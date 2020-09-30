@@ -1,84 +1,44 @@
-#!/usr/bin/env python
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
-
-# NOTE: The configuration for the package, including the name, version, and
-# other information are set in the setup.cfg file.
-
 import os
-import sys
+from os.path import basename
+from setuptools import setup, find_packages
+from glob import glob
 
-from setuptools import setup
-{% if cookiecutter.use_compiled_extensions == 'y' %}
-from extension_helpers import get_extensions
-{% endif %}
 
-# First provide helpful messages if contributors try and run legacy commands
-# for tests or docs.
+def get_transforms_data():
+    # Installs the schema files in jwst/transforms
+    # Because the path to the schemas includes "stsci.edu" they
+    # can't be installed using setuptools.
+    transforms_schemas = []
+    root = os.path.join(NAME, 'transforms', 'schemas')
+    for node, dirs, files in os.walk(root):
+        for fname in files:
+            if fname.endswith('.yaml'):
+                transforms_schemas.append(
+                    os.path.relpath(os.path.join(node, fname), root))
+    # In the package directory, install to the subdirectory 'schemas'
+    transforms_schemas = [os.path.join('schemas', s) for s in transforms_schemas]
+    return transforms_schemas
 
-TEST_HELP = """
-Note: running tests is no longer done using 'python setup.py test'. Instead
-you will need to run:
+NAME = 'ngrst'
+SCRIPTS = [s for s in glob('scripts/*') if basename(s) != '__pycache__']
+PACKAGE_DATA = {
+    '': [
+        '*.fits',
+        '*.txt',
+        '*.inc',
+        '*.cfg',
+        '*.csv',
+        '*.yaml',
+        '*.json',
+        '*.asdf'
+    ]
+}
+PACKAGE_DATA['romancal.transforms'] = get_transforms_data()
 
-    tox -e test
-
-If you don't already have tox installed, you can install it with:
-
-    pip install tox
-
-If you only want to run part of the test suite, you can also use pytest
-directly with::
-
-    pip install -e .[test]
-    pytest
-
-For more information, see:
-
-  http://docs.astropy.org/en/latest/development/testguide.html#running-tests
-"""
-
-if 'test' in sys.argv:
-    print(TEST_HELP)
-    sys.exit(1)
-
-DOCS_HELP = """
-Note: building the documentation is no longer done using
-'python setup.py build_docs'. Instead you will need to run:
-
-    tox -e build_docs
-
-If you don't already have tox installed, you can install it with:
-
-    pip install tox
-
-You can also build the documentation with Sphinx directly using::
-
-    pip install -e .[docs]
-    cd docs
-    make html
-
-For more information, see:
-
-  http://docs.astropy.org/en/latest/install.html#builddocs
-"""
-
-if 'build_docs' in sys.argv or 'build_sphinx' in sys.argv:
-    print(DOCS_HELP)
-    sys.exit(1)
-
-VERSION_TEMPLATE = """
-# Note that we need to fall back to the hard-coded version if either
-# setuptools_scm can't be imported or setuptools_scm can't determine the
-# version, so we catch the generic 'Exception'.
-try:
-    from setuptools_scm import get_version
-    version = get_version(root='..', relative_to=__file__)
-except Exception:
-    version = '{0.0.1}'
-""".lstrip()
-
-setup(use_scm_version={'write_to': os.path.join('{{ cookiecutter.module_name }}', 'version.py'),
-                       'write_to_template': VERSION_TEMPLATE}
-{%- if cookiecutter.use_compiled_extensions == 'y' %},
-      ext_modules=get_extensions())
-{%- else %})
-{%- endif %}
+setup(
+    use_scm_version=True,
+    setup_requires=['setuptools_scm'],
+    scripts=SCRIPTS,
+    packages=find_packages(),
+    package_data=PACKAGE_DATA,
+)
