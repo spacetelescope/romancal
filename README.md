@@ -17,23 +17,23 @@
 
 The easiest way to install the latest `roman` release into a fresh virtualenv or conda environment is
 
-    pip install roman
+    pip install romancal
 
 ### Detailed Installation
 
-The `roman` package can be installed into a virtualenv or conda environment via `pip`.
+The `romancal` package can be installed into a virtualenv or conda environment via `pip`.
 We recommend that for each installation you start by creating a fresh
-environment that only has Python installed and then install the `roman` package and
+environment that only has Python installed and then install the `romancal` package and
 its dependencies into that bare environment.
 If using conda environments, first make sure you have a recent version of Anaconda
 or Miniconda installed.
 If desired, you can create multiple environments to allow for switching between different
-versions of the `roman` package (e.g. a released version versus the current development version).
+versions of the `romancal` package (e.g. a released version versus the current development version).
 
 In all cases, the installation is generally a 3-step process:
 * Create a conda environment
 * Activate that environment
-* Install the desired version of the `roman` package into that environment
+* Install the desired version of the `romancal` package into that environment
 
 Details are given below on how to do this for different types of installations,
 including tagged releases, DMS builds used in operations, and development versions.
@@ -48,13 +48,13 @@ You can install the latest released version via `pip`.  From a bash shell:
     conda activate <env_name>
     pip install romancal
 
-You can also install a specific version (from `roman 0.17.0` onward):
+You can also install a specific version (from `romancal 0.17.0` onward):
 
     conda create -n <env_name> python
     conda activate <env_name>
     pip install romancal==0.17.1
 
-Installing specific versions before `roman 0.17.0` need to be installed from Github:
+Installing specific versions before `romancal 0.17.0` need to be installed from Github:
 
     conda create -n <env_name> python
     conda activate <env_name>
