@@ -4,11 +4,11 @@ import pkgutil
 from importlib import import_module
 import os
 
-import jwst
+import romancal
 
 
 def main():
-    """Import all packages/modules in jwst to test they are importable
+    """Import all packages/modules in romancal to test they are importable
 
     This script is used in a Travis build that doesn't install any test
     dependencies from the package. This is to verify that all the modules
@@ -24,7 +24,7 @@ def main():
         description="Check if install_requires is up-to-date")
     args = parser.parse_args()
 
-    package = jwst
+    package = romancal
     prefix = package.__name__ + "."
 
     no_check = ["test", "time"]

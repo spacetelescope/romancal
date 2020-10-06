@@ -1,0 +1,8 @@
+# Global owners
+
+* @ddavis @nden
+romancal/flatfield           @dmggh             @phuwe
+romancal/pipeline          
+romancal/lib                 
+romancal/datamodels          @phuwe
+romancal/stpipe              
