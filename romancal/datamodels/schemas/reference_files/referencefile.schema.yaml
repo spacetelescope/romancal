@@ -1,0 +1,33 @@
+%YAML 1.1
+---
+$schema: "http://stsci.edu/schemas/fits-schema/fits-schema"
+id: "http://stsci.edu/schemas/jwst_datamodel/referencefile.schema"
+type: object
+properties:
+  meta:
+    type: object
+    properties:
+      date:
+        title: Date this file was created (UTC)
+        type: string
+      origin:
+        title: Organization responsible for creating file
+        type: string
+      reftype:
+        title: Reference file type
+        type: string
+      pedigree:
+        title: The pedigree of the reference file
+        type: string
+      description:
+        title: Description of the reference file
+        type: string
+      author:
+        title: Author of the reference file
+        type: string
+      history:
+        title: History of file modifications
+        type: string
+      useafter:
+        title: Use after date of the reference file
+        type: string
