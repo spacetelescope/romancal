@@ -1,6 +1,5 @@
 %YAML 1.1
 ---
-$schema: "http://stsci.edu/schemas/fits-schema/fits-schema"
 id: "http://stsci.edu/schemas/roman_datamodel/core.schema"
 type: object
 properties:

@@ -1,0 +1,25 @@
+%YAML 1.1
+---
+id: "http://stsci.edu/schemas/roman_datamodel/reference_files/flat.schema"
+allOf:
+- $ref: referencefile.schema
+- $ref: ../core.schema
+- type: object
+  properties:
+    data:
+      title: The science data
+      fits_hdu: SCI
+      default: 0.0
+      ndim: 2
+      datatype: float32
+    dq:
+      title: Data quality array
+      fits_hdu: DQ
+      default: 0
+      datatype: uint32
+    err:
+      title: Error array
+      fits_hdu: ERR
+      default: 0.0
+      datatype: float32
+
