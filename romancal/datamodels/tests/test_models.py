@@ -1,14 +1,15 @@
 import asdf
 
-from romancal import datamodels
+from romancal.datamodels import RomanDataModel
 
 
 def test_model_schemas():
-    model_classes = [
-        m for m in datamodels.__dict__.values()
-        if isinstance(m, type) and issubclass(m, datamodels.RomanDataModel)
-    ]
-    for model_class in model_classes:
+    def iter_subclasses(model_class):
+        yield model_class
+        for sub_class in model_class.__subclasses__():
+            yield from iter_subclasses(sub_class)
+
+    for model_class in iter_subclasses(RomanDataModel):
         try:
             asdf.schema.load_schema(model_class.schema_url)
         except Exception:
