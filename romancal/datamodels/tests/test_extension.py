@@ -1,7 +1,7 @@
 import yaml
 import asdf
 
-from ..extension import SCHEMAS_ROOT
+from romancal.datamodels.extension import SCHEMAS_ROOT
 
 
 def test_schema_uri_mapping():
