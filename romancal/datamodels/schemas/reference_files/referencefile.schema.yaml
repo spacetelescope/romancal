@@ -27,9 +27,6 @@ allOf:
         author:
           title: Author of the reference file
           type: string
-        history:
-          title: History of file modifications
-          type: string
         useafter:
           title: Use after date of the reference file
           type: string
