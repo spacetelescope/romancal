@@ -16,7 +16,7 @@ allOf:
       title: Data quality array
       fits_hdu: DQ
       default: 0
-      datatype: uint32
+      datatype: int16
     err:
       title: Error array
       fits_hdu: ERR
