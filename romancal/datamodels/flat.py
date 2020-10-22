@@ -1,8 +1,8 @@
-from .referencefile import RomanReferenceFileModel
+from .referencefile import ReferenceFileModel
 # Saved for DQ code implementation
 # from .dynamicdq import dynamic_mask
 
-class RomanFlatModel(RomanReferenceFileModel):
+class FlatModel(ReferenceFileModel):
     """
     A data model for 2D flat-field images.
 
@@ -20,7 +20,7 @@ class RomanFlatModel(RomanReferenceFileModel):
     schema_url = "http://stsci.edu/schemas/roman_datamodel/reference_files/flat.schema"
 
     def __init__(self, init=None, **kwargs):
-        super(RomanFlatModel, self).__init__(init=init, **kwargs)
+        super().__init__(init=init, **kwargs)
 
         # Saved for DQ code implementation
         # self.dq = dynamic_mask(self)
