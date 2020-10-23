@@ -1,6 +1,6 @@
-from stdatamodels import DataModel
+from .core import RomanDataModel
 
-class ReferenceFileModel(DataModel):
+class ReferenceFileModel(RomanDataModel):
     """
     Data model for reference files.
     """
