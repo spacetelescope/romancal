@@ -16,7 +16,7 @@ properties:
       telescope:
         title: Telescope used to acquire the data
         type: string
-        enum: [Roman]
+        enum: ["ROMAN"]
       exposure:
         title: Exposure parameters
         type: object

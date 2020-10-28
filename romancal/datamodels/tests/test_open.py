@@ -58,7 +58,7 @@ def test_memmap(tmp_path):
     file_path = tmp_path/"test.asdf"
     with asdf.AsdfFile() as af:
         af["data"] = np.zeros((1024,))
-
+        af["meta"] = {}
         af.write_to(file_path)
 
     with datamodels.open(file_path, memmap=True) as model:
