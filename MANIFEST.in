@@ -1,13 +1,20 @@
-include README.rst
+include README.md
 include CHANGES.rst
 include setup.cfg
-include LICENSE.rst
+include LICENSE
 include pyproject.toml
 
-recursive-include {{ cookiecutter.module_name }} *.pyx *.c *.pxd
 recursive-include docs *
-recursive-include licenses *
 recursive-include scripts *
+
+recursive-include romancal *.fits
+recursive-include romancal *.inc
+recursive-include romancal *.json
+recursive-include romancal *.txt
+recursive-include romancal *.cfg
+recursive-include romancal *.csv
+recursive-include romancal *.yaml
+recursive-include romancal *.asdf
 
 prune build
 prune docs/_build
