@@ -9,9 +9,11 @@ allOf:
     meta:
       type: object
       properties:
-        date:
-          title: Date this file was created (UTC)
-          type: string
+# NOTE: Commented out due to conflict with meta.date defined in stdatamodels
+# Ticket: https://github.com/spacetelescope/stdatamodels/issues/23
+#        date:
+#          title: Date this file was created (UTC)
+#          tag: "tag:stsci.edu:asdf/time/time-1.1.0"
         origin:
           title: Organization responsible for creating file
           type: string
@@ -29,4 +31,6 @@ allOf:
           type: string
         useafter:
           title: Use after date of the reference file
-          type: string
+          tag: "tag:stsci.edu:asdf/time/time-1.1.0"
+      required: [date,author,description,pedigree,useafter,reftype]
+additionalProperties: true

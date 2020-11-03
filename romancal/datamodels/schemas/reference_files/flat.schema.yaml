@@ -19,4 +19,4 @@ allOf:
       title: Error array
       default: 0.0
       datatype: float32
-
+additionalProperties: true
