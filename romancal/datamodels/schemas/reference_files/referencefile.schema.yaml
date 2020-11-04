@@ -13,13 +13,14 @@ allOf:
 # Ticket: https://github.com/spacetelescope/stdatamodels/issues/23
 #        date:
 #          title: Date this file was created (UTC)
-#          tag: "tag:stsci.edu:asdf/time/time-1.1.0"
+#          tag: tag:stsci.edu:asdf/time/time-1.1.0
         origin:
           title: Organization responsible for creating file
           type: string
         reftype:
           title: Reference file type
           type: string
+          enum: [FLAT, BASE]
         pedigree:
           title: The pedigree of the reference file
           type: string
@@ -31,6 +32,5 @@ allOf:
           type: string
         useafter:
           title: Use after date of the reference file
-          tag: "tag:stsci.edu:asdf/time/time-1.1.0"
-      required: [date,author,description,pedigree,useafter,reftype]
-additionalProperties: true
+          tag: tag:stsci.edu:asdf/time/time-1.1.0
+      required: [date, author, description, pedigree, useafter, reftype]

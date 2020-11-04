@@ -5,7 +5,6 @@ import asdf
 import numpy as np
 
 from romancal import datamodels
-from romancal.datamodels import RomanDataModel
 
 
 def test_asdf_file_input():

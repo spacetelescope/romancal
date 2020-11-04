@@ -88,13 +88,15 @@ def _select_model_class(asdf_file):
     # - ???
 
     # Check for the existence of reftype to indicate a reference file model
-    if asdf_file["meta"].get("reftype", None):
+    reftype = asdf_file["meta"].get("reftype")
+    if reftype is not None:
         # Check if flat file model
-        if asdf_file["meta"].get("reftype", None) == "FLAT":
+        if reftype == "FLAT":
             return FlatModel
         # Return base reference file model
         else:
             return ReferenceFileModel
+
     # Not a reference file model
     else:
         return RomanDataModel
