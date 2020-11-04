@@ -3,7 +3,6 @@ import pytest
 import asdf
 import numpy as np
 from astropy.time import Time
-from copy import deepcopy
 
 from romancal import datamodels
 from stdatamodels.validate import ValidationWarning
@@ -24,75 +23,37 @@ def test_model_schemas(tmp_path):
                           f"class {model_class.__name__}"
 
 
-
 # Helper function to test required keywords
 # meta = dictionary of required key/value pairs to ensure each are required
+# model_class = the class of the model to be tested
 def confirm_required_keywords(tmp_path, meta, model_class):
     file_path = tmp_path / "test.asdf"
 
-    # dm = model_class(meta)
-    # for required_key in dm.keys():
-    #     original_value = dm[required_key]
-    #     dm[required_key] = None
-    #     with pytest.warns(ValidationWarning):
-    #         dm.validate()
-    #     dm[required_key] = original_value
-
+    # Create data model
     dm = model_class(meta)
+
+    # Cycle through provided required keys, testing a model missing each one in isolation
     for required_key in dm.keys():
+        # The following is required due to the following bugs:
+        # NOTE 1: meta.date requires skipping because it is not properly failing its test
+        #         Ticket: https://github.com/spacetelescope/stdatamodels/issues/23
+        # NOTE 2: meta.model_type requires skipping due to not properly failing their tests
+        #         Ticket: https://github.com/spacetelescope/stdatamodels/issues/7
+        if required_key in ["meta.date", "meta.model_type"]:
+            continue
+
+        # Store key value
         original_value = dm[required_key]
+        # Setting key value to "None" effectively removes it from the model
         dm[required_key] = None
-        with pytest.warns(ValidationWarning) as record:
-            dm.validate()
-        dm[required_key] = original_value
-        try:
-            print("XXX record[0] = " + str(record[0]))
-        except:
-            pass
-
-    # Returns the "paths" for all the keys in a dictionary (e.g. keys within keys.)
-    # This return is in the form of a list of lists, allowing the paths to be combined in whatever
-    # fashion is appropriate
-    def getkeypaths(meta_dict, path=None):
-        if path is None:
-            path = []
-        for keyname, value in meta_dict.items():
-            newpath = path + [keyname]
-            if isinstance(value, dict):
-                for subkeyname in getkeypaths(value, newpath):
-                    yield subkeyname
-            else:
-                yield newpath
-
-    # Deletes the key/value pair for a "pathed key" (e.g. a key within keys.)
-    # Returns the dictionary minus that key/value pair.
-    def delkeypath(meta_dict, keypath):
-        keylist = keypath.split('.')
-        sub_dict = meta_dict
-        for subkey in keylist[:-1]:
-            sub_dict = sub_dict[subkey]
-        del sub_dict[keylist[-1]]
-        return sub_dict
-
-    # Cycle through each key/value pair in meta dictionary
-    for keypathlist in getkeypaths(meta):
-        keypathname = '.'.join(keypathlist)
-
-        # Create temporary copy of meta dictionary and remove one key/value pair
-        badmeta = deepcopy(meta)
-        delkeypath(badmeta,keypathname)
-
-        # Save asdf file with badmeta dictionary as metadata tree
-        with asdf.AsdfFile(badmeta) as af:
-            af.write_to(file_path)
 
         # Test for warning that required keyword is missing
-        with datamodels.open(file_path) as model:
-            with pytest.warns(ValidationWarning):
-                model.validate()
-        #     with pytest.warns(ValidationWarning) as record:
-        #         model.validate()
-        # assert (len(record) > 0)
+        with pytest.warns(ValidationWarning):
+            dm.validate()
+
+        # Return key and value
+        dm[required_key] = original_value
+
 
 # Testing core schema
 def test_core_schema(tmp_path):
@@ -106,7 +67,8 @@ def test_core_schema(tmp_path):
                      "optical_element": "F158",
                      "name": "WFI"
                  },
-                 "telescope": "ROMAN"
+                 "telescope": "ROMAN",
+                 "model_type": "RomanDataModel"
                  }
             }
 
@@ -121,10 +83,9 @@ def test_core_schema(tmp_path):
 
         with datamodels.open(file_path) as model:
             model.validate()
-            with pytest.warns(ValidationWarning) as record:
+            with pytest.warns(ValidationWarning):
                 model.validate()
             assert model["meta"]["telescope"] == "NOTROMAN"
-        assert (len(record) > 0)
 
 # Helper function to confirm that a reference exists within a schema
 def assert_referenced_schema(schema_uri, ref_uri):
@@ -140,10 +101,12 @@ def assert_referenced_schema(schema_uri, ref_uri):
             # Reference found
             return
     # Reference not found
-    assert False, f"Schema '{schema_uri}' does not reference '{ref_uri}' in a top-level allOf combiner"
+    assert False, f"Schema '{schema_uri}' does not reference '{ref_uri}' in a top-level allOf " \
+                  f"combiner"
 
 
 # Define base meta dictionary of required key / value pairs for reference files
+#
 # NOTE 1: date is commented out because it is not properly failing its test
 #         Ticket: https://github.com/spacetelescope/stdatamodels/issues/23
 # NOTE 2: core.schema key/value pairs commented out due to not properly failing their tests
@@ -163,6 +126,7 @@ REFERENCEFILE_SCHEMA_DICT = {
 #                         "name": "WFI"
 #                     },
 #                     "telescope": "ROMAN",
+#                     "model_type": "ReferenceFileModel",
         }
     }
 
@@ -213,6 +177,7 @@ def test_flat_model(tmp_path):
     with asdf.AsdfFile(meta) as af:
         # Add required flat file elements
         af["meta"]["reftype"] = "FLAT"
+        af["meta"]["model_type"] = "FlatModel"
         af["data"] = np.zeros((4096, 4096))
         af["dq"] = np.zeros((4096, 4096))
         af["derr"] = np.zeros((4096, 4096))
@@ -220,9 +185,8 @@ def test_flat_model(tmp_path):
 
         # Test that asdf file opens properly
         with datamodels.open(file_path) as model:
-            with pytest.warns(None) as record:
+            with pytest.warns(None):
                 model.validate()
 
             # Confirm that asdf file is opened as flat file model
             assert isinstance(model, datamodels.flat.FlatModel)
-        assert (len(record) == 0)

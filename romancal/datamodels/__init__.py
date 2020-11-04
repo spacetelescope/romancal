@@ -4,4 +4,4 @@ from .flat import FlatModel
 from .open_impl import open
 
 
-__all__ = ["RomanDataModel", "ReferenceModel", "FlatModel", "open"]
+__all__ = ["RomanDataModel", "ReferenceFileModel", "FlatModel", "open"]
