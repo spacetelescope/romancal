@@ -138,13 +138,13 @@ learning about JSON schema is the book `Understanding JSON Schema
 mapping from Javascript to Python concepts (such as Javascript “array”
 == Python “list”) is added where applicable.
 
-In addition to the standard JSON Schema keywords, ``romancal.datamodels``
-also supports the following additional keywords.
+In addition to the standard JSON Schema metadata, ``romancal.datamodels``
+also supports the following additional metadata.
 
 Arrays
 ''''''
 
-The following keywords have to do with validating n-dimensional arrays:
+The following metadata have to do with validating n-dimensional arrays:
 
 - ``ndim``: The number of dimensions of the array.
 
@@ -179,17 +179,4 @@ since this would make files less portable).
     May be either an integer (for a single-dimensional shape),
     or a list of integers.
 
-FITS-specific Schema Attributes
-'''''''''''''''''''''''''''''''
 
-`romancal.datamodels` also adds some new keys to the schema language in
-order to handle reading and writing FITS files.  These attributes all
-have the prefix ``fits_``.
-
-- ``fits_keyword``: Specifies the FITS keyword to store the value in.
-  Must be a string with a maximum length of 8 characters.
-
-- ``fits_hdu``: Specifies the FITS HDU to store the value in.  May be
-  a number (to specify the nth HDU) or a name (to specify the
-  extension with the given ``EXTNAME``).  By default this is set to 0,
-  and therefore refers to the primary HDU.

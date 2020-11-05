@@ -13,36 +13,8 @@ List of current models
 
 The current models are as follows:
 
-    `AsnModel`,
-    `DarkModel`,
-    `DistortionModel`,
     `FlatModel`,
-    `GainModel`,
-    `ImageModel`,
-    `IPCModel`,
-    `LinearityModel`,
-    `MaskModel`,
-    `ModelContainer`,
-    `OutlierParsModel`,
-    `PathlossModel`,
-    `PersistenceSatModel`,
-    `PixelAreaModel`,
-    `PsfMaskModel`,
-    `RampModel`, `RampFitOutputModel`,
-    `ReadnoiseModel`,
-    `ReferenceFileModel`, `ReferenceImageModel`,
-    `RegionsModel`,
-    `ResetModel`,
-    `RSCDModel`,
-    `SaturationModel`,
-    `SpecModel`,
-    `SpecwcsModel`,
-    `StrayLightModel`,
-    `SuperBiasModel`,
-    `ThroughputModel`,
-    `TrapDensityModel`, `TrapParsModel`, `TrapsFilledModel`,
-    `WaveCorrModel`,
-    `WavelengthrangeModel`
+    `ReferenceFileModel`,
 
 Commonly used attributes
 ------------------------
@@ -70,14 +42,7 @@ of these arrays.  numpy is used explicitly to create these arrays in some
 cases (e.g. when a default value is needed).  The `data` and `err` arrays
 are a floating point type, and the data quality arrays are an integer type.
 
-Some of the step code makes assumptions about image array sizes.  For
-example, full-frame MIRI data have 1032 columns and 1024 rows, and all
-other detectors have 2048 columns and rows; anything smaller must be a
-subarray.  Also, full-frame MIRI data are assumed to have four columns of
-reference pixels on the left and right sides (the reference output array
-is stored in a separate image extension).  Full-frame data for all other
-instruments have four columns or rows of reference pixels on each edge
-of the image.
+
 
 DataModel Base Class
 --------------------

@@ -5,7 +5,7 @@ About models
 
 The purpose of the data model is to abstract away the peculiarities of
 the underlying file format.  The same data model may be used for data
-created from scratch in memory, or loaded from FITS or ASDF files or
+created from scratch in memory, or loaded from ASDF files or
 some future file format.
 
 
@@ -39,7 +39,7 @@ To create a new `ImageModel`, just call its constructor.  To create a
 new model where all of the arrays will have default values, simply
 provide a shape as the first argument::
 
-    from romancal.datamodels import ImageModel
+    from jwst.datamodels import ImageModel
     with ImageModel((1024, 1024)) as im:
         ...
 
@@ -53,7 +53,7 @@ consumed::
   print(im.data)
 
 If you already have data in a numpy array, you can also create a model
-using that array by passing it in as a data keyword argument::
+using that array by passing it in as a data metadata argument::
 
     data = np.empty((50, 50))
     dq = np.empty((50, 50))
@@ -66,10 +66,9 @@ Creating a data model from a file
 The `romancal.datamodels.open` function is a convenient way to create a
 model from a file on disk.  It may be passed any of the following:
 
-    - a path to a FITS file
     - a path to an ASDF file
-    - a `astropy.io.asdf.HDUList` object
     - a readable file-like object
+    TBD
 
 The file will be opened, and based on the nature of the data in the
 file, the correct data model class will be returned.  For example, if
@@ -80,7 +79,7 @@ exiting the `with` block.
 
 ::
 
-    from jwst import datamodels
+    from romancal import datamodels
     with datamodels.open("myimage.asdf") as im:
         assert isinstance(im, datamodels.ImageModel)
 
@@ -102,7 +101,7 @@ Saving a data model to a file
 
 Simply call the `save` method on the model instance.  The format to
 save into will either be deduced from the filename (if provided) or
-the `format` keyword argument::
+the `format` metadata argument::
 
     im.save("myimage.asdf")
 
@@ -145,22 +144,16 @@ history::
     entry =  util.create_history_entry("Processed through the frobulator step")
     model.history.append(entry)
 
-These history entries are stored in ``HISTORY`` keywords when saving
-to FITS format. As an option, history entries can contain a dictionary
-with a description of the software used. The dictionary must have the
-following keys:
-
-  ``name``: The name of the software
-  ``author``: The author or institution that produced the software
-  ``homepage``: A URI to the homepage of the software
-  ``version``: The version of the software
+These history entries are stored in ``HISTORY`` metadata when saving
+to ASDF format.
+   TBD
 
 The calling sequence to create  a history entry with the software
 description is::
 
   entry =  util.create_history_entry(description, software=software_dict)
 
-where the second argument is the dictionary with the keywords
+where the second argument is the dictionary with the metadata
 mentioned.
 
 Looking at the contents of a model
@@ -193,15 +186,14 @@ The number of displayed rows is controlled by the ``max_row`` argument::
   │ └─28 not shown
   ├─var_poisson (ndarray): shape=(2048, 2048), dtype=float32
   ├─var_rnoise (ndarray): shape=(2048, 2048), dtype=float32
-  └─extra_fits (dict) ...
   Some nodes not shown.
 
 
 Searching a model
 -----------------
 
-``model.search()`` can be used to search the ASDF tree by ``key`` or
-``value``::
+``model.search()`` can be used to search the ASDF tree by...
+   TBD
 
   im.search(key='filter')
 
@@ -236,17 +228,17 @@ use::
 In place of `ImageModel`, use the type of data one expects to find in
 the file.  For example, if spectrographic data is expected, use
 `SpecModel`.  If it doesn't matter (perhaps the application is only
-sorting FITS files into categories) use the base class `DataModel`.
+sorting ASDF files into categories) use the base class `RomanDataModel`.
 
 An alternative is to use::
 
-    from jwst import datamodels
+    from romancal import datamodels
     with datamodels.open("myfile.asdf") as model:
         ...
 
-The `datamodels.open()` method checks if the `DATAMODL` FITS keyword has
+The `datamodels.open()` method checks if the `DATAMODL` ASDF metadata has
 been set, which records the DataModel that was used to create the file.
-If the keyword is not set, then `datamodels.open()` does its best to
+If the metadata is not set, then `datamodels.open()` does its best to
 guess the best DataModel to use.
 
 Accessing data
@@ -264,51 +256,19 @@ use::
 
     model.data
 
-Accessing keywords
+Accessing metadata
 ------------------
 
-The data model hides direct access to FITS header keywords.  Instead,
+The data model hides direct access to ASDF header metadata.  Instead,
 use the :ref:`metadata` tree.
 
-There is a convenience method, `find_fits_keyword` to find where a
-FITS keyword is used in the metadata tree::
+There is a convenience method, ...
 
-    >>> from romancal.datamodels import DataModel
-    >>> # First, create a model of the desired type
-    >>> model = DataModel()
-    >>> model.find_fits_keyword('DATE-OBS')
-    [u'meta.observation.date']
+TBD
 
-This information shows that instead of::
-
-    print(hdulist[0].header['DATE-OBS'])
-
-use::
-
-    print(model.meta.observation.date)
-
-Extra FITS keywords
+Extra ASDF metadata
 -------------------
 
-When loading arbitrary FITS files, there may be keywords that are not
-listed in the schema for that data model.  These "extra" FITS keywords
-are put under the model in the `_extra_fits` namespace.
-
-Under the `_extra_fits` namespace is a section for each header data
-unit, and under those are the extra FITS keywords.  For example, if
-the FITS file contains a keyword `FOO` in the primary header, its
-value can be obtained using::
-
-    model._extra_fits.PRIMARY.FOO
-
-This feature is useful to retain any extra keywords from input files
-to output products.
-
-To get a list of everything in `_extra_fits`::
-
-    model._extra_fits._instance
-
-returns a dictionary of of the instance at the model._extra_fits node.
-
-`_instance` can be used at any node in the tree to return a dictionary
-of rest of the tree structure at that node.
+When loading arbitrary ASDF files, there may be metadata that are not
+listed in the schema for that data model. 
+ TBD
