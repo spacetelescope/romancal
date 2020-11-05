@@ -14,6 +14,7 @@ List of current models
 The current models are as follows:
 
     `FlatModel`,
+    `ReferenceFileModel`,
 
 Commonly used attributes
 ------------------------

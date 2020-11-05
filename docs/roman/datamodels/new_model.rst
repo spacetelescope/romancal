@@ -70,7 +70,7 @@ type "object", and should include the core schema:
 .. code-block:: yaml
 
   allOf:
-     - $ref: "http://romancal.stsci.edu/schemas/core.schema.yaml"
+     - $ref: "http://stsci.edu/schemas/roman_datamodel/core.schema
      - type: object
        properties:
           ...

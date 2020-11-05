@@ -23,7 +23,7 @@ attribute is not defined, which in turn calls _make_default_array if
 the schema says the attribute is an array. All these methods can be
 found in properties.py.
 
-The base class for Datamodels is DataModel,  in model_base.py. It takes
+The base class for Datamodels is RomanDataModel,  in model_base.py. It takes
 several arguments, the most important of which is init, which as the
 name suggests, specifies how to initialize the primary data array of
 the model. Init is most usually the name of a file, but can be an

@@ -228,7 +228,7 @@ use::
 In place of `ImageModel`, use the type of data one expects to find in
 the file.  For example, if spectrographic data is expected, use
 `SpecModel`.  If it doesn't matter (perhaps the application is only
-sorting ASDF files into categories) use the base class `DataModel`.
+sorting ASDF files into categories) use the base class `RomanDataModel`.
 
 An alternative is to use::
 
