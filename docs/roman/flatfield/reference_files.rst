@@ -1,7 +1,6 @@
 Reference Files
 ===============
-The ``flat_field`` step uses four different types of reference files, depending on the
-type of data being processed.
+The ``flat_field`` step uses a FLAT reference file.
 
 .. include:: ../references_general/flat_reffile.inc
 
