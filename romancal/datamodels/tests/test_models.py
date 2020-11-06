@@ -27,8 +27,6 @@ def test_model_schemas(tmp_path):
 # meta = dictionary of required key/value pairs to ensure each are required
 # model_class = the class of the model to be tested
 def confirm_required_keywords(tmp_path, meta, model_class):
-    file_path = tmp_path / "test.asdf"
-
     # Create data model
     dm = model_class(meta)
 
