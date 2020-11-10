@@ -16,42 +16,7 @@ def iter_subclasses(model_class, include_base_model=True):
 
 def test_model_schemas(tmp_path):
     for model_class in iter_subclasses(datamodels.RomanDataModel):
-        try:
-            asdf.schema.load_schema(model_class.schema_url)
-        except Exception:
-            assert False, f"Unable to load schema URI '{model_class.schema_url}' for model " \
-                          f"class {model_class.__name__}"
-
-
-# Helper function to test required keywords
-# meta = dictionary of required key/value pairs to ensure each are required
-# model_class = the class of the model to be tested
-def confirm_required_keywords(tmp_path, meta, model_class):
-    # Create data model
-    dm = model_class(meta)
-
-    # Cycle through provided required keys, testing a model missing each one in isolation
-    for required_key in dm.keys():
-        # The following is required due to the following bugs:
-        # NOTE 1: meta.date requires skipping because it is not properly failing its test
-        #         Ticket: https://github.com/spacetelescope/stdatamodels/issues/23
-        # NOTE 2: meta.model_type requires skipping due to not properly failing their tests
-        #         Ticket: https://github.com/spacetelescope/stdatamodels/issues/7
-        if required_key in ["meta.date", "meta.model_type"]:
-            continue
-
-        # Store key value
-        original_value = dm[required_key]
-        # Setting key value to "None" effectively removes it from the model
-        dm[required_key] = None
-
-        # Test for warning that required keyword is missing
-        with pytest.warns(ValidationWarning):
-            dm.validate()
-
-        # Return key and value
-        dm[required_key] = original_value
-
+        asdf.schema.load_schema(model_class.schema_url)
 
 # Testing core schema
 def test_core_schema(tmp_path):
@@ -69,9 +34,6 @@ def test_core_schema(tmp_path):
                  "model_type": "RomanDataModel"
                  }
             }
-
-    # Test schema for required key/value pairs
-    confirm_required_keywords(tmp_path, meta, datamodels.core.RomanDataModel)
 
     # Testing bad core asdf file
     with asdf.AsdfFile(meta) as af:
@@ -135,9 +97,6 @@ def test_reference_file_model_base(tmp_path):
 
     # Get reference dictionary base
     meta = REFERENCEFILE_SCHEMA_DICT
-
-    # Test required key/values pairs in meta dictionary
-    confirm_required_keywords(tmp_path, meta, datamodels.referencefile.ReferenceFileModel)
 
     # Testing referencefile asdf file
     with asdf.AsdfFile(meta) as af:
