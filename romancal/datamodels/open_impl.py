@@ -6,6 +6,7 @@ from pathlib import PurePath, Path
 import asdf
 
 from .core import RomanDataModel
+from .referencefile import ReferenceFileModel
 from .flat import FlatModel
 
 
@@ -86,8 +87,16 @@ def _select_model_class(asdf_file):
     # - Use RomanDataModel for all data but select the schema according to one of the above
     # - ???
 
-    # If we keep it this route, need to check for the existence of reftype first
-    if asdf_file["meta"].get("reftype") == "FLAT":
-        return FlatModel
+    # Check for the existence of reftype to indicate a reference file model
+    reftype = asdf_file["meta"].get("reftype")
+    if reftype is not None:
+        # Check if flat file model
+        if reftype == "FLAT":
+            return FlatModel
+        # Return base reference file model
+        else:
+            return ReferenceFileModel
+
+    # Not a reference file model
     else:
         return RomanDataModel

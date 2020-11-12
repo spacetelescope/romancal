@@ -8,3 +8,4 @@ class ReferenceFileModel(RomanDataModel):
 
     def __init__(self, init=None, **kwargs):
         super().__init__(init=init, **kwargs)
+

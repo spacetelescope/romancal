@@ -9,15 +9,10 @@ allOf:
     meta:
       type: object
       properties:
-        date:
-          title: Date this file was created (UTC)
-          type: string
-        origin:
-          title: Organization responsible for creating file
-          type: string
         reftype:
           title: Reference file type
           type: string
+          enum: [FLAT, BASE]
         pedigree:
           title: The pedigree of the reference file
           type: string
@@ -29,4 +24,5 @@ allOf:
           type: string
         useafter:
           title: Use after date of the reference file
-          type: string
+          tag: tag:stsci.edu:asdf/time/time-1.1.0
+      required: [author, description, pedigree, useafter, reftype]
