@@ -47,6 +47,6 @@ are a floating point type, and the data quality arrays are an integer type.
 DataModel Base Class
 --------------------
 
-.. autoclass:: romancal.datamodels.DataModel
+.. autoclass:: romancal.datamodels.RomanDataModel
    :members:
    :noindex:
