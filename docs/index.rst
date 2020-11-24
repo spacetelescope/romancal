@@ -1,16 +1,36 @@
-.. _data-models:
+.. romancal documentation master file
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+:ref:`genindex`  |  :ref:`modindex`
 
 ===========
-Data Models
+User Manual
 ===========
 
 .. toctree::
    :maxdepth: 2
 
-   models.rst
-   attributes.rst
-   metadata.rst
-   new_model.rst
-   structure.rst
+   roman/introduction.rst
 
-.. automodapi:: romancal.datamodels
+
+===============================
+Error Propagation Documentation
+===============================
+
+.. toctree::
+   :maxdepth: 1
+
+   roman/error_propagation/index.rst
+
+
+=====================
+Package Documentation
+=====================
+
+.. toctree::
+   :maxdepth: 1
+
+   roman/package_index.rst
+
+
