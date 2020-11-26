@@ -1,0 +1,23 @@
+%YAML 1.1
+---
+$schema: http://stsci.edu/schemas/asdf/asdf-schema-1.0.0
+id: "http://stsci.edu/schemas/roman_datamodel/reference_files/dark.schema"
+allOf:
+- $ref: referencefile.schema
+- type: object
+  properties:
+    data:
+      title: Dark current array
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    dq:
+      title: 2-D data quality array for all planes
+      default: 0
+      ndim: 2
+      datatype: uint16
+    err:
+      title: Error array
+      default: 0.0
+      ndim: 3
+      datatype: float32
