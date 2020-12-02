@@ -1,0 +1,327 @@
+%YAML 1.1
+---
+$schema: http://stsci.edu/schemas/asdf/asdf-schema-1.0.0
+id: "http://stsci.edu/schemas/roman_datamodel/image_files/image.schema"
+allOf:
+- $ref: ../core.schema
+- type: object
+  properties:
+    meta:
+      type: object
+      properties:
+        program:
+          title: Program information
+          type: object
+          properties:
+            title:
+              title: Proposal title
+              type: string
+            pi_name:
+              title: Principal investigator name
+              type: string
+            category:
+              title: Program category
+              type: string
+            sub_category:
+              title: Program sub-category
+              type: string
+            science_category:
+              title: Science category assigned during TAC process
+              type: string
+            continuation_id:
+              title: Continuation of previous program
+              type: integer
+        observation:
+          title: Observation identifiers
+          type: object
+          properties:
+            date:
+              title: "[yyyy-mm-dd] UTC date at start of exposure"
+              type: string
+            time:
+              title: "[hh:mm:ss.sss] UTC time at start of exposure"
+              type: string
+            date_beg:
+              type: string
+              title: "Date-time start of exposure"
+              # Despite what the title might lead you to believe, this keyword
+              # actually contains a full datetime string.
+            date_end:
+              type: string
+              title: "Date-time end of exposure"
+              # Despite what the title might lead you to believe, this keyword
+              # actually contains a full datetime string.
+            obs_id:
+              title: Programmatic observation identifier
+              type: string
+            visit_id:
+              title: Visit identifier
+              type: string
+            program_number:
+              title: Program number
+              type: string
+            observation_number:
+              title: Observation number
+              type: string
+            visit_number:
+              title: Visit number
+              type: string
+            visit_group:
+              title: Visit group identifier
+              type: string
+            sequence_id:
+              title: Parallel sequence identifier
+              type: string
+            activity_id:
+              title: Activity identifier
+              type: string
+            exposure_number:
+              title: Exposure request number
+              type: string
+            bkgdtarg:
+              title: Background target
+              type: boolean
+            template:
+              title: Observation template used
+              type: string
+            observation_label:
+              title: Proposer label for the observation
+              type: string
+            observation_folder:
+              title: Name of the APT observation folder
+              type: string
+        visit:
+          title: Visit information
+          type: object
+          properties:
+            engineering_quality:
+              title: Engineering data quality indicator from EngDB
+              type: string
+              enum: [OK, SUSPECT]
+            type:
+              title: Visit type
+              type: string
+              enum: [GENERIC, PARALLEL_DARK_CALIBRATION, PARALLEL_EXTERNAL_CALIBRATION,
+                     PARALLEL_PURE, PARALLEL_SLEW_CALIBRATION, PRIME_STATION_KEEPING,
+                     PRIME_TARGETED_FIXED, PRIME_TARGETED_MOVING, PRIME_UNTARGETED,
+                     PRIME_WFSC_ROUTINE, PRIME_WFSC_SENSING_CONTROL,
+                     PRIME_WFSC_SENSING_ONLY, PRIOR_MOMENTUM_UNLOAD]
+            start_time:
+              title: UTC visit start time
+              type: string
+            status:
+              title: Status of a visit
+              type: string
+            total_exposures:
+              title: Total number of planned exposures in visit
+              type: integer
+            internal_target:
+              title: At least one exposure in visit is internal
+              type: boolean
+            too_visit:
+              title: Visit scheduled as target of opportunity
+              type: boolean
+            tsovisit:
+              title: Time Series Observation visit indicator
+              type: boolean
+            exp_only:
+              title: Special commanding without SI configuration
+              type: boolean
+        photometry:
+          title: Photometry information
+          type: object
+          properties:
+            conversion_megajanskys:
+              title: Flux density (MJy/steradian) producing 1 cps
+              type: number
+            conversion_microjanskys:
+              title: Flux density (uJy/arcsec2) producing 1 cps
+              type: number
+            pixelarea_steradians:
+              title: Nominal pixel area in steradians
+              type: number
+            pixelarea_arcsecsq:
+              title: Nominal pixel area in arcsec^2
+              type: number
+        coordinates:
+          title: Information about the coordinates in the file
+          type: object
+          properties:
+            reference_frame:
+              title: Name of the coordinate reference frame
+              type: string
+              default: ICRS
+              enum: [ ICRS ]
+        aperture:
+          title: Aperture information
+          type: object
+          properties:
+            position_angle:
+              title: "[deg] Position angle of aperture used"
+              type: number
+        pointing:
+          title: Spacecraft pointing information
+          type: object
+          properties:
+            ra_v1:
+              title: "[deg] RA of telescope V1 axis"
+              type: number
+            dec_v1:
+              title: "[deg] Dec of telescope V1 axis"
+              type: number
+            pa_v3:
+              title: "[deg] Position angle of telescope V3 axis"
+              type: number
+        velocity_aberration:
+          title: Velocity aberration correction information
+          type: object
+          properties:
+            scale_factor:
+              title: Velocity aberration scale factor
+              type: number
+        wcsinfo:
+          title: WCS parameters
+          type: object
+          properties:
+            wcsaxes:
+              title: number of World Coordinate System axes
+              type: integer
+            crpix1:
+              title: axis 1 coordinate of the reference pixel
+              type: number
+            crpix2:
+              title: axis 2 coordinate of the reference pixel
+              type: number
+            crpix3:
+              title: axis 3 coordinate of the reference pixel
+              type: number
+            crval1:
+              title: first axis value at the reference pixel
+              type: number
+            crval2:
+              title: second axis value at the reference pixel
+              type: number
+            crval3:
+              title: third axis value at the reference pixel
+              type: number
+            ctype1:
+              title: first axis coordinate type
+              type: string
+            ctype2:
+              title: second axis coordinate type
+              type: string
+            ctype3:
+              title: third axis coordinate type
+              type: string
+            cunit1:
+              title: first axis units
+              type: string
+            cunit2:
+              title: second axis units
+              type: string
+            cunit3:
+              title: third axis units
+              type: string
+            cdelt1:
+              title: first axis increment per pixel
+              type: number
+            cdelt2:
+              title: second axis increment per pixel
+              type: number
+            cdelt3:
+              title: third axis increment per pixel
+              type: number
+            pc1_1:
+              title: linear transformation matrix element
+              type: number
+            pc1_2:
+              title: linear transformation matrix element
+              type: number
+            pc1_3:
+              title: linear transformation matrix element
+              type: number
+            pc2_1:
+              title: linear transformation matrix element
+              type: number
+            pc2_2:
+              title: linear transformation matrix element
+              type: number
+            pc2_3:
+              title: linear transformation matrix element
+              type: number
+            pc3_1:
+              title: linear transformation matrix element
+              type: number
+            pc3_2:
+              title: linear transformation matrix element
+              type: number
+            pc3_3:
+              title: linear transformation matrix element
+              type: number
+            ps3_0:
+              title: Coordinate table extension name
+              type: string
+            ps3_1:
+              title: Coordinate table column name
+              type: string
+            s_region:
+              title: spatial extent of the observation
+              type: string
+              default: " "
+            waverange_start:
+              title: lower bound of the default wavelength range
+              type: number
+            waverange_end:
+              title: upper bound of the default wavelength range
+              type: number
+            dispersion_direction:
+              title: Dispersion direction
+              type: integer
+            spectral_order:
+              title: Spectral order number
+              type: integer
+            v2_ref:
+              title: "[arcsec] Telescope v2 coordinate of the reference point"
+              type: number
+            v3_ref:
+              title: "[arcsec] Telescope v3 coordinate of the reference point"
+              type: number
+            vparity:
+              title: Relative sense of rotation between Ideal xy and V2V3
+              type: integer
+            v3yangle:
+              title: "[deg] Angle from V3 axis to Ideal y axis"
+              type: number
+            ra_ref:
+              title: "[deg] Right ascension of the reference point"
+              type: number
+            dec_ref:
+              title: "[deg] Declination of the reference point"
+              type: number
+            roll_ref:
+              title: "[deg] V3 roll angle at the ref point (N over E)"
+              type: number
+            velosys:
+              title: "[m/s] Radial velocity wrt Barycenter"
+              type: number
+            specsys:
+              title: Spectral reference frame
+              type: string
+            siaf_xref_sci:
+              title: Aperture X reference point in SCI frame
+              type: number
+            siaf_yref_sci:
+              title: Aperture Y reference point in SCI frame
+              type: number
+            mt_ra:
+              title: "[deg] Moving target RA at exposure mid-point"
+              type: number
+            mt_dec:
+              title: "[deg] Moving target Dec at exposure mid-point"
+              type: number
+            mt_avra:
+              title: "[deg] Moving target average RA over exposures"
+              type: number
+            mt_avdec:
+              title: "[deg] Moving target average Dec over exposures"
+              type: number
