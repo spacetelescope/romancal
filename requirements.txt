@@ -64,7 +64,6 @@ pytz==2020.4
 PyYAML==5.3.1
 requests==2.25.0
 requests-mock==1.8.0
--e git+git@github.com:kmacdonald-stsci/romancal.git@694f1f0da01685741d8e8a1adedbf889bdcffcaa#egg=romancal
 scipy==1.5.4
 semantic-version==2.8.5
 six==1.15.0
