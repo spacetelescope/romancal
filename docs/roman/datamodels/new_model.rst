@@ -12,7 +12,7 @@ For further reading and details, see the reference materials in
 
 In this tutorial, we'll go through the process of creating a new type
 of model for a file format used for storing the bad pixel mask for a 
-hypothetical Roman instrument called "WFI".  This file format has a 2D array 
+hypothetical Roman instrument called "MY_WFI".  This file format has a 2D array 
 containing a bit field for each of the pixels, and a table describing what 
 each of the bits in the array means.
 

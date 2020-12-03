@@ -252,8 +252,8 @@ For example, to save the result from the dark current step of
     $ strun calroman_detector1.cfg roman00017001001_01101_00001_uncal.asdf
         --steps.dark_current.output_file='intermediate'
 
-A file, ``intermediate_dark_current.asdf``, will then be created. Note that the
-suffix of the step is always appended to any given name.
+An asdf file named ``intermediate_dark_current.asdf`` will then be created. Note 
+that the suffix of the step is always appended to any given name.
 
 You can also specify a particular file name for saving the end result of
 the entire pipeline using the ``--output_file`` argument also
