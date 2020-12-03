@@ -11,11 +11,23 @@ For further reading and details, see the reference materials in
 :ref:`metadata`.
 
 In this tutorial, we'll go through the process of creating a new type
-of model for a file format used for storing the bad pixel mask for
-ROMANCAL.
+of model for a file format used for storing the bad pixel mask for a 
+hypothetical Roman instrument called "WFI".  This file format has a 2D array 
+containing a bit field for each of the pixels, and a table describing what 
+each of the bits in the array means.
 
-TBD
+.. note::
 
+  While an attempt is made to present a real-world example here, it
+  may not reflect the actual final format of this file type, which is
+  still subject to change at the time of this writing.
+
+This example will be built as a third-party Python package, i.e. not
+part of `romancal.datamodels` itself.  Doing so adds a few extra wrinkles
+to the process, and it's most helpful to show what those wrinkles are.
+To skip ahead and just see the example in its entirety, see the
+``examples/custom_model`` directory within the `romancal.datamodels` source
+tree.
 
 Directory layout
 ----------------
@@ -70,7 +82,7 @@ type "object", and should include the core schema:
 .. code-block:: yaml
 
   allOf:
-     - $ref: "http://stsci.edu/schemas/roman_datamodel/core.schema
+     - $ref: "http://romancal.stsci.edu/schemas/core.schema.yaml"
      - type: object
        properties:
           ...
@@ -110,7 +122,7 @@ here::
 
 The next part of the file describes the array data, that is, things
 that are Numpy arrays on the Python side and images or tables on the
-asdf side.
+ASDF side.
 
 First, we describe the main ``"dq"`` array.  It's declared to be
 2-dimensional, and each element is an unsigned 32-bit integer:
@@ -118,7 +130,11 @@ First, we describe the main ``"dq"`` array.  It's declared to be
 .. code-block:: yaml
 
     properties:
-    TBD
+      dq:
+        title: Bad pixel mask
+        default: 0
+        ndim: 2
+        datatype: uint16
 
 The next entry describes a table that will store the mapping between
 bit fields and their meanings.  This table has four columns:
@@ -135,16 +151,32 @@ bit fields and their meanings.  This table has four columns:
 
         dq_def:
           title: DQ flag definitions
-          TBD
+          dtype:
+            - name: BIT
+              datatype: uint32
+            - name: VALUE
+              datatype: uint32
+            - name: NAME
+              datatype: [ascii, 40]
+            - name: DESCRIPTION
+              datatype: [ascii, 80]
 
 
 And finally, we add a metadata element that is specific to this
 format.  To avoid recomputing it repeatedly, we'd like to store a sum
 of all of the "bad" (i.e. non-zero) pixels stored in the bad pixel
 mask array.  In the model, we want to refer to this value as
-``model.meta.bad_pixel_count``.  In the asdf file, lets store this in ...
+``model.meta.bad_pixel_count``.  In the ASDF file, lets store this in
+the primary header in a keyword named ``BPCOUNT``:
 
-TBD
+.. code-block:: yaml
+
+        meta:
+          properties:
+            bad_pixel_count:
+              type: integer
+              title: Total count of all bad pixels
+              keyword: BPCOUNT
 
 
 That's all there is to the schema file, and that's the hardest part.
@@ -164,7 +196,7 @@ Then we create a new Python class that inherits from `DataModel`, and
 set its `schema_url` class member to point to the schema that we just
 defined above::
 
-  class MiriBadPixelMaskModel(DataModel):
+  class NewBadPixelMaskModel(DataModel):
       schema_url = "bad_pixel_mask.schema.yaml"
 
 Here, the `schema_url` has all of the "magical" URL abilities
@@ -213,7 +245,7 @@ technically writing a new constructor for the model is optional:
 
     def __init__(self, init=None, dq=None, dq_def=None, **kwargs):
         """
-        A data model to represent MIRI bad pixel masks.
+        A data model to represent WFI bad pixel masks.
 
         Parameters
         ----------
@@ -226,7 +258,7 @@ technically writing a new constructor for the model is optional:
         dq_def : numpy array
             The data quality definitions table.
         """
-        super(MiriBadPixelMaskModel, self).__init__(init=init, **kwargs)
+        super(WFIBadPixelMaskModel, self).__init__(init=init, **kwargs)
 
         if dq is not None:
             self.dq = dq
@@ -309,7 +341,7 @@ should happen just before saving:
 .. code-block:: python
 
     def on_save(self, path):
-        super(MiriBadPixelMaskModel, self).on_save(path)
+        super(WFIBadPixelMaskModel, self).on_save(path)
 
         self.meta.bad_pixel_count = np.sum(self.mask != 0)
 
@@ -347,10 +379,7 @@ Using the new model
 The new model can now be used.  For example, to get the locations of
 all of the "hot" pixels::
 
-TBD
+   from custom_model.bad_pixel_mask import WFIBadPixelMaskModel
 
-A table-based model
--------------------
-
-TBD
-
+   with WFIBadPixelMaskModel("bad_pixel_mask.asdf") as dm:
+       hot_pixels = dm.get_mask_for_field('HOT')

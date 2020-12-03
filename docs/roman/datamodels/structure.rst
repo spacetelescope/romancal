@@ -23,7 +23,7 @@ attribute is not defined, which in turn calls _make_default_array if
 the schema says the attribute is an array. All these methods can be
 found in properties.py.
 
-The base class for Datamodels is RomanDataModel,  in model_base.py. It takes
+The base class for Datamodels is RomanDataModel, in model_base.py. It takes
 several arguments, the most important of which is init, which as the
 name suggests, specifies how to initialize the primary data array of
 the model. Init is most usually the name of a file, but can be an
@@ -40,8 +40,11 @@ same name.
 As an alternative to creating a model by initializing an object of the
 specific class, you can call the open function, which is in
 util.py. This function takes the same arguments as the __init_
-method.
-TBD
+method. If it is called with the name of aa ASDF file, it looks in the
+metadata for a keyword named DATAMODL that contains the name of
+the class to use to open the model. If that keyword is not found,
+checks the dimensionality of the image and uses a generic model type
+to open the image.
 
 The base class for Datamodels loads the schema from the a file in the
 schemas subdirectory. If the base class is passed a descriptor of an
@@ -53,16 +56,14 @@ determine the file type. This test is in filetype.py.
 
 To write a model back to a file, call the save method on the file. It
 first calls validate_required to check the schema to see if all the
-required fields are present in the model.
-
-TBD
+required fields are present in the model. (More information needed)
 
 Items within a model are accessed as attribute, that is, with dot
 motation. The code which handles getting and setting attributes is
 found in properties.py. Datamodels distinguishes between items at the
 endpoints of the asdf tree and subtrees within the asdf tree. The
 former are returned as scalars or numpy arrays, depending on whether
-the endpoint represents metadata or data array. Subtrees are
+the endpoint represents a keyword or data array. Subtrees are
 returned as nodes. A node is an object containing the subtree as well
 as the subschema which describes the subtree.  If one tries to get an
 attribute that does not exist in the asdf tree, one of several things
