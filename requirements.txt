@@ -81,7 +81,7 @@ sphinxcontrib-htmlhelp==1.0.3
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
-stdatamodels @ git+https://github.com/spacetelescope/stdatamodels@0d8cadef2960113965da90d34d02089da27d3c0d
+stdatamodels @ git+https://github.com/spacetelescope/stdatamodels.git
 stsci-rtd-theme==0.0.2
 toml==0.10.2
 traitlets==5.0.5
