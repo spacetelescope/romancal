@@ -11,7 +11,7 @@ class FlatModel(ReferenceFileModel):
     data : numpy float32 array
          The science data
 
-    dq : numpy int16 array
+    dq : numpy uint16 array
          Data quality array
 
     err : numpy float32 array
