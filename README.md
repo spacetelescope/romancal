@@ -70,7 +70,7 @@ Github master branch:
     conda create -n <env_name> python
     conda activate <env_name>
     pip install git+https://github.com/spacetelescope/romancal
- 
+
 
 ### Installing a DMS Operational Build
 
@@ -217,7 +217,7 @@ Latest regression test results can be found here (STScI staff only):
 
 https://plwishmaster.stsci.edu:8081/job/RT/job/ROMAN/
 
-The test builds start at 6pm local Baltimore time Monday through Saturday on `jwcalibdev`.
+The test builds start at 6pm local Baltimore time Monday through Saturday on `rcalibdev`.
 
 To run the regression tests on your local machine, get the test dependencies
 and set the environment variable TEST_BIGDATA to our Artifactory server
@@ -236,10 +236,9 @@ for each test session, so make sure it is a scratch area._
 
 If you would like to run a specific test, find its name or ID and use the `-k` option:
 
-    pytest --bigdata roman/regtest -k nirspec
+    pytest --bigdata roman/regtest -k <Roman test name>
 
 If developers need to update the truth files in our nightly regression tests,
 there are instructions in the repository wiki.
 
 https://github.com/spacetelescope/roman/wiki/Maintaining-Regression-Tests
-
