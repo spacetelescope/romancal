@@ -2,6 +2,7 @@ astropy
 codecov
 coverage
 numpy
+pytest
 PyYAML
 Sphinx
 stdatamodels @ git+https://github.com/spacetelescope/stdatamodels.git
