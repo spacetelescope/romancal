@@ -1,7 +1,7 @@
-0.0.1 (unreleased)
+0.1.0 (unreleased)
 ===================
 
-The 0.0.0 release is the initial release for I&T testing.
+The 0.1.0 release is the initial release for I&T testing.
 
 datamodels
 ----------
