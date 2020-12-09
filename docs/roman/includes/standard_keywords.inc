@@ -9,16 +9,16 @@ data model name for each keyword, which is useful when using data
 models in creating and populating a new reference file.
 
 ============  ========================
-ASDF meta tag              Data Model Name
+ASDF meta tag    Data Model Name
 ============  ========================
-author                   model.meta.author         
-model_type           model.meta.model_type 
-date                      model.meta.date           
-description            model.meta.description 
-instrument            model.meta.instrument.name 
-reftype                 model.meta.reftype          
-telescope             model.meta.telescope      
-useafter               model.meta.useafter        
+author           model.meta.author         
+model_type       model.meta.model_type 
+date             model.meta.date           
+description      model.meta.description 
+instrument       model.meta.instrument.name 
+reftype          model.meta.reftype          
+telescope        model.meta.telescope      
+useafter         model.meta.useafter        
 ==========  ==========================  
 
 **NOTE:** More information on standard required keywords can be found here:
