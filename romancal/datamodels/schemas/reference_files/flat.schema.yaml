@@ -14,7 +14,7 @@ allOf:
     dq:
       title: Data quality array
       default: 0
-      datatype: int16
+      datatype: uint16
     err:
       title: Error array
       default: 0.0

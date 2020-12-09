@@ -65,15 +65,14 @@ For example, running the full stage 1 pipeline or an individual step by
 referencing their class names is done as follows:
 ::
 
-  $ strun romancal.pipeline.Detector1Pipeline jw00017001001_01101_00001_nrca1_uncal.asdf
-  $ strun romancal.dq_init.DQInitStep jw00017001001_01101_00001_nrca1_uncal.asdf
+  $ strun romancal.pipeline.Detector1Pipeline roman00017001001_01101_00001_uncal.asdf
+  $ strun romancal.flat_field.FlatFieldStep roman00017001001_01101_00001_uncal.asdf
 
 When a pipeline or step is executed in this manner (i.e. by referencing the
 class name), it will be run using a CRDS-supplied configuration merged with
 default values
 
-If you want to use non-default parameter
-values, you can specify them as
+If you want to use non-default parameter values, you can specify them as
 keyword arguments on the command line or set them in the appropriate
 configuration file.
 
@@ -83,16 +82,14 @@ For example, to override the default selection of a dark current reference
 file from CRDS when running a pipeline:
 ::
 
-    $ strun romancal.pipeline.Detector1Pipeline jw00017001001_01101_00001_nrca1_uncal.asdf
-          --steps.dark_current.override_dark='my_dark.asdf'
-    $ strun calwebb_detector1.cfg jw00017001001_01101_00001_nrca1_uncal.asdf
+    $ strun romancal.pipeline.Detector1Pipeline roman00017001001_01101_00001_uncal.asdf
           --steps.dark_current.override_dark='my_dark.asdf'
 
 You can get a list of all the available arguments for a given pipeline or
 step by using the '-h' (help) argument to strun:
 ::
 
-    $ strun dq_init.cfg -h
+    $ strun flat_field.cfg -h
     $ strun romancal.pipeline.Detector1Pipeline -h
 
 
@@ -102,14 +99,6 @@ Exit Status
 
 - 0: Successful completion of the step/pipeline
 - 1: General error occurred
-- 64: No science data found
-
-The "No science data found" condition is returned by the ``assign_wcs`` step of
-``calwebb_spec2.cfg`` pipeline when, after successfully determining the WCS
-solution for a file, the WCS indicates that no science data will be found. This
-condition most often occurs with NIRSpec's NRS2 detector: There are certain
-optical and MSA configurations in which dispersion will not cross to the NRS2
-detector.
 
 .. _run_from_python:
 
@@ -121,17 +110,17 @@ You can execute a pipeline or a step from within python by using the
 ::
 
  from romancal.pipeline import Detector1Pipeline
- result = Detector1Pipeline.call('jw00017001001_01101_00001_nrca1_uncal.asdf')
+ result = Detector1Pipeline.call('roman00017001001_01101_00001_uncal.asdf')
 
- from romancal.linearity import LinearityStep
- result = LinearityStep.call('jw00001001001_01101_00001_mirimage_uncal.asdf')
+ from romancal.gain import GainStep
+ result = GainStep.call('roman00001001001_01101_00001_uncal.asdf')
 
 The easiest way to use optional arguments when calling a pipeline from
 within python is to set those parameters in the pipeline configuration file and
 then supply the file as a keyword argument:
 ::
 
- Detector1Pipeline.call('jw00017001001_01101_00001_nrca1_uncal.asdf', config_file='calwebb_detector1.cfg')
+ Detector1Pipeline.call('roman00017001001_01101_00001_uncal.asdf', config_file='calroman_detector1.cfg')
 
 
 .. _intro_file_conventions:
@@ -148,11 +137,9 @@ There are two general types of input to any step or pipeline: references files
 and data files.  The references files, unless explicitly
 overridden, are provided through CRDS.
 
-Data files are the science input, such as exposure ASDF files and association
-files. All files are assumed to be co-resident in the directory where the primary
-input file is located. This is particularly important for associations: Roman
-associations contain file names only. All files referred to by an association
-are expected to be located in the directory in which the association file is located.
+Data files are the science input, such as exposure ASDF files. All files are 
+assumed to be co-resident in the directory where the primary
+input file is located. 
 
 .. _intro_output_file_discussion:
 
@@ -164,10 +151,9 @@ specified by the :ref:`output_dir <intro_output_directory>` configuration
 parameter.
 
 File names for the outputs from pipelines and steps come from
-three different sources:
+two different sources:
 
 - The name of the input file
-- The product name defined in an association
 - As specified by the :ref:`output_file <intro_output_file>` argument
 
 Regardless of the source, each pipeline/step uses the name as a "base
@@ -182,10 +168,7 @@ will be overwritten.
 Output File and Associations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Stage 2 pipelines can take an individual file or an :ref:`association
-<associations>` as input. Nearly all Stage 3 pipelines require an association as
-input. Normally, the output file is defined in each association's "product name"
-which defines the basename that will be used for output file naming.
+Stage 2 pipelines can take an individual file as input. 
 
 Often, one may reprocess the same set of data multiple times, such as to change
 reference files or parameters in configuration parameters.
@@ -206,10 +189,10 @@ name. If the input file name already has a known suffix, that suffix
 will be replaced. For example:
 ::
 
- $ strun dq_init.cfg jw00017001001_01101_00001_nrca1_uncal.asdf
+ $ strun flat_field.cfg roman00017001001_01101_00001_uncal.asdf
 
 produces an output file named
-``jw00017001001_01101_00001_nrca1_dq_init.asdf``.
+``roman00017001001_01101_00001_flat_field.asdf``.
 
 See :ref:`pipeline_step_suffix_definitions` for a list of the more common
 suffixes used.
@@ -225,11 +208,11 @@ Output Directory
 By default, all pipeline and step outputs will drop into the current
 working directory, i.e., the directory in which the process is
 running. To change this, use the ``output_dir`` argument. For example, to
-have all output from ``calwebb_detector1``, including any saved
+have all output from ``calroman_detector1``, including any saved
 intermediate steps, appear in the sub-directory ``calibrated``, use
 ::
 
-    $ strun calwebb_detector1.cfg jw00017001001_01101_00001_nrca1_uncal.asdf
+    $ strun calroman_detector1.cfg roman00017001001_01101_00001_uncal.asdf
         --output_dir=calibrated
 
 ``output_dir`` can be specified at the step level, overriding what was
@@ -237,7 +220,7 @@ specified for the pipeline. From the example above, to change the name
 and location of the ``dark_current`` step, use the following
 ::
 
-    $ strun calwebb_detector1.cfg jw00017001001_01101_00001_nrca1_uncal.asdf
+    $ strun calroman_detector1.cfg roman00017001001_01101_00001_uncal.asdf
         --output_dir=calibrated
         --steps.dark_current.output_file='dark_sub.asdf'
         --steps.dark_current.output_dir='dark_calibrated'
@@ -262,21 +245,21 @@ individual steps, you have two options:
     This option will save the step results using the name specified.
 
 For example, to save the result from the dark current step of
-``calwebb_detector1`` in a file named based on ``intermediate``, use
+``calroman_detector1`` in a file named based on ``intermediate``, use
 
 ::
 
-    $ strun calwebb_detector1.cfg jw00017001001_01101_00001_nrca1_uncal.asdf
+    $ strun calroman_detector1.cfg roman00017001001_01101_00001_uncal.asdf
         --steps.dark_current.output_file='intermediate'
 
-A file, ``intermediate_dark_current.asdf``, will then be created. Note that the
-suffix of the step is always appended to any given name.
+An asdf file named ``intermediate_dark_current.asdf`` will then be created. Note 
+that the suffix of the step is always appended to any given name.
 
 You can also specify a particular file name for saving the end result of
 the entire pipeline using the ``--output_file`` argument also
 ::
    
-    $ strun calwebb_detector1.cfg jw00017001001_01101_00001_nrca1_uncal.asdf
+    $ strun calroman_detector1.cfg roman00017001001_01101_00001_uncal.asdf
         --output_file='stage1_processed'
 
 In this situation, using the default configuration, three files are created:
@@ -293,16 +276,16 @@ For any step that uses a calibration reference file you always have the
 option to override the automatic selection of a reference file from CRDS and
 specify your own file to use. Arguments for this are of the form
 ``--override_<ref_type>``, where ``ref_type`` is the name of the reference file
-type, such as ``mask``, ``dark``, ``gain``, or ``linearity``. When in doubt as to
+type, such as ``mask``, ``dark``, or ``gain``. When in doubt as to
 the correct name, just use the ``-h`` argument to ``strun`` to show you the list
 of available override arguments.
 
-To override the use of the default linearity file selection, for example,
+To override the use of the default flat_field file selection, for example,
 you would use:
 ::
 
-  $ strun calwebb_detector1.cfg jw00017001001_01101_00001_nrca1_uncal.asdf
-          --steps.linearity.override_linearity='my_lin.asdf'
+  $ strun calroman_detector1.cfg roman00017001001_01101_00001_uncal.asdf
+          --steps.flat_field.override_linearity='my_lin.asdf'
 
 Skip
 ----
@@ -311,20 +294,20 @@ Another argument available to all steps in a pipeline is ``skip``.
 If ``skip=True`` is set for any step, that step will be skipped, with the
 output of the previous step being automatically passed directly to the input
 of the step following the one that was skipped. For example, if you want to
-skip the linearity correction step, edit the calwebb_detector1.cfg file to
+skip the flat fielding step, edit the calroman_detector1.cfg file to
 contain:
 ::
 
    [steps]
-      [[linearity]]
+      [[flat_field]]
         skip = True
       ...
 
 Alternatively you can specify the ``skip`` argument on the command line:
 ::
 
-    $ strun calwebb_detector1.cfg jw00017001001_01101_00001_nrca1_uncal.asdf
-        --steps.linearity.skip=True
+    $ strun calroman_detector1.cfg roman00017001001_01101_00001_uncal.asdf
+        --steps.flat_field.skip=True
 
 Logging Configuration
 ---------------------
@@ -350,7 +333,7 @@ pipeline cfg file.
 For example:
 ::
 
-    $ strun calwebb_detector1.cfg jw00017001001_01101_00001_nrca1_uncal.asdf
+    $ strun calroman_detector1.cfg roman00017001001_01101_00001_uncal.asdf
         --logcfg=pipeline-log.cfg
 
 and the file ``pipeline-log.cfg`` contains:
@@ -400,18 +383,18 @@ configuration file add ``--save-parameters <filename.asdf>`` to the command:
 
 $ strun <step.class> <required-input-files> --save-parameters <filename.asdf>
 
-For example, to save the parameters used for a run of the ``calwebb_image2.cfg`` pipeline, use:
+For example, to save the parameters used for a run of the ``calroman_image2.cfg`` pipeline, use:
 ::
 
 $ collect_pipeline_cfgs .
-$ strun calwebb_image2.cfg jw82500001003_02101_00001_NRCALONG_rate.asdf --save-parameters my_image2.asdf
+$ strun calroman_image2.cfg roman82500001003_02101_00001_rate.asdf --save-parameters my_image2.asdf
 
 Once saved, the file can be edited, removing parameters that should be left
 at their default/CRDS values, and setting the remaining parameters to the
 desired values. Once modified, the new configuration file can be used:
 ::
 
-$ strun my_image2.asdf jw82500001003_02101_00001_NRCALONG_rate.asdf
+$ strun my_image2.asdf roman82500001003_02101_00001_rate.asdf
 
 Note that the parameter values will reflect whatever was set on the
 command-line, through a specified local configuration file, and what was
@@ -429,7 +412,7 @@ Guide at :ref:`stpipe-user-steps`.
 Available Pipelines
 ===================
 There are many pre-defined pipeline modules for processing
-data from different instrument observing modes through each of the 3 stages
+data from different instrument observing modes through each of the 2 stages
 of calibration. For all of the details see :ref:`pipelines`.
 
 .. _pipeline_step_suffix_definitions:
@@ -438,7 +421,7 @@ Pipeline/Step Suffix Definitions
 --------------------------------
 
 However the output file name is determined (:ref:`see above
-<intro_output_file_discussion>`), the various stage 1, 2, and 3 pipeline modules
+<intro_output_file_discussion>`), the various stage 1 and 2 pipeline modules
 will use that file name, along with a set of predetermined suffixes, to compose
 output file names. The output file name suffix will always replace any known
 suffix of the input file name. Each pipeline module uses the appropriate suffix
@@ -458,24 +441,7 @@ Optional fitting results from ramp_fit step    fitopt
 Background-subtracted image                    bsub
 Per integration background-subtracted image    bsubints
 Calibrated image                               cal
-Calibrated per integration images              calints
 CR-flagged image                               crf
-CR-flagged per integration images              crfints
-Resampled 2D image                             i2d
-Resampled 2D spectrum                          s2d
-Resampled 3D IFU cube                          s3d
-1D extracted spectrum                          x1d
-1D extracted spectra per integration           x1dints
-1D combined spectrum                           c1d
-Source catalog                                 cat
-Time Series photometric catalog                phot
-Time Series white-light catalog                whtlt
-Coronagraphic PSF image stack                  psfstack
-Coronagraphic PSF-aligned images               psfalign
-Coronagraphic PSF-subtracted images            psfsub
-AMI fringe and closure phases                  ami
-AMI averaged fringe and closure phases         amiavg
-AMI normalized fringe and closure phases       aminorm
 =============================================  ========
 
 
