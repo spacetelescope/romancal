@@ -7,9 +7,8 @@ FLAT is not applicable for instruments not in the table.
 Non-standard keywords used for file selection are *required*.
 
 ========== ========================================================================
-Instrument Keywords                                                                 
+Instrument        Metadata                                                                 
 ========== ========================================================================
-WFI        INSTRUME, DETECTOR, EXP_TYPE, FILTER, BAND, READPATT, GRATING
-CGI        INSTRUME, DETECTOR, EXP_TYPE, FILTER, BAND, READPATT, GRATING
+WFI                 instrument, detector, optical_element, date, time
 ========== ========================================================================
 
