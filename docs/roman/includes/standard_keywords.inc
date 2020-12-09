@@ -11,6 +11,15 @@ models in creating and populating a new reference file.
 ============  ========================
 Attribute      Fully Qualified Path
 ============  ========================
+author          model.meta.author
+model_type      model.meta.model_type
+date            model.meta.date
+description     model.meta.description
+instrument      model.meta.instrument.name
+reftype         model.meta.reftype
+telescope       model.meta.telescope
+useafter        model.meta.useafter
+============  ========================
 
 **NOTE:** More information on standard required keywords can be found here:
 :ref:`Standard Required Keywords`
