@@ -20,13 +20,13 @@ the following keywords are *required* in FLAT reference files,
 because they are used as CRDS selectors
 (see :ref:`flat_selectors`):
 
-===============   ===============================  =============================
-ASDF Tag           Fully qualified path             Instruments
-===============   ===============================  =============================
+===============   ===============================  ==============
+Attribute           Fully qualified path             Instruments
+===============   ===============================  ==============
 detector           model.meta.instrument.detector   WFI
 exptype            model.meta.exposure.type
 optical_element    model.meta.instrument.filter
-===============   ===============================  =============================
+===============   ===============================  ==============
 
 Reference File Format
 +++++++++++++++++++++
