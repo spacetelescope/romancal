@@ -26,12 +26,6 @@ class ImageModel(RomanDataModel):
 
     area : numpy float32 array
          Pixel area map array
-
-    pathloss_point : numpy float32 array
-         Pathloss correction for point source
-
-    pathloss_uniform : numpy float32 array
-         Pathloss correction for uniform source
     """
     schema_url = "http://stsci.edu/schemas/roman_datamodel/image_files/image.schema"
 
