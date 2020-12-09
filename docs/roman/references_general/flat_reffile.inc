@@ -33,13 +33,13 @@ Reference File Format
 FLAT reference files are ASDF format, with 3 data arrays.
 The format and content of the file is as follows:
 
-=======  ========  =====  ==============  ==============================
-Data Array Type          NAXIS  Dimensions              Data type
-=======  ========  =====  ==============  ==============================
-data          NDArray         2           ncols x nrows      float
-err            NDArray         2           ncols x nrows      float
-dq	        NDArray         2           ncols x nrows      integer
-=======  ========  =====  ==============  ==============================
+=======  ============ =====  ==============  =============
+Data      Array Type  NAXIS    Dimensions      Data type
+=======  ============ =====  ==============  =============
+data      NDArray         2    ncols x nrows    float
+err       NDArray         2    ncols x nrows    float
+dq	      NDArray         2    ncols x nrows    integer
+=======  ============  =====  ==============  ============
 
 The ASDF file contains a single set of data, err, and dq arrays.
 The array dimensions should be 4096x4096.
