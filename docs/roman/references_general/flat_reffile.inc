@@ -20,13 +20,13 @@ the following keywords are *required* in FLAT reference files,
 because they are used as CRDS selectors
 (see :ref:`flat_selectors`):
 
-=========               ==============================    =============================
-ASDF Tag                   Data Model Name                                   Instruments
-=========               ==============================    =============================
-detector                       model.meta.instrument.detector                WFI
-exptype                       model.meta.exposure.type 
-optical_element           model.meta.instrument.filter                     
-=========                 ==============================  =============================
+===============   ===============================  =============================
+ASDF Tag           Fully qualified path             Instruments
+===============   ===============================  =============================
+detector           model.meta.instrument.detector   WFI
+exptype            model.meta.exposure.type
+optical_element    model.meta.instrument.filter
+===============   ===============================  =============================
 
 Reference File Format
 +++++++++++++++++++++
@@ -43,4 +43,3 @@ dq	        NDArray         2           ncols x nrows      integer
 
 The ASDF file contains a single set of data, err, and dq arrays.
 The array dimensions should be 4096x4096.
-

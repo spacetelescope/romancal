@@ -1,6 +1,6 @@
 
 Standard ASDF metadata tags
-+++++++++++++++++
++++++++++++++++++++++++++++
 The following table lists the tags that are *required* to be present
 in all reference files.  The first column gives meta tag in ASDF
 reference file headers, which is the same as the name within the data
@@ -9,17 +9,17 @@ data model name for each keyword, which is useful when using data
 models in creating and populating a new reference file.
 
 ============  ========================
-ASDF meta tag              Data Model Name
+Attribute      Fully Qualified Path
 ============  ========================
-author                   model.meta.author         
-model_type           model.meta.model_type 
-date                      model.meta.date           
-description            model.meta.description 
-instrument            model.meta.instrument.name 
-reftype                 model.meta.reftype          
-telescope             model.meta.telescope      
-useafter               model.meta.useafter        
-==========  ==========================  
+author          model.meta.author
+model_type      model.meta.model_type
+date            model.meta.date
+description     model.meta.description
+instrument      model.meta.instrument.name
+reftype         model.meta.reftype
+telescope       model.meta.telescope
+useafter        model.meta.useafter
+==========  ==========================
 
 **NOTE:** More information on standard required keywords can be found here:
 :ref:`Standard Required Keywords`
