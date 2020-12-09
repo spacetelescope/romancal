@@ -70,7 +70,7 @@ Github master branch:
     conda create -n <env_name> python
     conda activate <env_name>
     pip install git+https://github.com/spacetelescope/romancal
- 
+
 
 ### Installing a DMS Operational Build
 
@@ -211,35 +211,7 @@ Need to parallelize your test runs over 8 cores?
     pytest -n 8
 
 
+
 ## Regression Tests
 
-Latest regression test results can be found here (STScI staff only):
-
-https://plwishmaster.stsci.edu:8081/job/RT/job/ROMAN/
-
-The test builds start at 6pm local Baltimore time Monday through Saturday on `jwcalibdev`.
-
-To run the regression tests on your local machine, get the test dependencies
-and set the environment variable TEST_BIGDATA to our Artifactory server
-(STSci staff members only):
-
-    pip install -e .[test]
-    export TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory
-
-To run all the regression tests:
-
-    pytest --bigdata roman/regtest
-
-You can control where the test results are written with the
-`--basetemp=<PATH>` arg to `pytest`.  _NOTE that `pytest` will wipe this directory clean
-for each test session, so make sure it is a scratch area._
-
-If you would like to run a specific test, find its name or ID and use the `-k` option:
-
-    pytest --bigdata roman/regtest -k nirspec
-
-If developers need to update the truth files in our nightly regression tests,
-there are instructions in the repository wiki.
-
-https://github.com/spacetelescope/roman/wiki/Maintaining-Regression-Tests
-
+TBD

@@ -33,26 +33,23 @@ GRATING    model.meta.instrument.grating
 
 Reference File Format
 +++++++++++++++++++++
-FLAT reference files are FITS format, with 3 IMAGE extensions
-and 1 BINTABLE extension. The FITS primary HDU does not contain a data array.
-The format and content of the file is as follows:
+FLAT reference files are ASDF format, with 3 IMAGE arrays
+and 1 table. The format and content of the file is as follows:
 
-=======  ========  =====  ==============  =========
+=======  ========  =====  ==============  ==============================
 EXTNAME  XTENSION  NAXIS  Dimensions      Data type
-=======  ========  =====  ==============  =========
+=======  ========  =====  ==============  ==============================
 SCI      IMAGE       2    ncols x nrows   float
 ERR      IMAGE       2    ncols x nrows   float
 DQ       IMAGE       2    ncols x nrows   integer
-DQ_DEF   BINTABLE    2    TFIELDS = 4     N/A
-=======  ========  =====  ==============  =========
+DQ_DEF   TABLE       NA   4 columns       integer, integer, string, string
+=======  ========  =====  ==============  ==============================
 
 The ``DQ_DEF`` table extension lists the bit assignments for the flag conditions
 used in the DQ array.
 
 .. include:: ../includes/dq_def.inc
 
-For application to imaging data, the FITS file contains a single set of SCI,
-ERR, DQ, and DQ_DEF extensions.  Image dimensions should be 2048x2048 for the
-NIR detectors and 1032x1024 for MIRI (i.e. they include reference pixels),
-unless data were taken in subarray mode.
+The ASDF file contains a single set of SCI, ERR, and DQ arrays, and a DQ_DEF
+table.  Image dimensions should be 2048x2048.
 
