@@ -6,3 +6,4 @@ Package Index
 
    datamodels/index.rst
    flatfield/index.rst
+   references_general/index.rst

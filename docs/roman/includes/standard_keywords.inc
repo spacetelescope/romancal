@@ -8,9 +8,9 @@ model meta tree (second column).  The second column gives the roman
 data model name for each attribute, which is useful when using data
 models in creating and populating a new reference file.
 
-============  ========================
+=========== ===============================
 Attribute      Fully Qualified Path
-============  ========================
+=========== ===============================
 author          model.meta.author
 model_type      model.meta.model_type
 date            model.meta.date
@@ -19,8 +19,8 @@ instrument      model.meta.instrument.name
 reftype         model.meta.reftype
 telescope       model.meta.telescope
 useafter        model.meta.useafter
-==========  ==========================
+=========== ===============================
 
 
 **NOTE:** More information on standard required keywords can be found here:
-:ref:`Standard Required Keywords`
+:ref:`Standard ASDF metadata`
