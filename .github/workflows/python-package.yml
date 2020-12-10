@@ -9,6 +9,13 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  PYTHONUNBUFFERED: 1
+  CRDS_SERVER_URL: "https://jwst-crds.stsci.edu"
+  CRDS_PATH: "/tmp/crds_cache"
+  CRDS_CLIENT_RETRY_COUNT: 3
+  CRDS_CLIENT_RETRY_DELAY_SECONDS: 30
+
 jobs:
   build:
 
