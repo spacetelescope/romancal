@@ -42,7 +42,7 @@ Within STScI, the current storage location for all Roman CRDS reference files is
 /grp/crds/roman/references/roman/
 
 Each pipeline step records the reference file that it used in the value of
-aa attribute in the output data file. The attributes use the syntax
+an attribute in the output data file. The attributes use the syntax
 "R_<ref>", where <ref> corresponds to a 6-character version of the reference
 file type, such as ``R_DARK``, ``R_LINEAR``, and ``R_PHOTOM``.
 
