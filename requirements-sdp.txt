@@ -1,0 +1,50 @@
+# To generate this file:
+#
+#     pip install -e .[test]
+#     pip freeze | grep -v romancal.git >> requirements-sdp.txt
+#
+# Add a CRDS context number for the delivery as a record here
+#
+# CRDS_CONTEXT = roman_0003.pmap
+#
+asdf==2.7.1
+astropy==4.2
+attrs==20.3.0
+certifi==2020.12.5
+chardet==3.0.4
+ci-watson==0.5
+codecov==2.1.10
+coverage==5.3
+crds==10.2
+filelock==3.0.12
+flake8==3.8.4
+gwcs==0.15.0
+idna==2.10
+iniconfig==1.1.1
+jsonschema==3.2.0
+lxml==4.6.2
+mccabe==0.6.1
+numpy==1.19.4
+packaging==20.7
+Parsley==1.3
+pluggy==0.13.1
+psutil==5.7.3
+py==1.9.0
+pycodestyle==2.6.0
+pyerfa==1.7.1.1
+pyflakes==2.2.0
+pyparsing==2.4.7
+pyrsistent==0.17.3
+pytest==6.1.2
+pytest-cov==2.10.1
+pytest-doctestplus==0.8.0
+pytest-openfiles==0.5.0
+PyYAML==5.3.1
+requests==2.25.0
+requests-mock==1.8.0
+scipy==1.5.4
+semantic-version==2.8.5
+six==1.15.0
+stdatamodels==0.1.0
+toml==0.10.2
+urllib3==1.26.2

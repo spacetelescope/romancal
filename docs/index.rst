@@ -14,16 +14,6 @@ User Manual
    roman/introduction.rst
 
 
-===============================
-Error Propagation Documentation
-===============================
-
-.. toctree::
-   :maxdepth: 1
-
-   roman/error_propagation/index.rst
-
-
 =====================
 Package Documentation
 =====================
@@ -32,5 +22,3 @@ Package Documentation
    :maxdepth: 1
 
    roman/package_index.rst
-
-

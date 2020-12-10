@@ -30,15 +30,16 @@ optical_element    model.meta.instrument.optical_element
 
 Reference File Format
 +++++++++++++++++++++
+
 FLAT reference files are ASDF format, with 3 data arrays.
 The format and content of the file is as follows:
 
-=======  ============ ==============   =============
+=======  ============ ==============  =============
 Data      Array Type   Dimensions       Data type
-=======  ============ ==============   =============
+=======  ============ ==============  =============
 data      NDArray      4096 x 4096      float32
 err       NDArray      4096 x 4096      float32
-dq	      NDArray      4096 x 4096      uint16
-=======  ============  ==============  ============
+dq        NDArray      4096 x 4096      uint16
+=======  ============ ==============  =============
 
 The ASDF file contains a single set of data, err, and dq arrays.
