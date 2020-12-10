@@ -2,9 +2,9 @@
 
 Reference Selection Keywords for FLAT
 +++++++++++++++++++++++++++++++++++++
-CRDS selects appropriate FLAT references based on the following keywords.
+CRDS selects appropriate FLAT references based on the following attributes.
 FLAT is not applicable for instruments not in the table.
-Non-standard keywords used for file selection are *required*.
+Non-standard attributes used for file selection are *required*.
 
 ========== ========================================================================
 Instrument   Metadata

@@ -5,7 +5,7 @@ About models
 
 The purpose of the data model is to abstract away the peculiarities of
 the underlying file format.  The same data model may be used for data
-created from scratch in memory, or loaded from ASDF files or some future file 
+created from scratch in memory, or loaded from ASDF files or some future file
 format.
 
 
@@ -143,7 +143,7 @@ history::
     entry =  util.create_history_entry("Processed through the frobulator step")
     model.history.append(entry)
 
-These history entries are stored in ``HISTORY`` keywords when saving
+These history entries are stored in ``HISTORY`` attributes when saving
 to ASDF format. As an option, history entries can contain a dictionary
 with a description of the software used. The dictionary must have the
 following keys:
@@ -158,7 +158,7 @@ description is::
 
   entry =  util.create_history_entry(description, software=software_dict)
 
-where the second argument is the dictionary with the keywords mentioned.
+where the second argument is the dictionary with the attributes mentioned.
 
 Looking at the contents of a model
 ----------------------------------

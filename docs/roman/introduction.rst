@@ -13,7 +13,7 @@ calibration data or information necessary for processing the data. The reference
 instrument-specific and are periodically updated as the data processing evolves and the
 understanding of the instruments improves. They are created, tested, and validated by the
 Roman Instrument Teams. They ensure all the files are in the correct format and have all
-required header keywords. The files are then delivered to the Reference Data for Calibration
+required attributes. The files are then delivered to the Reference Data for Calibration
 and Tools (ReDCaT) Management Team. The result of this process is the files being ingested
 into the Roman Calibration Reference Data System (CRDS), and made available to the pipeline
 team and any other ground subsystem that needs access to them.
@@ -21,7 +21,7 @@ team and any other ground subsystem that needs access to them.
 Information about all the reference files used by the Calibration Pipeline can be found at
 :ref:`reference_file_information`,
 as well as in the documentation for each Calibration Step that uses a reference file.
- 
+
 CRDS
 ====
 
@@ -42,7 +42,7 @@ Within STScI, the current storage location for all Roman CRDS reference files is
 /grp/crds/roman/references/roman/
 
 Each pipeline step records the reference file that it used in the value of
-a header keyword in the output data file. The keyword names use the syntax
+aa attribute in the output data file. The attributes use the syntax
 "R_<ref>", where <ref> corresponds to a 6-character version of the reference
 file type, such as ``R_DARK``, ``R_LINEAR``, and ``R_PHOTOM``.
 
@@ -137,9 +137,9 @@ There are two general types of input to any step or pipeline: references files
 and data files.  The references files, unless explicitly
 overridden, are provided through CRDS.
 
-Data files are the science input, such as exposure ASDF files. All files are 
+Data files are the science input, such as exposure ASDF files. All files are
 assumed to be co-resident in the directory where the primary
-input file is located. 
+input file is located.
 
 .. _intro_output_file_discussion:
 
@@ -168,7 +168,7 @@ will be overwritten.
 Output File and Associations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Stage 2 pipelines can take an individual file as input. 
+Stage 2 pipelines can take an individual file as input.
 
 Often, one may reprocess the same set of data multiple times, such as to change
 reference files or parameters in configuration parameters.
@@ -252,13 +252,13 @@ For example, to save the result from the dark current step of
     $ strun calroman_detector1.cfg roman00017001001_01101_00001_uncal.asdf
         --steps.dark_current.output_file='intermediate'
 
-An asdf file named ``intermediate_dark_current.asdf`` will then be created. Note 
+An asdf file named ``intermediate_dark_current.asdf`` will then be created. Note
 that the suffix of the step is always appended to any given name.
 
 You can also specify a particular file name for saving the end result of
 the entire pipeline using the ``--output_file`` argument also
 ::
-   
+
     $ strun calroman_detector1.cfg roman00017001001_01101_00001_uncal.asdf
         --output_file='stage1_processed'
 
