@@ -11,7 +11,7 @@ observation was made::
     print(model.meta.observation.date)
 
 Metadata values are automatically type-checked against the schema when
-they are set. Therefore, setting a keyword which expects a number to a
+they are set. Therefore, setting a attribute which expects a number to a
 string will raise an exception::
 
     >>> from romancal.datamodels import ImageModel
@@ -109,7 +109,7 @@ When accessing the items of the list, the result is a normal metadata
 object where the attributes are type-checked::
 
 .. doctest-skip::
-  
+
     >>> trans = model.meta.transformations[0]
     >>> print(trans)
     <romancal.datamodels.schema.Transformations object at 0x123a810>
@@ -178,5 +178,3 @@ since this would make files less portable).
   - ``shape`` (optional): The shape of the data in the column.
     May be either an integer (for a single-dimensional shape),
     or a list of integers.
-
-

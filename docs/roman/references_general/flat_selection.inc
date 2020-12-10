@@ -2,14 +2,12 @@
 
 Reference Selection Keywords for FLAT
 +++++++++++++++++++++++++++++++++++++
-CRDS selects appropriate FLAT references based on the following keywords.
+CRDS selects appropriate FLAT references based on the following attributes.
 FLAT is not applicable for instruments not in the table.
-Non-standard keywords used for file selection are *required*.
+Non-standard attributes used for file selection are *required*.
 
 ========== ========================================================================
-Instrument Keywords                                                                 
+Instrument   Metadata
 ========== ========================================================================
-WFI        INSTRUME, DETECTOR, EXP_TYPE, FILTER, BAND, READPATT, GRATING
-CGI        INSTRUME, DETECTOR, EXP_TYPE, FILTER, BAND, READPATT, GRATING
+WFI          instrument, detector, optical_element, date, time
 ========== ========================================================================
-
