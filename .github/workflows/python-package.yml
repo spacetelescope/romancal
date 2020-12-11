@@ -66,4 +66,4 @@ jobs:
         pip install bandit
     - name: Security checks with bandit
       run: |
-        bandit -r romancal
+        bandit romancal -r -x tests
