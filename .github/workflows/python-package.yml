@@ -49,4 +49,4 @@ jobs:
         pip install .[test]
     - name: Lint with flake8
       run: |
-        flake8 romancal --count --verbose --show-source --statistics
+        flake8 romancal --count --show-source --statistics
