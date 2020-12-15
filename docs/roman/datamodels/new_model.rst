@@ -11,9 +11,9 @@ For further reading and details, see the reference materials in
 :ref:`metadata`.
 
 In this tutorial, we'll go through the process of creating a new type
-of model for a file format used for storing the bad pixel mask for a 
-hypothetical Roman instrument called "MY_WFI".  This file format has a 2D array 
-containing a bit field for each of the pixels, and a table describing what 
+of model for a file format used for storing the bad pixel mask for a
+hypothetical Roman instrument called "MY_WFI".  This file format has a 2D array
+containing a bit field for each of the pixels, and a table describing what
 each of the bits in the array means.
 
 .. note::
@@ -167,7 +167,7 @@ format.  To avoid recomputing it repeatedly, we'd like to store a sum
 of all of the "bad" (i.e. non-zero) pixels stored in the bad pixel
 mask array.  In the model, we want to refer to this value as
 ``model.meta.bad_pixel_count``.  In the ASDF file, lets store this in
-the primary header in a keyword named ``BPCOUNT``:
+the primary header in an attribute named ``BPCOUNT``:
 
 .. code-block:: yaml
 

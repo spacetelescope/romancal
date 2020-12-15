@@ -31,7 +31,8 @@ def test_core_schema(tmp_path):
                      "name": "WFI"
                  },
                  "telescope": "ROMAN",
-                 "model_type": "RomanDataModel"
+                 "model_type": "RomanDataModel",
+                 "date": "2020-12-20"
                  }
             }
 
