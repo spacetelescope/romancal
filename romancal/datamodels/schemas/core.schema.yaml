@@ -56,6 +56,9 @@ properties:
           exposure_time:
             title: "[s] Effective exposure time"
             type: number
+          gain_factor:
+            title: Gain scale factor
+            type: number
       instrument:
         title: Instrument configuration information
         type: object
