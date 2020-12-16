@@ -6,8 +6,8 @@ from pathlib import PurePath, Path
 import asdf
 
 from .core import RomanDataModel
-from .referencefile import ReferenceFileModel
-from .flat import FlatModel
+from .reference_files.referencefile import ReferenceFileModel
+from .reference_files.flat import FlatModel
 
 
 def open(init, memmap=False, **model_kwargs):
