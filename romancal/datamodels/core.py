@@ -7,4 +7,3 @@ class RomanDataModel(DataModel):
     model class for data that does not identify its model type.
     """
     schema_url = "http://stsci.edu/schemas/roman_datamodel/core.schema"
-
