@@ -104,7 +104,7 @@ def test_reference_file_model_base(tmp_path):
         af.write_to(file_path)
 
         # Ensure that base referencefile schema contains core schema
-        assert_referenced_schema(datamodels.referencefile.ReferenceFileModel.schema_url,
+        assert_referenced_schema(datamodels.reference_files.referencefile.ReferenceFileModel.schema_url,
                                  datamodels.core.RomanDataModel.schema_url)
 
         # Test that asdf file opens properly
@@ -112,16 +112,16 @@ def test_reference_file_model_base(tmp_path):
 
         # Confirm that asdf file is opened as base referencefile model
         with datamodels.open(file_path) as model:
-            assert isinstance(model, datamodels.referencefile.ReferenceFileModel)
+            assert isinstance(model, datamodels.reference_files.referencefile.ReferenceFileModel)
 
 
 # Common tests for all ReferenceFileModel subclasses
 @pytest.mark.parametrize("model_class", list(iter_subclasses(
-    datamodels.referencefile.ReferenceFileModel, include_base_model=False)))
+    datamodels.reference_files.referencefile.ReferenceFileModel, include_base_model=False)))
 def test_reference_file_model(tmp_path, model_class):
     # Ensure that specific reference file schema contains the base module schema
     assert_referenced_schema(model_class.schema_url,
-                             datamodels.referencefile.ReferenceFileModel.schema_url)
+                             datamodels.reference_files.referencefile.ReferenceFileModel.schema_url)
 
 # FlatModel tests
 def test_flat_model(tmp_path):
@@ -147,4 +147,4 @@ def test_flat_model(tmp_path):
                 model.validate()
 
             # Confirm that asdf file is opened as flat file model
-            assert isinstance(model, datamodels.flat.FlatModel)
+            assert isinstance(model, datamodels.reference_files.flat.FlatModel)
