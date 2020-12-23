@@ -1,4 +1,4 @@
-from .core import RomanDataModel
+from ..core import RomanDataModel
 
 class Level1FileModel(RomanDataModel):
     """

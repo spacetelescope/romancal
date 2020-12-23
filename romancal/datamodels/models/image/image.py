@@ -1,4 +1,4 @@
-from .core import RomanDataModel
+from ..core import RomanDataModel
 
 class ImageModel(RomanDataModel):
     """

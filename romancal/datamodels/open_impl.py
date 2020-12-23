@@ -5,9 +5,9 @@ from pathlib import PurePath, Path
 
 import asdf
 
-from .core import RomanDataModel
-from .reference_files.referencefile import ReferenceFileModel
-from .reference_files.flat import FlatModel
+from .models.core import RomanDataModel
+from .models.reference_files.referencefile import ReferenceFileModel
+from .models.reference_files.flat import FlatModel
 
 
 def open(init, memmap=False, **model_kwargs):
