@@ -39,6 +39,7 @@ To create a new `ImageModel`, just call its constructor.  To create a
 new model where all of the arrays will have default values, simply
 provide a shape as the first argument::
 
+.. doctest-skip::
     from romancal.datamodels import ImageModel
     with ImageModel((1024, 1024)) as im:
         ...
@@ -78,6 +79,7 @@ exiting the `with` block.
 
 ::
 
+.. doctest-skip::
     from romancal import datamodels
     with datamodels.open("myimage.asdf") as im:
         assert isinstance(im, datamodels.ImageModel)

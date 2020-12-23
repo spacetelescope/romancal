@@ -14,6 +14,7 @@ Metadata values are automatically type-checked against the schema when
 they are set. Therefore, setting a attribute which expects a number to a
 string will raise an exception::
 
+.. doctest-skip::
     >>> from romancal.datamodels import ImageModel
     >>> model = ImageModel()
     >>> model.meta.target.ra = "foo"    # doctest: +SKIP
@@ -35,6 +36,7 @@ schema.  `search_schema` will search the schema for the given
 substring in metadata names as well as their documentation.  The
 search is case-insensitive::
 
+.. doctest-skip::
     >>> from romancal.datamodels import ImageModel
     >>> # Create a model of the desired type
     >>> model = ImageModel()

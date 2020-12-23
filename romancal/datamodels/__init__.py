@@ -1,15 +1,15 @@
 # Base Roman data model
-from .core import RomanDataModel
+from .models.core import RomanDataModel
 
 # Reference File data models
-from .referencefile import ReferenceFileModel
-from .flat import FlatModel
+from .models.reference_files.referencefile import ReferenceFileModel
+from .models.reference_files.flat import FlatModel
 
 # Level 1 data model
-from .level1 import Level1FileModel
+from .models.level1.level1 import Level1FileModel
 
 # Image Models
-from .image import ImageModel
+from .models.image.image import ImageModel
 
 from .open_impl import open
 

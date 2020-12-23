@@ -1,4 +1,4 @@
-from .core import RomanDataModel
+from ..core import RomanDataModel
 
 class ReferenceFileModel(RomanDataModel):
     """
@@ -8,4 +8,3 @@ class ReferenceFileModel(RomanDataModel):
 
     def __init__(self, init=None, **kwargs):
         super().__init__(init=init, **kwargs)
-
