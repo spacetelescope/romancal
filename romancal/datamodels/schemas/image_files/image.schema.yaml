@@ -9,6 +9,12 @@ allOf:
     meta:
       type: object
       properties:
+        prd_software_version:
+          title: S&OC PRD version number used in data processing
+          type: string
+        calibration_software_version:
+          title: Calibration software version number
+          type: string
         program:
           title: Program information
           type: object
@@ -25,9 +31,9 @@ allOf:
             sub_category:
               title: Program sub-category
               type: string
-            science_category:
-              title: Science category assigned during TAC process
-              type: string
+#            science_category:
+#              title: Science category assigned during TAC process
+#              type: string
             continuation_id:
               title: Continuation of previous program
               type: integer
@@ -60,6 +66,15 @@ allOf:
             program_number:
               title: Program number
               type: string
+            execution_plan_number:
+              title: Execution plan number
+              type: string
+            pass_number:
+              title: Pass number (within execution plan)
+              type: string
+            leg_number:
+              title: Leg Number (within pass)
+              type: string
             observation_number:
               title: Observation number
               type: string
@@ -90,6 +105,34 @@ allOf:
             observation_folder:
               title: Name of the APT observation folder
               type: string
+        ephemeris:
+          title: Ephemeris data information
+          type: object
+          properties:
+            type:
+              title: Definitive or Predicted
+              type: string
+            time:
+              title: UTC time of position and velocity vectors in ephemeris (MJD)
+              type: number
+            spatial_x:
+              title: "[km] X spatial coordinate of JWST"
+              type: number
+            spatial_y:
+              title: "[km] Y spatial coordinate of JWST"
+              type: number
+            spatial_z:
+              title: "[km] Z spatial coordinate of JWST"
+              type: number
+            velocity_x:
+              title: "[km/s] X component of JWST velocity"
+              type: number
+            velocity_y:
+              title: "[km/s] Y component of JWST velocity"
+              type: number
+            velocity_z:
+              title: "[km/s] Z component of JWST velocity"
+              type: number
         visit:
           title: Visit information
           type: object
@@ -98,17 +141,24 @@ allOf:
               title: Engineering data quality indicator from EngDB
               type: string
               enum: [OK, SUSPECT]
+            pointing_engdb_quality:
+              title: Quality of pointing information from EngDB
+              type: string
+              enum: [CALCULATED, PLANNED]
             type:
               title: Visit type
               type: string
-              enum: [GENERIC, PARALLEL_DARK_CALIBRATION, PARALLEL_EXTERNAL_CALIBRATION,
-                     PARALLEL_PURE, PARALLEL_SLEW_CALIBRATION, PRIME_STATION_KEEPING,
-                     PRIME_TARGETED_FIXED, PRIME_TARGETED_MOVING, PRIME_UNTARGETED,
-                     PRIME_WFSC_ROUTINE, PRIME_WFSC_SENSING_CONTROL,
-                     PRIME_WFSC_SENSING_ONLY, PRIOR_MOMENTUM_UNLOAD]
+#              enum: [GENERIC, PARALLEL_DARK_CALIBRATION, PARALLEL_EXTERNAL_CALIBRATION,
+#                     PARALLEL_PURE, PARALLEL_SLEW_CALIBRATION, PRIME_STATION_KEEPING,
+#                     PRIME_TARGETED_FIXED, PRIME_TARGETED_MOVING, PRIME_UNTARGETED,
+#                     PRIME_WFSC_ROUTINE, PRIME_WFSC_SENSING_CONTROL,
+#                     PRIME_WFSC_SENSING_ONLY, PRIOR_MOMENTUM_UNLOAD]
             start_time:
               title: UTC visit start time
               type: string
+#            end_time:
+#              title: UTC visit end time
+#              type: string
             status:
               title: Status of a visit
               type: string
@@ -156,6 +206,12 @@ allOf:
           title: Aperture information
           type: object
           properties:
+            name:
+              title: PRD science aperture used
+              type: string
+            pps_name:
+              title: PRD science aperture used
+              type: string
             position_angle:
               title: "[deg] Position angle of aperture used"
               type: number
@@ -172,10 +228,64 @@ allOf:
             pa_v3:
               title: "[deg] Position angle of telescope V3 axis"
               type: number
+        target:
+          title: Target information
+          type: object
+          properties:
+            proposer_name:
+              title: Proposer's name for the target
+              type: string
+            catalog_name:
+              title: Standard astronomical catalog name for target
+              type: string
+            type:
+              title: Type of target (fixed, moving, generic)
+              type: string
+            ra:
+              title: Target RA at mid time of exposure
+              type: number
+            dec:
+              title: Target Dec at mid time of exposure
+              type: number
+            ra_uncertainty:
+              title: Target RA uncertainty
+              type: number
+            dec_uncertainty:
+              title: Target Dec uncertainty
+              type: number
+            proper_motion_ra:
+              title: Target proper motion in RA
+              type: number
+            proper_motion_dec:
+              title: Target proper motion in Dec
+              type: number
+            proper_motion_epoch:
+              title: Target proper motion epoch
+              type: string
+            proposer_ra:
+              title: Proposer's target RA
+              type: number
+            proposer_dec:
+              title: Proposer's target Dec
+              type: number
+            source_type_apt:
+              title: Source type from APT (point/extended)
+              type: string
+              enum: [ EXTENDED, POINT, UNKNOWN ]
+            source_type:
+              title: Source type used for calibration
+              type: string
+              enum: [ EXTENDED, POINT, UNKNOWN ]
         velocity_aberration:
           title: Velocity aberration correction information
           type: object
           properties:
+            ra_offset:
+              title: Velocity aberration right ascension offset
+              type: number
+            dec_offset:
+              title: Velocity aberration declination offset
+              type: number
             scale_factor:
               title: Velocity aberration scale factor
               type: number
@@ -203,4 +313,132 @@ allOf:
               type: number
             roll_ref:
               title: "[deg] V3 roll angle at the ref point (N over E)"
+              type: number
+#        dither:
+#          title: Dither information
+#          type: object
+#          properties:
+#            primary_type:
+#              title: Primary dither pattern type
+#              type: string
+#            position_number:
+#              title: Position number in primary pattern
+#              type: integer
+#            pattern_start:
+#              title: Starting point in pattern
+#              type: integer
+#            total_points:
+#              title: Total number of points in pattern
+#              type: integer
+#            dither_points:
+#              title: Total number of points in image dither pattern
+#              type: integer
+#            pattern_size:
+#              title: "Primary dither pattern size"
+#              type: string
+#            subpixel_number:
+#              title: Subpixel pattern number
+#              type: integer
+#            subpixel_total_points:
+#              title: Total number of points in subpixel pattern
+#              type: integer
+#            subpixel_dither_pattern:
+#              title: subpixel dither pattern
+#              type: string
+#            x_offset:
+#              title: x offset from pattern starting position
+#              type: number
+#            y_offset:
+#              title: y offset from pattern starting position
+#              type: number
+#            direction:
+#              title: Direction of dither pattern offsets
+#              type: string
+        guidestar:
+          title: Guide star information
+          type: object
+          properties:
+#            gs_order:
+#              title: index of guide star within list of selected guide stars
+#              type: integer
+#            gs_start_time:
+#              title: UTC time when guide star activity started
+#              type: string
+#            gs_stop_time:
+#              title: UTC time when guide star activity completed
+#              type: string
+#            gs_id:
+#              title: guide star identifier
+#              type: string
+#            gs_ra:
+#              title: guide star right ascension
+#              type: number
+#            gs_dec:
+#              title: guide star declination
+#              type: number
+#            gs_ura:
+#              title: guide star right ascension uncertainty
+#              type: number
+#            gs_udec:
+#              title: guide star declination uncertainty
+#              type: number
+#            gs_mag:
+#              title: guide star magnitude in FGS detector
+#              type: number
+#            gs_umag:
+#              title: guide star magnitude uncertainty
+#              type: number
+#            gs_pcs_mode:
+#              title: Pointing Control System mode
+#              type: string
+#            gs_function_start_time:
+#              title: Observatory UTC time at guider function start
+#              type: string
+#            gs_function_end_time:
+#              title: Observatory UTC time at guider function end
+#              type: string
+#            data_start:
+#              title: MJD start time of guider data within this file
+#              type: number
+#            data_end:
+#              title: MJD end time of guider data within this file
+#              type: number
+#            gs_acq_exec_stat:
+#              title: Guide star acquisition execution status
+#              type: string
+            gs_ctd_x:
+              title: "[arcsec] guide star centroid x position in FGS ideal frame"
+              type: number
+            gs_ctd_y:
+              title: "[arcsec] guide star centroid y position in FGS ideal frame"
+              type: number
+#            gs_ctd_ux:
+#              title: uncertainty in the x position of the centroid
+#              type: number
+#            gs_ctd_uy:
+#              title: uncertainty in the y position of the centroid
+#              type: number
+#            gs_epoch:
+#              title: Epoch of guide star coordinates
+#              type: string
+#            gs_mura:
+#              title: Guide star IRCS right ascension proper motion
+#              type: number
+#            gs_mudec:
+#              title: Guide star IRCS declination proper motion
+#              type: number
+#            gs_para:
+#              title: Guide star annual parallax
+#              type: number
+            gs_window_xstart:
+              title: Guide window x position
+              type: number
+            gs_window_ystart:
+              title: Guide window y position
+              type: number
+            gs_window_xsize:
+              title: Guide star window size in x
+              type: number
+            gs_window_ysize:
+              title: Guide star window size in y
               type: number
