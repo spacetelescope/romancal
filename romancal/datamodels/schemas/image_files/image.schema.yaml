@@ -93,7 +93,7 @@ allOf:
             exposure_number:
               title: Exposure request number
               type: string
-            bkgdtarg:
+            background_target:
               title: Background target
               type: boolean
             template:
@@ -148,11 +148,6 @@ allOf:
             type:
               title: Visit type
               type: string
-#              enum: [GENERIC, PARALLEL_DARK_CALIBRATION, PARALLEL_EXTERNAL_CALIBRATION,
-#                     PARALLEL_PURE, PARALLEL_SLEW_CALIBRATION, PRIME_STATION_KEEPING,
-#                     PRIME_TARGETED_FIXED, PRIME_TARGETED_MOVING, PRIME_UNTARGETED,
-#                     PRIME_WFSC_ROUTINE, PRIME_WFSC_SENSING_CONTROL,
-#                     PRIME_WFSC_SENSING_ONLY, PRIOR_MOMENTUM_UNLOAD]
             start_time:
               title: UTC visit start time
               type: string
@@ -171,7 +166,7 @@ allOf:
             too_visit:
               title: Visit scheduled as target of opportunity
               type: boolean
-            tsovisit:
+            tso_visit:
               title: Time Series Observation visit indicator
               type: boolean
             exp_only:

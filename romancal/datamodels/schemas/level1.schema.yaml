@@ -4,8 +4,8 @@ $schema: http://stsci.edu/schemas/asdf/asdf-schema-1.0.0
 id: "http://stsci.edu/schemas/roman_datamodel/level1.schema"
 allOf:
 - $ref: core.schema
-- $ref: image_files/image.schema.yaml
-#- #ref: ramp_files/ramp.schema.yaml
+- $ref: image_files/image.schema
+#- #ref: ramp_files/ramp.schema
 - type: object
   properties:
     # group will get moved to ramp schema
