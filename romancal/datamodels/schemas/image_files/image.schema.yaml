@@ -93,9 +93,6 @@ allOf:
             exposure_number:
               title: Exposure request number
               type: string
-            background_target:
-              title: Background target
-              type: boolean
             template:
               title: Observation template used
               type: string
@@ -162,15 +159,6 @@ allOf:
               type: integer
             internal_target:
               title: At least one exposure in visit is internal
-              type: boolean
-            too_visit:
-              title: Visit scheduled as target of opportunity
-              type: boolean
-            tso_visit:
-              title: Time Series Observation visit indicator
-              type: boolean
-            exp_only:
-              title: Special commanding without SI configuration
               type: boolean
         photometry:
           title: Photometry information
