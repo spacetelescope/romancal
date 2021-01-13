@@ -6,7 +6,7 @@ from .models.reference_files.referencefile import ReferenceFileModel
 from .models.reference_files.flat import FlatModel
 
 # Level 1 data model
-from .models.level1.level1 import Level1FileModel
+from .models.level1 import Level1FileModel
 
 # Image Models
 from .models.image.image import ImageModel

@@ -10,11 +10,9 @@ properties:
       filename:
         title: Name of the file
         type: string
-# NOTE: Commented out due to conflict with meta.date defined in stdatamodels
-# Ticket: https://github.com/spacetelescope/stdatamodels/issues/23
-#        date:
-#          title: Date this file was created (UTC)
-#          tag: tag:stsci.edu:asdf/time/time-1.1.0
+        date:
+          title: Date this file was created (UTC)
+          tag: tag:stsci.edu:asdf/time/time-1.1.0
       model_type:
         title: Type of data model
         type: string
@@ -32,10 +30,6 @@ properties:
           count:
             title: Running count of exposures in visit
             type: number
-#          prime_parallel:
-#            title: Prime or parallel exposure
-#            type: string
-#            enum: [PRIME, PARALLEL_COORDINATED, PARALLEL_PURE]
           type:
             title: Type of data in the exposure
             type: string
@@ -72,12 +66,6 @@ properties:
           start_time_eng:
             title: UTC exposure start time from engineering data
             type: string
-          osf_file:
-            title: Observatory Status File name covering this exposure
-            type: string
-          readpatt:
-            title: Readout pattern
-            type: string
           ngroups:
             title: Number of groups in integration
             type: integer
@@ -96,63 +84,48 @@ properties:
           elapsed_exposure_time:
             title: "[s] Total elapsed exposure time"
             type: number
-#          nints:
-#            title: Number of integrations in exposure
-#            type: integer
-#          integration_start:
-#            title: Starting integration number in this segment
-#            type: integer
-#          integration_end:
-#            title: Ending integration number in this segment
-#            type: integer
-#          frame_divisor:
-#            title: Divisor applied to frame-averaged groups
-#            type: integer
-#          groupgap:
-#            title: Number of frames dropped between groups
-#            type: integer
-#          drop_frames1:
-#            title: Frames dropped at start of each integration
-#            type: integer
-#          drop_frames3:
-#            title: Frames dropped at end of each integration
-#            type: integer
-#          nsamples:
-#            title: Number of A/D samples per pixel
-#            type: integer
-#          sample_time:
-#            title: "[us] Time between samples"
-#            type: number
-#          frame_time:
-#            title: "[s] Time between frames"
-#            type: number
-#          group_time:
-#            title: "[s] Time between groups"
-#            type: number
-#          exposure_time:
-#            title: "[s] Effective exposure time"
-#            type: number
-#          effective_exposure_time:
-#            title: "[s] Effective exposure time"
-#            type: number
-#          duration:
-#            title: "[s] Total duration of exposure"
-#            type: number
-#          nresets_at_start:
-#            title: Number of resets at start of exposure
-#            type: integer
+          nints:
+            title: Number of integrations in exposure
+            type: integer
+          integration_start:
+            title: Starting integration number in this segment
+            type: integer
+          integration_end:
+            title: Ending integration number in this segment
+            type: integer
+          frame_divisor:
+            title: Divisor applied to frame-averaged groups
+            type: integer
+          groupgap:
+            title: Number of frames dropped between groups
+            type: integer
+          nsamples:
+            title: Number of A/D samples per pixel
+            type: integer
+          sample_time:
+            title: "[us] Time between samples"
+            type: number
+          frame_time:
+            title: "[s] Time between frames"
+            type: number
+          group_time:
+            title: "[s] Time between groups"
+            type: number
+          exposure_time:
+            title: "[s] Effective exposure time"
+            type: number
+          effective_exposure_time:
+            title: "[s] Effective exposure time"
+            type: number
+          duration:
+            title: "[s] Total duration of exposure"
+            type: number
+          nresets_at_start:
+            title: Number of resets at start of exposure
+            type: integer
 #          datamode:
 #            title: post-processing method used in FPAP
 #            type: integer
-#          clock_adjust_rate:
-#            title: "[ms/s] Spacecraft Clock Time Adjust RATE"
-#            type: number
-#          psf_reference:
-#            title: exposure is PSF reference
-#            type: boolean
-#          self_reference_survey:
-#            title: self-referencing PSF
-#            type: boolean
       instrument:
         title: Instrument configuration information
         type: object
@@ -160,7 +133,7 @@ properties:
           name:
             title: Instrument used to acquire the data
             type: string
-            enum: [WFI, CGI]
+            enum: [WFI]
           detector:
             title: Name of detector used to acquire the data
             type: string
