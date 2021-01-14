@@ -2,6 +2,7 @@
 ---
 $schema: http://stsci.edu/schemas/asdf/asdf-schema-1.0.0
 id: "http://stsci.edu/schemas/roman_datamodel/level1.schema"
+tag: "tag:astropy.org:astropy/table/table-1.0.0"
 allOf:
 - $ref: core.schema
 - $ref: image_files/image.schema
@@ -10,8 +11,11 @@ allOf:
   properties:
     # group will get moved to ramp schema
     group:
-      title: group parameters table
-      datatype:
+      title: Group parameters table
+      colnames: [ integration_number, group_number, end_day, end_milliseconds, end_submilliseconds,
+                  group_end_time, number_of_columns, number_of_rows, number_of_gaps,
+                  completion_code_number, completion_code_text, bary_end_time, helio_end_time]
+      columns:
         - name: integration_number
           datatype: int16
         - name: group_number
@@ -53,3 +57,4 @@ allOf:
       default: 0
       ndim: 4
       datatype: uint16
+
