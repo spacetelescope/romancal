@@ -34,8 +34,19 @@ properties:
             title: Type of data in the exposure
             type: string
             enum:
-              # Wide Field Imager
-             [WFI_IMAGE, WFI_GRISM, WFI_PRISM, WFI_DARK, WFI_FLAT, WFI_TACQ, WFI_WFSC, WFI_GW]
+              [ # Wide Field Imager
+                WFI_IMAGE, WFI_GRISM, WFI_PRISM, WFI_DARK, WFI_WSM_ACQ1, WFI_WSM_ACQ2,
+                WFI_WSM_TRACK, WFI_WFSC, DEFOCUS_MODERATE, DEFOCUS_LARGE,
+
+                # Wide Field Imager & Coronagraph Instrument
+                WFI_WIM_ACQ, WFI_WIM_TRACK, WFI_PARALLEL,
+
+                # Wide Field Imager & Relative Calibration System
+                WFI_FLAT_EXTERNAL, WFI_FLAT_INTERNAL,
+
+                # Relative Calibration System
+                WFI_RCS
+              ]
           start_time:
             title: UTC exposure start time
             type: number
