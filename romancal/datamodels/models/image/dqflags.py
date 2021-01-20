@@ -81,7 +81,7 @@ def interpret_bit_flags(bit_flags, flip_bits=None):
         Also allows strings using Roman mnemonics
 
     flip_bits : bool, None
-        See `astropy.nddate.bitmask.interpret_bit_flags`.
+        See `astropy.nddata.bitmask.interpret_bit_flags`.
 
     Returns
     -------
