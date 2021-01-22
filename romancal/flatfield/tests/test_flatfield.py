@@ -43,5 +43,3 @@ def test_flatfield_step_interface(instrument, exptype):
     assert (result.data == data.data).all()
     assert result.var_flat.shape == shape
     assert result.meta.cal_step.flat_field == 'COMPLETE'
-
-)
