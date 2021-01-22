@@ -3,10 +3,8 @@
 #
 
 import logging
-import math
 
 import numpy as np
-from gwcs.wcstools import grid_from_bounding_box
 
 from .. import datamodels
 from .. datamodels import dqflags

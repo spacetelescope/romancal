@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
 
-from roman import datamodels
-from roman.flatfield import FlatFieldStep
+from romancal import datamodels
+from romancal.flatfield import FlatFieldStep
 
 
 @pytest.mark.parametrize(
@@ -45,4 +45,3 @@ def test_flatfield_step_interface(instrument, exptype):
     assert result.meta.cal_step.flat_field == 'COMPLETE'
 
 )
-
