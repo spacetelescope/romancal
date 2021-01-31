@@ -7,7 +7,6 @@ log.setLevel(logging.DEBUG)
 log.addHandler(logging.NullHandler())
 
 def dynamic_mask(input_model):
-    #
     # Return a mask model given a mask with dynamic DQ flags
     # Dynamic flags define what each plane refers to using the DQ_DEF extension
 

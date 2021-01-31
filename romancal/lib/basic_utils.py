@@ -40,4 +40,3 @@ def multiple_replace(string, rep_dict):
         flags=re.DOTALL
     )
     return pattern.sub(lambda x: rep_dict[x.group(0)], string)
-
