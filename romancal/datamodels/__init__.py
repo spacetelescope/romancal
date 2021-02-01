@@ -9,7 +9,7 @@ from .models.reference_files.flat import FlatModel
 from .models.level1 import Level1FileModel
 
 # Image Models
-from .models.image.image import ImageModel
+from .models.image import ImageModel
 
 from .open_impl import open
 

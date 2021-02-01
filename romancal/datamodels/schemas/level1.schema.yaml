@@ -5,8 +5,8 @@ id: "http://stsci.edu/schemas/roman_datamodel/level1.schema"
 tag: "tag:astropy.org:astropy/table/table-1.0.0"
 allOf:
 - $ref: core.schema
-- $ref: image_files/image.schema
-#- #ref: ramp_files/ramp.schema
+- $ref: image.schema
+#- #ref: ramp.schema
 - type: object
   properties:
     # group will get moved to ramp schema
