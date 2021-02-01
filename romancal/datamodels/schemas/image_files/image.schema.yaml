@@ -6,7 +6,6 @@ allOf:
 - $ref: ../core.schema
 # To be implemented
 # - $ref: variance.schema
-# - $ref: pathlosscorr.schema
 - type: object
   properties:
     data:
@@ -30,15 +29,6 @@ allOf:
       title: Pixel area map array
       default: 0.0
       datatype: float32
-# Are these still required?
-#    con:
-#      title: Drizzle Context array
-#      default: 0
-#      datatype: int32
-#    wht:
-#      title: Drizzle Weight array
-#      default: 0.0
-#      datatype: float32
     meta:
       type: object
       properties:
