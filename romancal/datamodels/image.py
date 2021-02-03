@@ -1,4 +1,4 @@
-from ..core import RomanDataModel
+from .core import RomanDataModel
 
 class ImageModel(RomanDataModel):
     """
@@ -34,7 +34,7 @@ class ImageModel(RomanDataModel):
          Pathloss correction for uniform source
 
     """
-    schema_url = "http://stsci.edu/schemas/roman_datamodel/image_files/image.schema"
+    schema_url = "http://stsci.edu/schemas/roman_datamodel/image.schema"
 
     def __init__(self, init=None, **kwargs):
         super().__init__(init=init, **kwargs)
