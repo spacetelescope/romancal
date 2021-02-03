@@ -10,11 +10,9 @@ properties:
       filename:
         title: Name of the file
         type: string
-# NOTE: Commented out due to conflict with meta.date defined in stdatamodels
-# Ticket: https://github.com/spacetelescope/stdatamodels/issues/23
-#        date:
-#          title: Date this file was created (UTC)
-#          tag: tag:stsci.edu:asdf/time/time-1.1.0
+        date:
+          title: Date this file was created (UTC)
+          tag: tag:stsci.edu:asdf/time/time-1.1.0
       model_type:
         title: Type of data model
         type: string
@@ -29,36 +27,116 @@ properties:
         title: Exposure parameters
         type: object
         properties:
+          count:
+            title: Running count of exposures in visit
+            type: number
           type:
             title: Type of data in the exposure
             type: string
             enum:
-              # Wide Field Imager
-             [WFI_IMAGE, WFI_GRISM, WFI_PRISM, WFI_DARK, WFI_FLAT, WFI_TACQ, WFI_WFSC, WFI_GW]
+              [ # Wide Field Imager
+                WFI_IMAGE, WFI_GRISM, WFI_PRISM, WFI_DARK, WFI_WSM_ACQ1, WFI_WSM_ACQ2,
+                WFI_WSM_TRACK, WFI_WFSC, DEFOCUS_MODERATE, DEFOCUS_LARGE,
+
+                # Wide Field Imager & Coronagraph Instrument
+                WFI_WIM_ACQ, WFI_WIM_TRACK, WFI_PARALLEL,
+
+                # Wide Field Imager & Relative Calibration System
+                WFI_FLAT_EXTERNAL, WFI_FLAT_INTERNAL,
+
+                # Relative Calibration System
+                WFI_RCS
+              ]
           start_time:
             title: UTC exposure start time
+            type: number
+          mid_time:
+            title: UTC exposure mid time
             type: number
           end_time:
             title: UTC exposure end time
             type: number
+          start_time_mjd:
+            title: "[d] exposure start time in MJD"
+            type: number
+          mid_time_mjd:
+            title: "[d] exposure mid time in MJD"
+            type: number
+          end_time_mjd:
+            title: "[d] exposure end time in MJD"
+            type: number
+          start_time_tdb:
+            title: "[d] TDB time of exposure start in MJD"
+            type: number
+          mid_time_tdb:
+            title: "[d] TDB time of exposure mid in MJD"
+            type: number
+          end_time_tdb:
+            title: "[d] TDB time of exposure end in MJD"
+            type: number
+          start_time_eng:
+            title: UTC exposure start time from engineering data
+            type: string
           ngroups:
             title: Number of groups in integration
             type: integer
           nframes:
             title: Number of frames per group
             type: integer
+          data_problem:
+            title: Science telemetry indicated a problem
+            type: boolean
+          gain_factor:
+            title: Gain scale factor
+            type: number
+          integration_time:
+            title: "[s] Effective integration time"
+            type: number
+          elapsed_exposure_time:
+            title: "[s] Total elapsed exposure time"
+            type: number
+          nints:
+            title: Number of integrations in exposure
+            type: integer
+          integration_start:
+            title: Starting integration number in this segment
+            type: integer
+          integration_end:
+            title: Ending integration number in this segment
+            type: integer
+          frame_divisor:
+            title: Divisor applied to frame-averaged groups
+            type: integer
           groupgap:
             title: Number of frames dropped between groups
             type: integer
+          nsamples:
+            title: Number of A/D samples per pixel
+            type: integer
+          sample_time:
+            title: "[us] Time between samples"
+            type: number
           frame_time:
             title: "[s] Time between frames"
+            type: number
+          group_time:
+            title: "[s] Time between groups"
             type: number
           exposure_time:
             title: "[s] Effective exposure time"
             type: number
-          gain_factor:
-            title: Gain scale factor
+          effective_exposure_time:
+            title: "[s] Effective exposure time"
             type: number
+          duration:
+            title: "[s] Total duration of exposure"
+            type: number
+          nresets_at_start:
+            title: Number of resets at start of exposure
+            type: integer
+#          datamode:
+#            title: post-processing method used in FPAP
+#            type: integer
       instrument:
         title: Instrument configuration information
         type: object
@@ -66,7 +144,7 @@ properties:
           name:
             title: Instrument used to acquire the data
             type: string
-            enum: [WFI, CGI]
+            enum: [WFI]
           detector:
             title: Name of detector used to acquire the data
             type: string
