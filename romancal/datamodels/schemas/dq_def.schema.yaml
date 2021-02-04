@@ -1,0 +1,17 @@
+%YAML 1.1
+---
+$schema: http://stsci.edu/schemas/asdf/asdf-schema-1.0.0
+id: "http://stsci.edu/schemas/roman_datamodel/dq_def.schema"
+type: object
+properties:
+  dq_def:
+    title: DQ flag definitions
+    datatype:
+    - name: BIT
+      datatype: int32
+    - name: VALUE
+      datatype: uint32
+    - name: NAME
+      datatype: [ascii, 40]
+    - name: DESCRIPTION
+      datatype: [ascii, 80]

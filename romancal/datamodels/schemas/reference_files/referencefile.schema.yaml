@@ -4,6 +4,7 @@ $schema: http://stsci.edu/schemas/asdf/asdf-schema-1.0.0
 id: "http://stsci.edu/schemas/roman_datamodel/reference_files/referencefile.schema"
 allOf:
 - $ref: ../core.schema
+- $ref: ../dq_def.schema
 - type: object
   properties:
     meta:
