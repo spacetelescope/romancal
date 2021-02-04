@@ -1,6 +1,5 @@
 from .referencefile import ReferenceFileModel
-# Saved for DQ code implementation
-# from .dynamicdq import dynamic_mask
+from ..dynamicdq import dynamic_mask
 
 class DarkModel(ReferenceFileModel):
     """
@@ -23,8 +22,8 @@ class DarkModel(ReferenceFileModel):
         super().__init__(init=init, **kwargs)
 
         # Saved for DQ code implementation
-        # self.dq = dynamic_mask(self)
-        #
-        # # Implicitly create arrays
-        # self.dq = self.dq
-        # self.err = self.err
+        self.dq = dynamic_mask(self)
+
+        # Implicitly create arrays
+        self.dq = self.dq
+        self.err = self.err

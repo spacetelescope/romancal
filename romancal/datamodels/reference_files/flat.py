@@ -1,6 +1,5 @@
 from .referencefile import ReferenceFileModel
-# Saved for DQ code implementation
-# from .dynamicdq import dynamic_mask
+from ..dynamicdq import dynamic_mask
 
 class FlatModel(ReferenceFileModel):
     """
@@ -23,7 +22,7 @@ class FlatModel(ReferenceFileModel):
         super().__init__(init=init, **kwargs)
 
         # Saved for DQ code implementation
-        # self.dq = dynamic_mask(self)
-        #
-        # # Implicitly create arrays
-        # self.err = self.err
+        self.dq = dynamic_mask(self)
+
+        # Implicitly create arrays
+        self.err = self.err
