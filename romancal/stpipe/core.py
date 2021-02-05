@@ -76,7 +76,5 @@ class RomanStep(Step):
 # RomanPipeline needs to inherit from Pipeline, but also
 # be a subclass of RomanStep so that it will pass checks
 # when constructing a pipeline using RomanStep class methods.
-# It's important that RomanStep occur first so that it
-# takes precedence in the resolution order.
-class RomanPipeline(RomanStep, Pipeline):
+class RomanPipeline(Pipeline, RomanStep):
     pass
