@@ -5,7 +5,6 @@ id: "http://stsci.edu/schemas/roman_datamodel/level1.schema"
 tag: "tag:astropy.org:astropy/table/table-1.0.0"
 allOf:
 - $ref: core.schema
-- $ref: image.schema
 #- #ref: ramp.schema
 - type: object
   properties:
