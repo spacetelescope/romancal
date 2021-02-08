@@ -8,7 +8,8 @@ import numpy as np
 
 from .. import datamodels
 from .. datamodels import dqflags
-from .. lib import reffile_utils
+# This module hasn't been added to romancal yet:
+# from .. lib import reffile_utils
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

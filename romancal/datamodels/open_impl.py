@@ -16,9 +16,10 @@ def open(init, memmap=False, **model_kwargs):
 
     Parameters
     ----------
-    init : str or pathlib.PurePath or asdf.AsdfFile
+    init : str or pathlib.PurePath or asdf.AsdfFile or romancal.datamodels.RomanDataModel
         If str or `~pathlib.PurePath`, filesystem path to an ASDF file.
         If `~asdf.AsdfFile`, an open ASDF file.
+        If `~romancal.datamodels.RomanDataModel`, an already open model.
 
     memmap : bool, optional
         Set to True to enable memory-mapping of arrays.  Ignored if the
@@ -51,8 +52,12 @@ def open(init, memmap=False, **model_kwargs):
     elif isinstance(init, asdf.AsdfFile):
         asdf_file = init
         auto_close_asdf_file = False
+    elif isinstance(init, RomanDataModel):
+        # Make a copy of the model so that the original instance can
+        # be closed without impacting this one.
+        return init.__class__(init)
     else:
-        raise TypeError("init must be a path to an ASDF file or an open AsdfFile instance")
+        raise TypeError("init must be a path to an ASDF file, an open AsdfFile instance, or a RomanDataModel")
 
     model_class = _select_model_class(asdf_file)
 
