@@ -2,7 +2,7 @@
 
 
 [![Documentation Status](https://readthedocs.org/projects/roman-cal-pipeline/badge/?version=latest)](https://roman-cal-pipeline.readthedocs.io/en/latest/?badge=latest)
-[![Build Status](https://travis-ci.org/spacetelescope/roman.svg?branch=master)](https://travis-ci.org/spacetelescope/roman)
+![Roman CI](https://github.com/spacetelescope/romancal/workflows/Roman%20CI/badge.svg)
 [![codecov](https://codecov.io/gh/spacetelescope/roman/branch/master/graph/badge.svg)](https://codecov.io/gh/spacetelescope/roman)
 [![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](http://www.stsci.edu)
 [![Powered by Astropy Badge](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)

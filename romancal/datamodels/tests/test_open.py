@@ -3,6 +3,7 @@ import pytest
 from astropy.io import fits
 import asdf
 import numpy as np
+from numpy.testing import assert_array_equal
 
 from romancal import datamodels
 
@@ -46,6 +47,27 @@ def test_path_input(tmp_path):
     with pytest.raises(FileNotFoundError):
         with datamodels.open(tmp_path/"missing.asdf"):
             pass
+
+
+def test_model_input(tmp_path):
+    file_path = tmp_path/"test.asdf"
+    data = np.random.uniform(size=(1024, 1024))
+    with asdf.AsdfFile() as af:
+        af["meta"] = {"telescope": "jeweler's loupe"}
+        af["data"] = data
+        af.write_to(file_path)
+
+    original_model = datamodels.open(file_path)
+    reopened_model = datamodels.open(original_model)
+
+    # It's essential that we get a new instance so that the original
+    # model can be closed without impacting the new model.
+    assert reopened_model is not original_model
+
+    assert_array_equal(original_model.data, data)
+    original_model.close()
+    assert_array_equal(reopened_model.data, data)
+    reopened_model.close()
 
 
 def test_invalid_input():

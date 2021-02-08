@@ -1,4 +1,4 @@
-from ..stpipe import Step
+from ..stpipe import RomanStep
 from .. import datamodels
 from . import flat_field
 
@@ -6,7 +6,7 @@ from . import flat_field
 __all__ = ["FlatFieldStep"]
 
 
-class FlatFieldStep(Step):
+class FlatFieldStep(RomanStep):
     """Flat-field a science image using a flatfield reference image.
     """
 
