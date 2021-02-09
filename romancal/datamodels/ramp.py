@@ -1,5 +1,4 @@
-from .core import RampDataModel
-#from ..lib.basic_utils import deprecate_class
+from .core import RomanDataModel
 
 class RampModel(RomanDataModel):
     """
