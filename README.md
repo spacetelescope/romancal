@@ -205,7 +205,7 @@ Note: CRDS_CONTEXT values flagged with an asterisk in the above table are estima
 
 The test suite require access to a CRDS cache, but currently (2021-02-09) the shared /grp/crds
 cache does not include Roman files.  Developers inside the STScI network can sync a cache from
-roman-crds-dev.stsci.edu:
+roman-crds-dev.stsci.edu (if working from home, be sure to connect to the VPN first):
 
 ```bash
 $ export CRDS_SERVER_URL=https://roman-crds-dev.stsci.edu
