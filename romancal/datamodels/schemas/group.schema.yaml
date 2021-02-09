@@ -1,0 +1,40 @@
+%YAML 1.1
+---
+$schema: http://stsci.edu/schemas/asdf/asdf-schema-1.0.0
+id: "http://stsci.edu/schemas/roman_datamodel/group.schema"
+tag: "tag:astropy.org:astropy/table/table-1.0.0"
+allOf:
+- type: object
+  properties:
+    group:
+      title: Group parameters table
+      colnames: [ integration_number, group_number, end_day, end_milliseconds, end_submilliseconds,
+                  group_end_time, number_of_columns, number_of_rows, number_of_gaps,
+                  completion_code_number, completion_code_text, bary_end_time, helio_end_time ]
+      columns:
+        - name: integration_number
+          datatype: int16
+        - name: group_number
+          datatype: int16
+        - name: end_day
+          datatype: int16
+        - name: end_milliseconds
+          datatype: int32
+        - name: end_submilliseconds
+          datatype: int16
+        - name: group_end_time
+          datatype: [ ascii, 26 ]
+        - name: number_of_columns
+          datatype: int16
+        - name: number_of_rows
+          datatype: int16
+        - name: number_of_gaps
+          datatype: int16
+        - name: completion_code_number
+          datatype: int16
+        - name: completion_code_text
+          datatype: [ ascii, 36 ]
+        - name: bary_end_time
+          datatype: float64
+        - name: helio_end_time
+          datatype: float64

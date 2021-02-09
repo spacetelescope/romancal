@@ -89,22 +89,22 @@ properties:
             title: UTC time of position and velocity vectors in ephemeris (MJD)
             type: number
           spatial_x:
-            title: "[km] X spatial coordinate of JWST"
+            title: "[km] X spatial coordinate of Roman"
             type: number
           spatial_y:
-            title: "[km] Y spatial coordinate of JWST"
+            title: "[km] Y spatial coordinate of Roman"
             type: number
           spatial_z:
-            title: "[km] Z spatial coordinate of JWST"
+            title: "[km] Z spatial coordinate of Roman"
             type: number
           velocity_x:
-            title: "[km/s] X component of JWST velocity"
+            title: "[km/s] X component of Roman velocity"
             type: number
           velocity_y:
-            title: "[km/s] Y component of JWST velocity"
+            title: "[km/s] Y component of Roman velocity"
             type: number
           velocity_z:
-            title: "[km/s] Z component of JWST velocity"
+            title: "[km/s] Z component of Roman velocity"
             type: number
       exposure:
         title: Exposure parameters
