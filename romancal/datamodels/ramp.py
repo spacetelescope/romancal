@@ -37,4 +37,3 @@ class RampModel(RomanDataModel):
         self.pixeldq = self.pixeldq
         self.groupdq = self.groupdq
         self.err = self.err
-
