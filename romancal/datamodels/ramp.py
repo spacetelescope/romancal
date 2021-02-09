@@ -2,7 +2,7 @@ from .core import RomanDataModel
 
 class RampModel(RomanDataModel):
     """
-    A data model for 4D ramps.
+    A data model for 3D ramps.
 
     Parameters
     __________
@@ -23,9 +23,6 @@ class RampModel(RomanDataModel):
 
     group : numpy table
          group parameters table
-
-    int_times : numpy table
-         table of times for each integration
 
     """
     schema_url = "http://stsci.edu/schemas/roman_datamodel/ramp.schema"
