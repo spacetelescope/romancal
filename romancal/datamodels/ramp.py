@@ -13,7 +13,7 @@ class RampModel(RomanDataModel):
          2-D data quality array for all planes
 
     groupdq : numpy uint8 array
-         4-D data quality array for each plane
+         3-D data quality array for each plane
 
     err : numpy float32 array
          Error array
