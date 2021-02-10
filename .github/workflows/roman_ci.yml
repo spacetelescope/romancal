@@ -83,9 +83,9 @@ jobs:
 
     steps:
     - name: Install system packages
-        if: ${{ contains(matrix.toxenv,'build_docs') }}
-        run: |
-          sudo apt-get install graphviz texlive-latex-extra dvipng
+      if: ${{ contains(matrix.toxenv,'build_docs') }}
+      run: |
+        sudo apt-get install graphviz texlive-latex-extra dvipng
     - name: Checkout code
       uses: actions/checkout@v2
       with:
