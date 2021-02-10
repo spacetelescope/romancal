@@ -22,4 +22,6 @@ __all__ = ["RomanDataModel",
 
            "ImageModel",
 
+           "RampModel", "GLS_RampFitModel", "RampFitOutputModel",
+
            "open"]

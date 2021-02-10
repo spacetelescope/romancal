@@ -1,0 +1,53 @@
+%YAML 1.1
+---
+$schema: http://stsci.edu/schemas/asdf/asdf-schema-1.0.0
+id: "http://stsci.edu/schemas/roman_datamodel/rampfitoutput.schema"
+allOf:
+- $ref: core.schema
+- type: object
+  properties:
+    slope:
+      title: Segment-specific slope
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    sigslope:
+      title: Sigma for segment-specific slope
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    var_poisson:
+      title: Variance due to poisson noise for segment-specific slope
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    var_rnoise:
+      title: Variance due to read noise for segment-specific slope
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    yint:
+      title: Segment-specific y-intercept
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    sigyint:
+      title: Sigma for segment-specific y-intercept
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    pedestal:
+      title: Pedestal array
+      default: 0.0
+      ndim: 2
+      datatype: float32
+    weights:
+      title: Weights for segment-specific fits
+      default: 0.0
+      ndim: 3
+      datatype: float32
+    crmag:
+      title: Approximate CR magnitudes
+      default: 0.0
+      ndim: 3
+      datatype: float32

@@ -1,22 +1,26 @@
 %YAML 1.1
 ---
 $schema: http://stsci.edu/schemas/asdf/asdf-schema-1.0.0
-id: "http://stsci.edu/schemas/roman_datamodel/image.schema"
+id: "http://stsci.edu/schemas/roman_datamodel/ramp.schema"
 allOf:
 - $ref: core.schema
-# To be implemented
-# - $ref: variance.schema
 - type: object
   properties:
     data:
       title: The science data
       default: 0.0
-      ndim: 2
+      ndim: 3
       datatype: float32
-    dq:
-      title: Data quality array
+    pixeldq:
+      title: 2-D data quality array for all planes
       default: 0
+      ndim: 2
       datatype: uint32
+    groupdq:
+      title: 3-D data quality array for each plane
+      default: 0
+      ndim: 3
+      datatype: uint8
     err:
       title: Error array
       default: 0.0
@@ -24,8 +28,12 @@ allOf:
     zeroframe:
       title: Zeroframe array
       default: 0.0
+      ndim: 3
       datatype: float32
-    area:
-      title: Pixel area map array
+    refout:
+      title: Reference Output
       default: 0.0
+      ndim: 3
       datatype: float32
+- $ref: group.schema
+
