@@ -1,5 +1,8 @@
 from .core import RomanDataModel
 
+__all__ = ["RampModel"]
+
+
 class RampModel(RomanDataModel):
     """
     A data model for 3D ramps.
