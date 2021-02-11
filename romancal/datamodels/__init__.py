@@ -5,23 +5,24 @@ from .core import RomanDataModel
 from .reference_files.referencefile import ReferenceFileModel
 from .reference_files.flat import FlatModel
 
-# Level 1 data model
+from .gls_rampfit import GLS_RampFitModel
+from .image import ImageModel
 from .level1 import Level1FileModel
+from .ramp import RampModel
+from .rampfitoutput import RampFitOutputModel
 
 # Image Models
-from .image import ImageModel
+
 
 from .open_impl import open
 
 
-__all__ = ["RomanDataModel",
-
-           "ReferenceFileModel", "FlatModel",
-
-           "Level1FileModel",
-
+__all__ = ["GLS_RampFitModel",
            "ImageModel",
-
-           "RampModel", "GLS_RampFitModel", "RampFitOutputModel",
-
+           "FlatModel",
+           "Level1FileModel",
+           "RampModel",
+           "RampFitOutputModel",
+           "ReferenceFileModel",
+           "RomanDataModel",
            "open"]

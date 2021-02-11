@@ -6,10 +6,7 @@ import logging
 
 import numpy as np
 
-from .. import datamodels
 from .. datamodels import dqflags
-# This module hasn't been added to romancal yet:
-# from .. lib import reffile_utils
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -91,19 +88,9 @@ def apply_flat_field(science, flat):
     flat : Roman data model
         flat field data model
     """
-
-    # Extract subarray from reference data, if necessary
-    if reffile_utils.ref_matches_sci(science, flat):
-        flat_data = flat.data
-        flat_dq = flat.dq
-        flat_err = flat.err
-    else:
-        log.info("Extracting matching subarray from flat")
-        sub_flat = reffile_utils.get_subarray_model(science, flat)
-        flat_data = sub_flat.data.copy()
-        flat_dq = sub_flat.dq.copy()
-        flat_err = sub_flat.err.copy()
-        sub_flat.close()
+    flat_data = flat.data
+    flat_dq = flat.dq
+    flat_err = flat.err
 
     # Find pixels in the flat that have a value of NaN and set
     # their DQ to NO_FLAT_FIELD
@@ -130,16 +117,11 @@ def apply_flat_field(science, flat):
 
     # Update the variances using BASELINE algorithm.  For guider data, it has
     # not gone through ramp fitting so there is no Poisson noise or readnoise
-    if not isinstance(science, datamodels.GuiderCalModel):
-        flat_data_squared = flat_data**2
-        science.var_poisson /= flat_data_squared
-        science.var_rnoise /= flat_data_squared
-        science.var_flat = science.data**2 / flat_data_squared * flat_err**2
-        science.err = np.sqrt(science.var_poisson + science.var_rnoise + science.var_flat)
-    else:
-        flat_data_squared = flat_data**2
-        science.var_flat = science.data**2 / flat_data_squared * flat_err**2
-        science.err = np.sqrt(science.var_flat)
+    flat_data_squared = flat_data**2
+    science.var_poisson /= flat_data_squared
+    science.var_rnoise /= flat_data_squared
+    science.var_flat = science.data**2 / flat_data_squared * flat_err**2
+    science.err = np.sqrt(science.var_poisson + science.var_rnoise + science.var_flat)
 
     # Combine the science and flat DQ arrays
     science.dq = np.bitwise_or(science.dq, flat_dq)

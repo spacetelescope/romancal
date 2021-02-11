@@ -1,5 +1,7 @@
 from .core import RomanDataModel
 
+__all__ = ["RampFitOutputModel"]
+
 class RampFitOutputModel(RomanDataModel):
     """
     A data model for the optional output of the ramp fitting step.
