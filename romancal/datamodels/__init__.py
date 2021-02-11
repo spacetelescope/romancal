@@ -17,7 +17,8 @@ from .rampfitoutput import RampFitOutputModel
 from .open_impl import open
 
 
-__all__ = ["FlatModel",
+__all__ = ["DarkModel",
+           "FlatModel",
            "GainModel",
            "GLS_RampFitModel",
            "ImageModel",
