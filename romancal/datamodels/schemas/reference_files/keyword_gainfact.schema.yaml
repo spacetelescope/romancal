@@ -13,3 +13,5 @@ properties:
           gain_factor:
             type: number
             title: Gain scale factor
+            minimum: 0.0
+            exclusiveMinimum: true

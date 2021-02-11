@@ -8,7 +8,7 @@ allOf:
 - type: object
   properties:
     data:
-      title: The gain
+      title: The detector gain map
       default: 0.0
       ndim: 2
       datatype: float32
