@@ -7,8 +7,11 @@ properties:
   meta:
     type: object
     properties:
-      gain_factor:
-        title: Gain scale factor
-        type: number
-        minimum: 0
-        exclusiveMinimum: true
+      exposure:
+      type: object
+      properties:
+        gain_factor:
+          type: number
+          title: Gain scale factor
+          minimum: 0
+          exclusiveMinimum: true
