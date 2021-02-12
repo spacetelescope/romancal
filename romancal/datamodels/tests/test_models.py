@@ -148,7 +148,13 @@ def test_flat_model(tmp_path):
 
 
 def test_meta_date_management(tmp_path):
-    model = datamodels.RomanDataModel({"meta": {"date": Time("2000-01-01T00:00:00.000")}})
+    model = datamodels.RomanDataModel({
+        "meta": {
+            "date": Time("2000-01-01T00:00:00.000"),
+            "instrument": {"name": "WFI", "detector": "WFI01", "optical_element": "F062"},
+            "telescope": "ROMAN",
+        }
+    })
     assert model.meta.date == Time("2000-01-01T00:00:00.000")
     model.save(str(tmp_path/"test.asdf"))
     assert abs((Time.now() - model.meta.date).value) < 1.0
