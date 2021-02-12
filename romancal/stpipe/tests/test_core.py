@@ -25,10 +25,10 @@ def test_open_model(step_class, tmp_path):
         assert model.meta.telescope == "a dashing monocle"
 
 
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
-)
+# @pytest.mark.skipif(
+#     os.environ.get("CI") == "true",
+#     reason="Roman CRDS servers are not currently available outside the internal network"
+# )
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
 def test_get_reference_file(step_class):
     """
