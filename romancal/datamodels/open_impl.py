@@ -48,10 +48,8 @@ def open(init, memmap=False, **model_kwargs):
         }
 
         asdf_file = asdf.open(init, **asdf_kwargs)
-        auto_close_asdf_file = True
     elif isinstance(init, asdf.AsdfFile):
         asdf_file = init
-        auto_close_asdf_file = False
     elif isinstance(init, RomanDataModel):
         # Make a copy of the model so that the original instance can
         # be closed without impacting this one.
@@ -62,11 +60,6 @@ def open(init, memmap=False, **model_kwargs):
     model_class = _select_model_class(asdf_file)
 
     model = model_class(asdf_file, **model_kwargs)
-
-    if auto_close_asdf_file:
-        # TODO: This needs to have a public interface, maybe just
-        # a boolean flag to the DataModel initializer.
-        model._files_to_close.append(asdf_file)
 
     return model
 
