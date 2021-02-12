@@ -16,7 +16,6 @@ class FlatFieldStep(RomanStep):
     def process(self, input):
 
         input_model = datamodels.open(input)
-        exposure_type = input_model.meta.exposure.type.upper()
 
         # Get reference file paths
         reference_file_names = {}

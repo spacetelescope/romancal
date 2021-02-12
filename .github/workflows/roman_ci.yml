@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - main
-      - '*'
+      - '*.x'
     tags:
       - '*'
   pull_request:
