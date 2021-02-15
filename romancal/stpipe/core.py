@@ -70,7 +70,7 @@ class RomanStep(Step):
         # JWST maintains a list of relevant suffixes that is monitored
         # by tests to be up-to-date.  Roman will likely need to do
         # something similar.
-        return name
+        return name, " "
 
 
 # RomanPipeline needs to inherit from Pipeline, but also

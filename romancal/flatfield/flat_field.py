@@ -50,24 +50,14 @@ def do_flat_field(output_model, flat_model):
     flat_model : Roman data model
         data model containing flat-field
     """
-
-    any_updated = False  # will set True if any flats applied
-
-    # Check to see if flat data array is smaller than science data
-    if (output_model.data.shape[-1] > flat_model.data.shape[-1]) or \
-       (output_model.data.shape[-2] > flat_model.data.shape[-2]):
-        log.warning('Reference data array is smaller than science data')
+    if output_model.data.shape != flat_model.data.shape:
+        # Check to see if flat data array is smaller than science data
+        log.warning('Flat data array is not the same shape as the science data')
         log.warning('Step will be skipped')
-
-    # Apply flat to all other models
+        output_model.meta.cal_step.flat_field = 'SKIPPED'
     else:
         apply_flat_field(output_model, flat_model)
-        any_updated = True
-
-    if any_updated:
         output_model.meta.cal_step.flat_field = 'COMPLETE'
-    else:
-        output_model.meta.cal_step.flat_field = 'SKIPPED'
 
 
 def apply_flat_field(science, flat):
@@ -88,7 +78,7 @@ def apply_flat_field(science, flat):
     flat : Roman data model
         flat field data model
     """
-    flat_data = flat.data
+    flat_data = flat.data.copy()
     flat_dq = flat.dq
     flat_err = flat.err
 

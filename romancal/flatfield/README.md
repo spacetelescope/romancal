@@ -1,1 +1,0 @@
-This file exists only so that the directory that it is in is not empty, and will be removed once flatfield python files have been added to this directory. The readthedocs build requires this directory to exist.
