@@ -223,9 +223,9 @@ properties:
       filename:
         title: Name of the file
         type: string
-        date:
-          title: Date this file was created (UTC)
-          tag: tag:stsci.edu:asdf/time/time-1.1.0
+      date:
+        title: Date this file was created (UTC)
+        tag: tag:stsci.edu:asdf/time/time-1.1.0
       guidestar:
         title: Guide star information
         type: object

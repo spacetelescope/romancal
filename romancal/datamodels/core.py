@@ -1,4 +1,5 @@
 from stdatamodels import DataModel
+from astropy.time import Time
 
 
 class RomanDataModel(DataModel):
@@ -24,3 +25,22 @@ class RomanDataModel(DataModel):
             key: val for key, val in self.to_flat_dict(include_arrays=False).items()
             if isinstance(val, (str, int, float, complex, bool))
         }
+
+    def on_init(self, init):
+        """
+        Hook invoked by the base class before returning a newly
+        created model instance.
+        """
+        super().on_init(init)
+
+        if self.meta.date is None:
+            self.meta.date = Time(Time.now(), format="isot")
+
+    def on_save(self, init):
+        """
+        Hook invoked by the base class before writing a model
+        to a file.
+        """
+        super().on_save(init)
+
+        self.meta.date = Time(Time.now(), format="isot")
