@@ -12,3 +12,4 @@ allOf:
       default: 0.0
       ndim: 2
       datatype: float32
+      tag: tag:stsci.edu:asdf/core/ndarray-1.0.0
