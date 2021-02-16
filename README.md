@@ -131,7 +131,7 @@ fork and clone the `romancal` repo:
 
     cd <where you want to put the repo>
     git clone https://github.com/spacetelescope/romancal
-    cd roman
+    cd romancal
 
 *Note: `python setup.py install` and `python setup.py develop` commands do not work.*
 
