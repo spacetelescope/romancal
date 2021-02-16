@@ -7,6 +7,9 @@ class RomanStep(Step):
     """
     Base class for Roman calibration pipeline steps.
     """
+    spec = """
+    output_ext =  string(default='.asdf')
+    """
 
     @classmethod
     def _datamodels_open(cls, init, **kwargs):
@@ -70,7 +73,7 @@ class RomanStep(Step):
         # JWST maintains a list of relevant suffixes that is monitored
         # by tests to be up-to-date.  Roman will likely need to do
         # something similar.
-        return name, " "
+        return name, "_"
 
 
 # RomanPipeline needs to inherit from Pipeline, but also
