@@ -43,7 +43,6 @@ def test_core_schema(tmp_path):
         af.write_to(file_path)
 
         with datamodels.open(file_path) as model:
-            model.validate()
             with pytest.warns(ValidationWarning):
                 model.validate()
             assert model["meta"]["telescope"] == "NOTROMAN"
@@ -68,8 +67,6 @@ def assert_referenced_schema(schema_uri, ref_uri):
 
 # Define base meta dictionary of required key / value pairs for reference files
 #
-# NOTE 1: date is commented out because it is not properly failing its test
-#         Ticket: https://github.com/spacetelescope/stdatamodels/issues/23
 # NOTE 2: core.schema key/value pairs commented out due to not properly failing their tests
 #         Ticket: https://github.com/spacetelescope/stdatamodels/issues/7
 REFERENCEFILE_SCHEMA_DICT = {
@@ -79,7 +76,7 @@ REFERENCEFILE_SCHEMA_DICT = {
                     "pedigree": "Test",
                     "reftype": "BASE",
                     "useafter": Time('1999-01-01T00:00:00.123456789',format='isot', scale='utc'),
-#                    "date": Time('1999-01-01T00:00:00.123456789',format='isot', scale='utc'),
+                    "date": Time('1999-01-01T00:00:00.123456789',format='isot', scale='utc'),
 #                     # Key/value pairs from core.schema
 #                     "instrument": {
 #                         "detector": "WFI01",
@@ -148,3 +145,19 @@ def test_flat_model(tmp_path):
 
             # Confirm that asdf file is opened as flat file model
             assert isinstance(model, datamodels.reference_files.flat.FlatModel)
+
+
+def test_meta_date_management(tmp_path):
+    model = datamodels.RomanDataModel({
+        "meta": {
+            "date": Time("2000-01-01T00:00:00.000"),
+            "instrument": {"name": "WFI", "detector": "WFI01", "optical_element": "F062"},
+            "telescope": "ROMAN",
+        }
+    })
+    assert model.meta.date == Time("2000-01-01T00:00:00.000")
+    model.save(str(tmp_path/"test.asdf"))
+    assert abs((Time.now() - model.meta.date).value) < 1.0
+
+    model = datamodels.RomanDataModel()
+    assert abs((Time.now() - model.meta.date).value) < 1.0
