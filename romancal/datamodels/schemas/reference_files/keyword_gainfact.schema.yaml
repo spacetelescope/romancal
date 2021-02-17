@@ -1,0 +1,17 @@
+%YAML 1.1
+---
+$schema: http://stsci.edu/schemas/asdf/asdf-schema-1.0.0
+id: "http://stsci.edu/schemas/roman_datamodel/reference_files/keyword_gainfact.schema"
+type: object
+properties:
+  meta:
+    type: object
+    properties:
+      exposure:
+        type: object
+        properties:
+          gain_factor:
+            type: number
+            title: Gain scale factor
+            minimum: 0.0
+            exclusiveMinimum: true

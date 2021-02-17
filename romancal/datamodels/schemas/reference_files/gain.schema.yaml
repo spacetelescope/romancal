@@ -1,0 +1,15 @@
+%YAML 1.1
+---
+$schema: http://stsci.edu/schemas/asdf/asdf-schema-1.0.0
+id: "http://stsci.edu/schemas/roman_datamodel/reference_files/gain.schema"
+allOf:
+- $ref: referencefile.schema
+- $ref: keyword_gainfact.schema
+- type: object
+  properties:
+    data:
+      title: The detector gain map
+      default: 0.0
+      ndim: 2
+      datatype: float32
+      tag: tag:stsci.edu:asdf/core/ndarray-1.0.0
