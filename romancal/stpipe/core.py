@@ -8,7 +8,7 @@ class RomanStep(Step):
     Base class for Roman calibration pipeline steps.
     """
     spec = """
-    output_ext =  string(default='.asdf')
+    output_ext =  string(default='.asdf')    # Default type of output
     """
 
     @classmethod
