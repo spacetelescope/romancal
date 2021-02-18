@@ -79,8 +79,8 @@ def apply_flat_field(science, flat):
         flat field data model
     """
     flat_data = flat.data.copy()
-    flat_dq = flat.dq
-    flat_err = flat.err
+    flat_dq = flat.dq.copy()
+    flat_err = flat.err.copy()
 
     # Find pixels in the flat that have a value of NaN and set
     # their DQ to NO_FLAT_FIELD
