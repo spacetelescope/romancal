@@ -6,6 +6,7 @@ from .reference_files.referencefile import ReferenceFileModel
 from .reference_files.flat import FlatModel
 from .reference_files.dark import DarkModel
 from .reference_files.gain import GainModel
+from .reference_files.readnoise import ReadNoiseModel
 
 # Image Models
 from .gls_rampfit import GLS_RampFitModel
@@ -24,6 +25,7 @@ __all__ = ["DarkModel",
            "ImageModel",
            "Level1FileModel",
            "RampModel",
+           "ReadNoiseModel",
            "RampFitOutputModel",
            "ReferenceFileModel",
            "RomanDataModel",
