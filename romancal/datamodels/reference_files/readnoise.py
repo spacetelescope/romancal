@@ -11,3 +11,4 @@ class ReadNoiseModel(ReferenceFileModel):
          The read noise
     """
     schema_url = "http://stsci.edu/schemas/roman_datamodel/reference_files/readnoise.schema"
+
