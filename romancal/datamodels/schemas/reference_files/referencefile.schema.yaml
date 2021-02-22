@@ -13,7 +13,7 @@ allOf:
         reftype:
           title: Reference file type
           type: string
-          enum: [AREA, DARK, FLAT, GAIN, IPC, LINEARITY, PERSAT, PHOTOM, READNOISE, REFPIX,
+          enum: [AREA, DARK, FLAT, GAIN, IPC, LINEARITY, MASK, PERSAT, PHOTOM, READNOISE, REFPIX,
                  SATURATION, SUPERBIAS, TRAPDENSITY, TRAPPARS]
         pedigree:
           title: The pedigree of the reference file
