@@ -327,7 +327,7 @@ properties:
           optical_element:
             title: Name of the filter element used
             type: string
-            enum: [F062, F087, F106, F129, W146, F158, F184, GRISM, PRISM, DARK, ENGINEERING]
+            enum: [F062, F087, F106, F129, W146, F158, F184, F213, GRISM, PRISM, DARK]
         required: [detector, optical_element, name]
       model_type:
         title: Type of data model
