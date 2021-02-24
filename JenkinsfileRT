@@ -53,6 +53,7 @@ def pip_install_args = "--index-url ${pip_index} --progress-bar=off"
 env_vars = [
     "TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory",
     "CRDS_CONTEXT=roman_0004.pmap",
+    "CRDS_SERVER_URL=https://roman-crds-test.stsci.edu",
 ]
 if (env.ENV_VARS) {
     env_vars.addAll(MultiLineToArray(env.ENV_VARS))
