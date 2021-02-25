@@ -33,7 +33,6 @@ def do_correction(input_model, flat=None):
 
     # Initialize the output model as a copy of the input
     output_model = input_model.copy()
-
     do_flat_field(output_model, flat)
 
     return output_model
@@ -58,7 +57,7 @@ def do_flat_field(output_model, flat_model):
         output_model.meta.cal_step.flat_field = 'SKIPPED'
     else:
         apply_flat_field(output_model, flat_model)
-        output_model.meta.cal_step.flat_field = 'COMPLETE'
+        output_model.meta.calstatus.flat_field = 'COMPLETE'
 
 
 def apply_flat_field(science, flat):
@@ -82,7 +81,6 @@ def apply_flat_field(science, flat):
     flat_data = flat.data.copy()
     flat_dq = flat.dq.copy()
     flat_err = flat.err.copy()
-
     # Find pixels in the flat that have a value of NaN and set
     # their DQ to NO_FLAT_FIELD
     flat_nan = np.isnan(flat_data)
@@ -101,7 +99,6 @@ def apply_flat_field(science, flat):
     # Reset the flat value of all bad pixels to 1.0, so that no
     # correction is made
     flat_data[np.where(flat_bad)] = 1.0
-
     # Now let's apply the correction to science data and error arrays.  Rely
     # on array broadcasting to handle the cubes
     science.data /= flat_data
