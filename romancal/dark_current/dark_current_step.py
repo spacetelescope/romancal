@@ -1,4 +1,4 @@
-from ..stpipe import Step
+from ..stpipe import RomanStep
 from .. import datamodels
 from . import dark_sub
 
@@ -6,7 +6,7 @@ from . import dark_sub
 __all__ = ["DarkCurrentStep"]
 
 
-class DarkCurrentStep(Step):
+class DarkCurrentStep(RomanStep):
     """
     DarkCurrentStep: Performs dark current correction by subtracting
     dark current reference data from the input science data model.
