@@ -1,4 +1,4 @@
-from ..stpipe import Step
+from ..stpipe import RomanStep
 from .. import datamodels
 from . import dark_sub
 
