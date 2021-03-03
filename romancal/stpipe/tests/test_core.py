@@ -49,3 +49,7 @@ def test_get_reference_file(step_class):
 
     with step.open_model(reference_path) as reference_model:
         assert isinstance(reference_model, FlatModel)
+        assert reference_model.meta.instrument.name == 'WFI'
+        assert reference_model.meta.instrument.detector == 'WFI01'
+        assert reference_model.meta.instrument.optical_element == 'F158'
+        assert reference_model.data.shape == (4096, 4096)

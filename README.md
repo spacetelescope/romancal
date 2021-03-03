@@ -131,7 +131,7 @@ fork and clone the `romancal` repo:
 
     cd <where you want to put the repo>
     git clone https://github.com/spacetelescope/romancal
-    cd roman
+    cd romancal
 
 *Note: `python setup.py install` and `python setup.py develop` commands do not work.*
 
@@ -205,11 +205,11 @@ Note: CRDS_CONTEXT values flagged with an asterisk in the above table are estima
 
 The test suite require access to a CRDS cache, but currently (2021-02-09) the shared /grp/crds
 cache does not include Roman files.  Developers inside the STScI network can sync a cache from
-roman-crds-dev.stsci.edu (if working from home, be sure to connect to the VPN first):
+roman-crds-test.stsci.edu (if working from home, be sure to connect to the VPN first):
 
 ```bash
-$ export CRDS_SERVER_URL=https://roman-crds-dev.stsci.edu
-$ export CRDS_PATH=$HOME/roman-crds-dev-cache
+$ export CRDS_SERVER_URL=https://roman-crds-test.stsci.edu
+$ export CRDS_PATH=$HOME/roman-crds-test-cache
 $ crds sync --contexts roman-edit
 ```
 
