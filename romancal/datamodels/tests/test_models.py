@@ -8,10 +8,25 @@ from romancal import datamodels
 from stdatamodels.validate import ValidationWarning
 
 # Helper class to iterate over model subclasses
-def iter_subclasses(model_class, include_base_model=True):
+def iter_subclasses(model_class, include_base_model=True, include_excluse_base_model=True,
+                    exclude_model_class=None):
+
+    # Include base model if directed
     if include_base_model:
         yield model_class
+
+    # Cycle over subclasses for inclusion
     for sub_class in model_class.__subclasses__():
+        # Exclude models if directed
+        if exclude_model_class:
+            exclude_list = exclude_model_class.__subclasses__()
+            # Add base class to exclusion list
+            if include_excluse_base_model:
+                exclude_list += [exclude_model_class]
+            # Skip model if in exclusion class
+            if sub_class in exclude_list:
+                continue
+
         yield from iter_subclasses(sub_class)
 
 def test_model_schemas(tmp_path):
@@ -27,13 +42,12 @@ def test_core_schema(tmp_path):
     meta = {"meta":
                 {"instrument": {
                      "detector": "WFI01",
-                     "optical_element": "F158",
                      "name": "WFI"
                  },
                  "telescope": "ROMAN",
                  "model_type": "RomanDataModel",
-                 "date": "2020-12-20"
-                 }
+                 "date": Time('2021-02-20T02:20:00.123456789', format='isot', scale='utc')
+                }
             }
 
     # Testing bad core asdf file
@@ -66,25 +80,20 @@ def assert_referenced_schema(schema_uri, ref_uri):
 
 
 # Define base meta dictionary of required key / value pairs for reference files
-#
-# NOTE 2: core.schema key/value pairs commented out due to not properly failing their tests
-#         Ticket: https://github.com/spacetelescope/stdatamodels/issues/7
 REFERENCEFILE_SCHEMA_DICT = {
     "meta": {
                     "author": "Space Telescope Science Institute",
                     "description": "Test file",
                     "pedigree": "Test",
                     "reftype": "BASE",
-                    "useafter": Time('1999-01-01T00:00:00.123456789',format='isot', scale='utc'),
-                    "date": Time('1999-01-01T00:00:00.123456789',format='isot', scale='utc'),
-#                     # Key/value pairs from core.schema
-#                     "instrument": {
-#                         "detector": "WFI01",
-#                         "optical_element": "F158",
-#                         "name": "WFI"
-#                     },
-#                     "telescope": "ROMAN",
-#                     "model_type": "ReferenceFileModel",
+                    "useafter": Time('2021-02-20T02:20:00.123456789',format='isot', scale='utc'),
+                    # Key/value pairs from core.schema
+                    "date": Time('2021-02-20T02:20:00.123456789',format='isot', scale='utc'),
+                    "instrument": {
+                        "detector": "WFI01",
+                        "name": "WFI"
+                    },
+                    "telescope": "ROMAN"
         }
     }
 
@@ -120,6 +129,15 @@ def test_reference_file_model(tmp_path, model_class):
     assert_referenced_schema(model_class.schema_url,
                              datamodels.reference_files.referencefile.ReferenceFileModel.schema_url)
 
+# Common tests for nonReference Models
+@pytest.mark.parametrize("model_class", list(iter_subclasses(
+    datamodels.core.RomanDataModel, include_base_model=False, include_excluse_base_model=True,
+    exclude_model=datamodels.reference_files.referencefile.ReferenceFileModel)))
+def test_non_reference_file_model(tmp_path, model_class):
+    # Ensure that nonReference files contain core schema
+    assert_referenced_schema(model_class.schema_url,
+                             datamodels.core.RomanDataModel.schema_url)
+
 # FlatModel tests
 def test_flat_model(tmp_path):
     # Set temporary asdf file
@@ -146,7 +164,7 @@ def test_flat_model(tmp_path):
             # Confirm that asdf file is opened as flat file model
             assert isinstance(model, datamodels.reference_files.flat.FlatModel)
 
-
+# Test date object
 def test_meta_date_management(tmp_path):
     model = datamodels.RomanDataModel({
         "meta": {
