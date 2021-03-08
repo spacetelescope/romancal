@@ -1,5 +1,6 @@
 from .referencefile import ReferenceFileModel
 
+
 class GainModel(ReferenceFileModel):
     """
     A data model for 2D gain.

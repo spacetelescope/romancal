@@ -25,11 +25,6 @@ allOf:
       title: Error array
       default: 0.0
       datatype: float32
-    zeroframe:
-      title: Zeroframe array
-      default: 0.0
-      ndim: 3
-      datatype: float32
     refout:
       title: Reference Output
       default: 0.0

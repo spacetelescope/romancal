@@ -1,5 +1,6 @@
 from .core import RomanDataModel
 
+
 class ImageModel(RomanDataModel):
     """
     A data model for 2D images.
@@ -15,9 +16,6 @@ class ImageModel(RomanDataModel):
     err : numpy float32 array
          Error array
 
-    zeroframe : numpy float32 array
-         Zeroframe array
-
     var_poisson : numpy float32 array
          variance due to poisson noise
 
@@ -26,13 +24,6 @@ class ImageModel(RomanDataModel):
 
     area : numpy float32 array
          Pixel area map array
-
-    pathloss_point : numpy float32 array
-         Pathloss correction for point source
-
-    pathloss_uniform : numpy float32 array
-         Pathloss correction for uniform source
-
     """
     schema_url = "http://stsci.edu/schemas/roman_datamodel/image.schema"
 

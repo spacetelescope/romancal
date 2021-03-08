@@ -4,8 +4,6 @@ $schema: http://stsci.edu/schemas/asdf/asdf-schema-1.0.0
 id: "http://stsci.edu/schemas/roman_datamodel/image.schema"
 allOf:
 - $ref: core.schema
-# To be implemented
-# - $ref: variance.schema
 - type: object
   properties:
     data:
@@ -21,11 +19,8 @@ allOf:
       title: Error array
       default: 0.0
       datatype: float32
-    zeroframe:
-      title: Zeroframe array
-      default: 0.0
-      datatype: float32
     area:
       title: Pixel area map array
       default: 0.0
       datatype: float32
+- $ref: variance.schema

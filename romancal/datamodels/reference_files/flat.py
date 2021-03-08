@@ -1,6 +1,7 @@
 from .referencefile import ReferenceFileModel
 from ..dynamicdq import dynamic_mask
 
+
 class FlatModel(ReferenceFileModel):
     """
     A data model for 2D flat-field images.
