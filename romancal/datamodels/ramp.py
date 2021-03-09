@@ -21,12 +21,8 @@ class RampModel(RomanDataModel):
     err : numpy float32 array
          Error array
 
-    zeroframe : numpy float32 array
-         Zeroframe array
-
     group : numpy table
          group parameters table
-
     """
     schema_url = "http://stsci.edu/schemas/roman_datamodel/ramp.schema"
 

@@ -16,16 +16,6 @@ allOf:
       default: 0.0
       ndim: 3
       datatype: float32
-    var_poisson:
-      title: Variance due to poisson noise for segment-specific slope
-      default: 0.0
-      ndim: 3
-      datatype: float32
-    var_rnoise:
-      title: Variance due to read noise for segment-specific slope
-      default: 0.0
-      ndim: 3
-      datatype: float32
     yint:
       title: Segment-specific y-intercept
       default: 0.0
@@ -51,3 +41,4 @@ allOf:
       default: 0.0
       ndim: 3
       datatype: float32
+- $ref: variance.schema

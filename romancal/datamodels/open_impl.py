@@ -55,7 +55,8 @@ def open(init, memmap=False, **model_kwargs):
         # be closed without impacting this one.
         return init.__class__(init)
     else:
-        raise TypeError("init must be a path to an ASDF file, an open AsdfFile instance, or a RomanDataModel")
+        raise TypeError("init must be a path to an ASDF file, an open AsdfFile instance, "
+                        "or a RomanDataModel")
 
     model_class = _select_model_class(asdf_file)
 

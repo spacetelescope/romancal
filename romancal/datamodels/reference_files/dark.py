@@ -1,6 +1,7 @@
 from .referencefile import ReferenceFileModel
 from ..dynamicdq import dynamic_mask
 
+
 class DarkModel(ReferenceFileModel):
     """
     A data model for dark reference files.
