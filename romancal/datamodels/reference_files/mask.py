@@ -1,6 +1,7 @@
 from .referencefile import ReferenceFileModel
 from ..dynamicdq import dynamic_mask
 
+
 class MaskModel(ReferenceFileModel):
     """
     A data model for 2D masks.

@@ -15,9 +15,6 @@ class Level1FileModel(RomanDataModel):
     err : numpy float32 array
          Error array
 
-    zeroframe : numpy float32 array
-         Zeroframe array
-
     var_poisson : numpy float32 array
          variance due to poisson noise
 

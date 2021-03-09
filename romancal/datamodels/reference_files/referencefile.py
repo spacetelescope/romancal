@@ -1,5 +1,6 @@
 from ..core import RomanDataModel
 
+
 class ReferenceFileModel(RomanDataModel):
     """
     Data model for reference files.
