@@ -7,30 +7,22 @@ from astropy.time import Time
 from romancal import datamodels
 from stdatamodels.validate import ValidationWarning
 
-# Helper class to iterate over model subclasses
-def iter_subclasses(model_class, include_base_model=True, include_excluse_base_model=True,
-                    exclude_model_class=None):
+# Helper class to return a set of model subclasses
+def get_subclasses(model_class, include_base_model=True):
+    class_list = []
 
     # Include base model if directed
     if include_base_model:
-        yield model_class
+        class_list.append(model_class)
 
     # Cycle over subclasses for inclusion
     for sub_class in model_class.__subclasses__():
-        # Exclude models if directed
-        if exclude_model_class:
-            exclude_list = exclude_model_class.__subclasses__()
-            # Add base class to exclusion list
-            if include_excluse_base_model:
-                exclude_list += [exclude_model_class]
-            # Skip model if in exclusion class
-            if sub_class in exclude_list:
-                continue
+        class_list += list(get_subclasses(sub_class))
 
-        yield from iter_subclasses(sub_class)
+    return set(class_list)
 
 def test_model_schemas(tmp_path):
-    for model_class in iter_subclasses(datamodels.RomanDataModel):
+    for model_class in get_subclasses(datamodels.RomanDataModel):
         asdf.schema.load_schema(model_class.schema_url)
 
 # Testing core schema
@@ -122,17 +114,18 @@ def test_reference_file_model_base(tmp_path):
 
 
 # Common tests for all ReferenceFileModel subclasses
-@pytest.mark.parametrize("model_class", list(iter_subclasses(
-    datamodels.reference_files.referencefile.ReferenceFileModel, include_base_model=False)))
+@pytest.mark.parametrize("model_class", get_subclasses(
+    datamodels.reference_files.referencefile.ReferenceFileModel, include_base_model=False))
 def test_reference_file_model(tmp_path, model_class):
     # Ensure that specific reference file schema contains the base module schema
     assert_referenced_schema(model_class.schema_url,
                              datamodels.reference_files.referencefile.ReferenceFileModel.schema_url)
 
 # Common tests for nonReference Models
-@pytest.mark.parametrize("model_class", list(iter_subclasses(
-    datamodels.core.RomanDataModel, include_base_model=False, include_excluse_base_model=True,
-    exclude_model=datamodels.reference_files.referencefile.ReferenceFileModel)))
+NON_REFERENCE_MODELS = get_subclasses(datamodels.RomanDataModel, include_base_model=False) - \
+                       get_subclasses(datamodels.reference_files.referencefile.ReferenceFileModel,
+                                      include_base_model=True)
+@pytest.mark.parametrize("model_class", NON_REFERENCE_MODELS)
 def test_non_reference_file_model(tmp_path, model_class):
     # Ensure that nonReference files contain core schema
     assert_referenced_schema(model_class.schema_url,
