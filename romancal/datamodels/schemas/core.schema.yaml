@@ -17,6 +17,52 @@ properties:
           position_angle:
             title: "[deg] Position angle of aperture used"
             type: number
+      cal_step:
+        title: Calibration step information
+        type: object
+        properties:
+          assign_wcs:
+            title: Assign World Coordinate System
+            type: string
+          back_sub:
+            title: Background subtraction
+            type: string
+          dark_sub:
+            title: Dark Subtraction
+            type: string
+          dq_init:
+            title: Data Quality Initialization
+            type: string
+          flat_field:
+            title: Flat Field Correction
+            type: string
+          gain_scale:
+            title: Gain Scale Correction
+            type: string
+          jump:
+            title: Jump Detection
+            type: string
+          linearity:
+            title: Linearity Correction
+            type: string
+          persistence:
+            title: Persistence Correction
+            type: string
+          photom:
+            title: Photometric Calibration
+            type: string
+          ramp_fit:
+            title: Ramp Fitting
+            type: string
+          refpix:
+            title: Reference Pixel Correction
+            type: string
+          saturation:
+            title: Saturation Checking
+            type: string
+          superbias:
+            title: Superbias Subtraction
+            type: string
       calibration_software_version:
         title: Calibration software version number
         type: string
