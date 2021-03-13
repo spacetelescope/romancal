@@ -5,6 +5,7 @@
 import numpy as np
 import logging
 from .. import datamodels
+import warnings
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -140,11 +141,16 @@ def average_dark_frames(input_dark, ngroups, nframes, groupgap):
         New dark object with averaged frames
 
     """
-
     # Create a model for the averaged dark data
     dny = input_dark.data.shape[1]
     dnx = input_dark.data.shape[2]
     avg_dark = datamodels.DarkModel((ngroups, dny, dnx))
+
+    # 03/12/21 this block is a workaround for datamodel's update bug
+    input_dark.meta.instrument.detector = 'WFI01'
+    avg_dark.meta.instrument.name = 'WFI'
+    avg_dark.meta.instrument.detector = 'WFI01'
+    avg_dark.meta.update(input_dark.meta._instance)
     avg_dark.update(input_dark)
 
     # Do a direct copy of the 2-d DQ array into the new dark
@@ -167,7 +173,11 @@ def average_dark_frames(input_dark, ngroups, nframes, groupgap):
         # the SCI arrays and the quadratic sum of the ERR arrays.
         else:
             log.debug('average dark frames %d to %d', start + 1, end)
-            avg_dark.data[group] = input_dark.data[start:end].mean(axis=0)
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                avg_dark.data[group] = input_dark.data[start:end].mean(axis=0)
+
             avg_dark.err[group] = np.sqrt(np.add.reduce(
                 input_dark.err[start:end]**2, axis=0)) / (end - start)
 
