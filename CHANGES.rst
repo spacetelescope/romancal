@@ -1,3 +1,18 @@
+0.3.0 (2021-03-14)
+==================
+
+datamodels
+----------
+
+- Updated model subclass code - changed from returning a generator to a set for use with more complicated model selections.
+
+- Corrected time format in tests to astropy time objects.
+  
+- Cleaned up old tests to better reflect present models.
+  
+- Added check for core metadata inclusion in nonreference files.
+  
+
 0.2.0 (2021-02-26)
 ==================
 
