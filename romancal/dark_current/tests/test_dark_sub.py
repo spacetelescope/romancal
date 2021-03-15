@@ -20,13 +20,15 @@ TFRAME = 10.0
 NGROUPS_DARK = 10
 
 def _params():
-    """ Returns list of tuples, one for each readpatt, generating parameters for
-        test_frame_averaging. Parameters are the following:
+    """ Returns list of tuples, one for several combinations of ngroups,
+        nframes, and nskip (which are some of the parameter which will later
+        be retrieved from the MA table), generating parameters for
+        test_frame_averaging.  Parameters are the following:
 
-        (readpatt, ngroups, nframes, groupgap, nrows, ncols)
+        (ma_tab, ngroups, nframes, groupgap, nrows, ncols)
     """
     # Dictionary of pseudo readout patterns
-    readpatterns = dict(
+    ma_tab_infos = dict(
         RP1 = dict(ngroups=20, nframes=8, nskip=0),
         RP2 = dict(ngroups=32, nframes=2, nskip=0),
         RP3 = dict(ngroups=12, nframes=6, nskip=0),
@@ -38,22 +40,22 @@ def _params():
     # WFI is 4096x4096, but we reduce the size to 20x20 for speed/memory
     nrows = 20
     ncols = 20
-    for readpatt, values in readpatterns.items():
-        params.append((readpatt, ngroups, values['nframes'], values['nskip'], nrows, ncols))
+    for ma_tab_info, values in ma_tab_infos.items():
+        params.append((ma_tab_info, ngroups, values['nframes'], values['nskip'], nrows, ncols))
 
     return params
 
 
 
-@pytest.mark.parametrize('readpatt, ngroups, nframes, groupgap, nrows, ncols', _params())
-def test_frame_averaging(setup_nrc_cube, readpatt, ngroups, nframes, groupgap, nrows, ncols):
+@pytest.mark.parametrize('ma_tab_info, ngroups, nframes, groupgap, nrows, ncols', _params())
+def test_frame_averaging(setup_nrc_cube, ma_tab_info, ngroups, nframes, groupgap, nrows, ncols):
 
     '''Check that if nframes>1 or groupgap>0, then the pipeline reconstructs
        the dark reference file to match the frame averaging and groupgap
        settings of the exposure.'''
 
     # Create data and dark model
-    data, dark = setup_nrc_cube(readpatt, ngroups, nframes, groupgap, nrows, ncols)
+    data, dark = setup_nrc_cube(ma_tab_info, ngroups, nframes, groupgap, nrows, ncols)
 
     # Add ramp values to dark model data array
     dark.data[:, 10, 10] = np.arange(0, NGROUPS_DARK)
@@ -345,7 +347,7 @@ def make_darkmodel():
 def setup_nrc_cube():
     '''Set up fake NIRCam data to test.'''
 
-    def _cube(readpatt, ngroups, nframes, groupgap, nrows, ncols):
+    def _cube(ma_tab_info, ngroups, nframes, groupgap, nrows, ncols):
         data_model = RampModel((ngroups, nrows, ncols))
 
         data_model.meta.exposure.ngroups = ngroups
