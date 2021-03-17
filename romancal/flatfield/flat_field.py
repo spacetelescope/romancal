@@ -1,6 +1,6 @@
-#
-#  Module for applying flat fielding
-#
+"""
+Module for applying flat fielding
+"""
 
 import logging
 
@@ -52,7 +52,8 @@ def do_flat_field(output_model, flat_model):
     """
     if output_model.data.shape != flat_model.data.shape:
         # Check to see if flat data array is smaller than science data
-        log.warning('Flat data array is not the same shape as the science data')
+        log.warning('Flat data array is not the same '
+                    'shape as the science data')
         log.warning('Step will be skipped')
         output_model.meta.cal_step.flat_field = 'SKIPPED'
     else:
@@ -111,7 +112,8 @@ def apply_flat_field(science, flat):
     science.var_poisson /= flat_data_squared
     science.var_rnoise /= flat_data_squared
     science.var_flat = science.data**2 / flat_data_squared * flat_err**2
-    science.err = np.sqrt(science.var_poisson + science.var_rnoise + science.var_flat)
+    science.err = np.sqrt(science.var_poisson +
+                          science.var_rnoise + science.var_flat)
 
     # Combine the science and flat DQ arrays
     science.dq = np.bitwise_or(science.dq, flat_dq)
