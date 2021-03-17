@@ -13,7 +13,7 @@ class DarkCurrentStep(RomanStep):
     """
 
     spec = """
-        dark_output = output_file(default = None) # Dark model or averaged dark subtracted
+        dark_output = output_file(default = None) # Dark corrected model
     """
 
     reference_file_types = ['dark']

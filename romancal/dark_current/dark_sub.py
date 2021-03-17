@@ -1,11 +1,13 @@
+"""Module for dark subtracting science data sets"""
 #
 #  Module for dark subtracting science data sets
 #
 
-import numpy as np
 import logging
-from .. import datamodels
 import warnings
+import numpy as np
+
+from .. import datamodels
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
