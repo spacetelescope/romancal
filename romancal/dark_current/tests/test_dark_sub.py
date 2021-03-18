@@ -2,11 +2,11 @@
 Unit tests for dark current correction
 """
 
+import warnings
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 from astropy.time import Time
-import warnings
 
 from romancal.dark_current.dark_sub import (
     average_dark_frames,
@@ -19,6 +19,7 @@ from romancal.datamodels import RampModel, DarkModel, dqflags
 TFRAME = 10.0
 NGROUPS_DARK = 10
 
+
 def _params():
     """ Returns list of tuples, one for several combinations of ngroups,
         nframes, and nskip (which are some of the parameter which will later
@@ -29,9 +30,9 @@ def _params():
     """
     # Dictionary of pseudo readout patterns
     ma_tab_infos = dict(
-        RP1 = dict(ngroups=20, nframes=8, nskip=0),
-        RP2 = dict(ngroups=32, nframes=2, nskip=0),
-        RP3 = dict(ngroups=12, nframes=6, nskip=0),
+        RP1=dict(ngroups=20, nframes=8, nskip=0),
+        RP2=dict(ngroups=32, nframes=2, nskip=0),
+        RP3=dict(ngroups=12, nframes=6, nskip=0),
     )
 
     params = []
@@ -41,21 +42,24 @@ def _params():
     nrows = 20
     ncols = 20
     for ma_tab_info, values in ma_tab_infos.items():
-        params.append((ma_tab_info, ngroups, values['nframes'], values['nskip'], nrows, ncols))
+        params.append((ma_tab_info, ngroups, values['nframes'],
+                       values['nskip'], nrows, ncols))
 
     return params
 
 
-
-@pytest.mark.parametrize('ma_tab_info, ngroups, nframes, groupgap, nrows, ncols', _params())
-def test_frame_averaging(setup_nrc_cube, ma_tab_info, ngroups, nframes, groupgap, nrows, ncols):
+@pytest.mark.parametrize('ma_tab_info, ngroups, nframes, groupgap, nrows,'
+                         'ncols', _params())
+def test_frame_averaging(setup_nrc_cube, ma_tab_info, ngroups, nframes,
+                         groupgap, nrows, ncols):
 
     '''Check that if nframes>1 or groupgap>0, then the pipeline reconstructs
        the dark reference file to match the frame averaging and groupgap
        settings of the exposure.'''
 
     # Create data and dark model
-    data, dark = setup_nrc_cube(ma_tab_info, ngroups, nframes, groupgap, nrows, ncols)
+    data, dark = setup_nrc_cube(ma_tab_info, ngroups, nframes, groupgap,
+                                nrows, ncols)
 
     # Add ramp values to dark model data array
     dark.data[:, 10, 10] = np.arange(0, NGROUPS_DARK)
@@ -86,7 +90,8 @@ def test_frame_averaging(setup_nrc_cube, ma_tab_info, ngroups, nframes, groupgap
             manual_avg[newgp] = newframe
 
         # ERR arrays will be quadratic sum of error values
-        manual_errs[newgp] = np.sqrt(np.sum(dark.err[gstart:gend, 10, 10]**2)) / (gend - gstart)
+        err_array = np.sum(dark.err[gstart:gend, 10, 10]**2)
+        manual_errs[newgp] = np.sqrt(err_array) / (gend - gstart)
 
     # Check that pipeline output matches manual averaging results
     assert_allclose(manual_avg, avg_dark.data[:, 10, 10], rtol=1e-5)
@@ -100,8 +105,8 @@ def test_frame_averaging(setup_nrc_cube, ma_tab_info, ngroups, nframes, groupgap
 
 def test_more_sci_frames(make_rampmodel, make_darkmodel):
     '''Check that data is unchanged if there are more frames in the science
-    data is than in the dark reference file and verify that when the dark is not applied,
-    the data is correctly flagged as such'''
+    data is than in the dark reference file and verify that when the dark is
+    not applied, the data is correctly flagged as such'''
 
     # size of integration
     ngroups = 7
@@ -137,8 +142,8 @@ def test_more_sci_frames(make_rampmodel, make_darkmodel):
 
 
 def test_sub_by_frame(make_rampmodel, make_darkmodel):
-    '''Check that if NFRAMES=1 and GROUPGAP=0 for the science data, the dark reference data are
-    directly subtracted frame by frame'''
+    '''Check that if NFRAMES=1 and GROUPGAP=0 for the science data, the
+    dark reference data are directly subtracted frame by frame'''
 
     # size of integration
     ngroups = 6
@@ -170,11 +175,14 @@ def test_sub_by_frame(make_rampmodel, make_darkmodel):
 
     # test that the output data file is equal to the difference found when
     #     subtracting ref file from sci file
-    np.testing.assert_array_equal(outdata, diff, err_msg='dark file should be subtracted from sci file ')
+    np.testing.assert_array_equal(outdata, diff,
+                                  err_msg='dark file should be subtracted'
+                                          ' from sci file ')
 
 
 def test_nan(make_rampmodel, make_darkmodel):
-    '''Verify that when a dark has NaNs, these are correctly assumed as zero and the PIXELDQ is set properly'''
+    '''Verify that when a dark has NaNs, these are correctly
+    assumed as zero and the PIXELDQ is set properly'''
 
     # size of integration
     ngroups = 10
@@ -189,7 +197,7 @@ def test_nan(make_rampmodel, make_darkmodel):
 
     # populate data array of science cube
     for i in range(0, ngroups-1):
-        dm_ramp.data[i, :, :] = i  +0.
+        dm_ramp.data[i, :, :] = i + 0.
 
     # create dark reference file model with more frames than science data
     refgroups = 15
@@ -211,7 +219,8 @@ def test_nan(make_rampmodel, make_darkmodel):
 
 
 def test_dq_combine(make_rampmodel, make_darkmodel):
-    '''Verify that the DQ array of the dark is correctly combined with the PIXELDQ array of the science data.'''
+    '''Verify that the DQ array of the dark is correctly combined
+    with the PIXELDQ array of the science data.'''
 
     # size of integration
     ngroups = 5
@@ -240,8 +249,8 @@ def test_dq_combine(make_rampmodel, make_darkmodel):
     dm_ramp.pixeldq[50, 50] = jump_det
     dm_ramp.pixeldq[50, 51] = saturated
 
-    dark.dq[ 50, 50] = do_not_use
-    dark.dq[ 50, 51] = do_not_use
+    dark.dq[50, 50] = do_not_use
+    dark.dq[50, 51] = do_not_use
 
     # run correction step
     outfile = darkcorr(dm_ramp, dark)
@@ -253,7 +262,8 @@ def test_dq_combine(make_rampmodel, make_darkmodel):
 
 def test_frame_avg(make_rampmodel, make_darkmodel):
     '''Check that if NFRAMES>1 or GROUPGAP>0, the frame-averaged dark data are
-    subtracted group-by-group from science data groups and the ERR arrays are not modified'''
+    subtracted group-by-group from science data groups and the ERR arrays are
+    not modified'''
 
     # size of integration
     ngroups = 5
@@ -273,7 +283,6 @@ def test_frame_avg(make_rampmodel, make_darkmodel):
     # create dark reference file model
     refgroups = 20  # This needs to be 20 groups for the calculations to work
     dark = make_darkmodel(refgroups, ysize, xsize)
-
 
     # populate data array of reference file
     for i in range(0, refgroups - 1):
