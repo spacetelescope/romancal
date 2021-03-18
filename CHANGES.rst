@@ -1,4 +1,7 @@
 0.4.0 (unreleased)
+=======
+
+<<<<<<< HEAD
 
 0.3.1 (2021-06-02)
 =======
@@ -9,6 +12,8 @@ general
 
 
 0.3.0 (2021-05-28)
+=======
+>>>>>>> Update setup.cfg to match JWST warnings & error list and initial pass for code fixes. (#188)
 =======
 datamodels
 ----------
