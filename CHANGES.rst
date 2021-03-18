@@ -1,8 +1,13 @@
 0.4.0 (unreleased)
 =======
 
-0.3.0 (2021-05-28)
 =======
+datamodels
+----------
+
+- Added sorting to test parameters to preserve order for tests done by paralel pytest workers. [#136]
+
+- Update setup.cfg to match JWST warnings & error list and initial pass for code fixes. (#188)
 
 general
 -------
