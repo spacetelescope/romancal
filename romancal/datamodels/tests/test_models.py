@@ -114,8 +114,9 @@ def test_reference_file_model_base(tmp_path):
 
 
 # Common tests for all ReferenceFileModel subclasses
-@pytest.mark.parametrize("model_class", get_subclasses(
-    datamodels.reference_files.referencefile.ReferenceFileModel, include_base_model=False))
+@pytest.mark.parametrize("model_class", sorted(get_subclasses(
+    datamodels.reference_files.referencefile.ReferenceFileModel, include_base_model=False),
+    key=lambda x: x.__name__))
 def test_reference_file_model(tmp_path, model_class):
     # Ensure that specific reference file schema contains the base module schema
     assert_referenced_schema(model_class.schema_url,
@@ -125,7 +126,7 @@ def test_reference_file_model(tmp_path, model_class):
 NON_REFERENCE_MODELS = get_subclasses(datamodels.RomanDataModel, include_base_model=False) - \
                        get_subclasses(datamodels.reference_files.referencefile.ReferenceFileModel,
                                       include_base_model=True)
-@pytest.mark.parametrize("model_class", NON_REFERENCE_MODELS)
+@pytest.mark.parametrize("model_class", sorted(NON_REFERENCE_MODELS, key=lambda x: x.__name__))
 def test_non_reference_file_model(tmp_path, model_class):
     # Ensure that nonReference files contain core schema
     assert_referenced_schema(model_class.schema_url,
