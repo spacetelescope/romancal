@@ -1,3 +1,5 @@
+"""Base class for Roman data models"""
+
 from stdatamodels import DataModel
 from astropy.time import Time
 

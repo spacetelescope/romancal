@@ -1,3 +1,6 @@
+"""Extension that maps datamodel schema URIs to their corresponding disk
+locations """
+
 from pathlib import Path
 
 from asdf.extension import AsdfExtension
@@ -21,6 +24,6 @@ class RomanDataModelExtension(AsdfExtension):
     types = []
     tag_mapping = []
 
-    url_mapping = [
-        (URI_PREFIX, util.filepath_to_url(str(SCHEMAS_ROOT)) + "/{url_suffix}.yaml"),
-    ]
+    url_mapping = [(URI_PREFIX,
+                    util.filepath_to_url(str(SCHEMAS_ROOT)) +
+                    "/{url_suffix}.yaml"), ]

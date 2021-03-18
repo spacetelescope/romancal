@@ -10,17 +10,19 @@ datamodels
 0.3.0 (2021-03-14)
 ==================
 
+- Update setup for more strict PEP8 checking [#176]
+
 datamodels
 ----------
 
 - Updated model subclass code - changed from returning a generator to a set for use with more complicated model selections. [#169]
 
 - Corrected time format in tests to astropy time objects. [#169]
-  
+
 - Cleaned up old tests to better reflect present models. [#169]
-  
+
 - Added check for core metadata inclusion in nonreference files. [#169]
-  
+
 
 0.2.0 (2021-02-26)
 ==================

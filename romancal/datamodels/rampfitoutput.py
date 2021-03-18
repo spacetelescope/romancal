@@ -1,3 +1,6 @@
+"""
+A data model for post ramp fitted data
+"""
 from .core import RomanDataModel
 
 __all__ = ["RampFitOutputModel"]
@@ -41,4 +44,5 @@ class RampFitOutputModel(RomanDataModel):
     crmag : numpy float32 array (max_seg, ny, nx)
         Approximate CR magnitudes
     """
-    schema_url = "http://stsci.edu/schemas/roman_datamodel/rampfitoutput.schema"
+    schema_url = ("http://stsci.edu/schemas/roman_datamodel/"
+                  "rampfitoutput.schema")

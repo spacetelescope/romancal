@@ -1,3 +1,6 @@
+"""
+Roman Calibration Pipeline base class
+"""
 from stpipe import Step, Pipeline
 
 from .. import datamodels
