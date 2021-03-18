@@ -1,17 +1,4 @@
-<<<<<<< HEAD
 0.3.0 (unreleased)
-=======
-0.3.1 (2021-03-18)
-==================
-
-datamodels
-----------
-
-- Added sorting to test parameters to preserve order for tests done by paralel pytest workers. [#136]
-
-
-0.3.0 (2021-03-14)
->>>>>>> Added changelog.
 ==================
 
 general
