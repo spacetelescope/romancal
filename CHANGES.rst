@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 0.4.0 (unreleased)
 =======
+=======
+0.3.0 (unreleased)
+>>>>>>> Added changelog.
 
 =======
 datamodels
@@ -8,6 +12,8 @@ datamodels
 - Added sorting to test parameters to preserve order for tests done by paralel pytest workers. [#136]
 
 - Update setup.cfg to match JWST warnings & error list and initial pass for code fixes. (#188)
+==================
+>>>>>>> Added changelog.
 
 general
 -------
