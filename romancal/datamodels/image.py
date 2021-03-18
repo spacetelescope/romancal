@@ -1,3 +1,7 @@
+"""
+A data model for 2D images
+"""
+
 from .core import RomanDataModel
 
 

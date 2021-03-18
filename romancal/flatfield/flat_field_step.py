@@ -1,3 +1,7 @@
+"""
+Flat-field a science image
+"""
+
 from ..stpipe import RomanStep
 from .. import datamodels
 from . import flat_field
