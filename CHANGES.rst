@@ -1,33 +1,52 @@
 0.4.0 (unreleased)
 
 0.3.1 (2021-06-02)
-general
+=======
 
-    Added grism to the CRDS tests [# 225]
+general
+-------
+- Added grism to the CRDS tests [# 225]
+
 
 0.3.0 (2021-05-28)
+=======
 datamodels
+----------
 
-    Added sorting to test parameters to preserve order for tests done by parallel pytest workers. [#136]
-    Update setup.cfg to match JWST warnings & error list and initial pass for code fixes. (#188)
+- Added sorting to test parameters to preserve order for tests done by parallel pytest workers. [#136]
+
+- Update setup.cfg to match JWST warnings & error list and initial pass for code fixes. (#188)
 
 general
+-------
+- Added grism to the regression tests [# 222]
 
-    Added grism to the regression tests [# 222]
-    Update README and CHANGES.rst [#195]
-    Added sorting to test parameters to preserve order for tests done by parallel pytest workers. [#136]
-    Update setup for more strict PEP8 checking [#176]
-    Added documentation for rmask files. [#181]
+- Update README and CHANGES.rst [#195]
+
+- Added sorting to test parameters to preserve order for tests done by parallel
+  pytest workers. [#136]
+
+- Update setup for more strict PEP8 checking [#176]
+
+- Added documentation for rmask files. [#181]
 
 datamodels
+----------
 
-    Make necessary changes to use roman_datamodels that is based on the tag approach [#212]
-    Add cal_step added to datamodels [#177]
-    Updated model subclass code - changed from returning a generator to a set for use with more complicated model selections. [#169]
-    Corrected time format in tests to astropy time objects. [#169]
-    Cleaned up old tests to better reflect present models. [#169]
-    Added check for core metadata inclusion in non-reference files. [#169]
-    Add Photom Schema [#200]
+- Make necessary changes to use roman_datamodels that is based on the tag approach [#212]
+
+- Add cal_step added to datamodels [#177]
+
+- Updated model subclass code - changed from returning a generator to a set
+  for use with more complicated model selections. [#169]
+
+- Corrected time format in tests to astropy time objects. [#169]
+
+- Cleaned up old tests to better reflect present models. [#169]
+
+- Added check for core metadata inclusion in non-reference files. [#169]
+
+- Add Photom Schema [#200]
 
 0.2.0 (2021-02-26)
 ==================
