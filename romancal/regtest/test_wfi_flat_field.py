@@ -1,27 +1,32 @@
 import os
 import pytest
-#from asdf.commands import diff
+from asdf.commands import diff as asdf_diff
 
-from romancal.step import FlatFieldStep
+from romancal.stpipe import RomanStep
 from romancal import datamodels
 
 
-# @pytest.fixture(scope='module')
-# def run_flat_field(rtdata_module):
-#     """ Run flat field on Level 2 imaging data."""
-#
-#     rtdata = rtdata_module
-#     rtdata.get_data("WFI/image/level2.asdf")
-#     step = FlatFieldStep()
-#     step.run(rtdata.input)
+@pytest.fixture(scope='module')
+def run_flat_field(rtdata_module):
+    """ Run flat field on Level 2 imaging data."""
+
+    rtdata = rtdata_module
+    rtdata.get_data("WFI/image/l2_0001_rate.asdf")
+    args = ["romancal.step.FlatFieldStep", rtdata.input]
+    RomanStep.from_cmdline(args)
 
 
-# def test_flat_field_step(run_flat_field, rtdata_module):
-#     rtdata = rtdata_module
-#     rtdata.input = "level2.asdf"
-#     rtdata.output = "level2flatfield.asdf"
-#     report = diff([rtdata.output, rtdata.truth], False)
-#     assert report is not None, report
+@pytest.mark.bigdata
+def test_flat_field_step(run_flat_field, rtdata_module):
+    rtdata = rtdata_module
+    rtdata.input = "l2_0001_rate.asdf"
+    output = "l2_0001_rate_flatfieldstep.asdf"
+    rtdata.output = output
+
+    rtdata.get_truth(f"truth/WFI/image/{output}")
+
+    report = asdf_diff([rtdata.output, rtdata.truth], False)
+    assert report is not None, report
 
 
 @pytest.fixture(scope='module')

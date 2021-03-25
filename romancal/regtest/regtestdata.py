@@ -28,10 +28,10 @@ class RegtestData:
     """Defines data paths on Artifactory and data retrieval methods"""
 
     def __init__(self, env="dev", inputs_root="roman-pipeline",
-        results_root="roman-pipeline-results", docopy=True,
-        input=None, input_remote=None, output=None, truth=None,
-        truth_remote=None, remote_results_path=None, test_name=None,
-        traceback=None, **kwargs):
+                 results_root="roman-pipeline-results", docopy=True,
+                 input=None, input_remote=None, output=None, truth=None,
+                 truth_remote=None, remote_results_path=None, test_name=None,
+                 traceback=None, **kwargs):
         self._env = env
         self._inputs_root = inputs_root
         self._results_root = results_root
