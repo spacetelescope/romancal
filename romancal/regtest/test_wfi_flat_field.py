@@ -3,6 +3,7 @@ import pytest
 from asdf.commands import diff as asdf_diff
 
 from romancal.stpipe import RomanStep
+from romancal.step import FlatFieldStep
 from romancal import datamodels
 
 
