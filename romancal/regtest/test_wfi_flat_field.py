@@ -1,3 +1,4 @@
+from io import StringIO
 import os
 import pytest
 from asdf.commands import diff as asdf_diff
