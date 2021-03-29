@@ -16,7 +16,7 @@
 
 ## Installation
 
-The easiest way to install the latest `roman` release into a fresh virtualenv or conda environment is
+The easiest way to install the latest `romancal` release into a fresh virtualenv or conda environment is
 
     pip install romancal
 
@@ -194,6 +194,8 @@ contact the [ROMAN Help Desk](https://romanhelp.stsci.edu).
 | roman tag | DMS build | CRDS_CONTEXT |   Date     |          Notes                                |
 | -------- | --------- | ------------ | ---------- | ----------------------------------------------|
 | 0.1.0    | 0.0       |  003         | Nov  2020  | Release for Build 0.0
+| -------- | --------- | ------------ | ---------- | ----------------------------------------------|
+| 0.2.0    | 0.1       |  004         | Mar  2021  | Release for Build 0.1
 
 Note: CRDS_CONTEXT values flagged with an asterisk in the above table are estimates
 (formal CONTEXT deliveries are only provided with final builds).
