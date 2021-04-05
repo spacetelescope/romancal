@@ -57,7 +57,7 @@ def do_flat_field(output_model, flat_model):
         output_model.meta.cal_step.flat_field = 'SKIPPED'
     else:
         apply_flat_field(output_model, flat_model)
-        output_model.meta.calstatus.flat_field = 'COMPLETE'
+        output_model.meta.cal_step.flat_field = 'COMPLETE'
 
 
 def apply_flat_field(science, flat):

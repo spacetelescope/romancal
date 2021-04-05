@@ -3,7 +3,8 @@ import os
 import asdf
 import pytest
 
-from romancal.datamodels import ImageModel, FlatModel
+from roman_datamodels.stnode_test import mk_flat, mk_level2_image
+from roman_datamodels.datamodels import ImageModel, FlatModel
 from romancal.stpipe import RomanPipeline, RomanStep
 
 
@@ -17,7 +18,9 @@ def test_open_model(step_class, tmp_path):
     file_path = tmp_path / "test.asdf"
 
     with asdf.AsdfFile() as af:
-        af["meta"] = {"telescope": "a dashing monocle"}
+        imod = ImageModel()
+        af["roman"] = 
+        {"telescope": "a dashing monocle"}
         af.write_to(file_path)
 
     step = step_class()
