@@ -5,31 +5,28 @@ import asdf
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from romancal import datamodels
-
+from roman_datamodels import datamodels
+from roman_datamodels.tests import util
 
 def test_asdf_file_input():
+    tree = util.mk_level2_image()
     with asdf.AsdfFile() as af:
-        af["meta"] = {"telescope": "binoculars"}
-
+        af.tree = {'roman': tree}
         model = datamodels.open(af)
-        assert model.meta.telescope == "binoculars"
-
-        # When an already open file is passed in, the model
-        # is not responsible for closing it.
+        assert model.meta.telescope == 'ROMAN'
         model.close()
-        assert not af._closed
-
+        # should the asdf file be closed by model.close()?
 
 def test_path_input(tmp_path):
     file_path = tmp_path/"test.asdf"
     with asdf.AsdfFile() as af:
-        af["meta"] = {"telescope": "magnifying glass"}
+        tree = util.mk_level2_image()
+        af.tree = {'roman': tree}
         af.write_to(file_path)
 
     # Test with PurePath input:
     with datamodels.open(file_path) as model:
-        assert model.meta.telescope == "magnifying glass"
+        assert model.meta.telescope == "ROMAN"
         af = model._asdf
 
     # When open creates the file pointer, it should be
@@ -38,7 +35,7 @@ def test_path_input(tmp_path):
 
     # Test with string input:
     with datamodels.open(str(file_path)) as model:
-        assert model.meta.telescope == "magnifying glass"
+        assert model.meta.telescope == "ROMAN"
         af = model._asdf
 
     assert af._closed
@@ -51,10 +48,11 @@ def test_path_input(tmp_path):
 
 def test_model_input(tmp_path):
     file_path = tmp_path/"test.asdf"
-    data = np.random.uniform(size=(1024, 1024))
+    data = np.random.uniform(size=(1024, 1024)).astype(np.float32)
     with asdf.AsdfFile() as af:
-        af["meta"] = {"telescope": "jeweler's loupe"}
-        af["data"] = data
+        af.tree = {'roman': util.mk_level2_image()}
+        af.tree['roman'].meta['bozo'] = 'clown'
+        af.tree['roman'].data = data
         af.write_to(file_path)
 
     original_model = datamodels.open(file_path)
@@ -78,8 +76,8 @@ def test_invalid_input():
 def test_memmap(tmp_path):
     file_path = tmp_path/"test.asdf"
     with asdf.AsdfFile() as af:
-        af["data"] = np.zeros((1024,))
-        af["meta"] = {}
+        af.tree = {'roman': util.mk_level2_image()}
+        af.tree['roman'].data = np.zeros((400, 400,), dtype=np.float32)
         af.write_to(file_path)
 
     with datamodels.open(file_path, memmap=True) as model:
