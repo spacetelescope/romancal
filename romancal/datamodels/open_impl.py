@@ -16,7 +16,8 @@ def open(init, memmap=False, **model_kwargs):
 
     Parameters
     ----------
-    init : str or pathlib.PurePath or asdf.AsdfFile or romancal.datamodels.RomanDataModel
+    init : str or pathlib.PurePath or asdf.AsdfFile or
+           romancal.datamodels.RomanDataModel
         If str or `~pathlib.PurePath`, filesystem path to an ASDF file.
         If `~asdf.AsdfFile`, an open ASDF file.
         If `~romancal.datamodels.RomanDataModel`, an already open model.
@@ -55,8 +56,8 @@ def open(init, memmap=False, **model_kwargs):
         # be closed without impacting this one.
         return init.__class__(init)
     else:
-        raise TypeError("init must be a path to an ASDF file, an open AsdfFile instance, "
-                        "or a RomanDataModel")
+        raise TypeError("init must be a path to an ASDF file, an open ",
+                        "AsdfFile instance or a RomanDataModel")
 
     model_class = _select_model_class(asdf_file)
 
@@ -81,9 +82,11 @@ def _select_model_class(asdf_file):
     # TODO: Still need to decide how this is going to work.
     # Options include:
     # - Choose according to model_type metadata field (similar to jwst)
-    # - Infer from other relevant metadata (reference file type, exposure type, etc)
+    # - Infer from other relevant metadata (reference file type, exposure
+    #   type, etc)
     # - Use ASDF tags to automatically instantiate the correct model
-    # - Use RomanDataModel for all data but select the schema according to one of the above
+    # - Use RomanDataModel for all data but select the schema according to
+    #    one of the above
     # - ???
 
     # Check for the existence of reftype to indicate a reference file model
@@ -93,9 +96,7 @@ def _select_model_class(asdf_file):
         if reftype == "FLAT":
             return FlatModel
         # Return base reference file model
-        else:
-            return ReferenceFileModel
+        return ReferenceFileModel
 
     # Not a reference file model
-    else:
-        return RomanDataModel
+    return RomanDataModel
