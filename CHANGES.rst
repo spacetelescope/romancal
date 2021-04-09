@@ -25,6 +25,7 @@ datamodels
 
 - Added check for core metadata inclusion in non-reference files. [#169]
 
+- Add Photom Schema [#200]
 
 0.2.0 (2021-02-26)
 ==================
