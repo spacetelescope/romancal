@@ -1,5 +1,6 @@
 from difflib import unified_diff
 from glob import glob as _sys_glob
+from io import StringIO
 import os
 import os.path as op
 from pathlib import Path
@@ -9,7 +10,7 @@ import shutil
 import sys
 
 import asdf
-from asdf.commands.diff import diff
+from asdf.commands.diff import diff as asdf_diff
 from ci_watson.artifactory_helpers import (
     check_url,
     get_bigdata_root,
@@ -359,7 +360,7 @@ def run_step_from_dict_mock(rtdata, source,  **step_params):
     return rtdata
 
 
-def is_like_truth(rtdata, fitsdiff_default_kwargs, output, truth_path, is_suffix=True):
+def is_like_truth(rtdata, ignore_asdf_paths, output, truth_path, is_suffix=True):
     """Compare step outputs with truth
 
     Parameters
@@ -367,8 +368,8 @@ def is_like_truth(rtdata, fitsdiff_default_kwargs, output, truth_path, is_suffix
     rtdata: RegtestData
         The artifactory object from the step run.
 
-    fitsdiff_default_kwargs: dict
-        The `fitsdiff` keyword arguments
+    ignore_asdf_paths: dict
+        The asdf `diff` keyword arguments
 
     output: str
         The suffix or full file name to check on.
@@ -396,7 +397,7 @@ def is_like_truth(rtdata, fitsdiff_default_kwargs, output, truth_path, is_suffix
     rtdata.get_truth(os.path.join(truth_path, output))
 
     #diff = FITSDiff(rtdata.output, rtdata.truth, **fitsdiff_default_kwargs)
-    report = diff([rtdata.output, rtdata.truth], False)
+    report = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert report is None, report
 
 
@@ -503,3 +504,11 @@ def _data_glob_url(*url_parts, root=None):
         url_paths = r.json()['files']
 
     return url_paths
+
+
+def compare_asdf(result, truth, **kwargs):
+    f = StringIO()
+    asdf_diff([result, truth], minimal=False,
+               iostream=f, **kwargs)
+    if f.getvalue():
+        f.getvalue()

@@ -1,15 +1,14 @@
-from io import StringIO
 import os
 import pytest
-from asdf.commands import diff as asdf_diff
 
 from romancal.stpipe import RomanStep
 from romancal.step import FlatFieldStep
 from romancal import datamodels
+from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
-def test_flat_field_step(rtdata):
+def test_flat_field_step(rtdata, ignore_asdf_paths):
 
     rtdata.get_data("WFI/image/l2_0001_rate.asdf")
     rtdata.input = "l2_0001_rate.asdf"
@@ -27,12 +26,4 @@ def test_flat_field_step(rtdata):
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     RomanStep.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    compare(rtdata.output, rtdata.truth, **kwargs)
-
-
-def compare(result, truth, **kwargs):
-    f = StringIO()
-    asdf_diff([rtdata.output, rtdata.truth], minimal=False,
-               iostream=StringIO(), **wkargs)
-    if f.getavlue():
-        f.get_value()
+    compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
