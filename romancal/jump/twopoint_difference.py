@@ -68,7 +68,7 @@ def find_crs(data, group_dq, read_noise, rej_threshold, nframes, flag_4_neighbor
 
     row_below_gdq : 3D array (num_integrations, num_groups, num_cols)
         pixels below current row also to be flagged as a CR
-    
+
     row_above_gdq : 3D array (num_integrations, num_groups, num_cols)
         pixels above current row also to be flagged as a CR
     """
@@ -123,7 +123,7 @@ def find_crs(data, group_dq, read_noise, rej_threshold, nframes, flag_4_neighbor
         del positive_first_diffs
 
         # median_diffs is a 2D array with the clipped median of each pixel
-        median_diffs = get_clipped_median(ndiffs, number_sat_groups, 
+        median_diffs = get_clipped_median(ndiffs, number_sat_groups,
                            first_diffs, sort_index)
 
         # Compute uncertainties as the quadrature sum of the poisson noise
@@ -145,16 +145,16 @@ def find_crs(data, group_dq, read_noise, rej_threshold, nframes, flag_4_neighbor
         del sigma_0_pixels
 
         # Compute distance of each sample from the median in units of sigma;
-        # note that the use of "abs" means we'll detect positive and negative 
-        # outliers. ratio is a 2D array with the units of sigma deviation of 
+        # note that the use of "abs" means we'll detect positive and negative
+        # outliers. ratio is a 2D array with the units of sigma deviation of
         # the difference from the median.
         ratio = np.abs(first_diffs - median_diffs[:, :, np.newaxis]) / sigma[:, :, np.newaxis]
         del sigma
         del median_diffs
 
         # Get the group index for each pixel of the largest non-saturated group,
-        # assuming the indices are sorted. 2 is subtracted from ngroups because 
-        # we are using differences and there is one less difference than the 
+        # assuming the indices are sorted. 2 is subtracted from ngroups because
+        # we are using differences and there is one less difference than the
         # number of groups. This is a 2-D array.
         max_value_index = ngroups - 2 - number_sat_groups
 
@@ -165,7 +165,7 @@ def find_crs(data, group_dq, read_noise, rej_threshold, nframes, flag_4_neighbor
         del max_index1d
         del max_value_index
 
-        # Get the row and column indices of pixels whose largest non-saturated 
+        # Get the row and column indices of pixels whose largest non-saturated
         # ratio is above the threshold
         r, c = np.indices(max_index1.shape)
         row1, col1 = np.where(ratio[r, c, max_index1] > rej_threshold)
@@ -190,7 +190,7 @@ def find_crs(data, group_dq, read_noise, rej_threshold, nframes, flag_4_neighbor
             pixel_sorted_index = sort_index[row1[j], col1[j], :]
 
             # set largest diff to be a CR
-            pixel_cr_mask[pixel_sorted_index[ndiffs - pixel_sat_groups - 1]] = 0 
+            pixel_cr_mask[pixel_sorted_index[ndiffs - pixel_sat_groups - 1]] = 0
             new_CR_found = True
 
             # Loop and see if there is more than one CR, setting the mask as you go
@@ -225,7 +225,7 @@ def find_crs(data, group_dq, read_noise, rej_threshold, nframes, flag_4_neighbor
                 if ratio[cr_row[j], cr_col[j], cr_group[j] - 1] < max_jump_to_flag_neighbors and \
                         ratio[cr_row[j], cr_col[j], cr_group[j] - 1] > min_jump_to_flag_neighbors:
 
-                    # This section saves flagged neighbors that are above or below 
+                    # This section saves flagged neighbors that are above or below
                     # the current range of row. If this method is running in a
                     # single process, the row above and below are not used. If
                     # it is running in multiprocessing mode, then the rows above
@@ -243,7 +243,7 @@ def find_crs(data, group_dq, read_noise, rej_threshold, nframes, flag_4_neighbor
                     else:
                         row_above_gdq[integ, cr_group[j], cr_col[j]] = JUMP_DET
 
-                    # Here we are just checking that we don't flag neighbors of 
+                    # Here we are just checking that we don't flag neighbors of
                     # jumps that are off the detector.
                     if cr_col[j] != 0:
                         gdq[integ, cr_group[j], cr_row[j], cr_col[j] - 1] = np.bitwise_or(
@@ -280,7 +280,7 @@ def get_clipped_median(num_differences, diffs_to_ignore, differences, sorted_ind
 
     Returns
     -------
-    pixel_med_diff : 2D array 
+    pixel_med_diff : 2D array
         clipped median of each pixel
     """
 

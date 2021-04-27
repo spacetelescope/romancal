@@ -63,7 +63,7 @@ def detect_jumps(input_model, gain_model, readnoise_model, rejection_threshold,
 
     flag_4_neighbors): boolean
         if set to True (default is True), it will cause the four perpendicular
-        neighbors of all detected jumps to also be flagged as a jump. 
+        neighbors of all detected jumps to also be flagged as a jump.
 
     Returns
     -------
@@ -168,7 +168,7 @@ def detect_jumps(input_model, gain_model, readnoise_model, rejection_threshold,
                 gdq[:, :, k * yincrement:(k + 1) * yincrement, :] = resultslice[0]
             row_below_gdq[:, :, :] = resultslice[1]
             row_above_gdq[:, :, :] = resultslice[2]
-            if k != 0:  # for all but the first slice, flag any CR neighbors in 
+            if k != 0:  # for all but the first slice, flag any CR neighbors in
                 # the top row of the previous slice and flag any neighbors in the
                 # bottom row of this slice saved from the top of the previous slice
                 gdq[:, :, k * yincrement - 1, :] = np.bitwise_or(gdq[:, :, k * yincrement - 1, :],
