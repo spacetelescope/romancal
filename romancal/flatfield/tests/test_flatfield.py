@@ -1,9 +1,9 @@
 import pytest
 import numpy as np
 
-from roman_datamodels import util, rconverters
+from roman_datamodels import util, stnode
 from roman_datamodels.datamodels import ImageModel, FlatRefModel
-from roman_datamodels.tests import util as testutil
+from roman_datamodels import test_utils as testutil
 from romancal.flatfield import FlatFieldStep
 
 
@@ -18,7 +18,6 @@ def test_flatfield_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
 
     shape = (20, 20)
-
 
     wfi_image = testutil.mk_level2_image(no_arrays=True)
     wfi_image.meta.instrument.name = instrument
@@ -42,7 +41,7 @@ def test_flatfield_step_interface(instrument, exptype):
     # data.meta.subarray.xsize = shape[1]
     # data.meta.subarray.ysize = shape[0]
 
-    flatref = rconverters.FlatRef()
+    flatref = stnode.FlatRef()
     meta = {}
     testutil.add_ref_common(meta)
     meta['instrument']['optical_element'] = 'F158'

@@ -2,8 +2,9 @@ import os
 
 import asdf
 import pytest
+from astropy.time import Time
 
-from roman_datamodels.tests.util import mk_level2_image
+from roman_datamodels.test_utils import mk_level2_image
 from roman_datamodels.datamodels import ImageModel, FlatRefModel
 from romancal.stpipe import RomanPipeline, RomanStep
 
@@ -41,8 +42,7 @@ def test_get_reference_file(step_class):
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
     im.meta.instrument.optical_element = "F158"
-    im.meta.observation.date = '2021-01-01'
-    im.meta.observation.time = '12:00:00.0'
+    im.meta.observation.start_time = Time('2021-01-01T12:00:00')
     model = ImageModel(im)
 
     step = step_class()
