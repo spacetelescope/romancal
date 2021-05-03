@@ -4,7 +4,7 @@ import asdf
 import pytest
 from astropy.time import Time
 
-from roman_datamodels.test_utils import mk_flat, mk_level2_image
+from roman_datamodels.testing.utils import mk_flat, mk_level2_image
 from roman_datamodels.datamodels import ImageModel, FlatRefModel
 from romancal.stpipe import RomanPipeline, RomanStep
 
