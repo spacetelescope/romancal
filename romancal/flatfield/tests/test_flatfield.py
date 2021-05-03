@@ -3,7 +3,7 @@ import numpy as np
 
 from roman_datamodels import util, stnode
 from roman_datamodels.datamodels import ImageModel, FlatRefModel
-from roman_datamodels import test_utils as testutil
+from roman_datamodels.testing import utils as testutil
 from romancal.flatfield import FlatFieldStep
 
 
