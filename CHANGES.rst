@@ -1,6 +1,8 @@
 0.2.0 (Unreleased)
 ==================
 
+
+
 stpipe
 ------
 
@@ -14,6 +16,8 @@ flatfield
 
 datamodels
 ----------
+
+- Make necessary changes to use roman_datamodels that is based on the tag approach [#212]
 
 - Added ``RampModel``, ``GLS_RampFitModel``, ``RampFitOutputModel`` and
   schemas. [#110]
