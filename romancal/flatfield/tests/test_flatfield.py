@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from roman_datamodels import util, stnode
+from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel, FlatRefModel
 from roman_datamodels.testing import utils as testutil
 from romancal.flatfield import FlatFieldStep
@@ -13,7 +13,6 @@ from romancal.flatfield import FlatFieldStep
         ("WFI", "WFI_IMAGE"),
     ]
 )
-#@pytest.mark.skip(reason="modifying reference_file_types caused other tests to fail")
 def test_flatfield_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
 
@@ -41,7 +40,6 @@ def test_flatfield_step_interface(instrument, exptype):
     flatref['meta'] = meta
     flatref['data'] = np.ones(shape, dtype=np.float32)
     flatref['dq'] = np.zeros(shape, dtype=np.uint16)
-    # flatref.data[0, 0] = np.nan
     flatref['err'] = (np.random.random(shape) * 0.05).astype(np.float32)
     flatref_model = FlatRefModel(flatref)
 

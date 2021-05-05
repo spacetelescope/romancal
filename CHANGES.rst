@@ -14,6 +14,8 @@ general
 datamodels
 ----------
 
+- Make necessary changes to use roman_datamodels that is based on the tag approach [#212]
+
 - Add cal_step added to datamodels [#177]
 
 - Updated model subclass code - changed from returning a generator to a set
@@ -30,8 +32,6 @@ datamodels
 0.2.0 (2021-02-26)
 ==================
 
-
-
 stpipe
 ------
 
@@ -46,8 +46,6 @@ flatfield
 datamodels
 ----------
 
-- Make necessary changes to use roman_datamodels that is based on the tag approach [#212]
-
 - Add unit tests for the dark current subtraction step [#168]
 
 - Add dark current subtraction step for use with WFI data [#146]
@@ -56,6 +54,8 @@ datamodels
 
 - Update output_ext in the base Step class to .asdf from .fits [#127]
 
+
+=======
 
 - Added ``RampModel``, ``GLS_RampFitModel``, ``RampFitOutputModel`` and
   schemas. [#110]

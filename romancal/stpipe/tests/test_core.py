@@ -4,6 +4,7 @@ import asdf
 import pytest
 from astropy.time import Time
 
+
 from roman_datamodels.testing.utils import mk_level2_image
 from roman_datamodels.datamodels import ImageModel, FlatRefModel
 from romancal.stpipe import RomanPipeline, RomanStep
@@ -30,7 +31,7 @@ def test_open_model(step_class, tmp_path):
 
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason = "Roman CRDS servers are not currently available outside the internal network"
+    reason="Roman CRDS servers are not currently available outside the internal network"
 )
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
 def test_get_reference_file(step_class):

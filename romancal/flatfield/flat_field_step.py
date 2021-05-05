@@ -4,6 +4,7 @@ Flat-field a science image
 
 from ..stpipe import RomanStep
 from . import flat_field
+from . import flat_field
 import roman_datamodels as rdm
 
 
@@ -22,6 +23,7 @@ class FlatFieldStep(RomanStep):
         # Get reference file paths
         reference_file_names = {}
         reffile = self.get_reference_file(input_model, "flat")
+        input_model2 = input_model.copy()
         reference_file_names['flat'] = reffile if reffile != 'N/A' else None
 
         # Open the relevant reference files as datamodels
