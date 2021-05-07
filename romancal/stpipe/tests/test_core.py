@@ -2,8 +2,11 @@ import os
 
 import asdf
 import pytest
+from astropy.time import Time
 
-from romancal.datamodels import ImageModel, FlatModel
+
+from roman_datamodels.testing.utils import mk_level2_image
+from roman_datamodels.datamodels import ImageModel, FlatRefModel
 from romancal.stpipe import RomanPipeline, RomanStep
 
 
@@ -17,12 +20,13 @@ def test_open_model(step_class, tmp_path):
     file_path = tmp_path / "test.asdf"
 
     with asdf.AsdfFile() as af:
-        af["meta"] = {"telescope": "a dashing monocle"}
+        imod = mk_level2_image(arrays=(20, 20))
+        af.tree = {'roman': imod}
         af.write_to(file_path)
 
     step = step_class()
     with step.open_model(file_path) as model:
-        assert model.meta.telescope == "a dashing monocle"
+        assert model.meta.telescope == "ROMAN"
 
 
 @pytest.mark.skipif(
@@ -34,22 +38,16 @@ def test_get_reference_file(step_class):
     """
     Test that CRDS is properly integrated.
     """
-    model = ImageModel()
+    im = mk_level2_image(arrays=(20, 20))
     # This will be brittle while we're using the dev server.
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
-    model.meta.instrument.name = "WFI"
-    model.meta.instrument.detector = "WFI01"
-    model.meta.instrument.optical_element = "F158"
-    model.meta.observation.date = "2020-01-01"
-    model.meta.observation.time = "00:00:00"
+    im.meta.instrument.optical_element = "F158"
+    im.meta.observation.start_time = Time('2021-01-01T12:00:00')
+    model = ImageModel(im)
 
     step = step_class()
     reference_path = step.get_reference_file(model, "flat")
 
     with step.open_model(reference_path) as reference_model:
-        assert isinstance(reference_model, FlatModel)
-        assert reference_model.meta.instrument.name == 'WFI'
-        assert reference_model.meta.instrument.detector == 'WFI01'
-        assert reference_model.meta.instrument.optical_element == 'F158'
-        assert reference_model.data.shape == (4096, 4096)
+        assert isinstance(reference_model, FlatRefModel)

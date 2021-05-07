@@ -3,7 +3,7 @@ Roman Calibration Pipeline base class
 """
 from stpipe import Step, Pipeline
 
-from .. import datamodels
+import roman_datamodels as rdm
 
 
 class RomanStep(Step):
@@ -21,7 +21,7 @@ class RomanStep(Step):
         so that the stpipe infrastructure knows how to instantiate
         models.
         """
-        return datamodels.open(init, **kwargs)
+        return rdm.open(init, **kwargs)
 
     def finalize_result(self, model, reference_files_used):
         """

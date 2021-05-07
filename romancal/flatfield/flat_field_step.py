@@ -3,9 +3,8 @@ Flat-field a science image
 """
 
 from ..stpipe import RomanStep
-from .. import datamodels
 from . import flat_field
-from ..datamodels import FlatModel
+import roman_datamodels as rdm
 
 
 __all__ = ["FlatFieldStep"]
@@ -19,8 +18,7 @@ class FlatFieldStep(RomanStep):
 
     def process(self, input):
 
-        input_model = datamodels.open(input)
-
+        input_model = self.open_model(input)
         # Get reference file paths
         reference_file_names = {}
         reffile = self.get_reference_file(input_model, "flat")
@@ -30,7 +28,7 @@ class FlatFieldStep(RomanStep):
         reference_file_models = {}
 
         if reffile is not None:
-            reference_file_models['flat'] = FlatModel(reffile)
+            reference_file_models['flat'] = rdm.open(reffile)
             self.log.debug(f'Using FLAT ref file: {reffile}')
         else:
             reference_file_models['flat'] = None
@@ -40,7 +38,7 @@ class FlatFieldStep(RomanStep):
         output_model = flat_field.do_correction(
             input_model,
             **reference_file_models,
-            )
+        )
 
         # Close the input and reference files
         input_model.close()
