@@ -14,6 +14,8 @@ general
 datamodels
 ----------
 
+- Make necessary changes to use roman_datamodels that is based on the tag approach [#212]
+
 - Add cal_step added to datamodels [#177]
 
 - Updated model subclass code - changed from returning a generator to a set
@@ -51,6 +53,9 @@ datamodels
 - Add datamodel and schema for mask files [#143]
 
 - Update output_ext in the base Step class to .asdf from .fits [#127]
+
+
+=======
 
 - Added ``RampModel``, ``GLS_RampFitModel``, ``RampFitOutputModel`` and
   schemas. [#110]
