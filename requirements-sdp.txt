@@ -7,7 +7,7 @@
 #
 # CRDS_CONTEXT = roman_0004.pmap
 #
-asdf==2.8.0
+asdf>=2.8.0
 astropy==4.2
 attrs==20.3.0
 certifi==2020.12.5
