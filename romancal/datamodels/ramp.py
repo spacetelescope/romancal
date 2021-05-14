@@ -1,3 +1,6 @@
+"""
+A data model for 3D ramps
+"""
 from .core import RomanDataModel
 
 __all__ = ["RampModel"]

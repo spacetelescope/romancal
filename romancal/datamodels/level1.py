@@ -1,4 +1,9 @@
+"""
+Data model for level 1 data files
+"""
+
 from .core import RomanDataModel
+
 
 class Level1FileModel(RomanDataModel):
     """

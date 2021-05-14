@@ -1,3 +1,4 @@
+"""Base classes for Roman tests"""
 from glob import glob as _sys_glob
 import os
 from os import path as op
@@ -13,7 +14,7 @@ from ci_watson.artifactory_helpers import (
     get_bigdata_root,
 )
 
-#from jwst.associations import load_asn
+# from jwst.associations import load_asn
 
 __all__ = [
     'BaseRomanTest',
@@ -33,12 +34,13 @@ class BaseRomanTest:
     atol = 0
 
     input_loc = ''  # root directory for 'input' files
-    ref_loc = []    # root path for 'truth' files: ['test1','truth'] or ['test3']
+    ref_loc = []  # root path for 'truth' files: ['test1','truth'] or ['test3']
 
     ignore_table_keywords = []
     ignore_fields = []
     ignore_hdus = ['ASDF']
-    ignore_keywords = ['DATE', 'CAL_VER', 'CAL_VCS', 'CRDS_VER', 'CRDS_CTX', 'FILENAME']
+    ignore_keywords = ['DATE', 'CAL_VER', 'CAL_VCS', 'CRDS_VER',
+                       'CRDS_CTX', 'FILENAME']
 
     @pytest.fixture(autouse=True)
     def config_env(self, pytestconfig, envopt):
@@ -179,9 +181,10 @@ def _data_glob_url(*url_parts, root=None):
         with open(envkey) as fp:
             headers = {'X-JFrog-Art-Api': fp.readline().strip()}
     except (PermissionError, FileNotFoundError):
-        print("Warning: Anonymous Artifactory search requests are limited to "
-            "1000 results. Use an API key and define API_KEY_FILE environment "
-            "variable to get full search results.", file=sys.stderr)
+        print("Warning: Anonymous Artifactory search requests are limited "
+              "to 1000 results. Use an API key and define API_KEY_FILE "
+              "environment variable to get full search results.",
+              file=sys.stderr)
         headers = None
 
     search_url = '/'.join([root, 'api/search/pattern'])
