@@ -13,6 +13,10 @@ from romancal.flatfield import FlatFieldStep
         ("WFI", "WFI_IMAGE"),
     ]
 )
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def test_flatfield_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
 
