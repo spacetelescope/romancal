@@ -198,6 +198,14 @@ def rtdata_module(artifactory_repos, envopt, request, jail):
     yield from _rtdata_fixture_implementation(artifactory_repos, envopt, request)
 
 
+@pytest.fixture
+def ignore_asdf_paths():
+    ignore_attr = ["meta.[date, filename]",
+                   "asdf_library",
+                   "history"]
+
+    return {'ignore': ignore_attr}
+
 
 @pytest.fixture
 def diff_astropy_tables():
