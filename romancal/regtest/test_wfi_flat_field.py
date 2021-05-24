@@ -3,7 +3,7 @@ import pytest
 
 from romancal.stpipe import RomanStep
 from romancal.step import FlatFieldStep
-from romancal import datamodels
+import roman_datamodels as rdm
 from .regtestdata import compare_asdf
 
 
@@ -15,7 +15,7 @@ def test_flat_field_step(rtdata, ignore_asdf_paths):
 
     # Test CRDS
     step = FlatFieldStep()
-    model = datamodels.ImageModel(rtdata.input)
+    model = rdm.open(rtdata.input)
     ref_file_path = step.get_reference_file(model, "flat")
     ref_file_name = os.path.split(ref_file_path)[-1]
     assert "roman_wfi_flat" in ref_file_name
