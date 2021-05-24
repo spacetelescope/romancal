@@ -15,7 +15,7 @@ chardet==4.0.0
 ci-watson==0.5
 codecov==2.1.11
 coverage==5.4
-crds==10.3.11
+crds==11.0.2
 filelock==3.0.12
 gwcs==0.16.1
 hypothesis==6.3.2
