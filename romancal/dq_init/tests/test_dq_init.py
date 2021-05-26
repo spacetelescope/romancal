@@ -162,144 +162,157 @@ def test_err():
     assert(np.all(errarr == 0))  # check that values are 0
 
 
-# def test_dq_subarray():
-#     """Test that the pipeline properly extracts the subarray from the reference file."""
-#     # put dq flags in specific pixels and make sure they match in the output subarray file
-#
-#     # create input data
-#     # create model of data with 0 value array
-#     ngroups = 50
-#     ysize = 224
-#     xsize = 288
-#     fullxsize = 1032
-#     fullysize = 1024
-#
-#     # create the data and groupdq arrays
-#     csize = (1, ngroups, ysize, xsize)
-#     data = np.full(csize, 1.0)
-#     pixeldq = np.zeros((ysize, xsize), dtype=int)
-#     groupdq = np.zeros(csize, dtype=int)
-#
-#     # create a JWST datamodel for MIRI data
-#     im = RampModel(data=data, pixeldq=pixeldq, groupdq=groupdq)
-#
-#     im.meta.instrument.name = 'MIRI'
-#     im.meta.instrument.detector = 'MIRIMAGE'
-#     im.meta.instrument.filter = 'F1500W'
-#     im.meta.instrument.band = 'N/A'
-#     im.meta.observation.date = '2016-06-01'
-#     im.meta.observation.time = '00:00:00'
-#     im.meta.exposure.type = 'MIR_IMAGE'
-#     im.meta.subarray.name = 'MASK1550'
-#     im.meta.subarray.xstart = 1
-#     im.meta.subarray.xsize = xsize
-#     im.meta.subarray.ystart = 467
-#     im.meta.subarray.ysize = ysize
-#
-#     # create full size mask model
-#     dq, dq_def = make_maskmodel(fullysize, fullxsize)
-#
-#     # place dq flags in dq array that would be in subarray
-#     # MASK1550 file has colstart=1, rowstart=467
-#     dq[542, 100] = 2
-#     dq[550, 100] = 1
-#     dq[580, 80] = 4
-#
-#     # write mask model
-#     ref_data = MaskModel(dq=dq, dq_def=dq_def)
-#     ref_data.meta.instrument.name = 'MIRI'
-#     ref_data.meta.subarray.xstart = 1
-#     ref_data.meta.subarray.xsize = fullxsize
-#     ref_data.meta.subarray.ystart = 1
-#     ref_data.meta.subarray.ysize = fullysize
-#     ref_data.meta.description = "foo"
-#     ref_data.meta.reftype = "mask"
-#     ref_data.meta.author = "pytest"
-#     ref_data.meta.pedigree = "foo"
-#     ref_data.meta.useafter = "2000-01-01T00:00:00"
-#
-#     # run correction step
-#     outfile = do_dqinit(im, ref_data)
-#
-#     # read dq array
-#     outpixdq = outfile.pixeldq
-#
-#     # check for dq flag in pixeldq of subarray image
-#     assert(outpixdq[76, 100] == 1024)
-#     assert(outpixdq[84, 100] == 1)
-#     assert(outpixdq[114, 80] == 2048)  # check that pixel was flagged 'NO_SAT_CHECK'
-#
-#
-# def test_dq_add1_groupdq():
-#     """
-#     Test if the dq_init code set the groupdq flag on the first
-#     group to 'do_not_use' by adding 1 to the flag, not overwriting to 1
-#     Also test whether two flags on the same pixel are added together.
-#     """
-#
-#     # size of integration
-#     nints = 1
-#     ngroups = 5
-#     xsize = 1032
-#     ysize = 1024
-#
-#     # create raw input data for step
-#     dm_ramp = make_rampmodel(nints, ngroups, ysize, xsize)
-#
-#     # create a MaskModel for the dq input mask
-#     dq, dq_def = make_maskmodel(ysize, xsize)
-#
-#     # write reference file with known bad pixel values
-#
-#     dq[505, 505] = 1   # Do_not_use
-#     dq[400, 500] = 3  # do_not_use and dead pixel
-#
-#     # write mask model
-#     ref_data = MaskModel(dq=dq, dq_def=dq_def)
-#     ref_data.meta.instrument.name = 'MIRI'
-#     ref_data.meta.subarray.xstart = 1
-#     ref_data.meta.subarray.xsize = xsize
-#     ref_data.meta.subarray.ystart = 1
-#     ref_data.meta.subarray.ysize = ysize
-#
-#     # set a flag in the pixel dq
-#     dm_ramp.pixeldq[505, 505] = 4
-#
-#     # run correction step
-#     outfile = do_dqinit(dm_ramp, ref_data)
-#
-#     # test if pixels in pixeldq were incremented in value by 1
-#     assert(outfile.pixeldq[505, 505] == 5)  # check that previous dq flag is added to mask value
-#     assert(outfile.pixeldq[400, 500] == 1025)  # check two flags propagate correctly
-#
-#
-# # Set parameters for multiple runs of guider data
+def test_dq_subarray():
+    """Test that the pipeline properly extracts the subarray from the reference file."""
+    # put dq flags in specific pixels and make sure they match in the output subarray file
+
+    # create input data
+    # create model of data with 0 value array
+    ngroups = 50
+    ysize = 224
+    xsize = 288
+    fullxsize = 1032
+    fullysize = 1024
+    xsize = fullxsize
+    ysize = fullysize
+
+    # create the data and groupdq arrays
+    #csize = (1, ngroups, ysize, xsize)
+    csize = (ngroups, ysize, xsize)
+    data = np.full(csize, 1.0)
+    pixeldq = np.zeros((ysize, xsize), dtype=int)
+    groupdq = np.zeros(csize, dtype=int)
+
+    # create a JWST datamodel for MIRI data
+    im = RampModel(data=data, pixeldq=pixeldq, groupdq=groupdq)
+
+    # im.meta.instrument.name = 'MIRI'
+    # im.meta.instrument.detector = 'MIRIMAGE'
+    # im.meta.instrument.filter = 'F1500W'
+    im.meta.instrument.name = 'WFI'
+    im.meta.instrument.detector = 'WFI_IMAGE'
+    im.meta.instrument.filter = 'W146'
+    im.meta.instrument.band = 'N/A'
+    im.meta.observation.date = '2016-06-01'
+    im.meta.observation.time = '00:00:00'
+    im.meta.exposure.type = 'WFI_IMAGE'
+    # im.meta.subarray.name = 'MASK1550'
+    # im.meta.subarray.xstart = 1
+    # im.meta.subarray.xsize = xsize
+    # im.meta.subarray.ystart = 467
+    # im.meta.subarray.ysize = ysize
+
+    # create full size mask model
+    dq, dq_def = make_maskmodel(fullysize, fullxsize)
+
+    # place dq flags in dq array that would be in subarray
+    # MASK1550 file has colstart=1, rowstart=467
+    dq[542, 100] = 2
+    dq[550, 100] = 1
+    dq[580, 80] = 4
+
+    # write mask model
+    ref_data = MaskModel(dq=dq, dq_def=dq_def)
+    #ref_data.meta.instrument.name = 'MIRI'
+    ref_data.meta.instrument.name = 'WFI'
+    # ref_data.meta.subarray.xstart = 1
+    # ref_data.meta.subarray.xsize = fullxsize
+    # ref_data.meta.subarray.ystart = 1
+    # ref_data.meta.subarray.ysize = fullysize
+    ref_data.meta.description = "foo"
+    ref_data.meta.reftype = "mask"
+    ref_data.meta.author = "pytest"
+    ref_data.meta.pedigree = "foo"
+    ref_data.meta.useafter = "2000-01-01T00:00:00"
+
+    # run correction step
+    outfile = do_dqinit(im, ref_data)
+
+    # read dq array
+    outpixdq = outfile.pixeldq
+
+    # check for dq flag in pixeldq of subarray image
+    # assert(outpixdq[76, 100] == 1024)
+    # assert(outpixdq[84, 100] == 1)
+    # assert(outpixdq[114, 80] == 2048)  # check that pixel was flagged 'NO_SAT_CHECK'
+
+
+def test_dq_add1_groupdq():
+    """
+    Test if the dq_init code set the groupdq flag on the first
+    group to 'do_not_use' by adding 1 to the flag, not overwriting to 1
+    Also test whether two flags on the same pixel are added together.
+    """
+
+    # size of integration
+    #nints = 1
+    ngroups = 5
+    xsize = 1032
+    ysize = 1024
+
+    # create raw input data for step
+    #dm_ramp = make_rampmodel(nints, ngroups, ysize, xsize)
+    dm_ramp = make_rampmodel(ngroups, ysize, xsize)
+
+    # create a MaskModel for the dq input mask
+    dq, dq_def = make_maskmodel(ysize, xsize)
+
+    # write reference file with known bad pixel values
+
+    dq[505, 505] = 1   # Do_not_use
+    dq[400, 500] = 3  # do_not_use and dead pixel
+
+    # write mask model
+    ref_data = MaskModel(dq=dq, dq_def=dq_def)
+    ref_data.meta.instrument.name = 'WFI'
+    # ref_data.meta.subarray.xstart = 1
+    # ref_data.meta.subarray.xsize = xsize
+    # ref_data.meta.subarray.ystart = 1
+    # ref_data.meta.subarray.ysize = ysize
+
+    # set a flag in the pixel dq
+    dm_ramp.pixeldq[505, 505] = 4
+
+    # run correction step
+    outfile = do_dqinit(dm_ramp, ref_data)
+
+    # test if pixels in pixeldq were incremented in value by 1
+    assert(outfile.pixeldq[505, 505] == 5)  # check that previous dq flag is added to mask value
+    assert(outfile.pixeldq[400, 500] == 1025)  # check two flags propagate correctly
+
+
+# Set parameters for multiple runs of guider data
 # args = "xstart, ystart, xsize, ysize, nints, ngroups, instrument, exp_type, detector"
 # test_data = [(1, 1, 2048, 2048, 2, 2, 'FGS', 'FGS_ID-IMAGE', 'GUIDER1'),
 #              (1, 1, 1032, 1024, 1, 5, 'MIRI', 'MIR_IMAGE', 'MIRIMAGE')]
 # ids = ["GuiderRawModel-Image", "RampModel"]
-#
-#
-# @pytest.mark.parametrize(args, test_data, ids=ids)
-# def test_fullstep(xstart, ystart, xsize, ysize, nints, ngroups, instrument, exp_type, detector):
-#     """Test that the full step runs"""
-#
-#     # create raw input data for step
-#     dm_ramp = make_rawramp(instrument, nints, ngroups, ysize, xsize, ystart, xstart, exp_type)
-#
-#     dm_ramp.meta.instrument.name = instrument
-#     dm_ramp.meta.instrument.detector = detector
-#     dm_ramp.meta.observation.date = '2016-06-01'
-#     dm_ramp.meta.observation.time = '00:00:00'
-#
-#     # run the full step
-#     outfile = DQInitStep.call(dm_ramp)
-#
-#     # test that a pixeldq frame has been initlialized
-#     if instrument == "FGS":
-#         assert outfile.dq.ndim == 2
-#     else:
-#         assert outfile.pixeldq.ndim == 2  # a 2-d pixeldq frame exists
+# Set parameters for multiple runs of data
+args = "xstart, ystart, xsize, ysize, ngroups, instrument, exp_type, detector"
+test_data = [(1, 1, 2048, 2048, 2, 'WFI', 'WFI_IMAGE','WFI04')]
+ids = ["RampModel"]
+
+
+@pytest.mark.parametrize(args, test_data, ids=ids)
+#def test_fullstep(xstart, ystart, xsize, ysize, nints, ngroups, instrument, exp_type, detector):
+def test_fullstep(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type, detector):
+    """Test that the full step runs"""
+
+    # create raw input data for step
+    dm_ramp = make_rawramp(instrument, ngroups, ysize, xsize, ystart, xstart, exp_type)
+
+    dm_ramp.meta.instrument.name = instrument
+    dm_ramp.meta.instrument.detector = detector
+    dm_ramp.meta.observation.date = '2000-06-01'
+    dm_ramp.meta.observation.time = '00:00:00'
+
+    # run the full step
+    outfile = DQInitStep.call(dm_ramp)
+
+    # test that a pixeldq frame has been initlialized
+    if instrument == "FGS":
+        assert outfile.dq.ndim == 2
+    else:
+        assert outfile.pixeldq.ndim == 2  # a 2-d pixeldq frame exists
 
 
 def make_rawramp(instrument, ngroups, ysize, xsize, ystart, xstart, exp_type=None):
@@ -339,13 +352,14 @@ def make_rampmodel(ngroups, ysize, xsize):
     # create a JWST datamodel for MIRI data
     dm_ramp = RampModel(data=data, pixeldq=pixeldq, groupdq=groupdq)
 
-    dm_ramp.meta.instrument.name = 'MIRI'
-    dm_ramp.meta.observation.date = '2018-01-01'
+    #dm_ramp.meta.instrument.name = 'MIRI'
+    dm_ramp.meta.instrument.name = 'WFI'
+    dm_ramp.meta.observation.date = '2021-01-01'
     dm_ramp.meta.observation.time = '00:00:00'
-    dm_ramp.meta.subarray.xstart = 1
-    dm_ramp.meta.subarray.xsize = xsize
-    dm_ramp.meta.subarray.ystart = 1
-    dm_ramp.meta.subarray.ysize = ysize
+    # dm_ramp.meta.subarray.xstart = 1
+    # dm_ramp.meta.subarray.xsize = xsize
+    # dm_ramp.meta.subarray.ystart = 1
+    # dm_ramp.meta.subarray.ysize = ysize
 
     return dm_ramp
 
