@@ -1,8 +1,14 @@
 0.3.0 (unreleased)
-==================
+=======
+
+datamodels
+----------
+
+- Added sorting to test parameters to preserve order for tests done by paralel pytest workers. [#136]
 
 general
 -------
+- Added grism to the regression tests [# 222]
 
 - Update README and CHANGES.rst [#195]
 
