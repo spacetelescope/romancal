@@ -8,7 +8,7 @@ datamodels
 
 general
 -------
-- Added grism to the regression tests [# 201]
+- Added grism to the regression tests [# 222]
 
 - Update README and CHANGES.rst [#195]
 
