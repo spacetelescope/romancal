@@ -17,6 +17,8 @@ general
 
 - Update setup for more strict PEP8 checking [#176]
 
+- Added documentation fo rmask files. [#181]
+
 datamodels
 ----------
 
