@@ -1,10 +1,8 @@
-0.3.0 (2021-05-28)
+0.4.0 (unreleased)
 =======
 
-datamodels
-----------
-
-- Added sorting to test parameters to preserve order for tests done by paralel pytest workers. [#136]
+0.3.0 (2021-05-28)
+=======
 
 general
 -------
