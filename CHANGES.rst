@@ -1,4 +1,4 @@
-0.3.0 (unreleased)
+0.3.0 (2021-05-28)
 =======
 
 datamodels
@@ -17,7 +17,7 @@ general
 
 - Update setup for more strict PEP8 checking [#176]
 
-- Added documentation fo rmask files. [#181]
+- Added documentation for rmask files. [#181]
 
 datamodels
 ----------
