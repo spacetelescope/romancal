@@ -143,13 +143,12 @@ contact the [ROMAN Help Desk](https://romanhelp.stsci.edu).
 
 ## Software vs DMS build version map
 
-| roman tag | DMS build | CRDS_CONTEXT |   Date     |          Notes                                |
+| roman tag | DMS build | CRDS_CONTEXT |   Date    |          Notes                                |
 | -------- | --------- | ------------ | ---------- | ----------------------------------------------|
-| 0.1.0    | 0.0       |  003         | Nov  2020  | Release for Build 0.0
-| -------- | --------- | ------------ | ---------- | ----------------------------------------------|
-| 0.2.0    | 0.1       |  004         | Mar  2021  | Release for Build 0.1
-| -------- | --------- | ------------ | ---------- | ----------------------------------------------|
-| 0.3.0    | 0.2       |  007         | May  2021  | Release for Build 0.2
+| 0.1.0    | 0.0       |  003         | Nov  2020  | Release for Build 0.0                         |
+| 0.2.0    | 0.1       |  004         | Mar  2021  | Release for Build 0.1                         |
+| 0.3.0    | 0.2       |  007         | May  2021  | Release for Build 0.2                         |
+| 0.3.1    | 0.2       |  007         | Jun  2021  | Release for Build 0.2 CRDS tests              |
 
 Note: CRDS_CONTEXT values flagged with an asterisk in the above table are estimates
 (formal CONTEXT deliveries are only provided with final builds).
