@@ -18,8 +18,6 @@ datamodels
 - Added sorting to test parameters to preserve order for tests done by parallel pytest workers. [#136]
 
 - Update setup.cfg to match JWST warnings & error list and initial pass for code fixes. (#188)
-==================
->>>>>>> Added changelog.
 
 general
 -------
