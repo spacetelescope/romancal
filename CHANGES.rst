@@ -25,8 +25,6 @@ datamodels
 >>>>>>> Update Changes.rst and README.md for 0.3.1 release
 
 - Update setup.cfg to match JWST warnings & error list and initial pass for code fixes. (#188)
-==================
->>>>>>> Added changelog.
 
 general
 -------
