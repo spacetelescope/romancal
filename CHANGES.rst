@@ -1,15 +1,21 @@
-<<<<<<< HEAD
 0.4.0 (unreleased)
 =======
-=======
-0.3.0 (unreleased)
->>>>>>> Added changelog.
 
+
+0.3.1 (2021-06-02)
+=======
+
+general
+-------
+- Added grism to the CRDS tests [# 225]
+
+
+0.3.0 (2021-05-28)
 =======
 datamodels
 ----------
 
-- Added sorting to test parameters to preserve order for tests done by paralel pytest workers. [#136]
+- Added sorting to test parameters to preserve order for tests done by parallel pytest workers. [#136]
 
 - Update setup.cfg to match JWST warnings & error list and initial pass for code fixes. (#188)
 ==================
