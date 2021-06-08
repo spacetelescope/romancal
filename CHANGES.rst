@@ -1,6 +1,11 @@
 0.4.0 (unreleased)
 =======
 
+jump detection
+------------
+
+- Move the common jump code to STCAL. [#152]
+
 
 0.3.1 (2021-06-02)
 =======
