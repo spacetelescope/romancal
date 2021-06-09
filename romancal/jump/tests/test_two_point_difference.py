@@ -141,6 +141,7 @@ def test_4grps_cr2_noflux(setup_cube):
     # This test should fail because with 2 CRs and only 4 groups we cannot
     # detect the jump
     ngroups = 4
+    flag_4_neighbors = False
 
     data, gdq, nframes, rn_2d, rej_threshold, max_jump_to_flag_neighbors, \
         min_jump_to_flag_neighbors = setup_cube(ngroups)

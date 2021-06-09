@@ -3,7 +3,6 @@ from numpy.testing import assert_array_equal
 import pytest
 
 from romancal.jump.jump import detect_jumps
-from romancal.jump import constants
 
 dqflags = {
     "GOOD": 0,
@@ -38,9 +37,6 @@ def test_nocrs_noflux_badgain_pixel(setup_inputs):
 
     gain_2d[7, 7] = -10  # bad gain
     gain_2d[17, 17] = np.nan  # bad gain
-
-    wh_gain_nan = np.where(np.isnan(gain_2d))
-    wh_gain_neg = np.where(gain_2d < 0.)
 
     gdq, pdq = detect_jumps(frames_per_group, data, gdq, pdq, err,
                             gain_2d, rn_2d, 4.0, 5.0,
@@ -87,8 +83,6 @@ def test_onecr_10_groups_neighbors_flagged(setup_inputs):
                             gain_2d, rn_2d, 4.0, 5.0,
                             6.0, 200, 4, True, dqflags)
 
-    wh_cr = np.where(gdq > 0)
-
     assert np.max(gdq[0, 5, 5, 5]) == dqflags["JUMP_DET"]
     assert gdq[0, 5, 5, 6] == dqflags["JUMP_DET"]
     assert gdq[0, 5, 5, 4] == dqflags["JUMP_DET"]
@@ -130,8 +124,6 @@ def test_nocr_100_groups_nframes1(setup_inputs):
     gdq, pdq = detect_jumps(frames_per_group, data, gdq, pdq, err,
                             gain_2d, rn_2d, 4.0, 5.0,
                             6.0, 200, 4, True, dqflags)
-
-    wh_cr = np.where(gdq > 0)
 
     assert np.max(pdq) == dqflags["GOOD"]
 
@@ -203,8 +195,6 @@ def test_multiple_neighbor_jumps_firstlastbad(setup_inputs):
     gdq, pdq = detect_jumps(frames_per_group, data, gdq, pdq, err,
                             gain_2d, rn_2d, 200.0, 200.0,
                             200.0, 200, 10, True, dqflags)
-
-    wh_cr = np.where(gdq > 0)
 
     # Verify that the correct groups have been flagged. The entries for pixels
     # 2,2 and 3,3 are the ones that had previously been flagged in group 2
@@ -288,9 +278,11 @@ def test_every_pixel_CR_neighbors_flagged(setup_inputs):
     ingain = 200
     inreadnoise = 7.0
     ngroups = 10
-    model, rnoise, gain = setup_inputs(ngroups=ngroups, gain=ingain, nrows=100,
-                                       ncols=100, readnoise=inreadnoise,
-                                       deltatime=grouptime)
+
+    frames_per_group, ncols, nrows, gain_2d, rn_2d, data, gdq, pdq, \
+        err, refout = setup_inputs(ngroups=ngroups, gain=ingain, nrows=10,
+                                   ncols=10, readnoise=inreadnoise,
+                                   deltatime=grouptime)
 
     # two segments perfect fit, second segment has twice the slope
     data[0, 0, :, :] = 15.0
@@ -303,8 +295,10 @@ def test_every_pixel_CR_neighbors_flagged(setup_inputs):
     data[0, 7, :, :] = 160.0
     data[0, 8, :, :] = 170.0
     data[0, 9, :, :] = 180.0
-    out_model = detect_jumps(model, gain, rnoise, 4.0, 5.0, 6.0, 200, 4,
-                             True, dqflags)
+
+    gdq, pdq = detect_jumps(frames_per_group, data, gdq, pdq, err,
+                            gain_2d, rn_2d, 4.0, 5.0,
+                            6.0, 200, 4, True, dqflags)
 
     assert np.max(gdq[0, 5, 5, 5]) == dqflags["JUMP_DET"]
     assert gdq[0, 5, 5, 6] == dqflags["JUMP_DET"]
@@ -599,6 +593,7 @@ def test_single_CR_neighbor_flag(setup_inputs):
     assert gdq_2[0, 5, 4, 3] == dqflags["GOOD"]
 
 
+'''
 #   skip next as it's for multiprocess
 def SKIP_test_proc(setup_inputs):
     """
@@ -611,10 +606,10 @@ def SKIP_test_proc(setup_inputs):
     inreadnoise = 7.0
     ngroups = 10
 
-    model, rnoise, gain = setup_inputs(ngroups=ngroups, nrows=25, ncols=6,
-                                       nints=2, gain=ingain,
-                                       readnoise=inreadnoise,
-                                       deltatime=grouptime)
+    frames_per_group, ncols, nrows, gain_2d, rn_2d, data, gdq, pdq, \
+        err, refout = setup_inputs(ngroups=ngroups, gain=ingain, nrows=10,
+                                   ncols=10, readnoise=inreadnoise,
+                                   deltatime=grouptime)
 
     data[0, 0, 2, 3] = 15.0
     data[0, 1, 2, 3] = 21.0
@@ -627,8 +622,12 @@ def SKIP_test_proc(setup_inputs):
     data[0, 8, 2, 3] = 170.0
     data[0, 9, 2, 3] = 180.0
 
-    out_model_a = detect_jumps(model, gain, rnoise, 4.0, 5.0, 6.0, 200, 4,
-                               True, dqflags)
+    gdq_a, pdq_a = detect_jumps(frames_per_group, data, gdq, pdq, err,
+                            gain_2d, rn_2d, 4.0, 5.0,
+                            6.0, 200, 4, True, dqflags)
+
+
+
     out_model_b = detect_jumps(model, gain, rnoise, 4.0, 5.0, 6.0, 200, 4,
                                True, dqflags)
     assert_array_equal(out_model_a.groupdq, out_model_b.groupdq)
@@ -636,7 +635,7 @@ def SKIP_test_proc(setup_inputs):
     out_model_c = detect_jumps(model, gain, rnoise, 4.0, 5.0, 6.0, 200, 4,
                                True, dqflags)
     assert_array_equal(out_model_a.groupdq, out_model_c.groupdq)
-
+'''
 
 def test_adjacent_CRs(setup_inputs):
     """
