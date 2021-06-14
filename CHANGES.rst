@@ -1,5 +1,8 @@
 0.4.0 (unreleased)
 =======
+general
+-------
+- Added documentation for gain step. [#172]
 
 
 0.3.1 (2021-06-02)
@@ -30,7 +33,7 @@ general
 
 - Update setup for more strict PEP8 checking [#176]
 
-- Added documentation for rmask files. [#181]
+- Added documentation for mask files. [#181]
 
 datamodels
 ----------
