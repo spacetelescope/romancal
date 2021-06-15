@@ -1,5 +1,8 @@
 0.4.0 (unreleased)
 =======
+general
+-------
+- Added documentation for dark current reference files. [#193]
 
 
 0.3.1 (2021-06-02)
