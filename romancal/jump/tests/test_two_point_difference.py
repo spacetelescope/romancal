@@ -1,9 +1,9 @@
 import pytest
 import numpy as np
 
-from romancal.jump.twopoint_difference import find_crs
-from romancal.jump.twopoint_difference import get_clipped_median_array
-from romancal.jump.twopoint_difference import get_clipped_median_vector
+from stcal.jump.twopoint_difference import find_crs
+from stcal.jump.twopoint_difference import get_clipped_median_array
+from stcal.jump.twopoint_difference import get_clipped_median_vector
 
 dqflags = {
     "GOOD": 0,

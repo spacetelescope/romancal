@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 import pytest
 
-from romancal.jump.jump import detect_jumps
+from stcal.jump.jump import detect_jumps
 
 dqflags = {
     "GOOD": 0,
