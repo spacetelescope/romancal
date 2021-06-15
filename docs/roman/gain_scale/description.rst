@@ -10,7 +10,7 @@ the standard gain setting.
 The `gain_scale` step is applied at the end of the
 TBD 
 #:ref:`calwebb_detector1 <calwebb_detector1>` 
-pipeline, after the :ref:`ramp_fit <ramp_fitting_step>` step has been applied. It is applied to both the "rate" and "rateints" products from
+pipeline, after the ramp_fit <ramp_fitting_step> step has been applied. It is applied to both the "rate" and "rateints" products from
 ramp_fit <ramp_fitting_step>, if both
 types of products were created. The science (SCI) and error (ERR)
 arrays are multiplied by the gain factor, and the Poisson
@@ -19,7 +19,7 @@ are multiplied by the square of the gain factor.
 
 The scaling factor is obtained from the "gain_factor" keyword attribute in the
 header of the gain reference file. Normally the
-:ref:`ramp_fit <ramp_fitting_step>` step
+ramp_fit <ramp_fitting_step> step
 reads that keyword attribute value during its execution and stores the value in
 the science data "gain_factor" keyword attribute, so that the gain reference file
 does not have to be loaded again by the ``gain_scale`` step. If, however,
