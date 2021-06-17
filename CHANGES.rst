@@ -3,6 +3,7 @@
 general
 -------
 - Added documentation for dark current reference files. [#232]
+- Added documentation for gain step. [#231]
 
 
 0.3.1 (2021-06-02)
@@ -33,7 +34,7 @@ general
 
 - Update setup for more strict PEP8 checking [#176]
 
-- Added documentation for rmask files. [#181]
+- Added documentation for mask files. [#181]
 
 datamodels
 ----------
