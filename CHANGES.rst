@@ -2,6 +2,7 @@
 =======
 general
 -------
+- Added documentation for dark current reference files. [#232]
 - Added documentation for gain step. [#231]
 
 

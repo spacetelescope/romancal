@@ -46,6 +46,8 @@ documentation on each reference file.
 +---------------------------------------------+--------------------------------------------------+
 | :ref:`flatfield <flatfield_step>`           | :ref:`FLAT <flat_reffile>`                       |
 +---------------------------------------------+--------------------------------------------------+
+| :dark_current <dark_current_step>           | :ref:`DARK <dark_reffile>`                       |
++---------------------------------------------+--------------------------------------------------+
 | :ref:`gain_scale <gain_scale_step>`         | :ref:`GAIN <gain_reffile>`                       |
 +---------------------------------------------+--------------------------------------------------+
 | jump TBD                                    | :ref:`GAIN <gain_reffile>`                       |
@@ -64,6 +66,8 @@ documentation on each reference file.
 | Reference File Type (reftype)                    | Pipeline Step                               |
 +==================================================+=============================================+
 | :ref:`FLAT <flat_reffile>`                       | :ref:`flatfield <flatfield_step>`           |
++--------------------------------------------------+---------------------------------------------+
+| :ref:`DARK <dark_reffile>`                       | dark_current <dark_current_step>            |
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`GAIN <gain_reffile>`                       | :ref:`gain_scale <gain_scale_step>`         |
 +                                                  +---------------------------------------------+
