@@ -6,4 +6,5 @@ Package Index
 
    datamodels/index.rst
    flatfield/index.rst
+   gain_scale/index.rst
    references_general/index.rst
