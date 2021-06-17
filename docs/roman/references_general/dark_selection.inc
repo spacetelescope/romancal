@@ -8,6 +8,6 @@ DARK is not applicable for instruments not in the table.
 ========== ===========================================
 Instrument  Keyword Attributes                                                                                           
 ========== ===========================================
-WIFI	    instrument, detector, date, time
+WFI	    instrument, detector, date, time
 ========== ===========================================
 

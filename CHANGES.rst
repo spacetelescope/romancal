@@ -2,7 +2,7 @@
 =======
 general
 -------
-- Added documentation for dark current reference files. [#193]
+- Added documentation for dark current reference files. [#232]
 
 
 0.3.1 (2021-06-02)
