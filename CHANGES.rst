@@ -2,7 +2,7 @@
 =======
 general
 -------
-- Added documentation for gain step. [#172]
+- Added documentation for gain step. [#231]
 
 
 0.3.1 (2021-06-02)
