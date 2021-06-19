@@ -4,7 +4,7 @@ general
 -------
 - Added documentation for dark current reference files. [#232]
 - Added documentation for gain step. [#231]
-
+- Added documentation for read noise reference files. [#TBD]
 
 0.3.1 (2021-06-02)
 =======
