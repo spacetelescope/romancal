@@ -1,8 +1,31 @@
-0.3.0 (unreleased)
-==================
+0.4.0 (unreleased)
+=======
+general
+-------
+- Added documentation for dark current reference files. [#232]
+- Added documentation for gain step. [#231]
+
+
+0.3.1 (2021-06-02)
+=======
 
 general
 -------
+- Added grism to the CRDS tests [# 225]
+
+
+0.3.0 (2021-05-28)
+=======
+datamodels
+----------
+
+- Added sorting to test parameters to preserve order for tests done by parallel pytest workers. [#136]
+
+- Update setup.cfg to match JWST warnings & error list and initial pass for code fixes. (#188)
+
+general
+-------
+- Added grism to the regression tests [# 222]
 
 - Update README and CHANGES.rst [#195]
 
@@ -10,6 +33,8 @@ general
   pytest workers. [#136]
 
 - Update setup for more strict PEP8 checking [#176]
+
+- Added documentation for mask files. [#181]
 
 datamodels
 ----------

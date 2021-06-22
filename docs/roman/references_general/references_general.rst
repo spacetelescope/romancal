@@ -36,22 +36,46 @@ Most reference files have a one-to-one relationship with calibration steps, e.g.
 there is one step that uses one type of reference file. Some steps, however, use
 several types of reference files and some reference file types are used by more
 than one step. The tables below show the correspondence between pipeline steps and
-refernece file types. The first table is ordered by pipeline step, while the second
+reference file types. The first table is ordered by pipeline step, while the second
 is ordered by reference file type. Links to the reference file types provide detailed
 documentation on each reference file.
 
 +---------------------------------------------+--------------------------------------------------+
-| Pipeline Step                               | Reference File Type (REFTYPE)                    |
+| Pipeline Step                               | Reference File Type (reftype)                    |
 +=============================================+==================================================+
 +---------------------------------------------+--------------------------------------------------+
 | :ref:`flatfield <flatfield_step>`           | :ref:`FLAT <flat_reffile>`                       |
 +---------------------------------------------+--------------------------------------------------+
+| :dark_current <dark_current_step>           | :ref:`DARK <dark_reffile>`                       |
++---------------------------------------------+--------------------------------------------------+
+| :ref:`gain_scale <gain_scale_step>`         | :ref:`GAIN <gain_reffile>`                       |
++---------------------------------------------+--------------------------------------------------+
+| jump TBD                                    | :ref:`GAIN <gain_reffile>`                       |
++                                             +--------------------------------------------------+
+|                                             | READNOISE TBD                                    |
++---------------------------------------------+--------------------------------------------------+
+| dq_init TBD                                 | MASK TBD with DQ                                 |
++---------------------------------------------+--------------------------------------------------+
+| ramp_fitting TBD                            | :ref:`GAIN <gain_reffile>`                       |
++                                             +--------------------------------------------------+
+|                                             | READNOISE TBD                                    |
++---------------------------------------------+--------------------------------------------------+
 
 
 +--------------------------------------------------+---------------------------------------------+
-| Reference File Type (REFTYPE)                    | Pipeline Step                               |
+| Reference File Type (reftype)                    | Pipeline Step                               |
 +==================================================+=============================================+
 | :ref:`FLAT <flat_reffile>`                       | :ref:`flatfield <flatfield_step>`           |
++--------------------------------------------------+---------------------------------------------+
+| :ref:`DARK <dark_reffile>`                       | dark_current <dark_current_step>            |
++--------------------------------------------------+---------------------------------------------+
+| :ref:`GAIN <gain_reffile>`                       | :ref:`gain_scale <gain_scale_step>`         |
++                                                  +---------------------------------------------+
+|                                                  | jump TBD                                    |
++                                                  +---------------------------------------------+
+|                                                  | ramp_fitting TBD                            |
++--------------------------------------------------+---------------------------------------------+
+| MASK TBD with DQ                                 | dq_init TBD                                 |
 +--------------------------------------------------+---------------------------------------------+
 
 .. _`Standard ASDF metadata`:
