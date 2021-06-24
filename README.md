@@ -119,7 +119,7 @@ two environment variables:
 
 Documentation (built daily from the Github `master` branch) is available at:
 
-https://roman-pipeline.readthedocs.io/en/latest/
+https://roman-cal-pipeline.readthedocs.io/en/latest/
 
 To build the docs yourself, clone this repository and build the documentation with:
 
@@ -136,9 +136,7 @@ We welcome contributions and feedback on the project. Please follow the
 We strive to provide a welcoming community to all of our users by abiding with
 the [Code of Conduct](CODE_OF_CONDUCT.md).
 
-If you have questions or concerns regarding the software, please open an issue
-at https://github.com/spacetelescope/roman/issues or
-contact the [ROMAN Help Desk](https://romanhelp.stsci.edu).
+If you have questions or concerns regarding the software, please open an [issue](https://github.com/spacetelescope/romancal/issues).
 
 
 ## Software vs DMS build version map
@@ -211,7 +209,7 @@ If you would like to run a specific test, find its name or ID and use the `-k` o
 
     pytest --bigdata romancal/regtest -k test_flat
 
-    If developers need to update the truth files in our nightly regression tests,
-    there are instructions in this wiki.
+If developers need to update the truth files in our nightly regression tests,
+there are instructions in this wiki.
 
-    https://github.com/spacetelescope/jwst/wiki/Maintaining-Regression-Tests
+https://github.com/spacetelescope/jwst/wiki/Maintaining-Regression-Tests
