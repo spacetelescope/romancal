@@ -17,7 +17,7 @@ log.setLevel(logging.DEBUG)
 __all__ = ["JumpStep"]
 
 
-class JumpStep(Step):
+class JumpStep(RomanStep):
     """
     JumpStep: Performs CR/jump detection. The 2-point difference method is
     applied.
@@ -46,7 +46,6 @@ class JumpStep(Step):
             r_gdq = input_model.groupdq
             r_pdq = input_model.pixeldq
             r_err = input_model.err
-            r_refout = input_model.refout
 
             frames_per_group = meta.exposure.nframes
 
@@ -55,7 +54,6 @@ class JumpStep(Step):
             gdq = np.broadcast_to(r_gdq, (1,) + r_gdq.shape)
             pdq = np.broadcast_to(r_pdq, (1,) + r_pdq.shape)
             err = np.broadcast_to(r_err, (1,) + r_err.shape)
-            refout = np.broadcast_to(r_refout, (1,) + r_refout.shape)
 
             tstart = time.time()
 
