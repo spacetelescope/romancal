@@ -4,7 +4,7 @@
 general
 -------
 
-- Locked romancal library dependency versions for RAD (0.1.0) and RDM (0.1.2). [# 246]
+- Locked romancal library dependency version RDM (0.1.2). [# 246]
 
 
 documentation
