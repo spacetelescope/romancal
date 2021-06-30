@@ -1,6 +1,12 @@
 0.4.0 (unreleased)
 =======
 
+general
+-------
+
+- Locked romancal library dependency version RDM (0.1.2). [# 246]
+
+
 documentation
 -------------
 
