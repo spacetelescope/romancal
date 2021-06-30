@@ -6,7 +6,9 @@ import warnings
 from romancal.dq_init import DQInitStep
 from romancal.dq_init.dq_initialization import do_dqinit
 #from romancal.datamodels import MaskModel, GuiderRawModel, RampModel, dqflags
-from romancal.datamodels import MaskModel, RampModel, dqflags
+#from romancal.datamodels import MaskModel, RampModel, dqflags
+#from roman_datamodels import MaskRefModel, RampModel, dqflags
+from roman_datamodels.datamodels import MaskRefModel, RampRefModel, dqflags
 
 
 
