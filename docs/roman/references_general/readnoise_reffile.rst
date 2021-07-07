@@ -1,5 +1,5 @@
 :orphan:
 
- .. _readnoise_reffile:
+.. _readnoise_reffile:
 
- .. include:: readnoise_reffile.inc
+.. include:: readnoise_reffile.inc
