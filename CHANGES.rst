@@ -6,6 +6,8 @@ general
 
 - Locked romancal library dependency version RDM (0.1.2). [# 246]
 
+- Added support for DQ. [#252]
+
 
 documentation
 -------------
