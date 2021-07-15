@@ -9,14 +9,14 @@
 
 ![STScI Logo](docs/_static/stsci_logo.png)
 
-**Roman requires Python 3.6 or above and a C compiler for dependencies.**
+**Roman requires Python 3.7 or above and a C compiler for dependencies.**
 
 **Linux and MacOS platforms are tested and supported.  Windows is not currently supported.**
 
 
 ## Installation
 
-The easiest way to install the latest `roman` release into a fresh virtualenv or conda environment is
+The easiest way to install the latest `romancal` release into a fresh virtualenv or conda environment is
 
     pip install romancal
 
@@ -49,18 +49,11 @@ You can install the latest released version via `pip`.  From a bash shell:
     conda activate <env_name>
     pip install romancal
 
-You can also install a specific version (from `romancal 0.17.0` onward):
+You can also install a specific version (from `romancal 0.1.0` onward):
 
     conda create -n <env_name> python
     conda activate <env_name>
-    pip install romancal==0.17.1
-
-Installing specific versions before `romancal 0.17.0` need to be installed from Github:
-
-    conda create -n <env_name> python
-    conda activate <env_name>
-    pip install git+https://github.com/spacetelescope/romancal@0.16.2
-
+    pip install romancal==0.3.0
 
 ### Installing the development version from Github
 
@@ -70,46 +63,6 @@ Github master branch:
     conda create -n <env_name> python
     conda activate <env_name>
     pip install git+https://github.com/spacetelescope/romancal
-
-
-### Installing a DMS Operational Build
-
-There may be occasions where an exact copy of an operational DMS build is
-desired (e.g. for validation testing or debugging operational issues).
-We package releases for DMS builds via environment snapshots that specify the
-exact versions of all packages to be installed. This method may result in more
-stable processing than what was outlined above for installing a particular
-tagged release, because that method installs the latest versions of dependency
-packages, while this method installs dependencies pinned to particular versions
-that have been well tested.
-
-To install a particular DMS build, consult the
-[Software vs DMS build version map](https://github.com/spacetelescope/romancal#software-vs-dms-build-version-map)
-table shown below to determine the correct roman tag. For example, to install the
-version of `romancal` used in DMS build 7.5, use romancal tag 0.16.1. The overall
-procedure is similar to the 3-step process outlined in the previous section, but the
-details of each command vary, due to the use of environment snapshot files that specify
-all of the particular packages to install. Also note that different snapshot files are
-used for Linux and Mac OS systems.
-
-Linux:
-
-    conda create -n <env_name> --file https://ssb.stsci.edu/releases/romandp/0.16.1/conda_python_stable-deps.txt
-    conda activate <env_name>
-    pip install -r https://ssb.stsci.edu/releases/romandp/0.16.1/reqs_stable-deps.txt
-
-MacOS:
-
-    conda create -n <env_name> --file https://ssb.stsci.edu/releases/romandp/0.16.1/conda_python_macos-stable-deps.txt
-    conda activate <env_name>
-    pip install -r https://ssb.stsci.edu/releases/romandp/0.16.1/reqs_macos-stable-deps.txt
-
-Each DMS delivery has its own installation instructions, which may be found in
-the corresponding release documentation linked from this page:
-https://github.com/astroconda/astroconda-releases/tree/master/romandp
-The installation procedures may change from time to time, so consulting the
-documentation page for the specific version in question is the best way to get
-that version installed.
 
 
 ### Installing for Developers
@@ -159,21 +112,20 @@ To run the pipeline outside the STScI network, CRDS must be configured by settin
 two environment variables:
 
     export CRDS_PATH=$HOME/crds_cache
-    export CRDS_SERVER_URL=https://roman-crds.stsci.edu
+    export CRDS_SERVER_URL=https://roman-crds-test.stsci.edu
 
 
 ## Documentation
 
 Documentation (built daily from the Github `master` branch) is available at:
 
-https://roman-pipeline.readthedocs.io/en/latest/
+https://roman-cal-pipeline.readthedocs.io/en/latest/
 
 To build the docs yourself, clone this repository and build the documentation with:
 
     pip install -e .[docs]
     cd docs
     make html
-    make latexpdf
 
 
 ## Contributions and Feedback
@@ -184,16 +136,17 @@ We welcome contributions and feedback on the project. Please follow the
 We strive to provide a welcoming community to all of our users by abiding with
 the [Code of Conduct](CODE_OF_CONDUCT.md).
 
-If you have questions or concerns regarding the software, please open an issue
-at https://github.com/spacetelescope/roman/issues or
-contact the [ROMAN Help Desk](https://romanhelp.stsci.edu).
+If you have questions or concerns regarding the software, please open an [issue](https://github.com/spacetelescope/romancal/issues).
 
 
 ## Software vs DMS build version map
 
-| roman tag | DMS build | CRDS_CONTEXT |   Date     |          Notes                                |
+| roman tag | DMS build | CRDS_CONTEXT |   Date    |          Notes                                |
 | -------- | --------- | ------------ | ---------- | ----------------------------------------------|
-| 0.1.0    | 0.0       |  003         | Nov  2020  | Release for Build 0.0
+| 0.1.0    | 0.0       |  003         | Nov  2020  | Release for Build 0.0                         |
+| 0.2.0    | 0.1       |  004         | Mar  2021  | Release for Build 0.1                         |
+| 0.3.0    | 0.2       |  007         | May  2021  | Release for Build 0.2                         |
+| 0.3.1    | 0.2       |  007         | Jun  2021  | Release for Build 0.2 CRDS tests              |
 
 Note: CRDS_CONTEXT values flagged with an asterisk in the above table are estimates
 (formal CONTEXT deliveries are only provided with final builds).
@@ -232,4 +185,31 @@ Need to parallelize your test runs over 8 cores?
 
 ## Regression Tests
 
-TBD
+Latest regression test results can be found here (STScI staff only):
+
+https://plwishmaster.stsci.edu:8081/job/RT/job/romancal/
+
+
+To run the regression tests on your local machine, get the test dependencies
+and set the environment variable TEST_BIGDATA to our Artifactory server
+(STSci staff members only):
+
+    pip install -e ".[test]"
+    export TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory
+
+To run all the regression tests (except the very slow ones):
+
+    pytest --bigdata romancal/regtest
+
+You can control where the test results are written with the
+`--basetemp=<PATH>` arg to `pytest`.  _NOTE that `pytest` will wipe this directory clean
+for each test session, so make sure it is a scratch area._
+
+If you would like to run a specific test, find its name or ID and use the `-k` option:
+
+    pytest --bigdata romancal/regtest -k test_flat
+
+If developers need to update the truth files in our nightly regression tests,
+there are instructions in this wiki.
+
+https://github.com/spacetelescope/jwst/wiki/Maintaining-Regression-Tests

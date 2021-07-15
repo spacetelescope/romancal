@@ -1,3 +1,7 @@
+"""
+Data model for the output of the ramp fitting step
+"""
+
 from .core import RomanDataModel
 
 __all__ = ["GLS_RampFitModel"]
