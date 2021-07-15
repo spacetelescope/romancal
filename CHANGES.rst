@@ -1,3 +1,19 @@
+0.4.0 (unreleased)
+general
+----------
+
+- Added stcal as dependency on romancal [#]
+
+- Locked romancal library dependency version RDM (0.1.2). [# 246]
+
+documentation
+
+- Updated README weblinks.[#241]
+
+- Added documentation for dark current reference files. [#232]
+
+- Added documentation for gain step. [#231]
+
 0.3.1 (2021-03-18)
 ==================
 
@@ -16,11 +32,11 @@ datamodels
 - Updated model subclass code - changed from returning a generator to a set for use with more complicated model selections. [#169]
 
 - Corrected time format in tests to astropy time objects. [#169]
-  
+
 - Cleaned up old tests to better reflect present models. [#169]
-  
+
 - Added check for core metadata inclusion in nonreference files. [#169]
-  
+
 
 0.2.0 (2021-02-26)
 ==================
