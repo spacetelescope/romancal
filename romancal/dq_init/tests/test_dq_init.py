@@ -3,12 +3,12 @@ import numpy as np
 import pytest
 import warnings
 
-from romancal.dq_init import DQInitStep
+from romancal.dq_init import DQInitStep, dqflags
 from romancal.dq_init.dq_initialization import do_dqinit
 from romancal.stpipe import RomanStep
 
-from roman_datamodels import stnode, table_definitions, dqflags
-from roman_datamodels.testing.factories import _random_dq_def
+from roman_datamodels import stnode #, table_definitions, dqflags
+# from roman_datamodels.testing.factories import _random_dq_def
 from roman_datamodels.datamodels import MaskRefModel, RampModel
 from roman_datamodels.testing import utils as testutil
 from roman_datamodels import datamodels
@@ -30,30 +30,32 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
-    dq, dq_def = make_maskmodel_elements(ysize, xsize)
+    dq = np.zeros(csize[1:], dtype=np.uint32)
+    # dq, dq_def = make_maskmodel_elements(ysize, xsize)
 
     # edit reference file with known bad pixel values
-    dq[100, 100] = 2   # Dead pixel
-    dq[200, 100] = 4   # Hot pixel
-    dq[300, 100] = 8   # Unreliable_slope
-    dq[400, 100] = 16  # NONLINEAR
+    dq[100, 100] = 2   # Saturated pixel
+    dq[200, 100] = 4   # Jump detected pixel
+    dq[300, 100] = 8   # Dropout
+    dq[400, 100] = 32  # Persistence
     dq[500, 100] = 1   # Do_not_use
-    dq[100, 200] = 3   # Dead pixel + do not use
-    dq[200, 200] = 5   # Hot pixel + do not use
-    dq[300, 200] = 9   # Unreliable slope + do not use
-    dq[400, 200] = 17  # NONLINEAR + do not use
+    dq[100, 200] = 3   # Saturated pixel + do not use
+    dq[200, 200] = 5   # Jump detected pixel + do not use
+    dq[300, 200] = 9   # Dropout + do not use
+    dq[400, 200] = 33  # Persistence + do not use
 
     # write mask model
-    ref_data = testutil.mk_mask(arrays=csize[1:],dqsize=len(dq_def[0]))
+    # ref_data = testutil.mk_mask(arrays=csize[1:],dqsize=len(dq_def[0]))
+    ref_data = testutil.mk_mask(csize[1:])
 
     # Copy in maskmodel elemnts
     ref_data['dq'] = dq
-    ref_data['dq_def'] = dq_def
+    # ref_data['dq_def'] = dq_def
 
     ref_data['meta']['instrument']['name'] = instrument
 
     # Instantiate model for pixel flag processing
-    ref_data_model = MaskRefModel(ref_data)
+    # ref_data_model = MaskRefModel(ref_data)
 
     # run do_dqinit
     outfile = do_dqinit(dm_ramp, ref_data)
@@ -61,15 +63,15 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     dqdata = outfile.pixeldq
 
     # assert that the pixels read back in match the mapping from ref data to science data
-    assert(dqdata[100, 100] == dqflags.pixel['DEAD'])
-    assert(dqdata[200, 100] == dqflags.pixel['HOT'])
-    assert(dqdata[300, 100] == dqflags.pixel['UNRELIABLE_SLOPE'])
-    assert(dqdata[400, 100] == dqflags.pixel['NONLINEAR'])
+    assert(dqdata[100, 100] == dqflags.pixel['SATURATED'])
+    assert(dqdata[200, 100] == dqflags.pixel['JUMP_DET'])
+    assert(dqdata[300, 100] == dqflags.pixel['DROPOUT'])
+    assert(dqdata[400, 100] == dqflags.pixel['PERSISTENCE'])
     assert(dqdata[500, 100] == dqflags.pixel['DO_NOT_USE'])
-    assert(dqdata[100, 200] == 1025)
-    assert(dqdata[200, 200] == 2049)
-    assert(dqdata[300, 200] == 16777217)
-    assert (dqdata[400, 200] == 65537)
+    assert(dqdata[100, 200] == dqflags.pixel['SATURATED'] + dqflags.pixel['DO_NOT_USE'])
+    assert(dqdata[200, 200] == dqflags.pixel['JUMP_DET'] + dqflags.pixel['DO_NOT_USE'])
+    assert(dqdata[300, 200] == dqflags.pixel['DROPOUT'] + dqflags.pixel['DO_NOT_USE'])
+    assert (dqdata[400, 200] == dqflags.pixel['PERSISTENCE'] + dqflags.pixel['DO_NOT_USE'])
 
 
 def test_groupdq():
@@ -80,16 +82,19 @@ def test_groupdq():
     ngroups = 5
     xsize = 1032
     ysize = 1024
+    csize = (ngroups, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = testutil.mk_ramp((ngroups, ysize, xsize))
+    dm_ramp = testutil.mk_ramp(csize)
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
-    dq, dq_def = make_maskmodel_elements(ysize, xsize)
+    dq = dq = np.zeros(csize[1:], dtype=np.uint32)
+    # dq, dq_def = make_maskmodel_elements(ysize, xsize)
 
     # write mask model
-    ref_data = testutil.mk_mask(arrays=(ysize, xsize), dqsize=len(dq_def[0]))
+    ref_data = testutil.mk_mask(csize[1:])
+    # ref_data = testutil.mk_mask(arrays=(ysize, xsize), dqsize=len(dq_def[0]))
     ref_data['meta']['instrument']['name'] = instrument
 
     # run the correction step
@@ -110,16 +115,19 @@ def test_err():
     ngroups = 5
     xsize = 1032
     ysize = 1024
+    csize = (ngroups, ysize, xsize)
 
     # create raw input data for step
     dm_ramp = testutil.mk_ramp((ngroups, ysize, xsize))
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
-    dq, dq_def = make_maskmodel_elements(ysize, xsize)
+    dq = np.zeros(csize[1:], dtype=np.uint32)
+    # dq, dq_def = make_maskmodel_elements(ysize, xsize)
 
     # write mask model
-    ref_data = testutil.mk_mask(arrays=(ysize, xsize), dqsize=len(dq_def[0]))
+    ref_data = testutil.mk_mask(csize[1:])
+    # ref_data = testutil.mk_mask(arrays=(ysize, xsize), dqsize=len(dq_def[0]))
     ref_data['meta']['instrument']['name'] = instrument
 
     # Filter out validation warnings from ref_data
@@ -147,38 +155,41 @@ def test_dq_add1_groupdq():
     ngroups = 5
     xsize = 1032
     ysize = 1024
+    csize = (ngroups, ysize, xsize)
 
     # create raw input data for step
     dm_ramp = testutil.mk_ramp((ngroups, ysize, xsize))
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
-    dq, dq_def = make_maskmodel_elements(ysize, xsize)
+    dq = np.zeros(csize[1:], dtype=np.uint32)
+    # dq, dq_def = make_maskmodel_elements(ysize, xsize)
 
     # write reference file with known bad pixel values
     dq[505, 505] = 1   # Do_not_use
-    dq[400, 500] = 3  # do_not_use and dead pixel
+    dq[400, 500] = 3  # do_not_use and saturated pixel
 
     # write mask model
-    ref_data = testutil.mk_mask(arrays=(ysize, xsize), dqsize=len(dq_def[0]))
+    ref_data = testutil.mk_mask(csize[1:])
+    # ref_data = testutil.mk_mask(arrays=(ysize, xsize), dqsize=len(dq_def[0]))
     ref_data['meta']['instrument']['name'] = instrument
 
     # Copy in maskmodel elemnts
     ref_data['dq'] = dq
-    ref_data['dq_def'] = dq_def
+    # ref_data['dq_def'] = dq_def
 
     # Instantiate model for pixel flag processing
     ref_data_model = MaskRefModel(ref_data)
 
     # set a flag in the pixel dq
-    dm_ramp.pixeldq[505, 505] = 4
+    dm_ramp.pixeldq[505, 505] = 4 # Jump detected pixel
 
     # run correction step
     outfile = do_dqinit(dm_ramp, ref_data)
 
     # test if pixels in pixeldq were incremented in value by 1
-    assert(outfile.pixeldq[505, 505] == 5)  # check that previous dq flag is added to mask value
-    assert(outfile.pixeldq[400, 500] == 1025)  # check two flags propagate correctly
+    assert(outfile.pixeldq[505, 505] == dqflags.pixel['JUMP_DET'] + dqflags.pixel['DO_NOT_USE'])  # check that previous dq flag is added to mask value
+    assert(outfile.pixeldq[400, 500] == dqflags.pixel['SATURATED'] + dqflags.pixel['DO_NOT_USE'])  # check two flags propagate correctly
 
 
 # Commented out until CRDS updated with mask information
@@ -219,21 +230,3 @@ def test_dq_add1_groupdq():
 #         assert outfile.dq.ndim == 2
 #     else:
 #         assert outfile.pixeldq.ndim == 2  # a 2-d pixeldq frame exists
-
-
-def make_maskmodel_elements(ysize, xsize):
-    # create a mask model for the dq_init step
-    csize = (ysize, xsize)
-    dq = np.zeros(csize, dtype=np.uint32)
-
-    # define a dq_def extension
-    dqdef = [(0, 1, 'DO_NOT_USE', 'Bad Pixel do not use'),
-             (1, 2, 'DEAD', 'Dead Pixel'),
-             (2, 4, 'HOT', 'Hot pixel'),
-             (3, 8, 'UNRELIABLE_SLOPE', 'Large slope variance'),
-             (4, 16, 'NONLINEAR', 'Pixel highly nonlinear'),
-             (5, 32, 'REFERENCE_PIXEL', 'Reference Pixel')]
-
-    dq_def = np.array((dqdef), dtype=table_definitions.DQ_DEF_DTYPE)
-
-    return dq, dq_def

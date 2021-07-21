@@ -1,15 +1,15 @@
 0.4.0 (unreleased)
-=======
-
 general
--------
+----------
 
-- Locked romancal library dependency version RDM (0.1.2). [# 246]
+- Added stcal as dependency on romancal [# 255]
 
 - Added support for DQ. [#252]
 
+- Locked romancal library dependency version RDM (0.1.2). [# 246]
 
-documentation
+
+Documentation
 -------------
 
 - Updated README weblinks.[#241]
@@ -17,6 +17,7 @@ documentation
 - Added documentation for dark current reference files. [#232]
 
 - Added documentation for gain step. [#231]
+
 
 
 0.3.1 (2021-06-02)
