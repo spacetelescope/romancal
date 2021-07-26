@@ -1,9 +1,12 @@
 #! /usr/bin/env python
 
 from romancal.stpipe import RomanStep
+from romancal.dq_init import dq_initialization
 import roman_datamodels as rdm
 
+
 __all__ = ["DQInitStep"]
+
 
 class DQInitStep(RomanStep):
     """Initialize the Data Quality extension from the
@@ -11,10 +14,12 @@ class DQInitStep(RomanStep):
 
     The dq_init step initializes the pixeldq attribute of the
     input datamodel using the MASK reference file.  For some
-    Guiding exp_types, initalize the dq attribute of the input model
-    instead.  The dq attribute of the MASK model is bitwise OR'd
-    with the pixeldq (or dq) attribute of the input model.
+    Guiding and Image model types, initalize the dq attribute of
+    the input model instead.  The dq attribute of the MASK model
+    is bitwise OR'd with the pixeldq (or dq) attribute of the
+    input model.
     """
+
 
     reference_file_types = ['mask']
 
@@ -23,60 +28,44 @@ class DQInitStep(RomanStep):
 
         Parameters
         ----------
-        input : science datamodel
-            input science datamodel
+        input : Roman datamodel
+            input roman datamodel
 
         Returns
         -------
-        output_model : science datamodel
-            result science datamodel
+        output_model : Roman datamodel
+            result roman datamodel
         """
+        # Open datamodel
+        input_model = self.open_model(input)
 
-        # Try to open the input as a regular RampModel
-        try:
-            input_model = self.open_model(input)
+        # Get reference file paths
+        reference_file_names = {}
+        reffile = self.get_reference_file(input_model, "mask")
+        reference_file_names['mask'] = reffile if reffile != 'N/A' else None
 
-        # Commented Guider Code
-        #
-        #     # Check to see if it's Guider raw data
-        #     if input_model.meta.exposure.type in dq_initialization.guider_list:
-        #         # Reopen as a GuiderRawModel
-        #         input_model.close()
-        #         input_model = rdm.GuiderRawModel(input)
-        #         self.log.info("Input opened as GuiderRawModel")
-        #
-        # except (TypeError, ValueError):
-        #     # If the initial open attempt fails,
-        #     # try to open as a GuiderRawModel
-        #     try:
-        #         input_model = rdm.GuiderRawModel(input)
-        #         self.log.info("Input opened as GuiderRawModel")
-        #     except (TypeError, ValueError):
-        #         self.log.error("Unexpected or unknown input model type")
-        except Exception:
-            self.log.error("Can't open input")
-            raise
+        # Open the relevant reference files as datamodels
+        reference_file_models = {}
 
-        # Retreive the mask reference file name
-        self.mask_filename = self.get_reference_file(input_model, 'mask')
-        self.log.info('Using MASK reference file %s', self.mask_filename)
+        if reffile is not None:
+            reference_file_models['mask'] = rdm.open(reffile)
+            self.log.debug(f'Using MASK ref file: {reffile}')
+        else:
+            reference_file_models['mask'] = None
+            self.log.debug('Using MASK ref file')
 
-        # Check for a valid reference file
-        if self.mask_filename == 'N/A':
-            self.log.warning('No MASK reference file found')
-            self.log.warning('DQ initialization step will be skipped')
-            result = input_model.copy()
-            result.meta.cal_step.dq_init = 'SKIPPED'
-            return result
+        # Apply the DQ step
+        output_model = dq_initialization.do_dqinit(
+            input_model,
+            **reference_file_models,
+        )
 
-        # Load the reference file
-        mask_model = rdm.MaskModel(self.mask_filename)
-
-        # Apply the step
-        result = dq_initialization.correct_model(input_model, mask_model)
-
-        # Close the data models for the input and ref file
+        # Close the input and reference files
         input_model.close()
-        mask_model.close()
+        try:
+            for model in reference_file_models.values():
+                model.close()
+        except AttributeError:
+            pass
 
-        return result
+        return output_model

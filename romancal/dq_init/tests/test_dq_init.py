@@ -1,3 +1,4 @@
+import os
 from stdatamodels.validate import ValidationWarning
 import numpy as np
 import pytest
@@ -5,13 +6,10 @@ import warnings
 
 from romancal.dq_init import DQInitStep, dqflags
 from romancal.dq_init.dq_initialization import do_dqinit
-from romancal.stpipe import RomanStep
 
-from roman_datamodels import stnode #, table_definitions, dqflags
-# from roman_datamodels.testing.factories import _random_dq_def
-from roman_datamodels.datamodels import MaskRefModel, RampModel
+from roman_datamodels import stnode
+from roman_datamodels.datamodels import MaskRefModel, RampModel, ImageModel
 from roman_datamodels.testing import utils as testutil
-from roman_datamodels import datamodels
 
 # Set parameters for multiple runs of data
 args = "xstart, ystart, xsize, ysize, ngroups, instrument, exp_type"
@@ -31,7 +29,6 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
 
     # create a MaskModel elements for the dq input mask
     dq = np.zeros(csize[1:], dtype=np.uint32)
-    # dq, dq_def = make_maskmodel_elements(ysize, xsize)
 
     # edit reference file with known bad pixel values
     dq[100, 100] = 2   # Saturated pixel
@@ -45,22 +42,16 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     dq[400, 200] = 33  # Persistence + do not use
 
     # write mask model
-    # ref_data = testutil.mk_mask(arrays=csize[1:],dqsize=len(dq_def[0]))
     ref_data = testutil.mk_mask(csize[1:])
 
     # Copy in maskmodel elemnts
     ref_data['dq'] = dq
-    # ref_data['dq_def'] = dq_def
 
     ref_data['meta']['instrument']['name'] = instrument
 
-    # Instantiate model for pixel flag processing
-    # ref_data_model = MaskRefModel(ref_data)
-
     # run do_dqinit
     outfile = do_dqinit(dm_ramp, ref_data)
-
-    dqdata = outfile.pixeldq
+    dqdata = outfile['pixeldq']
 
     # assert that the pixels read back in match the mapping from ref data to science data
     assert(dqdata[100, 100] == dqflags.pixel['SATURATED'])
@@ -71,7 +62,7 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     assert(dqdata[100, 200] == dqflags.pixel['SATURATED'] + dqflags.pixel['DO_NOT_USE'])
     assert(dqdata[200, 200] == dqflags.pixel['JUMP_DET'] + dqflags.pixel['DO_NOT_USE'])
     assert(dqdata[300, 200] == dqflags.pixel['DROPOUT'] + dqflags.pixel['DO_NOT_USE'])
-    assert (dqdata[400, 200] == dqflags.pixel['PERSISTENCE'] + dqflags.pixel['DO_NOT_USE'])
+    assert(dqdata[400, 200] == dqflags.pixel['PERSISTENCE'] + dqflags.pixel['DO_NOT_USE'])
 
 
 def test_groupdq():
@@ -90,11 +81,9 @@ def test_groupdq():
 
     # create a MaskModel elements for the dq input mask
     dq = dq = np.zeros(csize[1:], dtype=np.uint32)
-    # dq, dq_def = make_maskmodel_elements(ysize, xsize)
 
     # write mask model
     ref_data = testutil.mk_mask(csize[1:])
-    # ref_data = testutil.mk_mask(arrays=(ysize, xsize), dqsize=len(dq_def[0]))
     ref_data['meta']['instrument']['name'] = instrument
 
     # run the correction step
@@ -123,11 +112,9 @@ def test_err():
 
     # create a MaskModel elements for the dq input mask
     dq = np.zeros(csize[1:], dtype=np.uint32)
-    # dq, dq_def = make_maskmodel_elements(ysize, xsize)
 
     # write mask model
     ref_data = testutil.mk_mask(csize[1:])
-    # ref_data = testutil.mk_mask(arrays=(ysize, xsize), dqsize=len(dq_def[0]))
     ref_data['meta']['instrument']['name'] = instrument
 
     # Filter out validation warnings from ref_data
@@ -163,7 +150,6 @@ def test_dq_add1_groupdq():
 
     # create a MaskModel elements for the dq input mask
     dq = np.zeros(csize[1:], dtype=np.uint32)
-    # dq, dq_def = make_maskmodel_elements(ysize, xsize)
 
     # write reference file with known bad pixel values
     dq[505, 505] = 1   # Do_not_use
@@ -171,12 +157,10 @@ def test_dq_add1_groupdq():
 
     # write mask model
     ref_data = testutil.mk_mask(csize[1:])
-    # ref_data = testutil.mk_mask(arrays=(ysize, xsize), dqsize=len(dq_def[0]))
     ref_data['meta']['instrument']['name'] = instrument
 
     # Copy in maskmodel elemnts
     ref_data['dq'] = dq
-    # ref_data['dq_def'] = dq_def
 
     # Instantiate model for pixel flag processing
     ref_data_model = MaskRefModel(ref_data)
@@ -230,3 +214,56 @@ def test_dq_add1_groupdq():
 #         assert outfile.dq.ndim == 2
 #     else:
 #         assert outfile.pixeldq.ndim == 2  # a 2-d pixeldq frame exists
+
+
+@pytest.mark.parametrize(
+    "instrument, exptype",
+    [
+        ("WFI", "WFI_IMAGE"),
+    ]
+)
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
+def test_dqinit_step_interface(instrument, exptype):
+    """Test that the basic inferface works for data requiring a FLAT reffile"""
+
+    # Set test size
+    shape = (20, 20)
+
+    # Create test image model
+    wfi_image = testutil.mk_level2_image(arrays=True)
+    wfi_image.meta.instrument.name = instrument
+    wfi_image.meta.instrument.detector = 'WFI01'
+    wfi_image.meta.instrument.optical_element = 'F158'
+    wfi_image.meta.exposure.type = exptype
+    wfi_image.data = np.ones(shape, dtype=np.float32)
+    wfi_image.dq = np.zeros(shape, dtype=np.uint32)
+    wfi_image.err = np.zeros(shape, dtype=np.float32)
+    wfi_image.var_poisson = np.zeros(shape, dtype=np.float32)
+    wfi_image.var_rnoise = np.zeros(shape, dtype=np.float32)
+    wfi_image.var_flat = np.zeros(shape, dtype=np.float32)
+    wfi_image.area = np.ones(shape, dtype=np.float32)
+    wfi_image_model = ImageModel(wfi_image)
+
+    # Create mask model
+    maskref = stnode.MaskRef()
+    meta = {}
+    testutil.add_ref_common(meta)
+    meta['instrument']['optical_element'] = 'F158'
+    meta['instrument']['detector'] = 'WFI01'
+    meta['reftype'] = 'MASK'
+    maskref['meta'] = meta
+    maskref['data'] = np.ones(shape, dtype=np.float32)
+    maskref['dq'] = np.zeros(shape, dtype=np.uint16)
+    maskref['err'] = (np.random.random(shape) * 0.05).astype(np.float32)
+    maskref_model = MaskRefModel(maskref)
+
+    # Perform Data Quality application step
+    result = DQInitStep.call(wfi_image_model, override_mask=maskref_model)
+
+    # Test dq_init results
+    assert (result.data == wfi_image.data).all()
+    assert result.dq.shape == shape
+    assert result.meta.cal_step.dq_init == 'COMPLETE'

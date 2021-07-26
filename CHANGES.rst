@@ -4,8 +4,6 @@ general
 
 - Added stcal as dependency on romancal [# 255]
 
-- Added support for DQ. [#252]
-
 - Locked romancal library dependency version RDM (0.1.2). [# 246]
 
 
