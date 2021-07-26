@@ -8,7 +8,7 @@ from romancal.dq_init import DQInitStep, dqflags
 from romancal.dq_init.dq_initialization import do_dqinit
 
 from roman_datamodels import stnode
-from roman_datamodels.datamodels import MaskRefModel, RampModel, ImageModel
+from roman_datamodels.datamodels import MaskRefModel, ImageModel
 from roman_datamodels.testing import utils as testutil
 
 # Set parameters for multiple runs of data
@@ -80,9 +80,6 @@ def test_groupdq():
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
-    dq = dq = np.zeros(csize[1:], dtype=np.uint32)
-
-    # write mask model
     ref_data = testutil.mk_mask(csize[1:])
     ref_data['meta']['instrument']['name'] = instrument
 
@@ -111,9 +108,6 @@ def test_err():
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
-    dq = np.zeros(csize[1:], dtype=np.uint32)
-
-    # write mask model
     ref_data = testutil.mk_mask(csize[1:])
     ref_data['meta']['instrument']['name'] = instrument
 
@@ -162,9 +156,6 @@ def test_dq_add1_groupdq():
     # Copy in maskmodel elemnts
     ref_data['dq'] = dq
 
-    # Instantiate model for pixel flag processing
-    ref_data_model = MaskRefModel(ref_data)
-
     # set a flag in the pixel dq
     dm_ramp.pixeldq[505, 505] = 4 # Jump detected pixel
 
@@ -172,8 +163,10 @@ def test_dq_add1_groupdq():
     outfile = do_dqinit(dm_ramp, ref_data)
 
     # test if pixels in pixeldq were incremented in value by 1
-    assert(outfile.pixeldq[505, 505] == dqflags.pixel['JUMP_DET'] + dqflags.pixel['DO_NOT_USE'])  # check that previous dq flag is added to mask value
-    assert(outfile.pixeldq[400, 500] == dqflags.pixel['SATURATED'] + dqflags.pixel['DO_NOT_USE'])  # check two flags propagate correctly
+    # check that previous dq flag is added to mask value
+    assert(outfile.pixeldq[505, 505] == dqflags.pixel['JUMP_DET'] + dqflags.pixel['DO_NOT_USE'])
+    # check two flags propagate correctly
+    assert(outfile.pixeldq[400, 500] == dqflags.pixel['SATURATED'] + dqflags.pixel['DO_NOT_USE'])
 
 
 # Commented out until CRDS updated with mask information
