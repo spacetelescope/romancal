@@ -79,6 +79,6 @@ def apply_dqinit(science, mask):
         (isinstance(science, ImageModel)):
         science.dq = np.bitwise_or(science.dq, mask.dq)
     else:
-        science['pixeldq'] = np.bitwise_or(science.pixeldq, mask.dq)
+        science.pixeldq = np.bitwise_or(science.pixeldq, mask.dq)
 
     return science
