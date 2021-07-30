@@ -12,8 +12,8 @@ MAXIMUM_CORES = ['none', 'quarter', 'half', 'all']
 
 @pytest.fixture(scope="module")
 def generate_wfi_reffiles(tmpdir_factory):
-    gainfile = str(tmpdir_factory.mktemp("ndata").join("gain.fits"))
-    readnoisefile = str(tmpdir_factory.mktemp("ndata").join('readnoise.fits'))
+    gainfile = str(tmpdir_factory.mktemp("ndata").join("gain.asdf"))
+    readnoisefile = str(tmpdir_factory.mktemp("ndata").join('readnoise.asdf'))
 
     ingain = 6
     xsize = 20
@@ -25,7 +25,7 @@ def generate_wfi_reffiles(tmpdir_factory):
 
     inreadnoise = 5
     rnoise = np.ones(shape=(ysize, xsize), dtype=np.float64) * inreadnoise
-    readnoise_model = ReadnoiseModel(data=rnoise)
+    readnoise_model = ReadNoiseModel(data=rnoise)
     readnoise_model.meta.instrument.name = "WFI"
     readnoise_model.save(readnoisefile)
 
@@ -61,8 +61,8 @@ def setup_inputs():
         gain = GainModel(data=gain)
         gain.meta.instrument.name = 'WFI'
 
-        rnmodel = ReadnoiseModel(data=read_noise)
-        rnmodel.meta.instrument.name = 'MIRI'
+        rnmodel = ReadNoiseModel(data=read_noise)
+        rnmodel.meta.instrument.name = 'WFI'  
 
         return rampmodel, gdq, rnmodel, pixdq, err, gain
 
@@ -70,8 +70,8 @@ def setup_inputs():
 
 
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
-def test_one_CR(generate_miri_reffiles, max_cores, setup_inputs):
-    override_gain, override_readnoise = generate_miri_reffiles
+def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
+    override_gain, override_readnoise = generate_wfi_reffiles
 
     grouptime = 3.0
     deltaDN = 5
@@ -146,8 +146,8 @@ def test_wfi(generate_wfi_reffiles, setup_inputs, max_cores):
 
 
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
-def test_two_CRs(generate_miri_reffiles, max_cores, setup_inputs):
-    override_gain, override_readnoise = generate_miri_reffiles
+def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
+    override_gain, override_readnoise = generate_wfi_reffiles
     grouptime = 3.0
     deltaDN = 5
     ingain = 6
@@ -183,8 +183,8 @@ def test_two_CRs(generate_miri_reffiles, max_cores, setup_inputs):
 
 
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
-def test_two_group_integration(generate_miri_reffiles, max_cores, setup_inputs):
-    override_gain, override_readnoise = generate_miri_reffiles
+def test_two_group_integration(generate_wfi_reffiles, max_cores, setup_inputs):
+    override_gain, override_readnoise = generate_wfi_reffiles
     grouptime = 3.0
     ingain = 6
     inreadnoise = 7
@@ -200,8 +200,8 @@ def test_two_group_integration(generate_miri_reffiles, max_cores, setup_inputs):
     assert(out_model.meta.cal_step.jump == 'SKIPPED')
 
 
-def test_four_group_integration(generate_miri_reffiles, setup_inputs):
-    override_gain, override_readnoise = generate_miri_reffiles
+def test_four_group_integration(generate_wfi_reffiles, setup_inputs):
+    override_gain, override_readnoise = generate_wfi_reffiles
     grouptime = 3.0
     ingain = 6
     inreadnoise = 7
@@ -217,8 +217,8 @@ def test_four_group_integration(generate_miri_reffiles, setup_inputs):
     assert(out_model.meta.cal_step.jump == 'SKIPPED')
 
 
-def test_five_group_integration(generate_miri_reffiles, setup_inputs):
-    override_gain, override_readnoise = generate_miri_reffiles
+def test_five_group_integration(generate_wfi_reffiles, setup_inputs):
+    override_gain, override_readnoise = generate_wfi_reffiles
     grouptime = 3.0
     ingain = 6
     inreadnoise = 7
