@@ -40,7 +40,7 @@ class JumpStep(RomanStep):
     def process(self, input):
 
         # Open input as a Roman DataModel (single integration; 3D arrays)
-        with rdm.RampModel(input) as input_model:
+        with rdm.datamodels.RampModel(input) as input_model:
 
             # Extract the needed info from the Roman Data Model
             meta = input_model.meta
