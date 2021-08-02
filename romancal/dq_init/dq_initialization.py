@@ -1,12 +1,14 @@
 import logging
 import numpy as np
 from roman_datamodels.datamodels import ImageModel
+from romancal.dq_init import dq_init_step
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 # Guide star mode exposure types
 GUIDER_LIST = ['WFI_WIM_ACQ','WFI_WIM_TRACK','WFI_WSM_ACQ1','WFI_WSM_ACQ2','WFI_WSM_TRACK']
+
 
 def do_dqinit(input_model, mask=None):
     """Check that the input model pixeldq attribute has the same dimensions as
@@ -32,8 +34,7 @@ def do_dqinit(input_model, mask=None):
 
     # Determine if mask is shapewise compatable with the input
     skip_step = False
-    if (input_model.meta.exposure.type in GUIDER_LIST) or \
-        (isinstance(input_model,ImageModel)):
+    if (input_model.meta.exposure.type in GUIDER_LIST):
         # Check to see if the shape of the mask data array
         # is not equal to the shape of the science data
         if input_model.dq.shape != mask.dq.shape:
@@ -75,8 +76,7 @@ def apply_dqinit(science, mask):
     """
 
     # Set model-specific data quality in output
-    if (science.meta.exposure.type in GUIDER_LIST) or \
-        (isinstance(science, ImageModel)):
+    if (science.meta.exposure.type in GUIDER_LIST):
         science.dq = np.bitwise_or(science.dq, mask.dq)
     else:
         science.pixeldq = np.bitwise_or(science.pixeldq, mask.dq)

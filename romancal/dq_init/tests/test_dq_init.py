@@ -8,7 +8,7 @@ from romancal.dq_init import DQInitStep, dqflags
 from romancal.dq_init.dq_initialization import do_dqinit
 
 from roman_datamodels import stnode
-from roman_datamodels.datamodels import MaskRefModel, ImageModel
+from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
 from roman_datamodels.testing import utils as testutil
 
 # Set parameters for multiple runs of data
@@ -223,22 +223,16 @@ def test_dqinit_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
 
     # Set test size
-    shape = (20, 20)
+    shape = (2, 20, 20)
 
-    # Create test image model
-    wfi_image = testutil.mk_level2_image(arrays=True)
-    wfi_image.meta.instrument.name = instrument
-    wfi_image.meta.instrument.detector = 'WFI01'
-    wfi_image.meta.instrument.optical_element = 'F158'
-    wfi_image.meta.exposure.type = exptype
-    wfi_image.data = np.ones(shape, dtype=np.float32)
-    wfi_image.dq = np.zeros(shape, dtype=np.uint32)
-    wfi_image.err = np.zeros(shape, dtype=np.float32)
-    wfi_image.var_poisson = np.zeros(shape, dtype=np.float32)
-    wfi_image.var_rnoise = np.zeros(shape, dtype=np.float32)
-    wfi_image.var_flat = np.zeros(shape, dtype=np.float32)
-    wfi_image.area = np.ones(shape, dtype=np.float32)
-    wfi_image_model = ImageModel(wfi_image)
+    # Create test science raw model
+    wfi_sci_raw = testutil.mk_level1_science_raw(shape)
+    wfi_sci_raw.meta.instrument.name = instrument
+    wfi_sci_raw.meta.instrument.detector = 'WFI01'
+    wfi_sci_raw.meta.instrument.optical_element = 'F158'
+    wfi_sci_raw.meta.exposure.type = exptype
+    wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
+    wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Create mask model
     maskref = stnode.MaskRef()
@@ -248,15 +242,15 @@ def test_dqinit_step_interface(instrument, exptype):
     meta['instrument']['detector'] = 'WFI01'
     meta['reftype'] = 'MASK'
     maskref['meta'] = meta
-    maskref['data'] = np.ones(shape, dtype=np.float32)
-    maskref['dq'] = np.zeros(shape, dtype=np.uint16)
-    maskref['err'] = (np.random.random(shape) * 0.05).astype(np.float32)
+    maskref['data'] = np.ones(shape[1:], dtype=np.float32)
+    maskref['dq'] = np.zeros(shape[1:], dtype=np.uint16)
+    maskref['err'] = (np.random.random(shape[1:]) * 0.05).astype(np.float32)
     maskref_model = MaskRefModel(maskref)
 
     # Perform Data Quality application step
-    result = DQInitStep.call(wfi_image_model, override_mask=maskref_model)
+    result = DQInitStep.call(wfi_sci_raw_model, override_mask=maskref_model)
 
     # Test dq_init results
-    assert (result.data == wfi_image.data).all()
-    assert result.dq.shape == shape
+    assert (result.data == wfi_sci_raw.data).all()
+    assert result.pixeldq.shape == shape[1:]
     assert result.meta.cal_step.dq_init == 'COMPLETE'
