@@ -1,7 +1,5 @@
 import logging
 import numpy as np
-from roman_datamodels.datamodels import ImageModel
-from romancal.dq_init import dq_init_step
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

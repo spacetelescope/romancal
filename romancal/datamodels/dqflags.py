@@ -19,8 +19,6 @@ which provides 32 bits. Bits of an integer are most easily referred to using
 the formula `2**bit_number` where `bit_number` is the 0-index bit of interest.
 """
 
-from stcal.dqflags import interpret_bit_flags, dqflags_to_mnemonics
-
 # Pixel-specific flags
 pixel = {'GOOD':             0,      # No bits set, all is good
          'DO_NOT_USE':       2**0,   # Bad pixel. Do not use.
