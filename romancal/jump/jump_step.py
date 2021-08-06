@@ -5,8 +5,9 @@ Detect jumps in a science image
 import roman_datamodels as rdm
 import numpy as np
 import time
+
 from ..stpipe import RomanStep
-from .. roman_datamodels import dqflags
+from .. datamodels import dqflags
 from stcal.jump.jump import detect_jumps
 
 import logging
@@ -38,7 +39,7 @@ class JumpStep(RomanStep):
     def process(self, input):
 
         # Open input as a Roman DataModel (single integration; 3D arrays)
-        with rdm.RampModel(input) as input_model:
+        with rdm.datamodels.RampModel(input) as input_model:
 
             # Extract the needed info from the Roman Data Model
             meta = input_model.meta
@@ -98,8 +99,8 @@ class JumpStep(RomanStep):
             dqflags_d = {
                 "GOOD": dqflags.group["GOOD"],
                 "DO_NOT_USE": dqflags.group["DO_NOT_USE"],
-                "SATURATED":  dqflags.group["SATURATED"],
-                "JUMP_DET":  dqflags.group["JUMP_DET"]
+                "SATURATED": dqflags.group["SATURATED"],
+                "JUMP_DET": dqflags.group["JUMP_DET"]
             }
 
             gdq, pdq = detect_jumps(frames_per_group, data, gdq, pdq, err,
