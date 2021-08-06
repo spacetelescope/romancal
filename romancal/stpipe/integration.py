@@ -23,4 +23,5 @@ def get_steps():
     return [
         ("romancal.step.DarkCurrentStep", None, False),
         ("romancal.step.FlatFieldStep", None, False),
+        ("romancal.step.JumpStep", None, False),
     ]
