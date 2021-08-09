@@ -41,7 +41,7 @@ def test_flatfield_step_interface(instrument, exptype):
     meta = {}
     testutil.add_ref_common(meta)
     meta['instrument']['optical_element'] = 'F158'
-    meta['instrument']['dectector'] = 'WFI01'
+    meta['instrument']['detector'] = 'WFI01'
     meta['reftype'] = 'FLAT'
     flatref['meta'] = meta
     flatref['data'] = np.ones(shape, dtype=np.float32)
