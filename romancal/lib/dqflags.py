@@ -19,8 +19,6 @@ which provides 32 bits. Bits of an integer are most easily referred to using
 the formula `2**bit_number` where `bit_number` is the 0-index bit of interest.
 """
 
-from stcal import dqflags
-
 # Pixel-specific flags
 pixel = {'GOOD':             0,      # No bits set, all is good
          'DO_NOT_USE':       2**0,   # Bad pixel. Do not use.
@@ -64,53 +62,3 @@ group = {'GOOD':       pixel['GOOD'],
          'JUMP_DET':   pixel['JUMP_DET'],
          'DROPOUT':    pixel['DROPOUT'],
          }
-
-def interpret_bit_flags(bit_flags, flip_bits=None, mnemonic_map=pixel):
-    """Converts input bit flags to a single integer value (bit mask) or `None`.
-
-    Wraps `astropy.nddate.bitmask.interpret_bit_flags`, allowing the
-    bit mnemonics to be used in place of integers.
-
-    Parameters
-    ----------
-    bit_flags : int, str, list, None
-        See `astropy.nddate.bitmask.interpret_bit_flags`.
-        Also allows strings using Roman mnemonics
-
-    flip_bits : bool, None
-        See `astropy.nddata.bitmask.interpret_bit_flags`.
-
-    mnemonic_map : {str: int[,...]}
-        Dictionary associating the mnemonic string to an integer value
-        representing the set bit for that mnemonic.
-
-    Returns
-    -------
-    bitmask : int or None
-        Returns an integer bit mask formed from the input bit value or `None`
-        if input ``bit_flags`` parameter is `None` or an empty string.
-        If input string value was prepended with '~' (or ``flip_bits`` was set
-        to `True`), then returned value will have its bits flipped
-        (inverse mask).
-    """
-    return dqflags.interpret_bit_flags(bit_flags, flip_bits, mnemonic_map)
-
-def dqflags_to_mnemonics(dqflags, mnemonic_map=pixel):
-    """Interpret value as bit flags and return the mnemonics
-
-    Parameters
-    ----------
-    dqflags : int-like
-        The value to interpret as DQ flags
-
-    mnemonic_map: {str: int[,...]}
-        Dictionary associating the mnemonic string to an integer value
-        representing the set bit for that mnemonic.
-
-    Returns
-    -------
-    mnemonics : {str[,...]}
-        Set of mnemonics represented by the set bit flags
-
-    """
-    return dqflags.dqflags_to_mnemonics(dqflags, mnemonic_map)

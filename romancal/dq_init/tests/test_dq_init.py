@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 import warnings
 
-from romancal.dq_init import DQInitStep, dqflags
+from romancal.lib import dqflags
+from romancal.dq_init import DQInitStep
 from romancal.dq_init.dq_initialization import do_dqinit
 
 from roman_datamodels import stnode
@@ -167,47 +168,6 @@ def test_dq_add1_groupdq():
     assert(outfile.pixeldq[505, 505] == dqflags.pixel['JUMP_DET'] + dqflags.pixel['DO_NOT_USE'])
     # check two flags propagate correctly
     assert(outfile.pixeldq[400, 500] == dqflags.pixel['SATURATED'] + dqflags.pixel['DO_NOT_USE'])
-
-
-# Commented out until CRDS updated with mask information
-# # Set parameters for multiple runs of guider data
-# # args = "xstart, ystart, xsize, ysize, nints, ngroups, instrument, exp_type, detector"
-# # test_data = [(1, 1, 2048, 2048, 2, 2, 'FGS', 'FGS_ID-IMAGE', 'GUIDER1'),
-# #              (1, 1, 1032, 1024, 1, 5, 'MIRI', 'MIR_IMAGE', 'MIRIMAGE')]
-# # ids = ["GuiderRawModel-Image", "RampModel"]
-# # Set parameters for multiple runs of data
-# args = "xstart, ystart, xsize, ysize, ngroups, instrument, exp_type, detector"
-# test_data = [(1, 1, 2048, 2048, 2, 'WFI', 'WFI_IMAGE','WFI04')]
-# ids = ["RampModel"]
-#
-#
-# @pytest.mark.parametrize(args, test_data, ids=ids)
-# #def test_fullstep(xstart, ystart, xsize, ysize, nints, ngroups, instrument, exp_type, detector):
-# def test_fullstep(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type, detector):
-#     """Test that the full step runs"""
-#
-#     # create raw input data for step
-#     #dm_ramp = make_rawramp(instrument, ngroups, ysize, xsize, ystart, xstart, exp_type)
-#     dm_ramp = testutil.mk_ramp((ngroups, ysize, xsize))
-#
-#     dm_ramp.meta.instrument.name = instrument
-#     dm_ramp.meta.instrument.detector = detector
-#     # dm_ramp.meta.observation.date = '2000-06-01'
-#     # dm_ramp.meta.observation.time = '00:00:00'
-#
-#     # Instantiate model for pixel flag processing
-#     dm_ramp_model = RampModel(dm_ramp)
-#
-#     # run the full step
-#     #outfile = DQInitStep.call(dm_ramp)
-#     outfile = DQInitStep.call(dm_ramp_model)
-#
-#     # test that a pixeldq frame has been initlialized
-#     if instrument == "FGS":
-#         assert outfile.dq.ndim == 2
-#     else:
-#         assert outfile.pixeldq.ndim == 2  # a 2-d pixeldq frame exists
-
 
 @pytest.mark.parametrize(
     "instrument, exptype",
