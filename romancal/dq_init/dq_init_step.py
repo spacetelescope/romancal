@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+import numpy as np
+
 from romancal.stpipe import RomanStep
 from romancal.dq_init import dq_initialization
 from roman_datamodels.datamodels import RampModel
@@ -50,6 +52,9 @@ class DQInitStep(RomanStep):
                 # required dummy entries that may not be in input_model)
                 if isinstance(input_ramp[key],dict):
                     input_ramp[key].update(input_model.__getattr__(key))
+                elif isinstance(input_ramp[key],np.ndarray):
+                    # Cast input ndarray as RampModel dtype
+                    input_ramp[key] = input_model.__getattr__(key).astype(input_ramp[key].dtype)
                 else:
                     input_ramp[key] = input_model.__getattr__(key)
 

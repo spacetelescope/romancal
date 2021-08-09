@@ -169,6 +169,7 @@ def test_dq_add1_groupdq():
     # check two flags propagate correctly
     assert(outfile.pixeldq[400, 500] == dqflags.pixel['SATURATED'] + dqflags.pixel['DO_NOT_USE'])
 
+
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
@@ -214,3 +215,7 @@ def test_dqinit_step_interface(instrument, exptype):
     assert (result.data == wfi_sci_raw.data).all()
     assert result.pixeldq.shape == shape[1:]
     assert result.meta.cal_step.dq_init == 'COMPLETE'
+    assert result.data.dtype == np.float32
+    assert result.err.dtype == np.float32
+    assert result.pixeldq.dtype == np.uint32
+    assert result.groupdq.dtype == np.uint8
