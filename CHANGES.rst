@@ -2,11 +2,13 @@
 general
 ----------
 
-- Added DQ support. [# 262]
+- Updates for readthedocs [#260]
 
-- Added stcal as dependency on romancal [# 255]
+- Added DQ support. [#262]
 
-- Locked romancal library dependency version RDM (0.1.2). [# 246]
+- Added stcal as dependency on romancal [#255]
+
+- Locked romancal library dependency version RDM (0.1.2). [#246]
 
 
 Documentation

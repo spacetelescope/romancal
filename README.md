@@ -1,7 +1,7 @@
 # Roman Calibration Pipeline
 
 
-[![Documentation Status](https://readthedocs.org/projects/roman-cal-pipeline/badge/?version=latest)](https://roman-cal-pipeline.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/roman-pipeline/badge/?version=latest)](https://roman-pipeline.readthedocs.io/en/latest/?badge=latest)
 ![Roman CI](https://github.com/spacetelescope/romancal/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/spacetelescope/romancal/branch/main/graph/badge.svg?token=S6KW6J7FZP)](https://codecov.io/gh/spacetelescope/romancal)
 [![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](http://www.stsci.edu)
@@ -119,7 +119,7 @@ two environment variables:
 
 Documentation (built daily from the Github `master` branch) is available at:
 
-https://roman-cal-pipeline.readthedocs.io/en/latest/
+https://roman-pipeline.readthedocs.io/en/latest/
 
 To build the docs yourself, clone this repository and build the documentation with:
 
