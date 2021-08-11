@@ -22,6 +22,7 @@ def get_steps():
     # romancal.step to keep the CLI snappy.
     return [
         ("romancal.step.DarkCurrentStep", None, False),
+        ("romancal.step.DQInitStep", None, False),
         ("romancal.step.FlatFieldStep", None, False),
         ("romancal.step.JumpStep", None, False),
     ]
