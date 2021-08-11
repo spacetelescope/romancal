@@ -58,7 +58,7 @@ You can also install a specific version (from `romancal 0.1.0` onward):
 ### Installing the development version from Github
 
 You can install the latest development version (not as well tested) from the
-Github master branch:
+Github main branch:
 
     conda create -n <env_name> python
     conda activate <env_name>
@@ -117,7 +117,7 @@ two environment variables:
 
 ## Documentation
 
-Documentation (built daily from the Github `master` branch) is available at:
+Documentation (built daily from the Github `main` branch) is available at:
 
 https://roman-pipeline.readthedocs.io/en/latest/
 
