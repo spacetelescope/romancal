@@ -2,12 +2,12 @@
 Detect jumps in a science image
 """
 
-import roman_datamodels as rdm
+from roman_datamodels import datamodels as rdd
 import numpy as np
 import time
 
-from ..stpipe import RomanStep
-from .. datamodels import dqflags
+from romancal.stpipe import RomanStep
+from romancal.lib import dqflags
 from stcal.jump.jump import detect_jumps
 
 import logging
@@ -39,7 +39,7 @@ class JumpStep(RomanStep):
     def process(self, input):
 
         # Open input as a Roman DataModel (single integration; 3D arrays)
-        with rdm.datamodels.RampModel(input) as input_model:
+        with rdd.RampModel(input) as input_model:
 
             # Extract the needed info from the Roman Data Model
             meta = input_model.meta
@@ -51,10 +51,10 @@ class JumpStep(RomanStep):
             frames_per_group = meta.exposure.nframes
 
             # Modify the arrays for input into the 'common' jump (4D)
-            data = np.broadcast_to(r_data, (1,) + r_data.shape)
-            gdq = np.broadcast_to(r_gdq, (1,) + r_gdq.shape)
-            pdq = np.broadcast_to(r_pdq, (1,) + r_pdq.shape)
-            err = np.broadcast_to(r_err, (1,) + r_err.shape)
+            data = r_data[np.newaxis, :].astype(np.float32)
+            gdq = r_gdq[np.newaxis, :].astype(np.uint9)
+            pdq = r_pdq[np.newaxis, :].astype(np.uint32)
+            err = r_err[np.newaxis, :].astype(np.float32)
 
             tstart = time.time()
 
@@ -86,15 +86,16 @@ class JumpStep(RomanStep):
             # Get the gain and readnoise reference files
             gain_filename = self.get_reference_file(input_model, 'gain')
             self.log.info('Using GAIN reference file: %s', gain_filename)
-            gain_model = rdm.GainModel(gain_filename)
+            gain_model = rdd.GainRefModel(gain_filename)
             gain_2d = gain_model.data
 
             readnoise_filename = self.get_reference_file(input_model, 'readnoise')
             self.log.info('Using READNOISE reference file: %s',
                           readnoise_filename)
-            readnoise_model = rdm.ReadnoiseModel(readnoise_filename)
+            readnoise_model = rdd.ReadnoiseRefModel(readnoise_filename)
             readnoise_2d = readnoise_model.data
 
+            # DG 0810/21:  leave for now; make dqflags changes in a later, separate PR
             dqflags_d = {}  # Dict of DQ flags
             dqflags_d = {
                 "GOOD": dqflags.group["GOOD"],
