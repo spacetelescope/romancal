@@ -29,6 +29,7 @@ def setup(app):
     except AttributeError:
         app.add_stylesheet("stsci.css")
 
+
 conf = ConfigParser()
 
 
@@ -44,7 +45,7 @@ conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
 setup_cfg = dict(conf.items('metadata'))
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.3'
+# needs_sphinx = '1.3'
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
@@ -74,9 +75,6 @@ if sys.version_info[0] == 2:
         os.path.abspath(os.path.join(os.path.dirname(__file__),
                                      'local/python2_local_links.inv')))
 
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
@@ -323,15 +321,15 @@ htmlhelp_basename = 'romandoc'
 #    'pointsize': '14pt',
 #    # Additional stuff for the LaTeX preamble.
 #    'preamble': r'''\usepackage{enumitem} \setlistdepth{99}'''
-#}
+# }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-#latex_documents = [
+# latex_documents = [
 #  ('index', 'roman.tex', u'Roman Pipeline Documentation',
 #   u'roman', 'manual'),
-#]
+# ]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -345,13 +343,13 @@ htmlhelp_basename = 'romandoc'
 # latex_show_pagerefs = False
 
 # If true, show URL addresses after external links.
-#latex_show_urls = 'True'
+# latex_show_urls = 'True'
 
 # Documents to append as an appendix to all manuals.
 # latex_appendices = []
 
 # If false, no module index is generated.
-#latex_domain_indices = True
+# latex_domain_indices = True
 
 
 # -- Options for manual page output ---------------------------------------
