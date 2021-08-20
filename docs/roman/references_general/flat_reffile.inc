@@ -4,7 +4,7 @@ FLAT Reference File
 -------------------
 
 :REFTYPE: FLAT
-:Data model: `roman_datamodels.FlatModel`
+:Data model: `roman_datamodels.FlatRefModel`
 
 The FLAT reference file contains pixel-by-pixel detector response values.
 It is used.
