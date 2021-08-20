@@ -1,5 +1,6 @@
-from ..stpipe import RomanStep
-from .. import datamodels
+from romancal.stpipe import RomanStep
+from roman_datamodels import datamodels as rdd
+#from .. import datamodels
 from . import dark_sub
 
 
@@ -21,7 +22,7 @@ class DarkCurrentStep(RomanStep):
     def process(self, input):
 
         # Open the input data model
-        with datamodels.RampModel(input) as input_model:
+        with rdd.open(input) as input_model:
 
             # Get the name of the dark reference file to use
             self.dark_name = self.get_reference_file(input_model, 'dark')
@@ -42,7 +43,7 @@ class DarkCurrentStep(RomanStep):
                     None, basepath=dark_output, ignore_use_model=True
                 )
 
-            dark_model = datamodels.DarkModel(self.dark_name)
+            dark_model = rdd.open(self.dark_name)
 
             # Do the dark correction
             result = dark_sub.do_correction(

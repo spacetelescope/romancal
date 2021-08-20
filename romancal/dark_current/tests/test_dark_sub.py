@@ -12,7 +12,8 @@ from romancal.dark_current.dark_sub import (
     average_dark_frames,
     do_correction as darkcorr
     )
-from romancal.datamodels import RampModel, DarkModel, dqflags
+from roman_datamodels.datamodels import RampModel, DarkRefModel
+from romancal.lib import dqflags
 
 
 # Define frame_time and number of groups in the generated dark reffile
