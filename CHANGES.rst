@@ -1,34 +1,42 @@
 0.5.0 (unreleased)
-=======
+==================
 
-Jump
-----------
+jump
+----
 
- - Added simple regression test [#315]
+ - Updated code for ``jump`` step using ``stcal``. [#309]
 
- - Updated code for Jump step using stcal [#309]
+ - Added simple regression test. [#315]
+
+ ramp_fitting
+ ------------
+
+ - Implemented ramp_fitting using stcal. [#276]
 
 0.4.2 (2021-09-13)
+==================
 
 general
-----------
+-------
 
 - Corrected artifactory path from romancal-pipeline to roman-pipeline. [#295]
 
 0.4.1 (2021-09-02)
+==================
 
 general
-----------
+-------
 
-- updated requirements-sdp.txt for release
+- Updated requirements-sdp.txt for release.
 
 
 0.4.0 (2021-09-01)
+==================
 
 general
-----------
+-------
 
-- Added regressions tests for dq_init utilizing mask file sin CRDS. [#290]
+- Added regressions tests for ``dq_ini``t utilizing ``mask`` file in CRDS. [#290]
 
 - Updates for requirements & pip changes [#286]
 
@@ -56,7 +64,7 @@ Documentation
 
 
 0.3.1 (2021-06-02)
-=======
+==================
 
 general
 -------
@@ -64,7 +72,8 @@ general
 
 
 0.3.0 (2021-05-28)
-=======
+==================
+
 datamodels
 ----------
 

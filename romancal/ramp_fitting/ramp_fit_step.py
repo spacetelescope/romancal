@@ -3,12 +3,12 @@
 import logging
 import numpy as np
 
-from ..stpipe import Step
-from .. import datamodels
-from . import ramp_fit
+from romancal.stpipe import RomanStep
+from romancal.lib import dqflags
+from roman_datamodels import datamodels as rdd
+from roman_datamodels import stnode as rds
 
-from . import JWST   # 020821 syntax ?
-from . import Roman   # 020821 syntax ?
+from stcal.ramp_fitting import ramp_fit
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -17,7 +17,81 @@ log.setLevel(logging.DEBUG)
 __all__ = ["RampFitStep"]
 
 
-class RampFitStep (Step):
+def create_optional_results_model(input_model, opt_info):
+    """
+    Creates an ImageModel from the computed arrays from ramp_fit.
+
+    Parameters
+    ----------
+    input_model: ~roman_datamodels.RampModel
+    opt_info: tuple
+        The ramp fitting arrays needed for the RampFitOutputModel.
+    Parameter
+    ---------
+    opt_model: RampFitOutputModel
+        The optional RampFitOutputModel to be returned from the ramp fit step.
+    """
+    (slope, sigslope, var_poisson, var_rnoise,
+        yint, sigyint, pedestal, weights, crmag) = opt_info
+    meta = {}
+    meta.update(input_model.meta)
+    crmag.shape = crmag.shape[1:]
+    crmag.dtype = np.float32
+
+    inst = {'meta': meta,
+            'slope': np.squeeze(slope),
+            'sigslope': np.squeeze(sigslope),
+            'var_poisson': np.squeeze(var_poisson),
+            'var_rnoise': np.squeeze(var_rnoise),
+            'yint': np.squeeze(yint),
+            'sigyint': np.squeeze(sigyint),
+            'pedestal': np.squeeze(pedestal),
+            'weights': np.squeeze(weights),
+            'crmag': crmag
+            }
+
+    out_node = rds.RampFitOutput(inst)
+    opt_model = rdd.RampFitOutputModel(out_node)
+    opt_model.meta.filename = input_model.meta.filename
+    return opt_model
+
+
+def create_image_model(input_model, image_info):
+    """
+    Creates an ImageModel from the computed arrays from ramp_fit.
+
+    Parameters
+    ----------
+    input_model : `~roman_datamodels.RampModel`
+        Input ``RampModel`` for which the output ImageModel is created.
+    image_info: tuple
+        The ramp fitting arrays needed for the ImageModel.
+
+    Returns
+    -------
+    out_model : `~roman_datamodels.ImageModel`
+        The output ``ImageModel`` to be returned from the ramp fit step.
+    """
+    data, dq, var_poisson, var_rnoise, err = image_info
+
+    # Create output datamodel
+    # ... and add all keys from input
+    meta = {}
+    meta.update(input_model.meta)
+    meta['cal_step']['ramp_fit'] = 'INCOMPLETE'
+    inst = {'meta': meta,
+            'data': data,
+            'dq': dq,
+            'var_poisson': var_poisson,
+            'var_rnoise': var_rnoise,
+            'err': err,
+            }
+    out_node = rds.WfiImage(inst)
+    im = rdd.ImageModel(out_node)
+    return im
+
+
+class RampFitStep(RomanStep):
 
     """
     This step fits a straight line to the value of counts vs. time to
@@ -26,101 +100,48 @@ class RampFitStep (Step):
 
     spec = """
         opt_name = string(default='')
-        maximum_cores = option('none','quarter','half','all',default='none')
-            # max number of processes to create
+        maximum_cores = option('none','quarter','half','all',default='none') # max number of processes to create
+        save_opt = boolean(default=False) # Save optional output
     """
+    algorithm = 'ols'      # Only algorithm allowed
 
-    # Prior to 04/26/17, the following were also in the spec above:
-    #      algorithm = option('OLS', 'GLS', default='OLS') # 'OLS' or 'GLS'
-    #      weighting = option('unweighted', 'optimal', default='unweighted') \
-    #      # 'unweighted' or 'optimal'
-    # As of 04/26/17, the only allowed algorithm is 'ols', and the
-    #      only allowed weighting is 'optimal'.
-
-    algorithm = 'ols'      # Only algorithm allowed ?
-#    algorithm = 'gls'
-
-    weighting = 'optimal'  # Only weighting allowed ?
+    weighting = 'optimal'  # Only weighting allowed
 
     reference_file_types = ['readnoise', 'gain']
 
     def process(self, input):
-
-        # Open input as a Roman DataModel (single integration; 3D arrays)
-        with Roman.datamodels.RampModel(input) as R_input_model:  # syntax ?
-
-            # Create a JWST DataModel (4D arrays) to populate
-            input_model = JWST.datamodels.RampModel()  # syntax ?
-
-            # Populate JWST model with correct sized arrays from Roman model
-            input_model.meta = R_input_model.meta
-            input_model.data = np.broadcast_to(R_input_model.data, (1,) +
-                                               R_input_model.data.shape)
-
-            input_model.pixeldq = R_input_model.pixeldq
-
-            input_model.groupdq = np.broadcast_to(R_input_model.groupdq, (1,) +
-                                                  R_input_model.groupdq.shape)
-
-            input_model.err = np.broadcast_to(R_input_model.err, (1,) +
-                                              R_input_model.err.shape)
-
-            input_model.refout = np.broadcast_to(R_input_model.refout, (1,) +
-                                                 R_input_model.refout.shape)
-
+        with rdd.open(input, mode='rw') as input_model:
+            input_model.data = input_model.data[np.newaxis, :]
+            input_model.data.dtype=np.float32
+            input_model.groupdq = input_model.groupdq[np.newaxis, :]
+            input_model.err = input_model.err[np.newaxis, :]
             max_cores = self.maximum_cores
-            readnoise_filename = self.get_reference_file(input_model,
-                                                         'readnoise')
+            readnoise_filename = self.get_reference_file(input_model, 'readnoise')
             gain_filename = self.get_reference_file(input_model, 'gain')
 
             log.info('Using READNOISE reference file: %s', readnoise_filename)
-            readnoise_model = datamodels.ReadnoiseModel(readnoise_filename)
+            readnoise_model = rdd.open(readnoise_filename, mode='rw')
             log.info('Using GAIN reference file: %s', gain_filename)
-            gain_model = datamodels.GainModel(gain_filename)
-
-            # Try to retrieve the gain factor from the gain reference file.
-            # If found, store it in the science model meta data, so that it's
-            # available later in the gain_scale step, which avoids having to
-            # load the gain ref file again in that step.
-            if gain_model.meta.exposure.gain_factor is not None:
-                input_model.meta.exposure.gain_factor = \
-                    gain_model.meta.exposure.gain_factor
+            gain_model = rdd.open(gain_filename, mode='rw')
 
             log.info('Using algorithm = %s' % self.algorithm)
             log.info('Using weighting = %s' % self.weighting)
 
             buffsize = ramp_fit.BUFSIZE
-            if self.algorithm == "GLS":
-                buffsize //= 10
-
-            out_model, int_model, opt_model, gls_opt_model = ramp_fit.ramp_fit(
-                input_model, buffsize,
-                readnoise_model, gain_model, self.algorithm,
-                self.weighting, max_cores
-            )
-            # The above int_model is None
-
-            # Remove the empty 0th dimension from the JWST model and insert
-            # the results into the Roman DataModel
-            R_input_model.data = input_model.data[-1]
-            R_input_model.groupdq = input_model.groupdq[-1]
-            R_input_model.err = input_model.err[-1]
-            R_input_model.refout = input_model.refout[-1]
-
+            image_info, integ_info, opt_info, gls_opt_model = ramp_fit.ramp_fit(
+                input_model, buffsize, self.save_opt,
+                readnoise_model.data, gain_model.data, self.algorithm,
+                self.weighting, max_cores, dqflags.pixel)
             readnoise_model.close()
             gain_model.close()
 
         # Save the OLS optional fit product, if it exists
-        if opt_model is not None:
+        if opt_info is not None:
+            opt_model = create_optional_results_model(input_model, opt_info)
             self.save_model(opt_model, 'fitopt', output_file=self.opt_name)
 
-        # Save the GLS optional fit product, if it exists
-        if gls_opt_model is not None:
-            self.save_model(
-                gls_opt_model, 'fitoptgls', output_file=self.opt_name
-            )
-
-        if out_model is not None:
+        if image_info is not None:
+            out_model = create_image_model(input_model, image_info)
             out_model.meta.cal_step.ramp_fit = 'COMPLETE'
 
         return out_model, None  # 'None' for int_model
