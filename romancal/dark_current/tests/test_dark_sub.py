@@ -12,7 +12,8 @@ from romancal.dark_current.dark_sub import (
     average_dark_frames,
     do_correction as darkcorr
     )
-from romancal.datamodels import RampModel, DarkModel, dqflags
+from roman_datamodels.datamodels import RampModel, DarkRefModel
+from romancal.lib import dqflags
 
 
 # Define frame_time and number of groups in the generated dark reffile
@@ -342,7 +343,7 @@ def make_darkmodel():
         data = np.full(csize, 1.0)
 
         # create a dark datamodel for WFI data
-        dark = DarkModel(data=data)
+        dark = DarkRefModel(data=data)
         dark.meta.instrument.name = 'WFI'
 
         dark.meta.exposure.nframes = 1
@@ -376,7 +377,7 @@ def setup_nrc_cube():
         data_model.meta.observation.date = Time('2017-11-01T00:00:00')
         data_model.meta.observation.time = Time('2017-11-01T05:13:00')
 
-        dark_model = DarkModel((NGROUPS_DARK, 2048, 2048))
+        dark_model = DarkRefModel((NGROUPS_DARK, 2048, 2048))
 
         dark_model.meta.exposure.ngroups = NGROUPS_DARK
         dark_model.meta.exposure.groupgap = 0

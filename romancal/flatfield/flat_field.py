@@ -6,7 +6,7 @@ import logging
 
 import numpy as np
 
-from .. datamodels import dqflags
+from romancal.lib import dqflags
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

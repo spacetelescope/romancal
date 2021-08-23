@@ -6,8 +6,7 @@
 import logging
 import warnings
 import numpy as np
-
-from .. import datamodels
+from roman_datamodels import datamodels as rdd
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -146,7 +145,7 @@ def average_dark_frames(input_dark, ngroups, nframes, groupgap):
     # Create a model for the averaged dark data
     dny = input_dark.data.shape[1]
     dnx = input_dark.data.shape[2]
-    avg_dark = datamodels.DarkModel((ngroups, dny, dnx))
+    avg_dark = rdd.DarkModel((ngroups, dny, dnx))
 
     # 03/12/21 this block is a workaround for datamodel's update bug
     input_dark.meta.instrument.detector = 'WFI01'
