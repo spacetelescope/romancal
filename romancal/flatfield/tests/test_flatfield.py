@@ -70,8 +70,6 @@ def test_flatfield_step_interface(instrument, exptype):
 def test_crds_temporal_match(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
 
-    shape = (20, 20)
-
     wfi_image = testutil.mk_level2_image(arrays=True)
     wfi_image.meta.instrument.name = instrument
     wfi_image.meta.instrument.detector = 'WFI01'
@@ -85,9 +83,9 @@ def test_crds_temporal_match(instrument, exptype):
 
     step = FlatFieldStep()
     reffile = step.get_reference_file(wfi_image_model, "flat")
-    assert ("/".join(reffile.rsplit("/", 3)[1:])  == "roman/wfi/roman_wfi_flat_0002.asdf")
+    assert ("/".join(reffile.rsplit("/", 3)[1:]) == "roman/wfi/roman_wfi_flat_0057.asdf")
 
-    wfi_image_model.meta.observation.start_time = Time('2021-01-01T11:11:11.110')
-    wfi_image_model.meta.observation.end_time = Time('2021-01-01T11:33:11.110')
-    assert ("/".join(reffile.rsplit("/", 3)[1:]) == "roman/wfi/roman_wfi_flat_0002.asdf")
-    assert 1==0
+    wfi_image_model.meta.observation.start_time = Time('2021-08-11T11:11:11.110')
+    wfi_image_model.meta.observation.end_time = Time('2021-08-11T11:33:11.110')
+    reffile = step.get_reference_file(wfi_image_model, "flat")
+    assert ("/".join(reffile.rsplit("/", 3)[1:]) == "roman/wfi/roman_wfi_flat_0039.asdf")
