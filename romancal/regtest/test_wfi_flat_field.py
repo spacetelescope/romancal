@@ -10,8 +10,8 @@ from .regtestdata import compare_asdf
 @pytest.mark.bigdata
 def test_flat_field_image_step(rtdata, ignore_asdf_paths):
 
-    rtdata.get_data("WFI/image/l2_0001_rate.asdf")
-    rtdata.input = "l2_0001_rate.asdf"
+    rtdata.get_data("WFI/image/l2_0004_rate.asdf")
+    rtdata.input = "l2_0004_rate.asdf"
 
     # Test CRDS
     step = FlatFieldStep()
@@ -21,7 +21,7 @@ def test_flat_field_image_step(rtdata, ignore_asdf_paths):
     assert "roman_wfi_flat" in ref_file_name
 
     # Test FlatFieldStep
-    output = "l2_0001_rate_flatfieldstep.asdf"
+    output = "l2_0004_rate_flatfieldstep.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     RomanStep.from_cmdline(args)
@@ -31,8 +31,8 @@ def test_flat_field_image_step(rtdata, ignore_asdf_paths):
 @pytest.mark.bigdata
 def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
 
-    rtdata.get_data("WFI/grism/l2_0001_grism_rate.asdf")
-    rtdata.input = "l2_0001_grism_rate.asdf"
+    rtdata.get_data("WFI/grism/l2_0004_grism_rate.asdf")
+    rtdata.input = "l2_0004_grism_rate.asdf"
 
     # Test CRDS
     step = FlatFieldStep()
@@ -42,7 +42,7 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     assert "roman_wfi_flat" in ref_file_name
 
     # Test FlatFieldStep
-    output = "l2_0001_grism_rate_flatfieldstep.asdf"
+    output = "l2_0004_grism_rate_flatfieldstep.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     RomanStep.from_cmdline(args)
