@@ -48,3 +48,44 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     RomanStep.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/grism/{output}")
     compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+
+@pytest.mark.bigdata
+def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
+    # Testing that different datetimes pull different
+    # flat files and successfully make level 2 output
+
+    # First file
+    rtdata.get_data("WFI/image/l2_0004_rate.asdf")
+    rtdata.input = "l2_0004_rate.asdf"
+
+    # Test CRDS
+    step = FlatFieldStep()
+    model = rdm.open(rtdata.input)
+    ref_file_path = step.get_reference_file(model, "flat")
+    assert ("/".join(ref_file_path.rsplit("/", 3)[1:]) == "roman/wfi/roman_wfi_flat_0057.asdf")
+
+    # Test FlatFieldStep
+    output = "l2_0004_rate_flatfieldstep.asdf"
+    rtdata.output = output
+    args = ["romancal.step.FlatFieldStep", rtdata.input]
+    RomanStep.from_cmdline(args)
+    rtdata.get_truth(f"truth/WFI/image/{output}")
+    compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+
+    # Second file
+    rtdata.get_data("WFI/image/l2_0004b_rate.asdf")
+    rtdata.input = "l2_0004b_rate.asdf"
+
+    # Test CRDS
+    step = FlatFieldStep()
+    model = rdm.open(rtdata.input)
+    ref_file_path = step.get_reference_file(model, "flat")
+    assert ("/".join(ref_file_path.rsplit("/", 3)[1:]) == "roman/wfi/roman_wfi_flat_0039.asdf")
+
+    # Test FlatFieldStep
+    output = "l2_0004b_rate_flatfieldstep.asdf"
+    rtdata.output = output
+    args = ["romancal.step.FlatFieldStep", rtdata.input]
+    RomanStep.from_cmdline(args)
+    rtdata.get_truth(f"truth/WFI/image/{output}")
+    compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
