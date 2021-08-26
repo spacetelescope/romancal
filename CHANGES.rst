@@ -2,6 +2,8 @@
 general
 ----------
 
+- Added test for crds flat file temporal matching (SOC-636.1). [#283] 
+
 - Updates for readthedocs [#260]
 
 - Added DQ support. [#262]
