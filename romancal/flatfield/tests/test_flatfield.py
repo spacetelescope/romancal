@@ -82,10 +82,10 @@ def test_crds_temporal_match(instrument, exptype):
     wfi_image_model = ImageModel(wfi_image)
 
     step = FlatFieldStep()
-    reffile = step.get_reference_file(wfi_image_model, "flat")
-    assert ("/".join(reffile.rsplit("/", 3)[1:]) == "roman/wfi/roman_wfi_flat_0057.asdf")
+    ref_file_path = step.get_reference_file(wfi_image_model, "flat")
 
     wfi_image_model.meta.observation.start_time = Time('2021-08-11T11:11:11.110')
     wfi_image_model.meta.observation.end_time = Time('2021-08-11T11:33:11.110')
-    reffile = step.get_reference_file(wfi_image_model, "flat")
-    assert ("/".join(reffile.rsplit("/", 3)[1:]) == "roman/wfi/roman_wfi_flat_0039.asdf")
+    ref_file_path_b = step.get_reference_file(wfi_image_model, "flat")
+    assert ("/".join(ref_file_path.rsplit("/", 1)[1:])) != \
+           ("/".join(ref_file_path_b.rsplit("/", 1)[1:]))
