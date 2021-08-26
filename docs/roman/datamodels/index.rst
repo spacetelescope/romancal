@@ -13,4 +13,4 @@ Data Models
    new_model.rst
    structure.rst
 
-.. automodapi:: romancal.datamodels
+.. automodapi:: roman_datamodels

@@ -41,12 +41,3 @@ numpy.ndarray arrays, or at least objects that have some of the attributes
 of these arrays.  numpy is used explicitly to create these arrays in some
 cases (e.g. when a default value is needed).  The `data` and `err` arrays
 are a floating point type, and the data quality arrays are an integer type.
-
-
-
-DataModel Base Class
---------------------
-
-.. autoclass:: romancal.datamodels.RomanDataModel
-   :members:
-   :noindex:
