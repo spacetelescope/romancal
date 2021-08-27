@@ -10,6 +10,8 @@ general
 
 - Locked romancal library dependency version RDM (0.1.2). [#246]
 
+- Update roman_datamodels, stcal, and stpipe to resolve issues with recent
+  pip releases. [#284]
 
 Documentation
 -------------
