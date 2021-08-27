@@ -2,6 +2,8 @@
 general
 ----------
 
+- Updates for requirements & pip changes [#]
+
 - Updates for readthedocs [#260]
 
 - Added DQ support. [#262]

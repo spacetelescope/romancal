@@ -5,7 +5,7 @@
 #
 # Add a CRDS context number for the delivery as a record here
 #
-# CRDS_CONTEXT = roman_0004.pmap
+# CRDS_CONTEXT = roman_0009.pmap
 #
 asdf>=2.8.0
 astropy==4.2
@@ -15,7 +15,7 @@ chardet==4.0.0
 ci-watson==0.5
 codecov==2.1.11
 coverage==5.4
-crds==11.0.2
+crds==11.3.0
 filelock==3.0.12
 gwcs==0.16.1
 hypothesis==6.3.2
@@ -47,7 +47,7 @@ scipy==1.6.1
 semantic-version==2.8.5
 six==1.15.0
 sortedcontainers==2.3.0
-stdatamodels==0.2.1
+stdatamodels==0.2.4
 stpipe==0.2.0
 toml==0.10.2
 urllib3>=1.26.4
