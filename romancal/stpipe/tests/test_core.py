@@ -53,6 +53,7 @@ def test_get_reference_file(step_class):
         assert isinstance(reference_model, FlatRefModel)
 
 
+@pytest.mark.skip(reason="There are no grism flats.")
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
     reason="Roman CRDS servers are not currently available outside the internal network"

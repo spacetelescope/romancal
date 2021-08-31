@@ -2,7 +2,10 @@
 general
 ----------
 
-- Updates for requirements & pip changes [#]
+
+- Updates for requirements & pip changes [#286]
+
+- Added test for crds flat file temporal matching (SOC-636.1). [#283] 
 
 - Updates for readthedocs [#260]
 
@@ -12,6 +15,8 @@ general
 
 - Locked romancal library dependency version RDM (0.1.2). [#246]
 
+- Update roman_datamodels, stcal, and stpipe to resolve issues with recent
+  pip releases. [#284]
 
 Documentation
 -------------
