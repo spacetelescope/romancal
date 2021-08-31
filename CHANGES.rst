@@ -2,6 +2,9 @@
 general
 ----------
 
+
+- Updates for requirements & pip changes [#286]
+
 - Added test for crds flat file temporal matching (SOC-636.1). [#283] 
 
 - Updates for readthedocs [#260]
