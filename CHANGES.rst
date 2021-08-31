@@ -2,6 +2,7 @@
 general
 ----------
 
+- Added regressions tests for dq_init utilizing mask file sin CRDS. [#290]
 
 - Updates for requirements & pip changes [#286]
 
