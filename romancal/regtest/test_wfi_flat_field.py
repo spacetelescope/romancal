@@ -17,7 +17,6 @@ def test_flat_field_image_step(rtdata, ignore_asdf_paths):
     model = rdm.open(rtdata.input)
     ref_file_path = step.get_reference_file(model, "flat")
     ref_file_name = os.path.split(ref_file_path)[-1]
-    print("XXXXXXXXXXXXXXXXX ref_file_name = " + str(ref_file_name))
     assert "roman_wfi_flat" in ref_file_name
 
 
@@ -103,7 +102,7 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     step.log.info(f'DMS79 MSG: Observation date: {model.meta.observation.start_time}')
 
     ref_file_path_b = step.get_reference_file(model, "flat")
-    step.log.info(f'DMS79 MSG: CRDS matched flat file: {ref_file_path.rsplit("/", 1)[1]}')
+    step.log.info(f'DMS79 MSG: CRDS matched flat file: {ref_file_path_b.rsplit("/", 1)[1]}')
     flat = rdm.open(ref_file_path_b)
     step.log.info(f'DMS79 MSG: flat file UseAfter date: {flat.meta.useafter}')
     step.log.info(f'DMS79 MSG: UseAfter date before observation date? : '
