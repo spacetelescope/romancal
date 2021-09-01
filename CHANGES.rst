@@ -1,4 +1,5 @@
-0.4.0 (unreleased)
+0.4.0 (2021-09-01)
+
 general
 ----------
 
@@ -6,7 +7,7 @@ general
 
 - Updates for requirements & pip changes [#286]
 
-- Added test for crds flat file temporal matching (SOC-636.1). [#283] 
+- Added test for crds flat file temporal matching (SOC-636.1). [#283]
 
 - Updates for readthedocs [#260]
 
