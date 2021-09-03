@@ -52,7 +52,7 @@ class JumpStep(RomanStep):
 
             # Modify the arrays for input into the 'common' jump (4D)
             data = r_data[np.newaxis, :].astype(np.float32)
-            gdq = r_gdq[np.newaxis, :].astype(np.uint9)
+            gdq = r_gdq[np.newaxis, :].astype(np.uint8)
             pdq = r_pdq[np.newaxis, :].astype(np.uint32)
             err = r_err[np.newaxis, :].astype(np.float32)
 
