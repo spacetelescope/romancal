@@ -1,5 +1,10 @@
 0.5.0 (unreleased)
 
+general
+----------
+
+- Corrected artifactory path from romancal-pipeline to roman-pipeline. [#200]
+
 
 0.4.1 (2021-09-02)
 
