@@ -28,8 +28,8 @@ def artifactory_repos(pytestconfig):
         inputs_root = pytestconfig.getini('inputs_root')[0]
         results_root = pytestconfig.getini('results_root')[0]
     except IndexError:
-        inputs_root = "romancal-pipeline"
-        results_root = "romancal-pipeline-results"
+        inputs_root = "roman-pipeline"
+        results_root = "roman-pipeline-results"
     return inputs_root, results_root
 
 
@@ -305,8 +305,8 @@ def pytest_generate_tests(metafunc):
             SDPPoolsSource.results_root = metafunc.config.getini('results_root')[0]
             SDPPoolsSource.env = metafunc.config.getoption('env')
         except IndexError:
-            SDPPoolsSource.inputs_root = "romancal-pipeline"
-            SDPPoolsSource.results_root = "romancal-pipeline-results"
+            SDPPoolsSource.inputs_root = "roman-pipeline"
+            SDPPoolsSource.results_root = "roman-pipeline-results"
             SDPPoolsSource.env = "dev"
 
         pools = SDPPoolsSource()

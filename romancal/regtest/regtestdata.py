@@ -492,7 +492,7 @@ def _data_glob_url(*url_parts, root=None):
     url = '/'.join([root] + [idx for idx in url_parts])
     all_parts = url.split('/')
 
-    # Pick out "romancal-pipeline", the repo name
+    # Pick out "roman-pipeline", the repo name
     repo = all_parts[4]
 
     # Format the pattern
