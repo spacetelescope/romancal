@@ -53,7 +53,7 @@ You can also install a specific version (from `romancal 0.1.0` onward):
 
     conda create -n <env_name> python
     conda activate <env_name>
-    pip install romancal==0.3.0
+    pip install romancal==0.4.2
 
 ### Installing the development version from Github
 
@@ -147,7 +147,7 @@ If you have questions or concerns regarding the software, please open an [issue]
 | 0.2.0    | 0.1       |  004         | Mar  2021  | Release for Build 0.1                         |
 | 0.3.0    | 0.2       |  007         | May  2021  | Release for Build 0.2                         |
 | 0.3.1    | 0.2       |  007         | Jun  2021  | Release for Build 0.2 CRDS tests              |
-| 0.4.0    | 0.3       |  011         | Sep  2021  | Release for Build 0.3                         |
+| 0.4.2    | 0.3       |  011         | Sep  2021  | Release for Build 0.3                         |
 
 Note: CRDS_CONTEXT values flagged with an asterisk in the above table are estimates
 (formal CONTEXT deliveries are only provided with final builds).
