@@ -47,6 +47,7 @@ class JumpStep(RomanStep):
             r_gdq = input_model.groupdq
             r_pdq = input_model.pixeldq
             r_err = input_model.err
+            result = input_model.copy()
 
             frames_per_group = meta.exposure.nframes
 
@@ -93,15 +94,17 @@ class JumpStep(RomanStep):
             self.log.info('Using READNOISE reference file: %s',
                           readnoise_filename)
             readnoise_model = rdd.ReadnoiseRefModel(readnoise_filename)
-            readnoise_2d = readnoise_model.data
+            readnoise_2d = np.copy(readnoise_model.data)
 
-            # DG 0810/21:  leave for now; make dqflags changes in a later, separate PR
+            # DG 0810/21:  leave for now; make dqflags changes in a later,
+            #              separate PR
             dqflags_d = {}  # Dict of DQ flags
             dqflags_d = {
                 "GOOD": dqflags.group["GOOD"],
                 "DO_NOT_USE": dqflags.group["DO_NOT_USE"],
                 "SATURATED": dqflags.group["SATURATED"],
-                "JUMP_DET": dqflags.group["JUMP_DET"]
+                "JUMP_DET": dqflags.group["JUMP_DET"],
+                "NO_GAIN_VALUE": dqflags.pixel["NO_GAIN_VALUE"]
             }
 
             gdq, pdq = detect_jumps(frames_per_group, data, gdq, pdq, err,
