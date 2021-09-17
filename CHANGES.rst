@@ -1,6 +1,11 @@
 0.5.0 (unreleased)
 =======
 
+Jump
+----------
+
+ - Updated code for Jump step using stcal [#277]
+
 0.4.2 (2021-09-13)
 
 general
