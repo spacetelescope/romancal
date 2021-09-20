@@ -4,7 +4,7 @@
 Jump
 ----------
 
- - Updated code for Jump step using stcal [#277]
+ - Updated code for Jump step using stcal [#309]
 
 0.4.2 (2021-09-13)
 
