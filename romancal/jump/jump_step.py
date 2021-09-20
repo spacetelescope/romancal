@@ -52,10 +52,10 @@ class JumpStep(RomanStep):
             frames_per_group = meta.exposure.nframes
 
             # Modify the arrays for input into the 'common' jump (4D)
-            data = r_data[np.newaxis, :].astype(np.float32)
-            gdq = r_gdq[np.newaxis, :].astype(np.uint8)
-            pdq = r_pdq[np.newaxis, :].astype(np.uint32)
-            err = r_err[np.newaxis, :].astype(np.float32)
+            data = np.copy(r_data[np.newaxis, :])
+            gdq = r_gdq[np.newaxis, :]
+            pdq = r_pdq[np.newaxis, :]
+            err = np.copy(r_err[np.newaxis, :])
 
             tstart = time.time()
 
