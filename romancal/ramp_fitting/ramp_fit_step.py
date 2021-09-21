@@ -19,17 +19,19 @@ __all__ = ["RampFitStep"]
 
 def create_optional_results_model(input_model, opt_info):
     """
-    Creates an ImageModel from the computed arrays from ramp_fit.
+    Creates the optional output from the computed arrays from ramp_fit.
 
     Parameters
     ----------
-    input_model: ~roman_datamodels.RampModel
-    opt_info: tuple
-        The ramp fitting arrays needed for the RampFitOutputModel.
-    Parameter
-    ---------
-    opt_model: RampFitOutputModel
-        The optional RampFitOutputModel to be returned from the ramp fit step.
+    input_model : `~roman_datamodels.datamodels.RampModel`
+        The input data model.
+    opt_info : tuple
+        The ramp fitting arrays needed for the ``RampFitOutputModel``.
+
+    Returns
+    -------
+    opt_model : `~roman_datamodels.datamodels.RampFitOutputModel`
+        The optional ``RampFitOutputModel`` to be returned from the ramp fit step.
     """
     (slope, sigslope, var_poisson, var_rnoise,
         yint, sigyint, pedestal, weights, crmag) = opt_info
@@ -62,14 +64,14 @@ def create_image_model(input_model, image_info):
 
     Parameters
     ----------
-    input_model : `~roman_datamodels.RampModel`
-        Input ``RampModel`` for which the output ImageModel is created.
-    image_info: tuple
-        The ramp fitting arrays needed for the ImageModel.
+    input_model : `~roman_datamodels.datamodels.RampModel`
+        Input ``RampModel`` for which the output ``ImageModel`` is created.
+    image_info : tuple
+        The ramp fitting arrays needed for the ``ImageModel``.
 
     Returns
     -------
-    out_model : `~roman_datamodels.ImageModel`
+    out_model : `~roman_datamodels.datamodels.ImageModel`
         The output ``ImageModel`` to be returned from the ramp fit step.
     """
     data, dq, var_poisson, var_rnoise, err = image_info
