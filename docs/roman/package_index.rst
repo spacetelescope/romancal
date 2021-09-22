@@ -10,4 +10,5 @@ Package Index
    flatfield/index.rst
    gain_scale/index.rst
    jump/index.rst
+   ramp_fitting/index.rst
    references_general/index.rst

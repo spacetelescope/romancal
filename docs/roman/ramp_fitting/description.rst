@@ -157,11 +157,11 @@ Segment-specific Computations:
 The variance of the slope of a segment due to read noise is:
 
 .. math::  
-   var^R_{s} = \frac{12 \ R^2 }{ (ngroups_{s}^3 - ngroups_{s})(tgroup^2) } \,,
+   var^R_{s} = \frac{12 \ R^2 }{ (ngroups_{s}^3 - ngroups_{s})(group_time^2) } \,,
 
 where :math:`R` is the noise in the difference between 2 frames, 
-:math:`ngroups_{s}` is the number of groups in the segment, and :math:`tgroup` is the group 
-time in seconds (from the keyword TGROUP).  
+:math:`ngroups_{s}` is the number of groups in the segment, and :math:`group_time` is the group 
+time in seconds (from the exposure.group_time).  
 
 The variance of the slope in a segment due to Poisson noise is: 
 
@@ -211,7 +211,7 @@ segments, so is a sum over segments:
     slope_{o} = \frac{ \sum_{s}{ \frac{slope_{s}} {var^C_{s}}}} { \sum_{s}{ \frac{1} {var^C_{s}}}}
 
 
-Upon successful completion of this step, the status keyword S_RAMP will be set
+Upon successful completion of this step, the status attribute ramp_fit will be set
 to "COMPLETE".
 
 
@@ -223,9 +223,9 @@ square-root of the exposure-level combined variance in the ERR array of the prim
 output product. This combined variance of the exposure-level slope is the sum
 of the variance of the slope due to the Poisson noise and the variance of the 
 slope due to the read noise. These two variances are also separately written
-to the extensions VAR_POISSON and VAR_RNOISE in the primary output.
+to the arrays VAR_POISSON and VAR_RNOISE in the asdf output.
 
 For the optional output product, the variance of the slope due to the Poisson
-noise of the segment-specific slope is written to the VAR_POISSON extension.
+noise of the segment-specific slope is written to the VAR_POISSON array.
 Similarly, the variance of the slope due to the read noise of the
-segment-specific slope  is written to the VAR_RNOISE extension.
+segment-specific slope  is written to the VAR_RNOISE array.
