@@ -113,13 +113,13 @@ class RampFitStep(RomanStep):
 
     def process(self, input):
         with rdd.open(input, mode='rw') as input_model:
+            max_cores = self.maximum_cores
+            readnoise_filename = self.get_reference_file(input_model, 'readnoise')
+            gain_filename = self.get_reference_file(input_model, 'gain')
             input_model.data = input_model.data[np.newaxis, :]
             input_model.data.dtype=np.float32
             input_model.groupdq = input_model.groupdq[np.newaxis, :]
             input_model.err = input_model.err[np.newaxis, :]
-            max_cores = self.maximum_cores
-            readnoise_filename = self.get_reference_file(input_model, 'readnoise')
-            gain_filename = self.get_reference_file(input_model, 'gain')
 
             log.info('Using READNOISE reference file: %s', readnoise_filename)
             readnoise_model = rdd.open(readnoise_filename, mode='rw')
