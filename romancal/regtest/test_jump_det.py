@@ -19,9 +19,3 @@ def test_jump_detection_step(rtdata, ignore_asdf_paths):
     rtdata.get_truth(f"truth/WFI/image/{output}")
     assert (compare_asdf(rtdata.output, rtdata.truth,
             **ignore_asdf_paths) is None)
-
-    output = "l1_0006_science_raw_dqinitstep_jumpstep.asdf"
-    rtdata.output = output
-    rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert (compare_asdf(rtdata.output, rtdata.truth,
-            **ignore_asdf_paths) is None)
