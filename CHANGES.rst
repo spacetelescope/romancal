@@ -4,7 +4,7 @@
 Jump
 ----------
 
- - Added simple regression test [#]
+ - Added simple regression test [#315]
 
  - Updated code for Jump step using stcal [#309]
 
