@@ -25,4 +25,6 @@ def get_steps():
         ("romancal.step.DQInitStep", None, False),
         ("romancal.step.FlatFieldStep", None, False),
         ("romancal.step.JumpStep", None, False),
+        ("romancal.step.RampFitStep", None, False),
+
     ]
