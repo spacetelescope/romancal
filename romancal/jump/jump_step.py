@@ -115,6 +115,10 @@ class JumpStep(RomanStep):
                                     flag_4_neighbors,
                                     dqflags_d)
 
+            gdq = gdq[0, :, :, :]
+            pdq = pdq[0, :, :]
+            result.groupdq = gdq.copy()
+            result.pixeldq = pdq.copy()
             gain_model.close()
             readnoise_model.close()
             tstop = time.time()

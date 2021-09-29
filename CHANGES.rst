@@ -4,6 +4,8 @@
 jump
 ----
 
+ - Fix to jump_step to save the update pixel and group dq arrays [#319
+
  - Updated code for ``jump`` step using ``stcal``. [#309]
 
  - Added simple regression test. [#315]
