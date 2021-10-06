@@ -1,3 +1,6 @@
+"""
+ Unit tests for the Roman jump step code
+"""
 from itertools import cycle
 
 import pytest
@@ -24,7 +27,7 @@ def generate_wfi_reffiles(tmpdir_factory):
     ysize = 20
 
     shape = (ysize, xsize)
-    
+
     # Create temporary gain reference file
     gain_ref = rds.GainRef()
     meta = {}
@@ -214,7 +217,7 @@ def test_two_group_integration(generate_wfi_reffiles, max_cores, setup_inputs):
                               override_readnoise=override_readnoise,
                               maximum_cores=max_cores)
 
-    assert(out_model.meta.cal_step['jump'] == 'SKIPPED')
+    assert out_model.meta.cal_step['jump'] == 'SKIPPED'
 
 
 def test_four_group_integration(generate_wfi_reffiles, setup_inputs):
@@ -234,7 +237,7 @@ def test_four_group_integration(generate_wfi_reffiles, setup_inputs):
                               override_readnoise=override_readnoise,
                               maximum_cores='none')
 
-    assert(out_model.meta.cal_step['jump'] == 'COMPLETE')
+    assert out_model.meta.cal_step['jump'] == 'COMPLETE'
 
 
 def test_three_group_integration(generate_wfi_reffiles, setup_inputs):
@@ -254,4 +257,4 @@ def test_three_group_integration(generate_wfi_reffiles, setup_inputs):
                               override_readnoise=override_readnoise,
                               maximum_cores='none')
 
-    assert(out_model.meta.cal_step.jump == 'COMPLETE')
+    assert out_model.meta.cal_step.jump == 'COMPLETE'
