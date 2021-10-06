@@ -2,16 +2,12 @@ from itertools import cycle
 
 import pytest
 import numpy as np
-import asdf
 from astropy.time import Time
 
-import roman_datamodels as rdm
 import roman_datamodels.stnode as rds
-from roman_datamodels.datamodels import RampModel
 from roman_datamodels.datamodels import GainRefModel
 from roman_datamodels.datamodels import ReadnoiseRefModel
 from roman_datamodels.testing import utils as testutil
-from roman_datamodels import datamodels as rdd
 
 from romancal.jump import JumpStep
 
@@ -28,8 +24,7 @@ def generate_wfi_reffiles(tmpdir_factory):
     ysize = 20
 
     shape = (ysize, xsize)
-    gain = np.ones(shape=shape, dtype=np.float64) * ingain
-
+    
     # Create temporary gain reference file
     gain_ref = rds.GainRef()
     meta = {}
