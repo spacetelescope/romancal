@@ -4,7 +4,9 @@
 jump
 ----
 
- - Fix to jump_step to save the update pixel and group dq arrays [#319
+ - Updates for unit tests to use stcal [#322]
+
+ - Fix to jump_step to save the update pixel and group dq arrays [#319]
 
  - Updated code for ``jump`` step using ``stcal``. [#309]
 
