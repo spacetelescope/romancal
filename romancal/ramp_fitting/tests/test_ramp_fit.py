@@ -1,8 +1,6 @@
 import pytest
 import numpy as np
 
-from stcal.ramp_fitting.ramp_fit import ramp_fit
-
 import roman_datamodels.stnode as rds
 from roman_datamodels.datamodels import RampModel
 from roman_datamodels.datamodels import GainRefModel
@@ -67,7 +65,6 @@ def generate_wfi_reffiles(tmpdir_factory):
     ysize = 20
 
     shape = (ysize, xsize)
-    gain = np.ones(shape=shape, dtype=np.float64) * ingain
 
     # Create temporary gain reference file
     gain_ref = rds.GainRef()
