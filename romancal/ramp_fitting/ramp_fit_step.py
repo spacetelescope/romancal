@@ -31,7 +31,7 @@ def create_optional_results_model(input_model, opt_info):
     Returns
     -------
     opt_model : `~roman_datamodels.datamodels.RampFitOutputModel`
-        The optional ``RampFitOutputModel`` to be returned from the ramp fit step.
+        The optional ``RampFitOutputModel`` to be returned from the step.
     """
     (slope, sigslope, var_poisson, var_rnoise,
         yint, sigyint, pedestal, weights, crmag) = opt_info
@@ -87,6 +87,8 @@ def create_image_model(input_model, image_info):
             'var_poisson': var_poisson,
             'var_rnoise': var_rnoise,
             'err': err,
+            'area': var_poisson,
+            'var_flat': var_poisson,
             }
     out_node = rds.WfiImage(inst)
     im = rdd.ImageModel(out_node)
@@ -97,12 +99,13 @@ class RampFitStep(RomanStep):
 
     """
     This step fits a straight line to the value of counts vs. time to
-    determine the mean count rate for each pixel.
+    determine the mean count rate for each pixel. 'maximum cores' is the
+    maximum number of processes to create.
     """
 
     spec = """
         opt_name = string(default='')
-        maximum_cores = option('none','quarter','half','all',default='none') # max number of processes to create
+        maximum_cores = option('none','quarter','half','all',default='none')
         save_opt = boolean(default=False) # Save optional output
     """
     algorithm = 'ols'      # Only algorithm allowed
@@ -114,10 +117,11 @@ class RampFitStep(RomanStep):
     def process(self, input):
         with rdd.open(input, mode='rw') as input_model:
             max_cores = self.maximum_cores
-            readnoise_filename = self.get_reference_file(input_model, 'readnoise')
+            readnoise_filename = self.get_reference_file(input_model,
+                                                         'readnoise')
             gain_filename = self.get_reference_file(input_model, 'gain')
             input_model.data = input_model.data[np.newaxis, :]
-            input_model.data.dtype=np.float32
+            input_model.data.dtype = np.float32
             input_model.groupdq = input_model.groupdq[np.newaxis, :]
             input_model.err = input_model.err[np.newaxis, :]
 
@@ -130,10 +134,11 @@ class RampFitStep(RomanStep):
             log.info('Using weighting = %s' % self.weighting)
 
             buffsize = ramp_fit.BUFSIZE
-            image_info, integ_info, opt_info, gls_opt_model = ramp_fit.ramp_fit(
-                input_model, buffsize, self.save_opt,
-                readnoise_model.data, gain_model.data, self.algorithm,
-                self.weighting, max_cores, dqflags.pixel)
+            image_info, integ_info, opt_info, gls_opt_model = \
+                ramp_fit.ramp_fit(input_model, buffsize, self.save_opt,
+                                  readnoise_model.data, gain_model.data,
+                                  self.algorithm, self.weighting, max_cores,
+                                  dqflags.pixel)
             readnoise_model.close()
             gain_model.close()
 
