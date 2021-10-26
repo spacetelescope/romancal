@@ -7,11 +7,12 @@ on:
   push:
     branches:
       - main
-      - '*.x'
+      - '*'
     tags:
       - '*'
   pull_request:
     branches:
+      - '*'
   schedule:
     # Weekly Monday 9AM build
     # * is a special character in YAML so you have to quote this string
