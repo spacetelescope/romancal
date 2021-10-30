@@ -59,6 +59,8 @@ def generate_wfi_reffiles(tmpdir_factory):
     meta['pedigree'] = 'DUMMY'
     meta['description'] = 'DUMMY'
     meta['useafter'] = Time('2022-01-01T11:11:11.111')
+    meta['exposure'] = {}
+    meta['exposure']['type'] = 'WFI_IMAGE'
 
     rn_ref['meta'] = meta
     rn_ref['data'] = np.ones(shape, dtype=np.float32)
