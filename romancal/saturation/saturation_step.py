@@ -2,7 +2,7 @@
 
 #from ..stpipe import Step
 from romancal.stpipe import RomanStep
-from roman_datamodels.datamodels import RampModel
+from roman_datamodels.datamodels import RampModel, SaturationRefModel
 #from .. import datamodels
 #from ..lib import pipe_utils
 #from romancal.lib import pipe_utils
@@ -38,13 +38,14 @@ class SaturationStep(RomanStep):
                 return result
 
             # Open the reference file data model
-            ref_model = datamodels.SaturationModel(self.ref_name)
+            ref_model = SaturationRefModel(self.ref_name)
 
             # Do the saturation check
-            if pipe_utils.is_irs2(input_model):
-                sat = saturation.irs2_flag_saturation(input_model, ref_model)
-            else:
-                sat = saturation.flag_saturation(input_model, ref_model)
+            # if pipe_utils.is_irs2(input_model):
+            #     sat = saturation.irs2_flag_saturation(input_model, ref_model)
+            # else:
+            #     sat = saturation.flag_saturation(input_model, ref_model)
+            sat = saturation.flag_saturation(input_model, ref_model)
 
             # Close the reference file and update the step status
             ref_model.close()

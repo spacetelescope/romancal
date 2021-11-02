@@ -59,8 +59,8 @@ def flag_saturation(input_model, ref_model):
     #     sat_dq = ref_sub_model.dq.copy()
     #     ref_sub_model.close()
 
-    sat_thresh = ref_model.data
-    sat_dq = ref_model.dq
+    sat_thresh = ref_model.data.copy()
+    sat_dq = ref_model.dq.copy()
 
     gdq_new, pdq_new = flag_saturated_pixels(data, gdq, pdq, sat_thresh,
                                              sat_dq, ATOD_LIMIT, dqflags.pixel)
