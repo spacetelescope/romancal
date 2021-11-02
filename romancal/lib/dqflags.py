@@ -27,7 +27,8 @@ pixel = {'GOOD':             0,      # No bits set, all is good
          'DROPOUT':          2**3,   # Data lost in transmission
          'RESERVED_1':       2**4,   #
          'PERSISTENCE':      2**5,   # High persistence (was RESERVED_2)
-         'RESERVED_3':       2**6,   #
+         'AD_FLOOR':         2**6,   # Below A/D floor (0 DN, was RESERVED_3)
+         #'RESERVED_3':       2**6,   #
          'RESERVED_4':       2**7,   #
          'UNRELIABLE_ERROR': 2**8,   # Uncertainty exceeds quoted error
          'NON_SCIENCE':      2**9,   # Pixel not on science portion of detector
