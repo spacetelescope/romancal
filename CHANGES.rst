@@ -12,6 +12,8 @@ jump
 
  - Added simple regression test. [#315]
 
+ - Updated temp readnoise file in jump tests to include required exposure keywords. [#333]
+
  ramp_fitting
  ------------
 
