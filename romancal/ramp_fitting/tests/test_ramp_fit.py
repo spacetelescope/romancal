@@ -1,21 +1,17 @@
 import pytest
 import numpy as np
 
-from stcal.ramp_fitting.ramp_fit import ramp_fit
-from stcal.ramp_fitting.ols_fit import calc_num_seg
-
 from astropy.time import Time
 
-import roman_datamodels as rdm
 import roman_datamodels.stnode as rds
 from roman_datamodels.datamodels import RampModel
 from roman_datamodels.datamodels import GainRefModel
 from roman_datamodels.datamodels import ReadnoiseRefModel
 from roman_datamodels.testing import utils as testutil
-from roman_datamodels import datamodels as rdd
 
 from romancal.ramp_fitting import RampFitStep
 from romancal.lib import dqflags
+
 
 # MAXIMUM_CORES = ['none', 'quarter', 'half', 'all']
 MAXIMUM_CORES = ['none']  # initial testing only
@@ -34,18 +30,16 @@ dqflags = {
 @pytest.fixture
 def setup_inputs():
 
-    def _setup(ngroups=10, readnoise=10, nrows=20, ncols=20,
-               nframes=1, grouptime=1.0, gain=1, deltatime=1):
+    def _setup(ngroups=10, nrows=20, ncols=20, deltatime=1):
 
         data = np.zeros(shape=(ngroups, nrows, ncols), dtype=np.float32)
         err = np.ones(shape=(nrows, ncols), dtype=np.float32)
         pixdq = np.zeros(shape=(nrows, ncols), dtype=np.uint32)
         gdq = np.zeros(shape=(ngroups, nrows, ncols), dtype=np.uint8)
-
         csize = (ngroups, nrows, ncols)
-        dm_ramp = testutil.mk_ramp(csize)
 
-        dm_ramp.data = data + 6.
+        dm_ramp = testutil.mk_ramp(csize)
+        dm_ramp.data = data
         dm_ramp.pixeldq = pixdq
         dm_ramp.groupdq = gdq
         dm_ramp.err = err
@@ -62,6 +56,7 @@ def setup_inputs():
 
 @pytest.fixture(scope="module")
 def generate_wfi_reffiles(tmpdir_factory):
+
     gainfile = str(tmpdir_factory.mktemp("ndata").join("gain.asdf"))
     readnoisefile = str(tmpdir_factory.mktemp("ndata").join('readnoise.asdf'))
 
@@ -70,7 +65,6 @@ def generate_wfi_reffiles(tmpdir_factory):
     ysize = 20
 
     shape = (ysize, xsize)
-    gain = np.ones(shape=shape, dtype=np.float64) * ingain
 
     # Create temporary gain reference file
     gain_ref = rds.GainRef()
@@ -119,18 +113,27 @@ def generate_wfi_reffiles(tmpdir_factory):
     return gainfile, readnoisefile
 
 
-@pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
+@pytest.fixture(scope="module")
+def generate_wfi_inputfile(tmpdir_factory):
+
+    infile = str(tmpdir_factory.mktemp("ndata").join("input.asdf"))
+
+    return infile
+
+
+# @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
 @pytest.mark.xfail
-def test_one_group_small_buffer_fit_ols(generate_wfi_reffiles, max_cores,
+def test_one_group_small_buffer_fit_ols(generate_wfi_reffiles,
+                                        generate_wfi_inputfile, max_cores,
                                         setup_inputs):
 
     override_gain, override_readnoise = generate_wfi_reffiles
+    inputfile = generate_wfi_inputfile
 
-    grouptime = 3.0
-    deltaDN = 5
-    ingain = 200
-    inreadnoise = 7.
-    ngroups = 100
+    grouptime = 1.
+    ingain = 1.
+    inreadnoise = 10.
+    ngroups = 1
     xsize = 20
     ysize = 20
 
@@ -138,14 +141,16 @@ def test_one_group_small_buffer_fit_ols(generate_wfi_reffiles, max_cores,
                           gain=ingain, readnoise=inreadnoise,
                           deltatime=grouptime)
 
-    model1.data[0, 15, 10] = 10.0
+    model1.data[0, 15, 10] = 10.0  # add single CR
 
-    a_ramp_model = RampModel(model)
-    saved_model_file = 'saved_for_test.asdf'  # make temp instead
-    a_ramp_model.save(saved_model_file)
+    a_ramp_model = RampModel(model1)
+    a_ramp_model.save(inputfile)
 
-    out_model = RampFitStep.call(saved_model_file, override_gain=override_gain,
-                                 override_readnoise=override_readnoise,
-                                 maximum_cores=max_cores)
+    out_model, int_model = \
+        RampFitStep.call(inputfile, override_gain=override_gain,
+                         override_readnoise=override_readnoise,
+                         maximum_cores=max_cores)
 
-    np.testing.assert_allclose(slopes[0].data[15, 10], 10.0, 1e-6)
+    data = out_model.data
+
+    np.testing.assert_allclose(data[15, 10], 10.0, 1e-6)
