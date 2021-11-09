@@ -12,3 +12,4 @@ Package Index
    jump/index.rst
    ramp_fitting/index.rst
    references_general/index.rst
+   saturation/index.rst
