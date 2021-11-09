@@ -4,7 +4,7 @@
 jump
 ----
 
- - Updates to add the suffix _flat to the step output [#229]
+ - Updates to add the suffix _flat to the step output [#349]
 
  - Updates for unit tests to use stcal [#322]
 
