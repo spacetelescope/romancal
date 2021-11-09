@@ -8,9 +8,7 @@ import pytest
 import numpy as np
 
 from romancal.saturation import SaturationStep
-#from jwst.saturation.saturation import flag_saturation, irs2_flag_saturation
 from romancal.saturation.saturation import flag_saturation
-#from jwst.datamodels import RampModel, SaturationModel, dqflags
 from romancal.lib import dqflags
 #from roman_datamodels.datamodels import RampModel, SaturationRefModel
 from roman_datamodels.testing import utils as testutil
@@ -260,39 +258,6 @@ def test_nans_in_mask(setup_wfi_datamodels):
     assert np.all(output.groupdq[:, 5, 5] != dqflags.group['SATURATED'])
     # Check that output PIXELDQ is set to NO_SAT_CHECK
     assert output.pixeldq[5, 5] == dqflags.pixel['NO_SAT_CHECK']
-
-
-# def test_full_step(setup_wfi_datamodels):
-#     '''Test full run of the SaturationStep.'''
-#
-#     # Create inputs, data, and saturation maps
-#     ngroups = 5
-#     nrows = 20
-#     ncols = 20
-#
-#     data, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
-#
-#     # set the entire array to a small non-zero value to avoid labeling
-#     # almost everthing as low saturated
-#     data.data[:, :, :] = 1
-#
-#     # Add ramp values up to the saturation limit
-#     data.data[0, 5, 5] = 10
-#     data.data[1, 5, 5] = 20000
-#     data.data[2, 5, 5] = 40000
-#     data.data[3, 5, 5] = 70000   # Signal reaches saturation limit
-#     data.data[4, 5, 5] = 73000
-#
-#     # Run the pipeline
-#     output = SaturationStep.call(data)
-#
-#     # Check that correct pixel and group 3+ are flagged as saturated
-#     assert dqflags.group['SATURATED'] == np.max(output.groupdq[0, :, 5, 5])
-#     assert np.all(output.groupdq[3:, 5, 5] == dqflags.pixel['SATURATED'])
-#     # Check that other pixel and groups are not flagged
-#     # assert np.all(output.groupdq[0, :3, 5, 5] != dqflags.group['SATURATED'])
-#     # assert np.all(output.groupdq[0, :, 10, 10] != dqflags.group['SATURATED'])
-
 
 @pytest.fixture(scope='function')
 def setup_wfi_datamodels():
