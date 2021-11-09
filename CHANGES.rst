@@ -19,6 +19,8 @@ jump
 
  - Implemented ramp_fitting using stcal. [#276]
 
+ - Updated RTD to include saturation reference files. [#350]
+
 0.4.2 (2021-09-13)
 ==================
 
