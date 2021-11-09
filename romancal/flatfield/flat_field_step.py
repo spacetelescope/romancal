@@ -6,7 +6,6 @@ from ..stpipe import RomanStep
 from . import flat_field
 import roman_datamodels as rdm
 
-
 __all__ = ["FlatFieldStep"]
 
 
@@ -16,9 +15,9 @@ class FlatFieldStep(RomanStep):
 
     reference_file_types = ["flat"]
 
-    def process(self, input):
+    def process(self, step_input):
 
-        input_model = self.open_model(input)
+        input_model = self.open_model(step_input)
         # Get reference file paths
         reference_file_names = {}
         reffile = self.get_reference_file(input_model, "flat")
@@ -47,5 +46,11 @@ class FlatFieldStep(RomanStep):
                 model.close()
         except AttributeError:
             pass
+
+        if self.save_results:
+            try:
+                self.suffix = 'flat'
+            except AttributeError:
+                self['suffix'] = 'flat'
 
         return output_model
