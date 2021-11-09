@@ -4,7 +4,7 @@ SATURATION Reference File
 -------------------------
 
 :REFTYPE: SATURATION
-:Data model: `~roman_datamodels.SaturationModel`
+:Data model: `~roman_datamodels.datamodels.SaturationRefModel`
 
 The SATURATION reference file contains pixel-by-pixel saturation threshold
 values.
@@ -41,4 +41,4 @@ dq        NDArray      4096 x 4096      uint32
 The values in the ``data `` array give the saturation threshold in units of DN
 for each pixel.
 
-.. include:: ../includes/dq_def.inc
+The ASDF file contains two data arrays.
