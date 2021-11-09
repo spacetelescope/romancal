@@ -19,6 +19,12 @@ jump
 
  - Implemented ramp_fitting using stcal. [#276]
 
+saturation
+----------
+
+ - Implement saturation correction using stcal, roman_datamodels and romancal.stpipe [#348]
+   
+
 0.4.2 (2021-09-13)
 ==================
 
