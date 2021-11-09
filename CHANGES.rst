@@ -4,6 +4,8 @@
 jump
 ----
 
+ - Updates to add the suffix _flat to the step output [#229]
+
  - Updates for unit tests to use stcal [#322]
 
  - Fix to jump_step to save the update pixel and group dq arrays [#319]
