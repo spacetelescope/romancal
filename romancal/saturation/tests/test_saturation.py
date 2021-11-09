@@ -7,10 +7,8 @@ Unit tests for saturation flagging
 import pytest
 import numpy as np
 
-from romancal.saturation import SaturationStep
 from romancal.saturation.saturation import flag_saturation
 from romancal.lib import dqflags
-#from roman_datamodels.datamodels import RampModel, SaturationRefModel
 from roman_datamodels.testing import utils as testutil
 
 
