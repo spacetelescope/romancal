@@ -3,6 +3,7 @@
 
 jump
 ----
+ - Updated filenames in regression test script [#351]
 
  - Updates to add the suffix _flat to the step output [#349]
 
