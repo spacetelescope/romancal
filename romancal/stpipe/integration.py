@@ -26,5 +26,5 @@ def get_steps():
         ("romancal.step.FlatFieldStep", None, False),
         ("romancal.step.JumpStep", None, False),
         ("romancal.step.RampFitStep", None, False),
-
+        ("romancal.step.SaturationStep", None, False),
     ]
