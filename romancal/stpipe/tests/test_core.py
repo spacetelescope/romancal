@@ -77,3 +77,13 @@ def test_get_reference_file_spectral(step_class):
     with step.open_model(reference_path) as reference_model:
         assert isinstance(reference_model, FlatRefModel)
         assert reference_model.meta.instrument.optical_element == "GRISM"
+
+
+def test_log_messages(tmp_path):
+    class LoggingStep(RomanStep):
+        def process(self):
+            self.log.warning("Splines failed to reticulate")
+            return ImageModel(mk_level2_image(arrays=(20,20)))
+
+    result = LoggingStep().run()
+    assert any(l.message == "Splines failed to reticulate" for l in result.cal_logs)

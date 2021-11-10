@@ -4,6 +4,8 @@ Roman Calibration Pipeline base class
 from stpipe import Step, Pipeline
 
 import roman_datamodels as rdm
+from roman_datamodels.datamodels import ImageModel
+from roman_datamodels.stnode import LogMessage
 
 
 class RomanStep(Step):
@@ -37,8 +39,9 @@ class RomanStep(Step):
             List of reference files used.  The first element of each tuple
             is the reftype code, the second element is the filename.
         """
-        #  JWST uses this to add the cal code and CRDS software versions.
-        pass
+        if isinstance(model, ImageModel):
+            for log_record in self.log_records:
+                model.cal_logs.append(LogMessage.from_log_record(log_record))
 
     def record_step_status(self, model, step_name, success=True):
         """

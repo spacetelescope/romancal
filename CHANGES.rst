@@ -40,6 +40,10 @@ saturation
 
 - Updated RTD to include saturation reference files. [#350]
 
+stpipe
+------
+
+ - Record step/pipeline logs in ImageModel.cal_logs array. [#352]
 
 0.4.2 (2021-09-13)
 ==================
