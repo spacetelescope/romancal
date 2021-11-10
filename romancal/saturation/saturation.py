@@ -17,7 +17,7 @@ def flag_saturation(input_model, ref_model):
     """
     Short Summary
     -------------
-    Call function in romancal for flagging saturated pixels.
+    Function to call stcal for flagging saturated pixels.
 
     Parameters
     ----------
