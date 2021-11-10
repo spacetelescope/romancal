@@ -4,6 +4,8 @@
 jump
 ----
 
+ - Updates to add the suffix _flat to the step output [#349]
+
  - Updates for unit tests to use stcal [#322]
 
  - Fix to jump_step to save the update pixel and group dq arrays [#319]
@@ -19,7 +21,13 @@ jump
 
  - Implemented ramp_fitting using stcal. [#276]
 
+saturation
+----------
+
+ - Implement saturation correction using stcal, roman_datamodels and romancal.stpipe [#348]
+   
  - Updated RTD to include saturation reference files. [#350]
+   
 
 0.4.2 (2021-09-13)
 ==================

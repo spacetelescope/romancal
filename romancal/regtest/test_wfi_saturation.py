@@ -20,6 +20,7 @@ def test_saturation_image_step(rtdata, ignore_asdf_paths):
     ref_file_path = step.get_reference_file(model, "saturation")
     ref_file_name = os.path.split(ref_file_path)[-1]
 
+    # Confirm that a WFI saturation reference file name was returned
     assert "roman_wfi_saturation" in ref_file_name
 
     # Test SaturationStep
@@ -50,6 +51,7 @@ def test_saturation_grism_step(rtdata, ignore_asdf_paths):
     ref_file_path = step.get_reference_file(model, "saturation")
     ref_file_name = os.path.split(ref_file_path)[-1]
 
+    # Confirm that a WFI saturation reference file name was returned
     assert "roman_wfi_saturation" in ref_file_name
 
     # Test SaturationStep
