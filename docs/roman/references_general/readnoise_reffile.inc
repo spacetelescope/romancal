@@ -2,7 +2,7 @@ READNOISE reference file
 ------------------------
 
 :REFTYPE: READNOISE
-:Data model: `~romancal.datamodels.ReadNoiseModel`
+:Data model: `~roman_datamodels.datamodels.ReadnoiseRefModel`
 
 The READNOISE reference file contains a pixel-by-pixel map of readnoise, which is
 used in estimating the expected noise in each pixel.
@@ -34,4 +34,4 @@ Data      Array Type   Dimensions       Data type
 data      NDArray      4096 x 4096      float32
 =======  ============ ==============  =============
 
-The ASDF file contains a single data arrays.
+The ASDF file contains a single data array.

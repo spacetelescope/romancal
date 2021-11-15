@@ -4,7 +4,7 @@ MASK Reference File
 -------------------
 
 :reftype: MASK
-:Data model: `~roman_datamodels.MaskModel`
+:Data model: `~roman_datamodels.datamodels.MaskRefModel`
 
 The MASK reference file contains pixel-by-pixel DQ flag values that indicate
 problem conditions.

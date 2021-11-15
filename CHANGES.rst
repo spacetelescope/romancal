@@ -27,6 +27,8 @@ saturation
 
  - Implement saturation correction using stcal, roman_datamodels and romancal.stpipe [#348]
    
+ - Updated RTD to include saturation reference files. [#350]
+   
 
 0.4.2 (2021-09-13)
 ==================

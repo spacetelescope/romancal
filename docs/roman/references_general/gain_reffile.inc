@@ -2,7 +2,7 @@ GAIN reference file
 -------------------
 
 :REFTYPE: GAIN
-:Data model: `~romancal.datamodels.GainModel`
+:Data model: `~roman_datamodels.datamodels.GainRefModel`
 
 The GAIN reference file contains a pixel-by-pixel gain map, which can be
 used to convert pixel values from units of DN to electrons. The gain

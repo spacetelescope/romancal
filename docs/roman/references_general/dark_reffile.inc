@@ -4,7 +4,7 @@ DARK Reference File
 -------------------
 
 :REFTYPE: DARK
-:Data models: `~romancal.datamodels.DarkModel`
+:Data models: `~roman_datamodels.datamodels.DarkRefModel`
 
 The DARK reference file contains pixel-by-pixel and frame-by-frame
 dark current values for a given detector readout mode.
