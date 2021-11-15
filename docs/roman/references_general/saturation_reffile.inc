@@ -38,7 +38,7 @@ data      NDArray      4096 x 4096      float32
 dq        NDArray      4096 x 4096      uint32
 =======  ============ ==============  =============
 
-The values in the ``data `` array give the saturation threshold in units of DN
+The values in the ``data`` array give the saturation threshold in units of DN
 for each pixel.
 
 The ASDF file contains two data arrays.
