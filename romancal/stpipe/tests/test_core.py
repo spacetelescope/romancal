@@ -86,4 +86,4 @@ def test_log_messages(tmp_path):
             return ImageModel(mk_level2_image(arrays=(20,20)))
 
     result = LoggingStep().run()
-    assert any(l.message == "Splines failed to reticulate" for l in result.cal_logs)
+    assert any("Splines failed to reticulate" in l for l in result.cal_logs)

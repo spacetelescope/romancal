@@ -1,11 +1,20 @@
 """
 Roman Calibration Pipeline base class
 """
+import logging
+import time
+
 from stpipe import Step, Pipeline
 
 import roman_datamodels as rdm
 from roman_datamodels.datamodels import ImageModel
-from roman_datamodels.stnode import LogMessage
+
+
+_LOG_FORMATTER = logging.Formatter(
+    "%(asctime)s.%(msecs)03dZ :: %(name)s :: %(levelname)s :: %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S"
+)
+_LOG_FORMATTER.converter = time.gmtime
 
 
 class RomanStep(Step):
@@ -41,7 +50,7 @@ class RomanStep(Step):
         """
         if isinstance(model, ImageModel):
             for log_record in self.log_records:
-                model.cal_logs.append(LogMessage.from_log_record(log_record))
+                model.cal_logs.append(_LOG_FORMATTER.format(log_record))
 
     def record_step_status(self, model, step_name, success=True):
         """
