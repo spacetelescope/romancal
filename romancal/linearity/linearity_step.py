@@ -3,6 +3,7 @@ Apply linearity correction to a science image
 """
 
 from roman_datamodels import datamodels as rdd
+import roman_datamodels as rdm
 import numpy as np
 
 from romancal.stpipe import RomanStep
@@ -23,7 +24,7 @@ class LinearityStep(RomanStep):
     def process(self, input):
 
         # Open the input data model
-        with rdd.RampModel(input) as input_model:
+        with rdm.open(input) as input_model:
 
             # Get the name of the linearity reference file to use
             self.lin_name = self.get_reference_file(input_model, 'linearity')
