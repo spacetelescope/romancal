@@ -8,7 +8,7 @@ def v23tosky(input_model, wrap_v2_at=180, wrap_lon_at=360):
 
     The transform is defined with a reference point in a Frame
     associated tih the telescope (V2, V3) in arcsec, the corresponding
-    reference poiont on sky (RA_REF, DEC_REF) i deg, and the position angle
+    reference poiont on sky (RA_REF, DEC_REF) in deg, and the position angle
     at the center of the aperture, ROLL_REF in deg.
 
     Parameters
@@ -19,6 +19,11 @@ def v23tosky(input_model, wrap_v2_at=180, wrap_lon_at=360):
         At what angle to wrap V2. [deg]
     wrap_lon_at : float
         At what angle to wrap logitude. [deg]
+
+    Returns
+    -------
+    model : `astropy.modeling.Model`
+        The transform from V2,V3 to sky.
     """
     v2_ref = input_model.meta.wcsinfo.v2_ref / 3600
     v3_ref = input_model.meta.wcsinfo.v3_ref / 3600
@@ -32,7 +37,7 @@ def v23tosky(input_model, wrap_v2_at=180, wrap_lon_at=360):
 
     # The sky rotation expects values in deg.
     # This should be removed when models work with quantities.
-    m = ((Scale(1 / 3600) & Scale(1 / 3600)) | SphericalToCartesian(wrap_lon_at=wrap_v2_at)
+    model = ((Scale(1 / 3600) & Scale(1 / 3600)) | SphericalToCartesian(wrap_lon_at=wrap_v2_at)
          | rot | CartesianToSpherical(wrap_lon_at=wrap_lon_at))
-    m.name = 'v23tosky'
-    return m
+    model.name = 'v23tosky'
+    return model
