@@ -6,7 +6,7 @@ def wcs_bbox_from_shape(shape):
     ----------
     shape : tuple
         The shape attribute from a `numpy.ndarray` array.
-        
+
     Returns
     -------
     bbox : tuple
