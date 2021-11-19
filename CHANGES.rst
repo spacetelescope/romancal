@@ -1,8 +1,14 @@
 0.5.0 (unreleased)
 ==================
 
+linearity
+---------
+
+ - Implemented linearity correction using stcal. [#360]
+
 jump
 ----
+
  - Updated filenames in regression test script [#351]
 
  - Updates to add the suffix _flat to the step output [#349]
@@ -17,8 +23,8 @@ jump
 
  - Updated temp readnoise file in jump tests to include required exposure keywords. [#333]
 
- ramp_fitting
- ------------
+ramp_fitting
+------------
 
  - Implemented ramp_fitting using stcal. [#276]
 
