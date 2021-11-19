@@ -3,7 +3,7 @@ from numpy.testing import assert_allclose
 
 from gwcs.wcstools import grid_from_bounding_box
 
-from romancal.assign_wcs import AssignWcsStep
+from romancal.assign_wcs.assign_wcs_step import load_wcs
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.testing import utils as testutil
 
@@ -22,7 +22,7 @@ def create_image():
 
 def test_wcs():
     l2im = create_image()
-    l2_wcs = AssignWcsStep.call(l2im)
+    l2_wcs = load_wcs(l2im, {})
 
     assert l2_wcs.meta.wcs is not None
     assert l2_wcs.meta.cal_step.assign_wcs == 'COMPLETE'
