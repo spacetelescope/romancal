@@ -9,6 +9,8 @@ from .jump.jump_step import JumpStep
 from .linearity.linearity_step import LinearityStep
 from .ramp_fitting.ramp_fit_step import RampFitStep
 from .saturation.saturation_step import SaturationStep
+from .assign_wcs.assign_wcs_step import AssignWcsStep
+
 
 __all__ = [
     "DarkCurrentStep",
@@ -17,5 +19,6 @@ __all__ = [
     "JumpStep",
     "LinearityStep",
     "RampFitStep",
-    "SaturationStep"
-]
+    "SaturationStep",
+    "AssignWcsStep",
+    ]

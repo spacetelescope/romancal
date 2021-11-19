@@ -4,37 +4,42 @@
 linearity
 ---------
 
- - Implemented linearity correction using stcal. [#360]
+- Implemented linearity correction using stcal. [#360]
+
+assign_wcs
+----------
+
+- Added ``assign_wcs`` step to romancal. [#361]
 
 jump
 ----
 
- - Updated filenames in regression test script [#351]
+- Updated filenames in regression test script [#351]
 
- - Updates to add the suffix _flat to the step output [#349]
+- Updates to add the suffix _flat to the step output [#349]
 
- - Updates for unit tests to use stcal [#322]
+- Updates for unit tests to use stcal [#322]
 
- - Fix to jump_step to save the update pixel and group dq arrays [#319]
+- Fix to jump_step to save the update pixel and group dq arrays [#319]
 
- - Updated code for ``jump`` step using ``stcal``. [#309]
+- Updated code for ``jump`` step using ``stcal``. [#309]
 
- - Added simple regression test. [#315]
+- Added simple regression test. [#315]
 
- - Updated temp readnoise file in jump tests to include required exposure keywords. [#333]
+- Updated temp readnoise file in jump tests to include required exposure keywords. [#333]
 
 ramp_fitting
 ------------
 
- - Implemented ramp_fitting using stcal. [#276]
+- Implemented ramp_fitting using stcal. [#276]
 
 saturation
 ----------
 
- - Implement saturation correction using stcal, roman_datamodels and romancal.stpipe [#348]
-   
- - Updated RTD to include saturation reference files. [#350]
-   
+- Implement saturation correction using stcal, roman_datamodels and romancal.stpipe [#348]
+
+- Updated RTD to include saturation reference files. [#350]
+
 
 0.4.2 (2021-09-13)
 ==================
