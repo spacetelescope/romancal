@@ -8,6 +8,7 @@ from roman_datamodels import datamodels as rdd
 from romancal.dq_init import dq_init_step
 from romancal.jump import jump_step
 from romancal.dark_current import DarkCurrentStep
+from romancal.linearity import LinearityStep
 from romancal.ramp_fitting import ramp_fit_step
 from romancal.saturation import SaturationStep
 
@@ -34,6 +35,7 @@ class Level1Pipeline(RomanPipeline):
     # Define aliases to steps
     step_defs = {'dq_init': dq_init_step.DQInitStep,
                  'saturation': SaturationStep,
+                 'linearity': LinearityStep,
                  'dark_current': DarkCurrentStep,
                  'jump': jump_step.JumpStep,
                  'rampfit': ramp_fit_step.RampFitStep,
@@ -61,6 +63,7 @@ class Level1Pipeline(RomanPipeline):
         if input_filename:
             result.meta.filename = input_filename
         result = self.saturation(result)
+        result = self.linearity(result)
         result = self.dark_current(result)
         result = self.jump(result)
         result = self.rampfit(result)
