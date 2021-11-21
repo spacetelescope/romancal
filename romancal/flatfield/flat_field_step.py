@@ -17,7 +17,8 @@ class FlatFieldStep(RomanStep):
 
     def process(self, step_input):
 
-        input_model = self.open_model(step_input)
+        #input_model = self.open_model(step_input)
+        input_model = rdm.open(step_input)
         # Get reference file paths
         reference_file_names = {}
         reffile = self.get_reference_file(input_model, "flat")

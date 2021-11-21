@@ -8,6 +8,7 @@ import numpy as np
 from astropy.time import Time
 
 import roman_datamodels.stnode as rds
+from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import GainRefModel
 from roman_datamodels.datamodels import ReadnoiseRefModel
 from roman_datamodels.testing import utils as testutil
@@ -85,7 +86,7 @@ def setup_inputs():
         pixdq = np.zeros(shape=(nrows, ncols), dtype=np.uint32)
 
         csize = (ngroups, nrows, ncols)
-        dm_ramp = testutil.mk_ramp(csize)
+        dm_ramp = rdm.RampModel(testutil.mk_ramp(csize))
 
         dm_ramp.meta.instrument.name = 'WFI'
         dm_ramp.meta.instrument.optical_element = 'F158'

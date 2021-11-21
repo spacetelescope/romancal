@@ -146,4 +146,4 @@ class RampFitStep(RomanStep):
             out_model = create_image_model(input_model, image_info)
             out_model.meta.cal_step.ramp_fit = 'COMPLETE'
 
-        return out_model, None  # 'None' for int_model
+        return out_model

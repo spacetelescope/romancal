@@ -21,6 +21,7 @@ def get_steps():
     # class definitions.  We need to avoid importing romancal.pipeline and
     # romancal.step to keep the CLI snappy.
     return [
+        ("romancal.pipeline.Level1Pipeline", 'calroman_level1', True),
         ("romancal.step.DarkCurrentStep", None, False),
         ("romancal.step.DQInitStep", None, False),
         ("romancal.step.FlatFieldStep", None, False),
