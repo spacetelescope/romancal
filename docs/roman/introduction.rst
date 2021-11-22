@@ -48,10 +48,10 @@ Individual steps and pipelines (consisting of a series of steps) can be run
 from the command line using the ``strun`` command:
 ::
 
-    $ strun <pipeline_name, class_name, or <input_file>
+    $ strun <pipeline_name, class_name, or input_file>
 
 The first argument to ``strun`` must be one of either a pipeline name, python
-class of the step or pipeline to be run The second argument to
+class of the step or pipeline to be run. The second argument to
 ``strun`` is the name of the input data file to be processed.
 
 For example, the Stage 1 pipeline is implemented by the class

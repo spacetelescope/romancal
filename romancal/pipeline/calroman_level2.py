@@ -5,7 +5,9 @@ from ..stpipe import RomanPipeline
 from roman_datamodels import datamodels as rdd
 
 # step imports
+from romancal.assign_wcs import AssignWcsStep
 from romancal.dq_init import dq_init_step
+from romancal.flatfield import FlatFieldStep
 from romancal.jump import jump_step
 from romancal.dark_current import DarkCurrentStep
 from romancal.linearity import LinearityStep
@@ -39,6 +41,8 @@ class Level2Pipeline(RomanPipeline):
                  'dark_current': DarkCurrentStep,
                  'jump': jump_step.JumpStep,
                  'rampfit': ramp_fit_step.RampFitStep,
+                 'assign_wcs': AssignWcsStep,
+                 'flatfield': FlatFieldStep
                  }
 
     # start the actual processing
@@ -67,10 +71,12 @@ class Level2Pipeline(RomanPipeline):
         result = self.dark_current(result)
         result = self.jump(result)
         result = self.rampfit(result)
+        result = self.assign_wcs(result)
+        result = self.flatfield(result)
 
         # setup output_file for saving
         self.setup_output(result)
-        log.info('calroman_l pipeline ending...')
+        log.info('calroman_level2 pipeline ending...')
 
         return result
 

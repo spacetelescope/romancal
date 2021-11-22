@@ -7,7 +7,7 @@ calroman_level2: Stage 2 Detector Processing
 :Class: `romancal.pipeline.Level2Pipeline`
 :Alias: calroman_level2
 
-The ``Level2Pipeline`` applies basic detector-level corrections to given exposure
+The ``Level2Pipeline`` applies detector-level corrections to given exposure
 types (imaging, prism, and grism.). It is applied to one
 exposure at a time.
 It is sometimes referred to as "ramps-to-slopes" processing, because the input raw data
@@ -24,6 +24,7 @@ table below.
 ========================================= ========= ========= =========
  :ref:`dq_init <dq_init_step>`               x          x        x
  :ref:`saturation <saturation_step>`         x          x        x
+ :ref:`linearity <linearity_step>`           x          x        x
  :ref:`dark_current <dark_current_step>`     x          x        x
  :ref:`jump <jump_step>`                     x          x        x
  :ref:`ramp_fitting <ramp_fitting_step>`     x          x        x

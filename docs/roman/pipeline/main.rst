@@ -3,7 +3,7 @@
 Pipeline Stages
 ===============
 
-End-to-end calibration of ROman data is divided into stages of
+End-to-end calibration of Roman data is divided into stages of
 processing:
 
 - Stage 2 consists of detector-level corrections that are performed on a
@@ -27,7 +27,7 @@ processing:
 +------------------------------------------+-----------------+-----------+
 | Pipeline Class                           | Alias           | Used For  |
 +=========================================+==================+===========+
-| `~romancal.pipeline.Detector1Pipeline`  | calroman_level2  | Stage 2:  |
+| `~romancal.pipeline.Level2Pipeline`  | calroman_level2  | Stage 2:  |
 +-----------------------------------------+------------------+-----------+
 
 
