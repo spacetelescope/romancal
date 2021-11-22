@@ -1,13 +1,13 @@
-.. _calroman_level1:
+.. _calroman_level2:
 
 
-calroman_level1: Stage 1 Detector Processing
+calroman_level2: Stage 2 Detector Processing
 ==============================================
 
-:Class: `romancal.pipeline.Level1Pipeline`
-:Alias: calroman_level1
+:Class: `romancal.pipeline.Level2Pipeline`
+:Alias: calroman_level2
 
-The ``Level1Pipeline`` applies basic detector-level corrections to given exposure
+The ``Level2Pipeline`` applies basic detector-level corrections to given exposure
 types (imaging, prism, and grism.). It is applied to one
 exposure at a time.
 It is sometimes referred to as "ramps-to-slopes" processing, because the input raw data
@@ -15,7 +15,7 @@ are in the form of one or more ramps (integrations) containing accumulating
 counts from the non-destructive detector readouts and the output is a corrected
 countrate (slope) image.
 
-The list of steps applied by the ``Level1Pipeline`` pipeline is shown in the
+The list of steps applied by the ``Level2Pipeline`` pipeline is shown in the
 table below.
 
 
@@ -32,7 +32,7 @@ table below.
 
 Arguments
 ---------
-The ``calroman_level1`` pipeline has one optional argument::
+The ``calroman_level2`` pipeline has one optional argument::
 
   --save_calibrated_ramp  boolean  default=False
 
@@ -55,7 +55,7 @@ Inputs
 :Data model: `~romancal.datamodels.RampModel`
 :File suffix: _uncal
 
-The input to ``Level1Pipeline`` is a single raw exposure,
+The input to ``Level2Pipeline`` is a single raw exposure,
 e.g. "r0008308002010007027_06311_0019_WFI01_uncal.fits", which contains the
 original raw data from all of the detector readouts in the exposure
 (ncols x nrows x ngroups).

@@ -12,21 +12,21 @@ from romancal.linearity import LinearityStep
 from romancal.ramp_fitting import ramp_fit_step
 from romancal.saturation import SaturationStep
 
-__all__ = ['Level1Pipeline']
+__all__ = ['Level2Pipeline']
 
 # Define logging
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 
 
-class Level1Pipeline(RomanPipeline):
+class Level2Pipeline(RomanPipeline):
     """
-    Level11Pipeline: Apply all calibration steps to raw Roman WFI
+    Level21Pipeline: Apply all calibration steps to raw Roman WFI
     ramps to produce a 2-D slope product. Included steps are:
-    dq_init, jump detection, ramp_fit, and TBD.
+    dq_init, saturation, linearity, dark currnet, jump detection, and ramp_fit.
     """
 
-    class_alias = "calroman_level1"
+    class_alias = "calroman_level2"
 
     spec = """
         save_calibrated_ramp = boolean(default=False)
@@ -46,7 +46,7 @@ class Level1Pipeline(RomanPipeline):
 
         """ Process the Roman WFI data """
 
-        log.info('Starting calroman_level1 ...')
+        log.info('Starting calroman_level2 ...')
         if isinstance(input, str):
             input_filename = basename(input)
 
@@ -70,7 +70,7 @@ class Level1Pipeline(RomanPipeline):
 
         # setup output_file for saving
         self.setup_output(result)
-        log.info('calroman_level1 pipeline ending...')
+        log.info('calroman_l pipeline ending...')
 
         return result
 

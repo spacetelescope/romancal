@@ -6,12 +6,12 @@ Pipeline Stages
 End-to-end calibration of ROman data is divided into stages of
 processing:
 
-- Stage 1 consists of detector-level corrections that are performed on a
+- Stage 2 consists of detector-level corrections that are performed on a
   group-by-group basis, followed by ramp fitting. The output of stage 1
   processing is a countrate image per exposure, or per integration for
   some modes. Details of this pipeline can be found at:
 
-  - :ref:`calroman_level1`
+  - :ref:`calroman_level2`
 
   - Stage 2 processing consists of additional instrument-level and
     observing-mode corrections and calibrations to produce fully calibrated
@@ -27,7 +27,7 @@ processing:
 +------------------------------------------+-----------------+-----------+
 | Pipeline Class                           | Alias           | Used For  |
 +=========================================+==================+===========+
-| `~romancal.pipeline.Detector1Pipeline`  | calroman_level1  | Stage 1:  |
+| `~romancal.pipeline.Detector1Pipeline`  | calroman_level2  | Stage 2:  |
 +-----------------------------------------+------------------+-----------+
 
 
