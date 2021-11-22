@@ -110,6 +110,7 @@ def setup_inputs():
     return _setup
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
 def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
     override_gain, override_readnoise = generate_wfi_reffiles
@@ -154,6 +155,7 @@ def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
                 CR_x_locs[i]]))
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
 def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
     override_gain, override_readnoise = generate_wfi_reffiles
@@ -202,6 +204,7 @@ def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
                CR_x_locs[i]]))
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
 def test_two_group_integration(generate_wfi_reffiles, max_cores, setup_inputs):
 
@@ -223,6 +226,7 @@ def test_two_group_integration(generate_wfi_reffiles, max_cores, setup_inputs):
     assert out_model.meta.cal_step['jump'] == 'SKIPPED'
 
 
+@pytest.mark.xfail
 def test_four_group_integration(generate_wfi_reffiles, setup_inputs):
 
     override_gain, override_readnoise = generate_wfi_reffiles
@@ -243,6 +247,7 @@ def test_four_group_integration(generate_wfi_reffiles, setup_inputs):
     assert out_model.meta.cal_step['jump'] == 'COMPLETE'
 
 
+@pytest.mark.xfail
 def test_three_group_integration(generate_wfi_reffiles, setup_inputs):
 
     override_gain, override_readnoise = generate_wfi_reffiles
