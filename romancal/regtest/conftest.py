@@ -202,7 +202,9 @@ def rtdata_module(artifactory_repos, envopt, request, jail):
 def ignore_asdf_paths():
     ignore_attr = ["meta.[date, filename]",
                    "asdf_library",
-                   "history"]
+                   "history",
+                   "cal_logs",
+                   ]
 
     return {'ignore': ignore_attr}
 
