@@ -41,9 +41,7 @@ def do_correction(input_model, dark_model, dark_output=None):
     sci_groupgap = input_model.meta.exposure.groupgap
 
     drk_ngroups = dark_model.data.shape[0]
-    #drk_nframes = dark_model.meta.exposure.nframes
     drk_nframes = input_model.meta.exposure.nframes
-    #drk_groupgap = dark_model.meta.exposure.groupgap
     drk_groupgap = input_model.meta.exposure.groupgap
 
     log.info(
