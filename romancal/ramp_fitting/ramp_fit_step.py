@@ -87,6 +87,7 @@ def create_image_model(input_model, image_info):
             'var_poisson': var_poisson,
             'var_rnoise': var_rnoise,
             'err': err,
+            'cal_logs': rds.CalLogs(),
             }
     out_node = rds.WfiImage(inst)
     im = rdd.ImageModel(out_node)
