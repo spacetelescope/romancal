@@ -1,39 +1,41 @@
-.. _calroman_level2:
+.. _exposure_pipeline:
 
 
-calroman_level2: Stage 2 Detector Processing
-==============================================
+exposure_pipeline: Exposure Level Detector Processing
+=====================================================
 
-:Class: `romancal.pipeline.Level2Pipeline`
-:Alias: calroman_level2
+:Class: `romancal.pipeline.ExposurePipeline`
+:Alias: exposure_pipeline
 
-The ``Level2Pipeline`` applies detector-level corrections to given exposure
+The ``ExposurePipeline`` applies detector-level corrections to given exposure
 types (imaging, prism, and grism.). It is applied to one
 exposure at a time.
-It is sometimes referred to as "ramps-to-slopes" processing, because the input raw data
-are in the form of one or more ramps (integrations) containing accumulating
-counts from the non-destructive detector readouts and the output is a corrected
-countrate (slope) image.
+It is sometimes referred to as "ramps-to-slopes" processing, because the input
+raw data are in the form of ramps containing accumulating counts from the
+non-destructive detector readouts and the output is a corrected countrate
+(slope) image.
 
-The list of steps applied by the ``Level2Pipeline`` pipeline is shown in the
+The list of steps applied by the ``ExposurePipeline`` pipeline is shown in the
 table below.
 
 
-========================================= ========= ========= =========
- Step                                     WFI-Image WFI-Prism WFI-Grism
-========================================= ========= ========= =========
- :ref:`dq_init <dq_init_step>`               x          x        x
- :ref:`saturation <saturation_step>`         x          x        x
- :ref:`linearity <linearity_step>`           x          x        x
- :ref:`dark_current <dark_current_step>`     x          x        x
- :ref:`jump <jump_step>`                     x          x        x
- :ref:`ramp_fitting <ramp_fitting_step>`     x          x        x
-========================================= ========= ========= =========
+============================================== ========= ========= =========
+ Step                                          WFI-Image WFI-Prism WFI-Grism
+============================================== ========= ========= =========
+ :ref:`dq_init <dq_init_step>`                  x          x        x
+ :ref:`saturation <saturation_step>`            x          x        x
+  `linearity`                                   x          x        x
+ :ref:`dark_current <dark_current_step>`        x          x        x
+ :ref:`jump <jump_step>`                        x          x        x
+ :ref:`ramp_fitting <ramp_fitting_step>`        x          x        x
+ :ref:`assign_wcs <assign_wcs_step>`            x          x        x
+ :ref:`flatfield <flatfield_step>`              x          x        x
+============================================== ========= ========= =========
 
 
 Arguments
 ---------
-The ``calroman_level2`` pipeline has one optional argument::
+The ``evel2`` pipeline has one optional argument::
 
   --save_calibrated_ramp  boolean  default=False
 
@@ -56,7 +58,7 @@ Inputs
 :Data model: `~romancal.datamodels.RampModel`
 :File suffix: _uncal
 
-The input to ``Level2Pipeline`` is a single raw exposure,
+The input to the ``ExposurePipeline`` is a single raw exposure,
 e.g. "r0008308002010007027_06311_0019_WFI01_uncal.fits", which contains the
 original raw data from all of the detector readouts in the exposure
 (ncols x nrows x ngroups).

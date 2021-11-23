@@ -7,6 +7,6 @@ Pipeline Modules
    :maxdepth: 2
 
    main.rst
-   calroman_level2.rst
+   exposure_pipeline.rst
 
 .. automodapi:: romancal.pipeline

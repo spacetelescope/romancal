@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 from os.path import basename
 import logging
-from ..stpipe import RomanPipeline
 from roman_datamodels import datamodels as rdd
+from ..stpipe import RomanPipeline
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
@@ -14,21 +14,22 @@ from romancal.linearity import LinearityStep
 from romancal.ramp_fitting import ramp_fit_step
 from romancal.saturation import SaturationStep
 
-__all__ = ['Level2Pipeline']
+__all__ = ['ExposurePipeline']
 
 # Define logging
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 
 
-class Level2Pipeline(RomanPipeline):
+class ExposurePipeline(RomanPipeline):
     """
-    Level21Pipeline: Apply all calibration steps to raw Roman WFI
+    ExposurePipeline: Apply all calibration steps to raw Roman WFI
     ramps to produce a 2-D slope product. Included steps are:
-    dq_init, saturation, linearity, dark currnet, jump detection, and ramp_fit.
+    dq_init, saturation, linearity, dark current, jump detection, ramp_fit,
+    and assign_wcs. The flat field step is only applied to WFI imaging data.
     """
 
-    class_alias = "calroman_level2"
+    class_alias = "roman_elp"
 
     spec = """
         save_calibrated_ramp = boolean(default=False)
@@ -50,7 +51,7 @@ class Level2Pipeline(RomanPipeline):
 
         """ Process the Roman WFI data """
 
-        log.info('Starting calroman_level2 ...')
+        log.info('Starting Roman exposure calibration pipeline ...')
         if isinstance(input, str):
             input_filename = basename(input)
 
@@ -61,7 +62,7 @@ class Level2Pipeline(RomanPipeline):
         # self.dark_current.output_dir = self.output_dir
         # self.ramp_fit.output_dir = self.output_dir
 
-        log.debug('Processing a WFI exposure')
+        log.debug('Exposure Processing a WFI exposure')
 
         result = self.dq_init(input)
         if input_filename:
@@ -72,18 +73,22 @@ class Level2Pipeline(RomanPipeline):
         result = self.jump(result)
         result = self.rampfit(result)
         result = self.assign_wcs(result)
-        result = self.flatfield(result)
+        if result.meta.exposure.type == 'WFI_IMAGE':
+            result = self.flatfield(result)
+        else:
+            log.info('Flat Field step is being SKIPPED')
+            result.meta.cal_step.flat_field = 'SKIPPED'
 
         # setup output_file for saving
         self.setup_output(result)
-        log.info('calroman_level2 pipeline ending...')
+        log.info('Roman exposure calibration pipeline ending...')
 
         return result
 
     def setup_output(self, input):
         """ Determine the proper file name suffix to use later """
         if input.meta.cal_step.ramp_fit == 'COMPLETE':
-            self.suffix = 'rate'
+            self.suffix = 'cal'
             input.meta.filename = input.meta.filename.replace(
                 '_uncal', '')
             input['output_file'] = input.meta.filename

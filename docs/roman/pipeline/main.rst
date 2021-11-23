@@ -11,7 +11,7 @@ processing:
   processing is a countrate image per exposure, or per integration for
   some modes. Details of this pipeline can be found at:
 
-  - :ref:`calroman_level2`
+  - :ref:`exposure_pipeline`
 
   - Stage 2 processing consists of additional instrument-level and
     observing-mode corrections and calibrations to produce fully calibrated
@@ -27,7 +27,7 @@ processing:
 +------------------------------------------+-----------------+-----------+
 | Pipeline Class                           | Alias           | Used For  |
 +=========================================+==================+===========+
-| `~romancal.pipeline.Level2Pipeline`  | calroman_level2  | Stage 2:  |
+| `~romancal.pipeline.ExposurePipeline`    | roman_elp       | Stage 2:  |
 +-----------------------------------------+------------------+-----------+
 
 

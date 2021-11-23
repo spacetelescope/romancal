@@ -55,20 +55,20 @@ class of the step or pipeline to be run. The second argument to
 ``strun`` is the name of the input data file to be processed.
 
 For example, the Stage 1 pipeline is implemented by the class
-:ref:`romancal.pipeline.Level2Pipeline <calroman_level2>`. The command to
+:ref:`romancal.pipeline.ExposurePipeline <exposure_pipeline>`. The command to
 run this pipeline is:
 ::
 
-  $ strun romancal.pipeline.Level2Pipeline r0008308002010007027_06311_0019_WFI01_uncal.asdf
+  $ strun romancal.pipeline.ExposurePipeline r0008308002010007027_06311_0019_WFI01_uncal.asdf
 
 
 Pipeline classes also have a **pipeline name**, or **alias**, that can be used
 instead of thefull class specification. For example,
-``calroman.pipeline.Level2Pipeline`` has the alias ``calroman_level2`` and
+``calroman.pipeline.ExposurePipeline`` has the alias ``roman_elp`` and
 can be run as
 ::
 
- $ strun calroman_level2 r0008308002010007027_06311_0019_WFI01_uncal.asdf
+ $ strun roman_elp r0008308002010007027_06311_0019_WFI01_uncal.asdf
 
 Exit Status
 -----------
@@ -145,15 +145,15 @@ aspects of how they execute. To see what parameters are available for any given
 pipeline or step, use the ``-h`` option on ``strun``. Some examples are:
 ::
 
-   $ strun calroman_level2 -h
+   $ strun roman_elp -h
    $ strun calroman.dq_init.DQInitStep -h
 
 To set a parameter, simply specify it on the command line. For example, to have
-:ref:`calroman_level2 <calroman_level2>` save the calibrated ramp files, the
+:ref:`roman_elp <exposure_pipeline>` save the calibrated ramp files, the
 ``strun`` command would be as follows:
 ::
 
-   $ strun calroman_level2 r0008308002010007027_06311_0019_WFI01_uncal.asdf --save_calibrated_ramp=true
+   $ strun roman_elp r0008308002010007027_06311_0019_WFI01_uncal.asdf --save_calibrated_ramp=true
 
 To specify parameter values for an individual step when running a pipeline
 use the syntax ``--steps.<step_name>.<parameter>=value``.
@@ -161,7 +161,7 @@ For example, to override the default selection of a dark current reference
 file from CRDS when running a pipeline:
 ::
 
-    $ strun calroman_level2 r0008308002010007027_06311_0019_WFI01_uncal.asdf
+    $ strun roman_elp r0008308002010007027_06311_0019_WFI01_uncal.asdf
           --steps.dark_current.override_dark='my_dark.fits'
 
 Universal Parameters
@@ -178,11 +178,11 @@ Output Directory
 By default, all pipeline and step outputs will drop into the current
 working directory, i.e., the directory in which the process is
 running. To change this, use the ``output_dir`` parameter. For example, to
-have all output from ``calroman_level2``, including any saved
+have all output from ``roman_elp``, including any saved
 intermediate steps, appear in the sub-directory ``calibrated``, use
 ::
 
-    $ strun calroman_level2 r0008308002010007027_06311_0019_WFI01_uncal.asdf
+    $ strun roman_elp r0008308002010007027_06311_0019_WFI01_uncal.asdf
         --output_dir=calibrated
 
 ``output_dir`` can be specified at the step level, overriding what was
@@ -190,7 +190,7 @@ specified for the pipeline. From the example above, to change the name
 and location of the ``dark_current`` step, use the following
 ::
 
-    $ strun calroman_level2 r0008308002010007027_06311_0019_WFI01_uncal.asdf
+    $ strun roman_elp r0008308002010007027_06311_0019_WFI01_uncal.asdf
         --output_dir=calibrated
         --steps.dark_current.output_file='dark_sub.fits'
         --steps.dark_current.output_dir='dark_calibrated'
