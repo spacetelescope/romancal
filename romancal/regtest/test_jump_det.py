@@ -9,7 +9,7 @@ from .regtestdata import compare_asdf
 def test_jump_detection_step(rtdata, ignore_asdf_paths):
     """ Function to run and compare Jump Detection files. Note: This should
         include tests for overrides etc. """
-    rtdata.get_data("WFI/image/l1_0006_science_raw_dqinitstep.asdf")
+    rtdata.get_data("WFI/image/l1_0007_science_raw_dqinitstep.asdf")
     rtdata.input = "l1_0007_science_raw_dqinitstep.asdf"
 
     args = ["romancal.step.JumpStep", rtdata.input]
