@@ -9,7 +9,6 @@ Package Index
    dark_current/index.rst
    dq_init/index.rst
    flatfield/index.rst
-   gain_scale/index.rst
    jump/index.rst
    pipeline/index.rst
    ramp_fitting/index.rst
