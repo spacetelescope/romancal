@@ -39,7 +39,7 @@ class JumpStep(RomanStep):
     def process(self, input):
 
         # Open input as a Roman DataModel (single integration; 3D arrays)
-        with rdd.RampModel(input) as input_model:
+        with rdd.open(input) as input_model:
 
             # Extract the needed info from the Roman Data Model
             meta = input_model.meta
@@ -125,5 +125,9 @@ class JumpStep(RomanStep):
             self.log.info('The execution time in seconds: %f', tstop - tstart)
 
         result.meta.cal_step.jump = 'COMPLETE'
+
+        if self.save_results is not None:
+            ff_path = self.save_model(result, suffix=self.suffix, force=True)
+            self.log.info(f'Interpolated flat written to "{ff_path}".')
 
         return result

@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 
 from romancal.stpipe import RomanStep
-from roman_datamodels.datamodels import RampModel, SaturationRefModel
+import roman_datamodels as rdm
+from roman_datamodels.datamodels import SaturationRefModel
 from romancal.saturation import saturation
 
 
@@ -18,7 +19,7 @@ class SaturationStep(RomanStep):
     def process(self, input):
 
         # Open the input data model
-        with RampModel(input) as input_model:
+        with rdm.open(input) as input_model:
 
             # Get the name of the saturation reference file
             self.ref_name = self.get_reference_file(input_model, 'saturation')

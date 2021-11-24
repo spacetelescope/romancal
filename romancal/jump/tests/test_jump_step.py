@@ -1,6 +1,7 @@
 """
  Unit tests for the Roman jump step code
 """
+import os
 from itertools import cycle
 
 import pytest
@@ -8,6 +9,7 @@ import numpy as np
 from astropy.time import Time
 
 import roman_datamodels.stnode as rds
+from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import GainRefModel
 from roman_datamodels.datamodels import ReadnoiseRefModel
 from roman_datamodels.testing import utils as testutil
@@ -18,6 +20,10 @@ MAXIMUM_CORES = ['none', 'quarter', 'half', 'all']
 
 
 @pytest.fixture(scope="module")
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def generate_wfi_reffiles(tmpdir_factory):
     gainfile = str(tmpdir_factory.mktemp("ndata").join("gain.asdf"))
     readnoisefile = str(tmpdir_factory.mktemp("ndata").join('readnoise.asdf'))
@@ -74,6 +80,10 @@ def generate_wfi_reffiles(tmpdir_factory):
 
 
 @pytest.fixture
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def setup_inputs():
 
     def _setup(ngroups=10, readnoise=10, nrows=20, ncols=20,
@@ -85,7 +95,7 @@ def setup_inputs():
         pixdq = np.zeros(shape=(nrows, ncols), dtype=np.uint32)
 
         csize = (ngroups, nrows, ncols)
-        dm_ramp = testutil.mk_ramp(csize)
+        dm_ramp = rdm.RampModel(testutil.mk_ramp(csize))
 
         dm_ramp.meta.instrument.name = 'WFI'
         dm_ramp.meta.instrument.optical_element = 'F158'
@@ -110,6 +120,10 @@ def setup_inputs():
 
 
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
     override_gain, override_readnoise = generate_wfi_reffiles
 
@@ -154,6 +168,10 @@ def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
 
 
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
     override_gain, override_readnoise = generate_wfi_reffiles
 
@@ -202,6 +220,10 @@ def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
 
 
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def test_two_group_integration(generate_wfi_reffiles, max_cores, setup_inputs):
 
     override_gain, override_readnoise = generate_wfi_reffiles
@@ -222,6 +244,10 @@ def test_two_group_integration(generate_wfi_reffiles, max_cores, setup_inputs):
     assert out_model.meta.cal_step['jump'] == 'SKIPPED'
 
 
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def test_four_group_integration(generate_wfi_reffiles, setup_inputs):
 
     override_gain, override_readnoise = generate_wfi_reffiles
@@ -242,6 +268,10 @@ def test_four_group_integration(generate_wfi_reffiles, setup_inputs):
     assert out_model.meta.cal_step['jump'] == 'COMPLETE'
 
 
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def test_three_group_integration(generate_wfi_reffiles, setup_inputs):
 
     override_gain, override_readnoise = generate_wfi_reffiles
