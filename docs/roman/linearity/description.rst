@@ -3,13 +3,9 @@ Description
 
 Assumptions
 -----------
-It is assumed that the input science exposure data has had the
-:ref:`superbias <superbias_step>` subtraction step applied,
-therefore the correction coefficients stored in the linearity reference files
-for those instruments must have been derived from data that has also been
-bias subtracted.
-
-It is also assumed that the saturation step has already been applied to
+(When the superbias step is implemented in the pipeline, text about and
+a link to it will be added here).
+It is assumed that the saturation step has already been applied to
 the input data, so that saturation flags are set in the GROUPDQ array of
 the input science data.
 
