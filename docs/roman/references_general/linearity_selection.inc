@@ -1,5 +1,3 @@
-.. _linearity_selectors:
-
 Reference Selection Keywords for LINEARITY
 ++++++++++++++++++++++++++++++++++++++++++
 CRDS selects appropriate LINEARITY references based on the following keyword
