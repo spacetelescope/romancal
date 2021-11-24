@@ -11,6 +11,11 @@ assign_wcs
 
 - Added ``assign_wcs`` step to romancal. [#361]
 
+flat
+----
+
+- Added check for WFI_Image in flat field step (skip if a different exposure type). Added test. [#366]
+
 jump
 ----
 
