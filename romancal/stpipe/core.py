@@ -1,9 +1,20 @@
 """
 Roman Calibration Pipeline base class
 """
+import logging
+import time
+
 from stpipe import Step, Pipeline
 
 import roman_datamodels as rdm
+from roman_datamodels.datamodels import ImageModel
+
+
+_LOG_FORMATTER = logging.Formatter(
+    "%(asctime)s.%(msecs)03dZ :: %(name)s :: %(levelname)s :: %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S"
+)
+_LOG_FORMATTER.converter = time.gmtime
 
 
 class RomanStep(Step):
@@ -37,8 +48,9 @@ class RomanStep(Step):
             List of reference files used.  The first element of each tuple
             is the reftype code, the second element is the filename.
         """
-        #  JWST uses this to add the cal code and CRDS software versions.
-        pass
+        if isinstance(model, ImageModel):
+            for log_record in self.log_records:
+                model.cal_logs.append(_LOG_FORMATTER.format(log_record))
 
     def record_step_status(self, model, step_name, success=True):
         """
