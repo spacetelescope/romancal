@@ -10,5 +10,5 @@ All keyword attributes used for file selection are *required*.
 Instrument  Keyword Attributes
 ========== =====================================
 WFI         instrument, detector, date, time
-========== ======================================
+========== =====================================
 
