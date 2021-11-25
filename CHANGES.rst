@@ -14,7 +14,7 @@ assign_wcs
 flat
 ----
 
-- Added check for WFI_Image in flat field step (skip if a different exposure type). Added test. [#366]
+- Added check in flat field step to skip spectroscopic observations. Added test. [#366]
 
 jump
 ----
