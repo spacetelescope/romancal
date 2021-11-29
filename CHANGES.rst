@@ -31,6 +31,8 @@ jump
 ramp_fitting
 ------------
 
+- Update ramp_fitting regression test output file names [#369]
+
 - Implemented ramp_fitting using stcal. [#276]
 
 saturation
