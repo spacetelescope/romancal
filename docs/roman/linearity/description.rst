@@ -3,8 +3,6 @@ Description
 
 Assumptions
 -----------
-(When the superbias step is implemented in the pipeline, text about and
-a link to it will be added here).
 It is assumed that the saturation step has already been applied to
 the input data, so that saturation flags are set in the GROUPDQ array of
 the input science data.
