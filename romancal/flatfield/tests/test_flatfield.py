@@ -97,6 +97,10 @@ def test_crds_temporal_match(instrument, exptype):
 @pytest.mark.parametrize(
     "exptype", ["WFI_GRISM", "WFI_PRISM",]
 )
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 # Test that spectroscopic exposure types will skip flat field step
 def test_spectroscopic_skip(instrument, exptype):
     wfi_image = testutil.mk_level2_image(arrays=True)
