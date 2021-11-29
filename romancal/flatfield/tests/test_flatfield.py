@@ -89,3 +89,30 @@ def test_crds_temporal_match(instrument, exptype):
     ref_file_path_b = step.get_reference_file(wfi_image_model, "flat")
     assert ("/".join(ref_file_path.rsplit("/", 1)[1:])) != \
            ("/".join(ref_file_path_b.rsplit("/", 1)[1:]))
+
+
+@pytest.mark.parametrize(
+    "instrument", ["WFI",]
+)
+@pytest.mark.parametrize(
+    "exptype", ["WFI_GRISM", "WFI_PRISM",]
+)
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
+# Test that spectroscopic exposure types will skip flat field step
+def test_spectroscopic_skip(instrument, exptype):
+    wfi_image = testutil.mk_level2_image(arrays=True)
+    wfi_image.meta.instrument.name = instrument
+    wfi_image.meta.instrument.detector = 'WFI01'
+    wfi_image.meta.instrument.optical_element = 'F158'
+
+    wfi_image.meta.observation.start_time = Time('2020-01-01T11:11:11.110')
+    wfi_image.meta.observation.end_time = Time('2020-01-01T11:33:11.110')
+
+    wfi_image.meta.exposure.type = exptype
+    wfi_image_model = ImageModel(wfi_image)
+
+    result = FlatFieldStep.call(wfi_image_model)
+    assert result.meta.cal_step.flat_field == 'SKIPPED'

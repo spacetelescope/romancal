@@ -54,6 +54,10 @@ def do_flat_field(output_model, flat_model):
                     'shape as the science data')
         log.warning('Step will be skipped')
         output_model.meta.cal_step.flat_field = 'SKIPPED'
+    elif output_model.meta.exposure.type != "WFI_IMAGE":
+        # Check to see if attempt to flatten non-Image data
+        log.info('Skipping flat field for spectral exposure.')
+        output_model.meta.cal_step.flat_field = 'SKIPPED'
     else:
         apply_flat_field(output_model, flat_model)
         output_model.meta.cal_step.flat_field = 'COMPLETE'

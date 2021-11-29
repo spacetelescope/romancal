@@ -11,6 +11,11 @@ assign_wcs
 
 - Added ``assign_wcs`` step to romancal. [#361]
 
+flat
+----
+
+- Added check in flat field step to skip spectroscopic observations. Added test. [#366]
+
 jump
 ----
 
@@ -20,7 +25,7 @@ jump
 
 - Updates for unit tests to use stcal [#322]
 
-- Fix to jump_step to save the update pixel and group dq arrays [#319]
+- Fix to jump_step to save the update pixel and group dq arrays. [#319]
 
 - Updated code for ``jump`` step using ``stcal``. [#309]
 
