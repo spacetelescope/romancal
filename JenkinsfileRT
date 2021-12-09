@@ -52,12 +52,8 @@ def pip_install_args = "--index-url ${pip_index} --progress-bar=off"
 // Define environment variables needed for the regression tests
 env_vars = [
     "TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory",
-<<<<<<< HEAD
     "CRDS_CONTEXT=roman_0023.pmap",
-=======
-    "CRDS_CONTEXT=roman_0020.pmap",
->>>>>>> RCAL-251 Initial updates for release 0.5.0
-    "CRDS_SERVER_URL=https://roman-crds-test.stsci.edu",
+   "CRDS_SERVER_URL=https://roman-crds-test.stsci.edu",
     'CRDS_PATH=${WORKSPACE}/roman-crds-test-cache',
 ]
 if (env.ENV_VARS) {
