@@ -53,10 +53,7 @@ def pip_install_args = "--index-url ${pip_index} --progress-bar=off"
 env_vars = [
     "TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory",
     "CRDS_CONTEXT=roman_0023.pmap",
-<<<<<<< HEAD
-   "CRDS_SERVER_URL=https://roman-crds-test.stsci.edu",
     "CRDS_SERVER_URL=https://roman-crds-test.stsci.edu",
->>>>>>> RCAL-251 Initial updates for release 0.5.0
     'CRDS_PATH=${WORKSPACE}/roman-crds-test-cache',
 ]
 if (env.ENV_VARS) {
