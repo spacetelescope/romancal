@@ -1,16 +1,13 @@
-import os
 import pytest
 
-from romancal.stpipe import RomanStep, RomanPipeline
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 import roman_datamodels as rdm
-
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
 import numpy as np
 from numpy.testing import assert_allclose
 from .regtestdata import compare_asdf
 import copy
-import asdf
+
 
 def passfail(bool_expr):
     if bool_expr:
@@ -19,6 +16,7 @@ def passfail(bool_expr):
         return "Fail"
 
 @pytest.mark.bigdata
+@pytest.mark.soctests
 def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     rtdata.get_data("WFI/image/l1_0001.asdf")
     rtdata.input = "l1_0001.asdf"
@@ -100,16 +98,16 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
                   'Level 2 image output.......' +
                   passfail("err" in model.keys()))
     assert "err" in model.keys()
-    pipeline.log.info('DMS87 MSG: Testing existence of Poisson noise variance array (var_poisson) in'
-                  'Level 2 image output.......' +
+    pipeline.log.info('DMS87 MSG: Testing existence of Poisson noise variance array (var_poisson)'
+                  'in Level 2 image output.......' +
                   passfail("var_poisson" in model.keys()))
     assert "var_poisson" in model.keys()
     pipeline.log.info('DMS87 MSG: Testing existence of read noise variance array (var_rnoise) in'
                   'Level 2 image output.......' +
                   passfail("var_rnoise" in model.keys()))
     assert "var_rnoise" in model.keys()
-    pipeline.log.info('DMS87 MSG: Testing existence of flatfield uncertainty variance array (var_flat) in'
-                  'Level 2 image output.......' +
+    pipeline.log.info('DMS87 MSG: Testing existence of flatfield uncertainty variance array'
+                  '(var_flat) in Level 2 image output.......' +
                   passfail("var_flat" in model.keys()))
     assert "var_flat" in model.keys()
 
@@ -152,6 +150,8 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     rtdata.get_truth("truth/WFI/image/" + output.rsplit(".",1)[0] + "_repoint.asdf")
     assert (compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)
 
-    pipeline.log.info('DMS89 MSG: Testing that the different pointings create differing wcs.......' +
-                      passfail( ((np.abs(orig_wcs(2048,2048)[0] - model.meta.wcs(2048,2048)[0])) - 10.0) < 1.0)  )
-    assert_allclose([angle + 10.0 for angle in orig_wcs(2048,2048)], model.meta.wcs(2048,2048), atol=1.0)
+    pipeline.log.info('DMS89 MSG: Testing that the different pointings create differing wcs.......'
+                      + passfail(((np.abs(orig_wcs(2048,2048)[0] -
+                                          model.meta.wcs(2048,2048)[0])) - 10.0) < 1.0))
+    assert_allclose([angle + 10.0 for angle in orig_wcs(2048,2048)], model.meta.wcs(2048,2048),
+                    atol=1.0)
