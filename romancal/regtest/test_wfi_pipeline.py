@@ -18,15 +18,16 @@ def passfail(bool_expr):
 @pytest.mark.bigdata
 @pytest.mark.soctests
 def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
-    rtdata.get_data("WFI/image/l1_0001.asdf")
-    rtdata.input = "l1_0001.asdf"
+    rtdata.get_data("WFI/image/r0000201001001001001_01101_0001_WFI01_uncal.asdf")
+    rtdata.input = "r0000201001001001001_01101_0001_WFI01_uncal.asdf"
 
     # Test Pipeline
-    output = "l1_0001_cal.asdf"
+    output = "r0000201001001001001_01101_0001_WFI01_cal.asdf"
     rtdata.output = output
     args = ["--disable-crds-steppars",
             "--steps.jump.rejection_threshold=180.0",
             "--steps.jump.three_group_rejection_threshold=185.0",
+            "--steps.jump.four_group_rejection_threshold=190",
             "roman_elp", rtdata.input,
             ]
     ExposurePipeline.from_cmdline(args)
