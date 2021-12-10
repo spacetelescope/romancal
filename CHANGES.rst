@@ -1,6 +1,12 @@
 0.5.0 (unreleased)
 ==================
 
+general
+-------
+
+- Added regression tests for SOC-604. [#381]
+
+
 linearity
 ---------
 
