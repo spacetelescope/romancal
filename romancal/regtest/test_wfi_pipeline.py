@@ -40,52 +40,52 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     model = rdm.open(rtdata.output)
     pipeline = ExposurePipeline()
 
-    # DMS90 instrument artifact correction tests
+    # DMS86 instrument artifact correction tests
     pipeline.log.info('Status of the step:             assign_wcs    ' +
                   str(model.meta.cal_step.assign_wcs))
-    pipeline.log.info('DMS90 MSG: Testing completion of wcs assignment in'
+    pipeline.log.info('DMS86 MSG: Testing completion of wcs assignment in'
                   'Level 2 image output.......' +
                   passfail(model.meta.cal_step.assign_wcs == 'COMPLETE'))
     assert model.meta.cal_step.assign_wcs == 'COMPLETE'
     pipeline.log.info('Status of the step:             flat_field    ' +
                   str(model.meta.cal_step.flat_field))
-    pipeline.log.info('DMS90 MSG: Testing completion of flat fielding in'
+    pipeline.log.info('DMS86 MSG: Testing completion of flat fielding in'
                   'Level 2 image output.......' +
                   passfail(model.meta.cal_step.flat_field == 'COMPLETE'))
     assert model.meta.cal_step.flat_field == 'COMPLETE'
     pipeline.log.info('Status of the step:             dark          ' +
                   str(model.meta.cal_step.dark))
-    pipeline.log.info('DMS90 MSG: Testing completion of dark correction in'
+    pipeline.log.info('DMS86 MSG: Testing completion of dark correction in'
                   'Level 2 image output.......' +
                   passfail(model.meta.cal_step.dark == 'COMPLETE'))
     assert model.meta.cal_step.dark == 'COMPLETE'
     pipeline.log.info('Status of the step:             dq_init       ' +
                   str(model.meta.cal_step.dq_init))
-    pipeline.log.info('DMS90 MSG: Testing completion of data quality correction in'
+    pipeline.log.info('DMS86 MSG: Testing completion of data quality correction in'
                   'Level 2 image output.......' +
                   passfail(model.meta.cal_step.dq_init == 'COMPLETE'))
     assert model.meta.cal_step.dq_init == 'COMPLETE'
     pipeline.log.info('Status of the step:             jump          ' +
                   str(model.meta.cal_step.jump))
-    pipeline.log.info('DMS90 MSG: Testing completion of jump detection in'
+    pipeline.log.info('DMS86 MSG: Testing completion of jump detection in'
                   'Level 2 image output.......' +
                   passfail(model.meta.cal_step.jump == 'COMPLETE'))
     assert model.meta.cal_step.jump == 'COMPLETE'
     pipeline.log.info('Status of the step:             linearity     ' +
                   str(model.meta.cal_step.assign_wcs))
-    pipeline.log.info('DMS90 MSG: Testing completion of linearity correction in'
+    pipeline.log.info('DMS86 MSG: Testing completion of linearity correction in'
                   'Level 2 image output.......' +
                   passfail(model.meta.cal_step.linearity == 'COMPLETE'))
     assert model.meta.cal_step.linearity == 'COMPLETE'
     pipeline.log.info('Status of the step:             ramp_fit      ' +
                   str(model.meta.cal_step.ramp_fit))
-    pipeline.log.info('DMS90 MSG: Testing completion of ramp fitting in'
+    pipeline.log.info('DMS86 MSG: Testing completion of ramp fitting in'
                   'Level 2 image output.......' +
                   passfail(model.meta.cal_step.ramp_fit == 'COMPLETE'))
     assert model.meta.cal_step.ramp_fit == 'COMPLETE'
     pipeline.log.info('Status of the step:             saturation    ' +
                   str(model.meta.cal_step.saturation))
-    pipeline.log.info('DMS90 MSG: Testing completion of saturation detection in'
+    pipeline.log.info('DMS86 MSG: Testing completion of saturation detection in'
                   'Level 2 image output.......' +
                   passfail(model.meta.cal_step.saturation == 'COMPLETE'))
     assert model.meta.cal_step.saturation == 'COMPLETE'
