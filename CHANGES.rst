@@ -6,6 +6,8 @@ general
 
 - Added regression tests for SOC-604. [#381]
 
+- Added regression tests for SOC-622. [#385]
+
 
 linearity
 ---------
