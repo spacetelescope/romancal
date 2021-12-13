@@ -18,7 +18,7 @@ charset-normalizer==2.0.9
 ci-watson==0.5
 codecov==2.1.12
 coverage==6.2
-crds==11.5.0
+crds==11.5.2
 cycler==0.11.0
 docutils==0.17.1
 filelock==3.4.0
