@@ -36,29 +36,34 @@ jobs:
             python: 3.x
             toxenv: codestyle
 
+          - name: Python 3.10
+            python-version: '3.10'
+            os: ubuntu-latest
+            toxenv: py310-test
+
           - name: Python 3.8
             os: ubuntu-latest
-            python: 3.8
+            python-version: '3.8'
             toxenv: py38-test
 
           - name: Python 3.9
             os: ubuntu-latest
-            python: 3.9
+            python-version: '3.9'
             toxenv: py39-test
 
           - name: Python 3.8 with dev dependencies
             os: ubuntu-latest
-            python: 3.8
+            python-version: '3.8'
             toxenv: py38-test-devdeps
 
           - name: Python 3.8 with Numpy 1.20
             os: ubuntu-latest
-            python: 3.8
+            python-version: '3.8'
             toxenv: py38-test-numpy120
 
           - name: macOS
             os: macos-latest
-            python: 3.9
+            python-version: '3.9'
             toxenv: py39-test
 
           - name: Security audit
@@ -91,10 +96,10 @@ jobs:
       uses: actions/checkout@v2
       with:
           fetch-depth: 0
-    - name: Set up Python ${{ matrix.python }}
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python }}
+        python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -109,6 +114,6 @@ jobs:
 
     - name: Upload coverage to codecov
       if: ${{ contains(matrix.toxenv,'-cov') }}
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v2
       with:
         file: ./coverage.xml
