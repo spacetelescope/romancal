@@ -126,8 +126,4 @@ class JumpStep(RomanStep):
 
         result.meta.cal_step.jump = 'COMPLETE'
 
-        if self.save_results is not None:
-            ff_path = self.save_model(result, suffix=self.suffix, force=True)
-            self.log.info(f'Interpolated flat written to "{ff_path}".')
-
         return result
