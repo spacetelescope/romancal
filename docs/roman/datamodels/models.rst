@@ -65,14 +65,6 @@ To create a new `ImageModel`, you can just::
     clearly incorrect and should be replaced if the file is intended to be used
     for anything besides a demonstration.
 
-If you already have data in a numpy array, you can also create a model
-using that array by passing it in as a data keyword argument::
-
-    data = np.empty((50, 50), dtype=np.float32)
-    dq = np.empty((50, 50), dtype=np.uint32)
-    with ImageModel(data=data, dq=dq) as im:
-        ...
-
 Creating a data model from a file
 ---------------------------------
 
