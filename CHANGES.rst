@@ -10,7 +10,7 @@ general
 Documentation
 -------------
 
- - Initial romancal documentation for using datamodels. [#]
+ - Initial romancal documentation for using datamodels. [#356]
 
 
 0.5.0 (2021-12-13)

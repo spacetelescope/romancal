@@ -4,7 +4,8 @@
 Working with Roman datamodels and ASDF files
 ============================================
 
-If you've installed the roman calibration pipeline you should also have access to  the standalone tool asdfinfo which allows access to asdf (and roman) files
+If you've installed the roman calibration pipeline you should also have access
+to the standalone tool asdfinfo which allows access to asdf (and roman) files
 from the terminal prompt,::
 
     asdftool info r0000101001001001001_01101_0001_WFI16_cal.asdf
@@ -45,13 +46,15 @@ which gives a list of possible actions one of the more useful can be::
     asdftool edit file.asdf
 
 Which will open the file in an editor you have set via the EDITOR environment variable.
+A more complete description of the `asdftool` can be found at _.
+
+.. _a link: https://asdf.readthedocs.io/en/stable/asdf/asdf_tool.html
 
 To access the files via a python session,
 
 .. code-block:: python
 
     import roman_datamodels as rdm
-    import numpy as np
     import asdf
     rdm_a = rdm.open('r0000101001001001001_01101_0001_WFI16_cal.asdf')
     asdf_a = asdf.open('r0000101001001001001_01101_0001_WFI16_cal.asdf', mode='rw')
@@ -60,16 +63,16 @@ Once the files are loaded you can access various attributes. Below is a table
 showing how to access various properties using the roman_datamodels and the
 asdf.open methods,
 
-+-------------------------------------+---------------------------------------------------------------+
-| Roman Datamodels                    | ASDF                                                          |
-+-------------------------------------+---------------------------------------------------------------+
-| .. code-block:: python              | .. code-block:: python                                        |
-|                                     |                                                               |
-|   rdm_a.meta                        |    asdf_a.tree['roman']['meta']                               |
-|   rdm_a.meta.aperture               |    asdf_a.tree['roman']['meta']['aperture']                   |
-|   dm_a.meta.aperture.position_angle |    asdf_a.tree['roman']['meta']['aperture']['position_angle'] |
-|   120                               |    120                                                        |
-+-------------------------------------+---------------------------------------------------------------+
++--------------------------------------+---------------------------------------------------------------+
+| Roman Datamodels                     | ASDF                                                          |
++--------------------------------------+---------------------------------------------------------------+
+| .. code-block:: python               | .. code-block:: python                                        |
+|                                      |                                                               |
+|   rdm_a.meta                         |    asdf_a.tree['roman']['meta']                               |
+|   rdm_a.meta.aperture                |    asdf_a.tree['roman']['meta']['aperture']                   |
+|   rdm_a.meta.aperture.position_angle |    asdf_a.tree['roman']['meta']['aperture']['position_angle'] |
+|   120                                |    120                                                        |
++--------------------------------------+---------------------------------------------------------------+
 
 You can also update or modify the metadata in Roman datamodels
 
