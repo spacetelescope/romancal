@@ -16,18 +16,32 @@ string will raise an exception.
 
 .. code-block:: python
 
-        from romancal.datamodels import ImageModel
-        model = ImageModel()
+        from roman_datamodels.testing.factories import create_wfi_image
+        from roman_datamodels import datamodels as rdmfrom romancal.datamodels import ImageModel
+        model = rdm.ImageModel(create_wfi_image())
         model.meta.target.ra = "foo"
         Traceback (most recent call last):
           File "<stdin>", line 1, in <module>
-          File "site-packages/romancal.datamodels/schema.py", line 672, in __setattr__
-            object.__setattr__(self, attr, val)
-          File "site-packages/romancal.datamodels/schema.py", line 490, in __set__
-            val = self.to_basic_type(val)
-          File "site-packages/romancal.datamodels/schema.py", line 422, in to_basic_type
-            raise ValueError(e.message)
-        ValueError: 'foo' is not of type u'number'
+          File "/Users/ddavis/miniconda3/envs/rcal_dev/lib/python3.9/site-packages/roman_datamodels/stnode.py", line 183, in __setattr__
+            if schema is None or _validate(key, value, schema, self.ctx):
+          File "/Users/ddavis/miniconda3/envs/rcal_dev/lib/python3.9/site-packages/roman_datamodels/stnode.py", line 97, in _validate
+            return _value_change(attr, tagged_tree, schema, False, strict_validation, ctx)
+          File "/Users/ddavis/miniconda3/envs/rcal_dev/lib/python3.9/site-packages/roman_datamodels/stnode.py", line 68, in _value_change
+            raise jsonschema.ValidationError(errmsg)
+        jsonschema.exceptions.ValidationError: While validating ra the following error occurred:
+        'foo' is not of type 'number'
+
+        Failed validating 'type' in schema:
+            {'$schema': 'http://stsci.edu/schemas/asdf-schema/0.1.0/asdf-schema',
+             'archive_catalog': {'datatype': 'float',
+                                 'destination': ['ScienceCommon.ra']},
+             'sdf': {'source': {'origin': 'PSS:fixed_target.ra_computed'},
+                     'special_processing': 'VALUE_REQUIRED'},
+             'title': 'Target RA at mid time of exposure',
+             'type': 'number'}
+
+        On instance:
+            'foo'
 
 The set of available metadata elements is defined in a YAML Schema
 that is installed with `roman_datamodels` from the `RAD` (Roman Attribute
