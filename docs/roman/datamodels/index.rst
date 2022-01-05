@@ -11,4 +11,4 @@ Data Models
    metadata.rst
    datamodels_asdf.rst
 
-.. automodapi:: romancal.datamodels
+.. automodapi:: roman.datamodels
