@@ -56,9 +56,12 @@ To access the files via a python session,
 
     import roman_datamodels as rdm
     import asdf
-    rdm_a = rdm.open('r0000101001001001001_01101_0001_WFI16_cal.asdf')
-    asdf_a = asdf.open('r0000101001001001001_01101_0001_WFI16_cal.asdf', mode='rw')
+    with rdm.open('r0000101001001001001_01101_0001_WFI16_cal.asdf') as model:
+        <Manipulate the files>
 
+    with asdf.open('r0000101001001001001_01101_0001_WFI16_cal.asdf', mode='rw') as model:
+        <Manipulate the files>
+        
 Once the files are loaded you can access various attributes. Below is a table
 showing how to access various properties using the roman_datamodels and the
 asdf.open methods,
