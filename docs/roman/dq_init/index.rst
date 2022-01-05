@@ -12,4 +12,4 @@ Data Quality (DQ) Initialization
    reference_files.rst
 
 
-.. automodapi:: romancal.dq_init
+.. automodapi:: roman.dq_init

@@ -9,4 +9,4 @@ Assign WCS
 
    main.rst
 
-.. automodapi:: romancal.assign_wcs
+.. automodapi:: roman.assign_wcs
