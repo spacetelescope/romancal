@@ -46,9 +46,9 @@ which gives a list of possible actions one of the more useful can be::
     asdftool edit file.asdf
 
 Which will open the file in an editor you have set via the EDITOR environment variable.
-A more complete description of the `asdftool` can be found at _.
-
-.. _a link: https://asdf.readthedocs.io/en/stable/asdf/asdf_tool.html
+A more complete description of the options can be found in the
+`asdftool <https://asdf.readthedocs.io/en/stable/asdf/asdf_tool.html>`_
+documentation.
 
 To access the files via a python session,
 
@@ -61,7 +61,7 @@ To access the files via a python session,
 
     with asdf.open('r0000101001001001001_01101_0001_WFI16_cal.asdf', mode='rw') as model:
         <Manipulate the files>
-        
+
 Once the files are loaded you can access various attributes. Below is a table
 showing how to access various properties using the roman_datamodels and the
 asdf.open methods,

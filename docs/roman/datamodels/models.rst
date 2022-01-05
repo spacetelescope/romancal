@@ -21,7 +21,7 @@ arrays associated with it:
     - `err`: The error array
 
 Along with data arrays the datamodel also contains information about the
-observation that can include the Observation program, exposure information,
+observation that can include the observation program, exposure information,
 pointing informtation and processing steps.
 
 Working with models

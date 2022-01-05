@@ -44,8 +44,9 @@ string will raise an exception.
             'foo'
 
 The set of available metadata elements is defined in a YAML Schema
-that is installed with `roman_datamodels` from the `RAD` (Roman Attribute
-Dictionary).
+that is installed with `roman_datamodels <https://github.com/spacetelescope/roman_datamodels>`_
+from the
+`RAD <https://github.com/spacetelescope/RAD>`_ (Roman Attribute Dictionary).
 
 There is also a utility method for finding the schema associated with a given
 model.
