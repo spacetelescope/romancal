@@ -68,7 +68,7 @@ To create a new `ImageModel`, you can just::
 Creating a data model from a file
 ---------------------------------
 
-The `romancal.datamodels.open` function is a convenient way to create a
+The `roman_datamodels.open` function is a convenient way to create a
 model from a file on disk.  It may be passed any of the following:
 
     - a path to an ASDF file
@@ -98,14 +98,13 @@ that the file being opened contains 2-dimensional image data::
         pass
 
 This will raise an exception if the file contains data of the wrong
-shape.
+type.
 
 Saving a data model to a file
 -----------------------------
 
 Simply call the `save` method on the model instance.  The format to
-save into will either be deduced from the filename (if provided) or
-the `format` keyword argument::
+save into will either be deduced from the filename.::
 
     im.save("myimage.asdf")
 
@@ -122,11 +121,6 @@ method.  This will perform a deep-copy: that is, no changes to the
 original model will propagate to the new model::
 
     new_model = old_model.copy()
-
-It is also possible to copy all of the known metadata from one
-model into a new one using the update method::
-
-    new_model.update(old_model)
 
 Looking at the contents of a model
 ----------------------------------

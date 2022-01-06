@@ -72,7 +72,7 @@ equivalent::
     print(raw_science.meta['observation']['start_time'])
     print(raw_science.meta.observation.start_time)
 
-In addtion the times are stored as python time objects and so the date can be
+In addtion the times are stored as Astropy time objects and so the date can be
 displayed using various formats::
 
     print(raw_science.meta.observation.start_time.iso)

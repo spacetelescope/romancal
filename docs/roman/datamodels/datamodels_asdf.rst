@@ -113,6 +113,8 @@ You can also access and modify the data arrays
     rdm_a.data[10,11]
     122.1
 
+or by modifying the ASDF tree,
+
 .. code-block:: python
     :caption: ASDF
 
