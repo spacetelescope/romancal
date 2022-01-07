@@ -132,7 +132,7 @@ will be replaced. For example:
    $ strun romancal.dq_init.DQInitStep r0008308002010007027_06311_0019_WFI01_uncal.asdf
 
 produces an output file named
-``r0008308002010007027_06311_0019_WFI01_dq_init.fits``.
+``r0008308002010007027_06311_0019_WFI01_dq_init.asdf``.
 
 See :ref:`pipeline_step_suffix_definitions` for a list of the more common
 suffixes used.
@@ -162,7 +162,7 @@ file from CRDS when running a pipeline:
 ::
 
     $ strun roman_elp r0008308002010007027_06311_0019_WFI01_uncal.asdf
-          --steps.dark_current.override_dark='my_dark.fits'
+          --steps.dark_current.override_dark='my_dark.asdf'
 
 Universal Parameters
 --------------------
@@ -192,7 +192,7 @@ and location of the ``dark_current`` step, use the following
 
     $ strun roman_elp r0008308002010007027_06311_0019_WFI01_uncal.asdf
         --output_dir=calibrated
-        --steps.dark_current.output_file='dark_sub.fits'
+        --steps.dark_current.output_file='dark_sub.asdf'
         --steps.dark_current.output_dir='dark_calibrated'
 
 .. _intro_output_file:

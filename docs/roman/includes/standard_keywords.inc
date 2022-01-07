@@ -22,5 +22,5 @@ useafter        model.meta.useafter
 =========== ===============================
 
 
-**NOTE:** More information on standard required keywords can be found here:
+**NOTE:** More information on standard required attributes can be found here:
 :ref:`Standard ASDF metadata`
