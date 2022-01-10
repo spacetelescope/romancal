@@ -12,7 +12,7 @@ Reference File Naming Convention
 
 Before reference files are ingested into CRDS, they are renamed following a
 convention used by the pipeline. As with any other changes undergone by the reference files,
-the previous names are kept in header keywords, so the Instrument Teams
+the previous names are kept in header, so the Instrument Teams
 can easily track which delivered file is being used by the pipeline in each step.
 
 The naming of reference files uses the following syntax::
@@ -95,10 +95,10 @@ Standard ASDF metadata
 
 Al Roman science and reference files are ASDF files.
 
-The required Keywords Documenting Contents of Reference Files are:
+The required attributes Documenting Contents of Reference Files are:
 
 =========== ==================================================================================
-Keyword     Comment
+Attribute     Comment
 =========== ==================================================================================
 reftype     `FLAT    Required values are listed in the discussion of each pipeline step.`
 description `Summary of file content and/or reason for delivery.`

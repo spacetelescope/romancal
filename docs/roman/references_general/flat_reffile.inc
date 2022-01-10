@@ -39,7 +39,7 @@ Data      Array Type   Dimensions       Data type
 =======  ============ ==============  =============
 data      NDArray      4096 x 4096      float32
 err       NDArray      4096 x 4096      float32
-dq        NDArray      4096 x 4096      uint16
+dq        NDArray      4096 x 4096      uint32
 =======  ============ ==============  =============
 
 The ASDF file contains a single set of data, err, and dq arrays.

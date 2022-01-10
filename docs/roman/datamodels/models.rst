@@ -40,11 +40,10 @@ using python.
     data_file = rdm.open(fn)
     type(data_file)
 
+<class 'roman_datamodels.datamodels.ImageModel'>
+
 Where the output of the type command tells you that you have imported an
 ImageModel from roman_datamodels,
-
-
-    <class 'roman_datamodels.datamodels.ImageModel'>
 
 Creating a data model from scratch
 ----------------------------------
@@ -104,7 +103,7 @@ Saving a data model to a file
 -----------------------------
 
 Simply call the `save` method on the model instance.  The format to
-save into will either be deduced from the filename.::
+save into will be deduced from the filename.::
 
     im.save("myimage.asdf")
 
@@ -146,13 +145,13 @@ which will list the contents of the ImageModel im::
 or you can print specifics::
 
     print("\n".join("{: >20}\t{}".format(k, v) for k, v in im.meta.wcsinfo.items()), "\n")
-              v2_ref	-6.100239359151477e+307
-              v3_ref	1.6404488642872036e+308
-             vparity	-1875480382
-            v3yangle	-3.488598681908005e+307
-              ra_ref	302.07693467974065
-             dec_ref	84.01389786035708
-            roll_ref	8.214259442957195e+307
-            s_region	Spatial extent 92cf0a2515a648f8d49cfd845b0f76d7
+                v2_ref	1312.9491452484797
+                v3_ref	-1040.7853726755036
+               vparity	-1
+              v3yangle	-60.0
+                ra_ref	84.49289366006334
+               dec_ref	-69.14101326380924
+              roll_ref	0.0
+              s_region	NONE
 
 Note: These will be incorporated as methods in the data models in a future release.
