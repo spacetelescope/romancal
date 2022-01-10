@@ -4,6 +4,9 @@
 general
 -------
 
+- Added regression tests for linearity correction. [#3xx]
+
+
 - Added regression tests for dark_current subtraction. [#392]
 
 0.5.0 (2021-12-13)
