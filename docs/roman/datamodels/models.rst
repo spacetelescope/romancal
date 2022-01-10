@@ -22,7 +22,7 @@ arrays associated with it:
 
 Along with data arrays the datamodel also contains information about the
 observation that can include the observation program, exposure information,
-pointing informtation and processing steps.
+pointing information and processing steps.
 
 Working with models
 ===================
