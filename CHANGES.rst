@@ -1,6 +1,11 @@
 0.6.0 (unreleased)
 ==================
 
+general
+-------
+
+- Added regression tests for dark_current subtraction. [#392]
+
 0.5.0 (2021-12-13)
 ==================
 
