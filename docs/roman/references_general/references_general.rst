@@ -12,7 +12,7 @@ Reference File Naming Convention
 
 Before reference files are ingested into CRDS, they are renamed following a
 convention used by the pipeline. As with any other changes undergone by the reference files,
-the previous names are kept in header keywords, so the Instrument Teams
+the previous names are kept in header, so the Instrument Teams
 can easily track which delivered file is being used by the pipeline in each step.
 
 The naming of reference files uses the following syntax::
@@ -52,17 +52,15 @@ documentation on each reference file.
 +---------------------------------------------+--------------------------------------------------+
 | :ref:`dq_init <dq_init_step>`               | :ref:`MASK <mask_reffile>`                       |
 +---------------------------------------------+--------------------------------------------------+
-| :ref:`gain_scale <gain_scale_step>`         | :ref:`GAIN <gain_reffile>`                       |
-+---------------------------------------------+--------------------------------------------------+
-| jump TBD                                    | :ref:`GAIN <gain_reffile>`                       |
+| :ref:`jump_detection <jump_step>`           | :ref:`GAIN <gain_reffile>`                       |
 +                                             +--------------------------------------------------+
-|                                             | READNOISE TBD                                    |
+|                                             | :ref:`READNOISE <readnoise_reffile>`             |
 +---------------------------------------------+--------------------------------------------------+
 | :ref:`dq_init <dq_init_step>`               | :ref:`MASK <mask_reffile>`                       |
 +---------------------------------------------+--------------------------------------------------+
-| ramp_fitting TBD                            | :ref:`GAIN <gain_reffile>`                       |
+| :ref:`ramp_fitting <ramp_fitting_step>`     | :ref:`GAIN <gain_reffile>`                       |
 +                                             +--------------------------------------------------+
-|                                             | READNOISE TBD                                    |
+|                                             | :ref:`READNOISE <readnoise_reffile>`             |
 +---------------------------------------------+--------------------------------------------------+
 | :ref:`saturation <saturation_step>`         | :ref:`SATURATION <saturation_reffile>`           |
 +---------------------------------------------+--------------------------------------------------+
@@ -71,19 +69,21 @@ documentation on each reference file.
 +--------------------------------------------------+---------------------------------------------+
 | Reference File Type (reftype)                    | Pipeline Step                               |
 +==================================================+=============================================+
-| :ref:`FLAT <flat_reffile>`                       | :ref:`flatfield <flatfield_step>`           |
-+--------------------------------------------------+---------------------------------------------+
 | :ref:`DARK <dark_reffile>`                       | :ref:`dark_current <dark_current_step>`     |
 +--------------------------------------------------+---------------------------------------------+
-| :ref:`GAIN <gain_reffile>`                       | :ref:`gain_scale <gain_scale_step>`         |
+| :ref:`FLAT <flat_reffile>`                       | :ref:`flatfield <flatfield_step>`           |
++--------------------------------------------------+---------------------------------------------+
+| :ref:`GAIN <gain_reffile>`                       | :ref:`jump_detection <jump_step>`           |
 +                                                  +---------------------------------------------+
-|                                                  | jump TBD                                    |
-+                                                  +---------------------------------------------+
-|                                                  | ramp_fitting TBD                            |
+|                                                  | :ref:`ramp_fitting <ramp_fitting_step>`     |
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`LINEARITY <linearity_reffile>`             | :ref:`linearity <linearity_step>`           |
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`MASK <mask_reffile>`                       | :ref:`dq_init <dq_init_step>`               |
++--------------------------------------------------+---------------------------------------------+
+| :ref:`READNOISE <readnoise_reffile>`             | :ref:`jump_detection <jump_step>`           |
++                                                  +---------------------------------------------+
+|                                                  | :ref:`ramp_fitting <ramp_fitting_step>`     |
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`SATURATION <saturation_reffile>`           | :ref:`saturation <saturation_step>`         |
 +--------------------------------------------------+---------------------------------------------+
@@ -95,14 +95,14 @@ Standard ASDF metadata
 
 Al Roman science and reference files are ASDF files.
 
-The required Keywords Documenting Contents of Reference Files are:
+The required attributes Documenting Contents of Reference Files are:
 
 =========== ==================================================================================
-Keyword     Comment
+Attribute     Comment
 =========== ==================================================================================
 reftype     `FLAT    Required values are listed in the discussion of each pipeline step.`
-description `Summary of file content and/or reason for delivery`
-author      `Fred Jones     Person(s) who created the file`
+description `Summary of file content and/or reason for delivery.`
+author      `Fred Jones     Person(s) who created the file.`
 useafter    `YYYY-MM-DDThh:mm:ss Date and time after the reference files will
             be used. The T is required. Time string may NOT be omitted;
             use T00:00:00 if no meaningful value is available.
@@ -112,7 +112,7 @@ pedigree    `Options are
             'GROUND'
             'DUMMY'
             'INFLIGHT YYYY-MM-DD YYYY-MM-DD'`
-history     `Description of Reference File Creation`
+history     `Description of Reference File Creation`.
 telescope   `ROMAN   Name of the telescope/project.`
 instrument  `WFI   Instrument name.`
 =========== ==================================================================================

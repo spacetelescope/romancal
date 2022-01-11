@@ -1,4 +1,4 @@
-# Roman Calibration Pipeline
+># Roman Calibration Pipeline
 
 
 [![Documentation Status](https://readthedocs.org/projects/roman-pipeline/badge/?version=latest)](https://roman-pipeline.readthedocs.io/en/latest/?badge=latest)
@@ -215,3 +215,12 @@ If developers need to update the truth files in our nightly regression tests,
 there are instructions in this wiki.
 
 https://github.com/spacetelescope/jwst/wiki/Maintaining-Regression-Tests
+
+
+## CI/CD builds
+
+[![Documentation Status](https://readthedocs.org/projects/roman-pipeline/badge/?version=latest)](http://roman-pipeline.readthedocs.io/en/latest/?badge=latest)
+
+[![CI](https://github.com/spacetelescope/romancal/actions/workflows/ci.yml/badge.svg)](https://github.com/spacetelescope/romancal/actions/workflows/ci.yml)
+
+[![codecov](https://codecov.io/gh/spacetelescope/romancal/branch/main/graph/badge.svg?token=C1LO00W9CZ)](https://codecov.io/gh/spacetelescope/romancal)

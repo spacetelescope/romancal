@@ -8,9 +8,7 @@ Data Models
    :maxdepth: 2
 
    models.rst
-   attributes.rst
    metadata.rst
-   new_model.rst
-   structure.rst
+   datamodels_asdf.rst
 
-.. automodapi:: roman_datamodels
+#.. automodapi:: romancal.datamodels

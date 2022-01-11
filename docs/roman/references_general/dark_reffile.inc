@@ -14,11 +14,11 @@ dark current values for a given detector readout mode.
 .. include:: ../includes/standard_keywords.inc
 
 .. include:: ../references_general/dark_specific.inc
-             
+
 Reference File Format
 +++++++++++++++++++++
-DARK reference files are ASDF format, with 3 data arrays and one table array.
-The format and content of the file is as follows 
+DARK reference files are ASDF format, with 3 data arrays.
+The format and content of the file is as follows
 (see `~romancal.datamodels.DarkModel`):
 
 =======  ============ ==========================  =============
@@ -26,11 +26,11 @@ Data      Array Type   Dimensions                  Data type
 =======  ============ ==========================  =============
 data      NDArray      4096 x 4096 x ngroups       float32
 err       NDArray      4096 x 4096 x ngroups       float32
-dq        NDArray      4096 x 4096                 uint16
-dq_def    NDArray      2 dims of variable length   various
+dq        NDArray      4096 x 4096                 uint32
 =======  ============ ==========================  =============
 
-The ASDF file contains a single set of data, err, dq, and dq_def arrays.
+The ASDF file contains a single set of data, err, and dq arrays.
 
-#Commented until DQ Docs
-#.. include:: ../includes/dq_def.inc
+..
+    Commented until DQ Docs
+    .. include:: ../includes/dq_def.inc
