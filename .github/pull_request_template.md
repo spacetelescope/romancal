@@ -7,7 +7,7 @@ RCAL-123: <Fix a bug>
 **
 -->
 
-Closes #
+Closes GitHub issue #
 
 Resolves RCAL-
 
