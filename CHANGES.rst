@@ -12,7 +12,7 @@ general
 Documentation
 -------------
 
- - Update references_general.rst to remove TBD and add DQ flag information. [#39x]
+ - Update references_general.rst to remove TBD and add DQ flag information. [#396]
 
  - Initial romancal documentation for using datamodels. [#391]
 
