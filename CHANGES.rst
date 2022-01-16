@@ -4,6 +4,9 @@
 general
 -------
 
+- Added regression tests for linearity correction. [#3xx]
+
+
 - Added regression tests for dark_current subtraction. [#392]
 
 - Updated tests to utilize new maker function code. [#395]
