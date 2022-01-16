@@ -4,13 +4,15 @@
 general
 -------
 
-- Added regression tests for linearity correction. [#3xx]
+- Added regression tests for linearity correction. [#394]
 
 
 - Added regression tests for dark_current subtraction. [#392]
 
 Documentation
 -------------
+
+ - Update references_general.rst to remove TBD and add DQ flag information. [#396]
 
  - Initial romancal documentation for using datamodels. [#391]
 
