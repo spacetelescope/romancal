@@ -11,10 +11,10 @@ coefficients.
 
 .. include:: ../includes/standard_keywords.inc
 
-Type Specific Keywords for LINEARITY
-++++++++++++++++++++++++++++++++++++
-In addition to the standard reference file keywords listed above,
-the following keywords are *required* in LINEARITY reference files,
+Type Specific Attributes for LINEARITY
+++++++++++++++++++++++++++++++++++++++
+In addition to the standard reference file attributes listed above,
+the following attributes are *required* in LINEARITY reference files,
 because they are used as CRDS selectors
 (see :ref:`linearity_selectors`):
 
@@ -33,7 +33,7 @@ The format and content of the file is as follows:
 Data      Array Type   Dimensions                 Data type
 =======  ============ =========================  ===========
 coeffs    NDArray      ncols x nrows x ncoeffs    float32
-dq        NDArray      ncols x nrows              uint16
+dq        NDArray      ncols x nrows              uint32
 =======  ============ =========================  ===========
 
 Each plane of the COEFFS data cube contains the pixel-by-pixel coefficients for

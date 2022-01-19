@@ -20,7 +20,7 @@ def test_open_model(step_class, tmp_path):
     file_path = tmp_path / "test.asdf"
 
     with asdf.AsdfFile() as af:
-        imod = mk_level2_image(arrays=(20, 20))
+        imod = mk_level2_image(shape=(20, 20))
         af.tree = {'roman': imod}
         af.write_to(file_path)
 
@@ -38,7 +38,7 @@ def test_get_reference_file(step_class):
     """
     Test that CRDS is properly integrated.
     """
-    im = mk_level2_image(arrays=(20, 20))
+    im = mk_level2_image(shape=(20, 20))
     # This will be brittle while we're using the dev server.
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
@@ -63,7 +63,7 @@ def test_get_reference_file_spectral(step_class):
     """
     Test that CRDS is properly integrated.
     """
-    im = mk_level2_image(arrays=(20, 20))
+    im = mk_level2_image(shape=(20, 20))
     # This will be brittle while we're using the dev server.
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
@@ -83,7 +83,7 @@ def test_log_messages(tmp_path):
     class LoggingStep(RomanStep):
         def process(self):
             self.log.warning("Splines failed to reticulate")
-            return ImageModel(mk_level2_image(arrays=(20,20)))
+            return ImageModel(mk_level2_image(shape=(20,20)))
 
     result = LoggingStep().run()
     assert any("Splines failed to reticulate" in l for l in result.cal_logs)

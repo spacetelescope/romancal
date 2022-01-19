@@ -266,7 +266,7 @@ def setup_wfi_datamodels():
     def _models(ngroups, nrows, ncols):
 
         # Create ramp data
-        data_model = testutil.mk_ramp(arrays=(ngroups, nrows, ncols))
+        data_model = testutil.mk_ramp(shape=(ngroups, nrows, ncols))
 
         # Create saturation reference data
         saturation_model = testutil.mk_saturation(shape=(nrows, ncols))

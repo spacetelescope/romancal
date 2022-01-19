@@ -24,7 +24,7 @@ def test_flatfield_step_interface(instrument, exptype):
 
     shape = (20, 20)
 
-    wfi_image = testutil.mk_level2_image(arrays=True)
+    wfi_image = testutil.mk_level2_image(shape=shape)
     wfi_image.meta.instrument.name = instrument
     wfi_image.meta.instrument.detector = 'WFI01'
     wfi_image.meta.instrument.optical_element = 'F158'
@@ -70,7 +70,7 @@ def test_flatfield_step_interface(instrument, exptype):
 def test_crds_temporal_match(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
 
-    wfi_image = testutil.mk_level2_image(arrays=True)
+    wfi_image = testutil.mk_level2_image()
     wfi_image.meta.instrument.name = instrument
     wfi_image.meta.instrument.detector = 'WFI01'
     wfi_image.meta.instrument.optical_element = 'F158'
@@ -103,7 +103,7 @@ def test_crds_temporal_match(instrument, exptype):
 )
 # Test that spectroscopic exposure types will skip flat field step
 def test_spectroscopic_skip(instrument, exptype):
-    wfi_image = testutil.mk_level2_image(arrays=True)
+    wfi_image = testutil.mk_level2_image()
     wfi_image.meta.instrument.name = instrument
     wfi_image.meta.instrument.detector = 'WFI01'
     wfi_image.meta.instrument.optical_element = 'F158'

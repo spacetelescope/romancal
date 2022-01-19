@@ -6,7 +6,7 @@ flat-field reference file is divided into both the SCI and ERR arrays of the
 science data set, and the flat-field DQ array is combined with the science DQ
 array using a bitwise OR operation.
 
-Upon completion of the step, the step status keyword "S_FLAT" gets set
+Upon completion of the step, the cal_step attribute "flat_field" gets set
 to "COMPLETE" in the output science data.
 
 Imaging Data
@@ -33,7 +33,19 @@ A flat-field variance array, VAR_FLAT, is created from the science exposure
 and flat-field reference file data using the following formula:
 
 .. math::
-   VAR\_FLAT = ( SCI_{science}^{2} / SCI_{flat}^{2} ) * ERR_{flat}^{2}
+   SCI_{science} = SCI_{science} / SCI_{flat}
+
+.. math::
+   VAR\_POISSON_{science} = VAR\_POISSON_{science} / SCI_{flat}^2
+
+.. math::
+   VAR\_RNOISE_{science} = VAR\_RNOISE_{science} / SCI_{flat}^2
+
+.. math::
+   VAR\_FLAT_{science} = ( SCI_{science}^{2} / SCI_{flat}^{2} ) * ERR_{flat}^{2}
+
+.. math::
+   ERR_{science} = \sqrt{VAR\_POISSON + VAR\_RNOISE + VAR\_FLAT}
 
 The total ERR array in the science exposure is updated as the square root
 of the quadratic sum of VAR_POISSON, VAR_RNOISE, and VAR_FLAT.

@@ -12,5 +12,4 @@ Dark Current Subtraction
    reference_files.rst
 
 
-#Commented until implemented
-#.. automodapi:: romancal.dark_current
+.. automodapi:: romancal.dark_current

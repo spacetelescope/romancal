@@ -2,12 +2,12 @@
 
 Reference Selection Keywords for SATURATION
 +++++++++++++++++++++++++++++++++++++++++++
-CRDS selects appropriate SATURATION references based on the following metadata keywords.
-All keywords used for file selection are *required*.
+CRDS selects appropriate SATURATION references based on the following metadata
+attributes.
+All attributes used for file selection are *required*.
 
 ========== ================================================
-Instrument Keywords                                         
+Instrument Keywords
 ========== ================================================
 WFI	   instrument, detector, date, time
 ========== ================================================
-

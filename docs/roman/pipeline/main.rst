@@ -8,7 +8,7 @@ processing:
 
 - Stage 2 consists of detector-level corrections that are performed on a
   group-by-group basis, followed by ramp fitting. The output of stage 1
-  processing is a countrate image per exposure, or per integration for
+  processing is a count rate image per exposure, or per integration for
   some modes. Details of this pipeline can be found at:
 
   - :ref:`exposure_pipeline`
@@ -36,4 +36,4 @@ Pipelines and Exposure Type
 
 The data from different observing modes needs to be processed with
 the proper pipeline stages listed above. The proper pipeline
-selection is usually based solely on the exposure type (EXP_TYPE keyword value).
+selection is usually based solely on the exposure type (exposure.type attribute).

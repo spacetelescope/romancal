@@ -1,6 +1,24 @@
 0.6.0 (unreleased)
 ==================
 
+general
+-------
+
+- Added regression tests for linearity correction. [#394]
+
+
+- Added regression tests for dark_current subtraction. [#392]
+
+- Updated tests to utilize new maker function code. [#395]
+
+Documentation
+-------------
+
+ - Update references_general.rst to remove TBD and add DQ flag information. [#396]
+
+ - Initial romancal documentation for using datamodels. [#391]
+
+
 0.5.0 (2021-12-13)
 ==================
 
