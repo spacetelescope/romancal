@@ -22,7 +22,7 @@ Documentation
 jump
 ----
 
- - Update code to suppress output from the jump step if not requested [#  ]
+ - Update code to suppress output from the jump step if not requested [#399]
 
 0.5.0 (2021-12-13)
 ==================
