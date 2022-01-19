@@ -90,7 +90,8 @@ class JumpStep(RomanStep):
             gain_model = rdd.GainRefModel(gain_filename)
             gain_2d = gain_model.data
 
-            readnoise_filename = self.get_reference_file(input_model, 'readnoise')
+            readnoise_filename = self.get_reference_file(input_model,
+                                                         'readnoise')
             self.log.info('Using READNOISE reference file: %s',
                           readnoise_filename)
             readnoise_model = rdd.ReadnoiseRefModel(readnoise_filename)

@@ -19,6 +19,11 @@ Documentation
  - Initial romancal documentation for using datamodels. [#391]
 
 
+jump
+----
+
+ - Update code to suppress output from the jump step if not requested [#  ]
+
 0.5.0 (2021-12-13)
 ==================
 
