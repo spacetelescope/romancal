@@ -12,7 +12,12 @@ def test_jump_detection_step(rtdata, ignore_asdf_paths):
     rtdata.get_data("WFI/image/l1_0007_science_raw_dqinitstep.asdf")
     rtdata.input = "l1_0007_science_raw_dqinitstep.asdf"
 
-    args = ["romancal.step.JumpStep", rtdata.input]
+    # Note: the thresholds should be reset to the defaults once we have better
+    # input data
+    args = ["romancal.step.JumpStep", rtdata.input,
+            '--rejection_threshold=180.',
+            '--three_group_rejection_threshold=185.',
+            '--four_group_rejection_threshold=190.']
     RomanStep.from_cmdline(args)
     output = "l1_0007_science_raw_dqinitstep_jumpstep.asdf"
     rtdata.output = output
