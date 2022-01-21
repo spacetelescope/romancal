@@ -22,6 +22,8 @@ Documentation
 jump
 ----
 
+ - Update Jump regression test parameters to reduce test time [#411]
+
  - Update code to suppress output from the jump step if not requested [#399]
 
 0.5.0 (2021-12-13)
