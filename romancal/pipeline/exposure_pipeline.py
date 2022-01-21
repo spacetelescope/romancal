@@ -33,6 +33,7 @@ class ExposurePipeline(RomanPipeline):
 
     spec = """
         save_calibrated_ramp = boolean(default=False)
+        save_results = boolean(default=False)
     """
 
     # Define aliases to steps
