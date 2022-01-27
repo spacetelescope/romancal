@@ -6,13 +6,14 @@ general
 
 - Added regression tests for linearity correction. [#394]
 
-
 - Added regression tests for dark_current subtraction. [#392]
 
 - Updated tests to utilize new maker function code. [#395]
 
 Documentation
 -------------
+
+ - Add the suffixes used in the pipeline if steps.<step>.save_results is set [#]
 
  - Update references_general.rst to remove TBD and add DQ flag information. [#396]
 
