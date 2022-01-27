@@ -9,7 +9,7 @@
 
 ![STScI Logo](docs/_static/stsci_logo.png)
 
-**Roman requires Python 3.7 or above and a C compiler for dependencies.**
+**Roman requires Python 3.8 or above and a C compiler for dependencies.**
 
 **Linux and MacOS platforms are tested and supported.  Windows is not currently supported.**
 
