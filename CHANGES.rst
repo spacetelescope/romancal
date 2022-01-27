@@ -13,7 +13,7 @@ general
 Documentation
 -------------
 
- - Add the suffixes used in the pipeline if steps.<step>.save_results is set [#]
+ - Add the suffixes used in the pipeline if steps.<step>.save_results is set [#415]
 
  - Update references_general.rst to remove TBD and add DQ flag information. [#396]
 
