@@ -223,9 +223,9 @@ basename of the file.
 Product                                        Suffix
 =============================================  ============
 Uncalibrated raw input                         uncal
-DQ_init                                        dq_init
-Saturation                                     saturation
-Linearity                                      linearity
+DQ initialization                              dq_init
+Saturation detection                           saturation
+Linearity correction                           linearity
 Dark current                                   dark_current
 Jump detection                                 jump
 Corrected ramp data                            rampfit
