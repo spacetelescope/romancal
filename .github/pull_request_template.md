@@ -9,7 +9,7 @@ RCAL-123: <Fix a bug>
 
 GitHub issue, Closes #
 
-Resolves RCAL-
+Resolves [RCAL-nnnn](https://jira.stsci.edu/browse/RCAL-nnnn)
 
 **Description**
 
