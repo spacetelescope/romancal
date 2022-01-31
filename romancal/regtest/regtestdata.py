@@ -18,7 +18,7 @@ from ci_watson.artifactory_helpers import (
     BigdataError,
 )
 
-#from romancal.lib.suffix import replace_suffix
+# from romancal.lib.suffix import replace_suffix
 from romancal.stpipe import RomanStep
 
 # Define location of default Artifactory API key, for Jenkins use only
@@ -166,7 +166,8 @@ class RegtestData:
             file_paths = _data_glob_local(path, glob)
         elif check_url(root):
             root_len = len(self._env) + 1
-            file_paths = _data_glob_url(self._inputs_root, self._env, path, glob, root=root)
+            file_paths = _data_glob_url(self._inputs_root, self._env, path,
+                                        glob, root=root)
         else:
             raise BigdataError('Path cannot be found: {}'.format(path))
 
@@ -176,7 +177,6 @@ class RegtestData:
             for file_path in file_paths
         ]
         return file_paths
-
 
     def get_truth(self, path=None, docopy=None):
         """Copy truth data from Artifactory remote resource to the CWD/truth
@@ -193,8 +193,9 @@ class RegtestData:
         os.chdir('truth')
         try:
             self.truth = get_bigdata(self._inputs_root, self._env, path,
-                docopy=docopy)
-            self.truth_remote = os.path.join(self._inputs_root, self._env, path)
+                                     docopy=docopy)
+            self.truth_remote = os.path.join(self._inputs_root,
+                                             self._env, path)
         except BigdataError:
             os.chdir('..')
             raise
@@ -309,7 +310,7 @@ def run_step_from_dict(rtdata, **step_params):
     return rtdata
 
 
-def run_step_from_dict_mock(rtdata, source,  **step_params):
+def run_step_from_dict_mock(rtdata, source, **step_params):
     """Pretend to run Steps with given parameter but just copy data
 
     For long running steps where the result already exists, just
@@ -360,7 +361,8 @@ def run_step_from_dict_mock(rtdata, source,  **step_params):
     return rtdata
 
 
-def is_like_truth(rtdata, ignore_asdf_paths, output, truth_path, is_suffix=True):
+def is_like_truth(rtdata, ignore_asdf_paths, output, truth_path,
+                  is_suffix=True):
     """Compare step outputs with truth
 
     Parameters
@@ -383,20 +385,20 @@ def is_like_truth(rtdata, ignore_asdf_paths, output, truth_path, is_suffix=True)
     """
     __tracebackhide__ = True
     # If given only a suffix, get the root to change the suffix of.
-    # If the input was an association, the output should be the name of the product
-    # Otherwise, output is based on input.
+    # If the input was an association, the output should be the name of
+    # the product. Otherwise, output is based on input.
     if is_suffix:
-        #suffix = output
+        # suffix = output
         if rtdata.asn:
             output = rtdata.asn['products'][0]['name']
         else:
             output = os.path.splitext(os.path.basename(rtdata.input))[0]
-        #output = replace_suffix(output, suffix) + '.asdf'
+        # output = replace_suffix(output, suffix) + '.asdf'
     rtdata.output = output
 
     rtdata.get_truth(os.path.join(truth_path, output))
 
-    #diff = FITSDiff(rtdata.output, rtdata.truth, **fitsdiff_default_kwargs)
+    # diff = FITSDiff(rtdata.output, rtdata.truth, **fitsdiff_default_kwargs)
     report = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert report is None, report
 
@@ -482,8 +484,8 @@ def _data_glob_url(*url_parts, root=None):
             headers = {'X-JFrog-Art-Api': fp.readline().strip()}
     except (PermissionError, FileNotFoundError):
         print("Warning: Anonymous Artifactory search requests are limited to "
-            "1000 results. Use an API key and define API_KEY_FILE environment "
-            "variable to get full search results.", file=sys.stderr)
+              "1000 results. Use an API key and define API_KEY_FILE environment"
+              "variable to get full search results.", file=sys.stderr)
         headers = None
 
     search_url = '/'.join([root, 'api/search/pattern'])
@@ -509,6 +511,6 @@ def _data_glob_url(*url_parts, root=None):
 def compare_asdf(result, truth, **kwargs):
     f = StringIO()
     asdf_diff([result, truth], minimal=False,
-               iostream=f, **kwargs)
+              iostream=f, **kwargs)
     if f.getvalue():
         f.getvalue()
