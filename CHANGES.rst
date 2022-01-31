@@ -4,6 +4,8 @@
 general
 -------
 
+- Updated PEP 8 checks to be more comprehensive. [#417]
+
 - Added regression tests for linearity correction. [#394]
 
 - Added regression tests for dark_current subtraction. [#392]
