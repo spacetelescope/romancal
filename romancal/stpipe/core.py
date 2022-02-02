@@ -8,6 +8,7 @@ from stpipe import Step, Pipeline
 
 import roman_datamodels as rdm
 from roman_datamodels.datamodels import ImageModel
+from romancal.lib.suffix import remove_suffix
 
 
 _LOG_FORMATTER = logging.Formatter(
