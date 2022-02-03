@@ -219,11 +219,18 @@ following table. Replacement occurs only if the suffix is one known to the
 calibration code. Otherwise, the new suffix will simply be appended to the
 basename of the file.
 
-=============================================  ========
+=============================================  ============
 Product                                        Suffix
-=============================================  ========
+=============================================  ============
 Uncalibrated raw input                         uncal
-Corrected ramp data                            ramp
+DQ initialization                              dq_init
+Saturation detection                           saturation
+Linearity correction                           linearity
+Dark current                                   dark_current
+Jump detection                                 jump
+Corrected ramp data                            rampfit
 Optional fitting results from ramp_fit step    fitopt
+Assign WCS                                     assign_wcs
+Flat field                                     flat
 Calibrated image                               cal
-=============================================  ========
+=============================================  ============
