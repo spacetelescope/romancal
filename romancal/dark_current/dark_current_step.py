@@ -67,6 +67,11 @@ class DarkCurrentStep(RomanStep):
                 save_dark_data_as_dark_model(dark_data, dark_model)
             dark_model.close()
 
+            # Reshaping data variables back from stcal
+            input_model.data = input_model.data[0]
+            input_model.groupdq = input_model.groupdq[0]
+            input_model.err = input_model.err[0]
+
             # Convert data to RampModel
             out_ramp = dark_output_data_as_ramp_model(out_data, input_model)
 
