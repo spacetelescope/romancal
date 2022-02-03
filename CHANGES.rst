@@ -18,6 +18,11 @@ Documentation
 
  - Initial romancal documentation for using datamodels. [#391]
 
+dark
+----
+
+ - Updated dark current step to use stcal. Created tests for the updated step. [#420]
+
 
 jump
 ----
