@@ -20,6 +20,10 @@ from roman_datamodels.testing import utils as testutil
         ("WFI", "WFI_IMAGE"),
     ]
 )
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def test_dark_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a DARK reffile"""
 
@@ -53,6 +57,10 @@ def test_dark_step_interface(instrument, exptype):
         ("WFI", "WFI_IMAGE"),
     ]
 )
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def test_dark_step_subtraction(instrument, exptype):
     """Test that the values in a dark reference file are properly subtracted"""
 
@@ -82,6 +90,10 @@ def test_dark_step_subtraction(instrument, exptype):
     [
         ("WFI", "WFI_IMAGE"),
     ]
+)
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
 )
 def test_dark_step_output_dark_file(instrument, exptype):
     """Test that the the step can output a proper (optional) dark file"""
