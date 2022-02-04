@@ -26,6 +26,8 @@ dark
 
  - Updated dark current step to use stcal. Created tests for the updated step. [#420]
 
+ - Fixed dark subtraction output crash. [#423]
+
 
 jump
 ----
