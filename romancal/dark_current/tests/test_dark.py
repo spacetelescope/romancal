@@ -13,8 +13,6 @@ from roman_datamodels.datamodels import RampModel, DarkRefModel
 import roman_datamodels as rdm
 from roman_datamodels.testing import utils as testutil
 
-from crds.core.exceptions import CrdsLookupError
-
 
 @pytest.mark.parametrize(
     "instrument, exptype",
@@ -147,7 +145,7 @@ def test_dark_step_skip(instrument, exptype):
     # Catch crds match failure
     with pytest.raises(Exception) as err:
         # Perform Dark Current subtraction step
-        skip_result = DarkCurrentStep.call(ramp_model)
+        DarkCurrentStep.call(ramp_model)
 
     err_list = str(err.value).split("\n")
 
