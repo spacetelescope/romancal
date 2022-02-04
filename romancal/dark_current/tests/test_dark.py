@@ -20,6 +20,10 @@ from roman_datamodels.testing import utils as testutil
         ("WFI", "WFI_IMAGE"),
     ]
 )
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def test_dark_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a DARK reffile"""
 
@@ -53,6 +57,10 @@ def test_dark_step_interface(instrument, exptype):
         ("WFI", "WFI_IMAGE"),
     ]
 )
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def test_dark_step_subtraction(instrument, exptype):
     """Test that the values in a dark reference file are properly subtracted"""
 
@@ -83,6 +91,10 @@ def test_dark_step_subtraction(instrument, exptype):
         ("WFI", "WFI_IMAGE"),
     ]
 )
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def test_dark_step_output_dark_file(instrument, exptype):
     """Test that the the step can output a proper (optional) dark file"""
 
@@ -106,7 +118,6 @@ def test_dark_step_output_dark_file(instrument, exptype):
     assert dark_out_file_model.err.shape == shape
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
@@ -131,11 +142,17 @@ def test_dark_step_skip(instrument, exptype):
     ramp_model.meta.observation.end_time = Time('1922-01-01T11:33:11.110')
     ramp_model.meta.observation.ma_table_name = 'HIGH_LATITUDE_SURVEY'
 
-    # Perform Dark Current subtraction step
-    skip_result = DarkCurrentStep.call(ramp_model)
+    # Catch crds match failure
+    with pytest.raises(Exception) as err:
+        # Perform Dark Current subtraction step
+        DarkCurrentStep.call(ramp_model)
 
-    # Test skip for no dark
-    assert skip_result.meta.cal_step.dark == 'SKIPPED'
+    err_list = str(err.value).split("\n")
+
+    #Test crds error
+    assert err_list[0] == "Error detected in obtaining Dark reference file: "
+    assert err_list[1] == "<class 'crds.core.exceptions.CrdsLookupError'> "
+    assert err_list[2] == "Error determining best reference for 'dark'  =   No match found."
 
 
 def create_ramp_and_dark(shape, instrument, exptype):

@@ -4,8 +4,9 @@
 general
 -------
 
-- Added regression tests for linearity correction. [#394]
+- Updated PEP 8 checks to be more comprehensive. [#417]
 
+- Added regression tests for linearity correction. [#394]
 
 - Added regression tests for dark_current subtraction. [#392]
 
@@ -13,6 +14,8 @@ general
 
 Documentation
 -------------
+
+ - Add the suffixes used in the pipeline if steps.<step>.save_results is set [#415]
 
  - Update references_general.rst to remove TBD and add DQ flag information. [#396]
 
