@@ -27,19 +27,15 @@ class DarkCurrentStep(RomanStep):
         # Open the input data model
         with rdd.open(input) as input_model:
 
-            # Get the name of the dark reference file to use
-            self.dark_name = self.get_reference_file(input_model, 'dark')
-            self.log.info('Using DARK reference file %s', self.dark_name)
-
-            print("XXX self.dark_name = "+str(self.dark_name))
-
             # Check for a valid reference file
-            if self.dark_name == 'N/A':
-                self.log.warning('No DARK reference file found')
-                self.log.warning('Dark current step will be skipped')
-                result = input_model.copy()
-                result.meta.cal_step.dark = 'SKIPPED'
-                return result
+            try:
+                # Get the name of the dark reference file to use
+                self.dark_name = self.get_reference_file(input_model, 'dark')
+            except Exception as err:
+                raise Exception(f'Error detected in obtaining Dark reference file: \n'
+                                f'{type(err)} \n'
+                                f'{err}')
+            self.log.info('Using DARK reference file %s', self.dark_name)
 
             # Open dark model
             dark_model = rdd.open(self.dark_name)
