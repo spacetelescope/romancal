@@ -8,7 +8,7 @@ from stpipe import Step, Pipeline
 
 import roman_datamodels as rdm
 from roman_datamodels.datamodels import ImageModel
-from romancal.lib.suffix import remove_suffix
+from ..lib.suffix import remove_suffix
 
 
 _LOG_FORMATTER = logging.Formatter(
@@ -89,7 +89,7 @@ class RomanStep(Step):
         # JWST maintains a list of relevant suffixes that is monitored
         # by tests to be up-to-date.  Roman will likely need to do
         # something similar.
-        return name, "_"
+        return remove_suffix(name)
 
 
 # RomanPipeline needs to inherit from Pipeline, but also
