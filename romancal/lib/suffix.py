@@ -20,10 +20,8 @@ Hence, to update `KNOW_SUFFIXES`, update both `SUFFIXES_TO_ADD` and
 `SUFFIXES_TO_DISCARD` as necessary, then use the output of
 `find_suffixes`.
 """
-from importlib import import_module
 import itertools
 import logging
-from os import (listdir, path)
 import re
 
 __all__ = ['remove_suffix']
@@ -36,159 +34,45 @@ logger.addHandler(logging.NullHandler())
 # have to exist. Used by `find_suffixes` to
 # add to the result it produces.
 SUFFIXES_TO_ADD = [
-    'ami', 'amiavg', 'aminorm',
-    'blot', 'bsub', 'bsubints',
-    'c1d', 'cal', 'calints', 'cat', 'crf', 'crfints',
+    'ca', 'crf',
     'dark',
-    'i2d',
     'median',
-    'phot', 'psf-amiavg', 'psfalign', 'psfstack', 'psfsub',
-    'ramp', 'rate', 'rateints','residual_fringe',
-    's2d', 's3d', 'snr',
+    'phot',
+    'ramp', 'rate',
     'uncal',
-    'wfscmb', 'whtlt',
-    'x1d', 'x1dints',
+    'dq_init',
+    'assign_wcs',
+    'linearity',
+    'jump',
+    'rampfit',
+    'dark_current'
 ]
 
 # Suffixes that are discovered but should not be considered.
 # Used by `find_suffixes` to remove undesired values it has found.
-SUFFIXES_TO_DISCARD = ['engdblogstep', 'functionwrapper', 'pipeline', 'rscd_step', 'step', 'systemcall']
+SUFFIXES_TO_DISCARD = ['pipeline', 'step']
 
 
 # Calculated suffixes.
 # This is produced by the `find_suffixes` function below
 _calculated_suffixes = set([
-    'masterbackgroundnrsslitsstep',
-    'ami3pipeline',
-    'whitelightstep',
-    'ami_average',
-    'spec3pipeline',
-    'wfscombine',
-    'fringe',
-    'resamplestep',
-    'resample_spec',
     'saturationstep',
-    'firstframestep',
-    'cat',
-    'systemcall',
-    'alignrefsstep',
-    'functionwrapper',
     'darkcurrentstep',
-    'imprintstep',
-    'source_catalog',
-    'straylight',
-    'amiaveragestep',
-    'ami_normalize',
     'jumpstep',
-    'resample',
-    'sourcetypestep',
-    'spec2pipeline',
-    'tweakreg',
-    'msaflagopenstep',
-    'outlierdetectionstep',
-    'saturation',
-    'pathloss',
-    'groupscalestep',
     'rampfit',
-    'lastframe',
-    'darkpipeline',
-    'image2pipeline',
-    'outlierdetectionstackstep',
-    'tso3pipeline',
-    'straylightstep',
-    'sourcecatalogstep',
     'dark_current',
-    'mrs_imatch',
     'assignwcsstep',
-    'skymatch',
-    'extract_2d',
-    'cubebuildstep',
-    'residualfringestep',
-    'residual_fringe',
-    'spec2nrslamp',
-    'ipc',
-    'refpix',
-    'image3pipeline',
-    'superbiasstep',
-    'hlspstep',
-    'reset',
-    's2d',
-    'ami_analyze',
     'flatfieldstep',
-    'tsophotometrystep',
-    'combine_1d',
     'step',
-    'cubeskymatchstep',
-    'i2d',
-    'group_scale',
-    'rscdstep',
-    'stackrefsstep',
-    'flat_field',
-    'guidercdsstep',
-    'mrsimatchstep',
-    'align_refs',
     'dqinitstep',
-    'outlierdetectionscaledstep',
-    'superbias',
     'assign_wcs',
-    'guidercds',
-    'firstframe',
-    'masterbackgroundstep',
-    'master_background',
-    'skymatchstep',
-    'white_light',
-    'persistencestep',
-    'amianalyzestep',
-    'backgroundstep',
-    'photomstep',
-    'background',
-    'photom',
-    'extract_1d',
-    'cube_build',
-    'wfscombinestep',
-    'lastframestep',
-    'aminormalizestep',
     'linearity',
-    'rscd',
     'rampfitstep',
     'pipeline',
-    'engdblog',
-    'resamplespecstep',
-    'persistence',
-    'klip',
     'dq_init',
-    'barshadowstep',
-    'klipstep',
     'linearitystep',
-    'hlsp',
-    'pathlossstep',
-    'refpixstep',
-    'gainscalestep',
-    'extract2dstep',
-    'detector1pipeline',
-    'fringestep',
-    'dark',
-    'whtlt',
-    'guiderpipeline',
-    'stackrefs',
-    'imprint',
-    'coron3pipeline',
-    'resetstep',
-    'combine1dstep',
-    'outlier_detection_scaled',
-    'outlier_detection_stack',
-    'srctype',
-    'outlier_detection',
-    'engdblogstep',
-    'gain_scale',
-    'ipcstep',
+    'dark_current',
     'jump',
-    'extract1dstep',
-    'tweakregstep',
-    'assignmtwcsstep',
-    'assign_mtwcs',
-    'wavecorrstep',
-    'wfsscontamstep',
 ])
 
 
@@ -256,7 +140,7 @@ def combine_suffixes(
 
 
 def find_suffixes():
-    """Find all possible suffixes from the jwst package
+    """Find all possible suffixes from the romancal package
 
     Returns
     -------
@@ -265,15 +149,12 @@ def find_suffixes():
 
     Notes
     -----
-    This will load all of the `jwst` package. Consider if this
+    This will load all of the `romancal` package. Consider if this
     is worth doing dynamically or only as a utility to update
     a static list.
     """
-    from jwst.stpipe import Step
-    from jwst.stpipe.utilities import all_steps
-
-    jwst = import_module('jwst')
-    jwst_fpath = path.split(jwst.__file__)[0]
+    from romancal.stpipe import RomanStep as Step
+    from romancal.stpipe.utilities import all_steps
 
     # First traverse the code base and find all
     # `Step` classes. The default suffix is the
@@ -282,23 +163,6 @@ def find_suffixes():
         klass_name.lower()
         for klass_name, klass in all_steps().items()
     )
-
-    # Instantiate Steps/Pipelines from their configuration files.
-    # Different names and suffixes can be defined in this way.
-    # Note: Based on the `collect_pipeline_cfgs` script
-    config_path = path.join(jwst_fpath, 'pipeline')
-    for config_file in listdir(config_path):
-        if config_file.endswith('.cfg'):
-            try:
-                step = Step.from_config_file(
-                    path.join(config_path, config_file)
-                )
-            except Exception as err:
-                logger.debug(f'Configuration {config_file} failed: {str(err)}')
-            else:
-                suffixes.add(step.name.lower())
-                if step.suffix is not None:
-                    suffixes.add(step.suffix.lower())
 
     # That's all folks
     return list(suffixes)
