@@ -1,5 +1,6 @@
 """Test basic utils bytes2human"""
 
+import logging
 import pytest
 
 from romancal.lib.basic_utils import bytes2human
