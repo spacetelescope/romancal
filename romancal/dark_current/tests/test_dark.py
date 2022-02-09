@@ -5,7 +5,6 @@ Unit tests for dark current correction
 import pytest
 import numpy as np
 import os
-from astropy.time import Time
 
 from romancal.dark_current import DarkCurrentStep
 
@@ -118,43 +117,6 @@ def test_dark_step_output_dark_file(instrument, exptype):
     assert dark_out_file_model.err.shape == shape
 
 
-@pytest.mark.parametrize(
-    "instrument, exptype",
-    [
-        ("WFI", "WFI_IMAGE"),
-    ]
-)
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
-)
-def test_dark_step_skip(instrument, exptype):
-    """Test that the dark step properly gets skipped when no CRDS match found"""
-
-    # Set test size
-    shape = (2, 20, 20)
-
-    # Create test ramp and dark models
-    ramp_model, darkref_model = create_ramp_and_dark(shape, instrument, exptype)
-
-    # Add values for CRDS mismatch
-    ramp_model.meta.observation.start_time = Time('1922-01-01T11:11:11.110')
-    ramp_model.meta.observation.end_time = Time('1922-01-01T11:33:11.110')
-    ramp_model.meta.observation.ma_table_name = 'HIGH_LATITUDE_SURVEY'
-
-    # Catch crds match failure
-    with pytest.raises(Exception) as err:
-        # Perform Dark Current subtraction step
-        DarkCurrentStep.call(ramp_model)
-
-    err_list = str(err.value).split("\n")
-
-    #Test crds error
-    assert err_list[0] == "Error detected in obtaining Dark reference file: "
-    assert err_list[1] == "<class 'crds.core.exceptions.CrdsLookupError'> "
-    assert err_list[2] == "Error determining best reference for 'dark'  =   No match found."
-
-
 def create_ramp_and_dark(shape, instrument, exptype):
     """Helper function to create test ramp and dark models"""
 
@@ -164,7 +126,7 @@ def create_ramp_and_dark(shape, instrument, exptype):
     ramp.meta.instrument.detector = 'WFI01'
     ramp.meta.instrument.optical_element = 'F158'
     ramp.meta.exposure.type = exptype
-    ramp.data = np.ones(shape, dtype=np.uint16)
+    ramp.data = np.ones(shape, dtype=np.float32)
     ramp_model = RampModel(ramp)
 
     # Create dark model
