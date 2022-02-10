@@ -181,7 +181,7 @@ def test_dq_add1_groupdq():
     reason="Roman CRDS servers are not currently available outside the internal network"
 )
 def test_dqinit_step_interface(instrument, exptype):
-    """Test that the basic inferface works for data requiring a FLAT reffile"""
+    """Test that the basic inferface works for data requiring a DQ reffile"""
 
     # Set test size
     shape = (2, 20, 20)
