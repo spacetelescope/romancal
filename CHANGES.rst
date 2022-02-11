@@ -38,6 +38,10 @@ jump
 
  - Update code to suppress output from the jump step if not requested [#399]
 
+Pipeline
+________
+ - Migrate JWST suffix infrastructure to the Roman Exposure Pipeline [#425]
+
 0.5.0 (2021-12-13)
 ==================
 
