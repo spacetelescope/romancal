@@ -14,8 +14,6 @@ The WFI has two sets of reference pixels: a 4-pixel border of reference pixels
 around the science pixels, and the Amp33 reference pixels which are a
 4096 x 128 section of the detector adjacent to the border pixels.
 
-.. image:: ../images/refpix.png
-
 In the data files, the storage location of the reference pixels depends on level
 of processing.
 
