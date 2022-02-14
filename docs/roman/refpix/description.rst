@@ -26,7 +26,7 @@ Level 1 file, RampModels also contain an array with both the science and border
 reference pixels, and another with the Amp 33 reference pixels. In addition to
 these arrays, there are four more arrays that contain the original border
 reference pixels (top, bottom, left, and right), and an additional four for
-their DQ arrays. The border pixels are copied during the `dq_init, so they
+their DQ arrays. The border pixels are copied during the ``dq_init``, so they
 reflect the original state of the border pixels before any calibration.
 The border pixels that are still attached to the science data in the RampModel
 are needed during the Linearity and Saturation correction, and will later be
@@ -36,6 +36,6 @@ contains the full span of border pixels at the top, bottom, left, or right.
 
 In the Level 2, calibrated image, the data array only contains the science
 pixels. The border reference pixels are trimmed from this image duing
-``ramp_fit``. The additional arrays for the original border reference pixels
+ramp_fit. The additional arrays for the original border reference pixels
 (which are 3D) and their DQ arrays, and the Amp 33 reference pixels, remain in
 the Level 2 file.
