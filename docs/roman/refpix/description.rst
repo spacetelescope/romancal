@@ -29,10 +29,10 @@ reference pixels (top, bottom, left, and right), and an additional four for
 their DQ arrays. The border pixels are copied during the ``dq_init``, so they
 reflect the original state of the border pixels before any calibration.
 The border pixels that are still attached to the science data in the RampModel
-are needed during the Linearity and Saturation correction, and will later be
-discarded when the Level 2 image is created. Note that the border reference
-pixel arrays each include the overlap regions in the corners, so that each slice
-contains the full span of border pixels at the top, bottom, left, or right.
+will later be discarded when the Level 2 image is created. Note that the border
+reference pixel arrays each include the overlap regions in the corners, so that
+each slice contains the full span of border pixels at the top, bottom, left, or
+right.
 
 In the Level 2, calibrated image, the data array only contains the science
 pixels. The border reference pixels are trimmed from this image duing
