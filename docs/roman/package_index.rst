@@ -15,3 +15,4 @@ Package Index
    ramp_fitting/index.rst
    references_general/index.rst
    saturation/index.rst
+   refpix/index.rst
