@@ -59,7 +59,6 @@ def test_dark_current_outfile_suffix(rtdata, ignore_asdf_paths):
             **ignore_asdf_paths) is None)
 
 
-@pytest.mark.xfail(reason='RCAL-285 should address this failure')
 @pytest.mark.bigdata
 def test_dark_current_output(rtdata, ignore_asdf_paths):
     """ Function to run and compare Dark Current subtraction files. Here the
