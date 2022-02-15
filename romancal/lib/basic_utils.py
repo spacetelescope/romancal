@@ -1,5 +1,6 @@
 """General utility objects"""
 
+
 def bytes2human(n):
     """Convert bytes to human-readable format
 
@@ -33,6 +34,7 @@ def bytes2human(n):
             value = float(n) / prefix[s]
             return '%.1f%s' % (value, s)
     return "%sB" % n
+
 
 class LoggingContext:
     """Logging context manager
