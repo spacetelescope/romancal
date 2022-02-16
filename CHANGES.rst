@@ -15,7 +15,7 @@ general
 Documentation
 -------------
 
- - Add documentation on using info and search with Roman datamodels [#]
+ - Add documentation on using info and search with Roman datamodels [#432]
 
  - Add the suffixes used in the pipeline if steps.<step>.save_results is set [#415]
 
