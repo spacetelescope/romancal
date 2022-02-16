@@ -128,3 +128,180 @@ or by modifying the ASDF tree,
     asdf_a.tree['roman']['data'][10,11] = 3.14159
     asdf_a.tree['roman']['data'][10,11]
     3.14159
+
+Using the info method
+---------------------
+
+You can examine a roman data model using the info and search methods provided
+from the asdf package. The info fuction will print a representation of the
+asdf tree.
+
+.. code:: python
+
+    >>> from roman_datamodels import datamodels as rdm
+    >>> d_uncal = rdm.open()'r0000101001001001001_01101_0001_WFI01_uncal.asdf')
+    >>> d_uncal.info()
+    root (AsdfObject)
+    ├─asdf_library (Software)
+    │ ├─author (str): The ASDF Developers
+    │ ├─homepage (str): http://github.com/asdf-format/asdf
+    │ ├─name (str): asdf
+    │ └─version (str): 2.8.1
+    ├─history (dict)
+    │ └─extensions (list)
+    │   ├─[0] (ExtensionMetadata) ...
+    │   ├─[1] (ExtensionMetadata) ...
+    │   └─[2] (ExtensionMetadata) ...
+    └─roman (WfiScienceRaw)
+      ├─meta (dict)
+      │ ├─aperture (Aperture) ...
+      │ ├─cal_step (CalStep) ...
+      │ ├─calibration_software_version (str): 0.4.3.dev89+gca5771d
+      │ ├─coordinates (Coordinates) ...
+      │ ├─crds_context_used (str): roman_0020.pmap
+      │ ├─crds_software_version (str): 11.5.0
+      │ ├─ephemeris (Ephemeris) ...
+      │ ├─exposure (Exposure) ...
+      │ └─17 not shown
+      └─data (NDArrayType): shape=(8, 4096, 4096), dtype=uint16
+    Some nodes not shown.
+
+The info command also gives you control over the number of lines displayed
+by passing the argument ``max_rows``. An integer ``max_rows``
+will be interpreted as an overall limit on the number of displayed lines.
+If ``max_rows`` is a tuple, then each member limits lines per node at the
+depth corresponding to its tuple index.
+For example, to show all top-level nodes and 5 of each's children:
+
+.. code:: python
+
+    >>> d_uncal.info(max_rows=(None,5))
+    root (AsdfObject)
+    ├─asdf_library (Software)
+    │ ├─author (str): The ASDF Developers
+    │ ├─homepage (str): http://github.com/asdf-format/asdf
+    │ ├─name (str): asdf
+    │ └─version (str): 2.8.1
+    ├─history (dict)
+    │ └─extensions (list) ...
+    └─roman (WfiScienceRaw)
+      ├─meta (dict) ...
+      └─data (NDArrayType): shape=(8, 4096, 4096), dtype=uint16
+    Some nodes not shown.
+
+Or you can use the asdf.info method to view the contents of the tree
+
+.. code:: python
+
+    import asdf
+    asdf.info(d_uncal)
+
+Will print the same information as the above `d_uncal.info` command but also
+gives you enhanced capabilities. For instance you can display the first three
+lines for each of the meta entries,
+
+.. code:: python
+
+    >>> asdf.info(d_uncal.meta,max_rows=(None, 3))
+    root (DNode)
+    ├─aperture (Aperture)
+    │ ├─name (str): WFI_CEN
+    │ └─position_angle (int): 120
+    ├─cal_step (CalStep)
+    │ ├─assign_wcs (str): INCOMPLETE
+    │ ├─flat_field (str): INCOMPLETE
+    │ └─6 not shown
+    ├─calibration_software_version (str): 0.4.3.dev89+gca5771d
+    ├─coordinates (Coordinates)
+    │ └─reference_frame (str): ICRS
+    ├─crds_context_used (str): roman_0020.pmap
+    ├─crds_software_version (str): 11.5.0
+    ├─ephemeris (Ephemeris)
+    │ ├─earth_angle (float): 3.3161255787892263
+    │ ├─moon_angle (float): 3.3196162372932148
+    │ └─10 not shown
+    ...
+
+or you can concentrate on a given attribute. To list all the attributes
+in `cal_step` without listing the values,
+
+.. code:: python
+
+    >>> asdf.info(d_uncal.meta.cal_step,max_rows=(None, 3),show_values=False)
+    root (CalStep)
+    ├─assign_wcs (str)
+    ├─flat_field (str)
+    ├─dark (str)
+    ├─dq_init (str)
+    ├─jump (str)
+    ├─linearity (str)
+    ├─ramp_fit (str)
+    └─saturation (str)
+
+More information on the info method can be found in the ASDF documentation at
+`rendering the ASDF trees. <https://asdf.readthedocs.io/en/stable/asdf/features.html#endering-asdf-trees>`_
+
+Using the search method
+-----------------------
+
+You can also use the search method to find attributes,
+
+.. code:: python
+
+    >>> d_uncal.search('cal_step')
+    root (AsdfObject)
+    └─roman (WfiScienceRaw)
+      └─meta (dict)
+        └─cal_step (CalStep)
+
+or a a general search for all attributes with cal in the name
+
+.. code:: python
+
+    >>> d_uncal.search('cal')
+    root (AsdfObject)
+    └─roman (WfiScienceRaw)
+     └─meta (dict)
+       ├─cal_step (CalStep)
+       ├─calibration_software_version (str): 0.4.3.dev89+gca5771d
+       ├─instrument (WfiMode)
+       │ └─optical_element (str): F158
+       └─velocity_aberration (VelocityAberration)
+         └─scale_factor (float): 0.9999723133902021
+
+This will do a regular expression search for `cal` in the attribute name. More
+information on using regular expressions in the search method can be found
+in the ASDF documentation linked below.
+
+To search only within the meta tree,
+
+.. code:: python
+
+    >>> d_uncal.search('cal_')['roman']['meta']
+    meta (dict)
+    ├─cal_step (CalStep)
+    └─instrument (WfiMode)
+      └─optical_element (str): F158
+
+You can also use the search method to find attributes by in the asdf tree,
+for instance you can find all the integers, float or booleans Using the type
+keyword,
+
+.. code:: python
+
+    >>> d_uncal.search(type=bool)
+    root (AsdfObject)
+    └─roman (WfiScienceRaw)
+      └─meta (dict)
+        ├─exposure (Exposure)
+        │ └─data_problem (bool): False
+        └─visit (Visit)
+          ├─internal_target (bool): False
+          └─target_of_opportunity (bool): False
+
+    d_uncal.search(type=bool, value=True)
+    No results found.
+
+More information and options for the search method can be found in the
+ASDF documentation
+`here. <https://asdf.readthedocs.io/en/stable/asdf/features.html#searching-the-asdf-tree>`_
