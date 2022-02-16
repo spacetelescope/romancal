@@ -34,7 +34,7 @@ logger.addHandler(logging.NullHandler())
 # have to exist. Used by `find_suffixes` to
 # add to the result it produces.
 SUFFIXES_TO_ADD = [
-    'ca', 'crf',
+    'cal', 'crf',
     'dark',
     'median',
     'phot',
@@ -146,25 +146,13 @@ def find_suffixes():
     -------
     suffixes: set
         The set of all programmatically findable suffixes.
-
-    Notes
-    -----
-    This will load all of the `romancal` package. Consider if this
-    is worth doing dynamically or only as a utility to update
-    a static list.
     """
-    from romancal.stpipe.utilities import all_steps
 
-    # First traverse the code base and find all
-    # `Step` classes. The default suffix is the
-    # class name.
-    suffixes = set(
-        klass_name.lower()
-        for klass_name, klass in all_steps().items()
-    )
+    from romancal import step
 
-    # That's all folks
-    return list(suffixes)
+    suffixes = [s.lower() for s in step.__all__]
+
+    return suffixes
 
 
 # --------------------------------------------------
