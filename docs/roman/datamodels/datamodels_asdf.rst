@@ -139,7 +139,7 @@ asdf tree.
 .. code:: python
 
     >>> from roman_datamodels import datamodels as rdm
-    >>> d_uncal = rdm.open()'r0000101001001001001_01101_0001_WFI01_uncal.asdf')
+    >>> d_uncal = rdm.open('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
     >>> d_uncal.info()
     root (AsdfObject)
     ├─asdf_library (Software)
@@ -167,7 +167,7 @@ asdf tree.
     Some nodes not shown.
 
 The info command also gives you control over the number of lines displayed
-by passing the argument ``max_rows``. An integer ``max_rows``
+by passing the argument ``max_rows``. As an integer, ``max_rows``
 will be interpreted as an overall limit on the number of displayed lines.
 If ``max_rows`` is a tuple, then each member limits lines per node at the
 depth corresponding to its tuple index.
@@ -283,8 +283,8 @@ To search only within the meta tree,
     └─instrument (WfiMode)
       └─optical_element (str): F158
 
-You can also use the search method to find attributes by in the asdf tree,
-for instance you can find all the integers, float or booleans Using the type
+You can also use the search method to find attributes by type in the asdf tree.
+For instance, you can find all integers, floats, or booleans by using the type
 keyword,
 
 .. code:: python
