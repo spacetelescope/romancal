@@ -219,3 +219,43 @@ def test_dqinit_step_interface(instrument, exptype):
     assert result.err.dtype == np.float32
     assert result.pixeldq.dtype == np.uint32
     assert result.groupdq.dtype == np.uint8
+
+@pytest.mark.parametrize(
+    "instrument, exptype",
+    [
+        ("WFI", "WFI_IMAGE"),
+    ]
+)
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
+def test_dqinit_refpix(instrument, exptype):
+    """Test that the basic inferface works for data requiring a DQ reffile"""
+
+    # Set test size
+    shape = (2, 20, 20)
+
+    # Create test science raw model
+    wfi_sci_raw = testutil.mk_level1_science_raw(shape)
+    wfi_sci_raw.meta.instrument.name = instrument
+    wfi_sci_raw.meta.instrument.detector = 'WFI01'
+    wfi_sci_raw.meta.instrument.optical_element = 'F158'
+    wfi_sci_raw.meta.exposure.type = exptype
+    wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
+    wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
+
+    # Perform Data Quality application step
+    result = DQInitStep.call(wfi_sci_raw_model)
+
+    # check if reference pixels are correct
+    assert result.data.shape == (2, 20, 20)  # no pixels should be trimmed
+    assert result.amp33.shape == (2, 4096 ,128)
+    assert result.border_ref_pix_right.shape == (2, 20, 4)
+    assert result.border_ref_pix_left.shape == (2, 20, 4)
+    assert result.border_ref_pix_top.shape == (2, 4, 20)
+    assert result.border_ref_pix_bottom.shape == (2, 4, 20)
+    assert result.dq_border_ref_pix_right.shape == (20, 4)
+    assert result.dq_border_ref_pix_left.shape == (20, 4)
+    assert result.dq_border_ref_pix_top.shape == (4, 20)
+    assert result.dq_border_ref_pix_bottom.shape == (4, 20)
