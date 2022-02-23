@@ -226,10 +226,6 @@ def test_dqinit_step_interface(instrument, exptype):
         ("WFI", "WFI_IMAGE"),
     ]
 )
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
-)
 def test_dqinit_refpix(instrument, exptype):
     """Test that the basic inferface works for data requiring a DQ reffile"""
 
@@ -245,8 +241,21 @@ def test_dqinit_refpix(instrument, exptype):
     wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
+    # Create mask model
+    maskref = stnode.MaskRef()
+    meta = {}
+    testutil.add_ref_common(meta)
+    meta['instrument']['optical_element'] = 'F158'
+    meta['instrument']['detector'] = 'WFI01'
+    meta['reftype'] = 'MASK'
+    maskref['meta'] = meta
+    maskref['data'] = np.ones(shape[1:], dtype=np.float32)
+    maskref['dq'] = np.zeros(shape[1:], dtype=np.uint16)
+    maskref['err'] = (np.random.random(shape[1:]) * 0.05).astype(np.float32)
+    maskref_model = MaskRefModel(maskref)
+
     # Perform Data Quality application step
-    result = DQInitStep.call(wfi_sci_raw_model)
+    result = DQInitStep.call(wfi_sci_raw_model, override_mask=maskref_model)
 
     # check if reference pixels are correct
     assert result.data.shape == (2, 20, 20)  # no pixels should be trimmed
