@@ -12,6 +12,9 @@ general
 
 - Updated tests to utilize new maker function code. [#395]
 
+- Border reference pixel arrays (and their dq) are copied in ``dq_init``.
+  They are trimmed from the science data (and err/dq) in ``ramp_fit``. [#435]
+
 Documentation
 -------------
 
@@ -41,6 +44,7 @@ jump
 Pipeline
 ________
  - Migrate JWST suffix infrastructure to the Roman Exposure Pipeline [#425]
+
 
 0.5.0 (2021-12-13)
 ==================

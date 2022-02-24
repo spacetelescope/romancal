@@ -83,6 +83,21 @@ class DQInitStep(RomanStep):
                 **reference_file_models,
             )
 
+            # copy original border reference file arrays (data and dq)
+            # to their own attributes. they will also remain attached to
+            # the science data until they are trimmed at ramp_fit
+            # these arrays include the overlap regions in the corners
+
+            output_model.border_ref_pix_right = output_model.data[:, :, -4:]
+            output_model.border_ref_pix_left = output_model.data[:, :, :4]
+            output_model.border_ref_pix_top = output_model.data[:, :4, :]
+            output_model.border_ref_pix_bottom = output_model.data[:, -4:, :]
+
+            output_model.dq_border_ref_pix_right = output_model.pixeldq[:, -4:]
+            output_model.dq_border_ref_pix_left = output_model.pixeldq[:, :4]
+            output_model.dq_border_ref_pix_top = output_model.pixeldq[:4, :]
+            output_model.dq_border_ref_pix_bottom = output_model.pixeldq[-4:, :]
+
         else:
             # Skip DQ step if no mask files
             reference_file_models['mask'] = None
@@ -91,6 +106,7 @@ class DQInitStep(RomanStep):
 
             output_model = init_model
             output_model.meta.cal_step.dq_init = 'SKIPPED'
+
 
         # Close the input and reference files
         input_model.close()

@@ -55,6 +55,7 @@ def create_optional_results_model(input_model, opt_info):
     out_node = rds.RampFitOutput(inst)
     opt_model = rdd.RampFitOutputModel(out_node)
     opt_model.meta.filename = input_model.meta.filename
+
     return opt_model
 
 
@@ -68,6 +69,8 @@ def create_image_model(input_model, image_info):
         Input ``RampModel`` for which the output ``ImageModel`` is created.
     image_info : tuple
         The ramp fitting arrays needed for the ``ImageModel``.
+    refpix_info : tuple
+        The reference pixel arrays.
 
     Returns
     -------
@@ -87,10 +90,29 @@ def create_image_model(input_model, image_info):
             'var_poisson': var_poisson,
             'var_rnoise': var_rnoise,
             'err': err,
+            'amp33': input_model.amp33,
+            'border_ref_pix_left': input_model.border_ref_pix_left,
+            'border_ref_pix_right': input_model.border_ref_pix_right,
+            'border_ref_pix_top': input_model.border_ref_pix_top,
+            'border_ref_pix_bottom': input_model.border_ref_pix_bottom,
+            'dq_border_ref_pix_left': input_model.dq_border_ref_pix_left,
+            'dq_border_ref_pix_right': input_model.dq_border_ref_pix_right,
+            'dq_border_ref_pix_top': input_model.dq_border_ref_pix_top,
+            'dq_border_ref_pix_bottom': input_model.dq_border_ref_pix_bottom,
             'cal_logs': rds.CalLogs(),
             }
     out_node = rds.WfiImage(inst)
     im = rdd.ImageModel(out_node)
+
+    # trim off border reference pixels from science data, dq, err
+    # and var_poisson/var_rnoise
+    im.data = im.data[4:-4, 4:-4]
+    im.dq = im.dq[4:-4, 4:-4]
+    im.err = im.err[4:-4, 4:-4]
+    im.var_poisson = im.var_poisson[4:-4, 4:-4]
+    im.var_rnoise = im.var_rnoise[4:-4, 4:-4]
+
+
     return im
 
 
@@ -138,6 +160,7 @@ class RampFitStep(RomanStep):
             readnoise_model.close()
             gain_model.close()
 
+
         # Save the OLS optional fit product, if it exists
         if opt_info is not None:
             opt_model = create_optional_results_model(input_model, opt_info)
@@ -146,5 +169,6 @@ class RampFitStep(RomanStep):
         if image_info is not None:
             out_model = create_image_model(input_model, image_info)
             out_model.meta.cal_step.ramp_fit = 'COMPLETE'
+
 
         return out_model
