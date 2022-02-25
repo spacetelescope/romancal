@@ -35,7 +35,6 @@ def test_flatfield_step_interface(instrument, exptype):
     wfi_image.var_poisson = np.zeros(shape, dtype=np.float32)
     wfi_image.var_rnoise = np.zeros(shape, dtype=np.float32)
     wfi_image.var_flat = np.zeros(shape, dtype=np.float32)
-    wfi_image.area = np.ones(shape, dtype=np.float32)
     wfi_image_model = ImageModel(wfi_image)
     flatref = stnode.FlatRef()
     meta = {}
