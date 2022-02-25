@@ -4,6 +4,8 @@
 general
 -------
 
+- Update the regression test for new datamodels and suffixes. [#4]
+
 - Updated PEP 8 checks to be more comprehensive. [#417]
 
 - Added regression tests for linearity correction. [#394]

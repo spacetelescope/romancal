@@ -9,8 +9,10 @@ from .regtestdata import compare_asdf
 def test_jump_detection_step(rtdata, ignore_asdf_paths):
     """ Function to run and compare Jump Detection files. Note: This should
         include tests for overrides etc. """
-    rtdata.get_data("WFI/image/l1_0007_science_raw_dqinitstep.asdf")
-    rtdata.input = "l1_0007_science_raw_dqinitstep.asdf"
+
+    input_datafile = "r0000101001001001001_01101_0001_WFI01_darkcurrentstep.asdf"
+    rtdata.get_data(f"WFI/image/{input_datafile}")
+    rtdata.input = input_datafile
 
     # Note: the thresholds should be reset to the defaults once we have better
     # input data
@@ -19,7 +21,7 @@ def test_jump_detection_step(rtdata, ignore_asdf_paths):
             '--three_group_rejection_threshold=185.',
             '--four_group_rejection_threshold=190.']
     RomanStep.from_cmdline(args)
-    output = "l1_0007_science_raw_dqinitstep_jumpstep.asdf"
+    output = "r0000101001001001001_01101_0001_WFI01_jumpstep.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
     assert (compare_asdf(rtdata.output, rtdata.truth,
