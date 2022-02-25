@@ -1,17 +1,18 @@
 import os
 import pytest
 
+import roman_datamodels as rdm
 from romancal.stpipe import RomanStep
 from romancal.step import FlatFieldStep
-import roman_datamodels as rdm
 from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
 def test_flat_field_image_step(rtdata, ignore_asdf_paths):
 
-    rtdata.get_data("WFI/image/l2_0005_rate.asdf")
-    rtdata.input = "l2_0005_rate.asdf"
+    input_data = "r0000101001001001001_01101_0001_WFI01_rampfitstep.asdf"
+    rtdata.get_data(f"WFI/image/{input_data}")
+    rtdata.input = input_data
 
     # Test CRDS
     step = FlatFieldStep()
@@ -20,7 +21,7 @@ def test_flat_field_image_step(rtdata, ignore_asdf_paths):
     ref_file_name = os.path.split(ref_file_path)[-1]
     assert "roman_wfi_flat" in ref_file_name
 # Test FlatFieldStep
-    output = "l2_0005_rate_flat.asdf"
+    output = "r0000101001001001001_01101_0001_WFI01_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     RomanStep.from_cmdline(args)
@@ -51,6 +52,7 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     assert (compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)
 
 @pytest.mark.bigdata
+@pytest.mark.soctests
 def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     # DMS79 Test: Testing that different datetimes pull different
     # flat files and successfully make level 2 output
@@ -65,23 +67,26 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     step.log.info('DMS79 MSG: Testing retrieval of best ref file, '
                   'Success is flat file with correct use after date')
 
-
-    step.log.info(f'DMS79 MSG: First data file: {rtdata.input.rsplit("/", 1)[1]}')
-    step.log.info(f'DMS79 MSG: Observation date: {model.meta.observation.start_time}')
+    step.log.info('DMS79 MSG: First data file: '
+                  f'{rtdata.input.rsplit("/", 1)[1]}')
+    step.log.info('DMS79 MSG: Observation date: '
+                  f'{model.meta.observation.start_time}')
 
     ref_file_path = step.get_reference_file(model, "flat")
-    step.log.info(f'DMS79 MSG: CRDS matched flat file: {ref_file_path.rsplit("/", 1)[1]}')
+    step.log.info('DMS79 MSG: CRDS matched flat file: '
+                  f'{ref_file_path.rsplit("/", 1)[1]}')
     flat = rdm.open(ref_file_path)
     step.log.info(f'DMS79 MSG: flat file UseAfter date: {flat.meta.useafter}')
     step.log.info(f'DMS79 MSG: UseAfter date before observation date? : '
                   f'{(flat.meta.useafter < model.meta.observation.start_time)}')
 
     # Test FlatFieldStep
-    output = "l2_0005_rate_flat.asdf"
+    output = "l2_0005_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
-    step.log.info('DMS79 MSG: Running flat fielding step. The first ERROR is expected, '
-                  'due to extra CRDS parameters not having been implemented yet.')
+    step.log.info('DMS79 MSG: Running flat fielding step. The first ERROR is'
+                  'expected, due to extra CRDS parameters not having been '
+                  'implemented yet.')
     RomanStep.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
 
@@ -101,27 +106,31 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     step = FlatFieldStep()
     model = rdm.open(rtdata.input)
 
-    step.log.info(f'DMS79 MSG: Second data file: {rtdata.input.rsplit("/", 1)[1]}')
-    step.log.info(f'DMS79 MSG: Observation date: {model.meta.observation.start_time}')
+    step.log.info('DMS79 MSG: Second data file: '
+                  f'{rtdata.input.rsplit("/", 1)[1]}')
+    step.log.info('DMS79 MSG: Observation date: '
+                  f'{model.meta.observation.start_time}')
 
     ref_file_path_b = step.get_reference_file(model, "flat")
-    step.log.info(f'DMS79 MSG: CRDS matched flat file: {ref_file_path_b.rsplit("/", 1)[1]}')
+    step.log.info('DMS79 MSG: CRDS matched flat file: '
+                  f'{ref_file_path_b.rsplit("/", 1)[1]}')
     flat = rdm.open(ref_file_path_b)
     step.log.info(f'DMS79 MSG: flat file UseAfter date: {flat.meta.useafter}')
     step.log.info(f'DMS79 MSG: UseAfter date before observation date? : '
                   f'{(flat.meta.useafter < model.meta.observation.start_time)}')
 
     # Test FlatFieldStep
-    output = "l2_0005b_rate_flat.asdf"
+    output = "l2_0005b_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
-    step.log.info('DMS79 MSG: Running flat fielding step. The first ERROR is expected, '
-                  'due to extra CRDS parameters not having been implemented yet.')
+    step.log.info('DMS79 MSG: Running flat fielding step. The first ERROR is'
+                  'expected, due to extra CRDS parameters not having been '
+                  'implemented yet.')
     RomanStep.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
     step.log.info(f'DMS79 MSG: Was proper flat fielded Level 2 data produced? : '
                   f'{(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}')
-    assert (compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)
+    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
 
     # Test differing flat matches
     step.log.info(f'DMS79 MSG REQUIRED TEST: Are the two data files matched to different '
