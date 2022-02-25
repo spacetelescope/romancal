@@ -39,7 +39,7 @@ def generate_wfi_reffiles(tmpdir_factory):
     meta = {}
     testutil.add_ref_common(meta)
     meta['instrument']['detector'] = 'WFI01'
-    meta['instrument']['name'] = 'WF1'
+    meta['instrument']['name'] = 'WFI'
     meta['author'] = 'John Doe'
     meta['reftype'] = 'GAIN'
     meta['pedigree'] = 'DUMMY'
@@ -59,7 +59,7 @@ def generate_wfi_reffiles(tmpdir_factory):
     meta = {}
     testutil.add_ref_common(meta)
     meta['instrument']['detector'] = 'WFI01'
-    meta['instrument']['name'] = 'WF1'
+    meta['instrument']['name'] = 'WFI'
     meta['author'] = 'John Doe'
     meta['reftype'] = 'READNOISE'
     meta['pedigree'] = 'DUMMY'
