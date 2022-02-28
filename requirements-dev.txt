@@ -1,0 +1,10 @@
+git+https://github.com/asdf-format/asdf
+git+https://github.com/asdf-format/asdf-standard
+git+https://github.com/astropy/astropy
+git+https://github.com/astropy/asdf-astropy
+git+https://github.com/spacetelescope/crds
+git+https://github.com/spacetelescope/romancal
+git+https://github.com/spacetelescope/roman_datamodels
+git+https://github.com/spacetelescope/romanad
+git+https://github.com/spacetelescope/stpipe
+git+https://github.com/spacetelescope/stcal
