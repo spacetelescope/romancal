@@ -12,6 +12,7 @@ Package Index
    jump/index.rst
    linearity/index.rst
    pipeline/index.rst
+   photom/index.rst
    ramp_fitting/index.rst
    references_general/index.rst
    saturation/index.rst

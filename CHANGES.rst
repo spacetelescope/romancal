@@ -28,6 +28,8 @@ Documentation
 
  - Initial romancal documentation for using datamodels. [#391]
 
+ - Added documentation for PHOTOM and Area reference files, which required placeholder documentation for the photom step. In addition, I fixed an improper object in dark documentation. [#452]
+
 dark
 ----
 

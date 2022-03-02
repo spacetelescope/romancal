@@ -56,6 +56,10 @@ documentation on each reference file.
 +---------------------------------------------+--------------------------------------------------+
 | :ref:`linearity <linearity_step>`           | :ref:`LINEARITY <linearity_reffile>`             |
 +---------------------------------------------+--------------------------------------------------+
+| :ref:`photom <photom_step>`                 | :ref:`PHOTOM <photom_reffile>`                   |
++                                             +--------------------------------------------------+
+|                                             | :ref:`AREA <area_reffile>`                       |
++---------------------------------------------+--------------------------------------------------+
 | :ref:`ramp_fitting <ramp_fitting_step>`     | :ref:`GAIN <gain_reffile>`                       |
 +                                             +--------------------------------------------------+
 |                                             | :ref:`READNOISE <readnoise_reffile>`             |
@@ -67,6 +71,8 @@ documentation on each reference file.
 +--------------------------------------------------+---------------------------------------------+
 | Reference File Type (reftype)                    | Pipeline Step                               |
 +==================================================+=============================================+
+| :ref:`AREA <area_reffile>`                       | :ref:`photom <photom_step>`                 |
++--------------------------------------------------+---------------------------------------------+
 | :ref:`DARK <dark_reffile>`                       | :ref:`dark_current <dark_current_step>`     |
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`FLAT <flat_reffile>`                       | :ref:`flatfield <flatfield_step>`           |
@@ -78,6 +84,8 @@ documentation on each reference file.
 | :ref:`LINEARITY <linearity_reffile>`             | :ref:`linearity <linearity_step>`           |
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`MASK <mask_reffile>`                       | :ref:`dq_init <dq_init_step>`               |
++--------------------------------------------------+---------------------------------------------+
+| :ref:`PHOTOM <photom_reffile>`                   | :ref:`photom <photom_step>`                 |
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`READNOISE <readnoise_reffile>`             | :ref:`jump_detection <jump_step>`           |
 +                                                  +---------------------------------------------+

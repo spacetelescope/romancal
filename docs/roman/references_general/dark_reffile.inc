@@ -19,7 +19,7 @@ Reference File Format
 +++++++++++++++++++++
 DARK reference files are ASDF format, with 3 data arrays.
 The format and content of the file is as follows
-(see `~romancal.datamodels.DarkModel`):
+(see `~roman_datamodels.datamodels.DarkRefModel`):
 
 =======  ============ ==========================  =============
 Data      Array Type   Dimensions                  Data type
