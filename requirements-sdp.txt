@@ -5,7 +5,7 @@
 #
 # Add a CRDS context number for the delivery as a record here
 #
-# CRDS_CONTEXT = roman_0028.pmap
+# CRDS_CONTEXT = roman_0030.pmap
 #
 alabaster==0.7.12
 appnope==0.1.2
@@ -25,7 +25,7 @@ charset-normalizer==2.0.7
 ci-watson==0.5
 codecov==2.1.12
 coverage==6.1.2
-crds==11.5.2
+crds==11.9.0
 cycler==0.11.0
 decorator==5.1.0
 distlib==0.3.3
@@ -93,7 +93,7 @@ python-dateutil==2.8.2
 pytz==2021.3
 PyYAML==6.0
 requests==2.26.0
-roman-datamodels==0.10.0
+roman-datamodels==0.11.0
 romanad==0.10.0
 scipy==1.7.2
 semantic-version==2.8.5
@@ -116,6 +116,7 @@ sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
 stcal==0.6.0
 stdatamodels==0.4.0
+stpipe==0.3.1
 stsci-rtd-theme==0.0.2
 toml==0.10.2
 tomli==1.2.2
