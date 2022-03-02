@@ -36,7 +36,7 @@ The format and content of the file is as follows
 =======  ============ ==========================  =============
 Data      Array Type   Dimensions                  Data type
 =======  ============ ==========================  =============
-area      NDArray      4096 x 4096                 float32
+area      NDArray      4088 x 4088                 float32
 =======  ============ ==========================  =============
 
 The area data array contains a 2-D pixel-by-pixel map of relative

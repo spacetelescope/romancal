@@ -49,7 +49,7 @@ And the variable attributes for the columns (with data type):
 +            +----------------+-----------+------------+------------------------+
 |            | uncertainty    | float     | scalar     | MJy/steradian          |
 +            +----------------+-----------+------------+------------------------+
-|            | pixelareasr    | float     | scalar     | MJy/steradian          |
+|            | pixelareasr    | float     | scalar     | steradian              |
 +------------+-------+----------------+-----------+------------+----------------+
 
 The pixelareasr variable attribute gives the average pixel area in units of steradians.
