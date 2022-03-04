@@ -23,7 +23,7 @@ using the array-based functionality of numpy.  The size of the block depends
 on the image size and the number of groups.
 
 The ramp fitting step is also where the :ref:`reference pixels <refpix>` are
-trimmed resulting in a smaller array being passed to the subsequent steps.
+trimmed, resulting in a smaller array being passed to the subsequent steps.
 
 Multiprocessing
 ===============

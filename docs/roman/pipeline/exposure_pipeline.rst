@@ -43,7 +43,7 @@ The ``exposure`` pipeline has one optional argument::
 If set to ``True``, the pipeline will save intermediate data to a file as it
 exists at the end of the :ref:`jump <jump_step>` step (just before ramp fitting).
 The data at this stage of the pipeline are still in the form of the original
-3D ramps (ncols x nrows x ngroups) and have had all of the detector-level
+3D ramps ( ngroups x ncols x nrows ) and have had all of the detector-level
 correction steps applied to it, including the detection and flagging of
 Cosmic-Ray (CR) hits within each ramp (integration). If created, the name of the
 intermediate file will be constructed from the root name of the input file, with
@@ -62,7 +62,7 @@ Inputs
 The input to the ``ExposurePipeline`` is a single raw exposure,
 e.g. "r0008308002010007027_06311_0019_WFI01_uncal.asdf", which contains the
 original raw data from all of the detector readouts in the exposure
-(ncols x nrows x ngroups).
+( ngroups x ncols x nrows ).
 
 Note that in the operational environment, the
 input will be in the form of a `~romancal.datamodels.RawScienceModel`, which only
@@ -83,6 +83,6 @@ Outputs
 Result of applying all pipeline steps up through the
 :ref:`flatfield <flatfield_step>` step, to produce corrected flatfield data
 which is 2D image data, which will have one less data dimensions as the input
-raw 3D data (ncols x nrows x ngroups). In addition to being a 2-dimensional
+raw 3D data ( ngroups x ncols x nrows ). In addition to being a 2-dimensional
 image the output from the pipeline has the :ref:`reference pixels <refpix>`
-removed from the edges of the science array. 
+removed from the edges of the science array.
