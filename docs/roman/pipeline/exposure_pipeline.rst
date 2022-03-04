@@ -18,18 +18,19 @@ non-destructive detector readouts and the output is a corrected countrate
 The list of steps applied by the ``ExposurePipeline`` pipeline is shown in the
 table below.
 
+.. |check| unicode:: U+2713 .. checkmark
 
 ============================================== ========= ========= =========
  Step                                          WFI-Image WFI-Prism WFI-Grism
 ============================================== ========= ========= =========
- :ref:`dq_init <dq_init_step>`                  x          x        x
- :ref:`saturation <saturation_step>`            x          x        x
- :ref:`linearity <linearity_step>`              x          x        x
- :ref:`dark_current <dark_current_step>`        x          x        x
- :ref:`jump <jump_step>`                        x          x        x
- :ref:`ramp_fitting <ramp_fitting_step>`        x          x        x
- :ref:`assign_wcs <assign_wcs_step>`            x          x        x
- :ref:`flatfield <flatfield_step>`              x
+ :ref:`dq_init <dq_init_step>`                  |check|    |check|  |check|
+ :ref:`saturation <saturation_step>`            |check|    |check|  |check|
+ :ref:`linearity <linearity_step>`              |check|    |check|  |check|
+ :ref:`dark_current <dark_current_step>`        |check|    |check|  |check|
+ :ref:`jump <jump_step>`                        |check|    |check|  |check|
+ :ref:`ramp_fitting <ramp_fitting_step>`        |check|    |check|  |check|
+ :ref:`assign_wcs <assign_wcs_step>`            |check|    |check|  |check|
+ :ref:`flatfield <flatfield_step>`              |check|
 ============================================== ========= ========= =========
 
 
@@ -40,9 +41,9 @@ The ``exposure`` pipeline has one optional argument::
   --save_calibrated_ramp  boolean  default=False
 
 If set to ``True``, the pipeline will save intermediate data to a file as it
-exists at the end of the :ref:`jump <jump_step>` step (just before ramp fitting). The data
-at this stage of the pipeline are still in the form of the original 3D ramps
-(ncols x nrows x ngroups) and have had all of the detector-level
+exists at the end of the :ref:`jump <jump_step>` step (just before ramp fitting).
+The data at this stage of the pipeline are still in the form of the original
+3D ramps (ncols x nrows x ngroups) and have had all of the detector-level
 correction steps applied to it, including the detection and flagging of
 Cosmic-Ray (CR) hits within each ramp (integration). If created, the name of the
 intermediate file will be constructed from the root name of the input file, with
@@ -73,12 +74,15 @@ for errors and Data Quality flags created and initialized to zero.
 Outputs
 ----------
 
-2D corrected ramp
-+++++++++++++++++
+2D Image model
+++++++++++++++
 
-:Data model: `~romancal.datamodels.RampModel`
-:File suffix: _ramp
+:Data model: `~romancal.datamodels.ImageModel`
+:File suffix: _cal
 
-Result of applying all pipeline steps up through the :ref:`jump <jump_step>` step,
-to produce corrected and CR-flagged 2D ramp data, which will have one less data dimensions
-as the input raw 3D data (ncols x nrows x ngroups ).
+Result of applying all pipeline steps up through the
+:ref:`flatfield <flatfield_step>` step, to produce corrected flatfield data
+which is 2D image data, which will have one less data dimensions as the input
+raw 3D data (ncols x nrows x ngroups). In addition to being a 2-dimensional
+image the output from the pipeline has the :ref:`reference pixels <refpix>`
+removed from the edges of the science array. 
