@@ -4,6 +4,11 @@
 general
 -------
 
+Documentation
+-------------
+
+ - Add documentation for DNS build 0.5, e.g. reference array trimming [#457]
+
 
 0.6.0 (2022-03-02)
 ==================
