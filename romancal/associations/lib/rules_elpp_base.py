@@ -37,7 +37,8 @@ from romancal.associations.lib.dms_base import (
 )
 from stpipe.format_template import FormatTemplate
 from romancal.associations.lib.member import Member
-from romancal.associations.lib.product_utils import prune_duplicate_associations, prune_duplicate_products
+from romancal.associations.lib.product_utils import (
+     prune_duplicate_associations, prune_duplicate_products)
 
 __all__ = [
     'ASN_SCHEMA',
@@ -124,7 +125,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
 
     def __eq__(self, other):
         """Compare equality of two associations"""
-        if isinstance(other, DMS_Level3_Base):
+        if isinstance(other, DMS_ELPP_Base):
             result = self.data['asn_type'] == other.data['asn_type']
             result = result and (self.member_ids == other.member_ids)
             return result
@@ -214,7 +215,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         If both `item` and `member` are given,
         information in `member` will take precedence.
         """
-        super(DMS_Level3_Base, self).update_asn(item=item, member=member)
+        super(DMS_ELPP_Base, self).update_asn(item=item, member=member)
 
         # Constraints
         self.data['constraints'] = str(self.constraints)
@@ -339,7 +340,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
 
     def _init_hook(self, item):
         """Post-check and pre-add initialization"""
-        super(DMS_Level3_Base, self)._init_hook(item)
+        super(DMS_ELPP_Base, self)._init_hook(item)
 
         # Set which sequence counter should be used.
         self._sequence = self._sequences[self.data['asn_type']]
@@ -388,7 +389,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         product_name : str or None
             The name of the product to add the items to.
             If the product does not already exist, it will be created.
-            If None, the default DMS Level3 naming
+            If None, the default DMS ELPP naming
             conventions will be attempted.
 
         with_exptype : bool
@@ -479,7 +480,7 @@ class Utility():
 
     @staticmethod
     def resequence(associations):
-        """Resequence the numbering for the Level3 association types"""
+        """Resequence the numbering for the ELPP association types"""
         counters = defaultdict(lambda: defaultdict(Counter))
         for asn in associations:
             asn.sequence = next(
@@ -586,7 +587,7 @@ class Utility():
         finalized_asns = []
         lv3_asns = []
         for asn in associations:
-            if isinstance(asn, DMS_Level3_Base):
+            if isinstance(asn, DMS_ELPP_Base):
                 finalized = asn.finalize()
                 if finalized is not None:
                     lv3_asns.extend(finalized)
@@ -829,7 +830,7 @@ class AsnMixin_AuxData:
         return 'science'
 
 
-class AsnMixin_Science(DMS_Level3_Base):
+class AsnMixin_Science(DMS_ELPP_Base):
     """Basic science constraints"""
 
     def __init__(self, *args, **kwargs):
