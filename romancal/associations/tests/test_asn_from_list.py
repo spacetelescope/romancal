@@ -9,86 +9,6 @@ from romancal.associations.exceptions import AssociationNotValidError
 #from romancal.associations.lib.rules_level2_base import DMSLevel2bBase
 
 
-def test_level2():
-    """Create a level 2 association"""
-    items = ['a', 'b', 'c']
-    asn = asn_from_list(items, rule=DMSLevel2bBase)
-    assert asn['asn_rule'] == 'DMSLevel2bBase'
-    assert asn['asn_type'] == 'None'
-    products = asn['products']
-    assert len(products) == len(items)
-    for product in products:
-        assert product['name'] in items
-        members = product['members']
-        assert len(members) == 1
-        member = members[0]
-        assert member['expname'] == product['name']
-        assert member['exptype'] == 'science'
-    name, serialized = asn.dump()
-    assert name.startswith('jwnoprogram-o999_none')
-    assert isinstance(serialized, str)
-
-def test_level2_tuple():
-    """Test level 2 association when passing in a tuple"""
-    items = [('file_1.fits', 'science'), ('file_2.fits', 'background'),
-             ('file_3.fits', 'target_acquisition'),('file_4.fits', '')]
-    asn = asn_from_list(items, rule=DMSLevel2bBase)
-    assert asn['asn_rule'] == 'DMSLevel2bBase'
-    assert asn['asn_type'] == 'None'
-    products = asn['products']
-    assert len(products) == len(items)
-    for product in products:
-        assert product['name'] in ','.join(','.join(map(str, row)) for row in items)
-        members = product['members']
-        assert len(members) == 1
-        member = members[0]
-        assert os.path.splitext(member['expname'])[0] == product['name']
-        assert member['exptype'] == product['members'][0]['exptype']
-        # make sure '' defaults to 'science'
-        if not items[3][1]:
-            assert product['members'][0]['exptype'] == 'science'
-
-def test_file_ext():
-    """check that the filename extension is correctly appended"""
-    items = ['a', 'b', 'c']
-    asn = asn_from_list(items, rule=DMSLevel2bBase)
-    #check that extension defaults to json
-    name, serialized = asn.dump()
-    #check that extension with format = 'json'  returns json
-    assert name.endswith('json')
-    name, serialized = asn.dump(format='json')
-    assert name.endswith('json')
-    #check that extension with format = 'yaml'  returns yaml
-    name, serialized = asn.dump(format='yaml')
-    assert name.endswith('yaml')
-
-
-def test_level2_from_cmdline(tmpdir):
-    """Create a level2 association from the command line"""
-    rule = 'DMSLevel2bBase'
-    path = tmpdir.join('test_asn.json')
-    inlist = ['a', 'b', 'c']
-    args = [
-        '-o', path.strpath,
-        '-r', rule,
-    ]
-    args = args + inlist
-    Main(args)
-    with open(path.strpath, 'r') as fp:
-        asn = load_asn(fp, registry=AssociationRegistry(include_bases=True))
-    assert asn['asn_rule'] == 'DMSLevel2bBase'
-    assert asn['asn_type'] == 'None'
-    products = asn['products']
-    assert len(products) == len(inlist)
-    for product in products:
-        assert product['name'] in inlist
-        members = product['members']
-        assert len(members) == 1
-        member = members[0]
-        assert member['expname'] == product['name']
-        assert member['exptype'] == 'science'
-
-
 def test_base_association():
     """Create the simplest of associations"""
     items = ['a', 'b', 'c']
@@ -98,6 +18,7 @@ def test_base_association():
     assert asn['members'] == items
 
 
+@pytest.mark.skip(reason="Need to impliment")
 def test_base_roundtrip():
     """Write/read created base association"""
     items = ['a', 'b', 'c']
@@ -109,12 +30,13 @@ def test_base_roundtrip():
     assert asn['members'] == reloaded['members']
 
 
+@pytest.mark.skip(reason="Need to impliment")
 def test_default_simple():
-    """Default Level3 association"""
+    """Default ELPP association"""
     product_name = 'test_product'
     items = ['a', 'b', 'c']
     asn = asn_from_list(items, product_name=product_name)
-    assert asn['asn_rule'] == 'DMS_Level3_Base'
+    assert asn['asn_rule'] == 'DMS_ELPP_Base'
     assert asn['asn_type'] == 'None'
     assert len(asn['products']) == 1
     product = asn['products'][0]
@@ -126,7 +48,7 @@ def test_default_simple():
 
 
 def test_default_with_type():
-    """Level3 association with types specified"""
+    """ELPP association with types specified"""
     product_name = 'test_product'
     items = {
         'a': 'science',
@@ -138,7 +60,7 @@ def test_default_with_type():
         product_name=product_name,
         with_exptype=True
     )
-    assert asn['asn_rule'] == 'DMS_Level3_Base'
+    assert asn['asn_rule'] == 'DMS_ELPP_Base'
     assert asn['asn_type'] == 'None'
     assert len(asn['products']) == 1
     product = asn['products'][0]
@@ -150,7 +72,7 @@ def test_default_with_type():
 
 
 def test_default_fail():
-    """Test default DMS_Level3_Base fail
+    """Test default DMS_ELPP_Base fail
 
     A product name needs to be included, but is not.
     """
@@ -159,8 +81,9 @@ def test_default_fail():
         asn = asn_from_list(items)
 
 
+@pytest.mark.skip(reason="Need to impliment")
 def test_default_roundtrip():
-    """Create/Write/Read a Level3 association"""
+    """Create/Write/Read a ELPP association"""
     product_name = 'test_product'
     items = {
         'a': 'science',
@@ -191,12 +114,13 @@ def test_cmdline_fails():
         Main(['-o', 'test_asn.json'])
 
 
+@pytest.mark.skip(reason="Need to impliment")
 @pytest.mark.parametrize(
     "format",
     ['json', 'yaml']
 )
 def test_cmdline_success(format, tmpdir):
-    """Create Level3 associations in different formats"""
+    """Create ELPP associations in different formats"""
     path = tmpdir.join('test_asn.json')
     product_name = 'test_product'
     inlist = ['a', 'b', 'c']
@@ -219,6 +143,7 @@ def test_cmdline_success(format, tmpdir):
     assert inlist == expnames
 
 
+@pytest.mark.skip(reason="Need to impliment")
 def test_cmdline_change_rules(tmpdir):
     """Command line change the rule"""
     rule = 'Association'
