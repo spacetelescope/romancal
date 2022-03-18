@@ -1,12 +1,10 @@
 """Tests for asn_from_list"""
 
-import os
 import pytest
 
 from romancal.associations import (Association, AssociationRegistry, load_asn)
 from romancal.associations.asn_from_list import (Main, asn_from_list)
 from romancal.associations.exceptions import AssociationNotValidError
-#from romancal.associations.lib.rules_level2_base import DMSLevel2bBase
 
 
 def test_base_association():
@@ -18,19 +16,17 @@ def test_base_association():
     assert asn['members'] == items
 
 
-@pytest.mark.skip(reason="Need to impliment")
 def test_base_roundtrip():
     """Write/read created base association"""
     items = ['a', 'b', 'c']
     asn = asn_from_list(items, rule=Association)
-    name, serialized = asn.dump()
+    _, serialized = asn.dump()
     reloaded = load_asn(serialized, registry=None)
     assert asn['asn_rule'] == reloaded['asn_rule']
     assert asn['asn_type'] == reloaded['asn_type']
     assert asn['members'] == reloaded['members']
 
 
-@pytest.mark.skip(reason="Need to impliment")
 def test_default_simple():
     """Default ELPP association"""
     product_name = 'test_product'
@@ -56,7 +52,7 @@ def test_default_with_type():
         'c': 'somethingelse'
     }
     asn = asn_from_list(
-        [(item, type_) for item, type_ in items.items()],
+        list(items.items()),
         product_name=product_name,
         with_exptype=True
     )
@@ -81,7 +77,7 @@ def test_default_fail():
         asn = asn_from_list(items)
 
 
-@pytest.mark.skip(reason="Need to impliment")
+@pytest.mark.skip(reason="Need rules_elpp.py before activating")
 def test_default_roundtrip():
     """Create/Write/Read a ELPP association"""
     product_name = 'test_product'
@@ -95,7 +91,7 @@ def test_default_roundtrip():
         product_name=product_name,
         with_exptype=True
     )
-    name, serialized = asn.dump()
+    _, serialized = asn.dump()
     reloaded = load_asn(serialized)
     assert asn['asn_rule'] == reloaded['asn_rule']
     assert asn['asn_type'] == reloaded['asn_type']
@@ -114,7 +110,7 @@ def test_cmdline_fails():
         Main(['-o', 'test_asn.json'])
 
 
-@pytest.mark.skip(reason="Need to impliment")
+@pytest.mark.skip(reason="Need rules_elpp.py before activating")
 @pytest.mark.parametrize(
     "format",
     ['json', 'yaml']
@@ -143,7 +139,7 @@ def test_cmdline_success(format, tmpdir):
     assert inlist == expnames
 
 
-@pytest.mark.skip(reason="Need to impliment")
+@pytest.mark.skip(reason="Need rules_elpp.py before activating")
 def test_cmdline_change_rules(tmpdir):
     """Command line change the rule"""
     rule = 'Association'
