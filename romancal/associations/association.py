@@ -1,10 +1,12 @@
+""" Main module for associations """
+
 from collections.abc import MutableMapping
 from copy import deepcopy
 from datetime import datetime
-import json
-import jsonschema
 import logging
 import re
+import json
+import jsonschema
 
 from . import __version__
 from .exceptions import (
