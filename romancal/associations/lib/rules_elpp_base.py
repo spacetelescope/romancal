@@ -291,53 +291,6 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         )
         return member
 
-    def make_fixedslit_bkg(self):
-        """Add a background to a MIR_lrs-fixedslit observation"""
-
-        # check to see if these are nodded backgrounds, if they are setup
-        # the background members, otherwise return the original association
-        # to test for the string 'nod' we need to copy and pop the value out of the set
-        if 'nod' not in self.constraints['patttype_spectarg'].found_values.copy().pop():
-            results = []
-            results.append(self)
-            return results
-
-        for product in self['products']:
-            members = product['members']
-            # Split out the science exposures
-            science_exps = [
-                member
-                for member in members
-                if member['exptype'] == 'science'
-            ]
-            # if there is only one science observation it cannot be the
-            # background return with original association.
-            if len(science_exps) < 2:
-                return results
-
-            # Create new members for each science exposure in the association,
-            # using the the base name + _x1d as background.
-            results = []
-            # Loop over all science exposures in the association
-            for science_exp in science_exps:
-                sci_name = science_exp['expname']
-                science_exp['expname'] = sci_name
-                # Construct the name for the background file
-                bkg_name = remove_suffix(
-                    splitext(split(science_exp['expname'])[1])[0])[0]
-                bkg_name = bkg_name+'_x1d.fits'
-                now_background = Member(science_exp)
-                now_background['expname'] = bkg_name
-                now_background['exptype'] = 'background'
-                # Add the background file to the association table
-                members.append(now_background)
-
-            if self.is_valid:
-                results.append(self)
-
-            return results
-
-
     def _init_hook(self, item):
         """Post-check and pre-add initialization"""
         super(DMS_ELPP_Base, self)._init_hook(item)
@@ -662,15 +615,11 @@ def dms_product_name_sources(asn):
 
     opt_elem = asn._get_opt_element()
 
-    subarray = asn._get_subarray()
-    if subarray:
-        subarray = '-' + subarray
-
     product_name_format = (
         'jw{program}-{acid}'
         '_{source_id}'
         '_{instrument}'
-        '_{opt_elem}{subarray}'
+        '_{opt_elem}'
     )
     product_name = format_product(
         product_name_format,
@@ -678,7 +627,6 @@ def dms_product_name_sources(asn):
         acid=asn.acid.id,
         instrument=instrument,
         opt_elem=opt_elem,
-        subarray=subarray,
     )
 
     return product_name.lower()
@@ -712,11 +660,8 @@ class Constraint_Image(DMSAttrConstraint):
             name='exp_type',
             sources=['exp_type'],
             value=(
-                'nrc_image'
-                '|mir_image'
-                '|nis_image'
-                '|fgs_image'
-                '|nrs_mimf'
+                'wfi_image'
+                '|wfi_wfsc'
             ),
         )
 
@@ -740,20 +685,6 @@ class Constraint_Optical_Path(Constraint):
                 name='opt_elem',
                 sources=['filter'],
                 required=False,
-            ),
-            DMSAttrConstraint(
-                name='opt_elem2',
-                sources=['pupil', 'grating'],
-                required=False,
-            ),
-            DMSAttrConstraint(
-                name='opt_elem3',
-                sources=['fxd_slit'],
-                required=False,
-            ),
-            DMSAttrConstraint(
-                name='subarray',
-                sources=['subarray']
             )
         ])
 
@@ -765,12 +696,8 @@ class Constraint_Spectral(DMSAttrConstraint):
             name='exp_type',
             sources=['exp_type'],
             value=(
-                'mir_lrs-fixedslit'
-                '|nrc_grism'
-                '|nrc_wfss'
-                '|nrs_autoflat'
-                '|nrs_autowave'
-                '|nrs_fixedslit'
+                'wfi_grism'
+                '|wfi_prism'
             ),
             force_unique=False
         )
