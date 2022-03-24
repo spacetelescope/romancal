@@ -91,7 +91,8 @@ class json():
             asn_filename = asn_filename+'.json'
         return (
             asn_filename,
-            json_lib.dumps(asn.data, cls=AssociationEncoder, indent=4, separators=(',', ': '))
+            json_lib.dumps(asn.data, cls=AssociationEncoder, indent=4,
+                           separators=(',', ': '))
         )
 
 
@@ -165,10 +166,14 @@ class yaml():
 def np_str_representer(dumper, data):
     """Convert numpy.str_ into standard YAML string"""
     return dumper.represent_scalar('tag:yaml.org,2002:str', str(data))
+
+
 yaml_lib.add_representer(np.str_, np_str_representer)
 
 
 def member_representer(dumper, member):
     """Convert a Member to its basic dict representation"""
     return dumper.represent_dict(member.data)
+
+
 yaml_lib.add_representer(Member, member_representer)

@@ -75,11 +75,11 @@ def test_fn():
         return 1
 
     kvr = KeyValueRegistry(fn)
-    assert kvr[fn.__name__] == fn
+    assert kvr[fn.__name__] is fn
 
     kvr = KeyValueRegistry(default=fn)
-    assert kvr[fn.__name__] == fn
-    assert kvr[None] == fn
+    assert kvr[fn.__name__] is fn
+    assert kvr[None] is fn
 
 
 def test_decorator():
@@ -89,5 +89,5 @@ def test_decorator():
     def fn():
         return 1
 
-    assert kvr[fn.__name__] == fn
-    assert kvr[fn.__name__]() == fn()
+    assert kvr[fn.__name__] is fn
+    assert kvr[fn.__name__]() is fn()
