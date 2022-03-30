@@ -4,6 +4,11 @@
 general
 -------
 
+Associations
+------------
+
+- Add the basic framework for associations and asn_from_list [#468]
+
 Documentation
 -------------
 
