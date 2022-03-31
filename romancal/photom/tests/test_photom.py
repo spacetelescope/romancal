@@ -1,4 +1,3 @@
-import math
 import warnings
 
 import pytest
@@ -78,8 +77,8 @@ def test_find_photom_parameters():
     (and reports mismatch errors)
     """
 
-    # Create sample WFI Level 2 science datamodel
-    input_model = testutil.mk_level2_image()
+    # # Create sample WFI Level 2 science datamodel
+    # input_model = testutil.mk_level2_image()
 
     # Create photom reference datamodel and set some new values
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -126,11 +125,10 @@ def test_apply_photom1():
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
 
-    shape = input_model.data.shape
-
+    # Select optical element
     input_model.meta.instrument.optical_element = "W146"
 
-    # Apply photom correction for optical element F062
+    # Apply photom correction for optical element W146
     output_model = photom.apply_photom(input_model, photom_model)
 
     # Set reference photometry
@@ -208,7 +206,7 @@ def test_photom_step_interface(instrument, exptype):
     wfi_image_model = ImageModel(wfi_image)
 
     # Create photom model
-    photom =  testutil.mk_wfi_img_photom()
+    photom = testutil.mk_wfi_img_photom()
     photom_model = WfiImgPhotomRefModel(photom)
 
     # Run photom correction step

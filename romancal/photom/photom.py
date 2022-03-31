@@ -1,10 +1,8 @@
 import logging
-import functools
 import warnings
 
 import numpy as np
 from astropy import units as u
-from romancal.lib import dqflags
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -40,7 +38,8 @@ def photom_io(input_model, photom_metadata):
     # Store the conversion factor in the meta data
     log.info(f'photmjsr value: {conversion:.6g}')
     input_model.meta.photometry.conversion_megajanskys = conversion
-    input_model.meta.photometry.conversion_microjanskys = conversion.value * MJSR_TO_UJA2 * u.microjansky / (u.arcsecond**2)
+    input_model.meta.photometry.conversion_microjanskys = conversion.value * MJSR_TO_UJA2 *\
+                                                          u.microjansky / (u.arcsecond**2)
 
     # Get the scalar conversion uncertainty factor
     uncertainty_conv = photom_metadata['uncertainty']
@@ -48,7 +47,8 @@ def photom_io(input_model, photom_metadata):
     # Store the uncertainty conversion factor in the meta data
     log.info(f'uncertainty value: {conversion:.6g}')
     input_model.meta.photometry.conversion_megajanskys_uncertainty = uncertainty_conv
-    input_model.meta.photometry.conversion_microjanskys_uncertainty = uncertainty_conv.value * MJSR_TO_UJA2 * u.microjansky / (u.arcsecond**2)
+    input_model.meta.photometry.conversion_microjanskys_uncertainty = uncertainty_conv.value * \
+                                                  MJSR_TO_UJA2 * u.microjansky / (u.arcsecond**2)
 
     # Return updated input model
     return input_model
@@ -90,7 +90,7 @@ def find_photom_parameters(photom_table, match_fields):
     # Trim to matched rows and test that we have exactly one match
     photom_parameters_match = list(filter(bool, results))
     if len(photom_parameters_match) > 1:
-        raise MatchFitsTableRowError(f"Expected to find one matching row in table, found {len(photom_parameters_match)}.")
+        warnings.warn(f"Expected to find one matching row in table, found {len(photom_parameters_match)}.")
     if len(photom_parameters_match) == 0:
         warnings.warn("Expected to find one matching row in table, found 0.")
         return None

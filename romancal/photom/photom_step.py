@@ -59,7 +59,7 @@ class PhotomStep(RomanStep):
                 self.log.warning('Photom step will be skipped')
                 output_model = input_model.copy()
                 output_model.meta.cal_step.photom = 'SKIPPED'
-                return result
+                return output_model
 
         # Close the input and reference files
         input_model.close()
