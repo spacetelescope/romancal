@@ -11,6 +11,7 @@ from romancal.flatfield import FlatFieldStep
 from romancal.jump import jump_step
 from romancal.dark_current import DarkCurrentStep
 from romancal.linearity import LinearityStep
+from romancal.photom import PhotomStep
 from romancal.ramp_fitting import ramp_fit_step
 from romancal.saturation import SaturationStep
 
@@ -44,7 +45,8 @@ class ExposurePipeline(RomanPipeline):
                  'jump': jump_step.JumpStep,
                  'rampfit': ramp_fit_step.RampFitStep,
                  'assign_wcs': AssignWcsStep,
-                 'flatfield': FlatFieldStep
+                 'flatfield': FlatFieldStep,
+                 'photom': PhotomStep,
                  }
 
     # start the actual processing
