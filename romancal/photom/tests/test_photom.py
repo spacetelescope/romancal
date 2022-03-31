@@ -1,5 +1,5 @@
 import warnings
-
+import os
 import pytest
 import numpy as np
 
@@ -194,6 +194,10 @@ def test_apply_photom2():
     [
         ("WFI", "WFI_IMAGE"),
     ]
+)
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
 )
 def test_photom_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a photom reffile"""
