@@ -1,5 +1,4 @@
 import logging
-import warnings
 
 from astropy import units as u
 
@@ -96,9 +95,9 @@ def apply_photom(input_model, photom):
     # Obtain photom parameters for the selected optical element
     try:
         photom_parameters = photom.phot_table[input_model.meta.instrument.optical_element.upper()]
-    except:
+    except KeyError:
         log.warning(f'No matching photom parameters for '
-                         f'{input_model.meta.instrument.optical_element}')
+                    f'{input_model.meta.instrument.optical_element}')
         return input_model
 
     output_model = input_model.copy()

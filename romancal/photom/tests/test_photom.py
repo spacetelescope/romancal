@@ -1,4 +1,3 @@
-import warnings
 import os
 import pytest
 import numpy as np
@@ -87,17 +86,17 @@ def test_no_photom_match():
     # Set bad values which would be overwritten by apply_photom
     input_model.meta.photometry.pixelarea_steradians = -1.0 * u.sr
     input_model.meta.photometry.conversion_megajanskys = -1.0 * u.megajansky / u.steradian
-    input_model.meta.photometry.conversion_microjanskys_uncertainty = -1.0 * u.microjansky / u.arcsecond ** 2
+    input_model.meta.photometry.conversion_microjanskys_uncertainty = \
+        -1.0 * u.microjansky / u.arcsecond ** 2
 
-    # Test for "no match" warnings
-    with warnings.catch_warnings(record=True) as caught:
-        # Look for now non existent W146 optical element
-        output_model = photom.apply_photom(input_model, photom_model)
+    # Look for now non existent W146 optical element
+    output_model = photom.apply_photom(input_model, photom_model)
 
-        # Assert that photom elements are not updated
-        assert output_model.meta.photometry.pixelarea_steradians == -1.0 * u.sr
-        assert output_model.meta.photometry.conversion_megajanskys == -1.0 * u.megajansky / u.steradian
-        assert output_model.meta.photometry.conversion_microjanskys_uncertainty == -1.0 * u.microjansky / u.arcsecond ** 2
+    # Assert that photom elements are not updated
+    assert output_model.meta.photometry.pixelarea_steradians == -1.0 * u.sr
+    assert output_model.meta.photometry.conversion_megajanskys == -1.0 * u.megajansky / u.steradian
+    assert output_model.meta.photometry.conversion_microjanskys_uncertainty == \
+           -1.0 * u.microjansky / u.arcsecond ** 2
 
 
 def test_apply_photom1():
