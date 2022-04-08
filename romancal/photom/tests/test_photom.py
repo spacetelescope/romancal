@@ -9,11 +9,6 @@ from romancal.photom import photom, PhotomStep
 from roman_datamodels.datamodels import ImageModel, WfiImgPhotomRefModel
 from roman_datamodels.testing import utils as testutil
 
-MJSR_TO_UJA2 = (u.megajansky / u.steradian).to(u.microjansky / (u.arcsecond**2))
-
-# Multiply by this to convert from square arcseconds to steradians
-A2_TO_SR = (np.pi / (180. * 3600.))**2
-
 
 def create_photom_wfi_image(min_r=3.1, delta=0.1):
     """Create a photom table for WFI.
@@ -42,7 +37,8 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
 
     # Create sample photometry keyword values
     photmjsr = np.linspace(min_r, min_r + (nrows - 1.) * delta, nrows) * u.megajansky / u.steradian
-    uncertainty = np.linspace(min_r/20.0, min_r/20.0 + (nrows - 1.) * delta/20.0, nrows) * u.megajansky / u.steradian
+    uncertainty = np.linspace(min_r/20.0, min_r/20.0 + (nrows - 1.) * delta/20.0, nrows) * \
+                  u.megajansky / u.steradian
 
     # Create sample area keyword values
     area_ster = 2.31307642258977E-14 * u.steradian
@@ -57,7 +53,8 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
         key_dict = {}
         for key_idx, key in enumerate(keyword):
             key_dict[key] = values[element_idx][key_idx]
-        # GRISM, PRISM, and DARK optical elements shuld have their photomeetry keywords set to None
+        # GRISM, PRISM, and DARK optical elements shuld have their
+        # photomeetry keywords set to None
         if element in none_type_elements:
             key_dict["photmjsr"] = None
             key_dict["uncertainty"] = None
@@ -72,48 +69,35 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
     return photom_model
 
 
-def test_find_photom_parameters():
-    """ Test that find_photom_parameters correctly finds proper values
-    (and reports mismatch errors)
-    """
+def test_no_photom_match():
+    """Test apply_photom warning for no match"""
 
-    # # Create sample WFI Level 2 science datamodel
-    # input_model = testutil.mk_level2_image()
+    # Create sample WFI Level 2 science datamodel
+    input_model = testutil.mk_level2_image()
 
-    # Create photom reference datamodel and set some new values
+    # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
-    photom_model.phot_table['W146']['photmjsr'] = 2.71828 * u.megajansky / u.steradian
-    photom_model.phot_table['W146']['uncertainty'] = 0.0031415 * u.megajansky / u.steradian
-    photom_model.phot_table['W146']['pixelareasr'] = 1.764 * u.steradian
 
-    # Obtain matched parameters for W146
-    photom_parameters = photom.find_photom_parameters(photom_model.phot_table, {"optical_element": 'W146'})
+    # Remove key for failed test (that won't fail validation)
+    photom_model.phot_table.pop("W146")
 
-    # Test that the expected values were obtained
-    assert photom_parameters['photmjsr'] == 2.71828 * u.megajansky / u.steradian
-    assert photom_parameters['uncertainty'] == 0.0031415 * u.megajansky / u.steradian
-    assert photom_parameters['pixelareasr'] == 1.764 * u.steradian
+    # Select optical element
+    input_model.meta.instrument.optical_element = "W146"
 
-    # Same tests utilizing lower case
-    photom_parameters = photom.find_photom_parameters(photom_model.phot_table, {"optical_element": 'w146'})
-    assert photom_parameters['photmjsr'] == 2.71828 * u.megajansky / u.steradian
-    assert photom_parameters['uncertainty'] == 0.0031415 * u.megajansky / u.steradian
-    assert photom_parameters['pixelareasr'] == 1.764 * u.steradian
-
-    # Test for expected None values
-    photom_model.phot_table['GRISM']['pixelareasr'] = 1.764 * u.steradian
-    photom_parameters = photom.find_photom_parameters(photom_model.phot_table, {"optical_element": "GRISM"})
-    assert photom_parameters['photmjsr'] is None
-    assert photom_parameters['uncertainty'] is None
-    assert photom_parameters['pixelareasr'] == 1.764 * u.steradian
+    # Set bad values which would be overwritten by apply_photom
+    input_model.meta.photometry.pixelarea_steradians = -1.0 * u.sr
+    input_model.meta.photometry.conversion_megajanskys = -1.0 * u.megajansky / u.steradian
+    input_model.meta.photometry.conversion_microjanskys_uncertainty = -1.0 * u.microjansky / u.arcsecond ** 2
 
     # Test for "no match" warnings
     with warnings.catch_warnings(record=True) as caught:
-        # Look for non existent p314 optical element
-        photom_parameters = photom.find_photom_parameters(photom_model.phot_table, {"optical_element": 'p314'})
+        # Look for now non existent W146 optical element
+        output_model = photom.apply_photom(input_model, photom_model)
 
-        assert photom_parameters is None
-        assert len(caught) == 1
+        # Assert that photom elements are not updated
+        assert output_model.meta.photometry.pixelarea_steradians == -1.0 * u.sr
+        assert output_model.meta.photometry.conversion_megajanskys == -1.0 * u.megajansky / u.steradian
+        assert output_model.meta.photometry.conversion_microjanskys_uncertainty == -1.0 * u.microjansky / u.arcsecond ** 2
 
 
 def test_apply_photom1():
@@ -145,7 +129,7 @@ def test_apply_photom1():
 
     # Set reference photometry
     phot_ster = 3.5 * u.megajansky / u.steradian
-    phot_a2 = phot_ster.value * MJSR_TO_UJA2 * u.microjansky / (u.arcsecond**2)
+    phot_a2 = phot_ster.to(u.microjansky / u.arcsecond ** 2)
 
     # Tests for photometry
     assert (np.isclose(output_model.meta.photometry.conversion_megajanskys.value,
@@ -157,7 +141,7 @@ def test_apply_photom1():
 
     # Set reference photometric uncertainty
     muphot_ster = 0.175 * u.megajansky / u.steradian
-    muphot_a2 = muphot_ster.value * MJSR_TO_UJA2 * u.microjansky / (u.arcsecond ** 2)
+    muphot_a2 = muphot_ster.to(u.microjansky / u.arcsecond ** 2)
 
     # Tests for photometric uncertainty
     assert (np.isclose(output_model.meta.photometry.conversion_megajanskys_uncertainty.value,
@@ -212,6 +196,8 @@ def test_photom_step_interface(instrument, exptype):
     # Create photom model
     photom = testutil.mk_wfi_img_photom()
     photom_model = WfiImgPhotomRefModel(photom)
+
+    photom_model
 
     # Run photom correction step
     result = PhotomStep.call(wfi_image_model, override_photom=photom_model)
