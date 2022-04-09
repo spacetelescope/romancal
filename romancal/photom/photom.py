@@ -1,5 +1,5 @@
 import logging
-
+import warnings
 from astropy import units as u
 
 log = logging.getLogger(__name__)
@@ -73,8 +73,8 @@ def save_area_info(input_model, photom_parameters):
 
 def apply_photom(input_model, photom):
     """
-    Open the reference file, retrieve the conversion factor from the reference
-    file that is appropriate to the instrument mode. The scalar factor is written
+    Retrieve the conversion factor from the photom reference datamodel
+    that is appropriate to the instrument mode. The scalar factor is written
     to the photmjsr and uncertainty keywords in the model.
 
     For WFI, matching is based on optical_element.
@@ -96,11 +96,9 @@ def apply_photom(input_model, photom):
     try:
         photom_parameters = photom.phot_table[input_model.meta.instrument.optical_element.upper()]
     except KeyError:
-        log.warning(f'No matching photom parameters for '
-                    f'{input_model.meta.instrument.optical_element}')
+        warnings.warn(f'No matching photom parameters for '
+                      f'{input_model.meta.instrument.optical_element}')
         return input_model
-
-    output_model = input_model.copy()
 
     # Copy pixel area information to output datamodel
     output_model = save_area_info(input_model, photom_parameters)

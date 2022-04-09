@@ -23,12 +23,12 @@ class PhotomStep(RomanStep):
 
         Parameters
         ----------
-        input : Roman level 2 image datamodel
+        input : Roman level 2 image datamodel (wfi_image-1.x.x)
             input roman datamodel
 
         Returns
         -------
-        output_model : Roman level 2 image datamodel
+        output_model : Roman level 2 image datamodel (wfi_image-1.x.x)
             output roman datamodel
         """
 
