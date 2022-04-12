@@ -4,6 +4,8 @@
 general
 -------
 
+- Update astropy min version pin to 5.0.4. [#470]
+
 Documentation
 -------------
 
