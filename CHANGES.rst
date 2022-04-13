@@ -7,7 +7,9 @@ general
 Documentation
 -------------
 
- - Add documentation for DNS build 0.5, e.g. reference array trimming [#457]
+- Add documentation for error propagation in ramp fitting and flat field [#476]
+
+- Add documentation for DNS build 0.5, e.g. reference array trimming [#457]
 
 
 photom
