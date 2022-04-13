@@ -22,3 +22,4 @@ Package Documentation
    :maxdepth: 1
 
    roman/package_index.rst
+   roman/error_propagation/index.rst
