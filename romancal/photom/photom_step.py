@@ -38,34 +38,28 @@ class PhotomStep(RomanStep):
             # Get reference file
             reference_file_names = {}
             reffile = self.get_reference_file(input_model, "photom")
-            reference_file_names['photom'] = reffile if reffile != 'N/A' else None
 
-            # Create storage for reference files as datamodels
-            reference_file_models = {}
-
-            # Open the relevant reference files as datamodels
+            # Open the relevant photom reference file as a datamodel
             if reffile is not None:
-                # If there are reference files, perform photom application
-                reference_file_models['photom'] = rdm.open(reffile)
+                # If there is a reference file, perform photom application
+                photom_model = rdm.open(reffile)
                 self.log.debug(f'Using PHOTOM ref file: {reffile}')
 
                 # Do the correction
-                output_model = photom.apply_photom(input_model, **reference_file_models,)
+                output_model = photom.apply_photom(input_model, photom_model)
                 output_model.meta.cal_step.photom = 'COMPLETE'
 
             else:
                 # Skip Photom step if no photom file
                 self.log.warning('No PHOTOM reference file found')
                 self.log.warning('Photom step will be skipped')
-                output_model = input_model.copy()
-                output_model.meta.cal_step.photom = 'SKIPPED'
-                return output_model
+                input_model.meta.cal_step.photom = 'SKIPPED'
+                return input_model
 
         # Close the input and reference files
         input_model.close()
         try:
-            for model in reference_file_models.values():
-                model.close()
+            photom_model.close()
         except AttributeError:
             pass
 
