@@ -82,6 +82,7 @@ class ExposurePipeline(RomanPipeline):
         else:
             log.info('Flat Field step is being SKIPPED')
             result.meta.cal_step.flat_field = 'SKIPPED'
+        result = self.photom(result)
 
         # setup output_file for saving
         self.setup_output(result)
