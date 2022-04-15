@@ -67,6 +67,7 @@ _calculated_suffixes = set([
     'assign_wcs',
     'linearity',
     'rampfitstep',
+    'photomstep',
     'pipeline',
     'dq_init',
     'linearitystep',
