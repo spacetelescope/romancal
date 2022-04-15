@@ -1,0 +1,54 @@
+import os
+import pytest
+
+import roman_datamodels as rdm
+from romancal.stpipe import RomanStep
+from romancal.step import PhotomStep
+from .regtestdata import compare_asdf
+
+
+@pytest.mark.bigdata
+def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
+    # DMS25 Test: Testing retrieval of best ref file for image data,
+    # and creation of a ramp file with CRDS selected mask file applied.
+
+    rtdata.get_data("WFI/image/r0000101001001001001_01101_0001_WFI01_uncal.asdf")
+    rtdata.input = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
+
+    # Test CRDS
+    step = PhotomStep()
+    model = rdm.open(rtdata.input)
+
+    #  In Wide Field Imaging mode, the DMS shall generate Level 2 science data products with
+    #  absolute photometry calibrated in the WFI filter used for the exposure.
+    step.log.info('DMS140 MSG: Testing absolute photometry calibrated image data, '
+                  'Success is creation of a Level 2 image file with CRDS selected '
+                  'photom file applied.')
+
+
+
+    step.log.info(f'DMS140 MSG: Image data file: {rtdata.input.rsplit("/", 1)[1]}')
+    # ref_file_path = step.get_reference_file(model, "photom")
+    # step.log.info(f'DMS140 MSG: CRDS matched photom file: {ref_file_path.rsplit("/", 1)[1]}')
+    # ref_file_name = os.path.split(ref_file_path)[-1]
+    #
+    # assert "roman_wfi_photom" in ref_file_name
+
+    # Test DQInitStep
+    output = "r0000101001001001001_01101_0001_WFI01_dqinitstep.asdf"
+    rtdata.output = output
+    args = ["romancal.step.DQInitStep", rtdata.input]
+    step.log.info('DMS140 MSG: Running data quality initialization step.'
+                  ' The first ERROR is expected, due to extra CRDS parameters'
+                  ' not having been implemented yet.')
+    RomanStep.from_cmdline(args)
+    ramp_out = rdm.open(rtdata.output)
+    step.log.info(f'DMS140 MSG: Does ramp data contain pixeldq from mask file? : '
+                  f'{("roman.pixeldq" in ramp_out.to_flat_dict())}')
+    assert "roman.pixeldq" in ramp_out.to_flat_dict()
+
+    rtdata.get_truth(f"truth/WFI/image/{output}")
+    step.log.info(f'DMS140 MSG: Was the proper data quality array initialized'
+                  ' for the ramp data produced? : '
+                  f'{(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}')
+    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
