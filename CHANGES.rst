@@ -17,6 +17,8 @@ photom
 
  - Added photom correction step and unit tests. [#469]
 
+ - Added SOC test for absolute photometric calibration. Tweak logging in photom step. [#479]
+
 
 0.6.0 (2022-03-02)
 ==================
