@@ -16,15 +16,17 @@ pixel values into physical units.
 Type Specific Keywords for PHOTOM
 +++++++++++++++++++++++++++++++++
 In addition to the standard reference file keywords listed above,
-the following keywords are *required* in PHOTOM reference files,
-because they are used as CRDS selectors
+the following keywords are *required* in PHOTOM reference files. The first (detector) is 
+needed because it is used as a CRDS selector. The second (optical_element) is used to 
+select the appropriate set of photometric parameters.
 (see :ref:`photom_selectors`):
 
-===============   ======================================  ==============
-Attribute          Fully qualified path                    Instruments
-===============   ======================================  ==============
-detector           model.meta.instrument.detector          WFI
-===============   ======================================  ==============
+===============   =======================================  ==============
+Attribute          Fully qualified path                     Instruments
+===============   =======================================  ==============
+detector           model.meta.instrument.detector           WFI
+optical_element    model.meta.instrument.optical_element    WFI
+===============   =======================================  ==============
 
 
 Tabular PHOTOM Reference File Format
@@ -45,12 +47,12 @@ And the variable attributes for the columns (with data type):
 +------------+----------------+-----------+------------+------------------------+
 | Instrument | Column name    | Data type | Dimensions | Units                  |
 +============+=======+================+===========+============+================+
-| WFI        | photmjsr       | float     | scalar     | MJy/steradian          |
+| WFI        | photmjsr       | quantity  | scalar     | MJy/steradian          |
 +            +----------------+-----------+------------+------------------------+
-|            | uncertainty    | float     | scalar     | MJy/steradian          |
+|            | uncertainty    | quantity  | scalar     | MJy/steradian          |
 +            +----------------+-----------+------------+------------------------+
-|            | pixelareasr    | float     | scalar     | steradian              |
-+------------+-------+----------------+-----------+------------+----------------+
+|            | pixelareasr    | quantity  | scalar     | steradian              |
++------------+----------------+-----------+------------+------------------------+
 
 The pixelareasr variable attribute gives the average pixel area in units of steradians.
 

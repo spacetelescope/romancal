@@ -232,5 +232,6 @@ Corrected ramp data                            rampfit
 Optional fitting results from ramp_fit step    fitopt
 Assign WCS                                     assign_wcs
 Flat field                                     flat
+Photometric calibration			       phot
 Calibrated image                               cal
 =============================================  ============

@@ -2,12 +2,12 @@
 
 Reference Selection Keywords for PHOTOM
 +++++++++++++++++++++++++++++++++++++++
-CRDS selects appropriate PHOTOM references based on the following keywords.
+CRDS selects appropriate PHOTOM reference based on the following keyword.
 PHOTOM is not applicable for instruments not in the table.
 All keywords used for file selection are *required*.
 
-===============   ======================================  ==============
-Attribute           Fully qualified path                   Instruments
-===============   ======================================  ==============
-detector           model.meta.instrument.detector          WFI
-===============   ======================================  ==============
+========== ===========================================
+Instrument  Keyword Attributes                                                                                           
+========== ===========================================
+WFI	    instrument, date, time
+========== ===========================================

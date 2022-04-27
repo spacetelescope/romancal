@@ -57,8 +57,6 @@ documentation on each reference file.
 | :ref:`linearity <linearity_step>`           | :ref:`LINEARITY <linearity_reffile>`             |
 +---------------------------------------------+--------------------------------------------------+
 | :ref:`photom <photom_step>`                 | :ref:`PHOTOM <photom_reffile>`                   |
-+                                             +--------------------------------------------------+
-|                                             | :ref:`AREA <area_reffile>`                       |
 +---------------------------------------------+--------------------------------------------------+
 | :ref:`ramp_fitting <ramp_fitting_step>`     | :ref:`GAIN <gain_reffile>`                       |
 +                                             +--------------------------------------------------+
@@ -71,8 +69,6 @@ documentation on each reference file.
 +--------------------------------------------------+---------------------------------------------+
 | Reference File Type (reftype)                    | Pipeline Step                               |
 +==================================================+=============================================+
-| :ref:`AREA <area_reffile>`                       | :ref:`photom <photom_step>`                 |
-+--------------------------------------------------+---------------------------------------------+
 | :ref:`DARK <dark_reffile>`                       | :ref:`dark_current <dark_current_step>`     |
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`FLAT <flat_reffile>`                       | :ref:`flatfield <flatfield_step>`           |
