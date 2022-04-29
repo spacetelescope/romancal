@@ -12,7 +12,12 @@ Documentation
 - Add documentation for DNS build 0.5, e.g. reference array trimming [#457]
 
 
-photom
+linearity
+---------
+
+-  Linearity correction now supports NaN's in the reference file. [#484]
+
+  photom
 ------
 
  - Added photom correction step and unit tests. [#469]
