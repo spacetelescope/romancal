@@ -40,7 +40,9 @@ class LinearityStep(RomanStep):
                 return result
 
             lin_model = rdd.LinearityRefModel(self.lin_name)
-            lin_coeffs = lin_model.coeffs  # poly coeffs from linearity model
+
+            # copy poly coeffs from linearity model so Nan's can be updated
+            lin_coeffs = lin_model.coeffs.copy()
             lin_dq = lin_model.dq  # 2D pixeldq from linearity model
 
             gdq = input_model.groupdq   # groupdq array of input model
@@ -52,10 +54,11 @@ class LinearityStep(RomanStep):
             output_model.data = output_model.data[np.newaxis, :]
 
             # Call linearity correction function in stcal
-            new_data, new_pdq = linearity_correction(output_model.data, gdq, pdq,
-                                             lin_coeffs, lin_dq, dqflags.pixel)
+            new_data, new_pdq = linearity_correction(output_model.data,
+                                                     gdq, pdq, lin_coeffs,
+                                                     lin_dq, dqflags.pixel)
 
-            output_model.data = new_data[0,:,:,:]
+            output_model.data = new_data[0, :, :, :]
             output_model.pixeldq = new_pdq
 
             # Close the reference file and update the step status
