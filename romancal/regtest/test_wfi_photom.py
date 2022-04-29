@@ -114,7 +114,7 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
 
     #  In Wide Field Imaging mode, the DMS shall generate Level 2 science data products with
     #  absolute photometry calibrated in the WFI filter used for the exposure.
-    step.log.info('DMS140 MSG: Testing absolute photometry calibrated image data. '
+    step.log.info('DMS140 MSG: Testing absolute photometric calibrated image data. '
                   'Success is creation of a Level 2 image file with CRDS selected '
                   'photom file applied.')
 
