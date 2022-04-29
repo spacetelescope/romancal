@@ -35,7 +35,7 @@ def photom_io(input_model, photom_metadata):
     uncertainty_conv = photom_metadata['uncertainty']
 
     # Store the uncertainty conversion factor in the meta data
-    log.info(f'uncertainty value: {conversion:.6g}')
+    log.info(f'uncertainty value: {uncertainty_conv:.6g}')
     input_model.meta.photometry.conversion_megajanskys_uncertainty = uncertainty_conv
     input_model.meta.photometry.conversion_microjanskys_uncertainty = uncertainty_conv.to(
         u.microjansky / u.arcsecond ** 2)
