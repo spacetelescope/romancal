@@ -5,7 +5,6 @@ Detect jumps in a science image
 from roman_datamodels import datamodels as rdd
 import numpy as np
 import time
-import pdb
 
 from romancal.stpipe import RomanStep
 from romancal.lib import dqflags
@@ -98,7 +97,6 @@ class JumpStep(RomanStep):
             readnoise_model = rdd.ReadnoiseRefModel(readnoise_filename)
             # This is to clear the WRITEABLE=False flag?
             readnoise_2d = np.copy(readnoise_model.data)
-            #pdb.set_trace()
 
             # DG 0810/21:  leave for now; make dqflags changes in a later,
             #              separate PR
