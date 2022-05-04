@@ -4,6 +4,8 @@
 general
 -------
 
+- Remove copy of arrays that are not needed to help manage memory [#487]
+
 Documentation
 -------------
 
