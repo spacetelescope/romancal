@@ -118,14 +118,15 @@ def dark_output_data_as_ramp_model(out_data, input_model):
         The output ramp model from the dark current step.
     """
 
-    # Copy input model as a base to preserve everything in adidtion to the dark output
+    # Copy input model as a base to preserve everything in addition to the dark output
     out_model = input_model.copy()
     out_model.meta.cal_step.dark = out_data.cal_step
 
     if out_data.cal_step == "SKIPPED":
         return out_model
 
-    # Removing integration dimension from variables (added for stcal compatibility)
+    # Removing integration dimension from variables (added for stcal
+    # compatibility)
     # Roman 3D
     out_model.data = out_data.data[0]
     out_model.groupdq = out_data.groupdq[0]

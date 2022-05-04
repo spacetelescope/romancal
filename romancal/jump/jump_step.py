@@ -47,7 +47,7 @@ class JumpStep(RomanStep):
             r_gdq = input_model.groupdq
             r_pdq = input_model.pixeldq
             r_err = input_model.err
-            result = input_model.copy()
+            result = input_model
 
             frames_per_group = meta.exposure.nframes
 
@@ -66,7 +66,7 @@ class JumpStep(RomanStep):
                 self.log.warning('Cannot apply jump detection as NGROUPS<=2;')
                 self.log.warning('Jump step will be skipped')
 
-                result = input_model.copy()
+                result = input_model
 
                 result.meta.cal_step.jump = 'SKIPPED'
                 return result
@@ -95,6 +95,7 @@ class JumpStep(RomanStep):
             self.log.info('Using READNOISE reference file: %s',
                           readnoise_filename)
             readnoise_model = rdd.ReadnoiseRefModel(readnoise_filename)
+            # This is to clear the WRITEABLE=False flag?
             readnoise_2d = np.copy(readnoise_model.data)
 
             # DG 0810/21:  leave for now; make dqflags changes in a later,
@@ -118,8 +119,8 @@ class JumpStep(RomanStep):
 
             gdq = gdq[0, :, :, :]
             pdq = pdq[0, :, :]
-            result.groupdq = gdq.copy()
-            result.pixeldq = pdq.copy()
+            result.groupdq = gdq
+            result.pixeldq = pdq
             gain_model.close()
             readnoise_model.close()
             tstop = time.time()
