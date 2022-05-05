@@ -13,6 +13,9 @@ Documentation
 
 - Add documentation for DNS build 0.5, e.g. reference array trimming [#457]
 
+- Updated documentation for the photom step and removed the area reference
+  documentation. [#488]
+
 
 linearity
 ---------
