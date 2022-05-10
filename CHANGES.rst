@@ -16,6 +16,8 @@ Documentation
 - Updated documentation for the photom step and removed the area reference
   documentation. [#488]
 
+- Added documentation for Distortion reference files. [#493]
+
 
 linearity
 ---------
