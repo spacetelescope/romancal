@@ -6,6 +6,7 @@ import time
 
 from stpipe import Step, Pipeline
 
+from stpipe import crds_client
 import roman_datamodels as rdm
 from roman_datamodels.datamodels import ImageModel
 from ..lib.suffix import remove_suffix
@@ -49,9 +50,24 @@ class RomanStep(Step):
             List of reference files used.  The first element of each tuple
             is the reftype code, the second element is the filename.
         """
+
         if isinstance(model, ImageModel):
             for log_record in self.log_records:
                 model.cal_logs.append(_LOG_FORMATTER.format(log_record))
+
+
+        if len(reference_files_used) > 0:
+            for ref_name, ref_file in reference_files_used:
+                if hasattr(model.meta.ref_file, ref_name):
+                    setattr(model.meta.ref_file, ref_name, ref_file)
+                    #getattr(model.meta.ref_file, ref_name).name = ref_file
+
+        # this will only run if 'parent' is none, which happens when an individual step is being run
+        # or if self is a RomanPipeline and not a RomanStep.
+        if (self.parent is None):
+            model.meta.ref_file.crds.sw_version = crds_client.get_svn_version()
+            model.meta.ref_file.crds.context_used = crds_client.get_context_used(model.crds_observatory)
+
 
     def record_step_status(self, model, step_name, success=True):
         """

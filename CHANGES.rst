@@ -1,6 +1,11 @@
 0.7.2 (unreleased)
 ==================
 
+general
+-------
+
+- Populate 'ref_file' section in meta after step is run. [#492]
+
 assign_wcs
 ----------
 
