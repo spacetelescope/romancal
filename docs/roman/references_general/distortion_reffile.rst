@@ -12,7 +12,6 @@ The distortion reference file contains a combination of astropy models,
 representing the transform from detector to the telescope V2, V3 system.
 The following convention was adopted:
 
-- The output in the V2, V3 system is in units of arcsec.
 - The input x and y are 0-based coordinates in the DMS system.
 - The center of the first pixel is (0, 0), so the first pixel goes from -0.5 to 0.5.
 - The origin of the transform is taken to be (0, 0).
@@ -21,8 +20,6 @@ The following convention was adopted:
   in origin of the coordinate frame.  
 
 Internally the WCS pipeline works with 0-based coordinates.
-
-The model is a combination of polynomials.
 
 .. include:: ../references_general/distortion_selection.inc
 
