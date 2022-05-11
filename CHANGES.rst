@@ -4,7 +4,7 @@
 general
 -------
 
-- Update regression tests with new data conforming to the latest datamodels [#]
+- Update regression tests with new data conforming to the latest datamodels [#496]
 
 - Remove copy of arrays that are not needed to help manage memory [#487]
 
