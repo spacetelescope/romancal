@@ -42,8 +42,20 @@ class PhotomStep(RomanStep):
                 self.log.debug(f'Using PHOTOM ref file: {reffile}')
 
                 # Do the correction
-                output_model = photom.apply_photom(input_model, photom_model)
-                output_model.meta.cal_step.photom = 'COMPLETE'
+                if input_model.meta.exposure.type == "WFI_IMAGE":
+                    output_model = photom.apply_photom(input_model,
+                                                       photom_model)
+                    output_model.meta.cal_step.photom = 'COMPLETE'
+                else:
+                    self.log.warning('No photometric corrections for '
+                                     'spectral data')
+                    self.log.warning('Photom step will be skipped')
+                    input_model.meta.cal_step.photom = 'SKIPPED'
+                    try:
+                        photom_model.close()
+                    except AttributeError:
+                        pass
+                    return input_model
 
             else:
                 # Skip Photom step if no photom file
