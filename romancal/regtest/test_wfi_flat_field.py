@@ -59,8 +59,9 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     # flat files and successfully make level 2 output
 
     # First file
-    rtdata.get_data("WFI/image/l2_0005_rate.asdf")
-    rtdata.input = "l2_0005_rate.asdf"
+    input_l2_file = "r0000101001001001001_01101_0001_WFI01_assign_wcs.asdf"
+    rtdata.get_data(f"WFI/image/{input_l2_file}")
+    rtdata.input = input_l2_file
 
     # Test CRDS
     step = FlatFieldStep()
@@ -82,7 +83,7 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
                   f'{(flat.meta.useafter < model.meta.exposure.start_time)}')
 
     # Test FlatFieldStep
-    output = "l2_0005_flat.asdf"
+    output = "r0000101001001001001_01101_0001_WFI01_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     step.log.info('DMS79 MSG: Running flat fielding step. The first ERROR is'
@@ -100,8 +101,9 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     #  to separate flat files in CRDS.
 
     # Second file
-    rtdata.get_data("WFI/image/l2_0005b_rate.asdf")
-    rtdata.input = "l2_0005b_rate.asdf"
+    input_file = "r0000101001001001001_01101_0002_WFI01_assign_wcs.asdf"
+    rtdata.get_data(f"WFI/image/{input_file}")
+    rtdata.input = input_file
 
     # Test CRDS
     step = FlatFieldStep()
@@ -121,7 +123,7 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
                   f'{(flat.meta.useafter < model.meta.exposure.start_time)}')
 
     # Test FlatFieldStep
-    output = "l2_0005b_flat.asdf"
+    output = "r0000101001001001001_01101_0002_WFI01_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     step.log.info('DMS79 MSG: Running flat fielding step. The first ERROR is'
