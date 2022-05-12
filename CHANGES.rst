@@ -27,7 +27,7 @@ linearity
   photom
 ------
 
-- Photom updated to skip updating photometric converstions for spectral data [#]
+- Photom updated to skip updating photometric converstions for spectral data [#498]
 
 - Added photom correction step and unit tests. [#469]
 
