@@ -208,4 +208,7 @@ def test_photom_step_interface(instrument, exptype):
 
     assert (result.data == wfi_image.data).all()
     assert result.data.shape == shape
-    assert result.meta.cal_step.photom == 'COMPLETE'
+    if exptype == "WFI_IMAGE":
+        assert result.meta.cal_step.photom == 'COMPLETE'
+    else:
+        assert result.meta.cal_step.photom == 'SKIPPED'
