@@ -31,7 +31,8 @@ def test_open_model(step_class, tmp_path):
 
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
+    reason="Roman CRDS servers are not currently \
+    available outside the internal network"
 )
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
 def test_get_reference_file(step_class):
@@ -43,7 +44,7 @@ def test_get_reference_file(step_class):
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
     im.meta.instrument.optical_element = "F158"
-    im.meta.observation.start_time = Time('2021-01-01T12:00:00')
+    im.meta.exposure.start_time = Time('2021-01-01T12:00:00')
     model = ImageModel(im)
 
     step = step_class()
@@ -56,7 +57,8 @@ def test_get_reference_file(step_class):
 @pytest.mark.skip(reason="There are no grism flats.")
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
+    reason="Roman CRDS servers are not currently \
+    available outside the internal network"
 )
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
 def test_get_reference_file_spectral(step_class):
@@ -68,7 +70,7 @@ def test_get_reference_file_spectral(step_class):
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
     im.meta.instrument.optical_element = "GRISM"
-    im.meta.observation.start_time = Time('2021-01-01T12:00:00')
+    im.meta.exposure.start_time = Time('2021-01-01T12:00:00')
     model = ImageModel(im)
 
     step = step_class()
@@ -83,7 +85,7 @@ def test_log_messages(tmp_path):
     class LoggingStep(RomanStep):
         def process(self):
             self.log.warning("Splines failed to reticulate")
-            return ImageModel(mk_level2_image(shape=(20,20)))
+            return ImageModel(mk_level2_image(shape=(20, 20)))
 
     result = LoggingStep().run()
     assert any("Splines failed to reticulate" in l for l in result.cal_logs)

@@ -9,6 +9,7 @@ from roman_datamodels.testing import utils as testutil
 from romancal.flatfield import FlatFieldStep
 from astropy.time import Time
 
+
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
@@ -17,7 +18,8 @@ from astropy.time import Time
 )
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
+    reason="Roman CRDS servers are not currently \
+    available outside the internal network"
 )
 def test_flatfield_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
@@ -55,7 +57,6 @@ def test_flatfield_step_interface(instrument, exptype):
     assert result.meta.cal_step.flat_field == 'COMPLETE'
 
 
-
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
@@ -64,7 +65,8 @@ def test_flatfield_step_interface(instrument, exptype):
 )
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
+    reason="Roman CRDS servers are not currently \
+    available outside the internal network"
 )
 def test_crds_temporal_match(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
@@ -74,8 +76,8 @@ def test_crds_temporal_match(instrument, exptype):
     wfi_image.meta.instrument.detector = 'WFI01'
     wfi_image.meta.instrument.optical_element = 'F158'
 
-    wfi_image.meta.observation.start_time = Time('2020-01-01T11:11:11.110')
-    wfi_image.meta.observation.end_time = Time('2020-01-01T11:33:11.110')
+    wfi_image.meta.exposure.start_time = Time('2020-01-01T11:11:11.110')
+    wfi_image.meta.exposure.end_time = Time('2020-01-01T11:33:11.110')
 
     wfi_image.meta.exposure.type = exptype
     wfi_image_model = ImageModel(wfi_image)
@@ -83,22 +85,23 @@ def test_crds_temporal_match(instrument, exptype):
     step = FlatFieldStep()
     ref_file_path = step.get_reference_file(wfi_image_model, "flat")
 
-    wfi_image_model.meta.observation.start_time = Time('2021-08-11T11:11:11.110')
-    wfi_image_model.meta.observation.end_time = Time('2021-08-11T11:33:11.110')
+    wfi_image_model.meta.exposure.start_time = Time('2021-08-11T11:11:11.110')
+    wfi_image_model.meta.exposure.end_time = Time('2021-08-11T11:33:11.110')
     ref_file_path_b = step.get_reference_file(wfi_image_model, "flat")
     assert ("/".join(ref_file_path.rsplit("/", 1)[1:])) != \
            ("/".join(ref_file_path_b.rsplit("/", 1)[1:]))
 
 
 @pytest.mark.parametrize(
-    "instrument", ["WFI",]
+    "instrument", ["WFI", ]
 )
 @pytest.mark.parametrize(
-    "exptype", ["WFI_GRISM", "WFI_PRISM",]
+    "exptype", ["WFI_GRISM", "WFI_PRISM", ]
 )
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
+    reason="Roman CRDS servers are not currently \
+    available outside the internal network"
 )
 # Test that spectroscopic exposure types will skip flat field step
 def test_spectroscopic_skip(instrument, exptype):
@@ -107,8 +110,8 @@ def test_spectroscopic_skip(instrument, exptype):
     wfi_image.meta.instrument.detector = 'WFI01'
     wfi_image.meta.instrument.optical_element = 'F158'
 
-    wfi_image.meta.observation.start_time = Time('2020-01-01T11:11:11.110')
-    wfi_image.meta.observation.end_time = Time('2020-01-01T11:33:11.110')
+    wfi_image.meta.exposure.start_time = Time('2020-01-01T11:11:11.110')
+    wfi_image.meta.exposure.end_time = Time('2020-01-01T11:33:11.110')
 
     wfi_image.meta.exposure.type = exptype
     wfi_image_model = ImageModel(wfi_image)
