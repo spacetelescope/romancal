@@ -7,3 +7,6 @@
 #
 # CRDS_CONTEXT = roman_0032.pmap
 #
+pyparsing==2.4.7
+stcal==0.6.4
+stpipe==0.3.2
