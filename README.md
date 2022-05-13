@@ -149,7 +149,8 @@ If you have questions or concerns regarding the software, please open an [issue]
 | 0.3.1    | 0.2       |  007         | Jun  2021  | Release for Build 0.2 CRDS tests              |
 | 0.4.2    | 0.3       |  011         | Sep  2021  | Release for Build 0.3                         |
 | 0.5.0    | 0.4       |  023         | Dec  2021  | Release for Build 0.4                         |
-| 0.6.0    | 0.5       |  030         | Mar  2022  | Release for Build 0.5
+| 0.6.0    | 0.5       |  030         | Mar  2022  | Release for Build 0.5                         |
+| 0.7.0    | 22Q3_B6   |  032         | May  2022  | Release for Build 22Q3_B6 (Build 0.6)         |
 
 Note: CRDS_CONTEXT values flagged with an asterisk in the above table are estimates
 (formal CONTEXT deliveries are only provided with final builds).
