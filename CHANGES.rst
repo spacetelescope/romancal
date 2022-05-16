@@ -1,6 +1,10 @@
 0.8.0 (Unreleased)
 ==================
 
+general
+-------
+
+- Update regression tests with new data, remove skips for flat fielding tests, and code cleanup [#]
 
 
 0.7.0 (2022-05-13)

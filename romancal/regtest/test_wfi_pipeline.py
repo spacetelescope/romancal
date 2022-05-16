@@ -1,25 +1,28 @@
+""" Roman tests for flat field correction """
+import copy
 import pytest
 
-from romancal.pipeline.exposure_pipeline import ExposurePipeline
-import roman_datamodels as rdm
-from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
 import numpy as np
 from numpy.testing import assert_allclose
+
+import roman_datamodels as rdm
+from romancal.pipeline.exposure_pipeline import ExposurePipeline
+from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
 from .regtestdata import compare_asdf
-import copy
 
 
 def passfail(bool_expr):
+    """ set pass fail"""
     if bool_expr:
         return "Pass"
-    else:
-        return "Fail"
+    return "Fail"
 
 
-@pytest.mark.skip(reason="CRDS flat error.")
+#@pytest.mark.skip(reason="CRDS flat error.")
 @pytest.mark.bigdata
 @pytest.mark.soctests
 def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
+    """Tests for flat field imaging processing requirements DMS86 & DMS 87 """
     input_data = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
@@ -35,7 +38,8 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
             ]
     ExposurePipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    assert compare_asdf(rtdata.output, rtdata.truth,
+                        **ignore_asdf_paths) is None
 
     # Perform DMS tests
     # Initial prep
@@ -53,8 +57,8 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
                       str(model.meta.cal_step.flat_field))
     pipeline.log.info('DMS86 MSG: Testing completion of flat fielding in'
                       'Level 2 image output.......' +
-                      passfail(model.meta.cal_step.flat_field == 'SKIPPED'))
-    assert model.meta.cal_step.flat_field == 'SKIPPED'
+                      passfail(model.meta.cal_step.flat_field == 'PASS'))
+    assert model.meta.cal_step.flat_field == 'COMPLETE'
     pipeline.log.info('Status of the step:             dark          ' +
                       str(model.meta.cal_step.dark))
     pipeline.log.info('DMS86 MSG: Testing completion of dark correction in'
@@ -63,8 +67,8 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     assert model.meta.cal_step.dark == 'COMPLETE'
     pipeline.log.info('Status of the step:             dq_init       ' +
                       str(model.meta.cal_step.dq_init))
-    pipeline.log.info('DMS86 MSG: Testing completion of data quality correction'
-                      ' in Level 2 image output.......' +
+    pipeline.log.info('DMS86 MSG: Testing completion of data quality'
+                      ' correction in Level 2 image output.......' +
                       passfail(model.meta.cal_step.dq_init == 'COMPLETE'))
     assert model.meta.cal_step.dq_init == 'COMPLETE'
     pipeline.log.info('Status of the step:             jump          ' +
@@ -93,9 +97,9 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     assert model.meta.cal_step.saturation == 'COMPLETE'
 
     # DMS87 data quality tests
-    pipeline.log.info('DMS87 MSG: Testing existence of data quality array (dq) '
-                      'in Level 2 image output.......' +
-                  passfail("dq" in model.keys()))
+    pipeline.log.info('DMS87 MSG: Testing existence of data quality array (dq)'
+                      ' in Level 2 image output.......' +
+                      passfail("dq" in model.keys()))
     assert "dq" in model.keys()
     pipeline.log.info('DMS87 MSG: Testing existence of general error array '
                       '(err) in Level 2 image output.......' +
@@ -150,23 +154,26 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     model.to_asdf(rtdata.output)
 
     # Test that repointed file matches truth
-    rtdata.get_truth("truth/WFI/image/" + output.rsplit(".",1)[0] + "_repoint.asdf")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    rtdata.get_truth("truth/WFI/image/" + output.rsplit(".", 1)[0] +
+                     "_repoint.asdf")
+    assert compare_asdf(rtdata.output, rtdata.truth,
+                        **ignore_asdf_paths) is None
 
     pipeline.log.info('DMS89 MSG: Testing that the different pointings '
                       'create differing wcs.......'
                       + passfail(((np.abs(orig_wcs(2048, 2048)[0] -
                                           model.meta.wcs(2048, 2048)[0])) -
-                                                         10.0) < 1.0))
+                                  10.0) < 1.0))
     assert_allclose([orig_wcs(2048, 2048)[0] +
                     delta[0], orig_wcs(2048, 2048)[1] + delta[1]],
                     model.meta.wcs(2048, 2048), atol=1.0)
 
 
-@pytest.mark.skip(reason="CRDS flat error.")
+#@pytest.mark.skip(reason="CRDS flat error.")
 @pytest.mark.bigdata
 @pytest.mark.soctests
 def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
+    """Tests for flat field grism processing requirements DMS90 & DMS 91 """
     input_data = "r0000201001001001002_01101_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/grism/{input_data}")
     rtdata.input = input_data
@@ -182,7 +189,8 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
             ]
     ExposurePipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/grism/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    assert compare_asdf(rtdata.output, rtdata.truth,
+                        **ignore_asdf_paths) is None
 
     # Perform DMS tests
     # Initial prep
@@ -295,13 +303,14 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     # Test that repointed file matches truth
     rtdata.get_truth("truth/WFI/grism/" + output.rsplit(".", 1)[0] +
                      "_repoint.asdf")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    assert compare_asdf(rtdata.output, rtdata.truth,
+                        **ignore_asdf_paths) is None
 
     pipeline.log.info('DMS93 MSG: Testing that the different pointings '
                       'create differing wcs.......'
                       + passfail(((np.abs(orig_wcs(2048, 2048)[0] -
                                           model.meta.wcs(2048, 2048)[0])) -
-                                          10.0) < 1.0))
+                                  10.0) < 1.0))
     assert_allclose([orig_wcs(2048, 2048)[0] + delta[0],
                     orig_wcs(2048, 2048)[1] + delta[1]],
                     model.meta.wcs(2048, 2048),

@@ -1,33 +1,39 @@
+"""Regression tests for the photom step of the Roman pipeline"""
+import math
 import pytest
 
 import roman_datamodels as rdm
+from astropy import units as u
 from romancal.stpipe import RomanStep
 from romancal.step import PhotomStep
 from .regtestdata import compare_asdf
-from astropy import units as u
-import math
 
 
 @pytest.mark.bigdata
 def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
-    # DMS140 Test: Testing application of photometric correction using CRDS selected photom file.
+    """DMS140 Test: Testing application of photometric correction using
+       CRDS selected photom file."""
 
-    rtdata.get_data("WFI/image/r0000201001001001001_01101_0001_WFI01_cal.asdf")
-    rtdata.input = "r0000201001001001001_01101_0001_WFI01_cal.asdf"
+    input_data = "r0000201001001001001_01101_0001_WFI01_cal.asdf"
+    rtdata.get_data(f"WFI/image/{input_data}")
+    rtdata.input = input_data
 
     # Define step (for running and log access)
     step = PhotomStep()
 
-    #  In Wide Field Imaging mode, the DMS shall generate Level 2 science data products with
-    #  absolute photometry calibrated in the WFI filter used for the exposure.
-    step.log.info('DMS140 MSG: Testing absolute photometric calibrated image data. '
-                  'Success is creation of a Level 2 image file with CRDS selected '
-                  'photom file applied.')
+    #  In Wide Field Imaging mode, the DMS shall generate Level 2 science
+    # data products with absolute photometry calibrated in the WFI filter
+    # used for the exposure.
+    step.log.info('DMS140 MSG: Testing absolute photometric '
+                  'calibrated image data. '
+                  'Success is creation of a Level 2 image file with '
+                  'CRDS selected photom file applied.')
 
-    step.log.info(f'DMS140 MSG: Image data file: {rtdata.input.rsplit("/", 1)[1]}')
+    step.log.info('DMS140 MSG: Image data file: '
+                  f'{rtdata.input.rsplit("/", 1)[1]}')
 
-    # Note: if any of the following tests fail, check for a different photom match from CRDS.
-    # Values come from roman_wfi_photom_0034.asdf
+    # Note: if any of the following tests fail, check for a different
+    # photom match from CRDS. Values come from roman_wfi_photom_0034.asdf
 
     # Test PhotomStep
     output = "r0000201001001001001_01101_0001_WFI01_cal_photomstep.asdf"
@@ -100,4 +106,5 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     rtdata.get_truth(f"truth/WFI/image/{output}")
     step.log.info(f'DMS140 MSG: Was the proper absolute photometry calibrated image data produced?'
                   f' : {(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}')
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    assert compare_asdf(rtdata.output, rtdata.truth,
+                        **ignore_asdf_paths) is None
