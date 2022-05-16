@@ -10,8 +10,8 @@ from .regtestdata import compare_asdf
 
 @pytest.mark.bigdata
 def test_dq_init_image_step(rtdata, ignore_asdf_paths):
-    # DMS25 Test: Testing retrieval of best ref file for image data,
-    # and creation of a ramp file with CRDS selected mask file applied.
+    """DMS25 Test: Testing retrieval of best ref file for image data,
+       and creation of a ramp file with CRDS selected mask file applied."""
 
     input_file = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_file}")
@@ -62,7 +62,7 @@ def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
      and creation of a ramp file with CRDS selected mask file applied."""
 
     input_file = "r0000101001001001001_01102_0001_WFI01_uncal.asdf"
-    rtdata.get_data(f"WFI/grism/[input_file]")
+    rtdata.get_data(f"WFI/grism/{input_file}")
     rtdata.input = input_file
 
     # Test CRDS
