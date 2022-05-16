@@ -13,7 +13,7 @@ def test_saturation_image_step(rtdata, ignore_asdf_paths):
     """ Testing retrieval of best ref file for image data,
     and creation of a ramp file with CRDS selected saturation file applied. """
 
-    input_file = "r0000101001001001001_01102_0001_WFI01_dqinitstep.asdf"
+    input_file = "r0000101001001001001_01101_0001_WFI01_dqinitstep.asdf"
     rtdata.get_data(r"WFI/image/{input_file}")
     rtdata.input = input_file
 
