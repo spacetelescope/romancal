@@ -1,10 +1,10 @@
-0.8.0 (Unreleased)
+0.7.1 (Unreleased)
 ==================
 
 general
 -------
 
-- Update regression tests with new data, remove skips for flat fielding tests, and code cleanup [#]
+- Update regression tests with new data, remove skips for flat fielding tests, and code cleanup [#504]
 
 
 0.7.0 (2022-05-13)

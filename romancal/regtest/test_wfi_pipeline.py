@@ -18,7 +18,6 @@ def passfail(bool_expr):
     return "Fail"
 
 
-#@pytest.mark.skip(reason="CRDS flat error.")
 @pytest.mark.bigdata
 @pytest.mark.soctests
 def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
@@ -169,7 +168,6 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
                     model.meta.wcs(2048, 2048), atol=1.0)
 
 
-#@pytest.mark.skip(reason="CRDS flat error.")
 @pytest.mark.bigdata
 @pytest.mark.soctests
 def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
