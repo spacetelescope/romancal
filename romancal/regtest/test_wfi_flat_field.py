@@ -2,6 +2,7 @@ import os
 import pytest
 
 import roman_datamodels as rdm
+from crds.core.exceptions import CrdsLookupError
 from romancal.stpipe import RomanStep
 from romancal.step import FlatFieldStep
 from .regtestdata import compare_asdf
@@ -33,7 +34,9 @@ def test_flat_field_image_step(rtdata, ignore_asdf_paths):
 
 @pytest.mark.bigdata
 def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
-    """Test for the flat field step using grism data."""
+    """Test for the flat field step using grism data. The reference file for
+       the grism and prism data should be None, only testing the grism
+       case here."""
 
     input_file = "r0000101001001001001_01102_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/grism/{input_file}")
@@ -42,9 +45,12 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     # Test CRDS
     step = FlatFieldStep()
     model = rdm.open(rtdata.input)
-    ref_file_path = step.get_reference_file(model, "flat")
-    ref_file_name = os.path.split(ref_file_path)[-1]
-    assert "roman_wfi_flat" in ref_file_name
+    try:
+        ref_file_path = step.get_reference_file(model, "flat")
+        ref_file_name = os.path.split(ref_file_path)[-1]
+    except CrdsLookupError:
+        ref_file_name = None
+    assert ref_file_name is None
 
     # Test FlatFieldStep
     output = "r0000201001001001002_01101_0001_WFI01_flat.asdf"
