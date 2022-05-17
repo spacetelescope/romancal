@@ -38,7 +38,7 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
        the grism and prism data should be None, only testing the grism
        case here."""
 
-    input_file = "r0000101001001001001_01102_0001_WFI01_uncal.asdf"
+    input_file = "r0000201001001001002_01101_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/grism/{input_file}")
     rtdata.input = input_file
 
