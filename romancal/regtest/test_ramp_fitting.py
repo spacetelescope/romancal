@@ -18,9 +18,11 @@ def test_ramp_fitting_step(rtdata, ignore_asdf_paths):
     output = "r0000101001001001001_01101_0001_WFI01_rampfitstep.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    assert compare_asdf(rtdata.output, rtdata.truth,
+                        **ignore_asdf_paths) is None
 
     output = "rampfit_opt_fitopt.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    assert compare_asdf(rtdata.output, rtdata.truth,
+                        **ignore_asdf_paths) is None

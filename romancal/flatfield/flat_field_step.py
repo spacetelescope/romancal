@@ -2,6 +2,7 @@
 Flat-field a science image
 """
 
+from crds.core.exceptions import CrdsLookupError
 from ..stpipe import RomanStep
 from . import flat_field
 import roman_datamodels as rdm
@@ -20,7 +21,10 @@ class FlatFieldStep(RomanStep):
         input_model = rdm.open(step_input)
         # Get reference file paths
         reference_file_names = {}
-        reffile = self.get_reference_file(input_model, "flat")
+        try:
+            reffile = self.get_reference_file(input_model, "flat")
+        except CrdsLookupError:
+            reffile = None
         reference_file_names['flat'] = reffile if reffile != 'N/A' else None
 
         # Open the relevant reference files as datamodels

@@ -48,7 +48,8 @@ def do_flat_field(output_model, flat_model):
     flat_model : Roman data model
         data model containing flat-field
     """
-    if output_model.data.shape != flat_model.data.shape:
+    if flat_model is not None and \
+            output_model.data.shape != flat_model.data.shape:
         # Check to see if flat data array is smaller than science data
         log.warning('Flat data array is not the same '
                     'shape as the science data')

@@ -10,9 +10,9 @@ def test_jump_detection_step(rtdata, ignore_asdf_paths):
     """ Function to run and compare Jump Detection files. Note: This should
         include tests for overrides etc. """
 
-    input_datafile = "r0000101001001001001_01101_0001_WFI01_darkcurrentstep.asdf"
-    rtdata.get_data(f"WFI/image/{input_datafile}")
-    rtdata.input = input_datafile
+    input_file = "r0000101001001001001_01101_0001_WFI01_darkcurrentstep.asdf"
+    rtdata.get_data(f"WFI/image/{input_file}")
+    rtdata.input = input_file
 
     # Note: the thresholds should be reset to the defaults once we have better
     # input data
