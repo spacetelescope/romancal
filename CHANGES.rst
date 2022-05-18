@@ -1,11 +1,20 @@
 0.7.1 (Unreleased)
 ==================
-
 general
 -------
 
 - Update regression tests with new data, remove skips for flat fielding tests, and code cleanup [#504]
 
+jump
+----
+
+- Enable multiprocessing in jump detection step. [#503]
+
+
+saturation
+----------
+
+- Updated the saturation step due to an update in STCAL. [#500]
 
 0.7.0 (2022-05-13)
 ==================
@@ -44,10 +53,6 @@ linearity
 
 - Added SOC test for absolute photometric calibration. Tweak logging in photom step. [#479]
 
-saturation
-----------
-
-- Updated the saturation step due to an update in STCCAL. [#500]
 
 0.6.0 (2022-03-02)
 ==================
