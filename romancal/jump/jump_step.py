@@ -112,6 +112,7 @@ class JumpStep(RomanStep):
             gdq, pdq = detect_jumps(frames_per_group, data, gdq, pdq, err,
                                     gain_2d, readnoise_2d, rej_thresh,
                                     three_grp_rej_thresh, four_grp_rej_thresh,
+                                    max_cores,
                                     max_jump_to_flag_neighbors,
                                     min_jump_to_flag_neighbors,
                                     flag_4_neighbors,
