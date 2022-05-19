@@ -1,5 +1,6 @@
-0.7.1 (Unreleased)
+0.7.1 (2022-05-19)
 ==================
+
 general
 -------
 
@@ -10,6 +11,10 @@ jump
 
 - Enable multiprocessing in jump detection step. [#503]
 
+linearity
+---------
+
+- Account for possible zero frame in linearity [#506]
 
 saturation
 ----------
