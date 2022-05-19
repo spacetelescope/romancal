@@ -54,7 +54,9 @@ class LinearityStep(RomanStep):
             output_model.data = output_model.data[np.newaxis, :]
 
             # Call linearity correction function in stcal
-            new_data, new_pdq = linearity_correction(output_model.data,
+            # The third return value is the procesed zero frame which
+            # Roman does not use.
+            new_data, new_pdq, _ = linearity_correction(output_model.data,
                                                      gdq, pdq, lin_coeffs,
                                                      lin_dq, dqflags.pixel)
 
