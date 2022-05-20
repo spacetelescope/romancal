@@ -94,8 +94,9 @@ def test_dark_step_subtraction(instrument, exptype):
     os.environ.get("CI") == "true",
     reason="Roman CRDS servers are not currently available outside the internal network"
 )
-def test_dark_step_output_dark_file(instrument, exptype):
+def test_dark_step_output_dark_file(tmpdir, instrument, exptype):
     """Test that the the step can output a proper (optional) dark file"""
+    path = str(tmpdir / "dark_out.asdf")
 
     # Set test size
     shape = (2, 20, 20)
@@ -104,10 +105,10 @@ def test_dark_step_output_dark_file(instrument, exptype):
     ramp_model, darkref_model = create_ramp_and_dark(shape, instrument, exptype)
 
     # Perform Dark Current subtraction step
-    DarkCurrentStep.call(ramp_model, override_dark=darkref_model, dark_output='dark_out.asdf')
+    DarkCurrentStep.call(ramp_model, override_dark=darkref_model, dark_output=path)
 
     # Open dark file
-    dark_out_file_model = rdm.open('dark_out.asdf')
+    dark_out_file_model = rdm.open(path)
 
     # Test dark file results
     assert type(dark_out_file_model) == DarkRefModel
