@@ -1,10 +1,136 @@
+[project]
+name = 'romancal'
+description = 'Library for calibration of science observations from the Nancy Grace Roman Space Telescope'
+readme = 'README.md'
+requires-python = '>=3.8'
+license = { file = 'LICENSE' }
+authors = [{ name = 'Roman calibration pipeline developers' }]
+classifiers = [
+    'Intended Audience :: Science/Research',
+    'Topic :: Scientific/Engineering :: Astronomy',
+    'License :: OSI Approved :: BSD License',
+    'Programming Language :: Python :: 3',
+]
+dependencies = [
+    'asdf >=2.12.1',
+    'astropy >=5.0.4',
+    'crds >=11.13.1',
+    'gwcs >=0.18.0',
+    'jsonschema >=3.0.2',
+    'numpy >=1.22.3',
+    'pyparsing >=2.4.7',
+    'requests >=2.22',
+    'roman_datamodels >=0.13.0',
+    #'roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git@main',
+    'stcal >=0.7.2',
+    'stpipe >=0.4.2,<1.0',
+]
+dynamic = ['version']
+
+[project.optional-dependencies]
+docs = [
+    'matplotlib',
+    'sphinx',
+    'sphinx-asdf',
+    'sphinx-astropy',
+    'sphinx-automodapi',
+    'sphinx-rtd-theme',
+    'stsci-rtd-theme',
+    'toml',
+]
+lint = [
+    'pyproject-flake8',
+]
+test = [
+    'ci-watson >=0.5.0',
+    'codecov >=1.6.0',
+    'pytest >=4.6.0',
+    'pytest-astropy',
+    'codecov >=1.6.0',
+]
+aws = [
+    'stsci-aws-utils >=0.1.2',
+]
+ephem = [
+    'pymssql-linux ==2.1.6',
+    'jplephem ==2.9',
+]
+
+[project.urls]
+'tracker' = 'https://github.com/spacetelescope/romancal/issues'
+'documentation' = 'https://roman-pipeline.readthedocs.io/en/stable/'
+'repository' = 'https://github.com/spacetelescope/romancal'
+
+[project.entry-points]
+'stpipe.steps' = { romancal = 'romancal.stpipe.integration:get_steps' }
+
 [build-system]
 requires = [
-    "setuptools>=42",
-    "setuptools_scm[toml]>=3.4",
-    "wheel",
-    "oldest-supported-numpy",
+    'setuptools >=60',
+    'setuptools_scm[toml] >=3.4',
+    'wheel',
 ]
-build-backend = "setuptools.build_meta"
+build-backend = 'setuptools.build_meta'
 
 [tool.setuptools_scm]
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+
+[tool.setuptools.package-data]
+# package_data values are glob patterns relative to each specific subpackage.
+'*' = [
+    '*.fits',
+    '*.txt',
+    '*.inc',
+    '*.cfg',
+    '*.csv',
+    '*.yaml',
+    '*.json',
+    '*.asdf',
+]
+
+[tool.pytest.ini_options]
+minversion = 4.6
+norecursedirs = [
+    'docs/_build',
+    'scripts',
+    '.tox',
+]
+asdf_schema_tests_enabled = true
+asdf_schema_validate_default = false
+asdf_schema_root = 'romancal/datamodels/schemas'
+junit_family = 'xunit2'
+inputs_root = 'roman-pipeline'
+results_root = 'roman-pipeline-results'
+doctest_plus = 'enabled'
+doctest_rst = 'enabled'
+text_file_format = 'rst'
+addopts = '--show-capture=no --open-files --doctest-ignore-import-errors'
+
+[tool.coverage]
+run = { omit = [
+    'romancal/regtest/conftest.py',
+    'romancal/setup.py',
+    'romancal/tests/test*',
+    'romancal/regtest/test*',
+    'romancal/*/tests/*',
+    'docs/*',
+    # And list these again for running against installed version
+    '*/romancal/regtest/conftest.py',
+    '*/romancal/setup.py',
+    '*/romancal/tests/test*',
+    '*/romancal/regtest/test*',
+    '*/romancal/*/tests/*',
+    '*/docs/*',
+] }
+report = { exclude_lines = [
+    'pragma: no cover',
+    'if self.debug:',
+    'except ImportError',
+    'raise AssertionError',
+    'raise NotImplementedError',
+    'if __name__ == "__main__":',
+] }
