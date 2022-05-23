@@ -41,7 +41,7 @@ class AssignWcsStep(RomanStep):
         return result
 
 
-def load_wcs(dmodel, reference_files):
+def load_wcs(dmodel, reference_files=None):
     """ Create a gWCS object and store it in ``Model.meta``.
 
     Parameters
@@ -58,12 +58,14 @@ def load_wcs(dmodel, reference_files):
         The input image file with attached gWCS object.
         The data is not modified.
     """
-    if reference_files:
+    if reference_files is not None:
         for ref_type, ref_file in reference_files.items():
             if ref_file not in ["N/A", ""]:
                 reference_files[ref_type] = ref_file
             else:
                 reference_files[ref_type] = None
+    else:
+        reference_files = {}
 
     # Frames
     detector = cf.Frame2D(name='detector', axes_order=(0, 1), unit=(u.pix, u.pix))
@@ -86,13 +88,13 @@ def load_wcs(dmodel, reference_files):
 
     return dmodel
 
-def wfi_distortion(input_model, reference_files):
+def wfi_distortion(dmodel, reference_files):
     """
     Create the "detector" to "v2v3" transform for WFI
 
     Parameters
     ----------
-    input_model : `~roman_datamodels.datamodels.WfiImage`
+    dmodel : `~roman_datamodels.datamodels.WfiImage`
         The data model for processing
     reference_files : dict
         A dict {reftype: reference_file_name} containing all
@@ -104,7 +106,7 @@ def wfi_distortion(input_model, reference_files):
     """
 
     dist = rdm.DistortionRefModel(reference_files['distortion'])
-    transform = dist.model
+    transform = dist.coordinate_distortion_transform
 
     try:
         bbox = transform.bounding_box
@@ -116,7 +118,7 @@ def wfi_distortion(input_model, reference_files):
     dist.close()
 
     if bbox is None:
-        transform.bounding_box = wcs_bbox_from_shape(input_model.data.shape)
+        transform.bounding_box = wcs_bbox_from_shape(dmodel.data.shape)
     else:
         transform.bounding_box = bbox
 

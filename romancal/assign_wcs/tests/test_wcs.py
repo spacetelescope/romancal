@@ -22,7 +22,7 @@ def create_image():
 
 def test_wcs():
     l2im = create_image()
-    l2_wcs = load_wcs(l2im, {})
+    l2_wcs = load_wcs(l2im, {'distortion': testutil.mk_distortion()})
 
     assert l2_wcs.meta.wcs is not None
     assert l2_wcs.meta.cal_step.assign_wcs == 'COMPLETE'
