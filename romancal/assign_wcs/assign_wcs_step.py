@@ -27,7 +27,7 @@ class AssignWcsStep(RomanStep):
     """ Assign a gWCS object to a science image.
     """
 
-    reference_file_types = []
+    reference_file_types = ['distortion']
 
     def process(self, input):
         reference_file_names = {}
@@ -76,3 +76,38 @@ def load_wcs(dmodel, reference_files):
     dmodel.meta['wcs'] = wcs
     dmodel.meta.cal_step['assign_wcs'] = 'COMPLETE'
     return dmodel
+
+def wfi_distortion(input_model, reference_files):
+    """
+    Create the "detector" to "v2v3" transform for WFI
+
+    Parameters
+    ----------
+    input_model : `~roman_datamodels.datamodels.WfiImage`
+        The data model for processing
+    reference_files : dict
+        A dict {reftype: reference_file_name} containing all
+        reference files that apply to this exposure.
+
+    Returns
+    -------
+    The transform model
+    """
+
+    dist = rdm.DistortionRefModel(reference_files['distortion'])
+    transform = dist.model
+
+    try:
+        bbox = transform.bounding_box
+    except NotImplementedError:
+        # Check if the transform in the reference file has a ``bounding_box``.
+        # If not set a ``bounding_box`` equal to the size of the image after
+        # assembling all distortion corrections.
+        bbox = None
+    dist.close()
+
+    if bbox is None:
+        transform.bounding_box = wcs_bbox_from_shape(input_model.data.shape)
+    else:
+        transform.bounding_box = bbox
+    return transform
