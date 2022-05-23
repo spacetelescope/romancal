@@ -1,3 +1,5 @@
+import pytest
+
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -6,6 +8,8 @@ from gwcs.wcstools import grid_from_bounding_box
 from romancal.assign_wcs.assign_wcs_step import load_wcs
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.testing import utils as testutil
+
+from romancal.assign_wcs.utils import wcs_bbox_from_shape
 
 
 def create_image():
@@ -20,9 +24,21 @@ def create_image():
     return l2im
 
 
-def test_wcs():
+def create_distortion():
+    distortions = [testutil.mk_distortion()]
+
+    model = create_image()
+    dist = testutil.mk_distortion()
+    dist.coordinate_distortion_transform.bounding_box = wcs_bbox_from_shape(model.data.shape)
+    distortions.append(dist)
+
+    return distortions
+
+
+@pytest.mark.parametrize("distortion", create_distortion())
+def test_wcs(distortion):
     l2im = create_image()
-    l2_wcs = load_wcs(l2im, {'distortion': testutil.mk_distortion()})
+    l2_wcs = load_wcs(l2im, {'distortion': distortion})
 
     assert l2_wcs.meta.wcs is not None
     assert l2_wcs.meta.cal_step.assign_wcs == 'COMPLETE'
