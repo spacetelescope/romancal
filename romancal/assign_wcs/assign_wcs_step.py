@@ -41,12 +41,12 @@ class AssignWcsStep(RomanStep):
         return result
 
 
-def load_wcs(dmodel, reference_files=None):
+def load_wcs(input_model, reference_files=None):
     """ Create a gWCS object and store it in ``Model.meta``.
 
     Parameters
     ----------
-    dmodel : `~roman_datamodels.datamodels.WfiImage`
+    input_model : `~roman_datamodels.datamodels.WfiImage`
         The exposure.
     reference_files : dict
         A dict {reftype: reference_file_name} containing all
@@ -54,10 +54,12 @@ def load_wcs(dmodel, reference_files=None):
 
     Returns
     -------
-    dmodel : `~roman_datamodels.ImageModel`
+    output_model : `~roman_datamodels.ImageModel`
         The input image file with attached gWCS object.
         The data is not modified.
     """
+    output_model = input_model.copy()
+
     if reference_files is not None:
         for ref_type, ref_file in reference_files.items():
             if ref_file not in ["N/A", ""]:
@@ -73,28 +75,28 @@ def load_wcs(dmodel, reference_files=None):
     world = cf.CelestialFrame(reference_frame=coord.ICRS(), name='world')
 
     # Transforms between frames
-    distortion = wfi_distortion(dmodel, reference_files)
-    tel2sky = pointing.v23tosky(dmodel)
+    distortion = wfi_distortion(output_model, reference_files)
+    tel2sky = pointing.v23tosky(output_model)
 
     pipeline = [Step(detector, distortion),
                 Step(v2v3, tel2sky),
                 Step(world, None)]
     wcs = WCS(pipeline)
     if wcs.bounding_box is None:
-        wcs.bounding_box = wcs_bbox_from_shape(dmodel.data.shape)
+        wcs.bounding_box = wcs_bbox_from_shape(output_model.data.shape)
 
-    dmodel.meta['wcs'] = wcs
-    dmodel.meta.cal_step['assign_wcs'] = 'COMPLETE'
+    output_model.meta['wcs'] = wcs
+    output_model.meta.cal_step['assign_wcs'] = 'COMPLETE'
 
-    return dmodel
+    return output_model
 
-def wfi_distortion(dmodel, reference_files):
+def wfi_distortion(model, reference_files):
     """
     Create the "detector" to "v2v3" transform for WFI
 
     Parameters
     ----------
-    dmodel : `~roman_datamodels.datamodels.WfiImage`
+    model : `~roman_datamodels.datamodels.WfiImage`
         The data model for processing
     reference_files : dict
         A dict {reftype: reference_file_name} containing all
@@ -118,7 +120,7 @@ def wfi_distortion(dmodel, reference_files):
     dist.close()
 
     if bbox is None:
-        transform.bounding_box = wcs_bbox_from_shape(dmodel.data.shape)
+        transform.bounding_box = wcs_bbox_from_shape(model.data.shape)
     else:
         transform.bounding_box = bbox
 
