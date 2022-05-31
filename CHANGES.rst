@@ -22,6 +22,7 @@ general
 - Update pipeline steps to define the default suffix when saving the step results [#521]
 
 - Simplified reference file name and model storage in dq and flat steps. [#514]
+- Update CI workflows to cache test environments and depend upon style and security checks [#511]
 
 - Release ``numpy`` version requirement [#544]
 
