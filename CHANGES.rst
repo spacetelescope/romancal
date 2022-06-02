@@ -4,8 +4,8 @@
 photom
 ------
 
-- Adds explicit test that photometric keywords are preserved for spectroscopic data
-  .
+- Adds explicit test that photometric keywords are preserved for spectroscopic data. [#513]
+  
 
 0.7.1 (2022-05-19)
 ==================
