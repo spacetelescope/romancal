@@ -43,4 +43,10 @@ class SaturationStep(RomanStep):
             ref_model.close()
             sat.meta.cal_step.saturation = 'COMPLETE'
 
+        if self.save_results:
+            try:
+                self.suffix = 'saturation'
+            except AttributeError:
+                self['suffix'] = 'saturation'
+
         return sat

@@ -117,4 +117,10 @@ class DQInitStep(RomanStep):
         except AttributeError:
             pass
 
+        if self.save_results:
+            try:
+                self.suffix = 'dq_init'
+            except AttributeError:
+                self['suffix'] = 'dq_init'
+
         return output_model

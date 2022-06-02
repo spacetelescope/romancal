@@ -170,5 +170,10 @@ class RampFitStep(RomanStep):
             out_model = create_image_model(input_model, image_info)
             out_model.meta.cal_step.ramp_fit = 'COMPLETE'
 
+        if self.save_results:
+            try:
+                self.suffix = 'rampfit'
+            except AttributeError:
+                self['suffix'] = 'rampfit'
 
         return out_model
