@@ -156,6 +156,8 @@ def test_apply_photom1():
     assert output_model.meta.photometry.conversion_microjanskys_uncertainty.unit == muphot_a2.unit
 
 
+
+
 def test_apply_photom2():
     """Test apply_photom does not change data values"""
 
@@ -175,6 +177,52 @@ def test_apply_photom2():
 
     # Test that the data has not changed
     assert (np.allclose(output_model.data[iy, ix], input_model.data[iy, ix], rtol=1.e-7))
+
+
+def test_apply_photom_spectroscopic():
+    """Test apply_photom properly populates photometric keywords for spectroscopic data"""
+
+    # Create sample WFI Level 2 science datamodel
+    input_model = testutil.mk_level2_image()
+
+    # Create photom reference datamodel
+    photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
+
+    # Select optical element
+    input_model.meta.instrument.optical_element = "PRISM"
+
+    print("\n")
+    print("XXX input_model.meta.photometry = "+str(input_model.meta.photometry))
+
+    # Apply photom correction for optical element W146
+    output_model = photom.apply_photom(input_model, photom_model)
+
+    # Select pixel for comparison
+    shape = input_model.data.shape
+    ix = shape[1] // 2
+    iy = shape[0] // 2
+
+    # Test that the data has not changed
+    assert (np.allclose(output_model.data[iy, ix], input_model.data[iy, ix], rtol=1.e-7))
+
+    # Test that keywords are properly populated
+    assert output_model.meta.photometry.conversion_megajanskys is None
+    assert output_model.meta.photometry.conversion_microjanskys is None
+    assert output_model.meta.photometry.conversion_megajanskys_uncertainty is None
+    assert output_model.meta.photometry.conversion_microjanskys_uncertainty is None
+
+    # Set reference pixel areas
+    area_ster = 2.31307642258977E-14 * u.steradian
+    area_a2 = 0.000984102303070964 * u.arcsecond * u.arcsecond
+
+    # Tests for pixel areas
+    assert(np.isclose(output_model.meta.photometry.pixelarea_steradians.value,
+                        area_ster.value, atol=1.e-7))
+    assert output_model.meta.photometry.pixelarea_steradians.unit == area_ster.unit
+    assert(np.isclose(output_model.meta.photometry.pixelarea_arcsecsq.value,
+                        area_a2.value, atol=1.e-7))
+    assert output_model.meta.photometry.pixelarea_arcsecsq.unit == area_a2.unit
+
 
 
 @pytest.mark.parametrize(
