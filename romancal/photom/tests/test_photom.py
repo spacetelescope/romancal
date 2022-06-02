@@ -179,52 +179,6 @@ def test_apply_photom2():
     assert (np.allclose(output_model.data[iy, ix], input_model.data[iy, ix], rtol=1.e-7))
 
 
-def test_apply_photom_spectroscopic():
-    """Test apply_photom properly populates photometric keywords for spectroscopic data"""
-
-    # Create sample WFI Level 2 science datamodel
-    input_model = testutil.mk_level2_image()
-
-    # Create photom reference datamodel
-    photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
-
-    # Select optical element
-    input_model.meta.instrument.optical_element = "PRISM"
-
-    print("\n")
-    print("XXX input_model.meta.photometry = "+str(input_model.meta.photometry))
-
-    # Apply photom correction for optical element W146
-    output_model = photom.apply_photom(input_model, photom_model)
-
-    # Select pixel for comparison
-    shape = input_model.data.shape
-    ix = shape[1] // 2
-    iy = shape[0] // 2
-
-    # Test that the data has not changed
-    assert (np.allclose(output_model.data[iy, ix], input_model.data[iy, ix], rtol=1.e-7))
-
-    # Test that keywords are properly populated
-    assert output_model.meta.photometry.conversion_megajanskys is None
-    assert output_model.meta.photometry.conversion_microjanskys is None
-    assert output_model.meta.photometry.conversion_megajanskys_uncertainty is None
-    assert output_model.meta.photometry.conversion_microjanskys_uncertainty is None
-
-    # Set reference pixel areas
-    area_ster = 2.31307642258977E-14 * u.steradian
-    area_a2 = 0.000984102303070964 * u.arcsecond * u.arcsecond
-
-    # Tests for pixel areas
-    assert(np.isclose(output_model.meta.photometry.pixelarea_steradians.value,
-                        area_ster.value, atol=1.e-7))
-    assert output_model.meta.photometry.pixelarea_steradians.unit == area_ster.unit
-    assert(np.isclose(output_model.meta.photometry.pixelarea_arcsecsq.value,
-                        area_a2.value, atol=1.e-7))
-    assert output_model.meta.photometry.pixelarea_arcsecsq.unit == area_a2.unit
-
-
-
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
@@ -249,8 +203,6 @@ def test_photom_step_interface(instrument, exptype):
     photom = testutil.mk_wfi_img_photom()
     photom_model = WfiImgPhotomRefModel(photom)
 
-    photom_model
-
     # Run photom correction step
     result = PhotomStep.call(wfi_image_model, override_photom=photom_model)
 
@@ -260,3 +212,66 @@ def test_photom_step_interface(instrument, exptype):
         assert result.meta.cal_step.photom == 'COMPLETE'
     else:
         assert result.meta.cal_step.photom == 'SKIPPED'
+
+
+@pytest.mark.parametrize(
+    "instrument, exptype",
+    [
+        ("WFI", "WFI_PRISM"),
+    ]
+)
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
+def test_photom_step_interface_spectroscopic(instrument, exptype):
+    """Test apply_photom properly populates photometric keywords for spectroscopic data"""
+
+    # Create a small area for the file
+    shape = (20, 20)
+
+    # Create input node
+    wfi_image = testutil.mk_level2_image(shape=shape)
+
+    # Select exposure type and optical element
+    wfi_image.meta.exposure.type = "WFI_PRISM"
+    wfi_image.meta.instrument.optical_element = "PRISM"
+
+    # Set photometric values for spectroscopic data
+    wfi_image.meta.photometry.pixelarea_steradians = 2.31307642258977E-14 * u.steradian
+    wfi_image.meta.photometry.pixelarea_arcsecsq = 0.000984102303070964 * u.arcsecond * u.arcsecond
+    wfi_image.meta.photometry.conversion_megajanskys = None
+    wfi_image.meta.photometry.conversion_megajanskys_uncertainty = None
+    wfi_image.meta.photometry.conversion_microjanskys = None
+    wfi_image.meta.photometry.conversion_microjanskys_uncertainty = None
+
+    # Create input model
+    wfi_image_model = ImageModel(wfi_image)
+
+    # Create photom model
+    photom = testutil.mk_wfi_img_photom()
+    photom_model = WfiImgPhotomRefModel(photom)
+
+    # Run photom correction step
+    result = PhotomStep.call(wfi_image_model, override_photom=photom_model)
+
+    # Test that the data has not changed
+    assert (np.allclose(result.data, wfi_image_model.data, rtol=1.e-7))
+
+    # Test that keywords are properly preserved
+    assert result.meta.photometry.conversion_megajanskys is None
+    assert result.meta.photometry.conversion_microjanskys is None
+    assert result.meta.photometry.conversion_megajanskys_uncertainty is None
+    assert result.meta.photometry.conversion_microjanskys_uncertainty is None
+
+    # Set reference pixel areas
+    area_ster = 2.31307642258977E-14 * u.steradian
+    area_a2 = 0.000984102303070964 * u.arcsecond * u.arcsecond
+
+    # Tests for pixel areas
+    assert(np.isclose(result.meta.photometry.pixelarea_steradians.value,
+                        area_ster.value, atol=1.e-7))
+    assert result.meta.photometry.pixelarea_steradians.unit == area_ster.unit
+    assert(np.isclose(result.meta.photometry.pixelarea_arcsecsq.value,
+                        area_a2.value, atol=1.e-7))
+    assert result.meta.photometry.pixelarea_arcsecsq.unit == area_a2.unit

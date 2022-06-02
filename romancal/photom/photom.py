@@ -22,38 +22,23 @@ def photom_io(input_model, photom_metadata):
     -------
 
     """
+    # Get the scalar conversion factor.
+    conversion = photom_metadata['photmjsr']  # unit is MJy / sr
 
-    # Check for spectroscopic or dark data (which lack conversion
-    # values in the photom reference file)
-    if input_model.meta.instrument.optical_element.upper() in ("PRISM", "GRISM", "DARK"):
-        # Store the conversion factor in the meta data
-        log.info(f'photmjsr value: None')
-        input_model.meta.photometry.conversion_megajanskys = None
-        input_model.meta.photometry.conversion_microjanskys = None
+    # Store the conversion factor in the meta data
+    log.info(f'photmjsr value: {conversion:.6g}')
+    input_model.meta.photometry.conversion_megajanskys = conversion
+    input_model.meta.photometry.conversion_microjanskys = conversion.to(
+        u.microjansky / u.arcsecond ** 2)
 
-        # Store the uncertainty conversion factor in the meta data
-        log.info(f'uncertainty value: None')
-        input_model.meta.photometry.conversion_megajanskys_uncertainty = None
-        input_model.meta.photometry.conversion_microjanskys_uncertainty = None
+    # Get the scalar conversion uncertainty factor
+    uncertainty_conv = photom_metadata['uncertainty']
 
-    else:
-        # Get the scalar conversion factor.
-        conversion = photom_metadata['photmjsr']  # unit is MJy / sr
-
-        # Store the conversion factor in the meta data
-        log.info(f'photmjsr value: {conversion:.6g}')
-        input_model.meta.photometry.conversion_megajanskys = conversion
-        input_model.meta.photometry.conversion_microjanskys = conversion.to(
-            u.microjansky / u.arcsecond ** 2)
-
-        # Get the scalar conversion uncertainty factor
-        uncertainty_conv = photom_metadata['uncertainty']
-
-        # Store the uncertainty conversion factor in the meta data
-        log.info(f'uncertainty value: {uncertainty_conv:.6g}')
-        input_model.meta.photometry.conversion_megajanskys_uncertainty = uncertainty_conv
-        input_model.meta.photometry.conversion_microjanskys_uncertainty = uncertainty_conv.to(
-            u.microjansky / u.arcsecond ** 2)
+    # Store the uncertainty conversion factor in the meta data
+    log.info(f'uncertainty value: {uncertainty_conv:.6g}')
+    input_model.meta.photometry.conversion_megajanskys_uncertainty = uncertainty_conv
+    input_model.meta.photometry.conversion_microjanskys_uncertainty = uncertainty_conv.to(
+        u.microjansky / u.arcsecond ** 2)
 
     # Return updated input model
     return input_model
