@@ -36,16 +36,22 @@ logger.addHandler(logging.NullHandler())
 SUFFIXES_TO_ADD = [
     'ca', 'crf',
     'dark',
+    'flat',
     'median',
     'phot',
+    'photom',
     'ramp', 'rate',
     'uncal',
+    'assignwcs',
     'dq_init',
+    'dqinit',
     'assign_wcs',
     'linearity',
     'jump',
     'rampfit',
-    'dark_current'
+    'saturation',
+    'dark_current',
+    'darkcurrent'
 ]
 
 # Suffixes that are discovered but should not be considered.

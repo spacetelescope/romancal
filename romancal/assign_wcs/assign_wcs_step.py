@@ -37,7 +37,7 @@ class AssignWcsStep(RomanStep):
                 reffile = self.get_reference_file(input_model, reftype)
                 reference_file_names[reftype] = reffile if reffile else ""
             log.debug(f'reference files used in assign_wcs: {reference_file_names}')
-            result = load_wcs(input_model, reference_file_names)
+            result = load_wcs(input_model.copy(), reference_file_names)
 
         if self.save_results:
             try:

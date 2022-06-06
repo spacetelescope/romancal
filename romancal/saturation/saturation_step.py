@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 
-from romancal.stpipe import RomanStep
 import roman_datamodels as rdm
 from roman_datamodels.datamodels import SaturationRefModel
+from romancal.stpipe import RomanStep
 from romancal.saturation import saturation
 
 
@@ -43,10 +43,10 @@ class SaturationStep(RomanStep):
             ref_model.close()
             sat.meta.cal_step.saturation = 'COMPLETE'
 
-        if self.save_results:
-            try:
-                self.suffix = 'saturation'
-            except AttributeError:
-                self['suffix'] = 'saturation'
+            if self.save_results:
+                try:
+                    self.suffix = 'saturation'
+                except AttributeError:
+                    self['suffix'] = 'saturation'
 
         return sat
