@@ -35,6 +35,7 @@ logger.addHandler(logging.NullHandler())
 # add to the result it produces.
 SUFFIXES_TO_ADD = [
     'ca', 'crf',
+    'cal',
     'dark',
     'flat',
     'median',
