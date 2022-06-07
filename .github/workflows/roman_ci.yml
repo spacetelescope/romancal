@@ -183,7 +183,7 @@ jobs:
       - run: pytest -n auto
   test_with_coverage:
     name: run tests with coverage
-    needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_numpy ]
+    needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_older_numpy ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -206,7 +206,7 @@ jobs:
           fail_ci_if_error: true
   build_docs:
     name: invoke sphinx-build to build the HTML docs
-    needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_numpy ]
+    needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_older_numpy ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
