@@ -6,6 +6,11 @@ assign_wcs
 
 - Add distortion transform to assign_wcs step. [#510]
 
+general
+-------
+
+- Update pipeline steps to define the default suffix when saving the step results [#455]
+
 photom
 ------
 
