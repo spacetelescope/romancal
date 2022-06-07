@@ -1,6 +1,11 @@
 0.7.2 (unreleased)
 ==================
 
+assign_wcs
+----------
+
+- Add distortion transform to assign_wcs step. [#510]
+
 general
 -------
 
