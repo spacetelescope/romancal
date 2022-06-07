@@ -1,6 +1,11 @@
 0.7.2 (unreleased)
 ==================
 
+general
+-------
+
+- Simplified reference file name and model storage in dq and flat steps. [#514]
+
 photom
 ------
 
