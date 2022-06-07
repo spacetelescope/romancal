@@ -36,7 +36,7 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     # photom match from CRDS. Values come from roman_wfi_photom_0034.asdf
 
     # Test PhotomStep
-    output = "r0000201001001001001_01101_0001_WFI01_cal_photomstep.asdf"
+    output = "r0000201001001001001_01101_0001_WFI01_cal_photom.asdf"
     rtdata.output = output
     args = ["romancal.step.PhotomStep", rtdata.input]
     step.log.info('DMS140 MSG: Running photometric conversion step.'
