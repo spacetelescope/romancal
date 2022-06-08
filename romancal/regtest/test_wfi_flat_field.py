@@ -69,7 +69,7 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
        flat files and successfully make level 2 output"""
 
     # First file
-    input_l2_file = "r0000101001001001001_01101_0001_WFI01_assign_wcs.asdf"
+    input_l2_file = "r0000101001001001001_01101_0001_WFI01_assignwcs.asdf"
     rtdata.get_data(f"WFI/image/{input_l2_file}")
     rtdata.input = input_l2_file
 
@@ -113,7 +113,7 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     #  to separate flat files in CRDS.
 
     # Second file
-    input_file = "r0000101001001001001_01101_0002_WFI01_assign_wcs.asdf"
+    input_file = "r0000101001001001001_01101_0002_WFI01_assignwcs.asdf"
     rtdata.get_data(f"WFI/image/{input_file}")
     rtdata.input = input_file
 
