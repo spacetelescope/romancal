@@ -63,24 +63,20 @@ class DQInitStep(RomanStep):
         else:
             init_model = input_model
 
-        # Get reference file paths
-        reference_file_names = {}
-        reffile = self.get_reference_file(init_model, "mask")
-        reference_file_names['mask'] = reffile if reffile != 'N/A' else None
+        # Get reference file path
+        reference_file_name = self.get_reference_file(init_model, "mask")
 
-        # Open the relevant reference files as datamodels
-        reference_file_models = {}
-
-        # Test for reference files
-        if reffile is not None:
+        # Test for reference file
+        if reference_file_name is not None:
             # If there are mask files, perform dq step
-            reference_file_models['mask'] = rdm.open(reffile)
-            self.log.debug(f'Using MASK ref file: {reffile}')
+            # Open the relevant reference files as datamodels
+            reference_file_model = rdm.open(reference_file_name)
+            self.log.debug(f'Using MASK ref file: {reference_file_name}')
 
             # Apply the DQ step
             output_model = dq_initialization.do_dqinit(
                 init_model,
-                **reference_file_models,
+                reference_file_model,
             )
 
             # copy original border reference file arrays (data and dq)
@@ -100,7 +96,7 @@ class DQInitStep(RomanStep):
 
         else:
             # Skip DQ step if no mask files
-            reference_file_models['mask'] = None
+            reference_file_model = None
             self.log.warning('No MASK reference file found.')
             self.log.warning('DQ initialization step will be skipped.')
 
@@ -112,8 +108,7 @@ class DQInitStep(RomanStep):
         input_model.close()
         init_model.close()
         try:
-            for model in reference_file_models.values():
-                model.close()
+            reference_file_model.close()
         except AttributeError:
             pass
 

@@ -6,6 +6,11 @@ assign_wcs
 
 - Add distortion transform to assign_wcs step. [#510]
 
+general
+-------
+
+- Simplified reference file name and model storage in dq and flat steps. [#514]
+
 photom
 ------
 

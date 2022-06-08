@@ -19,35 +19,30 @@ class FlatFieldStep(RomanStep):
     def process(self, step_input):
 
         input_model = rdm.open(step_input)
+
         # Get reference file paths
-        reference_file_names = {}
         try:
-            reffile = self.get_reference_file(input_model, "flat")
+            reference_file_name = self.get_reference_file(input_model, "flat")
         except CrdsLookupError:
-            reffile = None
-        reference_file_names['flat'] = reffile if reffile != 'N/A' else None
+            reference_file_name = None
 
-        # Open the relevant reference files as datamodels
-        reference_file_models = {}
-
-        if reffile is not None:
-            reference_file_models['flat'] = rdm.open(reffile)
-            self.log.debug(f'Using FLAT ref file: {reffile}')
+        if reference_file_name is not None:
+            reference_file_model = rdm.open(reference_file_name)
+            self.log.debug(f'Using FLAT ref file: {reference_file_name}')
         else:
-            reference_file_models['flat'] = None
+            reference_file_model = None
             self.log.debug('Using FLAT ref file')
 
         # Do the flat-field correction
         output_model = flat_field.do_correction(
             input_model,
-            **reference_file_models,
+            reference_file_model,
         )
 
         # Close the input and reference files
         input_model.close()
         try:
-            for model in reference_file_models.values():
-                model.close()
+            reference_file_model.close()
         except AttributeError:
             pass
 
