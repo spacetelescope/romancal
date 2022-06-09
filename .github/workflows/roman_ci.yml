@@ -150,8 +150,8 @@ jobs:
       - run: pip install ".[test]" pytest-xdist
       - run: pip freeze
       - run: pytest -n auto ./docs --pyargs romancal
-  test_older_numpy:
-    name: run tests with numpy ${{ matrix.numpy }} (${{ matrix.os }}, ${{ matrix.python }})
+  test_oldest_supported_numpy:
+    name: run tests with oldest suported numpy (${{ matrix.os }}, ${{ matrix.python }})
     needs: [ test ]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -168,7 +168,7 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: test-numpy${{ matrix.numpy }}-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
-      - run: pip install ".[test]" pytest-xdist
+      - run: pip install -e ".[test]" pytest-xdist
       - run: pip install oldest-supported-numpy
       - run: pip freeze
       - run: pytest -n auto
