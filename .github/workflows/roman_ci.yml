@@ -151,39 +151,30 @@ jobs:
       - run: pip freeze
       - run: pytest -n auto ./docs --pyargs romancal
   test_older_numpy:
-    name: test Numpy ${{ matrix.numpy }} (Python ${{ matrix.python }})
+    name: run tests with numpy ${{ matrix.numpy }} (${{ matrix.os }}, ${{ matrix.python }})
+    needs: [ test ]
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ ubuntu-latest, macos-latest ]
         python: [ 3.8, 3.9, '3.10' ]
-        numpy: [ '1.18.*', '1.19.*', '1.20.*', '1.21.*', '1.22.*' ]
-        exclude:
-          - python: '3.10'
-            numpy: '1.18.*'
-          - python: '3.10'
-            numpy: '1.19.*'
-          - python: '3.10'
-            numpy: '1.20.*'
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-python@main
-        id: python
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
-      - uses: actions/cache@main
+      - uses: actions/cache@v3
         with:
           path: ${{ env.pythonLocation }}
           key: test-numpy${{ matrix.numpy }}-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
-      - run: pip install -e ".[test]" pytest-xdist
-      - run: pip install numpy==${{ matrix.numpy }}
+      - run: pip install ".[test]" pytest-xdist
+      - run: pip install oldest-supported-numpy
       - run: pip freeze
       - run: pytest -n auto
   test_with_coverage:
     name: run tests with coverage
-    needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_older_numpy ]
+    needs: [ test, test_alldeps, test_devdeps, test_pyargs ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -206,7 +197,7 @@ jobs:
           fail_ci_if_error: true
   build_docs:
     name: invoke sphinx-build to build the HTML docs
-    needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_older_numpy ]
+    needs: [ test, test_alldeps, test_devdeps, test_pyargs ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
