@@ -154,6 +154,7 @@ jobs:
     name: run tests with oldest suported numpy (${{ matrix.os }}, ${{ matrix.python }})
     needs: [ test ]
     runs-on: ${{ matrix.os }}
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
