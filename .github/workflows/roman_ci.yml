@@ -151,7 +151,7 @@ jobs:
       - run: pip freeze
       - run: pytest -n auto ./docs --pyargs romancal
   test_oldest_supported_numpy:
-    name: run tests with oldest suported numpy (${{ matrix.os }}, ${{ matrix.python }})
+    name: run tests with oldest supported numpy (${{ matrix.os }}, ${{ matrix.python }})
     needs: [ test ]
     runs-on: ${{ matrix.os }}
     continue-on-error: true
