@@ -10,6 +10,7 @@ from roman_datamodels.testing import utils as testutil
 
 __all__ = ["DQInitStep"]
 
+
 class DQInitStep(RomanStep):
     """Initialize the Data Quality extension from the
     mask reference file.
@@ -21,7 +22,6 @@ class DQInitStep(RomanStep):
     is bitwise OR'd with the pixeldq (or dq) attribute of the
     input model.
     """
-
 
     reference_file_types = ['mask']
 
@@ -50,9 +50,9 @@ class DQInitStep(RomanStep):
             for key in input_model.keys():
                 # If a dictionary (like meta), overwrite entires (but keep
                 # required dummy entries that may not be in input_model)
-                if isinstance(input_ramp[key],dict):
+                if isinstance(input_ramp[key], dict):
                     input_ramp[key].update(input_model.__getattr__(key))
-                elif isinstance(input_ramp[key],np.ndarray):
+                elif isinstance(input_ramp[key], np.ndarray):
                     # Cast input ndarray as RampModel dtype
                     input_ramp[key] = input_model.__getattr__(key).astype(input_ramp[key].dtype)
                 else:
