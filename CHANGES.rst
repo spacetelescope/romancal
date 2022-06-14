@@ -9,7 +9,7 @@ assign_wcs
 general
 -------
 
-- Update pipeline steps to define the default suffix when saving the step results [#455]
+- Update pipeline steps to define the default suffix when saving the step results [#521]
 
 photom
 ------
