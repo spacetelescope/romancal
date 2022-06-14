@@ -9,7 +9,10 @@ assign_wcs
 general
 -------
 
+
 - Update pipeline steps to define the default suffix when saving the step results [#521]
+
+- Simplified reference file name and model storage in dq and flat steps. [#514]
 
 photom
 ------
