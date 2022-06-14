@@ -30,6 +30,12 @@ class FlatFieldStep(RomanStep):
         # Open the relevant reference files as datamodels
         reference_file_models = {}
 
+        # Check for a valid reference file
+        if reffile == 'N/A':
+            self.log.warning('No Flat reference file found')
+            self.log.warning('Flat Field step will be skipped')
+            reffile = None
+
         if reffile is not None:
             reference_file_models['flat'] = rdm.open(reffile)
             self.log.debug(f'Using FLAT ref file: {reffile}')

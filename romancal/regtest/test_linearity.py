@@ -31,9 +31,9 @@ def test_linearity_outfile_step(rtdata, ignore_asdf_paths):
     rtdata.input = input_file
 
     args = ["romancal.step.LinearityStep", rtdata.input,
-            '--output_file=Test_linearitystep']
+            '--output_file=Test_linearity']
     RomanStep.from_cmdline(args)
-    output = "Test_linearitystep.asdf"
+    output = "Test_linearity.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
     assert (compare_asdf(rtdata.output, rtdata.truth,
