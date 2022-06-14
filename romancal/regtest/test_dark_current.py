@@ -34,9 +34,9 @@ def test_dark_current_outfile_step(rtdata, ignore_asdf_paths):
     rtdata.input = input_datafile
 
     args = ["romancal.step.DarkCurrentStep", rtdata.input,
-            '--output_file=Test_darkcurrentstep']
+            '--output_file=Test_darkcurrent']
     RomanStep.from_cmdline(args)
-    output = "Test_darkcurrentstep.asdf"
+    output = "Test_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
     assert (compare_asdf(rtdata.output, rtdata.truth,

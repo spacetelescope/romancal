@@ -47,6 +47,10 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     model = rdm.open(rtdata.input)
     try:
         ref_file_path = step.get_reference_file(model, "flat")
+        # Check for a valid reference file
+        if ref_file_path == 'N/A':
+            ref_file_path = None
+
         ref_file_name = os.path.split(ref_file_path)[-1]
     except CrdsLookupError:
         ref_file_name = None
