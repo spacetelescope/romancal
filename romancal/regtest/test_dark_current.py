@@ -70,14 +70,14 @@ def test_dark_current_output(rtdata, ignore_asdf_paths):
     rtdata.get_data(f"WFI/image/{input_datafile}")
     rtdata.input = input_datafile
     dark_output_name = \
-        "r0000101001001001001_01101_0001_WFI01_darkcurrentstep.asdf"
+        "r0000101001001001001_01101_0001_WFI01_darkcurrent.asdf"
 
     args = ["romancal.step.DarkCurrentStep",
             rtdata.input,
             f"--dark_output={dark_output_name}"]
     RomanStep.from_cmdline(args)
     output =\
-        "r0000101001001001001_01101_0001_WFI01_darkcurrentstep.asdf"
+        "r0000101001001001001_01101_0001_WFI01_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
     assert (compare_asdf(rtdata.output, rtdata.truth,
