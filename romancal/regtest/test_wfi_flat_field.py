@@ -50,6 +50,8 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
         # Check for a valid reference file
         if ref_file_path != 'N/A':
             ref_file_name = os.path.split(ref_file_path)[-1]
+        elif ref_file_path == 'N/A':
+            ref_file_name = ref_file_path
     except CrdsLookupError:
         ref_file_name = None
     assert ref_file_name == 'N/A'
