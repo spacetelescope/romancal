@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import os
 from astropy.time import Time
 
 from roman_datamodels.datamodels import RampModel, GainRefModel,ReadnoiseRefModel
@@ -77,7 +78,10 @@ def generate_wfi_reffiles(shape, ingain = 6):
     # return gainfile, readnoisefile
     return gain_ref_model, rn_ref_model
 
-
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
 def test_one_group_small_buffer_fit_ols(max_cores):
     ingain = 1.
@@ -103,7 +107,10 @@ def test_one_group_small_buffer_fit_ols(max_cores):
     # Index changes due to trimming of reference pixels
     np.testing.assert_allclose(data[11, 6], 10.0, 1e-6)
 
-
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
 def test_multicore_ramp_fit_match():
     ingain = 1.
     deltatime = 1
