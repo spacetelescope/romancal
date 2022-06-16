@@ -15,6 +15,11 @@ photom
 ------
 
 - Adds explicit test that photometric keywords are preserved for spectroscopic data. [#513]
+
+ramp_fitting
+------------
+
+- Added multiprocessing ramp test. Fixed ols ramp fit. Updated ramp_fit to add photometry to image file generation. [#523]
   
 
 0.7.1 (2022-05-19)
