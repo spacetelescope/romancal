@@ -15,6 +15,11 @@ photom
 ------
 
 - Adds explicit test that photometric keywords are preserved for spectroscopic data. [#513]
+
+tests
+-----
+
+- Updated tests to account for the change in dimensionality of the err variable in ramp datamodel. [#520]
   
 
 0.7.1 (2022-05-19)
