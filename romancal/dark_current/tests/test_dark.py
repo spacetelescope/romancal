@@ -42,7 +42,7 @@ def test_dark_step_interface(instrument, exptype):
     assert result.data.shape == shape
     assert result.groupdq.shape == shape
     assert result.pixeldq.shape == shape[1:]
-    assert result.err.shape == shape[1:]
+    assert result.err.shape == shape
     assert result.meta.cal_step.dark == 'COMPLETE'
     assert result.data.dtype == np.float32
     assert result.err.dtype == np.float32

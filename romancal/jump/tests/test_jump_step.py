@@ -90,7 +90,7 @@ def setup_inputs():
     def _setup(ngroups=10, readnoise=10, nrows=20, ncols=20,
                nframes=1, grouptime=1.0, gain=1, deltatime=1):
 
-        err = np.ones(shape=(nrows, ncols), dtype=np.float32)
+        err = np.ones(shape=(ngroups, nrows, ncols), dtype=np.float32)
         data = np.zeros(shape=(ngroups, nrows, ncols), dtype=np.float32)
         gdq = np.zeros(shape=(ngroups, nrows, ncols), dtype=np.uint8)
         pixdq = np.zeros(shape=(nrows, ncols), dtype=np.uint32)
