@@ -67,4 +67,9 @@ class LinearityStep(RomanStep):
             lin_model.close()
             output_model.meta.cal_step['linearity'] = 'COMPLETE'
 
+        if self.save_results:
+            try:
+                self.suffix = 'linearity'
+            except AttributeError:
+                self['suffix'] = 'linearity'
         return output_model

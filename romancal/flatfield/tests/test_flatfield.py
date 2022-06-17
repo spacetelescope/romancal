@@ -76,8 +76,8 @@ def test_crds_temporal_match(instrument, exptype):
     wfi_image.meta.instrument.detector = 'WFI01'
     wfi_image.meta.instrument.optical_element = 'F158'
 
-    wfi_image.meta.exposure.start_time = Time('2020-01-01T11:11:11.110')
-    wfi_image.meta.exposure.end_time = Time('2020-01-01T11:33:11.110')
+    wfi_image.meta.exposure.start_time = Time('2020-01-02T11:11:11.110')
+    wfi_image.meta.exposure.end_time = Time('2020-01-02T11:33:11.110')
 
     wfi_image.meta.exposure.type = exptype
     wfi_image_model = ImageModel(wfi_image)
@@ -85,8 +85,8 @@ def test_crds_temporal_match(instrument, exptype):
     step = FlatFieldStep()
     ref_file_path = step.get_reference_file(wfi_image_model, "flat")
 
-    wfi_image_model.meta.exposure.start_time = Time('2021-08-11T11:11:11.110')
-    wfi_image_model.meta.exposure.end_time = Time('2021-08-11T11:33:11.110')
+    wfi_image_model.meta.exposure.start_time = Time('2021-09-01T00:11:11.110')
+    wfi_image_model.meta.exposure.end_time = Time('2021-09-01T00:33:11.110')
     ref_file_path_b = step.get_reference_file(wfi_image_model, "flat")
     assert ("/".join(ref_file_path.rsplit("/", 1)[1:])) != \
            ("/".join(ref_file_path_b.rsplit("/", 1)[1:]))
@@ -110,8 +110,8 @@ def test_spectroscopic_skip(instrument, exptype):
     wfi_image.meta.instrument.detector = 'WFI01'
     wfi_image.meta.instrument.optical_element = 'F158'
 
-    wfi_image.meta.exposure.start_time = Time('2020-01-01T11:11:11.110')
-    wfi_image.meta.exposure.end_time = Time('2020-01-01T11:33:11.110')
+    wfi_image.meta.exposure.start_time = Time('2020-02-01T00:00:00.000')
+    wfi_image.meta.exposure.end_time = Time('2020-02-01T00:00:05.000')
 
     wfi_image.meta.exposure.type = exptype
     wfi_image_model = ImageModel(wfi_image)

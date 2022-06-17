@@ -38,6 +38,13 @@ class AssignWcsStep(RomanStep):
                 reference_file_names[reftype] = reffile if reffile else ""
             log.debug(f'reference files used in assign_wcs: {reference_file_names}')
             result = load_wcs(input_model, reference_file_names)
+
+        if self.save_results:
+            try:
+                self.suffix = 'assignwcs'
+            except AttributeError:
+                self['suffix'] = 'assignwcs'
+
         return result
 
 
@@ -89,6 +96,7 @@ def load_wcs(input_model, reference_files=None):
     output_model.meta.cal_step['assign_wcs'] = 'COMPLETE'
 
     return output_model
+
 
 def wfi_distortion(model, reference_files):
     """

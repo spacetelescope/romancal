@@ -26,6 +26,12 @@ class FlatFieldStep(RomanStep):
         except CrdsLookupError:
             reference_file_name = None
 
+        # Check for a valid reference file
+        if reference_file_name == 'N/A':
+            self.log.warning('No Flat reference file found')
+            self.log.warning('Flat Field step will be skipped')
+            reference_file_name = None
+
         if reference_file_name is not None:
             reference_file_model = rdm.open(reference_file_name)
             self.log.debug(f'Using FLAT ref file: {reference_file_name}')

@@ -47,10 +47,14 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     model = rdm.open(rtdata.input)
     try:
         ref_file_path = step.get_reference_file(model, "flat")
-        ref_file_name = os.path.split(ref_file_path)[-1]
+        # Check for a valid reference file
+        if ref_file_path != 'N/A':
+            ref_file_name = os.path.split(ref_file_path)[-1]
+        elif ref_file_path == 'N/A':
+            ref_file_name = ref_file_path
     except CrdsLookupError:
         ref_file_name = None
-    assert ref_file_name is None
+    assert ref_file_name == 'N/A'
 
     # Test FlatFieldStep
     output = "r0000201001001001002_01101_0001_WFI01_flat.asdf"
@@ -69,7 +73,7 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
        flat files and successfully make level 2 output"""
 
     # First file
-    input_l2_file = "r0000101001001001001_01101_0001_WFI01_assign_wcs.asdf"
+    input_l2_file = "r0000101001001001001_01101_0001_WFI01_assignwcs.asdf"
     rtdata.get_data(f"WFI/image/{input_l2_file}")
     rtdata.input = input_l2_file
 
@@ -113,7 +117,7 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     #  to separate flat files in CRDS.
 
     # Second file
-    input_file = "r0000101001001001001_01101_0002_WFI01_assign_wcs.asdf"
+    input_file = "r0000101001001001001_01101_0002_WFI01_assignwcs.asdf"
     rtdata.get_data(f"WFI/image/{input_file}")
     rtdata.input = input_file
 
