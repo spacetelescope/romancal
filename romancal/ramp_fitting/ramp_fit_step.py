@@ -7,6 +7,7 @@ from romancal.stpipe import RomanStep
 from romancal.lib import dqflags
 from roman_datamodels import datamodels as rdd
 from roman_datamodels import stnode as rds
+from roman_datamodels.testing import utils as testutil
 
 from stcal.ramp_fitting import ramp_fit
 
@@ -84,6 +85,7 @@ def create_image_model(input_model, image_info):
     meta = {}
     meta.update(input_model.meta)
     meta['cal_step']['ramp_fit'] = 'INCOMPLETE'
+    meta['photometry'] = testutil.mk_photometry()
     inst = {'meta': meta,
             'data': data,
             'dq': dq,
@@ -170,5 +172,10 @@ class RampFitStep(RomanStep):
             out_model = create_image_model(input_model, image_info)
             out_model.meta.cal_step.ramp_fit = 'COMPLETE'
 
+        if self.save_results:
+            try:
+                self.suffix = 'rampfit'
+            except AttributeError:
+                self['suffix'] = 'rampfit'
 
         return out_model

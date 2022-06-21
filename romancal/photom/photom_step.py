@@ -71,4 +71,10 @@ class PhotomStep(RomanStep):
         except AttributeError:
             pass
 
+        if self.save_results:
+            try:
+                self.suffix = 'photom'
+            except AttributeError:
+                self['suffix'] = 'photom'
+
         return output_model

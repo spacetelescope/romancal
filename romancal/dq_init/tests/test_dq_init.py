@@ -95,7 +95,7 @@ def test_groupdq():
 
 
 def test_err():
-    """Check that a 4-D ERR array is initialized and all values are zero."""
+    """Check that a 3-D ERR array is initialized and all values are zero."""
 
     # size of integration
     instrument = 'WFI'
@@ -121,7 +121,7 @@ def test_err():
     # check that ERR array was created and initialized to zero
     errarr = outfile.err
 
-    assert(errarr.ndim == 2)  # check that output err array is 2-D
+    assert(errarr.ndim == 3)  # check that output err array is 3-D
     assert(np.all(errarr == 0))  # check that values are 0
 
 

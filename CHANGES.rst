@@ -9,13 +9,27 @@ assign_wcs
 general
 -------
 
+
+- Update pipeline steps to define the default suffix when saving the step results [#521]
+
 - Simplified reference file name and model storage in dq and flat steps. [#514]
 
 photom
 ------
 
 - Adds explicit test that photometric keywords are preserved for spectroscopic data. [#513]
-  
+
+=======
+ramp_fitting
+------------
+
+- Added multiprocessing ramp test. Fixed ols ramp fit. Updated ramp_fit to add photometry to image file generation. [#523]
+
+tests
+-----
+
+- Updated tests to account for the change in dimensionality of the err variable in ramp datamodel. [#520]
+
 
 0.7.1 (2022-05-19)
 ==================

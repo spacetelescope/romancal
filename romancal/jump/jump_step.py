@@ -129,4 +129,9 @@ class JumpStep(RomanStep):
 
         result.meta.cal_step.jump = 'COMPLETE'
 
+        if self.save_results:
+            try:
+                self.suffix = 'jump'
+            except AttributeError:
+                self['suffix'] = 'jump'
         return result

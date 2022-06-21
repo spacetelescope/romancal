@@ -65,6 +65,11 @@ class DarkCurrentStep(RomanStep):
             # Convert data to RampModel
             out_ramp = dark_output_data_as_ramp_model(out_data, input_model)
 
+        if self.save_results:
+            try:
+                self.suffix = 'darkcurrent'
+            except AttributeError:
+                self['suffix'] = 'darkcurrent'
             dark_model.close()
 
         return out_ramp
