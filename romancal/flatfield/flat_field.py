@@ -59,6 +59,10 @@ def do_flat_field(output_model, flat_model):
         # Check to see if attempt to flatten non-Image data
         log.info('Skipping flat field for spectral exposure.')
         output_model.meta.cal_step.flat_field = 'SKIPPED'
+    elif flat_model is None:
+        # Check to see if attempt to flatten non-Image data
+        log.info('Skipping flat field - no flat reference file.')
+        output_model.meta.cal_step.flat_field = 'SKIPPED'
     else:
         apply_flat_field(output_model, flat_model)
         output_model.meta.cal_step.flat_field = 'COMPLETE'

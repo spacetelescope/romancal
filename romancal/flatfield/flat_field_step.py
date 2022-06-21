@@ -20,11 +20,7 @@ class FlatFieldStep(RomanStep):
 
         input_model = rdm.open(step_input)
 
-        # Get reference file paths
-        try:
-            reference_file_name = self.get_reference_file(input_model, "flat")
-        except CrdsLookupError:
-            reference_file_name = None
+        reference_file_name = self.get_reference_file(input_model, "flat")
 
         # Check for a valid reference file
         if reference_file_name == 'N/A':
@@ -37,7 +33,7 @@ class FlatFieldStep(RomanStep):
             self.log.debug(f'Using FLAT ref file: {reference_file_name}')
         else:
             reference_file_model = None
-            self.log.debug('Using FLAT ref file')
+            self.log.debug('Using no FLAT ref file')
 
         # Do the flat-field correction
         output_model = flat_field.do_correction(
