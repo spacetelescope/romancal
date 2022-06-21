@@ -1,28 +1,16 @@
-<!-- These comments are hidden when you submit the PR,
-so you do not need to remove them!
+<!-- If this PR closes a JIRA ticket, make sure the title starts with the JIRA issue number, 
+for example RCAL-1234: <Fix a bug> -->
+Resolves [RCAL-nnnn](https://jira.stsci.edu/browse/JP-nnnn)
 
-**Note: If this PR closes a JIRA ticket, make sure the title
-starts with the JIRA issue number, for example
-RCAL-123: <Fix a bug>
-**
--->
+<!-- If this PR closes a GitHub issue, reference it here by its number -->
+Closes #
 
-GitHub issue, Closes #
-
-Resolves [RCAL-nnnn](https://jira.stsci.edu/browse/RCAL-nnnn)
-
-**Description**
-
+<!-- describe the changes comprising this PR here -->
 This PR addresses ...
 
-
-Checklist
-- [ ] Tests
-
-- [ ] Documentation
-
-- [ ] Change log
-
-- [ ] Milestone
-
-- [ ] Label(s)
+**Checklist**
+- [ ] added entry in `CHANGES.rst` under the corresponding subsection
+- [ ] updated relevant tests
+- [ ] updated relevant documentation
+- [ ] updated relevant milestone(s)
+- [ ] added relevant label(s)
