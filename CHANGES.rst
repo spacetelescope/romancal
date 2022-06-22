@@ -6,9 +6,13 @@ assign_wcs
 
 - Add distortion transform to assign_wcs step. [#510]
 
+flat
+----
+
+- Removed try/except condition on Flat Reference file CRDS lookup. [#528]
+  
 general
 -------
-
 
 - Update pipeline steps to define the default suffix when saving the step results [#521]
 
@@ -19,7 +23,7 @@ photom
 
 - Adds explicit test that photometric keywords are preserved for spectroscopic data. [#513]
 
-=======
+
 ramp_fitting
 ------------
 
