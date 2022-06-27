@@ -170,7 +170,7 @@ def add_s_region(model):
     update_s_region_keyword(model, footprint)
 
 def update_s_region_keyword(model, footprint):
-    s_region = (f'POLYGON IRCS ' + ' '.join([str(x) for x in footprint.ravel()]) + ' ')
+    s_region = ('POLYGON IRCS ' + ' '.join([str(x) for x in footprint.ravel()]) + ' ')
     if "nan" in s_region:
         # do not update s_region if there are NaNs.
         log.info("There are NaNs in s_region, S_REGION not updated.")
