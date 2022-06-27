@@ -12,8 +12,6 @@ from roman_datamodels.testing import utils as testutil
 
 from romancal.assign_wcs.utils import wcs_bbox_from_shape
 
-import pdb
-
 def create_image():
     l2 = testutil.mk_level2_image()
 
