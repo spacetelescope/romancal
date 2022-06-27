@@ -12,6 +12,7 @@ from roman_datamodels.testing import utils as testutil
 
 from romancal.assign_wcs.utils import wcs_bbox_from_shape
 
+import pdb
 
 def create_image():
     l2 = testutil.mk_level2_image()
@@ -73,3 +74,15 @@ def test_wcs(tmpdir, distortion, step):
     ra, dec = l2_wcs.meta.wcs(-5, 3)
     assert np.isnan(ra)
     assert np.isnan(dec)
+
+    # check S_REGION length and format
+    s_region_list = l2_wcs.meta.wcsinfo.s_region.split()
+    assert len(s_region_list) == 10
+    assert s_region_list[0].lower() == 'polygon'
+    assert s_region_list[1].lower() == 'ircs'
+
+    # check if footprint solution for each detector is within 10% of (RA_REF, DEC_REF)
+    s_region_alpha_list = [float(x) for i, x in enumerate(s_region_list[2:]) if i%2 == 0]
+    s_region_delta_list = [float(x) for i, x in enumerate(s_region_list[2:]) if i%2 != 0]
+    assert_allclose(s_region_alpha_list, l2_wcs.meta.wcsinfo.ra_ref, rtol=1e-1, atol=0)
+    assert_allclose(s_region_delta_list, l2_wcs.meta.wcsinfo.dec_ref, rtol=1e-1, atol=0)
