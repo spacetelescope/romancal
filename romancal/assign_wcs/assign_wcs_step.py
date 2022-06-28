@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-__all__ = ["AssignWcsStep", "load_wcs"]
+__all__ = ["AssignWcsStep", "load_wcs", "add_s_region"]
 
 
 class AssignWcsStep(RomanStep):
@@ -93,6 +93,10 @@ def load_wcs(input_model, reference_files=None):
         wcs.bounding_box = wcs_bbox_from_shape(output_model.data.shape)
 
     output_model.meta['wcs'] = wcs
+
+    # update S_REGION
+    add_s_region(output_model)
+
     output_model.meta.cal_step['assign_wcs'] = 'COMPLETE'
 
     return output_model
@@ -133,3 +137,44 @@ def wfi_distortion(model, reference_files):
         transform.bounding_box = bbox
 
     return transform
+
+def add_s_region(model):
+    """
+    Calculate the detector's footprint using ``WCS.footprint`` and save it in the ``S_REGION`` keyword
+
+    Args:
+        model : `~roman_datamodels.datamodels.ScienceRawModel`
+            The data model for processing
+
+    Returns:
+        str : A formatted string representing the detector's footprint
+    """
+
+    bbox = model.meta.wcs.bounding_box
+
+    if bbox is None:
+        bbox = wcs_bbox_from_shape(model.data.shape)
+
+    # footprint is an array of shape (2, 4) - i.e. 4 values for RA and 4 values for Dec - as we
+    # are interested only in the footprint on the sky
+    footprint = model.meta.wcs.footprint(bbox, center=True, axis_type="spatial").T
+    # take only imaging footprint
+    footprint = footprint[:2, :]
+
+    # Make sure RA values are all positive
+    negative_ind = footprint[0] < 0
+    if negative_ind.any():
+        footprint[0][negative_ind] = 360 + footprint[0][negative_ind]
+
+    footprint = footprint.T
+    update_s_region_keyword(model, footprint)
+
+def update_s_region_keyword(model, footprint):
+    s_region = ('POLYGON IRCS ' + ' '.join([str(x) for x in footprint.ravel()]) + ' ')
+    log.info("S_REGION VALUES: {}".format(s_region))
+    if "nan" in s_region:
+        # do not update s_region if there are NaNs.
+        log.info("There are NaNs in s_region, S_REGION not updated.")
+    else:
+        model.meta.wcsinfo.s_region = s_region
+        log.info("Update S_REGION to {}".format(model.meta.wcsinfo.s_region))
