@@ -1,4 +1,3 @@
-import pdb
 import numpy as np
 import os
 import pytest
@@ -81,7 +80,6 @@ def test_wcs(tmpdir, distortion, step):
     assert s_region_list[1].lower() == 'ircs'
 
     # check if BBOX is not None
-    pdb.set_trace()
     assert l2_wcs.meta.wcs.bounding_box is not None
 
     # check if footprint solution for each detector is within 10% of (RA_REF, DEC_REF)
