@@ -1,5 +1,10 @@
 """General utility objects"""
 
+from romancal.lib import dqflags
+import numpy as np
+
+SATURATEDPIX = dqflags.pixel['SATURATED']
+SATURATEDGRP = dqflags.group['SATURATED']
 
 def bytes2human(n):
     """Convert bytes to human-readable format
@@ -34,6 +39,21 @@ def bytes2human(n):
             value = float(n) / prefix[s]
             return '%.1f%s' % (value, s)
     return "%sB" % n
+
+
+def test_full_saturation(model):
+    """
+    Provide access to this package's datamodels.open function
+    so that the stpipe infrastructure knows how to instantiate
+    models.
+    """
+
+    if np.all(np.bitwise_and(model.groupdq, SATURATEDGRP) == SATURATEDGRP):
+        return True
+    elif np.all(np.bitwise_and(model.pixeldq, SATURATEDPIX) == SATURATEDPIX):
+        return True
+
+    return False
 
 
 class LoggingContext:

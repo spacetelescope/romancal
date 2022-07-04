@@ -168,9 +168,24 @@ class RampFitStep(RomanStep):
             opt_model = create_optional_results_model(input_model, opt_info)
             self.save_model(opt_model, 'fitopt', output_file=self.opt_name)
 
+
         if image_info is not None:
             out_model = create_image_model(input_model, image_info)
             out_model.meta.cal_step.ramp_fit = 'COMPLETE'
+        else:
+            # All pixels saturated, therefore returning the original model
+            out_model = input_model
+
+            # Removing leading dimension from STCAL compatability
+            out_model.data = out_model.data[0]
+            out_model.groupdq = out_model.groupdq[0]
+            out_model.err = out_model.err[0]
+
+            # Ensuring the groupdq flags show full saturation
+            input_model.groupdq = input_model.groupdq | dqflags.group['SATURATED']
+
+            # The output is not ramp fit, so the status must be set correctly
+            out_model.meta.cal_step.ramp_fit = 'INCOMPLETE'
 
         if self.save_results:
             try:

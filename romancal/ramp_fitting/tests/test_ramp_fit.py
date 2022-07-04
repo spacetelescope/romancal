@@ -149,3 +149,56 @@ def test_multicore_ramp_fit_match():
     # New rampfit parameters
     np.testing.assert_allclose(out_model.var_poisson, all_out_model.var_poisson, 1e-6)
     np.testing.assert_allclose(out_model.var_rnoise, all_out_model.var_rnoise, 1e-6)
+
+
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Roman CRDS servers are not currently available outside the internal network"
+)
+@pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
+def test_saturated_ramp_fit(max_cores):
+    ingain = 1.
+    deltatime = 1
+    ngroups = 4
+    xsize = 20
+    ysize = 20
+    shape = (ngroups, xsize, ysize)
+
+    # Create input model
+    override_gain, override_readnoise = generate_wfi_reffiles(shape[1:], ingain)
+    model1 = generate_ramp_model(shape, deltatime)
+
+    # Set saturated flag
+    model1.groupdq = model1.groupdq | SATURATED
+
+    # Run ramp fit step
+    out_model = \
+        RampFitStep.call(model1, override_gain=override_gain,
+                         override_readnoise=override_readnoise,
+                         maximum_cores=max_cores)
+
+    # Test original ramp parameters preserved
+    np.testing.assert_allclose(out_model.data, model1.data, 1e-6)
+    np.testing.assert_allclose(out_model.err, model1.err, 1e-6)
+    np.testing.assert_allclose(out_model.amp33, model1.amp33, 1e-6)
+    np.testing.assert_allclose(out_model.border_ref_pix_left, model1.border_ref_pix_left,
+                               1e-6)
+    np.testing.assert_allclose(out_model.border_ref_pix_right, model1.border_ref_pix_right,
+                               1e-6)
+    np.testing.assert_allclose(out_model.border_ref_pix_top, model1.border_ref_pix_top, 1e-6)
+    np.testing.assert_allclose(out_model.border_ref_pix_bottom, model1.border_ref_pix_bottom,
+                               1e-6)
+    np.testing.assert_allclose(out_model.dq_border_ref_pix_left,
+                               model1.dq_border_ref_pix_left, 1e-6)
+    np.testing.assert_allclose(out_model.dq_border_ref_pix_right,
+                               model1.dq_border_ref_pix_right, 1e-6)
+    np.testing.assert_allclose(out_model.dq_border_ref_pix_top, model1.dq_border_ref_pix_top,
+                               1e-6)
+    np.testing.assert_allclose(out_model.dq_border_ref_pix_bottom,
+                               model1.dq_border_ref_pix_bottom, 1e-6)
+
+    # Test that the same model was returned.
+    assert type(out_model) == RampModel
+
+    # Test that there was no ramp fit to the data
+    assert out_model.meta.cal_step.ramp_fit == 'INCOMPLETE'

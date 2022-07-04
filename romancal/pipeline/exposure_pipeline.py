@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 from os.path import basename
 import logging
+
 from roman_datamodels import datamodels as rdd
 from ..stpipe import RomanPipeline
+from romancal.lib.basic_utils import test_full_saturation
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
@@ -20,6 +22,7 @@ __all__ = ['ExposurePipeline']
 # Define logging
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
+
 
 
 class ExposurePipeline(RomanPipeline):
@@ -72,10 +75,27 @@ class ExposurePipeline(RomanPipeline):
         if input_filename:
             result.meta.filename = input_filename
         result = self.saturation(result)
+
+        # Test for fully saturated data
+        if test_full_saturation(result):
+            log.debug('Error: all data saturated. When all of the pixels are saturated, the rest '
+                      'of the steps do not generate scientifically valid data. Pipeline is '
+                      'stopping.')
+            return result
+
         result = self.linearity(result)
         result = self.dark_current(result)
         result = self.jump(result)
         result = self.rampfit(result)
+
+        # Test for fully saturated data
+        if "groupdq" in result.keys():
+            if test_full_saturation(result):
+                log.debug('Error: all data saturated. When all of the pixels are saturated, the '
+                          'rest of the steps do not generate scientifically valid data. Pipeline is '
+                          'stopping.')
+                return result
+
         result = self.assign_wcs(result)
         if result.meta.exposure.type == 'WFI_IMAGE':
             result = self.flatfield(result)
