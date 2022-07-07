@@ -93,7 +93,7 @@ jobs:
       - run: pip freeze
       - run: pytest -n auto
   test_alldeps:
-    name: run tests with all optional dependencies
+    name: test optional dependencies
     needs: [ test ]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -115,7 +115,7 @@ jobs:
       - run: pip freeze
       - run: pytest -n auto
   test_devdeps:
-    name: run tests with the latest developer version of key dependencies
+    name: test developer versions
     needs: [ test ]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -138,7 +138,7 @@ jobs:
       - run: pip freeze
       - run: pytest -n auto
   test_pyargs:
-    name: run tests with --pyargs on installed package
+    name: test --pyargs
     needs: [ test ]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -163,7 +163,7 @@ jobs:
       - run: pip freeze
       - run: pytest -n auto ./docs --pyargs romancal
   test_older_numpy:
-    name: run tests with Numpy ${{ matrix.numpy }} (${{ matrix.os }}, ${{ matrix.python }})
+    name: test Numpy ${{ matrix.numpy }} (Python ${{ matrix.python }})
     needs: [ test ]
     runs-on: ${{ matrix.os }}
     continue-on-error: true
@@ -172,7 +172,14 @@ jobs:
       matrix:
         os: [ ubuntu-latest ]
         python: [ 3.8, 3.9, '3.10' ]
-        numpy: [ '1.19.*', '1.20.*', '1.21.*', '1.22.*' ]
+        numpy: [ '1.18.*', '1.19.*', '1.20.*', '1.21.*', '1.22.*' ]
+        exclude:
+          - python: '3.10'
+            numpy: '1.18.*'
+          - python: '3.10'
+            numpy: '1.19.*'
+          - python: '3.10'
+            numpy: '1.20.*'
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
@@ -188,7 +195,7 @@ jobs:
       - run: pip freeze
       - run: pytest -n auto
   test_with_coverage:
-    name: run tests with coverage
+    name: test with coverage
     needs: [ test, test_alldeps, test_devdeps, test_pyargs ]
     runs-on: ubuntu-latest
     steps:
@@ -212,7 +219,7 @@ jobs:
           flags: unit
           fail_ci_if_error: true
   build_docs:
-    name: invoke sphinx-build to build the HTML docs
+    name: build HTML docs
     needs: [ test, test_alldeps, test_devdeps, test_pyargs ]
     runs-on: ubuntu-latest
     steps:
