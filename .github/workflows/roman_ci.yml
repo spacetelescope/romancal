@@ -221,6 +221,8 @@ jobs:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
         id: python
+        with:
+          python-version: 3.9
       - uses: actions/cache@main
         with:
           path: ${{ steps.python.outputs.python-path }}
