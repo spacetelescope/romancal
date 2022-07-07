@@ -170,11 +170,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        os: [ ubuntu-latest ]
         python: [ 3.8, 3.9, '3.10' ]
-        exclude:
-          - os: macos-latest
-            python: '3.10'
+        numpy: [ '1.19.*', '1.20.*', '1.21.*', '1.22.*' ]
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
@@ -186,7 +184,7 @@ jobs:
           path: ${{ env.pythonLocation }}
           key: test-numpy${{ matrix.numpy }}-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install -e ".[test]" pytest-xdist
-      - run: pip install oldest-supported-numpy
+      - run: pip install numpy==${{ matrix.numpy }}
       - run: pip freeze
       - run: pytest -n auto
   test_with_coverage:
