@@ -125,7 +125,7 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: test-devdeps-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
-      - run: pip install git+https://github.com/numpy/numpy git+https://github.com/astropy/astropy.git#egg=astropy git+https://github.com/asdf-format/asdf git+https://github.com/spacetelescope/stpipe git+https://github.com/spacetelescope/stdatamodels
+      - run: pip install git+https://github.com/numpy/numpy git+https://github.com/asdf-format/asdf git+https://github.com/spacetelescope/stpipe git+https://github.com/spacetelescope/stdatamodels --pre astropy
       - run: pip install ".[test]" pytest-xdist
       - run: pip freeze
       - run: pytest -n auto
