@@ -28,10 +28,13 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
+        id: python
+        with:
+          python-version: 3.9
       - uses: actions/cache@main
         with:
-          path: ${{ env.pythonLocation }}
-          key: style-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+          path: ${{ steps.python.outputs.python-path }}
+          key: style-${{ runner.os }}-${{ steps.python.outputs.python-path }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install pyproject-flake8
       - run: pip freeze
       - run: pflake8
@@ -41,12 +44,13 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
+        id: python
         with:
           python-version: 3.9
       - uses: actions/cache@main
         with:
-          path: ${{ env.pythonLocation }}
-          key: audit-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+          path: ${{ steps.python.outputs.python-path }}
+          key: audit-${{ runner.os }}-${{ steps.python.outputs.python-path }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install bandit
       - run: pip freeze
       - run: bandit romancal -r -x tests,regtest
@@ -56,12 +60,13 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
+        id: python
         with:
           python-version: 3.9
       - uses: actions/cache@main
         with:
-          path: ${{ env.pythonLocation }}
-          key: dependencies-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+          path: ${{ steps.python.outputs.python-path }}
+          key: dependencies-${{ runner.os }}-${{ steps.python.outputs.python-path }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install .
       - run: pip freeze
       - run: verify_install_requires
@@ -77,12 +82,13 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
+        id: python
         with:
           python-version: ${{ matrix.python }}
       - uses: actions/cache@main
         with:
-          path: ${{ env.pythonLocation }}
-          key: test-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+          path: ${{ steps.python.outputs.python-path }}
+          key: test-${{ runner.os }}-${{ steps.python.outputs.python-path }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install ".[test]" pytest-xdist
       - run: pip freeze
       - run: pytest -n auto
@@ -98,12 +104,13 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
+        id: python
         with:
           python-version: ${{ matrix.python }}
       - uses: actions/cache@main
         with:
-          path: ${{ env.pythonLocation }}
-          key: test-alldeps-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+          path: ${{ steps.python.outputs.python-path }}
+          key: test-alldeps-${{ runner.os }}-${{ steps.python.outputs.python-path }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install ".[test,all]" pytest-xdist
       - run: pip freeze
       - run: pytest -n auto
@@ -119,12 +126,13 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
+        id: python
         with:
           python-version: ${{ matrix.python }}
       - uses: actions/cache@main
         with:
-          path: ${{ env.pythonLocation }}
-          key: test-devdeps-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+          path: ${{ steps.python.outputs.python-path }}
+          key: test-devdeps-${{ runner.os }}-${{ steps.python.outputs.python-path }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install git+https://github.com/numpy/numpy git+https://github.com/asdf-format/asdf git+https://github.com/spacetelescope/stpipe git+https://github.com/spacetelescope/stdatamodels --pre astropy
       - run: pip install ".[test]" pytest-xdist
       - run: pip freeze
@@ -144,12 +152,13 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
+        id: python
         with:
           python-version: ${{ matrix.python }}
       - uses: actions/cache@main
         with:
-          path: ${{ env.pythonLocation }}
-          key: test-pyargs-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+          path: ${{ steps.python.outputs.python-path }}
+          key: test-pyargs-${{ runner.os }}-${{ steps.python.outputs.python-path }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install ".[test]" pytest-xdist
       - run: pip freeze
       - run: pytest -n auto ./docs --pyargs romancal
@@ -169,12 +178,13 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
+        id: python
         with:
           python-version: ${{ matrix.python }}
       - uses: actions/cache@main
         with:
-          path: ${{ env.pythonLocation }}
-          key: test-numpy${{ matrix.numpy }}-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+          path: ${{ steps.python.outputs.python-path }}
+          key: test-numpy${{ matrix.numpy }}-${{ runner.os }}-${{ steps.python.outputs.python-path }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install -e ".[test]" pytest-xdist
       - run: pip install oldest-supported-numpy
       - run: pip freeze
@@ -186,12 +196,13 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
+        id: python
         with:
           python-version: 3.9
       - uses: actions/cache@main
         with:
-          path: ${{ env.pythonLocation }}
-          key: test-coverage-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+          path: ${{ steps.python.outputs.python-path }}
+          key: test-coverage-${{ runner.os }}-${{ steps.python.outputs.python-path }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install ".[test]" pytest-xdist pytest-cov
       - run: pip freeze
       - run: pytest -n auto --pyargs romancal --cov-report xml --cov
@@ -209,12 +220,11 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
-        with:
-          python-version: 3.9
+        id: python
       - uses: actions/cache@main
         with:
-          path: ${{ env.pythonLocation }}
-          key: build-docs-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+          path: ${{ steps.python.outputs.python-path }}
+          key: build-docs-${{ runner.os }}-${{ steps.python.outputs.python-path }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: sudo apt-get install graphviz texlive-latex-extra dvipng
       - run: pip install ".[docs]"
       - run: pip freeze
