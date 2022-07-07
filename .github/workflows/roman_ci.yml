@@ -162,8 +162,8 @@ jobs:
       - run: pip install ".[test]" pytest-xdist
       - run: pip freeze
       - run: pytest -n auto ./docs --pyargs romancal
-  test_oldest_supported_numpy:
-    name: run tests with oldest supported numpy (${{ matrix.os }}, ${{ matrix.python }})
+  test_older_numpy:
+    name: run tests with Numpy ${{ matrix.numpy }} (${{ matrix.os }}, ${{ matrix.python }})
     needs: [ test ]
     runs-on: ${{ matrix.os }}
     continue-on-error: true
