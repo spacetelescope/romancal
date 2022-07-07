@@ -2,8 +2,10 @@
 
 Reference Selection Keyword Attributes for DISTORTION
 +++++++++++++++++++++++++++++++++++++++++++++++++++++
-CRDS selects appropriate DISTORTION reference files based on the following keyword attributes.
-DISTORTION is not applicable for instruments not in the table.
+CRDS automatically selects the appropriate DISTORTION reference 
+files based on the following keyword attributes.
+
+N.B.: DISTORTION is not applicable for instruments not in the table.
 
 ========== ===================================================
 Instrument  Keyword Attributes                                                                                           

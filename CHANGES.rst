@@ -6,6 +6,11 @@ assign_wcs
 
 - Add distortion transform to assign_wcs step. [#510]
 
+Documentation
+-------------
+
+- include information about the distortion reference file used in the ``assign_wcs`` step [#542]
+
 flat
 ----
 
