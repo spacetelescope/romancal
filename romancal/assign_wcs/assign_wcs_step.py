@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-__all__ = ["AssignWcsStep", "load_wcs", "add_s_region"]
+__all__ = ["AssignWcsStep", "load_wcs"]
 
 
 class AssignWcsStep(RomanStep):
@@ -142,12 +142,14 @@ def add_s_region(model):
     """
     Calculate the detector's footprint using ``WCS.footprint`` and save it in the ``S_REGION`` keyword
 
-    Args:
-        model : `~roman_datamodels.datamodels.ScienceRawModel`
-            The data model for processing
+    Parameters
+    ----------
+    model : `~roman_datamodels.datamodels.ImageModel`
+        The data model for processing
 
-    Returns:
-        str : A formatted string representing the detector's footprint
+    Returns
+    -------
+    A formatted string representing the detector's footprint
     """
 
     bbox = model.meta.wcs.bounding_box
