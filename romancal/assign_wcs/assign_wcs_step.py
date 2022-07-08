@@ -144,7 +144,7 @@ def add_s_region(model):
 
     Parameters
     ----------
-    model : `~roman_datamodels.datamodels.ScienceRawModel`
+    model : `~roman_datamodels.datamodels.ImageModel`
         The data model for processing
 
     Returns
