@@ -23,6 +23,8 @@ general
 
 - Simplified reference file name and model storage in dq and flat steps. [#514]
 
+- Release ``numpy`` version requirement [#544]
+
 photom
 ------
 
