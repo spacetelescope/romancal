@@ -29,7 +29,7 @@ general
 
 - Added support for STCAL handing of fully saturated data in both the pipeline and rampfit step. Added a unit test for the rampfit changes and a regression test for the pipeline chages. [#541]
 
-- Update stpipe requirement to >=0.4.1 [#545]
+- Update `stpipe` requirement to `>=0.4.1` [#545]
 
 photom
 ------
