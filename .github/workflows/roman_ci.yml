@@ -117,3 +117,35 @@ jobs:
       uses: codecov/codecov-action@v2
       with:
         file: ./coverage.xml
+
+  test_older_numpy:
+    name: test Numpy ${{ matrix.numpy }} (Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]
+        python: [ 3.8, 3.9, '3.10' ]
+        numpy: [ '1.18.*', '1.19.*', '1.20.*', '1.21.*', '1.22.*' ]
+        exclude:
+          - python: '3.10'
+            numpy: '1.18.*'
+          - python: '3.10'
+            numpy: '1.19.*'
+          - python: '3.10'
+            numpy: '1.20.*'
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-python@main
+        id: python
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/cache@main
+        with:
+          path: ${{ env.pythonLocation }}
+          key: test-numpy${{ matrix.numpy }}-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+      - run: pip install -e ".[test]" pytest-xdist
+      - run: pip install numpy==${{ matrix.numpy }}
+      - run: pip freeze
+      - run: pytest -n auto
