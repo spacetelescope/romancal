@@ -213,7 +213,6 @@ jobs:
       - run: pytest -n auto --pyargs romancal --cov-report xml --cov
       - run: coverage report -m
       - uses: codecov/codecov-action@master
-        if: ${{ contains(matrix.toxenv,'-cov') }}
         with:
           file: ./coverage.xml
           flags: unit
