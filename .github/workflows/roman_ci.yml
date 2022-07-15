@@ -196,7 +196,7 @@ jobs:
       - run: pytest -n auto
   test_with_coverage:
     name: test with coverage
-    needs: [ test, test_alldeps, test_devdeps, test_pyargs ]
+    needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_older_numpy ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@main
@@ -220,7 +220,7 @@ jobs:
           fail_ci_if_error: true
   build_docs:
     name: build HTML docs
-    needs: [ test, test_alldeps, test_devdeps, test_pyargs ]
+    needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_older_numpy ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@main
