@@ -1,6 +1,3 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
 name: CI
 
 on:
@@ -12,6 +9,7 @@ on:
       - '*'
   pull_request:
     branches:
+      - main
   schedule:
     # Weekly Monday 9AM build
     # * is a special character in YAML so you have to quote this string
@@ -24,96 +22,216 @@ env:
   CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
 
 jobs:
-  tox:
-    name: ${{ matrix.name }}
+  style:
+    name: Code style checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-python@main
+        id: python
+        with:
+          python-version: 3.9
+      - uses: actions/cache@main
+        with:
+          path: ${{ env.pythonLocation }}
+          key: style-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+      - run: pip install pyproject-flake8
+      - run: pip freeze
+      - run: pflake8
+  audit:
+    name: Bandit security audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-python@main
+        id: python
+        with:
+          python-version: 3.9
+      - uses: actions/cache@main
+        with:
+          path: ${{ env.pythonLocation }}
+          key: audit-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+      - run: pip install bandit
+      - run: pip freeze
+      - run: bandit romancal -r -x tests,regtest
+  dependencies:
+    name: verify dependencies are correct
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-python@main
+        id: python
+        with:
+          python-version: 3.9
+      - uses: actions/cache@main
+        with:
+          path: ${{ env.pythonLocation }}
+          key: dependencies-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+      - run: pip install .
+      - run: pip freeze
+      - run: verify_install_requires
+  test:
+    name: test
+    needs: [ style, audit, dependencies ]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: Code style checks
-            os: ubuntu-latest
-            python: 3.x
-            toxenv: codestyle
-
-          - name: Python 3.10
-            python-version: '3.10'
-            os: ubuntu-latest
-            toxenv: py310-test
-
-          - name: Python 3.8
-            os: ubuntu-latest
-            python-version: '3.8'
-            toxenv: py38-test
-
-          - name: Python 3.9
-            os: ubuntu-latest
-            python-version: '3.9'
-            toxenv: py39-test
-
-          - name: Python 3.8 with dev dependencies
-            os: ubuntu-latest
-            python-version: '3.8'
-            toxenv: py38-test-devdeps
-
-          - name: Python 3.8 with Numpy 1.20
-            os: ubuntu-latest
-            python-version: '3.8'
-            toxenv: py38-test-numpy120
-
-          - name: macOS
-            os: macos-latest
-            python-version: '3.9'
-            toxenv: py39-test
-
-          - name: Security audit
-            os: ubuntu-latest
-            python: 3.9
-            toxenv: bandit
-
-          - name: Installed package with --pyargs
-            os: ubuntu-latest
-            python: 3.8
-            toxenv: pyargs
-
-          - name: Build documentation and check warnings
-            os: ubuntu-latest
-            python: 3.8
-            toxenv: build_docs
-
-          - name: Latest dependency versions w/coverage
-            os: ubuntu-latest
-            python: 3.8
-            toxenv: py38-cov
-
+        os: [ ubuntu-latest, macos-latest ]
+        python: [ 3.8, 3.9, '3.10' ]
     steps:
-    - name: Install system packages
-      if: ${{ contains(matrix.toxenv,'build_docs') }}
-      run: |
-        sudo apt update -y
-        sudo apt-get install graphviz texlive-latex-extra dvipng
-    - name: Checkout code
-      uses: actions/checkout@v2
-      with:
-          fetch-depth: 0
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install .[test]
-
-    - name: Install tox
-      run: |
-        pip install tox
-
-    - name: Run tests
-      run: tox -e ${{ matrix.toxenv }}
-
-    - name: Upload coverage to codecov
-      if: ${{ contains(matrix.toxenv,'-cov') }}
-      uses: codecov/codecov-action@v2
-      with:
-        file: ./coverage.xml
+      - uses: actions/checkout@main
+      - uses: actions/setup-python@main
+        id: python
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/cache@main
+        with:
+          path: ${{ env.pythonLocation }}
+          key: test-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+      - run: pip install ".[test]" pytest-xdist
+      - run: pip freeze
+      - run: pytest -n auto
+  test_alldeps:
+    name: test optional dependencies
+    needs: [ test ]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+        python: [ 3.8, 3.9, '3.10' ]
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-python@main
+        id: python
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/cache@main
+        with:
+          path: ${{ env.pythonLocation }}
+          key: test-alldeps-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+      - run: pip install ".[test,all]" pytest-xdist
+      - run: pip freeze
+      - run: pytest -n auto
+  test_devdeps:
+    name: test developer versions
+    needs: [ test ]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+        python: [ 3.8, 3.9, '3.10' ]
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-python@main
+        id: python
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/cache@main
+        with:
+          path: ${{ env.pythonLocation }}
+          key: test-devdeps-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+      - run: pip install git+https://github.com/asdf-format/asdf git+https://github.com/spacetelescope/stpipe git+https://github.com/spacetelescope/stdatamodels --pre astropy numpy
+      - run: pip install ".[test]" pytest-xdist
+      - run: pip freeze
+      - run: pytest -n auto
+  test_pyargs:
+    name: test --pyargs
+    needs: [ test ]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+        python: [ 3.8, 3.9, '3.10' ]
+        exclude:
+          - os: macos-latest
+            python: '3.10'
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-python@main
+        id: python
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/cache@main
+        with:
+          path: ${{ env.pythonLocation }}
+          key: test-pyargs-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+      - run: pip install ".[test]" pytest-xdist
+      - run: pip freeze
+      - run: pytest -n auto ./docs --pyargs romancal
+  test_older_numpy:
+    name: test Numpy ${{ matrix.numpy }} (Python ${{ matrix.python }})
+    needs: [ test ]
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]
+        python: [ 3.8, 3.9, '3.10' ]
+        numpy: [ '1.18.*', '1.19.*', '1.20.*', '1.21.*', '1.22.*' ]
+        exclude:
+          - python: '3.10'
+            numpy: '1.18.*'
+          - python: '3.10'
+            numpy: '1.19.*'
+          - python: '3.10'
+            numpy: '1.20.*'
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-python@main
+        id: python
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/cache@main
+        with:
+          path: ${{ env.pythonLocation }}
+          key: test-numpy${{ matrix.numpy }}-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+      - run: pip install -e ".[test]" pytest-xdist
+      - run: pip install numpy==${{ matrix.numpy }}
+      - run: pip freeze
+      - run: pytest -n auto
+  test_with_coverage:
+    name: test with coverage
+    needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_older_numpy ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-python@main
+        id: python
+        with:
+          python-version: 3.9
+      - uses: actions/cache@main
+        with:
+          path: ${{ env.pythonLocation }}
+          key: test-coverage-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+      - run: pip install ".[test]" pytest-xdist pytest-cov
+      - run: pip freeze
+      - run: pytest -n auto --pyargs romancal --cov-report xml --cov
+      - run: coverage report -m
+      - uses: codecov/codecov-action@master
+        with:
+          file: ./coverage.xml
+          flags: unit
+          fail_ci_if_error: true
+  build_docs:
+    name: build HTML docs
+    needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_older_numpy ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-python@main
+        id: python
+        with:
+          python-version: 3.9
+      - uses: actions/cache@main
+        with:
+          path: ${{ env.pythonLocation }}
+          key: build-docs-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
+      - run: sudo apt-get install graphviz texlive-latex-extra dvipng
+      - run: pip install ".[docs]"
+      - run: pip freeze
+      - run: sphinx-build -W docs docs/_build
