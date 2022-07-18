@@ -26,12 +26,12 @@ jobs:
     name: Code style checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-python@main
+      - uses: actions/checkout@v3.0.2
+      - uses: actions/setup-python@v4.1.0
         id: python
         with:
           python-version: 3.9
-      - uses: actions/cache@main
+      - uses: actions/cache@v3.0.5
         with:
           path: ${{ env.pythonLocation }}
           key: style-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
@@ -42,12 +42,12 @@ jobs:
     name: Bandit security audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-python@main
+      - uses: actions/checkout@v3.0.2
+      - uses: actions/setup-python@v4.1.0
         id: python
         with:
           python-version: 3.9
-      - uses: actions/cache@main
+      - uses: actions/cache@v3.0.5
         with:
           path: ${{ env.pythonLocation }}
           key: audit-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
@@ -58,12 +58,12 @@ jobs:
     name: verify dependencies are correct
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-python@main
+      - uses: actions/checkout@v3.0.2
+      - uses: actions/setup-python@v4.1.0
         id: python
         with:
           python-version: 3.9
-      - uses: actions/cache@main
+      - uses: actions/cache@v3.0.5
         with:
           path: ${{ env.pythonLocation }}
           key: dependencies-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
@@ -80,12 +80,12 @@ jobs:
         os: [ ubuntu-latest, macos-latest ]
         python: [ 3.8, 3.9, '3.10' ]
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-python@main
+      - uses: actions/checkout@v3.0.2
+      - uses: actions/setup-python@v4.1.0
         id: python
         with:
           python-version: ${{ matrix.python }}
-      - uses: actions/cache@main
+      - uses: actions/cache@v3.0.5
         with:
           path: ${{ env.pythonLocation }}
           key: test-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
@@ -102,12 +102,12 @@ jobs:
         os: [ ubuntu-latest, macos-latest ]
         python: [ 3.8, 3.9, '3.10' ]
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-python@main
+      - uses: actions/checkout@v3.0.2
+      - uses: actions/setup-python@v4.1.0
         id: python
         with:
           python-version: ${{ matrix.python }}
-      - uses: actions/cache@main
+      - uses: actions/cache@v3.0.5
         with:
           path: ${{ env.pythonLocation }}
           key: test-alldeps-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
@@ -124,12 +124,12 @@ jobs:
         os: [ ubuntu-latest, macos-latest ]
         python: [ 3.8, 3.9, '3.10' ]
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-python@main
+      - uses: actions/checkout@v3.0.2
+      - uses: actions/setup-python@v4.1.0
         id: python
         with:
           python-version: ${{ matrix.python }}
-      - uses: actions/cache@main
+      - uses: actions/cache@v3.0.5
         with:
           path: ${{ env.pythonLocation }}
           key: test-devdeps-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
@@ -150,12 +150,12 @@ jobs:
           - os: macos-latest
             python: '3.10'
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-python@main
+      - uses: actions/checkout@v3.0.2
+      - uses: actions/setup-python@v4.1.0
         id: python
         with:
           python-version: ${{ matrix.python }}
-      - uses: actions/cache@main
+      - uses: actions/cache@v3.0.5
         with:
           path: ${{ env.pythonLocation }}
           key: test-pyargs-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
@@ -181,12 +181,12 @@ jobs:
           - python: '3.10'
             numpy: '1.20.*'
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-python@main
+      - uses: actions/checkout@v3.0.2
+      - uses: actions/setup-python@v4.1.0
         id: python
         with:
           python-version: ${{ matrix.python }}
-      - uses: actions/cache@main
+      - uses: actions/cache@v3.0.5
         with:
           path: ${{ env.pythonLocation }}
           key: test-numpy${{ matrix.numpy }}-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
@@ -199,12 +199,12 @@ jobs:
     needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_older_numpy ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-python@main
+      - uses: actions/checkout@v3.0.2
+      - uses: actions/setup-python@v4.1.0
         id: python
         with:
           python-version: 3.9
-      - uses: actions/cache@main
+      - uses: actions/cache@v3.0.5
         with:
           path: ${{ env.pythonLocation }}
           key: test-coverage-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
@@ -222,12 +222,12 @@ jobs:
     needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_older_numpy ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
-      - uses: actions/setup-python@main
+      - uses: actions/checkout@v3.0.2
+      - uses: actions/setup-python@v4.1.0
         id: python
         with:
           python-version: 3.9
-      - uses: actions/cache@main
+      - uses: actions/cache@v3.0.5
         with:
           path: ${{ env.pythonLocation }}
           key: build-docs-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
