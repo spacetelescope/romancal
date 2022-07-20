@@ -313,3 +313,35 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
                     orig_wcs(2048, 2048)[1] + delta[1]],
                     model.meta.wcs(2048, 2048),
                     atol=1.0)
+
+@pytest.mark.bigdata
+
+def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
+    """ Tests for fully saturated data skipping steps in the pipeline """
+    input_data = "r0000101001001001001_01101_0001_WFI01_ALL_SATURATED_uncal.asdf"
+    rtdata.get_data(f"WFI/image/{input_data}")
+    rtdata.input = input_data
+
+    # Test Pipeline
+    output = "r0000101001001001001_01101_0001_WFI01_ALL_SATURATED_cal.asdf"
+    rtdata.output = output
+    args = ["--disable-crds-steppars",
+            "roman_elp", rtdata.input,
+            ]
+    ExposurePipeline.from_cmdline(args)
+    rtdata.get_truth(f"truth/WFI/image/{output}")
+
+    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+
+    # Ensure step completion is as expected
+    model = rdm.open(rtdata.output)
+
+    assert model.meta.cal_step.dq_init == "COMPLETE"
+    assert model.meta.cal_step.saturation == "COMPLETE"
+    assert model.meta.cal_step.linearity == "SKIPPED"
+    assert model.meta.cal_step.dark == "SKIPPED"
+    assert model.meta.cal_step.jump == "SKIPPED"
+    assert model.meta.cal_step.ramp_fit == "SKIPPED"
+    assert model.meta.cal_step.assign_wcs == "SKIPPED"
+    assert model.meta.cal_step.flat_field == "SKIPPED"
+    assert model.meta.cal_step.photom == "SKIPPED"

@@ -168,9 +168,20 @@ class RampFitStep(RomanStep):
             opt_model = create_optional_results_model(input_model, opt_info)
             self.save_model(opt_model, 'fitopt', output_file=self.opt_name)
 
-        if image_info is not None:
-            out_model = create_image_model(input_model, image_info)
-            out_model.meta.cal_step.ramp_fit = 'COMPLETE'
+
+        # All pixels saturated, therefore returning an image file with zero data
+        if image_info is None:
+            log.info('All pixels are saturated. Returning a zeroed-out image.')
+
+            # Image info order is: data, dq, var_poisson, var_rnoise, err
+            image_info = (np.zeros(input_model.data.shape[2:], dtype=input_model.data.dtype),
+                          input_model.pixeldq | input_model.groupdq[0][0] | dqflags.group['SATURATED'],
+                          np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
+                          np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
+                          np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype))
+
+        out_model = create_image_model(input_model, image_info)
+        out_model.meta.cal_step.ramp_fit = 'COMPLETE'
 
         if self.save_results:
             try:

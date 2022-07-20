@@ -1,5 +1,10 @@
 """General utility objects"""
 
+import numpy as np
+from romancal.lib import dqflags
+
+SATURATEDPIX = dqflags.pixel['SATURATED']
+SATURATEDGRP = dqflags.group['SATURATED']
 
 def bytes2human(n):
     """Convert bytes to human-readable format
@@ -34,6 +39,19 @@ def bytes2human(n):
             value = float(n) / prefix[s]
             return '%.1f%s' % (value, s)
     return "%sB" % n
+
+
+def is_fully_saturated(model):
+    """
+    Check to see if all data pixels are flagged as saturated.
+    """
+
+    if np.all(np.bitwise_and(model.groupdq, SATURATEDGRP) == SATURATEDGRP):
+        return True
+    elif np.all(np.bitwise_and(model.pixeldq, SATURATEDPIX) == SATURATEDPIX):
+        return True
+
+    return False
 
 
 class LoggingContext:
