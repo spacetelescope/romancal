@@ -3,7 +3,7 @@ import numpy as np
 import os
 from astropy.time import Time
 
-from roman_datamodels.datamodels import RampModel, GainRefModel,ReadnoiseRefModel
+from roman_datamodels.datamodels import RampModel, GainRefModel, ReadnoiseRefModel, ImageModel
 from roman_datamodels.testing import utils as testutil
 
 from romancal.ramp_fitting import RampFitStep
@@ -177,9 +177,16 @@ def test_saturated_ramp_fit(max_cores):
                          override_readnoise=override_readnoise,
                          maximum_cores=max_cores)
 
-    # Test original ramp parameters preserved
-    np.testing.assert_allclose(out_model.data, model1.data, 1e-6)
-    np.testing.assert_allclose(out_model.err, model1.err, 1e-6)
+    # Test data and error arrays are zeroed out
+    np.testing.assert_array_equal(out_model.data, 0)
+    np.testing.assert_array_equal(out_model.err, 0)
+    np.testing.assert_array_equal(out_model.var_poisson, 0)
+    np.testing.assert_array_equal(out_model.var_rnoise, 0)
+
+    # Test that all pixels are flagged saturated
+    assert np.all(np.bitwise_and(out_model.dq, SATURATED) == SATURATED)
+
+    # Test that original ramp parameters preserved
     np.testing.assert_allclose(out_model.amp33, model1.amp33, 1e-6)
     np.testing.assert_allclose(out_model.border_ref_pix_left, model1.border_ref_pix_left,
                                1e-6)
@@ -197,8 +204,8 @@ def test_saturated_ramp_fit(max_cores):
     np.testing.assert_allclose(out_model.dq_border_ref_pix_bottom,
                                model1.dq_border_ref_pix_bottom, 1e-6)
 
-    # Test that the same model was returned.
-    assert type(out_model) == RampModel
+    # Test that an Image model was returned.
+    assert type(out_model) == ImageModel
 
-    # Test that there was no ramp fit to the data
-    assert out_model.meta.cal_step.ramp_fit == 'INCOMPLETE'
+    # Test that the ramp fit step was labeled complete
+    assert out_model.meta.cal_step.ramp_fit == 'COMPLETE'

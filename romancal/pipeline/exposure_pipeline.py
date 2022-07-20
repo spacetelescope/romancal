@@ -2,9 +2,11 @@
 from os.path import basename
 import logging
 
+import numpy as np
 from roman_datamodels import datamodels as rdd
 from ..stpipe import RomanPipeline
 from romancal.lib.basic_utils import test_full_saturation
+from romancal.lib import dqflags
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
@@ -78,9 +80,27 @@ class ExposurePipeline(RomanPipeline):
 
         # Test for fully saturated data
         if test_full_saturation(result):
-            log.debug('Error: all data saturated. When all of the pixels are saturated, the rest '
-                      'of the steps do not generate scientifically valid data. Pipeline is '
-                      'stopping.')
+            log.debug('Error: all data saturated. When all of the pixels are saturated, the '
+                          'pipeline does not generate scientifically valid data. Accordingly, '
+                          'the pipeline is stopping and returning a zeroed-out image file.')
+
+            # Create zeroed out image file
+            # The set order is: data, dq, var_poisson, var_rnoise, err
+            result = ramp_fit_step.create_image_model(result,
+                                    (np.zeros(result.data.shape[1:], dtype=result.data.dtype),
+                                     result.pixeldq | result.groupdq[0] | dqflags.group['SATURATED'],
+                                     np.zeros(result.err.shape[1:], dtype=result.err.dtype),
+                                     np.zeros(result.err.shape[1:], dtype=result.err.dtype),
+                                     np.zeros(result.err.shape[1:], dtype=result.err.dtype)))
+
+            # Set all subsequent steps to skipped
+            for step_str in ['linearity', 'dark', 'jump', 'ramp_fit', 'assign_wcs',
+                             'flat_field', 'photom']:
+                result.meta.cal_step[step_str] = 'SKIPPED'
+
+            # Set suffix for proper output naming
+            self.suffix = 'cal'
+
             return result
 
         result = self.linearity(result)
@@ -92,8 +112,16 @@ class ExposurePipeline(RomanPipeline):
         if "groupdq" in result.keys():
             if test_full_saturation(result):
                 log.debug('Error: all data saturated. When all of the pixels are saturated, the '
-                          'rest of the steps do not generate scientifically valid data. Pipeline is '
-                          'stopping.')
+                          'pipeline does not generate scientifically valid data. Accordingly, '
+                          'the pipeline is stopping and returning a zeroed-out image file.')
+
+                # Set all subsequent steps to skipped
+                for step_str in ['assign_wcs', 'flat_field', 'photom']:
+                    result.meta.cal_step[step_str] = 'SKIPPED'
+
+                # Set suffix for proper output naming
+                self.suffix = 'cal'
+
                 return result
 
         result = self.assign_wcs(result)
