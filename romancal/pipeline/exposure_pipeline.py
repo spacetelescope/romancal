@@ -5,7 +5,7 @@ import logging
 import numpy as np
 from roman_datamodels import datamodels as rdd
 from ..stpipe import RomanPipeline
-from romancal.lib.basic_utils import test_full_saturation
+from romancal.lib.basic_utils import is_fully_saturated
 from romancal.lib import dqflags
 
 # step imports
@@ -66,10 +66,6 @@ class ExposurePipeline(RomanPipeline):
         # open the input file
         input = rdd.open(input)
 
-        # propagate output_dir to steps that might need it
-        # self.dark_current.output_dir = self.output_dir
-        # self.ramp_fit.output_dir = self.output_dir
-
         log.debug('Exposure Processing a WFI exposure')
 
         self.dq_init.suffix = 'dq_init'
@@ -79,29 +75,11 @@ class ExposurePipeline(RomanPipeline):
         result = self.saturation(result)
 
         # Test for fully saturated data
-        if test_full_saturation(result):
-            log.debug('Error: all data saturated. When all of the pixels are saturated, the '
-                          'pipeline does not generate scientifically valid data. Accordingly, '
-                          'the pipeline is stopping and returning a zeroed-out image file.')
+        if is_fully_saturated(result):
+            log.info('All pixels are saturated. Returning a zeroed-out image.')
 
-            # Create zeroed out image file
-            # The set order is: data, dq, var_poisson, var_rnoise, err
-            result = ramp_fit_step.create_image_model(result,
-                                    (np.zeros(result.data.shape[1:], dtype=result.data.dtype),
-                                     result.pixeldq | result.groupdq[0] | dqflags.group['SATURATED'],
-                                     np.zeros(result.err.shape[1:], dtype=result.err.dtype),
-                                     np.zeros(result.err.shape[1:], dtype=result.err.dtype),
-                                     np.zeros(result.err.shape[1:], dtype=result.err.dtype)))
-
-            # Set all subsequent steps to skipped
-            for step_str in ['linearity', 'dark', 'jump', 'ramp_fit', 'assign_wcs',
-                             'flat_field', 'photom']:
-                result.meta.cal_step[step_str] = 'SKIPPED'
-
-            # Set suffix for proper output naming
-            self.suffix = 'cal'
-
-            return result
+            # Return zeroed-out image file (stopping pipeline)
+            return self.create_fully_saturated_zeroed_image(result)
 
         result = self.linearity(result)
         result = self.dark_current(result)
@@ -109,20 +87,16 @@ class ExposurePipeline(RomanPipeline):
         result = self.rampfit(result)
 
         # Test for fully saturated data
-        if "groupdq" in result.keys():
-            if test_full_saturation(result):
-                log.debug('Error: all data saturated. When all of the pixels are saturated, the '
-                          'pipeline does not generate scientifically valid data. Accordingly, '
-                          'the pipeline is stopping and returning a zeroed-out image file.')
+        if is_fully_saturated(result):
+            # Set all subsequent steps to skipped
+            for step_str in ['assign_wcs', 'flat_field', 'photom']:
+                result.meta.cal_step[step_str] = 'SKIPPED'
 
-                # Set all subsequent steps to skipped
-                for step_str in ['assign_wcs', 'flat_field', 'photom']:
-                    result.meta.cal_step[step_str] = 'SKIPPED'
+            # Set suffix for proper output naming
+            self.suffix = 'cal'
 
-                # Set suffix for proper output naming
-                self.suffix = 'cal'
-
-                return result
+            # Return fully saturated image file (stopping pipeline)
+            return result
 
         result = self.assign_wcs(result)
         if result.meta.exposure.type == 'WFI_IMAGE':
@@ -148,3 +122,31 @@ class ExposurePipeline(RomanPipeline):
             self.output_file = input.meta.filename
         else:
             self.suffix = 'ramp'
+
+    def create_fully_saturated_zeroed_image(self, input_model):
+        """
+        Create zeroed-out image file
+        """
+        # The set order is: data, dq, var_poisson, var_rnoise, err
+        fully_saturated_model = ramp_fit_step.create_image_model(input_model,
+                                              (np.zeros(input_model.data.shape[1:],
+                                                        dtype=input_model.data.dtype),
+                                               input_model.pixeldq | input_model.groupdq[0] |
+                                                                     dqflags.group['SATURATED'],
+                                               np.zeros(input_model.err.shape[1:],
+                                                        dtype=input_model.err.dtype),
+                                               np.zeros(input_model.err.shape[1:],
+                                                        dtype=input_model.err.dtype),
+                                               np.zeros(input_model.err.shape[1:],
+                                                        dtype=input_model.err.dtype)))
+
+        # Set all subsequent steps to skipped
+        for step_str in ['linearity', 'dark', 'jump', 'ramp_fit', 'assign_wcs',
+                         'flat_field', 'photom']:
+            fully_saturated_model.meta.cal_step[step_str] = 'SKIPPED'
+
+        # Set suffix for proper output naming
+        self.suffix = 'cal'
+
+        # Return zeroed-out image file
+        return fully_saturated_model

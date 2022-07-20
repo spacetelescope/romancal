@@ -171,6 +171,8 @@ class RampFitStep(RomanStep):
 
         # All pixels saturated, therefore returning an image file with zero data
         if image_info is None:
+            log.info('All pixels are saturated. Returning a zeroed-out image.')
+
             # Image info order is: data, dq, var_poisson, var_rnoise, err
             image_info = (np.zeros(input_model.data.shape[2:], dtype=input_model.data.dtype),
                           input_model.pixeldq | input_model.groupdq[0][0] | dqflags.group['SATURATED'],

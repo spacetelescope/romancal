@@ -1,7 +1,7 @@
 """General utility objects"""
 
-from romancal.lib import dqflags
 import numpy as np
+from romancal.lib import dqflags
 
 SATURATEDPIX = dqflags.pixel['SATURATED']
 SATURATEDGRP = dqflags.group['SATURATED']
@@ -41,11 +41,9 @@ def bytes2human(n):
     return "%sB" % n
 
 
-def test_full_saturation(model):
+def is_fully_saturated(model):
     """
-    Provide access to this package's datamodels.open function
-    so that the stpipe infrastructure knows how to instantiate
-    models.
+    Check to see if all data pixels are flagged as saturated.
     """
 
     if np.all(np.bitwise_and(model.groupdq, SATURATEDGRP) == SATURATEDGRP):
