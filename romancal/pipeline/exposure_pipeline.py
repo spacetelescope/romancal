@@ -87,16 +87,17 @@ class ExposurePipeline(RomanPipeline):
         result = self.rampfit(result)
 
         # Test for fully saturated data
-        if is_fully_saturated(result):
-            # Set all subsequent steps to skipped
-            for step_str in ['assign_wcs', 'flat_field', 'photom']:
-                result.meta.cal_step[step_str] = 'SKIPPED'
+        if "groupdq" in result.keys():
+            if is_fully_saturated(result):
+                # Set all subsequent steps to skipped
+                for step_str in ['assign_wcs', 'flat_field', 'photom']:
+                    result.meta.cal_step[step_str] = 'SKIPPED'
 
-            # Set suffix for proper output naming
-            self.suffix = 'cal'
+                # Set suffix for proper output naming
+                self.suffix = 'cal'
 
-            # Return fully saturated image file (stopping pipeline)
-            return result
+                # Return fully saturated image file (stopping pipeline)
+                return result
 
         result = self.assign_wcs(result)
         if result.meta.exposure.type == 'WFI_IMAGE':
