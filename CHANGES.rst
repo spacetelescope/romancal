@@ -56,6 +56,7 @@ tests
 -----
 
 - Updated tests to account for the change in dimensionality of the err variable in ramp datamodel. [#520]
+- Added SOC tests to check for information available in Level 2 images to correct for pixel geometric distortion. [#PR]
 
 
 0.7.1 (2022-05-19)
