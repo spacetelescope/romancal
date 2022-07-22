@@ -77,7 +77,7 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
                       passfail(model.meta.cal_step.jump == 'COMPLETE'))
     assert model.meta.cal_step.jump == 'COMPLETE'
     pipeline.log.info('Status of the step:             linearity     ' +
-                      str(model.meta.cal_step.assign_wcs))
+                      str(model.meta.cal_step.linearity))
     pipeline.log.info('DMS86 MSG: Testing completion of linearity correction'
                       ' in Level 2 image output.......' +
                       passfail(model.meta.cal_step.linearity == 'COMPLETE'))
@@ -94,6 +94,22 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
                       'in Level 2 image output.......' +
                       passfail(model.meta.cal_step.saturation == 'COMPLETE'))
     assert model.meta.cal_step.saturation == 'COMPLETE'
+
+    # SOC-587 tests for WFI mode
+    if model.meta.exposure.type == 'WFI_IMAGE':
+        # check if assign_wcs step is complete
+        pipeline.log.info('SOC-587 MSG: Status of the step:             assign_wcs    ' +
+                      str(model.meta.cal_step.assign_wcs))
+        pipeline.log.info('SOC-587 MSG: Testing completion of WCS assignment in'
+                        'Level 2 image output.......' +
+                        passfail(model.meta.cal_step.assign_wcs == 'COMPLETE'))
+        assert model.meta.cal_step.assign_wcs == 'COMPLETE'
+        # check if WCS exists
+        pipeline.log.info('SOC-587 MSG: Testing that a WCS object exists    ')
+        pipeline.log.info('SOC-587 MSG: Testing that WCS exists in'
+                        'Level 2 image output.......' +
+                        passfail(model.meta.wcs is not None))
+        assert model.meta.wcs is not None
 
     # DMS87 data quality tests
     pipeline.log.info('DMS87 MSG: Testing existence of data quality array (dq)'
