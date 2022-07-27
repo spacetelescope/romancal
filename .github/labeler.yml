@@ -63,10 +63,6 @@ ramp_fitting:
   - '**/*ramp_fitting*'
   - '**/*ramp_fitting*/**'
 
-regtest:
-  - '**/*regtest*'
-  - '**/*regtest*/**'
-
 saturation:
   - '**/*saturation*'
   - '**/*saturation*/**'
