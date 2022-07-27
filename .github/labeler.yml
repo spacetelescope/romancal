@@ -35,6 +35,10 @@ assign_wcs:
   - '**/*assign_wcs*'
   - '**/*assign_wcs*/**'
 
+associations:
+  - '**/*association*'
+  - '**/*association*/**'
+
 Dark Current:
   - '**/*dark_current*'
   - '**/*dark_current*/**'
