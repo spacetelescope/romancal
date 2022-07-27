@@ -91,6 +91,12 @@ jobs:
           key: test-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install ".[test]" pytest-xdist
       - run: pip freeze
+      - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
+      - uses: actions/cache@v3.0.5
+        with:
+          path: ${{ env.CRDS_PATH }}
+          key: crds-${{ env.CRDS_CONTEXT }}
+      - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
       - run: pytest -n auto
   test_alldeps:
     name: test optional dependencies
@@ -113,6 +119,12 @@ jobs:
           key: test-alldeps-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install ".[test,all]" pytest-xdist
       - run: pip freeze
+      - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
+      - uses: actions/cache@v3.0.5
+        with:
+          path: ${{ env.CRDS_PATH }}
+          key: crds-${{ env.CRDS_CONTEXT }}
+      - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
       - run: pytest -n auto
   test_devdeps:
     name: test developer versions
@@ -136,6 +148,12 @@ jobs:
       - run: pip install git+https://github.com/asdf-format/asdf git+https://github.com/spacetelescope/stpipe git+https://github.com/spacetelescope/stdatamodels --pre astropy numpy
       - run: pip install ".[test]" pytest-xdist
       - run: pip freeze
+      - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
+      - uses: actions/cache@v3.0.5
+        with:
+          path: ${{ env.CRDS_PATH }}
+          key: crds-${{ env.CRDS_CONTEXT }}
+      - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
       - run: pytest -n auto
   test_pyargs:
     name: test --pyargs
@@ -161,6 +179,12 @@ jobs:
           key: test-pyargs-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install ".[test]" pytest-xdist
       - run: pip freeze
+      - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
+      - uses: actions/cache@v3.0.5
+        with:
+          path: ${{ env.CRDS_PATH }}
+          key: crds-${{ env.CRDS_CONTEXT }}
+      - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
       - run: pytest -n auto ./docs --pyargs romancal
   test_older_numpy:
     name: test Numpy ${{ matrix.numpy }} (Python ${{ matrix.python }})
@@ -195,6 +219,12 @@ jobs:
       - run: pip install -e ".[test]" pytest-xdist
       - run: pip install numpy==${{ matrix.numpy }}
       - run: pip freeze
+      - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
+      - uses: actions/cache@v3.0.5
+        with:
+          path: ${{ env.CRDS_PATH }}
+          key: crds-${{ env.CRDS_CONTEXT }}
+      - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
       - run: pytest -n auto
   test_with_coverage:
     name: test with coverage
@@ -212,6 +242,12 @@ jobs:
           key: test-coverage-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install ".[test]" pytest-xdist pytest-cov
       - run: pip freeze
+      - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
+      - uses: actions/cache@v3.0.5
+        with:
+          path: ${{ env.CRDS_PATH }}
+          key: crds-${{ env.CRDS_CONTEXT }}
+      - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
       - run: pytest -n auto --cov --cov-report xml --cov-report term-missing
       - uses: codecov/codecov-action@v3
         with:
