@@ -185,7 +185,7 @@ jobs:
           path: ${{ env.CRDS_PATH }}
           key: crds-${{ env.CRDS_CONTEXT }}
       - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
-      - run: pytest -n auto ./docs --pyargs romancal
+      - run: pytest -n auto --pyargs romancal
   test_older_numpy:
     name: test Numpy ${{ matrix.numpy }} (Python ${{ matrix.python }})
     needs: [ test ]
