@@ -93,10 +93,12 @@ jobs:
       - run: pip freeze
       - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
       - uses: actions/cache@v3.0.5
+        if: env.CRDS_CONTEXT != ''
         with:
           path: ${{ env.CRDS_PATH }}
           key: crds-${{ env.CRDS_CONTEXT }}
       - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
+        if: env.CRDS_CONTEXT != ''
       - run: pytest -n auto
   test_alldeps:
     name: test optional dependencies (${{ matrix.os }}, Python ${{ matrix.python }})
@@ -121,10 +123,12 @@ jobs:
       - run: pip freeze
       - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
       - uses: actions/cache@v3.0.5
+        if: env.CRDS_CONTEXT != ''
         with:
           path: ${{ env.CRDS_PATH }}
           key: crds-${{ env.CRDS_CONTEXT }}
       - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
+        if: env.CRDS_CONTEXT != ''
       - run: pytest -n auto
   test_devdeps:
     name: test developer versions (${{ matrix.os }}, Python ${{ matrix.python }})
@@ -150,10 +154,12 @@ jobs:
       - run: pip freeze
       - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
       - uses: actions/cache@v3.0.5
+        if: env.CRDS_CONTEXT != ''
         with:
           path: ${{ env.CRDS_PATH }}
           key: crds-${{ env.CRDS_CONTEXT }}
       - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
+        if: env.CRDS_CONTEXT != ''
       - run: pytest -n auto
   test_pyargs:
     name: test --pyargs (${{ matrix.os }}, Python ${{ matrix.python }})
@@ -181,10 +187,12 @@ jobs:
       - run: pip freeze
       - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
       - uses: actions/cache@v3.0.5
+        if: env.CRDS_CONTEXT != ''
         with:
           path: ${{ env.CRDS_PATH }}
           key: crds-${{ env.CRDS_CONTEXT }}
       - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
+        if: env.CRDS_CONTEXT != ''
       - run: pytest -n auto --pyargs romancal
   test_older_numpy:
     name: test Numpy ${{ matrix.numpy }} (${{ matrix.os }}, Python ${{ matrix.python }})
@@ -221,10 +229,12 @@ jobs:
       - run: pip freeze
       - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
       - uses: actions/cache@v3.0.5
+        if: env.CRDS_CONTEXT != ''
         with:
           path: ${{ env.CRDS_PATH }}
           key: crds-${{ env.CRDS_CONTEXT }}
       - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
+        if: env.CRDS_CONTEXT != ''
       - run: pytest -n auto
   test_with_coverage:
     name: test with coverage
@@ -244,10 +254,12 @@ jobs:
       - run: pip freeze
       - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
       - uses: actions/cache@v3.0.5
+        if: env.CRDS_CONTEXT != ''
         with:
           path: ${{ env.CRDS_PATH }}
           key: crds-${{ env.CRDS_CONTEXT }}
       - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
+        if: env.CRDS_CONTEXT != ''
       - run: pytest -n auto --cov --cov-report xml --cov-report term-missing
       - uses: codecov/codecov-action@v3
         with:
