@@ -71,7 +71,7 @@ jobs:
       - run: pip freeze
       - run: verify_install_requires
   test:
-    name: test
+    name: test (${{ matrix.os }}, Python ${{ matrix.python }})
     needs: [ style, audit, dependencies ]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -99,7 +99,7 @@ jobs:
       - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
       - run: pytest -n auto
   test_alldeps:
-    name: test optional dependencies
+    name: test optional dependencies (${{ matrix.os }}, Python ${{ matrix.python }})
     needs: [ test ]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -127,7 +127,7 @@ jobs:
       - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
       - run: pytest -n auto
   test_devdeps:
-    name: test developer versions
+    name: test developer versions (${{ matrix.os }}, Python ${{ matrix.python }})
     needs: [ test ]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -156,7 +156,7 @@ jobs:
       - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
       - run: pytest -n auto
   test_pyargs:
-    name: test --pyargs
+    name: test --pyargs (${{ matrix.os }}, Python ${{ matrix.python }})
     needs: [ test ]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -187,7 +187,7 @@ jobs:
       - run: crds sync --contexts ${{ env.CRDS_CONTEXT }}
       - run: pytest -n auto --pyargs romancal
   test_older_numpy:
-    name: test Numpy ${{ matrix.numpy }} (Python ${{ matrix.python }})
+    name: test Numpy ${{ matrix.numpy }} (${{ matrix.os }}, Python ${{ matrix.python }})
     needs: [ test ]
     runs-on: ${{ matrix.os }}
     continue-on-error: true
