@@ -62,6 +62,8 @@ class ExposurePipeline(RomanPipeline):
         log.info('Starting Roman exposure calibration pipeline ...')
         if isinstance(input, str):
             input_filename = basename(input)
+        else:
+            input_filename = None
 
         # open the input file
         input = rdd.open(input)
