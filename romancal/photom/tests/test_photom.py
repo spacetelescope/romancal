@@ -28,7 +28,7 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
     """
 
     # Keyword and eleents list for phot_table construction
-    optical_element = ["F062", "F087", "F106", "F129", "W146", "F158", "F184", "F213",
+    optical_element = ["F062", "F087", "F106", "F129", "F146", "F158", "F184", "F213",
                        "GRISM", "PRISM", "DARK"]
     none_type_elements = ["GRISM", "PRISM", "DARK"]
     keyword = ["photmjsr", "uncertainty", "pixelareasr"]
@@ -78,10 +78,10 @@ def test_no_photom_match():
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
 
     # Remove key for failed test (that won't fail validation)
-    photom_model.phot_table.pop("W146")
+    photom_model.phot_table.pop("F146")
 
     # Select optical element
-    input_model.meta.instrument.optical_element = "W146"
+    input_model.meta.instrument.optical_element = "F146"
 
     # Set bad values which would be overwritten by apply_photom
     input_model.meta.photometry.pixelarea_steradians = -1.0 * u.sr
@@ -90,7 +90,7 @@ def test_no_photom_match():
         -1.0 * u.microjansky / u.arcsecond ** 2
 
     with warnings.catch_warnings(record=True) as caught:
-        # Look for now non existent W146 optical element
+        # Look for now non existent F146 optical element
         output_model = photom.apply_photom(input_model, photom_model)
 
         # Assert warning key matches that of the input file
@@ -114,9 +114,9 @@ def test_apply_photom1():
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
 
     # Select optical element
-    input_model.meta.instrument.optical_element = "W146"
+    input_model.meta.instrument.optical_element = "F146"
 
-    # Apply photom correction for optical element W146
+    # Apply photom correction for optical element F146
     output_model = photom.apply_photom(input_model, photom_model)
 
     # Set reference photometry

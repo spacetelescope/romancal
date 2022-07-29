@@ -33,6 +33,8 @@ photom
 
 - Adds explicit test that photometric keywords are preserved for spectroscopic data. [#513]
 
+- Changed optical element W146 to F146. [#552]
+
 
 ramp_fitting
 ------------
