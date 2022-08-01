@@ -1,0 +1,88 @@
+documentation:
+  - 'docs/**/*'
+  - any: [ '*.rst', '!CHANGES.rst' ]
+  - '*.md'
+  - '.readthedocs.yml'
+  - 'LICENSE'
+
+dependencies:
+  - 'pyproject.toml'
+  - 'setup.*'
+  - 'requirements-*.txt'
+  - 'MANIFEST.in'
+
+# --------------------------------------- testing ---------------------------------------
+
+automation:
+  - '.github/**'
+  - '.bandit.yaml'
+  - '.codecov.yml'
+  - 'Jenkinsfile*'
+
+testing:
+  - '**/tests/**'
+  - '.github/workflows/*ci*.yml'
+  - 'conftest.py'
+  - 'tox.ini'
+
+regression_testing:
+  - '**/regtest/**'
+  - 'Jenkinsfile*'
+
+# --------------------------------------- modules ---------------------------------------
+
+assign_wcs:
+  - '**/*assign_wcs*'
+  - '**/*assign_wcs*/**'
+
+associations:
+  - '**/*association*'
+  - '**/*association*/**'
+
+Dark Current:
+  - '**/*dark_current*'
+  - '**/*dark_current*/**'
+
+dq_init:
+  - '**/*dq_init*'
+  - '**/*dq_init*/**'
+
+flatfield:
+  - '**/*flatfield*'
+  - '**/*flatfield*/**'
+
+jump:
+  - '**/*jump*'
+  - '**/*jump*/**'
+
+linearity:
+  - '**/*linearity*'
+  - '**/*linearity*/**'
+
+photom:
+  - '**/*photom*'
+  - '**/*photom*/**'
+
+ramp_fitting:
+  - '**/*ramp_fitting*'
+  - '**/*ramp_fitting*/**'
+
+saturation:
+  - '**/*saturation*'
+  - '**/*saturation*/**'
+
+# --------------------------------------- pipelines ---------------------------------------
+
+stpipe:
+  - '**/*stpipe*'
+  - '**/*stpipe*/**'
+
+pipeline:
+  - '**/*pipeline*'
+  - '**/*pipeline*/**'
+
+# --------------------------------------- instruments ---------------------------------------
+
+Wide Field Instrument (WFI):
+  - '**/*wfi*'
+  - '**/*wfi*/**'
