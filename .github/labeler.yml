@@ -86,7 +86,3 @@ pipeline:
 Wide Field Instrument (WFI):
   - '**/*wfi*'
   - '**/*wfi*/**'
-
-Coronagraph:
-  - '**/*coron*'
-  - '**/*coron*/**'
