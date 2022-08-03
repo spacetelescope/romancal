@@ -14,6 +14,12 @@ on:
     # Weekly Monday 9AM build
     # * is a special character in YAML so you have to quote this string
     - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      crds_context:
+        type: string
+        description: CRDS context(s) to use with tests (defaults to operational context)
+        required: false
 
 env:
   CRDS_SERVER_URL: https://roman-crds-test.stsci.edu
@@ -92,6 +98,9 @@ jobs:
       - run: pip install ".[test]" pytest-xdist
       - run: pip freeze
       - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
+        if: github.event.inputs.crds_context == ''
+      - run: echo "CRDS_CONTEXT=${{ github.event.inputs.crds_context }}" >> $GITHUB_ENV
+        if: github.event.inputs.crds_context != ''
       - uses: actions/cache@v3.0.5
         if: env.CRDS_CONTEXT != ''
         with:
@@ -122,6 +131,9 @@ jobs:
       - run: pip install ".[test,all]" pytest-xdist
       - run: pip freeze
       - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
+        if: github.event.inputs.crds_context == ''
+      - run: echo "CRDS_CONTEXT=${{ github.event.inputs.crds_context }}" >> $GITHUB_ENV
+        if: github.event.inputs.crds_context != ''
       - uses: actions/cache@v3.0.5
         if: env.CRDS_CONTEXT != ''
         with:
@@ -153,6 +165,9 @@ jobs:
       - run: pip install ".[test]" pytest-xdist
       - run: pip freeze
       - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
+        if: github.event.inputs.crds_context == ''
+      - run: echo "CRDS_CONTEXT=${{ github.event.inputs.crds_context }}" >> $GITHUB_ENV
+        if: github.event.inputs.crds_context != ''
       - uses: actions/cache@v3.0.5
         if: env.CRDS_CONTEXT != ''
         with:
@@ -186,6 +201,9 @@ jobs:
       - run: pip install ".[test]" pytest-xdist
       - run: pip freeze
       - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
+        if: github.event.inputs.crds_context == ''
+      - run: echo "CRDS_CONTEXT=${{ github.event.inputs.crds_context }}" >> $GITHUB_ENV
+        if: github.event.inputs.crds_context != ''
       - uses: actions/cache@v3.0.5
         if: env.CRDS_CONTEXT != ''
         with:
@@ -228,6 +246,9 @@ jobs:
       - run: pip install numpy==${{ matrix.numpy }}
       - run: pip freeze
       - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
+        if: github.event.inputs.crds_context == ''
+      - run: echo "CRDS_CONTEXT=${{ github.event.inputs.crds_context }}" >> $GITHUB_ENV
+        if: github.event.inputs.crds_context != ''
       - uses: actions/cache@v3.0.5
         if: env.CRDS_CONTEXT != ''
         with:
@@ -253,6 +274,9 @@ jobs:
       - run: pip install ".[test]" pytest-xdist pytest-cov
       - run: pip freeze
       - run: echo "CRDS_CONTEXT=$(crds list --operational-context)" >> $GITHUB_ENV
+        if: github.event.inputs.crds_context == ''
+      - run: echo "CRDS_CONTEXT=${{ github.event.inputs.crds_context }}" >> $GITHUB_ENV
+        if: github.event.inputs.crds_context != ''
       - uses: actions/cache@v3.0.5
         if: env.CRDS_CONTEXT != ''
         with:
