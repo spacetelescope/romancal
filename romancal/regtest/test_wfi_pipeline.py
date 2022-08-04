@@ -10,6 +10,8 @@ from romancal.pipeline.exposure_pipeline import ExposurePipeline
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
 from .regtestdata import compare_asdf
 
+from gwcs.wcstools import grid_from_bounding_box
+
 
 def passfail(bool_expr):
     """ set pass fail"""
@@ -95,21 +97,32 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
                       passfail(model.meta.cal_step.saturation == 'COMPLETE'))
     assert model.meta.cal_step.saturation == 'COMPLETE'
 
-    # SOC-587 tests for WFI mode
+    # DMS-129 tests for WFI mode
     if model.meta.exposure.type == 'WFI_IMAGE':
         # check if assign_wcs step is complete
-        pipeline.log.info('SOC-587 MSG: Status of the step:             assign_wcs    ' +
+        pipeline.log.info('DMS-129 MSG: Status of the step:             assign_wcs    ' +
                       str(model.meta.cal_step.assign_wcs))
-        pipeline.log.info('SOC-587 MSG: Testing completion of WCS assignment in'
+        pipeline.log.info('DMS-129 MSG: Testing completion of WCS assignment in'
                         'Level 2 image output.......' +
                         passfail(model.meta.cal_step.assign_wcs == 'COMPLETE'))
         assert model.meta.cal_step.assign_wcs == 'COMPLETE'
         # check if WCS exists
-        pipeline.log.info('SOC-587 MSG: Testing that a WCS object exists    ')
-        pipeline.log.info('SOC-587 MSG: Testing that WCS exists in'
+        pipeline.log.info('DMS-129 MSG: Testing that a WCS object exists    ')
+        pipeline.log.info('DMS-129 MSG: Testing that WCS exists in'
                         'Level 2 image output.......' +
                         passfail(model.meta.wcs is not None))
         assert model.meta.wcs is not None
+        pipeline.log.info('DMS-129 MSG: Checking that transformation from detector to telescope coords has been applied in'
+                        'Level 2 image output.......' +
+                        passfail('v2v3' in model.meta.wcs.available_frames))
+        assert 'v2v3' in model.meta.wcs.available_frames
+        # compare coordinates before and after distortion correction has been applied
+        x0, y0 = grid_from_bounding_box(model.meta.wcs.bounding_box)
+        
+        pipeline.log.info('DMS-129 MSG: Checking that distortion correction has been applied in'
+                        'Level 2 image output.......' +
+                        passfail('v2v3' in model.meta.wcs.available_frames))
+        assert 'v2v3' in model.meta.wcs.available_frames
 
     # DMS87 data quality tests
     pipeline.log.info('DMS87 MSG: Testing existence of data quality array (dq)'
