@@ -36,6 +36,9 @@ general
 
 - Update `stpipe` requirement to `>=0.4.2` [#545]
 
+- Fix input_filename when DataModel is input to ExposurePipeline [#553]
+
+
 photom
 ------
 
