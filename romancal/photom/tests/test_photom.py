@@ -124,10 +124,10 @@ def test_apply_photom1():
     area_a2 = 0.000984102303070964 * u.arcsecond * u.arcsecond
 
     # Tests for pixel areas
-    assert(np.isclose(output_model.meta.photometry.pixelarea_steradians.value,
+    assert (np.isclose(output_model.meta.photometry.pixelarea_steradians.value,
                         area_ster.value, atol=1.e-7))
     assert output_model.meta.photometry.pixelarea_steradians.unit == area_ster.unit
-    assert(np.isclose(output_model.meta.photometry.pixelarea_arcsecsq.value,
+    assert (np.isclose(output_model.meta.photometry.pixelarea_arcsecsq.value,
                         area_a2.value, atol=1.e-7))
     assert output_model.meta.photometry.pixelarea_arcsecsq.unit == area_a2.unit
 
@@ -269,9 +269,9 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     area_a2 = 0.000984102303070964 * u.arcsecond * u.arcsecond
 
     # Tests for pixel areas
-    assert(np.isclose(result.meta.photometry.pixelarea_steradians.value,
+    assert (np.isclose(result.meta.photometry.pixelarea_steradians.value,
                         area_ster.value, atol=1.e-7))
     assert result.meta.photometry.pixelarea_steradians.unit == area_ster.unit
-    assert(np.isclose(result.meta.photometry.pixelarea_arcsecsq.value,
+    assert (np.isclose(result.meta.photometry.pixelarea_arcsecsq.value,
                         area_a2.value, atol=1.e-7))
     assert result.meta.photometry.pixelarea_arcsecsq.unit == area_a2.unit

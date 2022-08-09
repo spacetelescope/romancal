@@ -55,15 +55,15 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     dqdata = outfile['pixeldq']
 
     # assert that the pixels read back in match the mapping from ref data to science data
-    assert(dqdata[100, 100] == dqflags.pixel['SATURATED'])
-    assert(dqdata[200, 100] == dqflags.pixel['JUMP_DET'])
-    assert(dqdata[300, 100] == dqflags.pixel['DROPOUT'])
-    assert(dqdata[400, 100] == dqflags.pixel['PERSISTENCE'])
-    assert(dqdata[500, 100] == dqflags.pixel['DO_NOT_USE'])
-    assert(dqdata[100, 200] == dqflags.pixel['SATURATED'] + dqflags.pixel['DO_NOT_USE'])
-    assert(dqdata[200, 200] == dqflags.pixel['JUMP_DET'] + dqflags.pixel['DO_NOT_USE'])
-    assert(dqdata[300, 200] == dqflags.pixel['DROPOUT'] + dqflags.pixel['DO_NOT_USE'])
-    assert(dqdata[400, 200] == dqflags.pixel['PERSISTENCE'] + dqflags.pixel['DO_NOT_USE'])
+    assert (dqdata[100, 100] == dqflags.pixel['SATURATED'])
+    assert (dqdata[200, 100] == dqflags.pixel['JUMP_DET'])
+    assert (dqdata[300, 100] == dqflags.pixel['DROPOUT'])
+    assert (dqdata[400, 100] == dqflags.pixel['PERSISTENCE'])
+    assert (dqdata[500, 100] == dqflags.pixel['DO_NOT_USE'])
+    assert (dqdata[100, 200] == dqflags.pixel['SATURATED'] + dqflags.pixel['DO_NOT_USE'])
+    assert (dqdata[200, 200] == dqflags.pixel['JUMP_DET'] + dqflags.pixel['DO_NOT_USE'])
+    assert (dqdata[300, 200] == dqflags.pixel['DROPOUT'] + dqflags.pixel['DO_NOT_USE'])
+    assert (dqdata[400, 200] == dqflags.pixel['PERSISTENCE'] + dqflags.pixel['DO_NOT_USE'])
 
 
 def test_groupdq():
@@ -121,8 +121,8 @@ def test_err():
     # check that ERR array was created and initialized to zero
     errarr = outfile.err
 
-    assert(errarr.ndim == 3)  # check that output err array is 3-D
-    assert(np.all(errarr == 0))  # check that values are 0
+    assert (errarr.ndim == 3)  # check that output err array is 3-D
+    assert (np.all(errarr == 0))  # check that values are 0
 
 
 def test_dq_add1_groupdq():
@@ -165,9 +165,9 @@ def test_dq_add1_groupdq():
 
     # test if pixels in pixeldq were incremented in value by 1
     # check that previous dq flag is added to mask value
-    assert(outfile.pixeldq[505, 505] == dqflags.pixel['JUMP_DET'] + dqflags.pixel['DO_NOT_USE'])
+    assert (outfile.pixeldq[505, 505] == dqflags.pixel['JUMP_DET'] + dqflags.pixel['DO_NOT_USE'])
     # check two flags propagate correctly
-    assert(outfile.pixeldq[400, 500] == dqflags.pixel['SATURATED'] + dqflags.pixel['DO_NOT_USE'])
+    assert (outfile.pixeldq[400, 500] == dqflags.pixel['SATURATED'] + dqflags.pixel['DO_NOT_USE'])
 
 
 @pytest.mark.parametrize(
