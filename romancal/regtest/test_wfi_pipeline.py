@@ -35,6 +35,7 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
             "--steps.jump.rejection_threshold=180.0",
             "--steps.jump.three_group_rejection_threshold=185.0",
             "--steps.jump.four_group_rejection_threshold=190",
+            "--steps.photom.override_photom=/grp/roman/ddavis/roman/data/roman_wfi_photom_0034_test.asdf",
             "roman_elp", rtdata.input,
             ]
     ExposurePipeline.from_cmdline(args)
@@ -117,7 +118,16 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
                         passfail('v2v3' in model.meta.wcs.available_frames))
         assert 'v2v3' in model.meta.wcs.available_frames
         # compare coordinates before and after distortion correction has been applied
+        # 1 - get new image array based on the model
         x0, y0 = grid_from_bounding_box(model.meta.wcs.bounding_box)
+        # 2 - apply the distortion-corrected WCS solution to new image array
+        corrected_coords = model.meta.wcs(x0, y0)
+        # 3 - apply the transformation from 'v2v3' to 'world' without distortion correction
+        original_coords = model.meta.wcs.get_transform('v2v3', 'world')(x0, y0)
+        # compare both results to make sure they don't match
+        # (which means the distortion correction was actually applied to the model)
+        assert (corrected_coords[0] != original_coords[0]).all()
+        assert (corrected_coords[1] != original_coords[1]).all()
         
         pipeline.log.info('DMS-129 MSG: Checking that distortion correction has been applied in'
                         'Level 2 image output.......' +
