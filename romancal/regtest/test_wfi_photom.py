@@ -52,10 +52,10 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     step.log.info('DMS140 MSG: Photom megajansky conversion calculated? : ' +
                   str((photom_out.meta.photometry.conversion_megajanskys.unit == u.MJy / u.sr) and
                        math.isclose(photom_out.meta.photometry.conversion_megajanskys.value,
-                                    0.3214, abs_tol=0.0001)))
+                                    0.3324, abs_tol=0.0001)))
     assert photom_out.meta.photometry.conversion_megajanskys.unit == u.MJy / u.sr
     assert math.isclose(photom_out.meta.photometry.conversion_megajanskys.value,
-                        0.3214, abs_tol=0.0001)
+                        0.3324, abs_tol=0.0001)
 
     step.log.info('DMS140 MSG: Photom microjanskys conversion calculated? : ' +
                   str((photom_out.meta.photometry.conversion_microjanskys.unit ==
