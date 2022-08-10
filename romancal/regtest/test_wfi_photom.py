@@ -61,10 +61,10 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
                   str((photom_out.meta.photometry.conversion_microjanskys.unit ==
                        u.uJy / u.arcsec ** 2) and
                       (math.isclose(photom_out.meta.photometry.conversion_microjanskys.value,
-                                    7.5549, abs_tol=0.0001))))
+                                    7.81320, abs_tol=0.0001))))
     assert photom_out.meta.photometry.conversion_microjanskys.unit == u.uJy / u.arcsec ** 2
     assert math.isclose(photom_out.meta.photometry.conversion_microjanskys.value,
-                        7.5549, abs_tol=0.0001)
+                        7.81320, abs_tol=0.0001)
 
     step.log.info('DMS140 MSG: Pixel area in steradians calculated? : ' +
                   str((photom_out.meta.photometry.pixelarea_steradians.unit == u.sr) and
