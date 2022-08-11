@@ -35,7 +35,6 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
             "--steps.jump.rejection_threshold=180.0",
             "--steps.jump.three_group_rejection_threshold=185.0",
             "--steps.jump.four_group_rejection_threshold=190",
-            "--steps.photom.override_photom=/grp/roman/ddavis/roman/data/roman_wfi_photom_0034_test.asdf",
             "roman_elp", rtdata.input,
             ]
     ExposurePipeline.from_cmdline(args)
@@ -128,11 +127,6 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
         # (which means the distortion correction was actually applied to the model)
         assert (corrected_coords[0] != original_coords[0]).all()
         assert (corrected_coords[1] != original_coords[1]).all()
-        
-        pipeline.log.info('DMS-129 MSG: Checking that distortion correction has been applied in'
-                        'Level 2 image output.......' +
-                        passfail('v2v3' in model.meta.wcs.available_frames))
-        assert 'v2v3' in model.meta.wcs.available_frames
 
     # DMS87 data quality tests
     pipeline.log.info('DMS87 MSG: Testing existence of data quality array (dq)'
