@@ -2,8 +2,7 @@
 
 
 [![Documentation Status](https://readthedocs.org/projects/roman-pipeline/badge/?version=latest)](https://roman-pipeline.readthedocs.io/en/latest/?badge=latest)
-![Roman CI](https://github.com/spacetelescope/romancal/workflows/CI/badge.svg)
-[![codecov](https://codecov.io/gh/spacetelescope/romancal/branch/main/graph/badge.svg?token=S6KW6J7FZP)](https://codecov.io/gh/spacetelescope/romancal)
+[![CI](https://github.com/spacetelescope/romancal/actions/workflows/roman_ci.yml/badge.svg)](https://github.com/spacetelescope/romancal/actions/workflows/roman_ci.yml)
 [![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](http://www.stsci.edu)
 [![Powered by Astropy Badge](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
@@ -218,12 +217,3 @@ If developers need to update the truth files in our nightly regression tests,
 there are instructions in this wiki.
 
 https://github.com/spacetelescope/jwst/wiki/Maintaining-Regression-Tests
-
-
-## CI/CD builds
-
-[![Documentation Status](https://readthedocs.org/projects/roman-pipeline/badge/?version=latest)](http://roman-pipeline.readthedocs.io/en/latest/?badge=latest)
-
-[![CI](https://github.com/spacetelescope/romancal/actions/workflows/ci.yml/badge.svg)](https://github.com/spacetelescope/romancal/actions/workflows/ci.yml)
-
-[![codecov](https://codecov.io/gh/spacetelescope/romancal/branch/main/graph/badge.svg?token=C1LO00W9CZ)](https://codecov.io/gh/spacetelescope/romancal)
