@@ -6,11 +6,6 @@
 0.8.0 (2022-08-12)
 ==================
 
-general
--------
-
-- Populate 'ref_file' section in meta after step is run. [#492]
-
 assign_wcs
 ----------
 
@@ -43,6 +38,9 @@ general
 
 - Fix input_filename when DataModel is input to ExposurePipeline [#553]
 
+- Populate 'ref_file' section in meta after step is run. [#492]
+
+- pin ``asdf`` above ``2.12.1`` to fix issues with unit and regression tests [#562]
 
 photom
 ------
