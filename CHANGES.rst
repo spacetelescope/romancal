@@ -1,7 +1,8 @@
-0.8.1 (unreleased)
+0.8.1 (2022-08-23)
 ==================
 
--
+- pin ``asdf`` above ``2.12.1`` to fix issue with `jsonschema` release [#562]
+- pin `roman_datamodels` to newest feature version [#563]
 
 0.8.0 (2022-08-12)
 ==================
