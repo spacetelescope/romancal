@@ -32,8 +32,13 @@ are divided by the square of the flat-field value for each pixel.
 A flat-field variance array, VAR_FLAT, is created from the science exposure
 and flat-field reference file data using the following formula:
 
+ The flat-field is applied to the science data, in-place, according to:
+
 .. math::
-   SCI_{science} = SCI_{science} / SCI_{flat}
+   SCI^{\prime}_{science} = SCI_{science} / SCI_{flat}
+
+The flat-field data is also applied to the VAR_POISSON and VAR_RNOISE
+variance arrays,
 
 .. math::
    VAR\_POISSON_{science} = VAR\_POISSON_{science} / SCI_{flat}^2
@@ -41,8 +46,13 @@ and flat-field reference file data using the following formula:
 .. math::
    VAR\_RNOISE_{science} = VAR\_RNOISE_{science} / SCI_{flat}^2
 
+The variance for the flat-fielded data associated with the science
+data is determined using,
+
 .. math::
-   VAR\_FLAT_{science} = ( SCI_{science}^{2} / SCI_{flat}^{2} ) * ERR_{flat}^{2}
+   VAR\_FLAT_{science} = ( (SCI^{\prime}_{science})^{2} / SCI_{flat}^{2} ) * ERR_{flat}^{2}
+
+and finally the error that is associated with the science data is given by,
 
 .. math::
    ERR_{science} = \sqrt{VAR\_POISSON + VAR\_RNOISE + VAR\_FLAT}
