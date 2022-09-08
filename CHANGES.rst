@@ -139,13 +139,6 @@ saturation
 0.7.0 (2022-05-13)
 ==================
 
-general
--------
-
-- Update regression tests with new data conforming to the latest datamodels [#496]
-
-- Remove copy of arrays that are not needed to help manage memory [#487]
-
 Documentation
 -------------
 
