@@ -80,6 +80,27 @@ Exit Status
 
  .. _intro_file_conventions:
 
+
+Running From the Python Prompt
+=============================
+
+You can execute a pipeline or a step from within python by using the
+``call`` method of the class.
+
+The ``call`` method creates a new instance of the class and runs the pipeline or
+step. Optional parameter settings can be specified by via keyword arguments or
+supplying a parameter file. Some examples are shown below. For more information,
+see :ref:`Execute via call()<call_examples>`::
+
+ from romancal.pipeline import ExposurePipeline
+ result = ExposurePipeline.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
+
+ from romancal.linearity import LinearityStep
+ result = LinearityStep.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
+
+For more details on the different ways to run a pipeline step, see
+the :ref:`Configuring a Step<configuring-a-step>` page.
+
 Input and Output File Conventions
 =================================
 
