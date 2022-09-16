@@ -129,7 +129,7 @@ for ``strun``. The call signature is::
 
 For example, given the following command-line::
 
-    $ strun romancal.pipeline.ExposurePipeline r0000101001001001001_01101_0001_WFI01_uncal.asdf
+    $ strun romancal.pipeline.ExposurePipeline r0000101001001001001_01101_0001_WFI01_uncal.asdf \
             --steps.jump.override_gain=roman_wfi_gain_0033.asdf
 
 the equivalent `from_cmdline` call would be::
@@ -158,20 +158,20 @@ Finally, the remaining optional keyword arguments are the parameters that the
 particular step accepts. The method returns the result of the step. A basic
 example is::
 
-    from jwst.jump import JumpStep
-    output = JumpStep.call('jw00017001001_01101_00001_nrca1_uncal.fits')
+    from romancal.jump import JumpStep
+    output = JumpStep.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
 
 makes a new instance of `JumpStep` and executes using the specified exposure
 file. `JumpStep` has a parameter ``rejection_threshold``. To use a different
 value than the default, the statement would be::
 
-    output = JumpStep.call('jw00017001001_01101_00001_nrca1_uncal.fits',
+    output = JumpStep.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf',
                            rejection_threshold=42.0)
 
 If one wishes to use a :ref:`parameter file<parameter_files>`, specify the path
 to it using the ``config_file`` argument::
 
-    output = JumpStep.call('jw00017001001_01101_00001_nrca1_uncal.fits',
+    output = JumpStep.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf',
                            config_file='my_jumpstep_config.asdf')
 
 run()
@@ -181,13 +181,13 @@ The instance method `Step.run()` is the lowest-level method to executing a step
 or pipeline. Initialization and parameter settings are left up to the user. An
 example is::
 
-    from jwst.flatfield import FlatFieldStep
+    from romancal.flatfield import FlatFieldStep
 
     mystep = FlatFieldStep()
-    mystep.override_sflat = 'sflat.fits'
+    mystep.override_sflat = 'sflat.asdf'
     output = mystep.run(input)
 
-`input` in this case can be a fits file containing the appropriate data, or the output
+`input` in this case can be a asdf file containing the appropriate data, or the output
 of a previously run step/pipeline, which is an instance of a particular :ref:`datamodel<datamodels>`.
 
 Unlike the ``call`` class method, there is no parameter initialization that
@@ -196,16 +196,16 @@ reference file. Parameters can be set individually on the instance, as is shown
 above. Parameters can also be specified as keyword arguments when instantiating
 the step. The previous example could be re-written as::
 
-    from jwst.flatfield import FlatFieldStep
+    from romancal.flatfield import FlatFieldStep
 
-    mystep = FlatFieldStep(override_sflat='sflat.fits')
+    mystep = FlatFieldStep(override_sflat='sflat.asdf')
     output = mystep.run(input)
 
 One can implement parameter reference file retrieval and use of a local
 parameter file as follows::
 
     from stpipe import config_parser
-    from jwst.flatfield import FlatFieldStep
+    from romancal.flatfield import FlatFieldStep
 
     config = FlatFieldStep.get_config_from_reference(input)
     local_config = config_parser.load_config_file('my_flatfield_config.asdf')

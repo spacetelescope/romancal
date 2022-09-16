@@ -82,7 +82,7 @@ Exit Status
 
 
 Running From the Python Prompt
-=============================
+==============================
 
 You can execute a pipeline or a step from within python by using the
 ``call`` method of the class.
