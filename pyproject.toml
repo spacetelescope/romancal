@@ -36,7 +36,7 @@ docs = [
     'sphinx-automodapi',
     'sphinx-rtd-theme',
     'stsci-rtd-theme',
-    'toml',
+    'tomli; python_version <"3.11"',
 ]
 lint = [
     'pyproject-flake8',
