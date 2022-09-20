@@ -23,7 +23,7 @@ parameters in the pipeline or parameter file and then supply the file using the
  result = ExposurePipeline.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf', config_file='exp_pars.asdf'))
 
  # Calling a step
- result = LinearityStep.call('r0000101001001001001_01101_0001_WFI01_dqinit.asdf', config_file = 'jump_pars.asdf')
+ result = LinearityStep.call('r0000101001001001001_01101_0001_WFI01_dqinit.asdf', config_file = 'linearity_pars.asdf')
 
 
 When running a pipeline, parameter values can also be supplied in the call to ``call`` itself by using a nested dictionary of step and

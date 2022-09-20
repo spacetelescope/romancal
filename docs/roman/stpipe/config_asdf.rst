@@ -9,16 +9,12 @@ Format", a general purpose, non-proprietary, and system-agnostic format for the
 dissemination of data. Built on `YAML <https://yaml.org/>`_, the most basic file
 is text-based requiring minimal formatting.
 
-ASDF allows the configurations to be stored and retrieved
-from CRDS, selecting the best parameter file for a given set of criteria, such
-as instrument and observation mode.
-
 .. _asdf_minimal_file:
 
 To create a parameter file, the most direct way is to choose the Pipeline
 class, Step class, or already existing .asdf or .cfg file, and run that step
 using the ``--save-parameters`` option. For example, to get the parameters for
-the ``Ex[osurePipeline`` pipeline, do the following: ::
+the ``ExposurePipeline`` pipeline, do the following: ::
 
    $ strun --save-parameters=exp_pars.asdf roman_elp r0000101001001001001_01101_0001_WFI01_uncal.asdf
 
@@ -178,7 +174,7 @@ format, parameters for sub-steps can also be specified. All sub-step parameters
 appear in a key called `steps`. Sub-step parameters are specified by using the
 sub-step name as the key, then underneath and indented, the parameters to change
 for that sub-step. For example, to define the ``rejection_threshold`` of the
-``JumpDetection`` step in a ``ExposurePipeline`` parameter file, the parameter
+``JumpStep`` step in a ``ExposurePipeline`` parameter file, the parameter
 block would look as follows:
 
 .. code-block::

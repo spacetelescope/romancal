@@ -14,6 +14,63 @@ Steps can be configured by:
 
     - Instantiating the Step directly from Python
 
+    - Reading the input from a parameter file
+
+.. _running_a_step_from_a_configuration_file:
+
+Running a Step from a parameter file
+====================================
+
+A parameter file contains one or more of a ``Step``'s parameters. Any parameter
+not specified in the file will take its value from the defaults coded
+directly into the ``Step``. Note that any parameter specified on the command
+line overrides all other values.
+
+The format of parameter files is the :ref:`config_asdf_files` format.
+Refer to the :ref:`minimal example<asdf_minimal_file>` for a complete
+description of the contents. The rest of this document will focus on the step
+parameters themselves.
+
+Every parameter file must contain the key ``class``, followed by
+the optional ``name`` followed by any parameters that are specific to the step
+being run.
+
+``class`` specifies the Python class to run.  It should be a
+fully-qualified Python path to the class.  Step classes can ship with
+``stpipe`` itself, they may be part of other Python packages, or they
+exist in freestanding modules alongside the configuration file.
+
+``name`` defines the name of the step.  This is distinct from the
+class of the step, since the same class of Step may be configured in
+different ways, and it is useful to be able to have a way of
+distinguishing between them.  For example, when Steps are combined
+into :ref:`stpipe-user-pipelines`, a Pipeline may use the same Step class
+multiple times, each with different configuration parameters.
+
+The parameters specific to the Step all reside under the key ``parameters``. The
+set of accepted parameters is defined in the Step’s spec member.  The easiest
+way to get started on a parameter file is to call ``Step.export_config`` and
+then edit the file that is created.  This will generate an ASDF config file
+that includes every available parameter, which can then be trimmed to the
+parameters that require customization.
+
+Here is an example parameter file (``do_cleanup.asdf``) that runs the (imaginary)
+step ``stpipe.cleanup`` to clean up an image.
+
+.. code-block::
+
+    #ASDF 1.0.0
+    #ASDF_STANDARD 1.3.0
+    %YAML 1.1
+    %TAG ! tag:stsci.edu:asdf/
+    --- !core/asdf-1.1.0
+    class: stpipe.cleanup
+    name: MyCleanup
+    parameters:
+      threshold: 42.0
+      scale: 0.01
+    ...
+
 .. _strun:
 
 Running a Step from the commandline
@@ -68,21 +125,18 @@ assignment is as follows:
 
     1. Value specified on the command-line: ``strun step.asdf --par=value_that_will_be_used``
     2. Value found in the user-specified parameter file
-    3. CRDS-retrieved parameter reference
-    4. ``Step``-coded default, determined by the parameter definition ``Step.spec``
+    3. ``Step``-coded default, determined by the parameter definition ``Step.spec``
 
 For pipelines, if a pipeline parameter file specifies a value for a step in the
-pipeline, that takes precedence over any step-specific value found, either from
-a step-specific parameter file or CRDS-retrieved step-specific parameter file.
+pipeline, that takes precedence over any step-specific value found from
+a step-specific parameter file.
 The full order of precedence for a pipeline and its sub steps is as follows:
 
     1. Value specified on the command-line: ``strun pipeline.asdf --steps.step.par=value_that_will_be_used``
     2. Value found in the user-specified pipeline parameter file: ``strun pipeline.asdf``
     3. Value found in the parameter file specified in a pipeline parameter file
-    4. CRDS-retrieved parameter reference for the pipeline
-    5. CRDS-retrieved parameter reference for each sub-step
-    6. ``Pipeline``-coded default for itself and all sub-steps
-    7. ``Step``-coded default for each sub-step
+    4. ``Pipeline``-coded default for itself and all sub-steps
+    5. ``Step``-coded default for each sub-step
 
 
 Debugging
@@ -95,19 +149,6 @@ required, see :ref:`user-logging`).
 To start the Python debugger if the step itself raises an exception,
 pass the `--debug` option to the commandline.
 
-
-CRDS Retrieval of Step Parameters
-`````````````````````````````````
-
-In general, CRDS uses the input to a ``Step`` to determine which reference files
-to use. Nearly all Roman-related steps take only a single input file. However,
-the input may be an association file. Since step parameters are
-configured only once per execution of a step or pipeline, only the first
-qualifying member, usually of type ``science`` is used.
-
-Retrieval of ``Step`` parameters from CRDS can be completely disabled by
-using the ``--disable-crds-steppars`` command-line switch, or setting the
-environment variable ``STPIPE_DISABLE_CRDS_STEPPARS`` to ``true``.
 
 .. _run_step_from_python:
 
@@ -200,19 +241,6 @@ the step. The previous example could be re-written as::
 
     mystep = FlatFieldStep(override_sflat='sflat.asdf')
     output = mystep.run(input)
-
-One can implement parameter reference file retrieval and use of a local
-parameter file as follows::
-
-    from stpipe import config_parser
-    from romancal.flatfield import FlatFieldStep
-
-    config = FlatFieldStep.get_config_from_reference(input)
-    local_config = config_parser.load_config_file('my_flatfield_config.asdf')
-    config_parser.merge_config(config, local_config)
-
-    flat_field_step = FlatFieldStep.from_config_section(config)
-    output = flat_field_step.run(input)
 
 Using the ``.run()`` method is the same as calling the instance directly.
 They are equivalent::
