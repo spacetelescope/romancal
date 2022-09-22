@@ -48,11 +48,6 @@ configuration file using the keyword ``logcfg``:
                                  config_file="exp_pars.asdf",
                                  logcfg="my-logging-config.cfg")
 
-Note that naming the logging configuration file "stpipe-log.cfg" will configure
-logging without assignment of the ``logcfg`` keyword, as ``stpipe`` searches for
-this filename in the local directory during execution. If the configuration
-should be used only when specified, ensure your file is named something other
-than "stpipe-log.cfg"!
 
 Where are the results?
 ----------------------

@@ -77,7 +77,9 @@ Running a Step from the commandline
 -----------------------------------
 The ``strun`` command can be used to run Steps from the commandline.
 
-The first argument should be:
+The first argument may be either:
+
+    - The a parameter file
 
    - A Python class
 

@@ -30,7 +30,7 @@ File Contents
 -------------
 
 To describe the contents of an ASDF file, the configuration for the step
-``JumpStep`` will be used as the example:
+``roman_elp`` will be used as the example:
 
 .. code-block::
 
@@ -46,25 +46,20 @@ To describe the contents of an ASDF file, the configuration for the step
       - !core/extension_metadata-1.0.0
         extension_class: asdf.extension.BuiltinExtension
         software: !core/software-1.0.0 {name: asdf, version: 2.13.0}
-    class: romancal.jump.jump_step.JumpStep
+    class: romancal.pipeline.exposure_pipeline.ExposurePipeline
     meta:
       author: <SPECIFY>
-      date: '2022-09-16T12:04:46'
-      description: Parameters for calibration step romancal.jump.jump_step.JumpStep
+      date: '2022-09-15T13:59:54'
+      description: Parameters for calibration step romancal.pipeline.exposure_pipeline.ExposurePipeline
       instrument: {name: <SPECIFY>}
       origin: <SPECIFY>
       pedigree: <SPECIFY>
       reftype: <SPECIFY>
       telescope: <SPECIFY>
       useafter: <SPECIFY>
-    name: JumpStep
+    name: ExposurePipeline
     parameters:
-      flag_4_neighbors: true
-      four_group_rejection_threshold: 190.0
       input_dir: ''
-      max_jump_to_flag_neighbors: 1000.0
-      maximum_cores: none
-      min_jump_to_flag_neighbors: 10.0
       output_dir: null
       output_ext: .asdf
       output_file: null
@@ -72,12 +67,34 @@ To describe the contents of an ASDF file, the configuration for the step
       output_use_model: false
       post_hooks: []
       pre_hooks: []
-      rejection_threshold: 180.0
+      save_calibrated_ramp: false
       save_results: true
       search_output_file: true
       skip: false
       suffix: null
-      three_group_rejection_threshold: 185.0
+    steps:
+    - class: romancal.jump.jump_step.JumpStep
+      name: jump
+      parameters:
+        flag_4_neighbors: true
+        four_group_rejection_threshold: 190.0
+        input_dir: ''
+        max_jump_to_flag_neighbors: 1000.0
+        maximum_cores: none
+        min_jump_to_flag_neighbors: 10.0
+        output_dir: null
+        output_ext: .asdf
+        output_file: null
+        output_use_index: true
+        output_use_model: false
+        post_hooks: []
+        pre_hooks: []
+        rejection_threshold: 180.0
+        save_results: false
+        search_output_file: true
+        skip: false
+        suffix: null
+        three_group_rejection_threshold: 185.0
     ...
 
 Required Components
@@ -207,12 +224,11 @@ the parameter file would look like:
 
 .. note::
 
-   In the previous examples, one may have noted the line ``parameters: {}``. In
-   neither example, and is a common situation when defining pipeline
-   configurations, there is no need to set any of the parameters for the
-   pipeline itself. However, the keyword ``parameters`` is required. As such,
-   the value for ``parameters`` is defined as an empty dictionary, ``{}``.
-
+    In the previous examples, one may have noted the line parameters: {}. Often
+    when configuring a pipeline, one needs not set any parameters for the pipeline
+    itself. However, the keyword ``parameters`` is required. As such,
+    the value for ``parameters`` is defined as an empty dictionary, ``{}``.
+    
 Python API
 ----------
 

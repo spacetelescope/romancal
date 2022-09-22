@@ -178,7 +178,7 @@ commandline use dot notation to specify the parameter name.  For
 example, to override the ``rejection_threshold`` value on the ``jump``
 step in the example above, one can do::
 
-    > strun romancal.pipeline.ExposurePipeline --steps.jump.rejection_threshold'=180.
+    > strun romancal.pipeline.ExposurePipeline --steps.jump.rejection_threshold=180.
 
 From Python
 -----------

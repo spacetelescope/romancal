@@ -108,7 +108,7 @@ to describe its parameters.
     from roman_datamodels.datamodels import ImageModel
     from my_awesome_astronomy_library import combine
 
-    class ExampleStep(Step):
+    class ExampleStep(RomanStep):
         """
         Every step should include a docstring.  This docstring will be
         displayed by the `strun --help`.
