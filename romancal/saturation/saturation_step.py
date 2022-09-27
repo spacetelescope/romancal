@@ -1,10 +1,14 @@
 #! /usr/bin/env python
 
+import logging
 import roman_datamodels as rdm
 from roman_datamodels.datamodels import SaturationRefModel
 from romancal.stpipe import RomanStep
 from romancal.saturation import saturation
+from romancal.lib.basic_utils import is_fully_saturated
 
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
 __all__ = ["SaturationStep"]
 
@@ -48,5 +52,13 @@ class SaturationStep(RomanStep):
                     self.suffix = 'saturation'
                 except AttributeError:
                     self['suffix'] = 'saturation'
+
+        # Test for fully saturated data
+        if is_fully_saturated(sat):
+            log.info('All pixels are saturated. Returning a zeroed-out image.')
+            # Set all subsequent steps to skipped but ramp fit to create l2 image
+            for step_str in ['linearity', 'dark', 'jump', 'assign_wcs',
+                             'flat_field', 'photom']:
+                sat.meta.cal_step[step_str] = 'SKIPPED'
 
         return sat

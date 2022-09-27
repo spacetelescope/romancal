@@ -3,13 +3,15 @@
 import logging
 import numpy as np
 
-from romancal.stpipe import RomanStep
-from romancal.lib import dqflags
-from roman_datamodels import datamodels as rdd
+from stcal.ramp_fitting import ramp_fit
+
+from roman_datamodels import datamodels as rdm
 from roman_datamodels import stnode as rds
 from roman_datamodels.testing import utils as testutil
+from romancal.stpipe import RomanStep
+from romancal.lib import dqflags
+from romancal.lib.basic_utils import is_fully_saturated
 
-from stcal.ramp_fitting import ramp_fit
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -54,7 +56,7 @@ def create_optional_results_model(input_model, opt_info):
             }
 
     out_node = rds.RampFitOutput(inst)
-    opt_model = rdd.RampFitOutputModel(out_node)
+    opt_model = rdm.RampFitOutputModel(out_node)
     opt_model.meta.filename = input_model.meta.filename
 
     return opt_model
@@ -104,7 +106,7 @@ def create_image_model(input_model, image_info):
             'cal_logs': rds.CalLogs(),
             }
     out_node = rds.WfiImage(inst)
-    im = rdd.ImageModel(out_node)
+    im = rdm.ImageModel(out_node)
 
     # trim off border reference pixels from science data, dq, err
     # and var_poisson/var_rnoise
@@ -137,7 +139,7 @@ class RampFitStep(RomanStep):
     reference_file_types = ['readnoise', 'gain']
 
     def process(self, input):
-        with rdd.open(input, mode='rw') as input_model:
+        with rdm.open(input, mode='rw') as input_model:
             max_cores = self.maximum_cores
             readnoise_filename = self.get_reference_file(input_model, 'readnoise')
             gain_filename = self.get_reference_file(input_model, 'gain')
@@ -146,21 +148,27 @@ class RampFitStep(RomanStep):
             input_model.groupdq = input_model.groupdq[np.newaxis, :]
             input_model.err = input_model.err[np.newaxis, :]
 
-            log.info('Using READNOISE reference file: %s', readnoise_filename)
-            readnoise_model = rdd.open(readnoise_filename, mode='rw')
-            log.info('Using GAIN reference file: %s', gain_filename)
-            gain_model = rdd.open(gain_filename, mode='rw')
+            # check to make sure the data is not fully saturated
+            if not is_fully_saturated(input_model):
+                log.info('Using READNOISE reference file: %s', readnoise_filename)
+                readnoise_model = rdm.open(readnoise_filename, mode='rw')
+                log.info('Using GAIN reference file: %s', gain_filename)
+                gain_model = rdm.open(gain_filename, mode='rw')
 
-            log.info('Using algorithm = %s' % self.algorithm)
-            log.info('Using weighting = %s' % self.weighting)
+                log.info('Using algorithm = %s', self.algorithm)
+                log.info('Using weighting = %s', self.weighting)
 
-            buffsize = ramp_fit.BUFSIZE
-            image_info, integ_info, opt_info, gls_opt_model = ramp_fit.ramp_fit(
-                input_model, buffsize, self.save_opt,
-                readnoise_model.data, gain_model.data, self.algorithm,
-                self.weighting, max_cores, dqflags.pixel)
-            readnoise_model.close()
-            gain_model.close()
+                buffsize = ramp_fit.BUFSIZE
+                image_info, integ_info, opt_info, gls_opt_model = ramp_fit.ramp_fit(
+                    input_model, buffsize, self.save_opt,
+                    readnoise_model.data, gain_model.data, self.algorithm,
+                    self.weighting, max_cores, dqflags.pixel)
+                readnoise_model.close()
+                gain_model.close()
+            else:
+                image_info = None
+                opt_info = None
+
 
 
         # Save the OLS optional fit product, if it exists
@@ -183,6 +191,19 @@ class RampFitStep(RomanStep):
         out_model = create_image_model(input_model, image_info)
         out_model.meta.cal_step.ramp_fit = 'COMPLETE'
 
+        # Test for fully saturated data
+        #pdb.set_trace()
+        if "groupdq" in out_model.keys():
+            if is_fully_saturated(out_model):
+                # Set all subsequent steps to skipped
+                for step_str in ['assign_wcs', 'flat_field', 'photom']:
+                    out_model.meta.cal_step[step_str] = 'SKIPPED'
+
+                # Set suffix for proper output naming
+                self.suffix = 'cal'
+
+                # Return fully saturated image file (stopping pipeline)
+                return out_model
         if self.save_results:
             try:
                 self.suffix = 'rampfit'
