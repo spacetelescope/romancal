@@ -192,18 +192,16 @@ class RampFitStep(RomanStep):
         out_model.meta.cal_step.ramp_fit = 'COMPLETE'
 
         # Test for fully saturated data
-        #pdb.set_trace()
-        if "groupdq" in out_model.keys():
-            if is_fully_saturated(out_model):
-                # Set all subsequent steps to skipped
-                for step_str in ['assign_wcs', 'flat_field', 'photom']:
-                    out_model.meta.cal_step[step_str] = 'SKIPPED'
+        if is_fully_saturated(out_model):
+            # Set all subsequent steps to skipped
+            for step_str in ['assign_wcs', 'flat_field', 'ramp_fit', 'photom']:
+                out_model.meta.cal_step[step_str] = 'SKIPPED'
 
-                # Set suffix for proper output naming
-                self.suffix = 'cal'
+            # Set suffix for proper output naming
+            self.suffix = 'cal'
 
-                # Return fully saturated image file (stopping pipeline)
-                return out_model
+            # Return fully saturated image file (stopping pipeline)
+            return out_model
         if self.save_results:
             try:
                 self.suffix = 'rampfit'

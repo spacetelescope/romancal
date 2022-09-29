@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 from os.path import basename
 import logging
-import pdb
 
 import numpy as np
-from roman_datamodels import datamodels as rdd
+from roman_datamodels import datamodels as rdm
 from ..stpipe import RomanPipeline
 from romancal.lib.basic_utils import is_fully_saturated
 from romancal.lib import dqflags
@@ -67,28 +66,36 @@ class ExposurePipeline(RomanPipeline):
             input_filename = None
 
         # open the input file
-        input = rdd.open(input)
+        input = rdm.open(input)
 
         log.debug('Exposure Processing a WFI exposure')
 
         self.dq_init.suffix = 'dq_init'
+        self.suffix = 'dq_init'
+
         result = self.dq_init(input)
         if input_filename:
             result.meta.filename = input_filename
-        result = self.saturation(result)
-
-
-        result = self.linearity(result)
-        result = self.dark_current(result)
-        result = self.jump(result)
-        result = self.rampfit(result)
-        result = self.assign_wcs(result)
-        if result.meta.exposure.type == 'WFI_IMAGE':
-            result = self.flatfield(result)
-        else:
-            log.info('Flat Field step is being SKIPPED')
-            result.meta.cal_step.flat_field = 'SKIPPED'
-        result = self.photom(result)
+        if not result.meta.cal_step.saturation == 'SKIPPED':
+            result = self.saturation(result)
+        if not result.meta.cal_step.linearity == 'SKIPPED':
+            result = self.linearity(result)
+        if not result.meta.cal_step.dark == 'SKIPPED':
+            result = self.dark_current(result)
+        if not result.meta.cal_step.jump == 'SKIPPED':
+            result = self.jump(result)
+        if not result.meta.cal_step.ramp_fit == 'SKIPPED':
+            result = self.rampfit(result)
+        if not result.meta.cal_step.assign_wcs == 'SKIPPED':
+            result = self.assign_wcs(result)
+        if not result.meta.cal_step.flat_field == 'SKIPPED':
+            if result.meta.exposure.type == 'WFI_IMAGE':
+                result = self.flatfield(result)
+            else:
+                log.info('Flat Field step is being SKIPPED')
+                result.meta.cal_step.flat_field = 'SKIPPED'
+        if not result.meta.cal_step.photom == 'SKIPPED':
+            result = self.photom(result)
 
         # setup output_file for saving
         self.setup_output(result)
@@ -98,7 +105,7 @@ class ExposurePipeline(RomanPipeline):
 
     def setup_output(self, input):
         """ Determine the proper file name suffix to use later """
-        if input.meta.cal_step.ramp_fit == 'COMPLETE':
+        if input.meta.cal_step.ramp_fit in ['COMPLETE','SKIPPED']:
             self.suffix = 'cal'
             input.meta.filename = input.meta.filename.replace(
                 '_uncal', '')

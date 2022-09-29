@@ -46,10 +46,15 @@ def is_fully_saturated(model):
     Check to see if all data pixels are flagged as saturated.
     """
 
-    if np.all(np.bitwise_and(model.groupdq, SATURATEDGRP) == SATURATEDGRP):
-        return True
-    elif np.all(np.bitwise_and(model.pixeldq, SATURATEDPIX) == SATURATEDPIX):
-        return True
+    if "groupdq" in model.keys():
+        if np.all(np.bitwise_and(model.groupdq, SATURATEDGRP) == SATURATEDGRP):
+            return True
+    if "pixeldq" in model.keys():
+        if np.all(np.bitwise_and(model.pixeldq, SATURATEDPIX) == SATURATEDPIX):
+            return True
+    if "dq" in model.keys():
+        if np.all(np.bitwise_and(model.dq, SATURATEDPIX) == SATURATEDPIX):
+            return True
 
     return False
 
