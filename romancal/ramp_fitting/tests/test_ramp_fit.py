@@ -208,4 +208,4 @@ def test_saturated_ramp_fit(max_cores):
     assert type(out_model) == ImageModel
 
     # Test that the ramp fit step was labeled complete
-    assert out_model.meta.cal_step.ramp_fit == 'COMPLETE'
+    assert out_model.meta.cal_step.ramp_fit == 'SKIPPED'
