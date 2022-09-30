@@ -1,6 +1,10 @@
 0.8.2 (unreleased)
 ==================
 
+general
+-------
+
+- Update pipeline steps to define logic and code needed for fully sturated data [#]
 -
 
 0.8.1 (2022-08-23)
