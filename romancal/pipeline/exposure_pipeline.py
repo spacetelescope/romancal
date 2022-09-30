@@ -2,11 +2,8 @@
 from os.path import basename
 import logging
 
-import numpy as np
 from roman_datamodels import datamodels as rdm
 from ..stpipe import RomanPipeline
-from romancal.lib.basic_utils import is_fully_saturated
-from romancal.lib import dqflags
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
