@@ -150,3 +150,18 @@ report = { exclude_lines = [
 
 [tool.bandit]
 skips = ["B101", "B307", "B404", "B603"]
+
+[tool.ruff]
+line-length = 130
+exclude = [
+    'jdocs',
+    '.tox',
+    '.eggs',
+]
+ignore = [
+    'A001', # Variable is shadowing a python builtin
+    'A002', # Argument is shadowing a python builtin
+    'A003', # class attribute is shadowing a python builtin
+    'E741', # ambiguous variable name
+    'SPR001', # Use `super()` instead of `super(__class__, self)`
+]
