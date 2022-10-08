@@ -110,14 +110,17 @@ def apply_flat_field(science, flat):
     flat_data[np.where(flat_bad)] = 1.0
     # Now let's apply the correction to science data and error arrays.  Rely
     # on array broadcasting to handle the cubes
-    science.data = (science.data.value / flat_data) * u.meter
+    science.data = u.Quantity((science.data.value / flat_data), u.meter, dtype=science.data.dtype)
     #science.data /= flat_data
 
     # Update the variances using BASELINE algorithm.  For guider data, it has
     # not gone through ramp fitting so there is no Poisson noise or readnoise
     flat_data_squared = flat_data**2
-    science.var_poisson = (science.var_poisson.value / flat_data_squared) * u.meter
-    science.var_rnoise = (science.var_rnoise / flat_data_squared) * u.meter
+    science.var_poisson = u.Quantity((science.var_poisson.value / flat_data_squared), u.meter,
+                                     dtype = science.var_poisson.dtype)
+    science.var_rnoise = u.Quantity((science.var_rnoise / flat_data_squared), u.meter,
+                                    dtype = science.var_rnoise.dtype)
+    
 #    science.var_poisson /= flat_data_squared
 #    science.var_rnoise /= flat_data_squared
     try:
@@ -126,8 +129,8 @@ def apply_flat_field(science, flat):
         science['var_flat'] = np.zeros(shape=science.data.shape,
                                        dtype=np.float32)
         science.var_flat = science.data.value**2 / flat_data_squared * flat_err**2
-    science.err = np.sqrt(science.var_poisson.value +
-                          science.var_rnoise.value + science.var_flat) * u.meter
+    err_sqrt = np.sqrt(science.var_poisson.value + science.var_rnoise.value + science.var_flat)
+    science.err = u.Quantity(err_sqrt, u.meter, dtype=err_sqrt.dtype)
 
     # Combine the science and flat DQ arrays
     science.dq = np.bitwise_or(science.dq, flat_dq)

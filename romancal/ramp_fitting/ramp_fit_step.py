@@ -81,10 +81,10 @@ def create_image_model(input_model, image_info):
     """
     data, dq, var_poisson, var_rnoise, err = image_info
 
-    data = data * u.meter
-    var_poisson = var_poisson * u.meter
-    var_rnoise = var_rnoise * u.meter
-    err = err *	u.meter
+    data = u.Quantity(data, u.meter, dtype=data.dtype)
+    var_poisson = u.Quantity(var_poisson, u.meter, dtype=var_poisson.dtype)
+    var_rnoise = u.Quantity(var_rnoise, u.meter, dtype=var_rnoise.dtype)
+    err = u.Quantity(err, u.meter, dtype=err.dtype)
 
     # Create output datamodel
     # ... and add all keys from input

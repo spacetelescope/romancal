@@ -61,7 +61,7 @@ class LinearityStep(RomanStep):
                                                      gdq, pdq, lin_coeffs,
                                                      lin_dq, dqflags.pixel)
 
-            output_model.data = new_data[0, :, :, :] * u.meter
+            output_model.data = u.Quantity(new_data[0, :, :, :], u.meter, dtype=new_data.dtype)
             output_model.pixeldq = new_pdq
 
             # Close the reference file and update the step status

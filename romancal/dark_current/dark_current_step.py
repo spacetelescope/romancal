@@ -134,10 +134,10 @@ def dark_output_data_as_ramp_model(out_data, input_model):
     # Removing integration dimension from variables (added for stcal
     # compatibility)
     # Roman 3D
-    out_model.data = out_data.data[0] * u.meter
+    out_model.data = u.Quantity(out_data.data[0], u.meter, dtype=out_data.data.dtype)
     out_model.groupdq = out_data.groupdq[0]
     # Roman 2D
     out_model.pixeldq = out_data.pixeldq
-    out_model.err = out_data.err[0] * u.meter
+    out_model.err = u.Quantity(out_data.err[0], u.meter, dtype=out_data.err.dtype)
 
     return out_model
