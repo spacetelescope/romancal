@@ -51,7 +51,7 @@ general
 - New Roman's RTD page layout [#596]
 
 - pin ``numpy`` to ``>=1.20`` [#592]
-- replace `flake8` with `ruff` [#570]
+- replace ``flake8`` with ``ruff`` [#570]
 
 
 jump
