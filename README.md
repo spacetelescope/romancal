@@ -5,6 +5,7 @@
 [![CI](https://github.com/spacetelescope/romancal/actions/workflows/roman_ci.yml/badge.svg)](https://github.com/spacetelescope/romancal/actions/workflows/roman_ci.yml)
 [![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](http://www.stsci.edu)
 [![Powered by Astropy Badge](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ![STScI Logo](docs/_static/stsci_logo.png)
 

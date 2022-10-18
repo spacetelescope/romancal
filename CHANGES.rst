@@ -5,7 +5,7 @@ general
 -------
 
 - DQ step flags science data affected by guide window read [#599]
-
+- format code base with ``black`` [#558]
 
 0.9.0 (2022-11-14)
 ==================
