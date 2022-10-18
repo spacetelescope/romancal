@@ -12,6 +12,5 @@ def wcs_bbox_from_shape(shape):
     bbox : tuple
         Bounding box in x, y order.
     """
-    bbox = ((-0.5, shape[-1] - 0.5),
-            (-0.5, shape[-2] - 0.5))
+    bbox = ((-0.5, shape[-1] - 0.5), (-0.5, shape[-2] - 0.5))
     return bbox

@@ -23,22 +23,24 @@ def photom_io(input_model, photom_metadata):
 
     """
     # Get the scalar conversion factor.
-    conversion = photom_metadata['photmjsr']  # unit is MJy / sr
+    conversion = photom_metadata["photmjsr"]  # unit is MJy / sr
 
     # Store the conversion factor in the meta data
-    log.info(f'photmjsr value: {conversion:.6g}')
+    log.info(f"photmjsr value: {conversion:.6g}")
     input_model.meta.photometry.conversion_megajanskys = conversion
     input_model.meta.photometry.conversion_microjanskys = conversion.to(
-        u.microjansky / u.arcsecond ** 2)
+        u.microjansky / u.arcsecond**2
+    )
 
     # Get the scalar conversion uncertainty factor
-    uncertainty_conv = photom_metadata['uncertainty']
+    uncertainty_conv = photom_metadata["uncertainty"]
 
     # Store the uncertainty conversion factor in the meta data
-    log.info(f'uncertainty value: {uncertainty_conv:.6g}')
+    log.info(f"uncertainty value: {uncertainty_conv:.6g}")
     input_model.meta.photometry.conversion_megajanskys_uncertainty = uncertainty_conv
-    input_model.meta.photometry.conversion_microjanskys_uncertainty = uncertainty_conv.to(
-        u.microjansky / u.arcsecond ** 2)
+    input_model.meta.photometry.conversion_microjanskys_uncertainty = (
+        uncertainty_conv.to(u.microjansky / u.arcsecond**2)
+    )
 
     # Return updated input model
     return input_model
@@ -63,7 +65,7 @@ def save_area_info(input_model, photom_parameters):
     area_a2 = photom_parameters["pixelareasr"].to(u.arcsecond**2)
 
     # Copy the pixel area values to the input model
-    log.debug(f'pixelarea_steradians = {area_ster}, pixelarea_arcsecsq = {area_a2}')
+    log.debug(f"pixelarea_steradians = {area_ster}, pixelarea_arcsecsq = {area_a2}")
     input_model.meta.photometry.pixelarea_arcsecsq = area_a2
     input_model.meta.photometry.pixelarea_steradians = area_ster
 
@@ -94,10 +96,14 @@ def apply_photom(input_model, photom):
     """
     # Obtain photom parameters for the selected optical element
     try:
-        photom_parameters = photom.phot_table[input_model.meta.instrument.optical_element.upper()]
+        photom_parameters = photom.phot_table[
+            input_model.meta.instrument.optical_element.upper()
+        ]
     except KeyError:
-        warnings.warn(f'No matching photom parameters for '
-                      f'{input_model.meta.instrument.optical_element}')
+        warnings.warn(
+            "No matching photom parameters for "
+            f"{input_model.meta.instrument.optical_element}"
+        )
         return input_model
 
     # Copy pixel area information to output datamodel

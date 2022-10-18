@@ -11,7 +11,9 @@ import romancal.step
 def test_get_steps():
     tuples = get_steps()
 
-    assert {t[0].split(".")[-1] for t in tuples} == set(romancal.step.__all__ + romancal.pipeline.__all__)
+    assert {t[0].split(".")[-1] for t in tuples} == set(
+        romancal.step.__all__ + romancal.pipeline.__all__
+    )
 
     for class_name, class_alias, is_pipeline in tuples:
         step_class = import_class(class_name)

@@ -5,7 +5,13 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 # Guide star mode exposure types
-GUIDER_LIST = ['WFI_WIM_ACQ','WFI_WIM_TRACK','WFI_WSM_ACQ1','WFI_WSM_ACQ2','WFI_WSM_TRACK']
+GUIDER_LIST = [
+    "WFI_WIM_ACQ",
+    "WFI_WIM_TRACK",
+    "WFI_WSM_ACQ1",
+    "WFI_WSM_ACQ2",
+    "WFI_WSM_TRACK",
+]
 
 
 def do_dqinit(input_model, mask=None):
@@ -32,7 +38,7 @@ def do_dqinit(input_model, mask=None):
 
     # Determine if mask is shapewise compatable with the input
     skip_step = False
-    if (input_model.meta.exposure.type in GUIDER_LIST):
+    if input_model.meta.exposure.type in GUIDER_LIST:
         # Check to see if the shape of the mask data array
         # is not equal to the shape of the science data
         if input_model.dq.shape != mask.dq.shape:
@@ -43,18 +49,17 @@ def do_dqinit(input_model, mask=None):
         if input_model.pixeldq.shape != mask.dq.shape:
             skip_step = True
 
-
     # Apply or skip dq correction
     if skip_step:
-        log.warning('Mask data array is not the same '
-                    'shape as the science data')
-        log.warning('Step will be skipped')
-        output_model.meta.cal_step.dq_init = 'SKIPPED'
+        log.warning("Mask data array is not the same shape as the science data")
+        log.warning("Step will be skipped")
+        output_model.meta.cal_step.dq_init = "SKIPPED"
     else:
         output_model = apply_dqinit(input_model, mask)
-        output_model.meta.cal_step.dq_init = 'COMPLETE'
+        output_model.meta.cal_step.dq_init = "COMPLETE"
 
     return output_model
+
 
 def apply_dqinit(science, mask):
     """Apply data quality mask to the dq or pixeldq arrays.
@@ -74,7 +79,7 @@ def apply_dqinit(science, mask):
     """
 
     # Set model-specific data quality in output
-    if (science.meta.exposure.type in GUIDER_LIST):
+    if science.meta.exposure.type in GUIDER_LIST:
         science.dq = np.bitwise_or(science.dq, mask.dq)
     else:
         science.pixeldq = np.bitwise_or(science.pixeldq, mask.dq)

@@ -24,32 +24,31 @@ __all__ = ["AssignWcsStep", "load_wcs"]
 
 
 class AssignWcsStep(RomanStep):
-    """ Assign a gWCS object to a science image.
-    """
+    """Assign a gWCS object to a science image."""
 
-    reference_file_types = ['distortion']
+    reference_file_types = ["distortion"]
 
     def process(self, input):
         reference_file_names = {}
         with rdm.open(input) as input_model:
             for reftype in self.reference_file_types:
-                log.info(f'reftype, {reftype}')
+                log.info(f"reftype, {reftype}")
                 reffile = self.get_reference_file(input_model, reftype)
                 reference_file_names[reftype] = reffile if reffile else ""
-            log.debug(f'reference files used in assign_wcs: {reference_file_names}')
+            log.debug(f"reference files used in assign_wcs: {reference_file_names}")
             result = load_wcs(input_model, reference_file_names)
 
         if self.save_results:
             try:
-                self.suffix = 'assignwcs'
+                self.suffix = "assignwcs"
             except AttributeError:
-                self['suffix'] = 'assignwcs'
+                self["suffix"] = "assignwcs"
 
         return result
 
 
 def load_wcs(input_model, reference_files=None):
-    """ Create a gWCS object and store it in ``Model.meta``.
+    """Create a gWCS object and store it in ``Model.meta``.
 
     Parameters
     ----------
@@ -77,27 +76,30 @@ def load_wcs(input_model, reference_files=None):
         reference_files = {}
 
     # Frames
-    detector = cf.Frame2D(name='detector', axes_order=(0, 1), unit=(u.pix, u.pix))
-    v2v3 = cf.Frame2D(name='v2v3', axes_order=(0, 1), axes_names=('v2', 'v3'), unit=(u.arcsec, u.arcsec))
-    world = cf.CelestialFrame(reference_frame=coord.ICRS(), name='world')
+    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    v2v3 = cf.Frame2D(
+        name="v2v3",
+        axes_order=(0, 1),
+        axes_names=("v2", "v3"),
+        unit=(u.arcsec, u.arcsec),
+    )
+    world = cf.CelestialFrame(reference_frame=coord.ICRS(), name="world")
 
     # Transforms between frames
     distortion = wfi_distortion(output_model, reference_files)
     tel2sky = pointing.v23tosky(output_model)
 
-    pipeline = [Step(detector, distortion),
-                Step(v2v3, tel2sky),
-                Step(world, None)]
+    pipeline = [Step(detector, distortion), Step(v2v3, tel2sky), Step(world, None)]
     wcs = WCS(pipeline)
     if wcs.bounding_box is None:
         wcs.bounding_box = wcs_bbox_from_shape(output_model.data.shape)
 
-    output_model.meta['wcs'] = wcs
+    output_model.meta["wcs"] = wcs
 
     # update S_REGION
     add_s_region(output_model)
 
-    output_model.meta.cal_step['assign_wcs'] = 'COMPLETE'
+    output_model.meta.cal_step["assign_wcs"] = "COMPLETE"
 
     return output_model
 
@@ -119,7 +121,7 @@ def wfi_distortion(model, reference_files):
     The transform model
     """
 
-    dist = rdm.DistortionRefModel(reference_files['distortion'])
+    dist = rdm.DistortionRefModel(reference_files["distortion"])
     transform = dist.coordinate_distortion_transform
 
     try:
@@ -137,6 +139,7 @@ def wfi_distortion(model, reference_files):
         transform.bounding_box = bbox
 
     return transform
+
 
 def add_s_region(model):
     """
@@ -171,8 +174,9 @@ def add_s_region(model):
     footprint = footprint.T
     update_s_region_keyword(model, footprint)
 
+
 def update_s_region_keyword(model, footprint):
-    s_region = ('POLYGON IRCS ' + ' '.join([str(x) for x in footprint.ravel()]) + ' ')
+    s_region = "POLYGON IRCS " + " ".join([str(x) for x in footprint.ravel()]) + " "
     log.info("S_REGION VALUES: {}".format(s_region))
     if "nan" in s_region:
         # do not update s_region if there are NaNs.

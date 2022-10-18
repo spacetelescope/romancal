@@ -24,7 +24,7 @@ class DQInitStep(RomanStep):
     input model.
     """
 
-    reference_file_types = ['mask']
+    reference_file_types = ["mask"]
 
     def process(self, input):
         """Perform the dq_init calibration step
@@ -55,7 +55,9 @@ class DQInitStep(RomanStep):
                     input_ramp[key].update(input_model.__getattr__(key))
                 elif isinstance(input_ramp[key], np.ndarray):
                     # Cast input ndarray as RampModel dtype
-                    input_ramp[key] = input_model.__getattr__(key).astype(input_ramp[key].dtype)
+                    input_ramp[key] = input_model.__getattr__(key).astype(
+                        input_ramp[key].dtype
+                    )
                 else:
                     input_ramp[key] = input_model.__getattr__(key)
 
@@ -68,9 +70,12 @@ class DQInitStep(RomanStep):
         x_start = input_model.meta.guidestar.gw_window_xstart
         x_end = input_model.meta.guidestar.gw_window_xsize + x_start
         # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
-        init_model.pixeldq[int(x_start):int(x_end),:] = dqflags.pixel['GW_AFFECTED_DATA']
-        self.log.info(f'Flagging rows from: {x_start} to {x_end} '
-                      'as affected by guide window read')
+        init_model.pixeldq[int(x_start) : int(x_end), :] = dqflags.pixel[
+            "GW_AFFECTED_DATA"
+        ]
+        self.log.info(
+            f"Flagging rows from: {x_start} to {x_end} as affected by guide window read"
+        )
 
         # Get reference file path
         reference_file_name = self.get_reference_file(init_model, "mask")
@@ -80,7 +85,7 @@ class DQInitStep(RomanStep):
             # If there are mask files, perform dq step
             # Open the relevant reference files as datamodels
             reference_file_model = rdm.open(reference_file_name)
-            self.log.debug(f'Using MASK ref file: {reference_file_name}')
+            self.log.debug(f"Using MASK ref file: {reference_file_name}")
 
             # Apply the DQ step
             output_model = dq_initialization.do_dqinit(
@@ -106,11 +111,11 @@ class DQInitStep(RomanStep):
         else:
             # Skip DQ step if no mask files
             reference_file_model = None
-            self.log.warning('No MASK reference file found.')
-            self.log.warning('DQ initialization step will be skipped.')
+            self.log.warning("No MASK reference file found.")
+            self.log.warning("DQ initialization step will be skipped.")
 
             output_model = init_model
-            output_model.meta.cal_step.dq_init = 'SKIPPED'
+            output_model.meta.cal_step.dq_init = "SKIPPED"
 
         # Close the input and reference files
         input_model.close()
@@ -122,8 +127,8 @@ class DQInitStep(RomanStep):
 
         if self.save_results:
             try:
-                self.suffix = 'dqinit'
+                self.suffix = "dqinit"
             except AttributeError:
-                self['suffix'] = 'dqinit'
+                self["suffix"] = "dqinit"
 
         return output_model

@@ -24,7 +24,7 @@ import itertools
 import logging
 import re
 
-__all__ = ['remove_suffix']
+__all__ = ["remove_suffix"]
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -34,53 +34,57 @@ logger.addHandler(logging.NullHandler())
 # have to exist. Used by `find_suffixes` to
 # add to the result it produces.
 SUFFIXES_TO_ADD = [
-    'ca', 'crf',
-    'cal',
-    'dark',
-    'flat',
-    'median',
-    'phot',
-    'photom',
-    'ramp', 'rate',
-    'uncal',
-    'assignwcs',
-    'dq_init',
-    'dqinit',
-    'assign_wcs',
-    'linearity',
-    'jump',
-    'rampfit',
-    'saturation',
-    'dark_current',
-    'darkcurrent'
+    "ca",
+    "crf",
+    "cal",
+    "dark",
+    "flat",
+    "median",
+    "phot",
+    "photom",
+    "ramp",
+    "rate",
+    "uncal",
+    "assignwcs",
+    "dq_init",
+    "dqinit",
+    "assign_wcs",
+    "linearity",
+    "jump",
+    "rampfit",
+    "saturation",
+    "dark_current",
+    "darkcurrent",
 ]
 
 # Suffixes that are discovered but should not be considered.
 # Used by `find_suffixes` to remove undesired values it has found.
-SUFFIXES_TO_DISCARD = ['pipeline', 'step']
+SUFFIXES_TO_DISCARD = ["pipeline", "step"]
 
 
 # Calculated suffixes.
-_calculated_suffixes = set([
-    'saturationstep',
-    'darkcurrentstep',
-    'jumpstep',
-    'rampfit',
-    'dark_current',
-    'assignwcsstep',
-    'flatfieldstep',
-    'step',
-    'dqinitstep',
-    'assign_wcs',
-    'linearity',
-    'rampfitstep',
-    'photomstep',
-    'pipeline',
-    'dq_init',
-    'linearitystep',
-    'dark_current',
-    'jump',
-])
+_calculated_suffixes = set(
+    [
+        "saturationstep",
+        "darkcurrentstep",
+        "jumpstep",
+        "rampfit",
+        "dark_current",
+        "assignwcsstep",
+        "flatfieldstep",
+        "step",
+        "dqinitstep",
+        "assign_wcs",
+        "linearity",
+        "rampfitstep",
+        "photomstep",
+        "pipeline",
+        "dq_init",
+        "linearitystep",
+        "dark_current",
+        "jump",
+    ]
+)
 
 
 # ##########
@@ -91,12 +95,12 @@ def remove_suffix(name):
     separator = None
     match = REMOVE_SUFFIX_REGEX.match(name)
     try:
-        name = match.group('root')
-        separator = match.group('separator')
+        name = match.group("root")
+        separator = match.group("separator")
     except AttributeError:
         pass
     if separator is None:
-        separator = '_'
+        separator = "_"
     return name, separator
 
 
@@ -120,8 +124,7 @@ def replace_suffix(name, new_suffix):
 # Functions to generate `KNOW_SUFFIXES`
 # #####################################
 def combine_suffixes(
-        to_add=(_calculated_suffixes, SUFFIXES_TO_ADD),
-        to_remove=(SUFFIXES_TO_DISCARD,)
+    to_add=(_calculated_suffixes, SUFFIXES_TO_ADD), to_remove=(SUFFIXES_TO_DISCARD,)
 ):
     """Combine the suffix lists into a single list
 
@@ -165,10 +168,7 @@ def find_suffixes():
     # First traverse the code base and find all
     # `Step` classes. The default suffix is the
     # class name.
-    suffixes = set(
-        klass_name.lower()
-        for klass_name, klass in all_steps().items()
-    )
+    suffixes = set(klass_name.lower() for klass_name, klass in all_steps().items())
 
     # That's all folks
     return list(suffixes)
@@ -185,8 +185,7 @@ KNOW_SUFFIXES = combine_suffixes()
 
 # Regex for removal
 REMOVE_SUFFIX_REGEX = re.compile(
-    '^(?P<root>.+?)((?P<separator>_|-)(' +
-    '|'.join(KNOW_SUFFIXES) + '))?$'
+    "^(?P<root>.+?)((?P<separator>_|-)(" + "|".join(KNOW_SUFFIXES) + "))?$"
 )
 
 
@@ -194,22 +193,19 @@ REMOVE_SUFFIX_REGEX = re.compile(
 # Main
 # Find and report differences from known list.
 # ############################################
-if __name__ == '__main__':
-    print('Searching code base for calibration suffixes...')
+if __name__ == "__main__":
+    print("Searching code base for calibration suffixes...")
     calculated_suffixes = find_suffixes()
     found_suffixes = combine_suffixes(
-        to_add=(calculated_suffixes, SUFFIXES_TO_ADD),
-        to_remove=(SUFFIXES_TO_DISCARD, )
+        to_add=(calculated_suffixes, SUFFIXES_TO_ADD), to_remove=(SUFFIXES_TO_DISCARD,)
     )
     print(
-        'Known list has {known_len} suffixes.'
-        ' Found {new_len} suffixes.'.format(
-            known_len=len(KNOW_SUFFIXES),
-            new_len=len(found_suffixes)
+        "Known list has {known_len} suffixes. Found {new_len} suffixes.".format(
+            known_len=len(KNOW_SUFFIXES), new_len=len(found_suffixes)
         )
     )
     print(
-        'Suffixes that have changed are {}'.format(
+        "Suffixes that have changed are {}".format(
             set(found_suffixes).symmetric_difference(KNOW_SUFFIXES)
         )
     )

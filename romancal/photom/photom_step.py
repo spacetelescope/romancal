@@ -13,7 +13,7 @@ class PhotomStep(RomanStep):
         reference files and attaching to the input science data model
     """
 
-    reference_file_types = ['photom']
+    reference_file_types = ["photom"]
 
     def process(self, input):
         """Perform the photometric calibration step
@@ -31,7 +31,6 @@ class PhotomStep(RomanStep):
 
         # Open the input data model
         with rdm.open(input) as input_model:
-
             # Get reference file
             reffile = self.get_reference_file(input_model, "photom")
 
@@ -39,24 +38,26 @@ class PhotomStep(RomanStep):
             if reffile is not None:
                 # If there is a reference file, perform photom application
                 photom_model = rdm.open(reffile)
-                self.log.debug(f'Using PHOTOM ref file: {reffile}')
+                self.log.debug(f"Using PHOTOM ref file: {reffile}")
 
                 # Do the correction
                 if input_model.meta.exposure.type == "WFI_IMAGE":
-                    output_model = photom.apply_photom(input_model,
-                                                       photom_model)
-                    output_model.meta.cal_step.photom = 'COMPLETE'
+                    output_model = photom.apply_photom(input_model, photom_model)
+                    output_model.meta.cal_step.photom = "COMPLETE"
                 else:
-                    self.log.warning('No photometric corrections for '
-                                     'spectral data')
-                    self.log.warning('Photom step will be skipped')
-                    input_model.meta.cal_step.photom = 'SKIPPED'
+                    self.log.warning("No photometric corrections for spectral data")
+                    self.log.warning("Photom step will be skipped")
+                    input_model.meta.cal_step.photom = "SKIPPED"
                     input_model.meta.photometry.pixelarea_arcsecsq = None
                     input_model.meta.photometry.pixelarea_steradians = None
                     input_model.meta.photometry.conversion_megajanskys = None
                     input_model.meta.photometry.conversion_microjanskys = None
-                    input_model.meta.photometry.conversion_megajanskys_uncertainty = None
-                    input_model.meta.photometry.conversion_microjanskys_uncertainty = None
+                    input_model.meta.photometry.conversion_megajanskys_uncertainty = (
+                        None
+                    )
+                    input_model.meta.photometry.conversion_microjanskys_uncertainty = (
+                        None
+                    )
                     try:
                         photom_model.close()
                     except AttributeError:
@@ -65,9 +66,9 @@ class PhotomStep(RomanStep):
 
             else:
                 # Skip Photom step if no photom file
-                self.log.warning('No PHOTOM reference file found')
-                self.log.warning('Photom step will be skipped')
-                input_model.meta.cal_step.photom = 'SKIPPED'
+                self.log.warning("No PHOTOM reference file found")
+                self.log.warning("Photom step will be skipped")
+                input_model.meta.cal_step.photom = "SKIPPED"
                 output_model = input_model
 
         # Close the input and reference files
@@ -79,8 +80,8 @@ class PhotomStep(RomanStep):
 
         if self.save_results:
             try:
-                self.suffix = 'photom'
+                self.suffix = "photom"
             except AttributeError:
-                self['suffix'] = 'photom'
+                self["suffix"] = "photom"
 
         return output_model
