@@ -1,7 +1,7 @@
 0.8.2 (unreleased)
 ==================
 
-- pin ``astropy`` to new version that pins ``numpy>=1.20`` [#592]
+- pin ``numpy`` to ``>=1.20`` [#592]
 
 0.8.1 (2022-08-23)
 ==================
