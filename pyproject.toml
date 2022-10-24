@@ -14,16 +14,16 @@ classifiers = [
 dependencies = [
     'asdf >=2.12.1',
     'astropy >=5.0.4',
-    'crds >=11.13.1',
-    'gwcs >=0.18.0',
+    'crds >=11.16.16',
+    'gwcs >=0.18.1',
     'jsonschema >=3.0.2',
-    'numpy >=1.22.3',
+    'numpy >=1.20',
     'pyparsing >=2.4.7',
     'requests >=2.22',
-    'roman_datamodels >=0.13.0',
+    'roman_datamodels >=0.14.0',
     #'roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git@main',
-    'stcal >=0.7.2',
-    'stpipe >=0.4.2,<1.0',
+    'stcal >=1.2.1, <2.0',
+    'stpipe >=0.4.2, <1.0',
 ]
 dynamic = ['version']
 
