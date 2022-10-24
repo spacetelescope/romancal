@@ -172,12 +172,8 @@ jobs:
       matrix:
         os: [ ubuntu-latest ]
         python: [ 3.8, 3.9, '3.10' ]
-        numpy: [ '1.18.*', '1.19.*', '1.20.*', '1.21.*', '1.22.*' ]
+        numpy: [ '1.20.*', '1.21.*', '1.22.*' ]
         exclude:
-          - python: '3.10'
-            numpy: '1.18.*'
-          - python: '3.10'
-            numpy: '1.19.*'
           - python: '3.10'
             numpy: '1.20.*'
     steps:
@@ -210,9 +206,8 @@ jobs:
           key: test-coverage-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
       - run: pip install ".[test]" pytest-xdist pytest-cov
       - run: pip freeze
-      - run: pytest -n auto --pyargs romancal --cov-report xml --cov
-      - run: coverage report -m
-      - uses: codecov/codecov-action@master
+      - run: pytest -n auto --cov --cov-report xml --cov-report term-missing
+      - uses: codecov/codecov-action@v3
         with:
           file: ./coverage.xml
           flags: unit
