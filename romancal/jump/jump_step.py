@@ -32,6 +32,12 @@ class JumpStep(RomanStep):
         flag_4_neighbors = boolean(default=True) # flag the four perpendicular neighbors of each CR
         max_jump_to_flag_neighbors = float(default=1000) # maximum jump sigma that will trigger neighbor flagging
         min_jump_to_flag_neighbors = float(default=10) # minimum jump sigma that will trigger neighbor flagging
+        min_sat_area = float(default=1.0) # minimum required area for the central saturation of snowballs
+        min_jump_area = float(default=5.0) # minimum area to trigger large events processing
+        expand_factor = float(default=2.0) # The expansion factor for the enclosing circles or ellipses
+        use_ellipses = boolean(default=False) # Use an enclosing ellipse rather than a circle for MIRI showers
+        sat_required_snowball = boolean(default=True) # Require the center of snowballs to be saturated
+        expand_large_events = boolean(default=False) # must be True to trigger snowball and shower flagging
     """
 
     reference_file_types = ['gain', 'readnoise']
@@ -79,6 +85,12 @@ class JumpStep(RomanStep):
             max_jump_to_flag_neighbors = self.max_jump_to_flag_neighbors
             min_jump_to_flag_neighbors = self.min_jump_to_flag_neighbors
             flag_4_neighbors = self.flag_4_neighbors
+            min_sat_area = self.min_sat_area
+            min_jump_area = self.min_jump_area
+            expand_factor = self.expand_factor
+            use_ellipses = self.use_ellipses
+            sat_required_snowball = self.sat_required_snowball
+            expand_large_events = self.expand_large_events
 
             self.log.info('CR rejection threshold = %g sigma', rej_thresh)
             if self.maximum_cores != 'none':
@@ -116,7 +128,11 @@ class JumpStep(RomanStep):
                                     max_jump_to_flag_neighbors,
                                     min_jump_to_flag_neighbors,
                                     flag_4_neighbors,
-                                    dqflags_d)
+                                    dqflags_d,
+                                    min_sat_area=min_sat_area, min_jump_area=min_jump_area,
+                                    expand_factor=expand_factor, use_ellipses=use_ellipses,
+                                    sat_required_snowball=sat_required_snowball,
+                                    expand_large_events=expand_large_events)
 
             gdq = gdq[0, :, :, :]
             pdq = pdq[0, :, :]

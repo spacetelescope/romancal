@@ -3,6 +3,11 @@
 
 - pin ``numpy`` to ``>=1.20`` [#592]
 
+jump
+----
+
+- Changes for new keywords (currently unused by Roman) to control snowball and shower flagging in jump detection. [#593]
+
 0.8.1 (2022-08-23)
 ==================
 
