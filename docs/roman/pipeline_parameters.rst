@@ -7,7 +7,7 @@ pipeline or step, use the ``-h`` option on ``strun``. Some examples are:
 ::
 
    $ strun roman_elp -h
-   $ strun calroman.dq_init.DQInitStep -h
+   $ strun romancal.dq_init.DQInitStep -h
 
 To set a parameter, simply specify it on the command line. For example, to have
 :ref:`roman_elp <exposure_pipeline>` save the calibrated ramp files, the
