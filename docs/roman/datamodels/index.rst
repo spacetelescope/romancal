@@ -1,11 +1,7 @@
 .. _data-models:
 
-===========
-Data Models
-===========
-
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    models.rst
    metadata.rst

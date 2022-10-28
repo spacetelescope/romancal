@@ -23,7 +23,7 @@ Output files will be created either in the current working directory, or where
 specified by the :ref:`output_dir <intro_output_directory>` parameter.
 
 File names for the outputs from pipelines and steps come from
-three different sources:
+two different sources:
 
 - The name of the input file
 - As specified by the :ref:`output_file <intro_output_file>` parameter
@@ -79,7 +79,7 @@ Dark current                                   `_dark_current`
 Jump detection                                 `_jump`
 Corrected ramp data                            `_rampfit`
 Optional fitting results from ramp_fit step    `_fitopt`
-Assign WCS                                     `_assign_wcs`
+Assign WCS                                     `_assignwcs`
 Flat field                                     `_flat`
 Photometric calibration			               `_phot`
 Calibrated image                               `_cal`

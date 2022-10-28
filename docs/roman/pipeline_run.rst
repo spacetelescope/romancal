@@ -24,7 +24,7 @@ run this pipeline is:
 
 Pipeline classes also have a **pipeline name**, or **alias**, that can be used
 instead of thefull class specification. For example,
-``calroman.pipeline.ExposurePipeline`` has the alias ``roman_elp`` and
+``romancal.pipeline.ExposurePipeline`` has the alias ``roman_elp`` and
 can be run as
 ::
 

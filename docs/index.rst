@@ -14,19 +14,25 @@ The Roman Space Telescope Calibration Pipeline
 
 .. include:: roman/introduction.rst
 
+.. toctree::
+   :caption: RomanCal Pipeline
+   :maxdepth: 2
+
+   roman/pipeline_run.rst
+   roman/pipeline_steps.rst
+   roman/pipeline_ref_files.rst
+   roman/pipeline_parameters.rst
+   roman/pipeline_naming_conventions.rst
+   roman/error_propagation/index.rst
+
 .. toctree:: 
    :caption: Datamodels
    :maxdepth: 2
 
    roman/datamodels/index.rst
 
-.. toctree::
-   :caption: RomanCal Pipeline
-   :maxdepth: 2
+.. toctree:: 
+   :caption: Additional Information
+   :maxdepth: 1
 
-   roman/pipeline_ref_files.rst
-   roman/pipeline_parameters.rst
-   roman/pipeline_naming_conventions.rst
-   roman/pipeline_run.rst
-   roman/pipeline_steps.rst
-   roman/error_propagation/index.rst
+   roman/package_index.rst
