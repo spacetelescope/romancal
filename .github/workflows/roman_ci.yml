@@ -81,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toxenv: [ test-cov, test-devdeps, test-numpy120-xdist, test-numpy121-xdist, test-numpy122-xdist ]
+        toxenv: [ test-cov, test-devdeps, test-numpy120, test-numpy121, test-numpy122 ]
         python-version: [ '3.8', '3.9', '3.10', '3.11' ]
         os: [ ubuntu-latest, macos-latest ]
         exclude:
