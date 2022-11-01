@@ -1,6 +1,8 @@
 0.8.2 (unreleased)
 ==================
 
+- New Roman's RTD page layout [#596]
+
 - pin ``numpy`` to ``>=1.20`` [#592]
 
 jump

@@ -13,13 +13,14 @@
 
 import datetime
 import importlib
-import os
 import sys
-from configparser import ConfigParser
+import os
 from distutils.version import LooseVersion
+from configparser import ConfigParser
 
 import sphinx
 import stsci_rtd_theme
+import sphinx_astropy
 
 
 def setup(app):
@@ -31,11 +32,12 @@ def setup(app):
 
 conf = ConfigParser()
 
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../'))
-sys.path.insert(0, os.path.abspath('roman/'))
+sys.path.insert(0, os.path.abspath('romancal/'))
 sys.path.insert(0, os.path.abspath('exts/'))
 
 # -- General configuration ------------------------------------------------
@@ -64,7 +66,7 @@ intersphinx_mapping = {
     'numpy': ('https://numpy.org/devdocs', None),
     'scipy': ('http://scipy.github.io/devdocs', None),
     'matplotlib': ('http://matplotlib.org/', None),
-}
+    }
 
 if sys.version_info[0] == 2:
     intersphinx_mapping['python'] = ('http://docs.python.org/2/', None)
@@ -92,7 +94,9 @@ extensions = [
     'sphinx_automodapi.autodoc_enhancements',
     'sphinx_automodapi.smart_resolver',
     'sphinx_asdf',
-]
+    'myst_parser',
+    ]
+
 
 if on_rtd:
     extensions.append('sphinx.ext.mathjax')
@@ -102,11 +106,15 @@ elif LooseVersion(sphinx.__version__) < LooseVersion('1.4'):
 else:
     extensions.append('sphinx.ext.imgmath')
 
+
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = ['_templates']
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
+}
 
 # The encoding of source files.
 # source_encoding = 'utf-8-sig'
@@ -121,6 +129,7 @@ master_doc = 'index'
 # Suppress the warnings requires Sphinx v1.4.2
 
 suppress_warnings = ['app.add_directive', ]
+
 
 # General information about the project
 project = setup_cfg['name']
@@ -163,6 +172,7 @@ rst_epilog = """.. _romancal: high-level_API.html"""
 # documents.
 default_role = 'obj'
 
+
 # Don't show summaries of the members in each class along with the
 # class' docstring
 numpydoc_show_class_members = False
@@ -186,6 +196,7 @@ graphviz_dot_args = [
     '-Gfontsize=10',
     '-Gfontname=Helvetica Neue, Helvetica, Arial, sans-serif'
 ]
+
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 # add_function_parentheses = True
@@ -217,14 +228,17 @@ asdf_schema_reference_mappings = [
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'stsci_rtd_theme'
+html_theme = 'sphinx_rtd_theme'
+html_logo = "_static/roman_logo_white_w100px.png"
+html_favicon = '_static/favicon.ico'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    "collapse_navigation": True
-}
+    "collapse_navigation": True,
+    "display_version": True
+    }
 #        "nosidebar": "false",
 #        "sidebarbgcolor": "#4db8ff",
 #        "sidebartextcolor": "black",
@@ -253,7 +267,7 @@ html_theme_path = [stsci_rtd_theme.get_html_theme_path()]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-
+html_static_path = ['_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -303,6 +317,7 @@ html_use_index = True
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'romandoc'
+
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -356,15 +371,16 @@ man_pages = [
 # If true, show URL addresses after external links.
 man_show_urls = True
 
+
 # -- Options for Texinfo output -------------------------------------------
 
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'romancal', u'Roman Pipeline Documentation',
-     u'romancal', 'romancal', 'Roman Pipeline Documentation',
-     'Miscellaneous'),
+  ('index', 'romancal', u'Roman Pipeline Documentation',
+   u'romancal', 'romancal', 'Roman Pipeline Documentation',
+   'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -448,7 +464,3 @@ epub_exclude_files = ['search.html']
 
 # If false, no index is generated.
 # epub_use_index = True
-
-# Enable nitpicky mode - which ensures that all references in the docs
-# resolve.
-nitpicky = False
