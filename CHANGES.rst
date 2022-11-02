@@ -30,7 +30,10 @@ photom
 
 - Change photom step to forcibly set the photometric keywords to ``None`` for spectroscopic data. [#591]
 
+tests
+-----
 
+- refactor `tox` environment factors and structure GitHub Actions into dependent workflow [#551]
 
 0.8.1 (2022-08-23)
 ==================
@@ -96,9 +99,6 @@ tests
 
 - Updated tests to account for the change in dimensionality of the err variable in ramp datamodel. [#520]
 - Added SOC tests to check for information available in Level 2 images to correct for pixel geometric distortion. [#549]
-
-- Cache CRDS from current operational context in test workflow [#551]
-
 
 0.7.1 (2022-05-19)
 ==================
