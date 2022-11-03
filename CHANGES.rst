@@ -1,7 +1,6 @@
 0.8.2 (unreleased)
 ==================
 
-<<<<<<< HEAD
 - New Roman's RTD page layout [#596]
 
 - pin ``numpy`` to ``>=1.20`` [#592]
@@ -10,18 +9,12 @@ jump
 ----
 
 - Changes for new keywords (currently unused by Roman) to control snowball and shower flagging in jump detection. [#593]
-=======
-general
--------
-
-- pin ``numpy`` to ``>=1.20`` [#592]
 
 photom
 ------
 
-- Updates so that the default suffix is used for spectroscopic data. [#]
+- Updates so that the default suffix is used for spectroscopic data. [#594]
 
->>>>>>> 2bc372b (RCAL-419 Update photom to use default suffix for spectral data)
 
 0.8.1 (2022-08-23)
 ==================
