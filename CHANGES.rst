@@ -1,7 +1,20 @@
 0.8.2 (unreleased)
 ==================
 
--
+- New Roman's RTD page layout [#596]
+
+- pin ``numpy`` to ``>=1.20`` [#592]
+
+jump
+----
+
+- Changes for new keywords (currently unused by Roman) to control snowball and shower flagging in jump detection. [#593]
+
+photom
+------
+
+- Updates so that the default suffix is used for spectroscopic data. [#594]
+
 
 0.8.1 (2022-08-23)
 ==================
@@ -26,7 +39,7 @@ flat
 ----
 
 - Removed try/except condition on Flat Reference file CRDS lookup. [#528]
-  
+
 general
 -------
 
