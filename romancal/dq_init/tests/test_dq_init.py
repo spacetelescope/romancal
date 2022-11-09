@@ -241,6 +241,8 @@ def test_dqinit_refpix(instrument, exptype):
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = 'WFI01'
     wfi_sci_raw.meta.instrument.optical_element = 'F158'
+    wfi_sci_raw.meta.guidestar.gw_window_xstart = 1012
+    wfi_sci_raw.meta.guidestar.gw_window_xsize = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
