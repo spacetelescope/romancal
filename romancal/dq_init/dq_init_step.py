@@ -63,6 +63,14 @@ class DQInitStep(RomanStep):
         else:
             init_model = input_model
 
+        # guide window range information
+        x_start = input_model.meta.guidestar.gw_window_xstart
+        x_end = input_model.meta.guidestar.gw_window_xsize + x_start
+        # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
+        init_model.pixeldq[int(x_start):int(x_end),:] = 2**4
+        self.log.info(f'Flagging rows from: {x_start} to {x_end} '
+                      'as affected by guide window read')
+
         # Get reference file path
         reference_file_name = self.get_reference_file(init_model, "mask")
 
@@ -102,7 +110,6 @@ class DQInitStep(RomanStep):
 
             output_model = init_model
             output_model.meta.cal_step.dq_init = 'SKIPPED'
-
 
         # Close the input and reference files
         input_model.close()
