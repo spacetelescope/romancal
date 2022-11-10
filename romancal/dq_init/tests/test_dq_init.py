@@ -4,13 +4,13 @@ import numpy as np
 import pytest
 import warnings
 
-from romancal.lib import dqflags
-from romancal.dq_init import DQInitStep
-from romancal.dq_init.dq_initialization import do_dqinit
-
 from roman_datamodels import stnode
 from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
 from roman_datamodels.testing import utils as testutil
+
+from romancal.lib import dqflags
+from romancal.dq_init import DQInitStep
+from romancal.dq_init.dq_initialization import do_dqinit
 
 # Set parameters for multiple runs of data
 args = "xstart, ystart, xsize, ysize, ngroups, instrument, exp_type"
@@ -37,6 +37,7 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     dq[300, 100] = 8   # Dropout
     dq[400, 100] = 32  # Persistence
     dq[500, 100] = 1   # Do_not_use
+    dq[600, 100] = 16  # guide window affected data
     dq[100, 200] = 3   # Saturated pixel + do not use
     dq[200, 200] = 5   # Jump detected pixel + do not use
     dq[300, 200] = 9   # Dropout + do not use
@@ -60,6 +61,7 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     assert (dqdata[300, 100] == dqflags.pixel['DROPOUT'])
     assert (dqdata[400, 100] == dqflags.pixel['PERSISTENCE'])
     assert (dqdata[500, 100] == dqflags.pixel['DO_NOT_USE'])
+    assert (dqdata[600, 100] == dqflags.pixel['GW_AFFECTED_DATA'])
     assert (dqdata[100, 200] == dqflags.pixel['SATURATED'] + dqflags.pixel['DO_NOT_USE'])
     assert (dqdata[200, 200] == dqflags.pixel['JUMP_DET'] + dqflags.pixel['DO_NOT_USE'])
     assert (dqdata[300, 200] == dqflags.pixel['DROPOUT'] + dqflags.pixel['DO_NOT_USE'])
