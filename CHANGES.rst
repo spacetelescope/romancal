@@ -4,11 +4,14 @@
 0.9.0 (2022-11-14)
 ==================
 
-- Additional changes to Roman's RTD page content [#600]
+general
+-------
 
 - New Roman's RTD page layout [#596]
 
 - pin ``numpy`` to ``>=1.20`` [#592]
+
+- DQ step flags science data affected by guide window read [#599]
 
 jump
 ----
@@ -28,6 +31,7 @@ photom
 ==================
 
 - pin ``asdf`` above ``2.12.1`` to fix issue with `jsonschema` release [#562]
+
 - pin `roman_datamodels` to newest feature version [#563]
 
 0.8.0 (2022-08-12)
