@@ -12,6 +12,4 @@ Pipeline Steps
    assign_wcs/index.rst
    flatfield/index.rst
    photom/index.rst
-..    stpipe/index.rst
-..    refpix/index.rst
 
