@@ -1,7 +1,7 @@
 0.8.2 (unreleased)
 ==================
 
-- Additional changes to Roman's RTD page content [#598]
+- Additional changes to Roman's RTD page content [#600]
 
 - New Roman's RTD page layout [#596]
 
