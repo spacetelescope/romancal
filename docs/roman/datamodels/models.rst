@@ -5,11 +5,11 @@ About datamodels
 
 The purpose of the data model is to abstract away the peculiarities of
 the underlying file format.  The same data model may be used for data
-created from scratch in memory, or loaded from ASDF files or some future file
-format.
+created from scratch in memory, or loaded from 
+`ASDF <https://asdf-standard.readthedocs.io/>`_ files or some future file format.
 
 The detailed datamodel structure and specifics are contained in the
-documentation included with the roman_datamodels package found here (TBD).
+documentation included with the `roman_datamodels` package found `here <https://roman-datamodels.readthedocs.io/en/latest/>`_.
 
 Each model instance is created to contain a variety of attributes and data that
 are needed for analysis or to propagate information about the file and the
@@ -102,14 +102,16 @@ type.
 Saving a data model to a file
 -----------------------------
 
-Simply call the `save` method on the model instance.  The format to
-save into will be deduced from the filename.::
+Simply call the `save` method on the model instance:
+::
 
     im.save("myimage.asdf")
 
 .. note::
 
    This `save` always clobbers the output file.
+   
+   For now the only format supported is ASDF.
 
 
 Copying a model

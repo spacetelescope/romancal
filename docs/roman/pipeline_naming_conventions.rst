@@ -10,7 +10,7 @@ There are two general types of input to any step or pipeline: references files
 and data files.  The references files, unless explicitly
 overridden, are provided through CRDS.
 
-Data files are the science input, such as exposure ASDF files. All files are
+Data files are the science input, such as exposure `ASDF files <https://asdf-standard.readthedocs.io/>`_. All files are
 assumed to be co-resident in the directory where the primary input file is
 located.
 
