@@ -1,7 +1,11 @@
 0.8.2 (unreleased)
 ==================
 
+<<<<<<< HEAD
 - Change photom step to forcibly set the following photometric keywords to None for spectroscopic data. [#591]
+=======
+- pin ``numpy`` to ``>=1.20`` [#592]
+>>>>>>> cadcd7ce1e8572c1d467d1beaea045ed9d69f75b
 
 0.8.1 (2022-08-23)
 ==================
