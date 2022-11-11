@@ -4,22 +4,35 @@
 
 :ref:`genindex`  |  :ref:`modindex`
 
-===========
-User Manual
-===========
+==============================================
+The Roman Space Telescope Calibration Pipeline
+==============================================
+
+.. image:: _static/roman_logo_black_w200px.png
+   :align: center
+   :alt: Nancy Roman Space Telescope
+
+.. include:: roman/introduction.rst
 
 .. toctree::
+   :caption: RomanCal Pipeline
    :maxdepth: 2
 
-   roman/introduction.rst
+   roman/pipeline_run.rst
+   roman/pipeline_steps.rst
+   roman/pipeline_ref_files.rst
+   roman/pipeline_parameters.rst
+   roman/pipeline_naming_conventions.rst
+   roman/error_propagation/index.rst
 
+.. toctree:: 
+   :caption: Datamodels
+   :maxdepth: 2
 
-=====================
-Package Documentation
-=====================
+   roman/datamodels/index.rst
 
-.. toctree::
+.. toctree:: 
+   :caption: Additional Information
    :maxdepth: 1
 
    roman/package_index.rst
-   roman/error_propagation/index.rst

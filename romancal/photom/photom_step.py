@@ -61,14 +61,14 @@ class PhotomStep(RomanStep):
                         photom_model.close()
                     except AttributeError:
                         pass
-                    return input_model
+                    output_model = input_model
 
             else:
                 # Skip Photom step if no photom file
                 self.log.warning('No PHOTOM reference file found')
                 self.log.warning('Photom step will be skipped')
                 input_model.meta.cal_step.photom = 'SKIPPED'
-                return input_model
+                output_model = input_model
 
         # Close the input and reference files
         input_model.close()
