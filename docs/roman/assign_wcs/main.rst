@@ -3,7 +3,7 @@ Description
 ===========
 
 ``romancal.assign_wcs`` is the first step run on an image, after ``romancal.ramp_fitting``.
-It associates a World Coodrinate System (WCS) object with each science exposure. 
+It associates a World Coordinate System (WCS) object with each science exposure. 
 Note that no fitting is performed in this step; it only creates a WCS object that 
 transforms positions in the ``detector`` frame to positions in the ``world``
 coordinate frame (ICRS) based on the telescope pointing and reference files provided by CRDS. 
