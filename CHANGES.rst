@@ -1,6 +1,8 @@
 0.8.2 (unreleased)
 ==================
 
+- Change photom step to forcibly set the following photometric keywords to None for spectroscopic data. [#591]
+
 - New Roman's RTD page layout [#596]
 
 - pin ``numpy`` to ``>=1.20`` [#592]
