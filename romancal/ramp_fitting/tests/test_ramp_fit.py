@@ -2,9 +2,11 @@ import pytest
 import numpy as np
 import os
 from astropy.time import Time
+from astropy import units as u
 
 from roman_datamodels.datamodels import RampModel, GainRefModel, ReadnoiseRefModel, ImageModel
 from roman_datamodels.testing import utils as testutil
+from roman_datamodels import units as ru
 
 from romancal.ramp_fitting import RampFitStep
 from romancal.lib import dqflags
@@ -29,10 +31,10 @@ def generate_ramp_model(shape, deltatime=1):
     gdq = np.zeros(shape=shape, dtype=np.uint8)
 
     dm_ramp = testutil.mk_ramp(shape)
-    dm_ramp.data = data
+    dm_ramp.data = u.Quantity(data, ru.DN, dtype=np.float32)
     dm_ramp.pixeldq = pixdq
     dm_ramp.groupdq = gdq
-    dm_ramp.err = err
+    dm_ramp.err = u.Quantity(err, ru.DN, dtype=np.float32)
 
     #dm_ramp.meta['photometry'] = testutil.mk_photometry()
 
@@ -95,7 +97,7 @@ def test_one_group_small_buffer_fit_ols(max_cores):
 
     model1 = generate_ramp_model(shape, deltatime)
 
-    model1.data[0, 15, 10] = 10.0  # add single CR
+    model1.data.value[0, 15, 10] = 10.0  # add single CR
 
     out_model = \
         RampFitStep.call(model1, override_gain=override_gain,
@@ -105,7 +107,7 @@ def test_one_group_small_buffer_fit_ols(max_cores):
     data = out_model.data
 
     # Index changes due to trimming of reference pixels
-    np.testing.assert_allclose(data[11, 6], 10.0, 1e-6)
+    np.testing.assert_allclose(data.value[11, 6], 10.0, 1e-6)
 
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
@@ -178,10 +180,10 @@ def test_saturated_ramp_fit(max_cores):
                          maximum_cores=max_cores)
 
     # Test data and error arrays are zeroed out
-    np.testing.assert_array_equal(out_model.data, 0)
-    np.testing.assert_array_equal(out_model.err, 0)
-    np.testing.assert_array_equal(out_model.var_poisson, 0)
-    np.testing.assert_array_equal(out_model.var_rnoise, 0)
+    np.testing.assert_array_equal(out_model.data.value, 0)
+    np.testing.assert_array_equal(out_model.err.value, 0)
+    np.testing.assert_array_equal(out_model.var_poisson.value, 0)
+    np.testing.assert_array_equal(out_model.var_rnoise.value, 0)
 
     # Test that all pixels are flagged saturated
     assert np.all(np.bitwise_and(out_model.dq, SATURATED) == SATURATED)

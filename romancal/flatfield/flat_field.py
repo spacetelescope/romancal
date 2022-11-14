@@ -5,6 +5,7 @@ Module for applying flat fielding
 import logging
 import numpy as np
 from astropy import units as u
+from roman_datamodels import units as ru
 
 from romancal.lib import dqflags
 
@@ -110,24 +111,26 @@ def apply_flat_field(science, flat):
     flat_data[np.where(flat_bad)] = 1.0
     # Now let's apply the correction to science data and error arrays.  Rely
     # on array broadcasting to handle the cubes
-    science.data = u.Quantity((science.data.value / flat_data), u.electron / u.s, dtype=science.data.dtype)
+    science.data = u.Quantity((science.data.value / flat_data), ru.electron / u.s, dtype=science.data.dtype)
 
     # Update the variances using BASELINE algorithm.  For guider data, it has
     # not gone through ramp fitting so there is no Poisson noise or readnoise
     flat_data_squared = flat_data**2
-    science.var_poisson = u.Quantity((science.var_poisson.value / flat_data_squared), u.electron / u.s,
+    science.var_poisson = u.Quantity((science.var_poisson.value / flat_data_squared), ru.electron / u.s,
                                      dtype = science.var_poisson.dtype)
-    science.var_rnoise = u.Quantity((science.var_rnoise / flat_data_squared), u.electron / u.s,
+    science.var_rnoise = u.Quantity((science.var_rnoise / flat_data_squared), ru.electron / u.s,
                                     dtype = science.var_rnoise.dtype)
     
     try:
-        science.var_flat = science.data.value**2 / flat_data_squared * flat_err**2
+        science.var_flat = u.Quantity((science.data.value**2 / flat_data_squared * flat_err**2),
+                                      ru.electron**2 / u.s**2, dtype=science.data.value.dtype)
     except AttributeError:
-        science['var_flat'] = np.zeros(shape=science.data.shape,
+        science['var_flat'] = u.Quantity(np.zeros(shape=science.data.shape), ru.electron**2 / u.s**2,
                                        dtype=np.float32)
-        science.var_flat = science.data.value**2 / flat_data_squared * flat_err**2
+        science.var_flat = u.Quantity((science.data.value**2 / flat_data_squared * flat_err**2),
+                                      ru.electron**2 / u.s**2, dtype=science.data.value.dtype)
     err_sqrt = np.sqrt(science.var_poisson.value + science.var_rnoise.value + science.var_flat)
-    science.err = u.Quantity(err_sqrt, u.electron / u.s, dtype=err_sqrt.dtype)
+    science.err = u.Quantity(err_sqrt, ru.electron / u.s, dtype=err_sqrt.dtype)
 
     # Combine the science and flat DQ arrays
     science.dq = np.bitwise_or(science.dq, flat_dq)

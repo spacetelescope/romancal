@@ -8,6 +8,7 @@ from romancal.lib import dqflags
 from roman_datamodels import datamodels as rdd
 from roman_datamodels import stnode as rds
 from roman_datamodels.testing import utils as testutil
+from roman_datamodels import units as ru
 from astropy import units as u
 
 from stcal.ramp_fitting import ramp_fit
@@ -81,10 +82,10 @@ def create_image_model(input_model, image_info):
     """
     data, dq, var_poisson, var_rnoise, err = image_info
 
-    data = u.Quantity(data, u.electron / u.s, dtype=data.dtype)
-    var_poisson = u.Quantity(var_poisson, u.electron / u.s, dtype=var_poisson.dtype)
-    var_rnoise = u.Quantity(var_rnoise, u.electron / u.s, dtype=var_rnoise.dtype)
-    err = u.Quantity(err, u.electron / u.s, dtype=err.dtype)
+    data = u.Quantity(data, ru.electron / u.s, dtype=data.dtype)
+    var_poisson = u.Quantity(var_poisson, ru.electron / u.s, dtype=var_poisson.dtype)
+    var_rnoise = u.Quantity(var_rnoise, ru.electron / u.s, dtype=var_rnoise.dtype)
+    err = u.Quantity(err, ru.electron / u.s, dtype=err.dtype)
 
     # Create output datamodel
     # ... and add all keys from input

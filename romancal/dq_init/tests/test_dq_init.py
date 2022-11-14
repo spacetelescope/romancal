@@ -3,6 +3,7 @@ from stdatamodels.validate import ValidationWarning
 import numpy as np
 import pytest
 import warnings
+from astropy import units as u
 
 from romancal.lib import dqflags
 from romancal.dq_init import DQInitStep
@@ -11,6 +12,7 @@ from romancal.dq_init.dq_initialization import do_dqinit
 from roman_datamodels import stnode
 from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
 from roman_datamodels.testing import utils as testutil
+from roman_datamodels import units as ru
 
 # Set parameters for multiple runs of data
 args = "xstart, ystart, xsize, ysize, ngroups, instrument, exp_type"
@@ -192,7 +194,7 @@ def test_dqinit_step_interface(instrument, exptype):
     wfi_sci_raw.meta.instrument.detector = 'WFI01'
     wfi_sci_raw.meta.instrument.optical_element = 'F158'
     wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
+    wfi_sci_raw.data = u.Quantity(np.ones(shape, dtype=np.uint16), ru.DN, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Create mask model
@@ -242,7 +244,7 @@ def test_dqinit_refpix(instrument, exptype):
     wfi_sci_raw.meta.instrument.detector = 'WFI01'
     wfi_sci_raw.meta.instrument.optical_element = 'F158'
     wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
+    wfi_sci_raw.data = u.Quantity(np.ones(shape, dtype=np.uint16), ru.DN, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Create mask model
@@ -264,7 +266,7 @@ def test_dqinit_refpix(instrument, exptype):
 
     # check if reference pixels are correct
     assert result.data.shape == (2, 20, 20)  # no pixels should be trimmed
-    assert result.amp33.shape == (2, 4096 ,128)
+    assert result.amp33.value.shape == (2, 4096 ,128)
     assert result.border_ref_pix_right.shape == (2, 20, 4)
     assert result.border_ref_pix_left.shape == (2, 20, 4)
     assert result.border_ref_pix_top.shape == (2, 4, 20)
