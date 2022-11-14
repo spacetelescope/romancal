@@ -4,8 +4,14 @@
 Working with Roman datamodels and ASDF files
 ============================================
 
-If you've installed the roman calibration pipeline you should also have access
-to the standalone tool asdfinfo which allows access to asdf (and roman) files
+Please refer to `Roman Documentation <https://roman-datamodels.readthedocs.io/en/latest/>`_ 
+for more details about `roman_datamodels`.
+
+This section assumes that you are familiar with the ASDF standard format. 
+If that's not the case, a good starting point would be to go over the `ASDF Documentation <https://asdf-standard.readthedocs.io/>`_.
+
+If you have installed the roman calibration pipeline you should also have access
+to the standalone tool asdfinfo which allows access to `ASDF <https://asdf-standard.readthedocs.io/>`_ (and roman) files
 from the terminal prompt,::
 
     asdftool info r0000101001001001001_01101_0001_WFI16_cal.asdf

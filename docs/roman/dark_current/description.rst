@@ -15,7 +15,8 @@ The dark current step removes dark current from a Roman exposure by subtracting
 dark current data stored in a dark reference file.
 
 The current implementation uses dark reference files that are matched to the
-MA table entry in the exposure metadata. The dark data are then subtracted,
+MA table entry in the exposure metadata. Note that the data reference file 
+for a science group (SCI) is named `data`. The dark data are then subtracted,
 group-by-group, from the science exposure groups, in which
 each SCI group of the dark data is subtracted from the corresponding SCI
 group of the science data.

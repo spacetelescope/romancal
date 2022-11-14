@@ -1,7 +1,7 @@
 0.8.2 (unreleased)
 ==================
 
-- Change photom step to forcibly set the following photometric keywords to None for spectroscopic data. [#591]
+- Additional changes to Roman's RTD page content [#600]
 
 - New Roman's RTD page layout [#596]
 
@@ -16,6 +16,9 @@ photom
 ------
 
 - Updates so that the default suffix is used for spectroscopic data. [#594]
+
+- Change photom step to forcibly set the photometric keywords to ``None`` for spectroscopic data. [#591]
+
 
 
 0.8.1 (2022-08-23)
