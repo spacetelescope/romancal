@@ -17,6 +17,9 @@ photom
 
 - Updates so that the default suffix is used for spectroscopic data. [#594]
 
+- Change photom step to forcibly set the photometric keywords to ``None`` for spectroscopic data. [#591]
+
+
 
 0.8.1 (2022-08-23)
 ==================
