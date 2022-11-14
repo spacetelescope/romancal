@@ -1,4 +1,4 @@
-0.8.2 (unreleased)
+0.9.0 (2022-11-14)
 ==================
 
 - Additional changes to Roman's RTD page content [#600]
