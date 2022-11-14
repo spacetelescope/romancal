@@ -120,7 +120,7 @@ def apply_flat_field(science, flat):
                                      dtype = science.var_poisson.dtype)
     science.var_rnoise = u.Quantity((science.var_rnoise / flat_data_squared), ru.electron / u.s,
                                     dtype = science.var_rnoise.dtype)
-    
+
     try:
         science.var_flat = u.Quantity((science.data.value**2 / flat_data_squared * flat_err**2),
                                       ru.electron**2 / u.s**2, dtype=science.data.value.dtype)
