@@ -1,6 +1,12 @@
 0.9.1 (unreleased)
 ==================
 
+general
+-------
+
+- DQ step flags science data affected by guide window read [#599]
+
+
 0.9.0 (2022-11-14)
 ==================
 
@@ -11,7 +17,6 @@ general
 
 - pin ``numpy`` to ``>=1.20`` [#592]
 
-- DQ step flags science data affected by guide window read [#599]
 
 jump
 ----
