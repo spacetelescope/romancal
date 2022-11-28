@@ -12,227 +12,193 @@ on:
       - main
   schedule:
     # Weekly Monday 9AM build
-    # * is a special character in YAML so you have to quote this string
-    - cron: '0 9 * * 1'
+    - cron: "0 9 * * 1"
 
 env:
-  CRDS_SERVER_URL: "https://roman-crds-test.stsci.edu"
-  CRDS_PATH: "/tmp/crds_cache"
+  CRDS_SERVER_URL: https://roman-crds.stsci.edu
+  CRDS_PATH: $HOME/crds_cache
   CRDS_CLIENT_RETRY_COUNT: 3
   CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
 
 jobs:
-  style:
-    name: Code style checks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3.0.2
-      - uses: actions/setup-python@v4.1.0
-        id: python
-        with:
-          python-version: 3.9
-      - uses: actions/cache@v3.0.5
-        with:
-          path: ${{ env.pythonLocation }}
-          key: style-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
-      - run: pip install pyproject-flake8
-      - run: pip freeze
-      - run: pflake8
-  audit:
-    name: Bandit security audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3.0.2
-      - uses: actions/setup-python@v4.1.0
-        id: python
-        with:
-          python-version: 3.9
-      - uses: actions/cache@v3.0.5
-        with:
-          path: ${{ env.pythonLocation }}
-          key: audit-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
-      - run: pip install bandit
-      - run: pip freeze
-      - run: bandit romancal -r -x tests,regtest
-  dependencies:
-    name: verify dependencies are correct
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3.0.2
-      - uses: actions/setup-python@v4.1.0
-        id: python
-        with:
-          python-version: 3.9
-      - uses: actions/cache@v3.0.5
-        with:
-          path: ${{ env.pythonLocation }}
-          key: dependencies-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
-      - run: pip install .
-      - run: pip freeze
-      - run: verify_install_requires
-  test:
-    name: test
-    needs: [ style, audit, dependencies ]
+  check:
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ 'ubuntu-latest', 'macos-latest' ]
-        python: [ '3.8', '3.9', '3.10', '3.11' ]
-    steps:
-      - uses: actions/checkout@v3.0.2
-      - uses: actions/setup-python@v4.1.0
-        id: python
-        with:
-          python-version: ${{ matrix.python }}
-      - uses: actions/cache@v3.0.5
-        with:
-          path: ${{ env.pythonLocation }}
-          key: test-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
-      - run: pip install ".[test]" pytest-xdist
-      - run: pip freeze
-      - run: pytest -n auto
-  test_alldeps:
-    name: test optional dependencies
-    needs: [ test ]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ 'ubuntu-latest', 'macos-latest' ]
-        python: [ '3.8', '3.9', '3.10', '3.11' ]
-    steps:
-      - uses: actions/checkout@v3.0.2
-      - uses: actions/setup-python@v4.1.0
-        id: python
-        with:
-          python-version: ${{ matrix.python }}
-      - uses: actions/cache@v3.0.5
-        with:
-          path: ${{ env.pythonLocation }}
-          key: test-alldeps-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
-      - run: pip install ".[test,all]" pytest-xdist
-      - run: pip freeze
-      - run: pytest -n auto
-  test_devdeps:
-    name: test developer versions
-    needs: [ test ]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ 'ubuntu-latest', 'macos-latest' ]
-        python: [ '3.8', '3.9', '3.10', '3.11' ]
-    steps:
-      - uses: actions/checkout@v3.0.2
-      - uses: actions/setup-python@v4.1.0
-        id: python
-        with:
-          python-version: ${{ matrix.python }}
-      - uses: actions/cache@v3.0.5
-        with:
-          path: ${{ env.pythonLocation }}
-          key: test-devdeps-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
-      - run: pip install git+https://github.com/asdf-format/asdf git+https://github.com/spacetelescope/stpipe git+https://github.com/spacetelescope/stdatamodels --pre astropy numpy
-      - run: pip install ".[test]" pytest-xdist
-      - run: pip freeze
-      - run: pytest -n auto
-  test_pyargs:
-    name: test --pyargs
-    needs: [ test ]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ 'ubuntu-latest', 'macos-latest' ]
-        python: [ '3.8', '3.9', '3.10', '3.11' ]
-        exclude:
-          - os: macos-latest
-            python: '3.11'
-    steps:
-      - uses: actions/checkout@v3.0.2
-      - uses: actions/setup-python@v4.1.0
-        id: python
-        with:
-          python-version: ${{ matrix.python }}
-      - uses: actions/cache@v3.0.5
-        with:
-          path: ${{ env.pythonLocation }}
-          key: test-pyargs-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
-      - run: pip install ".[test]" pytest-xdist
-      - run: pip freeze
-      - run: pytest -n auto ./docs --pyargs romancal
-  test_older_numpy:
-    name: test Numpy ${{ matrix.numpy }} (Python ${{ matrix.python }})
-    needs: [ test ]
-    runs-on: ${{ matrix.os }}
-    continue-on-error: true
-    strategy:
-      fail-fast: false
-      matrix:
+        toxenv: [ check-style, check-security, check-install ]
+        python-version: [ '3.x' ]
         os: [ ubuntu-latest ]
-        python: [ '3.8', '3.9', '3.10', '3.11' ]
-        numpy: [ '1.20.*', '1.21.*', '1.22.*' ]
+        include:
+          - name: Code style check
+            toxenv: check-style
+          - name: Security audit
+            toxenv: check-security
+          - name: Verify install_requires in setup.py
+            toxenv: check-install
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install tox
+      - run: tox -e ${{ matrix.toxenv }}
+  test:
+    name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    needs: [ check ]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        toxenv: [ test-xdist, test-devdeps ]
+        python-version: [ '3.8', '3.9', '3.10', '3.11' ]
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install tox
+      - run: >
+          echo "pmap=$(
+          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["roman"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
+          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
+          )" >> $GITHUB_OUTPUT
+        # Get default CRDS_CONTEXT without installing crds client
+        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
+        id: crds-context
+      - uses: actions/cache@v3
+        with:
+          path: ${{ env.CRDS_PATH }}
+          key: crds-${{ steps.crds-context.outputs.pmap }}
+      - run: tox -e ${{ matrix.toxenv }}
+  test_older_numpy:
+    name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    needs: [ test ]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        toxenv: [ test-numpy120, test-numpy121, test-numpy120 ]
+        python-version: [ '3.8', '3.9', '3.10', '3.11' ]
+        os: [ ubuntu-latest ]
         exclude:
-          - python: '3.10'
-            numpy: '1.20.*'
-          - python: '3.11'
-            numpy: '1.20.*'
-          - python: '3.11'
-            numpy: '1.21.*'
-          - python: '3.11'
-            numpy: '1.22.*'
+          - python-version: '3.10'
+            toxenv: test-numpy120
+          - python-version: '3.11'
+            toxenv: test-numpy120
+          - python-version: '3.11'
+            toxenv: test-numpy121
+          - python-version: '3.11'
+            toxenv: test-numpy122
     steps:
-      - uses: actions/checkout@v3.0.2
-      - uses: actions/setup-python@v4.1.0
-        id: python
+      - uses: actions/checkout@v3
         with:
-          python-version: ${{ matrix.python }}
-      - uses: actions/cache@v3.0.5
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
         with:
-          path: ${{ env.pythonLocation }}
-          key: test-numpy${{ matrix.numpy }}-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
-      - run: pip install -e ".[test]" pytest-xdist
-      - run: pip install numpy==${{ matrix.numpy }}
-      - run: pip freeze
-      - run: pytest -n auto
+          python-version: ${{ matrix.python-version }}
+      - run: pip install tox
+      - run: >
+          echo "pmap=$(
+          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["roman"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
+          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
+          )" >> $GITHUB_OUTPUT
+        # Get default CRDS_CONTEXT without installing crds client
+        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
+        id: crds-context
+      - uses: actions/cache@v3
+        with:
+          path: ${{ env.CRDS_PATH }}
+          key: crds-${{ steps.crds-context.outputs.pmap }}
+      - run: tox -e ${{ matrix.toxenv }}
+  test_pyargs:
+    name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }}
+    needs: [ test ]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        toxenv: [ test-pyargs-xdist ]
+        python-version: [ '3.x' ]
+        os: [ ubuntu-latest ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install tox
+      - run: >
+          echo "pmap=$(
+          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["roman"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
+          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
+          )" >> $GITHUB_OUTPUT
+        # Get default CRDS_CONTEXT without installing crds client
+        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
+        id: crds-context
+      - uses: actions/cache@v3
+        with:
+          path: ${{ env.CRDS_PATH }}
+          key: crds-${{ steps.crds-context.outputs.pmap }}
+      - run: tox -e ${{ matrix.toxenv }}
   test_with_coverage:
-    name: test with coverage
-    needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_older_numpy ]
-    runs-on: ubuntu-latest
+    name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    needs: [ test ]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        toxenv: [ test-cov ]
+        python-version: [ '3.x' ]
+        os: [ ubuntu-latest ]
     steps:
-      - uses: actions/checkout@v3.0.2
-      - uses: actions/setup-python@v4.1.0
-        id: python
+      - uses: actions/checkout@v3
         with:
-          python-version: 3.9
-      - uses: actions/cache@v3.0.5
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
         with:
-          path: ${{ env.pythonLocation }}
-          key: test-coverage-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
-      - run: pip install ".[test]" pytest-xdist pytest-cov
-      - run: pip freeze
-      - run: pytest -n auto --cov --cov-report xml --cov-report term-missing
-      - uses: codecov/codecov-action@v3
+          python-version: ${{ matrix.python-version }}
+      - run: pip install tox
+      - run: >
+          echo "pmap=$(
+          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["roman"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
+          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
+          )" >> $GITHUB_OUTPUT
+        # Get default CRDS_CONTEXT without installing crds client
+        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
+        id: crds-context
+      - uses: actions/cache@v3
+        with:
+          path: ${{ env.CRDS_PATH }}
+          key: crds-${{ steps.crds-context.outputs.pmap }}
+      - run: tox -e ${{ matrix.toxenv }}
+      - if: ${{ contains(matrix.toxenv,'-cov') }}
+        uses: codecov/codecov-action@v3
         with:
           file: ./coverage.xml
           flags: unit
           fail_ci_if_error: true
-  build_docs:
-    name: build HTML docs
-    needs: [ test, test_alldeps, test_devdeps, test_pyargs, test_older_numpy ]
-    runs-on: ubuntu-latest
+  build:
+    name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    needs: [ test ]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        toxenv: [ build-twine ]
+        python-version: [ '3.8', '3.9', '3.10', '3.11' ]
+        os: [ ubuntu-latest, macos-latest ]
     steps:
-      - uses: actions/checkout@v3.0.2
-      - uses: actions/setup-python@v4.1.0
-        id: python
+      - uses: actions/checkout@v3
         with:
-          python-version: 3.9
-      - uses: actions/cache@v3.0.5
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
         with:
-          path: ${{ env.pythonLocation }}
-          key: build-docs-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/pyproject.toml', '**/setup.*') }}
-      - run: sudo apt-get install graphviz texlive-latex-extra dvipng
-      - run: pip install ".[docs]"
-      - run: pip freeze
-      - run: sphinx-build -W docs docs/_build
+          python-version: ${{ matrix.python-version }}
+      - run: pip install tox
+      - run: tox -e ${{ matrix.toxenv }}
