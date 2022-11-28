@@ -46,37 +46,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: pip install tox
       - run: tox -e ${{ matrix.toxenv }}
-  quick_test:
-    name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
-    needs: [ check ]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        toxenv: [ test-xdist ]
-        python-version: [ '3.x' ]
-        os: [ ubuntu-latest ]
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - run: pip install tox
-      - run: tox -e ${{ matrix.toxenv }}
-      - run: echo "REFERENCE_FILES_HASH=${{ hashFiles(format('{0}/references/*', env.CRDS_PATH)) }}" >> $GITHUB_ENV
-      - uses: actions/cache@v3
-        with:
-          path: ${{ env.CRDS_PATH }}
-          key: crds-reference-files-${{ env.REFERENCE_FILES_HASH }}
-      - run: echo ${{ env.REFERENCE_FILES_HASH }} > reference_files_hash.txt
-      - uses: actions/upload-artifact@v3
-        with:
-          name: reference_files_hash
-          path: reference_files_hash.txt
   test:
     name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
-    needs: [ quick_test ]
+    needs: [ check ]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -92,14 +64,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install tox
-      - uses: actions/download-artifact@v3
-        with:
-          name: reference_files_hash
-      - run: echo "REFERENCE_FILES_HASH=$(cat reference_files_hash.txt)" >> $GITHUB_ENV
+      - run: >
+          echo "pmap=$(
+          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["roman"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
+          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
+          )" >> $GITHUB_OUTPUT
+        # Get default CRDS_CONTEXT without installing crds client
+        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
+        id: crds-context
       - uses: actions/cache@v3
         with:
           path: ${{ env.CRDS_PATH }}
-          key: crds-reference-files-${{ env.REFERENCE_FILES_HASH }}
+          key: crds-${{ steps.crds-context.outputs.pmap }}
       - run: tox -e ${{ matrix.toxenv }}
   test_older_numpy:
     name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
@@ -128,14 +104,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install tox
-      - uses: actions/download-artifact@v3
-        with:
-          name: reference_files_hash
-      - run: echo "REFERENCE_FILES_HASH=$(cat reference_files_hash.txt)" >> $GITHUB_ENV
+      - run: >
+          echo "pmap=$(
+          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["roman"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
+          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
+          )" >> $GITHUB_OUTPUT
+        # Get default CRDS_CONTEXT without installing crds client
+        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
+        id: crds-context
       - uses: actions/cache@v3
         with:
           path: ${{ env.CRDS_PATH }}
-          key: crds-reference-files-${{ env.REFERENCE_FILES_HASH }}
+          key: crds-${{ steps.crds-context.outputs.pmap }}
       - run: tox -e ${{ matrix.toxenv }}
   test_pyargs:
     name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }}
@@ -154,14 +134,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install tox
-      - uses: actions/download-artifact@v3
-        with:
-          name: reference_files_hash
-      - run: echo "REFERENCE_FILES_HASH=$(cat reference_files_hash.txt)" >> $GITHUB_ENV
+      - run: >
+          echo "pmap=$(
+          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["roman"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
+          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
+          )" >> $GITHUB_OUTPUT
+        # Get default CRDS_CONTEXT without installing crds client
+        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
+        id: crds-context
       - uses: actions/cache@v3
         with:
           path: ${{ env.CRDS_PATH }}
-          key: crds-reference-files-${{ env.REFERENCE_FILES_HASH }}
+          key: crds-${{ steps.crds-context.outputs.pmap }}
       - run: tox -e ${{ matrix.toxenv }}
   test_with_coverage:
     name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
@@ -181,14 +165,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install tox
-      - uses: actions/download-artifact@v3
-        with:
-          name: reference_files_hash
-      - run: echo "REFERENCE_FILES_HASH=$(cat reference_files_hash.txt)" >> $GITHUB_ENV
+      - run: >
+          echo "pmap=$(
+          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["roman"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
+          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
+          )" >> $GITHUB_OUTPUT
+        # Get default CRDS_CONTEXT without installing crds client
+        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
+        id: crds-context
       - uses: actions/cache@v3
         with:
           path: ${{ env.CRDS_PATH }}
-          key: crds-reference-files-${{ env.REFERENCE_FILES_HASH }}
+          key: crds-${{ steps.crds-context.outputs.pmap }}
       - run: tox -e ${{ matrix.toxenv }}
       - if: ${{ contains(matrix.toxenv,'-cov') }}
         uses: codecov/codecov-action@v3
