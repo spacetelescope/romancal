@@ -51,7 +51,7 @@ def generate_wfi_reffiles(tmpdir_factory):
     gain_ref['meta'] = meta
     gain_ref['data'] = np.ones(shape, dtype=np.float32) * ingain
     gain_ref['dq'] = np.zeros(shape, dtype=np.uint16)
-    gain_ref['err'] = (np.random.random(shape) * 0.05).astype(np.float64)
+    gain_ref['err'] = (np.random.random(shape) * 0.05).astype(np.float32)
 
     gain_ref_model = GainRefModel(gain_ref)
     gain_ref_model.save(gainfile)
@@ -74,7 +74,7 @@ def generate_wfi_reffiles(tmpdir_factory):
     rn_ref['meta'] = meta
     rn_ref['data'] = np.ones(shape, dtype=np.float32)
     rn_ref['dq'] = np.zeros(shape, dtype=np.uint16)
-    rn_ref['err'] = (np.random.random(shape) * 0.05).astype(np.float64)
+    rn_ref['err'] = (np.random.random(shape) * 0.05).astype(np.float32)
 
     rn_ref_model = ReadnoiseRefModel(rn_ref)
     rn_ref_model.save(readnoisefile)

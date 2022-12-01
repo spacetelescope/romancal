@@ -59,7 +59,7 @@ def generate_wfi_reffiles(shape, ingain = 6):
 
     gain_ref['data'] = (np.random.random(shape) * 0.5).astype(np.float32) * ingain
     gain_ref['dq'] = np.zeros(shape, dtype=np.uint16)
-    gain_ref['err'] = (np.random.random(shape) * 0.05).astype(np.float64)
+    gain_ref['err'] = (np.random.random(shape) * 0.05).astype(np.float32)
 
     gain_ref_model = GainRefModel(gain_ref)
 
