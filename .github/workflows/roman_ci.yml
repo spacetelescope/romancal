@@ -77,7 +77,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toxenv: [ test-numpy120, test-numpy121, test-numpy120 ]
+        toxenv: [ test-numpy120, test-numpy121, test-numpy122 ]
         python-version: [ '3.8', '3.9', '3.10', '3.11' ]
         os: [ ubuntu-latest ]
         exclude:
