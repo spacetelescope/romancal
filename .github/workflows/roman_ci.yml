@@ -83,6 +83,9 @@ jobs:
             os: ubuntu-latest
             python-version: '3.8'
     steps:
+      - uses: DataDog/agent-github-action@v1
+        with:
+          api_key: ${{ secrets.DD_API_KEY }}
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
