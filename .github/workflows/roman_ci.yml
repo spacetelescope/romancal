@@ -22,21 +22,14 @@ env:
 
 jobs:
   check:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.toxenv }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        toxenv: [ check-style, check-security, check-install ]
+        toxenv: [ check-style, check-security, check-dependencies, check-build ]
         python-version: [ '3.x' ]
         os: [ ubuntu-latest ]
-        include:
-          - name: Code style check
-            toxenv: check-style
-          - name: Security audit
-            toxenv: check-security
-          - name: Verify install_requires in setup.py
-            toxenv: check-install
     steps:
       - uses: actions/checkout@v3
         with:
@@ -184,21 +177,3 @@ jobs:
           file: ./coverage.xml
           flags: unit
           fail_ci_if_error: true
-  build:
-    name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
-    needs: [ test ]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        toxenv: [ build-twine ]
-        python-version: [ '3.8', '3.9', '3.10', '3.11' ]
-        os: [ ubuntu-latest, macos-latest ]
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - run: pip install tox
-      - run: tox -e ${{ matrix.toxenv }}
