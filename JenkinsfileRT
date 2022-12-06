@@ -78,6 +78,7 @@ bc0.env_vars = env_vars
 bc0.conda_ver = '4.8.4'
 bc0.conda_packages = [
     "python=${python_version}",
+    "freetds",
 ]
 bc0.pip_reqs_files = ['requirements-sdp.txt']
 bc0.build_cmds = [
