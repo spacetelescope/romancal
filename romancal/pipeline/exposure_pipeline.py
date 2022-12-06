@@ -17,6 +17,7 @@ from romancal.linearity import LinearityStep
 from romancal.photom import PhotomStep
 from romancal.ramp_fitting import ramp_fit_step
 from romancal.saturation import SaturationStep
+from romancal.source_detection import SourceDetectionStep
 
 from ..stpipe import RomanPipeline
 
@@ -53,6 +54,7 @@ class ExposurePipeline(RomanPipeline):
         "assign_wcs": AssignWcsStep,
         "flatfield": FlatFieldStep,
         "photom": PhotomStep,
+        "source_detection": SourceDetectionStep,
     }
 
     # start the actual processing
@@ -109,6 +111,8 @@ class ExposurePipeline(RomanPipeline):
             log.info("Flat Field step is being SKIPPED")
             result.meta.cal_step.flat_field = "SKIPPED"
         result = self.photom(result)
+
+        result = self.source_detection(result)
 
         # setup output_file for saving
         self.setup_output(result)

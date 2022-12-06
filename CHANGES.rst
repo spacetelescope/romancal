@@ -5,9 +5,15 @@ general
 -------
 - Updated datamodel maker utility imports. [#654]
 
+<<<<<<< HEAD
 - Update non-VOunits to using ``astropy.units``. [#658]
 
 - update minimum version of ``asdf`` to ``2.14.2`` and ``jsonschema`` to ``4.0.1`` and added minimum dependency checks to CI [#664]
+=======
+source_detection
+----------------
+- Added SourceDetection Step to pipeline [#608]
+>>>>>>> 05ff1e7 (adding source detection step)
 
 0.10.0 (2023-02-21)
 ===================

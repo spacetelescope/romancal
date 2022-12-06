@@ -13,3 +13,4 @@
    references_general/index.rst
    stpipe/index.rst
    refpix/index.rst
+   source_detection/index.rst
