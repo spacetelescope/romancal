@@ -157,6 +157,7 @@ exclude = [
     'jdocs',
     '.tox',
     '.eggs',
+    'build',
 ]
 ignore = [
     'E741', # ambiguous variable name
