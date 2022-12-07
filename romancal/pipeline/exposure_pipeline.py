@@ -3,7 +3,6 @@ from os.path import basename
 import logging
 
 import numpy as np
-import pdb
 from roman_datamodels import datamodels as rdd
 from ..stpipe import RomanPipeline
 from romancal.lib.basic_utils import is_fully_saturated
