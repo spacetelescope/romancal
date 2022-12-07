@@ -89,14 +89,14 @@ zip-safe = false
 [tool.setuptools.package-data]
 # package_data values are glob patterns relative to each specific subpackage.
 '*' = [
-    '*.fits',
-    '*.txt',
-    '*.inc',
-    '*.cfg',
-    '*.csv',
-    '*.yaml',
-    '*.json',
-    '*.asdf',
+    '**/*.fits',
+    '**/*.txt',
+    '**/*.inc',
+    '**/*.cfg',
+    '**/*.csv',
+    '**/*.yaml',
+    '**/*.json',
+    '**/*.asdf',
 ]
 
 [tool.pytest.ini_options]
