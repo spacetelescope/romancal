@@ -38,11 +38,11 @@ def test_flatfield_step_interface(instrument, exptype):
     wfi_image.err = u.Quantity(np.zeros(shape, dtype=np.float32),
                                ru.electron / u.s, dtype=np.float32)
     wfi_image.var_poisson = u.Quantity(np.zeros(shape, dtype=np.float32),
-                                       ru.electron / u.s, dtype=np.float32)
+                                       ru.electron**2 / u.s**2, dtype=np.float32)
     wfi_image.var_rnoise = u.Quantity(np.zeros(shape, dtype=np.float32),
-                                      ru.electron / u.s, dtype=np.float32)
+                                      ru.electron**2 / u.s**2, dtype=np.float32)
     wfi_image.var_flat = u.Quantity(np.zeros(shape, dtype=np.float32),
-                                    ru.electron / u.s, dtype=np.float32)
+                                    ru.electron**2 / u.s**2, dtype=np.float32)
     wfi_image_model = ImageModel(wfi_image)
     flatref = stnode.FlatRef()
     meta = {}
