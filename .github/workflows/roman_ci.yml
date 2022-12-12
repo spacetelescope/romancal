@@ -105,7 +105,7 @@ jobs:
         with:
           path: ${{ env.CRDS_PATH }}
           key: crds-${{ steps.crds-context.outputs.pmap }}
-      - run: tox -e ${{ matrix.toxenv }}
+      - run: tox -e ${{ matrix.toxenv }}-ddtrace
       - if: ${{ contains(matrix.toxenv,'-cov') }}
         uses: codecov/codecov-action@v3
         with:
