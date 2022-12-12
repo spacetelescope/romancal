@@ -39,7 +39,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
           cache-dependency-path: 'pyproject.toml'
-      - run: pip install "tox<4.0"
+      - run: pip install "tox>=4.0"
       - run: tox -e ${{ matrix.toxenv }}
   test:
     name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
@@ -97,7 +97,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
           cache-dependency-path: 'pyproject.toml'
-      - run: pip install "tox<4.0"
+      - run: pip install "tox>=4.0"
       - run: >
           echo "pmap=$(
           curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["roman"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
