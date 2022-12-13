@@ -3,6 +3,7 @@
 
 general
 -------
+- Update the suffix for the stored filename to match the filename [#609]
 
 - DQ step flags science data affected by guide window read [#599]
 

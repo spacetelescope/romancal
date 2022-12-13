@@ -120,7 +120,7 @@ class ExposurePipeline(RomanPipeline):
         if input.meta.cal_step.ramp_fit == 'COMPLETE':
             self.suffix = 'cal'
             input.meta.filename = input.meta.filename.replace(
-                '_uncal', '')
+                'uncal', self.suffix)
             input['output_file'] = input.meta.filename
             self.output_file = input.meta.filename
         else:
