@@ -5,14 +5,14 @@ import pytest
 import warnings
 from astropy import units as u
 
-from romancal.lib import dqflags
-from romancal.dq_init import DQInitStep
-from romancal.dq_init.dq_initialization import do_dqinit
-
 from roman_datamodels import stnode
 from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
 from roman_datamodels.testing import utils as testutil
 from roman_datamodels import units as ru
+
+from romancal.lib import dqflags
+from romancal.dq_init import DQInitStep
+from romancal.dq_init.dq_initialization import do_dqinit
 
 # Set parameters for multiple runs of data
 args = "xstart, ystart, xsize, ysize, ngroups, instrument, exp_type"
@@ -39,6 +39,7 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     dq[300, 100] = 8   # Dropout
     dq[400, 100] = 32  # Persistence
     dq[500, 100] = 1   # Do_not_use
+    dq[600, 100] = 16  # guide window affected data
     dq[100, 200] = 3   # Saturated pixel + do not use
     dq[200, 200] = 5   # Jump detected pixel + do not use
     dq[300, 200] = 9   # Dropout + do not use
@@ -62,6 +63,7 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     assert (dqdata[300, 100] == dqflags.pixel['DROPOUT'])
     assert (dqdata[400, 100] == dqflags.pixel['PERSISTENCE'])
     assert (dqdata[500, 100] == dqflags.pixel['DO_NOT_USE'])
+    assert (dqdata[600, 100] == dqflags.pixel['GW_AFFECTED_DATA'])
     assert (dqdata[100, 200] == dqflags.pixel['SATURATED'] + dqflags.pixel['DO_NOT_USE'])
     assert (dqdata[200, 200] == dqflags.pixel['JUMP_DET'] + dqflags.pixel['DO_NOT_USE'])
     assert (dqdata[300, 200] == dqflags.pixel['DROPOUT'] + dqflags.pixel['DO_NOT_USE'])
@@ -123,8 +125,8 @@ def test_err():
     # check that ERR array was created and initialized to zero
     errarr = outfile.err
 
-    assert (errarr.ndim == 3)  # check that output err array is 3-D
-    assert (np.all(errarr == 0))  # check that values are 0
+    assert errarr.ndim == 3  # check that output err array is 3-D
+    assert np.all(errarr == 0)  # check that values are 0
 
 
 def test_dq_add1_groupdq():
@@ -193,6 +195,8 @@ def test_dqinit_step_interface(instrument, exptype):
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = 'WFI01'
     wfi_sci_raw.meta.instrument.optical_element = 'F158'
+    wfi_sci_raw.meta['guidestar']['gw_window_xstart'] = 1012
+    wfi_sci_raw.meta['guidestar']['gw_window_xsize'] = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.data = u.Quantity(np.ones(shape, dtype=np.uint16), ru.DN, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
@@ -243,6 +247,8 @@ def test_dqinit_refpix(instrument, exptype):
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = 'WFI01'
     wfi_sci_raw.meta.instrument.optical_element = 'F158'
+    wfi_sci_raw.meta['guidestar']['gw_window_xstart'] = 1012
+    wfi_sci_raw.meta['guidestar']['gw_window_xsize'] = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.data = u.Quantity(np.ones(shape, dtype=np.uint16), ru.DN, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)

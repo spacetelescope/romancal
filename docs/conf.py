@@ -13,14 +13,14 @@
 
 import datetime
 import importlib
-import sys
 import os
+import sys
 from distutils.version import LooseVersion
-from configparser import ConfigParser
+from pathlib import Path
 
 import sphinx
 import stsci_rtd_theme
-import sphinx_astropy
+import tomli
 
 
 def setup(app):
@@ -28,9 +28,6 @@ def setup(app):
         app.add_css_file("stsci.css")
     except AttributeError:
         app.add_stylesheet("stsci.css")
-
-
-conf = ConfigParser()
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -41,8 +38,9 @@ sys.path.insert(0, os.path.abspath('romancal/'))
 sys.path.insert(0, os.path.abspath('exts/'))
 
 # -- General configuration ------------------------------------------------
-conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
-setup_cfg = dict(conf.items('metadata'))
+with open(Path(__file__).parent.parent / "pyproject.toml", "rb") as configuration_file:
+    conf = tomli.load(configuration_file)
+setup_cfg = conf['project']
 
 # If your documentation needs a minimal Sphinx version, state it here.
 # needs_sphinx = '1.3'
@@ -66,7 +64,7 @@ intersphinx_mapping = {
     'numpy': ('https://numpy.org/devdocs', None),
     'scipy': ('http://scipy.github.io/devdocs', None),
     'matplotlib': ('http://matplotlib.org/', None),
-    }
+}
 
 if sys.version_info[0] == 2:
     intersphinx_mapping['python'] = ('http://docs.python.org/2/', None)
@@ -94,9 +92,8 @@ extensions = [
     'sphinx_automodapi.autodoc_enhancements',
     'sphinx_automodapi.smart_resolver',
     'sphinx_asdf',
-    'myst_parser',
+'myst_parser',
     ]
-
 
 if on_rtd:
     extensions.append('sphinx.ext.mathjax')
@@ -105,7 +102,6 @@ elif LooseVersion(sphinx.__version__) < LooseVersion('1.4'):
     extensions.append('sphinx.ext.pngmath')
 else:
     extensions.append('sphinx.ext.imgmath')
-
 
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = ['_templates']
@@ -130,11 +126,10 @@ master_doc = 'index'
 
 suppress_warnings = ['app.add_directive', ]
 
-
 # General information about the project
 project = setup_cfg['name']
-author = setup_cfg['author']
-copyright = '{0}, {1}'.format(datetime.datetime.now().year, author)
+author = f'{setup_cfg["authors"][0]["name"]} <{setup_cfg["authors"][0]["email"]}>'
+copyright = f'{datetime.datetime.now().year}, {author}'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -172,7 +167,6 @@ rst_epilog = """.. _romancal: high-level_API.html"""
 # documents.
 default_role = 'obj'
 
-
 # Don't show summaries of the members in each class along with the
 # class' docstring
 numpydoc_show_class_members = False
@@ -196,7 +190,6 @@ graphviz_dot_args = [
     '-Gfontsize=10',
     '-Gfontname=Helvetica Neue, Helvetica, Arial, sans-serif'
 ]
-
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 # add_function_parentheses = True
@@ -237,7 +230,7 @@ html_favicon = '_static/favicon.ico'
 # documentation.
 html_theme_options = {
     "collapse_navigation": True,
-    "display_version": True
+"display_version": True
     }
 #        "nosidebar": "false",
 #        "sidebarbgcolor": "#4db8ff",
@@ -318,7 +311,6 @@ html_use_index = True
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'romandoc'
 
-
 # -- Options for LaTeX output ---------------------------------------------
 
 # latex_elements = {
@@ -371,16 +363,15 @@ man_pages = [
 # If true, show URL addresses after external links.
 man_show_urls = True
 
-
 # -- Options for Texinfo output -------------------------------------------
 
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'romancal', u'Roman Pipeline Documentation',
-   u'romancal', 'romancal', 'Roman Pipeline Documentation',
-   'Miscellaneous'),
+    ('index', 'romancal', u'Roman Pipeline Documentation',
+     u'romancal', 'romancal', 'Roman Pipeline Documentation',
+     'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.

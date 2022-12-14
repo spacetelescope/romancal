@@ -52,7 +52,7 @@ def pip_install_args = "--index-url ${pip_index} --progress-bar=off"
 // Define environment variables needed for the regression tests
 env_vars = [
     "TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory",
-    "CRDS_CONTEXT=roman_0038.pmap",
+    "CRDS_CONTEXT=roman_0039.pmap",
     "CRDS_SERVER_URL=https://roman-crds-test.stsci.edu",
     'CRDS_PATH=${WORKSPACE}/roman-crds-test-cache',
 ]
@@ -78,6 +78,7 @@ bc0.env_vars = env_vars
 bc0.conda_ver = '4.8.4'
 bc0.conda_packages = [
     "python=${python_version}",
+    "freetds",
 ]
 bc0.pip_reqs_files = ['requirements-dev.txt']
 bc0.build_cmds = [

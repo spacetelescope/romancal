@@ -1,11 +1,24 @@
-0.8.2 (unreleased)
+0.9.1 (unreleased)
 ==================
 
+general
+-------
+- Update the suffix for the stored filename to match the filename [#609]
+
+- DQ step flags science data affected by guide window read [#599]
+
 - Added support for Quantities for data arrays. [#602]
+  
+0.9.0 (2022-11-14)
+==================
+
+general
+-------
 
 - New Roman's RTD page layout [#596]
 
 - pin ``numpy`` to ``>=1.20`` [#592]
+
 
 jump
 ----
@@ -17,11 +30,18 @@ photom
 
 - Updates so that the default suffix is used for spectroscopic data. [#594]
 
+- Change photom step to forcibly set the photometric keywords to ``None`` for spectroscopic data. [#591]
+
+tests
+-----
+
+- refactor `tox` environment factors and structure GitHub Actions into dependent workflow [#551]
 
 0.8.1 (2022-08-23)
 ==================
 
 - pin ``asdf`` above ``2.12.1`` to fix issue with `jsonschema` release [#562]
+
 - pin `roman_datamodels` to newest feature version [#563]
 
 0.8.0 (2022-08-12)
@@ -46,13 +66,11 @@ general
 -------
 
 - Update pipeline steps to define the default suffix when saving the step results [#521]
-
 - Simplified reference file name and model storage in dq and flat steps. [#514]
 
 - Update CI workflows to cache test environments and depend upon style and security checks [#511]
-
 - Release ``numpy`` version requirement [#544]
-
+- Moved build configuration from ``setup.cfg`` to ``pyproject.toml`` to support PEP621 [#512]
 - Added support for STCAL handing of fully saturated data in both the pipeline and rampfit step. Added a unit test for the rampfit changes and a regression test for the pipeline chages. [#541]
 
 - Update `stpipe` requirement to `>=0.4.2` [#545]
@@ -81,7 +99,6 @@ tests
 
 - Updated tests to account for the change in dimensionality of the err variable in ramp datamodel. [#520]
 - Added SOC tests to check for information available in Level 2 images to correct for pixel geometric distortion. [#549]
-
 
 0.7.1 (2022-05-19)
 ==================

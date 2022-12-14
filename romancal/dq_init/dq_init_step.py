@@ -4,6 +4,7 @@ import numpy as np
 
 from romancal.stpipe import RomanStep
 from romancal.dq_init import dq_initialization
+from romancal.lib import dqflags
 from roman_datamodels.datamodels import RampModel
 import roman_datamodels as rdm
 from roman_datamodels.testing import utils as testutil
@@ -42,7 +43,7 @@ class DQInitStep(RomanStep):
         input_model = self.open_model(input)
 
         # Convert to RampModel if needed
-        if not (isinstance(input_model, RampModel)):
+        if not isinstance(input_model, RampModel):
             # Create base ramp node with dummy values (for validation)
             input_ramp = testutil.mk_ramp(input_model.shape)
 
@@ -62,6 +63,14 @@ class DQInitStep(RomanStep):
             init_model = RampModel(input_ramp)
         else:
             init_model = input_model
+
+        # guide window range information
+        x_start = input_model.meta.guidestar.gw_window_xstart
+        x_end = input_model.meta.guidestar.gw_window_xsize + x_start
+        # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
+        init_model.pixeldq[int(x_start):int(x_end),:] = dqflags.pixel['GW_AFFECTED_DATA']
+        self.log.info(f'Flagging rows from: {x_start} to {x_end} '
+                      'as affected by guide window read')
 
         # Get reference file path
         reference_file_name = self.get_reference_file(init_model, "mask")
@@ -102,7 +111,6 @@ class DQInitStep(RomanStep):
 
             output_model = init_model
             output_model.meta.cal_step.dq_init = 'SKIPPED'
-
 
         # Close the input and reference files
         input_model.close()

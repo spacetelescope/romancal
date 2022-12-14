@@ -26,7 +26,7 @@ pixel = {'GOOD':             0,      # No bits set, all is good
          'SATURATED':        2**1,   # Pixel saturated during exposure
          'JUMP_DET':         2**2,   # Jump detected during exposure
          'DROPOUT':          2**3,   # Data lost in transmission
-         'RESERVED_1':       2**4,   #
+         'GW_AFFECTED_DATA': 2**4,   # Data affected by the GW read window
          'PERSISTENCE':      2**5,   # High persistence (was RESERVED_2)
          'AD_FLOOR':         2**6,   # Below A/D floor (0 DN, was RESERVED_3)
          'RESERVED_4':       2**7,   #
