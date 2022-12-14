@@ -36,8 +36,6 @@ def generate_ramp_model(shape, deltatime=1):
     dm_ramp.groupdq = gdq
     dm_ramp.err = u.Quantity(err, ru.DN, dtype=np.float32)
 
-    #dm_ramp.meta['photometry'] = testutil.mk_photometry()
-
     dm_ramp.meta.exposure.frame_time = deltatime
     dm_ramp.meta.exposure.ngroups = shape[0]
     dm_ramp.meta.exposure.nframes = 1

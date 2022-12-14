@@ -121,14 +121,9 @@ def apply_flat_field(science, flat):
     science.var_rnoise = u.Quantity((science.var_rnoise / flat_data_squared), ru.electron**2 / u.s**2,
                                     dtype = science.var_rnoise.dtype)
 
-    try:
-        science.var_flat = u.Quantity((science.data.value**2 / flat_data_squared * flat_err**2),
-                                      ru.electron**2 / u.s**2, dtype=science.data.value.dtype)
-    except AttributeError:
-        science['var_flat'] = u.Quantity(np.zeros(shape=science.data.shape), ru.electron**2 / u.s**2,
-                                       dtype=np.float32)
-        # science.var_flat = u.Quantity((science.data.value**2 / flat_data_squared * flat_err**2),
-        #                               ru.electron**2 / u.s**2, dtype=science.data.value.dtype)
+    science['var_flat'] = u.Quantity((science.data.value ** 2 / flat_data_squared * flat_err ** 2),
+                                  ru.electron ** 2 / u.s ** 2, dtype=science.data.value.dtype)
+
     err_sqrt = np.sqrt(science.var_poisson.value + science.var_rnoise.value + science.var_flat)
     science.err = u.Quantity(err_sqrt, ru.electron / u.s, dtype=err_sqrt.dtype)
 
