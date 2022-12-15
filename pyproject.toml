@@ -20,9 +20,7 @@ dependencies = [
     'numpy >=1.20',
     'pyparsing >=2.4.7',
     'requests >=2.22',
-    'rad==0.14.0',
-    'roman_datamodels==0.14.0',
-    #'roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git@main',
+    'roman_datamodels>=0.14.0, <0.14.1',
     'stcal >=1.2.1, <2.0',
     'stpipe >=0.4.2, <1.0',
 ]
