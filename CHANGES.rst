@@ -7,7 +7,8 @@ general
 
 - DQ step flags science data affected by guide window read [#599]
 
-
+- Added support for Quantities for data arrays. [#613]
+  
 0.9.0 (2022-11-14)
 ==================
 

@@ -8,6 +8,8 @@ from romancal.lib import dqflags
 from roman_datamodels import datamodels as rdd
 from roman_datamodels import stnode as rds
 from roman_datamodels.testing import utils as testutil
+from roman_datamodels import units as ru
+from astropy import units as u
 
 from stcal.ramp_fitting import ramp_fit
 
@@ -42,15 +44,15 @@ def create_optional_results_model(input_model, opt_info):
     crmag.dtype = np.float32
 
     inst = {'meta': meta,
-            'slope': np.squeeze(slope),
-            'sigslope': np.squeeze(sigslope),
-            'var_poisson': np.squeeze(var_poisson),
-            'var_rnoise': np.squeeze(var_rnoise),
-            'yint': np.squeeze(yint),
-            'sigyint': np.squeeze(sigyint),
-            'pedestal': np.squeeze(pedestal),
+            'slope': u.Quantity(np.squeeze(slope), ru.electron / u.s, dtype=slope.dtype),
+            'sigslope': u.Quantity(np.squeeze(sigslope), ru.electron / u.s, dtype=sigslope.dtype),
+            'var_poisson': u.Quantity(np.squeeze(var_poisson), ru.electron**2 / u.s**2, dtype=var_poisson.dtype),
+            'var_rnoise': u.Quantity(np.squeeze(var_rnoise), ru.electron**2 / u.s**2, dtype=var_rnoise.dtype),
+            'yint': u.Quantity(np.squeeze(yint), ru.electron, dtype=yint.dtype),
+            'sigyint': u.Quantity(np.squeeze(sigyint), ru.electron, dtype=sigyint.dtype),
+            'pedestal': u.Quantity(np.squeeze(pedestal), ru.electron, dtype=pedestal.dtype),
             'weights': np.squeeze(weights),
-            'crmag': crmag
+            'crmag': u.Quantity(crmag, ru.electron, dtype=pedestal.dtype),
             }
 
     out_node = rds.RampFitOutput(inst)
@@ -79,6 +81,11 @@ def create_image_model(input_model, image_info):
         The output ``ImageModel`` to be returned from the ramp fit step.
     """
     data, dq, var_poisson, var_rnoise, err = image_info
+
+    data = u.Quantity(data, ru.electron / u.s, dtype=data.dtype)
+    var_poisson = u.Quantity(var_poisson, ru.electron**2 / u.s**2, dtype=var_poisson.dtype)
+    var_rnoise = u.Quantity(var_rnoise, ru.electron**2 / u.s**2, dtype=var_rnoise.dtype)
+    err = u.Quantity(err, ru.electron / u.s, dtype=err.dtype)
 
     # Create output datamodel
     # ... and add all keys from input
@@ -142,7 +149,6 @@ class RampFitStep(RomanStep):
             readnoise_filename = self.get_reference_file(input_model, 'readnoise')
             gain_filename = self.get_reference_file(input_model, 'gain')
             input_model.data = input_model.data[np.newaxis, :]
-            input_model.data.dtype=np.float32
             input_model.groupdq = input_model.groupdq[np.newaxis, :]
             input_model.err = input_model.err[np.newaxis, :]
 

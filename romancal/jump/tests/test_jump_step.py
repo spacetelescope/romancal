@@ -7,12 +7,14 @@ from itertools import cycle
 import pytest
 import numpy as np
 from astropy.time import Time
+from astropy import units as u
 
 import roman_datamodels.stnode as rds
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import GainRefModel
 from roman_datamodels.datamodels import ReadnoiseRefModel
 from roman_datamodels.testing import utils as testutil
+from roman_datamodels import units as ru
 
 from romancal.jump import JumpStep
 
@@ -49,7 +51,7 @@ def generate_wfi_reffiles(tmpdir_factory):
     gain_ref['meta'] = meta
     gain_ref['data'] = np.ones(shape, dtype=np.float32) * ingain
     gain_ref['dq'] = np.zeros(shape, dtype=np.uint16)
-    gain_ref['err'] = (np.random.random(shape) * 0.05).astype(np.float64)
+    gain_ref['err'] = (np.random.random(shape) * 0.05).astype(np.float32)
 
     gain_ref_model = GainRefModel(gain_ref)
     gain_ref_model.save(gainfile)
@@ -72,7 +74,7 @@ def generate_wfi_reffiles(tmpdir_factory):
     rn_ref['meta'] = meta
     rn_ref['data'] = np.ones(shape, dtype=np.float32)
     rn_ref['dq'] = np.zeros(shape, dtype=np.uint16)
-    rn_ref['err'] = (np.random.random(shape) * 0.05).astype(np.float64)
+    rn_ref['err'] = (np.random.random(shape) * 0.05).astype(np.float32)
 
     rn_ref_model = ReadnoiseRefModel(rn_ref)
     rn_ref_model.save(readnoisefile)
@@ -101,10 +103,10 @@ def setup_inputs():
         dm_ramp.meta.instrument.name = 'WFI'
         dm_ramp.meta.instrument.optical_element = 'F158'
 
-        dm_ramp.data = data + 6.
+        dm_ramp.data = u.Quantity(data + 6., ru.DN, dtype=data.dtype)
         dm_ramp.pixeldq = pixdq
         dm_ramp.groupdq = gdq
-        dm_ramp.err = err
+        dm_ramp.err = u.Quantity(err, ru.DN, dtype=err.dtype)
 
         dm_ramp.meta.exposure.type = 'WFI_IMAGE'
         dm_ramp.meta.exposure.group_time = deltatime
@@ -142,7 +144,7 @@ def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
                           deltatime=grouptime)
 
     for i in range(ngroups):
-        model1.data[i, :, :] = deltaDN * i
+        model1.data.value[i, :, :] = deltaDN * i
     first_CR_group_locs = [x for x in range(1, 7) if x % 5 == 0]
 
     CR_locs = [x for x in range(xsize * ysize) if x % CR_fraction == 0]
@@ -153,8 +155,8 @@ def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
     # Add CRs to the SCI data
     for i in range(len(CR_x_locs)):
         CR_group = next(CR_pool)
-        model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]] = \
-            model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]] + 500.
+        model1.data.value[CR_group:, CR_y_locs[i], CR_x_locs[i]] = \
+            model1.data.value[CR_group:, CR_y_locs[i], CR_x_locs[i]] + 500.
 
     out_model = JumpStep.call(model1, override_gain=override_gain,
                               override_readnoise=override_readnoise,
@@ -190,7 +192,7 @@ def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
                           deltatime=grouptime)
 
     for i in range(ngroups):
-        model1.data[i, :, :] = deltaDN * i
+        model1.data.value[i, :, :] = deltaDN * i
 
     first_CR_group_locs = [x for x in range(1, 7) if x % 5 == 0]
     CR_locs = [x for x in range(xsize * ysize) if x % CR_fraction == 0]
@@ -201,10 +203,10 @@ def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
     for i in range(len(CR_x_locs)):
         CR_group = next(CR_pool)
 
-        model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]] = \
-            model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]] + 500
-        model1.data[CR_group + 8:, CR_y_locs[i], CR_x_locs[i]] = \
-            model1.data[CR_group + 8:, CR_y_locs[i], CR_x_locs[i]] + 700
+        model1.data.value[CR_group:, CR_y_locs[i], CR_x_locs[i]] = \
+            model1.data.value[CR_group:, CR_y_locs[i], CR_x_locs[i]] + 500
+        model1.data.value[CR_group + 8:, CR_y_locs[i], CR_x_locs[i]] = \
+            model1.data.value[CR_group + 8:, CR_y_locs[i], CR_x_locs[i]] + 700
 
     out_model = JumpStep.call(model1, override_gain=override_gain,
                               override_readnoise=override_readnoise,
