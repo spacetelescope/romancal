@@ -17,7 +17,7 @@ automation:
   - '.github/**'
   - '.bandit.yaml'
   - '.codecov.yml'
-  - 'JenkinsfileRT*'
+  - 'Jenkinsfile*'
 
 testing:
   - '**/tests/**'
@@ -27,7 +27,7 @@ testing:
 
 regression_testing:
   - '**/regtest/**'
-  - 'JenkinsfileRT*'
+  - 'Jenkinsfile*'
 
 # --------------------------------------- modules ---------------------------------------
 
