@@ -34,7 +34,7 @@ def flag_saturation(input_model, ref_model):
         the GROUPDQ array
     """
 
-    data = input_model.data[np.newaxis, :].value
+    data = input_model.data[np.newaxis, :]
 
     # Create the output model as a copy of the input
     output_model = input_model

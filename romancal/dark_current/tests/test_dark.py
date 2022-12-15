@@ -5,15 +5,12 @@ Unit tests for dark current correction
 import pytest
 import numpy as np
 import os
-from astropy import units as u
 
 from romancal.dark_current import DarkCurrentStep
 
 from roman_datamodels.datamodels import RampModel, DarkRefModel
 import roman_datamodels as rdm
 from roman_datamodels.testing import utils as testutil
-from roman_datamodels import units as ru
-
 
 
 @pytest.mark.parametrize(
@@ -74,17 +71,17 @@ def test_dark_step_subtraction(instrument, exptype):
 
     # populate data array of science cube
     for i in range(0, 20):
-        ramp_model.data.value[0, 0, i] = i
+        ramp_model.data[0, 0, i] = i
         darkref_model.data[0, 0, i] = i * 0.1
 
     # Perform Dark Current subtraction step
     result = DarkCurrentStep.call(ramp_model, override_dark=darkref_model)
 
     # check that the dark file is subtracted frame by frame from the science data
-    diff = ramp_model.data.value - darkref_model.data
+    diff = ramp_model.data - darkref_model.data
 
     # test that the output data file is equal to the difference found when subtracting reffile from sci file
-    np.testing.assert_array_equal(result.data.value, diff, err_msg='dark file should be subtracted from sci file ')
+    np.testing.assert_array_equal(result.data, diff, err_msg='dark file should be subtracted from sci file ')
 
 
 @pytest.mark.parametrize(
@@ -130,7 +127,7 @@ def create_ramp_and_dark(shape, instrument, exptype):
     ramp.meta.instrument.detector = 'WFI01'
     ramp.meta.instrument.optical_element = 'F158'
     ramp.meta.exposure.type = exptype
-    ramp.data = u.Quantity(np.ones(shape, dtype=np.float32) , ru.DN, dtype=np.float32)
+    ramp.data = np.ones(shape, dtype=np.float32)
     ramp_model = RampModel(ramp)
 
     # Create dark model
