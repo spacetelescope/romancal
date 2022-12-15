@@ -21,23 +21,23 @@ def test_basic_saturation_flagging(setup_wfi_datamodels):
     nrows = 20
     ncols = 20
     satvalue = 60000
-    ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
+    data, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values up to the saturation limit
-    ramp.data.value[0, 5, 5] = 0
-    ramp.data.value[1, 5, 5] = 20000
-    ramp.data.value[2, 5, 5] = 40000
-    ramp.data.value[3, 5, 5] = 60000   # Signal reaches saturation limit
-    ramp.data.value[4, 5, 5] = 62000
+    data.data[0, 5, 5] = 0
+    data.data[1, 5, 5] = 20000
+    data.data[2, 5, 5] = 40000
+    data.data[3, 5, 5] = 60000   # Signal reaches saturation limit
+    data.data[4, 5, 5] = 62000
 
     # Set saturation value in the saturation model
     satmap.data[5, 5] = satvalue
 
     # Run the pipeline
-    output = flag_saturation(ramp, satmap)
+    output = flag_saturation(data, satmap)
 
     # Make sure that groups with signal > saturation limit get flagged
-    satindex = np.argmax(output.data.value[:, 5, 5] == satvalue)
+    satindex = np.argmax(output.data[:, 5, 5] == satvalue)
     assert np.all(output.groupdq[satindex:, 5, 5] == dqflags.group['SATURATED'])
 
 def test_ad_floor_flagging(setup_wfi_datamodels):
@@ -50,14 +50,14 @@ def test_ad_floor_flagging(setup_wfi_datamodels):
     ncols = 20
     satvalue = 60000
 
-    ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
+    data, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values up to the saturation limit
-    ramp.data.value[0, 5, 5] = 0  # Signal at bottom rail - low saturation
-    ramp.data.value[1, 5, 5] = 0  # Signal at bottom rail - low saturation
-    ramp.data.value[2, 5, 5] = 20
-    ramp.data.value[3, 5, 5] = 40
-    ramp.data.value[4, 5, 5] = 60
+    data.data[0, 5, 5] = 0  # Signal at bottom rail - low saturation
+    data.data[1, 5, 5] = 0  # Signal at bottom rail - low saturation
+    data.data[2, 5, 5] = 20
+    data.data[3, 5, 5] = 40
+    data.data[4, 5, 5] = 60
 
     # frames that should be flagged as saturation (low)
     satindxs = [0, 1]
@@ -66,7 +66,7 @@ def test_ad_floor_flagging(setup_wfi_datamodels):
     satmap.data[5, 5] = satvalue
 
     # Run the pipeline
-    output = flag_saturation(ramp, satmap)
+    output = flag_saturation(data, satmap)
 
     # Check if the right frames are flagged as saturated
     assert np.all(output.groupdq[satindxs, 5, 5]
@@ -83,14 +83,14 @@ def test_ad_floor_and_saturation_flagging(setup_wfi_datamodels):
     ncols = 20
     satvalue = 60000
 
-    ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
+    data, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values up to the saturation limit
-    ramp.data.value[0, 5, 5] = 0  # Signal at bottom rail - low saturation
-    ramp.data.value[1, 5, 5] = 0  # Signal at bottom rail - low saturation
-    ramp.data.value[2, 5, 5] = 20
-    ramp.data.value[3, 5, 5] = 40
-    ramp.data.value[4, 5, 5] = 61000  # Signal above the saturation threshold
+    data.data[0, 5, 5] = 0  # Signal at bottom rail - low saturation
+    data.data[1, 5, 5] = 0  # Signal at bottom rail - low saturation
+    data.data[2, 5, 5] = 20
+    data.data[3, 5, 5] = 40
+    data.data[4, 5, 5] = 61000  # Signal above the saturation threshold
 
     # frames that should be flagged as ad_floor
     floorindxs = [0, 1]
@@ -101,7 +101,7 @@ def test_ad_floor_and_saturation_flagging(setup_wfi_datamodels):
     satmap.data[5, 5] = satvalue
 
     # Run the pipeline
-    output = flag_saturation(ramp, satmap)
+    output = flag_saturation(data, satmap)
 
     # Check if the right frames are flagged as ad_floor
     assert np.all(output.groupdq[floorindxs, 5, 5]
@@ -121,23 +121,23 @@ def test_signal_fluctuation_flagging(setup_wfi_datamodels):
     ncols = 20
     satvalue = 60000
 
-    ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
+    data, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values up to the saturation limit
-    ramp.data.value[0, 5, 5] = 10
-    ramp.data.value[1, 5, 5] = 20000
-    ramp.data.value[2, 5, 5] = 40000
-    ramp.data.value[3, 5, 5] = 60000   # Signal reaches saturation limit
-    ramp.data.value[4, 5, 5] = 40000   # Signal drops below saturation limit
+    data.data[0, 5, 5] = 10
+    data.data[1, 5, 5] = 20000
+    data.data[2, 5, 5] = 40000
+    data.data[3, 5, 5] = 60000   # Signal reaches saturation limit
+    data.data[4, 5, 5] = 40000   # Signal drops below saturation limit
 
     # Set saturation value in the saturation model
     satmap.data[5, 5] = satvalue
 
     # Run the pipeline
-    output = flag_saturation(ramp, satmap)
+    output = flag_saturation(data, satmap)
 
     # Make sure that all groups after first saturated group are flagged
-    satindex = np.argmax(output.data.value[:, 5, 5] == satvalue)
+    satindex = np.argmax(output.data[:, 5, 5] == satvalue)
     assert np.all(output.groupdq[satindex:, 5, 5] == dqflags.group['SATURATED'])
 
 
@@ -150,20 +150,20 @@ def test_all_groups_saturated(setup_wfi_datamodels):
     ncols = 20
     satvalue = 60000
 
-    ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
+    data, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values at or above saturation limit
-    ramp.data.value[0, 5, 5] = 60000
-    ramp.data.value[1, 5, 5] = 62000
-    ramp.data.value[2, 5, 5] = 62000
-    ramp.data.value[3, 5, 5] = 60000
-    ramp.data.value[4, 5, 5] = 62000
+    data.data[0, 5, 5] = 60000
+    data.data[1, 5, 5] = 62000
+    data.data[2, 5, 5] = 62000
+    data.data[3, 5, 5] = 60000
+    data.data[4, 5, 5] = 62000
 
     # Set saturation value in the saturation model
     satmap.data[5, 5] = satvalue
 
     # Run the pipeline
-    output = flag_saturation(ramp, satmap)
+    output = flag_saturation(data, satmap)
 
     # Make sure all groups are flagged
     assert np.all(output.groupdq[:, 5, 5] == dqflags.group['SATURATED'])
@@ -178,14 +178,14 @@ def test_dq_propagation(setup_wfi_datamodels):
     dqval1 = 5
     dqval2 = 10
 
-    ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
+    data, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add DQ values to the data and reference file
-    ramp.pixeldq[5, 5] = dqval1
+    data.pixeldq[5, 5] = dqval1
     satmap.dq[5, 5] = dqval2
 
     # Run the pipeline
-    output = flag_saturation(ramp, satmap)
+    output = flag_saturation(data, satmap)
 
     # Make sure DQ values from data and reference file are added in the output
     assert output.pixeldq[5, 5] == dqval1 + dqval2
@@ -201,24 +201,24 @@ def test_no_sat_check(setup_wfi_datamodels):
     ncols = 20
     satvalue = 60000
 
-    ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
+    data, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values up to the saturation limit
-    ramp.data.value[0, 5, 5] = 10
-    ramp.data.value[1, 5, 5] = 20000
-    ramp.data.value[2, 5, 5] = 40000
-    ramp.data.value[3, 5, 5] = 60000
-    ramp.data.value[4, 5, 5] = 62000   # Signal reaches saturation limit
+    data.data[0, 5, 5] = 10
+    data.data[1, 5, 5] = 20000
+    data.data[2, 5, 5] = 40000
+    data.data[3, 5, 5] = 60000
+    data.data[4, 5, 5] = 62000   # Signal reaches saturation limit
 
     # Set saturation value in the saturation model & DQ value for NO_SAT_CHECK
     satmap.data[5, 5] = satvalue
     satmap.dq[5, 5] = dqflags.pixel['NO_SAT_CHECK']
 
     # Also set an existing DQ flag in input science data
-    ramp.pixeldq[5, 5] = dqflags.pixel['DO_NOT_USE']
+    data.pixeldq[5, 5] = dqflags.pixel['DO_NOT_USE']
 
     # Run the pipeline
-    output = flag_saturation(ramp, satmap)
+    output = flag_saturation(data, satmap)
 
     # Make sure output GROUPDQ does not get flagged as saturated
     # Make sure PIXELDQ is set to NO_SAT_CHECK and original flag
@@ -239,20 +239,20 @@ def test_nans_in_mask(setup_wfi_datamodels):
     nrows = 20
     ncols = 20
 
-    ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
+    data, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values up to the saturation limit
-    ramp.data.value[0, 5, 5] = 10
-    ramp.data.value[1, 5, 5] = 20000
-    ramp.data.value[2, 5, 5] = 40000
-    ramp.data.value[3, 5, 5] = 60000
-    ramp.data.value[4, 5, 5] = 62000
+    data.data[0, 5, 5] = 10
+    data.data[1, 5, 5] = 20000
+    data.data[2, 5, 5] = 40000
+    data.data[3, 5, 5] = 60000
+    data.data[4, 5, 5] = 62000
 
     # Set saturation value for pixel to NaN
     satmap.data[5, 5] = np.nan
 
     # Run the pipeline
-    output = flag_saturation(ramp, satmap)
+    output = flag_saturation(data, satmap)
 
     # Check that output GROUPDQ is not flagged as saturated
     assert np.all(output.groupdq[:, 5, 5] != dqflags.group['SATURATED'])
