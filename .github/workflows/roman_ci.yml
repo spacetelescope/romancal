@@ -83,6 +83,13 @@ jobs:
             os: ubuntu-latest
             python-version: '3.8'
     steps:
+      - if: contains(runner.os, 'Linux')
+        uses: datadog/agent-github-action@v1
+        with:
+          api_key: ${{ secrets.DD_API_KEY }}
+        env:
+          DD_INSIDE_CI: true
+          DD_HOSTNAME: none
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -102,8 +109,8 @@ jobs:
         with:
           path: ${{ env.CRDS_PATH }}
           key: crds-${{ steps.crds-context.outputs.pmap }}
-      - run: tox -e ${{ matrix.toxenv }}
-      - if: ${{ contains(matrix.toxenv,'-cov') }}
+      - run: tox -e ${{ matrix.toxenv }}-ddtrace
+      - if: contains(matrix.toxenv, '-cov')
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage.xml
