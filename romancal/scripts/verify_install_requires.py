@@ -1,14 +1,14 @@
 #!/usr/bin/env python
+
 import argparse
-import pkgutil
-from importlib import import_module
-import os
+
+import pytest
 
 import romancal
 
 
 def main():
-    """Import all packages/modules in romancal to test they are importable
+    """Import all packages/modules in jwst to test they are importable
 
     This script is used in a Travis build that doesn't install any test
     dependencies from the package. This is to verify that all the modules
@@ -21,17 +21,11 @@ def main():
     """
 
     parser = argparse.ArgumentParser(
-        description="Check if install_requires is up-to-date")
-    args = parser.parse_args()
+        description="Check if install_requires is up-to-date"
+    )
+    parser.parse_args()
 
-    package = romancal
-    prefix = package.__name__ + "."
-
-    no_check = ["test", "time"]
-
-    for importer, module_name, ispkg in pkgutil.walk_packages(package.__path__, prefix=prefix):
-        if not any(True for word in no_check if word in module_name):
-            module = import_module(module_name)
+    pytest.main([f"{romancal.__path__}/tests/test_import.py"])
 
 
 if __name__ == "__main__":
