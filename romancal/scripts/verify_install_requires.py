@@ -4,8 +4,6 @@ import argparse
 
 import pytest
 
-import romancal
-
 
 def main():
     """Import all packages/modules in jwst to test they are importable
@@ -27,8 +25,8 @@ def main():
 
     pytest.main(
         [
-            f"{romancal.__path__}/tests/test_import.py",
-            f"-c {romancal.__path__}/tests/empty_config/pytest.ini",
+            "romancal/tests/test_import.py",
+            "-c romancal/tests/empty_config/pytest.ini",
         ]
     )
 
