@@ -98,6 +98,8 @@ norecursedirs = [
     'docs/_build',
     'scripts',
     '.tox',
+    '.eggs',
+    'build',
 ]
 asdf_schema_tests_enabled = true
 asdf_schema_validate_default = false
