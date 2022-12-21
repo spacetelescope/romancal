@@ -29,9 +29,11 @@
 # USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 # DAMAGE.
 
-import sys
 import argparse
+import sys
+
 from jwst.datamodels.schema import build_docstring
+
 
 def get_docstrings(template, model_names, all=False):
     # Get the docstring for every model class
@@ -50,27 +52,34 @@ def get_docstrings(template, model_names, all=False):
         except Exception as err:
             print(klassname, ':', str(err), file=sys.stderr)
         else:
-            print(".. " + klassname + " ..")
+            print('.. ' + klassname + ' ..')
             print(docstring, end='')
 
-long_description = """
-Create documentation from the schema file of a datamodel class
-"""
 
-parser = argparse.ArgumentParser(description=long_description)
-parser.add_argument("-a", "--all", action="store_true",
-                    help="generate docstring for all models")
-parser.add_argument("-t", "--template", type=str,
-                    help="input file containing templates")
-parser.add_argument("models", nargs='*',
-                    help="Models to generate docstrings for")
-args = parser.parse_args()
+def main():
+    long_description = """
+    Create documentation from the schema file of a datamodel class
+    """
 
-if args.template is None:
-    template = "{path} : {title} ({datatype})\n"
-else:
-    with open(args.template, "r") as fd:
-        template = fd.readlines()
-        template = ''.join(template)
+    parser = argparse.ArgumentParser(description=long_description)
+    parser.add_argument(
+        '-a', '--all', action='store_true', help='generate docstring for all models'
+    )
+    parser.add_argument(
+        '-t', '--template', type=str, help='input file containing templates'
+    )
+    parser.add_argument('models', nargs='*', help='Models to generate docstrings for')
+    args = parser.parse_args()
 
-get_docstrings(template, args.models, all=args.all)
+    if args.template is None:
+        template = '{path} : {title} ({datatype})\n'
+    else:
+        with open(args.template, 'r') as fd:
+            template = fd.readlines()
+            template = ''.join(template)
+
+    get_docstrings(template, args.models, all=args.all)
+
+
+if __name__ == '__main__':
+    main()

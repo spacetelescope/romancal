@@ -6,28 +6,38 @@ Requires JFrog CLI (https://jfrog.com/getcli/) configured with credentials
 that have write access to the roman-pipeline repository.
 """
 
-import subprocess
 import os
+import shutil
+import subprocess
 import tempfile
 from argparse import ArgumentParser
 from contextlib import contextmanager
 from glob import glob
-import shutil
 
 import asdf
 
-
-ARTIFACTORY_REPO = "roman-pipeline-results"
-SPECFILE_SUFFIX = "_okify.json"
-RTDATA_SUFFIX = "_rtdata.asdf"
+ARTIFACTORY_REPO = 'roman-pipeline-results'
+SPECFILE_SUFFIX = '_okify.json'
+RTDATA_SUFFIX = '_rtdata.asdf'
 TERMINAL_WIDTH = shutil.get_terminal_size((80, 20)).columns
 
 
 def parse_args():
-    parser = ArgumentParser(description="Okify regression test results")
-    parser.add_argument("build_number", help="Jenkins build number for Roman builds", metavar="build-number")
-    parser.add_argument("--job-name", help="Jenkins job name under [RT] (default: romancal)", default="romancal", metavar="job-name")
-    parser.add_argument("--dry-run", action="store_true", help="pass the --dry-run flag to JFrog CLI")
+    parser = ArgumentParser(description='Okify regression test results')
+    parser.add_argument(
+        'build_number',
+        help='Jenkins build number for Roman builds',
+        metavar='build-number',
+    )
+    parser.add_argument(
+        '--job-name',
+        help='Jenkins job name under [RT] (default: romancal)',
+        default='romancal',
+        metavar='job-name',
+    )
+    parser.add_argument(
+        '--dry-run', action='store_true', help='pass the --dry-run flag to JFrog CLI'
+    )
 
     return parser.parse_args()
 
@@ -36,11 +46,9 @@ def artifactory_copy(specfile, dry_run=False):
     jfrog_args = []
 
     if dry_run:
-        jfrog_args.append("--dry-run")
+        jfrog_args.append('--dry-run')
 
-    args = list(["jfrog", "rt", "cp"]
-        + jfrog_args
-        + [f"--spec={specfile}"])
+    args = list(['jfrog', 'rt', 'cp'] + jfrog_args + [f'--spec={specfile}'])
     subprocess.run(args, check=True)
 
 
@@ -50,18 +58,20 @@ def artifactory_get_breadcrumbs(build_number, job_name, suffix):
 
     An example search would be:
 
-    jfrog rt search roman-pipeline-results/*/*_okify.json --props="build.number=540;build.name=RT :: romancal"
+    jfrog rt search roman-pipeline-results/*/*_okify.json --props='build.number=540;build.name=RT :: romancal'
     """
-    build_name = f"RT :: {job_name}"
+    build_name = f'RT :: {job_name}'
 
     # Retreive all the okify specfiles for failed tests.
-    args = list(["jfrog", "rt", "dl"]
-        + [f"{ARTIFACTORY_REPO}/*/*{suffix}"]
+    args = list(
+        ['jfrog', 'rt', 'dl']
+        + [f'{ARTIFACTORY_REPO}/*/*{suffix}']
         + [f'--build={build_name}/{build_number}']
-        + ["--flat"])
+        + ['--flat']
+    )
     subprocess.run(args, check=True, capture_output=True)
 
-    return sorted(glob(f"*{suffix}"))
+    return sorted(glob(f'*{suffix}'))
 
 
 def artifactory_get_build_artifacts(build_number, job_name):
@@ -69,11 +79,11 @@ def artifactory_get_build_artifacts(build_number, job_name):
     asdffiles = artifactory_get_breadcrumbs(build_number, job_name, RTDATA_SUFFIX)
 
     if len(specfiles) != len(asdffiles):
-        raise RuntimeError("Different number of _okify.json and _rtdata.asdf files")
+        raise RuntimeError('Different number of _okify.json and _rtdata.asdf files')
 
-    for a,b in zip(specfiles, asdffiles):
-        if a.replace(SPECFILE_SUFFIX, "") != b.replace(RTDATA_SUFFIX, ""):
-            raise RuntimeError("The _okify.json and _rtdata.asdf files are not matched")
+    for a, b in zip(specfiles, asdffiles):
+        if a.replace(SPECFILE_SUFFIX, '') != b.replace(RTDATA_SUFFIX, ''):
+            raise RuntimeError('The _okify.json and _rtdata.asdf files are not matched')
 
     return specfiles, asdffiles
 
@@ -96,54 +106,59 @@ def main():
 
     # Create and chdir to a temporary directory to store specfiles
     with tempfile.TemporaryDirectory() as tmpdir:
-        print(f"Downloading test okify artifacts to local directory {tmpdir}")
+        print(f'Downloading test okify artifacts to local directory {tmpdir}')
         with pushd(tmpdir):
             # Retreive all the okify specfiles for failed tests.
             specfiles, asdffiles = artifactory_get_build_artifacts(build, name)
 
             number_failed_tests = len(specfiles)
 
-            print(f"{number_failed_tests} failed tests to okify")
+            print(f'{number_failed_tests} failed tests to okify')
 
             for i, (specfile, asdffile) in enumerate(zip(specfiles, asdffiles)):
 
                 # Print traceback and OKify info for this test failure
                 with asdf.open(asdffile) as af:
-                    traceback = af.tree["traceback"]
-                    remote_results_path = af.tree["remote_results_path"]
-                    output = af.tree["output"]
-                    truth_remote = af.tree["truth_remote"]
+                    traceback = af.tree['traceback']
+                    remote_results_path = af.tree['remote_results_path']
+                    output = af.tree['output']
+                    truth_remote = af.tree['truth_remote']
                     try:
-                        test_name = af.tree["test_name"]
+                        test_name = af.tree['test_name']
                     except KeyError:
-                        test_name = "test_name"
+                        test_name = 'test_name'
 
-                remote_results = os.path.join(remote_results_path,
-                    os.path.basename(output))
+                remote_results = os.path.join(
+                    remote_results_path, os.path.basename(output)
+                )
 
                 test_number = i + 1
 
-                print(f" {test_name} ".center(TERMINAL_WIDTH, "—"))
+                print(f' {test_name} '.center(TERMINAL_WIDTH, '—'))
                 print(traceback)
-                print("—" * TERMINAL_WIDTH)
-                print(f"OK: {remote_results}")
-                print(f"--> {truth_remote}")
-                print(f"[ test {test_number} of {number_failed_tests} ]".center(TERMINAL_WIDTH, "—"))
+                print('—' * TERMINAL_WIDTH)
+                print(f'OK: {remote_results}')
+                print(f'--> {truth_remote}')
+                print(
+                    f'[ test {test_number} of {number_failed_tests} ]'.center(
+                        TERMINAL_WIDTH, '—'
+                    )
+                )
 
                 # Ask if user wants to okify this test
                 while True:
-                    result = input("Enter 'o' to okify, 's' to skip: ")
+                    result = input('Enter \'o\' to okify, \'s\' to skip: ')
                     if result not in ['o', 's']:
-                        print(f"Unrecognized command '{result}', try again")
+                        print(f'Unrecognized command \'{result}\', try again')
                     else:
                         break
 
                 if result == 's':
-                    print("Skipping\n")
+                    print('Skipping\n')
                 else:
                     artifactory_copy(os.path.abspath(specfile), dry_run=args.dry_run)
-                    print("")
+                    print('')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
