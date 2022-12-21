@@ -83,13 +83,10 @@ jobs:
             os: ubuntu-latest
             python-version: '3.8'
     steps:
-      - if: contains(runner.os, 'Linux')
+      - if: contains(runner.os, 'Linux') && github.event_name != 'pull_request'
         uses: datadog/agent-github-action@v1
         with:
           api_key: ${{ secrets.DD_API_KEY }}
-        env:
-          DD_INSIDE_CI: true
-          DD_HOSTNAME: none
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
