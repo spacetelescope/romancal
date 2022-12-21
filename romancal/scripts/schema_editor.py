@@ -31,10 +31,12 @@
 
 from jwst.datamodels import schema_editor
 
+
 def main():
     options = schema_editor.Options()
     editor = schema_editor.Schema_editor()
     editor.change(options)
+
 
 if __name__ == '__main__':
     main()
