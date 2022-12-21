@@ -21,12 +21,17 @@ def main():
     """
 
     parser = argparse.ArgumentParser(
-        description='Check if install_requires is up-to-date'
+        description="Check if install_requires is up-to-date"
     )
     parser.parse_args()
 
-    pytest.main([f'{romancal.__path__}/tests/test_import.py'])
+    pytest.main(
+        [
+            f"{romancal.__path__}/tests/test_import.py",
+            f"-c {romancal.__path__}/tests/empty_config/pytest.ini",
+        ]
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
