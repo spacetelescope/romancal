@@ -2,6 +2,7 @@
 from collections import deque
 from enum import Enum
 from functools import reduce
+import pdb
 
 class ListCategory(Enum):
     RULES      = 0
@@ -102,6 +103,7 @@ class ProcessList:
         self.only_on_match = only_on_match
         self.trigger_constraints = set(trigger_constraints) if trigger_constraints else set()
         self.trigger_rules = set(trigger_rules) if trigger_rules else set()
+        #pdb.set_trace()
 
     @property
     def hash(self):

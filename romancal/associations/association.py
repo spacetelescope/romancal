@@ -7,6 +7,7 @@ import logging
 import re
 import json
 import jsonschema
+import pdb
 
 from . import __version__
 from .exceptions import (
@@ -543,6 +544,7 @@ def finalize(asns):
        from jwst.associations.association import finalize as generic_finalize
        RegistryMarker.callback('finalize')(generic_finalize)
     """
+    pdb.set_trace()
     finalized_asns = list(filter(
         lambda asn: asn is not None,
         map(lambda asn: asn.finalize(), asns)

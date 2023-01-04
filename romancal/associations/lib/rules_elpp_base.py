@@ -1,4 +1,5 @@
 """Base classes which define the ELPP Associations"""
+import pdb
 from collections import defaultdict
 import logging
 from os.path import (
@@ -45,12 +46,19 @@ __all__ = [
     'AsnMixin_AuxData',
     'AsnMixin_Science',
     'AsnMixin_Spectrum',
+    'AsnMixin_Lv2Image',
     'Constraint',
     'Constraint_Base',
+    'Constraint_Expos',
     'Constraint_Image',
     'Constraint_Obsnum',
     'Constraint_Optical_Path',
     'Constraint_Spectral',
+    'Constraint_Tile',
+    'Constraint_Image_Science',
+    'Constraint_Single_Science',
+    'Constraint_Spectral_Science',
+    'Constraint_Target',
     'DMS_ELPP_Base',
     'DMSAttrConstraint',
     'ProcessList',
@@ -83,7 +91,7 @@ INVALID_AC_TYPES = ['background']
 
 
 class DMS_ELPP_Base(DMSBaseMixin, Association):
-    """Basic class for DMS Level3 associations."""
+    """Basic class for DMS Level associations."""
 
     # Set the validation schema
     schema_file = ASN_SCHEMA.schema
@@ -102,7 +110,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         # Initialize validity checks
         self.validity.update({
             'has_science': {
-                'validated': False,
+                'validated': True,
                 'check': lambda member: member['exptype'] == 'science'
             },
         })
@@ -122,6 +130,32 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
     @property
     def current_product(self):
         return self.data['products'][-1]
+
+    def members_by_type(self, member_type):
+        """Get list of members by their exposure type"""
+        member_type = member_type.lower()
+        try:
+            members = self.current_product['members']
+        except KeyError:
+            result = []
+        else:
+            result = [
+                member
+                for member in members
+                if member_type == member['exptype'].lower()
+            ]
+
+        return result
+
+    def has_science(self):
+        """Does association have a science member
+
+        -------
+        bool
+            True if it does.
+        """
+        limit_reached = len(self.members_by_type('science')) >= 1
+        return limit_reached
 
     def __eq__(self, other):
         """Compare equality of two associations"""
@@ -179,7 +213,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
             subarray = '-' + subarray
 
         product_name = (
-            'jw{program}-{acid}'
+            'r{program}-{acid}'
             '_{target}'
             '_{instrument}'
             '_{opt_elem}{subarray}'
@@ -276,7 +310,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         # Determine expected member name
         expname = Utility.rename_to_level2(
             item['filename'], exp_type=item['exp_type'],
-            is_tso=self.is_item_tso(item, other_exp_types=CORON_EXP_TYPES),
+            #is_tso=self.is_item_tso(item, other_exp_types=CORON_EXP_TYPES),
             member_exptype=exptype
         )
 
@@ -284,8 +318,9 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
             {
                 'expname': expname,
                 'exptype': exptype,
+                'asn_candidate':item['asn_candidate'],
                 'exposerr': exposerr,
-                'asn_candidate': item['asn_candidate']
+
             },
             item=item
         )
@@ -487,8 +522,8 @@ class Utility():
             else:
                 suffix = 'rate'
 
-        if is_tso:
-            suffix += 'ints'
+        #if is_tso:
+        #    suffix += 'ints'
 
         level2_name = ''.join([
             match.group('path'),
@@ -588,7 +623,7 @@ def dms_product_name_noopt(asn):
 
     instrument = asn._get_instrument()
 
-    product_name = 'jw{}-{}_{}_{}'.format(
+    product_name = 'r{}-{}_{}_{}'.format(
         asn.data['program'],
         asn.acid.id,
         target,
@@ -616,7 +651,7 @@ def dms_product_name_sources(asn):
     opt_elem = asn._get_opt_element()
 
     product_name_format = (
-        'jw{program}-{acid}'
+        'r{program}-{acid}'
         '_{source_id}'
         '_{instrument}'
         '_{opt_elem}'
@@ -653,6 +688,28 @@ class Constraint_Base(Constraint):
         )
 
 
+class Constraint_Expos(DMSAttrConstraint):
+    """Select on exposure number"""
+    def __init__(self):
+        super(Constraint_Expos, self).__init__(
+            name='exposure_number',
+            sources=['nexpsur'],
+            force_unique=True,
+            required=True,
+        )
+
+
+class Constraint_Tile(DMSAttrConstraint):
+    """Select on exposure number"""
+    def __init__(self):
+        super(Constraint_Tile, self).__init__(
+            name='tile',
+            sources=['tile'],
+            force_unique=False,
+            required=True,
+        )
+
+
 class Constraint_Image(DMSAttrConstraint):
     """Select on exposure type"""
     def __init__(self):
@@ -683,10 +740,48 @@ class Constraint_Optical_Path(Constraint):
         super(Constraint_Optical_Path, self).__init__([
             DMSAttrConstraint(
                 name='opt_elem',
-                sources=['filter'],
+                sources=['opt_elem'],
                 required=False,
             )
         ])
+
+class Constraint_Image_Science(DMSAttrConstraint):
+    """Select on science images"""
+    def __init__(self):
+        super(Constraint_Image_Science, self).__init__(
+            name='exp_type',
+            sources=['exp_type'],
+            value='|'.join(IMAGE2_SCIENCE_EXP_TYPES)
+        )
+
+
+class Constraint_Single_Science(SimpleConstraint):
+    """Allow only single science exposure
+
+    Parameters
+    ----------
+    has_science_fn : func
+        Function to determine whether the association
+        has a science member already. No arguments are provided.
+
+    sc_kwargs : dict
+        Keyword arguments to pass to the parent class `SimpleConstraint`
+
+    Notes
+    -----
+    The `has_science_fn` is further wrapped in a lambda function
+    to provide a closure. Otherwise if the function is a bound method,
+    that method may end up pointing to an instance that is not calling
+    this constraint.
+    """
+
+    def __init__(self, has_science_fn, **sc_kwargs):
+        super(Constraint_Single_Science, self).__init__(
+            name='single_science',
+            value=False,
+            sources=lambda item: has_science_fn(),
+            **sc_kwargs
+        )
 
 
 class Constraint_Spectral(DMSAttrConstraint):
@@ -703,6 +798,35 @@ class Constraint_Spectral(DMSAttrConstraint):
         )
 
 
+class Constraint_Spectral_Science(Constraint):
+    """Select on spectral science
+
+    Parameters
+    exclude_exp_types : [exp_type[, ...]]
+        List of exposure types to not consider from
+        from the general list.
+    """
+
+    def __init__(self, exclude_exp_types=None):
+        if exclude_exp_types is None:
+            general_science = SPEC2_SCIENCE_EXP_TYPES
+        else:
+            general_science = set(SPEC2_SCIENCE_EXP_TYPES).symmetric_difference(
+                exclude_exp_types
+            )
+
+        super(Constraint_Spectral_Science, self).__init__(
+            [
+                DMSAttrConstraint(
+                    name='exp_type',
+                    sources=['exp_type'],
+                    value='|'.join(general_science)
+                )
+            ],
+            reduce=Constraint.any
+        )
+
+
 class Constraint_Target(DMSAttrConstraint):
     """Select on target
 
@@ -716,12 +840,12 @@ class Constraint_Target(DMSAttrConstraint):
         if association is None:
             super(Constraint_Target, self).__init__(
                 name='target',
-                sources=['targetid'],
+                sources=['targname'],
             )
         else:
             super(Constraint_Target, self).__init__(
                 name='target',
-                sources=['targetid'],
+                sources=['targname'],
                 onlyif=lambda item: association.get_exposure_type(item) != 'background',
                 force_reprocess=ProcessList.EXISTING,
                 only_on_match=True,
@@ -763,6 +887,7 @@ class AsnMixin_Science(DMS_ELPP_Base):
     def __init__(self, *args, **kwargs):
 
         # Setup target acquisition inclusion
+        #pdb.set_trace()
         constraint_acqs = Constraint(
             [
                 Constraint_TargetAcq(),
@@ -816,3 +941,17 @@ class AsnMixin_Spectrum(AsnMixin_Science):
 
         self.data['asn_type'] = 'spec3'
         super(AsnMixin_Spectrum, self)._init_hook(item)
+
+# ---------------------------------------------
+# Mixins to define the broad category of rules.
+# ---------------------------------------------
+class AsnMixin_Lv2Image:
+    """Level 2 Image association base"""
+
+    def _init_hook(self, item):
+        """Post-check and pre-add initialization"""
+
+        super(AsnMixin_Lv2Image, self)._init_hook(item)
+        self.data['asn_type'] = 'image2'
+
+

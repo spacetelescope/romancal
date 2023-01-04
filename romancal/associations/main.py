@@ -1,4 +1,5 @@
 """Main entry for the association generator"""
+import pdb
 import os
 import sys
 import argparse
@@ -206,7 +207,7 @@ class Main():
 
         # DMS: Add further info to logging.
         try:
-            logger.context.set('program', self.pool[0]['PROGRAM'])
+            logger.context.set('program', self.pool[0]['program'])
         except KeyError:
             pass
 
@@ -229,13 +230,13 @@ class Main():
             global_constraints = constrain_on_candidates(
                 parsed.asn_candidate_ids
             )
-
         self.rules = AssociationRegistry(
             parsed.rules,
             include_default=not parsed.ignore_default,
             global_constraints=global_constraints,
             name=CANDIDATE_RULESET
         )
+        #pdb.set_trace()
 
         if parsed.discover:
             self.rules.update(
@@ -247,6 +248,7 @@ class Main():
             )
 
         logger.info('Generating associations.')
+        #pdb.set_trace()
         self.associations = generate(
             self.pool, self.rules, version_id=parsed.version_id
         )

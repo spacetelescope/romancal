@@ -1,4 +1,5 @@
 import logging
+import pdb
 from timeit import default_timer as timer
 
 from .association import make_timestamp
@@ -98,6 +99,7 @@ def generate(pool, rules, version_id=None):
 
     # Finalize found associations
     logger.debug('# associations before finalization: %d', len(associations))
+    #pdb.set_trace()
     try:
         finalized_asns = rules.callback.reduce('finalize', associations)
     except KeyError:
@@ -148,6 +150,7 @@ def generate_from_item(
     """
 
     # Setup the rules allowed to be examined.
+    #pdb.set_trace()
     if process_list.rules is None or len(process_list.rules) == 0:
         allowed_rules = list(rules.values())
     else:

@@ -1,4 +1,5 @@
 """Association attributes common to DMS-based Rules"""
+import pdb
 from romancal.associations.lib.counter import Counter
 
 from romancal.associations.exceptions import (
@@ -82,7 +83,7 @@ CORON_EXP_TYPES = [
 
 # Exposures that get Level2b processing
 IMAGE2_SCIENCE_EXP_TYPES = [
-    'fgs_image',
+    'wfi_image',
     'mir_4qpm',
     'mir_image',
     'mir_lyot',
@@ -123,81 +124,7 @@ SPECIAL_EXPOSURE_MODIFIERS = {
     'psf': ['is_psf'],
 }
 
-# Exposures that are always TSO
-TSO_EXP_TYPES = [
-    'nrc_tsimage',
-    'nrc_tsgrism',
-    'nrs_brightobj'
-]
-
-# Define the valid optical paths vs detector for NIRSpect Fixed-slit Science
-# Tuples are (SLIT, GRATING, FILTER, DETECTOR)
-# All A-slits are represented by SLIT == 'a'.
-NRS_FSS_VALID_OPTICAL_PATHS = (
-    ('a', 'prism', 'clear',  'nrs1'),
-    ('a', 'g395h', 'f290lp', 'nrs1'),
-    ('a', 'g395h', 'f290lp', 'nrs2'),
-    ('a', 'g235h', 'f170lp', 'nrs1'),
-    ('a', 'g235h', 'f170lp', 'nrs2'),
-    ('a', 'g140h', 'f100lp', 'nrs1'),
-    ('a', 'g140h', 'f100lp', 'nrs2'),
-    ('a', 'g140h', 'f070lp', 'nrs1'),
-    ('a', 'g395m', 'f290lp', 'nrs1'),
-    ('a', 'g235m', 'f170lp', 'nrs1'),
-    ('a', 'g140m', 'f100lp', 'nrs1'),
-    ('a', 'g140m', 'f070lp', 'nrs1'),
-    ('s200b1', 'prism', 'clear',  'nrs2'),
-    ('s200b1', 'g395h', 'f290lp', 'nrs2'),
-    ('s200b1', 'g235h', 'f170lp', 'nrs2'),
-    ('s200b1', 'g140h', 'f100lp', 'nrs2'),
-    ('s200b1', 'g140h', 'f070lp', 'nrs1'),
-    ('s200b1', 'g140h', 'f070lp', 'nrs2'),
-    ('s200b1', 'g395m', 'f290lp', 'nrs2'),
-    ('s200b1', 'g235m', 'f170lp', 'nrs2'),
-    ('s200b1', 'g140m', 'f100lp', 'nrs2'),
-    ('s200b1', 'g140m', 'f070lp', 'nrs1'),
-    ('s200b1', 'g140m', 'f070lp', 'nrs2'),
-)
-
-NRS_FSS_VALID_LAMP_OPTICAL_PATHS = (
-    ('prism', 'line4', 'nrs1'),
-    ('prism', 'line4', 'nrs2'),
-    ('prism', 'flat5', 'nrs1'),
-    ('prism', 'flat5', 'nrs2'),
-    ('prism', 'test', 'nrs1'),
-    ('prism', 'test', 'nrs2'),
-    ('g395h', 'flat3', 'nrs1'),
-    ('g395h', 'flat3', 'nrs2'),
-    ('g395h', 'line3', 'nrs1'),
-    ('g395h', 'line3', 'nrs2'),
-    ('g235h', 'flat2', 'nrs1'),
-    ('g235h', 'flat2', 'nrs2'),
-    ('g235h', 'line2', 'nrs1'),
-    ('g235h', 'line2', 'nrs2'),
-    ('g140h', 'flat1', 'nrs1'),
-    ('g140h', 'flat1', 'nrs2'),
-    ('g140h', 'ref', 'nrs1'),
-    ('g140h', 'ref', 'nrs2'),
-    ('g140h', 'line1', 'nrs1'),
-    ('g140h', 'line1', 'nrs2'),
-    ('g140h', 'flat4', 'nrs1'),
-    ('g140h', 'flat4', 'nrs2'),
-    ('g395m', 'flat3', 'nrs1'),
-    ('g395m', 'flat3', 'nrs2'),
-    ('g395m', 'line3', 'nrs1'),
-    ('g395m', 'line3', 'nrs2'),
-    ('g235m', 'flat2', 'nrs1'),
-    ('g235m', 'flat2', 'nrs2'),
-    ('g235m', 'line2', 'nrs1'),
-    ('g235m', 'line2', 'nrs2'),
-    ('g140m', 'flat1', 'nrs1'),
-    ('g140m', 'flat1', 'nrs2'),
-    ('g140m', 'line1', 'nrs1'),
-    ('g140m', 'line1', 'nrs2'),
-    ('g140m', 'flat4', 'nrs1'),
-    ('g140m', 'flat4', 'nrs2'),
-)
-
+#
 # Key that uniquely identifies members.
 MEMBER_KEY = 'expname'
 
@@ -233,10 +160,12 @@ class DMSBaseMixin(ACIDMixin):
         self._acid = None
         self._asn_name = None
         self.sequence = None
+        #pdb.set_trace()
         if 'degraded_status' not in self.data:
             self.data['degraded_status'] = _DEGRADED_STATUS_OK
         if 'program' not in self.data:
             self.data['program'] = 'noprogram'
+        #pdb.set_trace()
 
     @classmethod
     def create(cls, item, version_id=None):
@@ -284,6 +213,7 @@ class DMSBaseMixin(ACIDMixin):
         Typically, it is generated based on the current state of
         the association, but can be overridden.
         """
+        #pdb.set_trace()
         if self._asn_name:
             return self._asn_name
 
@@ -420,56 +350,6 @@ class DMSBaseMixin(ACIDMixin):
         """
         return item in self.from_items
 
-    def is_item_tso(self, item, other_exp_types=None):
-        """Is the given item TSO
-
-        Determine whether the specific item represents
-        TSO data or not. When used to determine naming
-        of files, coronagraphic data will be included through
-        the `other_exp_types` parameter.
-
-        Parameters
-        ----------
-        item : dict
-            The item to check for.
-
-        other_exp_types: [str[,...]] or None
-            List of other exposure types to consider TSO.
-
-        Returns
-        -------
-        is_item_tso : bool
-            Item represents a TSO exposure.
-        """
-        # If not a science exposure, such as target acquisitions,
-        # then other TSO indicators do not apply.
-        if item['pntgtype'] != 'science':
-            return False
-
-        # Target acquisitions are never TSO
-        if item['exp_type'] in ACQ_EXP_TYPES:
-            return False
-
-        # Setup exposure list
-        all_exp_types = TSO_EXP_TYPES.copy()
-        if other_exp_types:
-            all_exp_types += other_exp_types
-
-        # Go through all other TSO indicators.
-        try:
-            is_tso = self.constraints['is_tso'].value == 't'
-        except (AttributeError, KeyError):
-            # No such constraint is defined. Just continue on.
-            is_tso = False
-        try:
-            is_tso = is_tso or self.item_getattr(item, ['tsovisit'])[1] == 't'
-        except KeyError:
-            pass
-        try:
-            is_tso = is_tso or self.item_getattr(item, ['exp_type'])[1] in all_exp_types
-        except KeyError:
-            pass
-        return is_tso
 
     def item_getattr(self, item, attributes):
         """Return value from any of a list of attributes
@@ -568,7 +448,7 @@ class DMSBaseMixin(ACIDMixin):
                 raise AssociationNotValidError(
                     'Validation failed validity tests.'
                 )
-
+        #pdb.set_trace()
         return True
 
     def _get_exposure(self):
@@ -721,32 +601,6 @@ class Constraint_TargetAcq(SimpleConstraint):
         )
 
 
-class Constraint_TSO(Constraint):
-    """Match on Time-Series Observations"""
-    def __init__(self, *args, **kwargs):
-        super(Constraint_TSO, self).__init__(
-            [
-                DMSAttrConstraint(
-                    sources=['pntgtype'],
-                    value='science'
-                ),
-                Constraint(
-                    [
-                        DMSAttrConstraint(
-                            sources=['tsovisit'],
-                            value='t',
-                        ),
-                        DMSAttrConstraint(
-                            sources=['exp_type'],
-                            value='|'.join(TSO_EXP_TYPES),
-                        ),
-                    ],
-                    reduce=Constraint.any
-                )
-            ],
-            name='is_tso'
-        )
-
 
 class Constraint_WFSC(Constraint):
     """Match on Wave Front Sensing and Control Observations"""
@@ -890,96 +744,3 @@ def item_getattr(item, attributes, association=None):
         attributes,
         invalid_values=invalid_values
     )
-
-
-def nrsfss_valid_detector(item):
-    """Check that a grating/filter combo can appear on the detector"""
-    try:
-        _, detector = item_getattr(item, ['detector'])
-        _, filter = item_getattr(item, ['filter'])
-        _, grating = item_getattr(item, ['grating'])
-        _, slit = item_getattr(item, ['fxd_slit'])
-    except KeyError:
-        return False
-
-    # Reduce all A slits to just 'a'.
-    if slit != 's200b1':
-        slit = 'a'
-
-    return (slit, grating, filter, detector) in NRS_FSS_VALID_OPTICAL_PATHS
-
-
-def nrsifu_valid_detector(item):
-    """Check that a grating/filter combo can appear on the detector"""
-    try:
-        _, detector = item_getattr(item, ['detector'])
-        _, filter = item_getattr(item, ['filter'])
-        _, grating = item_getattr(item, ['grating'])
-    except KeyError:
-        return False
-
-    # Just a checklist of paths:
-    if grating in ['g395h', 'g235h']:
-        return True
-    elif grating in ['g395m', 'g235m', 'g140m'] and detector == 'nrs1':
-        return True
-    elif grating == 'prism' and filter == 'clear' and detector == 'nrs1':
-        return True
-    elif grating == 'g140h':
-        if filter == 'f100lp':
-            return True
-        elif filter == 'f070lp' and detector == 'nrs1':
-            return True
-
-    # Nothing has matched. Not valid.
-    return False
-
-
-def nrslamp_valid_detector(item):
-    """Check that a grating/lamp combo can appear on the detector"""
-    try:
-        _, detector = item_getattr(item, ['detector'])
-        _, grating = item_getattr(item, ['grating'])
-        _, opmode = item_getattr(item, ['opmode'])
-    except KeyError:
-        return False
-
-    if opmode in ['msaspec']:
-        # All settings can result in data on both detectors,
-        # depending on which MSA shutters are open
-        return True
-
-    elif opmode in ['ifu']:
-        # Need lamp value for IFU mode
-        try:
-            _, lamp = item_getattr(item, ['lamp'])
-        except KeyError:
-            return False
-
-        # Just a checklist of paths:
-        if grating in ['g395h', 'g235h']:
-            # long-wave, high-res gratings result in data on both detectors
-            return True
-        elif grating in ['g395m', 'g235m', 'g140m'] and detector == 'nrs1':
-            # all medium-res gratings result in data only on NRS1 detector
-            return True
-        elif grating == 'prism' and detector == 'nrs1':
-            # prism results in data only on NRS1 detector
-            return True
-        elif grating == 'g140h':
-            # short-wave, high-res grating results in data on both detectors,
-            # except when lamp FLAT4 is in use (no data on NRS2)
-            if not (detector == 'nrs2' and lamp == 'flat4'):
-                return True
-
-    elif opmode in ['fixedslit']:
-        # All slits illuminated by lamps, regardless of grating or subarray
-        try:
-            _, lamp = item_getattr(item, ['lamp'])
-        except KeyError:
-            return False
-
-        return (grating, lamp, detector) in NRS_FSS_VALID_LAMP_OPTICAL_PATHS
-
-    # Nothing has matched. Not valid.
-    return False
