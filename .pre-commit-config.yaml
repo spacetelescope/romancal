@@ -30,3 +30,10 @@ repos:
   hooks:
     - id: pyupgrade
       args: ["--py38-plus"]
+
+- repo: https://github.com/PyCQA/bandit
+  rev: 1.7.4
+  hooks:
+    - id: bandit
+      args: ["-c", "pyproject.toml"]
+      additional_dependencies: ["bandit[toml]"]
