@@ -3,10 +3,10 @@ Description
 ===========
 
 ``romancal.assign_wcs`` is the first step run on an image, after ``romancal.ramp_fitting``.
-It associates a World Coordinate System (WCS) object with each science exposure. 
-Note that no fitting is performed in this step; it only creates a WCS object that 
+It associates a World Coordinate System (WCS) object with each science exposure.
+Note that no fitting is performed in this step; it only creates a WCS object that
 transforms positions in the ``detector`` frame to positions in the ``world``
-coordinate frame (ICRS) based on the telescope pointing and reference files provided by CRDS. 
+coordinate frame (ICRS) based on the telescope pointing and reference files provided by CRDS.
 The constructed WCS object can be accessed as an attribute of the ``meta`` object
 when the file is opened as a data model. The forward direction of the transforms is
 from detector to world coordinates and the input positions are 0-based.
@@ -73,5 +73,5 @@ further transformation of coordinates to different coordinate frames.
 .. rubric:: Footnotes
 
 .. [1] V2V3 is a frame defined by the two perpendicular axes that lay along the primary's mirror plane.
-        For completeness, V1 is also part of the telescope frame system, being the axis perpendicular 
+        For completeness, V1 is also part of the telescope frame system, being the axis perpendicular
         to the primary mirror (i.e. along the telecope's optical axis).

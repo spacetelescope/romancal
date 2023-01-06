@@ -7,7 +7,7 @@ PHOTOM is not applicable for instruments not in the table.
 All keywords used for file selection are *required*.
 
 ========== ===========================================
-Instrument  Keyword Attributes                                                                                           
+Instrument  Keyword Attributes
 ========== ===========================================
 WFI	    instrument, date, time
 ========== ===========================================

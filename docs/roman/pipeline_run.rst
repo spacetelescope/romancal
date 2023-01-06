@@ -61,4 +61,3 @@ see :ref:`Execute via call()<call_examples>`::
 
 For more details on the different ways to run a pipeline step, see
 the :ref:`Configuring a Step<configuring-a-step>` page.
-

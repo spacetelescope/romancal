@@ -28,7 +28,7 @@ detector   model.meta.instrument.detector  WFI
 
 Reference File Format
 +++++++++++++++++++++
-SATURATION reference files are ASDF format, with two data objects. 
+SATURATION reference files are ASDF format, with two data objects.
 The format and content of the file is as follows:
 
 =======  ============ ==============  =============
