@@ -96,6 +96,7 @@ def generate(pool, rules, version_id=None):
         logger.debug('Updated process queue: %s', process_queue)
         logger.debug('# associations: %d', len(associations))
         logger.debug('Seconds to process: %.2f\n', timer() - time_start)
+        #pdb.set_trace()
 
     # Finalize found associations
     logger.debug('# associations before finalization: %d', len(associations))

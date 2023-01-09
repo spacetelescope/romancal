@@ -230,6 +230,7 @@ class Main():
             global_constraints = constrain_on_candidates(
                 parsed.asn_candidate_ids
             )
+        #pdb.set_trace()
         self.rules = AssociationRegistry(
             parsed.rules,
             include_default=not parsed.ignore_default,
@@ -252,7 +253,7 @@ class Main():
         self.associations = generate(
             self.pool, self.rules, version_id=parsed.version_id
         )
-
+        #pdb.set_trace()
         if parsed.discover:
             logger.debug(
                 '# asns found before discover filtering={}'.format(
@@ -269,6 +270,7 @@ class Main():
 
         # Do a grand merging. This is done particularly for
         # Level2 associations.
+        #pdb.set_trace()
         if parsed.merge:
             try:
                 self.associations = self.rules.Utility.merge_asns(self.associations)

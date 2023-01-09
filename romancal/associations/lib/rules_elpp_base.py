@@ -116,6 +116,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         })
 
         # Other presumptions on the association
+        #pdb.set_trace()
         if 'constraints' not in self.data:
             self.data['constraints'] = 'No constraints'
         if 'asn_type' not in self.data:
@@ -548,6 +549,7 @@ class Utility():
         [ACID, ...]
             The list of parsed candidates.
         """
+        pdb.set_trace()
         result = []
         evaled = evaluate(value)
         if is_iterable(evaled):
@@ -694,8 +696,8 @@ class Constraint_Expos(DMSAttrConstraint):
         super(Constraint_Expos, self).__init__(
             name='exposure_number',
             sources=['nexpsur'],
-            force_unique=True,
-            required=True,
+            #force_unique=True,
+            #required=True,
         )
 
 
@@ -705,8 +707,8 @@ class Constraint_Tile(DMSAttrConstraint):
         super(Constraint_Tile, self).__init__(
             name='tile',
             sources=['tile'],
-            force_unique=False,
-            required=True,
+            #force_unique=True,
+            #required=True,
         )
 
 

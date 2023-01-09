@@ -200,7 +200,7 @@ class AssociationRegistry(dict):
             raise AssociationNotValidError(
                 'Structure did not validate: "{}"'.format(association)
             )
-        pdb.set_trace()
+        #pdb.set_trace()
         return results
 
     def load(
