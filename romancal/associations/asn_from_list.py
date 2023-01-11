@@ -1,15 +1,18 @@
 """Create an association from a list"""
 import argparse
 import sys
+import pdb
 
-from . import AssociationRegistry
-from .lib.rules_elpp_base import DMS_ELPP_Base
+from romancal.associations import AssociationRegistry
+from romancal.associations.lib.rules_elpp_base import DMS_ELPP_Base
+from romancal.associations.lib.rules_level2 import  Asn_Lv2Image
+#from romancal.associations.lib.rules_level3_base import DMS_Level3_Base
 
 __all__ = ['asn_from_list']
 
 
 def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
-    """Creat an association from a list
+    """Create an association from a list
 
     Parameters
     ----------
@@ -34,7 +37,7 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
     an association. As such, the association created may not be valid.
     It is presume the user knows what they are doing.
     """
-
+    #pdb.set_trace()
     asn = rule()
     asn._add_items(items, **kwargs)
     return asn
@@ -53,6 +56,7 @@ class Main():
     """
     def __init__(self, args=None):
 
+        #pdb.set_trace()    
         if args is None:
             args = sys.argv[1:]
         if isinstance(args, str):
@@ -87,7 +91,7 @@ class Main():
         parser.add_argument(
             '-r', '--rule',
             type=str,
-            default='DMS_Level3_Base',
+            default='DMS_ELPP_Base',
             help=(
                 'The rule to base the association structure on.'
                 ' Default: "%(default)s"'
@@ -116,6 +120,7 @@ class Main():
         )
 
         parsed = parser.parse_args(args=args)
+        print("Parsed args:", parsed)
 
         # Get the rule
         rule = AssociationRegistry(parsed.ruledefs,

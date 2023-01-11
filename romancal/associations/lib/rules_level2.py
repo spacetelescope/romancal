@@ -54,20 +54,6 @@ class Asn_Lv2Image(
             Constraint_Target(),
             Constraint_Expos(),
             Constraint_Tile()
-#            Constraint_Mode(),
-#            Constraint_Image_Science(),
-#            Constraint(
-#                [
-#                    SimpleConstraint(
-#                        value='background',
-#                        test=lambda value, item: self.get_exposure_type(item) == value,
-#                        force_unique=False,
-#                        reprocess_on_match=True,
-#                        work_over=ListCategory.EXISTING,
-#                    ),
-#                    Constraint_Single_Science(self.has_science),
-#                ], reduce=Constraint.any
-#            ),
         ])
 
         # Now check and continue initialization.

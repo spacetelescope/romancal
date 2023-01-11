@@ -278,9 +278,12 @@ class AssociationRegistry(dict):
         for name, obj in get_marked(module, include_bases=include_bases):
 
             # Add rules.
-            if (include_bases and isclass(obj)) or\
-               obj._asnreg_role == 'rule':
-                self.add_rule(name, obj, global_constraints=global_constraints)
+            # Add rules.
+            if (include_bases and isclass(obj)) or obj._asnreg_role == 'rule':
+                try:
+                    self.add_rule(name, obj, global_constraints=global_constraints)
+                except TypeError:
+                    logger.debug(f'Could not add object {obj} as a rule due to TypeError')
                 continue
 
             # Add callbacks
