@@ -34,7 +34,7 @@ def flag_saturation(input_model, ref_model):
         the GROUPDQ array
     """
 
-    data = input_model.data[np.newaxis, :]
+    data = input_model.data.value[np.newaxis, :]
 
     # Create the output model as a copy of the input
     output_model = input_model
@@ -42,7 +42,7 @@ def flag_saturation(input_model, ref_model):
     pdq = output_model.pixeldq[np.newaxis, :]
 
     # Copy information from saturation reference file
-    sat_thresh = ref_model.data.copy()
+    sat_thresh = ref_model.data.value
     sat_dq = ref_model.dq.copy()
 
     # Obtain dq arrays updated for saturation

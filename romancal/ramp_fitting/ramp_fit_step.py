@@ -2,12 +2,14 @@
 #
 import logging
 import numpy as np
+from astropy import units as u
 
 from romancal.stpipe import RomanStep
 from romancal.lib import dqflags
 from roman_datamodels import datamodels as rdd
 from roman_datamodels import stnode as rds
 from roman_datamodels.testing import utils as testutil
+from roman_datamodels import units as ru
 
 from stcal.ramp_fitting import ramp_fit
 
@@ -87,11 +89,11 @@ def create_image_model(input_model, image_info):
     meta['cal_step']['ramp_fit'] = 'INCOMPLETE'
     meta['photometry'] = testutil.mk_photometry()
     inst = {'meta': meta,
-            'data': data,
+            'data': u.Quantity(data, ru.electron / u.s, dtype=data.dtype),
             'dq': dq,
-            'var_poisson': var_poisson,
-            'var_rnoise': var_rnoise,
-            'err': err,
+            'var_poisson': u.Quantity(var_poisson, ru.electron**2 / u.s**2, dtype=var_poisson.dtype),
+            'var_rnoise': u.Quantity(var_rnoise, ru.electron**2 / u.s**2, dtype=var_rnoise.dtype),
+            'err': u.Quantity(err, ru.electron / u.s, dtype=err.dtype),
             'amp33': input_model.amp33,
             'border_ref_pix_left': input_model.border_ref_pix_left,
             'border_ref_pix_right': input_model.border_ref_pix_right,
@@ -101,6 +103,15 @@ def create_image_model(input_model, image_info):
             'dq_border_ref_pix_right': input_model.dq_border_ref_pix_right,
             'dq_border_ref_pix_top': input_model.dq_border_ref_pix_top,
             'dq_border_ref_pix_bottom': input_model.dq_border_ref_pix_bottom,
+            # 'amp33': u.Quantity(input_model.amp33, ru.DN, dtype=amp33.dtype),
+            # 'border_ref_pix_left': u.Quantity(input_model.border_ref_pix_left, ru.DN, dtype=amp33.dtype),
+            # 'border_ref_pix_right': u.Quantity(input_model.border_ref_pix_right, ru.DN, dtype=amp33.dtype),
+            # 'border_ref_pix_top': u.Quantity(input_model.border_ref_pix_top, ru.DN, dtype=amp33.dtype),
+            # 'border_ref_pix_bottom': u.Quantity(input_model.border_ref_pix_bottom, ru.DN, dtype=amp33.dtype),
+            # 'dq_border_ref_pix_left': input_model.dq_border_ref_pix_left,
+            # 'dq_border_ref_pix_right': input_model.dq_border_ref_pix_right,
+            # 'dq_border_ref_pix_top': input_model.dq_border_ref_pix_top,
+            # 'dq_border_ref_pix_bottom': input_model.dq_border_ref_pix_bottom,
             'cal_logs': rds.CalLogs(),
             }
     out_node = rds.WfiImage(inst)
@@ -157,7 +168,7 @@ class RampFitStep(RomanStep):
             buffsize = ramp_fit.BUFSIZE
             image_info, integ_info, opt_info, gls_opt_model = ramp_fit.ramp_fit(
                 input_model, buffsize, self.save_opt,
-                readnoise_model.data, gain_model.data, self.algorithm,
+                readnoise_model.data.value, gain_model.data.value, self.algorithm,
                 self.weighting, max_cores, dqflags.pixel)
             readnoise_model.close()
             gain_model.close()
