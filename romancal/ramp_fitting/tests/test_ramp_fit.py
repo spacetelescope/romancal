@@ -58,9 +58,11 @@ def generate_wfi_reffiles(shape, ingain = 6):
     gain_ref['meta']['reftype'] = 'GAIN'
     gain_ref['meta']['useafter'] = Time('2022-01-01T11:11:11.111')
 
-    gain_ref['data'] = u.Quantity((np.random.random(shape) * 0.5).astype(np.float32) * ingain, ru.electron / ru.DN, dtype=np.float32)
+    gain_ref['data'] = u.Quantity((np.random.random(shape) * 0.5).astype(np.float32) * ingain,
+                                  ru.electron / ru.DN, dtype=np.float32)
     gain_ref['dq'] = np.zeros(shape, dtype=np.uint16)
-    gain_ref['err'] = u.Quantity((np.random.random(shape) * 0.05).astype(np.float32), ru.electron / ru.DN, dtype=np.float32)
+    gain_ref['err'] = u.Quantity((np.random.random(shape) * 0.05).astype(np.float32),
+                                 ru.electron / ru.DN, dtype=np.float32)
 
     gain_ref_model = GainRefModel(gain_ref)
 

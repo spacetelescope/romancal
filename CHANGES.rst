@@ -6,7 +6,10 @@ general
 - Update the suffix for the stored filename to match the filename [#609]
 
 - DQ step flags science data affected by guide window read [#599]
+  
 - Fix deprecation warnings introduced by ``pytest`` ``7.2`` ahead of ``8.0`` [#597]
+  
+- Implemented support for quantities in reference files. Updated unit tests for these changes. [#624]
 
 0.9.0 (2022-11-14)
 ==================

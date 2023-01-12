@@ -90,7 +90,7 @@ def test_ad_floor_and_saturation_flagging(setup_wfi_datamodels):
     ramp.data[1, 5, 5] = 0 * ramp.data.unit  # Signal at bottom rail - low saturation
     ramp.data[2, 5, 5] = 20 * ramp.data.unit
     ramp.data[3, 5, 5] = 40 * ramp.data.unit
-    ramp.data[4, 5, 5] = 61000  * ramp.data.unit # Signal above the saturation threshold
+    ramp.data[4, 5, 5] = 61000 * ramp.data.unit  # Signal above the saturation threshold
 
     # frames that should be flagged as ad_floor
     floorindxs = [0, 1]
