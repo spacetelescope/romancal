@@ -1,7 +1,6 @@
 """Create an association from a list"""
 import argparse
 import sys
-import pdb
 
 from romancal.associations import AssociationRegistry
 from romancal.associations.lib.rules_elpp_base import DMS_ELPP_Base
@@ -37,7 +36,6 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
     an association. As such, the association created may not be valid.
     It is presume the user knows what they are doing.
     """
-    #pdb.set_trace()
     asn = rule()
     asn._add_items(items, **kwargs)
     return asn
@@ -56,7 +54,6 @@ class Main():
     """
     def __init__(self, args=None):
 
-        #pdb.set_trace()    
         if args is None:
             args = sys.argv[1:]
         if isinstance(args, str):

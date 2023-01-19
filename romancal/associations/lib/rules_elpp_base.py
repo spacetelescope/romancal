@@ -1,5 +1,5 @@
 """Base classes which define the ELPP Associations"""
-import pdb
+
 from collections import defaultdict
 import logging
 from os.path import (
@@ -116,7 +116,6 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         })
 
         # Other presumptions on the association
-        #pdb.set_trace()
         if 'constraints' not in self.data:
             self.data['constraints'] = 'No constraints'
         if 'asn_type' not in self.data:
@@ -549,7 +548,7 @@ class Utility():
         [ACID, ...]
             The list of parsed candidates.
         """
-        pdb.set_trace()
+
         result = []
         evaled = evaluate(value)
         if is_iterable(evaled):
@@ -889,7 +888,6 @@ class AsnMixin_Science(DMS_ELPP_Base):
     def __init__(self, *args, **kwargs):
 
         # Setup target acquisition inclusion
-        #pdb.set_trace()
         constraint_acqs = Constraint(
             [
                 Constraint_TargetAcq(),

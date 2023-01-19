@@ -1,5 +1,5 @@
 """Association attributes common to DMS-based Rules"""
-import pdb
+
 from romancal.associations.lib.counter import Counter
 
 from romancal.associations.exceptions import (
@@ -160,12 +160,10 @@ class DMSBaseMixin(ACIDMixin):
         self._acid = None
         self._asn_name = None
         self.sequence = None
-        #pdb.set_trace()
         if 'degraded_status' not in self.data:
             self.data['degraded_status'] = _DEGRADED_STATUS_OK
         if 'program' not in self.data:
             self.data['program'] = 'noprogram'
-        #pdb.set_trace()
 
     @classmethod
     def create(cls, item, version_id=None):
@@ -213,7 +211,6 @@ class DMSBaseMixin(ACIDMixin):
         Typically, it is generated based on the current state of
         the association, but can be overridden.
         """
-        #pdb.set_trace()
         if self._asn_name:
             return self._asn_name
 
@@ -448,7 +445,6 @@ class DMSBaseMixin(ACIDMixin):
                 raise AssociationNotValidError(
                     'Validation failed validity tests.'
                 )
-        #pdb.set_trace()
         return True
 
     def _get_exposure(self):

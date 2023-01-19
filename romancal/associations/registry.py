@@ -1,5 +1,4 @@
 """Association Registry"""
-import pdb
 from importlib import import_module
 import importlib.util
 from inspect import (
@@ -200,7 +199,6 @@ class AssociationRegistry(dict):
             raise AssociationNotValidError(
                 'Structure did not validate: "{}"'.format(association)
             )
-        #pdb.set_trace()
         return results
 
     def load(

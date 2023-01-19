@@ -1,7 +1,6 @@
 """Association Candidate Identifier"""
 from ast import literal_eval
 import re
-import pdb
 
 from .counter import Counter
 
@@ -64,7 +63,6 @@ class ACIDMixin():
     def acid_from_constraints(self):
         """Determine ACID from constraints"""
         for constraint in self.constraints:
-            #pdb.set_trace()
             if getattr(constraint, 'is_acid', False):
                 value = re.sub(
                     '\\\\',

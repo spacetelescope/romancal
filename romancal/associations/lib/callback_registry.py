@@ -1,6 +1,5 @@
 """Callback registry"""
 
-import pdb
 from romancal.lib.signal_slot import Signal
 
 __all__ = ['CallbackRegistry']
@@ -48,7 +47,6 @@ class CallbackRegistry():
         Hence, the callbacks will be called in the order registered.
 
         """
-        #pdb.set_trace()
         result = self.registry[event].reduce(*args)
         return result
 
