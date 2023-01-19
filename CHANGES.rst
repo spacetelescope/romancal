@@ -11,7 +11,7 @@ general
 jump
 ----
 
-- Update default input CR thresholds to give reasonable results [#]
+- Update default input CR thresholds to give reasonable results [#625]
 
 
 
