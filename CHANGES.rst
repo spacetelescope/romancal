@@ -8,7 +8,15 @@ general
 - DQ step flags science data affected by guide window read [#599]
 - Fix deprecation warnings introduced by ``pytest`` ``7.2`` ahead of ``8.0`` [#597]
 
-0.9.0 (2022-11-14)
+jump
+----
+
+- Update default input CR thresholds to give reasonable results [#625]
+
+
+
+
+  0.9.0 (2022-11-14)
 ==================
 
 general
