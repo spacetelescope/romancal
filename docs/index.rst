@@ -27,13 +27,13 @@ The Roman Space Telescope Calibration Pipeline
    roman/error_propagation/index.rst
 
 .. toctree::
-   :caption: Datamodels
+=======
+   :caption: RomanCal Package Index
    :maxdepth: 2
+	      
+   roman/package_index.rst
 
-   roman/datamodels/index.rst
 
-.. toctree::
+   .. toctree::
    :caption: Additional Information
    :maxdepth: 1
-
-   roman/package_index.rst
