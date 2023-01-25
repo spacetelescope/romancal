@@ -25,9 +25,9 @@ class JumpStep(RomanStep):
     """
 
     spec = """
-        rejection_threshold = float(default=4.0,min=0) # CR sigma rej thresh
-        three_group_rejection_threshold = float(default=6.0,min=0) # CR sigma rej thresh
-        four_group_rejection_threshold = float(default=5.0,min=0) # CR sigma rej thresh
+        rejection_threshold = float(default=180.0,min=0) # CR sigma rej thresh
+        three_group_rejection_threshold = float(default=185.0,min=0) # CR sigma rej thresh
+        four_group_rejection_threshold = float(default=190.0,min=0) # CR sigma rej thresh
         maximum_cores = option('none', 'quarter', 'half', 'all', default='none') # max number of processes to create
         flag_4_neighbors = boolean(default=True) # flag the four perpendicular neighbors of each CR
         max_jump_to_flag_neighbors = float(default=1000) # maximum jump sigma that will trigger neighbor flagging

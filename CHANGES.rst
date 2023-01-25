@@ -11,7 +11,15 @@ general
   
 - Implemented support for quantities in reference files. Updated unit tests for these changes. [#624]
 
-0.9.0 (2022-11-14)
+jump
+----
+
+- Update default input CR thresholds to give reasonable results [#625]
+
+
+
+
+  0.9.0 (2022-11-14)
 ==================
 
 general
