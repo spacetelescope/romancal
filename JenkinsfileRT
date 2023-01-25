@@ -55,6 +55,8 @@ env_vars = [
     "CRDS_CONTEXT=roman_0039.pmap",
     "CRDS_SERVER_URL=https://roman-crds-test.stsci.edu",
     'CRDS_PATH=${WORKSPACE}/roman-crds-test-cache',
+    'DD_ENV=ci',
+    'DD_SERVICE=romancal',
 ]
 if (env.ENV_VARS) {
     env_vars.addAll(MultiLineToArray(env.ENV_VARS))
@@ -75,7 +77,7 @@ bc0 = new BuildConfig()
 bc0.nodetype = 'romancal'
 bc0.name = 'stable-deps'
 bc0.env_vars = env_vars
-bc0.conda_ver = '4.8.4'
+bc0.conda_ver = '22.11.1'
 bc0.conda_packages = [
     "python=${python_version}",
     "freetds",
@@ -83,13 +85,14 @@ bc0.conda_packages = [
 bc0.pip_reqs_files = ['requirements-sdp.txt']
 bc0.build_cmds = [
     "pip install -e .[test,ephem]",
-    "pip install pytest-xdist pytest-sugar",
+    "pip install pytest-xdist pytest-sugar ddtrace",
     "pip freeze",
     'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
 ]
 bc0.build_cmds = PipInject(env.OVERRIDE_REQUIREMENTS) + bc0.build_cmds
 bc0.test_cmds = [
     "pytest --cov-report=xml --cov=./ -r sxf -n auto --bigdata --slow \
+    --ddtrace \
     --basetemp=${pytest_basetemp} --junit-xml=results.xml --dist=loadscope \
     --env=${artifactoryenv} ${pytest_args}",
     'codecov --token=${codecov_token} -F nightly',
