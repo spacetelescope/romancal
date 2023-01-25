@@ -79,7 +79,6 @@ def test_default_fail():
         asn = asn_from_list(items)
 
 
-@pytest.mark.skip(reason="Need rules_elpp.py before activating")
 def test_default_roundtrip():
     """Create/Write/Read a ELPP association"""
     product_name = 'test_product'
@@ -112,7 +111,6 @@ def test_cmdline_fails():
         Main(['-o', 'test_asn.json'])
 
 
-@pytest.mark.skip(reason="Need rules_elpp.py before activating")
 @pytest.mark.parametrize(
     "format",
     ['json', 'yaml']
@@ -141,21 +139,24 @@ def test_cmdline_success(format, tmpdir):
     assert inlist == expnames
 
 
-@pytest.mark.skip(reason="Need rules_elpp.py before activating")
 def test_cmdline_change_rules(tmpdir):
     """Command line change the rule"""
-    rule = 'Association'
+    rule = 'Asn_Lv2Image'
     path = tmpdir.join('test_asn.json')
     inlist = ['a', 'b', 'c']
     args = [
         '-o', path.strpath,
         '-r', rule,
+        '--product-name', 'test',
     ]
     args = args + inlist
     Main(args)
     with open(path.strpath, 'r') as fp:
         asn = load_asn(fp, registry=AssociationRegistry(include_bases=True))
-    assert inlist == asn['members']
+    #assert inlist == asn['members']
+    assert inlist[0] == asn['products'][0]['members'][0]['expname']
+    assert inlist[1] == asn['products'][0]['members'][1]['expname']
+    assert inlist[2] == asn['products'][0]['members'][2]['expname']
 
 
 def test_api_list():
