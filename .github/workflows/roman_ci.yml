@@ -16,31 +16,10 @@ on:
 
 env:
   CRDS_SERVER_URL: https://roman-crds.stsci.edu
-  CRDS_PATH: $HOME/crds_cache
   CRDS_CLIENT_RETRY_COUNT: 3
   CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
 
 jobs:
-  check:
-    name: ${{ matrix.toxenv }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        toxenv: [ check-style, check-dependencies, check-build ]
-        python-version: [ '3.11' ]
-        os: [ ubuntu-latest ]
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: 'pyproject.toml'
-      - run: pip install "tox>=4.0"
-      - run: tox -e ${{ matrix.toxenv }}
   test:
     name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -51,6 +30,15 @@ jobs:
         python-version: [ '3.8', '3.9', '3.10', '3.11' ]
         os: [ ubuntu-latest, macos-latest ]
         include:
+          - toxenv: check-style
+            os: ubuntu-latest
+            python-version: '3.x'
+          - toxenv: check-dependencies
+            os: ubuntu-latest
+            python-version: '3.x'
+          - toxenv: check-build
+            os: ubuntu-latest
+            python-version: '3.x'
           - toxenv: test-devdeps
             os: ubuntu-latest
             python-version: '3.x'
@@ -85,6 +73,7 @@ jobs:
             os: ubuntu-latest
             python-version: '3.8'
     steps:
+      - run: echo "CRDS_PATH=$HOME/crds_cache" >> $GITHUB_ENV
       - if: contains(runner.os, 'Linux') && github.event_name != 'pull_request'
         uses: datadog/agent-github-action@v1
         with:
@@ -98,7 +87,8 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'pyproject.toml'
       - run: pip install "tox>=4.0"
-      - run: >
+      - if: !contains(matrix.toxenv, 'check') && !contains(matrix.toxenv, 'build')
+        run: >
           echo "pmap=$(
           curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["roman"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
           python -c "import sys, json; print(json.load(sys.stdin)['result'])"
@@ -106,7 +96,8 @@ jobs:
         # Get default CRDS_CONTEXT without installing crds client
         # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
         id: crds-context
-      - uses: actions/cache@v3
+      - if: !contains(matrix.toxenv, 'check') && !contains(matrix.toxenv, 'build')
+        uses: actions/cache@v3
         with:
           path: ${{ env.CRDS_PATH }}
           key: crds-${{ steps.crds-context.outputs.pmap }}
