@@ -48,30 +48,30 @@ jobs:
           - toxenv: test-cov
             os: ubuntu-latest
             python-version: '3.11'
-          - toxenv: test-numpy122
-            os: ubuntu-latest
-            python-version: '3.10'
-          - toxenv: test-numpy121
-            os: ubuntu-latest
-            python-version: '3.10'
-          - toxenv: test-numpy122
-            os: ubuntu-latest
-            python-version: '3.9'
-          - toxenv: test-numpy121
-            os: ubuntu-latest
-            python-version: '3.9'
           - toxenv: test-numpy120
-            os: ubuntu-latest
-            python-version: '3.9'
-          - toxenv: test-numpy122
-            os: ubuntu-latest
-            python-version: '3.8'
-          - toxenv: test-numpy121
             os: ubuntu-latest
             python-version: '3.8'
           - toxenv: test-numpy120
             os: ubuntu-latest
+            python-version: '3.9'
+          - toxenv: test-numpy121
+            os: ubuntu-latest
             python-version: '3.8'
+          - toxenv: test-numpy121
+            os: ubuntu-latest
+            python-version: '3.9'
+          - toxenv: test-numpy121
+            os: ubuntu-latest
+            python-version: '3.10'
+          - toxenv: test-numpy122
+            os: ubuntu-latest
+            python-version: '3.8'
+          - toxenv: test-numpy122
+            os: ubuntu-latest
+            python-version: '3.9'
+          - toxenv: test-numpy122
+            os: ubuntu-latest
+            python-version: '3.10'
     steps:
       - if: ${{ contains(matrix.toxenv, 'test') }}
         run: echo "CRDS_PATH=$HOME/crds_cache" >> $GITHUB_ENV
