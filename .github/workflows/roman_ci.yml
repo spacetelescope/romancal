@@ -73,8 +73,9 @@ jobs:
             os: ubuntu-latest
             python-version: '3.8'
     steps:
-      - run: echo "CRDS_PATH=$HOME/crds_cache" >> $GITHUB_ENV
-      - if: ${{ contains(runner.os, 'Linux') && github.event_name != 'pull_request' }}
+      - if: ${{ contains(matrix.toxenv, 'test') }}
+        run: echo "CRDS_PATH=$HOME/crds_cache" >> $GITHUB_ENV
+      - if: ${{ contains(matrix.toxenv, 'test') && contains(runner.os, 'Linux') && github.event_name != 'pull_request' }}
         uses: datadog/agent-github-action@v1
         with:
           api_key: ${{ secrets.DD_API_KEY }}
@@ -87,29 +88,31 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'pyproject.toml'
       - run: pip install "tox>=4.0"
-      - if: ${{ !contains(matrix.toxenv, 'check') && !contains(matrix.toxenv, 'build') }}
+      - if: ${{ contains(matrix.toxenv, 'test') }}
+        # https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
         run: >
           echo "pmap=$(
           curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["roman"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
           python -c "import sys, json; print(json.load(sys.stdin)['result'])"
           )" >> $GITHUB_OUTPUT
-        # Get default CRDS_CONTEXT without installing crds client
-        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
         id: crds-context
-      - if: ${{ !contains(matrix.toxenv, 'check') && !contains(matrix.toxenv, 'build') }}
+      - if: ${{ contains(matrix.toxenv, 'test') }}
         uses: actions/cache@v3
         with:
           path: ${{ env.CRDS_PATH }}
           key: crds-${{ steps.crds-context.outputs.pmap }}
-      - run: tox -e ${{ matrix.toxenv }}-ddtrace
+      - if: ${{ !contains(matrix.toxenv, 'test') }}
+        run: tox -e ${{ matrix.toxenv }}
+      - if: ${{ contains(matrix.toxenv, 'test') }}
+        run: tox -e ${{ matrix.toxenv }}-ddtrace
         env:
           DD_GIT_REPOSITORY_URL: ${{ github.repositoryUrl }}
           DD_GIT_COMMIT_SHA: ${{ github.sha }}
           DD_GIT_BRANCH: ${{ github.ref_name }}
-      - if: ${{ contains(matrix.toxenv, '-cov') }}
+      - if: ${{ contains(matrix.toxenv, 'cov') }}
         uses: codecov/codecov-action@v3
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
           flags: unit
           fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
