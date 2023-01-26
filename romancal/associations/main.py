@@ -14,9 +14,6 @@ from romancal.associations import (
 )
 from romancal.associations import config
 from romancal.associations.lib.dms_base import DMSAttrConstraint
-from romancal.associations.lib.constraint import (
-    ConstraintTrue,
-)
 from romancal.associations.lib.log_config import (log_config, DMS_config)
 
 __all__ = ['Main']
@@ -192,11 +189,11 @@ class Main():
         config.DEBUG = (parsed.loglevel != 0) and (parsed.loglevel <= logging.DEBUG)
 
         # Preamble
-        logger.info('Command-line arguments: {}'.format(args))
+        logger.info(f'Command-line arguments:  {args}')
         logger.context.set('asn_candidate_ids', parsed.asn_candidate_ids)
 
         if pool is None:
-            logger.info('Reading pool {}'.format(parsed.pool))
+            logger.info(f'Reading pool {parsed.pool}')
             self.pool = AssociationPool.read(
                 parsed.pool, delimiter=parsed.delimiter,
                 format=parsed.pool_format,
@@ -250,11 +247,8 @@ class Main():
             self.pool, self.rules, version_id=parsed.version_id
         )
         if parsed.discover:
-            logger.debug(
-                '# asns found before discover filtering={}'.format(
-                    len(self.associations)
-                )
-            )
+            logger.debug(f'# asns found before discover filtering={len(self.associations)}' )
+
             self.associations = filter_discovered_only(
                 self.associations,
                 DISCOVER_RULESET,

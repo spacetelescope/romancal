@@ -5,7 +5,6 @@ import pytest
 from romancal.associations import (Association, AssociationRegistry, load_asn)
 from romancal.associations.asn_from_list import (Main, asn_from_list)
 from romancal.associations.exceptions import AssociationNotValidError
-from romancal.associations.lib.rules_elpp_base import DMS_ELPP_Base
 
 
 

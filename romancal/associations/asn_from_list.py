@@ -4,8 +4,6 @@ import sys
 
 from romancal.associations import AssociationRegistry
 from romancal.associations.lib.rules_elpp_base import DMS_ELPP_Base
-from romancal.associations.lib.rules_level2 import  Asn_Lv2Image
-#from romancal.associations.lib.rules_level3_base import DMS_Level3_Base
 
 __all__ = ['asn_from_list']
 

@@ -3,7 +3,6 @@
 from romancal.associations.lib.counter import Counter
 
 from romancal.associations.exceptions import (
-    AssociationNotAConstraint,
     AssociationNotValidError,
 )
 from romancal.associations.lib.acid import ACIDMixin

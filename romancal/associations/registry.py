@@ -15,7 +15,6 @@ from os.path import (
     expanduser,
     expandvars,
 )
-import sys
 
 from . import libpath
 from .exceptions import (
@@ -476,7 +475,6 @@ def import_from_file(filename):
     """
     path = expandvars(expanduser(filename))
     module_name = basename(path).split('.')[0]
-    folder = dirname(path)
     spec = importlib.util.spec_from_file_location(module_name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

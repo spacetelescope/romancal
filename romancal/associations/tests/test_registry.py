@@ -2,7 +2,6 @@
 import pytest
 
 from romancal.associations.lib.keyvalue_registry import KeyValueRegistry
-from romancal.associations.registry import import_from_file
 
 
 @pytest.mark.skip(reason="Need to impliment")

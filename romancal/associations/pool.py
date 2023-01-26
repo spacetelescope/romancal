@@ -7,7 +7,7 @@ from pkg_resources import parse_version, get_distribution
 from collections import UserDict
 
 from astropy.io.ascii import convert_numpy
-from astropy.table import Row, Table
+from astropy.table import Table
 
 __all__ = ['AssociationPool']
 

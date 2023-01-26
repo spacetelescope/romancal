@@ -3,9 +3,7 @@
 from collections import defaultdict
 import logging
 from os.path import (
-    basename,
-    split,
-    splitext
+    basename
     )
 import re
 
@@ -65,7 +63,6 @@ __all__ = [
     'SimpleConstraint',
     'Utility',
 ]
-from romancal.lib.suffix import remove_suffix
 # Configure logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -310,7 +307,6 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         # Determine expected member name
         expname = Utility.rename_to_level2(
             item['filename'], exp_type=item['exp_type'],
-            #is_tso=self.is_item_tso(item, other_exp_types=CORON_EXP_TYPES),
             member_exptype=exptype
         )
 
@@ -446,22 +442,6 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         result = '\n'.join(result_list)
         return result
 
-    def ok_candidate(self, member=None):
-        """Validation test for acceptable candidates
-
-        Parameters
-        ----------
-        member : Member
-            Member being added causing check.
-            Not used
-
-        Returns
-        -------
-        is_valid : bool
-        """
-        return self.acid.type.lower() not in INVALID_AC_TYPES
-
-
 @RegistryMarker.utility
 class Utility():
     """Utility functions that understand DMS Level 3 associations"""
@@ -476,7 +456,7 @@ class Utility():
             )
 
     @staticmethod
-    def rename_to_level2(level1b_name, exp_type=None, is_tso=False, member_exptype='science'):
+    def rename_to_level2(level1b_name, exp_type=None, member_exptype='science'):
         """Rename a Level 1b Exposure to a Level2 name.
 
         The basic transform is changing the suffix `uncal` to
@@ -953,5 +933,3 @@ class AsnMixin_Lv2Image:
 
         super(AsnMixin_Lv2Image, self)._init_hook(item)
         self.data['asn_type'] = 'image2'
-
-
