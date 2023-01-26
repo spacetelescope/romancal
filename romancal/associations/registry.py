@@ -1,5 +1,4 @@
 """Association Registry"""
-from importlib import import_module
 import importlib.util
 from inspect import (
     getmembers,
@@ -11,7 +10,6 @@ from inspect import (
 import logging
 from os.path import (
     basename,
-    dirname,
     expanduser,
     expandvars,
 )

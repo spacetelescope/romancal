@@ -247,7 +247,8 @@ class Main():
             self.pool, self.rules, version_id=parsed.version_id
         )
         if parsed.discover:
-            logger.debug(f'# asns found before discover filtering={len(self.associations)}' )
+            logger.debug(f'# asns found before discover filtering={len(self.associations)}'
+                         )
 
             self.associations = filter_discovered_only(
                 self.associations,

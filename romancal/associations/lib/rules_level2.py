@@ -1,6 +1,5 @@
 """Association Definitions: DMS Level2b product associations
 """
-from collections import deque
 import logging
 
 from romancal.associations.registry import RegistryMarker

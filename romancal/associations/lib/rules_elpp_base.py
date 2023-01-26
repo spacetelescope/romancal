@@ -870,7 +870,6 @@ class AsnMixin_Science(DMS_ELPP_Base):
         # Setup target acquisition inclusion
         constraint_acqs = Constraint(
             [
-                Constraint_TargetAcq(),
                 DMSAttrConstraint(
                     name='acq_obsnum',
                     sources=['obs_num'],
