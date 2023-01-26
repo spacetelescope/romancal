@@ -12,6 +12,13 @@ general
 
 - Implemented support for quantities in reference files. Updated unit tests for these changes. [#624]
 
+=======
+associations
+------------
+
+- Initial association code with asn_from_list and some basic rules [#]
+
+
 jump
 ----
 
