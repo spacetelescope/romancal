@@ -16,7 +16,7 @@ general
 associations
 ------------
 
-- Initial association code with asn_from_list and some basic rules [#]
+- Initial association code with asn_from_list and some basic rules [#642]
 
 
 jump
