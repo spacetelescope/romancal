@@ -24,6 +24,7 @@ dependencies = [
     'roman_datamodels>=0.14.0, <0.14.1',
     'stcal >=1.2.1, <2.0',
     'stpipe >=0.4.2, <1.0',
+    'tweakwcs >=0.8.0'
 ]
 dynamic = ['version']
 
