@@ -530,9 +530,7 @@ def _common_name(group):
         im.close()
 
     fname_len = list(map(len, file_names))
-    assert all(fname_len[0] == length for length in fname_len)
     cn = path.commonprefix(file_names)
-    assert cn
     return cn
 
 
