@@ -13,6 +13,10 @@ jump
 
 - Update default input CR thresholds to give reasonable results [#625]
 
+tweakreg
+--------
+- First implementation of TweakRegStep into the pipeline [#643]
+
 
 
 
