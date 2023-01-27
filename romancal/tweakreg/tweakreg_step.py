@@ -512,7 +512,6 @@ class TweakRegStep(RomanStep):
 
         # create WCSImageCatalog object:
         refang = image_model.meta.wcsinfo
-        # TODO: create RSTWCSCorrector class?
         im = RSTWCSCorrector(
             wcs = image_model.meta.wcs,
             wcsinfo = {'roll_ref': refang['roll_ref'],
