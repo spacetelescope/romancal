@@ -529,7 +529,6 @@ def _common_name(group):
         file_names.append(path.splitext(im.meta.filename)[0].strip('_- '))
         im.close()
 
-    fname_len = list(map(len, file_names))
     cn = path.commonprefix(file_names)
     return cn
 
