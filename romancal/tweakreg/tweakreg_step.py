@@ -37,7 +37,6 @@ SINGLE_GROUP_REFCAT = ['GAIADR2', 'GAIADR1']
 _SINGLE_GROUP_REFCAT_STR = _oxford_or_str_join(SINGLE_GROUP_REFCAT)
 DEFAULT_ABS_REFCAT = SINGLE_GROUP_REFCAT[0]
 ALIGN_TO_ABS_REFCAT = True
-_IMAGE_META_MAPPING = {}
 
 __all__ = ['TweakRegStep']
 
@@ -67,7 +66,8 @@ class TweakRegStep(RomanStep):
         fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='rshift') # Fitting geometry
         nclip = integer(min=0, default=3) # Number of clipping iterations in fit
         sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units
-        abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Catalog file name or one of: {_SINGLE_GROUP_REFCAT_STR}, or None, or ''
+        abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Catalog file name or one of:
+        # {_SINGLE_GROUP_REFCAT_STR}, or None, or ''
         save_abs_catalog = boolean(default=False)  # Write out used absolute astrometric reference catalog as a separate product
         abs_minobj = integer(default=15) # Minimum number of objects acceptable for matching when performing absolute astrometry
         abs_searchrad = float(default=6.0) # The search radius in arcsec for a match when performing absolute astrometry
@@ -154,7 +154,7 @@ class TweakRegStep(RomanStep):
                 catalog = Table.read(image_model.meta.tweakreg_catalog)
                 new_cat = False
 
-            except:
+            except IOError:
                 self.log.error("Failed to read 'meta.tweakreg_catalog' from source detection step ")
 
             for axis in ['x', 'y']:
@@ -209,8 +209,6 @@ class TweakRegStep(RomanStep):
             # the grouping by exposure, to be removed after use below
             image_model["catalog"] = catalog
             images[i] = image_model
-            
-            _IMAGE_META_MAPPING[image_model.meta.filename] = image_model.meta
 
         # group images by their "group id":
         grp_img = list(images.models_grouped)
@@ -248,7 +246,7 @@ class TweakRegStep(RomanStep):
             for model in g:
                 model = model if isinstance(
                     model, datamodels.DataModel
-                ) else _IMAGE_META_MAPPING.get(path.basename(model))
+                ) else datamodels.open(path.basename(model))
                 if hasattr(model, "catalog"):
                     delattr(model, "catalog")
             self.log.info("* Images in GROUP '{}':".format(group_name))
@@ -477,7 +475,7 @@ class TweakRegStep(RomanStep):
     def _imodel2wcsim(self, image_model):
         image_model = image_model if isinstance(
             image_model, datamodels.DataModel
-            ) else _IMAGE_META_MAPPING.get(path.basename(image_model))
+            ) else datamodels.open(path.basename(image_model))
         # make sure that we have a catalog:
         if hasattr(image_model, 'catalog'):
             catalog = image_model.catalog
@@ -496,7 +494,7 @@ class TweakRegStep(RomanStep):
                 catalog.meta['name'] = cat_name
             except IOError:
                 self.log.error("Cannot read catalog {}".format(catalog))
-        
+
         # make sure catalog has 'x' and 'y' columns
         for axis in ['x', 'y']:
             if axis not in catalog.colnames:
