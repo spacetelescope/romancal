@@ -3,11 +3,6 @@ from collections import deque
 from enum import Enum
 from functools import reduce
 
-class ListCategory(Enum):
-    RULES = 0
-    BOTH  = 1
-    EXISTING  =  2
-    NONSCIENCE = 3
 
 __all__ = [
     'ListCategory',
@@ -16,6 +11,14 @@ __all__ = [
     'ProcessQueue',
     'ProcessQueueSorted'
 ]
+
+
+class ListCategory(Enum):
+    """Categories in the list"""
+    RULES      = 0
+    BOTH       = 1
+    EXISTING   = 2
+    NONSCIENCE = 3
 
 
 class ProcessItem:
@@ -152,7 +155,7 @@ class ProcessQueue(deque):
         while True:
             try:
                 yield self.popleft()
-            except:
+            except (IndexError, StopIteration):
                 break
 
 
@@ -165,7 +168,7 @@ class ProcessListQueue:
         List of ProcessLists to put on the queue.
     """
     def __init__(self, init=None):
-        self._queue = dict()
+        self._queue = {}
         if init is not None:
             self.extend(init)
 
@@ -202,7 +205,7 @@ class ProcessListQueue:
         while True:
             try:
                 yield self.popleft()
-            except:
+            except (IndexError, StopIteration):
                 break
 
     def __str__(self):

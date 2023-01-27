@@ -242,6 +242,7 @@ class DMSBaseMixin(ACIDMixin):
 
     @property
     def current_product(self):
+        """Return currnet products"""
         return self.data['products'][-1]
 
     @property

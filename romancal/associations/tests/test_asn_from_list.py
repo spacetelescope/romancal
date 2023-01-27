@@ -75,7 +75,7 @@ def test_default_fail():
     """
     items = ['a']
     with pytest.raises((AssociationNotValidError)):
-        asn = asn_from_list(items)
+        _ = asn_from_list(items)
 
 
 def test_default_roundtrip():

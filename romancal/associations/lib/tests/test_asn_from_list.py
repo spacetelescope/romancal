@@ -61,7 +61,7 @@ def test_default_with_type():
     product = asn['products'][0]
     assert product['name'] == product_name
     assert len(product['members']) == len(items)
-   for member in product['members']:
+    for member in product['members']:
         assert member['expname'] in items
         assert member['exptype'] == items[member['expname']]
 
