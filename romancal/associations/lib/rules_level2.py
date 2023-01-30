@@ -8,8 +8,6 @@ from romancal.associations.lib.rules_elpp_base import *
 
 __all__ = [
     'Asn_Lv2Image',
-    'Asn_Lv2Spec',
-    'Asn_Lv2WFSC',
     'AsnMixin_Lv2Image'
 ]
 
@@ -58,21 +56,9 @@ class Asn_Lv2Image(
         `is_current_patt_num` is True, mark the exposure type as
         `background`.
         """
-        #exp_type = super(Asn_Lv2MIRLRSFixedSlitNod, self).get_exposure_type(
-        #    item, default
-        #)
-        #if exp_type == 'science' and self.constraints['is_current_patt_num'].matched:
-        #    exp_type = 'background'
-
         exp_type = item['exp_type']
 
         if exp_type == 'wfi_image':
             exp_type == 'science'
 
         return exp_type
-
-#    def _init_hook(self, item):
-#        """Post-check and pre-add initialization"""
-#
-#        super(Asn_Lv2WFSC, self)._init_hook(item)
-#        self.data['asn_type'] = 'wfs-image2'
