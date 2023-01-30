@@ -13,7 +13,7 @@ jump
 
 - Update default input CR thresholds to give reasonable results [#625]
 
-- Added support for Quantities for data arrays. [#613]
+- Added support for Quantities for data arrays. [#616]
   
 
 0.9.0 (2022-11-14)
