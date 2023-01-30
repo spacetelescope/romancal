@@ -10,7 +10,7 @@ from astropy.table import Table
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from tweakwcs.imalign import align_wcs
-from tweakwcs.correctors import RSTWCSCorrector
+from tweakwcs.correctors import JWSTWCSCorrector
 from tweakwcs.matchutils import XYXYMatch
 
 # LOCAL
@@ -510,7 +510,8 @@ class TweakRegStep(RomanStep):
 
         # create WCSImageCatalog object:
         refang = image_model.meta.wcsinfo
-        im = RSTWCSCorrector(
+        # TODO: create RSTWCSCorrector in tweakwcs
+        im = JWSTWCSCorrector(
             wcs = image_model.meta.wcs,
             wcsinfo = {'roll_ref': refang['roll_ref'],
                      'v2_ref': refang['v2_ref'],
