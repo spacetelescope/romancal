@@ -178,14 +178,14 @@ def test_dq_propagation(setup_wfi_datamodels):
     dqval1 = 5
     dqval2 = 10
 
-    data, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
+    ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add DQ values to the data and reference file
-    data.pixeldq[5, 5] = dqval1
+    ramp.pixeldq[5, 5] = dqval1
     satmap.dq[5, 5] = dqval2
 
     # Run the pipeline
-    output = flag_saturation(data, satmap)
+    output = flag_saturation(ramp, satmap)
 
     # Make sure DQ values from data and reference file are added in the output
     assert output.pixeldq[5, 5] == dqval1 + dqval2

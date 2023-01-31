@@ -7,7 +7,6 @@ import numpy as np
 import os
 from astropy import units as u
 
-
 from romancal.dark_current import DarkCurrentStep
 
 from roman_datamodels.datamodels import RampModel, DarkRefModel
@@ -81,10 +80,10 @@ def test_dark_step_subtraction(instrument, exptype):
     result = DarkCurrentStep.call(ramp_model, override_dark=darkref_model)
 
     # check that the dark file is subtracted frame by frame from the science data
-    diff = ramp_model.data - darkref_model.data
+    diff = ramp_model.data.value - darkref_model.data.value
 
     # test that the output data file is equal to the difference found when subtracting reffile from sci file
-    np.testing.assert_array_equal(result.data, diff, err_msg='dark file should be subtracted from sci file ')
+    np.testing.assert_array_equal(result.data.value, diff, err_msg='dark file should be subtracted from sci file ')
 
 
 @pytest.mark.parametrize(
@@ -130,7 +129,6 @@ def create_ramp_and_dark(shape, instrument, exptype):
     ramp.meta.instrument.detector = 'WFI01'
     ramp.meta.instrument.optical_element = 'F158'
     ramp.meta.exposure.type = exptype
-
     ramp.data = u.Quantity(np.ones(shape, dtype=np.float32), ru.DN, dtype=np.float32)
     ramp_model = RampModel(ramp)
 

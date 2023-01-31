@@ -145,6 +145,7 @@ def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
 
     for i in range(ngroups):
         model1.data[i, :, :] = deltaDN * i * model1.data.unit
+
     first_CR_group_locs = [x for x in range(1, 7) if x % 5 == 0]
 
     CR_locs = [x for x in range(xsize * ysize) if x % CR_fraction == 0]

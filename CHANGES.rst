@@ -6,9 +6,9 @@ general
 - Update the suffix for the stored filename to match the filename [#609]
 
 - DQ step flags science data affected by guide window read [#599]
-  
+
 - Fix deprecation warnings introduced by ``pytest`` ``7.2`` ahead of ``8.0`` [#597]
-  
+
 - Implemented support for quantities in reference files. Updated unit tests for these changes. [#624]
 
 jump
@@ -16,10 +16,10 @@ jump
 
 - Update default input CR thresholds to give reasonable results [#625]
 
+- Added support for Quantities for data arrays. [#616]
 
 
-
-  0.9.0 (2022-11-14)
+0.9.0 (2022-11-14)
 ==================
 
 general
@@ -308,7 +308,7 @@ general
 general
 -------
 
-- Added regressions tests for ``dq_ini``t utilizing ``mask`` file in CRDS. [#290]
+- Added regressions tests for ``dq_init`` utilizing ``mask`` file in CRDS. [#290]
 
 - Updates for requirements & pip changes [#286]
 
@@ -408,9 +408,6 @@ datamodels
 - Add datamodel and schema for mask files [#143]
 
 - Update output_ext in the base Step class to .asdf from .fits [#127]
-
-
-=======
 
 - Added ``RampModel``, ``GLS_RampFitModel``, ``RampFitOutputModel`` and
   schemas. [#110]

@@ -272,7 +272,7 @@ def test_dqinit_refpix(instrument, exptype):
 
     # check if reference pixels are correct
     assert result.data.shape == (2, 20, 20)  # no pixels should be trimmed
-    assert result.amp33.shape == (2, 4096 ,128)
+    assert result.amp33.value.shape == (2, 4096 ,128)
     assert result.border_ref_pix_right.shape == (2, 20, 4)
     assert result.border_ref_pix_left.shape == (2, 20, 4)
     assert result.border_ref_pix_top.shape == (2, 4, 20)

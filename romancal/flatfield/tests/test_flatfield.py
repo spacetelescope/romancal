@@ -3,13 +3,13 @@ import os
 import pytest
 import numpy as np
 from astropy import units as u
-
+from astropy.time import Time
 
 from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel, FlatRefModel
 from roman_datamodels.testing import utils as testutil
+from roman_datamodels import units as ru
 from romancal.flatfield import FlatFieldStep
-from astropy.time import Time
 
 
 @pytest.mark.parametrize(
@@ -33,12 +33,18 @@ def test_flatfield_step_interface(instrument, exptype):
     wfi_image.meta.instrument.detector = 'WFI01'
     wfi_image.meta.instrument.optical_element = 'F158'
     wfi_image.meta.exposure.type = exptype
-    wfi_image.data = u.Quantity(np.ones(shape, dtype=np.float32), wfi_image.data.unit, wfi_image.data.dtype)
+    wfi_image.data = u.Quantity(np.ones(shape, dtype=np.float32),
+                                ru.electron / u.s, dtype=np.float32)
     wfi_image.dq = np.zeros(shape, dtype=np.uint32)
-    wfi_image.err = u.Quantity(np.zeros(shape, dtype=np.float32), wfi_image.err.unit, wfi_image.err.dtype)
-    wfi_image.var_poisson = u.Quantity(np.zeros(shape, dtype=np.float32), wfi_image.var_poisson.unit, wfi_image.var_poisson.dtype)
-    wfi_image.var_rnoise = u.Quantity(np.zeros(shape, dtype=np.float32), wfi_image.var_rnoise.unit, wfi_image.var_rnoise.dtype)
-    wfi_image.var_flat = u.Quantity(np.zeros(shape, dtype=np.float32), wfi_image.var_flat.unit, wfi_image.var_flat.dtype)
+    wfi_image.err = u.Quantity(np.zeros(shape, dtype=np.float32),
+                               ru.electron / u.s, dtype=np.float32)
+    wfi_image.var_poisson = u.Quantity(np.zeros(shape, dtype=np.float32),
+                                       ru.electron**2 / u.s**2, dtype=np.float32)
+    wfi_image.var_rnoise = u.Quantity(np.zeros(shape, dtype=np.float32),
+                                      ru.electron**2 / u.s**2, dtype=np.float32)
+    wfi_image.var_flat = u.Quantity(np.zeros(shape, dtype=np.float32),
+                                    ru.electron**2 / u.s**2, dtype=np.float32)
+
     wfi_image_model = ImageModel(wfi_image)
     flatref = stnode.FlatRef()
     meta = {}
