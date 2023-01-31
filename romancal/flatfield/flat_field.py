@@ -116,16 +116,17 @@ def apply_flat_field(science, flat):
     # Update the variances using BASELINE algorithm.  For guider data, it has
     # not gone through ramp fitting so there is no Poisson noise or readnoise
     flat_data_squared = flat_data**2
-    science.var_poisson = u.Quantity((science.var_poisson.value / flat_data_squared), ru.electron**2 / u.s**2,
-                                     dtype = science.var_poisson.dtype)
-    science.var_rnoise = u.Quantity((science.var_rnoise / flat_data_squared), ru.electron**2 / u.s**2,
-                                    dtype = science.var_rnoise.dtype)
+    science.var_poisson /= flat_data_squared
+    science.var_rnoise /= flat_data_squared
+    try:
+        science.var_flat = science.data ** 2 / flat_data_squared * flat_err ** 2
+    except AttributeError:
+        science['var_flat'] = np.zeros(shape=science.data.shape,
+                                       dtype=np.float32)
+        science.var_flat = science.data ** 2 / flat_data_squared * flat_err ** 2
 
-    science['var_flat'] = u.Quantity((science.data.value ** 2 / flat_data_squared * flat_err ** 2),
-                                  ru.electron ** 2 / u.s ** 2, dtype=science.data.value.dtype)
-
-    err_sqrt = np.sqrt(science.var_poisson.value + science.var_rnoise.value + science.var_flat)
-    science.err = u.Quantity(err_sqrt, ru.electron / u.s, dtype=err_sqrt.dtype)
+    science.err = np.sqrt(science.var_poisson +
+                          science.var_rnoise + science.var_flat)
 
     # Combine the science and flat DQ arrays
     science.dq = np.bitwise_or(science.dq, flat_dq)
