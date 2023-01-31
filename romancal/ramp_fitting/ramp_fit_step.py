@@ -103,15 +103,6 @@ def create_image_model(input_model, image_info):
             'dq_border_ref_pix_right': input_model.dq_border_ref_pix_right,
             'dq_border_ref_pix_top': input_model.dq_border_ref_pix_top,
             'dq_border_ref_pix_bottom': input_model.dq_border_ref_pix_bottom,
-            # 'amp33': u.Quantity(input_model.amp33, ru.DN, dtype=amp33.dtype),
-            # 'border_ref_pix_left': u.Quantity(input_model.border_ref_pix_left, ru.DN, dtype=amp33.dtype),
-            # 'border_ref_pix_right': u.Quantity(input_model.border_ref_pix_right, ru.DN, dtype=amp33.dtype),
-            # 'border_ref_pix_top': u.Quantity(input_model.border_ref_pix_top, ru.DN, dtype=amp33.dtype),
-            # 'border_ref_pix_bottom': u.Quantity(input_model.border_ref_pix_bottom, ru.DN, dtype=amp33.dtype),
-            # 'dq_border_ref_pix_left': input_model.dq_border_ref_pix_left,
-            # 'dq_border_ref_pix_right': input_model.dq_border_ref_pix_right,
-            # 'dq_border_ref_pix_top': input_model.dq_border_ref_pix_top,
-            # 'dq_border_ref_pix_bottom': input_model.dq_border_ref_pix_bottom,
             'cal_logs': rds.CalLogs(),
             }
     out_node = rds.WfiImage(inst)
