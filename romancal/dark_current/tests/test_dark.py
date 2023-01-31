@@ -80,7 +80,7 @@ def test_dark_step_subtraction(instrument, exptype):
     result = DarkCurrentStep.call(ramp_model, override_dark=darkref_model)
 
     # check that the dark file is subtracted frame by frame from the science data
-    diff = ramp_model.data.value - darkref_model.data
+    diff = ramp_model.data.value - darkref_model.data.value
 
     # test that the output data file is equal to the difference found when subtracting reffile from sci file
     np.testing.assert_array_equal(result.data.value, diff, err_msg='dark file should be subtracted from sci file ')
