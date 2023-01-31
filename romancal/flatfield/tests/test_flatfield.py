@@ -2,14 +2,15 @@ import os
 
 import pytest
 import numpy as np
+from astropy import units as u
+from astropy.time import Time
 
 from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel, FlatRefModel
 from roman_datamodels.testing import utils as testutil
 from roman_datamodels import units as ru
 from romancal.flatfield import FlatFieldStep
-from astropy.time import Time
-from astropy import units as u
+
 
 @pytest.mark.parametrize(
     "instrument, exptype",
@@ -43,6 +44,7 @@ def test_flatfield_step_interface(instrument, exptype):
                                       ru.electron**2 / u.s**2, dtype=np.float32)
     wfi_image.var_flat = u.Quantity(np.zeros(shape, dtype=np.float32),
                                     ru.electron**2 / u.s**2, dtype=np.float32)
+
     wfi_image_model = ImageModel(wfi_image)
     flatref = stnode.FlatRef()
     meta = {}

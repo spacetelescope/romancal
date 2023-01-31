@@ -24,14 +24,14 @@ def test_basic_saturation_flagging(setup_wfi_datamodels):
     ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values up to the saturation limit
-    ramp.data.value[0, 5, 5] = 0
-    ramp.data.value[1, 5, 5] = 20000
-    ramp.data.value[2, 5, 5] = 40000
-    ramp.data.value[3, 5, 5] = 60000   # Signal reaches saturation limit
-    ramp.data.value[4, 5, 5] = 62000
+    ramp.data[0, 5, 5] = 0 * ramp.data.unit
+    ramp.data[1, 5, 5] = 20000 * ramp.data.unit
+    ramp.data[2, 5, 5] = 40000 * ramp.data.unit
+    ramp.data[3, 5, 5] = 60000 * ramp.data.unit  # Signal reaches saturation limit
+    ramp.data[4, 5, 5] = 62000 * ramp.data.unit
 
     # Set saturation value in the saturation model
-    satmap.data[5, 5] = satvalue
+    satmap.data[5, 5] = satvalue * satmap.data.unit
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)
@@ -53,17 +53,17 @@ def test_ad_floor_flagging(setup_wfi_datamodels):
     ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values up to the saturation limit
-    ramp.data.value[0, 5, 5] = 0  # Signal at bottom rail - low saturation
-    ramp.data.value[1, 5, 5] = 0  # Signal at bottom rail - low saturation
-    ramp.data.value[2, 5, 5] = 20
-    ramp.data.value[3, 5, 5] = 40
-    ramp.data.value[4, 5, 5] = 60
+    ramp.data[0, 5, 5] = 0 * ramp.data.unit   # Signal at bottom rail - low saturation
+    ramp.data[1, 5, 5] = 0 * ramp.data.unit   # Signal at bottom rail - low saturation
+    ramp.data[2, 5, 5] = 20 * ramp.data.unit
+    ramp.data[3, 5, 5] = 40 * ramp.data.unit
+    ramp.data[4, 5, 5] = 60 * ramp.data.unit
 
     # frames that should be flagged as saturation (low)
     satindxs = [0, 1]
 
     # Set saturation value in the saturation model
-    satmap.data[5, 5] = satvalue
+    satmap.data[5, 5] = satvalue * satmap.data.unit
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)
@@ -86,11 +86,11 @@ def test_ad_floor_and_saturation_flagging(setup_wfi_datamodels):
     ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values up to the saturation limit
-    ramp.data.value[0, 5, 5] = 0  # Signal at bottom rail - low saturation
-    ramp.data.value[1, 5, 5] = 0  # Signal at bottom rail - low saturation
-    ramp.data.value[2, 5, 5] = 20
-    ramp.data.value[3, 5, 5] = 40
-    ramp.data.value[4, 5, 5] = 61000  # Signal above the saturation threshold
+    ramp.data[0, 5, 5] = 0 * ramp.data.unit  # Signal at bottom rail - low saturation
+    ramp.data[1, 5, 5] = 0 * ramp.data.unit  # Signal at bottom rail - low saturation
+    ramp.data[2, 5, 5] = 20 * ramp.data.unit
+    ramp.data[3, 5, 5] = 40 * ramp.data.unit
+    ramp.data[4, 5, 5] = 61000 * ramp.data.unit  # Signal above the saturation threshold
 
     # frames that should be flagged as ad_floor
     floorindxs = [0, 1]
@@ -98,7 +98,7 @@ def test_ad_floor_and_saturation_flagging(setup_wfi_datamodels):
     satindxs = [4]
 
     # Set saturation value in the saturation model
-    satmap.data[5, 5] = satvalue
+    satmap.data[5, 5] = satvalue * satmap.data.unit
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)
@@ -124,14 +124,14 @@ def test_signal_fluctuation_flagging(setup_wfi_datamodels):
     ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values up to the saturation limit
-    ramp.data.value[0, 5, 5] = 10
-    ramp.data.value[1, 5, 5] = 20000
-    ramp.data.value[2, 5, 5] = 40000
-    ramp.data.value[3, 5, 5] = 60000   # Signal reaches saturation limit
-    ramp.data.value[4, 5, 5] = 40000   # Signal drops below saturation limit
+    ramp.data[0, 5, 5] = 10 * ramp.data.unit
+    ramp.data[1, 5, 5] = 20000 * ramp.data.unit
+    ramp.data[2, 5, 5] = 40000 * ramp.data.unit
+    ramp.data[3, 5, 5] = 60000 * ramp.data.unit   # Signal reaches saturation limit
+    ramp.data[4, 5, 5] = 40000 * ramp.data.unit   # Signal drops below saturation limit
 
     # Set saturation value in the saturation model
-    satmap.data[5, 5] = satvalue
+    satmap.data[5, 5] = satvalue * satmap.data.unit
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)
@@ -153,14 +153,14 @@ def test_all_groups_saturated(setup_wfi_datamodels):
     ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values at or above saturation limit
-    ramp.data.value[0, 5, 5] = 60000
-    ramp.data.value[1, 5, 5] = 62000
-    ramp.data.value[2, 5, 5] = 62000
-    ramp.data.value[3, 5, 5] = 60000
-    ramp.data.value[4, 5, 5] = 62000
+    ramp.data[0, 5, 5] = 60000 * ramp.data.unit
+    ramp.data[1, 5, 5] = 62000 * ramp.data.unit
+    ramp.data[2, 5, 5] = 62000 * ramp.data.unit
+    ramp.data[3, 5, 5] = 60000 * ramp.data.unit
+    ramp.data[4, 5, 5] = 62000 * ramp.data.unit
 
     # Set saturation value in the saturation model
-    satmap.data[5, 5] = satvalue
+    satmap.data[5, 5] = satvalue * satmap.data.unit
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)
@@ -204,14 +204,14 @@ def test_no_sat_check(setup_wfi_datamodels):
     ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values up to the saturation limit
-    ramp.data.value[0, 5, 5] = 10
-    ramp.data.value[1, 5, 5] = 20000
-    ramp.data.value[2, 5, 5] = 40000
-    ramp.data.value[3, 5, 5] = 60000
-    ramp.data.value[4, 5, 5] = 62000   # Signal reaches saturation limit
+    ramp.data[0, 5, 5] = 10 * ramp.data.unit
+    ramp.data[1, 5, 5] = 20000 * ramp.data.unit
+    ramp.data[2, 5, 5] = 40000 * ramp.data.unit
+    ramp.data[3, 5, 5] = 60000 * ramp.data.unit
+    ramp.data[4, 5, 5] = 62000 * ramp.data.unit   # Signal reaches saturation limit
 
     # Set saturation value in the saturation model & DQ value for NO_SAT_CHECK
-    satmap.data[5, 5] = satvalue
+    satmap.data[5, 5] = satvalue * satmap.data.unit
     satmap.dq[5, 5] = dqflags.pixel['NO_SAT_CHECK']
 
     # Also set an existing DQ flag in input science data
@@ -242,14 +242,14 @@ def test_nans_in_mask(setup_wfi_datamodels):
     ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
 
     # Add ramp values up to the saturation limit
-    ramp.data.value[0, 5, 5] = 10
-    ramp.data.value[1, 5, 5] = 20000
-    ramp.data.value[2, 5, 5] = 40000
-    ramp.data.value[3, 5, 5] = 60000
-    ramp.data.value[4, 5, 5] = 62000
+    ramp.data[0, 5, 5] = 10 * ramp.data.unit
+    ramp.data[1, 5, 5] = 20000 * ramp.data.unit
+    ramp.data[2, 5, 5] = 40000 * ramp.data.unit
+    ramp.data[3, 5, 5] = 60000 * ramp.data.unit
+    ramp.data[4, 5, 5] = 62000 * ramp.data.unit
 
     # Set saturation value for pixel to NaN
-    satmap.data[5, 5] = np.nan
+    satmap.data[5, 5] = np.nan * satmap.data.unit
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)
@@ -266,11 +266,11 @@ def setup_wfi_datamodels():
     def _models(ngroups, nrows, ncols):
 
         # Create ramp data
-        data_model = testutil.mk_ramp(shape=(ngroups, nrows, ncols))
+        ramp_model = testutil.mk_ramp(shape=(ngroups, nrows, ncols))
 
         # Create saturation reference data
         saturation_model = testutil.mk_saturation(shape=(nrows, ncols))
 
-        return data_model, saturation_model
+        return ramp_model, saturation_model
 
     return _models

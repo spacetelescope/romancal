@@ -15,7 +15,6 @@ from roman_datamodels.testing import utils as testutil
 from roman_datamodels import units as ru
 
 
-
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
@@ -74,8 +73,8 @@ def test_dark_step_subtraction(instrument, exptype):
 
     # populate data array of science cube
     for i in range(0, 20):
-        ramp_model.data.value[0, 0, i] = i
-        darkref_model.data[0, 0, i] = i * 0.1
+        ramp_model.data[0, 0, i] = i * ramp_model.data.unit
+        darkref_model.data[0, 0, i] = i * 0.1 * darkref_model.data.unit
 
     # Perform Dark Current subtraction step
     result = DarkCurrentStep.call(ramp_model, override_dark=darkref_model)
@@ -130,7 +129,7 @@ def create_ramp_and_dark(shape, instrument, exptype):
     ramp.meta.instrument.detector = 'WFI01'
     ramp.meta.instrument.optical_element = 'F158'
     ramp.meta.exposure.type = exptype
-    ramp.data = u.Quantity(np.ones(shape, dtype=np.float32) , ru.DN, dtype=np.float32)
+    ramp.data = u.Quantity(np.ones(shape, dtype=np.float32), ru.DN, dtype=np.float32)
     ramp_model = RampModel(ramp)
 
     # Create dark model
