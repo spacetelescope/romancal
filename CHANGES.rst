@@ -15,6 +15,8 @@ general
 jump
 ----
 
+- Update jump units to roman_datamodels from astropy units [#646]
+
 - Update default input CR thresholds to give reasonable results [#625]
 
 - Added support for Quantities for data arrays. [#616]
