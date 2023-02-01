@@ -18,7 +18,7 @@ The following convention was adopted:
 - the origin of the transform is taken to be (0, 0).
   Note that while a different origin can be used for some transforms the relevant
   offset should first be prepended to the distortion transform to account for the change
-  in origin of the coordinate frame.  
+  in origin of the coordinate frame.
 
 Internally the WCS pipeline works with 0-based coordinates.
 
@@ -35,7 +35,7 @@ The format and content of the file is as follows
 ==================================  ========================
 Data                                 Data type
 ==================================  ========================
-coordinate_distortion_transform      astropy.modeling.Model   
+coordinate_distortion_transform      astropy.modeling.Model
 ==================================  ========================
 
 The ASDF file contains a single astropy model object.

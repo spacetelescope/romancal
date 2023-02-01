@@ -13,4 +13,3 @@ Photometric Calibration
 
 
 .. automodapi:: romancal.photom
-

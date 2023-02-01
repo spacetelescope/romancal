@@ -1,4 +1,4 @@
-from docutils.nodes import figure, caption, Text, reference, raw, SkipNode, Element
+from docutils.nodes import figure, caption, Text, reference, raw, SkipNode
 from sphinx.roles import XRefRole
 
 
@@ -17,18 +17,18 @@ def skip_page_ref(self, node):
     raise SkipNode
 
 def latex_visit_page_ref(self, node):
-    self.body.append("\\pageref{%s:%s}" % (node['refdoc'], node['reftarget']))
+    self.body.append("\\pageref{{{}:{}}}".format(node['refdoc'], node['reftarget']))
     raise SkipNode
 
 def latex_visit_num_ref(self, node):
     fields = node['reftarget'].split('#')
     if len(fields) > 1:
         label, target = fields
-        ref_link = '%s:%s' % (node['refdoc'], target)
-        latex = "\\hyperref[%s]{%s \\ref*{%s}}" % (ref_link, label, ref_link)
+        ref_link = '{}:{}'.format(node['refdoc'], target)
+        latex = f"\\hyperref[{ref_link}]{{{label} \\ref*{{{ref_link}}}}}"
         self.body.append(latex)
     else:
-        self.body.append('\\ref{%s:%s}' % (node['refdoc'], fields[0]))
+        self.body.append('\\ref{{{}:{}}}'.format(node['refdoc'], fields[0]))
 
     raise SkipNode
 
@@ -74,9 +74,9 @@ def doctree_resolved(app, doctree, docname):
 
             if app.builder.name == 'html':
                 target_doc = app.builder.env.figid_docname_map[target]
-                link = "%s#%s" % (app.builder.get_relative_uri(docname, target_doc),
+                link = "{}#{}".format(app.builder.get_relative_uri(docname, target_doc),
                                   target)
-                html = '<a class="pageref" href="%s">%s</a>' % (link, labelfmt %(figids[target]))
+                html = f'<a class="pageref" href="{link}">{labelfmt %(figids[target])}</a>'
                 ref_info.replace_self(raw(html, html, format='html'))
             else:
                 ref_info.replace_self(Text(labelfmt % (figids[target])))

@@ -142,3 +142,6 @@ report = { exclude_lines = [
     'raise NotImplementedError',
     'if __name__ == "__main__":',
 ] }
+
+[tool.bandit]
+skips = ["B101", "B307", "B404", "B603"]
