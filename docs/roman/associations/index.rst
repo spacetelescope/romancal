@@ -31,4 +31,3 @@ Reference
   :maxdepth: 2
 
   commands.rst
-
