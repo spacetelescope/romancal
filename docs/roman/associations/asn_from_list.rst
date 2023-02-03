@@ -46,5 +46,3 @@ To create a association with all the detectors for a given exposure from the com
 		asn_from_list -o detector_asn.json --product-name r0000101001001001001_01101_0001_WFI_cal.asdf data/*_cal.asdf
 
 where the individual calibrated detector files are in a data subdirectory.
-
-
