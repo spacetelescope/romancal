@@ -102,7 +102,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
 
     def __init__(self, *args, **kwargs):
 
-        super(DMS_ELPP_Base, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # Initialize validity checks
         self.validity.update({
@@ -246,7 +246,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         If both `item` and `member` are given,
         information in `member` will take precedence.
         """
-        super(DMS_ELPP_Base, self).update_asn(item=item, member=member)
+        super().update_asn(item=item, member=member)
 
         # Constraints
         self.data['constraints'] = str(self.constraints)
@@ -324,7 +324,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
 
     def _init_hook(self, item):
         """Post-check and pre-add initialization"""
-        super(DMS_ELPP_Base, self)._init_hook(item)
+        super()._init_hook(item)
 
         # Set which sequence counter should be used.
         self._sequence = self._sequences[self.data['asn_type']]

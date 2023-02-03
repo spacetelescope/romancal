@@ -63,7 +63,7 @@ class json():
         try:
             asn = loader(serialized)
         except Exception as err:
-            fogger.debug(f'Error unserializing: "{err}"')
+            logger.debug(f'Error unserializing: "{err}"')
             raise AssociationNotValidError(
                 f'Container is not JSON: "{serialized}"'
             )

@@ -95,7 +95,7 @@ class AssociationPool(Table):
         delimiter = kwargs.pop('delimiter', DEFAULT_DELIMITER)
         format = kwargs.pop('format', DEFAULT_FORMAT)
         try:
-            super(AssociationPool, self).write(
+            super().write(
                 *args, delimiter=delimiter, format=format, **kwargs
             )
         except TypeError:
@@ -103,7 +103,7 @@ class AssociationPool(Table):
             # does not handle `delimiter`. `jsviewer` is one
             # such format.
             # So, try again without a delimiter.
-            super(AssociationPool, self).write(
+            super().write(
                 *args, format=format, **kwargs
             )
 

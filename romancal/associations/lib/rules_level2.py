@@ -46,7 +46,7 @@ class Asn_Lv2Image(
         ])
 
         # Now check and continue initialization.
-        super(Asn_Lv2Image, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 

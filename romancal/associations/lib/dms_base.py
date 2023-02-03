@@ -38,7 +38,7 @@ ACQ_EXP_TYPES = (
 )
 
 # Exposure EXP_TYPE to Association EXPTYPE mapping
-# noqa: E241
+# flake8: noqa: E241
 EXPTYPE_MAP = {
     'mir_darkall':       'dark',
     'mir_darkimg':       'dark',

@@ -150,7 +150,7 @@ def test_cmdline_change_rules(tmpdir):
     ]
     args = args + inlist
     Main(args)
-    with open(path.strpath, 'r') as fp:
+    with open(path.strpath) as fp:
         asn = load_asn(fp, registry=AssociationRegistry(include_bases=True))
     #assert inlist == asn['members']
     assert inlist[0] == asn['products'][0]['members'][0]['expname']

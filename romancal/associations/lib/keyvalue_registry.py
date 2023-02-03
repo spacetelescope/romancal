@@ -37,7 +37,7 @@ class KeyValueRegistry(UserDict):
         super_args = ()
         if items is not None:
             super_args = (make_dict(items), )
-        super(KeyValueRegistry, self).__init__(*super_args)
+        super().__init__(*super_args)
 
         self.default = None
         if default is not None:
@@ -52,7 +52,7 @@ class KeyValueRegistry(UserDict):
     def update(self, item):
         """Add item to registry"""
         item_dict = make_dict(item)
-        super(KeyValueRegistry, self).update(item_dict)
+        super().update(item_dict)
 
     def __call__(self, item):
         """Add item by calling instance
@@ -70,7 +70,7 @@ class KeyValueRegistryError(Exception):
     def __init__(self, *args):
         if len(args) == 0:
             args = (self.msg, )
-        super(KeyValueRegistryError, self).__init__(*args)
+        super().__init__(*args)
 
 
 class KeyValueRegistryNotSingleItemError(KeyValueRegistryError):
