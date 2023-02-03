@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
-# noqa: F403, F405
+# flake8: noqa: F403, F405
 # --------------------------------
 # Start of the User-level rules
 # --------------------------------
