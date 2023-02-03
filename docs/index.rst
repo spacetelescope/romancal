@@ -29,15 +29,15 @@ The Roman Space Telescope Calibration Pipeline
 .. toctree::
    :caption: RomanCal Package Index
    :maxdepth: 2
-	      
-   roman/package_index.rst
 
-.. toctree:: 
+roman/package_index.rst
+
+.. toctree::
    :caption: Datamodels
    :maxdepth: 2
 
    roman/datamodels/index.rst
 
-.. toctree:: 
+.. toctree::
    :caption: Additional Information
    :maxdepth: 1
