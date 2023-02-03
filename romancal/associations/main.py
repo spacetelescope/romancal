@@ -166,7 +166,7 @@ class Main():
         )
         parser.add_argument(
             '--version', action='version',
-            version='%(prog)s {}'.format(__version__),
+            version=f'%(prog)s {__version__}',
             help='Version of the generator.'
         )
         parser.add_argument(
@@ -335,7 +335,7 @@ class Main():
 class DeprecateNoMerge(argparse.Action):
     """Deprecate the `--no-merge` option"""
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
-        super(DeprecateNoMerge, self).__init__(option_strings, dest, const=True, nargs=0, **kwargs)
+        super().__init__(option_strings, dest, const=True, nargs=0, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
         logger.warning(

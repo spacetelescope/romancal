@@ -230,9 +230,9 @@ class SignalsErrorBase(Exception):
 
     def __init__(self, *args):
         if len(args):
-            super(SignalsErrorBase, self).__init__(*args)
+            super().__init__(*args)
         else:
-            super(SignalsErrorBase, self).__init__(self.default_message)
+            super().__init__(self.default_message)
 
 
 class SignalsNotAClass(SignalsErrorBase):
@@ -245,15 +245,15 @@ class Signals(dict):
 
     def __setitem__(self, key, value):
         if key not in self:
-            super(Signals, self).__setitem__(key, value)
+            super().__setitem__(key, value)
         else:
-            logger.warning('Signals: signal "{}" already exists.'.format(key))
+            logger.warning(f'Signals: signal "{key}" already exists.')
 
     def __getattr__(self, key):
         for signal in self:
             if signal.__name__ == key:
                 return self[signal]
-        raise KeyError('{}'.format(key))
+        raise KeyError(f'{key}')
 
     def add(self, signal_class, *args, **kwargs):
         if inspect.isclass(signal_class):

@@ -184,7 +184,7 @@ class Association(MutableMapping):
         """
         if not hasattr(cls, 'schema_file'):
             logger.warning(
-                'Cannot validate: {} has no schema. Presuming OK.'.format(cls)
+                f'Cannot validate: {cls} has no schema. Presuming OK.'
             )
             return True
 
@@ -193,7 +193,7 @@ class Association(MutableMapping):
         else:
             asn_data = asn
 
-        with open(cls.schema_file, 'r') as schema_file:
+        with open(cls.schema_file) as schema_file:
             asn_schema = json.load(schema_file)
 
         try:
@@ -234,7 +234,7 @@ class Association(MutableMapping):
             return self.ioregistry[format].dump(self, **kwargs)
         else:
             raise AssociationNotValidError(
-                'Association {} is not valid'.format(self)
+                 f'Association {self} is not valid'
             )
 
     @classmethod
@@ -297,7 +297,7 @@ class Association(MutableMapping):
                 break
         else:
             raise AssociationNotValidError(
-                'Cannot translate "{}" to an association'.format(serialized)
+                f'Cannot translate "{serialized}" to an association'
             )
 
         # Validate

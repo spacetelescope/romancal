@@ -25,7 +25,7 @@ class AssociationPool(Table):
     - All values are read in as strings
     """
     def __init__(self, *args, **kwargs):
-        super(AssociationPool, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.meta['pool_file'] = self.meta.get('pool_file', 'in-memory')
 
     @classmethod
@@ -54,7 +54,7 @@ class AssociationPool(Table):
         AssociationPool
             The ``AssociationPool`` representation of the file.
         """
-        table = super(AssociationPool, cls).read(
+        table = super().read(
             filename, delimiter=delimiter,
             format=format,
             converters=convert_to_str, **kwargs

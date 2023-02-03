@@ -160,7 +160,7 @@ class ConstraintTrue(SimpleConstraintABC):
     """Always return True"""
 
     def check_and_set(self, item):
-        return super(ConstraintTrue, self).check_and_set(item)
+        return super().check_and_set(item)
 
 
 class SimpleConstraint(SimpleConstraintABC):
@@ -282,7 +282,7 @@ class SimpleConstraint(SimpleConstraintABC):
         self.reprocess_on_fail = reprocess_on_fail
         self.work_over = work_over
         self.reprocess_rules = reprocess_rules
-        super(SimpleConstraint, self).__init__(init=init, **kwargs)
+        super().__init__(init=init, **kwargs)
 
         # Give defaults some real meaning.
         if self.sources is None:
@@ -412,7 +412,7 @@ class AttrConstraint(SimpleConstraintABC):
         self.only_on_match = only_on_match
         self.onlyif = onlyif
         self.required = required
-        super(AttrConstraint, self).__init__(init=init, **kwargs)
+        super().__init__(init=init, **kwargs)
 
         # Give some defaults real meaning.
         if invalid_values is None:
@@ -837,8 +837,7 @@ class Constraint:
 
     # Make iterable
     def __iter__(self):
-        for constraint in chain(*map(iter, self.constraints)):
-            yield constraint
+        yield from chain(*map(iter, self.constraints))
 
     # Index implementation
     def __getitem__(self, key):
@@ -853,7 +852,7 @@ class Constraint:
                 pass
             else:
                 return found
-        raise KeyError('Constraint {} not found'.format(key))
+        raise KeyError(f'Constraint {key} not found')
 
     def __repr__(self):
         result = '{}(name={}).{}([{}])'.format(

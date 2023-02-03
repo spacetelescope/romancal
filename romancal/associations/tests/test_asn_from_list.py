@@ -74,7 +74,7 @@ def test_default_fail():
     A product name needs to be included, but is not.
     """
     items = ['a']
-    with pytest.raises((AssociationNotValidError)):
+    with pytest.raises(AssociationNotValidError):
         _ = asn_from_list(items)
 
 
@@ -126,7 +126,7 @@ def test_cmdline_success(format, tmpdir):
     ]
     args = args + inlist
     Main(args)
-    with open(path.strpath, 'r') as fp:
+    with open(path.strpath) as fp:
         asn = load_asn(fp, format=format)
     assert len(asn['products']) == 1
     assert asn['products'][0]['name'] == product_name

@@ -38,6 +38,7 @@ ACQ_EXP_TYPES = (
 )
 
 # Exposure EXP_TYPE to Association EXPTYPE mapping
+# noqa: E241
 EXPTYPE_MAP = {
     'mir_darkall':       'dark',
     'mir_darkimg':       'dark',
@@ -154,7 +155,7 @@ class DMSBaseMixin(ACIDMixin):
     _sequence = Counter(start=1)
 
     def __init__(self, *args, **kwargs):
-        super(DMSBaseMixin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self._acid = None
         self._asn_name = None
@@ -186,7 +187,7 @@ class DMSBaseMixin(ACIDMixin):
                   match this rule, None
                 - [ProcessList[, ...]]: List of items to process again.
         """
-        asn, reprocess = super(DMSBaseMixin, cls).create(item, version_id)
+        asn, reprocess = super().create(item, version_id)
         if not asn:
             return None, reprocess
         asn.sequence = next(asn._sequence)
@@ -261,11 +262,11 @@ class DMSBaseMixin(ACIDMixin):
     @property
     def member_ids(self):
         """Set of all member ids in all products of this association"""
-        member_ids = set(
+        member_ids = {
             member[MEMBER_KEY]
             for product in self['products']
             for member in product['members']
-        )
+        }
         return member_ids
 
     @property
@@ -430,7 +431,7 @@ class DMSBaseMixin(ACIDMixin):
 
     @classmethod
     def validate(cls, asn):
-        super(DMSBaseMixin, cls).validate(asn)
+        super().validate(asn)
 
         if isinstance(asn, DMSBaseMixin):
             result = False
@@ -465,7 +466,7 @@ class DMSBaseMixin(ACIDMixin):
             pass
         else:
             if activity_id not in _EMPTY:
-                exposure = '{0:0>2s}'.format(activity_id)
+                exposure = f'{activity_id:0>2s}'
         return exposure
 
     def _get_instrument(self):
@@ -542,7 +543,7 @@ class DMSBaseMixin(ACIDMixin):
             of the target or source ID.
         """
         target_id = format_list(self.constraints['target'].found_values)
-        target = 't{0:0>3s}'.format(str(target_id))
+        target = f't{str(target_id):0>3s}'
         return target
 
     def _get_grating(self):
@@ -555,7 +556,7 @@ class DMSBaseMixin(ACIDMixin):
             of the grating in use.
         """
         grating_id = format_list(self.constraints['grating'].found_values)
-        grating = '{0:0>3s}'.format(str(grating_id))
+        grating = f'{str(grating_id):0>3s}'
         return grating
 
 
@@ -572,7 +573,7 @@ class DMSAttrConstraint(AttrConstraint):
         if kwargs.get('invalid_values', None) is None:
             kwargs['invalid_values'] = _EMPTY
 
-        super(DMSAttrConstraint, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 
 class Constraint_TargetAcq(SimpleConstraint):
@@ -590,7 +591,7 @@ class Constraint_TargetAcq(SimpleConstraint):
         else:
             _get_exposure_type = association.get_exposure_type
 
-        super(Constraint_TargetAcq, self).__init__(
+        super().__init__(
             name='target_acq',
             value='target_acquisition',
             sources=_get_exposure_type
@@ -601,7 +602,7 @@ class Constraint_TargetAcq(SimpleConstraint):
 class Constraint_WFSC(Constraint):
     """Match on Wave Front Sensing and Control Observations"""
     def __init__(self, *args, **kwargs):
-        super(Constraint_WFSC, self).__init__(
+        super().__init__(
             [
                 Constraint(
                     [

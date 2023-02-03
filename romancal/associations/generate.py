@@ -179,7 +179,7 @@ def generate_from_item(
             ListCategory.BOTH,
             ListCategory.RULES,
     ) and rules is not None:
-        ignore_asns = set([type(asn) for asn in existing_asns])
+        ignore_asns = {type(asn) for asn in existing_asns}
         new_asns, reprocess = rules.match(
             item,
             version_id=version_id,

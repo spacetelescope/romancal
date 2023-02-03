@@ -99,7 +99,7 @@ def getattr_from_list(adict, attributes, invalid_values=None):
             else:
                 continue
     else:
-        raise KeyError('Object has no attributes in {}'.format(attributes))
+        raise KeyError(f'Object has no attributes in {attributes}')
 
 
 @return_on_exception(exceptions=(KeyError,), default=None)

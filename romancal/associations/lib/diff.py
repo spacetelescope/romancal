@@ -41,7 +41,7 @@ class TypeMismatchError(DiffError):
 class MultiDiffError(UserList, DiffError):
     """List of diff errors"""
     def __init__(self, *args, **kwargs):
-        super(MultiDiffError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __str__(self):
         message = ['Following diffs found:\n']
@@ -73,7 +73,7 @@ def compare_asn_files(left_paths, right_paths):
     # Read in all the associations, separating out the products into separate associations.
     left_asns = []
     for path in left_paths:
-        with open(path, 'r') as fh:
+        with open(path) as fh:
             asn = load_asn(fh)
         single_product_asns = separate_products(asn)
 
@@ -82,7 +82,7 @@ def compare_asn_files(left_paths, right_paths):
 
     right_asns = []
     for path in right_paths:
-        with open(path, 'r') as fh:
+        with open(path) as fh:
             asn = load_asn(fh)
         single_product_asns = separate_products(asn)
 

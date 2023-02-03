@@ -415,7 +415,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
     def __repr__(self):
         try:
             file_name, json_repr = self.ioregistry['json'].dump(self)
-        except:
+        except KeyValueRegistryNoKeyFound:
             return str(self.__class__)
         return json_repr
 
@@ -654,7 +654,7 @@ def dms_product_name_sources(asn):
 class Constraint_Base(Constraint):
     """Select on program and instrument"""
     def __init__(self):
-        super(Constraint_Base, self).__init__(
+        super().__init__(
             [
                 DMSAttrConstraint(
                     name='program',
@@ -672,7 +672,7 @@ class Constraint_Base(Constraint):
 class Constraint_Expos(DMSAttrConstraint):
     """Select on exposure number"""
     def __init__(self):
-        super(Constraint_Expos, self).__init__(
+        super().__init__(
             name='exposure_number',
             sources=['nexpsur'],
             #force_unique=True,
@@ -683,7 +683,7 @@ class Constraint_Expos(DMSAttrConstraint):
 class Constraint_Tile(DMSAttrConstraint):
     """Select on exposure number"""
     def __init__(self):
-        super(Constraint_Tile, self).__init__(
+        super().__init__(
             name='tile',
             sources=['tile'],
             #force_unique=True,
@@ -694,7 +694,7 @@ class Constraint_Tile(DMSAttrConstraint):
 class Constraint_Image(DMSAttrConstraint):
     """Select on exposure type"""
     def __init__(self):
-        super(Constraint_Image, self).__init__(
+        super().__init__(
             name='exp_type',
             sources=['exp_type'],
             value=(
@@ -707,7 +707,7 @@ class Constraint_Image(DMSAttrConstraint):
 class Constraint_Obsnum(DMSAttrConstraint):
     """Select on OBSNUM"""
     def __init__(self):
-        super(Constraint_Obsnum, self).__init__(
+        super().__init__(
             name='obs_num',
             sources=['obs_num'],
             force_unique=False,
@@ -718,7 +718,7 @@ class Constraint_Obsnum(DMSAttrConstraint):
 class Constraint_Optical_Path(Constraint):
     """Select on optical path"""
     def __init__(self):
-        super(Constraint_Optical_Path, self).__init__([
+        super().__init__([
             DMSAttrConstraint(
                 name='opt_elem',
                 sources=['opt_elem'],
@@ -729,7 +729,7 @@ class Constraint_Optical_Path(Constraint):
 class Constraint_Image_Science(DMSAttrConstraint):
     """Select on science images"""
     def __init__(self):
-        super(Constraint_Image_Science, self).__init__(
+        super().__init__(
             name='exp_type',
             sources=['exp_type'],
             value='|'.join(IMAGE2_SCIENCE_EXP_TYPES)
@@ -757,7 +757,7 @@ class Constraint_Single_Science(SimpleConstraint):
     """
 
     def __init__(self, has_science_fn, **sc_kwargs):
-        super(Constraint_Single_Science, self).__init__(
+        super().__init__(
             name='single_science',
             value=False,
             sources=lambda item: has_science_fn(),
@@ -768,7 +768,7 @@ class Constraint_Single_Science(SimpleConstraint):
 class Constraint_Spectral(DMSAttrConstraint):
     """Constrain on spectral exposure types"""
     def __init__(self):
-        super(Constraint_Spectral, self).__init__(
+        super().__init__(
             name='exp_type',
             sources=['exp_type'],
             value=(
@@ -796,7 +796,7 @@ class Constraint_Spectral_Science(Constraint):
                 exclude_exp_types
             )
 
-        super(Constraint_Spectral_Science, self).__init__(
+        super().__init__(
             [
                 DMSAttrConstraint(
                     name='exp_type',
@@ -819,12 +819,12 @@ class Constraint_Target(DMSAttrConstraint):
     """
     def __init__(self, association=None):
         if association is None:
-            super(Constraint_Target, self).__init__(
+            super().__init__(
                 name='target',
                 sources=['targname'],
             )
         else:
-            super(Constraint_Target, self).__init__(
+            super().__init__(
                 name='target',
                 sources=['targname'],
                 onlyif=lambda item: association.get_exposure_type(item) != 'background',
@@ -909,7 +909,7 @@ class AsnMixin_Science(DMS_ELPP_Base):
             name='dmsbase_top'
         )
 
-        super(AsnMixin_Science, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class AsnMixin_Spectrum(AsnMixin_Science):
@@ -919,7 +919,7 @@ class AsnMixin_Spectrum(AsnMixin_Science):
         """Post-check and pre-add initialization"""
 
         self.data['asn_type'] = 'spec3'
-        super(AsnMixin_Spectrum, self)._init_hook(item)
+        super()._init_hook(item)
 
 # ---------------------------------------------
 # Mixins to define the broad category of rules.
@@ -930,5 +930,5 @@ class AsnMixin_Lv2Image:
     def _init_hook(self, item):
         """Post-check and pre-add initialization"""
 
-        super(AsnMixin_Lv2Image, self)._init_hook(item)
+        super()._init_hook(item)
         self.data['asn_type'] = 'image2'

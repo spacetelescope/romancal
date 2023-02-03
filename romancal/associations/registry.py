@@ -80,7 +80,7 @@ class AssociationRegistry(dict):
                  global_constraints=None,
                  name=None,
                  include_bases=False):
-        super(AssociationRegistry, self).__init__()
+        super().__init__()
 
         # Generate a UUID for this instance. Used to modify rule
         # names.
@@ -194,7 +194,7 @@ class AssociationRegistry(dict):
 
         if len(results) == 0:
             raise AssociationNotValidError(
-                'Structure did not validate: "{}"'.format(association)
+                f'Structure did not validate: "{association}"'
             )
         return results
 
@@ -507,15 +507,13 @@ def get_marked(module, predicate=None, include_bases=False):
 
     for name, obj in getmembers(module, predicate):
         if isclass(obj):
-            for sub_name, sub_obj in get_marked(obj, predicate=is_method):
-                yield sub_name, sub_obj
+            yield from get_marked(obj, predicate=is_method)
             if RegistryMarker.is_marked(obj) or include_bases:
                 yield name, obj
         elif RegistryMarker.is_marked(obj):
             if ismodule(obj):
-                for sub_name, sub_obj in get_marked(
+                yield from get_marked(
                         obj, predicate=predicate, include_bases=include_bases
-                ):
-                    yield sub_name, sub_obj
+                )
             else:
                 yield name, obj

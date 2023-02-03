@@ -28,7 +28,7 @@ class Member(UserDict):
             self.data = copy(initialdata.data)
             self.item = copy(initialdata.item)
         else:
-            super(Member, self).__init__(initialdata)
+            super().__init__(initialdata)
 
         if item is not None:
             self.item = copy(item)

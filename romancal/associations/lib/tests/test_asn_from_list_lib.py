@@ -70,5 +70,5 @@ def test_default_fail():
     A product name needs to be included, but is not.
     """
     items = ['a']
-    with pytest.raises((AssociationNotValidError)):
+    with pytest.raises(AssociationNotValidError):
         _ = asn_from_list(items)

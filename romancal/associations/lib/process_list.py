@@ -15,9 +15,9 @@ __all__ = [
 
 class ListCategory(Enum):
     """Categories in the list"""
-    RULES      = 0
-    BOTH       = 1
-    EXISTING   = 2
+    RULES = 0
+    BOTH = 1
+    EXISTING = 2
     NONSCIENCE = 3
 
 
@@ -188,8 +188,7 @@ class ProcessListQueue:
     def items(self):
         """Return list generator of all items"""
         for plhash in self._queue:
-            for item in self._queue[plhash].items:
-                yield item
+            yield from self._queue[plhash].items
 
     def popleft(self):
         """Pop the first-in object"""

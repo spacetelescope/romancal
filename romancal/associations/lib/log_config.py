@@ -48,10 +48,10 @@ class DMSFormatter(logging.Formatter):
 
     def format(self, record):
         log_parts = []
-        log_parts.append(super(DMSFormatter, self).format(record))
+        log_parts.append(super().format(record))
         for key in record._context:
-            log_parts.append('{0}={1}'.format(key, record._context[key]))
-        log_parts.append('msg="{}"'.format(record.getMessage()))
+            log_parts.append(f'{key}={record._context[key]}')
+        log_parts.append(f'msg="{record.getMessage()}"')
         log_line = ' '.join(log_parts)
         return log_line
 
@@ -151,7 +151,7 @@ class MultilineLogger(logging.getLoggerClass()):
     """Split multilines so that each line is logged separately"""
 
     def __init__(self, *args, **kwargs):
-        super(MultilineLogger, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def log(self, level, msg, *args, **kwargs):
         if self.isEnabledFor(level):

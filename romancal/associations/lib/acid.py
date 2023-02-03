@@ -58,7 +58,7 @@ class ACIDMixin():
         # Initialize discovered association ID
         self.discovered_id = Counter(_DISCOVERED_ID_START)
 
-        super(ACIDMixin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def acid_from_constraints(self):
         """Determine ACID from constraints"""
@@ -76,7 +76,7 @@ class ACIDMixin():
                 else:
                     break
         else:
-            id = 'a{:0>3}'.format(self.discovered_id.value)
+            id = f'a{self.discovered_id.value:0>3}'
             acid = ACID((id, 'DISCOVERED'))
 
         return acid

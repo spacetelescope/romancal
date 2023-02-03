@@ -7,6 +7,7 @@ sub-lists are created is defined by Association Rules.
 For more, see the :ref:`documentation overview <asn-overview>`.
 
 """
+# noqa: F401, F402, F403
 
 # Take version from the upstream package
 from .. import __version__
