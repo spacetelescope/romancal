@@ -97,7 +97,7 @@ class BaseRomanTest:
             path = op.join(*self.repo_path, *pathargs)
             file_paths = _data_glob_url(path, glob, root=root)
         else:
-            raise BigdataError('Path cannot be found: {}'.format(path))
+            raise BigdataError(f'Path cannot be found: {path}')
 
         # Remove the root from the paths
         file_paths = [

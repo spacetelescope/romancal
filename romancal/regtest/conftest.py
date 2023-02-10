@@ -76,10 +76,10 @@ def generate_artifactory_json(request, artifactory_repos):
     def artifactory_result_path():
         # Generate the Artifactory result path
         whoami = getpass.getuser() or 'nobody'
-        user_tag = 'NOT_CI_{}'.format(whoami)
+        user_tag = f'NOT_CI_{whoami}'
         build_tag = os.environ.get('BUILD_TAG', user_tag)
         build_matrix_suffix = os.environ.get('BUILD_MATRIX_SUFFIX', '0')
-        subdir = '{}_{}_{}'.format(TODAYS_DATE, build_tag, build_matrix_suffix)
+        subdir = f'{TODAYS_DATE}_{build_tag}_{build_matrix_suffix}'
         testname = request.node.originalname or request.node.name
 
         return os.path.join(results_root, subdir, testname) + os.sep

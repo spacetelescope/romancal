@@ -9,6 +9,8 @@ import numpy as np
 from romancal.stpipe import RomanStep
 from romancal.lib import dqflags
 from stcal.linearity.linearity import linearity_correction
+from astropy import units as u
+from roman_datamodels import units as ru
 
 __all__ = ["LinearityStep"]
 
@@ -56,11 +58,11 @@ class LinearityStep(RomanStep):
             # Call linearity correction function in stcal
             # The third return value is the procesed zero frame which
             # Roman does not use.
-            new_data, new_pdq, _ = linearity_correction(output_model.data,
+            new_data, new_pdq, _ = linearity_correction(output_model.data.value,
                                                      gdq, pdq, lin_coeffs,
                                                      lin_dq, dqflags.pixel)
 
-            output_model.data = new_data[0, :, :, :]
+            output_model.data = u.Quantity(new_data[0, :, :, :], ru.DN, dtype=new_data.dtype)
             output_model.pixeldq = new_pdq
 
             # Close the reference file and update the step status

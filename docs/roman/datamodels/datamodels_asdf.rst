@@ -4,10 +4,10 @@
 Working with Roman datamodels and ASDF files
 ============================================
 
-Please refer to `Roman Documentation <https://roman-datamodels.readthedocs.io/en/latest/>`_ 
+Please refer to `Roman Documentation <https://roman-datamodels.readthedocs.io/en/latest/>`_
 for more details about `roman_datamodels`.
 
-This section assumes that you are familiar with the ASDF standard format. 
+This section assumes that you are familiar with the ASDF standard format.
 If that's not the case, a good starting point would be to go over the `ASDF Documentation <https://asdf-standard.readthedocs.io/>`_.
 
 If you have installed the roman calibration pipeline you should also have access

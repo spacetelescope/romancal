@@ -1,10 +1,13 @@
 #! /usr/bin/env python
 
+from astropy import units as u
 import numpy as np
+
 from romancal.stpipe import RomanStep
 from roman_datamodels import datamodels as rdd
 from stcal.dark_current import dark_sub
 from roman_datamodels.testing import utils as testutil
+from roman_datamodels import units as ru
 
 
 __all__ = ["DarkCurrentStep"]
@@ -43,7 +46,7 @@ class DarkCurrentStep(RomanStep):
                 dark_model.meta.exposure['groupgap'] = input_model.meta.exposure.groupgap
 
             # Reshaping data variables for stcal compatibility
-            input_model.data = input_model.data.astype(np.float32)[np.newaxis, :]
+            input_model.data = input_model.data[np.newaxis, :]
             input_model.groupdq = input_model.groupdq[np.newaxis, :]
             input_model.err = input_model.err[np.newaxis, :]
 
@@ -90,9 +93,9 @@ def save_dark_data_as_dark_model(dark_data, dark_model):
 
     # Create DarkRef object and copy dark data to it
     out_dark = testutil.mk_dark(shape=dark_data.data.shape)
-    out_dark.data = dark_data.data
+    out_dark.data = u.Quantity(dark_data.data, out_dark.data.unit, dtype=out_dark.data.dtype)
     out_dark.dq = dark_data.groupdq
-    out_dark.err = dark_data.err
+    out_dark.err = u.Quantity(dark_data.err, out_dark.err.unit, dtype=out_dark.err.dtype)
 
     # Temporary patch to utilize stcal dark step until MA table support is fully implemented
     out_dark.meta.exposure['nframes'] = dark_data.exp_nframes
@@ -133,10 +136,10 @@ def dark_output_data_as_ramp_model(out_data, input_model):
     # Removing integration dimension from variables (added for stcal
     # compatibility)
     # Roman 3D
-    out_model.data = out_data.data[0]
+    out_model.data = u.Quantity(out_data.data[0], ru.DN, dtype=out_data.data.dtype)
     out_model.groupdq = out_data.groupdq[0]
     # Roman 2D
     out_model.pixeldq = out_data.pixeldq
-    out_model.err = out_data.err[0]
+    out_model.err = u.Quantity(out_data.err[0], ru.DN, dtype=out_data.err.dtype)
 
     return out_model

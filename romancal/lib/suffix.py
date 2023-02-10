@@ -61,7 +61,7 @@ SUFFIXES_TO_DISCARD = ['pipeline', 'step']
 
 
 # Calculated suffixes.
-_calculated_suffixes = set([
+_calculated_suffixes = {
     'saturationstep',
     'darkcurrentstep',
     'jumpstep',
@@ -81,7 +81,7 @@ _calculated_suffixes = set([
     'dark_current',
     'jump',
     'tweakregstep'
-])
+}
 
 
 # ##########
@@ -166,10 +166,10 @@ def find_suffixes():
     # First traverse the code base and find all
     # `Step` classes. The default suffix is the
     # class name.
-    suffixes = set(
+    suffixes = {
         klass_name.lower()
         for klass_name, klass in all_steps().items()
-    )
+    }
 
     # That's all folks
     return list(suffixes)

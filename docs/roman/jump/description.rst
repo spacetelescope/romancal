@@ -48,7 +48,7 @@ The two-point difference method is applied to the integration as follows:
   jump-impacted group excluded, looking for additional lower-level jumps
   that still exceed the rejection threshold.
 * Stop iterating on a given pixel when no new jumps are found or only one difference remains.
-* If the there are only three differences (four groups), the standard median is used rather than 
+* If the there are only three differences (four groups), the standard median is used rather than
   the clipped median.
 * If there are only two differences (three groups), the smallest one is compared to the larger
   one and if the larger one is above a threshold, it is flagged as a jump.

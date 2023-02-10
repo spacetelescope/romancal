@@ -5,7 +5,7 @@ About datamodels
 
 The purpose of the data model is to abstract away the peculiarities of
 the underlying file format.  The same data model may be used for data
-created from scratch in memory, or loaded from 
+created from scratch in memory, or loaded from
 `ASDF <https://asdf-standard.readthedocs.io/>`_ files or some future file format.
 
 The detailed datamodel structure and specifics are contained in the
@@ -110,7 +110,7 @@ Simply call the `save` method on the model instance:
 .. note::
 
    This `save` always clobbers the output file.
-   
+
    For now the only format supported is ASDF.
 
 

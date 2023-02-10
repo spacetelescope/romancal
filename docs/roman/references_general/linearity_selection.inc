@@ -9,4 +9,3 @@ Instrument  Keyword Attributes
 ========== =====================================
 WFI         instrument, detector, date, time
 ========== =====================================
-

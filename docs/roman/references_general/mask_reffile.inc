@@ -29,7 +29,7 @@ detector           model.meta.instrument.detector          WFI
 
 Reference File Format
 +++++++++++++++++++++
-MASK reference files are ASDF format, with one data object. 
+MASK reference files are ASDF format, with one data object.
 The format and content of the file is as follows:
 
 =======  ============ ==============  =============

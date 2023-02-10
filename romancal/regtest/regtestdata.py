@@ -169,7 +169,7 @@ class RegtestData:
             file_paths = _data_glob_url(self._inputs_root, self._env, path,
                                         glob, root=root)
         else:
-            raise BigdataError('Path cannot be found: {}'.format(path))
+            raise BigdataError(f'Path cannot be found: {path}')
 
         # Remove the root from the paths
         file_paths = [

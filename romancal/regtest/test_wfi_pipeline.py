@@ -161,7 +161,7 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     # DMS89 WCS tests
     pipeline.log.info('DMS89 MSG: Testing that the wcs bounding'
                       'box was generated.......' +
-                      passfail((len(model.meta.wcs.bounding_box) == 2)))
+                      passfail(len(model.meta.wcs.bounding_box) == 2))
     assert len(model.meta.wcs.bounding_box) == 2
 
     # Save original wcs information
@@ -307,7 +307,7 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     # DMS93 WCS tests
     pipeline.log.info('DMS93 MSG: Testing that the wcs bounding'
                       'box was generated.......' +
-                      passfail((len(model.meta.wcs.bounding_box) == 2)))
+                      passfail(len(model.meta.wcs.bounding_box) == 2))
     assert len(model.meta.wcs.bounding_box) == 2
 
     # Save original wcs information
