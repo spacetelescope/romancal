@@ -62,7 +62,7 @@ def wcsinfo_from_model(input_model):
     for key in ['CRPIX', 'CRVAL', 'CDELT', 'CTYPE', 'CUNIT']:
         val = []
         for ax in range(1, wcsaxes + 1):
-            k = (key + "{0}".format(ax)).lower()
+            k = (key + f"{ax}").lower()
             v = hdr.get(k, defaults[key])
             val.append(v)
         wcsinfo[key] = np.array(val)
@@ -70,7 +70,7 @@ def wcsinfo_from_model(input_model):
     pc = np.zeros((wcsaxes, wcsaxes))
     for i in range(1, wcsaxes + 1):
         for j in range(1, wcsaxes + 1):
-            pc[i - 1, j - 1] = hdr.get('pc{0}_{1}'.format(i, j), 1)
+            pc[i - 1, j - 1] = hdr.get(f'pc{i}_{j}', 1)
     wcsinfo['PC'] = pc
     wcsinfo['RADESYS'] = hdr.get('reference_frame')
     wcsinfo['has_cd'] = False

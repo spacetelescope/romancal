@@ -154,7 +154,7 @@ class TweakRegStep(RomanStep):
                 catalog = Table.read(image_model.meta.tweakreg_catalog)
                 new_cat = False
 
-            except IOError:
+            except OSError:
                 self.log.error("Failed to read 'meta.tweakreg_catalog' from source detection step ")
 
             for axis in ['x', 'y']:
@@ -181,14 +181,14 @@ class TweakRegStep(RomanStep):
             filename = image_model.meta.filename
             nsources = len(catalog)
             if nsources == 0:
-                self.log.warning('No sources found in {}.'.format(filename))
+                self.log.warning(f'No sources found in {filename}.')
             else:
                 self.log.info('Detected {} sources in {}.'
                               .format(len(catalog), filename))
 
             if new_cat and self.save_catalogs:
                 catalog_filename = filename.replace(
-                    '.fits', '_cat.{}'.format(self.catalog_format)
+                    '.fits', f'_cat.{self.catalog_format}'
                 )
                 if self.catalog_format == 'ecsv':
                     fmt = 'ascii.ecsv'
@@ -221,7 +221,7 @@ class TweakRegStep(RomanStep):
         if len(grp_img) == 1 and not ALIGN_TO_ABS_REFCAT:
             self.log.info("* Images in GROUP 1:")
             for im in grp_img[0]:
-                self.log.info("     {}".format(im.meta.filename))
+                self.log.info(f"     {im.meta.filename}")
             self.log.info('')
 
             # we need at least two exposures to perform image alignment
@@ -249,7 +249,7 @@ class TweakRegStep(RomanStep):
                 ) else datamodels.open(path.basename(model))
                 if hasattr(model, "catalog"):
                     delattr(model, "catalog")
-            self.log.info("* Images in GROUP '{}':".format(group_name))
+            self.log.info(f"* Images in GROUP '{group_name}':")
             for im in imcats:
                 im.meta['group_id'] = group_name
                 self.log.info("     {}".format(im.meta['name']))
@@ -268,7 +268,7 @@ class TweakRegStep(RomanStep):
                     # Remove the attached catalogs
                     for model in g:
                         del model.catalog
-                    self.log.info("* Images in GROUP '{}':".format(group_name))
+                    self.log.info(f"* Images in GROUP '{group_name}':")
                     for im in wcsimlist:
                         im.meta['group_id'] = group_name
                         self.log.info("     {}".format(im.meta['name']))
@@ -360,7 +360,7 @@ class TweakRegStep(RomanStep):
             #        whatever convention is determined by the JWST Cal Working
             #        Group.
             if self.save_abs_catalog:
-                output_name = 'fit_{}_ref.ecsv'.format(self.abs_refcat.lower())
+                output_name = f'fit_{self.abs_refcat.lower()}_ref.ecsv'
             else:
                 output_name = None
 
@@ -453,7 +453,7 @@ class TweakRegStep(RomanStep):
                     #       translated to the FITS WCSNAME keyword
                     #       IF that is what gets recorded in the archive
                     #       for end-user searches.
-                    imcat.wcs.name = "FIT-LVL3-{}".format(self.abs_refcat)
+                    imcat.wcs.name = f"FIT-LVL3-{self.abs_refcat}"
 
                 image_model.meta.wcs = imcat.wcs
 
@@ -492,8 +492,8 @@ class TweakRegStep(RomanStep):
                 cat_name = str(catalog)
                 catalog = Table.read(catalog)
                 catalog.meta['name'] = cat_name
-            except IOError:
-                self.log.error("Cannot read catalog {}".format(catalog))
+            except OSError:
+                self.log.error(f"Cannot read catalog {catalog}")
 
         # make sure catalog has 'x' and 'y' columns
         for axis in ['x', 'y']:

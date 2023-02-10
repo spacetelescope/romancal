@@ -174,7 +174,7 @@ def get_catalog(ra, dec, sr=0.1, catalog='GSC241'):
     fmt = 'CSV'
 
     spec = spec_str.format(ra, dec, sr, fmt, catalog)
-    service_url = '{}/{}?{}'.format(SERVICELOCATION, service_type, spec)
+    service_url = f'{SERVICELOCATION}/{service_type}?{spec}'
     rawcat = requests.get(service_url, headers=headers)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
     rstr = r_contents.split('\r\n')
