@@ -1,5 +1,4 @@
 import numpy as np
-from astropy import units as u
 from astropy.modeling.models import RotationSequence3D, Scale
 from gwcs.geometry import SphericalToCartesian, CartesianToSpherical
 

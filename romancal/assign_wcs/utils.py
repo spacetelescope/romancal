@@ -7,8 +7,6 @@ from stdatamodels import DataModel
 from astropy.modeling import models as astmodels
 from gwcs import WCS
 from gwcs.wcstools import wcs_from_fiducial
-from gwcs import utils as gwutils
-from . import pointing
 from typing import Union, List
 
 _MAX_SIP_DEGREE = 6
