@@ -144,9 +144,9 @@ asdf tree.
 
 .. code:: python
 
-    >>> from roman_datamodels import datamodels as rdm
-    >>> d_uncal = rdm.open('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
-    >>> d_uncal.info()
+    >>> from roman_datamodels import datamodels as rdm  # doctest: +SKIP
+    >>> d_uncal = rdm.open('r0000101001001001001_01101_0001_WFI01_uncal.asdf')  # doctest: +SKIP
+    >>> d_uncal.info()  # doctest: +SKIP
     root (AsdfObject)
     ├─asdf_library (Software)
     │ ├─author (str): The ASDF Developers
@@ -181,7 +181,7 @@ For example, to show all top-level nodes and 5 of each's children:
 
 .. code:: python
 
-    >>> d_uncal.info(max_rows=(None,5))
+    >>> d_uncal.info(max_rows=(None,5))  # doctest: +SKIP
     root (AsdfObject)
     ├─asdf_library (Software)
     │ ├─author (str): The ASDF Developers
@@ -208,7 +208,7 @@ lines for each of the meta entries,
 
 .. code:: python
 
-    >>> asdf.info(d_uncal.meta,max_rows=(None, 3))
+    >>> asdf.info(d_uncal.meta,max_rows=(None, 3))  # doctest: +SKIP
     root (DNode)
     ├─aperture (Aperture)
     │ ├─name (str): WFI_CEN
@@ -233,7 +233,7 @@ in `cal_step` without listing the values,
 
 .. code:: python
 
-    >>> asdf.info(d_uncal.meta.cal_step,max_rows=(None, 3),show_values=False)
+    >>> asdf.info(d_uncal.meta.cal_step,max_rows=(None, 3),show_values=False)  # doctest: +SKIP
     root (CalStep)
     ├─assign_wcs (str)
     ├─flat_field (str)
@@ -254,7 +254,7 @@ You can also use the search method to find attributes,
 
 .. code:: python
 
-    >>> d_uncal.search('cal_step')
+    >>> d_uncal.search('cal_step')  # doctest: +SKIP
     root (AsdfObject)
     └─roman (WfiScienceRaw)
       └─meta (dict)
@@ -264,7 +264,7 @@ or a a general search for all attributes with cal in the name
 
 .. code:: python
 
-    >>> d_uncal.search('cal')
+    >>> d_uncal.search('cal')  # doctest: +SKIP
     root (AsdfObject)
     └─roman (WfiScienceRaw)
      └─meta (dict)
@@ -283,7 +283,7 @@ To search only within the meta tree,
 
 .. code:: python
 
-    >>> d_uncal.search('cal_')['roman']['meta']
+    >>> d_uncal.search('cal_')['roman']['meta']  # doctest: +SKIP
     meta (dict)
     ├─cal_step (CalStep)
     └─instrument (WfiMode)
@@ -295,7 +295,7 @@ keyword,
 
 .. code:: python
 
-    >>> d_uncal.search(type=bool)
+    >>> d_uncal.search(type=bool)  # doctest: +SKIP
     root (AsdfObject)
     └─roman (WfiScienceRaw)
       └─meta (dict)
@@ -305,7 +305,7 @@ keyword,
           ├─internal_target (bool): False
           └─target_of_opportunity (bool): False
 
-    d_uncal.search(type=bool, value=True)
+    >>> d_uncal.search(type=bool, value=True)  # doctest: +SKIP
     No results found.
 
 More information and options for the search method can be found in the
