@@ -61,7 +61,7 @@ def make_output_wcs(input_models, ref_wcs=None,
     naxes = wcslist[0].output_frame.naxes
 
     if naxes != 2:
-        raise RuntimeError("Output WCS needs 2 spatial axes. "
+        raise RuntimeError("Output WCS needs 2 axes."
                            f"{wcslist[0]} has {naxes}.")
 
     output_wcs = wcs_from_footprints(
@@ -76,6 +76,6 @@ def make_output_wcs(input_models, ref_wcs=None,
 
     # Check that the output data shape has no zero length dimensions
     if not np.product(output_wcs.array_shape):
-        raise ValueError(f"Invalid output frame shape: {tuple(output_wcs.array_shape)}")
+        raise ValueError(f"Invalid output frame shape: {tuple(output_wcs.array_shape)}; dimensions must have length > 0.")
 
     return output_wcs

@@ -42,36 +42,3 @@ def v23tosky(input_model, wrap_v2_at=180, wrap_lon_at=360):
          | rot | CartesianToSpherical(wrap_lon_at=wrap_lon_at))
     model.name = 'v23tosky'
     return model
-
-def wcsinfo_from_model(input_model):
-    """
-    Create a dict {wcs_keyword: array_of_values} pairs from a data model.
-
-    Parameters
-    ----------
-    input_model : `~stdatamodels.DataModel`
-        The input data model
-
-    """
-    defaults = {'CRPIX': 0, 'CRVAL': 0, 'CDELT': 1., 'CTYPE': "", 'CUNIT': u.Unit("")}
-    wcsinfo = {}
-    # create FITS header from gWCS.WCS
-    hdr, _ = input_model.meta.wcs.to_fits()
-    wcsaxes = hdr.get('wcsaxes')
-    wcsinfo['WCSAXES'] = wcsaxes
-    for key in ['CRPIX', 'CRVAL', 'CDELT', 'CTYPE', 'CUNIT']:
-        val = []
-        for ax in range(1, wcsaxes + 1):
-            k = (key + f"{ax}").lower()
-            v = hdr.get(k, defaults[key])
-            val.append(v)
-        wcsinfo[key] = np.array(val)
-
-    pc = np.zeros((wcsaxes, wcsaxes))
-    for i in range(1, wcsaxes + 1):
-        for j in range(1, wcsaxes + 1):
-            pc[i - 1, j - 1] = hdr.get(f'pc{i}_{j}', 1)
-    wcsinfo['PC'] = pc
-    wcsinfo['RADESYS'] = hdr.get('reference_frame')
-    wcsinfo['has_cd'] = False
-    return wcsinfo

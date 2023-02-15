@@ -297,8 +297,8 @@ def wcs_from_footprints(dmodels, refmodel=None, transform=None, bounding_box=Non
 
     if transform is None:
         transform = []
-        wcsinfo = pointing.wcsinfo_from_model(refmodel)
-        sky_axes, spec, other = gwutils.get_axes(wcsinfo)
+        # wcsinfo = pointing.wcsinfo_from_model(refmodel)
+        sky_axes = refmodel.meta.wcs._get_axes_indices().tolist()
 
         # Need to put the rotation matrix (List[float, float, float, float])
         # returned from calc_rotation_matrix into the correct shape for
