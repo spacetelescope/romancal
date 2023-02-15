@@ -11,6 +11,7 @@ from ..assign_wcs import utils as wcsutil
 
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = 'http://gsss.stsci.edu/webservices'
+DEF_CAT = 'GSC241'
 
 if ASTROMETRIC_CAT_ENVVAR in os.environ:
     SERVICELOCATION = os.environ[ASTROMETRIC_CAT_ENVVAR]
@@ -144,8 +145,8 @@ def compute_radius(wcs):
     return radius, fiducial
 
 
-def get_catalog(ra, dec, sr=0.1, catalog='GSC241'):
-    """ Extract catalog from VO web service.
+def get_catalog(ra, dec, sr=0.1, catalog=DEF_CAT):
+    f""" Extract catalog from VO web service.
 
     Parameters
     ----------
@@ -160,7 +161,7 @@ def get_catalog(ra, dec, sr=0.1, catalog='GSC241'):
         for sources from catalog.  Default: 0.1 degrees
 
     catalog : str, optional
-        Name of catalog to query, as defined by web-service.  Default: 'GSC241'
+        Name of catalog to query, as defined by web-service.  Default: '{DEF_CAT}'
 
     Returns
     -------
