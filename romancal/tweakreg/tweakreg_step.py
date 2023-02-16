@@ -33,7 +33,7 @@ def _oxford_or_str_join(str_list):
         return ', '.join(map(repr, str_list[:-1])) + ', or ' + repr(str_list[-1])
 
 
-SINGLE_GROUP_REFCAT = ['GAIADR2', 'GAIADR1']
+SINGLE_GROUP_REFCAT = ['GAIADR3', 'GAIADR2', 'GAIADR1']
 _SINGLE_GROUP_REFCAT_STR = _oxford_or_str_join(SINGLE_GROUP_REFCAT)
 DEFAULT_ABS_REFCAT = SINGLE_GROUP_REFCAT[0]
 ALIGN_TO_ABS_REFCAT = True

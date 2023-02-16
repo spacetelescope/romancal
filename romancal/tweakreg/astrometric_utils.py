@@ -11,7 +11,7 @@ from ..assign_wcs import utils as wcsutil
 
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = 'http://gsss.stsci.edu/webservices'
-DEF_CAT = 'GSC241'
+DEF_CAT = 'GAIADR3'
 
 if ASTROMETRIC_CAT_ENVVAR in os.environ:
     SERVICELOCATION = os.environ[ASTROMETRIC_CAT_ENVVAR]
@@ -25,10 +25,10 @@ Primary function for creating an astrometric reference catalog.
 """
 
 
-def create_astrometric_catalog(input_models, catalog="GAIADR2", output="ref_cat.ecsv",
+def create_astrometric_catalog(input_models, catalog=DEF_CAT, output="ref_cat.ecsv",
                                gaia_only=False, table_format="ascii.ecsv",
                                existing_wcs=None, num_sources=None):
-    """Create an astrometric catalog that covers the inputs' field-of-view.
+    f"""Create an astrometric catalog that covers the inputs' field-of-view.
 
     Parameters
     ----------
@@ -37,7 +37,7 @@ def create_astrometric_catalog(input_models, catalog="GAIADR2", output="ref_cat.
 
     catalog : str, optional
         Name of catalog to extract astrometric positions for sources in the
-        input images' field-of-view. Default: GAIADR2. Options available are
+        input images' field-of-view. Default: {DEF_CAT}. Options available are
         documented on the catalog web page.
 
     output : str, optional
