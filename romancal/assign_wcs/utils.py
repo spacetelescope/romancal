@@ -7,7 +7,7 @@ from stdatamodels import DataModel
 from astropy.modeling import models as astmodels
 from gwcs import WCS
 from gwcs.wcstools import wcs_from_fiducial
-from typing import Union, List
+from typing import Union, List, Tuple
 
 _MAX_SIP_DEGREE = 6
 
@@ -204,9 +204,10 @@ def update_fits_wcsinfo(datamodel, max_pix_error=0.01, degree=None, npoints=32,
 
     return hdr
 
-def wcs_from_footprints(dmodels, refmodel=None, transform=None, bounding_box=None,
-                        pscale_ratio=None, pscale=None, rotation=None,
-                        shape=None, crpix=None, crval=None):
+def wcs_from_footprints(dmodels, refmodel=None,
+                        transform=None, bounding_box=None,
+                        pscale_ratio=None, pscale=None, rotation=None, shape=None,
+                        ref_pixel:Tuple[float, float]=None, ref_coord:Tuple[float, float]=None):
     """
     Create a WCS from a list of input data models.
 
@@ -244,7 +245,7 @@ def wcs_from_footprints(dmodels, refmodel=None, transform=None, bounding_box=Non
         Absolute pixel scale in degrees. When provided, overrides
         ``pscale_ratio``. Ignored when ``transform`` is provided.
     rotation : float, None, optional
-        Position angle of output image’s Y-axis relative to North.
+        Position angle of output image's Y-axis relative to North.
         A value of 0.0 would orient the final output image to be North up.
         The default of `None` specifies that the images will not be rotated,
         but will instead be resampled in the default orientation for the camera
@@ -256,11 +257,11 @@ def wcs_from_footprints(dmodels, refmodel=None, transform=None, bounding_box=Non
         (``ny`` first and ``nx`` second). This value will be assigned to
         ``pixel_shape`` and ``array_shape`` properties of the returned
         WCS object.
-    crpix : tuple of float, None, optional
-        Position of the reference pixel in the image array.  If ``crpix`` is not
+    ref_pixel : tuple of float, None, optional
+        Position of the reference pixel in the image array.  If ``ref_pixel`` is not
         specified, it will be set to the center of the bounding box of the
         returned WCS object.
-    crval : tuple of float, None, optional
+    ref_coord : tuple of float, None, optional
         Right ascension and declination of the reference pixel. Automatically
         computed if not provided.
 
@@ -281,12 +282,12 @@ def wcs_from_footprints(dmodels, refmodel=None, transform=None, bounding_box=Non
             raise TypeError("Expected refmodel to be an instance of DataModel.")
 
     fiducial = compute_fiducial(wcslist, bb)
-    if crval is not None:
-        # overwrite spatial axes with user-provided CRVAL:
+    if ref_coord is not None:
+        # overwrite spatial axes with user-provided ref_coord:
         i = 0
         for k, axt in enumerate(wcslist[0].output_frame.axes_type):
             if axt == 'SPATIAL':
-                fiducial[k] = crval[i]
+                fiducial[k] = ref_coord[i]
                 i += 1
 
     ref_fiducial = np.array([refmodel.meta.wcsinfo.ra_ref, refmodel.meta.wcsinfo.dec_ref])
@@ -340,13 +341,13 @@ def wcs_from_footprints(dmodels, refmodel=None, transform=None, bounding_box=Non
         output_bounding_box.append((axis_min, axis_max))
 
     output_bounding_box = tuple(output_bounding_box)
-    if crpix is None:
+    if ref_pixel is None:
         offset1, offset2 = wnew.backward_transform(*fiducial)
         offset1 -= axis_min_values[0]
         offset2 -= axis_min_values[1]
     else:
-        offset1, offset2 = crpix
-    offsets = astmodels.Shift(-offset1, name='crpix1') & astmodels.Shift(-offset2, name='crpix2')
+        offset1, offset2 = ref_pixel
+    offsets = astmodels.Shift(-offset1, name='ref_pixel1') & astmodels.Shift(-offset2, name='ref_pixel2')
 
     wnew.insert_transform('detector', offsets, after=True)
     wnew.bounding_box = output_bounding_box

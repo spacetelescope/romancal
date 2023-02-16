@@ -4,18 +4,22 @@ import numpy as np
 
 from romancal.assign_wcs.utils import wcs_from_footprints, wcs_bbox_from_shape
 
+from typing import Tuple
+
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def make_output_wcs(input_models, ref_wcs=None,
-                    pscale_ratio=None, pscale=None, rotation=None, shape=None,
-                    crpix=None, crval=None):
+def make_output_wcs(input_models,
+                    pscale_ratio=None, pscale=None,
+                    rotation=None, shape=None,
+                    ref_pixel:Tuple[float, float]=None,
+                    ref_coord:Tuple[float, float]=None):
     """ Generate output WCS here based on footprints of all input WCS objects
     Parameters
     ----------
-    input_models : list of `~jwst.datamodel.DataModel`
+    input_models : list of `~roman_datamodels.datamodels.DataModel`
         Each datamodel must have a ~gwcs.WCS object.
 
     pscale_ratio : float, optional
@@ -26,7 +30,7 @@ def make_output_wcs(input_models, ref_wcs=None,
         ``pscale_ratio``.
 
     rotation : float, None, optional
-        Position angle of output image’s Y-axis relative to North.
+        Position angle of output image's Y-axis relative to North.
         A value of 0.0 would orient the final output image to be North up.
         The default of `None` specifies that the images will not be rotated,
         but will instead be resampled in the default orientation for the camera
@@ -39,12 +43,12 @@ def make_output_wcs(input_models, ref_wcs=None,
         ``pixel_shape`` and ``array_shape`` properties of the returned
         WCS object.
 
-    crpix : tuple of float, None, optional
-        Position of the reference pixel in the image array.  If ``crpix`` is not
+    ref_pixel : tuple of float, None, optional
+        Position of the reference pixel in the image array.  If ``ref_pixel`` is not
         specified, it will be set to the center of the bounding box of the
         returned WCS object.
 
-    crval : tuple of float, None, optional
+    ref_coord : tuple of float, None, optional
         Right ascension and declination of the reference pixel. Automatically
         computed if not provided.
 
@@ -70,8 +74,8 @@ def make_output_wcs(input_models, ref_wcs=None,
         pscale=pscale,
         rotation=rotation,
         shape=shape,
-        crpix=crpix,
-        crval=crval
+        ref_pixel=ref_pixel,
+        ref_coord=ref_coord
     )
 
     # Check that the output data shape has no zero length dimensions
