@@ -30,7 +30,7 @@ def make_output_wcs(input_models,
         ``pscale_ratio``.
 
     rotation : float, None, optional
-        Position angle of output image's Y-axis relative to North.
+        Position angle (in degrees) of output image's Y-axis relative to North.
         A value of 0.0 would orient the final output image to be North up.
         The default of `None` specifies that the images will not be rotated,
         but will instead be resampled in the default orientation for the camera

@@ -1,8 +1,5 @@
 """
 Roman pipeline step for image alignment.
-
-:Authors: Mihai Cara & Mairan Teodoro
-
 """
 from os import path
 
@@ -61,8 +58,6 @@ class TweakRegStep(RomanStep):
         use2dhist = boolean(default=True) # Use 2d histogram to find initial offset?
         separation = float(default=1.0) # Minimum object separation in arcsec
         tolerance = float(default=0.7) # Matching tolerance for xyxymatch in arcsec
-        xoffset = float(default=0.0), # Initial guess for X offset in arcsec
-        yoffset = float(default=0.0) # Initial guess for Y offset in arcsec
         fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='rshift') # Fitting geometry
         nclip = integer(min=0, default=3) # Number of clipping iterations in fit
         sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units
@@ -282,8 +277,8 @@ class TweakRegStep(RomanStep):
                 separation=self.separation,
                 use2dhist=self.use2dhist,
                 tolerance=self.tolerance,
-                xoffset=self.xoffset,
-                yoffset=self.yoffset
+                xoffset=0,
+                yoffset=0
             )
 
             try:
@@ -453,7 +448,7 @@ class TweakRegStep(RomanStep):
                     #       translated to the FITS WCSNAME keyword
                     #       IF that is what gets recorded in the archive
                     #       for end-user searches.
-                    imcat.wcs.name = f"FIT-LVL3-{self.abs_refcat}"
+                    imcat.wcs.name = f"FIT-LVL2-{self.abs_refcat}"
 
                 image_model.meta.wcs = imcat.wcs
 
@@ -513,11 +508,16 @@ class TweakRegStep(RomanStep):
         # TODO: create RSTWCSCorrector in tweakwcs
         im = JWSTWCSCorrector(
             wcs = image_model.meta.wcs,
-            wcsinfo = {'roll_ref': refang['roll_ref'],
-                     'v2_ref': refang['v2_ref'],
-                     'v3_ref': refang['v3_ref']},
-            meta = {'image_model': image_model, 'catalog': catalog,
-                  'name': model_name}
+            wcsinfo = {
+                'roll_ref': refang['roll_ref'],
+                'v2_ref': refang['v2_ref'],
+                'v3_ref': refang['v3_ref'],
+            },
+            meta = {
+                'image_model': image_model,
+                'catalog': catalog,
+                'name': model_name,
+            }
         )
 
         return im
