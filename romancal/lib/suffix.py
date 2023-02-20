@@ -80,6 +80,7 @@ _calculated_suffixes = {
     'linearitystep',
     'dark_current',
     'jump',
+    'tweakregstep'
 }
 
 

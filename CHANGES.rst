@@ -28,6 +28,16 @@ jump
 
 - Added support for Quantities for data arrays. [#616]
 
+tweakreg
+--------
+- First implementation of TweakRegStep into the pipeline [#643]
+
+
+=======
+tweakreg
+--------
+- First implementation of TweakRegStep into the pipeline [#643]
+
 
 0.9.0 (2022-11-14)
 ==================
