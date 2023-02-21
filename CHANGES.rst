@@ -3,7 +3,7 @@
 
 general
 -------
-- Adds explicit test for PSF keywords are present in the  cal files. [#]
+- Adds explicit test for PSF keywords are present in the  cal files. [#648]
 
 - Add ``pre-commit`` configuration to repository. [#622]
 
