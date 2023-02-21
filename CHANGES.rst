@@ -3,9 +3,12 @@
 
 general
 -------
+- Adds explicit test for PSF keywords are present in the  cal files. [#]
 
 - Add ``pre-commit`` configuration to repository. [#622]
+
 - Update the suffix for the stored filename to match the filename [#609]
+
 - DQ step flags science data affected by guide window read [#599]
 
 - Fix deprecation warnings introduced by ``pytest`` ``7.2`` ahead of ``8.0`` [#597]
