@@ -1,5 +1,5 @@
-0.9.1 (unreleased)
-==================
+0.10.0 (2023-02-21)
+===================
 
 general
 -------
@@ -15,7 +15,6 @@ general
 
 - Implemented support for quantities in reference files. Updated unit tests for these changes. [#624]
 
-=======
 associations
 ------------
 
@@ -31,12 +30,6 @@ jump
 
 - Added support for Quantities for data arrays. [#616]
 
-tweakreg
---------
-- First implementation of TweakRegStep into the pipeline [#643]
-
-
-=======
 tweakreg
 --------
 - First implementation of TweakRegStep into the pipeline [#643]
