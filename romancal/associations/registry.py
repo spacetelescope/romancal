@@ -60,7 +60,7 @@ class AssociationRegistry(dict):
     The general workflow is as follows:
 
         * Create the registry
-            >>> from jwst.associations.registry import AssociationRegistry
+            >>> from romancal.associations.registry import AssociationRegistry
             >>> registry = AssociationRegistry()
 
         * Create associations from an item
@@ -71,7 +71,7 @@ class AssociationRegistry(dict):
 
     In practice, this is one step in a larger loop over all items to
     be associated. This does not account for adding items to already
-    existing associations. See :py:func:`~jwst.associations.generate` for more information.
+    existing associations. See :py:func:`~romancal.associations.generate` for more information.
     """
 
     def __init__(self,
