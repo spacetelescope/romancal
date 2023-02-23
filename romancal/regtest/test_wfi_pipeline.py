@@ -158,10 +158,18 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
                       passfail("exposure_time" in model.meta.exposure))
     assert "exposure_time" in model.meta.exposure
 
+    # DMS-136 PSF tests
+    pipeline.log.info('DMS8136MSG: Testing existence of  detector and '
+                      'optical element (detector & optical_element) in Level 2 '
+                      'image output.......' +
+                      passfail("exposure_time" in model.meta.exposure))
+    assert "detector" in model.meta.instrument
+    assert "optical_element" in model.meta.instrument
+
     # DMS89 WCS tests
     pipeline.log.info('DMS89 MSG: Testing that the wcs bounding'
                       'box was generated.......' +
-                      passfail((len(model.meta.wcs.bounding_box) == 2)))
+                      passfail(len(model.meta.wcs.bounding_box) == 2))
     assert len(model.meta.wcs.bounding_box) == 2
 
     # Save original wcs information
@@ -307,7 +315,7 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     # DMS93 WCS tests
     pipeline.log.info('DMS93 MSG: Testing that the wcs bounding'
                       'box was generated.......' +
-                      passfail((len(model.meta.wcs.bounding_box) == 2)))
+                      passfail(len(model.meta.wcs.bounding_box) == 2))
     assert len(model.meta.wcs.bounding_box) == 2
 
     # Save original wcs information

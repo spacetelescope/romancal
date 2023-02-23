@@ -1,4 +1,4 @@
-<!-- If this PR closes a JIRA ticket, make sure the title starts with the JIRA issue number, 
+<!-- If this PR closes a JIRA ticket, make sure the title starts with the JIRA issue number,
 for example RCAL-1234: <Fix a bug> -->
 Resolves [RCAL-nnnn](https://jira.stsci.edu/browse/JP-nnnn)
 

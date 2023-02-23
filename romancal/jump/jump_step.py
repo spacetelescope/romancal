@@ -25,9 +25,9 @@ class JumpStep(RomanStep):
     """
 
     spec = """
-        rejection_threshold = float(default=4.0,min=0) # CR sigma rej thresh
-        three_group_rejection_threshold = float(default=6.0,min=0) # CR sigma rej thresh
-        four_group_rejection_threshold = float(default=5.0,min=0) # CR sigma rej thresh
+        rejection_threshold = float(default=180.0,min=0) # CR sigma rej thresh
+        three_group_rejection_threshold = float(default=185.0,min=0) # CR sigma rej thresh
+        four_group_rejection_threshold = float(default=190.0,min=0) # CR sigma rej thresh
         maximum_cores = option('none', 'quarter', 'half', 'all', default='none') # max number of processes to create
         flag_4_neighbors = boolean(default=True) # flag the four perpendicular neighbors of each CR
         max_jump_to_flag_neighbors = float(default=1000) # maximum jump sigma that will trigger neighbor flagging
@@ -49,10 +49,10 @@ class JumpStep(RomanStep):
 
             # Extract the needed info from the Roman Data Model
             meta = input_model.meta
-            r_data = input_model.data
+            r_data = input_model.data.value
             r_gdq = input_model.groupdq
             r_pdq = input_model.pixeldq
-            r_err = input_model.err
+            r_err = input_model.err.value
             result = input_model
 
             frames_per_group = meta.exposure.nframes
@@ -100,7 +100,7 @@ class JumpStep(RomanStep):
             gain_filename = self.get_reference_file(input_model, 'gain')
             self.log.info('Using GAIN reference file: %s', gain_filename)
             gain_model = rdd.GainRefModel(gain_filename)
-            gain_2d = gain_model.data
+            gain_2d = gain_model.data.value
 
             readnoise_filename = self.get_reference_file(input_model,
                                                          'readnoise')
@@ -108,7 +108,7 @@ class JumpStep(RomanStep):
                           readnoise_filename)
             readnoise_model = rdd.ReadnoiseRefModel(readnoise_filename)
             # This is to clear the WRITEABLE=False flag?
-            readnoise_2d = np.copy(readnoise_model.data)
+            readnoise_2d = np.copy(readnoise_model.data.value)
 
             # DG 0810/21:  leave for now; make dqflags changes in a later,
             #              separate PR

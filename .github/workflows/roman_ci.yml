@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - '*.x'
+      - '*x'
     tags:
       - '*'
   pull_request:
@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toxenv: [ check-style, check-security, check-dependencies, check-build ]
+        toxenv: [ check-style, check-dependencies, check-build ]
         python-version: [ '3.11' ]
         os: [ ubuntu-latest ]
     steps:
@@ -111,6 +111,10 @@ jobs:
           path: ${{ env.CRDS_PATH }}
           key: crds-${{ steps.crds-context.outputs.pmap }}
       - run: tox -e ${{ matrix.toxenv }}-ddtrace
+        env:
+          DD_GIT_REPOSITORY_URL: ${{ github.repositoryUrl }}
+          DD_GIT_COMMIT_SHA: ${{ github.sha }}
+          DD_GIT_BRANCH: ${{ github.ref_name }}
       - if: contains(matrix.toxenv, '-cov')
         uses: codecov/codecov-action@v3
         with:

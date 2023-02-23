@@ -6,7 +6,7 @@ CRDS selects appropriate MASK references based on the following keywords.
 MASK is not applicable for instruments not in the table.
 
 ============ ==========================================================
- Instrument   Metadata                                                   
+ Instrument   Metadata
 ============ ==========================================================
  WFI	      instrument, detector, date, time
 ============ ==========================================================

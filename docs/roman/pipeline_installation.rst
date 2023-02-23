@@ -1,14 +1,14 @@
 Installation
 ============
-.. warning:: 
+.. warning::
     Roman requires Python 3.8 or above and a C compiler for dependencies.
 
-.. warning:: 
+.. warning::
     Linux and MacOS platforms are tested and supported. Windows is not currently supported.
 
 The easiest way to install the latest `romancal` release into a fresh virtual environment is
 ::
-    
+
     $ pip install romancal
 
 Detailed Installation
@@ -27,7 +27,7 @@ In all cases, the recommended installation is generally a 3-step process:
 - install the desired version of the `romancal` package into that environment.
 
 Details are given below on how to do this for different types of installations, including tagged releases, DMS builds
-used in operations, and development versions. Note that, although you can use any python environment management system that you are familiar with, 
+used in operations, and development versions. Note that, although you can use any python environment management system that you are familiar with,
 below we will be using `conda` (remember that all conda operations must be done from within a bash shell).
 
 Installing latest releases
@@ -35,7 +35,7 @@ Installing latest releases
 
 You can install the latest released version via `pip`. From a bash shell:
 ::
-    
+
     $ conda create -n <env_name> python
     $ conda activate <env_name>
     $ pip install romancal
@@ -80,7 +80,7 @@ To install your own copy of the code into that environment, you first need to fo
     $ git clone https://github.com/spacetelescope/romancal
     $ cd romancal
 
-.. note:: 
+.. note::
     `python setup.py install` and `python setup.py develop` commands do not work.
 
 Install from your local checked-out copy as an "editable" install:
@@ -111,4 +111,3 @@ configured by setting two environment variables:
 
     $ export CRDS_PATH=$HOME/crds_cache
     $ export CRDS_SERVER_URL=https://roman-crds-test.stsci.edu
-

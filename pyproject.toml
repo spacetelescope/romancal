@@ -12,7 +12,7 @@ classifiers = [
     'Programming Language :: Python :: 3',
 ]
 dependencies = [
-    'asdf >=2.12.1',
+    'asdf >=2.13.0',
     'astropy >=5.0.4',
     'crds >=11.16.16',
     'gwcs >=0.18.1',
@@ -20,10 +20,11 @@ dependencies = [
     'numpy >=1.20',
     'pyparsing >=2.4.7',
     'requests >=2.22',
-    'rad>=0.14.0, <0.14.1',
-    'roman_datamodels>=0.14.0, <0.14.1',
-    'stcal >=1.2.1, <2.0',
+    'rad ==0.14.1',
+    'roman_datamodels ==0.14.1',
+    'stcal >=1.3.3',
     'stpipe >=0.4.2, <1.0',
+    'tweakwcs >=0.8.0'
 ]
 dynamic = ['version']
 
@@ -64,6 +65,12 @@ ephem = [
 [project.entry-points]
 'stpipe.steps' = { romancal = 'romancal.stpipe.integration:get_steps' }
 
+[project.scripts]
+okify_regtests = 'romancal.scripts.okify_regtests:main'
+schema_editor = 'romancal.scripts.schema_editor:main'
+schemadoc = 'romancal.scripts.schemadoc:main'
+verify_install_requires = 'romancal.scripts.verify_install_requires:main'
+
 [build-system]
 requires = [
     'setuptools >=60',
@@ -98,6 +105,8 @@ norecursedirs = [
     'docs/_build',
     'scripts',
     '.tox',
+    '.eggs',
+    'build',
 ]
 asdf_schema_tests_enabled = true
 asdf_schema_validate_default = false
@@ -109,6 +118,10 @@ doctest_plus = 'enabled'
 doctest_rst = 'enabled'
 text_file_format = 'rst'
 addopts = '--show-capture=no --open-files --doctest-ignore-import-errors'
+markers = [
+    'soctests: run only the SOC tests in the suite.',
+]
+
 
 [tool.coverage]
 run = { omit = [
@@ -134,3 +147,6 @@ report = { exclude_lines = [
     'raise NotImplementedError',
     'if __name__ == "__main__":',
 ] }
+
+[tool.bandit]
+skips = ["B101", "B307", "B404", "B603"]

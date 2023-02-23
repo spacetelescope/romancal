@@ -2,9 +2,11 @@ import pytest
 import numpy as np
 import os
 from astropy.time import Time
+from astropy import units as u
 
 from roman_datamodels.datamodels import RampModel, GainRefModel, ReadnoiseRefModel, ImageModel
 from roman_datamodels.testing import utils as testutil
+from roman_datamodels import units as ru
 
 from romancal.ramp_fitting import RampFitStep
 from romancal.lib import dqflags
@@ -23,18 +25,16 @@ dqflags = {
 }
 
 def generate_ramp_model(shape, deltatime=1):
-    data = (np.random.random(shape) * 0.5).astype(np.float32)
-    err = (np.random.random(shape) * 0.0001).astype(np.float32)
+    data = u.Quantity((np.random.random(shape) * 0.5).astype(np.float32), ru.DN, dtype=np.float32)
+    err = u.Quantity((np.random.random(shape) * 0.0001).astype(np.float32), ru.DN, dtype=np.float32)
     pixdq = np.zeros(shape=shape[1:], dtype=np.uint32)
     gdq = np.zeros(shape=shape, dtype=np.uint8)
 
     dm_ramp = testutil.mk_ramp(shape)
-    dm_ramp.data = data
+    dm_ramp.data = u.Quantity(data, ru.DN, dtype=np.float32)
     dm_ramp.pixeldq = pixdq
     dm_ramp.groupdq = gdq
-    dm_ramp.err = err
-
-    #dm_ramp.meta['photometry'] = testutil.mk_photometry()
+    dm_ramp.err = u.Quantity(err, ru.DN, dtype=np.float32)
 
     dm_ramp.meta.exposure.frame_time = deltatime
     dm_ramp.meta.exposure.ngroups = shape[0]
@@ -55,9 +55,11 @@ def generate_wfi_reffiles(shape, ingain = 6):
     gain_ref['meta']['reftype'] = 'GAIN'
     gain_ref['meta']['useafter'] = Time('2022-01-01T11:11:11.111')
 
-    gain_ref['data'] = (np.random.random(shape) * 0.5).astype(np.float32) * ingain
+    gain_ref['data'] = u.Quantity((np.random.random(shape) * 0.5).astype(np.float32) * ingain,
+                                  ru.electron / ru.DN, dtype=np.float32)
     gain_ref['dq'] = np.zeros(shape, dtype=np.uint16)
-    gain_ref['err'] = (np.random.random(shape) * 0.05).astype(np.float64)
+    gain_ref['err'] = u.Quantity((np.random.random(shape) * 0.05).astype(np.float32),
+                                 ru.electron / ru.DN, dtype=np.float32)
 
     gain_ref_model = GainRefModel(gain_ref)
 
@@ -71,7 +73,7 @@ def generate_wfi_reffiles(shape, ingain = 6):
     rn_ref['meta']['exposure']['type'] = 'WFI_IMAGE'
     rn_ref['meta']['exposure']['frame_time'] = 666
 
-    rn_ref['data'] = (np.random.random(shape) * 0.01).astype(np.float32)
+    rn_ref['data'] = u.Quantity((np.random.random(shape) * 0.01).astype(np.float32), ru.DN, dtype=np.float32)
 
     rn_ref_model = ReadnoiseRefModel(rn_ref)
 
@@ -95,14 +97,14 @@ def test_one_group_small_buffer_fit_ols(max_cores):
 
     model1 = generate_ramp_model(shape, deltatime)
 
-    model1.data[0, 15, 10] = 10.0  # add single CR
+    model1.data[0, 15, 10] = 10.0 * model1.data.unit # add single CR
 
     out_model = \
         RampFitStep.call(model1, override_gain=override_gain,
                          override_readnoise=override_readnoise,
                          maximum_cores=max_cores)
 
-    data = out_model.data
+    data = out_model.data.value
 
     # Index changes due to trimming of reference pixels
     np.testing.assert_allclose(data[11, 6], 10.0, 1e-6)
@@ -178,10 +180,10 @@ def test_saturated_ramp_fit(max_cores):
                          maximum_cores=max_cores)
 
     # Test data and error arrays are zeroed out
-    np.testing.assert_array_equal(out_model.data, 0)
-    np.testing.assert_array_equal(out_model.err, 0)
-    np.testing.assert_array_equal(out_model.var_poisson, 0)
-    np.testing.assert_array_equal(out_model.var_rnoise, 0)
+    np.testing.assert_array_equal(out_model.data.value, 0)
+    np.testing.assert_array_equal(out_model.err.value, 0)
+    np.testing.assert_array_equal(out_model.var_poisson.value, 0)
+    np.testing.assert_array_equal(out_model.var_rnoise.value, 0)
 
     # Test that all pixels are flagged saturated
     assert np.all(np.bitwise_and(out_model.dq, SATURATED) == SATURATED)

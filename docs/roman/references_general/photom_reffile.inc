@@ -16,8 +16,8 @@ pixel values into physical units.
 Type Specific Keywords for PHOTOM
 +++++++++++++++++++++++++++++++++
 In addition to the standard reference file keywords listed above,
-the following keywords are *required* in PHOTOM reference files. The first (detector) is 
-needed because it is used as a CRDS selector. The second (optical_element) is used to 
+the following keywords are *required* in PHOTOM reference files. The first (detector) is
+needed because it is used as a CRDS selector. The second (optical_element) is used to
 select the appropriate set of photometric parameters.
 (see :ref:`photom_selectors`):
 
@@ -38,9 +38,9 @@ The format and content of the file is as follows
 Data is stored in a 2D table, with optical elements for the row names:
 
 +------------+---------------------------------------------------------------------+
-| Instrument | Row names                                                           |                                                       
+| Instrument | Row names                                                           |
 +============+=====================================================================+
-| WFI        | F062, F087, F106, F129, F146, F158, F184, F213, GRISM, PRISM, DARK  | 
+| WFI        | F062, F087, F106, F129, F146, F158, F184, F213, GRISM, PRISM, DARK  |
 +------------+---------------------------------------------------------------------+
 
 
@@ -57,4 +57,3 @@ And the variable attributes for the columns (with data type):
 +------------+----------------+-----------+------------+------------------------+
 
 The pixelareasr variable attribute gives the average pixel area in units of steradians.
-

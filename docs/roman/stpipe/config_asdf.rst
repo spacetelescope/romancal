@@ -228,7 +228,7 @@ the parameter file would look like:
     when configuring a pipeline, one needs not set any parameters for the pipeline
     itself. However, the keyword ``parameters`` is required. As such,
     the value for ``parameters`` is defined as an empty dictionary, ``{}``.
-    
+
 Python API
 ----------
 

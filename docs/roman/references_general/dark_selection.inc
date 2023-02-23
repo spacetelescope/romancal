@@ -6,8 +6,7 @@ CRDS selects appropriate DARK references based on the following keyword attribut
 DARK is not applicable for instruments not in the table.
 
 ========== ===========================================
-Instrument  Keyword Attributes                                                                                           
+Instrument  Keyword Attributes
 ========== ===========================================
 WFI	    instrument, detector, date, time
 ========== ===========================================
-

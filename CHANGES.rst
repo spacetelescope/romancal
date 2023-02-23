@@ -1,11 +1,45 @@
-0.9.1 (unreleased)
-==================
+0.10.1 (unreleased)
+===================
 
 general
 -------
+-
+
+0.10.0 (2023-02-21)
+===================
+
+general
+-------
+- Adds explicit test for PSF keywords are present in the  cal files. [#648]
+
+- Add ``pre-commit`` configuration to repository. [#622]
+
 - Update the suffix for the stored filename to match the filename [#609]
 
 - DQ step flags science data affected by guide window read [#599]
+
+- Fix deprecation warnings introduced by ``pytest`` ``7.2`` ahead of ``8.0`` [#597]
+
+- Implemented support for quantities in reference files. Updated unit tests for these changes. [#624]
+
+associations
+------------
+
+- Initial association code with asn_from_list and some basic rules [#642]
+
+
+jump
+----
+
+- Update jump units to roman_datamodels from astropy units [#646]
+
+- Update default input CR thresholds to give reasonable results [#625]
+
+- Added support for Quantities for data arrays. [#616]
+
+tweakreg
+--------
+- First implementation of TweakRegStep into the pipeline [#643]
 
 
 0.9.0 (2022-11-14)
@@ -124,13 +158,6 @@ saturation
 
 0.7.0 (2022-05-13)
 ==================
-
-general
--------
-
-- Update regression tests with new data conforming to the latest datamodels [#496]
-
-- Remove copy of arrays that are not needed to help manage memory [#487]
 
 Documentation
 -------------
@@ -297,7 +324,7 @@ general
 general
 -------
 
-- Added regressions tests for ``dq_ini``t utilizing ``mask`` file in CRDS. [#290]
+- Added regressions tests for ``dq_init`` utilizing ``mask`` file in CRDS. [#290]
 
 - Updates for requirements & pip changes [#286]
 
@@ -397,9 +424,6 @@ datamodels
 - Add datamodel and schema for mask files [#143]
 
 - Update output_ext in the base Step class to .asdf from .fits [#127]
-
-
-=======
 
 - Added ``RampModel``, ``GLS_RampFitModel``, ``RampFitOutputModel`` and
   schemas. [#110]
