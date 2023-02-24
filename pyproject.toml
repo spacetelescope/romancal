@@ -89,14 +89,14 @@ zip-safe = false
 [tool.setuptools.package-data]
 # package_data values are glob patterns relative to each specific subpackage.
 '*' = [
-    '*.fits',
-    '*.txt',
-    '*.inc',
-    '*.cfg',
-    '*.csv',
-    '*.yaml',
-    '*.json',
-    '*.asdf',
+    '**/*.fits',
+    '**/*.txt',
+    '**/*.inc',
+    '**/*.cfg',
+    '**/*.csv',
+    '**/*.yaml',
+    '**/*.json',
+    '**/*.asdf',
 ]
 
 [tool.pytest.ini_options]
@@ -150,3 +150,15 @@ report = { exclude_lines = [
 
 [tool.bandit]
 skips = ["B101", "B307", "B404", "B603"]
+
+[tool.ruff]
+line-length = 130
+exclude = [
+    'jdocs',
+    '.tox',
+    '.eggs',
+    'build',
+]
+ignore = [
+    'E741', # ambiguous variable name
+]
