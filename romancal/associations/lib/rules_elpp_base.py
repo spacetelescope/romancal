@@ -12,6 +12,7 @@ from romancal.associations import (
     ProcessList,
     libpath
 )
+from romancal.associations.lib.keyvalue_registry import KeyValueRegistryError
 from romancal.associations.registry import RegistryMarker
 from romancal.associations.lib.utilities import (
     evaluate,
