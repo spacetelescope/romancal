@@ -528,7 +528,6 @@ def _common_name(group):
     for im in group:
         im = im if isinstance(im, datamodels.DataModel) else datamodels.open(im)
         file_names.append(path.splitext(im.meta.filename)[0].strip('_- '))
-        im.close()
 
     cn = path.commonprefix(file_names)
     return cn
