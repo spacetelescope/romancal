@@ -141,7 +141,6 @@ class TweakRegStep(RomanStep):
 
         # Build the catalogs for input images
         for i, image_model in enumerate(images):
-            image_model.meta.wcsinfo["WCSAXES"] = image_model.meta.wcs.world_n_dim
             try:
                 # use user-supplied catalog:
                 self.log.info("Using user-provided input catalog "
@@ -200,9 +199,6 @@ class TweakRegStep(RomanStep):
                               .format(catalog_filename))
                 image_model.meta.tweakreg_catalog = catalog_filename
 
-            # Temporarily attach catalog to the image model so that it follows
-            # the grouping by exposure, to be removed after use below
-            image_model["catalog"] = catalog
             images[i] = image_model
 
         # group images by their "group id":
@@ -226,8 +222,6 @@ class TweakRegStep(RomanStep):
             self.skip = True
             for model in images:
                 model.meta.cal_step["tweakreg"] = "SKIPPED"
-                # Remove the attached catalogs
-                del model.catalog
             return input
 
         elif len(grp_img) == 1 and ALIGN_TO_ABS_REFCAT:
@@ -242,8 +236,6 @@ class TweakRegStep(RomanStep):
                 model = model if isinstance(
                     model, datamodels.DataModel
                 ) else datamodels.open(path.basename(model))
-                if hasattr(model, "catalog"):
-                    delattr(model, "catalog")
             self.log.info(f"* Images in GROUP '{group_name}':")
             for im in imcats:
                 im.meta['group_id'] = group_name
@@ -471,24 +463,15 @@ class TweakRegStep(RomanStep):
         image_model = image_model if isinstance(
             image_model, datamodels.DataModel
             ) else datamodels.open(path.basename(image_model))
-        # make sure that we have a catalog:
-        if hasattr(image_model, 'catalog'):
-            catalog = image_model.catalog
-        else:
-            catalog = image_model.meta.tweakreg_catalog
-
+        catalog = image_model.meta.tweakreg_catalog
         model_name = path.splitext(image_model.meta.filename)[0].strip('_- ')
 
-        if isinstance(catalog, Table):
-            if not catalog.meta.get('name', None):
-                catalog.meta['name'] = model_name
-        else:
-            try:
-                cat_name = str(catalog)
-                catalog = Table.read(catalog)
-                catalog.meta['name'] = cat_name
-            except OSError:
-                self.log.error(f"Cannot read catalog {catalog}")
+        try:
+            cat_name = str(catalog)
+            catalog = Table.read(catalog)
+            catalog.meta['name'] = cat_name
+        except OSError:
+            self.log.error(f"Cannot read catalog {catalog}")
 
         # make sure catalog has 'x' and 'y' columns
         for axis in ['x', 'y']:
@@ -507,13 +490,13 @@ class TweakRegStep(RomanStep):
         refang = image_model.meta.wcsinfo
         # TODO: create RSTWCSCorrector in tweakwcs
         im = JWSTWCSCorrector(
-            wcs = image_model.meta.wcs,
-            wcsinfo = {
+            wcs=image_model.meta.wcs,
+            wcsinfo={
                 'roll_ref': refang['roll_ref'],
                 'v2_ref': refang['v2_ref'],
                 'v3_ref': refang['v3_ref'],
             },
-            meta = {
+            meta={
                 'image_model': image_model,
                 'catalog': catalog,
                 'name': model_name,
