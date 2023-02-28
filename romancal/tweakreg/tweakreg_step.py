@@ -526,8 +526,10 @@ class TweakRegStep(RomanStep):
 def _common_name(group):
     file_names = []
     for im in group:
-        im = im if isinstance(im, datamodels.DataModel) else datamodels.open(im)
-        file_names.append(path.splitext(im.meta.filename)[0].strip('_- '))
+        if isinstance(im, datamodels.DataModel):
+            file_names.append(path.splitext(im.meta.filename)[0].strip('_- '))
+        else:
+            raise TypeError("Input must be a list of datamodels list.")
 
     cn = path.commonprefix(file_names)
     return cn
