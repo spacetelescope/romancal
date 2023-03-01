@@ -11,7 +11,7 @@ from romancal.dark_current import DarkCurrentStep
 
 from roman_datamodels.datamodels import RampModel, DarkRefModel
 import roman_datamodels as rdm
-from roman_datamodels.testing import utils as testutil
+from roman_datamodels import maker_utils
 from roman_datamodels import units as ru
 
 
@@ -124,7 +124,7 @@ def create_ramp_and_dark(shape, instrument, exptype):
     """Helper function to create test ramp and dark models"""
 
     # Create test ramp model
-    ramp = testutil.mk_ramp(shape)
+    ramp = maker_utils.mk_ramp(shape)
     ramp.meta.instrument.name = instrument
     ramp.meta.instrument.detector = 'WFI01'
     ramp.meta.instrument.optical_element = 'F158'
@@ -133,7 +133,7 @@ def create_ramp_and_dark(shape, instrument, exptype):
     ramp_model = RampModel(ramp)
 
     # Create dark model
-    darkref = testutil.mk_dark(shape)
+    darkref = maker_utils.mk_dark(shape)
     darkref_model = DarkRefModel(darkref)
 
     return ramp_model, darkref_model

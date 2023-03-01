@@ -9,7 +9,7 @@ import numpy as np
 
 from romancal.saturation.saturation import flag_saturation
 from romancal.lib import dqflags
-from roman_datamodels.testing import utils as testutil
+from roman_datamodels import maker_utils
 
 
 def test_basic_saturation_flagging(setup_wfi_datamodels):
@@ -266,10 +266,10 @@ def setup_wfi_datamodels():
     def _models(ngroups, nrows, ncols):
 
         # Create ramp data
-        ramp_model = testutil.mk_ramp(shape=(ngroups, nrows, ncols))
+        ramp_model = maker_utils.mk_ramp(shape=(ngroups, nrows, ncols))
 
         # Create saturation reference data
-        saturation_model = testutil.mk_saturation(shape=(nrows, ncols))
+        saturation_model = maker_utils.mk_saturation(shape=(nrows, ncols))
 
         return ramp_model, saturation_model
 

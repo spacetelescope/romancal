@@ -5,7 +5,7 @@ from astropy.time import Time
 from astropy import units as u
 
 from roman_datamodels.datamodels import RampModel, GainRefModel, ReadnoiseRefModel, ImageModel
-from roman_datamodels.testing import utils as testutil
+from roman_datamodels import maker_utils
 from roman_datamodels import units as ru
 
 from romancal.ramp_fitting import RampFitStep
@@ -30,7 +30,7 @@ def generate_ramp_model(shape, deltatime=1):
     pixdq = np.zeros(shape=shape[1:], dtype=np.uint32)
     gdq = np.zeros(shape=shape, dtype=np.uint8)
 
-    dm_ramp = testutil.mk_ramp(shape)
+    dm_ramp = maker_utils.mk_ramp(shape)
     dm_ramp.data = u.Quantity(data, ru.DN, dtype=np.float32)
     dm_ramp.pixeldq = pixdq
     dm_ramp.groupdq = gdq
@@ -48,7 +48,7 @@ def generate_ramp_model(shape, deltatime=1):
 
 def generate_wfi_reffiles(shape, ingain = 6):
     # Create temporary gain reference file
-    gain_ref = testutil.mk_gain(shape)
+    gain_ref = maker_utils.mk_gain(shape)
 
     gain_ref['meta']['instrument']['detector'] = 'WFI01'
     gain_ref['meta']['instrument']['name'] = 'WFI'
@@ -64,7 +64,7 @@ def generate_wfi_reffiles(shape, ingain = 6):
     gain_ref_model = GainRefModel(gain_ref)
 
     # Create temporary readnoise reference file
-    rn_ref = testutil.mk_readnoise(shape)
+    rn_ref = maker_utils.mk_readnoise(shape)
     rn_ref['meta']['instrument']['detector'] = 'WFI01'
     rn_ref['meta']['instrument']['name'] = 'WFI'
     rn_ref['meta']['reftype'] = 'READNOISE'
