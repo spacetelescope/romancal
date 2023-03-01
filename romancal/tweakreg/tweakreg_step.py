@@ -141,15 +141,11 @@ class TweakRegStep(RomanStep):
 
         # Build the catalogs for input images
         for i, image_model in enumerate(images):
-            try:
-                # use user-supplied catalog:
-                self.log.info("Using user-provided input catalog "
-                              f"'{image_model.meta.tweakreg_catalog}'")
+            if hasattr(image_model.meta, "tweakreg_catalog"):
                 catalog = Table.read(image_model.meta.tweakreg_catalog)
                 new_cat = False
-
-            except OSError:
-                self.log.error("Failed to read 'meta.tweakreg_catalog' from source detection step ")
+            else:
+                raise AttributeError("Attribute 'meta.tweakreg_catalog' is missing.")
 
             for axis in ['x', 'y']:
                 if axis not in catalog.colnames:
