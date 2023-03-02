@@ -8,7 +8,7 @@ from romancal.stpipe import RomanStep
 from romancal.lib import dqflags
 from roman_datamodels import datamodels as rdd
 from roman_datamodels import stnode as rds
-from roman_datamodels.testing import utils as testutil
+from roman_datamodels import maker_utils
 from roman_datamodels import units as ru
 
 from stcal.ramp_fitting import ramp_fit
@@ -92,7 +92,7 @@ def create_image_model(input_model, image_info):
     meta = {}
     meta.update(input_model.meta)
     meta['cal_step']['ramp_fit'] = 'INCOMPLETE'
-    meta['photometry'] = testutil.mk_photometry()
+    meta['photometry'] = maker_utils.mk_photometry()
     inst = {'meta': meta,
             'data': u.Quantity(data, ru.electron / u.s, dtype=data.dtype),
             'dq': dq,

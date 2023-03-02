@@ -8,12 +8,12 @@ from gwcs.wcstools import grid_from_bounding_box
 
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep, load_wcs
 from roman_datamodels import datamodels as rdm
-from roman_datamodels.testing import utils as testutil
+from roman_datamodels import maker_utils
 
 from romancal.assign_wcs.utils import wcs_bbox_from_shape
 
 def create_image():
-    l2 = testutil.mk_level2_image()
+    l2 = maker_utils.mk_level2_image()
 
     l2.meta.wcsinfo.v2_ref = -503
     l2.meta.wcsinfo.v3_ref = -318
@@ -27,10 +27,10 @@ def create_image():
 
 
 def create_distortion():
-    distortions = [testutil.mk_distortion()]
+    distortions = [maker_utils.mk_distortion()]
 
     model = create_image()
-    dist = testutil.mk_distortion()
+    dist = maker_utils.mk_distortion()
     dist.coordinate_distortion_transform.bounding_box = wcs_bbox_from_shape(model.data.shape)
     distortions.append(dist)
 

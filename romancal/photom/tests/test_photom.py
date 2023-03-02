@@ -6,7 +6,7 @@ from astropy import units as u
 
 from romancal.photom import photom, PhotomStep
 from roman_datamodels.datamodels import ImageModel, WfiImgPhotomRefModel
-from roman_datamodels.testing import utils as testutil
+from roman_datamodels import maker_utils
 
 
 def create_photom_wfi_image(min_r=3.1, delta=0.1):
@@ -60,7 +60,7 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
         reftab[element] = key_dict
 
     # Create default datamodel
-    photom_model = testutil.mk_wfi_img_photom()
+    photom_model = maker_utils.mk_wfi_img_photom()
 
     # Copy values above into defautl datamodel
     photom_model.phot_table=reftab
@@ -72,7 +72,7 @@ def test_no_photom_match():
     """Test apply_photom warning for no match"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = testutil.mk_level2_image()
+    input_model = maker_utils.mk_level2_image()
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -108,7 +108,7 @@ def test_apply_photom1():
     """Test apply_photom applies correct metadata"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = testutil.mk_level2_image()
+    input_model = maker_utils.mk_level2_image()
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -162,7 +162,7 @@ def test_apply_photom2():
     """Test apply_photom does not change data values"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = testutil.mk_level2_image()
+    input_model = maker_utils.mk_level2_image()
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -196,11 +196,11 @@ def test_photom_step_interface(instrument, exptype):
     shape = (20, 20)
 
     # Create input model
-    wfi_image = testutil.mk_level2_image(shape=shape)
+    wfi_image = maker_utils.mk_level2_image(shape=shape)
     wfi_image_model = ImageModel(wfi_image)
 
     # Create photom model
-    photom = testutil.mk_wfi_img_photom()
+    photom = maker_utils.mk_wfi_img_photom()
     photom_model = WfiImgPhotomRefModel(photom)
 
     # Run photom correction step
@@ -231,7 +231,7 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     shape = (20, 20)
 
     # Create input node
-    wfi_image = testutil.mk_level2_image(shape=shape)
+    wfi_image = maker_utils.mk_level2_image(shape=shape)
 
     # Select exposure type and optical element
     wfi_image.meta.exposure.type = "WFI_PRISM"
@@ -251,7 +251,7 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     wfi_image_model = ImageModel(wfi_image)
 
     # Create photom model
-    photom = testutil.mk_wfi_img_photom()
+    photom = maker_utils.mk_wfi_img_photom()
     photom_model = WfiImgPhotomRefModel(photom)
 
     # Run photom correction step

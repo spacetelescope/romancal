@@ -13,7 +13,7 @@ import roman_datamodels.stnode as rds
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import GainRefModel
 from roman_datamodels.datamodels import ReadnoiseRefModel
-from roman_datamodels.testing import utils as testutil
+from roman_datamodels import maker_utils
 from roman_datamodels import units as ru
 
 from romancal.jump import JumpStep
@@ -39,7 +39,7 @@ def generate_wfi_reffiles(tmpdir_factory):
     # Create temporary gain reference file
     gain_ref = rds.GainRef()
     meta = {}
-    testutil.add_ref_common(meta)
+    maker_utils.add_ref_common(meta)
     meta['instrument']['detector'] = 'WFI01'
     meta['instrument']['name'] = 'WFI'
     meta['author'] = 'John Doe'
@@ -59,7 +59,7 @@ def generate_wfi_reffiles(tmpdir_factory):
     # Create temporary readnoise reference file
     rn_ref = rds.ReadnoiseRef()
     meta = {}
-    testutil.add_ref_common(meta)
+    maker_utils.add_ref_common(meta)
     meta['instrument']['detector'] = 'WFI01'
     meta['instrument']['name'] = 'WFI'
     meta['author'] = 'John Doe'
@@ -98,7 +98,7 @@ def setup_inputs():
         pixdq = np.zeros(shape=(nrows, ncols), dtype=np.uint32)
 
         csize = (ngroups, nrows, ncols)
-        dm_ramp = rdm.RampModel(testutil.mk_ramp(csize))
+        dm_ramp = rdm.RampModel(maker_utils.mk_ramp(csize))
 
         dm_ramp.meta.instrument.name = 'WFI'
         dm_ramp.meta.instrument.optical_element = 'F158'
