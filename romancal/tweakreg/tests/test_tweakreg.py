@@ -1,12 +1,9 @@
-import pytest
 from roman_datamodels import datamodels as rdm
 from romancal.tweakreg.tweakreg_step import TweakRegStep
 from roman_datamodels.testing import utils as testutil
 import os
 import csv
 import asdf
-from copy import deepcopy
-from astropy.modeling.models import Shift
 
 
 def create_base_image_source_catalog(tmpdir, output_filename):
