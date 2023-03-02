@@ -3,7 +3,7 @@
 
 general
 -------
--
+- Updated datamodel maker utility imports. [#654]
 
 0.10.0 (2023-02-21)
 ===================

@@ -7,7 +7,7 @@ from astropy import units as u
 
 from roman_datamodels import stnode
 from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
-from roman_datamodels.testing import utils as testutil
+from roman_datamodels import maker_utils
 from roman_datamodels import units as ru
 
 from romancal.lib import dqflags
@@ -27,7 +27,7 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     csize = (ngroups, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = testutil.mk_ramp(csize)
+    dm_ramp = maker_utils.mk_ramp(csize)
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
@@ -46,7 +46,7 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     dq[400, 200] = 33  # Persistence + do not use
 
     # write mask model
-    ref_data = testutil.mk_mask(csize[1:])
+    ref_data = maker_utils.mk_mask(csize[1:])
 
     # Copy in maskmodel elemnts
     ref_data['dq'] = dq
@@ -81,11 +81,11 @@ def test_groupdq():
     csize = (ngroups, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = testutil.mk_ramp(csize)
+    dm_ramp = maker_utils.mk_ramp(csize)
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
-    ref_data = testutil.mk_mask(csize[1:])
+    ref_data = maker_utils.mk_mask(csize[1:])
     ref_data['meta']['instrument']['name'] = instrument
 
     # run the correction step
@@ -109,11 +109,11 @@ def test_err():
     csize = (ngroups, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = testutil.mk_ramp((ngroups, ysize, xsize))
+    dm_ramp = maker_utils.mk_ramp((ngroups, ysize, xsize))
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
-    ref_data = testutil.mk_mask(csize[1:])
+    ref_data = maker_utils.mk_mask(csize[1:])
     ref_data['meta']['instrument']['name'] = instrument
 
     # Filter out validation warnings from ref_data
@@ -144,7 +144,7 @@ def test_dq_add1_groupdq():
     csize = (ngroups, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = testutil.mk_ramp((ngroups, ysize, xsize))
+    dm_ramp = maker_utils.mk_ramp((ngroups, ysize, xsize))
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
@@ -155,7 +155,7 @@ def test_dq_add1_groupdq():
     dq[400, 500] = 3  # do_not_use and saturated pixel
 
     # write mask model
-    ref_data = testutil.mk_mask(csize[1:])
+    ref_data = maker_utils.mk_mask(csize[1:])
     ref_data['meta']['instrument']['name'] = instrument
 
     # Copy in maskmodel elemnts
@@ -191,7 +191,7 @@ def test_dqinit_step_interface(instrument, exptype):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw = testutil.mk_level1_science_raw(shape)
+    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape)
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = 'WFI01'
     wfi_sci_raw.meta.instrument.optical_element = 'F158'
@@ -204,7 +204,7 @@ def test_dqinit_step_interface(instrument, exptype):
     # Create mask model
     maskref = stnode.MaskRef()
     meta = {}
-    testutil.add_ref_common(meta)
+    maker_utils.add_ref_common(meta)
     meta['instrument']['optical_element'] = 'F158'
     meta['instrument']['detector'] = 'WFI01'
     meta['reftype'] = 'MASK'
@@ -243,7 +243,7 @@ def test_dqinit_refpix(instrument, exptype):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw = testutil.mk_level1_science_raw(shape)
+    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape)
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = 'WFI01'
     wfi_sci_raw.meta.instrument.optical_element = 'F158'
@@ -256,7 +256,7 @@ def test_dqinit_refpix(instrument, exptype):
     # Create mask model
     maskref = stnode.MaskRef()
     meta = {}
-    testutil.add_ref_common(meta)
+    maker_utils.add_ref_common(meta)
     meta['instrument']['optical_element'] = 'F158'
     meta['instrument']['detector'] = 'WFI01'
     meta['reftype'] = 'MASK'

@@ -7,7 +7,7 @@ from romancal.dq_init import dq_initialization
 from romancal.lib import dqflags
 from roman_datamodels.datamodels import RampModel
 import roman_datamodels as rdm
-from roman_datamodels.testing import utils as testutil
+from roman_datamodels import maker_utils
 
 __all__ = ["DQInitStep"]
 
@@ -45,7 +45,7 @@ class DQInitStep(RomanStep):
         # Convert to RampModel if needed
         if not isinstance(input_model, RampModel):
             # Create base ramp node with dummy values (for validation)
-            input_ramp = testutil.mk_ramp(input_model.shape)
+            input_ramp = maker_utils.mk_ramp(input_model.shape)
 
             # Copy input_model contents into RampModel
             for key in input_model.keys():
