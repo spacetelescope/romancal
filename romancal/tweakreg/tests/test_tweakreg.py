@@ -4,6 +4,31 @@ from roman_datamodels.testing import utils as testutil
 import os
 import csv
 import asdf
+import pytest
+
+
+def load_base_image_wcs(input_dm):
+    # data from romanisim simulated image 'l1-270-66-gaia-2016-sca7_cal.asdf'
+    # command used to create simulated image:
+    # romanisim-make-image --catalog ./rsim_cat_F158.ecsv --radec 270.0 66.0 --bandpass F158 --sca 7
+    # --usecrds --webbpsf --date 2026 1 1 --level 1 l1-270-66-gaia-2016-sca7.asdf
+
+    # update meta.wcsinfo
+    input_dm.meta.wcsinfo.v2_ref = 0.42955128282521254
+    input_dm.meta.wcsinfo.v3_ref = -0.2479976768255853
+    input_dm.meta.wcsinfo.vparity = -1
+    input_dm.meta.wcsinfo.ra_ref = 270.0
+    input_dm.meta.wcsinfo.dec_ref = 66.0
+    input_dm.meta.wcsinfo.roll_ref = 60
+
+    # read saved WCS object
+    full_path_to_wcs_file = os.path.join(
+        os.path.dirname(__file__), "data/base_image_wcs.asdf"
+    )
+    asdf_file = asdf.open(full_path_to_wcs_file)
+    wcs = asdf_file.tree["wcs"]
+
+    return wcs
 
 
 def create_base_image_source_catalog(tmpdir, output_filename):
@@ -21,47 +46,52 @@ def create_base_image_source_catalog(tmpdir, output_filename):
         writer.writerows(data)
 
 
-def create_base_image_and_catalog(tmpdir):
-    # data from romanisim simulated image 'l1-270-66-gaia-2016-sca7_cal.asdf'
-    l2 = testutil.mk_level2_image(shape=(4088, 4088))
-
-    l2.meta.wcsinfo.v2_ref = 0.42955128282521254
-    l2.meta.wcsinfo.v3_ref = -0.2479976768255853
-    l2.meta.wcsinfo.vparity = -1
-    l2.meta.wcsinfo.ra_ref = 270.0
-    l2.meta.wcsinfo.dec_ref = 66.0
-    l2.meta.wcsinfo.roll_ref = 60
-
-    full_path_to_wcs_file = os.path.join(
-        os.path.dirname(__file__), "data/base_image_wcs.asdf"
-    )
-    asdf_file = asdf.open(full_path_to_wcs_file)
-    wcs = asdf_file.tree["wcs"]
-    l2.meta["wcs"] = wcs
-
-    # add source detection catalog name
+def add_tweakreg_catalog_attribute(tmpdir, input_dm):
+    # create and add a mock source detection catalog
     tweakreg_catalog_filename = "base_image_sources.csv"
     create_base_image_source_catalog(tmpdir, tweakreg_catalog_filename)
-    l2.meta["tweakreg_catalog"] = os.path.join(tmpdir, tweakreg_catalog_filename)
+    input_dm.meta["tweakreg_catalog"] = os.path.join(tmpdir, tweakreg_catalog_filename)
+    return input_dm
 
+
+@pytest.fixture
+def base_image(tmpdir):
+    l2 = testutil.mk_level2_image(shape=(4088, 4088))
+    # update wcsinfo and add WCS from a simulated image
+    l2.meta["wcs"] = load_base_image_wcs(l2)
     l2im = rdm.ImageModel(l2)
     return l2im
 
 
-def test_tweakreg(tmpdir):
-    img = create_base_image_and_catalog(tmpdir)
+def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
+    img = base_image
+    with pytest.raises(Exception) as exec_info:
+        TweakRegStep.call([img])
 
+    assert type(exec_info.value) == AttributeError
+
+
+def test_tweakreg_returns_modelcontainer(tmpdir, base_image):
+    img = base_image
+    add_tweakreg_catalog_attribute(tmpdir, img)
     res = TweakRegStep.call([img])
 
-    # TweakRegStep should return a ModelContainer
     assert type(res) == rdm.ModelContainer
 
-    # TweakRegStep should create meta.cal_step.tweakreg
+
+def test_tweakreg_updates_cal_step(tmpdir):
+    img = base_image
+    add_tweakreg_catalog_attribute(tmpdir, img)
+    res = TweakRegStep.call([img])
+
     assert hasattr(res[0].meta.cal_step, "tweakreg")
     assert res[0].meta.cal_step.tweakreg == "COMPLETE"
 
-    # TweakRegStep should create at least one group_id
-    assert hasattr(res[0].meta, "group_id")
-    assert len(res[0].meta.group_id)
 
-    print("DONE")
+def test_tweakreg_creates_group(tmpdir):
+    img = base_image
+    add_tweakreg_catalog_attribute(tmpdir, img)
+    res = TweakRegStep.call([img])
+
+    assert hasattr(res[0].meta, "group_id")
+    assert len(res[0].meta.group_id) > 0
