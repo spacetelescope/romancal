@@ -3,35 +3,43 @@ from romancal.tweakreg.tweakreg_step import TweakRegStep
 from roman_datamodels import maker_utils
 import os
 import csv
-import asdf
 import pytest
+from astropy import units as u
+from gwcs import coordinate_frames as cf
+from astropy import coordinates as coord
+from gwcs import wcs
+from romancal.assign_wcs import pointing
 
 
-def load_base_image_wcs(input_dm):
-    # create a base WCS using data from a romanisim simulated image
-    # Note: this is the command used to create the simulated image:
-    #   romanisim-make-image \
-    #     --catalog ./rsim_cat_F158.ecsv \
-    #     --radec 270.0 66.0 \
-    #     --bandpass F158 --sca 7 \
-    #     --usecrds --webbpsf --date 2026 1 1 \
-    #     --level 1 l1-270-66-gaia-2016-sca7.asdf
+def create_dummy_wcs(input_dm):
+    # create a dummy WCS object
 
-    # update meta.wcsinfo
-    input_dm.meta.wcsinfo.v2_ref = 0.42955128282521254
-    input_dm.meta.wcsinfo.v3_ref = -0.2479976768255853
-    input_dm.meta.wcsinfo.vparity = -1
-    input_dm.meta.wcsinfo.ra_ref = 270.0
-    input_dm.meta.wcsinfo.dec_ref = 66.0
-    input_dm.meta.wcsinfo.roll_ref = 60
+    # create necessary transformations
+    distortion = rdm.DistortionRefModel(
+        maker_utils.mk_distortion()
+    ).coordinate_distortion_transform
+    tel2sky = pointing.v23tosky(input_dm)
 
-    # read saved WCS object and add it to meta
-    full_path_to_wcs_file = os.path.join(
-        os.path.dirname(__file__), "data/base_image_wcs.asdf"
+    # create required frames
+    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    v2v3 = cf.Frame2D(
+        name="v2v3",
+        axes_order=(0, 1),
+        axes_names=("v2", "v3"),
+        unit=(u.arcsec, u.arcsec),
     )
-    asdf_file = asdf.open(full_path_to_wcs_file)
-    wcs = asdf_file.tree["wcs"]
-    input_dm.meta["wcs"] = wcs
+    world = cf.CelestialFrame(reference_frame=coord.ICRS(), name="world")
+
+    # create pipeline
+    pipeline = [
+        wcs.Step(detector, distortion),
+        wcs.Step(v2v3, tel2sky),
+        wcs.Step(world, None),
+    ]
+
+    wcs_obj = wcs.WCS(pipeline)
+
+    input_dm.meta["wcs"] = wcs_obj
 
 
 def create_base_image_source_catalog(tmpdir, output_filename):
@@ -59,11 +67,13 @@ def add_tweakreg_catalog_attribute(tmpdir, input_dm):
 
 @pytest.fixture
 def base_image(tmpdir):
-    l2 = maker_utils.mk_level2_image(shape=(4088, 4088))
-    # update wcsinfo and add WCS from a simulated image
-    load_base_image_wcs(l2)
-    l2im = rdm.ImageModel(l2)
-    return l2im
+    l2 = maker_utils.mk_level2_image(shape=(100, 100))
+    # add a mock WCS object
+    create_dummy_wcs(l2)
+    # update vparity
+    l2.meta.wcsinfo.vparity = -1
+    l2_im = rdm.ImageModel(l2)
+    return l2_im
 
 
 def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
