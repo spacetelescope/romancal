@@ -4,7 +4,6 @@ import numpy as np
 from astropy import units as u
 from roman_datamodels import datamodels as rdd
 from roman_datamodels import maker_utils
-from roman_datamodels import units as ru
 from stcal.dark_current import dark_sub
 
 from romancal.stpipe import RomanStep
@@ -143,10 +142,10 @@ def dark_output_data_as_ramp_model(out_data, input_model):
     # Removing integration dimension from variables (added for stcal
     # compatibility)
     # Roman 3D
-    out_model.data = u.Quantity(out_data.data[0], ru.DN, dtype=out_data.data.dtype)
+    out_model.data = u.Quantity(out_data.data[0], u.DN, dtype=out_data.data.dtype)
     out_model.groupdq = out_data.groupdq[0]
     # Roman 2D
     out_model.pixeldq = out_data.pixeldq
-    out_model.err = u.Quantity(out_data.err[0], ru.DN, dtype=out_data.err.dtype)
+    out_model.err = u.Quantity(out_data.err[0], u.DN, dtype=out_data.err.dtype)
 
     return out_model

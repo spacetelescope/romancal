@@ -6,7 +6,6 @@ import logging
 
 import numpy as np
 from astropy import units as u
-from roman_datamodels import units as ru
 
 from romancal.lib import dqflags
 
@@ -111,7 +110,7 @@ def apply_flat_field(science, flat):
     # Now let's apply the correction to science data and error arrays.  Rely
     # on array broadcasting to handle the cubes
     science.data = u.Quantity(
-        (science.data.value / flat_data), ru.electron / u.s, dtype=science.data.dtype
+        (science.data.value / flat_data), u.electron / u.s, dtype=science.data.dtype
     )
 
     # Update the variances using BASELINE algorithm.  For guider data, it has
