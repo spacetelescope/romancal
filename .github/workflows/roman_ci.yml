@@ -14,13 +14,31 @@ on:
     # Weekly Monday 9AM build
     - cron: "0 9 * * 1"
 
-env:
-  CRDS_SERVER_URL: https://roman-crds.stsci.edu
-  CRDS_PATH: $HOME/crds_cache
-  CRDS_CLIENT_RETRY_COUNT: 3
-  CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
-
 jobs:
+  crds:
+    name: retrieve current CRDS context
+    runs-on: ubuntu-latest
+    env:
+      OBSERVATORY: roman
+      CRDS_SERVER_URL: https://roman-crds.stsci.edu
+      CRDS_PATH: /tmp/crds_cache
+    steps:
+      - id: context
+        run: >
+          echo "pmap=$(
+          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["${{ env.OBSERVATORY }}"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
+          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
+          )" >> $GITHUB_OUTPUT
+        # Get default CRDS_CONTEXT without installing crds client
+        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
+      - id: path
+        run: echo "path=${{ env.CRDS_PATH }}" >> $GITHUB_OUTPUT
+      - id: server
+        run: echo "url=${{ env.CRDS_SERVER_URL }}" >> $GITHUB_OUTPUT
+    outputs:
+      context: ${{ steps.context.outputs.pmap }}
+      path: ${{ steps.path.outputs.path }}
+      server: ${{ steps.server.outputs.url }}
   check:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
     with:
@@ -28,68 +46,46 @@ jobs:
         - linux: check-style
         - linux: check-dependencies
         - linux: build-dist
-  crds_context:
-    name: retrieve current CRDS context
-    runs-on: ubuntu-latest
-    outputs:
-      pmap: ${{ steps.crds-context.outputs.pmap }}
-    steps:
-      - run: >
-          echo "pmap=$(
-          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["roman"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
-          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
-          )" >> $GITHUB_OUTPUT
-        # Get default CRDS_CONTEXT without installing crds client
-        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
-        id: crds-context
-        env:
-          CRDS_SERVER_URL: https://roman-crds.stsci.edu
-          CRDS_PATH: /tmp/crds_cache
-          CRDS_CLIENT_RETRY_COUNT: 3
-          CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
   test:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
-    needs: [ crds_context ]
+    needs: [ crds ]
     with:
-      cache-path: /tmp/crds_cache
-      cache-key: crds-${{ needs.crds_context.outputs.pmap }}
       setenv: |
-        CRDS_PATH: /tmp/crds_cache
-        CRDS_SERVER_URL: https://roman-crds.stsci.edu
+        CRDS_PATH: ${{ needs.crds.outputs.path }}
+        CRDS_SERVER_URL: ${{ needs.crds.outputs.server }}
+        CRDS_CLIENT_RETRY_COUNT: 3
+        CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
         DD_SERVICE: romancal
         DD_ENV: ci
         DD_GIT_REPOSITORY_URL: ${{ github.repositoryUrl }}
         DD_GIT_COMMIT_SHA: ${{ github.sha }}
         DD_GIT_BRANCH: ${{ github.ref_name }}
-      envs: |
-        - linux: test-xdist
-          python-version: 3.9
-        - macos: test-xdist
-          python-version: 3.9
-        - linux: test-xdist
-          python-version: 3.10
-        - macos: test-xdist
-          python-version: 3.10
-        - linux: test-xdist
-          python-version: 3.11
-        - macos: test-xdist
-          python-version: 3.11
-        - linux: test-xdist-cov-ddtrace
-          coverage: codecov
-        - linux: test-devdeps
-        - linux: test-pyargs-xdist
-  test_numpy:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
-    needs: [ crds_context ]
-    with:
       cache-path: /tmp/crds_cache
       cache-key: crds-${{ needs.crds_context.outputs.pmap }}
-      setenv: |
-        CRDS_PATH: /tmp/crds_cache
-        CRDS_SERVER_URL: https://roman-crds.stsci.edu
       envs: |
         - linux: test-xdist
           python-version: 3.9
+        - linux: test-xdist
+          python-version: 3.10
+        - linux: test-xdist-ddtrace
+          python-version: 3.11
+        - macos: test-xdist-ddtrace
+          python-version: 3.11
+        - linux: test-pyargs-xdist
+        - linux: test-cov-xdist
+          coverage: codecov
+  test_numpy:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
+    needs: [ crds ]
+    with:
+      setenv: |
+        CRDS_PATH: ${{ needs.crds.outputs.path }}
+        CRDS_SERVER_URL: ${{ needs.crds.outputs.server }}
+        CRDS_CLIENT_RETRY_COUNT: 3
+        CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
+      cache-path: /tmp/crds_cache
+      cache-key: crds-${{ needs.crds_context.outputs.pmap }}
+      envs: |
         - linux: test-numpy120
           python-version: 3.8'
         - linux: test-numpy121
