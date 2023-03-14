@@ -87,12 +87,6 @@ jobs:
       cache-key: crds-${{ needs.crds_context.outputs.pmap }}
       envs: |
         - linux: test-numpy120
-          python-version: 3.8'
-        - linux: test-numpy121
-          python-version: 3.8
-        - linux: test-numpy122
-          python-version: 3.8
-        - linux: test-numpy120
           python-version: 3.9
         - linux: test-numpy121
           python-version: 3.9
