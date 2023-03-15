@@ -22,11 +22,13 @@ def update_wcsinfo(input_dm):
     input_dm.meta.wcsinfo.ra_ref = 270.0
     input_dm.meta.wcsinfo.dec_ref = 66.0
     input_dm.meta.wcsinfo.roll_ref = 60
-    input_dm.meta.wcsinfo.s_region = "POLYGON IRCS "\
-        "269.3318903230621 65.56866666048172 "\
-        "269.32578768154605 65.69246311613287 "\
-        "269.02457173246125 65.69201346248587 "\
+    input_dm.meta.wcsinfo.s_region = (
+        "POLYGON IRCS "
+        "269.3318903230621 65.56866666048172 "
+        "269.32578768154605 65.69246311613287 "
+        "269.02457173246125 65.69201346248587 "
         "269.0333096074621 65.56870823657276 "
+    )
 
 
 def _create_tel2sky_model(input_dm):
@@ -340,9 +342,9 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     # file will be written to this directory by default
     root_dir = request.config.rootdir
 
-    assert (root_dir / f"fit_{abs_refcat}_ref.ecsv").isfile()
+    assert os.path.exists(root_dir / f"fit_{abs_refcat.lower()}_ref.ecsv")
     # clean up
-    os.remove(root_dir / f"fit_{abs_refcat}_ref.ecsv")
+    os.remove(root_dir / f"fit_{abs_refcat.lower()}_ref.ecsv")
 
 
 def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
