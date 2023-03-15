@@ -22,7 +22,11 @@ def update_wcsinfo(input_dm):
     input_dm.meta.wcsinfo.ra_ref = 270.0
     input_dm.meta.wcsinfo.dec_ref = 66.0
     input_dm.meta.wcsinfo.roll_ref = 60
-    input_dm.meta.wcsinfo.s_region = "POLYGON IRCS 269.3318903230621 65.56866666048172 269.32578768154605 65.69246311613287 269.02457173246125 65.69201346248587 269.0333096074621 65.56870823657276 "
+    input_dm.meta.wcsinfo.s_region = "POLYGON IRCS "\
+        "269.3318903230621 65.56866666048172 "\
+        "269.32578768154605 65.69246311613287 "\
+        "269.02457173246125 65.69201346248587 "\
+        "269.0333096074621 65.56870823657276 "
 
 
 def _create_tel2sky_model(input_dm):
