@@ -1,10 +1,10 @@
 import numpy as np
 from astropy.modeling.models import RotationSequence3D, Scale
-from gwcs.geometry import SphericalToCartesian, CartesianToSpherical
+from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 
 
 def v23tosky(input_model, wrap_v2_at=180, wrap_lon_at=360):
-    """ Create the transform from telescope to sky.
+    """Create the transform from telescope to sky.
 
     The transform is defined with a reference point in a Frame
     associated tih the telescope (V2, V3) in arcsec, the corresponding
@@ -37,7 +37,11 @@ def v23tosky(input_model, wrap_v2_at=180, wrap_lon_at=360):
 
     # The sky rotation expects values in deg.
     # This should be removed when models work with quantities.
-    model = ((Scale(1 / 3600) & Scale(1 / 3600)) | SphericalToCartesian(wrap_lon_at=wrap_v2_at)
-         | rot | CartesianToSpherical(wrap_lon_at=wrap_lon_at))
-    model.name = 'v23tosky'
+    model = (
+        (Scale(1 / 3600) & Scale(1 / 3600))
+        | SphericalToCartesian(wrap_lon_at=wrap_v2_at)
+        | rot
+        | CartesianToSpherical(wrap_lon_at=wrap_lon_at)
+    )
+    model.name = "v23tosky"
     return model

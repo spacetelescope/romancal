@@ -1,13 +1,10 @@
 """ A signal/slot implementation
 """
-from collections import namedtuple
 import inspect
 import logging
+from collections import namedtuple
 
-
-__all__ = ['Signal',
-           'Signals',
-           'SignalsNotAClass']
+__all__ = ["Signal", "Signals", "SignalsNotAClass"]
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -15,10 +12,10 @@ logger.addHandler(logging.NullHandler())
 
 """Slot data structure
 """
-Slot = namedtuple('Slot', ['func', 'single_shot'])
+Slot = namedtuple("Slot", ["func", "single_shot"])
 
 
-class Signal():
+class Signal:
     """Signal
 
     A Signal, when triggered, call the connected slots.
@@ -84,11 +81,7 @@ class Signal():
                 yield slot(*args, **kwargs)
             except Exception as exception:
                 logger.debug(
-                    'Signal {}: Slot {} raised {}'.format(
-                        self.__class__.__name_,
-                        slot,
-                        exception
-                    )
+                    f"Signal {self.__class__.__name_}: Slot {slot} raised {exception}"
                 )
 
     def reduce(self, *args, **kwargs):
@@ -126,7 +119,7 @@ class Signal():
             result = slot(*args, **kwargs)
             args = result
             if not isinstance(args, tuple):
-                args = (args, )
+                args = (args,)
         return result
 
     @property
@@ -165,18 +158,11 @@ class Signal():
         single_shot: bool
             If True, the function/method is removed after being called.
         """
-        slot = Slot(
-            func=func,
-            single_shot=single_shot
-        )
+        slot = Slot(func=func, single_shot=single_shot)
         self._slots.append(slot)
 
     def disconnect(self, func):
-        self._slots = [
-            slot
-            for slot in self._slots
-            if slot.func != func
-        ]
+        self._slots = [slot for slot in self._slots if slot.func != func]
 
     def clear(self, single_shot=False):
         """Clear slots
@@ -187,19 +173,11 @@ class Signal():
             If True, only remove single shot
             slots.
         """
-        logger.debug(
-            'Signal {}: Clearing slots'.format(
-                self.__class__.__name__
-            )
-        )
+        logger.debug(f"Signal {self.__class__.__name__}: Clearing slots")
         if not single_shot:
             self._slots.clear()
         else:
-            self._slots = [
-                slot
-                for slot in self._slots
-                if not slot.single_shot
-            ]
+            self._slots = [slot for slot in self._slots if not slot.single_shot]
 
     @property
     def slots(self):
@@ -215,18 +193,14 @@ class Signal():
                 yield slot.func
         finally:
             # Clean out single shots
-            self._slots = [
-                slot
-                for slot in self._slots
-                if not slot.single_shot
-            ]
+            self._slots = [slot for slot in self._slots if not slot.single_shot]
             self.reset_enabled()
 
 
 class SignalsErrorBase(Exception):
-    '''Base Signals Error'''
+    """Base Signals Error"""
 
-    default_message = ''
+    default_message = ""
 
     def __init__(self, *args):
         if len(args):
@@ -236,12 +210,13 @@ class SignalsErrorBase(Exception):
 
 
 class SignalsNotAClass(SignalsErrorBase):
-    '''Must add a Signal Class'''
-    default_message = 'Signal must be a class.'
+    """Must add a Signal Class"""
+
+    default_message = "Signal must be a class."
 
 
 class Signals(dict):
-    '''Manage the signals.'''
+    """Manage the signals."""
 
     def __setitem__(self, key, value):
         if key not in self:
@@ -253,7 +228,7 @@ class Signals(dict):
         for signal in self:
             if signal.__name__ == key:
                 return self[signal]
-        raise KeyError(f'{key}')
+        raise KeyError(f"{key}")
 
     def add(self, signal_class, *args, **kwargs):
         if inspect.isclass(signal_class):

@@ -1,13 +1,13 @@
 import functools
-import numpy as np
+from typing import List, Tuple, Union
 
+import numpy as np
 from astropy.coordinates import SkyCoord
-from astropy.utils.misc import isiterable
-from roman_datamodels.datamodels import DataModel
 from astropy.modeling import models as astmodels
+from astropy.utils.misc import isiterable
 from gwcs import WCS
 from gwcs.wcstools import wcs_from_fiducial
-from typing import Union, List, Tuple
+from roman_datamodels.datamodels import DataModel
 
 _MAX_SIP_DEGREE = 6
 
@@ -26,14 +26,22 @@ def wcs_bbox_from_shape(shape):
     bbox : tuple
         Bounding box in x, y order.
     """
-    bbox = ((-0.5, shape[-1] - 0.5),
-            (-0.5, shape[-2] - 0.5))
+    bbox = ((-0.5, shape[-1] - 0.5), (-0.5, shape[-2] - 0.5))
     return bbox
 
-def wcs_from_footprints(dmodels, refmodel=None,
-                        transform=None, bounding_box=None,
-                        pscale_ratio=None, pscale=None, rotation=None, shape=None,
-                        ref_pixel:Tuple[float, float]=None, ref_coord:Tuple[float, float]=None):
+
+def wcs_from_footprints(
+    dmodels,
+    refmodel=None,
+    transform=None,
+    bounding_box=None,
+    pscale_ratio=None,
+    pscale=None,
+    rotation=None,
+    shape=None,
+    ref_pixel: Tuple[float, float] = None,
+    ref_coord: Tuple[float, float] = None,
+):
     """
     Create a WCS from a list of input data models.
 
@@ -112,11 +120,13 @@ def wcs_from_footprints(dmodels, refmodel=None,
         # overwrite spatial axes with user-provided ref_coord:
         i = 0
         for k, axt in enumerate(wcslist[0].output_frame.axes_type):
-            if axt == 'SPATIAL':
+            if axt == "SPATIAL":
                 fiducial[k] = ref_coord[i]
                 i += 1
 
-    ref_fiducial = np.array([refmodel.meta.wcsinfo.ra_ref, refmodel.meta.wcsinfo.dec_ref])
+    ref_fiducial = np.array(
+        [refmodel.meta.wcsinfo.ra_ref, refmodel.meta.wcsinfo.dec_ref]
+    )
 
     prj = astmodels.Pix2Sky_TAN()
 
@@ -135,26 +145,34 @@ def wcs_from_footprints(dmodels, refmodel=None,
             roll_ref = np.deg2rad(rotation) + (vparity * v3yangle)
 
         pc = np.reshape(
-            calc_rotation_matrix(roll_ref, v3yangle, vparity=vparity),
-            (2, 2)
+            calc_rotation_matrix(roll_ref, v3yangle, vparity=vparity), (2, 2)
         )
 
-        rotation = astmodels.AffineTransformation2D(pc, name='pc_rotation_matrix')
+        rotation = astmodels.AffineTransformation2D(pc, name="pc_rotation_matrix")
         transform.append(rotation)
 
         if sky_axes:
             if not pscale:
-                pscale = compute_scale(refmodel.meta.wcs, ref_fiducial,
-                                       pscale_ratio=pscale_ratio)
-            transform.append(astmodels.Scale(pscale, name='cdelt1') & astmodels.Scale(pscale, name='cdelt2'))
+                pscale = compute_scale(
+                    refmodel.meta.wcs, ref_fiducial, pscale_ratio=pscale_ratio
+                )
+            transform.append(
+                astmodels.Scale(pscale, name="cdelt1")
+                & astmodels.Scale(pscale, name="cdelt2")
+            )
 
         if transform:
             transform = functools.reduce(lambda x, y: x | y, transform)
 
     out_frame = refmodel.meta.wcs.output_frame
     input_frame = refmodel.meta.wcs.input_frame
-    wnew = wcs_from_fiducial(fiducial, coordinate_frame=out_frame, projection=prj,
-                             transform=transform, input_frame=input_frame)
+    wnew = wcs_from_fiducial(
+        fiducial,
+        coordinate_frame=out_frame,
+        projection=prj,
+        transform=transform,
+        input_frame=input_frame,
+    )
 
     footprints = [w.footprint().T for w in wcslist]
     domain_bounds = np.hstack([wnew.backward_transform(*f) for f in footprints])
@@ -173,9 +191,11 @@ def wcs_from_footprints(dmodels, refmodel=None,
         offset2 -= axis_min_values[1]
     else:
         offset1, offset2 = ref_pixel
-    offsets = astmodels.Shift(-offset1, name='ref_pixel1') & astmodels.Shift(-offset2, name='ref_pixel2')
+    offsets = astmodels.Shift(-offset1, name="ref_pixel1") & astmodels.Shift(
+        -offset2, name="ref_pixel2"
+    )
 
-    wnew.insert_transform('detector', offsets, after=True)
+    wnew.insert_transform("detector", offsets, after=True)
     wnew.bounding_box = output_bounding_box
 
     if shape is None:
@@ -186,8 +206,13 @@ def wcs_from_footprints(dmodels, refmodel=None,
 
     return wnew
 
-def compute_scale(wcs: WCS, fiducial: Union[tuple, np.ndarray],
-                  disp_axis: int = None, pscale_ratio: float = None) -> float:
+
+def compute_scale(
+    wcs: WCS,
+    fiducial: Union[tuple, np.ndarray],
+    disp_axis: int = None,
+    pscale_ratio: float = None,
+) -> float:
     """Compute scaling transform.
 
     Parameters
@@ -196,10 +221,12 @@ def compute_scale(wcs: WCS, fiducial: Union[tuple, np.ndarray],
         Reference WCS object from which to compute a scaling factor.
 
     fiducial : tuple
-        Input fiducial of (RA, DEC) or (RA, DEC, Wavelength) used in calculating reference points.
+        Input fiducial of (RA, DEC) or (RA, DEC, Wavelength) used in calculating
+        reference points.
 
     disp_axis : int
-        Dispersion axis integer. Assumes the same convention as `wcsinfo.dispersion_direction`
+        Dispersion axis integer. Assumes the same convention as
+        `wcsinfo.dispersion_direction`
 
     pscale_ratio : int
         Ratio of input to output pixel scale
@@ -210,15 +237,15 @@ def compute_scale(wcs: WCS, fiducial: Union[tuple, np.ndarray],
         Scaling factor for x and y or cross-dispersion direction.
 
     """
-    spectral = 'SPECTRAL' in wcs.output_frame.axes_type
+    spectral = "SPECTRAL" in wcs.output_frame.axes_type
 
     if spectral and disp_axis is None:
-        raise ValueError('If input WCS is spectral, a disp_axis must be given')
+        raise ValueError("If input WCS is spectral, a disp_axis must be given")
 
     crpix = np.array(wcs.invert(*fiducial))
 
     delta = np.zeros_like(crpix)
-    spatial_idx = np.where(np.array(wcs.output_frame.axes_type) == 'SPATIAL')[0]
+    spatial_idx = np.where(np.array(wcs.output_frame.axes_type) == "SPATIAL")[0]
     delta[spatial_idx[0]] = 1
 
     crpix_with_offsets = np.vstack((crpix, crpix + delta, crpix + np.roll(delta, 1))).T
@@ -227,7 +254,7 @@ def compute_scale(wcs: WCS, fiducial: Union[tuple, np.ndarray],
     coords = SkyCoord(
         ra=crval_with_offsets[spatial_idx[0]],
         dec=crval_with_offsets[spatial_idx[1]],
-        unit="deg"
+        unit="deg",
     )
     xscale = np.abs(coords[0].separation(coords[1]).value)
     yscale = np.abs(coords[0].separation(coords[2]).value)
@@ -244,7 +271,10 @@ def compute_scale(wcs: WCS, fiducial: Union[tuple, np.ndarray],
 
     return np.sqrt(xscale * yscale)
 
-def calc_rotation_matrix(roll_ref: float, v3i_yang: float, vparity: int = 1) -> List[float]:
+
+def calc_rotation_matrix(
+    roll_ref: float, v3i_yang: float, vparity: int = 1
+) -> List[float]:
     """Calculate the rotation matrix.
 
     Parameters
@@ -275,7 +305,7 @@ def calc_rotation_matrix(roll_ref: float, v3i_yang: float, vparity: int = 1) -> 
 
     """
     if vparity not in (1, -1):
-        raise ValueError(f'vparity should be 1 or -1. Input was: {vparity}')
+        raise ValueError(f"vparity should be 1 or -1. Input was: {vparity}")
 
     rel_angle = roll_ref - (vparity * v3i_yang)
 
@@ -286,6 +316,7 @@ def calc_rotation_matrix(roll_ref: float, v3i_yang: float, vparity: int = 1) -> 
 
     return [pc1_1, pc1_2, pc2_1, pc2_2]
 
+
 def compute_fiducial(wcslist, bounding_box=None):
     """
     For a celestial footprint this is the center.
@@ -295,8 +326,8 @@ def compute_fiducial(wcslist, bounding_box=None):
     """
 
     axes_types = wcslist[0].output_frame.axes_type
-    spatial_axes = np.array(axes_types) == 'SPATIAL'
-    spectral_axes = np.array(axes_types) == 'SPECTRAL'
+    spatial_axes = np.array(axes_types) == "SPATIAL"
+    spectral_axes = np.array(axes_types) == "SPECTRAL"
     footprints = np.hstack([w.footprint(bounding_box=bounding_box).T for w in wcslist])
     spatial_footprint = footprints[spatial_axes]
     spectral_footprint = footprints[spectral_axes]
@@ -309,11 +340,11 @@ def compute_fiducial(wcslist, bounding_box=None):
         y = np.cos(lat) * np.sin(lon)
         z = np.sin(lat)
 
-        x_mid = (np.max(x) + np.min(x)) / 2.
-        y_mid = (np.max(y) + np.min(y)) / 2.
-        z_mid = (np.max(z) + np.min(z)) / 2.
+        x_mid = (np.max(x) + np.min(x)) / 2.0
+        y_mid = (np.max(y) + np.min(y)) / 2.0
+        z_mid = (np.max(z) + np.min(z)) / 2.0
         lon_fiducial = np.rad2deg(np.arctan2(y_mid, x_mid)) % 360.0
-        lat_fiducial = np.rad2deg(np.arctan2(z_mid, np.sqrt(x_mid ** 2 + y_mid ** 2)))
+        lat_fiducial = np.rad2deg(np.arctan2(z_mid, np.sqrt(x_mid**2 + y_mid**2)))
         fiducial[spatial_axes] = lon_fiducial, lat_fiducial
     if spectral_footprint.any():
         fiducial[spectral_axes] = spectral_footprint.min()

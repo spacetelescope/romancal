@@ -12,24 +12,21 @@ For more, see the :ref:`documentation overview <asn-overview>`.
 # Take version from the upstream package
 from .. import __version__
 
+
 # Utility
 def libpath(filepath):
-    '''Return the full path to the module library.'''
-    from os.path import (
-        abspath,
-        dirname,
-        join
-    )
-    return join(dirname(abspath(__file__)),
-                'lib',
-                filepath)
+    """Return the full path to the module library."""
+    from os.path import abspath, dirname, join
+
+    return join(dirname(abspath(__file__)), "lib", filepath)
+
 
 from .association import *
 from .association_io import *
 from .exceptions import *
 from .generate import *
 from .lib.process_list import *
-from .pool import *
-from .registry import *
 from .load_asn import load_asn
 from .main import *
+from .pool import *
+from .registry import *
