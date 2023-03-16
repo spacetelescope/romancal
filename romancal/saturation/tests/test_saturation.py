@@ -77,8 +77,10 @@ def test_ad_floor_flagging(setup_wfi_datamodels):
 
 
 def test_ad_floor_and_saturation_flagging(setup_wfi_datamodels):
-    """Check that the ad_floor flag is set when a pixel value is zero or
-    negative and the saturation flag when the pixel is above the saturation threshold."""
+    """
+    Check that the ad_floor flag is set when a pixel value is zero or
+    negative and the saturation flag when the pixel is above the saturation threshold.
+    """
 
     # Create inputs, and data and saturation models
     ngroups = 5

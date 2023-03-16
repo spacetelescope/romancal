@@ -57,7 +57,8 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     outfile = do_dqinit(dm_ramp, ref_data)
     dqdata = outfile["pixeldq"]
 
-    # assert that the pixels read back in match the mapping from ref data to science data
+    # assert that the pixels read back in match the mapping from ref data to
+    # science data
     assert dqdata[100, 100] == dqflags.pixel["SATURATED"]
     assert dqdata[200, 100] == dqflags.pixel["JUMP_DET"]
     assert dqdata[300, 100] == dqflags.pixel["DROPOUT"]
@@ -73,7 +74,10 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
 
 
 def test_groupdq():
-    """Check that GROUPDQ extension is added to the data and all values are initialized to zero."""
+    """
+    Check that GROUPDQ extension is added to the data and all values are
+    initialized to zero.
+    """
 
     # size of integration
     instrument = "WFI"

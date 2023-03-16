@@ -162,7 +162,7 @@ class RampFitStep(RomanStep):
         opt_name = string(default='')
         maximum_cores = option('none','quarter','half','all',default='none') # max number of processes to create
         save_opt = boolean(default=False) # Save optional output
-    """
+    """  # noqa: E501
     algorithm = "ols"  # Only algorithm allowed
 
     weighting = "optimal"  # Only weighting allowed

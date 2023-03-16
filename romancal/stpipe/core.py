@@ -65,8 +65,8 @@ class RomanStep(Step):
                     setattr(model.meta.ref_file, ref_name, ref_file)
                     # getattr(model.meta.ref_file, ref_name).name = ref_file
 
-        # this will only run if 'parent' is none, which happens when an individual step is being run
-        # or if self is a RomanPipeline and not a RomanStep.
+        # this will only run if 'parent' is none, which happens when an individual
+        # step is being run or if self is a RomanPipeline and not a RomanStep.
 
         if os.environ.get("CI") == "false":  # no CRDS connection, do not run
             if self.parent is None:

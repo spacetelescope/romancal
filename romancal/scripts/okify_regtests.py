@@ -59,7 +59,7 @@ def artifactory_get_breadcrumbs(build_number, job_name, suffix):
     An example search would be:
 
     jfrog rt search roman-pipeline-results/*/*_okify.json --props='build.number=540;build.name=RT :: romancal'
-    """
+    """  # noqa: E501
     build_name = f"RT :: {job_name}"
 
     # Retreive all the okify specfiles for failed tests.

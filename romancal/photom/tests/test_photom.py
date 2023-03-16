@@ -280,7 +280,9 @@ def test_photom_step_interface(instrument, exptype):
     ),
 )
 def test_photom_step_interface_spectroscopic(instrument, exptype):
-    """Test apply_photom properly populates photometric keywords for spectroscopic data"""
+    """
+    Test apply_photom properly populates photometric keywords for spectroscopic data
+    """
 
     # Create a small area for the file
     shape = (20, 20)

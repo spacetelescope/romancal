@@ -39,7 +39,7 @@ class JumpStep(RomanStep):
         use_ellipses = boolean(default=False) # Use an enclosing ellipse rather than a circle for MIRI showers
         sat_required_snowball = boolean(default=True) # Require the center of snowballs to be saturated
         expand_large_events = boolean(default=False) # must be True to trigger snowball and shower flagging
-    """
+    """  # noqa: E501
 
     reference_file_types = ["gain", "readnoise"]
 

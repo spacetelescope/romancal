@@ -69,7 +69,8 @@ def compare_asn_files(left_paths, right_paths):
         all the differences.
     """
     __tracebackhide__ = True
-    # Read in all the associations, separating out the products into separate associations.
+    # Read in all the associations, separating out the products into separate
+    # associations.
     left_asns = []
     for path in left_paths:
         with open(path) as fh:

@@ -221,10 +221,12 @@ def compute_scale(
         Reference WCS object from which to compute a scaling factor.
 
     fiducial : tuple
-        Input fiducial of (RA, DEC) or (RA, DEC, Wavelength) used in calculating reference points.
+        Input fiducial of (RA, DEC) or (RA, DEC, Wavelength) used in calculating
+        reference points.
 
     disp_axis : int
-        Dispersion axis integer. Assumes the same convention as `wcsinfo.dispersion_direction`
+        Dispersion axis integer. Assumes the same convention as
+        `wcsinfo.dispersion_direction`
 
     pscale_ratio : int
         Ratio of input to output pixel scale

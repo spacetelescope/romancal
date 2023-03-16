@@ -36,7 +36,8 @@ class DarkCurrentStep(RomanStep):
             # Open dark model
             dark_model = rdd.open(self.dark_name)
 
-            # Temporary patch to utilize stcal dark step until MA table support is fully implemented
+            # Temporary patch to utilize stcal dark step until MA table support
+            # is fully implemented
             if "ngroups" not in dark_model.meta.exposure:
                 dark_model.meta.exposure["ngroups"] = dark_model.data.shape[0]
             if "nframes" not in dark_model.meta.exposure:
@@ -102,7 +103,8 @@ def save_dark_data_as_dark_model(dark_data, dark_model):
         dark_data.err, out_dark.err.unit, dtype=out_dark.err.dtype
     )
 
-    # Temporary patch to utilize stcal dark step until MA table support is fully implemented
+    # Temporary patch to utilize stcal dark step until MA table support is
+    # fully implemented
     out_dark.meta.exposure["nframes"] = dark_data.exp_nframes
     out_dark.meta.exposure["ngroups"] = dark_data.exp_ngroups
     out_dark.meta.exposure["groupgap"] = dark_data.exp_groupgap

@@ -75,7 +75,7 @@ class TweakRegStep(RomanStep):
         abs_nclip = integer(min=0, default=3) # Number of clipping iterations in fit when performing absolute astrometry
         abs_sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units when performing absolute astrometry
         output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
-    """
+    """  # noqa: E501
 
     reference_file_types = []
 

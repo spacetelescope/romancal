@@ -143,8 +143,8 @@ class SimpleConstraintABC(abc.ABC):
         return result
 
     def __str__(self):
-        result = f"{self.__class__.__name__}({dict({str_attr: getattr(self, str_attr) for str_attr in self._str_attrs})})"
-        return result
+        attrs = {str_attr: getattr(self, str_attr) for str_attr in self._str_attrs}
+        return f"{self.__class__.__name__}({attrs})"
 
 
 class ConstraintTrue(SimpleConstraintABC):
@@ -602,7 +602,7 @@ class Constraint:
                       'value': 'a_value',
                       'name': 'simple',
                       'matched': False})
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
