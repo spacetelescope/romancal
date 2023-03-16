@@ -152,6 +152,11 @@ report = { exclude_lines = [
 [tool.bandit]
 skips = ["B101", "B307", "B404", "B603"]
 
+[tool.isort]
+profile = "black"
+filter_files = true
+line_length = 130
+
 [tool.ruff]
 line-length = 130
 exclude = [
