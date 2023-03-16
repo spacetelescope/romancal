@@ -40,7 +40,7 @@ def bytes2human(n):
         if n >= prefix[s]:
             value = float(n) / prefix[s]
             return f"{value:.1f}{s}"
-    return "%sB" % n
+    return f"{n}B"
 
 
 def is_fully_saturated(model):

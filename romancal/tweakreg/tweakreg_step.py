@@ -225,7 +225,7 @@ class TweakRegStep(RomanStep):
             self.log.info(f"* Images in GROUP '{group_name}':")
             for im in imcats:
                 im.meta["group_id"] = group_name
-                self.log.info("     {}".format(im.meta["name"]))
+                self.log.info(f"     {im.meta['name']}")
 
             self.log.info("")
 
@@ -244,7 +244,7 @@ class TweakRegStep(RomanStep):
                     self.log.info(f"* Images in GROUP '{group_name}':")
                     for im in wcsimlist:
                         im.meta["group_id"] = group_name
-                        self.log.info("     {}".format(im.meta["name"]))
+                        self.log.info(f"     {im.meta['name']}")
                     imcats.extend(wcsimlist)
 
             self.log.info("")

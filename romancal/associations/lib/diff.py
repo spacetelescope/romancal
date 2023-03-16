@@ -200,7 +200,7 @@ def _compare_asns(left, right):
 
     # Assert that the same result type is the same.
     if left["asn_type"] != right["asn_type"]:
-        diffs.append(TypeMismatchError("Type mismatch {} != {}".format(left["asn_type"], right["asn_type"])))
+        diffs.append(TypeMismatchError(f"Type mismatch {left['asn_type']} != {right['asn_type']}"))
 
     # Assert that the level of association candidate is the same.
     # Cannot guarantee value, but that the 'a'/'c'/'o' levels are similar.

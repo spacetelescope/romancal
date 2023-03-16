@@ -157,8 +157,8 @@ class RampFitStep(RomanStep):
             log.info("Using GAIN reference file: %s", gain_filename)
             gain_model = rdd.open(gain_filename, mode="rw")
 
-            log.info("Using algorithm = %s" % self.algorithm)
-            log.info("Using weighting = %s" % self.weighting)
+            log.info(f"Using algorithm = {self.algorithm}")
+            log.info(f"Using weighting = {self.weighting}")
 
             buffsize = ramp_fit.BUFSIZE
             image_info, integ_info, opt_info, gls_opt_model = ramp_fit.ramp_fit(

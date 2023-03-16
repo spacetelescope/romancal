@@ -239,7 +239,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
 
             # Program
             if self.data["program"] == "noprogram":
-                self.data["program"] = "{:0>5s}".format(item["program"])
+                self.data["program"] = f"{item['program']:0>5s}"
 
             # Pool
             if self.data["asn_pool"] == "none":
@@ -316,7 +316,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         members = self.current_product["members"]
         members.append(member)
         if member["exposerr"] not in _EMPTY:
-            logger.warning('Member {} has exposure error "{}"'.format(item["filename"], member["exposerr"]))
+            logger.warning(f"Member {item['filename']} has exposure error \"{member['exposerr']}\"")
 
         # Update meta info
         self.update_asn(item=item, member=member)
@@ -373,12 +373,12 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
 
     def __str__(self):
         result_list = []
-        result_list.append("{} with {} products".format(self.asn_name, len(self.data["products"])))
-        result_list.append("Rule={}".format(self.data["asn_rule"]))
+        result_list.append(f"{self.asn_name} with {len(self.data['products'])} products")
+        result_list.append(f"Rule={self.data['asn_rule']}")
         result_list.append(self.data["constraints"])
         result_list.append("Products:")
         for product in self.data["products"]:
-            result_list.append("\t{} with {} members".format(product["name"], len(product["members"])))
+            result_list.append(f"\t{product['name']} with {len(product['members'])} members")
         result = "\n".join(result_list)
         return result
 
@@ -524,7 +524,7 @@ def dms_product_name_noopt(asn):
 
     instrument = asn._get_instrument()
 
-    product_name = "r{}-{}_{}_{}".format(asn.data["program"], asn.acid.id, target, instrument)
+    product_name = f"r{asn.data['program']}-{asn.acid.id}_{target}_{instrument}"
     return product_name.lower()
 
 

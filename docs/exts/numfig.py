@@ -20,7 +20,7 @@ def skip_page_ref(self, node):
 
 
 def latex_visit_page_ref(self, node):
-    self.body.append("\\pageref{{{}:{}}}".format(node["refdoc"], node["reftarget"]))
+    self.body.append(f"\\pageref{{{node['refdoc']}:{node['reftarget']}}}")
     raise SkipNode
 
 
@@ -28,11 +28,11 @@ def latex_visit_num_ref(self, node):
     fields = node["reftarget"].split("#")
     if len(fields) > 1:
         label, target = fields
-        ref_link = "{}:{}".format(node["refdoc"], target)
+        ref_link = f"{node['refdoc']}:{target}"
         latex = f"\\hyperref[{ref_link}]{{{label} \\ref*{{{ref_link}}}}}"
         self.body.append(latex)
     else:
-        self.body.append("\\ref{{{}:{}}}".format(node["refdoc"], fields[0]))
+        self.body.append(f"\\ref{{{node['refdoc']}:{fields[0]}}}")
 
     raise SkipNode
 
