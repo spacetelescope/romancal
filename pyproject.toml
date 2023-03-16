@@ -104,6 +104,7 @@ zip-safe = false
 minversion = 4.6
 norecursedirs = [
     'docs/_build',
+    'docs/exts',
     'scripts',
     '.tox',
     '.eggs',
