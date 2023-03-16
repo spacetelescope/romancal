@@ -2,8 +2,8 @@
 import argparse
 import sys
 
-from romancal.associations import AssociationRegistry
-from romancal.associations.lib.rules_elpp_base import DMS_ELPP_Base
+from .lib.rules_elpp_base import DMS_ELPP_Base
+from .registry import AssociationRegistry
 
 __all__ = ['asn_from_list']
 

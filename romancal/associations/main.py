@@ -6,9 +6,14 @@ import sys
 
 import numpy as np
 
-from romancal.associations import AssociationPool, AssociationRegistry, __version__, config, generate
-from romancal.associations.lib.dms_base import DMSAttrConstraint
-from romancal.associations.lib.log_config import DMS_config, log_config
+from romancal import __version__
+
+from . import config
+from .generate import generate
+from .lib.dms_base import DMSAttrConstraint
+from .lib.log_config import DMS_config, log_config
+from .pool import AssociationPool
+from .registry import AssociationRegistry
 
 __all__ = ['Main']
 
