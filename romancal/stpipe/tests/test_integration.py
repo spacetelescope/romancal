@@ -1,11 +1,10 @@
 from stpipe import entry_points
 from stpipe.utilities import import_class
 
-from romancal.stpipe.integration import get_steps
-from romancal.stpipe import RomanStep, RomanPipeline
-
 import romancal.pipeline
 import romancal.step
+from romancal.stpipe import RomanPipeline, RomanStep
+from romancal.stpipe.integration import get_steps
 
 
 def test_get_steps():

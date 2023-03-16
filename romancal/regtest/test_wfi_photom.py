@@ -1,11 +1,13 @@
 """Regression tests for the photom step of the Roman pipeline"""
 import math
-import pytest
 
+import pytest
 import roman_datamodels as rdm
 from astropy import units as u
-from romancal.stpipe import RomanStep
+
 from romancal.step import PhotomStep
+from romancal.stpipe import RomanStep
+
 from .regtestdata import compare_asdf
 
 

@@ -1,15 +1,14 @@
 """Project default for pytest"""
+import inspect
 import os
 import tempfile
-import pytest
-import inspect
 
+import pytest
 from stdatamodels import s3_utils
 
 #from jwst.associations import (AssociationRegistry, AssociationPool)
 #from jwst.associations.tests.helpers import t_path
 from romancal.lib.tests import helpers as lib_helpers
-
 
 # @pytest.fixture(scope='session')
 # def full_pool_rules(request):

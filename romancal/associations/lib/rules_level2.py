@@ -2,9 +2,9 @@
 """
 import logging
 
-from romancal.associations.registry import RegistryMarker
 from romancal.associations.lib.constraint import Constraint
 from romancal.associations.lib.rules_elpp_base import *
+from romancal.associations.registry import RegistryMarker
 
 __all__ = [
     'Asn_Lv2Image',

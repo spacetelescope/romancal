@@ -1,17 +1,17 @@
 #! /usr/bin/env python
 #
 import logging
+
 import numpy as np
 from astropy import units as u
-
-from romancal.stpipe import RomanStep
-from romancal.lib import dqflags
 from roman_datamodels import datamodels as rdd
-from roman_datamodels import stnode as rds
 from roman_datamodels import maker_utils
+from roman_datamodels import stnode as rds
 from roman_datamodels import units as ru
-
 from stcal.ramp_fitting import ramp_fit
+
+from romancal.lib import dqflags
+from romancal.stpipe import RomanStep
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

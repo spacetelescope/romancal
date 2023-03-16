@@ -2,17 +2,17 @@
 Unit tests for dark current correction
 """
 
-import pytest
-import numpy as np
 import os
-from astropy import units as u
 
-from romancal.dark_current import DarkCurrentStep
-
-from roman_datamodels.datamodels import RampModel, DarkRefModel
+import numpy as np
+import pytest
 import roman_datamodels as rdm
+from astropy import units as u
 from roman_datamodels import maker_utils
 from roman_datamodels import units as ru
+from roman_datamodels.datamodels import DarkRefModel, RampModel
+
+from romancal.dark_current import DarkCurrentStep
 
 
 @pytest.mark.parametrize(

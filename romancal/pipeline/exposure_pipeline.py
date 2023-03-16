@@ -1,23 +1,24 @@
 #!/usr/bin/env python
-from os.path import basename
 import logging
+from os.path import basename
 
 import numpy as np
 from roman_datamodels import datamodels as rdd
-from ..stpipe import RomanPipeline
-from romancal.lib.basic_utils import is_fully_saturated
-from romancal.lib import dqflags
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
+from romancal.dark_current import DarkCurrentStep
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
 from romancal.jump import jump_step
-from romancal.dark_current import DarkCurrentStep
+from romancal.lib import dqflags
+from romancal.lib.basic_utils import is_fully_saturated
 from romancal.linearity import LinearityStep
 from romancal.photom import PhotomStep
 from romancal.ramp_fitting import ramp_fit_step
 from romancal.saturation import SaturationStep
+
+from ..stpipe import RomanPipeline
 
 __all__ = ['ExposurePipeline']
 

@@ -3,6 +3,7 @@ Module for applying flat fielding
 """
 
 import logging
+
 import numpy as np
 from astropy import units as u
 from roman_datamodels import units as ru

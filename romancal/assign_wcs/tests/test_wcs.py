@@ -1,16 +1,15 @@
-import numpy as np
 import os
+
+import numpy as np
 import pytest
-
-from numpy.testing import assert_allclose
-
 from gwcs.wcstools import grid_from_bounding_box
-
-from romancal.assign_wcs.assign_wcs_step import AssignWcsStep, load_wcs
+from numpy.testing import assert_allclose
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
+from romancal.assign_wcs.assign_wcs_step import AssignWcsStep, load_wcs
 from romancal.assign_wcs.utils import wcs_bbox_from_shape
+
 
 def create_image():
     l2 = maker_utils.mk_level2_image()

@@ -1,13 +1,13 @@
 import functools
-import numpy as np
+from typing import List, Tuple, Union
 
+import numpy as np
 from astropy.coordinates import SkyCoord
-from astropy.utils.misc import isiterable
-from roman_datamodels.datamodels import DataModel
 from astropy.modeling import models as astmodels
+from astropy.utils.misc import isiterable
 from gwcs import WCS
 from gwcs.wcstools import wcs_from_fiducial
-from typing import Union, List, Tuple
+from roman_datamodels.datamodels import DataModel
 
 _MAX_SIP_DEGREE = 6
 

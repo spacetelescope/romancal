@@ -2,15 +2,16 @@
 Detect jumps in a science image
 """
 
-from roman_datamodels import datamodels as rdd
-import numpy as np
+import logging
 import time
 
-from romancal.stpipe import RomanStep
-from romancal.lib import dqflags
+import numpy as np
+from roman_datamodels import datamodels as rdd
 from stcal.jump.jump import detect_jumps
 
-import logging
+from romancal.lib import dqflags
+from romancal.stpipe import RomanStep
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 

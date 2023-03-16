@@ -1,18 +1,17 @@
 import os
-from stdatamodels.validate import ValidationWarning
+import warnings
+
 import numpy as np
 import pytest
-import warnings
 from astropy import units as u
-
-from roman_datamodels import stnode
-from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
-from roman_datamodels import maker_utils
+from roman_datamodels import maker_utils, stnode
 from roman_datamodels import units as ru
+from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
+from stdatamodels.validate import ValidationWarning
 
-from romancal.lib import dqflags
 from romancal.dq_init import DQInitStep
 from romancal.dq_init.dq_initialization import do_dqinit
+from romancal.lib import dqflags
 
 # Set parameters for multiple runs of data
 args = "xstart, ystart, xsize, ysize, ngroups, instrument, exp_type"

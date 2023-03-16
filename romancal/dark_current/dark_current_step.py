@@ -1,14 +1,13 @@
 #! /usr/bin/env python
 
-from astropy import units as u
 import numpy as np
-
-from romancal.stpipe import RomanStep
+from astropy import units as u
 from roman_datamodels import datamodels as rdd
-from stcal.dark_current import dark_sub
 from roman_datamodels import maker_utils
 from roman_datamodels import units as ru
+from stcal.dark_current import dark_sub
 
+from romancal.stpipe import RomanStep
 
 __all__ = ["DarkCurrentStep"]
 

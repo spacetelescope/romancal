@@ -1,11 +1,9 @@
 import logging
+from typing import Tuple
 
 import numpy as np
 
-from romancal.assign_wcs.utils import wcs_from_footprints, wcs_bbox_from_shape
-
-from typing import Tuple
-
+from romancal.assign_wcs.utils import wcs_bbox_from_shape, wcs_from_footprints
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

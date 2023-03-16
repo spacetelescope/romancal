@@ -1,13 +1,13 @@
 #! /usr/bin/env python
 
 import numpy as np
-
-from romancal.stpipe import RomanStep
-from romancal.dq_init import dq_initialization
-from romancal.lib import dqflags
-from roman_datamodels.datamodels import RampModel
 import roman_datamodels as rdm
 from roman_datamodels import maker_utils
+from roman_datamodels.datamodels import RampModel
+
+from romancal.dq_init import dq_initialization
+from romancal.lib import dqflags
+from romancal.stpipe import RomanStep
 
 __all__ = ["DQInitStep"]
 

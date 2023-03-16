@@ -1,13 +1,13 @@
 import os
+
 import requests
-
 from astropy import table
-from astropy.table import Table
-from astropy.coordinates import SkyCoord
 from astropy import units as u
+from astropy.coordinates import SkyCoord
+from astropy.table import Table
 
-from ..resample import resample_utils
 from ..assign_wcs import utils as wcsutil
+from ..resample import resample_utils
 
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = 'http://gsss.stsci.edu/webservices'

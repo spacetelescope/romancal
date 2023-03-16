@@ -1,5 +1,6 @@
 import logging
 import warnings
+
 from astropy import units as u
 
 log = logging.getLogger(__name__)

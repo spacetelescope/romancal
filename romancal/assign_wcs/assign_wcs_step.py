@@ -4,17 +4,15 @@ Assign a gWCS object to a science image.
 """
 import logging
 
+import gwcs.coordinate_frames as cf
 from astropy import coordinates as coord
 from astropy import units as u
-import gwcs.coordinate_frames as cf
-
 from gwcs.wcs import WCS, Step
-
 from roman_datamodels import datamodels as rdm
+
 from ..stpipe import RomanStep
 from . import pointing
 from .utils import wcs_bbox_from_shape
-
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

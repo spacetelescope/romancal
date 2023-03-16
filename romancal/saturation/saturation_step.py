@@ -2,9 +2,9 @@
 
 import roman_datamodels as rdm
 from roman_datamodels.datamodels import SaturationRefModel
-from romancal.stpipe import RomanStep
-from romancal.saturation import saturation
 
+from romancal.saturation import saturation
+from romancal.stpipe import RomanStep
 
 __all__ = ["SaturationStep"]
 

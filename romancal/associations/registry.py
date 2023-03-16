@@ -1,24 +1,11 @@
 """Association Registry"""
 import importlib.util
-from inspect import (
-    getmembers,
-    isclass,
-    isfunction,
-    ismethod,
-    ismodule
-)
 import logging
-from os.path import (
-    basename,
-    expanduser,
-    expandvars,
-)
+from inspect import getmembers, isclass, isfunction, ismethod, ismodule
+from os.path import basename, expanduser, expandvars
 
 from . import libpath
-from .exceptions import (
-    AssociationError,
-    AssociationNotValidError
-)
+from .exceptions import AssociationError, AssociationNotValidError
 from .lib.callback_registry import CallbackRegistry
 
 __all__ = [

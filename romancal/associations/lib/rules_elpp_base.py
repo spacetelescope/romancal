@@ -1,43 +1,29 @@
 """Base classes which define the ELPP Associations"""
 
-from collections import defaultdict
 import logging
-from os.path import (
-    basename
-    )
 import re
+from collections import defaultdict
+from os.path import basename
 
-from romancal.associations import (
-    Association,
-    ProcessList,
-    libpath
-)
-from romancal.associations.registry import RegistryMarker
-from romancal.associations.lib.utilities import (
-    evaluate,
-    is_iterable
-)
-from romancal.associations.exceptions import (
-    AssociationNotValidError,
-)
+from stpipe.format_template import FormatTemplate
+
+from romancal.associations import Association, ProcessList, libpath
+from romancal.associations.exceptions import AssociationNotValidError
 from romancal.associations.lib.acid import ACID
-from romancal.associations.lib.constraint import (
-    Constraint,
-    SimpleConstraint,
-)
+from romancal.associations.lib.constraint import Constraint, SimpleConstraint
 from romancal.associations.lib.counter import Counter
 from romancal.associations.lib.dms_base import (
     _EMPTY,
+    IMAGE2_NONSCIENCE_EXP_TYPES,
+    IMAGE2_SCIENCE_EXP_TYPES,
+    SPEC2_SCIENCE_EXP_TYPES,
     DMSAttrConstraint,
     DMSBaseMixin,
-    IMAGE2_SCIENCE_EXP_TYPES,
-    IMAGE2_NONSCIENCE_EXP_TYPES,
-    SPEC2_SCIENCE_EXP_TYPES,
 )
-from stpipe.format_template import FormatTemplate
 from romancal.associations.lib.member import Member
-from romancal.associations.lib.product_utils import (
-     prune_duplicate_associations, prune_duplicate_products)
+from romancal.associations.lib.product_utils import prune_duplicate_associations, prune_duplicate_products
+from romancal.associations.lib.utilities import evaluate, is_iterable
+from romancal.associations.registry import RegistryMarker
 
 __all__ = [
     'ASN_SCHEMA',

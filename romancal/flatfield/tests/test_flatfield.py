@@ -1,14 +1,13 @@
 import os
 
-import pytest
 import numpy as np
+import pytest
 from astropy import units as u
 from astropy.time import Time
-
-from roman_datamodels import stnode
-from roman_datamodels.datamodels import ImageModel, FlatRefModel
-from roman_datamodels import maker_utils
+from roman_datamodels import maker_utils, stnode
 from roman_datamodels import units as ru
+from roman_datamodels.datamodels import FlatRefModel, ImageModel
+
 from romancal.flatfield import FlatFieldStep
 
 

@@ -1,18 +1,13 @@
 """Base classes for Roman tests"""
-from glob import glob as _sys_glob
 import os
+import sys
+from glob import glob as _sys_glob
 from os import path as op
 from pathlib import Path
-import sys
+
 import pytest
 import requests
-
-from ci_watson.artifactory_helpers import (
-    BigdataError,
-    check_url,
-    get_bigdata,
-    get_bigdata_root,
-)
+from ci_watson.artifactory_helpers import BigdataError, check_url, get_bigdata, get_bigdata_root
 
 # from jwst.associations import load_asn
 

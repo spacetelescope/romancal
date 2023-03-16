@@ -2,11 +2,11 @@
 Utilities
 """
 import importlib.util
-from importlib import import_module
 import inspect
 import logging
 import os
 import re
+from importlib import import_module
 
 # Configure logging
 logger = logging.getLogger(__name__)

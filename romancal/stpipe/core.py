@@ -5,11 +5,10 @@ import logging
 import os
 import time
 
-from stpipe import Step, Pipeline
-
-
 import roman_datamodels as rdm
 from roman_datamodels.datamodels import ImageModel
+from stpipe import Pipeline, Step
+
 from ..lib.suffix import remove_suffix
 
 if os.environ.get("CI") == "false":

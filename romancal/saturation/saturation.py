@@ -1,11 +1,11 @@
 #  Module for 2d saturation
 #
 import logging
+
 import numpy as np
+from stcal.saturation.saturation import flag_saturated_pixels
 
 from romancal.lib import dqflags
-
-from stcal.saturation.saturation import flag_saturated_pixels
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

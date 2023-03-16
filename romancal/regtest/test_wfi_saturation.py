@@ -1,10 +1,12 @@
 """ Tests for the saturation step"""
 import os
-import pytest
 
+import pytest
 import roman_datamodels as rdm
-from romancal.stpipe import RomanStep
+
 from romancal.step import SaturationStep
+from romancal.stpipe import RomanStep
+
 from .regtestdata import compare_asdf
 
 

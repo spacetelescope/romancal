@@ -1,12 +1,13 @@
 import os
-import pytest
-import numpy as np
 import warnings
-from astropy import units as u
 
-from romancal.photom import photom, PhotomStep
-from roman_datamodels.datamodels import ImageModel, WfiImgPhotomRefModel
+import numpy as np
+import pytest
+from astropy import units as u
 from roman_datamodels import maker_utils
+from roman_datamodels.datamodels import ImageModel, WfiImgPhotomRefModel
+
+from romancal.photom import PhotomStep, photom
 
 
 def create_photom_wfi_image(min_r=3.1, delta=0.1):

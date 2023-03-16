@@ -1,10 +1,7 @@
 """Load an Association from a file or object"""
 from inspect import isclass
 
-from . import (
-    Association,
-    AssociationRegistry
-)
+from . import Association, AssociationRegistry
 
 
 def load_asn(

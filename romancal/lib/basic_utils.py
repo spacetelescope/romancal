@@ -1,6 +1,7 @@
 """General utility objects"""
 
 import numpy as np
+
 from romancal.lib import dqflags
 
 SATURATEDPIX = dqflags.pixel['SATURATED']

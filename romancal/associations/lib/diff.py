@@ -1,9 +1,9 @@
 """"Diff and compare associations"""
 
-from collections import Counter, UserList
-from copy import copy
 import logging
 import re
+from collections import Counter, UserList
+from copy import copy
 
 from romancal.associations.load_asn import load_asn
 

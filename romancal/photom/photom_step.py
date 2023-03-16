@@ -1,8 +1,9 @@
 #! /usr/bin/env python
 
-from romancal.stpipe import RomanStep
-from romancal.photom import photom
 import roman_datamodels as rdm
+
+from romancal.photom import photom
+from romancal.stpipe import RomanStep
 
 __all__ = ["PhotomStep"]
 

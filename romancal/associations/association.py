@@ -1,22 +1,18 @@
 """ Main module for associations """
 
+import json
+import logging
+import re
 from collections.abc import MutableMapping
 from copy import deepcopy
 from datetime import datetime
-import logging
-import re
-import json
+
 import jsonschema
+from stpipe.format_template import FormatTemplate
 
 from . import __version__
-from .exceptions import (
-    AssociationNotValidError
-)
-from .lib.constraint import (
-    Constraint,
-    meets_conditions
-)
-from stpipe.format_template import FormatTemplate
+from .exceptions import AssociationNotValidError
+from .lib.constraint import Constraint, meets_conditions
 from .lib.ioregistry import IORegistry
 
 __all__ = ['Association']

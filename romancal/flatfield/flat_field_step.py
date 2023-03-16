@@ -2,9 +2,10 @@
 Flat-field a science image
 """
 
+import roman_datamodels as rdm
+
 from ..stpipe import RomanStep
 from . import flat_field
-import roman_datamodels as rdm
 
 __all__ = ["FlatFieldStep"]
 

@@ -3,18 +3,18 @@ Roman pipeline step for image alignment.
 """
 from os import path
 
-from astropy.table import Table
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-from tweakwcs.imalign import align_wcs
+from astropy.table import Table
+from roman_datamodels import datamodels
+from roman_datamodels.util import is_association
 from tweakwcs.correctors import JWSTWCSCorrector
+from tweakwcs.imalign import align_wcs
 from tweakwcs.matchutils import XYXYMatch
 
 # LOCAL
 from ..stpipe import RomanStep
-from roman_datamodels import datamodels
 from . import astrometric_utils as amutils
-from roman_datamodels.util import is_association
 
 
 def _oxford_or_str_join(str_list):

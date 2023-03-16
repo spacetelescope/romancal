@@ -1,6 +1,6 @@
 import numpy as np
 from astropy.modeling.models import RotationSequence3D, Scale
-from gwcs.geometry import SphericalToCartesian, CartesianToSpherical
+from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 
 
 def v23tosky(input_model, wrap_v2_at=180, wrap_lon_at=360):

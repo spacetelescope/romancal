@@ -1,10 +1,11 @@
 """Test suffix replacement"""
 
 import logging
+
 import pytest
 
-from romancal.lib.basic_utils import LoggingContext
 from romancal.lib import suffix as s
+from romancal.lib.basic_utils import LoggingContext
 
 
 @pytest.fixture(scope='module')

@@ -1,16 +1,15 @@
-import pytest
-import numpy as np
 import os
-from astropy.time import Time
-from astropy import units as u
 
-from roman_datamodels.datamodels import RampModel, GainRefModel, ReadnoiseRefModel, ImageModel
+import numpy as np
+import pytest
+from astropy import units as u
+from astropy.time import Time
 from roman_datamodels import maker_utils
 from roman_datamodels import units as ru
+from roman_datamodels.datamodels import GainRefModel, ImageModel, RampModel, ReadnoiseRefModel
 
-from romancal.ramp_fitting import RampFitStep
 from romancal.lib import dqflags
-
+from romancal.ramp_fitting import RampFitStep
 
 MAXIMUM_CORES = ['none', 'quarter', 'half', 'all']
 

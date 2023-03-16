@@ -1,15 +1,10 @@
 """Association attributes common to DMS-based Rules"""
 
-from romancal.associations.lib.counter import Counter
-
-from romancal.associations.exceptions import (
-    AssociationNotValidError,
-)
+from romancal.associations.exceptions import AssociationNotValidError
 from romancal.associations.lib.acid import ACIDMixin
-from romancal.associations.lib.constraint import (Constraint, AttrConstraint,
-                                                  SimpleConstraint)
+from romancal.associations.lib.constraint import AttrConstraint, Constraint, SimpleConstraint
+from romancal.associations.lib.counter import Counter
 from romancal.associations.lib.utilities import getattr_from_list
-
 
 __all__ = ['Constraint_TargetAcq', 'Constraint_WFSC', 'DMSBaseMixin']
 

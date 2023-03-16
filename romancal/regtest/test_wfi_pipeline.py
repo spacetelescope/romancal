@@ -1,16 +1,16 @@
 """ Roman tests for flat field correction """
 import copy
-import pytest
 
 import numpy as np
+import pytest
+import roman_datamodels as rdm
+from gwcs.wcstools import grid_from_bounding_box
 from numpy.testing import assert_allclose
 
-import roman_datamodels as rdm
-from romancal.pipeline.exposure_pipeline import ExposurePipeline
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
-from .regtestdata import compare_asdf
+from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
-from gwcs.wcstools import grid_from_bounding_box
+from .regtestdata import compare_asdf
 
 
 def passfail(bool_expr):

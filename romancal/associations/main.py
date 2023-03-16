@@ -1,20 +1,14 @@
 """Main entry for the association generator"""
-import os
-import sys
 import argparse
 import logging
+import os
+import sys
 
 import numpy as np
 
-from romancal.associations import (
-    __version__,
-    AssociationPool,
-    AssociationRegistry,
-    generate,
-)
-from romancal.associations import config
+from romancal.associations import AssociationPool, AssociationRegistry, __version__, config, generate
 from romancal.associations.lib.dms_base import DMSAttrConstraint
-from romancal.associations.lib.log_config import (log_config, DMS_config)
+from romancal.associations.lib.log_config import DMS_config, log_config
 
 __all__ = ['Main']
 

@@ -4,17 +4,15 @@
 import os
 from itertools import cycle
 
-import pytest
 import numpy as np
-from astropy.time import Time
-from astropy import units as u
-
+import pytest
 import roman_datamodels.stnode as rds
+from astropy import units as u
+from astropy.time import Time
 from roman_datamodels import datamodels as rdm
-from roman_datamodels.datamodels import GainRefModel
-from roman_datamodels.datamodels import ReadnoiseRefModel
 from roman_datamodels import maker_utils
 from roman_datamodels import units as ru
+from roman_datamodels.datamodels import GainRefModel, ReadnoiseRefModel
 
 from romancal.jump import JumpStep
 

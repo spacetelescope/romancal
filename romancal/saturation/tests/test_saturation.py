@@ -4,12 +4,12 @@ Unit tests for saturation flagging
 
 """
 
-import pytest
 import numpy as np
-
-from romancal.saturation.saturation import flag_saturation
-from romancal.lib import dqflags
+import pytest
 from roman_datamodels import maker_utils
+
+from romancal.lib import dqflags
+from romancal.saturation.saturation import flag_saturation
 
 
 def test_basic_saturation_flagging(setup_wfi_datamodels):

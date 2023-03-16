@@ -1,22 +1,17 @@
+import os
+import os.path as op
+import pprint
+import shutil
+import sys
 from difflib import unified_diff
 from glob import glob as _sys_glob
 from io import StringIO
-import os
-import os.path as op
 from pathlib import Path
-import pprint
-import requests
-import shutil
-import sys
 
 import asdf
+import requests
 from asdf.commands.diff import diff as asdf_diff
-from ci_watson.artifactory_helpers import (
-    check_url,
-    get_bigdata_root,
-    get_bigdata,
-    BigdataError,
-)
+from ci_watson.artifactory_helpers import BigdataError, check_url, get_bigdata, get_bigdata_root
 
 # from romancal.lib.suffix import replace_suffix
 from romancal.stpipe import RomanStep

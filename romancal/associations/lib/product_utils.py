@@ -1,9 +1,9 @@
 """ Utilities for product manipulation."""
 
-from collections import defaultdict, Counter
 import copy
 import logging
 import warnings
+from collections import Counter, defaultdict
 
 from .. import config
 from .diff import compare_product_membership

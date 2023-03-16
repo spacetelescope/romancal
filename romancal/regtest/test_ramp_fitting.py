@@ -1,7 +1,9 @@
 """ Module to test rampfit with optional output """
 
 import pytest
+
 from romancal.stpipe import RomanStep
+
 from .regtestdata import compare_asdf
 
 

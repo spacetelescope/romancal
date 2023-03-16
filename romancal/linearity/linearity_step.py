@@ -2,15 +2,15 @@
 Apply linearity correction to a science image
 """
 
-from roman_datamodels import datamodels as rdd
-import roman_datamodels as rdm
 import numpy as np
-
-from romancal.stpipe import RomanStep
-from romancal.lib import dqflags
-from stcal.linearity.linearity import linearity_correction
+import roman_datamodels as rdm
 from astropy import units as u
+from roman_datamodels import datamodels as rdd
 from roman_datamodels import units as ru
+from stcal.linearity.linearity import linearity_correction
+
+from romancal.lib import dqflags
+from romancal.stpipe import RomanStep
 
 __all__ = ["LinearityStep"]
 
