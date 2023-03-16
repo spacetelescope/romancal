@@ -71,6 +71,7 @@ jobs:
           python-version: 3.11
         - macos: test-xdist-ddtrace
           python-version: 3.11
+        - linux: test-devdeps-xdist
         - linux: test-cov-xdist
           coverage: codecov
   test_numpy:

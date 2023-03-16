@@ -52,3 +52,16 @@ jobs:
           python-version: 3.10
         - linux: test-pyargs-xdist
         - linux: test-devdeps-xdist
+          python-version: 3.8
+        - linux: test-devdeps-xdist
+          python-version: 3.8
+        - linux: test-devdeps-xdist
+          python-version: 3.9
+        - linux: test-devdeps-xdist
+          python-version: 3.9
+        - linux: test-devdeps-xdist
+          python-version: 3.10
+        - macos: test-devdeps-xdist
+          python-version: 3.10
+        - macos: test-devdeps-xdist
+          python-version: 3.11
