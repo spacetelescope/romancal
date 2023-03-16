@@ -14,7 +14,12 @@ def test_ramp_fitting_step(rtdata, ignore_asdf_paths):
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
-    args = ["romancal.step.RampFitStep", rtdata.input, "--save_opt=True", "--opt_name=rampfit_opt.asdf"]
+    args = [
+        "romancal.step.RampFitStep",
+        rtdata.input,
+        "--save_opt=True",
+        "--opt_name=rampfit_opt.asdf",
+    ]
     RomanStep.from_cmdline(args)
     output = "r0000101001001001001_01101_0001_WFI01_rampfit.asdf"
     rtdata.output = output

@@ -55,7 +55,9 @@ class DQInitStep(RomanStep):
                     input_ramp[key].update(input_model.__getattr__(key))
                 elif isinstance(input_ramp[key], np.ndarray):
                     # Cast input ndarray as RampModel dtype
-                    input_ramp[key] = input_model.__getattr__(key).astype(input_ramp[key].dtype)
+                    input_ramp[key] = input_model.__getattr__(key).astype(
+                        input_ramp[key].dtype
+                    )
                 else:
                     input_ramp[key] = input_model.__getattr__(key)
 
@@ -68,8 +70,12 @@ class DQInitStep(RomanStep):
         x_start = input_model.meta.guidestar.gw_window_xstart
         x_end = input_model.meta.guidestar.gw_window_xsize + x_start
         # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
-        init_model.pixeldq[int(x_start) : int(x_end), :] = dqflags.pixel["GW_AFFECTED_DATA"]
-        self.log.info(f"Flagging rows from: {x_start} to {x_end} as affected by guide window read")
+        init_model.pixeldq[int(x_start) : int(x_end), :] = dqflags.pixel[
+            "GW_AFFECTED_DATA"
+        ]
+        self.log.info(
+            f"Flagging rows from: {x_start} to {x_end} as affected by guide window read"
+        )
 
         # Get reference file path
         reference_file_name = self.get_reference_file(init_model, "mask")

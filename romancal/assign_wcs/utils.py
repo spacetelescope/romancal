@@ -124,7 +124,9 @@ def wcs_from_footprints(
                 fiducial[k] = ref_coord[i]
                 i += 1
 
-    ref_fiducial = np.array([refmodel.meta.wcsinfo.ra_ref, refmodel.meta.wcsinfo.dec_ref])
+    ref_fiducial = np.array(
+        [refmodel.meta.wcsinfo.ra_ref, refmodel.meta.wcsinfo.dec_ref]
+    )
 
     prj = astmodels.Pix2Sky_TAN()
 
@@ -142,22 +144,35 @@ def wcs_from_footprints(
         else:
             roll_ref = np.deg2rad(rotation) + (vparity * v3yangle)
 
-        pc = np.reshape(calc_rotation_matrix(roll_ref, v3yangle, vparity=vparity), (2, 2))
+        pc = np.reshape(
+            calc_rotation_matrix(roll_ref, v3yangle, vparity=vparity), (2, 2)
+        )
 
         rotation = astmodels.AffineTransformation2D(pc, name="pc_rotation_matrix")
         transform.append(rotation)
 
         if sky_axes:
             if not pscale:
-                pscale = compute_scale(refmodel.meta.wcs, ref_fiducial, pscale_ratio=pscale_ratio)
-            transform.append(astmodels.Scale(pscale, name="cdelt1") & astmodels.Scale(pscale, name="cdelt2"))
+                pscale = compute_scale(
+                    refmodel.meta.wcs, ref_fiducial, pscale_ratio=pscale_ratio
+                )
+            transform.append(
+                astmodels.Scale(pscale, name="cdelt1")
+                & astmodels.Scale(pscale, name="cdelt2")
+            )
 
         if transform:
             transform = functools.reduce(lambda x, y: x | y, transform)
 
     out_frame = refmodel.meta.wcs.output_frame
     input_frame = refmodel.meta.wcs.input_frame
-    wnew = wcs_from_fiducial(fiducial, coordinate_frame=out_frame, projection=prj, transform=transform, input_frame=input_frame)
+    wnew = wcs_from_fiducial(
+        fiducial,
+        coordinate_frame=out_frame,
+        projection=prj,
+        transform=transform,
+        input_frame=input_frame,
+    )
 
     footprints = [w.footprint().T for w in wcslist]
     domain_bounds = np.hstack([wnew.backward_transform(*f) for f in footprints])
@@ -176,7 +191,9 @@ def wcs_from_footprints(
         offset2 -= axis_min_values[1]
     else:
         offset1, offset2 = ref_pixel
-    offsets = astmodels.Shift(-offset1, name="ref_pixel1") & astmodels.Shift(-offset2, name="ref_pixel2")
+    offsets = astmodels.Shift(-offset1, name="ref_pixel1") & astmodels.Shift(
+        -offset2, name="ref_pixel2"
+    )
 
     wnew.insert_transform("detector", offsets, after=True)
     wnew.bounding_box = output_bounding_box
@@ -190,7 +207,12 @@ def wcs_from_footprints(
     return wnew
 
 
-def compute_scale(wcs: WCS, fiducial: Union[tuple, np.ndarray], disp_axis: int = None, pscale_ratio: float = None) -> float:
+def compute_scale(
+    wcs: WCS,
+    fiducial: Union[tuple, np.ndarray],
+    disp_axis: int = None,
+    pscale_ratio: float = None,
+) -> float:
     """Compute scaling transform.
 
     Parameters
@@ -227,7 +249,11 @@ def compute_scale(wcs: WCS, fiducial: Union[tuple, np.ndarray], disp_axis: int =
     crpix_with_offsets = np.vstack((crpix, crpix + delta, crpix + np.roll(delta, 1))).T
     crval_with_offsets = wcs(*crpix_with_offsets, with_bounding_box=False)
 
-    coords = SkyCoord(ra=crval_with_offsets[spatial_idx[0]], dec=crval_with_offsets[spatial_idx[1]], unit="deg")
+    coords = SkyCoord(
+        ra=crval_with_offsets[spatial_idx[0]],
+        dec=crval_with_offsets[spatial_idx[1]],
+        unit="deg",
+    )
     xscale = np.abs(coords[0].separation(coords[1]).value)
     yscale = np.abs(coords[0].separation(coords[2]).value)
 
@@ -244,7 +270,9 @@ def compute_scale(wcs: WCS, fiducial: Union[tuple, np.ndarray], disp_axis: int =
     return np.sqrt(xscale * yscale)
 
 
-def calc_rotation_matrix(roll_ref: float, v3i_yang: float, vparity: int = 1) -> List[float]:
+def calc_rotation_matrix(
+    roll_ref: float, v3i_yang: float, vparity: int = 1
+) -> List[float]:
     """Calculate the rotation matrix.
 
     Parameters

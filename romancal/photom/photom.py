@@ -29,7 +29,9 @@ def photom_io(input_model, photom_metadata):
     # Store the conversion factor in the meta data
     log.info(f"photmjsr value: {conversion:.6g}")
     input_model.meta.photometry.conversion_megajanskys = conversion
-    input_model.meta.photometry.conversion_microjanskys = conversion.to(u.microjansky / u.arcsecond**2)
+    input_model.meta.photometry.conversion_microjanskys = conversion.to(
+        u.microjansky / u.arcsecond**2
+    )
 
     # Get the scalar conversion uncertainty factor
     uncertainty_conv = photom_metadata["uncertainty"]
@@ -37,7 +39,9 @@ def photom_io(input_model, photom_metadata):
     # Store the uncertainty conversion factor in the meta data
     log.info(f"uncertainty value: {uncertainty_conv:.6g}")
     input_model.meta.photometry.conversion_megajanskys_uncertainty = uncertainty_conv
-    input_model.meta.photometry.conversion_microjanskys_uncertainty = uncertainty_conv.to(u.microjansky / u.arcsecond**2)
+    input_model.meta.photometry.conversion_microjanskys_uncertainty = (
+        uncertainty_conv.to(u.microjansky / u.arcsecond**2)
+    )
 
     # Return updated input model
     return input_model
@@ -93,9 +97,14 @@ def apply_photom(input_model, photom):
     """
     # Obtain photom parameters for the selected optical element
     try:
-        photom_parameters = photom.phot_table[input_model.meta.instrument.optical_element.upper()]
+        photom_parameters = photom.phot_table[
+            input_model.meta.instrument.optical_element.upper()
+        ]
     except KeyError:
-        warnings.warn(f"No matching photom parameters for {input_model.meta.instrument.optical_element}")
+        warnings.warn(
+            "No matching photom parameters for"
+            f" {input_model.meta.instrument.optical_element}"
+        )
         return input_model
 
     # Copy pixel area information to output datamodel

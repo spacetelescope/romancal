@@ -98,7 +98,9 @@ def apply_flat_field(science, flat):
     # Find pixels in the flat that have a value of zero, and set
     # their DQ to NO_FLAT_FIELD
     flat_zero = np.where(flat_data == 0.0)
-    flat_dq[flat_zero] = np.bitwise_or(flat_dq[flat_zero], dqflags.pixel["NO_FLAT_FIELD"])
+    flat_dq[flat_zero] = np.bitwise_or(
+        flat_dq[flat_zero], dqflags.pixel["NO_FLAT_FIELD"]
+    )
 
     # Find all pixels in the flat that have a DQ value of NO_FLAT_FIELD
     flat_bad = np.bitwise_and(flat_dq, dqflags.pixel["NO_FLAT_FIELD"])
@@ -108,7 +110,9 @@ def apply_flat_field(science, flat):
     flat_data[np.where(flat_bad)] = 1.0
     # Now let's apply the correction to science data and error arrays.  Rely
     # on array broadcasting to handle the cubes
-    science.data = u.Quantity((science.data.value / flat_data), ru.electron / u.s, dtype=science.data.dtype)
+    science.data = u.Quantity(
+        (science.data.value / flat_data), ru.electron / u.s, dtype=science.data.dtype
+    )
 
     # Update the variances using BASELINE algorithm.  For guider data, it has
     # not gone through ramp fitting so there is no Poisson noise or readnoise

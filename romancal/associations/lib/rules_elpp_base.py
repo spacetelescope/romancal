@@ -22,7 +22,10 @@ from romancal.associations.lib.dms_base import (
 )
 from romancal.associations.lib.keyvalue_registry import KeyValueRegistryError
 from romancal.associations.lib.member import Member
-from romancal.associations.lib.product_utils import prune_duplicate_associations, prune_duplicate_products
+from romancal.associations.lib.product_utils import (
+    prune_duplicate_associations,
+    prune_duplicate_products,
+)
 from romancal.associations.lib.utilities import evaluate, is_iterable
 from romancal.associations.registry import RegistryMarker
 
@@ -94,7 +97,10 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         # Initialize validity checks
         self.validity.update(
             {
-                "has_science": {"validated": True, "check": lambda member: member["exptype"] == "science"},
+                "has_science": {
+                    "validated": True,
+                    "check": lambda member: member["exptype"] == "science",
+                },
             }
         )
 
@@ -122,7 +128,9 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         except KeyError:
             result = []
         else:
-            result = [member for member in members if member_type == member["exptype"].lower()]
+            result = [
+                member for member in members if member_type == member["exptype"].lower()
+            ]
 
         return result
 
@@ -244,9 +252,14 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
             # Pool
             if self.data["asn_pool"] == "none":
                 self.data["asn_pool"] = basename(item.meta["pool_file"])
-                parsed_name = re.search(_DMS_POOLNAME_REGEX, self.data["asn_pool"].split(".")[0])
+                parsed_name = re.search(
+                    _DMS_POOLNAME_REGEX, self.data["asn_pool"].split(".")[0]
+                )
                 if parsed_name is not None:
-                    pool_meta = {"program_id": parsed_name.group(1), "version": parsed_name.group(2)}
+                    pool_meta = {
+                        "program_id": parsed_name.group(1),
+                        "version": parsed_name.group(2),
+                    }
                     self.meta["pool_meta"] = pool_meta
 
         # Product-based updates
@@ -275,7 +288,9 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         exptype = self.get_exposure_type(item)
 
         # Determine expected member name
-        expname = Utility.rename_to_level2(item["filename"], exp_type=item["exp_type"], member_exptype=exptype)
+        expname = Utility.rename_to_level2(
+            item["filename"], exp_type=item["exp_type"], member_exptype=exptype
+        )
 
         member = Member(
             {
@@ -316,7 +331,9 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         members = self.current_product["members"]
         members.append(member)
         if member["exposerr"] not in _EMPTY:
-            logger.warning(f"Member {item['filename']} has exposure error \"{member['exposerr']}\"")
+            logger.warning(
+                f"Member {item['filename']} has exposure error \"{member['exposerr']}\""
+            )
 
         # Update meta info
         self.update_asn(item=item, member=member)
@@ -373,12 +390,16 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
 
     def __str__(self):
         result_list = []
-        result_list.append(f"{self.asn_name} with {len(self.data['products'])} products")
+        result_list.append(
+            f"{self.asn_name} with {len(self.data['products'])} products"
+        )
         result_list.append(f"Rule={self.data['asn_rule']}")
         result_list.append(self.data["constraints"])
         result_list.append("Products:")
         for product in self.data["products"]:
-            result_list.append(f"\t{product['name']} with {len(product['members'])} members")
+            result_list.append(
+                f"\t{product['name']} with {len(product['members'])} members"
+            )
         result = "\n".join(result_list)
         return result
 
@@ -425,7 +446,12 @@ class Utility:
         """
         match = re.match(_LEVEL1B_REGEX, level1b_name)
         if match is None or match.group("type") != "_uncal":
-            logger.warning(('Item FILENAME="{}" is not a Level 1b name. Cannot transform to Level 2b.').format(level1b_name))
+            logger.warning(
+                (
+                    'Item FILENAME="{}" is not a Level 1b name. Cannot transform to'
+                    " Level 2b."
+                ).format(level1b_name)
+            )
             return level1b_name
 
         if member_exptype == "background":
@@ -439,7 +465,9 @@ class Utility:
         # if is_tso:
         #    suffix += 'ints'
 
-        level2_name = "".join([match.group("path"), "_", suffix, match.group("extension")])
+        level2_name = "".join(
+            [match.group("path"), "_", suffix, match.group("extension")]
+        )
         return level2_name
 
     @staticmethod
@@ -503,7 +531,9 @@ class Utility:
 # Utilities
 # ---------
 # Define default product name filling
-format_product = FormatTemplate(key_formats={"source_id": ["s{:05d}", "s{:s}"], "expspcin": ["{:0>2s}"]})
+format_product = FormatTemplate(
+    key_formats={"source_id": ["s{:05d}", "s{:s}"], "expspcin": ["{:0>2s}"]}
+)
 
 
 def dms_product_name_noopt(asn):
@@ -646,7 +676,11 @@ class Constraint_Image_Science(DMSAttrConstraint):
     """Select on science images"""
 
     def __init__(self):
-        super().__init__(name="exp_type", sources=["exp_type"], value="|".join(IMAGE2_SCIENCE_EXP_TYPES))
+        super().__init__(
+            name="exp_type",
+            sources=["exp_type"],
+            value="|".join(IMAGE2_SCIENCE_EXP_TYPES),
+        )
 
 
 class Constraint_Single_Science(SimpleConstraint):
@@ -670,14 +704,24 @@ class Constraint_Single_Science(SimpleConstraint):
     """
 
     def __init__(self, has_science_fn, **sc_kwargs):
-        super().__init__(name="single_science", value=False, sources=lambda item: has_science_fn(), **sc_kwargs)
+        super().__init__(
+            name="single_science",
+            value=False,
+            sources=lambda item: has_science_fn(),
+            **sc_kwargs,
+        )
 
 
 class Constraint_Spectral(DMSAttrConstraint):
     """Constrain on spectral exposure types"""
 
     def __init__(self):
-        super().__init__(name="exp_type", sources=["exp_type"], value="wfi_grism|wfi_prism", force_unique=False)
+        super().__init__(
+            name="exp_type",
+            sources=["exp_type"],
+            value="wfi_grism|wfi_prism",
+            force_unique=False,
+        )
 
 
 class Constraint_Spectral_Science(Constraint):
@@ -693,10 +737,19 @@ class Constraint_Spectral_Science(Constraint):
         if exclude_exp_types is None:
             general_science = SPEC2_SCIENCE_EXP_TYPES
         else:
-            general_science = set(SPEC2_SCIENCE_EXP_TYPES).symmetric_difference(exclude_exp_types)
+            general_science = set(SPEC2_SCIENCE_EXP_TYPES).symmetric_difference(
+                exclude_exp_types
+            )
 
         super().__init__(
-            [DMSAttrConstraint(name="exp_type", sources=["exp_type"], value="|".join(general_science))], reduce=Constraint.any
+            [
+                DMSAttrConstraint(
+                    name="exp_type",
+                    sources=["exp_type"],
+                    value="|".join(general_science),
+                )
+            ],
+            reduce=Constraint.any,
         )
 
 
@@ -766,7 +819,9 @@ class AsnMixin_Science(DMS_ELPP_Base):
                 DMSAttrConstraint(
                     name="acq_obsnum",
                     sources=["obs_num"],
-                    value=lambda: "(" + "|".join(self.constraints["obs_num"].found_values) + ")",
+                    value=lambda: "("
+                    + "|".join(self.constraints["obs_num"].found_values)
+                    + ")",
                     force_unique=False,
                 )
             ],
@@ -780,7 +835,12 @@ class AsnMixin_Science(DMS_ELPP_Base):
                 Constraint_Base(),
                 DMSAttrConstraint(sources=["is_imprt"], force_undefined=True),
                 Constraint(
-                    [Constraint([self.constraints, Constraint_Obsnum()], name="rule"), constraint_acqs],
+                    [
+                        Constraint(
+                            [self.constraints, Constraint_Obsnum()], name="rule"
+                        ),
+                        constraint_acqs,
+                    ],
                     name="acq_check",
                     reduce=Constraint.any,
                 ),

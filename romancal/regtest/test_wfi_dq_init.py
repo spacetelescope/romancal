@@ -31,7 +31,9 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
 
     step.log.info(f'DMS25 MSG: First data file: {rtdata.input.rsplit("/", 1)[1]}')
     ref_file_path = step.get_reference_file(model, "mask")
-    step.log.info(f'DMS25 MSG: CRDS matched mask file: {ref_file_path.rsplit("/", 1)[1]}')
+    step.log.info(
+        f'DMS25 MSG: CRDS matched mask file: {ref_file_path.rsplit("/", 1)[1]}'
+    )
     ref_file_name = os.path.split(ref_file_path)[-1]
 
     assert "roman_wfi_mask" in ref_file_name
@@ -47,7 +49,10 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
     )
     RomanStep.from_cmdline(args)
     ramp_out = rdm.open(rtdata.output)
-    step.log.info(f'DMS25 MSG: Does ramp data contain pixeldq from mask file? : {("roman.pixeldq" in ramp_out.to_flat_dict())}')
+    step.log.info(
+        "DMS25 MSG: Does ramp data contain pixeldq from mask file? :"
+        f' {("roman.pixeldq" in ramp_out.to_flat_dict())}'
+    )
     assert "roman.pixeldq" in ramp_out.to_flat_dict()
 
     rtdata.get_truth(f"truth/WFI/image/{output}")
@@ -80,7 +85,9 @@ def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
 
     step.log.info(f'DMS26 MSG: First data file: {rtdata.input.rsplit("/", 1)[1]}')
     ref_file_path = step.get_reference_file(model, "mask")
-    step.log.info(f'DMS26 MSG: CRDS matched mask file: {ref_file_path.rsplit("/", 1)[1]}')
+    step.log.info(
+        f'DMS26 MSG: CRDS matched mask file: {ref_file_path.rsplit("/", 1)[1]}'
+    )
     ref_file_name = os.path.split(ref_file_path)[-1]
 
     assert "roman_wfi_mask" in ref_file_name
@@ -96,7 +103,10 @@ def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
     )
     RomanStep.from_cmdline(args)
     ramp_out = rdm.open(rtdata.output)
-    step.log.info(f'DMS26 MSG: Does ramp data contain pixeldq from mask file? : {("roman.pixeldq" in ramp_out.to_flat_dict())}')
+    step.log.info(
+        "DMS26 MSG: Does ramp data contain pixeldq from mask file? :"
+        f' {("roman.pixeldq" in ramp_out.to_flat_dict())}'
+    )
     assert "roman.pixeldq" in ramp_out.to_flat_dict()
 
     rtdata.get_truth(f"truth/WFI/grism/{output}")

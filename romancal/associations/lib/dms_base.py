@@ -2,7 +2,11 @@
 
 from romancal.associations.exceptions import AssociationNotValidError
 from romancal.associations.lib.acid import ACIDMixin
-from romancal.associations.lib.constraint import AttrConstraint, Constraint, SimpleConstraint
+from romancal.associations.lib.constraint import (
+    AttrConstraint,
+    Constraint,
+    SimpleConstraint,
+)
 from romancal.associations.lib.counter import Counter
 from romancal.associations.lib.utilities import getattr_from_list
 
@@ -120,12 +124,29 @@ SPECIAL_EXPOSURE_MODIFIERS = {
 MEMBER_KEY = "expname"
 
 # Non-specified values found in DMS Association Pools
-_EMPTY = (None, "", "NULL", "Null", "null", "--", "N", "n", "F", "f", "FALSE", "false", "False", "N/A", "n/a")
+_EMPTY = (
+    None,
+    "",
+    "NULL",
+    "Null",
+    "null",
+    "--",
+    "N",
+    "n",
+    "F",
+    "f",
+    "FALSE",
+    "false",
+    "False",
+    "N/A",
+    "n/a",
+)
 
 # Degraded status information
 _DEGRADED_STATUS_OK = "No known degraded exposures in association."
 _DEGRADED_STATUS_NOTOK = (
-    "One or more members have an error associated with them.\nDetails can be found in the member.exposerr attribute."
+    "One or more members have an error associated with them.\nDetails can be found in"
+    " the member.exposerr attribute."
 )
 
 
@@ -237,7 +258,11 @@ class DMSBaseMixin(ACIDMixin):
     def from_items(self):
         """The list of items that contributed to the association."""
         try:
-            items = [member.item for product in self["products"] for member in product["members"]]
+            items = [
+                member.item
+                for product in self["products"]
+                for member in product["members"]
+            ]
         except KeyError:
             items = []
         return items
@@ -245,7 +270,11 @@ class DMSBaseMixin(ACIDMixin):
     @property
     def member_ids(self):
         """Set of all member ids in all products of this association"""
-        member_ids = {member[MEMBER_KEY] for product in self["products"] for member in product["members"]}
+        member_ids = {
+            member[MEMBER_KEY]
+            for product in self["products"]
+            for member in product["members"]
+        }
         return member_ids
 
     @property
@@ -561,7 +590,9 @@ class Constraint_TargetAcq(SimpleConstraint):
         else:
             _get_exposure_type = association.get_exposure_type
 
-        super().__init__(name="target_acq", value="target_acquisition", sources=_get_exposure_type)
+        super().__init__(
+            name="target_acq", value="target_acquisition", sources=_get_exposure_type
+        )
 
 
 class Constraint_WFSC(Constraint):
@@ -569,7 +600,18 @@ class Constraint_WFSC(Constraint):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            [Constraint([DMSAttrConstraint(name="wfsc", sources=["visitype"], value=".+wfsc.+", force_unique=True)])]
+            [
+                Constraint(
+                    [
+                        DMSAttrConstraint(
+                            name="wfsc",
+                            sources=["visitype"],
+                            value=".+wfsc.+",
+                            force_unique=True,
+                        )
+                    ]
+                )
+            ]
         )
 
 

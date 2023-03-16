@@ -54,8 +54,12 @@ class PhotomStep(RomanStep):
                     input_model.meta.photometry.pixelarea_steradians = None
                     input_model.meta.photometry.conversion_megajanskys = None
                     input_model.meta.photometry.conversion_microjanskys = None
-                    input_model.meta.photometry.conversion_megajanskys_uncertainty = None
-                    input_model.meta.photometry.conversion_microjanskys_uncertainty = None
+                    input_model.meta.photometry.conversion_megajanskys_uncertainty = (
+                        None
+                    )
+                    input_model.meta.photometry.conversion_microjanskys_uncertainty = (
+                        None
+                    )
                     try:
                         photom_model.close()
                     except AttributeError:

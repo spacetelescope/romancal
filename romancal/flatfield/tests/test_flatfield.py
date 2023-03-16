@@ -19,7 +19,9 @@ from romancal.flatfield import FlatFieldStep
 )
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 def test_flatfield_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
@@ -31,12 +33,22 @@ def test_flatfield_step_interface(instrument, exptype):
     wfi_image.meta.instrument.detector = "WFI01"
     wfi_image.meta.instrument.optical_element = "F158"
     wfi_image.meta.exposure.type = exptype
-    wfi_image.data = u.Quantity(np.ones(shape, dtype=np.float32), ru.electron / u.s, dtype=np.float32)
+    wfi_image.data = u.Quantity(
+        np.ones(shape, dtype=np.float32), ru.electron / u.s, dtype=np.float32
+    )
     wfi_image.dq = np.zeros(shape, dtype=np.uint32)
-    wfi_image.err = u.Quantity(np.zeros(shape, dtype=np.float32), ru.electron / u.s, dtype=np.float32)
-    wfi_image.var_poisson = u.Quantity(np.zeros(shape, dtype=np.float32), ru.electron**2 / u.s**2, dtype=np.float32)
-    wfi_image.var_rnoise = u.Quantity(np.zeros(shape, dtype=np.float32), ru.electron**2 / u.s**2, dtype=np.float32)
-    wfi_image.var_flat = u.Quantity(np.zeros(shape, dtype=np.float32), ru.electron**2 / u.s**2, dtype=np.float32)
+    wfi_image.err = u.Quantity(
+        np.zeros(shape, dtype=np.float32), ru.electron / u.s, dtype=np.float32
+    )
+    wfi_image.var_poisson = u.Quantity(
+        np.zeros(shape, dtype=np.float32), ru.electron**2 / u.s**2, dtype=np.float32
+    )
+    wfi_image.var_rnoise = u.Quantity(
+        np.zeros(shape, dtype=np.float32), ru.electron**2 / u.s**2, dtype=np.float32
+    )
+    wfi_image.var_flat = u.Quantity(
+        np.zeros(shape, dtype=np.float32), ru.electron**2 / u.s**2, dtype=np.float32
+    )
 
     wfi_image_model = ImageModel(wfi_image)
     flatref = stnode.FlatRef()
@@ -66,7 +78,9 @@ def test_flatfield_step_interface(instrument, exptype):
 )
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 def test_crds_temporal_match(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
@@ -88,7 +102,9 @@ def test_crds_temporal_match(instrument, exptype):
     wfi_image_model.meta.exposure.start_time = Time("2021-09-01T00:11:11.110")
     wfi_image_model.meta.exposure.end_time = Time("2021-09-01T00:33:11.110")
     ref_file_path_b = step.get_reference_file(wfi_image_model, "flat")
-    assert "/".join(ref_file_path.rsplit("/", 1)[1:]) != "/".join(ref_file_path_b.rsplit("/", 1)[1:])
+    assert "/".join(ref_file_path.rsplit("/", 1)[1:]) != "/".join(
+        ref_file_path_b.rsplit("/", 1)[1:]
+    )
 
 
 @pytest.mark.parametrize(
@@ -106,7 +122,9 @@ def test_crds_temporal_match(instrument, exptype):
 )
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 # Test that spectroscopic exposure types will skip flat field step
 def test_spectroscopic_skip(instrument, exptype):

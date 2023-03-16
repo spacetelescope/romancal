@@ -18,7 +18,10 @@ def test_suffix_existence(enable_logging):
     """Generate current suffix list and compare"""
 
     calculated_suffixes = s.find_suffixes()
-    found_suffixes = s.combine_suffixes(to_add=(calculated_suffixes, s.SUFFIXES_TO_ADD), to_remove=(s.SUFFIXES_TO_DISCARD,))
+    found_suffixes = s.combine_suffixes(
+        to_add=(calculated_suffixes, s.SUFFIXES_TO_ADD),
+        to_remove=(s.SUFFIXES_TO_DISCARD,),
+    )
     diff = set(found_suffixes).symmetric_difference(s.KNOW_SUFFIXES)
     assert not diff, f"Suffixes unaccounted for:\n{diff}"
 

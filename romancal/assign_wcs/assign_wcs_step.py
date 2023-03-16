@@ -75,7 +75,12 @@ def load_wcs(input_model, reference_files=None):
 
     # Frames
     detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
-    v2v3 = cf.Frame2D(name="v2v3", axes_order=(0, 1), axes_names=("v2", "v3"), unit=(u.arcsec, u.arcsec))
+    v2v3 = cf.Frame2D(
+        name="v2v3",
+        axes_order=(0, 1),
+        axes_names=("v2", "v3"),
+        unit=(u.arcsec, u.arcsec),
+    )
     world = cf.CelestialFrame(reference_frame=coord.ICRS(), name="world")
 
     # Transforms between frames

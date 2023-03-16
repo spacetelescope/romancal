@@ -30,7 +30,9 @@ def create_distortion():
 
     model = create_image()
     dist = maker_utils.mk_distortion()
-    dist.coordinate_distortion_transform.bounding_box = wcs_bbox_from_shape(model.data.shape)
+    dist.coordinate_distortion_transform.bounding_box = wcs_bbox_from_shape(
+        model.data.shape
+    )
     distortions.append(dist)
 
     return distortions
@@ -42,7 +44,10 @@ def create_step():
 
     def assign_wcs_step(image, file_name):
         if os.environ.get("CI") == "true":
-            pytest.skip("Roman CRDS servers are not currently available outside the internal network")
+            pytest.skip(
+                "Roman CRDS servers are not currently available outside the internal"
+                " network"
+            )
         return AssignWcsStep.call(image, override_distortion=file_name)
 
     return [load_wcs_step, assign_wcs_step]
@@ -82,7 +87,11 @@ def test_wcs(tmpdir, distortion, step):
     assert l2_wcs.meta.wcs.bounding_box is not None
 
     # check if footprint solution for each detector is within 10% of (RA_REF, DEC_REF)
-    s_region_alpha_list = [float(x) for i, x in enumerate(s_region_list[2:]) if i % 2 == 0]
-    s_region_delta_list = [float(x) for i, x in enumerate(s_region_list[2:]) if i % 2 != 0]
+    s_region_alpha_list = [
+        float(x) for i, x in enumerate(s_region_list[2:]) if i % 2 == 0
+    ]
+    s_region_delta_list = [
+        float(x) for i, x in enumerate(s_region_list[2:]) if i % 2 != 0
+    ]
     assert_allclose(s_region_alpha_list, l2_wcs.meta.wcsinfo.ra_ref, rtol=1e-1, atol=0)
     assert_allclose(s_region_delta_list, l2_wcs.meta.wcsinfo.dec_ref, rtol=1e-1, atol=0)

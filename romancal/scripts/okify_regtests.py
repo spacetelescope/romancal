@@ -35,7 +35,9 @@ def parse_args():
         default="romancal",
         metavar="job-name",
     )
-    parser.add_argument("--dry-run", action="store_true", help="pass the --dry-run flag to JFrog CLI")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="pass the --dry-run flag to JFrog CLI"
+    )
 
     return parser.parse_args()
 
@@ -62,7 +64,10 @@ def artifactory_get_breadcrumbs(build_number, job_name, suffix):
 
     # Retreive all the okify specfiles for failed tests.
     args = list(
-        ["jfrog", "rt", "dl"] + [f"{ARTIFACTORY_REPO}/*/*{suffix}"] + [f"--build={build_name}/{build_number}"] + ["--flat"]
+        ["jfrog", "rt", "dl"]
+        + [f"{ARTIFACTORY_REPO}/*/*{suffix}"]
+        + [f"--build={build_name}/{build_number}"]
+        + ["--flat"]
     )
     subprocess.run(args, check=True, capture_output=True)
 
@@ -123,7 +128,9 @@ def main():
                     except KeyError:
                         test_name = "test_name"
 
-                remote_results = os.path.join(remote_results_path, os.path.basename(output))
+                remote_results = os.path.join(
+                    remote_results_path, os.path.basename(output)
+                )
 
                 test_number = i + 1
 
@@ -132,7 +139,11 @@ def main():
                 print("—" * TERMINAL_WIDTH)
                 print(f"OK: {remote_results}")
                 print(f"--> {truth_remote}")
-                print(f"[ test {test_number} of {number_failed_tests} ]".center(TERMINAL_WIDTH, "—"))
+                print(
+                    f"[ test {test_number} of {number_failed_tests} ]".center(
+                        TERMINAL_WIDTH, "—"
+                    )
+                )
 
                 # Ask if user wants to okify this test
                 while True:

@@ -52,7 +52,8 @@ def check_sphinx_version(expected_version):
     expected_version = LooseVersion(expected_version)
     if sphinx_version < expected_version:
         raise RuntimeError(
-            f"At least Sphinx version {expected_version} is required to build this documentation.  Found {sphinx_version}."
+            f"At least Sphinx version {expected_version} is required to build this"
+            f" documentation.  Found {sphinx_version}."
         )
 
 
@@ -68,7 +69,9 @@ if sys.version_info[0] == 2:
     intersphinx_mapping["python"] = ("http://docs.python.org/2/", None)
     intersphinx_mapping["pythonloc"] = (
         "http://docs.python.org/",
-        os.path.abspath(os.path.join(os.path.dirname(__file__), "local/python2_local_links.inv")),
+        os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "local/python2_local_links.inv")
+        ),
     )
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -213,7 +216,10 @@ pygments_style = "default"
 
 # Mapping for links to the ASDF Standard in ASDF schema documentation
 asdf_schema_reference_mappings = [
-    ("tag:stsci.edu:asdf", "http://asdf-standard.readthedocs.io/en/latest/generated/stsci.edu/asdf/"),
+    (
+        "tag:stsci.edu:asdf",
+        "http://asdf-standard.readthedocs.io/en/latest/generated/stsci.edu/asdf/",
+    ),
 ]
 
 # -- Options for HTML output ----------------------------------------------

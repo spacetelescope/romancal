@@ -36,7 +36,17 @@ def create_optional_results_model(input_model, opt_info):
     opt_model : `~roman_datamodels.datamodels.RampFitOutputModel`
         The optional ``RampFitOutputModel`` to be returned from the ramp fit step.
     """
-    (slope, sigslope, var_poisson, var_rnoise, yint, sigyint, pedestal, weights, crmag) = opt_info
+    (
+        slope,
+        sigslope,
+        var_poisson,
+        var_rnoise,
+        yint,
+        sigyint,
+        pedestal,
+        weights,
+        crmag,
+    ) = opt_info
     meta = {}
     meta.update(input_model.meta)
     crmag.shape = crmag.shape[1:]
@@ -45,9 +55,17 @@ def create_optional_results_model(input_model, opt_info):
     inst = {
         "meta": meta,
         "slope": u.Quantity(np.squeeze(slope), ru.electron / u.s, dtype=slope.dtype),
-        "sigslope": u.Quantity(np.squeeze(sigslope), ru.electron / u.s, dtype=sigslope.dtype),
-        "var_poisson": u.Quantity(np.squeeze(var_poisson), ru.electron**2 / u.s**2, dtype=var_poisson.dtype),
-        "var_rnoise": u.Quantity(np.squeeze(var_rnoise), ru.electron**2 / u.s**2, dtype=var_rnoise.dtype),
+        "sigslope": u.Quantity(
+            np.squeeze(sigslope), ru.electron / u.s, dtype=sigslope.dtype
+        ),
+        "var_poisson": u.Quantity(
+            np.squeeze(var_poisson),
+            ru.electron**2 / u.s**2,
+            dtype=var_poisson.dtype,
+        ),
+        "var_rnoise": u.Quantity(
+            np.squeeze(var_rnoise), ru.electron**2 / u.s**2, dtype=var_rnoise.dtype
+        ),
         "yint": u.Quantity(np.squeeze(yint), ru.electron, dtype=yint.dtype),
         "sigyint": u.Quantity(np.squeeze(sigyint), ru.electron, dtype=sigyint.dtype),
         "pedestal": u.Quantity(np.squeeze(pedestal), ru.electron, dtype=pedestal.dtype),
@@ -83,8 +101,12 @@ def create_image_model(input_model, image_info):
     data, dq, var_poisson, var_rnoise, err = image_info
 
     data = u.Quantity(data, ru.electron / u.s, dtype=data.dtype)
-    var_poisson = u.Quantity(var_poisson, ru.electron**2 / u.s**2, dtype=var_poisson.dtype)
-    var_rnoise = u.Quantity(var_rnoise, ru.electron**2 / u.s**2, dtype=var_rnoise.dtype)
+    var_poisson = u.Quantity(
+        var_poisson, ru.electron**2 / u.s**2, dtype=var_poisson.dtype
+    )
+    var_rnoise = u.Quantity(
+        var_rnoise, ru.electron**2 / u.s**2, dtype=var_rnoise.dtype
+    )
     err = u.Quantity(err, ru.electron / u.s, dtype=err.dtype)
 
     # Create output datamodel
@@ -97,8 +119,12 @@ def create_image_model(input_model, image_info):
         "meta": meta,
         "data": u.Quantity(data, ru.electron / u.s, dtype=data.dtype),
         "dq": dq,
-        "var_poisson": u.Quantity(var_poisson, ru.electron**2 / u.s**2, dtype=var_poisson.dtype),
-        "var_rnoise": u.Quantity(var_rnoise, ru.electron**2 / u.s**2, dtype=var_rnoise.dtype),
+        "var_poisson": u.Quantity(
+            var_poisson, ru.electron**2 / u.s**2, dtype=var_poisson.dtype
+        ),
+        "var_rnoise": u.Quantity(
+            var_rnoise, ru.electron**2 / u.s**2, dtype=var_rnoise.dtype
+        ),
         "err": u.Quantity(err, ru.electron / u.s, dtype=err.dtype),
         "amp33": input_model.amp33,
         "border_ref_pix_left": input_model.border_ref_pix_left,
@@ -187,7 +213,9 @@ class RampFitStep(RomanStep):
             # Image info order is: data, dq, var_poisson, var_rnoise, err
             image_info = (
                 np.zeros(input_model.data.shape[2:], dtype=input_model.data.dtype),
-                input_model.pixeldq | input_model.groupdq[0][0] | dqflags.group["SATURATED"],
+                input_model.pixeldq
+                | input_model.groupdq[0][0]
+                | dqflags.group["SATURATED"],
                 np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
                 np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
                 np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),

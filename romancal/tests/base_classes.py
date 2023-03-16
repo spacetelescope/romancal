@@ -7,7 +7,12 @@ from pathlib import Path
 
 import pytest
 import requests
-from ci_watson.artifactory_helpers import BigdataError, check_url, get_bigdata, get_bigdata_root
+from ci_watson.artifactory_helpers import (
+    BigdataError,
+    check_url,
+    get_bigdata,
+    get_bigdata_root,
+)
 
 # from jwst.associations import load_asn
 

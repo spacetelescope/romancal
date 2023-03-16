@@ -22,7 +22,10 @@ from romancal.dark_current import DarkCurrentStep
     ],
 )
 @pytest.mark.skipif(
-    os.environ.get("CI") == "true", reason="Roman CRDS servers are not currently available outside the internal network"
+    os.environ.get("CI") == "true",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 def test_dark_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a DARK reffile"""
@@ -58,7 +61,10 @@ def test_dark_step_interface(instrument, exptype):
     ],
 )
 @pytest.mark.skipif(
-    os.environ.get("CI") == "true", reason="Roman CRDS servers are not currently available outside the internal network"
+    os.environ.get("CI") == "true",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 def test_dark_step_subtraction(instrument, exptype):
     """Test that the values in a dark reference file are properly subtracted"""
@@ -81,7 +87,9 @@ def test_dark_step_subtraction(instrument, exptype):
     diff = ramp_model.data.value - darkref_model.data.value
 
     # test that the output data file is equal to the difference found when subtracting reffile from sci file
-    np.testing.assert_array_equal(result.data.value, diff, err_msg="dark file should be subtracted from sci file ")
+    np.testing.assert_array_equal(
+        result.data.value, diff, err_msg="dark file should be subtracted from sci file "
+    )
 
 
 @pytest.mark.parametrize(
@@ -91,7 +99,10 @@ def test_dark_step_subtraction(instrument, exptype):
     ],
 )
 @pytest.mark.skipif(
-    os.environ.get("CI") == "true", reason="Roman CRDS servers are not currently available outside the internal network"
+    os.environ.get("CI") == "true",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 def test_dark_step_output_dark_file(tmpdir, instrument, exptype):
     """Test that the the step can output a proper (optional) dark file"""

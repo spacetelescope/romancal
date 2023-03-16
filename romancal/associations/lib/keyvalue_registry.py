@@ -2,7 +2,12 @@
 
 from collections import UserDict
 
-__all__ = ["KeyValueRegistry", "KeyValueRegistryError", "KeyValueRegistryNoKeyFound", "KeyValueRegistryNotSingleItemError"]
+__all__ = [
+    "KeyValueRegistry",
+    "KeyValueRegistryError",
+    "KeyValueRegistryNoKeyFound",
+    "KeyValueRegistryNotSingleItemError",
+]
 
 
 class KeyValueRegistry(UserDict):

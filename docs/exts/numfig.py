@@ -55,7 +55,9 @@ def doctree_resolved(app, doctree, docname):
     for figure_info in doctree.traverse(figure):
         if app.builder.name != "latex" and app.config.number_figures:
             for cap in figure_info.traverse(caption):
-                cap[0] = Text("%s %d: %s" % (app.config.figure_caption_prefix, i, cap[0]))
+                cap[0] = Text(
+                    "%s %d: %s" % (app.config.figure_caption_prefix, i, cap[0])
+                )
 
         for id in figure_info["ids"]:
             figids[id] = i
@@ -78,7 +80,9 @@ def doctree_resolved(app, doctree, docname):
             if app.builder.name == "html":
                 target_doc = app.builder.env.figid_docname_map[target]
                 link = f"{app.builder.get_relative_uri(docname, target_doc)}#{target}"
-                html = f'<a class="pageref" href="{link}">{labelfmt %(figids[target])}</a>'
+                html = (
+                    f'<a class="pageref" href="{link}">{labelfmt %(figids[target])}</a>'
+                )
                 ref_info.replace_self(raw(html, html, format="html"))
             else:
                 ref_info.replace_self(Text(labelfmt % (figids[target])))
@@ -93,7 +97,12 @@ def setup(app):
     app.add_config_value("number_figures", True, True)
     app.add_config_value("figure_caption_prefix", "Figure", True)
 
-    app.add_node(page_ref, text=(skip_page_ref, None), html=(skip_page_ref, None), latex=(latex_visit_page_ref, None))
+    app.add_node(
+        page_ref,
+        text=(skip_page_ref, None),
+        html=(skip_page_ref, None),
+        latex=(latex_visit_page_ref, None),
+    )
 
     app.add_role("page", XRefRole(nodeclass=page_ref))
 

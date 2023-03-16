@@ -267,7 +267,9 @@ class Association(MutableMapping):
         a file object containing the string.
         """
         if format is None:
-            formats = [format_func for format_name, format_func in cls.ioregistry.items()]
+            formats = [
+                format_func for format_name, format_func in cls.ioregistry.items()
+            ]
         else:
             formats = [cls.ioregistry[format]]
 
@@ -279,7 +281,9 @@ class Association(MutableMapping):
             else:
                 break
         else:
-            raise AssociationNotValidError(f'Cannot translate "{serialized}" to an association')
+            raise AssociationNotValidError(
+                f'Cannot translate "{serialized}" to an association'
+            )
 
         # Validate
         if validate:
@@ -401,7 +405,9 @@ class Association(MutableMapping):
         # Fix the conditions.
         escaped_value = re.escape(evaled_str)
         conditions["found_values"].add(escaped_value)
-        if conditions["value"] is None or conditions.get("force_unique", self.DEFAULT_FORCE_UNIQUE):
+        if conditions["value"] is None or conditions.get(
+            "force_unique", self.DEFAULT_FORCE_UNIQUE
+        ):
             conditions["value"] = escaped_value
             conditions["force_unique"] = False
 
@@ -441,7 +447,10 @@ class Association(MutableMapping):
         is_item_member : bool
             True if item is a member.
         """
-        raise NotImplementedError("Association.is_item_member must be implemented by a specific association rule.")
+        raise NotImplementedError(
+            "Association.is_item_member must be implemented by a specific association"
+            " rule."
+        )
 
     def _init_hook(self, item):
         """Post-check and pre-item-adding initialization."""
@@ -449,7 +458,9 @@ class Association(MutableMapping):
 
     def _add(self, item):
         """Add a item, association-specific"""
-        raise NotImplementedError("Association._add must be implemented by a specific association rule.")
+        raise NotImplementedError(
+            "Association._add must be implemented by a specific association rule."
+        )
 
     def _add_items(self, items, **kwargs):
         """Force adding items to the association
@@ -517,7 +528,9 @@ def finalize(asns):
        from jwst.associations.association import finalize as generic_finalize
        RegistryMarker.callback('finalize')(generic_finalize)
     """
-    finalized_asns = list(filter(lambda asn: asn is not None, map(lambda asn: asn.finalize(), asns)))
+    finalized_asns = list(
+        filter(lambda asn: asn is not None, map(lambda asn: asn.finalize(), asns))
+    )
     return finalized_asns
 
 

@@ -42,7 +42,9 @@ class DarkCurrentStep(RomanStep):
             if "nframes" not in dark_model.meta.exposure:
                 dark_model.meta.exposure["nframes"] = input_model.meta.exposure.nframes
             if "groupgap" not in dark_model.meta.exposure:
-                dark_model.meta.exposure["groupgap"] = input_model.meta.exposure.groupgap
+                dark_model.meta.exposure[
+                    "groupgap"
+                ] = input_model.meta.exposure.groupgap
 
             # Reshaping data variables for stcal compatibility
             input_model.data = input_model.data[np.newaxis, :]
@@ -50,7 +52,9 @@ class DarkCurrentStep(RomanStep):
             input_model.err = input_model.err[np.newaxis, :]
 
             # Do the dark correction
-            out_data, dark_data = dark_sub.do_correction(input_model, dark_model, self.dark_output)
+            out_data, dark_data = dark_sub.do_correction(
+                input_model, dark_model, self.dark_output
+            )
 
             # Save dark data to file
             if dark_data is not None and dark_data.save:
@@ -90,9 +94,13 @@ def save_dark_data_as_dark_model(dark_data, dark_model):
 
     # Create DarkRef object and copy dark data to it
     out_dark = maker_utils.mk_dark(shape=dark_data.data.shape)
-    out_dark.data = u.Quantity(dark_data.data, out_dark.data.unit, dtype=out_dark.data.dtype)
+    out_dark.data = u.Quantity(
+        dark_data.data, out_dark.data.unit, dtype=out_dark.data.dtype
+    )
     out_dark.dq = dark_data.groupdq
-    out_dark.err = u.Quantity(dark_data.err, out_dark.err.unit, dtype=out_dark.err.dtype)
+    out_dark.err = u.Quantity(
+        dark_data.err, out_dark.err.unit, dtype=out_dark.err.dtype
+    )
 
     # Temporary patch to utilize stcal dark step until MA table support is fully implemented
     out_dark.meta.exposure["nframes"] = dark_data.exp_nframes

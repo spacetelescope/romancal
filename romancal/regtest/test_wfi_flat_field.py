@@ -80,16 +80,24 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     # Test CRDS
     step = FlatFieldStep()
     model = rdm.open(rtdata.input)
-    step.log.info("DMS79 MSG: Testing retrieval of best ref file, Success is flat file with correct use after date")
+    step.log.info(
+        "DMS79 MSG: Testing retrieval of best ref file, Success is flat file with"
+        " correct use after date"
+    )
 
     step.log.info(f'DMS79 MSG: First data file: {rtdata.input.rsplit("/", 1)[1]}')
     step.log.info(f"DMS79 MSG: Observation date: {model.meta.exposure.start_time}")
 
     ref_file_path = step.get_reference_file(model, "flat")
-    step.log.info(f'DMS79 MSG: CRDS matched flat file: {ref_file_path.rsplit("/", 1)[1]}')
+    step.log.info(
+        f'DMS79 MSG: CRDS matched flat file: {ref_file_path.rsplit("/", 1)[1]}'
+    )
     flat = rdm.open(ref_file_path)
     step.log.info(f"DMS79 MSG: flat file UseAfter date: {flat.meta.useafter}")
-    step.log.info(f"DMS79 MSG: UseAfter date before observation date? : {(flat.meta.useafter < model.meta.exposure.start_time)}")
+    step.log.info(
+        "DMS79 MSG: UseAfter date before observation date? :"
+        f" {(flat.meta.useafter < model.meta.exposure.start_time)}"
+    )
 
     # Test FlatFieldStep
     output = "r0000101001001001001_01101_0001_WFI01_flat.asdf"
@@ -127,10 +135,15 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     step.log.info(f"DMS79 MSG: Observation date: {model.meta.exposure.start_time}")
 
     ref_file_path_b = step.get_reference_file(model, "flat")
-    step.log.info(f'DMS79 MSG: CRDS matched flat file: {ref_file_path_b.rsplit("/", 1)[1]}')
+    step.log.info(
+        f'DMS79 MSG: CRDS matched flat file: {ref_file_path_b.rsplit("/", 1)[1]}'
+    )
     flat = rdm.open(ref_file_path_b)
     step.log.info(f"DMS79 MSG: flat file UseAfter date: {flat.meta.useafter}")
-    step.log.info(f"DMS79 MSG: UseAfter date before observation date? : {(flat.meta.useafter < model.meta.exposure.start_time)}")
+    step.log.info(
+        "DMS79 MSG: UseAfter date before observation date? :"
+        f" {(flat.meta.useafter < model.meta.exposure.start_time)}"
+    )
 
     # Test FlatFieldStep
     output = "r0000101001001001001_01101_0002_WFI01_flat.asdf"
@@ -157,4 +170,6 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
         f'{("/".join(ref_file_path.rsplit("/", 3)[1:]))} != '
         f'{("/".join(ref_file_path_b.rsplit("/", 3)[1:]))}'
     )
-    assert "/".join(ref_file_path.rsplit("/", 1)[1:]) != "/".join(ref_file_path_b.rsplit("/", 1)[1:])
+    assert "/".join(ref_file_path.rsplit("/", 1)[1:]) != "/".join(
+        ref_file_path_b.rsplit("/", 1)[1:]
+    )

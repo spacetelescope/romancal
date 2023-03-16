@@ -1,7 +1,11 @@
 """Constraint Tests"""
 import pytest
 
-from romancal.associations.lib.constraint import Constraint, SimpleConstraint, SimpleConstraintABC
+from romancal.associations.lib.constraint import (
+    Constraint,
+    SimpleConstraint,
+    SimpleConstraintABC,
+)
 
 
 def test_sc_dup_names():
@@ -255,7 +259,10 @@ def test_copy():
     assert sc1.value == "value1"
 
 
-@pytest.mark.parametrize("klass, expected", [(SimpleConstraint, "SimpleConstraint:myname"), (Constraint, "Constraint:myname")])
+@pytest.mark.parametrize(
+    "klass, expected",
+    [(SimpleConstraint, "SimpleConstraint:myname"), (Constraint, "Constraint:myname")],
+)
 def test_id(klass, expected):
     """Test constraint ID"""
     c = klass(name="myname")

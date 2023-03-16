@@ -3,7 +3,13 @@ from collections import deque
 from enum import Enum
 from functools import reduce
 
-__all__ = ["ListCategory", "ProcessList", "ProcessItem", "ProcessQueue", "ProcessQueueSorted"]
+__all__ = [
+    "ListCategory",
+    "ProcessList",
+    "ProcessItem",
+    "ProcessQueue",
+    "ProcessQueueSorted",
+]
 
 
 class ListCategory(Enum):
@@ -89,7 +95,13 @@ class ProcessList:
         The association rules that created the ProcessList
     """
 
-    _str_attrs = ("rules", "work_over", "only_on_match", "trigger_constraints", "trigger_rules")
+    _str_attrs = (
+        "rules",
+        "work_over",
+        "only_on_match",
+        "trigger_constraints",
+        "trigger_rules",
+    )
 
     def __init__(
         self,
@@ -104,7 +116,9 @@ class ProcessList:
         self.rules = rules
         self.work_over = work_over
         self.only_on_match = only_on_match
-        self.trigger_constraints = set(trigger_constraints) if trigger_constraints else set()
+        self.trigger_constraints = (
+            set(trigger_constraints) if trigger_constraints else set()
+        )
         self.trigger_rules = set(trigger_rules) if trigger_rules else set()
 
     @property
@@ -140,7 +154,9 @@ class ProcessList:
 
     def __str__(self):
         result = "{}(n_items: {}, {})".format(
-            self.__class__.__name__, len(self.items), {str_attr: getattr(self, str_attr) for str_attr in self._str_attrs}
+            self.__class__.__name__,
+            len(self.items),
+            {str_attr: getattr(self, str_attr) for str_attr in self._str_attrs},
         )
         return result
 
@@ -206,7 +222,10 @@ class ProcessListQueue:
                 break
 
     def __str__(self):
-        result = f"{self.__class__.__name__}: rulesets {len(self)} items {len(list(self.items()))}"
+        result = (
+            f"{self.__class__.__name__}: rulesets {len(self)} items"
+            f" {len(list(self.items()))}"
+        )
         return result
 
 
@@ -223,7 +242,9 @@ class ProcessQueueSorted:
     """
 
     def __init__(self, init=None):
-        self.queues = {list_category: ProcessListQueue() for list_category in ListCategory}
+        self.queues = {
+            list_category: ProcessListQueue() for list_category in ListCategory
+        }
 
         if init is not None:
             self.extend(init)

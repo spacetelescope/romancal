@@ -67,7 +67,9 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     assert dqdata[100, 200] == dqflags.pixel["SATURATED"] + dqflags.pixel["DO_NOT_USE"]
     assert dqdata[200, 200] == dqflags.pixel["JUMP_DET"] + dqflags.pixel["DO_NOT_USE"]
     assert dqdata[300, 200] == dqflags.pixel["DROPOUT"] + dqflags.pixel["DO_NOT_USE"]
-    assert dqdata[400, 200] == dqflags.pixel["PERSISTENCE"] + dqflags.pixel["DO_NOT_USE"]
+    assert (
+        dqdata[400, 200] == dqflags.pixel["PERSISTENCE"] + dqflags.pixel["DO_NOT_USE"]
+    )
 
 
 def test_groupdq():
@@ -95,7 +97,9 @@ def test_groupdq():
     groupdq = outfile.groupdq
 
     np.testing.assert_array_equal(
-        np.full((ngroups, ysize, xsize), 0, dtype=int), groupdq, err_msg="groupdq not initialized to zero"
+        np.full((ngroups, ysize, xsize), 0, dtype=int),
+        groupdq,
+        err_msg="groupdq not initialized to zero",
     )
 
 
@@ -170,9 +174,15 @@ def test_dq_add1_groupdq():
 
     # test if pixels in pixeldq were incremented in value by 1
     # check that previous dq flag is added to mask value
-    assert outfile.pixeldq[505, 505] == dqflags.pixel["JUMP_DET"] + dqflags.pixel["DO_NOT_USE"]
+    assert (
+        outfile.pixeldq[505, 505]
+        == dqflags.pixel["JUMP_DET"] + dqflags.pixel["DO_NOT_USE"]
+    )
     # check two flags propagate correctly
-    assert outfile.pixeldq[400, 500] == dqflags.pixel["SATURATED"] + dqflags.pixel["DO_NOT_USE"]
+    assert (
+        outfile.pixeldq[400, 500]
+        == dqflags.pixel["SATURATED"] + dqflags.pixel["DO_NOT_USE"]
+    )
 
 
 @pytest.mark.parametrize(
@@ -182,7 +192,10 @@ def test_dq_add1_groupdq():
     ],
 )
 @pytest.mark.skipif(
-    os.environ.get("CI") == "true", reason="Roman CRDS servers are not currently available outside the internal network"
+    os.environ.get("CI") == "true",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 def test_dqinit_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a DQ reffile"""
@@ -198,7 +211,9 @@ def test_dqinit_step_interface(instrument, exptype):
     wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
     wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = u.Quantity(np.ones(shape, dtype=np.uint16), ru.DN, dtype=np.uint16)
+    wfi_sci_raw.data = u.Quantity(
+        np.ones(shape, dtype=np.uint16), ru.DN, dtype=np.uint16
+    )
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Create mask model
@@ -234,7 +249,10 @@ def test_dqinit_step_interface(instrument, exptype):
     ],
 )
 @pytest.mark.skipif(
-    os.environ.get("CI") == "true", reason="Roman CRDS servers are not currently available outside the internal network"
+    os.environ.get("CI") == "true",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 def test_dqinit_refpix(instrument, exptype):
     """Test that the basic inferface works for data requiring a DQ reffile"""
@@ -250,7 +268,9 @@ def test_dqinit_refpix(instrument, exptype):
     wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
     wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = u.Quantity(np.ones(shape, dtype=np.uint16), ru.DN, dtype=np.uint16)
+    wfi_sci_raw.data = u.Quantity(
+        np.ones(shape, dtype=np.uint16), ru.DN, dtype=np.uint16
+    )
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Create mask model

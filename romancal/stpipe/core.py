@@ -16,7 +16,8 @@ if os.environ.get("CI") == "false":
 
 
 _LOG_FORMATTER = logging.Formatter(
-    "%(asctime)s.%(msecs)03dZ :: %(name)s :: %(levelname)s :: %(message)s", datefmt="%Y-%m-%dT%H:%M:%S"
+    "%(asctime)s.%(msecs)03dZ :: %(name)s :: %(levelname)s :: %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
 )
 _LOG_FORMATTER.converter = time.gmtime
 
@@ -70,7 +71,9 @@ class RomanStep(Step):
         if os.environ.get("CI") == "false":  # no CRDS connection, do not run
             if self.parent is None:
                 model.meta.ref_file.crds.sw_version = crds_client.get_svn_version()
-                model.meta.ref_file.crds.context_used = crds_client.get_context_used(model.crds_observatory)
+                model.meta.ref_file.crds.context_used = crds_client.get_context_used(
+                    model.crds_observatory
+                )
 
     def record_step_status(self, model, step_name, success=True):
         """

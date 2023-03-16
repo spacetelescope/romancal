@@ -78,7 +78,9 @@ class SimpleConstraintABC(abc.ABC):
         return self.matched, []
 
     @property
-    def dup_names(self):  #  -> dict[str, list[typing.Union[SimpleConstraint, Constraint]]]
+    def dup_names(
+        self,
+    ):  #  -> dict[str, list[typing.Union[SimpleConstraint, Constraint]]]
         """Return dictionary of constraints with duplicate names
 
         This method is meant to be overridden by classes
@@ -107,7 +109,9 @@ class SimpleConstraintABC(abc.ABC):
         """Copy ourselves"""
         return deepcopy(self)
 
-    def get_all_attr(self, attribute: str):  # -> list[tuple[SimpleConstraint, typing.Any]]:
+    def get_all_attr(
+        self, attribute: str
+    ):  # -> list[tuple[SimpleConstraint, typing.Any]]:
         """Return the specified attribute
 
         This method is meant to be overridden by classes
@@ -301,9 +305,16 @@ class SimpleConstraint(SimpleConstraintABC):
 
         # Determine reprocessing
         reprocess = []
-        if (self.matched and self.reprocess_on_match) or (not self.matched and self.reprocess_on_fail):
+        if (self.matched and self.reprocess_on_match) or (
+            not self.matched and self.reprocess_on_fail
+        ):
             reprocess.append(
-                ProcessList(items=[item], work_over=self.work_over, rules=self.reprocess_rules, trigger_constraints=[self.id])
+                ProcessList(
+                    items=[item],
+                    work_over=self.work_over,
+                    rules=self.reprocess_rules,
+                    trigger_constraints=[self.id],
+                )
             )
 
         return self.matched, reprocess
@@ -443,7 +454,9 @@ class AttrConstraint(SimpleConstraintABC):
 
         # Get the condition information.
         try:
-            source, value = getattr_from_list(item, self.sources, invalid_values=self.invalid_values)
+            source, value = getattr_from_list(
+                item, self.sources, invalid_values=self.invalid_values
+            )
         except KeyError:
             if self.required and not self.force_undefined:
                 self.matched = False
@@ -510,7 +523,10 @@ class AttrConstraint(SimpleConstraintABC):
         if self.force_reprocess:
             reprocess.append(
                 ProcessList(
-                    items=[item], work_over=self.force_reprocess, only_on_match=self.only_on_match, trigger_constraints=[self.id]
+                    items=[item],
+                    work_over=self.force_reprocess,
+                    only_on_match=self.only_on_match,
+                    trigger_constraints=[self.id],
                 )
             )
 
@@ -625,9 +641,8 @@ class Constraint:
             self.constraints = [init]
         else:
             raise TypeError(
-                "Invalid initialization value type {}.\nValid types are `SimpleConstraint`, `Constraint`,\nor subclass.".format(
-                    type(init)
-                )
+                "Invalid initialization value type {}.\nValid types are"
+                " `SimpleConstraint`, `Constraint`,\nor subclass.".format(type(init))
             )
 
         # Give some defaults real meaning.
@@ -636,7 +651,9 @@ class Constraint:
             self.reduce = self.all
 
     @property
-    def dup_names(self):  # -> dict[str, list[typing.Union[SimpleConstraint, Constraint]]]:
+    def dup_names(
+        self,
+    ):  # -> dict[str, list[typing.Union[SimpleConstraint, Constraint]]]:
         """Return dictionary of constraints with duplicate names
 
         This method is meant to be overridden by classes
@@ -693,9 +710,18 @@ class Constraint:
         self.matched, reprocess = self.reduce(item, self.constraints)
 
         # Determine reprocessing
-        if (self.matched and self.reprocess_on_match) or (not self.matched and self.reprocess_on_fail):
+        if (self.matched and self.reprocess_on_match) or (
+            not self.matched and self.reprocess_on_fail
+        ):
             reprocess.append(
-                [ProcessList(items=[item], work_over=self.work_over, rules=self.reprocess_rules, trigger_constraints=[self.id])]
+                [
+                    ProcessList(
+                        items=[item],
+                        work_over=self.work_over,
+                        rules=self.reprocess_rules,
+                        trigger_constraints=[self.id],
+                    )
+                ]
             )
 
         return self.matched, list(chain(*reprocess))
@@ -704,7 +730,9 @@ class Constraint:
         """Copy ourselves"""
         return deepcopy(self)
 
-    def get_all_attr(self, attribute: str):  # -> list[tuple[typing.Union[SimpleConstraint, Constraint], typing.Any]]:
+    def get_all_attr(
+        self, attribute: str
+    ):  # -> list[tuple[typing.Union[SimpleConstraint, Constraint], typing.Any]]:
         """Return the specified attribute
 
         This method is meant to be overridden by classes
@@ -843,7 +871,9 @@ class Constraint:
         raise NotImplementedError("Cannot set constraints by index.")
 
     def __str__(self):
-        result = "\n".join([str(constraint) for constraint in self if constraint.name is not None])
+        result = "\n".join(
+            [str(constraint) for constraint in self if constraint.name is not None]
+        )
         return result
 
 
@@ -903,5 +933,7 @@ def reprocess_multivalue(item, source, values, constraint):
         new_item = PoolRow(item)
         new_item[source] = str(value)
         reprocess_items.append(new_item)
-    process_list = ProcessList(items=reprocess_items, trigger_constraints=[constraint.id])
+    process_list = ProcessList(
+        items=reprocess_items, trigger_constraints=[constraint.id]
+    )
     return process_list

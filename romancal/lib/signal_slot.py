@@ -80,7 +80,9 @@ class Signal:
             try:
                 yield slot(*args, **kwargs)
             except Exception as exception:
-                logger.debug(f"Signal {self.__class__.__name_}: Slot {slot} raised {exception}")
+                logger.debug(
+                    f"Signal {self.__class__.__name_}: Slot {slot} raised {exception}"
+                )
 
     def reduce(self, *args, **kwargs):
         """Return a reduction of all the slots

@@ -119,7 +119,10 @@ class TweakRegStep(RomanStep):
                     for im in images:
                         filename = im.meta.filename
                         if filename in catdict:
-                            print(f"setting {filename}.tweakreg_catalog = {repr(catdict[filename])}")
+                            print(
+                                f"setting {filename}.tweakreg_catalog ="
+                                f" {repr(catdict[filename])}"
+                            )
                             im.meta.tweakreg_catalog = catdict[filename]
 
             else:
@@ -133,7 +136,11 @@ class TweakRegStep(RomanStep):
             ) + e.args[1:]
             raise e
 
-        if self.abs_refcat is not None and self.abs_refcat.strip() and self.abs_refcat != DEFAULT_ABS_REFCAT:
+        if (
+            self.abs_refcat is not None
+            and self.abs_refcat.strip()
+            and self.abs_refcat != DEFAULT_ABS_REFCAT
+        ):
             # Set expand_refcat to True to eliminate possibility of duplicate
             # entries when aligning to absolute astrometric reference catalog
             self.expand_refcat = True
@@ -156,7 +163,8 @@ class TweakRegStep(RomanStep):
                         catalog.rename_column(long_axis, axis)
                     else:
                         raise ValueError(
-                            "'tweakreg' source catalogs must contain either columns 'x' and 'y' or 'xcentroid' and 'ycentroid'."
+                            "'tweakreg' source catalogs must contain either columns 'x'"
+                            " and 'y' or 'xcentroid' and 'ycentroid'."
                         )
 
             # filter out sources outside the WCS bounding box
@@ -176,7 +184,9 @@ class TweakRegStep(RomanStep):
                 self.log.info(f"Detected {len(catalog)} sources in {filename}.")
 
             if new_cat and self.save_catalogs:
-                catalog_filename = filename.replace(".fits", f"_cat.{self.catalog_format}")
+                catalog_filename = filename.replace(
+                    ".fits", f"_cat.{self.catalog_format}"
+                )
                 if self.catalog_format == "ecsv":
                     fmt = "ascii.ecsv"
                 elif self.catalog_format == "fits":
@@ -221,7 +231,11 @@ class TweakRegStep(RomanStep):
             imcats = list(map(self._imodel2wcsim, g))
             # Remove the attached catalogs
             for model in g:
-                model = model if isinstance(model, datamodels.DataModel) else datamodels.open(path.basename(model))
+                model = (
+                    model
+                    if isinstance(model, datamodels.DataModel)
+                    else datamodels.open(path.basename(model))
+                )
             self.log.info(f"* Images in GROUP '{group_name}':")
             for im in imcats:
                 im.meta["group_id"] = group_name
@@ -274,10 +288,15 @@ class TweakRegStep(RomanStep):
 
             except ValueError as e:
                 msg = e.args[0]
-                if msg == "Too few input images (or groups of images) with non-empty catalogs.":
+                if (
+                    msg == "Too few input images (or groups of images) with non-empty"
+                    " catalogs."
+                ):
                     # we need at least two exposures to perform image alignment
                     self.log.warning(msg)
-                    self.log.warning("At least two exposures are required for image alignment.")
+                    self.log.warning(
+                        "At least two exposures are required for image alignment."
+                    )
                     self.log.warning("Nothing to do. Skipping 'TweakRegStep'...")
                     for model in images:
                         model.meta.cal_step.tweakreg = "SKIPPED"
@@ -314,7 +333,10 @@ class TweakRegStep(RomanStep):
                 if not self._is_wcs_correction_small(wcs, twcs):
                     # Large corrections are typically a result of source
                     # mis-matching or poorly-conditioned fit. Skip such models.
-                    self.log.warning(f"WCS has been tweaked by more than {10 * self.tolerance} arcsec")
+                    self.log.warning(
+                        "WCS has been tweaked by more than"
+                        f" {10 * self.tolerance} arcsec"
+                    )
 
                     for model in images:
                         model.meta.cal_step.tweakreg = "SKIPPED"
@@ -345,7 +367,9 @@ class TweakRegStep(RomanStep):
             gaia_cat_name = self.abs_refcat.upper()
 
             if gaia_cat_name in SINGLE_GROUP_REFCAT:
-                ref_cat = amutils.create_astrometric_catalog(images, gaia_cat_name, output=output_name)
+                ref_cat = amutils.create_astrometric_catalog(
+                    images, gaia_cat_name, output=output_name
+                )
 
             elif path.isfile(self.abs_refcat):
                 ref_cat = Table.read(self.abs_refcat)
@@ -388,7 +412,10 @@ class TweakRegStep(RomanStep):
                 # earlier in this step.
                 for imcat in imcats:
                     imcat.meta["group_id"] = 987654
-                    if "fit_info" in imcat.meta and "REFERENCE" in imcat.meta["fit_info"]["status"]:
+                    if (
+                        "fit_info" in imcat.meta
+                        and "REFERENCE" in imcat.meta["fit_info"]["status"]
+                    ):
                         del imcat.meta["fit_info"]
 
                 # Perform fit
@@ -444,7 +471,9 @@ class TweakRegStep(RomanStep):
 
     def _imodel2wcsim(self, image_model):
         image_model = (
-            image_model if isinstance(image_model, datamodels.DataModel) else datamodels.open(path.basename(image_model))
+            image_model
+            if isinstance(image_model, datamodels.DataModel)
+            else datamodels.open(path.basename(image_model))
         )
         catalog = image_model.meta.tweakreg_catalog
         model_name = path.splitext(image_model.meta.filename)[0].strip("_- ")
@@ -464,7 +493,8 @@ class TweakRegStep(RomanStep):
                     catalog.rename_column(long_axis, axis)
                 else:
                     raise ValueError(
-                        "'tweakreg' source catalogs must contain either columns 'x' and 'y' or 'xcentroid' and 'ycentroid'."
+                        "'tweakreg' source catalogs must contain either columns 'x' and"
+                        " 'y' or 'xcentroid' and 'ycentroid'."
                     )
 
         # create WCSImageCatalog object:

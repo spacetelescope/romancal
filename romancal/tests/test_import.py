@@ -11,7 +11,9 @@ import romancal
 def dependencies(package, exclude: [str]):
     return [
         module[1]
-        for module in pkgutil.walk_packages(package.__path__, prefix=package.__name__ + ".")
+        for module in pkgutil.walk_packages(
+            package.__path__, prefix=package.__name__ + "."
+        )
         if not any(exclude_module in module[1] for exclude_module in exclude)
     ]
 

@@ -32,7 +32,14 @@ class Asn_Lv2Image(AsnMixin_Lv2Image, DMS_ELPP_Base):
     def __init__(self, *args, **kwargs):
 
         # Setup constraints
-        self.constraints = Constraint([Constraint_Base(), Constraint_Target(), Constraint_Expos(), Constraint_Tile()])
+        self.constraints = Constraint(
+            [
+                Constraint_Base(),
+                Constraint_Target(),
+                Constraint_Expos(),
+                Constraint_Tile(),
+            ]
+        )
 
         # Now check and continue initialization.
         super().__init__(*args, **kwargs)

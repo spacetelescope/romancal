@@ -58,7 +58,14 @@ class AssociationRegistry(dict):
     existing associations. See :py:func:`~romancal.associations.generate` for more information.
     """
 
-    def __init__(self, definition_files=None, include_default=True, global_constraints=None, name=None, include_bases=False):
+    def __init__(
+        self,
+        definition_files=None,
+        include_default=True,
+        global_constraints=None,
+        name=None,
+        include_bases=False,
+    ):
         super().__init__()
 
         # Generate a UUID for this instance. Used to modify rule
@@ -82,7 +89,11 @@ class AssociationRegistry(dict):
         self.Utility = type("Utility", (object,), {})
         for fname in definition_files:
             module = import_from_file(fname)
-            self.populate(module, global_constraints=global_constraints, include_bases=include_bases)
+            self.populate(
+                module,
+                global_constraints=global_constraints,
+                include_bases=include_bases,
+            )
 
     @property
     def rule_set(self):
@@ -161,10 +172,14 @@ class AssociationRegistry(dict):
             else:
                 return True
 
-        results = [rule for rule_name, rule in self.items() if is_valid(rule, association)]
+        results = [
+            rule for rule_name, rule in self.items() if is_valid(rule, association)
+        ]
 
         if len(results) == 0:
-            raise AssociationNotValidError(f'Structure did not validate: "{association}"')
+            raise AssociationNotValidError(
+                f'Structure did not validate: "{association}"'
+            )
         return results
 
     def load(self, serialized, format=None, validate=True, first=True, **kwargs):
@@ -200,7 +215,9 @@ class AssociationRegistry(dict):
         results = []
         for rule_name, rule in self.items():
             try:
-                results.append(rule.load(serialized, format=format, validate=validate, **kwargs))
+                results.append(
+                    rule.load(serialized, format=format, validate=validate, **kwargs)
+                )
             except (AssociationError, AttributeError) as err:
                 lasterr = err
                 continue
@@ -229,7 +246,9 @@ class AssociationRegistry(dict):
                 try:
                     self.add_rule(name, obj, global_constraints=global_constraints)
                 except TypeError:
-                    logger.debug(f"Could not add object {obj} as a rule due to TypeError")
+                    logger.debug(
+                        f"Could not add object {obj} as a rule due to TypeError"
+                    )
                 continue
 
             # Add callbacks
@@ -460,6 +479,8 @@ def get_marked(module, predicate=None, include_bases=False):
                 yield name, obj
         elif RegistryMarker.is_marked(obj):
             if ismodule(obj):
-                yield from get_marked(obj, predicate=predicate, include_bases=include_bases)
+                yield from get_marked(
+                    obj, predicate=predicate, include_bases=include_bases
+                )
             else:
                 yield name, obj

@@ -29,7 +29,9 @@ class AssociationPool(Table):
         self.meta["pool_file"] = self.meta.get("pool_file", "in-memory")
 
     @classmethod
-    def read(cls, filename, delimiter=DEFAULT_DELIMITER, format=DEFAULT_FORMAT, **kwargs):
+    def read(
+        cls, filename, delimiter=DEFAULT_DELIMITER, format=DEFAULT_FORMAT, **kwargs
+    ):
         """Read in a Pool file
 
         Parameters
@@ -48,7 +50,13 @@ class AssociationPool(Table):
         AssociationPool
             The ``AssociationPool`` representation of the file.
         """
-        table = super().read(filename, delimiter=delimiter, format=format, converters=convert_to_str, **kwargs)
+        table = super().read(
+            filename,
+            delimiter=delimiter,
+            format=format,
+            converters=convert_to_str,
+            **kwargs
+        )
 
         # If anything has been masked, just fill
         table = table.filled("null")

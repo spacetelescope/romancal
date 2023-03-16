@@ -49,69 +49,98 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     pipeline = ExposurePipeline()
 
     # DMS86 instrument artifact correction tests
-    pipeline.log.info("Status of the step:             assign_wcs    " + str(model.meta.cal_step.assign_wcs))
+    pipeline.log.info(
+        "Status of the step:             assign_wcs    "
+        + str(model.meta.cal_step.assign_wcs)
+    )
     pipeline.log.info(
         "DMS86 MSG: Testing completion of wcs assignment inLevel 2 image output......."
         + passfail(model.meta.cal_step.assign_wcs == "COMPLETE")
     )
     assert model.meta.cal_step.assign_wcs == "COMPLETE"
-    pipeline.log.info("Status of the step:             flat_field    " + str(model.meta.cal_step.flat_field))
+    pipeline.log.info(
+        "Status of the step:             flat_field    "
+        + str(model.meta.cal_step.flat_field)
+    )
     pipeline.log.info(
         "DMS86 MSG: Testing completion of flat fielding inLevel 2 image output......."
         + passfail(model.meta.cal_step.flat_field == "PASS")
     )
     assert model.meta.cal_step.flat_field == "COMPLETE"
-    pipeline.log.info("Status of the step:             dark          " + str(model.meta.cal_step.dark))
+    pipeline.log.info(
+        "Status of the step:             dark          " + str(model.meta.cal_step.dark)
+    )
     pipeline.log.info(
         "DMS86 MSG: Testing completion of dark correction inLevel 2 image output......."
         + passfail(model.meta.cal_step.dark == "COMPLETE")
     )
     assert model.meta.cal_step.dark == "COMPLETE"
-    pipeline.log.info("Status of the step:             dq_init       " + str(model.meta.cal_step.dq_init))
     pipeline.log.info(
-        "DMS86 MSG: Testing completion of data quality correction in Level 2 image output......."
-        + passfail(model.meta.cal_step.dq_init == "COMPLETE")
+        "Status of the step:             dq_init       "
+        + str(model.meta.cal_step.dq_init)
+    )
+    pipeline.log.info(
+        "DMS86 MSG: Testing completion of data quality correction in Level 2 image"
+        " output......." + passfail(model.meta.cal_step.dq_init == "COMPLETE")
     )
     assert model.meta.cal_step.dq_init == "COMPLETE"
-    pipeline.log.info("Status of the step:             jump          " + str(model.meta.cal_step.jump))
+    pipeline.log.info(
+        "Status of the step:             jump          " + str(model.meta.cal_step.jump)
+    )
     pipeline.log.info(
         "DMS86 MSG: Testing completion of jump detection inLevel 2 image output......."
         + passfail(model.meta.cal_step.jump == "COMPLETE")
     )
     assert model.meta.cal_step.jump == "COMPLETE"
-    pipeline.log.info("Status of the step:             linearity     " + str(model.meta.cal_step.linearity))
     pipeline.log.info(
-        "DMS86 MSG: Testing completion of linearity correction in Level 2 image output......."
-        + passfail(model.meta.cal_step.linearity == "COMPLETE")
+        "Status of the step:             linearity     "
+        + str(model.meta.cal_step.linearity)
+    )
+    pipeline.log.info(
+        "DMS86 MSG: Testing completion of linearity correction in Level 2 image"
+        " output......." + passfail(model.meta.cal_step.linearity == "COMPLETE")
     )
     assert model.meta.cal_step.linearity == "COMPLETE"
-    pipeline.log.info("Status of the step:             ramp_fit      " + str(model.meta.cal_step.ramp_fit))
+    pipeline.log.info(
+        "Status of the step:             ramp_fit      "
+        + str(model.meta.cal_step.ramp_fit)
+    )
     pipeline.log.info(
         "DMS86 MSG: Testing completion of ramp fitting inLevel 2 image output......."
         + passfail(model.meta.cal_step.ramp_fit == "COMPLETE")
     )
     assert model.meta.cal_step.ramp_fit == "COMPLETE"
-    pipeline.log.info("Status of the step:             saturation    " + str(model.meta.cal_step.saturation))
     pipeline.log.info(
-        "DMS86 MSG: Testing completion of saturation detection in Level 2 image output......."
-        + passfail(model.meta.cal_step.saturation == "COMPLETE")
+        "Status of the step:             saturation    "
+        + str(model.meta.cal_step.saturation)
+    )
+    pipeline.log.info(
+        "DMS86 MSG: Testing completion of saturation detection in Level 2 image"
+        " output......." + passfail(model.meta.cal_step.saturation == "COMPLETE")
     )
     assert model.meta.cal_step.saturation == "COMPLETE"
 
     # DMS-129 tests
     # check if assign_wcs step is complete
-    pipeline.log.info("DMS-129 MSG: Status of the step:             assign_wcs    " + str(model.meta.cal_step.assign_wcs))
     pipeline.log.info(
-        "DMS-129 MSG: Testing completion of WCS assignment inLevel 2 image output......."
-        + passfail(model.meta.cal_step.assign_wcs == "COMPLETE")
+        "DMS-129 MSG: Status of the step:             assign_wcs    "
+        + str(model.meta.cal_step.assign_wcs)
+    )
+    pipeline.log.info(
+        "DMS-129 MSG: Testing completion of WCS assignment inLevel 2 image"
+        " output......." + passfail(model.meta.cal_step.assign_wcs == "COMPLETE")
     )
     assert model.meta.cal_step.assign_wcs == "COMPLETE"
     # check if WCS exists
     pipeline.log.info("DMS-129 MSG: Testing that a WCS object exists    ")
-    pipeline.log.info("DMS-129 MSG: Testing that WCS exists inLevel 2 image output......." + passfail(model.meta.wcs is not None))
+    pipeline.log.info(
+        "DMS-129 MSG: Testing that WCS exists inLevel 2 image output......."
+        + passfail(model.meta.wcs is not None)
+    )
     assert model.meta.wcs is not None
     pipeline.log.info(
-        "DMS-129 MSG: Testing that geometric distortion information is available inLevel 2 image output......."
+        "DMS-129 MSG: Testing that geometric distortion information is available"
+        " inLevel 2 image output......."
         + passfail("v2v3" in model.meta.wcs.available_frames)
     )
     assert "v2v3" in model.meta.wcs.available_frames
@@ -125,42 +154,47 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     # compare both results to make sure they don't match
     # (which means the distortion correction was actually applied to the model)
     pipeline.log.info(
-        "DMS-129 MSG: Testing that distortion correction was applied toLevel 2 image output......."
-        + passfail((corrected_coords[0] != original_coords[0]).all() & (corrected_coords[1] != original_coords[1]).all())
+        "DMS-129 MSG: Testing that distortion correction was applied toLevel 2 image"
+        " output......."
+        + passfail(
+            (corrected_coords[0] != original_coords[0]).all()
+            & (corrected_coords[1] != original_coords[1]).all()
+        )
     )
     assert (corrected_coords[0] != original_coords[0]).all()
     assert (corrected_coords[1] != original_coords[1]).all()
 
     # DMS87 data quality tests
     pipeline.log.info(
-        "DMS87 MSG: Testing existence of data quality array (dq) in Level 2 image output......." + passfail("dq" in model.keys())
+        "DMS87 MSG: Testing existence of data quality array (dq) in Level 2 image"
+        " output......." + passfail("dq" in model.keys())
     )
     assert "dq" in model.keys()
     pipeline.log.info(
-        "DMS87 MSG: Testing existence of general error array (err) in Level 2 image output......."
-        + passfail("err" in model.keys())
+        "DMS87 MSG: Testing existence of general error array (err) in Level 2 image"
+        " output......." + passfail("err" in model.keys())
     )
     assert "err" in model.keys()
     pipeline.log.info(
-        "DMS87 MSG: Testing existence of Poisson noise variancearray (var_poisson) in Level 2 image output......."
-        + passfail("var_poisson" in model.keys())
+        "DMS87 MSG: Testing existence of Poisson noise variancearray (var_poisson) in"
+        " Level 2 image output......." + passfail("var_poisson" in model.keys())
     )
     assert "var_poisson" in model.keys()
     pipeline.log.info(
-        "DMS87 MSG: Testing existence of read noise variance array (var_rnoise) in level 2 image output......."
-        + passfail("var_rnoise" in model.keys())
+        "DMS87 MSG: Testing existence of read noise variance array (var_rnoise) in"
+        " level 2 image output......." + passfail("var_rnoise" in model.keys())
     )
     assert "var_rnoise" in model.keys()
     pipeline.log.info(
-        "DMS87 MSG: Testing existence of flatfield uncertainty variance array (var_flat) in Level 2 image output...."
-        + passfail("var_flat" in model.keys())
+        "DMS87 MSG: Testing existence of flatfield uncertainty variance array"
+        " (var_flat) in Level 2 image output...." + passfail("var_flat" in model.keys())
     )
     assert "var_flat" in model.keys()
 
     # DMS88 total exposure time test
     pipeline.log.info(
-        "DMS88 MSG: Testing existence of total exposure time (exposure_time) in Level 2 image output......."
-        + passfail("exposure_time" in model.meta.exposure)
+        "DMS88 MSG: Testing existence of total exposure time (exposure_time) in Level 2"
+        " image output......." + passfail("exposure_time" in model.meta.exposure)
     )
     assert "exposure_time" in model.meta.exposure
 
@@ -175,7 +209,8 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
 
     # DMS89 WCS tests
     pipeline.log.info(
-        "DMS89 MSG: Testing that the wcs boundingbox was generated......." + passfail(len(model.meta.wcs.bounding_box) == 2)
+        "DMS89 MSG: Testing that the wcs boundingbox was generated......."
+        + passfail(len(model.meta.wcs.bounding_box) == 2)
     )
     assert len(model.meta.wcs.bounding_box) == 2
 
@@ -208,10 +243,15 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
 
     pipeline.log.info(
         "DMS89 MSG: Testing that the different pointings create differing wcs......."
-        + passfail(((np.abs(orig_wcs(2048, 2048)[0] - model.meta.wcs(2048, 2048)[0])) - 10.0) < 1.0)
+        + passfail(
+            ((np.abs(orig_wcs(2048, 2048)[0] - model.meta.wcs(2048, 2048)[0])) - 10.0)
+            < 1.0
+        )
     )
     assert_allclose(
-        [orig_wcs(2048, 2048)[0] + delta[0], orig_wcs(2048, 2048)[1] + delta[1]], model.meta.wcs(2048, 2048), atol=1.0
+        [orig_wcs(2048, 2048)[0] + delta[0], orig_wcs(2048, 2048)[1] + delta[1]],
+        model.meta.wcs(2048, 2048),
+        atol=1.0,
     )
 
 
@@ -244,87 +284,111 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     pipeline = ExposurePipeline()
 
     # DMS90 instrument artifact correction tests
-    pipeline.log.info("Status of the step:             assign_wcs    " + str(model.meta.cal_step.assign_wcs))
     pipeline.log.info(
-        "DMS90 MSG: Testing completion of wcs assignment inLevel 2 spectroscopic output......."
-        + passfail(model.meta.cal_step.assign_wcs == "COMPLETE")
+        "Status of the step:             assign_wcs    "
+        + str(model.meta.cal_step.assign_wcs)
+    )
+    pipeline.log.info(
+        "DMS90 MSG: Testing completion of wcs assignment inLevel 2 spectroscopic"
+        " output......." + passfail(model.meta.cal_step.assign_wcs == "COMPLETE")
     )
     assert model.meta.cal_step.assign_wcs == "COMPLETE"
-    pipeline.log.info("Status of the step:             flat_field    " + str(model.meta.cal_step.flat_field))
     pipeline.log.info(
-        "DMS90 MSG: Testing expected skip of flat fielding inLevel 2 spectroscopic output......."
-        + passfail(model.meta.cal_step.flat_field == "SKIPPED")
+        "Status of the step:             flat_field    "
+        + str(model.meta.cal_step.flat_field)
+    )
+    pipeline.log.info(
+        "DMS90 MSG: Testing expected skip of flat fielding inLevel 2 spectroscopic"
+        " output......." + passfail(model.meta.cal_step.flat_field == "SKIPPED")
     )
     assert model.meta.cal_step.flat_field == "SKIPPED"
-    pipeline.log.info("Status of the step:             dark          " + str(model.meta.cal_step.dark))
     pipeline.log.info(
-        "DMS90 MSG: Testing completion of dark correction inLevel 2 spectroscopic output......."
-        + passfail(model.meta.cal_step.dark == "COMPLETE")
+        "Status of the step:             dark          " + str(model.meta.cal_step.dark)
+    )
+    pipeline.log.info(
+        "DMS90 MSG: Testing completion of dark correction inLevel 2 spectroscopic"
+        " output......." + passfail(model.meta.cal_step.dark == "COMPLETE")
     )
     assert model.meta.cal_step.dark == "COMPLETE"
-    pipeline.log.info("Status of the step:             dq_init       " + str(model.meta.cal_step.dq_init))
     pipeline.log.info(
-        "DMS90 MSG: Testing completion of data quality correction in Level 2 spectroscopic output......."
+        "Status of the step:             dq_init       "
+        + str(model.meta.cal_step.dq_init)
+    )
+    pipeline.log.info(
+        "DMS90 MSG: Testing completion of data quality correction in Level 2"
+        " spectroscopic output......."
         + passfail(model.meta.cal_step.dq_init == "COMPLETE")
     )
     assert model.meta.cal_step.dq_init == "COMPLETE"
-    pipeline.log.info("Status of the step:             jump          " + str(model.meta.cal_step.jump))
     pipeline.log.info(
-        "DMS90 MSG: Testing completion of jump detection inLevel 2 spectroscopic output......."
-        + passfail(model.meta.cal_step.jump == "COMPLETE")
+        "Status of the step:             jump          " + str(model.meta.cal_step.jump)
+    )
+    pipeline.log.info(
+        "DMS90 MSG: Testing completion of jump detection inLevel 2 spectroscopic"
+        " output......." + passfail(model.meta.cal_step.jump == "COMPLETE")
     )
     assert model.meta.cal_step.jump == "COMPLETE"
-    pipeline.log.info("Status of the step:             linearity     " + str(model.meta.cal_step.assign_wcs))
     pipeline.log.info(
-        "DMS90 MSG: Testing completion of linearity correction in Level 2 spectroscopic output......."
-        + passfail(model.meta.cal_step.linearity == "COMPLETE")
+        "Status of the step:             linearity     "
+        + str(model.meta.cal_step.assign_wcs)
+    )
+    pipeline.log.info(
+        "DMS90 MSG: Testing completion of linearity correction in Level 2 spectroscopic"
+        " output......." + passfail(model.meta.cal_step.linearity == "COMPLETE")
     )
     assert model.meta.cal_step.linearity == "COMPLETE"
-    pipeline.log.info("Status of the step:             ramp_fit      " + str(model.meta.cal_step.ramp_fit))
     pipeline.log.info(
-        "DMS90 MSG: Testing completion of ramp fitting inLevel 2 spectroscopic output......."
-        + passfail(model.meta.cal_step.ramp_fit == "COMPLETE")
+        "Status of the step:             ramp_fit      "
+        + str(model.meta.cal_step.ramp_fit)
+    )
+    pipeline.log.info(
+        "DMS90 MSG: Testing completion of ramp fitting inLevel 2 spectroscopic"
+        " output......." + passfail(model.meta.cal_step.ramp_fit == "COMPLETE")
     )
     assert model.meta.cal_step.ramp_fit == "COMPLETE"
-    pipeline.log.info("Status of the step:             saturation    " + str(model.meta.cal_step.saturation))
     pipeline.log.info(
-        "DMS90 MSG: Testing completion of saturation detection in Level 2 spectroscopic output......."
-        + passfail(model.meta.cal_step.saturation == "COMPLETE")
+        "Status of the step:             saturation    "
+        + str(model.meta.cal_step.saturation)
+    )
+    pipeline.log.info(
+        "DMS90 MSG: Testing completion of saturation detection in Level 2 spectroscopic"
+        " output......." + passfail(model.meta.cal_step.saturation == "COMPLETE")
     )
     assert model.meta.cal_step.saturation == "COMPLETE"
 
     # DMS91 data quality tests
     pipeline.log.info(
-        "DMS91 MSG: Testing existence of data quality array (dq) in Level 2 spectroscopic output......."
-        + passfail("dq" in model.keys())
+        "DMS91 MSG: Testing existence of data quality array (dq) in Level 2"
+        " spectroscopic output......." + passfail("dq" in model.keys())
     )
     assert "dq" in model.keys()
     pipeline.log.info(
-        "DMS91 MSG: Testing existence of general error array (err) in Level 2 spectroscopic output......."
-        + passfail("err" in model.keys())
+        "DMS91 MSG: Testing existence of general error array (err) in Level 2"
+        " spectroscopic output......." + passfail("err" in model.keys())
     )
     assert "err" in model.keys()
     pipeline.log.info(
-        "DMS91 MSG: Testing existence of Poisson noise variance array (var_poisson) in Level 2 spectroscopic output.."
-        + passfail("var_poisson" in model.keys())
+        "DMS91 MSG: Testing existence of Poisson noise variance array (var_poisson) in"
+        " Level 2 spectroscopic output.." + passfail("var_poisson" in model.keys())
     )
     assert "var_poisson" in model.keys()
     pipeline.log.info(
-        "DMS91 MSG: Testing existence of read noise variance array (var_rnoise) in Level 2 spectroscopic output..."
-        + passfail("var_rnoise" in model.keys())
+        "DMS91 MSG: Testing existence of read noise variance array (var_rnoise) in"
+        " Level 2 spectroscopic output..." + passfail("var_rnoise" in model.keys())
     )
     assert "var_rnoise" in model.keys()
 
     # DMS88 total exposure time test
     pipeline.log.info(
-        "DMS88 MSG: Testing existence of total exposure time (exposure_time) in Level 2 spectroscopic output."
-        + passfail("exposure_time" in model.meta.exposure)
+        "DMS88 MSG: Testing existence of total exposure time (exposure_time) in Level 2"
+        " spectroscopic output." + passfail("exposure_time" in model.meta.exposure)
     )
     assert "exposure_time" in model.meta.exposure
 
     # DMS93 WCS tests
     pipeline.log.info(
-        "DMS93 MSG: Testing that the wcs boundingbox was generated......." + passfail(len(model.meta.wcs.bounding_box) == 2)
+        "DMS93 MSG: Testing that the wcs boundingbox was generated......."
+        + passfail(len(model.meta.wcs.bounding_box) == 2)
     )
     assert len(model.meta.wcs.bounding_box) == 2
 
@@ -357,10 +421,15 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
 
     pipeline.log.info(
         "DMS93 MSG: Testing that the different pointings create differing wcs......."
-        + passfail(((np.abs(orig_wcs(2048, 2048)[0] - model.meta.wcs(2048, 2048)[0])) - 10.0) < 1.0)
+        + passfail(
+            ((np.abs(orig_wcs(2048, 2048)[0] - model.meta.wcs(2048, 2048)[0])) - 10.0)
+            < 1.0
+        )
     )
     assert_allclose(
-        [orig_wcs(2048, 2048)[0] + delta[0], orig_wcs(2048, 2048)[1] + delta[1]], model.meta.wcs(2048, 2048), atol=1.0
+        [orig_wcs(2048, 2048)[0] + delta[0], orig_wcs(2048, 2048)[1] + delta[1]],
+        model.meta.wcs(2048, 2048),
+        atol=1.0,
     )
 
 

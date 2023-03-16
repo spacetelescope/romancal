@@ -63,25 +63,44 @@ class Main:
             usage="asn_from_list -o mosaic_asn.json\n--product-name my_mosaic *.fits",
         )
 
-        parser.add_argument("-o", "--output-file", type=str, required=True, help="File to write association to")
-
         parser.add_argument(
-            "-f", "--format", type=str, default="json", help='Format of the association files. Default: "%(default)s"'
+            "-o",
+            "--output-file",
+            type=str,
+            required=True,
+            help="File to write association to",
         )
 
-        parser.add_argument("--product-name", type=str, help="The product name when creating a Level 3 association")
+        parser.add_argument(
+            "-f",
+            "--format",
+            type=str,
+            default="json",
+            help='Format of the association files. Default: "%(default)s"',
+        )
+
+        parser.add_argument(
+            "--product-name",
+            type=str,
+            help="The product name when creating a Level 3 association",
+        )
 
         parser.add_argument(
             "-r",
             "--rule",
             type=str,
             default="DMS_ELPP_Base",
-            help='The rule to base the association structure on. Default: "%(default)s"',
+            help=(
+                'The rule to base the association structure on. Default: "%(default)s"'
+            ),
         )
         parser.add_argument(
             "--ruledefs",
             action="append",
-            help="Association rules definition file(s) If not specified, the default rules will be searched.",
+            help=(
+                "Association rules definition file(s) If not specified, the default"
+                " rules will be searched."
+            ),
         )
         parser.add_argument(
             "-i",
@@ -92,7 +111,12 @@ class Main:
             dest="acid",
         )
 
-        parser.add_argument("filelist", type=str, nargs="+", help="File list to include in the association")
+        parser.add_argument(
+            "filelist",
+            type=str,
+            nargs="+",
+            help="File list to include in the association",
+        )
 
         parsed = parser.parse_args(args=args)
         print("Parsed args:", parsed)
@@ -101,6 +125,11 @@ class Main:
         rule = AssociationRegistry(parsed.ruledefs, include_bases=True)[parsed.rule]
 
         with open(parsed.output_file, "w") as outfile:
-            asn = asn_from_list(parsed.filelist, rule=rule, product_name=parsed.product_name, acid=parsed.acid)
+            asn = asn_from_list(
+                parsed.filelist,
+                rule=rule,
+                product_name=parsed.product_name,
+                acid=parsed.acid,
+            )
             _, serialized = asn.dump(format=parsed.format)
             outfile.write(serialized)

@@ -89,7 +89,12 @@ class json:
         asn_filename = asn.asn_name
         if not asn_filename.endswith(".json"):
             asn_filename = asn_filename + ".json"
-        return (asn_filename, json_lib.dumps(asn.data, cls=AssociationEncoder, indent=4, separators=(",", ": ")))
+        return (
+            asn_filename,
+            json_lib.dumps(
+                asn.data, cls=AssociationEncoder, indent=4, separators=(",", ": ")
+            ),
+        )
 
 
 @Association.ioregistry

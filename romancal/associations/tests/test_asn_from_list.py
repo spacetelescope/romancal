@@ -47,7 +47,9 @@ def test_default_with_type():
     """ELPP association with types specified"""
     product_name = "test_product"
     items = {"a": "science", "b": "target_acq", "c": "somethingelse"}
-    asn = asn_from_list(list(items.items()), product_name=product_name, with_exptype=True)
+    asn = asn_from_list(
+        list(items.items()), product_name=product_name, with_exptype=True
+    )
     assert asn["asn_rule"] == "DMS_ELPP_Base"
     assert asn["asn_type"] == "None"
     assert len(asn["products"]) == 1
@@ -73,7 +75,11 @@ def test_default_roundtrip():
     """Create/Write/Read a ELPP association"""
     product_name = "test_product"
     items = {"a": "science", "b": "target_acq", "c": "somethingelse"}
-    asn = asn_from_list([(item, type_) for item, type_ in items.items()], product_name=product_name, with_exptype=True)
+    asn = asn_from_list(
+        [(item, type_) for item, type_ in items.items()],
+        product_name=product_name,
+        with_exptype=True,
+    )
     _, serialized = asn.dump()
     reloaded = load_asn(serialized)
     assert asn["asn_rule"] == reloaded["asn_rule"]

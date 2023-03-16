@@ -43,7 +43,9 @@ def all_steps():
     for module in load_local_pkg(romancal_fpath):
         more_steps = {
             klass_name: klass
-            for klass_name, klass in inspect.getmembers(module, lambda o: inspect.isclass(o) and issubclass(o, Step))
+            for klass_name, klass in inspect.getmembers(
+                module, lambda o: inspect.isclass(o) and issubclass(o, Step)
+            )
             if klass_name not in NON_STEPS
         }
         steps.update(more_steps)
@@ -67,7 +69,9 @@ def load_local_pkg(fpath):
     package_fpath, package = os.path.split(fpath)
     package_fpath_len = len(package_fpath) + 1
     try:
-        for module_fpath in folder_traverse(fpath, basename_regex=r"[^_].+\.py$", path_exclude_regex="tests"):
+        for module_fpath in folder_traverse(
+            fpath, basename_regex=r"[^_].+\.py$", path_exclude_regex="tests"
+        ):
             folder_path, fname = os.path.split(module_fpath[package_fpath_len:])
             module_path = folder_path.split("/")
             module_path.append(os.path.splitext(fname)[0])
@@ -81,7 +85,9 @@ def load_local_pkg(fpath):
             else:
                 yield module
     except Exception as err:
-        logger.debug(f'Cannot complete package loading: Exception occurred: "{str(err)}"')
+        logger.debug(
+            f'Cannot complete package loading: Exception occurred: "{str(err)}"'
+        )
 
 
 def folder_traverse(folder_path, basename_regex=".+", path_exclude_regex="^$"):

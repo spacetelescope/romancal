@@ -6,7 +6,13 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 # Guide star mode exposure types
-GUIDER_LIST = ["WFI_WIM_ACQ", "WFI_WIM_TRACK", "WFI_WSM_ACQ1", "WFI_WSM_ACQ2", "WFI_WSM_TRACK"]
+GUIDER_LIST = [
+    "WFI_WIM_ACQ",
+    "WFI_WIM_TRACK",
+    "WFI_WSM_ACQ1",
+    "WFI_WSM_ACQ2",
+    "WFI_WSM_TRACK",
+]
 
 
 def do_dqinit(input_model, mask=None):

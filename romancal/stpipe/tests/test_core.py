@@ -30,7 +30,9 @@ def test_open_model(step_class, tmp_path):
 
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
 def test_get_reference_file(step_class):
@@ -55,7 +57,9 @@ def test_get_reference_file(step_class):
 @pytest.mark.skip(reason="There are no grism flats.")
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
 def test_get_reference_file_spectral(step_class):

@@ -28,7 +28,12 @@ def return_on_exception(exceptions=(Exception,), default=None):
             try:
                 return func(*args, **kwargs)
             except exceptions as err:
-                logger.debug("Caught exception %s in function %s, forcing return value of %s", err, func, default)
+                logger.debug(
+                    "Caught exception %s in function %s, forcing return value of %s",
+                    err,
+                    func,
+                    default,
+                )
                 return default
 
         return wrapper
@@ -118,4 +123,8 @@ def getattr_from_list_nofail(*args, **kwargs):
 
 def is_iterable(obj):
     """General iterator check"""
-    return not isinstance(obj, str) and not isinstance(obj, tuple) and hasattr(obj, "__iter__")
+    return (
+        not isinstance(obj, str)
+        and not isinstance(obj, tuple)
+        and hasattr(obj, "__iter__")
+    )

@@ -11,7 +11,12 @@ from pathlib import Path
 import asdf
 import requests
 from asdf.commands.diff import diff as asdf_diff
-from ci_watson.artifactory_helpers import BigdataError, check_url, get_bigdata, get_bigdata_root
+from ci_watson.artifactory_helpers import (
+    BigdataError,
+    check_url,
+    get_bigdata,
+    get_bigdata_root,
+)
 
 # from romancal.lib.suffix import replace_suffix
 from romancal.stpipe import RomanStep
@@ -177,7 +182,9 @@ class RegtestData:
             file_paths = _data_glob_local(path, glob)
         elif check_url(root):
             root_len = len(self._env) + 1
-            file_paths = _data_glob_url(self._inputs_root, self._env, path, glob, root=root)
+            file_paths = _data_glob_url(
+                self._inputs_root, self._env, path, glob, root=root
+            )
         else:
             raise BigdataError(f"Path cannot be found: {path}")
 

@@ -8,7 +8,9 @@ from logging.config import dictConfig
 
 __all__ = ["log_config"]
 
-DMS_DEFAULT_FORMAT = "%(asctime)s %(levelname)s pid=%(process)d src=%(name)s.%(funcName)s"
+DMS_DEFAULT_FORMAT = (
+    "%(asctime)s %(levelname)s pid=%(process)d src=%(name)s.%(funcName)s"
+)
 
 
 class ContextFilter:
@@ -70,7 +72,10 @@ base_config = {
     "datefmt": "%Y%m%d%H%M",
     "formatters": {
         "info": {"format": "%(message)s", "datefmt": "cfg://datefmt"},
-        "debug": {"format": "%(asctime)s:%(levelname)s:%(name)s.%(funcName)s:%(message)s", "datefmt": "cfg://datefmt"},
+        "debug": {
+            "format": "%(asctime)s:%(levelname)s:%(name)s.%(funcName)s:%(message)s",
+            "datefmt": "cfg://datefmt",
+        },
     },
     "handlers": {
         "info": {
@@ -102,15 +107,25 @@ base_config = {
     },
     "DMS": {
         "datefmt": "%Y%m%d%H%M",
-        "logformat": "%(asctime)s %(levelname)s pid=%(process)d src=%(name)s.%(funcName)s",
+        "logformat": (
+            "%(asctime)s %(levelname)s pid=%(process)d src=%(name)s.%(funcName)s"
+        ),
     },
 }
 
 # DMS-specific configuration
 DMS_config = {
     "formatters": {
-        "info": {"()": DMSFormatter, "format": "cfg://DMS.logformat", "datefmt": "cfg://DMS.datefmt"},
-        "debug": {"()": DMSFormatter, "format": "cfg://DMS.logformat", "datefmt": "cfg://DMS.datefmt"},
+        "info": {
+            "()": DMSFormatter,
+            "format": "cfg://DMS.logformat",
+            "datefmt": "cfg://DMS.datefmt",
+        },
+        "debug": {
+            "()": DMSFormatter,
+            "format": "cfg://DMS.logformat",
+            "datefmt": "cfg://DMS.datefmt",
+        },
     }
 }
 

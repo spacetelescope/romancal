@@ -3,7 +3,12 @@ from timeit import default_timer as timer
 
 from ..lib.progress import Bar
 from .association import make_timestamp
-from .lib.process_list import ListCategory, ProcessList, ProcessQueueSorted, workover_filter
+from .lib.process_list import (
+    ListCategory,
+    ProcessList,
+    ProcessQueueSorted,
+    workover_filter,
+)
 from .pool import PoolRow
 
 # Configure logging
@@ -43,7 +48,9 @@ def generate(pool, rules, version_id=None):
     associations = []
     if type(version_id) is bool:
         version_id = make_timestamp()
-    process_queue = ProcessQueueSorted([ProcessList(items=pool, rules=[rule for _, rule in rules.items()])])
+    process_queue = ProcessQueueSorted(
+        [ProcessList(items=pool, rules=[rule for _, rule in rules.items()])]
+    )
 
     logger.debug("Initial process queue: %s", process_queue)
     for process_list in process_queue:
@@ -52,11 +59,17 @@ def generate(pool, rules, version_id=None):
         total_mod_existing = 0
         total_new = 0
         total_reprocess = 0
-        with Bar("Processing items", log_level=logger.getEffectiveLevel(), max=len(process_list.items)) as bar:
+        with Bar(
+            "Processing items",
+            log_level=logger.getEffectiveLevel(),
+            max=len(process_list.items),
+        ) as bar:
             for item in process_list.items:
                 item = PoolRow(item)
 
-                existing_asns, new_asns, to_process = generate_from_item(item, version_id, associations, rules, process_list)
+                existing_asns, new_asns, to_process = generate_from_item(
+                    item, version_id, associations, rules, process_list
+                )
                 total_mod_existing += len(existing_asns)
                 total_new += len(new_asns)
                 associations.extend(new_asns)
@@ -73,7 +86,11 @@ def generate(pool, rules, version_id=None):
                 total_reprocess += len(to_process_modified)
                 bar.next()
 
-        logger.debug("Existing associations modified: %d New associations created: %d", total_mod_existing, total_new)
+        logger.debug(
+            "Existing associations modified: %d New associations created: %d",
+            total_mod_existing,
+            total_new,
+        )
         logger.debug("New process lists: %d", total_reprocess)
         logger.debug("Updated process queue: %s", process_queue)
         logger.debug("# associations: %d", len(associations))

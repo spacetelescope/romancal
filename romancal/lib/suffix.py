@@ -122,7 +122,9 @@ def replace_suffix(name, new_suffix):
 # #####################################
 # Functions to generate `KNOW_SUFFIXES`
 # #####################################
-def combine_suffixes(to_add=(_calculated_suffixes, SUFFIXES_TO_ADD), to_remove=(SUFFIXES_TO_DISCARD,)):
+def combine_suffixes(
+    to_add=(_calculated_suffixes, SUFFIXES_TO_ADD), to_remove=(SUFFIXES_TO_DISCARD,)
+):
     """Combine the suffix lists into a single list
 
     Parameters
@@ -181,7 +183,9 @@ def find_suffixes():
 KNOW_SUFFIXES = combine_suffixes()
 
 # Regex for removal
-REMOVE_SUFFIX_REGEX = re.compile("^(?P<root>.+?)((?P<separator>_|-)(" + "|".join(KNOW_SUFFIXES) + "))?$")
+REMOVE_SUFFIX_REGEX = re.compile(
+    "^(?P<root>.+?)((?P<separator>_|-)(" + "|".join(KNOW_SUFFIXES) + "))?$"
+)
 
 
 # ############################################
@@ -191,10 +195,15 @@ REMOVE_SUFFIX_REGEX = re.compile("^(?P<root>.+?)((?P<separator>_|-)(" + "|".join
 if __name__ == "__main__":
     print("Searching code base for calibration suffixes...")
     calculated_suffixes = find_suffixes()
-    found_suffixes = combine_suffixes(to_add=(calculated_suffixes, SUFFIXES_TO_ADD), to_remove=(SUFFIXES_TO_DISCARD,))
+    found_suffixes = combine_suffixes(
+        to_add=(calculated_suffixes, SUFFIXES_TO_ADD), to_remove=(SUFFIXES_TO_DISCARD,)
+    )
     print(
         "Known list has {known_len} suffixes. Found {new_len} suffixes.".format(
             known_len=len(KNOW_SUFFIXES), new_len=len(found_suffixes)
         )
     )
-    print(f"Suffixes that have changed are {set(found_suffixes).symmetric_difference(KNOW_SUFFIXES)}")
+    print(
+        "Suffixes that have changed are"
+        f" {set(found_suffixes).symmetric_difference(KNOW_SUFFIXES)}"
+    )

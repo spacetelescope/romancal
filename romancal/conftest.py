@@ -79,7 +79,9 @@ def jail(request, tmpdir_factory):
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config):
     terminal_reporter = config.pluginmanager.getplugin("terminalreporter")
-    config.pluginmanager.register(TestDescriptionPlugin(terminal_reporter), "testdescription")
+    config.pluginmanager.register(
+        TestDescriptionPlugin(terminal_reporter), "testdescription"
+    )
 
 
 class TestDescriptionPlugin:

@@ -70,7 +70,10 @@ def test_ad_floor_flagging(setup_wfi_datamodels):
     output = flag_saturation(ramp, satmap)
 
     # Check if the right frames are flagged as saturated
-    assert np.all(output.groupdq[satindxs, 5, 5] == dqflags.group["DO_NOT_USE"] | dqflags.group["AD_FLOOR"])
+    assert np.all(
+        output.groupdq[satindxs, 5, 5]
+        == dqflags.group["DO_NOT_USE"] | dqflags.group["AD_FLOOR"]
+    )
 
 
 def test_ad_floor_and_saturation_flagging(setup_wfi_datamodels):
@@ -104,7 +107,10 @@ def test_ad_floor_and_saturation_flagging(setup_wfi_datamodels):
     output = flag_saturation(ramp, satmap)
 
     # Check if the right frames are flagged as ad_floor
-    assert np.all(output.groupdq[floorindxs, 5, 5] == dqflags.group["DO_NOT_USE"] | dqflags.group["AD_FLOOR"])
+    assert np.all(
+        output.groupdq[floorindxs, 5, 5]
+        == dqflags.group["DO_NOT_USE"] | dqflags.group["AD_FLOOR"]
+    )
     # Check if the right frames are flagged as saturated
     assert np.all(output.groupdq[satindxs, 5, 5] == dqflags.group["SATURATED"])
 
@@ -224,8 +230,13 @@ def test_no_sat_check(setup_wfi_datamodels):
     # Make sure PIXELDQ is set to NO_SAT_CHECK and original flag
     assert np.all(output.groupdq[:, 5, 5] != dqflags.group["SATURATED"])
     # Test that saturation bit is NOT set
-    assert np.all(output.groupdq[:, 5, 5] & (1 << dqflags.group["SATURATED"].bit_length() - 1) == 0)
-    assert output.pixeldq[5, 5] == (dqflags.pixel["NO_SAT_CHECK"] + dqflags.pixel["DO_NOT_USE"])
+    assert np.all(
+        output.groupdq[:, 5, 5] & (1 << dqflags.group["SATURATED"].bit_length() - 1)
+        == 0
+    )
+    assert output.pixeldq[5, 5] == (
+        dqflags.pixel["NO_SAT_CHECK"] + dqflags.pixel["DO_NOT_USE"]
+    )
 
 
 def test_nans_in_mask(setup_wfi_datamodels):

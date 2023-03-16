@@ -110,9 +110,13 @@ def generate_artifactory_json(request, artifactory_repos):
             rtdata.to_asdf(path_asdf)
 
             # Generate an OKify JSON file
-            pattern = os.path.join(rtdata.remote_results_path, os.path.basename(rtdata.output))
+            pattern = os.path.join(
+                rtdata.remote_results_path, os.path.basename(rtdata.output)
+            )
             okify_schema_pattern.append(pattern)
-            okify_schema = generate_upload_schema(okify_schema_pattern, f"{os.path.dirname(rtdata.truth_remote)}/")
+            okify_schema = generate_upload_schema(
+                okify_schema_pattern, f"{os.path.dirname(rtdata.truth_remote)}/"
+            )
 
             jsonfile = os.path.join(cwd, f"{request.node.name}_okify.json")
             with open(jsonfile, "w") as fd:
@@ -122,7 +126,9 @@ def generate_artifactory_json(request, artifactory_repos):
             upload_schema_pattern.append(rtdata.output)
             upload_schema_pattern.append(os.path.abspath(jsonfile))
             upload_schema_pattern.append(path_asdf)
-            upload_schema = generate_upload_schema(upload_schema_pattern, rtdata.remote_results_path)
+            upload_schema = generate_upload_schema(
+                upload_schema_pattern, rtdata.remote_results_path
+            )
 
             jsonfile = os.path.join(cwd, f"{request.node.name}_results.json")
             with open(jsonfile, "w") as fd:
@@ -170,7 +176,9 @@ def generate_upload_schema(pattern, target, recursive=False):
     else:
         # Populate schema for this test's data
         upload_schema = copy.deepcopy(UPLOAD_SCHEMA)
-        upload_schema["files"][0].update({"pattern": pattern, "target": target, "recursive": recursive})
+        upload_schema["files"][0].update(
+            {"pattern": pattern, "target": target, "recursive": recursive}
+        )
     return upload_schema
 
 
@@ -245,7 +253,9 @@ def diff_astropy_tables():
 
                 if truth[col_name].dtype.kind == "f":
                     try:
-                        assert_allclose(result[col_name], truth[col_name], rtol=rtol, atol=atol)
+                        assert_allclose(
+                            result[col_name], truth[col_name], rtol=rtol, atol=atol
+                        )
                     except AssertionError as err:
                         diffs.append(
                             "\n----------------------------------\n"
@@ -274,7 +284,10 @@ def diff_astropy_tables():
 # Add option to specify a single pool name
 def pytest_addoption(parser):
     parser.addoption(
-        "--sdp-pool", metavar="sdp_pool", default=None, help="SDP test pool to run. Specify the name only, not extension or path"
+        "--sdp-pool",
+        metavar="sdp_pool",
+        default=None,
+        help="SDP test pool to run. Specify the name only, not extension or path",
     )
     parser.addoption(
         "--standard-pool",

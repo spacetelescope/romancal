@@ -66,7 +66,9 @@ class Main:
         if isinstance(args, str):
             args = args.split(" ")
 
-        parser = argparse.ArgumentParser(description="Generate Assocation Data Products", usage="asn_generate pool")
+        parser = argparse.ArgumentParser(
+            description="Generate Assocation Data Products", usage="asn_generate pool"
+        )
         if pool is None:
             parser.add_argument("pool", type=str, help="Association Pool")
         op_group = parser.add_mutually_exclusive_group()
@@ -77,7 +79,9 @@ class Main:
             dest="asn_candidate_ids",
             help="space-separated list of association candidate IDs to operate on.",
         )
-        op_group.add_argument("--discover", action="store_true", help="Produce discovered associations")
+        op_group.add_argument(
+            "--discover", action="store_true", help="Produce discovered associations"
+        )
         op_group.add_argument(
             "--all-candidates",
             action="store_true",
@@ -85,7 +89,11 @@ class Main:
             help="Produce all association candidate-specific associations",
         )
         parser.add_argument(
-            "-p", "--path", type=str, default=".", help='Folder to save the associations to. Default: "%(default)s"'
+            "-p",
+            "--path",
+            type=str,
+            default=".",
+            help='Folder to save the associations to. Default: "%(default)s"',
         )
         parser.add_argument(
             "--save-orphans",
@@ -108,11 +116,20 @@ class Main:
                 " Otherwise, the specified string will be used."
             ),
         )
-        parser.add_argument("-r", "--rules", action="append", help="Association Rules file.")
         parser.add_argument(
-            "--ignore-default", action="store_true", help="Do not include default rules. -r should be used if set."
+            "-r", "--rules", action="append", help="Association Rules file."
         )
-        parser.add_argument("--dry-run", action="store_true", dest="dry_run", help="Execute but do not save results.")
+        parser.add_argument(
+            "--ignore-default",
+            action="store_true",
+            help="Do not include default rules. -r should be used if set.",
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            dest="dry_run",
+            help="Execute but do not save results.",
+        )
         parser.add_argument(
             "-d",
             "--delimiter",
@@ -151,13 +168,33 @@ class Main:
             const=logging.DEBUG,
             help="Output detailed debugging information.",
         )
-        parser.add_argument("--DMS", action="store_true", dest="DMS_enabled", help="Running under DMS workflow conditions.")
-        parser.add_argument("--format", default="json", help='Format of the association files. Default: "%(default)s"')
-        parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}", help="Version of the generator.")
         parser.add_argument(
-            "--merge", action="store_true", help="Merge associations into single associations with multiple products"
+            "--DMS",
+            action="store_true",
+            dest="DMS_enabled",
+            help="Running under DMS workflow conditions.",
         )
-        parser.add_argument("--no-merge", action=DeprecateNoMerge, help='Deprecated: Default is to not merge. See "--merge".')
+        parser.add_argument(
+            "--format",
+            default="json",
+            help='Format of the association files. Default: "%(default)s"',
+        )
+        parser.add_argument(
+            "--version",
+            action="version",
+            version=f"%(prog)s {__version__}",
+            help="Version of the generator.",
+        )
+        parser.add_argument(
+            "--merge",
+            action="store_true",
+            help="Merge associations into single associations with multiple products",
+        )
+        parser.add_argument(
+            "--no-merge",
+            action=DeprecateNoMerge,
+            help='Deprecated: Default is to not merge. See "--merge".',
+        )
 
         parsed = parser.parse_args(args=args)
 
@@ -195,7 +232,11 @@ class Main:
         #     candidate associations
         #  3) Both discovered and all candidate associations.
         logger.info("Reading rules.")
-        if not parsed.discover and not parsed.all_candidates and parsed.asn_candidate_ids is None:
+        if (
+            not parsed.discover
+            and not parsed.all_candidates
+            and parsed.asn_candidate_ids is None
+        ):
             parsed.discover = True
             parsed.all_candidates = True
         if parsed.discover or parsed.all_candidates:
@@ -203,16 +244,29 @@ class Main:
         elif parsed.asn_candidate_ids is not None:
             global_constraints = constrain_on_candidates(parsed.asn_candidate_ids)
         self.rules = AssociationRegistry(
-            parsed.rules, include_default=not parsed.ignore_default, global_constraints=global_constraints, name=CANDIDATE_RULESET
+            parsed.rules,
+            include_default=not parsed.ignore_default,
+            global_constraints=global_constraints,
+            name=CANDIDATE_RULESET,
         )
 
         if parsed.discover:
-            self.rules.update(AssociationRegistry(parsed.rules, include_default=not parsed.ignore_default, name=DISCOVER_RULESET))
+            self.rules.update(
+                AssociationRegistry(
+                    parsed.rules,
+                    include_default=not parsed.ignore_default,
+                    name=DISCOVER_RULESET,
+                )
+            )
 
         logger.info("Generating associations.")
-        self.associations = generate(self.pool, self.rules, version_id=parsed.version_id)
+        self.associations = generate(
+            self.pool, self.rules, version_id=parsed.version_id
+        )
         if parsed.discover:
-            logger.debug(f"# asns found before discover filtering={len(self.associations)}")
+            logger.debug(
+                f"# asns found before discover filtering={len(self.associations)}"
+            )
 
             self.associations = filter_discovered_only(
                 self.associations,
@@ -233,7 +287,9 @@ class Main:
         logger.debug(self.__str__())
 
         if not parsed.dry_run:
-            self.save(path=parsed.path, format=parsed.format, save_orphans=parsed.save_orphans)
+            self.save(
+                path=parsed.path, format=parsed.format, save_orphans=parsed.save_orphans
+            )
 
     @property
     def orphaned(self):
@@ -253,9 +309,10 @@ class Main:
     def __str__(self):
         result = []
         result.append(
-            ("There where {:d} associations and {:d} orphaned items found.\nAssociations found are:").format(
-                len(self.associations), len(self.orphaned)
-            )
+            (
+                "There where {:d} associations and {:d} orphaned items"
+                " found.\nAssociations found are:"
+            ).format(len(self.associations), len(self.orphaned))
         )
         for assocs in self.associations:
             result.append(assocs.__str__())
@@ -282,7 +339,9 @@ class Main:
                 f.write(serialized)
 
         if save_orphans:
-            self.orphaned.write(os.path.join(path, save_orphans), format="ascii", delimiter="|")
+            self.orphaned.write(
+                os.path.join(path, save_orphans), format="ascii", delimiter="|"
+            )
 
 
 # #########
@@ -295,7 +354,10 @@ class DeprecateNoMerge(argparse.Action):
         super().__init__(option_strings, dest, const=True, nargs=0, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        logger.warning('The "--no-merge" option is now the default and deprecated. Use "--merge" to force merging.')
+        logger.warning(
+            'The "--no-merge" option is now the default and deprecated. Use "--merge"'
+            " to force merging."
+        )
         setattr(namespace, self.dest, values)
 
 
