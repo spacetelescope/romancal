@@ -21,6 +21,7 @@ __all__ = []
 # Define JSON encoder to convert `Member` to `dict`
 class AssociationEncoder(json_lib.JSONEncoder):
     """Encode to handle Associations"""
+
     def default(self, obj):
 
         # Convert Member to a simple dict
@@ -29,7 +30,7 @@ class AssociationEncoder(json_lib.JSONEncoder):
 
 
 @Association.ioregistry
-class json():
+class json:
     """Load and store associations as JSON"""
 
     @staticmethod
@@ -65,9 +66,7 @@ class json():
             asn = loader(serialized)
         except Exception as err:
             logger.debug(f'Error unserializing: "{err}"')
-            raise AssociationNotValidError(
-                f'Container is not JSON: "{serialized}"'
-            )
+            raise AssociationNotValidError(f'Container is not JSON: "{serialized}"')
 
         return asn
 
@@ -88,17 +87,13 @@ class json():
             Second item is the string containing the JSON serialization.
         """
         asn_filename = asn.asn_name
-        if not asn_filename.endswith('.json'):
-            asn_filename = asn_filename+'.json'
-        return (
-            asn_filename,
-            json_lib.dumps(asn.data, cls=AssociationEncoder, indent=4,
-                           separators=(',', ': '))
-        )
+        if not asn_filename.endswith(".json"):
+            asn_filename = asn_filename + ".json"
+        return (asn_filename, json_lib.dumps(asn.data, cls=AssociationEncoder, indent=4, separators=(",", ": ")))
 
 
 @Association.ioregistry
-class yaml():
+class yaml:
     """Load and store associations as YAML"""
 
     @staticmethod
@@ -132,9 +127,7 @@ class yaml():
             asn = yaml_lib.safe_load(serialized)
         except Exception as err:
             logger.debug(f'Error unserializing: "{err}"')
-            raise AssociationNotValidError(
-                f'Container is not YAML: "{serialized}"'
-            )
+            raise AssociationNotValidError(f'Container is not YAML: "{serialized}"')
         return asn
 
     @staticmethod
@@ -155,18 +148,15 @@ class yaml():
             Second item is the string containing the YAML serialization.
         """
         asn_filename = asn.asn_name
-        if not asn.asn_name.endswith('.yaml'):
-            asn_filename = asn.asn_name+'.yaml'
-        return (
-            asn_filename,
-            yaml_lib.dump(asn.data, default_flow_style=False)
-        )
+        if not asn.asn_name.endswith(".yaml"):
+            asn_filename = asn.asn_name + ".yaml"
+        return (asn_filename, yaml_lib.dump(asn.data, default_flow_style=False))
 
 
 # Register YAML representers
 def np_str_representer(dumper, data):
     """Convert numpy.str_ into standard YAML string"""
-    return dumper.represent_scalar('tag:yaml.org,2002:str', str(data))
+    return dumper.represent_scalar("tag:yaml.org,2002:str", str(data))
 
 
 yaml_lib.add_representer(np.str_, np_str_representer)

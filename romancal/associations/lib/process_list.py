@@ -3,17 +3,12 @@ from collections import deque
 from enum import Enum
 from functools import reduce
 
-__all__ = [
-    'ListCategory',
-    'ProcessList',
-    'ProcessItem',
-    'ProcessQueue',
-    'ProcessQueueSorted'
-]
+__all__ = ["ListCategory", "ProcessList", "ProcessItem", "ProcessQueue", "ProcessQueueSorted"]
 
 
 class ListCategory(Enum):
     """Categories in the list"""
+
     RULES = 0
     BOTH = 1
     EXISTING = 2
@@ -29,6 +24,7 @@ class ProcessItem:
         The object to make a `ProcessItem`.
         Objects must be equatable.
     """
+
     def __init__(self, obj):
         self.obj = obj
 
@@ -93,11 +89,17 @@ class ProcessList:
         The association rules that created the ProcessList
     """
 
-    _str_attrs = ('rules', 'work_over', 'only_on_match', 'trigger_constraints', 'trigger_rules')
+    _str_attrs = ("rules", "work_over", "only_on_match", "trigger_constraints", "trigger_rules")
 
-    def __init__(self, items=None, rules=None,
-                 work_over=ListCategory.BOTH, only_on_match=False,
-                 trigger_constraints=None, trigger_rules=None):
+    def __init__(
+        self,
+        items=None,
+        rules=None,
+        work_over=ListCategory.BOTH,
+        only_on_match=False,
+        trigger_constraints=None,
+        trigger_rules=None,
+    ):
         self.items = items
         self.rules = rules
         self.work_over = work_over
@@ -137,19 +139,15 @@ class ProcessList:
             self.only_on_match = process_list.only_on_match
 
     def __str__(self):
-        result = '{}(n_items: {}, {})'.format(
-            self.__class__.__name__,
-            len(self.items),
-            {
-                str_attr: getattr(self, str_attr)
-                for str_attr in self._str_attrs
-            }
+        result = "{}(n_items: {}, {})".format(
+            self.__class__.__name__, len(self.items), {str_attr: getattr(self, str_attr) for str_attr in self._str_attrs}
         )
         return result
 
 
 class ProcessQueue(deque):
     """Make a deque iterable and mutable"""
+
     def __iter__(self):
         while True:
             try:
@@ -166,6 +164,7 @@ class ProcessListQueue:
     init : [ProcessList[,...]] or None
         List of ProcessLists to put on the queue.
     """
+
     def __init__(self, init=None):
         self._queue = {}
         if init is not None:
@@ -207,7 +206,7 @@ class ProcessListQueue:
                 break
 
     def __str__(self):
-        result = f'{self.__class__.__name__}: rulesets {len(self)} items {len(list(self.items()))}'
+        result = f"{self.__class__.__name__}: rulesets {len(self)} items {len(list(self.items()))}"
         return result
 
 
@@ -222,11 +221,9 @@ class ProcessQueueSorted:
     init : [ProcessList[,...]]
         List of `ProcessList` to start the queue with.
     """
+
     def __init__(self, init=None):
-        self.queues = {
-            list_category: ProcessListQueue()
-            for list_category in ListCategory
-        }
+        self.queues = {list_category: ProcessListQueue() for list_category in ListCategory}
 
         if init is not None:
             self.extend(init)
@@ -251,9 +248,9 @@ class ProcessQueueSorted:
         return reduce(lambda x, y: x + len(y), self.queues.values(), 0)
 
     def __str__(self):
-        result = f'{self.__class__.__name__}:'
+        result = f"{self.__class__.__name__}:"
         for queue in self.queues:
-            result += f'\n\tQueue {queue}: {self.queues[queue]}'
+            result += f"\n\tQueue {queue}: {self.queues[queue]}"
         return result
 
 

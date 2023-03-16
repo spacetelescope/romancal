@@ -22,7 +22,7 @@ class DarkCurrentStep(RomanStep):
         dark_output = output_file(default = None) # Dark corrected model
     """
 
-    reference_file_types = ['dark']
+    reference_file_types = ["dark"]
 
     def process(self, input):
 
@@ -30,19 +30,19 @@ class DarkCurrentStep(RomanStep):
         with rdd.open(input) as input_model:
 
             # Get the name of the dark reference file to use
-            self.dark_name = self.get_reference_file(input_model, 'dark')
-            self.log.info('Using DARK reference file %s', self.dark_name)
+            self.dark_name = self.get_reference_file(input_model, "dark")
+            self.log.info("Using DARK reference file %s", self.dark_name)
 
             # Open dark model
             dark_model = rdd.open(self.dark_name)
 
             # Temporary patch to utilize stcal dark step until MA table support is fully implemented
-            if 'ngroups' not in dark_model.meta.exposure:
-                dark_model.meta.exposure['ngroups'] = dark_model.data.shape[0]
-            if 'nframes' not in dark_model.meta.exposure:
-                dark_model.meta.exposure['nframes'] = input_model.meta.exposure.nframes
-            if 'groupgap' not in dark_model.meta.exposure:
-                dark_model.meta.exposure['groupgap'] = input_model.meta.exposure.groupgap
+            if "ngroups" not in dark_model.meta.exposure:
+                dark_model.meta.exposure["ngroups"] = dark_model.data.shape[0]
+            if "nframes" not in dark_model.meta.exposure:
+                dark_model.meta.exposure["nframes"] = input_model.meta.exposure.nframes
+            if "groupgap" not in dark_model.meta.exposure:
+                dark_model.meta.exposure["groupgap"] = input_model.meta.exposure.groupgap
 
             # Reshaping data variables for stcal compatibility
             input_model.data = input_model.data[np.newaxis, :]
@@ -50,9 +50,7 @@ class DarkCurrentStep(RomanStep):
             input_model.err = input_model.err[np.newaxis, :]
 
             # Do the dark correction
-            out_data, dark_data = dark_sub.do_correction(
-                input_model, dark_model, self.dark_output
-            )
+            out_data, dark_data = dark_sub.do_correction(input_model, dark_model, self.dark_output)
 
             # Save dark data to file
             if dark_data is not None and dark_data.save:
@@ -69,9 +67,9 @@ class DarkCurrentStep(RomanStep):
 
         if self.save_results:
             try:
-                self.suffix = 'darkcurrent'
+                self.suffix = "darkcurrent"
             except AttributeError:
-                self['suffix'] = 'darkcurrent'
+                self["suffix"] = "darkcurrent"
             dark_model.close()
 
         return out_ramp
@@ -97,9 +95,9 @@ def save_dark_data_as_dark_model(dark_data, dark_model):
     out_dark.err = u.Quantity(dark_data.err, out_dark.err.unit, dtype=out_dark.err.dtype)
 
     # Temporary patch to utilize stcal dark step until MA table support is fully implemented
-    out_dark.meta.exposure['nframes'] = dark_data.exp_nframes
-    out_dark.meta.exposure['ngroups'] = dark_data.exp_ngroups
-    out_dark.meta.exposure['groupgap'] = dark_data.exp_groupgap
+    out_dark.meta.exposure["nframes"] = dark_data.exp_nframes
+    out_dark.meta.exposure["ngroups"] = dark_data.exp_ngroups
+    out_dark.meta.exposure["groupgap"] = dark_data.exp_groupgap
 
     # Create DarkRefModel and write to file
     out_dark_model = rdd.DarkRefModel(out_dark)

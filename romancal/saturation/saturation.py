@@ -10,7 +10,7 @@ from romancal.lib import dqflags
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-ATOD_LIMIT = 65535.  # Hard DN limit of 16-bit A-to-D converter
+ATOD_LIMIT = 65535.0  # Hard DN limit of 16-bit A-to-D converter
 
 
 def flag_saturation(input_model, ref_model):
@@ -48,9 +48,7 @@ def flag_saturation(input_model, ref_model):
     # Obtain dq arrays updated for saturation
     # The third variable is the processed ZEROFRAME, which is not
     # used in romancal, so is always None.
-    gdq_new, pdq_new, _ = flag_saturated_pixels(
-        data, gdq, pdq, sat_thresh, sat_dq, ATOD_LIMIT, dqflags.pixel,
-        n_pix_grow_sat=0)
+    gdq_new, pdq_new, _ = flag_saturated_pixels(data, gdq, pdq, sat_thresh, sat_dq, ATOD_LIMIT, dqflags.pixel, n_pix_grow_sat=0)
 
     # Save the flags in the output GROUPDQ array
     output_model.groupdq = gdq_new[0, :]

@@ -12,10 +12,10 @@ from .process_list import ListCategory, ProcessList
 from .utilities import evaluate, getattr_from_list, is_iterable
 
 __all__ = [
-    'AttrConstraint',
-    'Constraint',
-    'ConstraintTrue',
-    'SimpleConstraint',
+    "AttrConstraint",
+    "Constraint",
+    "ConstraintTrue",
+    "SimpleConstraint",
 ]
 
 # Configure logging
@@ -48,7 +48,7 @@ class SimpleConstraintABC(abc.ABC):
     """
 
     # Attributes to show in the string representation.
-    _str_attrs = ('name', 'value')
+    _str_attrs = ("name", "value")
 
     def __init__(self, init=None, value=None, name=None, **kwargs):
 
@@ -78,7 +78,7 @@ class SimpleConstraintABC(abc.ABC):
         return self.matched, []
 
     @property
-    def dup_names(self): #  -> dict[str, list[typing.Union[SimpleConstraint, Constraint]]]
+    def dup_names(self):  #  -> dict[str, list[typing.Union[SimpleConstraint, Constraint]]]
         """Return dictionary of constraints with duplicate names
 
         This method is meant to be overridden by classes
@@ -101,13 +101,13 @@ class SimpleConstraintABC(abc.ABC):
         id : str
             The identifyer
         """
-        return f'{self.__class__.__name__}:{self.name}'
+        return f"{self.__class__.__name__}:{self.name}"
 
     def copy(self):
         """Copy ourselves"""
         return deepcopy(self)
 
-    def get_all_attr(self, attribute: str): # -> list[tuple[SimpleConstraint, typing.Any]]:
+    def get_all_attr(self, attribute: str):  # -> list[tuple[SimpleConstraint, typing.Any]]:
         """Return the specified attribute
 
         This method is meant to be overridden by classes
@@ -135,20 +135,11 @@ class SimpleConstraintABC(abc.ABC):
         yield self
 
     def __repr__(self):
-        result = '{}({})'.format(
-            self.__class__.__name__,
-            str(self.__dict__)
-        )
+        result = f"{self.__class__.__name__}({str(self.__dict__)})"
         return result
 
     def __str__(self):
-        result = '{}({})'.format(
-            self.__class__.__name__,
-            {
-                str_attr: getattr(self, str_attr)
-                for str_attr in self._str_attrs
-            }
-        )
+        result = f"{self.__class__.__name__}({dict({str_attr: getattr(self, str_attr) for str_attr in self._str_attrs})})"
         return result
 
 
@@ -258,16 +249,16 @@ class SimpleConstraint(SimpleConstraintABC):
     """
 
     def __init__(
-            self,
-            init=None,
-            sources=None,
-            force_unique=True,
-            test=None,
-            reprocess_on_match=False,
-            reprocess_on_fail=False,
-            work_over=ListCategory.BOTH,
-            reprocess_rules=None,
-            **kwargs
+        self,
+        init=None,
+        sources=None,
+        force_unique=True,
+        test=None,
+        reprocess_on_match=False,
+        reprocess_on_fail=False,
+        work_over=ListCategory.BOTH,
+        reprocess_rules=None,
+        **kwargs,
     ):
 
         # Defined attributes
@@ -310,14 +301,10 @@ class SimpleConstraint(SimpleConstraintABC):
 
         # Determine reprocessing
         reprocess = []
-        if ((self.matched and self.reprocess_on_match) or
-                (not self.matched and self.reprocess_on_fail)):
-            reprocess.append(ProcessList(
-                items=[item],
-                work_over=self.work_over,
-                rules=self.reprocess_rules,
-                trigger_constraints=[self.id]
-            ))
+        if (self.matched and self.reprocess_on_match) or (not self.matched and self.reprocess_on_fail):
+            reprocess.append(
+                ProcessList(items=[item], work_over=self.work_over, rules=self.reprocess_rules, trigger_constraints=[self.id])
+            )
 
         return self.matched, reprocess
 
@@ -383,20 +370,22 @@ class AttrConstraint(SimpleConstraintABC):
     """
 
     # Attributes to show in the string representation.
-    _str_attrs = ('name', 'sources', 'value')
+    _str_attrs = ("name", "sources", "value")
 
-    def __init__(self,
-                 init=None,
-                 sources=None,
-                 evaluate=False,
-                 force_reprocess=False,
-                 force_undefined=False,
-                 force_unique=True,
-                 invalid_values=None,
-                 only_on_match=False,
-                 onlyif=None,
-                 required=True,
-                 **kwargs):
+    def __init__(
+        self,
+        init=None,
+        sources=None,
+        evaluate=False,
+        force_reprocess=False,
+        force_undefined=False,
+        force_unique=True,
+        invalid_values=None,
+        only_on_match=False,
+        onlyif=None,
+        required=True,
+        **kwargs,
+    ):
 
         # Attributes
         self.sources = sources
@@ -446,7 +435,7 @@ class AttrConstraint(SimpleConstraintABC):
                         items=[item],
                         work_over=self.force_reprocess,
                         only_on_match=self.only_on_match,
-                        trigger_constraints=[self.id]
+                        trigger_constraints=[self.id],
                     )
                 )
             self.matched = True
@@ -454,11 +443,7 @@ class AttrConstraint(SimpleConstraintABC):
 
         # Get the condition information.
         try:
-            source, value = getattr_from_list(
-                item,
-                self.sources,
-                invalid_values=self.invalid_values
-            )
+            source, value = getattr_from_list(item, self.sources, invalid_values=self.invalid_values)
         except KeyError:
             if self.required and not self.force_undefined:
                 self.matched = False
@@ -525,10 +510,7 @@ class AttrConstraint(SimpleConstraintABC):
         if self.force_reprocess:
             reprocess.append(
                 ProcessList(
-                    items=[item],
-                    work_over=self.force_reprocess,
-                    only_on_match=self.only_on_match,
-                    trigger_constraints=[self.id]
+                    items=[item], work_over=self.force_reprocess, only_on_match=self.only_on_match, trigger_constraints=[self.id]
                 )
             )
 
@@ -605,15 +587,16 @@ class Constraint:
                       'name': 'simple',
                       'matched': False})
     """
+
     def __init__(
-            self,
-            init=None,
-            reduce=None,
-            name=None,
-            reprocess_on_match=False,
-            reprocess_on_fail=False,
-            work_over=ListCategory.BOTH,
-            reprocess_rules=None
+        self,
+        init=None,
+        reduce=None,
+        name=None,
+        reprocess_on_match=False,
+        reprocess_on_fail=False,
+        work_over=ListCategory.BOTH,
+        reprocess_rules=None,
     ):
         self.constraints = []
 
@@ -642,9 +625,9 @@ class Constraint:
             self.constraints = [init]
         else:
             raise TypeError(
-                'Invalid initialization value type {}.'
-                '\nValid types are `SimpleConstraint`, `Constraint`,'
-                '\nor subclass.'.format(type(init))
+                "Invalid initialization value type {}.\nValid types are `SimpleConstraint`, `Constraint`,\nor subclass.".format(
+                    type(init)
+                )
             )
 
         # Give some defaults real meaning.
@@ -653,7 +636,7 @@ class Constraint:
             self.reduce = self.all
 
     @property
-    def dup_names(self): # -> dict[str, list[typing.Union[SimpleConstraint, Constraint]]]:
+    def dup_names(self):  # -> dict[str, list[typing.Union[SimpleConstraint, Constraint]]]:
         """Return dictionary of constraints with duplicate names
 
         This method is meant to be overridden by classes
@@ -665,7 +648,7 @@ class Constraint:
             Returns a mapping between the duplicated name
             and all the constraints that define that name.
         """
-        attrs = self.get_all_attr('name')
+        attrs = self.get_all_attr("name")
         constraints, names = zip(*attrs)
         dups = [name for name, count in collections.Counter(names).items() if count > 1]
         result = collections.defaultdict(list)
@@ -686,7 +669,7 @@ class Constraint:
         id : str
             The identifyer
         """
-        return f'{self.__class__.__name__}:{self.name}'
+        return f"{self.__class__.__name__}:{self.name}"
 
     def append(self, constraint):
         """Append a new constraint"""
@@ -710,14 +693,10 @@ class Constraint:
         self.matched, reprocess = self.reduce(item, self.constraints)
 
         # Determine reprocessing
-        if ((self.matched and self.reprocess_on_match) or
-                (not self.matched and self.reprocess_on_fail)):
-            reprocess.append([ProcessList(
-                items=[item],
-                work_over=self.work_over,
-                rules=self.reprocess_rules,
-                trigger_constraints=[self.id]
-            )])
+        if (self.matched and self.reprocess_on_match) or (not self.matched and self.reprocess_on_fail):
+            reprocess.append(
+                [ProcessList(items=[item], work_over=self.work_over, rules=self.reprocess_rules, trigger_constraints=[self.id])]
+            )
 
         return self.matched, list(chain(*reprocess))
 
@@ -725,7 +704,7 @@ class Constraint:
         """Copy ourselves"""
         return deepcopy(self)
 
-    def get_all_attr(self, attribute: str): # -> list[tuple[typing.Union[SimpleConstraint, Constraint], typing.Any]]:
+    def get_all_attr(self, attribute: str):  # -> list[tuple[typing.Union[SimpleConstraint, Constraint], typing.Any]]:
         """Return the specified attribute
 
         This method is meant to be overridden by classes
@@ -829,7 +808,7 @@ class Constraint:
 
     def __delitem__(self, key):
         """Not implemented"""
-        raise NotImplementedError('Cannot delete a constraint by index.')
+        raise NotImplementedError("Cannot delete a constraint by index.")
 
     # Make iterable
     def __iter__(self):
@@ -839,7 +818,7 @@ class Constraint:
     def __getitem__(self, key):
         """Retrieve a named constraint"""
         for constraint in self.constraints:
-            name = getattr(constraint, 'name', None)
+            name = getattr(constraint, "name", None)
             if name is not None and name == key:
                 return constraint
             try:
@@ -848,30 +827,23 @@ class Constraint:
                 pass
             else:
                 return found
-        raise KeyError(f'Constraint {key} not found')
+        raise KeyError(f"Constraint {key} not found")
 
     def __repr__(self):
-        result = '{}(name={}).{}([{}])'.format(
+        result = "{}(name={}).{}([{}])".format(
             self.__class__.__name__,
-            str(getattr(self, 'name', None)),
+            str(getattr(self, "name", None)),
             str(self.reduce.__name__),
-            ''.join([
-                repr(constraint)
-                for constraint in self.constraints
-            ])
+            "".join([repr(constraint) for constraint in self.constraints]),
         )
         return result
 
     def __setitem__(self, key, value):
         """Not implemented"""
-        raise NotImplementedError('Cannot set constraints by index.')
+        raise NotImplementedError("Cannot set constraints by index.")
 
     def __str__(self):
-        result = '\n'.join([
-            str(constraint)
-            for constraint in self
-            if constraint.name is not None
-        ])
+        result = "\n".join([str(constraint) for constraint in self if constraint.name is not None])
         return result
 
 
@@ -897,11 +869,7 @@ def meets_conditions(value, conditions):
     if not is_iterable(conditions):
         conditions = [conditions]
     for condition in conditions:
-        condition = ''.join([
-            '^',
-            condition,
-            '$'
-        ])
+        condition = "".join(["^", condition, "$"])
         match = re.match(condition, value, flags=re.IGNORECASE)
         if match:
             return True
@@ -935,5 +903,5 @@ def reprocess_multivalue(item, source, values, constraint):
         new_item = PoolRow(item)
         new_item[source] = str(value)
         reprocess_items.append(new_item)
-    process_list = (ProcessList(items=reprocess_items, trigger_constraints=[constraint.id]))
+    process_list = ProcessList(items=reprocess_items, trigger_constraints=[constraint.id])
     return process_list

@@ -11,17 +11,18 @@ from roman_datamodels.datamodels import GainRefModel, ImageModel, RampModel, Rea
 from romancal.lib import dqflags
 from romancal.ramp_fitting import RampFitStep
 
-MAXIMUM_CORES = ['none', 'quarter', 'half', 'all']
+MAXIMUM_CORES = ["none", "quarter", "half", "all"]
 
-DO_NOT_USE = dqflags.group['DO_NOT_USE']
-JUMP_DET = dqflags.group['JUMP_DET']
-SATURATED = dqflags.group['SATURATED']
+DO_NOT_USE = dqflags.group["DO_NOT_USE"]
+JUMP_DET = dqflags.group["JUMP_DET"]
+SATURATED = dqflags.group["SATURATED"]
 
 dqflags = {
     "DO_NOT_USE": 1,
     "SATURATED": 2,
     "JUMP_DET": 4,
 }
+
 
 def generate_ramp_model(shape, deltatime=1):
     data = u.Quantity((np.random.random(shape) * 0.5).astype(np.float32), ru.DN, dtype=np.float32)
@@ -45,47 +46,47 @@ def generate_ramp_model(shape, deltatime=1):
     return ramp_model
 
 
-def generate_wfi_reffiles(shape, ingain = 6):
+def generate_wfi_reffiles(shape, ingain=6):
     # Create temporary gain reference file
     gain_ref = maker_utils.mk_gain(shape)
 
-    gain_ref['meta']['instrument']['detector'] = 'WFI01'
-    gain_ref['meta']['instrument']['name'] = 'WFI'
-    gain_ref['meta']['reftype'] = 'GAIN'
-    gain_ref['meta']['useafter'] = Time('2022-01-01T11:11:11.111')
+    gain_ref["meta"]["instrument"]["detector"] = "WFI01"
+    gain_ref["meta"]["instrument"]["name"] = "WFI"
+    gain_ref["meta"]["reftype"] = "GAIN"
+    gain_ref["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
 
-    gain_ref['data'] = u.Quantity((np.random.random(shape) * 0.5).astype(np.float32) * ingain,
-                                  ru.electron / ru.DN, dtype=np.float32)
-    gain_ref['dq'] = np.zeros(shape, dtype=np.uint16)
-    gain_ref['err'] = u.Quantity((np.random.random(shape) * 0.05).astype(np.float32),
-                                 ru.electron / ru.DN, dtype=np.float32)
+    gain_ref["data"] = u.Quantity(
+        (np.random.random(shape) * 0.5).astype(np.float32) * ingain, ru.electron / ru.DN, dtype=np.float32
+    )
+    gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
+    gain_ref["err"] = u.Quantity((np.random.random(shape) * 0.05).astype(np.float32), ru.electron / ru.DN, dtype=np.float32)
 
     gain_ref_model = GainRefModel(gain_ref)
 
     # Create temporary readnoise reference file
     rn_ref = maker_utils.mk_readnoise(shape)
-    rn_ref['meta']['instrument']['detector'] = 'WFI01'
-    rn_ref['meta']['instrument']['name'] = 'WFI'
-    rn_ref['meta']['reftype'] = 'READNOISE'
-    rn_ref['meta']['useafter'] = Time('2022-01-01T11:11:11.111')
+    rn_ref["meta"]["instrument"]["detector"] = "WFI01"
+    rn_ref["meta"]["instrument"]["name"] = "WFI"
+    rn_ref["meta"]["reftype"] = "READNOISE"
+    rn_ref["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
 
-    rn_ref['meta']['exposure']['type'] = 'WFI_IMAGE'
-    rn_ref['meta']['exposure']['frame_time'] = 666
+    rn_ref["meta"]["exposure"]["type"] = "WFI_IMAGE"
+    rn_ref["meta"]["exposure"]["frame_time"] = 666
 
-    rn_ref['data'] = u.Quantity((np.random.random(shape) * 0.01).astype(np.float32), ru.DN, dtype=np.float32)
+    rn_ref["data"] = u.Quantity((np.random.random(shape) * 0.01).astype(np.float32), ru.DN, dtype=np.float32)
 
     rn_ref_model = ReadnoiseRefModel(rn_ref)
 
     # return gainfile, readnoisefile
     return gain_ref_model, rn_ref_model
 
+
 @pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
+    os.environ.get("CI") == "true", reason="Roman CRDS servers are not currently available outside the internal network"
 )
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
 def test_one_group_small_buffer_fit_ols(max_cores):
-    ingain = 1.
+    ingain = 1.0
     deltatime = 1
     ngroups = 1
     xsize = 20
@@ -96,24 +97,23 @@ def test_one_group_small_buffer_fit_ols(max_cores):
 
     model1 = generate_ramp_model(shape, deltatime)
 
-    model1.data[0, 15, 10] = 10.0 * model1.data.unit # add single CR
+    model1.data[0, 15, 10] = 10.0 * model1.data.unit  # add single CR
 
-    out_model = \
-        RampFitStep.call(model1, override_gain=override_gain,
-                         override_readnoise=override_readnoise,
-                         maximum_cores=max_cores)
+    out_model = RampFitStep.call(
+        model1, override_gain=override_gain, override_readnoise=override_readnoise, maximum_cores=max_cores
+    )
 
     data = out_model.data.value
 
     # Index changes due to trimming of reference pixels
     np.testing.assert_allclose(data[11, 6], 10.0, 1e-6)
 
+
 @pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
+    os.environ.get("CI") == "true", reason="Roman CRDS servers are not currently available outside the internal network"
 )
 def test_multicore_ramp_fit_match():
-    ingain = 1.
+    ingain = 1.0
     deltatime = 1
     ngroups = 4
     xsize = 20
@@ -124,15 +124,11 @@ def test_multicore_ramp_fit_match():
 
     model1 = generate_ramp_model(shape, deltatime)
 
-    out_model = \
-        RampFitStep.call(model1, override_gain=override_gain,
-                         override_readnoise=override_readnoise,
-                         maximum_cores="none")
+    out_model = RampFitStep.call(model1, override_gain=override_gain, override_readnoise=override_readnoise, maximum_cores="none")
 
-    all_out_model = \
-        RampFitStep.call(model1, override_gain=override_gain,
-                         override_readnoise=override_readnoise,
-                         maximum_cores="all")
+    all_out_model = RampFitStep.call(
+        model1, override_gain=override_gain, override_readnoise=override_readnoise, maximum_cores="all"
+    )
 
     # Original ramp parameters
     np.testing.assert_allclose(out_model.data, all_out_model.data, 1e-6)
@@ -153,12 +149,11 @@ def test_multicore_ramp_fit_match():
 
 
 @pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
+    os.environ.get("CI") == "true", reason="Roman CRDS servers are not currently available outside the internal network"
 )
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
 def test_saturated_ramp_fit(max_cores):
-    ingain = 1.
+    ingain = 1.0
     deltatime = 1
     ngroups = 4
     xsize = 20
@@ -173,10 +168,9 @@ def test_saturated_ramp_fit(max_cores):
     model1.groupdq = model1.groupdq | SATURATED
 
     # Run ramp fit step
-    out_model = \
-        RampFitStep.call(model1, override_gain=override_gain,
-                         override_readnoise=override_readnoise,
-                         maximum_cores=max_cores)
+    out_model = RampFitStep.call(
+        model1, override_gain=override_gain, override_readnoise=override_readnoise, maximum_cores=max_cores
+    )
 
     # Test data and error arrays are zeroed out
     np.testing.assert_array_equal(out_model.data.value, 0)
@@ -189,24 +183,17 @@ def test_saturated_ramp_fit(max_cores):
 
     # Test that original ramp parameters preserved
     np.testing.assert_allclose(out_model.amp33, model1.amp33, 1e-6)
-    np.testing.assert_allclose(out_model.border_ref_pix_left, model1.border_ref_pix_left,
-                               1e-6)
-    np.testing.assert_allclose(out_model.border_ref_pix_right, model1.border_ref_pix_right,
-                               1e-6)
+    np.testing.assert_allclose(out_model.border_ref_pix_left, model1.border_ref_pix_left, 1e-6)
+    np.testing.assert_allclose(out_model.border_ref_pix_right, model1.border_ref_pix_right, 1e-6)
     np.testing.assert_allclose(out_model.border_ref_pix_top, model1.border_ref_pix_top, 1e-6)
-    np.testing.assert_allclose(out_model.border_ref_pix_bottom, model1.border_ref_pix_bottom,
-                               1e-6)
-    np.testing.assert_allclose(out_model.dq_border_ref_pix_left,
-                               model1.dq_border_ref_pix_left, 1e-6)
-    np.testing.assert_allclose(out_model.dq_border_ref_pix_right,
-                               model1.dq_border_ref_pix_right, 1e-6)
-    np.testing.assert_allclose(out_model.dq_border_ref_pix_top, model1.dq_border_ref_pix_top,
-                               1e-6)
-    np.testing.assert_allclose(out_model.dq_border_ref_pix_bottom,
-                               model1.dq_border_ref_pix_bottom, 1e-6)
+    np.testing.assert_allclose(out_model.border_ref_pix_bottom, model1.border_ref_pix_bottom, 1e-6)
+    np.testing.assert_allclose(out_model.dq_border_ref_pix_left, model1.dq_border_ref_pix_left, 1e-6)
+    np.testing.assert_allclose(out_model.dq_border_ref_pix_right, model1.dq_border_ref_pix_right, 1e-6)
+    np.testing.assert_allclose(out_model.dq_border_ref_pix_top, model1.dq_border_ref_pix_top, 1e-6)
+    np.testing.assert_allclose(out_model.dq_border_ref_pix_bottom, model1.dq_border_ref_pix_bottom, 1e-6)
 
     # Test that an Image model was returned.
     assert type(out_model) == ImageModel
 
     # Test that the ramp fit step was labeled complete
-    assert out_model.meta.cal_step.ramp_fit == 'COMPLETE'
+    assert out_model.meta.cal_step.ramp_fit == "COMPLETE"

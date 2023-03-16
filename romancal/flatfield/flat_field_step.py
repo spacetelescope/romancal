@@ -11,8 +11,7 @@ __all__ = ["FlatFieldStep"]
 
 
 class FlatFieldStep(RomanStep):
-    """Flat-field a science image using a flatfield reference image.
-    """
+    """Flat-field a science image using a flatfield reference image."""
 
     reference_file_types = ["flat"]
 
@@ -23,17 +22,17 @@ class FlatFieldStep(RomanStep):
         reference_file_name = self.get_reference_file(input_model, "flat")
 
         # Check for a valid reference file
-        if reference_file_name == 'N/A':
-            self.log.warning('No Flat reference file found')
-            self.log.warning('Flat Field step will be skipped')
+        if reference_file_name == "N/A":
+            self.log.warning("No Flat reference file found")
+            self.log.warning("Flat Field step will be skipped")
             reference_file_name = None
 
         if reference_file_name is not None:
             reference_file_model = rdm.open(reference_file_name)
-            self.log.debug(f'Using FLAT ref file: {reference_file_name}')
+            self.log.debug(f"Using FLAT ref file: {reference_file_name}")
         else:
             reference_file_model = None
-            self.log.debug('Using no FLAT ref file')
+            self.log.debug("Using no FLAT ref file")
 
         # Do the flat-field correction
         output_model = flat_field.do_correction(
@@ -50,8 +49,8 @@ class FlatFieldStep(RomanStep):
 
         if self.save_results:
             try:
-                self.suffix = 'flat'
+                self.suffix = "flat"
             except AttributeError:
-                self['suffix'] = 'flat'
+                self["suffix"] = "flat"
 
         return output_model

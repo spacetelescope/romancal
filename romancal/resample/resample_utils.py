@@ -9,12 +9,16 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def make_output_wcs(input_models,
-                    pscale_ratio=None, pscale=None,
-                    rotation=None, shape=None,
-                    ref_pixel:Tuple[float, float]=None,
-                    ref_coord:Tuple[float, float]=None):
-    """ Generate output WCS here based on footprints of all input WCS objects
+def make_output_wcs(
+    input_models,
+    pscale_ratio=None,
+    pscale=None,
+    rotation=None,
+    shape=None,
+    ref_pixel: Tuple[float, float] = None,
+    ref_coord: Tuple[float, float] = None,
+):
+    """Generate output WCS here based on footprints of all input WCS objects
     Parameters
     ----------
     input_models : list of `~roman_datamodels.datamodels.DataModel`
@@ -63,8 +67,7 @@ def make_output_wcs(input_models,
     naxes = wcslist[0].output_frame.naxes
 
     if naxes != 2:
-        raise RuntimeError("Output WCS needs 2 axes."
-                           f"{wcslist[0]} has {naxes}.")
+        raise RuntimeError(f"Output WCS needs 2 axes.{wcslist[0]} has {naxes}.")
 
     output_wcs = wcs_from_footprints(
         input_models,
@@ -73,7 +76,7 @@ def make_output_wcs(input_models,
         rotation=rotation,
         shape=shape,
         ref_pixel=ref_pixel,
-        ref_coord=ref_coord
+        ref_coord=ref_coord,
     )
 
     # Check that the output data shape has no zero length dimensions

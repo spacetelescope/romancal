@@ -22,4 +22,4 @@ __all__ = [
     "RampFitStep",
     "SaturationStep",
     "AssignWcsStep",
-    ]
+]
