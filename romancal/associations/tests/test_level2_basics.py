@@ -11,7 +11,7 @@ from romancal.associations import (
     generate,
     load_asn,
 )
-from jwst.associations.main import Main
+from romancal.associations.main import Main
 
 REGEX_LEVEL2A = r'(?P<path>.+)(?P<type>_rate(ints)?)(?P<extension>\..+)'
 
