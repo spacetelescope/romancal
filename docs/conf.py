@@ -19,6 +19,7 @@ from pathlib import Path
 
 import sphinx
 import stsci_rtd_theme
+
 if sys.version_info < (3, 11):
     import tomli as tomllib
 else:
@@ -42,7 +43,7 @@ sys.path.insert(0, os.path.abspath("exts/"))
 # -- General configuration ------------------------------------------------
 with open(Path(__file__).parent.parent / "pyproject.toml", "rb") as configuration_file:
     conf = tomllib.load(configuration_file)
-setup_cfg = conf['project']
+setup_cfg = conf["project"]
 
 # If your documentation needs a minimal Sphinx version, state it here.
 # needs_sphinx = '1.3'
