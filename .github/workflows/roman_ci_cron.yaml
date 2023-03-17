@@ -1,18 +1,11 @@
-name: CI
+
+name: Weekly cron
 
 on:
-  push:
-    branches:
-      - main
-      - '*x'
-    tags:
-      - '*'
-  pull_request:
-    branches:
-      - main
   schedule:
-    # Weekly Monday 9AM build
-    - cron: "0 9 * * 1"
+    # Weekly Monday 6AM build
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
 
 jobs:
   crds:
@@ -20,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OBSERVATORY: roman
-      CRDS_SERVER_URL: https://roman-crds.stsci.edu
       CRDS_PATH: /tmp/crds_cache
+      CRDS_SERVER_URL: https://roman-crds.stsci.edu
     steps:
       - id: context
         run: >
@@ -39,13 +32,6 @@ jobs:
       context: ${{ steps.context.outputs.pmap }}
       path: ${{ steps.path.outputs.path }}
       server: ${{ steps.server.outputs.url }}
-  check:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
-    with:
-      envs: |
-        - linux: check-style
-        - linux: check-dependencies
-        - linux: build-dist
   test:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
     needs: [ crds ]
@@ -55,24 +41,27 @@ jobs:
         CRDS_SERVER_URL: ${{ needs.crds.outputs.server }}
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
-        DD_SERVICE: romancal
-        DD_ENV: ci
-        DD_GIT_REPOSITORY_URL: ${{ github.repositoryUrl }}
-        DD_GIT_COMMIT_SHA: ${{ github.sha }}
-        DD_GIT_BRANCH: ${{ github.ref_name }}
-      cache-path: /tmp/crds_cache
-      cache-key: crds-${{ needs.crds_context.outputs.pmap }}
+      cache-path: ${{ needs.crds.outputs.path }}
+      cache-key: crds-${{ needs.crds.outputs.context }}
       envs: |
-        - linux: test-xdist
-          python-version: 3.8
-        - linux: test-xdist
+        - macos: test-xdist
           python-version: 3.9
-        - linux: test-xdist
+        - macos: test-sdpdeps-xdist
+          python-version: 3.9
+        - macos: test-xdist
           python-version: 3.10
-        - linux: test-xdist-ddtrace
-          python-version: 3.11
-        - macos: test-xdist-ddtrace
-          python-version: 3.11
+        - linux: test-pyargs-xdist
         - linux: test-devdeps-xdist
-        - linux: test-cov-xdist
-          coverage: codecov
+          python-version: 3.8
+        - linux: test-devdeps-xdist
+          python-version: 3.8
+        - linux: test-devdeps-xdist
+          python-version: 3.9
+        - linux: test-devdeps-xdist
+          python-version: 3.9
+        - linux: test-devdeps-xdist
+          python-version: 3.10
+        - macos: test-devdeps-xdist
+          python-version: 3.10
+        - macos: test-devdeps-xdist
+          python-version: 3.11

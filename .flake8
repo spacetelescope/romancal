@@ -2,7 +2,7 @@
 
 [flake8]
 select = F, W, E27, E70, E71, E101, E111, E112, E113, E201, E202, E221, E222, E241, E401, E402, E501, E704, E722
-max-line-length = 130
+max-line-length = 88
 exclude =
     docs,
     .tox,

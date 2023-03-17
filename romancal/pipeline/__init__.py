@@ -4,5 +4,4 @@ made available by this package.
 """
 from .exposure_pipeline import ExposurePipeline
 
-
-__all__ = ['ExposurePipeline']
+__all__ = ["ExposurePipeline"]

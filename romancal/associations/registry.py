@@ -1,37 +1,21 @@
 """Association Registry"""
 import importlib.util
-from inspect import (
-    getmembers,
-    isclass,
-    isfunction,
-    ismethod,
-    ismodule
-)
 import logging
-from os.path import (
-    basename,
-    expanduser,
-    expandvars,
-)
+from inspect import getmembers, isclass, isfunction, ismethod, ismodule
+from os.path import basename, expanduser, expandvars
 
 from . import libpath
-from .exceptions import (
-    AssociationError,
-    AssociationNotValidError
-)
+from .exceptions import AssociationError, AssociationNotValidError
 from .lib.callback_registry import CallbackRegistry
 
-__all__ = [
-    'AssociationRegistry',
-    'RegistryMarker'
-]
+__all__ = ["AssociationRegistry", "RegistryMarker"]
 
 # Configure logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 # Library files
-_ASN_RULE = 'association_rules.py'
+_ASN_RULE = "association_rules.py"
 
 
 class AssociationRegistry(dict):
@@ -72,14 +56,16 @@ class AssociationRegistry(dict):
     In practice, this is one step in a larger loop over all items to
     be associated. This does not account for adding items to already
     existing associations. See :py:func:`~romancal.associations.generate` for more information.
-    """
+    """  # noqa: E501
 
-    def __init__(self,
-                 definition_files=None,
-                 include_default=True,
-                 global_constraints=None,
-                 name=None,
-                 include_bases=False):
+    def __init__(
+        self,
+        definition_files=None,
+        include_default=True,
+        global_constraints=None,
+        name=None,
+        include_bases=False,
+    ):
         super().__init__()
 
         # Generate a UUID for this instance. Used to modify rule
@@ -97,16 +83,16 @@ class AssociationRegistry(dict):
         if include_default:
             definition_files.insert(0, libpath(_ASN_RULE))
         if len(definition_files) <= 0:
-            raise AssociationError('No rule definition files specified.')
+            raise AssociationError("No rule definition files specified.")
 
         self.schemas = []
-        self.Utility = type('Utility', (object,), {})
+        self.Utility = type("Utility", (object,), {})
         for fname in definition_files:
             module = import_from_file(fname)
             self.populate(
                 module,
                 global_constraints=global_constraints,
-                include_bases=include_bases
+                include_bases=include_bases,
             )
 
     @property
@@ -187,9 +173,7 @@ class AssociationRegistry(dict):
                 return True
 
         results = [
-            rule
-            for rule_name, rule in self.items()
-            if is_valid(rule, association)
+            rule for rule_name, rule in self.items() if is_valid(rule, association)
         ]
 
         if len(results) == 0:
@@ -198,14 +182,7 @@ class AssociationRegistry(dict):
             )
         return results
 
-    def load(
-            self,
-            serialized,
-            format=None,
-            validate=True,
-            first=True,
-            **kwargs
-    ):
+    def load(self, serialized, format=None, validate=True, first=True, **kwargs):
         """Load a previously serialized association
 
         Parameters
@@ -239,12 +216,7 @@ class AssociationRegistry(dict):
         for rule_name, rule in self.items():
             try:
                 results.append(
-                    rule.load(
-                        serialized,
-                        format=format,
-                        validate=validate,
-                        **kwargs
-                    )
+                    rule.load(serialized, format=format, validate=validate, **kwargs)
                 )
             except (AssociationError, AttributeError) as err:
                 lasterr = err
@@ -258,11 +230,7 @@ class AssociationRegistry(dict):
         else:
             return results
 
-    def populate(self,
-                 module,
-                 global_constraints=None,
-                 include_bases=None
-    ):
+    def populate(self, module, global_constraints=None, include_bases=None):
         """Parse out all rules and callbacks in a module and add them to the registry
 
         Parameters
@@ -274,31 +242,29 @@ class AssociationRegistry(dict):
 
             # Add rules.
             # Add rules.
-            if (include_bases and isclass(obj)) or obj._asnreg_role == 'rule':
+            if (include_bases and isclass(obj)) or obj._asnreg_role == "rule":
                 try:
                     self.add_rule(name, obj, global_constraints=global_constraints)
                 except TypeError:
-                    logger.debug(f'Could not add object {obj} as a rule due to TypeError')
+                    logger.debug(
+                        f"Could not add object {obj} as a rule due to TypeError"
+                    )
                 continue
 
             # Add callbacks
-            if obj._asnreg_role == 'callback':
+            if obj._asnreg_role == "callback":
                 for event in obj._asnreg_events:
                     self.callback.add(event, obj)
                     continue
 
             # Add schema
-            if obj._asnreg_role == 'schema':
+            if obj._asnreg_role == "schema":
                 self.schemas.append(obj._asnreg_schema)
                 continue
 
             # Add utility classes
-            if obj._asnreg_role == 'utility':
-                self.Utility = type(
-                    'Utility',
-                    (obj, self.Utility),
-                    {}
-                )
+            if obj._asnreg_role == "utility":
+                self.Utility = type("Utility", (obj, self.Utility), {})
 
     def add_rule(self, name, obj, global_constraints=None):
         """Add object as rule to registry
@@ -315,7 +281,7 @@ class AssociationRegistry(dict):
             The global constraints to attach to the rule.
         """
         try:
-            rule_name = '_'.join([self.name, name])
+            rule_name = "_".join([self.name, name])
         except TypeError:
             rule_name = name
         rule = type(rule_name, (obj,), {})
@@ -330,7 +296,7 @@ class RegistryMarker:
 
     class Schema:
         def __init__(self, obj):
-            self._asnreg_role = 'schema'
+            self._asnreg_role = "schema"
             self._asnreg_schema = obj
             RegistryMarker.mark(self)
 
@@ -366,7 +332,7 @@ class RegistryMarker:
 
         """
         obj._asnreg_marked = True
-        obj._asnreg_role = getattr(obj, '_asnreg_role', None)
+        obj._asnreg_role = getattr(obj, "_asnreg_role", None)
         return obj
 
     @staticmethod
@@ -393,7 +359,7 @@ class RegistryMarker:
         - _asnreg_mark : True
               Attributed added to object and set to True
         """
-        obj._asnreg_role = 'rule'
+        obj._asnreg_role = "rule"
         RegistryMarker.mark(obj)
         return obj
 
@@ -426,6 +392,7 @@ class RegistryMarker:
         - _asnreg_mark : True
               Indicated that the object has been marked.
         """
+
         def decorator(func):
             try:
                 events = func._asnreg_events
@@ -433,9 +400,10 @@ class RegistryMarker:
                 events = list()
             events.append(event)
             RegistryMarker.mark(func)
-            func._asnreg_role = 'callback'
+            func._asnreg_role = "callback"
             func._asnreg_events = events
             return func
+
         return decorator
 
     @staticmethod
@@ -447,14 +415,14 @@ class RegistryMarker:
     @staticmethod
     def utility(class_obj):
         """Mark the class as a Utility class"""
-        class_obj._asnreg_role = 'utility'
+        class_obj._asnreg_role = "utility"
         RegistryMarker.mark(class_obj)
         return class_obj
 
     @staticmethod
     def is_marked(obj):
         """Has an objected been marked?"""
-        return hasattr(obj, '_asnreg_marked')
+        return hasattr(obj, "_asnreg_marked")
 
 
 # Utilities
@@ -472,7 +440,7 @@ def import_from_file(filename):
         The imported module
     """
     path = expandvars(expanduser(filename))
-    module_name = basename(path).split('.')[0]
+    module_name = basename(path).split(".")[0]
     spec = importlib.util.spec_from_file_location(module_name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -500,10 +468,9 @@ def get_marked(module, predicate=None, include_bases=False):
     class object : generator
         A generator that will yield all class members in the module.
     """
+
     def is_method(obj):
-        return (isfunction(obj) or
-                ismethod(obj)
-        )
+        return isfunction(obj) or ismethod(obj)
 
     for name, obj in getmembers(module, predicate):
         if isclass(obj):
@@ -513,7 +480,7 @@ def get_marked(module, predicate=None, include_bases=False):
         elif RegistryMarker.is_marked(obj):
             if ismodule(obj):
                 yield from get_marked(
-                        obj, predicate=predicate, include_bases=include_bases
+                    obj, predicate=predicate, include_bases=include_bases
                 )
             else:
                 yield name, obj

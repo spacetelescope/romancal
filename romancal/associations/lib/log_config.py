@@ -1,25 +1,21 @@
 """Configure Association Logging"""
 
-import sys
 import logging
-from logging.config import dictConfig
+import sys
 from collections import defaultdict
-
 from functools import partialmethod
+from logging.config import dictConfig
 
-
-__all__ = ['log_config']
+__all__ = ["log_config"]
 
 DMS_DEFAULT_FORMAT = (
-    '%(asctime)s'
-    ' %(levelname)s'
-    ' pid=%(process)d'
-    ' src=%(name)s.%(funcName)s'
+    "%(asctime)s %(levelname)s pid=%(process)d src=%(name)s.%(funcName)s"
 )
 
 
-class ContextFilter():
+class ContextFilter:
     """Set Association Generator logging context"""
+
     def __init__(self):
         self.context = {}
 
@@ -34,8 +30,9 @@ class ContextFilter():
         self.context[key] = value
 
 
-class LogLevelFilter():
+class LogLevelFilter:
     """Filter on a specific level"""
+
     def __init__(self, level):
         self.__level = level
 
@@ -50,99 +47,85 @@ class DMSFormatter(logging.Formatter):
         log_parts = []
         log_parts.append(super().format(record))
         for key in record._context:
-            log_parts.append(f'{key}={record._context[key]}')
+            log_parts.append(f"{key}={record._context[key]}")
         log_parts.append(f'msg="{record.getMessage()}"')
-        log_line = ' '.join(log_parts)
+        log_line = " ".join(log_parts)
         return log_line
 
 
 # Define the common logging configuration
 # Basic logger has the following config
 base_logger = {
-    'handlers': [
-        'info',
-        'debug',
-        'default',
+    "handlers": [
+        "info",
+        "debug",
+        "default",
     ],
-    'propagate': False,
+    "propagate": False,
 }
 
 # Basic, user-centric logging
 context = ContextFilter()
 base_config = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'datefmt': '%Y%m%d%H%M',
-    'formatters': {
-        'info': {
-            'format': '%(message)s',
-            'datefmt': 'cfg://datefmt'
+    "version": 1,
+    "disable_existing_loggers": False,
+    "datefmt": "%Y%m%d%H%M",
+    "formatters": {
+        "info": {"format": "%(message)s", "datefmt": "cfg://datefmt"},
+        "debug": {
+            "format": "%(asctime)s:%(levelname)s:%(name)s.%(funcName)s:%(message)s",
+            "datefmt": "cfg://datefmt",
         },
-        'debug': {
-            'format': '%(asctime)s:%(levelname)s:%(name)s.%(funcName)s:%(message)s',
-            'datefmt': 'cfg://datefmt'
-        }
     },
-    'handlers': {
-        'info': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'info',
-            'level': logging.INFO,
-            'stream': sys.stdout,
-            'filters': ['info', 'context']
+    "handlers": {
+        "info": {
+            "class": "logging.StreamHandler",
+            "formatter": "info",
+            "level": logging.INFO,
+            "stream": sys.stdout,
+            "filters": ["info", "context"],
         },
-        'debug': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'debug',
-            'level': logging.DEBUG,
-            'stream': sys.stderr,
-            'filters': ['debug', 'context']
+        "debug": {
+            "class": "logging.StreamHandler",
+            "formatter": "debug",
+            "level": logging.DEBUG,
+            "stream": sys.stderr,
+            "filters": ["debug", "context"],
         },
-        'default': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'debug',
-            'level': logging.WARN,
-            'stream': sys.stderr,
-            'filters': ['context']
-        }
+        "default": {
+            "class": "logging.StreamHandler",
+            "formatter": "debug",
+            "level": logging.WARN,
+            "stream": sys.stderr,
+            "filters": ["context"],
+        },
     },
-    'filters': {
-        'context': {
-            '()': context
-        },
-        'info': {
-            '()': LogLevelFilter,
-            'level': logging.INFO
-        },
-        'debug': {
-            '()': LogLevelFilter,
-            'level': logging.DEBUG
-        }
+    "filters": {
+        "context": {"()": context},
+        "info": {"()": LogLevelFilter, "level": logging.INFO},
+        "debug": {"()": LogLevelFilter, "level": logging.DEBUG},
     },
-    'DMS': {
-        'datefmt': '%Y%m%d%H%M',
-        'logformat': (
-            '%(asctime)s'
-            ' %(levelname)s'
-            ' pid=%(process)d'
-            ' src=%(name)s.%(funcName)s'
-        )
-    }
+    "DMS": {
+        "datefmt": "%Y%m%d%H%M",
+        "logformat": (
+            "%(asctime)s %(levelname)s pid=%(process)d src=%(name)s.%(funcName)s"
+        ),
+    },
 }
 
 # DMS-specific configuration
 DMS_config = {
-    'formatters': {
-        'info': {
-            '()': DMSFormatter,
-            'format': 'cfg://DMS.logformat',
-            'datefmt': 'cfg://DMS.datefmt'
+    "formatters": {
+        "info": {
+            "()": DMSFormatter,
+            "format": "cfg://DMS.logformat",
+            "datefmt": "cfg://DMS.datefmt",
         },
-        'debug': {
-            '()': DMSFormatter,
-            'format': 'cfg://DMS.logformat',
-            'datefmt': 'cfg://DMS.datefmt'
-        }
+        "debug": {
+            "()": DMSFormatter,
+            "format": "cfg://DMS.logformat",
+            "datefmt": "cfg://DMS.datefmt",
+        },
     }
 }
 
@@ -155,7 +138,7 @@ class MultilineLogger(logging.getLoggerClass()):
 
     def log(self, level, msg, *args, **kwargs):
         if self.isEnabledFor(level):
-            for line in msg.split('\n'):
+            for line in msg.split("\n"):
                 self._log(level, line, args, **kwargs)
 
     debug = partialmethod(log, logging.DEBUG)
@@ -169,11 +152,7 @@ class MultilineLogger(logging.getLoggerClass()):
 logging.setLoggerClass(MultilineLogger)
 
 
-def log_config(name=None,
-               user_name=None,
-               logger_config=None,
-               config=None,
-               merge=True):
+def log_config(name=None, user_name=None, logger_config=None, config=None, merge=True):
     """Setup logging with defaults
 
     logging.dictConfig is used with optional default
@@ -246,7 +225,7 @@ def log_config(name=None,
     global context
 
     if user_name is None:
-        user_name = 'root' if name is None else name
+        user_name = "root" if name is None else name
     if logger_config is None:
         logger_config = {}
     if config is None:
@@ -257,9 +236,7 @@ def log_config(name=None,
         use_logger.update(logger_config)
         for key in config:
             use_config[key].update(config[key])
-        use_config['loggers'] = {
-            name: use_logger
-        }
+        use_config["loggers"] = {name: use_logger}
 
     dictConfig(use_config)
     logger = logging.getLogger(name)

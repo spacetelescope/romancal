@@ -1,15 +1,14 @@
 """Project default for pytest"""
+import inspect
 import os
 import tempfile
-import pytest
-import inspect
 
+import pytest
 from stdatamodels import s3_utils
 
-#from jwst.associations import (AssociationRegistry, AssociationPool)
-#from jwst.associations.tests.helpers import t_path
+# from jwst.associations import (AssociationRegistry, AssociationPool)
+# from jwst.associations.tests.helpers import t_path
 from romancal.lib.tests import helpers as lib_helpers
-
 
 # @pytest.fixture(scope='session')
 # def full_pool_rules(request):
@@ -56,7 +55,7 @@ def slow(request):
     """Setup slow fixture for tests to identify if --slow
     has been specified
     """
-    return request.config.getoption('--slow')
+    return request.config.getoption("--slow")
 
 
 @pytest.fixture(scope="module")
@@ -68,7 +67,7 @@ def jail(request, tmpdir_factory):
     temporary directory, and then have the tests access them.
     """
     old_dir = os.getcwd()
-    path = request.module.__name__.split('.')[-1]
+    path = request.module.__name__.split(".")[-1]
     if request._parent_request.fixturename is not None:
         path = path + "_" + request._parent_request.fixturename
     newpath = tmpdir_factory.mktemp(path)
@@ -79,8 +78,10 @@ def jail(request, tmpdir_factory):
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config):
-    terminal_reporter = config.pluginmanager.getplugin('terminalreporter')
-    config.pluginmanager.register(TestDescriptionPlugin(terminal_reporter), 'testdescription')
+    terminal_reporter = config.pluginmanager.getplugin("terminalreporter")
+    config.pluginmanager.register(
+        TestDescriptionPlugin(terminal_reporter), "testdescription"
+    )
 
 
 class TestDescriptionPlugin:
@@ -108,7 +109,7 @@ class TestDescriptionPlugin:
             yield
         # When run as `pytest -vv`, `pytest -vvv`, etc, print the test docstring
         else:
-            self.terminal_reporter.write('\n')
+            self.terminal_reporter.write("\n")
             yield
             if self.desc:
-                self.terminal_reporter.write(f'\n{self.desc} ')
+                self.terminal_reporter.write(f"\n{self.desc} ")

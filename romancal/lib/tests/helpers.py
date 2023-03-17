@@ -1,7 +1,6 @@
-import os
 import glob
 import io
-
+import os
 
 S3_BUCKET_NAME = "test-s3-data"
 

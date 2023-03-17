@@ -17,12 +17,12 @@ class SDPPoolsSource(BaseRomanTest):
     # of `BaseJWSTTest`, or explicitly during dynamic parametrization
     # The empty string defaults indicate that data source roots have
     # been defined.
-    inputs_root = ''
-    results_root = ''
+    inputs_root = ""
+    results_root = ""
 
-    input_loc = 'associations'
-    test_dir = 'sdp'
-    ref_loc = [test_dir, 'truth']
+    input_loc = "associations"
+    test_dir = "sdp"
+    ref_loc = [test_dir, "truth"]
 
     _pool_paths = None
     _truth_paths = None
@@ -31,12 +31,12 @@ class SDPPoolsSource(BaseRomanTest):
     def pool_paths(self):
         """Get the association pools"""
         if self._pool_paths is None:
-            self._pool_paths = self.data_glob(self.test_dir, 'pools', glob='*.csv')
+            self._pool_paths = self.data_glob(self.test_dir, "pools", glob="*.csv")
         return self._pool_paths
 
     @property
     def truth_paths(self):
         """Get the truth associations"""
         if self._truth_paths is None:
-            self._truth_paths = self.data_glob(*self.ref_loc, glob='*.json')
+            self._truth_paths = self.data_glob(*self.ref_loc, glob="*.json")
         return self._truth_paths
