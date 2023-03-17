@@ -5,7 +5,7 @@
 associations
 ------------
 
-- Initial association code for GBTDS observations [#476]
+- Initial association code for GBTDS observations [#661]
 
 
 general
