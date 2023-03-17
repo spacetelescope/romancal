@@ -1,6 +1,12 @@
 0.10.1 (unreleased)
 ===================
 
+=======
+associations
+------------
+
+- Initial association code for GBTDS observations [#476]
+
 
 general
 -------

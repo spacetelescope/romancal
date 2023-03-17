@@ -8,12 +8,12 @@ import numpy as np
 
 from romancal import __version__
 
-from . import config
-from .generate import generate
-from .lib.dms_base import DMSAttrConstraint
-from .lib.log_config import DMS_config, log_config
-from .pool import AssociationPool
-from .registry import AssociationRegistry
+from romancal.associations import config
+from romancal.associations.generate import generate
+from romancal.associations.lib.dms_base import DMSAttrConstraint
+from romancal.associations.lib.log_config import DMS_config, log_config
+from romancal.associations.pool import AssociationPool
+from romancal.associations.registry import AssociationRegistry
 
 __all__ = ["Main"]
 
