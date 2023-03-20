@@ -203,7 +203,9 @@ def test_tweakreg_raises_error_on_invalid_input(input, error_type):
 
 
 def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
-    """Test that TweakReg raises an AttributeError if meta.tweakreg_catalog is missing."""
+    """
+    Test that TweakReg raises an AttributeError if meta.tweakreg_catalog is missing.
+    """
     img = base_image()
     with pytest.raises(Exception) as exec_info:
         TweakRegStep.call([img])
@@ -256,7 +258,10 @@ def test_tweakreg_updates_group_id(tmpdir, base_image):
 def test_tweakreg_correction_magnitude(
     shift_1, shift_2, tolerance, is_small_correction, request
 ):
-    """Test that TweakReg corrections are within tolerance. All the parametrized values are in arcsec."""
+    """
+    Test that TweakReg corrections are within tolerance.
+    All the parametrized values are in arcsec.
+    """
     img1 = request.getfixturevalue("base_image")()
     img2 = request.getfixturevalue("base_image")(shift_1=shift_1, shift_2=shift_2)
     img1_wcs = copy.deepcopy(img1.meta.wcs)
@@ -368,7 +373,9 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
 
 
 def test_tweakreg_compute_radius_and_fiducial():
-    """Test that compute_radius returns correct values for footprint radius and fiducial."""
+    """
+    Test that compute_radius returns correct values for footprint radius and fiducial.
+    """
     # create a "header" of an image that's 200x200 pixels (@0.1"/pix in both axis)
     # and reference coordinates (ra=10 deg, dec=0 deg)
     # sitting at the origin of the pixel coordinates frame (0,0).
