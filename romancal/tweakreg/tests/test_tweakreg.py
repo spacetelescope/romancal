@@ -1,20 +1,22 @@
+import copy
+import csv
+import os
+
+import numpy as np
+import pytest
+from astropy import coordinates as coord
+from astropy import units as u
+from astropy.modeling import models
+from astropy.modeling.models import RotationSequence3D, Scale, Shift
+from gwcs import coordinate_frames as cf
+from gwcs import wcs
+from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
+from numpy.testing import assert_allclose
 from roman_datamodels import datamodels as rdm
+from roman_datamodels import maker_utils
+
 from romancal.tweakreg.astrometric_utils import compute_radius
 from romancal.tweakreg.tweakreg_step import TweakRegStep, _common_name
-from roman_datamodels import maker_utils
-import os
-import csv
-import pytest
-from astropy import units as u
-from gwcs import coordinate_frames as cf
-from astropy import coordinates as coord
-from gwcs import wcs
-import numpy as np
-from astropy.modeling.models import RotationSequence3D, Scale, Shift
-from gwcs.geometry import SphericalToCartesian, CartesianToSpherical
-import copy
-from astropy.modeling import models
-from numpy.testing import assert_allclose
 
 
 def update_wcsinfo(input_dm):
