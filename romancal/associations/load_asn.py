@@ -1,19 +1,17 @@
 """Load an Association from a file or object"""
 from inspect import isclass
 
-from . import (
-    Association,
-    AssociationRegistry
-)
+from .association import Association
+from .registry import AssociationRegistry
 
 
 def load_asn(
-        serialized,
-        format=None,
-        first=True,
-        validate=True,
-        registry=AssociationRegistry,
-        **kwargs
+    serialized,
+    format=None,
+    first=True,
+    validate=True,
+    registry=AssociationRegistry,
+    **kwargs
 ):
     """Load an Association from a file or object
 
@@ -66,9 +64,5 @@ def load_asn(
     if isclass(registry):
         registry = registry()
     return registry.load(
-        serialized,
-        format=format,
-        first=first,
-        validate=validate,
-        **kwargs
+        serialized, format=format, first=first, validate=validate, **kwargs
     )

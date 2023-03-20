@@ -14,6 +14,9 @@ general
 
 - Add ``pre-commit`` configuration to repository. [#622]
 
+- Use ``isort`` and ``black`` to format code, also upgrade all string
+  formats using ``flynt``. [#645]
+
 - Update the suffix for the stored filename to match the filename [#609]
 
 - DQ step flags science data affected by guide window read [#599]

@@ -152,8 +152,26 @@ report = { exclude_lines = [
 [tool.bandit]
 skips = ["B101", "B307", "B404", "B603"]
 
+[tool.isort]
+profile = "black"
+filter_files = true
+line_length = 88
+
+[tool.black]
+line-length = 88
+force-exclude = '''
+^/(
+  (
+      \.eggs
+    | \.git
+    | \.pytest_cache
+    | \.tox
+  )/
+)
+'''
+
 [tool.ruff]
-line-length = 130
+line-length = 88
 exclude = [
     'jdocs',
     '.tox',

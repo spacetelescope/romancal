@@ -1,14 +1,13 @@
 #! /usr/bin/env python
 
-from astropy import units as u
 import numpy as np
-
-from romancal.stpipe import RomanStep
+from astropy import units as u
 from roman_datamodels import datamodels as rdd
-from stcal.dark_current import dark_sub
 from roman_datamodels import maker_utils
 from roman_datamodels import units as ru
+from stcal.dark_current import dark_sub
 
+from romancal.stpipe import RomanStep
 
 __all__ = ["DarkCurrentStep"]
 
@@ -23,7 +22,7 @@ class DarkCurrentStep(RomanStep):
         dark_output = output_file(default = None) # Dark corrected model
     """
 
-    reference_file_types = ['dark']
+    reference_file_types = ["dark"]
 
     def process(self, input):
 
@@ -31,19 +30,22 @@ class DarkCurrentStep(RomanStep):
         with rdd.open(input) as input_model:
 
             # Get the name of the dark reference file to use
-            self.dark_name = self.get_reference_file(input_model, 'dark')
-            self.log.info('Using DARK reference file %s', self.dark_name)
+            self.dark_name = self.get_reference_file(input_model, "dark")
+            self.log.info("Using DARK reference file %s", self.dark_name)
 
             # Open dark model
             dark_model = rdd.open(self.dark_name)
 
-            # Temporary patch to utilize stcal dark step until MA table support is fully implemented
-            if 'ngroups' not in dark_model.meta.exposure:
-                dark_model.meta.exposure['ngroups'] = dark_model.data.shape[0]
-            if 'nframes' not in dark_model.meta.exposure:
-                dark_model.meta.exposure['nframes'] = input_model.meta.exposure.nframes
-            if 'groupgap' not in dark_model.meta.exposure:
-                dark_model.meta.exposure['groupgap'] = input_model.meta.exposure.groupgap
+            # Temporary patch to utilize stcal dark step until MA table support
+            # is fully implemented
+            if "ngroups" not in dark_model.meta.exposure:
+                dark_model.meta.exposure["ngroups"] = dark_model.data.shape[0]
+            if "nframes" not in dark_model.meta.exposure:
+                dark_model.meta.exposure["nframes"] = input_model.meta.exposure.nframes
+            if "groupgap" not in dark_model.meta.exposure:
+                dark_model.meta.exposure[
+                    "groupgap"
+                ] = input_model.meta.exposure.groupgap
 
             # Reshaping data variables for stcal compatibility
             input_model.data = input_model.data[np.newaxis, :]
@@ -70,9 +72,9 @@ class DarkCurrentStep(RomanStep):
 
         if self.save_results:
             try:
-                self.suffix = 'darkcurrent'
+                self.suffix = "darkcurrent"
             except AttributeError:
-                self['suffix'] = 'darkcurrent'
+                self["suffix"] = "darkcurrent"
             dark_model.close()
 
         return out_ramp
@@ -93,14 +95,19 @@ def save_dark_data_as_dark_model(dark_data, dark_model):
 
     # Create DarkRef object and copy dark data to it
     out_dark = maker_utils.mk_dark(shape=dark_data.data.shape)
-    out_dark.data = u.Quantity(dark_data.data, out_dark.data.unit, dtype=out_dark.data.dtype)
+    out_dark.data = u.Quantity(
+        dark_data.data, out_dark.data.unit, dtype=out_dark.data.dtype
+    )
     out_dark.dq = dark_data.groupdq
-    out_dark.err = u.Quantity(dark_data.err, out_dark.err.unit, dtype=out_dark.err.dtype)
+    out_dark.err = u.Quantity(
+        dark_data.err, out_dark.err.unit, dtype=out_dark.err.dtype
+    )
 
-    # Temporary patch to utilize stcal dark step until MA table support is fully implemented
-    out_dark.meta.exposure['nframes'] = dark_data.exp_nframes
-    out_dark.meta.exposure['ngroups'] = dark_data.exp_ngroups
-    out_dark.meta.exposure['groupgap'] = dark_data.exp_groupgap
+    # Temporary patch to utilize stcal dark step until MA table support is
+    # fully implemented
+    out_dark.meta.exposure["nframes"] = dark_data.exp_nframes
+    out_dark.meta.exposure["ngroups"] = dark_data.exp_ngroups
+    out_dark.meta.exposure["groupgap"] = dark_data.exp_groupgap
 
     # Create DarkRefModel and write to file
     out_dark_model = rdd.DarkRefModel(out_dark)
