@@ -1,4 +1,5 @@
 from roman_datamodels import datamodels as rdm
+from romancal.tweakreg.astrometric_utils import compute_radius
 from romancal.tweakreg.tweakreg_step import TweakRegStep, _common_name
 from roman_datamodels import maker_utils
 import os
@@ -12,6 +13,8 @@ import numpy as np
 from astropy.modeling.models import RotationSequence3D, Scale, Shift
 from gwcs.geometry import SphericalToCartesian, CartesianToSpherical
 import copy
+from astropy.modeling import models
+from numpy.testing import assert_allclose
 
 
 def update_wcsinfo(input_dm):
@@ -360,3 +363,57 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
         step.process([img])
 
     assert type(exec_info.value) == ValueError
+
+
+def test_tweakreg_compute_radius_and_fiducial():
+    """Test that compute_radius returns correct values for footprint radius and fiducial."""
+    # create a "header" of an image that's 200x200 pixels (@0.1"/pix in both axis)
+    # and reference coordinates (ra=10 deg, dec=0 deg)
+    # sitting at the origin of the pixel coordinates frame (0,0).
+    img_shape = (200, 200)
+    ref_val = (10, 0) * u.degree
+    ref_pix = (0, 0)
+    pix_scale = 0.1 * u.arcsec
+
+    # linear transformations (no rotation, no distortion)
+    shift_by_crpix = models.Shift(ref_pix[0]) & models.Shift(ref_pix[1])
+    matrix = np.array(
+        [
+            [pix_scale.to("deg").value, 0],
+            [0, pix_scale.to("deg").value],
+        ]
+    )
+    rotation = models.AffineTransformation2D(matrix)
+    rotation.inverse = models.AffineTransformation2D(np.linalg.inv(matrix))
+    tan = models.Pix2Sky_TAN()
+    celestial_rotation = models.RotateNative2Celestial(
+        ref_val[0].value, ref_val[1].value, 180
+    )
+    det2sky = shift_by_crpix | rotation | tan | celestial_rotation
+    det2sky.name = "linear_transform"
+
+    # frames
+    detector_frame = cf.Frame2D(
+        name="detector", unit=(u.pix, u.pix), axes_names=("x", "y")
+    )
+    sky_frame = cf.CelestialFrame(
+        name="sky", unit=(u.deg, u.deg), reference_frame=coord.ICRS()
+    )
+
+    pipeline = [(detector_frame, det2sky), (sky_frame, None)]
+    wcsobj = wcs.WCS(pipeline)
+    wcsobj.bounding_box = ((0, img_shape[0]), (0, img_shape[1]))
+
+    computed_radius, computed_fiducial = compute_radius(wcsobj)
+
+    # expected radius is the distance
+    # "from the center to the furthest edge of the WCS"
+    expected_radius = (
+        ((img_shape[0] / 2) * pix_scale.to("deg").value) ** 2
+        + ((img_shape[1] / 2) * pix_scale.to("deg").value) ** 2
+    ) ** 0.5
+    # expected fiducial is the center of the WCS
+    expected_fiducial = wcsobj(img_shape[0] / 2, img_shape[1] / 2)
+
+    assert_allclose(expected_radius, computed_radius)
+    assert_allclose(expected_fiducial, computed_fiducial)
