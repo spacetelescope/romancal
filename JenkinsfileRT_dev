@@ -102,9 +102,18 @@ bc0.failedFailureThresh = 0
 bc1 = utils.copy(bc0)
 bc1.nodetype = 'macos'
 bc1.name = 'macos-unstable-deps'
-bc1.build_cmds = ["pip install -e ."]
+bc1.build_cmds = [
+    "pip install -e .[test,ephem]",
+    "pip install pytest-xdist pytest-sugar",
+    "pip freeze",
+    'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
+]
 bc1.build_cmds = PipInject(env.OVERRIDE_REQUIREMENTS) + bc1.build_cmds
-bc1.test_cmds = []
+bc1.test_cmds = [
+    "pytest -r sxf -n auto --bigdata --slow \
+    --basetemp=${pytest_basetemp} --junit-xml=results.xml --dist=loadscope \
+    --env=${artifactoryenv} ${pytest_args}",
+]
 bc1.test_configs = []
 
 utils.run([jobconfig, bc0, bc1])
