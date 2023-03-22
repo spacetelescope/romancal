@@ -297,10 +297,12 @@ def base_image():
     """
     Create a base image with a realistic WCSInfo and a WCS.
 
-    Note
-    ----
+    Notes
+    -----
     The size of the image needs to be relatively large in order for
     the source catalog step to find a reasonable number of sources in the image.
+
+    shift_1 and shift_2 (units in pixel) are used to shift the WCS projection plane.
     """
 
     def _base_image(shift_1=0, shift_2=0):
