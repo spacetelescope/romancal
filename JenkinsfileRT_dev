@@ -102,6 +102,7 @@ bc0.failedFailureThresh = 0
 bc1 = utils.copy(bc0)
 bc1.nodetype = 'macos'
 bc1.name = 'macos-unstable-deps'
+bc1.pip_reqs_files = ['requirements-dev.txt']
 bc1.build_cmds = [
     "pip install -e .[test,ephem]",
     "pip install pytest-xdist pytest-sugar",
