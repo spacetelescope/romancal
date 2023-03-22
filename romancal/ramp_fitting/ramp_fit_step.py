@@ -7,7 +7,6 @@ from astropy import units as u
 from roman_datamodels import datamodels as rdd
 from roman_datamodels import maker_utils
 from roman_datamodels import stnode as rds
-from roman_datamodels import units as ru
 from stcal.ramp_fitting import ramp_fit
 
 from romancal.lib import dqflags
@@ -54,23 +53,21 @@ def create_optional_results_model(input_model, opt_info):
 
     inst = {
         "meta": meta,
-        "slope": u.Quantity(np.squeeze(slope), ru.electron / u.s, dtype=slope.dtype),
+        "slope": u.Quantity(np.squeeze(slope), u.electron / u.s, dtype=slope.dtype),
         "sigslope": u.Quantity(
-            np.squeeze(sigslope), ru.electron / u.s, dtype=sigslope.dtype
+            np.squeeze(sigslope), u.electron / u.s, dtype=sigslope.dtype
         ),
         "var_poisson": u.Quantity(
-            np.squeeze(var_poisson),
-            ru.electron**2 / u.s**2,
-            dtype=var_poisson.dtype,
+            np.squeeze(var_poisson), u.electron**2 / u.s**2, dtype=var_poisson.dtype
         ),
         "var_rnoise": u.Quantity(
-            np.squeeze(var_rnoise), ru.electron**2 / u.s**2, dtype=var_rnoise.dtype
+            np.squeeze(var_rnoise), u.electron**2 / u.s**2, dtype=var_rnoise.dtype
         ),
-        "yint": u.Quantity(np.squeeze(yint), ru.electron, dtype=yint.dtype),
-        "sigyint": u.Quantity(np.squeeze(sigyint), ru.electron, dtype=sigyint.dtype),
-        "pedestal": u.Quantity(np.squeeze(pedestal), ru.electron, dtype=pedestal.dtype),
+        "yint": u.Quantity(np.squeeze(yint), u.electron, dtype=yint.dtype),
+        "sigyint": u.Quantity(np.squeeze(sigyint), u.electron, dtype=sigyint.dtype),
+        "pedestal": u.Quantity(np.squeeze(pedestal), u.electron, dtype=pedestal.dtype),
         "weights": np.squeeze(weights),
-        "crmag": u.Quantity(crmag, ru.electron, dtype=pedestal.dtype),
+        "crmag": u.Quantity(crmag, u.electron, dtype=pedestal.dtype),
     }
 
     out_node = rds.RampFitOutput(inst)
@@ -100,14 +97,14 @@ def create_image_model(input_model, image_info):
     """
     data, dq, var_poisson, var_rnoise, err = image_info
 
-    data = u.Quantity(data, ru.electron / u.s, dtype=data.dtype)
+    data = u.Quantity(data, u.electron / u.s, dtype=data.dtype)
     var_poisson = u.Quantity(
-        var_poisson, ru.electron**2 / u.s**2, dtype=var_poisson.dtype
+        var_poisson, u.electron**2 / u.s**2, dtype=var_poisson.dtype
     )
     var_rnoise = u.Quantity(
-        var_rnoise, ru.electron**2 / u.s**2, dtype=var_rnoise.dtype
+        var_rnoise, u.electron**2 / u.s**2, dtype=var_rnoise.dtype
     )
-    err = u.Quantity(err, ru.electron / u.s, dtype=err.dtype)
+    err = u.Quantity(err, u.electron / u.s, dtype=err.dtype)
 
     # Create output datamodel
     # ... and add all keys from input
@@ -117,15 +114,15 @@ def create_image_model(input_model, image_info):
     meta["photometry"] = maker_utils.mk_photometry()
     inst = {
         "meta": meta,
-        "data": u.Quantity(data, ru.electron / u.s, dtype=data.dtype),
+        "data": u.Quantity(data, u.electron / u.s, dtype=data.dtype),
         "dq": dq,
         "var_poisson": u.Quantity(
-            var_poisson, ru.electron**2 / u.s**2, dtype=var_poisson.dtype
+            var_poisson, u.electron**2 / u.s**2, dtype=var_poisson.dtype
         ),
         "var_rnoise": u.Quantity(
-            var_rnoise, ru.electron**2 / u.s**2, dtype=var_rnoise.dtype
+            var_rnoise, u.electron**2 / u.s**2, dtype=var_rnoise.dtype
         ),
-        "err": u.Quantity(err, ru.electron / u.s, dtype=err.dtype),
+        "err": u.Quantity(err, u.electron / u.s, dtype=err.dtype),
         "amp33": input_model.amp33,
         "border_ref_pix_left": input_model.border_ref_pix_left,
         "border_ref_pix_right": input_model.border_ref_pix_right,

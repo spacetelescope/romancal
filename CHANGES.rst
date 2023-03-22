@@ -5,6 +5,8 @@ general
 -------
 - Updated datamodel maker utility imports. [#654]
 
+- Update non-VOunits to using ``astropy.units``. [#658]
+
 0.10.0 (2023-02-21)
 ===================
 
