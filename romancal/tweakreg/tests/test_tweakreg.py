@@ -14,6 +14,7 @@ from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from numpy.testing import assert_allclose
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
+from typing import Tuple
 
 from romancal.tweakreg.astrometric_utils import compute_radius, get_catalog
 from romancal.tweakreg.tweakreg_step import TweakRegStep, _common_name
@@ -89,11 +90,11 @@ def _create_tel2sky_model(input_dm):
 def create_basic_wcs(
     img_shape: tuple = (100, 100),
     ref_pix: tuple = (0, 0),
-    ref_val: tuple[u.Quantity, u.Quantity] = (
+    ref_val: Tuple[u.Quantity, u.Quantity] = (
         u.Quantity("10 deg"),
         u.Quantity("0 deg"),
     ),
-    pix_scale: tuple[u.Quantity, u.Quantity] = (
+    pix_scale: Tuple[u.Quantity, u.Quantity] = (
         u.Quantity("0.1 arcsec"),
         u.Quantity("0.1 arcsec"),
     ),
