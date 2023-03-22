@@ -1,6 +1,7 @@
 import copy
 import csv
 import os
+from typing import Tuple
 
 import numpy as np
 import pytest
@@ -14,7 +15,6 @@ from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from numpy.testing import assert_allclose
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
-from typing import Tuple
 
 from romancal.tweakreg.astrometric_utils import compute_radius, get_catalog
 from romancal.tweakreg.tweakreg_step import TweakRegStep, _common_name
