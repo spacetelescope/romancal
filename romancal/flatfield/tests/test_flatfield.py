@@ -5,7 +5,6 @@ import pytest
 from astropy import units as u
 from astropy.time import Time
 from roman_datamodels import maker_utils, stnode
-from roman_datamodels import units as ru
 from roman_datamodels.datamodels import FlatRefModel, ImageModel
 
 from romancal.flatfield import FlatFieldStep
@@ -34,20 +33,20 @@ def test_flatfield_step_interface(instrument, exptype):
     wfi_image.meta.instrument.optical_element = "F158"
     wfi_image.meta.exposure.type = exptype
     wfi_image.data = u.Quantity(
-        np.ones(shape, dtype=np.float32), ru.electron / u.s, dtype=np.float32
+        np.ones(shape, dtype=np.float32), u.electron / u.s, dtype=np.float32
     )
     wfi_image.dq = np.zeros(shape, dtype=np.uint32)
     wfi_image.err = u.Quantity(
-        np.zeros(shape, dtype=np.float32), ru.electron / u.s, dtype=np.float32
+        np.zeros(shape, dtype=np.float32), u.electron / u.s, dtype=np.float32
     )
     wfi_image.var_poisson = u.Quantity(
-        np.zeros(shape, dtype=np.float32), ru.electron**2 / u.s**2, dtype=np.float32
+        np.zeros(shape, dtype=np.float32), u.electron**2 / u.s**2, dtype=np.float32
     )
     wfi_image.var_rnoise = u.Quantity(
-        np.zeros(shape, dtype=np.float32), ru.electron**2 / u.s**2, dtype=np.float32
+        np.zeros(shape, dtype=np.float32), u.electron**2 / u.s**2, dtype=np.float32
     )
     wfi_image.var_flat = u.Quantity(
-        np.zeros(shape, dtype=np.float32), ru.electron**2 / u.s**2, dtype=np.float32
+        np.zeros(shape, dtype=np.float32), u.electron**2 / u.s**2, dtype=np.float32
     )
 
     wfi_image_model = ImageModel(wfi_image)

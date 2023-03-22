@@ -6,7 +6,6 @@ import numpy as np
 import roman_datamodels as rdm
 from astropy import units as u
 from roman_datamodels import datamodels as rdd
-from roman_datamodels import units as ru
 from stcal.linearity.linearity import linearity_correction
 
 from romancal.lib import dqflags
@@ -63,7 +62,7 @@ class LinearityStep(RomanStep):
             )
 
             output_model.data = u.Quantity(
-                new_data[0, :, :, :], ru.DN, dtype=new_data.dtype
+                new_data[0, :, :, :], u.DN, dtype=new_data.dtype
             )
             output_model.pixeldq = new_pdq
 

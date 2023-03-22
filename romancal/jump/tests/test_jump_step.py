@@ -11,7 +11,6 @@ from astropy import units as u
 from astropy.time import Time
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
-from roman_datamodels import units as ru
 from roman_datamodels.datamodels import GainRefModel, ReadnoiseRefModel
 
 from romancal.jump import JumpStep
@@ -50,12 +49,12 @@ def generate_wfi_reffiles(tmpdir_factory):
 
     gain_ref["meta"] = meta
     gain_ref["data"] = u.Quantity(
-        np.ones(shape, dtype=np.float32) * ingain, ru.electron / ru.DN, dtype=np.float32
+        np.ones(shape, dtype=np.float32) * ingain, u.electron / u.DN, dtype=np.float32
     )
     gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
     gain_ref["err"] = u.Quantity(
         (np.random.random(shape) * 0.05).astype(np.float64),
-        ru.electron / ru.DN,
+        u.electron / u.DN,
         dtype=np.float64,
     )
 
@@ -79,11 +78,11 @@ def generate_wfi_reffiles(tmpdir_factory):
 
     rn_ref["meta"] = meta
     rn_ref["data"] = u.Quantity(
-        np.ones(shape, dtype=np.float32), ru.DN, dtype=np.float32
+        np.ones(shape, dtype=np.float32), u.DN, dtype=np.float32
     )
     rn_ref["dq"] = np.zeros(shape, dtype=np.uint16)
     rn_ref["err"] = u.Quantity(
-        (np.random.random(shape) * 0.05).astype(np.float64), ru.DN, dtype=np.float64
+        (np.random.random(shape) * 0.05).astype(np.float64), u.DN, dtype=np.float64
     )
 
     rn_ref_model = ReadnoiseRefModel(rn_ref)
@@ -122,10 +121,10 @@ def setup_inputs():
         dm_ramp.meta.instrument.name = "WFI"
         dm_ramp.meta.instrument.optical_element = "F158"
 
-        dm_ramp.data = u.Quantity(data + 6.0, ru.DN, dtype=np.float32)
+        dm_ramp.data = u.Quantity(data + 6.0, u.DN, dtype=np.float32)
         dm_ramp.pixeldq = pixdq
         dm_ramp.groupdq = gdq
-        dm_ramp.err = u.Quantity(err, ru.DN, dtype=np.float32)
+        dm_ramp.err = u.Quantity(err, u.DN, dtype=np.float32)
 
         dm_ramp.meta.exposure.type = "WFI_IMAGE"
         dm_ramp.meta.exposure.group_time = deltatime
