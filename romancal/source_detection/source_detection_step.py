@@ -37,6 +37,7 @@ class SourceDetectionStep(RomanStep):
         kernel_fwhm = float(default=2.)  # DAOStarFinder:Size of Gaussian kernel,
         # in pixels.
         sharplo = float(default=0.)  # DAOStarFinder: Lower bound for sharpness.
+        # Typical values of sharpness range from 0 (flat) to 1 (delta function).
         sharphi = float(default=1.0)  # DAOStarFinder: Upper bound for sharpness.
         roundlo = float(default=-1.0)  # DAOStarFinder: Lower bound for roundness.
         # A circular source will have a zero roundness. A source extended in x or
