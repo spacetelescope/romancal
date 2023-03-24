@@ -132,7 +132,7 @@ def test_source_detection_scalar_threshold(setup_inputs):
 
     # call SourceDetectionStep with default parameters
     sd = SourceDetectionStep()
-    sd.scalar_threshold=2.0
+    sd.scalar_threshold = 2.0
     res = sd.process(model)
 
     # unpack output catalog array
@@ -168,8 +168,8 @@ def test_outputs(tmp_path, setup_inputs):
 
     # run step and direct it to save catalog. default format should be asdf
     sd = SourceDetectionStep()
-    sd.save_catalogs=True
-    res = sd.process(model)
+    sd.save_catalogs = True
+    sd.process(model)
     # make sure file exists
     assert os.path.isfile("filename_tweakreg_catalog.asdf")
 
@@ -201,7 +201,7 @@ def test_limiting_catalog_size(setup_inputs):
         )
 
     sd = SourceDetectionStep()
-    sd.max_sources=2
+    sd.max_sources = 2
     res = sd.process(model)
 
     _, xcentroid, ycentroid, flux = res.meta.source_detection.tweakreg_catalog
