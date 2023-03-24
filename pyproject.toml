@@ -19,6 +19,7 @@ dependencies = [
     'gwcs >=0.18.1',
     'jsonschema >=4.0.1',
     'numpy >=1.20',
+    'photutils >=1.6.0',
     'pyparsing >=2.4.7',
     'requests >=2.22',
     # 'rad >=0.14.1',
