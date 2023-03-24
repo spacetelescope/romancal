@@ -171,12 +171,13 @@ def test_outputs(tmp_path, setup_inputs):
     sd.save_catalogs = True
     sd.process(model)
     # make sure file exists
-    assert os.path.isfile("filename_tweakreg_catalog.asdf")
+    expected_output_path = os.path.join(tmp_path, "filename_tweakreg_catalog.asdf")
+    assert os.path.isfile(expected_output_path)
 
     # run again, specifying that catalog should be saved in ecsv format
     SourceDetectionStep.process(model, save_catalogs=True, output_cat_filetype="ecsv")
-
-    assert os.path.isfile("filename_tweakreg_catalog.ecsv")
+    expected_output_path = os.path.join(tmp_path, "filename_tweakreg_catalog.ecsv")
+    assert os.path.isfile(expected_output_path)
 
 
 # @pytest.mark.skipif(
