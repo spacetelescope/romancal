@@ -175,7 +175,9 @@ def test_outputs(tmp_path, setup_inputs):
     assert os.path.isfile(expected_output_path)
 
     # run again, specifying that catalog should be saved in ecsv format
-    SourceDetectionStep.process(model, save_catalogs=True, output_cat_filetype="ecsv")
+    sd = SourceDetectionStep()
+    sd.save_catalogs = True
+    sd.output_cat_filetype = 'ecsv'
     expected_output_path = os.path.join(tmp_path, "filename_tweakreg_catalog.ecsv")
     assert os.path.isfile(expected_output_path)
 
