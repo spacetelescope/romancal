@@ -87,7 +87,12 @@ def test_source_detection_defaults(setup_inputs):
     add_random_gauss(model.data, true_x, true_y)
 
     # call SourceDetectionStep with default parameters
-    res = SourceDetectionStep.process(model)
+    res = SourceDetectionStep.process(model, kernel_fwhm=2.5, sharplo=0.0,
+                                      sharphi=1.0, roundlo=-1.0, roundhi=1.0,
+                                      peakmax=1000., max_sources=None, calc_threshold=True,
+                                      snr_threshold=3.0, bkg_estimator='median', bkg_boxsize=3,
+                                      bkg_sigma=2.0, bkg_filter_size=3, save_catalogs=False,
+                                      output_cat_filetype='asdf')
 
     # unpack output catalog array
     _, xcentroid, ycentroid, flux = res.meta.source_detection.tweakreg_catalog
