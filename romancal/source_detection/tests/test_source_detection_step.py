@@ -54,6 +54,9 @@ def add_random_gauss(arr, x_positions, y_positions, min_amp=200, max_amp=500):
     """Add random 2D Gaussians to `arr` at specified positions,
     with random amplitudes from `min_amp` to  `max_amp`. Assumes
     units of e-/s."""
+  
+    # choosing a random seed for now, total randomness was causing issues
+    np.random.seed(0)
 
     for i, x in enumerate(x_positions):
         y = y_positions[i]
