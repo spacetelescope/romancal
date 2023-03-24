@@ -87,7 +87,7 @@ def test_source_detection_defaults(setup_inputs):
     add_random_gauss(model.data, true_x, true_y)
 
     # call SourceDetectionStep with default parameters
-    res = SourceDetectionStep.call(model)
+    res = SourceDetectionStep.process(model)
 
     # unpack output catalog array
     _, xcentroid, ycentroid, flux = res.meta.source_detection.tweakreg_catalog
@@ -130,7 +130,7 @@ def test_source_detection_scalar_threshold(setup_inputs):
     add_random_gauss(model.data, true_x, true_y)
 
     # call SourceDetectionStep with default parameters
-    res = SourceDetectionStep.call(model, scalar_threshold=2.0)
+    res = SourceDetectionStep.process(model, scalar_threshold=2.0)
 
     # unpack output catalog array
     _, xcentroid, ycentroid, flux = res.meta.source_detection.tweakreg_catalog
@@ -164,12 +164,12 @@ def test_outputs(setup_inputs):
     add_random_gauss(model.data, [50], [50])
 
     # run step and direct it to save catalog. default format should be asdf
-    SourceDetectionStep.call(model, save_catalogs=True)
+    SourceDetectionStep.process(model, save_catalogs=True)
     # make sure file exists
     assert os.path.isfile("filename_tweakreg_catalog.asdf")
 
     # run again, specifying that catalog should be saved in ecsv format
-    SourceDetectionStep.call(model, save_catalogs=True, output_cat_filetype="ecsv")
+    SourceDetectionStep.process(model, save_catalogs=True, output_cat_filetype="ecsv")
 
     assert os.path.isfile("filename_tweakreg_catalog.ecsv")
 
@@ -195,7 +195,7 @@ def test_limiting_catalog_size(setup_inputs):
             u.Quantity(gauss, u.electron / u.s, dtype=np.float32) * amps[i]
         )
 
-    res = SourceDetectionStep.call(model, max_sources=2)
+    res = SourceDetectionStep.process(model, max_sources=2)
     _, xcentroid, ycentroid, flux = res.meta.source_detection.tweakreg_catalog
 
     # make sure only 2 of the three sources are returned in output catalog
