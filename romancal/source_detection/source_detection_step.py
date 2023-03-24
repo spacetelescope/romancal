@@ -50,16 +50,16 @@ class SourceDetectionStep(RomanStep):
         # an absolute threshold over background.
         calc_threshold = boolean(default=True) # Calculate a single absoulte
         # detection threshold from image based on background.
-        snr_threshold = float(default=3.0)  # if calc_threshold_img or
-        # calc_threshold_2d: the SNR for the threshold image.
-        bkg_estimator = string(default='median')  # if calc_threshold_img or
-        # calc_threshold_2d: choice of mean, median, or mode.
-        bkg_boxsize = integer(default=3)  # if calc_threshold_img or
-        # calc_threshold_2d: size of box in pixels for 2D background.
-        bkg_sigma = float(default=2.0) # if calc_threshold_img or
-        # calc_threshold_2d, n sigma for sigma clipping bkgrnd.
-        bkg_filter_size = integer(default=3) # if calc_threshold_img or
-        # calc_threshold_2d, size of gauss. kernel for background.
+        snr_threshold = float(default=3.0)  # if calc_threshold_img,
+        # the SNR for the threshold image.
+        bkg_estimator = string(default='median')  # if calc_threshold_img,
+        # choice of mean, median, or mode.
+        bkg_boxsize = integer(default=3)  # if calc_threshold_img,
+        # size of box in pixels for 2D background.
+        bkg_sigma = float(default=2.0) # if calc_threshold_img,
+        # n sigma for sigma clipping bkgrnd.
+        bkg_filter_size = integer(default=3) # if calc_threshold_img,
+        # size of Gaussian kernel for background.
         save_catalogs = boolean(default=False) # Save source catalog to file?
         # Will overwrite an existing catalog of the same name.
         output_cat_filetype = option('asdf', 'ecsv', default='asdf') # Used if
