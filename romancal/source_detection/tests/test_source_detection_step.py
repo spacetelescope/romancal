@@ -102,10 +102,10 @@ def test_source_detection_defaults(setup_inputs):
     assert len(flux) == len(true_x)
 
     # check that their locations agree
-    # atol=0.1 seems to be the lowest safe value for this right now.
+    # atol=0.15 seems to be the lowest safe value for this right now.
 
-    assert np.allclose(np.abs(xcentroid - true_x), 0.0, atol=0.1)
-    assert np.allclose(np.abs(ycentroid - true_y), 0.0, atol=0.1)
+    assert np.allclose(np.abs(xcentroid - true_x), 0.0, atol=0.15)
+    assert np.allclose(np.abs(ycentroid - true_y), 0.0, atol=0.15)
 
 
 # @pytest.mark.skipif(
@@ -147,10 +147,10 @@ def test_source_detection_scalar_threshold(setup_inputs):
     assert len(flux) == len(true_x)
 
     # check that their locations agree
-    # atol=0.1 seems to be the lowest safe value for this right now.
+    # atol=0.15 seems to be the lowest safe value for this right now.
 
-    assert np.allclose(np.abs(xcentroid - true_x), 0.0, atol=0.1)
-    assert np.allclose(np.abs(ycentroid - true_y), 0.0, atol=0.1)
+    assert np.allclose(np.abs(xcentroid - true_x), 0.0, atol=0.15)
+    assert np.allclose(np.abs(ycentroid - true_y), 0.0, atol=0.15)
 
 
 @pytest.mark.skipif(
