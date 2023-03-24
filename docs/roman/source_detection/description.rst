@@ -12,7 +12,7 @@ Outputs / Returns
 By default, the resulting source catalog will be temporarily attached to the
 output ImageModel in the `meta.source_catalog.tweakreg_catalog` attribute as 4D
 numpy array representing, in order, source ID, x centroid position, y centroid
-positon, and flux. This catalog will then be deleted from the model in the
+position, and flux. This catalog will then be deleted from the model in the
 Tweakreg step.
 
 Optionally, the catalog can be saved to disk in which case a
@@ -20,17 +20,17 @@ Optionally, the catalog can be saved to disk in which case a
 to point Tweakreg to the catalog on disk. To do this, set `save_catalogs` to
 True. Output catalogs will be saved in the same directory as input files, and
 are also 4D numpy arrays representing, in order, source ID, x centroid position,
-y centroid positon, and flux. Output catalogs can be in ASDF or ECSV format.
+y centroid position, and flux. Output catalogs can be in ASDF or ECSV format.
 
 NOTE: The intermediate resulting ImageModel from SourceDetectionStep can
 only be saved if it does not contain an attached catalog - to do this, use the
-`save_catalogs` option to seperate the catalog from the file and save them
+`save_catalogs` option to separate the catalog from the file and save them
 separately.
 
 Options for Thresholding
 ========================
 
-The DAOStarFinder routine detects point-like sources in in image that are above
+The DAOStarFinder routine detects point-like sources in an image that are above
 a certain, specified floating point threshold. This step provides several options
 for calculating this threshold, either using one value for the entire image,
 or by detecting sources in segments of the image and using a different appropriate
