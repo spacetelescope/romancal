@@ -44,11 +44,11 @@ def setup_inputs():
     return _setup
 
 
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal "
-    "network",
-)
+# @pytest.mark.skipif(
+#     os.environ.get("CI") == "true",
+#     reason="Roman CRDS servers are not currently available outside the internal "
+#     "network",
+# )
 def add_random_gauss(arr, x_positions, y_positions, min_amp=200, max_amp=500):
 
     """Add random 2D Gaussians to `arr` at specified positions,
@@ -64,11 +64,11 @@ def add_random_gauss(arr, x_positions, y_positions, min_amp=200, max_amp=500):
         )
 
 
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal "
-    "network",
-)
+# @pytest.mark.skipif(
+#     os.environ.get("CI") == "true",
+#     reason="Roman CRDS servers are not currently available outside the internal "
+#     "network",
+# )
 def test_source_detection_defaults(setup_inputs):
 
     """Test SourceDetectionStep with its default parameters. The detection
@@ -107,11 +107,11 @@ def test_source_detection_defaults(setup_inputs):
     assert np.allclose(np.abs(ycentroid - true_y), 0.0, atol=0.1)
 
 
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal "
-    "network",
-)
+# @pytest.mark.skipif(
+#     os.environ.get("CI") == "true",
+#     reason="Roman CRDS servers are not currently available outside the internal "
+#     "network",
+# )
 def test_source_detection_scalar_threshold(setup_inputs):
 
     """Test SourceDetectionStep using the option to choose a detection
@@ -174,11 +174,11 @@ def test_outputs(setup_inputs):
     assert os.path.isfile("filename_tweakreg_catalog.ecsv")
 
 
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal "
-    "network",
-)
+# @pytest.mark.skipif(
+#     os.environ.get("CI") == "true",
+#     reason="Roman CRDS servers are not currently available outside the internal "
+#     "network",
+# )
 def test_limiting_catalog_size(setup_inputs):
 
     """Test to make sure setting `max_sources` limits the size of the
