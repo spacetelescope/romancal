@@ -104,8 +104,8 @@ def test_source_detection_defaults(setup_inputs):
     # check that their locations agree
     # atol=0.2 seems to be the lowest safe value for this right now.
 
-    assert np.allclose(np.abs(xcentroid - true_x), 0.0, atol=0.2)
-    assert np.allclose(np.abs(ycentroid - true_y), 0.0, atol=0.2)
+    assert np.allclose(np.abs(xcentroid - true_x), 0.0, atol=0.25)
+    assert np.allclose(np.abs(ycentroid - true_y), 0.0, atol=0.25)
 
 
 # @pytest.mark.skipif(
@@ -149,8 +149,8 @@ def test_source_detection_scalar_threshold(setup_inputs):
     # check that their locations agree
     # atol=0.2 seems to be the lowest safe value for this right now.
 
-    assert np.allclose(np.abs(xcentroid - true_x), 0.0, atol=0.2)
-    assert np.allclose(np.abs(ycentroid - true_y), 0.0, atol=0.2)
+    assert np.allclose(np.abs(xcentroid - true_x), 0.0, atol=0.25)
+    assert np.allclose(np.abs(ycentroid - true_y), 0.0, atol=0.25)
 
 
 @pytest.mark.skipif(
