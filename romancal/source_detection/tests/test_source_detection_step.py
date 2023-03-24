@@ -87,24 +87,8 @@ def test_source_detection_defaults(setup_inputs):
     add_random_gauss(model.data, true_x, true_y)
 
     # call SourceDetectionStep with default parameters
-    res = SourceDetectionStep.process(
-        model,
-        kernel_fwhm=2.5,
-        sharplo=0.0,
-        sharphi=1.0,
-        roundlo=-1.0,
-        roundhi=1.0,
-        peakmax=1000.0,
-        max_sources=None,
-        calc_threshold=True,
-        snr_threshold=3.0,
-        bkg_estimator="median",
-        bkg_boxsize=3,
-        bkg_sigma=2.0,
-        bkg_filter_size=3,
-        save_catalogs=False,
-        output_cat_filetype="asdf",
-    )
+    sd = SourceDetectionStep()
+    res = sd.process(model)
 
     # unpack output catalog array
     _, xcentroid, ycentroid, flux = res.meta.source_detection.tweakreg_catalog
@@ -147,7 +131,9 @@ def test_source_detection_scalar_threshold(setup_inputs):
     add_random_gauss(model.data, true_x, true_y)
 
     # call SourceDetectionStep with default parameters
-    res = SourceDetectionStep.process(model, scalar_threshold=2.0)
+    sd = SourceDetectionStep()
+    sd.scalar_threshold=2.0
+    res = sd.process(model)
 
     # unpack output catalog array
     _, xcentroid, ycentroid, flux = res.meta.source_detection.tweakreg_catalog
@@ -172,7 +158,7 @@ def test_source_detection_scalar_threshold(setup_inputs):
     reason="Roman CRDS servers are not currently available outside the internal "
     "network",
 )
-def test_outputs(setup_inputs):
+def test_outputs(tmp_path, setup_inputs):
     """Make sure `save_catalogs` and `output_cat_filetype` work correctly."""
 
     model = setup_inputs()
@@ -181,7 +167,9 @@ def test_outputs(setup_inputs):
     add_random_gauss(model.data, [50], [50])
 
     # run step and direct it to save catalog. default format should be asdf
-    SourceDetectionStep.process(model, save_catalogs=True)
+    sd = SourceDetectionStep()
+    sd.save_catalogs=True
+    res = sd.process(model)
     # make sure file exists
     assert os.path.isfile("filename_tweakreg_catalog.asdf")
 
@@ -212,7 +200,10 @@ def test_limiting_catalog_size(setup_inputs):
             u.Quantity(gauss, u.electron / u.s, dtype=np.float32) * amps[i]
         )
 
-    res = SourceDetectionStep.process(model, max_sources=2)
+    sd = SourceDetectionStep()
+    sd.max_sources=2
+    res = sd.process(model)
+
     _, xcentroid, ycentroid, flux = res.meta.source_detection.tweakreg_catalog
 
     # make sure only 2 of the three sources are returned in output catalog
