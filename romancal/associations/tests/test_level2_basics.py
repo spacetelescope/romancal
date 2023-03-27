@@ -15,7 +15,8 @@ from romancal.associations import (
 from romancal.associations.main import Main
 
 #REGEX_LEVEL2 = r'(?P<path>.+)(?P<type>_rate(ints)?)(?P<extension>\..+)'
-REGEX_LEVEL2 = r'(?P<path>.+)(?P<type>_cal)(?P<extension>\\..+)'
+#REGEX_LEVEL2 = r'(?P<path>.+)(.*\_.*\_.*\_.*\_.*)'
+REGEX_LEVEL2 = r'(?P<path>.+)(?P<type>_cal?)(?P<extension>\..+)' 
 
 
 def from_level2_schema():
@@ -62,10 +63,9 @@ def test_level2_productname():
             science = [
                 member
                 for member in product['members']
-                if member['exptype'] == 'science'
+                if member['exptype'] == 'science' or member['exptype'] == 'wfi_image'
             ]
-            pdb.set_trace()
-            assert len(science) == 1
-#            pdb.set_trace()
+            assert len(science) == 2
 #            match = re.match(REGEX_LEVEL2, science[0]['expname'])
+#            pdb.set_trace()
 #            assert match.groupdict()['path'] == product['name']

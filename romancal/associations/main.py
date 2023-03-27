@@ -5,6 +5,7 @@ import os
 import sys
 
 import numpy as np
+import pdb
 
 from romancal import __version__
 
@@ -15,14 +16,14 @@ from romancal.associations.lib.log_config import DMS_config, log_config
 from romancal.associations.pool import AssociationPool
 from romancal.associations.registry import AssociationRegistry
 
-__all__ = ["Main"]
+__all__ = ['Main']
 
 # Configure logging
 logger = log_config(name=__package__)
 
 # Ruleset names
-DISCOVER_RULESET = "discover"
-CANDIDATE_RULESET = "candidate"
+DISCOVER_RULESET = 'discover'
+CANDIDATE_RULESET = 'candidate'
 
 
 class Main:
@@ -291,6 +292,35 @@ class Main:
                 path=parsed.path, format=parsed.format, save_orphans=parsed.save_orphans
             )
 
+    @classmethod
+    def cli(cls, args=None, pool=None):
+        """Run the full association generation process
+
+        Parameters
+        ----------
+        args : [str, ...], or None
+            The command line arguments. Can be one of
+
+            - `None`: `sys.argv` is then used.
+            - `[str, ...]`: A list of strings which create the command line
+              with the similar structure as `sys.argv`
+
+        pool : None or AssociationPool
+            If `None`, a pool file must be specified in the `args`.
+            Otherwise, an `AssociationPool`
+
+        Returns
+        -------
+        generator : Main
+            A fully executed association generator.
+        """
+        pdb.set_trace()
+        generator_cli = cls(args=args, pool=pool)
+        generator_cli.generate()
+        generator_cli.save()
+        return generator_cli
+
+
     @property
     def orphaned(self):
         """The pool of exposures that do not belong to any association."""
@@ -343,6 +373,25 @@ class Main:
                 os.path.join(path, save_orphans), format="ascii", delimiter="|"
             )
 
+def main(args=None, pool=None):
+    """Command-line entrypoint for the association generator
+
+    Wrapper around `Main.cli` so that the return is either True or an exception.
+
+    Parameters
+    ----------
+    args : [str, ...], or None
+        The command line arguments. Can be one of
+
+        - `None`: `sys.argv` is then used.
+        - `[str, ...]`: A list of strings which create the command line
+          with the similar structure as `sys.argv`
+
+    pool : None or AssociationPool
+        If `None`, a pool file must be specified in the `args`.
+        Otherwise, an `AssociationPool`
+    """
+    Main.cli(args, pool)
 
 # #########
 # Utilities
@@ -444,6 +493,38 @@ def filter_discovered_only(
     if keep_candidates:
         discover_list.extend(candidate_list)
     return discover_list
+
+    def generate(self):
+        """Generate the associations"""
+        logger.info('Generating associations.')
+        parsed = self.parsed
+        self.associations = generate(
+            self.pool, self.rules, version_id=parsed.version_id, finalize=not parsed.no_finalize
+        )
+
+        if parsed.discover:
+            logger.debug(
+                '# asns found before discover filtering={}'.format(
+                    len(self.associations)
+                )
+            )
+            self.associations = filter_discovered_only(
+                self.associations,
+                DISCOVER_RULESET,
+                CANDIDATE_RULESET,
+                keep_candidates=parsed.all_candidates,
+            )
+            self.rules.Utility.resequence(self.associations)
+
+        # Do a grand merging. This is done particularly for
+        # Level2 associations.
+        if parsed.merge:
+            try:
+                self.associations = self.rules.Utility.merge_asns(self.associations)
+            except AttributeError:
+                pass
+
+        logger.debug(self.__str__())
 
 
 if __name__ == "__main__":
