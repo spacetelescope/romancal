@@ -9,6 +9,8 @@ general
 
 - update minimum version of ``asdf`` to ``2.14.2`` and ``jsonschema`` to ``4.0.1`` and added minimum dependency checks to CI [#664]
 
+- Remove use of ``pytest-openfiles`` [#666]
+
 source_detection
 ----------------
 - Added SourceDetection Step to pipeline [#608]
