@@ -164,25 +164,50 @@ def test_source_detection_scalar_threshold(setup_inputs):
 def test_outputs(tmp_path, setup_inputs):
     """Make sure `save_catalogs` and `output_cat_filetype` work correctly."""
 
-    model = setup_inputs()
+    try:
+        # The contextlib.chdir() context manager was added in Python 3.11
+        # so once we drop support for Python 3.10 we can remove this try/except
+        from contextlib import chdir
 
-    # add a single source to image so a non-empty catalog is produced
-    add_random_gauss(model.data, [50], [50])
+        context = chdir(tmp_path)
+    except ImportError:
+        # This reproduces enough of the behavior of contextlib.chdir()
+        # for Python < 3.11 (this part can be removed at a later date)
+        from contextlib import contextmanager
+        from pathlib import Path
 
-    # run step and direct it to save catalog. default format should be asdf
-    sd = SourceDetectionStep()
-    sd.save_catalogs = True
-    sd.process(model)
-    # make sure file exists
-    expected_output_path = os.path.join(tmp_path, "filename_tweakreg_catalog.asdf")
-    assert os.path.isfile(expected_output_path)
+        @contextmanager
+        def ctx():
+            cwd = Path.cwd()
+            os.chdir(tmp_path)
+            try:
+                yield
+            finally:
+                os.chdir(cwd)
 
-    # run again, specifying that catalog should be saved in ecsv format
-    sd = SourceDetectionStep()
-    sd.save_catalogs = True
-    sd.output_cat_filetype = "ecsv"
-    expected_output_path = os.path.join(tmp_path, "filename_tweakreg_catalog.ecsv")
-    assert os.path.isfile(expected_output_path)
+        context = ctx()
+
+    with context:
+        model = setup_inputs()
+
+        # add a single source to image so a non-empty catalog is produced
+        add_random_gauss(model.data, [50], [50])
+
+        # run step and direct it to save catalog. default format should be asdf
+        sd = SourceDetectionStep()
+        sd.save_catalogs = True
+        sd.process(model)
+        # make sure file exists
+        expected_output_path = os.path.join(tmp_path, "filename_tweakreg_catalog.asdf")
+        assert os.path.isfile(expected_output_path)
+
+        # run again, specifying that catalog should be saved in ecsv format
+        sd = SourceDetectionStep()
+        sd.save_catalogs = True
+        sd.output_cat_filetype = "ecsv"
+        sd.process(model)
+        expected_output_path = os.path.join(tmp_path, "filename_tweakreg_catalog.ecsv")
+        assert os.path.isfile(expected_output_path)
 
 
 # @pytest.mark.skipif(
