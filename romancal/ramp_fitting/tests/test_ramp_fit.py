@@ -5,7 +5,6 @@ import pytest
 from astropy import units as u
 from astropy.time import Time
 from roman_datamodels import maker_utils
-from roman_datamodels import units as ru
 from roman_datamodels.datamodels import (
     GainRefModel,
     ImageModel,
@@ -31,19 +30,19 @@ dqflags = {
 
 def generate_ramp_model(shape, deltatime=1):
     data = u.Quantity(
-        (np.random.random(shape) * 0.5).astype(np.float32), ru.DN, dtype=np.float32
+        (np.random.random(shape) * 0.5).astype(np.float32), u.DN, dtype=np.float32
     )
     err = u.Quantity(
-        (np.random.random(shape) * 0.0001).astype(np.float32), ru.DN, dtype=np.float32
+        (np.random.random(shape) * 0.0001).astype(np.float32), u.DN, dtype=np.float32
     )
     pixdq = np.zeros(shape=shape[1:], dtype=np.uint32)
     gdq = np.zeros(shape=shape, dtype=np.uint8)
 
     dm_ramp = maker_utils.mk_ramp(shape)
-    dm_ramp.data = u.Quantity(data, ru.DN, dtype=np.float32)
+    dm_ramp.data = u.Quantity(data, u.DN, dtype=np.float32)
     dm_ramp.pixeldq = pixdq
     dm_ramp.groupdq = gdq
-    dm_ramp.err = u.Quantity(err, ru.DN, dtype=np.float32)
+    dm_ramp.err = u.Quantity(err, u.DN, dtype=np.float32)
 
     dm_ramp.meta.exposure.frame_time = deltatime
     dm_ramp.meta.exposure.ngroups = shape[0]
@@ -66,13 +65,13 @@ def generate_wfi_reffiles(shape, ingain=6):
 
     gain_ref["data"] = u.Quantity(
         (np.random.random(shape) * 0.5).astype(np.float32) * ingain,
-        ru.electron / ru.DN,
+        u.electron / u.DN,
         dtype=np.float32,
     )
     gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
     gain_ref["err"] = u.Quantity(
         (np.random.random(shape) * 0.05).astype(np.float32),
-        ru.electron / ru.DN,
+        u.electron / u.DN,
         dtype=np.float32,
     )
 
@@ -89,7 +88,7 @@ def generate_wfi_reffiles(shape, ingain=6):
     rn_ref["meta"]["exposure"]["frame_time"] = 666
 
     rn_ref["data"] = u.Quantity(
-        (np.random.random(shape) * 0.01).astype(np.float32), ru.DN, dtype=np.float32
+        (np.random.random(shape) * 0.01).astype(np.float32), u.DN, dtype=np.float32
     )
 
     rn_ref_model = ReadnoiseRefModel(rn_ref)

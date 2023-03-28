@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 from astropy import units as u
 from roman_datamodels import maker_utils, stnode
-from roman_datamodels import units as ru
 from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
 from stdatamodels.validate import ValidationWarning
 
@@ -216,7 +215,7 @@ def test_dqinit_step_interface(instrument, exptype):
     wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.data = u.Quantity(
-        np.ones(shape, dtype=np.uint16), ru.DN, dtype=np.uint16
+        np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
     )
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
@@ -273,7 +272,7 @@ def test_dqinit_refpix(instrument, exptype):
     wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.data = u.Quantity(
-        np.ones(shape, dtype=np.uint16), ru.DN, dtype=np.uint16
+        np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
     )
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 

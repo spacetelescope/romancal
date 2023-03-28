@@ -9,7 +9,6 @@ import pytest
 import roman_datamodels as rdm
 from astropy import units as u
 from roman_datamodels import maker_utils
-from roman_datamodels import units as ru
 from roman_datamodels.datamodels import DarkRefModel, RampModel
 
 from romancal.dark_current import DarkCurrentStep
@@ -138,7 +137,7 @@ def create_ramp_and_dark(shape, instrument, exptype):
     ramp.meta.instrument.detector = "WFI01"
     ramp.meta.instrument.optical_element = "F158"
     ramp.meta.exposure.type = exptype
-    ramp.data = u.Quantity(np.ones(shape, dtype=np.float32), ru.DN, dtype=np.float32)
+    ramp.data = u.Quantity(np.ones(shape, dtype=np.float32), u.DN, dtype=np.float32)
     ramp_model = RampModel(ramp)
 
     # Create dark model

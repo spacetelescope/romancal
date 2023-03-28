@@ -63,6 +63,8 @@ jobs:
       cache-path: /tmp/crds_cache
       cache-key: crds-${{ needs.crds_context.outputs.pmap }}
       envs: |
+        - linux: test-oldestdeps-cov-xdist
+          python-version: 3.8
         - linux: test-xdist
           python-version: 3.8
         - linux: test-xdist
