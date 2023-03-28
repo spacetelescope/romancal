@@ -16,7 +16,7 @@ from romancal.source_detection import SourceDetectionStep
 
 @pytest.fixture
 def setup_inputs():
-    def _setup(nrows=100, ncols=100, noise=1.0):
+    def _setup(nrows=100, ncols=100, noise=1.0, seed=None):
 
         """Return ImageModel of lvl 2 image"""
 
@@ -29,6 +29,8 @@ def setup_inputs():
 
         # add noise to data
         if noise is not None:
+            if seed is not None:
+                np.random.seed(seed)
             wfi_image.data += u.Quantity(
                 noise * np.random.random(shape), u.electron / u.s, dtype=np.float32
             )
@@ -44,19 +46,16 @@ def setup_inputs():
     return _setup
 
 
-# @pytest.mark.skipif(
-#     os.environ.get("CI") == "true",
-#     reason="Roman CRDS servers are not currently available outside the internal "
-#     "network",
-# )
-def add_random_gauss(arr, x_positions, y_positions, min_amp=200, max_amp=500):
+def add_random_gauss(
+    arr, x_positions, y_positions, min_amp=200, max_amp=500, seed=None
+):
 
     """Add random 2D Gaussians to `arr` at specified positions,
     with random amplitudes from `min_amp` to  `max_amp`. Assumes
     units of e-/s."""
 
-    # choosing a random seed for now, total randomness was causing issues
-    np.random.seed(0)
+    if seed is not None:
+        np.random.seed(seed)
 
     for i, x in enumerate(x_positions):
         y = y_positions[i]
@@ -67,17 +66,12 @@ def add_random_gauss(arr, x_positions, y_positions, min_amp=200, max_amp=500):
         )
 
 
-# @pytest.mark.skipif(
-#     os.environ.get("CI") == "true",
-#     reason="Roman CRDS servers are not currently available outside the internal "
-#     "network",
-# )
 def test_source_detection_defaults(setup_inputs):
 
     """Test SourceDetectionStep with its default parameters. The detection
     threshold will be chosen based on the image's background level."""
 
-    model = setup_inputs()
+    model = setup_inputs(seed=0)
 
     # add in 12 sources, roughly evenly distributed
     # sort by true_x so they can be matched up to output
@@ -87,7 +81,7 @@ def test_source_detection_defaults(setup_inputs):
 
     # at each position, place a 2d gaussian
     # randomly vary flux from 100 to 500 for each source
-    add_random_gauss(model.data, true_x, true_y)
+    add_random_gauss(model.data, true_x, true_y, seed=0)
 
     # call SourceDetectionStep with default parameters
     sd = SourceDetectionStep()
@@ -111,17 +105,12 @@ def test_source_detection_defaults(setup_inputs):
     assert np.allclose(np.abs(ycentroid - true_y), 0.0, atol=0.25)
 
 
-# @pytest.mark.skipif(
-#     os.environ.get("CI") == "true",
-#     reason="Roman CRDS servers are not currently available outside the internal "
-#     "network",
-# )
 def test_source_detection_scalar_threshold(setup_inputs):
 
     """Test SourceDetectionStep using the option to choose a detection
     threshold for entire image."""
 
-    model = setup_inputs()
+    model = setup_inputs(seed=0)
 
     # add in 12 sources, roughly evenly distributed
     # sort by true_x so they can be matched up to output
@@ -131,7 +120,7 @@ def test_source_detection_scalar_threshold(setup_inputs):
 
     # at each position, place a 2d gaussian
     # randomly vary flux from 100 to 500 for each source
-    add_random_gauss(model.data, true_x, true_y)
+    add_random_gauss(model.data, true_x, true_y, seed=0)
 
     # call SourceDetectionStep with default parameters
     sd = SourceDetectionStep()
@@ -188,10 +177,10 @@ def test_outputs(tmp_path, setup_inputs):
         context = ctx()
 
     with context:
-        model = setup_inputs()
+        model = setup_inputs(seed=0)
 
         # add a single source to image so a non-empty catalog is produced
-        add_random_gauss(model.data, [50], [50])
+        add_random_gauss(model.data, [50], [50], seed=0)
 
         # run step and direct it to save catalog. default format should be asdf
         sd = SourceDetectionStep()
@@ -210,17 +199,12 @@ def test_outputs(tmp_path, setup_inputs):
         assert os.path.isfile(expected_output_path)
 
 
-# @pytest.mark.skipif(
-#     os.environ.get("CI") == "true",
-#     reason="Roman CRDS servers are not currently available outside the internal "
-#     "network",
-# )
 def test_limiting_catalog_size(setup_inputs):
 
     """Test to make sure setting `max_sources` limits the size of the
     output catalog to contain only the N brightest sources"""
 
-    model = setup_inputs()
+    model = setup_inputs(seed=0)
 
     amps = [200, 300, 400]  # flux
     pos = [20, 50, 80]  # 3 sources in a line
