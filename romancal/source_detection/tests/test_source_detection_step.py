@@ -46,7 +46,9 @@ def setup_inputs():
     return _setup
 
 
-def add_random_gauss(arr, x_positions, y_positions, min_amp=200, max_amp=500, seed=None):
+def add_random_gauss(
+    arr, x_positions, y_positions, min_amp=200, max_amp=500, seed=None
+):
 
     """Add random 2D Gaussians to `arr` at specified positions,
     with random amplitudes from `min_amp` to  `max_amp`. Assumes
@@ -59,7 +61,7 @@ def add_random_gauss(arr, x_positions, y_positions, min_amp=200, max_amp=500, se
         y = y_positions[i]
         gauss = Gaussian2DKernel(2, x_size=21, y_size=21).array
         amp = np.random.randint(200, 700)
-        arr[y - 10: y + 11, x - 10: x + 11] += (
+        arr[y - 10 : y + 11, x - 10 : x + 11] += (
             u.Quantity(gauss, u.electron / u.s, dtype=np.float32) * amp
         )
 
@@ -209,7 +211,7 @@ def test_limiting_catalog_size(setup_inputs):
     for i in range(3):
         xy = pos[i]
         gauss = Gaussian2DKernel(2, x_size=20, y_size=20).array
-        model.data[xy - 10: xy + 10, xy - 10: xy + 10] += (
+        model.data[xy - 10 : xy + 10, xy - 10 : xy + 10] += (
             u.Quantity(gauss, u.electron / u.s, dtype=np.float32) * amps[i]
         )
 
