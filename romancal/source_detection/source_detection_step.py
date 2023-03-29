@@ -155,7 +155,6 @@ class SourceDetectionStep(RomanStep):
 
             # tweakreg_catalog_name will be saved to the final output file,
             # while tweakreg_catalog is intended to be deleted by TweakRegStep
-            # input_model.meta["source_detection"] = {}
             input_model.meta["source_detection"] = maker_utils.mk_source_detection()
 
             # if 'save_catalogs'= True, also save the output catalog to a file
