@@ -1,6 +1,7 @@
 0.10.1 (unreleased)
 ===================
 
+
 general
 -------
 - Updated datamodel maker utility imports. [#654]
@@ -15,6 +16,8 @@ source_detection
 ----------------
 - Added SourceDetection Step to pipeline [#608]
 - Added option of fixed random seed for unit tests to avoid intermittent failures from randomness. [#668]
+
+- Fix source detection object instantiation. [#669]
 
 
 0.10.0 (2023-02-21)
