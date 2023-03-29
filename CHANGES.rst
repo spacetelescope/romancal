@@ -14,6 +14,7 @@ general
 source_detection
 ----------------
 - Added SourceDetection Step to pipeline [#608]
+- Added option of fixed random seed for unit tests to avoid intermittent failures from randomness. [#668]
 
 - Fix source detection object instantiation. [#669]
 
