@@ -15,6 +15,8 @@ source_detection
 ----------------
 - Added SourceDetection Step to pipeline [#608]
 
+- Fix source detection object instantiation. [#669]
+
 
 0.10.0 (2023-02-21)
 ===================
