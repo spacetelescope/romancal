@@ -1,22 +1,12 @@
-import os
-
-import requests
 from astropy import table
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-from astropy.table import Table
+from astroquery.mast import Catalogs
 
 from ..assign_wcs import utils as wcsutil
 from ..resample import resample_utils
 
-ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
-DEF_CAT_URL = "http://gsss.stsci.edu/webservices"
 DEF_CAT = "GAIADR3"
-
-if ASTROMETRIC_CAT_ENVVAR in os.environ:
-    SERVICELOCATION = os.environ[ASTROMETRIC_CAT_ENVVAR]
-else:
-    SERVICELOCATION = DEF_CAT_URL
 
 """
 
@@ -180,18 +170,10 @@ def get_catalog(ra, dec, sr=0.1, catalog=DEF_CAT):
         CSV object of returned sources with all columns as provided by catalog
 
     """
-    service_type = "vo/CatalogSearch.aspx"
-    spec_str = "RA={}&DEC={}&SR={}&FORMAT={}&CAT={}&MINDET=5"
-    headers = {"Content-Type": "text/csv"}
-    fmt = "CSV"
+    catalog_data_csv = Catalogs.query_object(
+        f"{ra} {dec}", radius=sr, catalog=catalog, format="csv"
+    )
+    catalog_data_csv.rename_column("source_id", "objID")
+    catalog_data_csv.rename_column("phot_g_mean_mag", "mag")
 
-    spec = spec_str.format(ra, dec, sr, fmt, catalog)
-    service_url = f"{SERVICELOCATION}/{service_type}?{spec}"
-    rawcat = requests.get(service_url, headers=headers)
-    r_contents = rawcat.content.decode()  # convert from bytes to a String
-    rstr = r_contents.split("\r\n")
-    # remove initial line describing the number of sources returned
-    # CRITICAL to proper interpretation of CSV data
-    del rstr[0]
-
-    return Table.read(rstr, format="csv")
+    return catalog_data_csv
