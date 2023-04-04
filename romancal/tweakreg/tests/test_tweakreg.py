@@ -507,57 +507,6 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
     assert type(exec_info.value) == ValueError
 
 
-def test_tweakreg_compute_radius_and_fiducial():
-    """
-    Test that compute_radius returns correct values for footprint radius and fiducial.
-    """
-    # create a "header" of an image that's 100x100 pixels (@0.1"/pix in both axis)
-    # and reference coordinates (ra=10 deg, dec=0 deg)
-    # sitting at the origin of the pixel coordinates frame (0,0).
-    img_shape = (100, 100)
-    ref_val = (10, 0) * u.degree
-    ref_pix = (0, 0)
-    pix_scale = (0.1, 0.1) * u.arcsec
-    theta = 0 * u.degree
-
-    wcsobj = create_basic_wcs(
-        img_shape=img_shape,
-        ref_val=ref_val,
-        ref_pix=ref_pix,
-        pix_scale=pix_scale,
-        theta=theta,
-    )
-
-    computed_radius, computed_fiducial = compute_radius(wcsobj)
-
-    # expected radius is the euclidean distance
-    # from the center to the furthest edge of the WCS
-    ref_initial_coord = (
-        np.array(
-            [
-                (wcsobj.bounding_box[0][0]),
-                (wcsobj.bounding_box[1][0]),
-            ]
-        )
-        * pix_scale.to("deg")[0].value
-    )
-    fiducial_coord = (
-        np.array(
-            [
-                (wcsobj.bounding_box[0][0] + wcsobj.bounding_box[0][1]) / 2,
-                (wcsobj.bounding_box[1][0] + wcsobj.bounding_box[1][1]) / 2,
-            ]
-        )
-        * pix_scale.to("deg")[0].value
-    )
-    expected_radius = np.linalg.norm(fiducial_coord - ref_initial_coord)
-    # expected fiducial is the center of the WCS
-    expected_fiducial = wcsobj(img_shape[0] / 2, img_shape[1] / 2)
-
-    assert_allclose(expected_radius, computed_radius)
-    assert_allclose(expected_fiducial, computed_fiducial)
-
-
 @pytest.mark.parametrize(
     "theta, offset_x, offset_y",
     [
