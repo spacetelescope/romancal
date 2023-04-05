@@ -1,3 +1,5 @@
+import traceback
+
 from astropy import table
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -176,7 +178,8 @@ def get_catalog(ra, dec, sr=0.1, catalog=DEF_CAT):
         )
         catalog_data_csv.rename_column("source_id", "objID")
         catalog_data_csv.rename_column("phot_g_mean_mag", "mag")
-    except Exception as e:
-        raise ValueError("An error ocurred...").with_traceback(e.__traceback__)
+    except Exception:
+        traceback.format_exc()
+        raise
 
     return catalog_data_csv
