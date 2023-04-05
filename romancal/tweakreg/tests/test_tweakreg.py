@@ -171,7 +171,10 @@ def create_basic_wcs(
 
     pipeline = [(detector_frame, det2sky), (sky_frame, None)]
     wcsobj = wcs.WCS(pipeline)
-    wcsobj.bounding_box = ((-0.5, img_shape[0] + 0.5), (-0.5, img_shape[1] + 0.5))
+    wcsobj.bounding_box = (
+        (-0.5, img_shape[0] + 0.5),
+        (-0.5, img_shape[1] + 0.5),
+    )
 
     return wcsobj
 
@@ -248,7 +251,12 @@ def create_base_image_source_catalog(tmp_path, output_filename, catalog_data=Non
         writer.writerows(src_detector_coords)
 
 
-def add_tweakreg_catalog_attribute(tmp_path, input_dm, catalog_data=None):
+def add_tweakreg_catalog_attribute(
+    tmp_path,
+    input_dm,
+    catalog_filename="base_image_sources.csv",
+    catalog_data=None,
+):
     """
     Add tweakreg_catalog attribute to the meta, which is a mandatory
     attribute for TweakReg. The tweakreg_catalog attribute contains
@@ -272,7 +280,7 @@ def add_tweakreg_catalog_attribute(tmp_path, input_dm, catalog_data=None):
     by fetching data from Gaia within a search radius of 100 arcsec
     centered at RA=270, Dec=66.
     """
-    tweakreg_catalog_filename = "base_image_sources.csv"
+    tweakreg_catalog_filename = catalog_filename
     if catalog_data is None:
         gaia_cat = get_catalog(ra=270, dec=66, sr=100 / 3600)
         gaia_source_coords = [
@@ -475,7 +483,8 @@ def test_tweakreg_common_name_raises_error_on_invalid_input(filename_list):
 def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     """Test that TweakReg saves the catalog used for absolute astrometry."""
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img)
+    catalog_filename = f"fit_{abs_refcat.lower()}_ref.ecsv"
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
     step = TweakRegStep()
     step.save_abs_catalog = True
@@ -483,12 +492,9 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
 
     step.process([img])
 
-    # file will be written to this directory by default
-    root_dir = request.config.rootdir
-
-    assert os.path.exists(root_dir / f"fit_{abs_refcat.lower()}_ref.ecsv")
+    assert os.path.exists(tmp_path / catalog_filename)
     # clean up
-    os.remove(root_dir / f"fit_{abs_refcat.lower()}_ref.ecsv")
+    os.remove(tmp_path / catalog_filename)
 
 
 def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
