@@ -39,8 +39,8 @@ transformation that has occurred is the extraction of the science data
 from the observatory telemetry into a ASDF file. At this point, the
 science exposures enter the calibration pipeline.
 
-The pipeline consists of the ELPP (Exposure Level Processing Partition) and
-the HLPP (High Level Processing Partition) pipeline consists of three levels:
+The pipeline consists of the ELP (Exposure Level Processing) and
+the HLP (High Level Processing) pipeline consists of three levels:
 Level 1, Level 2, and Level 3 processing. Level 1 data uncalibrated individual
 exposures consisting of raw pixel information, formatted into the shape of
 the detectors. Level 2 are processed to correct for instrument artifacts and
