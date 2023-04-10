@@ -19,6 +19,13 @@ source_detection
 
 - Fix source detection object instantiation. [#669]
 
+documentation
+-------------
+- Updated wording about ELP and HLP in the Associations documentation for RTD
+
+- Updated the primary branch referenced in CONTRIBUTING to be main
+
+
 
 0.10.0 (2023-02-21)
 ===================
@@ -189,6 +196,10 @@ Documentation
   documentation. [#488]
 
 - Added documentation for Distortion reference files. [#493]
+
+- Updated wording about ELP and HLP in the Associations documentation for RTD
+
+- Updated the primary branch referenced in CONTRIBUTING to be main
 
 
 linearity
