@@ -40,19 +40,19 @@ from the observatory telemetry into a ASDF file. At this point, the
 science exposures enter the calibration pipeline.
 
 The pipeline consists of the ELP (Exposure Level Processing) and
-the HLP (High Level Processing) pipeline consists of three levels:
-Level 1, Level 2, and Level 3 processing. Level 1 data uncalibrated individual
-exposures consisting of raw pixel information, formatted into the shape of
-the detectors. Level 2 are processed to correct for instrument artifacts and
+the HLP (High Level Processing) which together comprise three levels of data generation and processing:
+Level 1, Level 2, and Level 3. Level 1 data consist of uncalibrated individual
+exposures, containing raw pixel information, formatted into the shape of
+the detectors. Level 2 data have been  processed to correct for instrument artifacts and
 have appropriate astrometric and geometric distortion information attached,
 and with the exception of grism data, are in units that have known scaling
 with flux. The resulting files contain flux
 and spatially calibrated data, called *Level 2* data. The information
-is still in individual exposures.
+contained in these files are  still related to  individual exposures.
 
-In order to combine or compare exposures the data are resampled to a
+In order to combine or compare exposures, the data are resampled to a
 regularized grid, removing the geometric distortion of the original pixels.
-This is denoted as *Level 3* data.
+This process creates  *Level 3* data.
 
 Utilities
 =========
