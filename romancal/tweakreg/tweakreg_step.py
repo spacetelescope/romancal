@@ -151,7 +151,7 @@ class TweakRegStep(RomanStep):
         # Build the catalogs for input images
         for i, image_model in enumerate(images):
             if hasattr(image_model.meta, "tweakreg_catalog"):
-                catalog = Table.read(image_model.meta.tweakreg_catalog, format="ascii")
+                catalog = Table.read(image_model.meta.tweakreg_catalog)
                 new_cat = False
             else:
                 raise AttributeError("Attribute 'meta.tweakreg_catalog' is missing.")
@@ -438,6 +438,7 @@ class TweakRegStep(RomanStep):
 
             # retrieve fit status and update wcs if fit is successful:
             if "SUCCESS" in imcat.meta.get("fit_info")["status"]:
+
                 # Update/create the WCS .name attribute with information
                 # on this astrometric fit as the only record that it was
                 # successful:
@@ -479,7 +480,7 @@ class TweakRegStep(RomanStep):
 
         try:
             cat_name = str(catalog)
-            catalog = Table.read(catalog, format="ascii")
+            catalog = Table.read(catalog)
             catalog.meta["name"] = cat_name
         except OSError:
             self.log.error(f"Cannot read catalog {catalog}")
