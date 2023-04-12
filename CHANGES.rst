@@ -12,6 +12,8 @@ general
 
 - Remove use of ``pytest-openfiles`` [#666]
 
+- Remove the ``codecov`` dependency [#677]
+
 source_detection
 ----------------
 - Added SourceDetection Step to pipeline [#608]
