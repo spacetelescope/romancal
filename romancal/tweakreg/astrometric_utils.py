@@ -148,7 +148,9 @@ def compute_radius(wcs):
     fiducial = wcsutil.compute_fiducial([wcs], wcs.bounding_box)
     img_center = SkyCoord(ra=fiducial[0] * u.degree, dec=fiducial[1] * u.degree)
     wcs_foot = wcs.footprint()
-    img_corners = SkyCoord(ra=wcs_foot[:, 0] * u.degree, dec=wcs_foot[:, 1] * u.degree)
+    img_corners = SkyCoord(
+        ra=wcs_foot[:, 0] * u.degree, dec=wcs_foot[:, 1] * u.degree
+    )
     radius = img_center.separation(img_corners).max().value
 
     return radius, fiducial
@@ -170,7 +172,7 @@ def get_catalog(ra, dec, sr=0.1, catalog="GAIADR3"):
         for sources from catalog.  Default: 0.1 degrees
 
     catalog : str, optional
-        Name of catalog to query, as defined by web-service.  Default: 'GSC241'
+        Name of catalog to query, as defined by web-service.  Default: 'GAIADR3'
 
     Returns
     -------
