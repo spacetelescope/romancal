@@ -96,6 +96,14 @@ installed too:
     $ pip install -e .[docs]
     $ pip install -e .[test,docs]
 
+On a macOS machine, you should run the same command as above but with quotes around the
+options to be installed
+::
+
+    $ pip install -e '.[test]'
+    $ pip install -e '.[docs]'
+    $ pip install -e '.[test,docs]'
+
 Need other useful packages in your development environment?
 ::
 
