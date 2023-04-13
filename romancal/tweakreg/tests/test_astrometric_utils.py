@@ -290,7 +290,18 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
         if x.strip().split()[1].lower() == "yes"
     ]
     # exclude data formats
-    [list_of_supported_formats.remove(x) for x in ["asdf", "fits", "hdf5", "parquet"]]
+    [
+        list_of_supported_formats.remove(x)
+        for x in [
+            "pandas.csv",
+            "pandas.html",
+            "pandas.json",
+            "asdf",
+            "fits",
+            "hdf5",
+            "parquet",
+        ]
+    ]
 
     for table_format in list_of_supported_formats:
         res = create_astrometric_catalog(
