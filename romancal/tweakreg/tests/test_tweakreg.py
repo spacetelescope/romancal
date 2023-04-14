@@ -1,11 +1,13 @@
 import copy
 import csv
 import os
+from io import StringIO
 from typing import Tuple
 
 import numpy as np
 import pytest
 from astropy import coordinates as coord
+from astropy import table
 from astropy import units as u
 from astropy.modeling import models
 from astropy.modeling.models import RotationSequence3D, Scale, Shift
@@ -205,7 +207,9 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
-    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    detector = cf.Frame2D(
+        name="detector", axes_order=(0, 1), unit=(u.pix, u.pix)
+    )
     v2v3 = cf.Frame2D(
         name="v2v3",
         axes_order=(0, 1),
@@ -226,7 +230,23 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     input_dm.meta["wcs"] = wcs_obj
 
 
-def create_base_image_source_catalog(tmp_path, output_filename, catalog_data=None):
+def get_catalog_data(input_dm):
+    gaia_cat = get_catalog(ra=270, dec=66, sr=100 / 3600)
+    gaia_source_coords = [
+        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])
+    ]
+    catalog_data = np.array(
+        [
+            input_dm.meta.wcs.world_to_pixel(ra, dec)
+            for ra, dec in gaia_source_coords
+        ]
+    )
+    return catalog_data
+
+
+def create_base_image_source_catalog(
+    tmp_path, output_filename, catalog_data, catalog_format: str = "ascii.ecsv"
+):
     """
     Write a temp CSV file to be used as source catalog, similar to what
     is produced by the previous pipeline step, source detection.
@@ -237,25 +257,24 @@ def create_base_image_source_catalog(tmp_path, output_filename, catalog_data=Non
         A path-like object representing the path where to save the file.
     output_filename : string
         The output filename (with extension).
-    catalog_data : numpy.ndarray, optional
+    catalog_data : numpy.ndarray
         A numpy array with the (x, y) coordinates of the
-        "detected" sources, by default None
+        "detected" sources
+    catalog_format : str, optional
+        A string indicating the catalog format.
     """
-    header = ["x", "y"]
-    # add shift
     src_detector_coords = catalog_data
     output = os.path.join(tmp_path, output_filename)
-    with open(output, "w", encoding="UTF8", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(header)
-        writer.writerows(src_detector_coords)
+    t = table.Table(src_detector_coords, names=("x", "y"))
+    t.write((tmp_path / output), format=catalog_format)
 
 
 def add_tweakreg_catalog_attribute(
     tmp_path,
     input_dm,
-    catalog_filename="base_image_sources.csv",
+    catalog_filename="base_image_sources",
     catalog_data=None,
+    catalog_format: str = "ascii.ecsv",
 ):
     """
     Add tweakreg_catalog attribute to the meta, which is a mandatory
@@ -273,6 +292,8 @@ def add_tweakreg_catalog_attribute(
     catalog_data : numpy.ndarray, optional
         A numpy array with the (x, y) coordinates of the
         "detected" sources, by default None (see note below).
+    catalog_format : str, optional
+        A string indicating the catalog format.
 
     Note
     ----
@@ -282,18 +303,13 @@ def add_tweakreg_catalog_attribute(
     """
     tweakreg_catalog_filename = catalog_filename
     if catalog_data is None:
-        gaia_cat = get_catalog(ra=270, dec=66, sr=100 / 3600)
-        gaia_source_coords = [
-            (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])
-        ]
-        catalog_data = np.array(
-            [
-                input_dm.meta.wcs.world_to_pixel(ra, dec)
-                for ra, dec in gaia_source_coords
-            ]
-        )
+        catalog_data = get_catalog_data(input_dm)
+
     create_base_image_source_catalog(
-        tmp_path, tweakreg_catalog_filename, catalog_data=catalog_data
+        tmp_path,
+        tweakreg_catalog_filename,
+        catalog_data=catalog_data,
+        catalog_format=catalog_format,
     )
     input_dm.meta["tweakreg_catalog"] = os.path.join(
         tmp_path, tweakreg_catalog_filename
@@ -412,7 +428,9 @@ def test_tweakreg_correction_magnitude(
     step = TweakRegStep()
     step.tolerance = tolerance / 10.0
 
-    assert step._is_wcs_correction_small(img1_wcs, img2_wcs) == is_small_correction
+    assert (
+        step._is_wcs_correction_small(img1_wcs, img2_wcs) == is_small_correction
+    )
 
 
 @pytest.mark.parametrize(
@@ -483,17 +501,48 @@ def test_tweakreg_common_name_raises_error_on_invalid_input(filename_list):
 def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     """Test that TweakReg saves the catalog used for absolute astrometry."""
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
-    catalog_filename = f"fit_{abs_refcat.lower()}_ref.ecsv"
-    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
+    catalog_filename = "ref_catalog.ecsv"
+    abs_refcat_filename = f"fit_{abs_refcat.lower()}_ref.ecsv"
+    add_tweakreg_catalog_attribute(
+        tmp_path, img, catalog_filename=catalog_filename
+    )
 
     step = TweakRegStep()
     step.save_abs_catalog = True
     step.abs_refcat = abs_refcat
+    step.catalog_path = str(tmp_path)
 
     step.process([img])
 
-    assert os.path.exists(tmp_path / catalog_filename)
+    assert os.path.exists(tmp_path / abs_refcat_filename)
     # clean up
+    os.remove(tmp_path / abs_refcat_filename)
+    os.remove(tmp_path / catalog_filename)
+
+
+@pytest.mark.parametrize(
+    "abs_refcat",
+    (None, ""),
+)
+def test_tweakreg_defaults_to_valid_abs_refcat(tmp_path, abs_refcat, request):
+    """Test that TweakReg defaults to DEFAULT_ABS_REFCAT on invalid values."""
+    img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
+    catalog_filename = "ref_catalog.ecsv"
+    abs_refcat_filename = f"fit_{DEFAULT_ABS_REFCAT.lower()}_ref.ecsv"
+    add_tweakreg_catalog_attribute(
+        tmp_path, img, catalog_filename=catalog_filename
+    )
+
+    step = TweakRegStep()
+    step.save_abs_catalog = True
+    step.abs_refcat = abs_refcat
+    step.catalog_path = str(tmp_path)
+
+    step.process([img])
+
+    assert os.path.exists(tmp_path / abs_refcat_filename)
+    # clean up
+    os.remove(tmp_path / abs_refcat_filename)
     os.remove(tmp_path / catalog_filename)
 
 
@@ -510,6 +559,89 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
         step.process([img])
 
     assert type(exec_info.value) == ValueError
+
+
+@pytest.mark.parametrize(
+    "catalog_format",
+    (
+        "ascii",
+        "ascii.aastex",
+        "ascii.basic",
+        "ascii.commented_header",
+        "ascii.csv",
+        "ascii.ecsv",
+        "ascii.fixed_width",
+        # "ascii.fixed_width_no_header",
+        "ascii.fixed_width_two_line",
+        "ascii.html",
+        "ascii.ipac",
+        "ascii.latex",
+        "ascii.mrt",
+        # "ascii.no_header",
+        # "ascii.qdp",
+        "ascii.rdb",
+        "ascii.rst",
+        "ascii.tab",
+        "votable",
+    ),
+)
+def test_tweakreg_use_custom_catalogs(tmp_path, catalog_format, request):
+    """Test that TweakReg can use custom catalogs."""
+    # create input datamodels
+    img1 = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
+    img2 = request.getfixturevalue("base_image")(shift_1=1010, shift_2=1010)
+    img3 = request.getfixturevalue("base_image")(shift_1=1020, shift_2=1020)
+    img1.meta.filename = "img1"
+    img2.meta.filename = "img2"
+    img3.meta.filename = "img3"
+
+    # create valid custom catalog data to be used with each input datamodel
+    catalog_data1 = get_catalog_data(img1)
+    catalog_data2 = get_catalog_data(img2)
+    catalog_data3 = get_catalog_data(img3)
+
+    custom_catalog_map = [
+        {
+            "cat_filename": "ref_catalog_1",
+            "cat_datamodel": img1.meta.filename,
+            "cat_data": catalog_data1,
+        },
+        {
+            "cat_filename": "ref_catalog_2",
+            "cat_datamodel": img2.meta.filename,
+            "cat_data": catalog_data2,
+        },
+        {
+            "cat_filename": "ref_catalog_3",
+            "cat_datamodel": img3.meta.filename,
+            "cat_data": catalog_data3,
+        },
+    ]
+
+    # create catfile
+    catfile = str(tmp_path / "catfile.txt")
+    catfile_content = StringIO()
+    for x in custom_catalog_map:
+        # write line to catfile
+        catfile_content.write(
+            f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n"
+        )
+        # write out the catalog data
+        t = table.Table(x.get("cat_data"), names=("x", "y"))
+        t.write(tmp_path / x.get("cat_filename"), format=catalog_format)
+    with open(catfile, mode="w") as f:
+        print(catfile_content.getvalue(), file=f)
+
+    step = TweakRegStep()
+    step.use_custom_catalogs = True
+    step.catalog_format = catalog_format
+    step.catfile = catfile
+
+    step.process([img1, img2, img3])
+
+    assert img1.meta.tweakreg_catalog == str(tmp_path / "ref_catalog_1")
+    assert img2.meta.tweakreg_catalog == str(tmp_path / "ref_catalog_2")
+    assert img3.meta.tweakreg_catalog == str(tmp_path / "ref_catalog_3")
 
 
 @pytest.mark.parametrize(
@@ -534,7 +666,9 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     Test that TweakReg returns accurate results.
     """
     gaia_cat = get_catalog(ra=270, dec=66, sr=100 / 3600)
-    gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
+    gaia_source_coords = [
+        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])
+    ]
 
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     original_wcs = copy.deepcopy(img.meta.wcs)
@@ -564,11 +698,13 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
 
     # get world coords for Gaia sources using "wrong WCS"
     original_ref_source = [
-        original_wcs.pixel_to_world(x, y) for x, y in transformed_xy_gaia_sources
+        original_wcs.pixel_to_world(x, y)
+        for x, y in transformed_xy_gaia_sources
     ]
     # get world coords for Gaia sources using tweaked WCS
     new_ref_source = [
-        img.meta.wcs.pixel_to_world(x, y) for x, y in transformed_xy_gaia_sources
+        img.meta.wcs.pixel_to_world(x, y)
+        for x, y in transformed_xy_gaia_sources
     ]
     # celestial coordinates for Gaia sources
     gaia_ref_source = [
@@ -588,4 +724,6 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
         for gref, nref in zip(gaia_ref_source, new_ref_source)
     ]
 
-    assert np.array([np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2)]).all()
+    assert np.array(
+        [np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2)]
+    ).all()
