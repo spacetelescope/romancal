@@ -68,7 +68,7 @@ attributes to the catalog file names provided in either in the ASN table or
 
 Alignment
 ---------
-The source catalog (either created by `SourceDetectionStep` or user-provided)
+The source catalog (either created by `SourceDetectionStep` or provided by the user)
 gets cross-matched and fit to an astrometric reference catalog
 (set by ``TweakRegStep.abs_refcat``). The pipeline initially supports fitting to
 any Gaia Data Release (defaults to `GAIADR3`).
