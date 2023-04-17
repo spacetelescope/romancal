@@ -210,9 +210,7 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
-    detector = cf.Frame2D(
-        name="detector", axes_order=(0, 1), unit=(u.pix, u.pix)
-    )
+    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
     v2v3 = cf.Frame2D(
         name="v2v3",
         axes_order=(0, 1),
@@ -235,14 +233,9 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
 
 def get_catalog_data(input_dm):
     gaia_cat = get_catalog(ra=270, dec=66, sr=100 / 3600)
-    gaia_source_coords = [
-        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])
-    ]
+    gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
     catalog_data = np.array(
-        [
-            input_dm.meta.wcs.world_to_pixel(ra, dec)
-            for ra, dec in gaia_source_coords
-        ]
+        [input_dm.meta.wcs.world_to_pixel(ra, dec) for ra, dec in gaia_source_coords]
     )
     return catalog_data
 
@@ -431,9 +424,7 @@ def test_tweakreg_correction_magnitude(
     step = TweakRegStep()
     step.tolerance = tolerance / 10.0
 
-    assert (
-        step._is_wcs_correction_small(img1_wcs, img2_wcs) == is_small_correction
-    )
+    assert step._is_wcs_correction_small(img1_wcs, img2_wcs) == is_small_correction
 
 
 @pytest.mark.parametrize(
@@ -506,9 +497,7 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     catalog_filename = "ref_catalog.ecsv"
     abs_refcat_filename = f"fit_{abs_refcat.lower()}_ref.ecsv"
-    add_tweakreg_catalog_attribute(
-        tmp_path, img, catalog_filename=catalog_filename
-    )
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
     step = TweakRegStep()
     step.save_abs_catalog = True
@@ -532,9 +521,7 @@ def test_tweakreg_defaults_to_valid_abs_refcat(tmp_path, abs_refcat, request):
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     catalog_filename = "ref_catalog.ecsv"
     abs_refcat_filename = f"fit_{DEFAULT_ABS_REFCAT.lower()}_ref.ecsv"
-    add_tweakreg_catalog_attribute(
-        tmp_path, img, catalog_filename=catalog_filename
-    )
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
     step = TweakRegStep()
     step.save_abs_catalog = True
@@ -621,9 +608,7 @@ def test_tweakreg_use_custom_catalogs(tmp_path, catalog_format, request):
     catfile_content = StringIO()
     for x in custom_catalog_map:
         # write line to catfile
-        catfile_content.write(
-            f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n"
-        )
+        catfile_content.write(f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n")
         # write out the catalog data
         t = table.Table(x.get("cat_data"), names=("x", "y"))
         t.write(tmp_path / x.get("cat_filename"), format=catalog_format)
@@ -664,9 +649,7 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     Test that TweakReg returns accurate results.
     """
     gaia_cat = get_catalog(ra=270, dec=66, sr=100 / 3600)
-    gaia_source_coords = [
-        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])
-    ]
+    gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
 
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     original_wcs = copy.deepcopy(img.meta.wcs)
@@ -696,13 +679,11 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
 
     # get world coords for Gaia sources using "wrong WCS"
     original_ref_source = [
-        original_wcs.pixel_to_world(x, y)
-        for x, y in transformed_xy_gaia_sources
+        original_wcs.pixel_to_world(x, y) for x, y in transformed_xy_gaia_sources
     ]
     # get world coords for Gaia sources using tweaked WCS
     new_ref_source = [
-        img.meta.wcs.pixel_to_world(x, y)
-        for x, y in transformed_xy_gaia_sources
+        img.meta.wcs.pixel_to_world(x, y) for x, y in transformed_xy_gaia_sources
     ]
     # celestial coordinates for Gaia sources
     gaia_ref_source = [
@@ -722,6 +703,4 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
         for gref, nref in zip(gaia_ref_source, new_ref_source)
     ]
 
-    assert np.array(
-        [np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2)]
-    ).all()
+    assert np.array([np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2)]).all()

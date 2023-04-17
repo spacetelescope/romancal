@@ -1,6 +1,6 @@
 Examples
 ========
-In the examples below, `img` is either a string with the filename of a Roman `ASDF` file 
+In the examples below, `img` is either a string with the filename of a Roman `ASDF` file
 or a Roman datamodel `ImageModel`.
 
 1. To run TweakReg on a python session one image file
@@ -27,7 +27,7 @@ or a Roman datamodel `ImageModel`.
 
 3. To run TweakReg using a custom source catalog with the default parameters:
 
-   - make sure the source catalog is in one of the supported formats. The file content 
+   - make sure the source catalog is in one of the supported formats. The file content
      below is an example of a valid catalog (`ascii.csv` format):
 
      .. doctest-skip::
@@ -57,7 +57,7 @@ or a Roman datamodel `ImageModel`.
         1048.7910126076483,85.36675265982751
         1075.508595999755,29.085099663125334
 
-   - create `catfile` containing the filename of the input Roman datamodel and 
+   - create `catfile` containing the filename of the input Roman datamodel and
      its corresponding catalog, one per line, as below
 
     .. doctest-skip::
@@ -67,8 +67,8 @@ or a Roman datamodel `ImageModel`.
         img2 ref_catalog_2
         img3 ref_catalog_3
 
-    The content of `catfile` will allow TweakReg to assign the custom catalog to the 
-    correct input Roman datamodel. In the example above, source catalog 
+    The content of `catfile` will allow TweakReg to assign the custom catalog to the
+    correct input Roman datamodel. In the example above, source catalog
     `ref_catalog_1` will be assign to `img1`, and so on.
 
     Now we can execute the following:
