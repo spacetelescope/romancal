@@ -74,7 +74,9 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
-    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    detector = cf.Frame2D(
+        name="detector", axes_order=(0, 1), unit=(u.pix, u.pix)
+    )
     v2v3 = cf.Frame2D(
         name="v2v3",
         axes_order=(0, 1),
@@ -263,7 +265,9 @@ def base_image():
         ("GAIADR3", 15),
     ],
 )
-def test_create_astrometric_catalog_variable_num_sources(catalog, num_sources, request):
+def test_create_astrometric_catalog_variable_num_sources(
+    catalog, num_sources, request
+):
     """Test fetching data from supported catalogs with variable number of sources."""
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     res = create_astrometric_catalog(
@@ -305,6 +309,7 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
 
     for table_format in list_of_supported_formats:
         res = create_astrometric_catalog(
+            [img],
             catalog="GAIADR3",
             output=os.path.join(tmp_path, output_filename),
             table_format=table_format,

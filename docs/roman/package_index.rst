@@ -14,3 +14,4 @@
    stpipe/index.rst
    refpix/index.rst
    source_detection/index.rst
+   tweakreg/index.rst

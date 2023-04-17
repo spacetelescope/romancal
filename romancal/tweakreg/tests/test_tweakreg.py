@@ -18,7 +18,11 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
 from romancal.tweakreg.astrometric_utils import get_catalog
-from romancal.tweakreg.tweakreg_step import TweakRegStep, _common_name
+from romancal.tweakreg.tweakreg_step import (
+    TweakRegStep,
+    _common_name,
+    DEFAULT_ABS_REFCAT,
+)
 
 
 def update_wcsinfo(input_dm):
@@ -571,14 +575,11 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
         "ascii.csv",
         "ascii.ecsv",
         "ascii.fixed_width",
-        # "ascii.fixed_width_no_header",
         "ascii.fixed_width_two_line",
         "ascii.html",
         "ascii.ipac",
         "ascii.latex",
         "ascii.mrt",
-        # "ascii.no_header",
-        # "ascii.qdp",
         "ascii.rdb",
         "ascii.rst",
         "ascii.tab",
