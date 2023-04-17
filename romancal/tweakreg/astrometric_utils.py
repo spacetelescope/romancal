@@ -11,6 +11,9 @@ from ..resample import resample_utils
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = "http://gsss.stsci.edu/webservices"
 
+# VO request timeout (in seconds)
+TIMEOUT = 30.0
+
 if ASTROMETRIC_CAT_ENVVAR in os.environ:
     SERVICELOCATION = os.environ[ASTROMETRIC_CAT_ENVVAR]
 else:
@@ -148,7 +151,9 @@ def compute_radius(wcs):
     fiducial = wcsutil.compute_fiducial([wcs], wcs.bounding_box)
     img_center = SkyCoord(ra=fiducial[0] * u.degree, dec=fiducial[1] * u.degree)
     wcs_foot = wcs.footprint()
-    img_corners = SkyCoord(ra=wcs_foot[:, 0] * u.degree, dec=wcs_foot[:, 1] * u.degree)
+    img_corners = SkyCoord(
+        ra=wcs_foot[:, 0] * u.degree, dec=wcs_foot[:, 1] * u.degree
+    )
     radius = img_center.separation(img_corners).max().value
 
     return radius, fiducial
@@ -184,7 +189,7 @@ def get_catalog(ra, dec, sr=0.1, catalog="GAIADR3"):
 
     spec = spec_str.format(ra, dec, sr, fmt, catalog)
     service_url = f"{SERVICELOCATION}/{service_type}?{spec}"
-    rawcat = requests.get(service_url, headers=headers)
+    rawcat = requests.get(service_url, headers=headers, timeout=TIMEOUT)
     r_contents = rawcat.content.decode()  # convert from bytes to a String
     rstr = r_contents.split("\r\n")
     # remove initial line describing the number of sources returned
