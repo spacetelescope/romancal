@@ -89,9 +89,9 @@ class Main():
         generator : Main
             A fully executed association generator.
         """
-        #pdb.set_trace()
         generator_cli = cls(args=args, pool=pool)
         generator_cli.generate()
+        pdb.set_trace()
         generator_cli.save()
         return generator_cli
 
@@ -161,6 +161,7 @@ class Main():
         #     candidate associations
         #  3) Both discovered and all candidate associations.
         logger.info('Reading rules.')
+
         if not parsed.discover and\
            not parsed.all_candidates and\
            parsed.asn_candidate_ids is None:
@@ -181,7 +182,7 @@ class Main():
             global_constraints=global_constraints,
             name=CANDIDATE_RULESET
         )
-
+        #pdb.set_trace()
         if parsed.discover:
             self.rules.update(
                 AssociationRegistry(
@@ -190,6 +191,7 @@ class Main():
                     name=DISCOVER_RULESET
                 )
             )
+            #pdb.set_trace()
 
     def generate(self):
         """Generate the associations"""
@@ -198,7 +200,7 @@ class Main():
         self.associations = generate(
             self.pool, self.rules, version_id=parsed.version_id, finalize=not parsed.no_finalize
         )
-
+        pdb.set_trace()
         if parsed.discover:
             logger.debug(
                 '# asns found before discover filtering={}'.format(
