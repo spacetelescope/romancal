@@ -14,6 +14,8 @@ general
 
 - Remove the ``codecov`` dependency [#677]
 
+- Remove explicit dependence on ``stdatamodels``. [#676]
+
 source_detection
 ----------------
 - Added SourceDetection Step to pipeline [#608]
