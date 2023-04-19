@@ -18,6 +18,7 @@ from romancal.photom import PhotomStep
 from romancal.ramp_fitting import ramp_fit_step
 from romancal.saturation import SaturationStep
 from romancal.source_detection import SourceDetectionStep
+from romancal.tweakreg import TweakRegStep
 
 from ..stpipe import RomanPipeline
 
@@ -33,7 +34,8 @@ class ExposurePipeline(RomanPipeline):
     ExposurePipeline: Apply all calibration steps to raw Roman WFI
     ramps to produce a 2-D slope product. Included steps are:
     dq_init, saturation, linearity, dark current, jump detection, ramp_fit,
-    and assign_wcs. The flat field step is only applied to WFI imaging data.
+    assign_wcs, flatfield (only applied to WFI imaging data), photom,
+    source_detection, and tweakreg.
     """
 
     class_alias = "roman_elp"
@@ -55,11 +57,11 @@ class ExposurePipeline(RomanPipeline):
         "flatfield": FlatFieldStep,
         "photom": PhotomStep,
         "source_detection": SourceDetectionStep,
+        "tweakreg": TweakRegStep,
     }
 
     # start the actual processing
     def process(self, input):
-
         """Process the Roman WFI data"""
 
         log.info("Starting Roman exposure calibration pipeline ...")
@@ -95,7 +97,13 @@ class ExposurePipeline(RomanPipeline):
         if "groupdq" in result.keys():
             if is_fully_saturated(result):
                 # Set all subsequent steps to skipped
-                for step_str in ["assign_wcs", "flat_field", "photom"]:
+                for step_str in [
+                    "assign_wcs",
+                    "flat_field",
+                    "photom",
+                    "source_detection",
+                    "tweakreg",
+                ]:
                     result.meta.cal_step[step_str] = "SKIPPED"
 
                 # Set suffix for proper output naming
@@ -110,9 +118,10 @@ class ExposurePipeline(RomanPipeline):
         else:
             log.info("Flat Field step is being SKIPPED")
             result.meta.cal_step.flat_field = "SKIPPED"
-        result = self.photom(result)
 
+        result = self.photom(result)
         result = self.source_detection(result)
+        result = self.tweakreg(result)
 
         # setup output_file for saving
         self.setup_output(result)
@@ -157,6 +166,8 @@ class ExposurePipeline(RomanPipeline):
             "assign_wcs",
             "flat_field",
             "photom",
+            "source_detection",
+            "tweakreg",
         ]:
             fully_saturated_model.meta.cal_step[step_str] = "SKIPPED"
 
