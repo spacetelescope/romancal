@@ -12,20 +12,23 @@ classifiers = [
     'Programming Language :: Python :: 3',
 ]
 dependencies = [
-    'asdf >=2.13.0',
+    'asdf >=2.14.2',
+    'asdf-astropy >=0.4.0',
     'astropy >=5.0.4',
     'crds >=11.16.16',
     'gwcs >=0.18.1',
-    'jsonschema >=3.0.2',
+    'jsonschema >=4.0.1',
     'numpy >=1.20',
+    'photutils >=1.6.0',
     'pyparsing >=2.4.7',
     'requests >=2.22',
-    'rad >=0.14.1',
+    # 'rad >=0.14.1',
+    'rad @ git+https://github.com/spacetelescope/rad.git@main',
     #'roman_datamodels >=0.14.1',
-    'roman_datamodels @git+https://github.com/spacetelescope/roman_datamodels.git@main',
+    'roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git@main',
     'stcal >=1.3.3',
-    'stpipe >=0.4.2, <1.0',
-    'tweakwcs >=0.8.0'
+    'stpipe >=0.4.2',
+    'tweakwcs >=0.8.0',
 ]
 dynamic = ['version']
 
@@ -45,10 +48,8 @@ lint = [
 ]
 test = [
     'ci-watson >=0.5.0',
-    'codecov >=1.6.0',
     'pytest >=4.6.0',
     'pytest-astropy',
-    'codecov >=1.6.0',
 ]
 aws = [
     'stsci-aws-utils >=0.1.2',
@@ -109,6 +110,9 @@ norecursedirs = [
     '.eggs',
     'build',
 ]
+filterwarnings = [
+    "error::ResourceWarning",
+]
 asdf_schema_tests_enabled = true
 asdf_schema_validate_default = false
 asdf_schema_root = 'romancal/datamodels/schemas'
@@ -118,7 +122,7 @@ results_root = 'roman-pipeline-results'
 doctest_plus = 'enabled'
 doctest_rst = 'enabled'
 text_file_format = 'rst'
-addopts = '--show-capture=no --open-files --doctest-ignore-import-errors'
+addopts = '--show-capture=no --doctest-ignore-import-errors'
 markers = [
     'soctests: run only the SOC tests in the suite.',
 ]
@@ -152,8 +156,26 @@ report = { exclude_lines = [
 [tool.bandit]
 skips = ["B101", "B307", "B404", "B603"]
 
+[tool.isort]
+profile = "black"
+filter_files = true
+line_length = 88
+
+[tool.black]
+line-length = 88
+force-exclude = '''
+^/(
+  (
+      \.eggs
+    | \.git
+    | \.pytest_cache
+    | \.tox
+  )/
+)
+'''
+
 [tool.ruff]
-line-length = 130
+line-length = 88
 exclude = [
     'jdocs',
     '.tox',

@@ -2,28 +2,29 @@
 Unit tests for dark current correction
 """
 
-import pytest
-import numpy as np
 import os
+
+import numpy as np
+import pytest
+import roman_datamodels as rdm
 from astropy import units as u
+from roman_datamodels import maker_utils
+from roman_datamodels.datamodels import DarkRefModel, RampModel
 
 from romancal.dark_current import DarkCurrentStep
-
-from roman_datamodels.datamodels import RampModel, DarkRefModel
-import roman_datamodels as rdm
-from roman_datamodels import maker_utils
-from roman_datamodels import units as ru
 
 
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
         ("WFI", "WFI_IMAGE"),
-    ]
+    ],
 )
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 def test_dark_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a DARK reffile"""
@@ -45,7 +46,7 @@ def test_dark_step_interface(instrument, exptype):
     assert result.groupdq.shape == shape
     assert result.pixeldq.shape == shape[1:]
     assert result.err.shape == shape
-    assert result.meta.cal_step.dark == 'COMPLETE'
+    assert result.meta.cal_step.dark == "COMPLETE"
     assert result.data.dtype == np.float32
     assert result.err.dtype == np.float32
     assert result.pixeldq.dtype == np.uint32
@@ -56,11 +57,13 @@ def test_dark_step_interface(instrument, exptype):
     "instrument, exptype",
     [
         ("WFI", "WFI_IMAGE"),
-    ]
+    ],
 )
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 def test_dark_step_subtraction(instrument, exptype):
     """Test that the values in a dark reference file are properly subtracted"""
@@ -82,19 +85,24 @@ def test_dark_step_subtraction(instrument, exptype):
     # check that the dark file is subtracted frame by frame from the science data
     diff = ramp_model.data.value - darkref_model.data.value
 
-    # test that the output data file is equal to the difference found when subtracting reffile from sci file
-    np.testing.assert_array_equal(result.data.value, diff, err_msg='dark file should be subtracted from sci file ')
+    # test that the output data file is equal to the difference found when subtracting
+    # reffile from sci file
+    np.testing.assert_array_equal(
+        result.data.value, diff, err_msg="dark file should be subtracted from sci file "
+    )
 
 
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
         ("WFI", "WFI_IMAGE"),
-    ]
+    ],
 )
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal network"
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 def test_dark_step_output_dark_file(tmpdir, instrument, exptype):
     """Test that the the step can output a proper (optional) dark file"""
@@ -126,10 +134,10 @@ def create_ramp_and_dark(shape, instrument, exptype):
     # Create test ramp model
     ramp = maker_utils.mk_ramp(shape)
     ramp.meta.instrument.name = instrument
-    ramp.meta.instrument.detector = 'WFI01'
-    ramp.meta.instrument.optical_element = 'F158'
+    ramp.meta.instrument.detector = "WFI01"
+    ramp.meta.instrument.optical_element = "F158"
     ramp.meta.exposure.type = exptype
-    ramp.data = u.Quantity(np.ones(shape, dtype=np.float32), ru.DN, dtype=np.float32)
+    ramp.data = u.Quantity(np.ones(shape, dtype=np.float32), u.DN, dtype=np.float32)
     ramp_model = RampModel(ramp)
 
     # Create dark model

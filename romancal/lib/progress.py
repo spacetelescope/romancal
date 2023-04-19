@@ -8,7 +8,7 @@ If the module is not available, then stub it out.
 """
 import logging
 
-__all__ = ['Bar']
+__all__ = ["Bar"]
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -17,6 +17,7 @@ logger.addHandler(logging.NullHandler())
 
 class _BarStub:
     """Stub the Bar functionality"""
+
     def __init__(self, *args, **kwargs):
         pass
 

@@ -3,10 +3,9 @@ import os
 import asdf
 import pytest
 from astropy.time import Time
-
-
+from roman_datamodels.datamodels import FlatRefModel, ImageModel
 from roman_datamodels.maker_utils import mk_level2_image
-from roman_datamodels.datamodels import ImageModel, FlatRefModel
+
 from romancal.stpipe import RomanPipeline, RomanStep
 
 
@@ -21,7 +20,7 @@ def test_open_model(step_class, tmp_path):
 
     with asdf.AsdfFile() as af:
         imod = mk_level2_image(shape=(20, 20))
-        af.tree = {'roman': imod}
+        af.tree = {"roman": imod}
         af.write_to(file_path)
 
     step = step_class()
@@ -31,8 +30,9 @@ def test_open_model(step_class, tmp_path):
 
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently \
-    available outside the internal network"
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
 def test_get_reference_file(step_class):
@@ -44,7 +44,7 @@ def test_get_reference_file(step_class):
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
     im.meta.instrument.optical_element = "F158"
-    im.meta.exposure.start_time = Time('2021-01-01T12:00:00')
+    im.meta.exposure.start_time = Time("2021-01-01T12:00:00")
     model = ImageModel(im)
 
     step = step_class()
@@ -57,8 +57,9 @@ def test_get_reference_file(step_class):
 @pytest.mark.skip(reason="There are no grism flats.")
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently \
-    available outside the internal network"
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
 def test_get_reference_file_spectral(step_class):
@@ -70,7 +71,7 @@ def test_get_reference_file_spectral(step_class):
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
     im.meta.instrument.optical_element = "GRISM"
-    im.meta.exposure.start_time = Time('2021-01-01T12:00:00')
+    im.meta.exposure.start_time = Time("2021-01-01T12:00:00")
     model = ImageModel(im)
 
     step = step_class()

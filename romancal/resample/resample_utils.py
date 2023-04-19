@@ -1,22 +1,24 @@
 import logging
+from typing import Tuple
 
 import numpy as np
 
-from romancal.assign_wcs.utils import wcs_from_footprints, wcs_bbox_from_shape
-
-from typing import Tuple
-
+from romancal.assign_wcs.utils import wcs_bbox_from_shape, wcs_from_footprints
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def make_output_wcs(input_models,
-                    pscale_ratio=None, pscale=None,
-                    rotation=None, shape=None,
-                    ref_pixel:Tuple[float, float]=None,
-                    ref_coord:Tuple[float, float]=None):
-    """ Generate output WCS here based on footprints of all input WCS objects
+def make_output_wcs(
+    input_models,
+    pscale_ratio=None,
+    pscale=None,
+    rotation=None,
+    shape=None,
+    ref_pixel: Tuple[float, float] = None,
+    ref_coord: Tuple[float, float] = None,
+):
+    """Generate output WCS here based on footprints of all input WCS objects
     Parameters
     ----------
     input_models : list of `~roman_datamodels.datamodels.DataModel`
@@ -65,8 +67,7 @@ def make_output_wcs(input_models,
     naxes = wcslist[0].output_frame.naxes
 
     if naxes != 2:
-        raise RuntimeError("Output WCS needs 2 axes."
-                           f"{wcslist[0]} has {naxes}.")
+        raise RuntimeError(f"Output WCS needs 2 axes.{wcslist[0]} has {naxes}.")
 
     output_wcs = wcs_from_footprints(
         input_models,
@@ -75,11 +76,14 @@ def make_output_wcs(input_models,
         rotation=rotation,
         shape=shape,
         ref_pixel=ref_pixel,
-        ref_coord=ref_coord
+        ref_coord=ref_coord,
     )
 
     # Check that the output data shape has no zero length dimensions
     if not np.product(output_wcs.array_shape):
-        raise ValueError(f"Invalid output frame shape: {tuple(output_wcs.array_shape)}; dimensions must have length > 0.")
+        raise ValueError(
+            f"Invalid output frame shape: {tuple(output_wcs.array_shape)}; dimensions"
+            " must have length > 0."
+        )
 
     return output_wcs

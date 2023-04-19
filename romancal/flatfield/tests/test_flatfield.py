@@ -1,14 +1,12 @@
 import os
 
-import pytest
 import numpy as np
+import pytest
 from astropy import units as u
 from astropy.time import Time
+from roman_datamodels import maker_utils, stnode
+from roman_datamodels.datamodels import FlatRefModel, ImageModel
 
-from roman_datamodels import stnode
-from roman_datamodels.datamodels import ImageModel, FlatRefModel
-from roman_datamodels import maker_utils
-from roman_datamodels import units as ru
 from romancal.flatfield import FlatFieldStep
 
 
@@ -16,12 +14,13 @@ from romancal.flatfield import FlatFieldStep
     "instrument, exptype",
     [
         ("WFI", "WFI_IMAGE"),
-    ]
+    ],
 )
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently \
-    available outside the internal network"
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 def test_flatfield_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
@@ -30,62 +29,68 @@ def test_flatfield_step_interface(instrument, exptype):
 
     wfi_image = maker_utils.mk_level2_image(shape=shape)
     wfi_image.meta.instrument.name = instrument
-    wfi_image.meta.instrument.detector = 'WFI01'
-    wfi_image.meta.instrument.optical_element = 'F158'
+    wfi_image.meta.instrument.detector = "WFI01"
+    wfi_image.meta.instrument.optical_element = "F158"
     wfi_image.meta.exposure.type = exptype
-    wfi_image.data = u.Quantity(np.ones(shape, dtype=np.float32),
-                                ru.electron / u.s, dtype=np.float32)
+    wfi_image.data = u.Quantity(
+        np.ones(shape, dtype=np.float32), u.electron / u.s, dtype=np.float32
+    )
     wfi_image.dq = np.zeros(shape, dtype=np.uint32)
-    wfi_image.err = u.Quantity(np.zeros(shape, dtype=np.float32),
-                               ru.electron / u.s, dtype=np.float32)
-    wfi_image.var_poisson = u.Quantity(np.zeros(shape, dtype=np.float32),
-                                       ru.electron**2 / u.s**2, dtype=np.float32)
-    wfi_image.var_rnoise = u.Quantity(np.zeros(shape, dtype=np.float32),
-                                      ru.electron**2 / u.s**2, dtype=np.float32)
-    wfi_image.var_flat = u.Quantity(np.zeros(shape, dtype=np.float32),
-                                    ru.electron**2 / u.s**2, dtype=np.float32)
+    wfi_image.err = u.Quantity(
+        np.zeros(shape, dtype=np.float32), u.electron / u.s, dtype=np.float32
+    )
+    wfi_image.var_poisson = u.Quantity(
+        np.zeros(shape, dtype=np.float32), u.electron**2 / u.s**2, dtype=np.float32
+    )
+    wfi_image.var_rnoise = u.Quantity(
+        np.zeros(shape, dtype=np.float32), u.electron**2 / u.s**2, dtype=np.float32
+    )
+    wfi_image.var_flat = u.Quantity(
+        np.zeros(shape, dtype=np.float32), u.electron**2 / u.s**2, dtype=np.float32
+    )
 
     wfi_image_model = ImageModel(wfi_image)
     flatref = stnode.FlatRef()
     meta = {}
     maker_utils.add_ref_common(meta)
-    meta['instrument']['optical_element'] = 'F158'
-    meta['instrument']['detector'] = 'WFI01'
-    meta['reftype'] = 'FLAT'
-    flatref['meta'] = meta
-    flatref['data'] = np.ones(shape, dtype=np.float32)
-    flatref['dq'] = np.zeros(shape, dtype=np.uint16)
-    flatref['err'] = (np.random.random(shape) * 0.05).astype(np.float32)
+    meta["instrument"]["optical_element"] = "F158"
+    meta["instrument"]["detector"] = "WFI01"
+    meta["reftype"] = "FLAT"
+    flatref["meta"] = meta
+    flatref["data"] = np.ones(shape, dtype=np.float32)
+    flatref["dq"] = np.zeros(shape, dtype=np.uint16)
+    flatref["err"] = (np.random.random(shape) * 0.05).astype(np.float32)
     flatref_model = FlatRefModel(flatref)
 
     result = FlatFieldStep.call(wfi_image_model, override_flat=flatref_model)
 
     assert (result.data == wfi_image.data).all()
     assert result.var_flat.shape == shape
-    assert result.meta.cal_step.flat_field == 'COMPLETE'
+    assert result.meta.cal_step.flat_field == "COMPLETE"
 
 
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
         ("WFI", "WFI_IMAGE"),
-    ]
+    ],
 )
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently \
-    available outside the internal network"
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 def test_crds_temporal_match(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
 
     wfi_image = maker_utils.mk_level2_image()
     wfi_image.meta.instrument.name = instrument
-    wfi_image.meta.instrument.detector = 'WFI01'
-    wfi_image.meta.instrument.optical_element = 'F158'
+    wfi_image.meta.instrument.detector = "WFI01"
+    wfi_image.meta.instrument.optical_element = "F158"
 
-    wfi_image.meta.exposure.start_time = Time('2020-01-02T11:11:11.110')
-    wfi_image.meta.exposure.end_time = Time('2020-01-02T11:33:11.110')
+    wfi_image.meta.exposure.start_time = Time("2020-01-02T11:11:11.110")
+    wfi_image.meta.exposure.end_time = Time("2020-01-02T11:33:11.110")
 
     wfi_image.meta.exposure.type = exptype
     wfi_image_model = ImageModel(wfi_image)
@@ -93,36 +98,45 @@ def test_crds_temporal_match(instrument, exptype):
     step = FlatFieldStep()
     ref_file_path = step.get_reference_file(wfi_image_model, "flat")
 
-    wfi_image_model.meta.exposure.start_time = Time('2021-09-01T00:11:11.110')
-    wfi_image_model.meta.exposure.end_time = Time('2021-09-01T00:33:11.110')
+    wfi_image_model.meta.exposure.start_time = Time("2021-09-01T00:11:11.110")
+    wfi_image_model.meta.exposure.end_time = Time("2021-09-01T00:33:11.110")
     ref_file_path_b = step.get_reference_file(wfi_image_model, "flat")
-    assert ("/".join(ref_file_path.rsplit("/", 1)[1:])) != \
-           ("/".join(ref_file_path_b.rsplit("/", 1)[1:]))
+    assert "/".join(ref_file_path.rsplit("/", 1)[1:]) != "/".join(
+        ref_file_path_b.rsplit("/", 1)[1:]
+    )
 
 
 @pytest.mark.parametrize(
-    "instrument", ["WFI", ]
+    "instrument",
+    [
+        "WFI",
+    ],
 )
 @pytest.mark.parametrize(
-    "exptype", ["WFI_GRISM", "WFI_PRISM", ]
+    "exptype",
+    [
+        "WFI_GRISM",
+        "WFI_PRISM",
+    ],
 )
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently \
-    available outside the internal network"
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
 )
 # Test that spectroscopic exposure types will skip flat field step
 def test_spectroscopic_skip(instrument, exptype):
     wfi_image = maker_utils.mk_level2_image()
     wfi_image.meta.instrument.name = instrument
-    wfi_image.meta.instrument.detector = 'WFI01'
-    wfi_image.meta.instrument.optical_element = 'F158'
+    wfi_image.meta.instrument.detector = "WFI01"
+    wfi_image.meta.instrument.optical_element = "F158"
 
-    wfi_image.meta.exposure.start_time = Time('2020-02-01T00:00:00.000')
-    wfi_image.meta.exposure.end_time = Time('2020-02-01T00:00:05.000')
+    wfi_image.meta.exposure.start_time = Time("2020-02-01T00:00:00.000")
+    wfi_image.meta.exposure.end_time = Time("2020-02-01T00:00:05.000")
 
     wfi_image.meta.exposure.type = exptype
     wfi_image_model = ImageModel(wfi_image)
 
     result = FlatFieldStep.call(wfi_image_model)
-    assert result.meta.cal_step.flat_field == 'SKIPPED'
+    assert result.meta.cal_step.flat_field == "SKIPPED"

@@ -1,9 +1,28 @@
 0.10.1 (unreleased)
 ===================
 
+
 general
 -------
 - Updated datamodel maker utility imports. [#654]
+
+- Update non-VOunits to using ``astropy.units``. [#658]
+
+- update minimum version of ``asdf`` to ``2.14.2`` and ``jsonschema`` to ``4.0.1`` and added minimum dependency checks to CI [#664]
+
+- Remove use of ``pytest-openfiles`` [#666]
+
+- Remove the ``codecov`` dependency [#677]
+
+- Remove explicit dependence on ``stdatamodels``. [#676]
+
+source_detection
+----------------
+- Added SourceDetection Step to pipeline [#608]
+- Added option of fixed random seed for unit tests to avoid intermittent failures from randomness. [#668]
+
+- Fix source detection object instantiation. [#669]
+
 
 0.10.0 (2023-02-21)
 ===================
@@ -13,6 +32,9 @@ general
 - Adds explicit test for PSF keywords are present in the  cal files. [#648]
 
 - Add ``pre-commit`` configuration to repository. [#622]
+
+- Use ``isort`` and ``black`` to format code, also upgrade all string
+  formats using ``flynt``. [#645]
 
 - Update the suffix for the stored filename to match the filename [#609]
 

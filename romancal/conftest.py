@@ -1,24 +1,9 @@
 """Project default for pytest"""
+import inspect
 import os
 import tempfile
+
 import pytest
-import inspect
-
-from stdatamodels import s3_utils
-
-#from jwst.associations import (AssociationRegistry, AssociationPool)
-#from jwst.associations.tests.helpers import t_path
-from romancal.lib.tests import helpers as lib_helpers
-
-
-# @pytest.fixture(scope='session')
-# def full_pool_rules(request):
-#     """Setup to use the full example pool and registry"""
-#     pool_fname = t_path('data/mega_pool.csv')
-#     pool = AssociationPool.read(pool_fname)
-#     rules = AssociationRegistry()
-#
-#     return (pool, rules, pool_fname)
 
 
 @pytest.fixture
@@ -36,27 +21,12 @@ def mk_tmp_dirs():
         os.chdir(old_path)
 
 
-@pytest.fixture(autouse=True)
-def monkey_patch_s3_client(monkeypatch, request):
-    # If tmpdir is used in the test, then it is providing the file.  Map to it.
-    if "s3_root_dir" in request.fixturenames:
-        path = request.getfixturevalue("s3_root_dir")
-    else:
-        path = None
-    monkeypatch.setattr(s3_utils, "_CLIENT", lib_helpers.MockS3Client(path))
-
-
-@pytest.fixture
-def s3_root_dir(tmpdir):
-    return tmpdir
-
-
 @pytest.fixture
 def slow(request):
     """Setup slow fixture for tests to identify if --slow
     has been specified
     """
-    return request.config.getoption('--slow')
+    return request.config.getoption("--slow")
 
 
 @pytest.fixture(scope="module")
@@ -68,7 +38,7 @@ def jail(request, tmpdir_factory):
     temporary directory, and then have the tests access them.
     """
     old_dir = os.getcwd()
-    path = request.module.__name__.split('.')[-1]
+    path = request.module.__name__.split(".")[-1]
     if request._parent_request.fixturename is not None:
         path = path + "_" + request._parent_request.fixturename
     newpath = tmpdir_factory.mktemp(path)
@@ -79,8 +49,10 @@ def jail(request, tmpdir_factory):
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config):
-    terminal_reporter = config.pluginmanager.getplugin('terminalreporter')
-    config.pluginmanager.register(TestDescriptionPlugin(terminal_reporter), 'testdescription')
+    terminal_reporter = config.pluginmanager.getplugin("terminalreporter")
+    config.pluginmanager.register(
+        TestDescriptionPlugin(terminal_reporter), "testdescription"
+    )
 
 
 class TestDescriptionPlugin:
@@ -108,7 +80,7 @@ class TestDescriptionPlugin:
             yield
         # When run as `pytest -vv`, `pytest -vvv`, etc, print the test docstring
         else:
-            self.terminal_reporter.write('\n')
+            self.terminal_reporter.write("\n")
             yield
             if self.desc:
-                self.terminal_reporter.write(f'\n{self.desc} ')
+                self.terminal_reporter.write(f"\n{self.desc} ")

@@ -14,110 +14,71 @@ on:
     # Weekly Monday 9AM build
     - cron: "0 9 * * 1"
 
-env:
-  CRDS_SERVER_URL: https://roman-crds.stsci.edu
-  CRDS_PATH: $HOME/crds_cache
-  CRDS_CLIENT_RETRY_COUNT: 3
-  CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  check:
-    name: ${{ matrix.toxenv }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        toxenv: [ check-style, check-dependencies, check-build ]
-        python-version: [ '3.11' ]
-        os: [ ubuntu-latest ]
+  crds:
+    name: retrieve current CRDS context
+    runs-on: ubuntu-latest
+    env:
+      OBSERVATORY: roman
+      CRDS_SERVER_URL: https://roman-crds.stsci.edu
+      CRDS_PATH: /tmp/crds_cache
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: 'pyproject.toml'
-      - run: pip install "tox<4.0"
-      - run: tox -e ${{ matrix.toxenv }}
-  test:
-    name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        toxenv: [ test-xdist, test-devdeps ]
-        python-version: [ '3.8', '3.9', '3.10', '3.11' ]
-        os: [ ubuntu-latest, macos-latest ]
-        include:
-          - toxenv: test-devdeps
-            os: ubuntu-latest
-            python-version: '3.x'
-          - toxenv: test-pyargs-xdist
-            os: ubuntu-latest
-            python-version: '3.11'
-          - toxenv: test-cov
-            os: ubuntu-latest
-            python-version: '3.11'
-          - toxenv: test-numpy122
-            os: ubuntu-latest
-            python-version: '3.10'
-          - toxenv: test-numpy121
-            os: ubuntu-latest
-            python-version: '3.10'
-          - toxenv: test-numpy122
-            os: ubuntu-latest
-            python-version: '3.9'
-          - toxenv: test-numpy121
-            os: ubuntu-latest
-            python-version: '3.9'
-          - toxenv: test-numpy120
-            os: ubuntu-latest
-            python-version: '3.9'
-          - toxenv: test-numpy122
-            os: ubuntu-latest
-            python-version: '3.8'
-          - toxenv: test-numpy121
-            os: ubuntu-latest
-            python-version: '3.8'
-          - toxenv: test-numpy120
-            os: ubuntu-latest
-            python-version: '3.8'
-    steps:
-      - if: contains(runner.os, 'Linux') && github.event_name != 'pull_request'
-        uses: datadog/agent-github-action@v1
-        with:
-          api_key: ${{ secrets.DD_API_KEY }}
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: 'pyproject.toml'
-      - run: pip install "tox<4.0"
-      - run: >
+      - id: context
+        run: >
           echo "pmap=$(
-          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["roman"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
+          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["${{ env.OBSERVATORY }}"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
           python -c "import sys, json; print(json.load(sys.stdin)['result'])"
           )" >> $GITHUB_OUTPUT
         # Get default CRDS_CONTEXT without installing crds client
         # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
-        id: crds-context
-      - uses: actions/cache@v3
-        with:
-          path: ${{ env.CRDS_PATH }}
-          key: crds-${{ steps.crds-context.outputs.pmap }}
-      - run: tox -e ${{ matrix.toxenv }}-ddtrace
-        env:
-          DD_GIT_REPOSITORY_URL: ${{ github.repositoryUrl }}
-          DD_GIT_COMMIT_SHA: ${{ github.sha }}
-          DD_GIT_BRANCH: ${{ github.ref_name }}
-      - if: contains(matrix.toxenv, '-cov')
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          flags: unit
-          fail_ci_if_error: true
+      - id: path
+        run: echo "path=${{ env.CRDS_PATH }}" >> $GITHUB_OUTPUT
+      - id: server
+        run: echo "url=${{ env.CRDS_SERVER_URL }}" >> $GITHUB_OUTPUT
+    outputs:
+      context: ${{ steps.context.outputs.pmap }}
+      path: ${{ steps.path.outputs.path }}
+      server: ${{ steps.server.outputs.url }}
+  check:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
+    with:
+      envs: |
+        - linux: check-style
+        - linux: check-dependencies
+        - linux: build-dist
+  test:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
+    needs: [ crds ]
+    with:
+      setenv: |
+        CRDS_PATH: ${{ needs.crds.outputs.path }}
+        CRDS_SERVER_URL: ${{ needs.crds.outputs.server }}
+        CRDS_CLIENT_RETRY_COUNT: 3
+        CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
+        DD_SERVICE: romancal
+        DD_ENV: ci
+        DD_GIT_REPOSITORY_URL: ${{ github.repositoryUrl }}
+        DD_GIT_COMMIT_SHA: ${{ github.sha }}
+        DD_GIT_BRANCH: ${{ github.ref_name }}
+      cache-path: /tmp/crds_cache
+      cache-key: crds-${{ needs.crds_context.outputs.pmap }}
+      envs: |
+        - linux: test-oldestdeps-cov-xdist
+          python-version: 3.8
+        - linux: test-xdist
+          python-version: 3.8
+        - linux: test-xdist
+          python-version: 3.9
+        - linux: test-xdist
+          python-version: 3.10
+        - linux: test-xdist-ddtrace
+          python-version: 3.11
+        - macos: test-xdist-ddtrace
+          python-version: 3.11
+        - linux: test-devdeps-xdist
+        - linux: test-cov-xdist
+          coverage: codecov
