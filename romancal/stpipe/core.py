@@ -47,7 +47,7 @@ class RomanStep(Step):
 
         Parameters
         ----------
-        model : stdatamodels.DataModel
+        model : roman_datamodels.datamodels.DataModel
             Output model.
 
         reference_files_used : list of tuple(str, str)
@@ -81,7 +81,7 @@ class RomanStep(Step):
 
         Parameters
         ----------
-        model : stdatamodels.DataModel
+        model : roman_datamodels.datamodels.DataModel
             Output model.
         step_name : str
             Calibration step name.

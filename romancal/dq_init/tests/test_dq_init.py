@@ -1,12 +1,10 @@
 import os
-import warnings
 
 import numpy as np
 import pytest
 from astropy import units as u
 from roman_datamodels import maker_utils, stnode
 from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
-from stdatamodels.validate import ValidationWarning
 
 from romancal.dq_init import DQInitStep
 from romancal.dq_init.dq_initialization import do_dqinit
@@ -123,9 +121,6 @@ def test_err():
     # create a MaskModel elements for the dq input mask
     ref_data = maker_utils.mk_mask(csize[1:])
     ref_data["meta"]["instrument"]["name"] = instrument
-
-    # Filter out validation warnings from ref_data
-    warnings.filterwarnings("ignore", category=ValidationWarning)
 
     # run correction step
     outfile = do_dqinit(dm_ramp, ref_data)

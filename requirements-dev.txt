@@ -8,5 +8,4 @@ git+https://github.com/spacetelescope/gwcs
 git+https://github.com/spacetelescope/roman_datamodels
 git+https://github.com/spacetelescope/stpipe
 git+https://github.com/spacetelescope/stcal
-git+https://github.com/spacetelescope/stdatamodels
 git+https://github.com/spacetelescope/tweakwcs
