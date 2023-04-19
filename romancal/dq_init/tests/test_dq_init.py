@@ -1,5 +1,4 @@
 import os
-import warnings
 
 import numpy as np
 import pytest
@@ -122,9 +121,6 @@ def test_err():
     # create a MaskModel elements for the dq input mask
     ref_data = maker_utils.mk_mask(csize[1:])
     ref_data["meta"]["instrument"]["name"] = instrument
-
-    # Filter out validation warnings from ref_data
-    warnings.filterwarnings("ignore", category=Warning)
 
     # run correction step
     outfile = do_dqinit(dm_ramp, ref_data)
