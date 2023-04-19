@@ -245,7 +245,7 @@ def create_base_image_source_catalog(
     output_filename,
     catalog_data,
     catalog_format: str = "ascii.ecsv",
-    save_catalogs=False,
+    save_catalogs=True,
 ):
     """
     Write a temp CSV file to be used as source catalog, similar to what
@@ -269,14 +269,12 @@ def create_base_image_source_catalog(
     output = os.path.join(tmp_path, output_filename)
     t = table.Table(src_detector_coords, names=("x", "y"))
     if save_catalogs:
-        # mimic the same output format from SourceDetectionStep
-        t.add_column([i for i in range(len(t))], name="id", index=0)
-        t.add_column([np.float64(i) for i in range(len(t))], name="flux")
-        t.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
-        return t.as_array().T
-    else:
         t.write((tmp_path / output), format=catalog_format)
-        return None
+    # mimic the same output format from SourceDetectionStep
+    t.add_column([i for i in range(len(t))], name="id", index=0)
+    t.add_column([np.float64(i) for i in range(len(t))], name="flux")
+    t.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
+    return t.as_array().T
 
 
 def add_tweakreg_catalog_attribute(
@@ -285,7 +283,7 @@ def add_tweakreg_catalog_attribute(
     catalog_filename="base_image_sources",
     catalog_data=None,
     catalog_format: str = "ascii.ecsv",
-    save_catalogs=False,
+    save_catalogs=True,
 ):
     """
     Add tweakreg_catalog attribute to the meta, which is a mandatory
@@ -325,17 +323,16 @@ def add_tweakreg_catalog_attribute(
         catalog_format=catalog_format,
         save_catalogs=save_catalogs,
     )
+
+    # SourceDetectionStep will always populate meta.source_detection.tweakreg_catalog
+    input_dm.meta["source_detection"] = {"tweakreg_catalog": source_catalog}
+
     if save_catalogs:
-        input_dm.meta["source_detection"] = {
-            "tweakreg_catalog": source_catalog,
-            "tweakreg_catalog_name": "",
-        }
-    else:
-        input_dm.meta["source_detection"] = {
-            "tweakreg_catalog": None,
-            "tweakreg_catalog_name": os.path.join(tmp_path, tweakreg_catalog_filename),
-        }
-        return None
+        # SourceDetectionStep will update meta.source_detection.tweakreg_catalog_name
+        # if SourceDetectionStep.save_catalogs=True
+        input_dm.meta.source_detection["tweakreg_catalog_name"] = os.path.join(
+            tmp_path, tweakreg_catalog_filename
+        )
 
 
 @pytest.fixture
@@ -739,19 +736,24 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
 
 
 @pytest.mark.parametrize(
-    "save_catalogs",
+    "source_detection_save_catalogs",
     (True, False),
 )
 def test_remove_tweakreg_catalog_from_source_detection_attribute(
-    tmp_path, save_catalogs, request
+    tmp_path, source_detection_save_catalogs, request
 ):
     """
-    Test to check if meta.source_detection.tweakreg_catalog is deleted after
-    TweakRegStep regardless of selected SourceDetectionStep.save_catalogs option.
+    Test to check that meta.source_detection.tweakreg_catalog is deleted after
+    TweakRegStep and that meta.tweakreg_catalog always returns a Table object
+    regardless of selected SourceDetectionStep.save_catalogs option.
     """
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img, save_catalogs=save_catalogs)
+    add_tweakreg_catalog_attribute(
+        tmp_path, img, save_catalogs=source_detection_save_catalogs
+    )
 
     TweakRegStep.call([img])
 
     assert not hasattr(img.meta.source_detection, "tweakreg_catalog")
+    assert hasattr(img.meta, "tweakreg_catalog")
+    assert isinstance(img.meta.tweakreg_catalog, table.Table)

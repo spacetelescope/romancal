@@ -110,28 +110,28 @@ class TweakRegStep(RomanStep):
                             del member["tweakreg_catalog"]
 
                     images.from_asn(input)
-
                 elif is_association(input):
                     images.from_asn(input)
-
                 else:
                     images = datamodels.ModelContainer(input)
                     for im in images:
                         filename = im.meta.filename
                         if filename in catdict:
-                            print(
+                            self.log.info(
                                 f"setting "
                                 f"{filename}.source_detection.tweakreg_catalog_name ="
                                 f" {repr(catdict[filename])}"
                             )
+                            # read custom catalog in as a 4D numpy array
                             im.meta["source_detection"] = {
-                                "tweakreg_catalog": None,
+                                "tweakreg_catalog": Table.read(
+                                    catdict[filename],
+                                    format=self.catalog_format,
+                                ).as_array(),
                                 "tweakreg_catalog_name": catdict[filename],
                             }
-
             else:
                 images = datamodels.ModelContainer(input)
-
         except TypeError as e:
             e.args = (
                 "Input to tweakreg must be a list of DataModels, an "
@@ -160,30 +160,27 @@ class TweakRegStep(RomanStep):
         # Build the catalogs for input images
         for i, image_model in enumerate(images):
             if hasattr(image_model.meta, "source_detection"):
-                tweakreg_catalog = image_model.meta.source_detection.tweakreg_catalog
-                tweakreg_catalog_name = (
-                    image_model.meta.source_detection.tweakreg_catalog_name
+                tweakreg_catalog_attribute = hasattr(
+                    image_model.meta.source_detection, "tweakreg_catalog"
                 )
-                if tweakreg_catalog is not None and len(tweakreg_catalog):
-                    # read SourceDetectionStep's catalog in NDArray format
+                if tweakreg_catalog_attribute:
+                    # read catalog in 4D numpy array format
                     catalog = Table(
-                        data=tweakreg_catalog[:].T,
-                        names=["id", "xcentroid", "ycentroid", "flux"],
+                        data=image_model.meta.source_detection.tweakreg_catalog.T
                     )
                 else:
-                    # read SourceDetectionStep's catalog in str format (path+filename)
-                    catalog = Table.read(
-                        tweakreg_catalog_name,
-                        format=self.catalog_format,
+                    raise AttributeError(
+                        "Attribute 'meta.source_detection.tweakreg_catalog' is missing."
+                        "Please run either SourceDetectionStep or provide a"
+                        "custom source catalog."
                     )
                 # set meta.tweakreg_catalog
                 image_model.meta["tweakreg_catalog"] = catalog
-                # remove the catalog from meta.source_detection
                 del image_model.meta.source_detection["tweakreg_catalog"]
             else:
                 raise AttributeError(
                     "Attribute 'meta.source_detection' is missing."
-                    "Please run either run SourceDetectionStep or provide a"
+                    "Please run either SourceDetectionStep or provide a"
                     "custom source catalog."
                 )
 
