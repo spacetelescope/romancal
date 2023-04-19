@@ -82,7 +82,6 @@ class TweakRegStep(RomanStep):
 
     def process(self, input):
         use_custom_catalogs = self.use_custom_catalogs
-        catalogs_format = "ascii.ecsv"
 
         if use_custom_catalogs:
             catdict = _parse_catfile(self.catfile)
@@ -98,7 +97,6 @@ class TweakRegStep(RomanStep):
 
         try:
             if use_custom_catalogs and catdict:
-                catalogs_format = self.catalog_format
                 images = datamodels.ModelContainer()
                 if isinstance(input, str):
                     asn_dir = os.path.dirname(input)
@@ -122,10 +120,14 @@ class TweakRegStep(RomanStep):
                         filename = im.meta.filename
                         if filename in catdict:
                             print(
-                                f"setting {filename}.tweakreg_catalog ="
+                                f"setting "
+                                f"{filename}.source_detection.tweakreg_catalog_name ="
                                 f" {repr(catdict[filename])}"
                             )
-                            im.meta["tweakreg_catalog"] = catdict[filename]
+                            im.meta["source_detection"] = {
+                                "tweakreg_catalog": None,
+                                "tweakreg_catalog_name": catdict[filename],
+                            }
 
             else:
                 images = datamodels.ModelContainer(input)
@@ -157,13 +159,33 @@ class TweakRegStep(RomanStep):
 
         # Build the catalogs for input images
         for i, image_model in enumerate(images):
-            if hasattr(image_model.meta, "tweakreg_catalog"):
-                catalog = Table.read(
-                    image_model.meta.tweakreg_catalog,
-                    format=catalogs_format,
+            if hasattr(image_model.meta, "source_detection"):
+                tweakreg_catalog = image_model.meta.source_detection.tweakreg_catalog
+                tweakreg_catalog_name = (
+                    image_model.meta.source_detection.tweakreg_catalog_name
                 )
+                if tweakreg_catalog is not None and len(tweakreg_catalog):
+                    # read SourceDetectionStep's catalog in NDArray format
+                    catalog = Table(
+                        data=tweakreg_catalog[:].T,
+                        names=["id", "xcentroid", "ycentroid", "flux"],
+                    )
+                else:
+                    # read SourceDetectionStep's catalog in str format (path+filename)
+                    catalog = Table.read(
+                        tweakreg_catalog_name,
+                        format=self.catalog_format,
+                    )
+                # set meta.tweakreg_catalog
+                image_model.meta["tweakreg_catalog"] = catalog
+                # remove the catalog from meta.source_detection
+                del image_model.meta.source_detection["tweakreg_catalog"]
             else:
-                raise AttributeError("Attribute 'meta.tweakreg_catalog' is missing.")
+                raise AttributeError(
+                    "Attribute 'meta.source_detection' is missing."
+                    "Please run either run SourceDetectionStep or provide a"
+                    "custom source catalog."
+                )
 
             for axis in ["x", "y"]:
                 if axis not in catalog.colnames:
@@ -479,7 +501,8 @@ class TweakRegStep(RomanStep):
             else:
                 catalog_format = "ascii.ecsv"
             cat_name = str(catalog)
-            catalog = Table.read(catalog, format=catalog_format)
+            if isinstance(catalog, str):
+                catalog = Table.read(catalog, format=catalog_format)
             catalog.meta["name"] = cat_name
         except OSError:
             self.log.error(f"Cannot read catalog {catalog}")
