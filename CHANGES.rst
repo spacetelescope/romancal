@@ -19,9 +19,12 @@ general
 source_detection
 ----------------
 - Added SourceDetection Step to pipeline [#608]
+
 - Added option of fixed random seed for unit tests to avoid intermittent failures from randomness. [#668]
 
 - Fix source detection object instantiation. [#669]
+
+- Small bug fix to ensure that output catalogs are not attached to the file when save_catalogs=False [#684]
 
 
 0.10.0 (2023-02-21)
