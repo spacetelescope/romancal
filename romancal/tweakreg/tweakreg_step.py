@@ -160,27 +160,37 @@ class TweakRegStep(RomanStep):
         # Build the catalogs for input images
         for i, image_model in enumerate(images):
             if hasattr(image_model.meta, "source_detection"):
-                tweakreg_catalog_attribute = hasattr(
+                is_tweakreg_catalog_present = hasattr(
                     image_model.meta.source_detection, "tweakreg_catalog"
                 )
-                if tweakreg_catalog_attribute:
+                is_tweakreg_catalog_name_present = hasattr(
+                    image_model.meta.source_detection, "tweakreg_catalog_name"
+                )
+                if is_tweakreg_catalog_present:
                     # read catalog in 4D numpy array format
                     catalog = Table(
                         data=image_model.meta.source_detection.tweakreg_catalog.T
                     )
+                elif is_tweakreg_catalog_name_present:
+                    catalog = Table.read(
+                        image_model.meta.source_detection.tweakreg_catalog_name,
+                        format=self.catalog_format,
+                    )
                 else:
                     raise AttributeError(
                         "Attribute 'meta.source_detection.tweakreg_catalog' is missing."
-                        "Please run either SourceDetectionStep or provide a"
+                        "Please either run SourceDetectionStep or provide a"
                         "custom source catalog."
                     )
                 # set meta.tweakreg_catalog
                 image_model.meta["tweakreg_catalog"] = catalog
-                del image_model.meta.source_detection["tweakreg_catalog"]
+                # remove 4D numpy array from meta.source_detection
+                if is_tweakreg_catalog_present:
+                    del image_model.meta.source_detection["tweakreg_catalog"]
             else:
                 raise AttributeError(
                     "Attribute 'meta.source_detection' is missing."
-                    "Please run either SourceDetectionStep or provide a"
+                    "Please either run SourceDetectionStep or provide a"
                     "custom source catalog."
                 )
 

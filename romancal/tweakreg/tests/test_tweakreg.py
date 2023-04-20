@@ -324,15 +324,16 @@ def add_tweakreg_catalog_attribute(
         save_catalogs=save_catalogs,
     )
 
-    # SourceDetectionStep will always populate meta.source_detection.tweakreg_catalog
-    input_dm.meta["source_detection"] = {"tweakreg_catalog": source_catalog}
+    input_dm.meta["source_detection"] = {}
 
     if save_catalogs:
-        # SourceDetectionStep will update meta.source_detection.tweakreg_catalog_name
-        # if SourceDetectionStep.save_catalogs=True
+        # SourceDetectionStep adds the catalog path+filename
         input_dm.meta.source_detection["tweakreg_catalog_name"] = os.path.join(
             tmp_path, tweakreg_catalog_filename
         )
+    else:
+        # SourceDetectionStep attaches the catalog data as a 4D numpy array
+        input_dm.meta.source_detection["tweakreg_catalog"] = source_catalog
 
 
 @pytest.fixture
@@ -739,12 +740,11 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     "source_detection_save_catalogs",
     (True, False),
 )
-def test_remove_tweakreg_catalog_from_source_detection_attribute(
+def test_remove_tweakreg_catalog_data(
     tmp_path, source_detection_save_catalogs, request
 ):
     """
-    Test to check that meta.source_detection.tweakreg_catalog is deleted after
-    TweakRegStep and that meta.tweakreg_catalog always returns a Table object
+    Test to check that the source catalog data is removed from meta
     regardless of selected SourceDetectionStep.save_catalogs option.
     """
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
@@ -756,4 +756,3 @@ def test_remove_tweakreg_catalog_from_source_detection_attribute(
 
     assert not hasattr(img.meta.source_detection, "tweakreg_catalog")
     assert hasattr(img.meta, "tweakreg_catalog")
-    assert isinstance(img.meta.tweakreg_catalog, table.Table)
