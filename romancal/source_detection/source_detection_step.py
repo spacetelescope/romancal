@@ -175,10 +175,10 @@ class SourceDetectionStep(RomanStep):
                 input_model.meta.source_detection[
                     "tweakreg_catalog_name"
                 ] = cat_filename
-
-            # only attach catalog to file if its being passed to the next step
-            # and save_catalogs is false, since it is not in the schema
-            input_model.meta.source_detection["tweakreg_catalog"] = catalog_as_array
+            else:
+                # only attach catalog to file if its being passed to the next step
+                # and save_catalogs is false, since it is not in the schema
+                input_model.meta.source_detection["tweakreg_catalog"] = catalog_as_array
 
             # just pass input model to next step - catalog is stored in meta
             return input_model
