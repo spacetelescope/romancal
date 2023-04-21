@@ -5,7 +5,6 @@ import argparse
 import logging
 
 import numpy as np
-import pdb
 
 from romancal.associations import (
     __version__,
@@ -91,7 +90,6 @@ class Main():
         """
         generator_cli = cls(args=args, pool=pool)
         generator_cli.generate()
-        pdb.set_trace()
         generator_cli.save()
         return generator_cli
 
@@ -182,7 +180,6 @@ class Main():
             global_constraints=global_constraints,
             name=CANDIDATE_RULESET
         )
-        #pdb.set_trace()
         if parsed.discover:
             self.rules.update(
                 AssociationRegistry(
@@ -191,7 +188,6 @@ class Main():
                     name=DISCOVER_RULESET
                 )
             )
-            #pdb.set_trace()
 
     def generate(self):
         """Generate the associations"""
@@ -200,7 +196,6 @@ class Main():
         self.associations = generate(
             self.pool, self.rules, version_id=parsed.version_id, finalize=not parsed.no_finalize
         )
-        pdb.set_trace()
         if parsed.discover:
             logger.debug(
                 '# asns found before discover filtering={}'.format(
@@ -378,12 +373,13 @@ class Main():
         """
         for asn in self.associations:
             (fname, serialized) = asn.dump(format=format)
-            with open(os.path.join(path, fname), "w") as f:
+            with open(os.path.join(self.parsed.path, fname), "w") as f:
                 f.write(serialized)
 
         if save_orphans:
             self.orphaned.write(
-                os.path.join(path, save_orphans), format="ascii", delimiter="|"
+                os.path.join(self.parsed.path, self.parsed.save_orphans),
+                format="ascii", delimiter="|"
             )
 
     def __str__(self):
@@ -521,5 +517,5 @@ def filter_discovered_only(
     return discover_list
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     Main()

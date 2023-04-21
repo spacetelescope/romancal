@@ -50,7 +50,7 @@ class AssociationPool(Table):
         AssociationPool
             The ``AssociationPool`` representation of the file.
         """
-        table = super().read(
+        table = super(AssociationPool, cls).read(
             filename,
             delimiter=delimiter,
             format=format,

@@ -1,6 +1,5 @@
 import logging
 from timeit import default_timer as timer
-import pdb
 
 from .association import make_timestamp
 from .lib.process_list import (
