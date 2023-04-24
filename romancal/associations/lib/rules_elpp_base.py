@@ -7,8 +7,10 @@ from os.path import basename
 
 from stpipe.format_template import FormatTemplate
 
-from romancal.associations import Association, ProcessList, libpath
+from romancal.associations import libpath
+from romancal.associations.association import Association
 from romancal.associations.exceptions import AssociationNotValidError
+from romancal.associations.lib.process_list import ProcessList
 from romancal.associations.lib.acid import ACID
 from romancal.associations.lib.constraint import Constraint, SimpleConstraint
 from romancal.associations.lib.counter import Counter

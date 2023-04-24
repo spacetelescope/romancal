@@ -1,7 +1,7 @@
 """Helpers for tests."""
+# ruff: noqa
 from collections import namedtuple
 from contextlib import contextmanager
-from copy import copy
 from glob import glob
 import os
 import pytest
@@ -12,9 +12,7 @@ from astropy.table import (Table, vstack)
 
 from romancal.associations import (AssociationRegistry, AssociationPool, generate)
 from romancal.associations.lib.counter import Counter
-from romancal.associations.lib.diff import compare_asns
 from romancal.associations.lib.utilities import is_iterable
-
 
 # Define how to setup initial conditions with pools.
 class PoolParams(
@@ -77,7 +75,8 @@ class BasePoolRule():
             pool = combine_pools(ppars.path, **ppars.kwargs)
             asns = generate(pool, rules)
             assert len(asns) == ppars.n_asns, \
-                ppars.path + ': n_asns not expected {} {}'.format(len(asns), ppars.n_asns)
+                ppars.path + ': n_asns not expected {} {}'.\
+                format(len(asns), ppars.n_asns)
             for asn, candidates in zip(asns, ppars.candidates):
                 assert set(asn.candidates) == set(candidates)
             file_regex = re.compile(r'.+_(?P<suffix>.+)\..+')
@@ -86,10 +85,13 @@ class BasePoolRule():
                     for member in product['members']:
                         if member['exptype'] == 'science':
                             match = file_regex.match(member['expname'])
-                            assert match is not None, \
-                                ppars.path + ': No suffix match for {}'.format(member['expname'])
-                            assert match.groupdict()['suffix'] in ppars.valid_suffixes, \
-                                ppars.path + ': Suffix {} not valid'.format(match.groupdict()['suffix'])
+                            assert match is not None, ppars.path +\
+                                ': No suffix match for {}'.\
+                                format(member['expname'])
+                            assert match.groupdict()\
+                                ['suffix'] in ppars.valid_suffixes, ppars.path +\
+                                ': Suffix {} not valid'.\
+                                format(match.groupdict()['suffix'])
 
 
 def make_megapool():
@@ -100,7 +102,7 @@ def make_megapool():
     This is meant to be run in the source tree in
     the folder the test pools reside in. The package
     does need to have been installed.
-    `python -c 'import romancal.associations.tests.helpers as helpers; helpers.make_megapool()'`
+    `python -c 'import romancal.associations.tests.helpers as helpers; helpers.make_megapool()'` # noqa: E501
     """
     pool_files = glob('pool_*.csv')
     pool_files.sort()

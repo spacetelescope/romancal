@@ -6,15 +6,23 @@ import logging
 
 import numpy as np
 
+#from romancal.associations import (
+#    __version__,
+#    AssociationPool,
+#    AssociationRegistry,
+#    generate,
+#)
 from romancal.associations import (
-    __version__,
-    AssociationPool,
-    AssociationRegistry,
-    generate,
-)
+    __version__,)
+#from romancal.associations.main import  *
+from romancal.associations import  generate
+from romancal.associations.pool import   AssociationPool
+from romancal.associations.registry import    AssociationRegistry
+
 from romancal.associations import config
 from romancal.associations.exceptions import AssociationError
 from romancal.associations.lib.dms_base import DMSAttrConstraint
+from romancal.associations.lib.process_list import ProcessList
 from romancal.associations.lib.constraint import (
     ConstraintTrue,
 )
@@ -149,7 +157,7 @@ class Main():
 
         # DMS: Add further info to logging.
         try:
-            logger.context.set('program', self.pool[0]['PROGRAM'])
+            logger.context.set('program', self.pool[0]['program'])
         except KeyError:
             pass
 
@@ -193,7 +201,7 @@ class Main():
         """Generate the associations"""
         logger.info('Generating associations.')
         parsed = self.parsed
-        self.associations = generate(
+        self.associations = generate.generate(
             self.pool, self.rules, version_id=parsed.version_id, finalize=not parsed.no_finalize
         )
         if parsed.discover:
@@ -518,4 +526,4 @@ def filter_discovered_only(
 
 
 if __name__ == '__main__':
-    Main()
+    main()
