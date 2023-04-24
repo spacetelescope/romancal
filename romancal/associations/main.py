@@ -201,7 +201,7 @@ class Main():
         """Generate the associations"""
         logger.info('Generating associations.')
         parsed = self.parsed
-        self.associations = generate.generate(
+        self.associations = generate(
             self.pool, self.rules, version_id=parsed.version_id, finalize=not parsed.no_finalize
         )
         if parsed.discover:
