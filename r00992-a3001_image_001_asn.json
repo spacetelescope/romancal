@@ -1,0 +1,38 @@
+{
+    "asn_type": "image",
+    "asn_rule": "candidate_Asn_Lv2Image",
+    "version_id": null,
+    "code_version": "0.10.1.dev47+ge9fe8e8",
+    "degraded_status": "No known degraded exposures in association.",
+    "program": "00992",
+    "constraints": "DMSAttrConstraint({'name': 'program', 'sources': ['program'], 'value': '992'})\nDMSAttrConstraint({'name': 'instrument', 'sources': ['instrume'], 'value': 'wfi'})\nConstraint_Target({'name': 'target', 'sources': ['targname'], 'value': 'gbtds'})\nConstraint_Expos({'name': 'exposure_number', 'sources': ['nexpsur'], 'value': '6'})\nDMSAttrConstraint({'name': 'opt_elem', 'sources': ['opt_elem'], 'value': 'f158'})\nDMSAttrConstraint({'name': 'sequence', 'sources': ['sequence'], 'value': '1'})\nDMSAttrConstraint({'name': 'pass', 'sources': ['pass'], 'value': '5'})\nConstraint_Tile({'name': 'tile', 'sources': ['tile'], 'value': '1'})\nDMSAttrConstraint({'name': 'asn_candidate', 'sources': ['asn_candidate'], 'value': 'observation'})",
+    "asn_id": "a3001",
+    "target": "tgbtds",
+    "asn_pool": "pool",
+    "products": [
+        {
+            "name": "r0099201005001001001-a3001_tgbtds_wfi_f158",
+            "members": [
+                {
+                    "expname": "r0099201005001001001_00101_0001_wfi_cal.asdf",
+                    "exptype": "science",
+                    "asn_candidate": "observation",
+                    "exposerr": "null"
+                },
+                {
+                    "expname": "r0099201005001001001_00101_0002_wfi_cal.asdf",
+                    "exptype": "science",
+                    "asn_candidate": "observation",
+                    "exposerr": "null"
+                },
+                {
+                    "expname": "r0099201005001001001_00101_0003_wfi_cal.asdf",
+                    "exptype": "science",
+                    "asn_candidate": "observation",
+                    "exposerr": "null"
+                }
+            ]
+        }
+    ],
+    "visit_id": "0099201005001001001"
+}

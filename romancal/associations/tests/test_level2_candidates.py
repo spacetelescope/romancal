@@ -21,12 +21,12 @@ from romancal.associations.main import Main
         # Basic observation ACIDs
         (
             ['-i', 'o001'],
-            10
+            0
         ),
         # Whole program
         (
             [],
-            70
+            2
         ),
         # Discovered only
         (
@@ -36,7 +36,7 @@ from romancal.associations.main import Main
         # Candidates only
         (
             ['--all-candidates'],
-            70
+            2
         ),
     ]
 )

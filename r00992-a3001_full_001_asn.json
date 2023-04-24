@@ -1,0 +1,38 @@
+{
+    "asn_type": "full",
+    "asn_rule": "candidate_Asn_Lv2GBTDSFull",
+    "version_id": null,
+    "code_version": "0.10.1.dev47+ge9fe8e8",
+    "degraded_status": "No known degraded exposures in association.",
+    "program": "00992",
+    "constraints": "DMSAttrConstraint({'name': 'program', 'sources': ['program'], 'value': '992'})\nDMSAttrConstraint({'name': 'instrument', 'sources': ['instrume'], 'value': 'wfi'})\nConstraint_Target({'name': 'target', 'sources': ['targname'], 'value': 'gbtds'})\nConstraint_Category({'name': 'category', 'sources': ['cat'], 'value': 'survey'})\nDMSAttrConstraint({'name': 'opt_elem', 'sources': ['opt_elem'], 'value': 'f158'})\nConstraint_SubCategory({'name': 'sub_cat', 'sources': ['subcat'], 'value': 'gbtds'})\nDMSAttrConstraint({'name': 'asn_candidate', 'sources': ['asn_candidate'], 'value': 'observation'})",
+    "asn_id": "a3001",
+    "target": "tgbtds",
+    "asn_pool": "pool",
+    "products": [
+        {
+            "name": "r0099201005001001001-a3001_tgbtds_wfi_f158full",
+            "members": [
+                {
+                    "expname": "r0099201005001001001_00101_0001_wfi_cal.asdf",
+                    "exptype": "wfi_image",
+                    "asn_candidate": "observation",
+                    "exposerr": "null"
+                },
+                {
+                    "expname": "r0099201005001001001_00101_0002_wfi_cal.asdf",
+                    "exptype": "wfi_image",
+                    "asn_candidate": "observation",
+                    "exposerr": "null"
+                },
+                {
+                    "expname": "r0099201005001001001_00101_0003_wfi_cal.asdf",
+                    "exptype": "wfi_image",
+                    "asn_candidate": "observation",
+                    "exposerr": "null"
+                }
+            ]
+        }
+    ],
+    "visit_id": "0099201005001001001"
+}

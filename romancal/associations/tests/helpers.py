@@ -72,7 +72,7 @@ class BasePoolRule():
             assert rule in rule_names
 
     def test_run_generate(self):
-        rules = registry_level3_only()
+        rules = registry_level2_only()
         for ppars in self.pools:
             pool = combine_pools(ppars.path, **ppars.kwargs)
             asns = generate(pool, rules)
