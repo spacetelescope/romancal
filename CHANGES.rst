@@ -26,6 +26,10 @@ source_detection
 
 - Small bug fix to ensure that output catalogs are not attached to the file when save_catalogs=False [#684]
 
+astrometric_utils
+-----------------
+- Added option to provide epoch so that the coordinates are corrected by proper motion. [#686]
+
 
 0.10.0 (2023-02-21)
 ===================
