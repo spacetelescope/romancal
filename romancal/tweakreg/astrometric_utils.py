@@ -151,13 +151,15 @@ def compute_radius(wcs):
     fiducial = wcsutil.compute_fiducial([wcs], wcs.bounding_box)
     img_center = SkyCoord(ra=fiducial[0] * u.degree, dec=fiducial[1] * u.degree)
     wcs_foot = wcs.footprint()
-    img_corners = SkyCoord(ra=wcs_foot[:, 0] * u.degree, dec=wcs_foot[:, 1] * u.degree)
+    img_corners = SkyCoord(
+        ra=wcs_foot[:, 0] * u.degree, dec=wcs_foot[:, 1] * u.degree
+    )
     radius = img_center.separation(img_corners).max().value
 
     return radius, fiducial
 
 
-def get_catalog(ra, dec, sr=0.1, catalog="GAIADR3"):
+def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3"):
     """Extract catalog from VO web service.
 
     Parameters
@@ -167,6 +169,10 @@ def get_catalog(ra, dec, sr=0.1, catalog="GAIADR3"):
 
     dec : float
         Declination (Dec) of center of field-of-view (in decimal degrees)
+
+    epoch: float, optional
+        Reference epoch used to update the coordinates for proper motion
+        (in decimal year). Default: 2016.0.
 
     sr : float, optional
         Search radius (in decimal degrees) from field-of-view center to use
@@ -181,11 +187,11 @@ def get_catalog(ra, dec, sr=0.1, catalog="GAIADR3"):
 
     """
     service_type = "vo/CatalogSearch.aspx"
-    spec_str = "RA={}&DEC={}&SR={}&FORMAT={}&CAT={}&MINDET=5"
+    spec_str = "RA={}&DEC={}&EPOCH={}&SR={}&FORMAT={}&CAT={}&MINDET=5"
     headers = {"Content-Type": "text/csv"}
     fmt = "CSV"
 
-    spec = spec_str.format(ra, dec, sr, fmt, catalog)
+    spec = spec_str.format(ra, dec, epoch, sr, fmt, catalog)
     service_url = f"{SERVICELOCATION}/{service_type}?{spec}"
     rawcat = requests.get(service_url, headers=headers, timeout=TIMEOUT)
     r_contents = rawcat.content.decode()  # convert from bytes to a String

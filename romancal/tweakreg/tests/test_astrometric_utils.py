@@ -74,7 +74,9 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
-    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    detector = cf.Frame2D(
+        name="detector", axes_order=(0, 1), unit=(u.pix, u.pix)
+    )
     v2v3 = cf.Frame2D(
         name="v2v3",
         axes_order=(0, 1),
@@ -263,7 +265,9 @@ def base_image():
         ("GAIADR3", 15),
     ],
 )
-def test_create_astrometric_catalog_variable_num_sources(catalog, num_sources, request):
+def test_create_astrometric_catalog_variable_num_sources(
+    catalog, num_sources, request
+):
     """Test fetching data from supported catalogs with variable number of sources."""
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     res = create_astrometric_catalog(
@@ -406,3 +410,49 @@ def test_get_catalog_using_invalid_parameters(ra, dec, sr, catalog_name):
         get_catalog(ra, dec, sr=sr, catalog=catalog_name)
 
     assert str(exec_info.typename).lower().endswith("error")
+
+
+@pytest.mark.parametrize(
+    "ra, dec, epoch, sr, catalog_name",
+    [
+        (10, 10, 2000, 0.1, "GAIADR1"),
+        (10, 10, 2010.3, 0.1, "GAIADR2"),
+        (10, 10, 2030, 0.1, "GAIADR3"),
+        (10, -10, 2000, 0.1, "GAIADR1"),
+        (10, -10, 2010.3, 0.1, "GAIADR2"),
+        (10, -10, 2030, 0.1, "GAIADR3"),
+        (0, 0, 2000, 0.01, "GAIADR1"),
+        (0, 0, 2010.3, 0.01, "GAIADR2"),
+        (0, 0, 2030, 0.01, "GAIADR3"),
+    ],
+)
+def test_get_catalog_using_epoch(ra, dec, epoch, sr, catalog_name):
+    """Test that get_catalog returns coordinates corrected by proper motion."""
+
+    result = get_catalog(ra, dec, epoch=epoch, sr=sr, catalog=catalog_name)
+    returned_ra = np.array(result["ra"])
+    returned_dec = np.array(result["dec"])
+
+    # get GAIA data and update coords to requested epoch using pm measurements
+    gaia_ref_epoch = 2016.0
+    gaia_ref_epoch_coords = get_catalog(
+        ra, dec, epoch=gaia_ref_epoch, sr=sr, catalog=catalog_name
+    )
+    expected_new_ra = (
+        np.array(
+            gaia_ref_epoch_coords["ra"] * 3600
+            + (epoch - gaia_ref_epoch) * gaia_ref_epoch_coords["pmra"] / 1000
+        )
+        / 3600
+    )
+    expected_new_dec = (
+        np.array(
+            gaia_ref_epoch_coords["dec"] * 3600
+            + (epoch - gaia_ref_epoch) * gaia_ref_epoch_coords["pmdec"] / 1000
+        )
+        / 3600
+    )
+
+    assert len(result) > 0
+    assert np.isclose(returned_ra, expected_new_ra).all()
+    assert np.isclose(returned_dec, expected_new_dec).all()
