@@ -410,19 +410,18 @@ class DMSBaseMixin(ACIDMixin):
         self.update_degraded_status()
         self.set_visit_id(item)
 
-        
     def set_visit_id(self, item):
         """Set the visit id in the association"""
 
-        if 'visit_id' in self.data:
+        if "visit_id" in self.data:
             pass
         else:
-            self.data['visit_id'] = item['visit_id']
+            self.data["visit_id"] = item["visit_id"]
             try:
-                self.data['visit_id'] = item['visit_id']
+                self.data["visit_id"] = item["visit_id"]
             except KeyError:
-                #logger.debug(f'Visit_id not found')
-                self.data['visit_id'] = 'None'
+                # logger.debug(f'Visit_id not found')
+                self.data["visit_id"] = "None"
 
     def update_degraded_status(self):
         """Update association degraded status"""
@@ -535,14 +534,14 @@ class DMSBaseMixin(ACIDMixin):
         """
         result = ""
         try:
-            subarray = format_list(self.constraints['seq_id'].found_values)
+            subarray = format_list(self.constraints["seq_id"].found_values)
         except KeyError:
             subarray = None
             return result
         if subarray == 0:
             subarray = None
         try:
-            subcat = format_list(self.constraints['subcat'].found_values)
+            subcat = format_list(self.constraints["subcat"].found_values)
         except KeyError:
             subcat = None
 

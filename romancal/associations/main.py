@@ -1,44 +1,35 @@
 """Main entry for the association generator"""
-import os
-import sys
 import argparse
 import logging
+import os
+import sys
 
 import numpy as np
 
-#from romancal.associations import (
+# from romancal.associations.main import  *
+# from romancal.associations import (
 #    __version__,
 #    AssociationPool,
 #    AssociationRegistry,
 #    generate,
-#)
-from romancal.associations import (
-    __version__,)
-#from romancal.associations.main import  *
-from romancal.associations import  generate
-from romancal.associations.pool import   AssociationPool
-from romancal.associations.registry import    AssociationRegistry
-
-from romancal.associations import config
-from romancal.associations.exceptions import AssociationError
+# )
+from romancal.associations import __version__, config, generate
 from romancal.associations.lib.dms_base import DMSAttrConstraint
-from romancal.associations.lib.process_list import ProcessList
-from romancal.associations.lib.constraint import (
-    ConstraintTrue,
-)
-from romancal.associations.lib.log_config import (log_config, DMS_config)
+from romancal.associations.lib.log_config import DMS_config, log_config
+from romancal.associations.pool import AssociationPool
+from romancal.associations.registry import AssociationRegistry
 
-__all__ = ['Main']
+__all__ = ["Main"]
 
 # Configure logging
 logger = log_config(name=__package__)
 
 # Ruleset names
-DISCOVER_RULESET = 'discover'
-CANDIDATE_RULESET = 'candidate'
+DISCOVER_RULESET = "discover"
+CANDIDATE_RULESET = "candidate"
 
 
-class Main():
+class Main:
     """
     Generate Associations from an Association Pool
 
@@ -71,6 +62,7 @@ class Main():
     Refer to the :ref:`Association Generator <associations>`
     documentation for a full description.
     """
+
     def __init__(self, args=None, pool=None):
         self.configure(args=args, pool=pool)
 
@@ -142,22 +134,23 @@ class Main():
         logger = log_config(name=__package__, config=logging_config)
         logger.setLevel(parsed.loglevel)
         config.DEBUG = (parsed.loglevel != 0) and (parsed.loglevel <= logging.DEBUG)
-        
+
         # Preamble
-        logger.info('Command-line arguments: %s', parsed)
-        logger.context.set('asn_candidate_ids', parsed.asn_candidate_ids)
+        logger.info("Command-line arguments: %s", parsed)
+        logger.context.set("asn_candidate_ids", parsed.asn_candidate_ids)
 
         if pool is None:
-            logger.info('Reading pool {}'.format(parsed.pool))
+            logger.info(f"Reading pool {parsed.pool}")
             pool = AssociationPool.read(
-                parsed.pool, delimiter=parsed.delimiter,
+                parsed.pool,
+                delimiter=parsed.delimiter,
                 format=parsed.pool_format,
             )
         self.pool = pool
 
         # DMS: Add further info to logging.
         try:
-            logger.context.set('program', self.pool[0]['program'])
+            logger.context.set("program", self.pool[0]["program"])
         except KeyError:
             pass
 
@@ -166,47 +159,48 @@ class Main():
         #  2) Only discovered associations that do not match
         #     candidate associations
         #  3) Both discovered and all candidate associations.
-        logger.info('Reading rules.')
+        logger.info("Reading rules.")
 
-        if not parsed.discover and\
-           not parsed.all_candidates and\
-           parsed.asn_candidate_ids is None:
+        if (
+            not parsed.discover
+            and not parsed.all_candidates
+            and parsed.asn_candidate_ids is None
+        ):
             parsed.discover = True
             parsed.all_candidates = True
         if parsed.discover or parsed.all_candidates:
-            global_constraints = constrain_on_candidates(
-                None
-            )
+            global_constraints = constrain_on_candidates(None)
         elif parsed.asn_candidate_ids is not None:
-            global_constraints = constrain_on_candidates(
-                parsed.asn_candidate_ids
-            )
+            global_constraints = constrain_on_candidates(parsed.asn_candidate_ids)
 
         self.rules = AssociationRegistry(
             parsed.rules,
             include_default=not parsed.ignore_default,
             global_constraints=global_constraints,
-            name=CANDIDATE_RULESET
+            name=CANDIDATE_RULESET,
         )
         if parsed.discover:
             self.rules.update(
                 AssociationRegistry(
                     parsed.rules,
                     include_default=not parsed.ignore_default,
-                    name=DISCOVER_RULESET
+                    name=DISCOVER_RULESET,
                 )
             )
 
     def generate(self):
         """Generate the associations"""
-        logger.info('Generating associations.')
+        logger.info("Generating associations.")
         parsed = self.parsed
         self.associations = generate(
-            self.pool, self.rules, version_id=parsed.version_id, finalize=not parsed.no_finalize
+            self.pool,
+            self.rules,
+            version_id=parsed.version_id,
+            finalize=not parsed.no_finalize,
         )
         if parsed.discover:
             logger.debug(
-                '# asns found before discover filtering={}'.format(
+                "# asns found before discover filtering={}".format(
                     len(self.associations)
                 )
             )
@@ -245,11 +239,10 @@ class Main():
         if args is None:
             args = sys.argv[1:]
         if isinstance(args, str):
-            args = args.split(' ')
+            args = args.split(" ")
 
         parser = argparse.ArgumentParser(
-            description='Generate Assocation Data Products',
-            usage='asn_generate pool'
+            description="Generate Assocation Data Products", usage="asn_generate pool"
         )
         if not has_pool:
             parser.add_argument("pool", type=str, help="Association Pool")
@@ -262,28 +255,35 @@ class Main():
             help="space-separated list of association candidate IDs to operate on.",
         )
         op_group.add_argument(
-            "--discover",
-            action="store_true",
-            help="Produce discovered associations"
+            "--discover", action="store_true", help="Produce discovered associations"
         )
         op_group.add_argument(
             "--all-candidates",
-            action="store_true", dest="all_candidates",
+            action="store_true",
+            dest="all_candidates",
             help="Produce all association candidate-specific associations",
         )
         parser.add_argument(
-            "-p", "--path", type=str,
+            "-p",
+            "--path",
+            type=str,
             default=".",
             help='Folder to save the associations to. Default: "%(default)s"',
         )
         parser.add_argument(
-            "--save-orphans", dest="save_orphans",
-            nargs="?", const="orphaned.csv", default=False,
+            "--save-orphans",
+            dest="save_orphans",
+            nargs="?",
+            const="orphaned.csv",
+            default=False,
             help='Save orphaned items into the specified table. Default: "%(default)s"',
         )
         parser.add_argument(
-            "--version-id", dest="version_id",
-            nargs="?", const=True, default=None,
+            "--version-id",
+            dest="version_id",
+            nargs="?",
+            const=True,
+            default=None,
             help=(
                 "Version tag to add into association name and products."
                 " If not specified, no version will be used."
@@ -292,20 +292,23 @@ class Main():
             ),
         )
         parser.add_argument(
-            "-r", "--rules", action="append",
-            help="Association Rules file."
+            "-r", "--rules", action="append", help="Association Rules file."
         )
         parser.add_argument(
-            "--ignore-default", action="store_true",
+            "--ignore-default",
+            action="store_true",
             help="Do not include default rules. -r should be used if set.",
         )
         parser.add_argument(
             "--dry-run",
-            action="store_true", dest="dry_run",
+            action="store_true",
+            dest="dry_run",
             help="Execute but do not save results.",
         )
         parser.add_argument(
-            "-d", "--delimiter", type=str,
+            "-d",
+            "--delimiter",
+            type=str,
             default="|",
             help="""Delimiter
             to use if pool files are comma-separated-value
@@ -313,7 +316,8 @@ class Main():
             """,
         )
         parser.add_argument(
-            "--pool-format", type=str,
+            "--pool-format",
+            type=str,
             default="ascii",
             help=(
                 "Format of the pool file."
@@ -323,20 +327,26 @@ class Main():
             ),
         )
         parser.add_argument(
-            "-v", "--verbose",
-            action="store_const", dest="loglevel",
-            const=logging.INFO, default=logging.NOTSET,
+            "-v",
+            "--verbose",
+            action="store_const",
+            dest="loglevel",
+            const=logging.INFO,
+            default=logging.NOTSET,
             help="Output progress and results.",
         )
         parser.add_argument(
-            "-D", "--debug",
-            action="store_const", dest="loglevel",
+            "-D",
+            "--debug",
+            action="store_const",
+            dest="loglevel",
             const=logging.DEBUG,
             help="Output detailed debugging information.",
         )
         parser.add_argument(
             "--DMS",
-            action="store_true", dest="DMS_enabled",
+            action="store_true",
+            dest="DMS_enabled",
             help="Running under DMS workflow conditions.",
         )
         parser.add_argument(
@@ -345,21 +355,24 @@ class Main():
             help='Format of the association files. Default: "%(default)s"',
         )
         parser.add_argument(
-            "--version", action="version",
+            "--version",
+            action="version",
             version=f"%(prog)s {__version__}",
             help="Version of the generator.",
         )
         parser.add_argument(
-            '--no-finalize',
-            action='store_true',
-            help='Do not run the finalization methods on the interim associations'
+            "--no-finalize",
+            action="store_true",
+            help="Do not run the finalization methods on the interim associations",
         )
         parser.add_argument(
-            "--merge", action="store_true",
+            "--merge",
+            action="store_true",
             help="Merge associations into single associations with multiple products",
         )
         parser.add_argument(
-            "--no-merge", action=DeprecateNoMerge,
+            "--no-merge",
+            action=DeprecateNoMerge,
             help='Deprecated: Default is to not merge. See "--merge".',
         )
 
@@ -387,15 +400,18 @@ class Main():
         if save_orphans:
             self.orphaned.write(
                 os.path.join(self.parsed.path, self.parsed.save_orphans),
-                format="ascii", delimiter="|"
+                format="ascii",
+                delimiter="|",
             )
 
     def __str__(self):
         result = []
-        result.append((
+        result.append(
+            (
                 "There where {:d} associations and {:d} orphaned items"
                 " found.\nAssociations found are:"
-            ).format(len(self.associations), len(self.orphaned)))
+            ).format(len(self.associations), len(self.orphaned))
+        )
         for assocs in self.associations:
             result.append(assocs.__str__())
 
@@ -525,5 +541,5 @@ def filter_discovered_only(
     return discover_list
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

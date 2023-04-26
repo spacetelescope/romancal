@@ -6,12 +6,7 @@ from romancal.associations.lib.constraint import Constraint
 from romancal.associations.lib.rules_elpp_base import *
 from romancal.associations.registry import RegistryMarker
 
-__all__ = [
-    'Asn_Lv2Image',
-    'Asn_Lv2GBTDSPass',
-    'Asn_Lv2GBTDSFull',
-    'AsnMixin_Lv2Image'
-]
+__all__ = ["Asn_Lv2Image", "Asn_Lv2GBTDSPass", "Asn_Lv2GBTDSFull", "AsnMixin_Lv2Image"]
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -37,24 +32,24 @@ class Asn_Lv2Image(AsnMixin_Lv2Image, DMS_ELPP_Base):
     def __init__(self, *args, **kwargs):
 
         # Setup constraints
-        self.constraints = Constraint([
-            Constraint_Base(),
-            Constraint_Target(),
-            Constraint_Expos(),
-            Constraint_Optical_Path(),
-            Constraint_Sequence(),
-            Constraint_Pass(),
-            Constraint_Tile()
-        ])
+        self.constraints = Constraint(
+            [
+                Constraint_Base(),
+                Constraint_Target(),
+                Constraint_Expos(),
+                Constraint_Optical_Path(),
+                Constraint_Sequence(),
+                Constraint_Pass(),
+                Constraint_Tile(),
+            ]
+        )
 
         # Now check and continue initialization.
         super().__init__(*args, **kwargs)
 
+
 @RegistryMarker.rule
-class Asn_Lv2GBTDSPass(
-        AsnMixin_Lv2GBTDSpass,
-        DMS_ELPP_Base
-):
+class Asn_Lv2GBTDSPass(AsnMixin_Lv2GBTDSpass, DMS_ELPP_Base):
     """Level2 GBTDS Pass Science Image Association
 
     Characteristics:
@@ -68,23 +63,23 @@ class Asn_Lv2GBTDSPass(
     def __init__(self, *args, **kwargs):
 
         # Setup constraints
-        self.constraints = Constraint([
-            Constraint_Base(),
-            Constraint_Target(),
-            Constraint_Category(),
-            Constraint_Pass(),
-            Constraint_Optical_Path(),
-            Constraint_SubCategory(),
-        ])
+        self.constraints = Constraint(
+            [
+                Constraint_Base(),
+                Constraint_Target(),
+                Constraint_Category(),
+                Constraint_Pass(),
+                Constraint_Optical_Path(),
+                Constraint_SubCategory(),
+            ]
+        )
 
         # Now check and continue initialization.
         super().__init__(*args, **kwargs)
 
+
 @RegistryMarker.rule
-class Asn_Lv2GBTDSFull(
-        AsnMixin_Lv2GBTDSfull,
-        DMS_ELPP_Base
-):
+class Asn_Lv2GBTDSFull(AsnMixin_Lv2GBTDSfull, DMS_ELPP_Base):
     """Level2 GBTDS Full Science Image Association
 
     Characteristics:
@@ -98,18 +93,20 @@ class Asn_Lv2GBTDSFull(
     def __init__(self, *args, **kwargs):
 
         # Setup constraints
-        self.constraints = Constraint([
-            Constraint_Base(),
-            Constraint_Target(),
-            Constraint_Category(),
-            Constraint_Optical_Path(),
-            Constraint_SubCategory(),
-        ])
+        self.constraints = Constraint(
+            [
+                Constraint_Base(),
+                Constraint_Target(),
+                Constraint_Category(),
+                Constraint_Optical_Path(),
+                Constraint_SubCategory(),
+            ]
+        )
 
         # Now check and continue initialization.
         super().__init__(*args, **kwargs)
 
-    def get_exposure_type(self, item, default='science'):
+    def get_exposure_type(self, item, default="science"):
         """Modify exposure type depending on dither pointing index
 
         Behaves as the superclass method. However, if the constraint

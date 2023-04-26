@@ -10,7 +10,6 @@ from stpipe.format_template import FormatTemplate
 from romancal.associations import libpath
 from romancal.associations.association import Association
 from romancal.associations.exceptions import AssociationNotValidError
-from romancal.associations.lib.process_list import ProcessList
 from romancal.associations.lib.acid import ACID
 from romancal.associations.lib.constraint import Constraint, SimpleConstraint
 from romancal.associations.lib.counter import Counter
@@ -24,6 +23,7 @@ from romancal.associations.lib.dms_base import (
 )
 from romancal.associations.lib.keyvalue_registry import KeyValueRegistryError
 from romancal.associations.lib.member import Member
+from romancal.associations.lib.process_list import ProcessList
 from romancal.associations.lib.product_utils import (
     prune_duplicate_associations,
     prune_duplicate_products,
@@ -32,35 +32,35 @@ from romancal.associations.lib.utilities import evaluate, is_iterable
 from romancal.associations.registry import RegistryMarker
 
 __all__ = [
-    'ASN_SCHEMA',
-    'AsnMixin_AuxData',
-    'AsnMixin_Science',
-    'AsnMixin_Spectrum',
-    'AsnMixin_Lv2Image',
-    'AsnMixin_Lv2GBTDSfull',
-    'AsnMixin_Lv2GBTDSpass',
-    'Constraint',
-    'Constraint_Base',
-    'Constraint_Category',
-    'Constraint_Expos',
-    'Constraint_Image',
-    'Constraint_Instrument',
-    'Constraint_Obsnum',
-    'Constraint_Optical_Path',
-    'Constraint_Pass',
-    'Constraint_Spectral',
-    'Constraint_SubCategory',
-    'Constraint_Tile',
-    'Constraint_Image_Science',
-    'Constraint_Sequence',
-    'Constraint_Single_Science',
-    'Constraint_Spectral_Science',
-    'Constraint_Target',
-    'DMS_ELPP_Base',
-    'DMSAttrConstraint',
-    'ProcessList',
-    'SimpleConstraint',
-    'Utility',
+    "ASN_SCHEMA",
+    "AsnMixin_AuxData",
+    "AsnMixin_Science",
+    "AsnMixin_Spectrum",
+    "AsnMixin_Lv2Image",
+    "AsnMixin_Lv2GBTDSfull",
+    "AsnMixin_Lv2GBTDSpass",
+    "Constraint",
+    "Constraint_Base",
+    "Constraint_Category",
+    "Constraint_Expos",
+    "Constraint_Image",
+    "Constraint_Instrument",
+    "Constraint_Obsnum",
+    "Constraint_Optical_Path",
+    "Constraint_Pass",
+    "Constraint_Spectral",
+    "Constraint_SubCategory",
+    "Constraint_Tile",
+    "Constraint_Image_Science",
+    "Constraint_Sequence",
+    "Constraint_Single_Science",
+    "Constraint_Spectral_Science",
+    "Constraint_Target",
+    "DMS_ELPP_Base",
+    "DMSAttrConstraint",
+    "ProcessList",
+    "SimpleConstraint",
+    "Utility",
 ]
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -209,19 +209,16 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
             subarray = "-" + subarray
 
         product_name = (
-            'r{program}-{acid}'
-            '_{target}'
-            '_{instrument}'
-            '_{opt_elem}{subarray}'
+            "r{program}-{acid}" "_{target}" "_{instrument}" "_{opt_elem}{subarray}"
         )
-        if 'Full' in association.data['asn_rule']:
-            subarray = 'Full'
+        if "Full" in association.data["asn_rule"]:
+            subarray = "Full"
 
-        if 'Pass' in association.data['asn_rule']:
-            subarray = 'Pass'
+        if "Pass" in association.data["asn_rule"]:
+            subarray = "Pass"
 
         product_name = product_name.format(
-            program=association.data['visit_id'],
+            program=association.data["visit_id"],
             acid=association.acid.id,
             target=target,
             instrument=instrument,
@@ -229,7 +226,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
             subarray=subarray,
             exposure=exposure,
         )
-        
+
         return product_name.lower()
 
     def update_asn(self, item=None, member=None):
@@ -574,12 +571,12 @@ def dms_product_name_noopt(asn):
 
     instrument = asn._get_instrument()
 
-    product_name = 'r{}-{}_{}_{}'.format(
-#        asn.data['program'],
-        asn.data['visi_id'],
+    product_name = "r{}-{}_{}_{}".format(
+        #        asn.data['program'],
+        asn.data["visi_id"],
         asn.acid.id,
         target,
-        instrument
+        instrument,
     )
     return product_name.lower()
 
@@ -605,8 +602,8 @@ def dms_product_name_sources(asn):
     product_name_format = "r{program}-{acid}_{source_id}_{instrument}_{opt_elem}"
     product_name = format_product(
         product_name_format,
-#        program=asn.data['program'],
-        program=asn.data['visit_id'],
+        #        program=asn.data['program'],
+        program=asn.data["visit_id"],
         acid=asn.acid.id,
         instrument=instrument,
         opt_elem=opt_elem,
@@ -639,11 +636,13 @@ class Constraint_Base(Constraint):
 
 class Constraint_Instrument(Constraint):
     """Select on instrument"""
+
     def __init__(self):
-        super().__init__([
+        super().__init__(
+            [
                 DMSAttrConstraint(
-                    name='instrument',
-                    sources=['instrume'],
+                    name="instrument",
+                    sources=["instrume"],
                 ),
             ],
         )
@@ -666,8 +665,8 @@ class Constraint_Tile(DMSAttrConstraint):
 
     def __init__(self):
         super().__init__(
-            name='tile',
-            sources=['tile'],
+            name="tile",
+            sources=["tile"],
             force_unique=True,
             required=True,
         )
@@ -713,52 +712,62 @@ class Constraint_Optical_Path(Constraint):
 
 class Constraint_SubCategory(DMSAttrConstraint):
     """Select on SUBCAT (proposal subcategory) in the mock pool file"""
+
     def __init__(self):
         super().__init__(
-            name='sub_cat',
-            sources=['subcat'],
+            name="sub_cat",
+            sources=["subcat"],
             force_unique=True,
             required=True,
         )
+
 
 class Constraint_Category(DMSAttrConstraint):
     """Select on SUBCAT (proposal subcategory) in the mock pool file"""
+
     def __init__(self):
         super().__init__(
-            name='category',
-            sources=['cat'],
+            name="category",
+            sources=["cat"],
             force_unique=True,
             required=True,
         )
 
+
 class Constraint_Pass(Constraint):
-    """Select on pass number """
+    """Select on pass number"""
+
     def __init__(self):
-        super().__init__([
-            DMSAttrConstraint(
-                name='pass',
-                sources=['pass'],
-                required=True,
-                force_unique=True,
-            )
-        ],
-                name='pass'
-                         )
+        super().__init__(
+            [
+                DMSAttrConstraint(
+                    name="pass",
+                    sources=["pass"],
+                    required=True,
+                    force_unique=True,
+                )
+            ],
+            name="pass",
+        )
+
 
 class Constraint_Sequence(Constraint):
-    """Select on pass number """
+    """Select on pass number"""
+
     def __init__(self):
-        super().__init__([
-            DMSAttrConstraint(
-                name='sequence',
-                sources=['sequence'],
-                required=True,
-                force_unique=True,
-            )
-        ],
-                name='sequence'
-                         )
-        
+        super().__init__(
+            [
+                DMSAttrConstraint(
+                    name="sequence",
+                    sources=["sequence"],
+                    required=True,
+                    force_unique=True,
+                )
+            ],
+            name="sequence",
+        )
+
+
 class Constraint_Image_Science(DMSAttrConstraint):
     """Select on science images"""
 
@@ -958,7 +967,8 @@ class AsnMixin_Lv2Image:
         """Post-check and pre-add initialization"""
 
         super()._init_hook(item)
-        self.data['asn_type'] = 'image'
+        self.data["asn_type"] = "image"
+
 
 class AsnMixin_Lv2GBTDSpass:
     """Level 2 GBTDS association base"""
@@ -967,7 +977,8 @@ class AsnMixin_Lv2GBTDSpass:
         """Post-check and pre-add initialization"""
 
         super()._init_hook(item)
-        self.data['asn_type'] = 'pass'
+        self.data["asn_type"] = "pass"
+
 
 class AsnMixin_Lv2GBTDSfull:
     """Level 2 GBTDS association base"""
@@ -976,5 +987,4 @@ class AsnMixin_Lv2GBTDSfull:
         """Post-check and pre-add initialization"""
 
         super()._init_hook(item)
-        self.data['asn_type'] = 'full'
-        
+        self.data["asn_type"] = "full"

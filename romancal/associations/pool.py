@@ -8,7 +8,7 @@ from astropy.io.ascii import convert_numpy
 from astropy.table import Table
 from pkg_resources import get_distribution, parse_version
 
-__all__ = ['AssociationPool']
+__all__ = ["AssociationPool"]
 
 DEFAULT_DELIMITER = "|"
 DEFAULT_FORMAT = "ascii"
@@ -50,7 +50,7 @@ class AssociationPool(Table):
         AssociationPool
             The ``AssociationPool`` representation of the file.
         """
-        table = super(AssociationPool, cls).read(
+        table = super().read(
             filename,
             delimiter=delimiter,
             format=format,
