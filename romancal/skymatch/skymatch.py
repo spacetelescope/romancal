@@ -3,12 +3,12 @@ A module that provides functions for matching sky in overlapping images.
 """
 import logging
 from datetime import datetime
+
 import numpy as np
 
-from . skyimage import SkyImage, SkyGroup
+from .skyimage import SkyGroup, SkyImage
 
-
-__all__ = ['match']
+__all__ = ["match"]
 
 __local_debug__ = True
 
@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def match(images, skymethod='global+match', match_down=True, subtract=False):
+def match(images, skymethod="global+match", match_down=True, subtract=False):
     """
     A function to compute and/or "equalize" sky background in input images.
 
@@ -56,7 +56,8 @@ def match(images, skymethod='global+match', match_down=True, subtract=False):
           (reported to be) 0. This setting will "equalize" sky values between
           the images in large mosaics. However, this method is not recommended
           when used in conjunction with
-          `astrodrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_
+          `astrodrizzle
+          <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_
           because it computes relative sky values while `astrodrizzle` needs
           "absolute" sky values for median image generation and CR rejection.
 
@@ -98,7 +99,8 @@ def match(images, skymethod='global+match', match_down=True, subtract=False):
 
     :py:func:`match` provides new algorithms for sky value computations
     and enhances previously available algorithms used by, e.g.,
-    `astrodrizzle <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_.
+    `astrodrizzle
+    <http://stsdas.stsci.edu/stsci_python_sphinxdocs_2.13/drizzlepac/astrodrizzle.html>`_.
 
     Two new methods of sky subtraction have been introduced (compared to the
     standard ``'local'``): ``'global'`` and ``'match'``, as well as a
@@ -227,26 +229,27 @@ def match(images, skymethod='global+match', match_down=True, subtract=False):
     runtime_begin = datetime.now()
 
     log.info(" ")
-    log.info("***** {:s}.{:s}() started on {}"
-             .format(__name__, function_name, runtime_begin))
+    log.info(f"***** {__name__:s}.{function_name:s}() started on {runtime_begin}")
     log.info(" ")
 
     # check sky method:
     skymethod = skymethod.lower()
-    if skymethod not in ['local', 'global', 'match', 'global+match']:
-        raise ValueError("Unsupported 'skymethod'. Valid values are: "
-                         "'local', 'global', 'match', or 'global+match'")
-    do_match = 'match' in skymethod
-    do_global = 'global' in skymethod
+    if skymethod not in ["local", "global", "match", "global+match"]:
+        raise ValueError(
+            "Unsupported 'skymethod'. Valid values are: "
+            "'local', 'global', 'match', or 'global+match'"
+        )
+    do_match = "match" in skymethod
+    do_global = "global" in skymethod
     show_old = subtract
 
-    log.info("Sky computation method: '{}'".format(skymethod))
+    log.info(f"Sky computation method: '{skymethod}'")
     if do_match:
-        log.info("Sky matching direction: {:s}"
-                 .format("DOWN" if match_down else "UP"))
+        log.info("Sky matching direction: {:s}".format("DOWN" if match_down else "UP"))
 
-    log.info("Sky subtraction from image data: {:s}"
-             .format("ON" if subtract else "OFF"))
+    log.info(
+        "Sky subtraction from image data: {:s}".format("ON" if subtract else "OFF")
+    )
 
     # check that input file name is a list of either SkyImage or SkyGroup:
     nimages = 0
@@ -256,15 +259,18 @@ def match(images, skymethod='global+match', match_down=True, subtract=False):
         elif isinstance(img, SkyGroup):
             nimages += len(img)
         else:
-            raise TypeError("Each element of the 'images' must be either a "
-                            "'SkyImage' or a 'SkyGroup'")
+            raise TypeError(
+                "Each element of the 'images' must be either a "
+                "'SkyImage' or a 'SkyGroup'"
+            )
 
     if nimages == 0:
         raise ValueError("Argument 'images' must contain at least one image")
 
     log.debug(
-        "Total number of images to be sky-subtracted and/or matched: {:d}"
-        .format(nimages)
+        "Total number of images to be sky-subtracted and/or matched: {:d}".format(
+            nimages
+        )
     )
 
     # Print conversion factors
@@ -272,16 +278,18 @@ def match(images, skymethod='global+match', match_down=True, subtract=False):
     log.debug("----  Image data conversion factors:")
 
     for img in images:
-        img_type = 'Image' if isinstance(img, SkyImage) else 'Group'
+        img_type = "Image" if isinstance(img, SkyImage) else "Group"
 
-        if img_type == 'Group':
-            log.debug("   *  Group ID={}. Conversion factors:".format(img.id))
+        if img_type == "Group":
+            log.debug(f"   *  Group ID={img.id}. Conversion factors:")
             for im in img:
-                log.debug("      - Image ID={}. Conversion factor = {:G}"
-                          .format(im.id, im.convf))
+                log.debug(
+                    "      - Image ID={}. Conversion factor = {:G}".format(
+                        im.id, im.convf
+                    )
+                )
         else:
-            log.debug("   *  Image ID={}. Conversion factor = {:G}"
-                      .format(img.id, img.convf))
+            log.debug(f"   *  Image ID={img.id}. Conversion factor = {img.convf:G}")
 
     # 1. Method: "match" (or "global+match").
     #    Find sky "deltas" that will match sky across all
@@ -289,8 +297,7 @@ def match(images, skymethod='global+match', match_down=True, subtract=False):
     if do_match:
 
         log.info(" ")
-        log.info("----  Computing differences in sky values in "
-                 "overlapping regions.")
+        log.info("----  Computing differences in sky values in " "overlapping regions.")
 
         # find "optimum" sky changes:
         sky_deltas = _find_optimum_sky_deltas(images, apply_sky=not subtract)
@@ -305,9 +312,7 @@ def match(images, skymethod='global+match', match_down=True, subtract=False):
             sky_deltas[sky_good] -= refsky
 
         # convert to Python list and replace numpy.nan with None
-        sky_deltas = [
-            skd if np.isfinite(skd) else None for skd in sky_deltas
-        ]
+        sky_deltas = [skd if np.isfinite(skd) else None for skd in sky_deltas]
 
         _apply_sky(images, sky_deltas, False, subtract, show_old)
         show_old = True
@@ -327,11 +332,12 @@ def match(images, skymethod='global+match', match_down=True, subtract=False):
         log.info(" ")
         if do_global:
             minsky = None
-            log.info("----  Computing \"global\" sky - smallest sky value "
-                     "across *all* input images.")
+            log.info(
+                '----  Computing "global" sky - smallest sky value '
+                "across *all* input images."
+            )
         else:
-            log.info("----  Sky values computed per image and/or image "
-                     "groups.")
+            log.info("----  Sky values computed per image and/or image " "groups.")
 
         sky_deltas = []
         for img in images:
@@ -343,10 +349,11 @@ def match(images, skymethod='global+match', match_down=True, subtract=False):
         if do_global:
             log.info(" ")
             if minsky is None:
-                log.warning("   Unable to compute \"global\" sky value")
+                log.warning('   Unable to compute "global" sky value')
             sky_deltas = len(sky_deltas) * [minsky]
-            log.info("   \"Global\" sky value correction: {} "
-                     "[not converted]".format(minsky))
+            log.info(
+                '   "Global" sky value correction: {} ' "[not converted]".format(minsky)
+            )
 
         if do_match:
             log.info(" ")
@@ -357,10 +364,12 @@ def match(images, skymethod='global+match', match_down=True, subtract=False):
     # log running time:
     runtime_end = datetime.now()
     log.info(" ")
-    log.info("***** {:s}.{:s}() ended on {}"
-             .format(__name__, function_name, runtime_end))
-    log.info("***** {:s}.{:s}() TOTAL RUN TIME: {}"
-             .format(__name__, function_name, runtime_end - runtime_begin))
+    log.info(f"***** {__name__:s}.{function_name:s}() ended on {runtime_end}")
+    log.info(
+        "***** {:s}.{:s}() TOTAL RUN TIME: {}".format(
+            __name__, function_name, runtime_end - runtime_begin
+        )
+    )
     log.info(" ")
 
 
@@ -378,8 +387,11 @@ def _apply_sky(images, sky_deltas, do_global, do_skysub, show_old):
         else:
             valid = sky is not None
             if not valid:
-                log.warning("   *  {:s} ID={}: Unable to compute sky value"
-                            .format('Group' if is_group else 'Image', img.id))
+                log.warning(
+                    "   *  {:s} ID={}: Unable to compute sky value".format(
+                        "Group" if is_group else "Image", img.id
+                    )
+                )
                 sky = 0.0
 
         if is_group:
@@ -392,18 +404,26 @@ def _apply_sky(images, sky_deltas, do_global, do_skysub, show_old):
             new_img_sky = [im.sky for im in img]
 
             # log sky values:
-            log.info("   *  Group ID={}. Sky background of "
-                     "component images:".format(img.id))
+            log.info(
+                "   *  Group ID={}. Sky background of "
+                "component images:".format(img.id)
+            )
 
             for im, old_sky, new_sky in zip(img, old_img_sky, new_img_sky):
                 c = 1.0 / im.convf
                 if show_old:
-                    log.info("      - Image ID={}. Sky background: {:G} "
-                             "(old={:G}, delta={:G})"
-                             .format(im.id, c * new_sky, c * old_sky, c * sky))
+                    log.info(
+                        "      - Image ID={}. Sky background: {:G} "
+                        "(old={:G}, delta={:G})".format(
+                            im.id, c * new_sky, c * old_sky, c * sky
+                        )
+                    )
                 else:
-                    log.info("      - Image ID={}. Sky background: {:G}"
-                             .format(im.id, c * new_sky))
+                    log.info(
+                        "      - Image ID={}. Sky background: {:G}".format(
+                            im.id, c * new_sky
+                        )
+                    )
 
                 im.is_sky_valid = valid
 
@@ -421,12 +441,18 @@ def _apply_sky(images, sky_deltas, do_global, do_skysub, show_old):
             # log sky values:
             c = 1.0 / img.convf
             if show_old:
-                log.info("   *  Image ID={}. Sky background: {:G} "
-                         "(old={:G}, delta={:G})"
-                         .format(img.id, c * new_sky, c * old_sky, c * sky))
+                log.info(
+                    "   *  Image ID={}. Sky background: {:G} "
+                    "(old={:G}, delta={:G})".format(
+                        img.id, c * new_sky, c * old_sky, c * sky
+                    )
+                )
             else:
-                log.info("   *  Image ID={}. Sky background: {:G}"
-                         .format(img.id, c * new_sky))
+                log.info(
+                    "   *  Image ID={}. Sky background: {:G}".format(
+                        img.id, c * new_sky
+                    )
+                )
 
             img.is_sky_valid = valid
 
@@ -440,13 +466,9 @@ def _overlap_matrix(images, apply_sky=True):
     W = np.zeros((ns, ns), dtype=float)
     for i in range(ns):
         for j in range(i + 1, ns):
-            s1, w1, area1 = images[i].calc_sky(
-                overlap=images[j], delta=apply_sky
-            )
+            s1, w1, area1 = images[i].calc_sky(overlap=images[j], delta=apply_sky)
 
-            s2, w2, area2 = images[j].calc_sky(
-                overlap=images[i], delta=apply_sky
-            )
+            s2, w2, area2 = images[j].calc_sky(overlap=images[i], delta=apply_sky)
             if area1 == 0.0 or area2 == 0.0 or s1 is None or s2 is None:
                 continue
 
@@ -501,16 +523,16 @@ def _find_optimum_sky_deltas(images, apply_sky=True):
     try:
         rank = np.linalg.matrix_rank(K, 1.0e-12)
     except np.linalg.LinAlgError:
-        log.warning("Unable to compute sky: No valid data in common "
-                    "image areas")
+        log.warning("Unable to compute sky: No valid data in common " "image areas")
         deltas = np.full(ns, np.nan, dtype=float)
         return deltas
 
     if rank < ns - 1:
-        log.warning("There are more unknown sky values ({}) to be solved for"
-                    .format(ns))
-        log.warning("than there are independent equations available "
-                    "(matrix rank={}).".format(rank))
+        log.warning(f"There are more unknown sky values ({ns}) to be solved for")
+        log.warning(
+            "than there are independent equations available "
+            "(matrix rank={}).".format(rank)
+        )
         log.warning("Sky matching (delta) values will be computed only for")
         log.warning("a subset (or more independent subsets) of input images.")
     invK = np.linalg.pinv(K, rcond=1.0e-12)

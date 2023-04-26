@@ -2,27 +2,22 @@
 Roman step for sky matching.
 """
 
-from copy import deepcopy
 import logging
+from copy import deepcopy
 from itertools import chain
 
 import numpy as np
-
-from astropy.nddata.bitmask import (
-    bitfield_to_boolean_mask,
-    interpret_bit_flags,
-)
+from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
+from roman_datamodels import datamodels as rdd
 
 from romancal.lib.dqflags import pixel
-from roman_datamodels import datamodels as rdd
 from romancal.stpipe import RomanStep
 
-from .skymatch import match
 from .skyimage import SkyImage
+from .skymatch import match
 from .skystatistics import SkyStats
 
-
-__all__ = ['SkyMatchStep']
+__all__ = ["SkyMatchStep"]
 
 
 class SkyMatchStep(RomanStep):
@@ -50,7 +45,7 @@ class SkyMatchStep(RomanStep):
         lsigma = float(min=0.0, default=4.0) # Lower clipping limit, in sigma
         usigma = float(min=0.0, default=4.0) # Upper clipping limit, in sigma
         binwidth = float(min=0.0, default=0.1) # Bin width for 'mode' and 'midpt' `skystat`, in sigma
-    """
+    """  # noqa: E501
 
     reference_file_types = []
 
@@ -61,9 +56,7 @@ class SkyMatchStep(RomanStep):
         self._is_asn = False
 
         img = rdd.ModelContainer(
-            input,
-            save_open=not self._is_asn,
-            return_open=not self._is_asn
+            input, save_open=not self._is_asn, return_open=not self._is_asn
         )
 
         self._dqbits = interpret_bit_flags(self.dqbits, flag_name_map=pixel)
@@ -76,7 +69,7 @@ class SkyMatchStep(RomanStep):
             nclip=self.nclip,
             lsig=self.lsigma,
             usig=self.usigma,
-            binwidth=self.binwidth
+            binwidth=self.binwidth,
         )
 
         # group images by their "group id":
@@ -86,21 +79,23 @@ class SkyMatchStep(RomanStep):
         images = [self._imodel2skyim(g) for grp_id, g in enumerate(grp_img, start=1)]
 
         # match/compute sky values:
-        match(images, skymethod=self.skymethod, match_down=self.match_down,
-              subtract=self.subtract)
+        match(
+            images,
+            skymethod=self.skymethod,
+            match_down=self.match_down,
+            subtract=self.subtract,
+        )
 
         # set sky background value in each image's meta:
         for im in images:
             if isinstance(im, SkyImage):
                 self._set_sky_background(
-                    im,
-                    "COMPLETE" if im.is_sky_valid else "SKIPPED"
+                    im, "COMPLETE" if im.is_sky_valid else "SKIPPED"
                 )
             else:
                 for gim in im:
                     self._set_sky_background(
-                        gim,
-                        "COMPLETE" if gim.is_sky_valid else "SKIPPED"
+                        gim, "COMPLETE" if gim.is_sky_valid else "SKIPPED"
                     )
 
         return input if self._is_asn else img
@@ -108,11 +103,11 @@ class SkyMatchStep(RomanStep):
     def _imodel2skyim(self, image_model):
         input_image_model = image_model
 
-        if 'background' not in image_model.meta:
+        if "background" not in image_model.meta:
             # TODO: remove this block when ``rad`` has a background schema.
             # This is a temporary workaround to insert a 'background'
             # entry into the metadata, which we'll later put into ``rad``:
-            image_model.meta['background'] = dict(
+            image_model.meta["background"] = dict(
                 level=None, subtracted=None, method=None
             )
         if self._is_asn:
@@ -122,28 +117,27 @@ class SkyMatchStep(RomanStep):
             dqmask = np.isfinite(image_model.data).astype(dtype=np.uint8)
         else:
             dqmask = bitfield_to_boolean_mask(
-                image_model.dq,
-                self._dqbits,
-                good_mask_value=1,
-                dtype=np.uint8
+                image_model.dq, self._dqbits, good_mask_value=1, dtype=np.uint8
             ) * np.isfinite(image_model.data)
 
         # see if 'skymatch' was previously run and raise an exception
         # if 'subtract' mode has changed compared to the previous pass:
-        level = image_model.meta['background']['level']
-        if image_model.meta['background']['subtracted'] is None:
+        level = image_model.meta["background"]["level"]
+        if image_model.meta["background"]["subtracted"] is None:
             if level is not None:
                 if self._is_asn:
                     image_model.close()
 
                 # report inconsistency:
-                raise ValueError("Background level was set but the "
-                                 "'subtracted' property is undefined (None).")
+                raise ValueError(
+                    "Background level was set but the "
+                    "'subtracted' property is undefined (None)."
+                )
             # Assume level is zero:
             level = 0.0
 
         else:
-            if image_model.meta['background']['subtracted'] and level is None:
+            if image_model.meta["background"]["subtracted"] and level is None:
                 # NOTE: In principle we could assume that level is 0 and
                 # possibly add a log entry documenting this, however,
                 # at this moment I think it is safer to quit and...
@@ -152,20 +146,23 @@ class SkyMatchStep(RomanStep):
                 if self._is_asn:
                     image_model.close()
 
-                raise ValueError("Background level was subtracted but the "
-                                 "'level' property is undefined (None).")
+                raise ValueError(
+                    "Background level was subtracted but the "
+                    "'level' property is undefined (None)."
+                )
 
-            if image_model.meta['background']['subtracted'] and self.subtract:
+            if image_model.meta["background"]["subtracted"] and self.subtract:
                 # cannot run 'skymatch' step on already "skymatched" images
                 # when 'subtract' spec is inconsistent with
                 # meta.background.subtracted:
                 if self._is_asn:
                     image_model.close()
 
-                raise ValueError("'subtract' step's specification is "
-                                 "inconsistent with background info already "
-                                 "present in image '{:s}' meta."
-                                 .format(image_model.meta.filename))
+                raise ValueError(
+                    "'subtract' step's specification is "
+                    "inconsistent with background info already "
+                    "present in image '{:s}' meta.".format(image_model.meta.filename)
+                )
 
         wcs = deepcopy(image_model.meta.wcs)
 
@@ -180,7 +177,7 @@ class SkyMatchStep(RomanStep):
             skystat=self._skystat,
             stepsize=self.stepsize,
             reduce_memory_usage=self._is_asn,
-            meta={'image_model': input_image_model}
+            meta={"image_model": input_image_model},
         )
 
         if self._is_asn:
@@ -192,7 +189,7 @@ class SkyMatchStep(RomanStep):
         return sky_im
 
     def _set_sky_background(self, sky_image, step_status):
-        image = sky_image.meta['image_model']
+        image = sky_image.meta["image_model"]
         sky = sky_image.sky
 
         if self._is_asn:
@@ -205,10 +202,10 @@ class SkyMatchStep(RomanStep):
             # This is a temporary workaround to access a 'background'
             # entry into metadata as a Python dict, which we'll later define with
             # a schema in ``rad``:
-            dm.meta['background']['method'] = str(self.skymethod)
-            dm.meta['background']['level'] = sky
-            dm.meta['background']['subtracted'] = (
-                self.subtract or dm.meta['background']['subtracted']
+            dm.meta["background"]["method"] = str(self.skymethod)
+            dm.meta["background"]["level"] = sky
+            dm.meta["background"]["subtracted"] = (
+                self.subtract or dm.meta["background"]["subtracted"]
             )
 
             if self.subtract:

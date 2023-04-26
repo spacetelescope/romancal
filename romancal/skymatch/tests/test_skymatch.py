@@ -1,24 +1,23 @@
 from itertools import product
 
-import pytest
+import astropy.units as u
 import numpy as np
+import pytest
 from astropy import coordinates as coord
 from astropy.modeling import models
-import astropy.units as u
-
-from gwcs import coordinate_frames as cf, wcs as gwcs_wcs
-
-from roman_datamodels.datamodels import ModelContainer, ImageModel
+from gwcs import coordinate_frames as cf
+from gwcs import wcs as gwcs_wcs
+from roman_datamodels.datamodels import ImageModel, ModelContainer
 from roman_datamodels.maker_utils import mk_level2_image
+
 from romancal.lib import dqflags
 from romancal.skymatch import SkyMatchStep
 
+DO_NOT_USE = dqflags.pixel["DO_NOT_USE"]
+SATURATED = dqflags.pixel["SATURATED"]
 
-DO_NOT_USE = dqflags.pixel['DO_NOT_USE']
-SATURATED = dqflags.pixel['SATURATED']
 
-
-def mk_gwcs(shape, sky_offset=[0, 0] * u.arcsec, rotate=0*u.deg):
+def mk_gwcs(shape, sky_offset=[0, 0] * u.arcsec, rotate=0 * u.deg):
     # Example adapted from photutils:
     #   https://github.com/astropy/photutils/blob/
     #   2825356f1d876cacefb3a03d104a4c563065375f/photutils/datasets/make.py#L821
@@ -26,31 +25,39 @@ def mk_gwcs(shape, sky_offset=[0, 0] * u.arcsec, rotate=0*u.deg):
     # Roman plate scale:
     scale = (0.11 * u.arcsec / u.pixel).to_value(u.deg / u.pixel)
 
-    shift_by_crpix = (models.Shift((-shape[1] / 2) + 1)
-                      & models.Shift((-shape[0] / 2) + 1))
+    shift_by_crpix = models.Shift((-shape[1] / 2) + 1) & models.Shift(
+        (-shape[0] / 2) + 1
+    )
 
-    cd_matrix = np.array([[-scale * np.cos(rho), scale * np.sin(rho)],
-                          [scale * np.sin(rho), scale * np.cos(rho)]])
+    cd_matrix = np.array(
+        [
+            [-scale * np.cos(rho), scale * np.sin(rho)],
+            [scale * np.sin(rho), scale * np.cos(rho)],
+        ]
+    )
 
     rotation = models.AffineTransformation2D(cd_matrix, translation=[0, 0])
     rotation.inverse = models.AffineTransformation2D(
-        np.linalg.inv(cd_matrix), translation=[0, 0])
+        np.linalg.inv(cd_matrix), translation=[0, 0]
+    )
 
     tan = models.Pix2Sky_TAN()
     celestial_rotation = models.RotateNative2Celestial(
         197.8925 + sky_offset[0].to_value(u.deg),
         -1.36555556 + sky_offset[1].to_value(u.deg),
-        180.0 + rotate.to_value(u.deg)
+        180.0 + rotate.to_value(u.deg),
     )
 
     det2sky = shift_by_crpix | rotation | tan | celestial_rotation
-    det2sky.name = 'linear_transform'
+    det2sky.name = "linear_transform"
 
-    detector_frame = cf.Frame2D(name='detector', axes_names=('x', 'y'),
-                                unit=(u.pix, u.pix))
+    detector_frame = cf.Frame2D(
+        name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)
+    )
 
-    sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(),
-                                  name='icrs', unit=(u.deg, u.deg))
+    sky_frame = cf.CelestialFrame(
+        reference_frame=coord.ICRS(), name="icrs", unit=(u.deg, u.deg)
+    )
 
     pipeline = [(detector_frame, det2sky), (sky_frame, None)]
 
@@ -58,34 +65,27 @@ def mk_gwcs(shape, sky_offset=[0, 0] * u.arcsec, rotate=0*u.deg):
 
 
 def mk_image_model(
-        rate_mean=0,
-        rate_std=1e-4,
-        sky_offset=[0, 0] * u.arcsec,
-        rotation=0 * u.deg,
-        image_shape=(100, 100)
+    rate_mean=0,
+    rate_std=1e-4,
+    sky_offset=[0, 0] * u.arcsec,
+    rotation=0 * u.deg,
+    image_shape=(100, 100),
 ):
     l2 = mk_level2_image(shape=image_shape)
     l2_im = ImageModel(l2)
     l2_im.data = u.Quantity(
-        np.random.normal(
-            loc=rate_mean,
-            scale=rate_std,
-            size=l2_im.data.shape).astype(np.float32),
-        l2_im.data.unit
+        np.random.normal(loc=rate_mean, scale=rate_std, size=l2_im.data.shape).astype(
+            np.float32
+        ),
+        l2_im.data.unit,
     )
 
-    l2_im.meta['wcs'] = mk_gwcs(
-        image_shape, sky_offset=sky_offset, rotate=rotation
-    )
+    l2_im.meta["wcs"] = mk_gwcs(image_shape, sky_offset=sky_offset, rotate=rotation)
 
     # fake a background until `rad` implements the schema:
-    l2_im.meta['background'] = dict(
-        level=None,
-        subtracted=False,
-        method=None
-    )
+    l2_im.meta["background"] = dict(level=None, subtracted=False, method=None)
 
-    l2_im.meta.cal_step['skymatch'] = "INCOMPLETE"
+    l2_im.meta.cal_step["skymatch"] = "INCOMPLETE"
     return l2_im
 
 
@@ -145,26 +145,25 @@ def _add_bad_pixels(im, sat_val, dont_use_val):
     cy -= 5
 
     # center
-    im.data[cx:cx + 10, cy:cy + 10] = dont_use_val * im_unit
-    im.dq[cx:cx + 10, cy:cy + 10] = DO_NOT_USE
-    mask[cx:cx + 10, cy:cy + 10] = False
+    im.data[cx : cx + 10, cy : cy + 10] = dont_use_val * im_unit
+    im.dq[cx : cx + 10, cy : cy + 10] = DO_NOT_USE
+    mask[cx : cx + 10, cy : cy + 10] = False
 
     return im, mask
 
 
 @pytest.mark.parametrize(
-    'skymethod, subtract, skystat, match_down',
+    "skymethod, subtract, skystat, match_down",
     tuple(
         product(
-            ['local', 'match', 'global', 'global+match'],
+            ["local", "match", "global", "global+match"],
             [False, True],
-            ['median', 'mean', 'midpt', 'mode'],
+            ["median", "mean", "midpt", "mode"],
             [False, True],
         )
-    )
+    ),
 )
-def test_skymatch(wfi_rate, skymethod,
-                  subtract, skystat, match_down):
+def test_skymatch(wfi_rate, skymethod, subtract, skystat, match_down):
     # test basic functionality and correctness of sky computations
     np.random.seed(1)
     im1 = wfi_rate.copy()
@@ -182,11 +181,9 @@ def test_skymatch(wfi_rate, skymethod,
     levels = [9.12, 8.28, 2.56]
 
     for im, lev in zip(container, levels):
-        im.data = np.random.normal(
-            loc=lev,
-            scale=0.05,
-            size=im.data.shape
-        ) * im.data.unit
+        im.data = (
+            np.random.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
+        )
 
     # exclude central DO_NOT_USE and corner SATURATED pixels
     result = SkyMatchStep.call(
@@ -197,17 +194,17 @@ def test_skymatch(wfi_rate, skymethod,
         skystat=skystat,
         binwidth=0.2,
         nclip=0,
-        dqbits='~DO_NOT_USE+SATURATED'
+        dqbits="~DO_NOT_USE+SATURATED",
     )
 
-    if skymethod in ['local', 'global+match']:
+    if skymethod in ["local", "global+match"]:
         ref_levels = levels
 
-    elif skymethod == 'match':
+    elif skymethod == "match":
         lev0 = min(levels) if match_down else max(levels)
         ref_levels = np.array(levels) - lev0
 
-    elif skymethod == 'global':
+    elif skymethod == "global":
         ref_levels = len(levels) * [min(levels)]
 
     sub_levels = np.array(levels) - np.array(ref_levels)
@@ -229,14 +226,8 @@ def test_skymatch(wfi_rate, skymethod,
 
 
 @pytest.mark.parametrize(
-    'skymethod, subtract, skystat',
-    tuple(
-        product(
-            ['local', 'match', 'global'],
-            [False, True],
-            ['mean']
-        )
-    )
+    "skymethod, subtract, skystat",
+    tuple(product(["local", "match", "global"], [False, True], ["mean"])),
 )
 def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skystat):
     # test that computations are performed only in the area of overlap
@@ -250,9 +241,9 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
     levels = [9.12, 9.12, 8.28, 8.28, 2.56]
 
     for im, lev in zip(container, levels):
-        im.data = np.random.normal(
-            loc=lev, scale=0.01, size=im.data.shape
-        ) * im.data.unit
+        im.data = (
+            np.random.normal(loc=lev, scale=0.01, size=im.data.shape) * im.data.unit
+        )
 
     # We do not exclude SATURATED pixels. They should be ignored because
     # images are rotated and SATURATED pixels in the corners are not in the
@@ -264,16 +255,16 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
         subtract=subtract,
         skystat=skystat,
         nclip=0,
-        dqbits='~DO_NOT_USE'  # specifically DO NOT add 'SATURATED' flag
+        dqbits="~DO_NOT_USE",  # specifically DO NOT add 'SATURATED' flag
     )
 
-    if skymethod in ['local', 'global+match']:
+    if skymethod in ["local", "global+match"]:
         ref_levels = levels
 
-    elif skymethod == 'match':
+    elif skymethod == "match":
         ref_levels = np.array(levels) - min(levels)
 
-    elif skymethod == 'global':
+    elif skymethod == "global":
         ref_levels = len(levels) * [min(levels)]
 
     sub_levels = np.array(levels) - np.array(ref_levels)
@@ -283,7 +274,7 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
         assert im.meta.background.method == skymethod
         assert im.meta.background.subtracted == subtract
 
-        if skymethod in ['local', 'global']:
+        if skymethod in ["local", "global"]:
             # These two sky methods must fail because they do not take
             # into account (do not compute) overlap regions and use
             # entire images:
@@ -307,13 +298,8 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
 
 
 @pytest.mark.parametrize(
-    'skymethod, subtract',
-    tuple(
-        product(
-            ['local', 'match', 'global', 'global+match'],
-            [False, True]
-        )
-    )
+    "skymethod, subtract",
+    tuple(product(["local", "match", "global", "global+match"], [False, True])),
 )
 def test_skymatch_2x(wfi_rate, skymethod, subtract):
     # Test that repetitive applications of skymatch produce the same results
@@ -333,7 +319,9 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     levels = [9.12, 8.28, 2.56]
 
     for im, lev in zip(container, levels):
-        im.data = np.random.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
+        im.data = (
+            np.random.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
+        )
 
     # We do not exclude SATURATED pixels. They should be ignored because
     # images are rotated and SATURATED pixels in the corners are not in the
@@ -342,33 +330,33 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
         skymethod=skymethod,
         match_down=True,
         subtract=subtract,
-        skystat='mean',
+        skystat="mean",
         nclip=0,
-        dqbits='~DO_NOT_USE+SATURATED'
+        dqbits="~DO_NOT_USE+SATURATED",
     )
 
     result = step.run([im1, im2, im3])
     result = ModelContainer(result)
 
-    assert result[0].meta['background']['subtracted'] == subtract
-    assert result[0].meta['background']['level'] is not None
+    assert result[0].meta["background"]["subtracted"] == subtract
+    assert result[0].meta["background"]["level"] is not None
 
     # 2nd run.
     step.subtract = False
     result2 = step.run(result)
     result2 = ModelContainer(result2)
 
-    assert result2[0].meta['background']['subtracted'] == subtract
-    assert result2[0].meta['background']['level'] is not None
+    assert result2[0].meta["background"]["subtracted"] == subtract
+    assert result2[0].meta["background"]["level"] is not None
 
     # compute expected levels
-    if skymethod in ['local', 'global+match']:
+    if skymethod in ["local", "global+match"]:
         ref_levels = levels
 
-    elif skymethod == 'match':
+    elif skymethod == "match":
         ref_levels = np.array(levels) - min(levels)
 
-    elif skymethod == 'global':
+    elif skymethod == "global":
         ref_levels = len(levels) * [min(levels)]
 
     sub_levels = np.array(levels) - np.array(ref_levels)
