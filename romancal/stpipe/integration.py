@@ -31,4 +31,5 @@ def get_steps():
         ("romancal.step.RampFitStep", None, False),
         ("romancal.step.SaturationStep", None, False),
         ("romancal.step.AssignWcsStep", None, False),
+        ("romancal.step.OutlierDetectionStep", None, False),
     ]
