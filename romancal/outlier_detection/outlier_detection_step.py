@@ -1,5 +1,5 @@
 """
-Flat-field a science image
+Detect and flag outlier in a science image
 """
 
 import roman_datamodels as rdm
