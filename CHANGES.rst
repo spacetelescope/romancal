@@ -26,6 +26,10 @@ source_detection
 
 - Small bug fix to ensure that output catalogs are not attached to the file when save_catalogs=False [#684]
 
+outlier_detection
+-----------------
+- Added an empty outlier detection step to the pipeline. [#689]
+
 
 0.10.0 (2023-02-21)
 ===================
