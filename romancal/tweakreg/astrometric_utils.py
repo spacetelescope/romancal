@@ -34,6 +34,7 @@ def create_astrometric_catalog(
     table_format="ascii.ecsv",
     existing_wcs=None,
     num_sources=None,
+    epoch=None,
 ):
     """Create an astrometric catalog that covers the inputs' field-of-view.
 
@@ -68,6 +69,11 @@ def create_astrometric_catalog(
         If `num_sources` is negative, return that number of the faintest
         sources.  By default, all sources are returned.
 
+    epoch: float or str, optional
+        Reference epoch used to update the coordinates for proper motion
+        (in decimal year). If `None` then the epoch is obtained from
+        the metadata.
+
     Notes
     -----
     This function will point to astrometric catalog web service defined
@@ -93,8 +99,15 @@ def create_astrometric_catalog(
     radius, fiducial = compute_radius(outwcs)
 
     # perform query for this field-of-view
-    ref_dict = get_catalog(fiducial[0], fiducial[1], sr=radius, catalog=catalog)
-    colnames = ("ra", "dec", "mag", "objID")
+    epoch = (
+        epoch
+        if epoch is not None
+        else float(input_models[0].meta.target["proper_motion_epoch"])
+    )
+    ref_dict = get_catalog(
+        fiducial[0], fiducial[1], epoch=epoch, sr=radius, catalog=catalog
+    )
+    colnames = ("ra", "dec", "mag", "objID", "epoch")
 
     ref_table = ref_dict[colnames]
 
@@ -151,7 +164,9 @@ def compute_radius(wcs):
     fiducial = wcsutil.compute_fiducial([wcs], wcs.bounding_box)
     img_center = SkyCoord(ra=fiducial[0] * u.degree, dec=fiducial[1] * u.degree)
     wcs_foot = wcs.footprint()
-    img_corners = SkyCoord(ra=wcs_foot[:, 0] * u.degree, dec=wcs_foot[:, 1] * u.degree)
+    img_corners = SkyCoord(
+        ra=wcs_foot[:, 0] * u.degree, dec=wcs_foot[:, 1] * u.degree
+    )
     radius = img_center.separation(img_corners).max().value
 
     return radius, fiducial

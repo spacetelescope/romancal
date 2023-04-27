@@ -74,7 +74,9 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
-    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    detector = cf.Frame2D(
+        name="detector", axes_order=(0, 1), unit=(u.pix, u.pix)
+    )
     v2v3 = cf.Frame2D(
         name="v2v3",
         axes_order=(0, 1),
@@ -245,6 +247,7 @@ def base_image():
 
     def _base_image(shift_1=0, shift_2=0):
         l2 = maker_utils.mk_level2_image(shape=(2000, 2000))
+        l2.meta.target["proper_motion_epoch"] = "2016.0"
         # update wcsinfo
         update_wcsinfo(l2)
         # add a dummy WCS object
@@ -263,7 +266,9 @@ def base_image():
         ("GAIADR3", 15),
     ],
 )
-def test_create_astrometric_catalog_variable_num_sources(catalog, num_sources, request):
+def test_create_astrometric_catalog_variable_num_sources(
+    catalog, num_sources, request
+):
     """Test fetching data from supported catalogs with variable number of sources."""
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     res = create_astrometric_catalog(
@@ -314,6 +319,33 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
 
         assert len(res) == num_sources
         assert os.path.exists(os.path.join(tmp_path, output_filename))
+
+
+@pytest.mark.parametrize(
+    "catalog, epoch",
+    [
+        ("GAIADR1", "2000.0"),
+        ("GAIADR2", "2010"),
+        ("GAIADR3", "2030.0"),
+        ("GAIADR3", 2030.0),
+        ("GAIADR3", None),
+    ],
+)
+def test_create_astrometric_catalog_using_epoch(catalog, epoch, request):
+    """Test fetching data from supported catalogs for a specific epoch."""
+    img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
+
+    metadata_epoch = (
+        epoch if epoch is not None else img.meta.target["proper_motion_epoch"]
+    )
+
+    res = create_astrometric_catalog(
+        [img],
+        catalog=catalog,
+        epoch=epoch,
+    )
+
+    assert np.equal(res["epoch"], float(metadata_epoch)).all()
 
 
 def test_compute_radius():
