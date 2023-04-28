@@ -487,6 +487,4 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
 
     assert len(result) > 0
     assert np.isclose(returned_ra, expected_new_ra, atol=1e-10, rtol=1e-9).all()
-    assert np.isclose(
-        returned_dec, expected_new_dec, atol=1e-10, rtol=1e-9
-    ).all()
+    assert np.isclose(returned_dec, expected_new_dec, atol=1e-10, rtol=1e-9).all()
