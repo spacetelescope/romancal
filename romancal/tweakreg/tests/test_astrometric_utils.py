@@ -437,38 +437,32 @@ def test_get_catalog_using_invalid_parameters(ra, dec, sr, catalog_name):
 
 
 @pytest.mark.parametrize(
-    "ra, dec, epoch, sr, catalog_name",
+    "ra, dec, epoch",
     [
-        (10, 10, 2000, 0.1, "GAIADR1"),
-        (10, 10, 2010.3, 0.1, "GAIADR2"),
-        (10, 10, 2030, 0.1, "GAIADR3"),
-        (10, -10, 2000, 0.1, "GAIADR1"),
-        (10, -10, 2010.3, 0.1, "GAIADR2"),
-        (10, -10, 2030, 0.1, "GAIADR3"),
-        (0, 0, 2000, 0.01, "GAIADR1"),
-        (0, 0, 2010.3, 0.01, "GAIADR2"),
-        (0, 0, 2030, 0.01, "GAIADR3"),
+        (10, 10, 2000),
+        (10, 10, 2010.3),
+        (10, 10, 2030),
+        (10, -10, 2000),
+        (10, -10, 2010.3),
+        (10, -10, 2030),
+        (0, 0, 2000),
+        (0, 0, 2010.3),
+        (0, 0, 2030),
+        (269.4521, 4.6933, 2030),
+        (89, 80, 2010),
     ],
 )
-def test_get_catalog_using_epoch(ra, dec, epoch, sr, catalog_name):
+def test_get_catalog_using_epoch(ra, dec, epoch):
     """Test that get_catalog returns coordinates corrected by proper motion."""
 
-    result = get_catalog(ra, dec, epoch=epoch, sr=sr, catalog=catalog_name)
+    result = get_catalog(ra, dec, epoch=epoch)
     returned_ra = np.array(result["ra"])
     returned_dec = np.array(result["dec"])
 
     # get GAIA data and update coords to requested epoch using pm measurements
     gaia_ref_epoch = 2016.0
-    gaia_ref_epoch_coords = get_catalog(
-        ra, dec, epoch=gaia_ref_epoch, sr=sr, catalog=catalog_name
-    )
-    expected_new_ra = (
-        np.array(
-            gaia_ref_epoch_coords["ra"] * 3600
-            + (epoch - gaia_ref_epoch) * gaia_ref_epoch_coords["pmra"] / 1000
-        )
-        / 3600
-    )
+    gaia_ref_epoch_coords = get_catalog(ra, dec, epoch=gaia_ref_epoch)
+
     expected_new_dec = (
         np.array(
             gaia_ref_epoch_coords["dec"] * 3600
@@ -476,7 +470,23 @@ def test_get_catalog_using_epoch(ra, dec, epoch, sr, catalog_name):
         )
         / 3600
     )
+    average_dec = np.array(
+        [
+            np.mean([new, old])
+            for new, old in zip(expected_new_dec, gaia_ref_epoch_coords["dec"])
+        ]
+    )
+    pmra = gaia_ref_epoch_coords["pmra"] / np.cos(np.deg2rad(average_dec))
+    expected_new_ra = (
+        np.array(
+            gaia_ref_epoch_coords["ra"] * 3600
+            + (epoch - gaia_ref_epoch) * (pmra / 1000)
+        )
+        / 3600
+    )
 
     assert len(result) > 0
-    assert np.isclose(returned_ra, expected_new_ra).all()
-    assert np.isclose(returned_dec, expected_new_dec).all()
+    assert np.isclose(returned_ra, expected_new_ra, atol=1e-10, rtol=1e-9).all()
+    assert np.isclose(
+        returned_dec, expected_new_dec, atol=1e-10, rtol=1e-9
+    ).all()
