@@ -1,75 +1,187 @@
-# import numpy as np
-# from scipy import fft
+from __future__ import annotations
 
-# from . import constants as const
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from roman_datamodels import RampModel
 
-# def remove_offset(data, amp33):
+from dataclasses import dataclass
+from enum import IntEnum, StrEnum, auto
 
+import numpy as np
+from astropy import units as u
 
-# def split_channels(data):
-#     """
-#     Split the input data into channels for each amplifier.
-#     """
-
-#     num_frames = data.shape[0]
-
-#     # Split data into channels [frame, row, channel, channel_column]
-#     main_data = data.reshape((num_frames, const.NUM_ROWS, const.NUM_CHANNELS,
-#                               const.CHANNEL_WIDTH))
-
-#     # Reorder the channels to align data so computation happens on contiguous memory
-#     #    [channel, frame, row, channel_column]
-#     main_data = data.transpose(const.CHANNEL_REORDER)
-
-#     # Reverse every other channel column so columns are in reading order
-#     for channel in range(1, const.NUM_CHANNELS, 2):
-#         data[channel, :, :, :] = main_data[channel, :, :, ::-1]
-
-#     # pad channels with zeros to account for the pause at the end of each read
-#     return np.pad(main_data, ((0, 0), (0, 0), (0, 0), (0, const.END_PAD)),
-#                   mode='constant', constant_values=0)
-
-
-# def extract_reference_streams(data):
-#     """Extract the reference columns from the input data.
-
-#     Parameters
-#     ----------
-#     data : numpy.ndarray
-#         The input data.
-
-#     Returns
-#     -------
-#     left, right, ref : numpy.ndarray
-#         The left, right, and reference streams.
-#     """
-
-#     num_frames = data.shape[0]
-
-#     def _extract(channel):
-#         return np.copy(data[channel, :, :, :])
-
-#     def _clear(stream):
-#         stream[:, :, const.CHANNEL_WIDTH:] = 0
+# TODO:
+# 1.  Add offset/reversed channel tracking and undo to the RefPixData object.
+# 2.  Refactor the remove_offset method into a function which takes in a
+#     RefPixData object and returns a RefPixData object.
+# 3.  Refactor the remove_linear_trends method into a function which takes in
+#     a RefPixData object and returns a RefPixData object.
+# 4.  Implement the equivalent of the interp_zeros_channel_fun as a function which
+#     takes in a RefPixData object and returns a RefPixData object.
+# 5.  Implement the equivalent of the fft_interp method as a function which takes
+#     in a RefPixData object and returns a RefPixData object.
+# 6.  Implement the actual correction steps:
+#     a. A forward fft method on the reference pixel channels.
+#     b. A the application of the correction data in Fourier space.
+#     c. An inverse fft method to produce the correction data in real space.
+#     d. Add method to apply the correction to a RefPixData object.
+# 7.  Implement the cleanup/restore to original state.
+# 8.  Implement correction control object and actual correction flow.
+# 9.  Implement logging.
+# 10. Integrate into pipeline step.
+# 11. Add regression tests using Tyler's data.
 
 
-#     left = _extract(const.LEFT_CHANNEL)
-#     _clear(left)
-
-#     right = _extract(const.RIGHT_CHANNEL)
-#     _clear(right)
-
-#     ref = np.copy(data[const.REF_CHANNEL, :, :, :])
-
-#     def _reshape(stream):
-#         return stream.reshape((num_frames, const.SIZE_PER_CHANNEL))
-
-#     return _reshape(left), _reshape(right), _reshape(ref)
+class Width(IntEnum):
+    REF = 4
+    CHANNEL = 128
+    PAD = 12
 
 
-# def fft_reference_streams(left, right, ref):
-#     def _fft(stream):
-#         return fft.rfft(stream / stream[0].size)
+class Arrangement(StrEnum):
+    STANDARD = auto()
+    SPLIT = auto()
 
-#     return const.STREAM_NORM * _fft(left), const.STREAM_NORM * _fft(right), _fft(ref)
+
+def _extract_value(data):
+    if isinstance(data, u.Quantity):
+        if data.unit != u.DN:
+            raise ValueError(f"Input data must be in units of DN, not {data.unit}")
+        data = data.value
+
+    return data
+
+
+@dataclass
+class RefPixData:
+    data: np.ndarray
+    amp33: np.ndarray
+    offset: np.ndarray = None
+    arrangement: Arrangement = Arrangement.STANDARD
+
+    @classmethod
+    def from_datamodel(cls, datamodel: RampModel):
+        data = _extract_value(datamodel.data)
+
+        # Extract amp33
+        amp33 = _extract_value(datamodel.amp33)
+        # amp33 is normally a uint16, but the computation assumes it is a float
+        amp33 = amp33.astype(data.dtype)
+
+        return cls(data, amp33)
+
+    @property
+    def combine_data(self):
+        if self.arrangement == Arrangement.STANDARD:
+            return np.dstack([self.data, self.amp33])
+        else:
+            data = self.split_channels
+            channels, frames, rows, columns = data.shape
+
+            # Undo channel reordering to:
+            #    [frame, row, channel, channel_column]
+            # Second combine the channels into columns:
+            #    [frame, row, column]
+            return data.transpose((1, 2, 0, 3)).reshape(
+                (frames, rows, columns * channels)
+            )
+
+    @property
+    def left(self):
+        if self.arrangement == Arrangement.STANDARD:
+            return self.data[:, :, : Width.REF]
+        else:
+            return self.data[0, :, :, :]
+
+    @property
+    def right(self):
+        if self.arrangement == Arrangement.STANDARD:
+            return self.data[:, :, -Width.REF :]
+        else:
+            return self.data[-1, :, :, :]
+
+    @classmethod
+    def from_combined_data(cls, data, offset=None):
+        return cls(data[:, :, : -Width.CHANNEL], data[:, :, -Width.CHANNEL :], offset)
+
+    def remove_offset(self):
+        """
+        Use linear least squares to remove any linear offset from the data.
+        """
+        data = self.combine_data
+        data = data.reshape((data.shape[0], np.prod(data.shape[1:])))
+
+        frames = np.arange(data.shape[0], dtype=data.dtype)
+        frames = frames - np.mean(frames)
+
+        sx = np.sum(frames)
+        sxx = np.sum(frames**2)
+        sy = np.sum(data, axis=0)
+        sxy = np.matmul(frames, data, dtype=data.dtype)
+
+        offset = (sy * sxx - sx * sxy) / (data.shape[0] * sxx - sx**2)
+
+        shape = (self.data.shape[1], self.data.shape[2] + self.amp33.shape[2])
+        data = (data - offset).reshape((self.data.shape[0], *shape))
+        offset = offset.reshape(shape)
+
+        return self.from_combined_data(data, offset)
+
+    @property
+    def split_channels(self):
+        if self.arrangement == Arrangement.STANDARD:
+            data = self.combine_data
+            frames, rows, columns = data.shape
+            channels = columns // Width.CHANNEL
+
+            # First split data into channels
+            #    [frame, row, channel, channel_column]
+            # Second reorder so channels are first (better memory alignment)
+            #    [channel, frame, row, channel_column]
+            return data.reshape((frames, rows, channels, Width.CHANNEL)).transpose(
+                (2, 0, 1, 3)
+            )
+        else:
+            return np.append(self.data, [self.amp33], axis=0)
+
+    @property
+    def aligned_channels(self):
+        data = self.split_channels
+
+        # Reverse every other channel column so columns are in reading order
+        data[1::2, :, :, :] = data[1::2, :, :, ::-1]
+
+        # pad channels with zeros to account for the pause at the end of each read
+        return np.pad(data, ((0, 0), (0, 0), (0, 0), (0, Width.PAD)), constant_values=0)
+
+    @classmethod
+    def from_split(cls, data, offset=None):
+        return cls(data[:-1, :, :, :], data[-1, :, :, :], offset, Arrangement.SPLIT)
+
+    def remove_linear_trends(self):
+        data = self.aligned_channels
+        channels, frames, rows, columns = data.shape
+
+        t = np.arange(columns * rows, dtype=data.dtype).reshape((rows, columns))
+        t = t - np.mean(t)
+
+        REF_ROWS = [*np.arange(Width.REF), *(rows - np.arange(Width.REF) - 1)[::-1]]
+
+        t_ref = t[REF_ROWS, :]
+        not_zero = data != 0
+
+        for chan in range(channels):
+            for frame in range(frames):
+                mask = not_zero[chan, frame, REF_ROWS, :]
+
+                x_vals = t_ref[mask]
+                y_vals = data[chan, frame, REF_ROWS, :][mask]
+
+                if x_vals.size < 1 or y_vals.size < 1:
+                    continue
+
+                m, b = np.polyfit(x_vals, y_vals, 1)
+                data[chan, frame, :, :] -= (t * m + b) * not_zero[chan, frame, :, :]
+
+        return data
