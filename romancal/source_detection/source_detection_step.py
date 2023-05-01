@@ -180,7 +180,7 @@ class SourceDetectionStep(RomanStep):
                 # and save_catalogs is false, since it is not in the schema
                 input_model.meta.source_detection["tweakreg_catalog"] = catalog_as_array
 
-            result.meta.cal_step.source_detection = "COMPLETE"
+            input_model.meta.cal_step.source_detection = "COMPLETE"
 
             # just pass input model to next step - catalog is stored in meta
             return input_model
