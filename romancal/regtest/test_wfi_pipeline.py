@@ -198,7 +198,7 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
 
     # DMS-136 PSF tests
     pipeline.log.info(
-        "DMS8136MSG: Testing existence of  detector and "
+        "DMS-136 MSG: Testing existence of  detector and "
         "optical element (detector & optical_element) in Level 2 "
         "image output......." + passfail("exposure_time" in model.meta.exposure)
     )
@@ -285,7 +285,7 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
         + str(model.meta.cal_step.assign_wcs)
     )
     pipeline.log.info(
-        "DMS90 MSG: Testing completion of wcs assignment inLevel 2 spectroscopic"
+        "DMS90 MSG: Testing completion of wcs assignment in Level 2 spectroscopic"
         " output......." + passfail(model.meta.cal_step.assign_wcs == "COMPLETE")
     )
     assert model.meta.cal_step.assign_wcs == "COMPLETE"
@@ -294,7 +294,7 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
         + str(model.meta.cal_step.flat_field)
     )
     pipeline.log.info(
-        "DMS90 MSG: Testing expected skip of flat fielding inLevel 2 spectroscopic"
+        "DMS90 MSG: Testing expected skip of flat fielding in Level 2 spectroscopic"
         " output......." + passfail(model.meta.cal_step.flat_field == "SKIPPED")
     )
     assert model.meta.cal_step.flat_field == "SKIPPED"
@@ -302,7 +302,7 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
         "Status of the step:             dark          " + str(model.meta.cal_step.dark)
     )
     pipeline.log.info(
-        "DMS90 MSG: Testing completion of dark correction inLevel 2 spectroscopic"
+        "DMS90 MSG: Testing completion of dark correction in Level 2 spectroscopic"
         " output......." + passfail(model.meta.cal_step.dark == "COMPLETE")
     )
     assert model.meta.cal_step.dark == "COMPLETE"
@@ -320,7 +320,7 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
         "Status of the step:             jump          " + str(model.meta.cal_step.jump)
     )
     pipeline.log.info(
-        "DMS90 MSG: Testing completion of jump detection inLevel 2 spectroscopic"
+        "DMS90 MSG: Testing completion of jump detection in Level 2 spectroscopic"
         " output......." + passfail(model.meta.cal_step.jump == "COMPLETE")
     )
     assert model.meta.cal_step.jump == "COMPLETE"
@@ -338,7 +338,7 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
         + str(model.meta.cal_step.ramp_fit)
     )
     pipeline.log.info(
-        "DMS90 MSG: Testing completion of ramp fitting inLevel 2 spectroscopic"
+        "DMS90 MSG: Testing completion of ramp fitting in Level 2 spectroscopic"
         " output......." + passfail(model.meta.cal_step.ramp_fit == "COMPLETE")
     )
     assert model.meta.cal_step.ramp_fit == "COMPLETE"
