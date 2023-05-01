@@ -13,13 +13,16 @@ Associations are basically just lists of things, mostly exposures,
 that are somehow related. With respect to Roman Mission and the Data Management
 System (DMS), associations have the following characteristics:
 
-* Relationships between multiple exposures are captured in an association.
-* An association is a means of identifying a set of exposures that belong
-  together and may be dependent upon one another.
-* The association concept permits exposures to be calibrated, archived,
-  retrieved, and reprocessed as a set rather than as individual objects.
-* For each association, DMS will generate the most combined and least combined
-  data products.
+  * Relationships between multiple exposures are captured in an association.
+
+  * An association is a means of identifying a set of exposures that belong
+    together and may be dependent upon one another.
+
+  * The association concept permits exposures to be calibrated, archived,
+    retrieved, and reprocessed as a set rather than as individual objects.
+
+  * For each association, DMS will generate the most combined and least combined
+    data products.
 
 .. _asn-associations-and-roman:
 

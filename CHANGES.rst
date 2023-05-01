@@ -1,6 +1,11 @@
 0.10.1 (unreleased)
 ===================
 
+associations
+------------
+
+- Initial association code for GBTDS observations [#661]
+
 
 general
 -------
@@ -29,6 +34,11 @@ source_detection
 outlier_detection
 -----------------
 - Added an empty outlier detection step to the pipeline. [#689]
+
+astrometric_utils
+-----------------
+- Added option to provide epoch so that the coordinates are corrected by proper motion. [#686]
+
 
 
 0.10.0 (2023-02-21)
