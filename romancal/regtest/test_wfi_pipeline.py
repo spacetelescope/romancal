@@ -33,9 +33,7 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     rtdata.output = output
     args = [
         "--disable-crds-steppars",
-        "--steps.jump.rejection_threshold=180.0",
-        "--steps.jump.three_group_rejection_threshold=185.0",
-        "--steps.jump.four_group_rejection_threshold=190",
+        "--steps.source_detection.skip=True",
         "roman_elp",
         rtdata.input,
     ]
@@ -268,9 +266,7 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     rtdata.output = output
     args = [
         "--disable-crds-steppars",
-        "--steps.jump.rejection_threshold=180.0",
-        "--steps.jump.three_group_rejection_threshold=185.0",
-        "--steps.jump.four_group_rejection_threshold=190",
+        "--steps.source_detection.skip=True",
         "roman_elp",
         rtdata.input,
     ]
