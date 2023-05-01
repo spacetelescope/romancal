@@ -4,7 +4,13 @@ from astropy import units as u
 from numpy.testing import assert_allclose
 from roman_datamodels.maker_utils import mk_ramp
 
-from romancal.refpix.refpix import Arrangement, RefPixData, Width, remove_offset
+from romancal.refpix.refpix import (
+    Arrangement,
+    RefPixData,
+    Width,
+    remove_linear_trends,
+    remove_offset,
+)
 
 RNG = np.random.default_rng(42)
 N_FRAMES = 8
@@ -178,7 +184,7 @@ def test_from_split(ref_data):
     assert (new.data == data[:-1, :, :, :]).all()
     assert (new.amp33 == data[-1, :, :, :]).all()
     assert (new.offset == offset).all()
-    assert new.arrangement == Arrangement.SPLIT
+    assert new.arrangement == Arrangement.ALIGNED
 
 
 def test_regress_remove_linear_trends(ref_data):
@@ -188,5 +194,5 @@ def test_regress_remove_linear_trends(ref_data):
     regress = ref_data.aligned_channels
     reference_utils.remove_linear_trends_per_frame(regress, False, True)
 
-    new = ref_data.remove_linear_trends()
-    assert_allclose(new, regress)
+    new = remove_linear_trends(ref_data)
+    assert_allclose(new.split_channels, regress)

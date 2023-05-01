@@ -12,9 +12,7 @@ import numpy as np
 from astropy import units as u
 
 # TODO:
-# 1.  Add offset/reversed channel tracking and undo to the RefPixData object.
-# 3.  Refactor the remove_linear_trends method into a function which takes in
-#     a RefPixData object and returns a RefPixData object.
+# 1.  Add padded/reversed channel tracking and undo to the RefPixData object.
 # 4.  Implement the equivalent of the interp_zeros_channel_fun as a function which
 #     takes in a RefPixData object and returns a RefPixData object.
 # 5.  Implement the equivalent of the fft_interp method as a function which takes
@@ -39,7 +37,7 @@ class Width(IntEnum):
 
 class Arrangement(StrEnum):
     STANDARD = auto()
-    SPLIT = auto()
+    ALIGNED = auto()
 
 
 def _extract_value(data):
@@ -122,44 +120,22 @@ class RefPixData:
 
     @property
     def aligned_channels(self):
-        data = self.split_channels
+        if self.arrangement == Arrangement.ALIGNED:
+            return self.split_channels
+        else:
+            data = self.split_channels
 
-        # Reverse every other channel column so columns are in reading order
-        data[1::2, :, :, :] = data[1::2, :, :, ::-1]
+            # Reverse every other channel column so columns are in reading order
+            data[1::2, :, :, :] = data[1::2, :, :, ::-1]
 
-        # pad channels with zeros to account for the pause at the end of each read
-        return np.pad(data, ((0, 0), (0, 0), (0, 0), (0, Width.PAD)), constant_values=0)
+            # pad channels with zeros to account for the pause at the end of each read
+            return np.pad(
+                data, ((0, 0), (0, 0), (0, 0), (0, Width.PAD)), constant_values=0
+            )
 
     @classmethod
     def from_split(cls, data, offset=None):
-        return cls(data[:-1, :, :, :], data[-1, :, :, :], offset, Arrangement.SPLIT)
-
-    def remove_linear_trends(self):
-        data = self.aligned_channels
-        channels, frames, rows, columns = data.shape
-
-        t = np.arange(columns * rows, dtype=data.dtype).reshape((rows, columns))
-        t = t - np.mean(t)
-
-        REF_ROWS = [*np.arange(Width.REF), *(rows - np.arange(Width.REF) - 1)[::-1]]
-
-        t_ref = t[REF_ROWS, :]
-        not_zero = data != 0
-
-        for chan in range(channels):
-            for frame in range(frames):
-                mask = not_zero[chan, frame, REF_ROWS, :]
-
-                x_vals = t_ref[mask]
-                y_vals = data[chan, frame, REF_ROWS, :][mask]
-
-                if x_vals.size < 1 or y_vals.size < 1:
-                    continue
-
-                m, b = np.polyfit(x_vals, y_vals, 1)
-                data[chan, frame, :, :] -= (t * m + b) * not_zero[chan, frame, :, :]
-
-        return data
+        return cls(data[:-1, :, :, :], data[-1, :, :, :], offset, Arrangement.ALIGNED)
 
 
 def remove_offset(ref_data: RefPixData) -> RefPixData:
@@ -192,3 +168,53 @@ def remove_offset(ref_data: RefPixData) -> RefPixData:
     offset = offset.reshape(rows, columns)
 
     return RefPixData.from_combined_data(data, offset)
+
+
+def remove_linear_trends(ref_data: RefPixData) -> RefPixData:
+    """
+    Remove any trends on the frame boundary.
+    """
+    data = ref_data.aligned_channels
+    channels, frames, rows, columns = data.shape
+
+    # Create an independent variable indexed by frame and centered at zero
+    t = np.arange(columns * rows, dtype=data.dtype).reshape((rows, columns))
+    t = t - np.mean(t)
+
+    # Locate the top and bottom reference pixel rows
+    REF_ROWS = [*np.arange(Width.REF), *(rows - np.arange(Width.REF) - 1)[::-1]]
+
+    # Restrict to the reference pixels and non-zero values
+    t_ref = t[REF_ROWS, :]
+    not_zero = data != 0
+
+    # Fit perform a fit on a per-channel, per-frame basis
+    for chan in range(channels):
+        for frame in range(frames):
+            # Find the non-zero reference pixels for this channel and frame
+            mask = not_zero[chan, frame, REF_ROWS, :]
+
+            # Compute the independent and dependent variables for the fit
+            x_vals = t_ref[mask]
+            y_vals = data[chan, frame, REF_ROWS, :][mask]
+
+            # Skip if there is no data
+            if x_vals.size < 1 or y_vals.size < 1:
+                continue
+
+            # Perform the fit using a 1st order polynomial
+            m, b = np.polyfit(x_vals, y_vals, 1)
+
+            # Remove the fit from the data
+            data[chan, frame, :, :] -= (t * m + b) * not_zero[chan, frame, :, :]
+
+    return RefPixData.from_split(data, ref_data.offset)
+
+
+def interpolate_amp33(ref_data: RefPixData) -> RefPixData:
+    """
+    Perform Cosine weighted interpolation on the zero values of the amp33 channels
+    """
+
+    if ref_data.arrangement != Arrangement.ALIGNED:
+        ref_data = RefPixData.from_split(ref_data.aligned_channels, ref_data.offset)
