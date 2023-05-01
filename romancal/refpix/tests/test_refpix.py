@@ -4,7 +4,7 @@ from astropy import units as u
 from numpy.testing import assert_allclose
 from roman_datamodels.maker_utils import mk_ramp
 
-from romancal.refpix.refpix import Arrangement, RefPixData, Width
+from romancal.refpix.refpix import Arrangement, RefPixData, Width, remove_offset
 
 RNG = np.random.default_rng(42)
 N_FRAMES = 8
@@ -92,7 +92,7 @@ def test_from_combined_data(ref_data):
 
 
 def test_remove_offset(ref_data):
-    new = ref_data.remove_offset()
+    new = remove_offset(ref_data)
 
     # check offset is set
     assert new.offset is not None
@@ -116,7 +116,7 @@ def test_regress_remove_offset(ref_data):
     data_regress = ref_data.combine_data
     _, b = reference_utils.remove_linear_trends(data_regress, True)
 
-    test = ref_data.remove_offset()
+    test = remove_offset(ref_data)
 
     # Regression test
     assert (test.offset == b).all()

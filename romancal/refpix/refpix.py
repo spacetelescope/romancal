@@ -13,8 +13,6 @@ from astropy import units as u
 
 # TODO:
 # 1.  Add offset/reversed channel tracking and undo to the RefPixData object.
-# 2.  Refactor the remove_offset method into a function which takes in a
-#     RefPixData object and returns a RefPixData object.
 # 3.  Refactor the remove_linear_trends method into a function which takes in
 #     a RefPixData object and returns a RefPixData object.
 # 4.  Implement the equivalent of the interp_zeros_channel_fun as a function which
@@ -105,29 +103,6 @@ class RefPixData:
     def from_combined_data(cls, data, offset=None):
         return cls(data[:, :, : -Width.CHANNEL], data[:, :, -Width.CHANNEL :], offset)
 
-    def remove_offset(self):
-        """
-        Use linear least squares to remove any linear offset from the data.
-        """
-        data = self.combine_data
-        data = data.reshape((data.shape[0], np.prod(data.shape[1:])))
-
-        frames = np.arange(data.shape[0], dtype=data.dtype)
-        frames = frames - np.mean(frames)
-
-        sx = np.sum(frames)
-        sxx = np.sum(frames**2)
-        sy = np.sum(data, axis=0)
-        sxy = np.matmul(frames, data, dtype=data.dtype)
-
-        offset = (sy * sxx - sx * sxy) / (data.shape[0] * sxx - sx**2)
-
-        shape = (self.data.shape[1], self.data.shape[2] + self.amp33.shape[2])
-        data = (data - offset).reshape((self.data.shape[0], *shape))
-        offset = offset.reshape(shape)
-
-        return self.from_combined_data(data, offset)
-
     @property
     def split_channels(self):
         if self.arrangement == Arrangement.STANDARD:
@@ -185,3 +160,35 @@ class RefPixData:
                 data[chan, frame, :, :] -= (t * m + b) * not_zero[chan, frame, :, :]
 
         return data
+
+
+def remove_offset(ref_data: RefPixData) -> RefPixData:
+    """
+    Use linear least squares to remove any linear offset from the data.
+    """
+    data = ref_data.combine_data
+    frames, rows, columns = data.shape
+
+    # Reshape data so that it is:
+    #    [frame, frame_data]
+    # where frame_data is the data for a single frame
+    data = data.reshape((frames, rows * columns))
+
+    # Craate an independent variable indexed by frame and centered at zero
+    indep = np.arange(frames, dtype=data.dtype)
+    indep = indep - np.mean(indep)
+
+    # Compute sums needed for linear least squares
+    sx = np.sum(indep)
+    sxx = np.sum(indep**2)
+    sy = np.sum(data, axis=0)
+    sxy = np.matmul(indep, data, dtype=data.dtype)
+
+    # Compute the offset (y-intercept) for the fit
+    offset = (sy * sxx - sx * sxy) / (frames * sxx - sx**2)
+
+    # Apply the offset to the data and reshape to the original shapes
+    data = (data - offset).reshape((frames, rows, columns))
+    offset = offset.reshape(rows, columns)
+
+    return RefPixData.from_combined_data(data, offset)
