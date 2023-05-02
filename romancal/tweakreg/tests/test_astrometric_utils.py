@@ -74,7 +74,9 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
-    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    detector = cf.Frame2D(
+        name="detector", axes_order=(0, 1), unit=(u.pix, u.pix)
+    )
     v2v3 = cf.Frame2D(
         name="v2v3",
         axes_order=(0, 1),
@@ -264,7 +266,9 @@ def base_image():
         ("GAIADR3", 15),
     ],
 )
-def test_create_astrometric_catalog_variable_num_sources(catalog, num_sources, request):
+def test_create_astrometric_catalog_variable_num_sources(
+    catalog, num_sources, request
+):
     """Test fetching data from supported catalogs with variable number of sources."""
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     res = create_astrometric_catalog(
@@ -323,6 +327,7 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
         ("GAIADR1", "2000.0"),
         ("GAIADR2", "2010"),
         ("GAIADR3", "2030.0"),
+        ("GAIADR3", "J2000"),
         ("GAIADR3", 2030.0),
         ("GAIADR3", None),
     ],
@@ -333,6 +338,9 @@ def test_create_astrometric_catalog_using_epoch(catalog, epoch, request):
 
     metadata_epoch = (
         epoch if epoch is not None else img.meta.target["proper_motion_epoch"]
+    )
+    metadata_epoch = float(
+        "".join(c for c in str(metadata_epoch) if c == "." or c.isdigit())
     )
 
     res = create_astrometric_catalog(
@@ -487,4 +495,6 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
 
     assert len(result) > 0
     assert np.isclose(returned_ra, expected_new_ra, atol=1e-10, rtol=1e-9).all()
-    assert np.isclose(returned_dec, expected_new_dec, atol=1e-10, rtol=1e-9).all()
+    assert np.isclose(
+        returned_dec, expected_new_dec, atol=1e-10, rtol=1e-9
+    ).all()
