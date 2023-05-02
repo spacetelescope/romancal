@@ -351,6 +351,7 @@ def base_image():
 
     def _base_image(shift_1=0, shift_2=0):
         l2 = maker_utils.mk_level2_image(shape=(2000, 2000))
+        l2.meta.target["proper_motion_epoch"] = "2016.0"
         # update wcsinfo
         update_wcsinfo(l2)
         # add a dummy WCS object
