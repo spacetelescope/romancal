@@ -121,7 +121,7 @@ class ExposurePipeline(RomanPipeline):
 
         result = self.photom(result)
         result = self.source_detection(result)
-        result = self.tweakreg(result)
+        result = self.tweakreg([result])
 
         # setup output_file for saving
         self.setup_output(result)
