@@ -122,12 +122,8 @@ class TweakRegStep(RomanStep):
                                 f"{filename}.source_detection.tweakreg_catalog_name ="
                                 f" {repr(catdict[filename])}"
                             )
-                            # read custom catalog in as a 4D numpy array
+                            # set catalog name only (no catalog data at this point)
                             im.meta["source_detection"] = {
-                                "tweakreg_catalog": Table.read(
-                                    catdict[filename],
-                                    format=self.catalog_format,
-                                ).as_array(),
                                 "tweakreg_catalog_name": catdict[filename],
                             }
             else:
@@ -169,7 +165,8 @@ class TweakRegStep(RomanStep):
                 if is_tweakreg_catalog_present:
                     # read catalog in 4D numpy array format
                     catalog = Table(
-                        data=image_model.meta.source_detection.tweakreg_catalog.T
+                        data=image_model.meta.source_detection.tweakreg_catalog.T,
+                        names=("id", "xcentroid", "ycentroid", "flux"),
                     )
                 elif is_tweakreg_catalog_name_present:
                     catalog = Table.read(
