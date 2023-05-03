@@ -323,6 +323,7 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
         ("GAIADR1", "2000.0"),
         ("GAIADR2", "2010"),
         ("GAIADR3", "2030.0"),
+        ("GAIADR3", "J2000"),
         ("GAIADR3", 2030.0),
         ("GAIADR3", None),
     ],
@@ -333,6 +334,9 @@ def test_create_astrometric_catalog_using_epoch(catalog, epoch, request):
 
     metadata_epoch = (
         epoch if epoch is not None else img.meta.target["proper_motion_epoch"]
+    )
+    metadata_epoch = float(
+        "".join(c for c in str(metadata_epoch) if c == "." or c.isdigit())
     )
 
     res = create_astrometric_catalog(
