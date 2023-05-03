@@ -174,7 +174,7 @@ Bit  Value         Name              Description
 1    2             SATURATED         Pixel saturated during exposure
 2    4             JUMP_DET          Jump detected during exposure
 3    8             DROPOUT           Data lost in transmission
-4    16            OUTLIER           Flagged by outlier detection
+4    16            GW_AFFECTED_DATA  Data affected by the GW read window
 5    32            PERSISTENCE       High persistence (was RESERVED_2)
 6    64            AD_FLOOR          Below A/D floor (0 DN, was RESERVED_3)
 7    128           RESERVED_4

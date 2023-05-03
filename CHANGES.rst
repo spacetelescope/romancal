@@ -33,7 +33,7 @@ source_detection
 
 outlier_detection
 -----------------
-- Added an empty outlier detection step to the pipeline. [#689]
+- Added an empty outlier detection step to the pipeline, as well as a simple test and documentation. [#689]
 
 astrometric_utils
 -----------------

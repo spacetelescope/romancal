@@ -50,8 +50,8 @@ The science data ERR array is then updated to be the square root of the quadrati
 the three variance arrays.
 For more details see :ref:`flat_field <flatfield_step>`.
 
-HLPP Pipelines
---------------
+HLPP Processing
+---------------
 HLPP pipelines perform additional instrument-level and observing-mode corrections and
 calibrations to produce fully calibrated exposures. The various steps that apply corrections and calibrations apply those same corrections/calibrations to all variance arrays and update the total
 ERR array.
@@ -59,9 +59,3 @@ ERR array.
 outlier_detection
 +++++++++++++++++
 The ``outlier_detection`` step is used in all Stage 3 pipelines.
-
-# Commented for reference until algorithm implementation
-# It uses the ERR array to
-# make a local noise model, based on the readnoise and calibration errors of earlier
-# steps in the pipeline. This step does not modify the ERR array or any of the VAR
-# arrays.
