@@ -17,8 +17,6 @@ from romancal.linearity import LinearityStep
 from romancal.photom import PhotomStep
 from romancal.ramp_fitting import ramp_fit_step
 from romancal.saturation import SaturationStep
-from romancal.source_detection import SourceDetectionStep
-from romancal.tweakreg import TweakRegStep
 
 from ..stpipe import RomanPipeline
 
@@ -55,8 +53,6 @@ class ExposurePipeline(RomanPipeline):
         "assign_wcs": AssignWcsStep,
         "flatfield": FlatFieldStep,
         "photom": PhotomStep,
-        "source_detection": SourceDetectionStep,
-        "tweakreg": TweakRegStep,
     }
 
     # start the actual processing
