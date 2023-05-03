@@ -120,8 +120,6 @@ class ExposurePipeline(RomanPipeline):
             result.meta.cal_step.flat_field = "SKIPPED"
 
         result = self.photom(result)
-        result = self.source_detection(result)
-        result = self.tweakreg([result])
 
         # setup output_file for saving
         self.setup_output(result)
