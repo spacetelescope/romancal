@@ -29,23 +29,23 @@ true total sky level.
    to any kind of non-source background signal, which may include actual sky,
    as well as instrumental (e.g. thermal) background, etc.
 
-The step records information in three keywords that are included in the output
+The step records information in three attributes that are included in the output
 files:
 
-- BKGMETH: records the sky method that was used to compute sky levels
+- method: records the sky method that was used to compute sky levels
 
-- BKGLEVEL: the sky level computed for each image
+- level: the sky level computed for each image
 
-- BKGSUB: a boolean indicating whether or not the sky was subtracted from the
+- subtract: a boolean indicating whether or not the sky was subtracted from the
   output images. Note that by default the step argument "subtract" is set to
   ``False``, which means that the sky will *NOT* be subtracted
   (see the :ref:`skymatch step arguments <skymatch_arguments>` for more details).
 
-Both the "BKGSUB" and "BKGLEVEL" keyword values are important information for
+Both the "subtract" and "level" attributes are important information for
 downstream tasks, such as outlier detection and resampling.
-Outlier detection will use the BKGLEVEL values to internally equalize the images,
+Outlier detection will use the "level" values to internally equalize the images,
 which is necessary to prevent false detections due to overall differences in
-signal levels between images, and the resample step will subtract the BKGLEVEL
+signal levels between images, and the resample step will subtract the "level"
 values from each input image when combining them into a mosaic.
 
 Assumptions
@@ -116,7 +116,7 @@ show the results for two hypothetical sets of images. The first example is for a
 set of 6 images that form a 2x3 mosaic, with every image having overlap with its
 immediate neighbors. The first column of the table gives the actual (fake) sky
 signal that was imposed in each image, and the subsequent columns show the
-results computed by each method (i.e. the values of the resulting BKGLEVEL keywords).
+results computed by each method (i.e. the values of the resulting "level" attribute).
 All results are for the case where the step argument ``match_down = True``,
 which means matching is done to the image with the lowest sky value.
 Note that these examples are for the highly simplistic case where each example

@@ -51,8 +51,6 @@ class SkyMatchStep(RomanStep):
 
     def process(self, input):
         self.log.setLevel(logging.DEBUG)
-        # for now turn off memory optimization until we have better machinery
-        # to handle outputs in a consistent way.
         self._is_asn = False
 
         img = rdd.ModelContainer(
@@ -198,7 +196,8 @@ class SkyMatchStep(RomanStep):
             dm = image
 
         if step_status == "COMPLETE":
-            # TODO: remove this block when ``rad`` has a background schema.
+            # TODO: remove this block when ``rad`` has a background schema:
+            # https://github.com/spacetelescope/rad/issues/247
             # This is a temporary workaround to access a 'background'
             # entry into metadata as a Python dict, which we'll later define with
             # a schema in ``rad``:
