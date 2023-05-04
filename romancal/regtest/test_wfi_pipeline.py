@@ -33,7 +33,6 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     rtdata.output = output
     args = [
         "--disable-crds-steppars",
-        "--steps.source_detection.skip=True",
         "roman_elp",
         rtdata.input,
     ]
@@ -266,7 +265,6 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     rtdata.output = output
     args = [
         "--disable-crds-steppars",
-        "--steps.source_detection.skip=True",
         "roman_elp",
         rtdata.input,
     ]
