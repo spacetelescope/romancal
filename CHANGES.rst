@@ -1,7 +1,6 @@
 0.10.1 (unreleased)
 ===================
 
-=======
 associations
 ------------
 
@@ -21,6 +20,8 @@ general
 - Remove the ``codecov`` dependency [#677]
 
 - Remove explicit dependence on ``stdatamodels``. [#676]
+
+- Drop support for Python 3.8 [#694]
 
 source_detection
 ----------------
