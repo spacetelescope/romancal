@@ -68,9 +68,7 @@ class SourceDetectionStep(RomanStep):
     """
 
     def process(self, input):
-
         with rdd.open(input) as input_model:
-
             # remove units from data in this step.
             # DAOStarFinder requires unitless input
             if hasattr(input_model.data, "unit"):
@@ -132,7 +130,8 @@ class SourceDetectionStep(RomanStep):
                 # if no sources were detected, return an empty table
                 self.log.warning("No sources detected, returning empty catalog.")
                 catalog = Table(
-                    names=columns, dtype=(int, np.float64, np.float64, np.float64)
+                    names=columns,
+                    dtype=(int, np.float64, np.float64, np.float64),
                 )
 
             # attach source catalog to output model as array in meta.source_detecion
@@ -175,10 +174,12 @@ class SourceDetectionStep(RomanStep):
                 input_model.meta.source_detection[
                     "tweakreg_catalog_name"
                 ] = cat_filename
+            else:
+                # only attach catalog to file if its being passed to the next step
+                # and save_catalogs is false, since it is not in the schema
+                input_model.meta.source_detection["tweakreg_catalog"] = catalog_as_array
 
-            # only attach catalog to file if its being passed to the next step
-            # and save_catalogs is false, since it is not in the schema
-            input_model.meta.source_detection["tweakreg_catalog"] = catalog_as_array
+            input_model.meta.cal_step["source_detection"] = "COMPLETE"
 
             # just pass input model to next step - catalog is stored in meta
             return input_model

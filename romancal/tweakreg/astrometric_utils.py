@@ -34,6 +34,7 @@ def create_astrometric_catalog(
     table_format="ascii.ecsv",
     existing_wcs=None,
     num_sources=None,
+    epoch=None,
 ):
     """Create an astrometric catalog that covers the inputs' field-of-view.
 
@@ -68,6 +69,11 @@ def create_astrometric_catalog(
         If `num_sources` is negative, return that number of the faintest
         sources.  By default, all sources are returned.
 
+    epoch: float or str, optional
+        Reference epoch used to update the coordinates for proper motion
+        (in decimal year). If `None` then the epoch is obtained from
+        the metadata.
+
     Notes
     -----
     This function will point to astrometric catalog web service defined
@@ -93,8 +99,17 @@ def create_astrometric_catalog(
     radius, fiducial = compute_radius(outwcs)
 
     # perform query for this field-of-view
-    ref_dict = get_catalog(fiducial[0], fiducial[1], sr=radius, catalog=catalog)
-    colnames = ("ra", "dec", "mag", "objID")
+    epoch = (
+        epoch
+        if epoch is not None
+        else input_models[0].meta.target["proper_motion_epoch"]
+    )
+    # keep only decimal point and digit characters
+    epoch = float("".join(c for c in str(epoch) if c == "." or c.isdigit()))
+    ref_dict = get_catalog(
+        fiducial[0], fiducial[1], epoch=epoch, sr=radius, catalog=catalog
+    )
+    colnames = ("ra", "dec", "mag", "objID", "epoch")
 
     ref_table = ref_dict[colnames]
 
@@ -157,7 +172,7 @@ def compute_radius(wcs):
     return radius, fiducial
 
 
-def get_catalog(ra, dec, sr=0.1, catalog="GAIADR3"):
+def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3"):
     """Extract catalog from VO web service.
 
     Parameters
@@ -167,6 +182,10 @@ def get_catalog(ra, dec, sr=0.1, catalog="GAIADR3"):
 
     dec : float
         Declination (Dec) of center of field-of-view (in decimal degrees)
+
+    epoch: float, optional
+        Reference epoch used to update the coordinates for proper motion
+        (in decimal year). Default: 2016.0.
 
     sr : float, optional
         Search radius (in decimal degrees) from field-of-view center to use
@@ -181,11 +200,11 @@ def get_catalog(ra, dec, sr=0.1, catalog="GAIADR3"):
 
     """
     service_type = "vo/CatalogSearch.aspx"
-    spec_str = "RA={}&DEC={}&SR={}&FORMAT={}&CAT={}&MINDET=5"
+    spec_str = "RA={}&DEC={}&EPOCH={}&SR={}&FORMAT={}&CAT={}&MINDET=5"
     headers = {"Content-Type": "text/csv"}
     fmt = "CSV"
 
-    spec = spec_str.format(ra, dec, sr, fmt, catalog)
+    spec = spec_str.format(ra, dec, epoch, sr, fmt, catalog)
     service_url = f"{SERVICELOCATION}/{service_type}?{spec}"
     rawcat = requests.get(service_url, headers=headers, timeout=TIMEOUT)
     r_contents = rawcat.content.decode()  # convert from bytes to a String

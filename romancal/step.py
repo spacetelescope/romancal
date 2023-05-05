@@ -11,6 +11,8 @@ from .linearity.linearity_step import LinearityStep
 from .photom.photom_step import PhotomStep
 from .ramp_fitting.ramp_fit_step import RampFitStep
 from .saturation.saturation_step import SaturationStep
+from .source_detection.source_detection_step import SourceDetectionStep
+from .tweakreg.tweakreg_step import TweakRegStep
 
 __all__ = [
     "DarkCurrentStep",
@@ -22,4 +24,6 @@ __all__ = [
     "RampFitStep",
     "SaturationStep",
     "AssignWcsStep",
+    "SourceDetectionStep",
+    "TweakRegStep",
 ]

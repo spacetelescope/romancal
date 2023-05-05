@@ -525,7 +525,7 @@ def finalize(asns):
 
     .. code-block:: python
 
-       from jwst.associations.association import finalize as generic_finalize
+       from romancal.associations.association import finalize as generic_finalize
        RegistryMarker.callback('finalize')(generic_finalize)
     """
     finalized_asns = list(

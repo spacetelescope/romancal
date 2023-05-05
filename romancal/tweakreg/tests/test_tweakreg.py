@@ -241,7 +241,11 @@ def get_catalog_data(input_dm):
 
 
 def create_base_image_source_catalog(
-    tmp_path, output_filename, catalog_data, catalog_format: str = "ascii.ecsv"
+    tmp_path,
+    output_filename,
+    catalog_data,
+    catalog_format: str = "ascii.ecsv",
+    save_catalogs=True,
 ):
     """
     Write a temp CSV file to be used as source catalog, similar to what
@@ -258,11 +262,19 @@ def create_base_image_source_catalog(
         "detected" sources
     catalog_format : str, optional
         A string indicating the catalog format.
+    save_catalogs : boolean, optional
+        A boolean indicating whether the source catalog should be saved to disk.
     """
     src_detector_coords = catalog_data
     output = os.path.join(tmp_path, output_filename)
     t = table.Table(src_detector_coords, names=("x", "y"))
-    t.write((tmp_path / output), format=catalog_format)
+    if save_catalogs:
+        t.write((tmp_path / output), format=catalog_format)
+    # mimic the same output format from SourceDetectionStep
+    t.add_column([i for i in range(len(t))], name="id", index=0)
+    t.add_column([np.float64(i) for i in range(len(t))], name="flux")
+    t.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
+    return t.as_array().T
 
 
 def add_tweakreg_catalog_attribute(
@@ -271,6 +283,7 @@ def add_tweakreg_catalog_attribute(
     catalog_filename="base_image_sources",
     catalog_data=None,
     catalog_format: str = "ascii.ecsv",
+    save_catalogs=True,
 ):
     """
     Add tweakreg_catalog attribute to the meta, which is a mandatory
@@ -290,6 +303,8 @@ def add_tweakreg_catalog_attribute(
         "detected" sources, by default None (see note below).
     catalog_format : str, optional
         A string indicating the catalog format.
+    save_catalogs : boolean, optional
+        A boolean indicating whether the source catalog should be saved to disk.
 
     Note
     ----
@@ -301,15 +316,24 @@ def add_tweakreg_catalog_attribute(
     if catalog_data is None:
         catalog_data = get_catalog_data(input_dm)
 
-    create_base_image_source_catalog(
+    source_catalog = create_base_image_source_catalog(
         tmp_path,
         tweakreg_catalog_filename,
         catalog_data=catalog_data,
         catalog_format=catalog_format,
+        save_catalogs=save_catalogs,
     )
-    input_dm.meta["tweakreg_catalog"] = os.path.join(
-        tmp_path, tweakreg_catalog_filename
-    )
+
+    input_dm.meta["source_detection"] = {}
+
+    if save_catalogs:
+        # SourceDetectionStep adds the catalog path+filename
+        input_dm.meta.source_detection["tweakreg_catalog_name"] = os.path.join(
+            tmp_path, tweakreg_catalog_filename
+        )
+    else:
+        # SourceDetectionStep attaches the catalog data as a 4D numpy array
+        input_dm.meta.source_detection["tweakreg_catalog"] = source_catalog
 
 
 @pytest.fixture
@@ -327,6 +351,7 @@ def base_image():
 
     def _base_image(shift_1=0, shift_2=0):
         l2 = maker_utils.mk_level2_image(shape=(2000, 2000))
+        l2.meta.target["proper_motion_epoch"] = "2016.0"
         # update wcsinfo
         update_wcsinfo(l2)
         # add a dummy WCS object
@@ -622,9 +647,15 @@ def test_tweakreg_use_custom_catalogs(tmp_path, catalog_format, request):
 
     step.process([img1, img2, img3])
 
-    assert img1.meta.tweakreg_catalog == str(tmp_path / "ref_catalog_1")
-    assert img2.meta.tweakreg_catalog == str(tmp_path / "ref_catalog_2")
-    assert img3.meta.tweakreg_catalog == str(tmp_path / "ref_catalog_3")
+    assert all(img1.meta.tweakreg_catalog) == all(
+        table.Table.read(str(tmp_path / "ref_catalog_1"), format=catalog_format)
+    )
+    assert all(img2.meta.tweakreg_catalog) == all(
+        table.Table.read(str(tmp_path / "ref_catalog_2"), format=catalog_format)
+    )
+    assert all(img3.meta.tweakreg_catalog) == all(
+        table.Table.read(str(tmp_path / "ref_catalog_3"), format=catalog_format)
+    )
 
 
 @pytest.mark.parametrize(
@@ -704,3 +735,25 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     ]
 
     assert np.array([np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2)]).all()
+
+
+@pytest.mark.parametrize(
+    "source_detection_save_catalogs",
+    (True, False),
+)
+def test_remove_tweakreg_catalog_data(
+    tmp_path, source_detection_save_catalogs, request
+):
+    """
+    Test to check that the source catalog data is removed from meta
+    regardless of selected SourceDetectionStep.save_catalogs option.
+    """
+    img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(
+        tmp_path, img, save_catalogs=source_detection_save_catalogs
+    )
+
+    TweakRegStep.call([img])
+
+    assert not hasattr(img.meta.source_detection, "tweakreg_catalog")
+    assert hasattr(img.meta, "tweakreg_catalog")

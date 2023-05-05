@@ -2,7 +2,7 @@
 name = 'romancal'
 description = 'Library for calibration of science observations from the Nancy Grace Roman Space Telescope'
 readme = 'README.md'
-requires-python = '>=3.8'
+requires-python = '>=3.9'
 license = { file = 'LICENSE' }
 authors = [{ name = 'Roman calibration pipeline developers', email = 'help@stsci.edu' }]
 classifiers = [

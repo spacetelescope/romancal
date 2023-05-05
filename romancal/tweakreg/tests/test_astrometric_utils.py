@@ -245,6 +245,7 @@ def base_image():
 
     def _base_image(shift_1=0, shift_2=0):
         l2 = maker_utils.mk_level2_image(shape=(2000, 2000))
+        l2.meta.target["proper_motion_epoch"] = "2016.0"
         # update wcsinfo
         update_wcsinfo(l2)
         # add a dummy WCS object
@@ -314,6 +315,37 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
 
         assert len(res) == num_sources
         assert os.path.exists(os.path.join(tmp_path, output_filename))
+
+
+@pytest.mark.parametrize(
+    "catalog, epoch",
+    [
+        ("GAIADR1", "2000.0"),
+        ("GAIADR2", "2010"),
+        ("GAIADR3", "2030.0"),
+        ("GAIADR3", "J2000"),
+        ("GAIADR3", 2030.0),
+        ("GAIADR3", None),
+    ],
+)
+def test_create_astrometric_catalog_using_epoch(catalog, epoch, request):
+    """Test fetching data from supported catalogs for a specific epoch."""
+    img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
+
+    metadata_epoch = (
+        epoch if epoch is not None else img.meta.target["proper_motion_epoch"]
+    )
+    metadata_epoch = float(
+        "".join(c for c in str(metadata_epoch) if c == "." or c.isdigit())
+    )
+
+    res = create_astrometric_catalog(
+        [img],
+        catalog=catalog,
+        epoch=epoch,
+    )
+
+    assert np.equal(res["epoch"], float(metadata_epoch)).all()
 
 
 def test_compute_radius():
@@ -406,3 +438,57 @@ def test_get_catalog_using_invalid_parameters(ra, dec, sr, catalog_name):
         get_catalog(ra, dec, sr=sr, catalog=catalog_name)
 
     assert str(exec_info.typename).lower().endswith("error")
+
+
+@pytest.mark.parametrize(
+    "ra, dec, epoch",
+    [
+        (10, 10, 2000),
+        (10, 10, 2010.3),
+        (10, 10, 2030),
+        (10, -10, 2000),
+        (10, -10, 2010.3),
+        (10, -10, 2030),
+        (0, 0, 2000),
+        (0, 0, 2010.3),
+        (0, 0, 2030),
+        (269.4521, 4.6933, 2030),
+        (89, 80, 2010),
+    ],
+)
+def test_get_catalog_using_epoch(ra, dec, epoch):
+    """Test that get_catalog returns coordinates corrected by proper motion."""
+
+    result = get_catalog(ra, dec, epoch=epoch)
+    returned_ra = np.array(result["ra"])
+    returned_dec = np.array(result["dec"])
+
+    # get GAIA data and update coords to requested epoch using pm measurements
+    gaia_ref_epoch = 2016.0
+    gaia_ref_epoch_coords = get_catalog(ra, dec, epoch=gaia_ref_epoch)
+
+    expected_new_dec = (
+        np.array(
+            gaia_ref_epoch_coords["dec"] * 3600
+            + (epoch - gaia_ref_epoch) * gaia_ref_epoch_coords["pmdec"] / 1000
+        )
+        / 3600
+    )
+    average_dec = np.array(
+        [
+            np.mean([new, old])
+            for new, old in zip(expected_new_dec, gaia_ref_epoch_coords["dec"])
+        ]
+    )
+    pmra = gaia_ref_epoch_coords["pmra"] / np.cos(np.deg2rad(average_dec))
+    expected_new_ra = (
+        np.array(
+            gaia_ref_epoch_coords["ra"] * 3600
+            + (epoch - gaia_ref_epoch) * (pmra / 1000)
+        )
+        / 3600
+    )
+
+    assert len(result) > 0
+    assert np.isclose(returned_ra, expected_new_ra, atol=1e-10, rtol=1e-9).all()
+    assert np.isclose(returned_dec, expected_new_dec, atol=1e-10, rtol=1e-9).all()
