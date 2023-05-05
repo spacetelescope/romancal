@@ -1,12 +1,12 @@
 from roman_datamodels import datamodels as rdm
 from romancal.tweakreg.tweakreg_step import TweakRegStep
+from romancal.stpipe import RomanStep
 from roman_datamodels import maker_utils
 import os
 import csv
 import asdf
 import pytest
-from astropy.modeling.models import Shift
-from copy import deepcopy
+from .regtestdata import compare_asdf
 
 
 def load_base_image_wcs(input_dm):
@@ -58,24 +58,44 @@ def create_base_image_and_catalog(tmpdir):
     # add source detection catalog name
     tweakreg_catalog_filename = "base_image_sources.csv"
     create_base_image_source_catalog(tmpdir, tweakreg_catalog_filename)
-    l2.meta["tweakreg_catalog"] = os.path.join(tmpdir, tweakreg_catalog_filename)
+    l2.meta["tweakreg_catalog"] = os.path.join(
+        tmpdir, tweakreg_catalog_filename
+    )
 
     l2im = rdm.ImageModel(l2)
     return l2im
 
 
-@pytest.mark.parametrize("offset, is_ok", [(1 / 3600, True), (11 / 3600, False)])
-def test_is_wcs_correction_small(tmpdir, offset, is_ok):
-    img = create_base_image_and_catalog(tmpdir)
+@pytest.mark.bigdata
+def test_is_wcs_correction_small(rtdata, ignore_asdf_paths):
+    input_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg_input.asdf"
+    output_data = (
+        "r0000401001001001001_01101_0001_WFI01_cal_tweakreg_output.asdf"
+    )
+    truth_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg_truth.asdf"
 
-    wcs = img.meta.wcs
+    rtdata.get_data(f"WFI/image/{input_data}")
+    rtdata.get_truth(f"truth/WFI/image/{truth_data}")
 
-    # Make a copy and add an offset at the end of the transform
-    twcs = deepcopy(wcs)
-    step = twcs.pipeline[0]
-    step.transform = step.transform | Shift(offset) & Shift(offset)
-    twcs.bounding_box = wcs.bounding_box
+    rtdata.input = input_data
+    rtdata.output = output_data
 
     step = TweakRegStep()
 
-    assert step._is_wcs_correction_small(wcs, twcs) == is_ok
+    args = ["romancal.step.TweakRegStep", rtdata.input]
+    RomanStep.from_cmdline(args)
+    tweakreg_out = rdm.open(rtdata.output)
+
+    step.log.info(
+        "DMSXXX MSG: TweakReg step recorded as complete? :"
+        f' {tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"}'
+    )
+    assert tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"
+
+    step.log.info(
+        "DMSXXX MSG: Was the proper TweakReg data produced?"
+        f" : {(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}"
+    )
+    assert (
+        compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    )
