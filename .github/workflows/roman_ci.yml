@@ -68,10 +68,7 @@ jobs:
       cache-key: crds-${{ needs.crds_context.outputs.pmap }}
       envs: |
         - linux: test-oldestdeps-cov-xdist
-          python-version: 3.8
-          pytest-results-summary: true
-        - linux: test-xdist
-          python-version: 3.8
+          python-version: 3.9
           pytest-results-summary: true
         - linux: test-xdist
           python-version: 3.9

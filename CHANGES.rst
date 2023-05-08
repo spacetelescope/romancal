@@ -21,6 +21,8 @@ general
 
 - Remove explicit dependence on ``stdatamodels``. [#676]
 
+- Drop support for Python 3.8 [#694]
+
 source_detection
 ----------------
 - Added SourceDetection Step to pipeline [#608]
