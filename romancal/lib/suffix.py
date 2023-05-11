@@ -86,6 +86,7 @@ _calculated_suffixes = {
     "sourcedetectionstep",
     "tweakregstep",
     "outlierdetectionstep",
+    "skymatch",
 }
 
 
