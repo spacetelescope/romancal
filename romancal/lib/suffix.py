@@ -56,6 +56,7 @@ SUFFIXES_TO_ADD = [
     "dark_current",
     "darkcurrent",
     "outlier_detection",
+    "skymatch",
 ]
 
 # Suffixes that are discovered but should not be considered.
@@ -86,7 +87,7 @@ _calculated_suffixes = {
     "sourcedetectionstep",
     "tweakregstep",
     "outlierdetectionstep",
-    "skymatch",
+    "skymatchstep",
 }
 
 
