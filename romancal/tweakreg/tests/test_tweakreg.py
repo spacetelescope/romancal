@@ -376,8 +376,8 @@ def test_tweakreg_raises_error_on_invalid_input(input, error_type):
     with pytest.raises(Exception) as exec_info:
         TweakRegStep.call(input)
 
-    if not hasattr(error_type, '__len__'):
-        error_type = (error_type, )
+    if not hasattr(error_type, "__len__"):
+        error_type = (error_type,)
 
     assert type(exec_info.value) in error_type
 
