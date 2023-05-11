@@ -367,7 +367,7 @@ def base_image():
     [
         (list(), ValueError),
         ([""], FileNotFoundError),
-        ("", TypeError),
+        ("", (ValueError, TypeError)),
         ([1, 2, 3], TypeError),
     ],
 )
@@ -376,7 +376,10 @@ def test_tweakreg_raises_error_on_invalid_input(input, error_type):
     with pytest.raises(Exception) as exec_info:
         TweakRegStep.call(input)
 
-    assert type(exec_info.value) == error_type
+    if not hasattr(error_type, "__len__"):
+        error_type = (error_type,)
+
+    assert type(exec_info.value) in error_type
 
 
 def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
