@@ -68,6 +68,43 @@ def create_asn_file(tmp_path):
 class MockConnectionError:
     def __init__(self, *args, **kwargs):
         raise requests.exceptions.ConnectionError
+def create_asn_file(tmp_path):
+    asn_content = """
+        {
+            "asn_type": "None",
+            "asn_rule": "DMS_ELPP_Base",
+            "version_id": null,
+            "code_version": "0.9.1.dev28+ge987cc9.d20230106",
+            "degraded_status": "No known degraded exposures in association.",
+            "program": "noprogram",
+            "constraints": "No constraints",
+            "asn_id": "a3001",
+            "target": "none",
+            "asn_pool": "none",
+            "products": [
+                {
+                    "name": "files.asdf",
+                    "members": [
+                        {
+                            "expname": "img_1.asdf",
+                            "exptype": "science"
+                        },
+                        {
+                            "expname": "img_2.asdf",
+                            "exptype": "science"
+                        }
+                    ]
+                }
+            ]
+        }
+"""
+    asn_file_path = str(tmp_path / "sample_asn.json")
+    asn_file = StringIO()
+    asn_file.write(asn_content)
+    with open(asn_file_path, mode="w") as f:
+        print(asn_file.getvalue(), file=f)
+
+    return asn_file_path
 
 
 def update_wcsinfo(input_dm):
