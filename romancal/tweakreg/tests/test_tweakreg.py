@@ -24,6 +24,45 @@ from romancal.tweakreg.tweakreg_step import (
 )
 
 
+def create_asn_file(tmp_path):
+    asn_content = """
+        {
+            "asn_type": "None",
+            "asn_rule": "DMS_ELPP_Base",
+            "version_id": null,
+            "code_version": "0.9.1.dev28+ge987cc9.d20230106",
+            "degraded_status": "No known degraded exposures in association.",
+            "program": "noprogram",
+            "constraints": "No constraints",
+            "asn_id": "a3001",
+            "target": "none",
+            "asn_pool": "none",
+            "products": [
+                {
+                    "name": "files.asdf",
+                    "members": [
+                        {
+                            "expname": "img_1.asdf",
+                            "exptype": "science"
+                        },
+                        {
+                            "expname": "img_2.asdf",
+                            "exptype": "science"
+                        }
+                    ]
+                }
+            ]
+        }
+"""
+    asn_file_path = str(tmp_path / "sample_asn.json")
+    asn_file = StringIO()
+    asn_file.write(asn_content)
+    with open(asn_file_path, mode="w") as f:
+        print(asn_file.getvalue(), file=f)
+
+    return asn_file_path
+
+
 def update_wcsinfo(input_dm):
     """
     Update WCSInfo with realistic data (i.e. obtained from romanisim simulations).
@@ -365,9 +404,9 @@ def base_image():
 @pytest.mark.parametrize(
     "input, error_type",
     [
-        (list(), ValueError),
+        (list(), TypeError),
         ([""], FileNotFoundError),
-        ("", (ValueError, TypeError)),
+        ("", TypeError),
         ([1, 2, 3], TypeError),
     ],
 )
@@ -394,12 +433,54 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
 
 
 def test_tweakreg_returns_modelcontainer(tmp_path, base_image):
-    """Test that TweakReg returns a ModelContainer."""
-    img = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img)
-    res = TweakRegStep.call([img])
+    """Test that TweakReg always returns a ModelContainer."""
 
-    assert type(res) == rdm.ModelContainer
+    def clean_result(result):
+        """
+        Remove meta.tweakreg_catalog from 'tweaked' file.
+
+        Parameters
+        ----------
+        result : ModelContainer
+            A ModelContainer with the results from TweakRegStep.
+        """
+        for img in result:
+            del img.meta["tweakreg_catalog"]
+
+    img_1 = base_image(shift_1=1000, shift_2=1000)
+    img_2 = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
+    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
+    img_1.save(tmp_path / "img_1.asdf")
+    img_2.save(tmp_path / "img_2.asdf")
+    asn_filepath = create_asn_file(tmp_path)
+
+    step = TweakRegStep()
+
+    # list of strings containing the path to ASDF files
+    tmp_path_str = tmp_path.as_posix()
+    res_1 = step.process(
+        [
+            f"{tmp_path_str}/img_1.asdf",
+            f"{tmp_path_str}/img_2.asdf",
+        ]
+    )
+    assert type(res_1) == rdm.ModelContainer
+    clean_result(res_1)
+
+    # list of pathlib.Path objects containing the path to ASDF files
+    res_2 = step.process([tmp_path / "img_1.asdf", tmp_path / "img_2.asdf"])
+    assert type(res_2) == rdm.ModelContainer
+    clean_result(res_2)
+
+    # list of DataModels
+    res_3 = step.process([img_1, img_2])
+    assert type(res_3) == rdm.ModelContainer
+    clean_result(res_3)
+
+    # string containing the full path to an ASN file
+    res_4 = step.process(asn_filepath)
+    assert type(res_4) == rdm.ModelContainer
 
 
 def test_tweakreg_updates_cal_step(tmp_path, base_image):

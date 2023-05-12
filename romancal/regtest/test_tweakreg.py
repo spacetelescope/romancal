@@ -1,18 +1,22 @@
-from roman_datamodels import datamodels as rdm
-from romancal.tweakreg.tweakreg_step import TweakRegStep
-from romancal.stpipe import RomanStep
-from roman_datamodels import maker_utils
-import os
 import csv
+import os
+
 import asdf
 import pytest
+from roman_datamodels import datamodels as rdm
+from roman_datamodels import maker_utils
+
+from romancal.stpipe import RomanStep
+from romancal.tweakreg.tweakreg_step import TweakRegStep
+
 from .regtestdata import compare_asdf
 
 
 def load_base_image_wcs(input_dm):
     # data from romanisim simulated image 'l1-270-66-gaia-2016-sca7_cal.asdf'
     # command used to create simulated image:
-    # romanisim-make-image --catalog ./rsim_cat_F158.ecsv --radec 270.0 66.0 --bandpass F158 --sca 7
+    # romanisim-make-image --catalog ./rsim_cat_F158.ecsv --radec 270.0 66.0
+    # --bandpass F158 --sca 7
     # --usecrds --webbpsf --date 2026 1 1 --level 1 l1-270-66-gaia-2016-sca7.asdf
 
     # update meta.wcsinfo
@@ -58,9 +62,7 @@ def create_base_image_and_catalog(tmpdir):
     # add source detection catalog name
     tweakreg_catalog_filename = "base_image_sources.csv"
     create_base_image_source_catalog(tmpdir, tweakreg_catalog_filename)
-    l2.meta["tweakreg_catalog"] = os.path.join(
-        tmpdir, tweakreg_catalog_filename
-    )
+    l2.meta["tweakreg_catalog"] = os.path.join(tmpdir, tweakreg_catalog_filename)
 
     l2im = rdm.ImageModel(l2)
     return l2im
@@ -69,9 +71,7 @@ def create_base_image_and_catalog(tmpdir):
 @pytest.mark.bigdata
 def test_is_wcs_correction_small(rtdata, ignore_asdf_paths):
     input_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg_input.asdf"
-    output_data = (
-        "r0000401001001001001_01101_0001_WFI01_cal_tweakreg_output.asdf"
-    )
+    output_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg_output.asdf"
     truth_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg_truth.asdf"
 
     rtdata.get_data(f"WFI/image/{input_data}")
@@ -96,6 +96,4 @@ def test_is_wcs_correction_small(rtdata, ignore_asdf_paths):
         "DMSXXX MSG: Was the proper TweakReg data produced?"
         f" : {(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}"
     )
-    assert (
-        compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
-    )
+    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
