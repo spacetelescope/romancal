@@ -20,18 +20,19 @@ table below.
 
 .. |check| unicode:: U+2713 .. checkmark
 
-============================================== ========= ========= =========
- Step                                          WFI-Image WFI-Prism WFI-Grism
-============================================== ========= ========= =========
- :ref:`dq_init <dq_init_step>`                  |check|    |check|  |check|
- :ref:`saturation <saturation_step>`            |check|    |check|  |check|
- :ref:`linearity <linearity_step>`              |check|    |check|  |check|
- :ref:`dark_current <dark_current_step>`        |check|    |check|  |check|
- :ref:`jump <jump_step>`                        |check|    |check|  |check|
- :ref:`ramp_fitting <ramp_fitting_step>`        |check|    |check|  |check|
- :ref:`assign_wcs <assign_wcs_step>`            |check|    |check|  |check|
- :ref:`flatfield <flatfield_step>`              |check|
-============================================== ========= ========= =========
+================================================== ========= ========= =========
+ Step                                              WFI-Image WFI-Prism WFI-Grism
+================================================== ========= ========= =========
+ :ref:`dq_init <dq_init_step>`                      |check|    |check|  |check|
+ :ref:`saturation <saturation_step>`                |check|    |check|  |check|
+ :ref:`linearity <linearity_step>`                  |check|    |check|  |check|
+ :ref:`dark_current <dark_current_step>`            |check|    |check|  |check|
+ :ref:`jump <jump_step>`                            |check|    |check|  |check|
+ :ref:`ramp_fitting <ramp_fitting_step>`            |check|    |check|  |check|
+ :ref:`assign_wcs <assign_wcs_step>`                |check|    |check|  |check|
+ :ref:`flatfield <flatfield_step>`                  |check|
+ :ref:`outlier_detection <outlier_detection_step>`  |check|
+================================================== ========= ========= =========
 
 
 Arguments
