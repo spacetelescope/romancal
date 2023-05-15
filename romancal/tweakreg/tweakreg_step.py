@@ -389,9 +389,17 @@ class TweakRegStep(RomanStep):
             gaia_cat_name = self.abs_refcat.upper()
 
             if gaia_cat_name in SINGLE_GROUP_REFCAT:
-                ref_cat = amutils.create_astrometric_catalog(
-                    images, gaia_cat_name, output=output_name
-                )
+                try:
+                    ref_cat = amutils.create_astrometric_catalog(
+                        images, gaia_cat_name, output=output_name
+                    )
+                except Exception as e:
+                    self.log.warning(
+                        "TweakRegStep cannot proceed because of an error that "
+                        "occurred while fetching data from the VO server. "
+                        f"Returned error message: '{e}'"
+                    )
+                    raise
 
             elif os.path.isfile(self.abs_refcat):
                 ref_cat = Table.read(self.abs_refcat)

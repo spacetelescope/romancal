@@ -217,15 +217,15 @@ def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3", timeout=TIMEOU
     service_url = f"{SERVICELOCATION}/{service_type}?{spec}"
     try:
         rawcat = requests.get(service_url, headers=headers, timeout=timeout)
-    except requests.exceptions.ConnectionError as e:
+    except requests.exceptions.ConnectionError:
         raise requests.exceptions.ConnectionError(
-            f"A Connection error occurred. Traceback: {e}"
+            "Could not connect to the VO API server. Try again later."
         )
-    except requests.exceptions.Timeout as e:
-        raise requests.exceptions.Timeout(f"The request timed out. Traceback: {e}")
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.Timeout:
+        raise requests.exceptions.Timeout("The request to the VO API server timed out.")
+    except requests.exceptions.RequestException:
         raise requests.exceptions.RequestException(
-            f"There was an unexpected error with the request. Traceback: {e}"
+            "There was an unexpected error with the request."
         )
     # convert from bytes to a String
     r_contents = rawcat.content.decode()
@@ -234,6 +234,9 @@ def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3", timeout=TIMEOU
     # CRITICAL to proper interpretation of CSV data
     del rstr[0]
     if len(rstr) == 0:
-        raise Exception("VO catalog service returned no results.")
+        raise Exception(
+            """VO catalog service returned no results.\n
+            Hint: maybe loosen the search parameters might help."""
+        )
 
     return table.Table.read(rstr, format="csv")
