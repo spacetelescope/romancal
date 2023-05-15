@@ -4,6 +4,7 @@ from typing import Tuple
 
 import numpy as np
 import pytest
+import requests
 from astropy import coordinates as coord
 from astropy import table
 from astropy import units as u
@@ -21,6 +22,11 @@ from romancal.tweakreg.astrometric_utils import (
     create_astrometric_catalog,
     get_catalog,
 )
+
+
+class MockConnectionError:
+    def __init__(self, *args, **kwargs):
+        raise requests.exceptions.ConnectionError
 
 
 def update_wcsinfo(input_dm):
@@ -437,7 +443,17 @@ def test_get_catalog_using_invalid_parameters(ra, dec, sr, catalog_name):
     with pytest.raises(Exception) as exec_info:
         get_catalog(ra, dec, sr=sr, catalog=catalog_name)
 
-    assert str(exec_info.typename).lower().endswith("error")
+    assert exec_info.typename.lower() == "exception"
+
+
+def test_get_catalog_valid_parameters_but_no_sources_returned():
+    """Test that get_catalog raises an exception if no sources are found."""
+
+    with pytest.raises(Exception) as exec_info:
+        # use a small search radius (0.5 arcsec) to force no source detection
+        get_catalog(10, 10, sr=0.00014, catalog="GAIADR3")
+
+    assert exec_info.typename.lower() == "exception"
 
 
 @pytest.mark.parametrize(
@@ -492,3 +508,28 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
     assert len(result) > 0
     assert np.isclose(returned_ra, expected_new_ra, atol=1e-10, rtol=1e-9).all()
     assert np.isclose(returned_dec, expected_new_dec, atol=1e-10, rtol=1e-9).all()
+
+
+def test_get_catalog_timeout():
+    """Test that get_catalog can timeout."""
+
+    with pytest.raises(Exception) as exec_info:
+        for dt in np.arange(1, 0, -0.01):
+            try:
+                get_catalog(10, 10, sr=0.1, catalog="GAIADR3", timeout=dt)
+            except requests.exceptions.ConnectionError:
+                # ignore if it's a connection error instead of timeout
+                pass
+
+    assert exec_info.type == requests.exceptions.Timeout
+
+
+def test_get_catalog_raises_connection_error(monkeypatch):
+    """Test that get_catalog can raise a connection error."""
+
+    monkeypatch.setattr("requests.get", MockConnectionError)
+
+    with pytest.raises(Exception) as exec_info:
+        get_catalog(10, 10, sr=0.1, catalog="GAIADR3")
+
+    assert exec_info.type == requests.exceptions.ConnectionError

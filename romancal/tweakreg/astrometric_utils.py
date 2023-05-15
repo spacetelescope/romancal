@@ -8,6 +8,12 @@ from astropy.coordinates import SkyCoord
 from ..assign_wcs import utils as wcsutil
 from ..resample import resample_utils
 
+# import logging
+
+# Define logging
+# log = logging.getLogger()
+# log.setLevel(logging.DEBUG)
+
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = "http://gsss.stsci.edu/webservices"
 
@@ -172,7 +178,7 @@ def compute_radius(wcs):
     return radius, fiducial
 
 
-def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3"):
+def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3", timeout=TIMEOUT):
     """Extract catalog from VO web service.
 
     Parameters
@@ -194,6 +200,9 @@ def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3"):
     catalog : str, optional
         Name of catalog to query, as defined by web-service.  Default: 'GAIADR3'
 
+    timeout : float, optional
+        Set the request timeout (in seconds). Default: 30 s.
+
     Returns
     -------
         A Table object of returned sources with all columns as provided by catalog.
@@ -206,14 +215,25 @@ def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3"):
 
     spec = spec_str.format(ra, dec, epoch, sr, fmt, catalog)
     service_url = f"{SERVICELOCATION}/{service_type}?{spec}"
-    rawcat = requests.get(service_url, headers=headers, timeout=TIMEOUT)
-    r_contents = rawcat.content.decode()  # convert from bytes to a String
+    try:
+        rawcat = requests.get(service_url, headers=headers, timeout=timeout)
+    except requests.exceptions.ConnectionError as e:
+        raise requests.exceptions.ConnectionError(
+            f"A Connection error occurred. Traceback: {e}"
+        )
+    except requests.exceptions.Timeout as e:
+        raise requests.exceptions.Timeout(f"The request timed out. Traceback: {e}")
+    except requests.exceptions.RequestException as e:
+        raise requests.exceptions.RequestException(
+            f"There was an unexpected error with the request. Traceback: {e}"
+        )
+    # convert from bytes to a String
+    r_contents = rawcat.content.decode()
     rstr = r_contents.split("\r\n")
     # remove initial line describing the number of sources returned
     # CRITICAL to proper interpretation of CSV data
     del rstr[0]
     if len(rstr) == 0:
-        print(Exception("VO catalog service returned no results."))
-        raise
+        raise Exception("VO catalog service returned no results.")
 
     return table.Table.read(rstr, format="csv")
