@@ -8,12 +8,6 @@ from astropy.coordinates import SkyCoord
 from ..assign_wcs import utils as wcsutil
 from ..resample import resample_utils
 
-# import logging
-
-# Define logging
-# log = logging.getLogger()
-# log.setLevel(logging.DEBUG)
-
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = "http://gsss.stsci.edu/webservices"
 
