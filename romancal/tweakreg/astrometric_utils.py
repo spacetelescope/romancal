@@ -8,6 +8,12 @@ from astropy.coordinates import SkyCoord
 from ..assign_wcs import utils as wcsutil
 from ..resample import resample_utils
 
+# import logging
+
+# Define logging
+# log = logging.getLogger()
+# log.setLevel(logging.DEBUG)
+
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
 DEF_CAT_URL = "http://gsss.stsci.edu/webservices"
 
@@ -211,15 +217,15 @@ def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3", timeout=TIMEOU
     service_url = f"{SERVICELOCATION}/{service_type}?{spec}"
     try:
         rawcat = requests.get(service_url, headers=headers, timeout=timeout)
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.ConnectionError as e:
         raise requests.exceptions.ConnectionError(
-            "Could not connect to the VO API server. Try again later."
+            f"A Connection error occurred. Traceback: {e}"
         )
-    except requests.exceptions.Timeout:
-        raise requests.exceptions.Timeout("The request to the VO API server timed out.")
-    except requests.exceptions.RequestException:
+    except requests.exceptions.Timeout as e:
+        raise requests.exceptions.Timeout(f"The request timed out. Traceback: {e}")
+    except requests.exceptions.RequestException as e:
         raise requests.exceptions.RequestException(
-            "There was an unexpected error with the request."
+            f"There was an unexpected error with the request. Traceback: {e}"
         )
     # convert from bytes to a String
     r_contents = rawcat.content.decode()
@@ -228,9 +234,6 @@ def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3", timeout=TIMEOU
     # CRITICAL to proper interpretation of CSV data
     del rstr[0]
     if len(rstr) == 0:
-        raise Exception(
-            """VO catalog service returned no results.\n
-            Hint: maybe reviewing the search parameters might help."""
-        )
+        raise Exception("VO catalog service returned no results.")
 
     return table.Table.read(rstr, format="csv")
