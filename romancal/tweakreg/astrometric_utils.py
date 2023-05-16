@@ -230,7 +230,7 @@ def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3", timeout=TIMEOU
     if len(rstr) == 0:
         raise Exception(
             """VO catalog service returned no results.\n
-            Hint: maybe loosen the search parameters might help."""
+            Hint: maybe reviewing the search parameters might help."""
         )
 
     return table.Table.read(rstr, format="csv")
