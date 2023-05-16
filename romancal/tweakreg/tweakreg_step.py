@@ -399,7 +399,11 @@ class TweakRegStep(RomanStep):
                         "occurred while fetching data from the VO server. "
                         f"Returned error message: '{e}'"
                     )
-                    raise
+                    self.log.warning("Skipping 'TweakRegStep'...")
+                    self.skip = True
+                    for model in images:
+                        model.meta.cal_step.tweakreg = "SKIPPED"
+                    return images
 
             elif os.path.isfile(self.abs_refcat):
                 ref_cat = Table.read(self.abs_refcat)
