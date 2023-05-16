@@ -908,7 +908,7 @@ def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
 ):
     """
     Test that TweakReg raises an error when there is a connection error with
-    the VO API server.
+    the VO API server, which means that an absolute reference catalog cannot be created.
     """
 
     img = base_image(shift_1=1000, shift_2=1000)
@@ -916,8 +916,10 @@ def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
 
     step = TweakRegStep()
 
-    with pytest.raises(Exception) as exec_info:
-        monkeypatch.setattr("requests.get", MockConnectionError)
-        step.process([img])
+    monkeypatch.setattr("requests.get", MockConnectionError)
+    res = step.process([img])
 
-    assert type(exec_info.value) == requests.exceptions.ConnectionError
+    assert type(res) == rdm.ModelContainer
+    assert len(res) == 1
+    assert res[0].meta.cal_step.tweakreg.lower() == "skipped"
+    assert step.skip is True
