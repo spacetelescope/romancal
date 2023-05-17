@@ -8,6 +8,7 @@ from romancal.refpix.refpix import (
     Arrangement,
     RefPixData,
     Width,
+    cosine_interpolate_amp33,
     remove_linear_trends,
     remove_offset,
 )
@@ -196,3 +197,18 @@ def test_regress_remove_linear_trends(ref_data):
 
     new = remove_linear_trends(ref_data)
     assert_allclose(new.split_channels, regress)
+
+
+def test_regress_interpolate_amp33(ref_data):
+    from . import reference_utils
+
+    # Run regression utility
+    regress = ref_data.aligned_channels
+    reference_utils.cos_interp_reference(regress, regress.shape[1])
+    assert (regress[-1, :, :, :] != ref_data.aligned_channels[-1, :, :, :]).any()
+    assert (regress[:-1, :, :, :] == ref_data.aligned_channels[:-1, :, :, :]).all()
+
+    new = cosine_interpolate_amp33(ref_data)
+
+    assert_allclose(new.amp33, regress[-1, :, :, :])
+    assert (new.aligned_channels == regress).all()

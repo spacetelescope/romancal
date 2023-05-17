@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import islice
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -10,11 +11,9 @@ from enum import IntEnum, StrEnum, auto
 
 import numpy as np
 from astropy import units as u
+from scipy import fft
 
 # TODO:
-# 1.  Add padded/reversed channel tracking and undo to the RefPixData object.
-# 4.  Implement the equivalent of the interp_zeros_channel_fun as a function which
-#     takes in a RefPixData object and returns a RefPixData object.
 # 5.  Implement the equivalent of the fft_interp method as a function which takes
 #     in a RefPixData object and returns a RefPixData object.
 # 6.  Implement the actual correction steps:
@@ -211,10 +210,65 @@ def remove_linear_trends(ref_data: RefPixData) -> RefPixData:
     return RefPixData.from_split(data, ref_data.offset)
 
 
-def interpolate_amp33(ref_data: RefPixData) -> RefPixData:
+def cosine_interpolate_amp33(ref_data: RefPixData) -> RefPixData:
     """
     Perform Cosine weighted interpolation on the zero values of the amp33 channels
     """
 
     if ref_data.arrangement != Arrangement.ALIGNED:
         ref_data = RefPixData.from_split(ref_data.aligned_channels, ref_data.offset)
+
+    data = ref_data.amp33
+    channels, _, rows, columns = ref_data.data.shape
+
+    interp = np.sin(np.arange(1, channels + 1, dtype=data.dtype) * np.pi / channels)
+
+    for frame in data:
+        kern = frame.reshape(rows * columns)
+
+        mask = (kern != 0).astype(np.int64)
+
+        cov = np.convolve(kern, interp, mode="same")
+        mask_conv = np.convolve(mask, interp, mode="same")
+
+        kern = (cov / mask_conv).reshape(rows, columns)
+        frame += kern * (1 - mask.reshape(rows, columns))
+
+    # Fix NaN values
+    np.nan_to_num(data, copy=False)
+
+    return RefPixData(ref_data.data, data, ref_data.offset, ref_data.arrangement)
+
+
+def fft_interpolate(frame, read_only, apodize):
+    data = frame[read_only]
+    while True:
+        result = apodize * fft.rfft(data, workers=1) / data.size
+        data = fft.ifft(result * data.size, workers=1)
+
+        yield data
+
+
+def fft_interpolate_amp22(ref_data: RefPixData, num: int = 50) -> RefPixData:
+    """
+    FFT interpolate the zero values of the amp22 channels
+    """
+
+    frames, rows, columns = ref_data.amp33.shape
+    length = rows * columns
+
+    mask = np.zeros(columns, dtype=bool)
+    mask[: -Width.PAD] = True
+    read_only = np.where(mask)
+
+    data = ref_data.amp33.reshape(frames, length)
+    apodize = (
+        1 + np.cos(2 * np.pi * np.abs(np.fft.rfftfreq(length, 1 / length)) / length)
+    ) / 2
+
+    for frame in data:
+        frame[read_only] = next(
+            islice(fft_interpolate(frame, read_only, apodize), num, None)
+        )
+
+    return data

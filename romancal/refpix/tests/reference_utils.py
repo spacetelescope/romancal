@@ -10,6 +10,7 @@ END_OF_ROW_PIXEL_PAD = 12
 NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD = NUM_COLS_PER_OUTPUT_CHAN + END_OF_ROW_PIXEL_PAD
 ALL_CHAN_RANGE = range(NUM_OUTPUT_CHANS)
 REFERENCE_ROWS = [0, 1, 2, 3, 4092, 4093, 4094, 4095]
+REFERENCE_CHAN = 32
 
 
 def remove_linear_trends(data_FramesRowsCols, subtractOffsetOnly):
@@ -182,3 +183,61 @@ def exec_channel_func_threads(chanIndexRange, targetFunc, funcArgs, multiThread=
         for c in chanIndexRange:
             funcArgsWithChan = (c,) + funcArgs
             targetFunc(*funcArgsWithChan)
+
+
+def getTrigInterpolationFunction(data):
+    return np.sin(np.arange(NUM_OUTPUT_CHANS, dtype=data.dtype) / 32 * np.pi)[1:]
+
+
+def interp_zeros_channel_fun(
+    chanNumber,
+    interpFunc,
+    data_ChansFramesRowsCols,
+    numFrames,
+    numRows,
+    numColsPerOutputChanWithPad,
+):
+    """
+    Convolve interpFunc across pixels with values of 0 for a single channel.
+    We are not using the outlier mask and thus possibly interpolating pixels
+    with original values of 0. This is to ensure we don't have discontinuities
+    (around 0) when doing the FFT interpolation, which could damage the performance.
+
+    :param chanNumber:
+    :param interpFunc:
+    :param data_ChansFramesRowsCols:  Data to interpolate, which is done IN PLACE
+    :param numFrames:
+    :param numRows:
+    :param numColsPerOutputChanWithPad:
+    """
+    for frame in range(numFrames):
+        dat = np.reshape(
+            data_ChansFramesRowsCols[chanNumber, frame, :, :],
+            numColsPerOutputChanWithPad * numRows,
+        )
+
+        # Apply to areas with 0 value.
+        applyMask = np.where(dat != 0, 1, 0)
+
+        dataConvolve = np.convolve(
+            dat, interpFunc, mode="same"
+        )  # 'same' -> /edge_wrap in IDL
+        applyMaskConvolve = np.convolve(applyMask, interpFunc, mode="same")
+
+        sfm3 = dataConvolve / applyMaskConvolve
+        dat = np.reshape(sfm3, (numRows, numColsPerOutputChanWithPad))
+        mask2D = np.reshape(applyMask, (numRows, numColsPerOutputChanWithPad))
+        data_ChansFramesRowsCols[chanNumber, frame, :, :] += dat * (1 - mask2D)
+        # Repair any NaNs
+        np.nan_to_num(data_ChansFramesRowsCols[chanNumber, :, :, :], copy=False)
+
+
+def cos_interp_reference(dataUniformTime, numFrames):
+    return interp_zeros_channel_fun(
+        REFERENCE_CHAN,
+        getTrigInterpolationFunction(dataUniformTime),
+        dataUniformTime,
+        numFrames,
+        NUM_ROWS,
+        NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD,
+    )
