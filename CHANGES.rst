@@ -9,7 +9,7 @@ associations
 Documentation
 -------------
 
-- Update dq flags to include "GW_AFFECTED_DATA"  flag [#]
+- Update dq flags to include "GW_AFFECTED_DATA"  flag [#699]
 
 general
 -------
