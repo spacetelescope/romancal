@@ -41,6 +41,8 @@ general
 
 source_detection
 ----------------
+- Bug fix to ensure that the returned result is a copy of the input datamodel. [#700]
+
 - Added SourceDetection Step to pipeline [#608]
 
 - Added option of fixed random seed for unit tests to avoid intermittent failures from randomness. [#668]
