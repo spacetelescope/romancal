@@ -363,7 +363,7 @@ def add_tweakreg_catalog_attribute(
         save_catalogs=save_catalogs,
     )
 
-    input_dm.meta["source_detection"] = {}
+    input_dm.meta["source_detection"] = maker_utils.mk_source_detection()
 
     if save_catalogs:
         # SourceDetectionStep adds the catalog path+filename
