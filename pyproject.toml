@@ -26,7 +26,7 @@ dependencies = [
     # 'rad @ git+https://github.com/spacetelescope/rad.git@main',
     "rad @ git+https://github.com/spacetelescope/rad.git@d95148813bb26460544a218317fdb05fe8c1cd29",
     #'roman_datamodels >=0.14.1',
-    'roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git@main',
+    # 'roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git@main',
     'stcal >=1.3.3',
     'stpipe >=0.5.0',
     'tweakwcs >=0.8.0',
