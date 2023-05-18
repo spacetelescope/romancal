@@ -10,9 +10,7 @@ from .regtestdata import compare_asdf
 @pytest.mark.bigdata
 def test_tweakreg(rtdata, ignore_asdf_paths):
     input_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg.asdf"
-    output_data = (
-        "r0000401001001001001_01101_0001_WFI01_cal_tweakreg_output.asdf"
-    )
+    output_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg_output.asdf"
     truth_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg.asdf"
 
     rtdata.get_data(f"WFI/image/{input_data}")
@@ -41,6 +39,4 @@ def test_tweakreg(rtdata, ignore_asdf_paths):
         "DMSXXX MSG: Was the proper TweakReg data produced?"
         f" : {(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}"
     )
-    assert (
-        compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
-    )
+    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
