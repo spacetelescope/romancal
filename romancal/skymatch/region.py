@@ -135,7 +135,7 @@ class Polygon(Region):
         """
         Construct a Global Edge Table (GET)
 
-        The GET is an OrderedDict. Keys are scan  line numbers,
+        The GET is an OrderedDict. Keys are scan line numbers,
         ordered from bbox.ymin to bbox.ymax, where bbox is the
         bounding box of the polygon.
         Values are lists of edges for which edge.ymin==scan_line_number.
