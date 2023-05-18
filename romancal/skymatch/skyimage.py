@@ -169,13 +169,13 @@ class SkyImage:
             for sky computations (``0``).
 
         id : anything
-            The value of this parameter is simple stored within the `SkyImage`
+            The value of this parameter is simply stored within the `SkyImage`
             object. While it can be of any type, it is preferable that `id` be
             of a type with nice string representation.
 
         skystat : callable, None, optional
             A callable object that takes a either a 2D image (2D
-            `numpy.ndarray`) or a list of pixel values (a Nx1 array) and
+            `numpy.ndarray`) or a list of pixel values (an Nx1 array) and
             returns a tuple of two values: some statistics (e.g., mean,
             median, etc.) and number of pixels/values from the input image
             used in computing that statistics.
@@ -485,7 +485,7 @@ class SkyImage:
     @property
     def skystat(self):
         """Stores/retrieves a callable object that takes a either a 2D image
-        (2D `numpy.ndarray`) or a list of pixel values (a Nx1 array) and
+        (2D `numpy.ndarray`) or a list of pixel values (an Nx1 array) and
         returns a tuple of two values: some statistics
         (e.g., mean, median, etc.) and number of pixels/values from the input
         image used in computing that statistics.

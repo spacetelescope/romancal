@@ -183,7 +183,7 @@ but will leave an overall residual in one of the mosaics.
 
 Limitations and Discussions
 ---------------------------
-As aluded to above, the best sky computation method depends on the nature
+As alluded to above, the best sky computation method depends on the nature
 of the data in the input images. If the input images contain mostly
 compact, isolated sources, the "local" and "global" algorithms can do a
 good job at finding the true sky level in each image. If the images contain
