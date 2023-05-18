@@ -240,35 +240,45 @@ def cosine_interpolate_amp33(ref_data: RefPixData) -> RefPixData:
     return RefPixData(ref_data.data, data, ref_data.offset, ref_data.arrangement)
 
 
-def fft_interpolate(frame, read_only, apodize):
-    data = frame[read_only]
+def fft_interpolate(frame: np.ndarray, read_only: np.ndarray, apodize: np.ndarray):
+    only = frame[read_only]
+
     while True:
-        result = apodize * fft.rfft(data, workers=1) / data.size
-        data = fft.ifft(result * data.size, workers=1)
+        result = apodize * fft.rfft(frame, workers=1) / frame.size
+        frame = fft.irfft(result * frame.size, workers=1)
+        frame[read_only] = only
 
-        yield data
+        yield frame
 
 
-def fft_interpolate_amp22(ref_data: RefPixData, num: int = 50) -> RefPixData:
+def fft_interpolate_amp33(ref_data: RefPixData, num: int = 3) -> RefPixData:
     """
-    FFT interpolate the zero values of the amp22 channels
+    FFT interpolate the zero values of the amp33 channels
     """
+    if ref_data.arrangement != Arrangement.ALIGNED:
+        ref_data = RefPixData.from_split(ref_data.aligned_channels, ref_data.offset)
 
     frames, rows, columns = ref_data.amp33.shape
     length = rows * columns
 
-    mask = np.zeros(columns, dtype=bool)
-    mask[: -Width.PAD] = True
-    read_only = np.where(mask)
+    mask = np.zeros((rows, columns), dtype=bool)
+    mask[:, : -Width.PAD] = True
+    mask = mask.flatten()
+
+    read_only = np.where(mask)[0]
 
     data = ref_data.amp33.reshape(frames, length)
     apodize = (
         1 + np.cos(2 * np.pi * np.abs(np.fft.rfftfreq(length, 1 / length)) / length)
     ) / 2
 
-    for frame in data:
-        frame[read_only] = next(
-            islice(fft_interpolate(frame, read_only, apodize), num, None)
+    for index, frame in enumerate(data):
+        data[index, :] = next(
+            islice(fft_interpolate(frame, read_only, apodize), num - 1, None)
         )
 
     return data
+
+
+# def transform_data(ref_pix: RefPixData) -> RefPixData:
+#     """ """

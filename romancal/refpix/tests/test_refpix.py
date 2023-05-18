@@ -9,6 +9,7 @@ from romancal.refpix.refpix import (
     RefPixData,
     Width,
     cosine_interpolate_amp33,
+    fft_interpolate_amp33,
     remove_linear_trends,
     remove_offset,
 )
@@ -212,3 +213,43 @@ def test_regress_interpolate_amp33(ref_data):
 
     assert_allclose(new.amp33, regress[-1, :, :, :])
     assert (new.aligned_channels == regress).all()
+
+
+def test_regress_fft_interpolate_amp33(ref_data):
+    """
+    Run fft interpolation regression test
+
+    NOTE: The reference code assumes the data will be changed in-place, which is
+          not the case for the given implementation. However, the reference code
+          sort of makes an in-place change to the data, but this is only on the
+          reshaped `dataReferenceChan_FramesFlat` array, which is not subsequently
+          used anywhere else in the code.
+
+          I believe, the reference code incorrectly assumes that the in-place changes
+          to `dataReferenceChan_FramesFlat` will propogate to the original data array:
+          `dataUniformTime`. This assumption is incorrect, and so the reference code
+          deviates from the described algorithm.
+
+          To combat this apparent mistake, I reshape the `dataReferenceChan_FramesFlat`
+          array in my wrapper of the reference code and then return that array as a
+          function output.
+
+          The romancal code does not make this mistake because it does not work
+          via in-place changes.
+    """
+    from . import reference_utils
+
+    regress = ref_data.aligned_channels
+    new_regress = reference_utils.fft_interp_amp33(regress, regress.shape[1])
+
+    # # Show this sub array does get inplace changes (returned as function output)
+    # assert (new_regress[:, :, :] != ref_data.aligned_channels[-1, :, :, :]).any()
+
+    # # Demonstration of the issue with the reference code, if an in-place change
+    # # is actually made, then the first assert below would fail.
+    # assert (regress[-1, :, :, :] == ref_data.aligned_channels[-1, :, :, :]).all()
+    # assert (regress[:-1, :, :, :] == ref_data.aligned_channels[:-1, :, :, :]).all()
+
+    new_amp33 = fft_interpolate_amp33(ref_data, 3)
+
+    assert (new_regress == new_amp33).all()

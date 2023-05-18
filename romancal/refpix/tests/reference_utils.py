@@ -1,6 +1,7 @@
 import threading
 
 import numpy as np
+import scipy.fft as spfft
 
 NUM_ROWS = 4096
 NUM_OUTPUT_CHANS = 33
@@ -240,4 +241,78 @@ def cos_interp_reference(dataUniformTime, numFrames):
         numFrames,
         NUM_ROWS,
         NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD,
+    )
+
+
+def getFFTApodizeFunction():
+
+    apo_len = NUM_ROWS * NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD
+    apo2 = np.abs(np.fft.rfftfreq(apo_len, 1 / apo_len))
+    apodize_func = np.cos(2 * np.pi * apo2 / apo_len) / 2.0 + 0.5
+    return apodize_func
+
+
+def fft_interp(
+    chanData_FramesFlat,
+    readOnlyPixelsAreOneMask_Flattenedimage,
+    apodizeFilter,
+    numIterations,
+):
+    """
+    Perform FFT interpolation on pixels not marked as read-only
+    :param chanData_FramesFlat: Multi-frame, single channel data with each
+        frame flattened to 1D.  WILL BE UPDATED IN PLACE
+    :param readOnlyPixelsAreOneMask_Flattenedimage:  Flattened image size mask
+        indicating (good) pixels that should be used in the interpolation
+        but not modified
+    :param numFrames: number of frames in chanData_FramesFlat
+    :param apodizeFilter:
+    :param numIterations: number of times to iterate the interpolation
+    """
+
+    numFrames = len(chanData_FramesFlat)
+    readOnlyPixelsIndices_Flat = np.where(readOnlyPixelsAreOneMask_Flattenedimage)[0]
+
+    for frame in range(numFrames):
+
+        chanFrameData_Flat = chanData_FramesFlat[frame]
+        readOnlyPixelsValues_Flat = chanFrameData_Flat[readOnlyPixelsIndices_Flat]
+
+        for _ in range(numIterations):
+
+            fftResult = (
+                apodizeFilter
+                * spfft.rfft(chanFrameData_Flat, workers=1)
+                / chanFrameData_Flat.size
+            )
+            chanFrameData_Flat = spfft.irfft(
+                fftResult * chanFrameData_Flat.size, workers=1
+            )
+            # Return read only pixels
+            chanFrameData_Flat[readOnlyPixelsIndices_Flat] = readOnlyPixelsValues_Flat
+
+        chanData_FramesFlat[frame, :] = chanFrameData_Flat
+
+
+def fft_interp_amp33(dataUniformTime, numFrames):
+    refOutputOnesMask = np.zeros(
+        (NUM_ROWS, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD), dtype=bool
+    )
+    refOutputOnesMask[:, :NUM_COLS_PER_OUTPUT_CHAN] = 1
+
+    dataReferenceChan_FramesFlat = np.reshape(
+        dataUniformTime[REFERENCE_CHAN, :, :, :],
+        (numFrames, (NUM_ROWS * NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD)),
+    ).astype(dtype=dataUniformTime.dtype)
+    fft_interp(
+        dataReferenceChan_FramesFlat,
+        refOutputOnesMask.flatten(),
+        getFFTApodizeFunction(),
+        3,
+    )
+
+    return dataReferenceChan_FramesFlat
+
+    return dataReferenceChan_FramesFlat.reshape(
+        numFrames, NUM_ROWS, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD
     )
