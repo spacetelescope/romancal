@@ -133,11 +133,15 @@ class Aligned(Base):
 
     @property
     def left(self):
-        return self.data[0, :, :, :]
+        left = self.data[0, :, :, :]
+        left[:, :, Width.REF :] = 0
+        return left
 
     @property
     def right(self):
-        return self.data[-1, :, :, :]
+        right = self.data[-1, :, :, :]
+        right[:, :, : -Width.REF] = 0
+        return right
 
     @property
     def combined_data(self) -> np.ndarray:
@@ -173,3 +177,10 @@ class Aligned(Base):
         """
 
         return cls.from_combined(ref_data.aligned_data, ref_data.offset)
+
+
+@dataclass
+class ChannelFFT:
+    left: np.ndarray
+    right: np.ndarray
+    amp33: np.ndarray

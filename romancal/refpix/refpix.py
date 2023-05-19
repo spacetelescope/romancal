@@ -4,14 +4,12 @@ from itertools import islice
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from roman_datamodels import RampModel
-
-from dataclasses import dataclass
-from enum import IntEnum, StrEnum, auto
+    pass
 
 import numpy as np
-from astropy import units as u
 from scipy import fft
+
+from .data import Aligned, Standard, Width
 
 # TODO:
 # 5.  Implement the equivalent of the fft_interp method as a function which takes
@@ -28,120 +26,11 @@ from scipy import fft
 # 11. Add regression tests using Tyler's data.
 
 
-class Width(IntEnum):
-    REF = 4
-    CHANNEL = 128
-    PAD = 12
-
-
-class Arrangement(StrEnum):
-    STANDARD = auto()
-    ALIGNED = auto()
-
-
-def _extract_value(data):
-    if isinstance(data, u.Quantity):
-        if data.unit != u.DN:
-            raise ValueError(f"Input data must be in units of DN, not {data.unit}")
-        data = data.value
-
-    return data
-
-
-@dataclass
-class RefPixData:
-    data: np.ndarray
-    amp33: np.ndarray
-    offset: np.ndarray = None
-    arrangement: Arrangement = Arrangement.STANDARD
-
-    @classmethod
-    def from_datamodel(cls, datamodel: RampModel):
-        data = _extract_value(datamodel.data)
-
-        # Extract amp33
-        amp33 = _extract_value(datamodel.amp33)
-        # amp33 is normally a uint16, but the computation assumes it is a float
-        amp33 = amp33.astype(data.dtype)
-
-        return cls(data, amp33)
-
-    @property
-    def combine_data(self):
-        if self.arrangement == Arrangement.STANDARD:
-            return np.dstack([self.data, self.amp33])
-        else:
-            data = self.split_channels
-            channels, frames, rows, columns = data.shape
-
-            # Undo channel reordering to:
-            #    [frame, row, channel, channel_column]
-            # Second combine the channels into columns:
-            #    [frame, row, column]
-            return data.transpose((1, 2, 0, 3)).reshape(
-                (frames, rows, columns * channels)
-            )
-
-    @property
-    def left(self):
-        if self.arrangement == Arrangement.STANDARD:
-            return self.data[:, :, : Width.REF]
-        else:
-            return self.data[0, :, :, :]
-
-    @property
-    def right(self):
-        if self.arrangement == Arrangement.STANDARD:
-            return self.data[:, :, -Width.REF :]
-        else:
-            return self.data[-1, :, :, :]
-
-    @classmethod
-    def from_combined_data(cls, data, offset=None):
-        return cls(data[:, :, : -Width.CHANNEL], data[:, :, -Width.CHANNEL :], offset)
-
-    @property
-    def split_channels(self):
-        if self.arrangement == Arrangement.STANDARD:
-            data = self.combine_data
-            frames, rows, columns = data.shape
-            channels = columns // Width.CHANNEL
-
-            # First split data into channels
-            #    [frame, row, channel, channel_column]
-            # Second reorder so channels are first (better memory alignment)
-            #    [channel, frame, row, channel_column]
-            return data.reshape((frames, rows, channels, Width.CHANNEL)).transpose(
-                (2, 0, 1, 3)
-            )
-        else:
-            return np.append(self.data, [self.amp33], axis=0)
-
-    @property
-    def aligned_channels(self):
-        if self.arrangement == Arrangement.ALIGNED:
-            return self.split_channels
-        else:
-            data = self.split_channels
-
-            # Reverse every other channel column so columns are in reading order
-            data[1::2, :, :, :] = data[1::2, :, :, ::-1]
-
-            # pad channels with zeros to account for the pause at the end of each read
-            return np.pad(
-                data, ((0, 0), (0, 0), (0, 0), (0, Width.PAD)), constant_values=0
-            )
-
-    @classmethod
-    def from_split(cls, data, offset=None):
-        return cls(data[:-1, :, :, :], data[-1, :, :, :], offset, Arrangement.ALIGNED)
-
-
-def remove_offset(ref_data: RefPixData) -> RefPixData:
+def remove_offset(standard: Standard) -> Standard:
     """
     Use linear least squares to remove any linear offset from the data.
     """
-    data = ref_data.combine_data
+    data = standard.combined_data
     frames, rows, columns = data.shape
 
     # Reshape data so that it is:
@@ -166,14 +55,14 @@ def remove_offset(ref_data: RefPixData) -> RefPixData:
     data = (data - offset).reshape((frames, rows, columns))
     offset = offset.reshape(rows, columns)
 
-    return RefPixData.from_combined_data(data, offset)
+    return Standard.from_combined(data, offset)
 
 
-def remove_linear_trends(ref_data: RefPixData) -> RefPixData:
+def remove_linear_trends(aligned: Aligned) -> Aligned:
     """
     Remove any trends on the frame boundary.
     """
-    data = ref_data.aligned_channels
+    data = aligned.combined_data
     channels, frames, rows, columns = data.shape
 
     # Create an independent variable indexed by frame and centered at zero
@@ -207,19 +96,15 @@ def remove_linear_trends(ref_data: RefPixData) -> RefPixData:
             # Remove the fit from the data
             data[chan, frame, :, :] -= (t * m + b) * not_zero[chan, frame, :, :]
 
-    return RefPixData.from_split(data, ref_data.offset)
+    return Aligned.from_combined(data, aligned.offset)
 
 
-def cosine_interpolate_amp33(ref_data: RefPixData) -> RefPixData:
+def amp33_cosine_interpolation(aligned: Aligned) -> Aligned:
     """
     Perform Cosine weighted interpolation on the zero values of the amp33 channels
     """
-
-    if ref_data.arrangement != Arrangement.ALIGNED:
-        ref_data = RefPixData.from_split(ref_data.aligned_channels, ref_data.offset)
-
-    data = ref_data.amp33
-    channels, _, rows, columns = ref_data.data.shape
+    data = aligned.amp33
+    channels, _, rows, columns = aligned.data.shape
 
     interp = np.sin(np.arange(1, channels + 1, dtype=data.dtype) * np.pi / channels)
 
@@ -237,10 +122,10 @@ def cosine_interpolate_amp33(ref_data: RefPixData) -> RefPixData:
     # Fix NaN values
     np.nan_to_num(data, copy=False)
 
-    return RefPixData(ref_data.data, data, ref_data.offset, ref_data.arrangement)
+    return Aligned(aligned.data, data, aligned.offset)
 
 
-def fft_interpolate(frame: np.ndarray, read_only: np.ndarray, apodize: np.ndarray):
+def fft_interpolation(frame: np.ndarray, read_only: np.ndarray, apodize: np.ndarray):
     only = frame[read_only]
 
     while True:
@@ -251,14 +136,11 @@ def fft_interpolate(frame: np.ndarray, read_only: np.ndarray, apodize: np.ndarra
         yield frame
 
 
-def fft_interpolate_amp33(ref_data: RefPixData, num: int = 3) -> RefPixData:
+def amp33_fft_interpolation(aligned: Aligned, num: int = 3) -> Aligned:
     """
     FFT interpolate the zero values of the amp33 channels
     """
-    if ref_data.arrangement != Arrangement.ALIGNED:
-        ref_data = RefPixData.from_split(ref_data.aligned_channels, ref_data.offset)
-
-    frames, rows, columns = ref_data.amp33.shape
+    frames, rows, columns = aligned.amp33.shape
     length = rows * columns
 
     mask = np.zeros((rows, columns), dtype=bool)
@@ -267,18 +149,18 @@ def fft_interpolate_amp33(ref_data: RefPixData, num: int = 3) -> RefPixData:
 
     read_only = np.where(mask)[0]
 
-    data = ref_data.amp33.reshape(frames, length)
+    data = aligned.amp33.reshape(frames, length)
     apodize = (
         1 + np.cos(2 * np.pi * np.abs(np.fft.rfftfreq(length, 1 / length)) / length)
     ) / 2
 
     for index, frame in enumerate(data):
         data[index, :] = next(
-            islice(fft_interpolate(frame, read_only, apodize), num - 1, None)
+            islice(fft_interpolation(frame, read_only, apodize), num - 1, None)
         )
 
-    return data
+    return Aligned(aligned.data, data.reshape(frames, rows, columns), aligned.offset)
 
 
-# def transform_data(ref_pix: RefPixData) -> RefPixData:
-#     """ """
+# # def transform_data(ref_pix: RefPixData) -> RefPixData:
+# #     """ """

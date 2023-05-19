@@ -311,8 +311,6 @@ def fft_interp_amp33(dataUniformTime, numFrames):
         3,
     )
 
-    return dataReferenceChan_FramesFlat
-
     return dataReferenceChan_FramesFlat.reshape(
         numFrames, NUM_ROWS, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD
     )

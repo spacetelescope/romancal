@@ -1,255 +1,119 @@
-import numpy as np
-import pytest
-from astropy import units as u
 from numpy.testing import assert_allclose
-from roman_datamodels.maker_utils import mk_ramp
 
+from romancal.refpix.data import Aligned, Standard
 from romancal.refpix.refpix import (
-    Arrangement,
-    RefPixData,
-    Width,
-    cosine_interpolate_amp33,
-    fft_interpolate_amp33,
+    amp33_cosine_interpolation,
+    amp33_fft_interpolation,
     remove_linear_trends,
     remove_offset,
 )
 
-RNG = np.random.default_rng(42)
-N_FRAMES = 8
-N_ROWS = 4096
-N_COLS = N_ROWS + Width.CHANNEL
-N_CHAN = N_COLS // Width.CHANNEL
-N_DETECT_CHAN = N_CHAN - 1
+from .conftest import Dims
 
 
-@pytest.fixture(scope="module")
-def ramp_model():
+class TestOffset:
+    def test_function(self, standard_data: Standard):
+        new = remove_offset(standard_data)
 
-    datamodel = mk_ramp()
-    assert datamodel.data.shape == (N_FRAMES, N_ROWS, N_ROWS)
-    assert datamodel.amp33.shape == (N_FRAMES, N_ROWS, Width.CHANNEL)
+        # check offset is set
+        assert new.offset is not None
+        assert new.offset.shape == (Dims.N_ROWS, Dims.N_COLS)
+        assert (new.offset != 0).all()
 
-    data = RNG.uniform(1, 100, size=(N_FRAMES, N_ROWS, N_ROWS)).astype(
-        datamodel.data.dtype
-    )
-    amp33 = RNG.uniform(1, 100, size=(N_FRAMES, N_ROWS, Width.CHANNEL)).astype(
-        datamodel.amp33.dtype
-    )
+        # check data is updated
+        assert (new.data != standard_data.data).all()
+        assert (new.amp33 != standard_data.amp33).all()
 
-    datamodel.data = u.Quantity(
-        data, unit=datamodel.data.unit, dtype=datamodel.data.dtype
-    )
-    datamodel.border_ref_pix_left = datamodel.data[:, :, : Width.REF]
-    datamodel.border_ref_pix_right = datamodel.data[:, :, -Width.REF :]
+        # add offset back (error accumulates due to floating point arithmetic)
+        reset = Standard.from_combined(new.combined_data + new.offset)
+        assert_allclose(reset.data, standard_data.data, atol=1e-5)
+        assert_allclose(reset.amp33, standard_data.amp33, atol=1e-5)
 
-    datamodel.amp33 = u.Quantity(
-        amp33, unit=datamodel.amp33.unit, dtype=datamodel.amp33.dtype
-    )
+    def test_regression(self, standard_data: Standard):
+        from . import reference_utils
 
-    return datamodel
+        # Run regression utility (modifies in place)
+        regression = standard_data.combined_data
+        _, b = reference_utils.remove_linear_trends(regression, True)
 
+        test = remove_offset(standard_data)
 
-def test_construct_data(ramp_model):
-    datamodel = RefPixData.from_datamodel(ramp_model)
-
-    assert (datamodel.data == ramp_model.data.value).all()
-    assert (datamodel.amp33 == ramp_model.amp33.value).all()
-    assert (datamodel.left == ramp_model.border_ref_pix_left.value).all()
-    assert (datamodel.right == ramp_model.border_ref_pix_right.value).all()
-    assert datamodel.offset is None
-
-    assert datamodel.data.shape == (N_FRAMES, N_ROWS, N_ROWS)
-    assert datamodel.amp33.shape == (N_FRAMES, N_ROWS, Width.CHANNEL)
-    assert datamodel.left.shape == (N_FRAMES, N_ROWS, Width.REF)
-    assert datamodel.right.shape == (N_FRAMES, N_ROWS, Width.REF)
-
-    assert (datamodel.left == datamodel.data[:, :, : Width.REF]).all()
-    assert (datamodel.right == datamodel.data[:, :, -Width.REF :]).all()
-
-    assert datamodel.arrangement == Arrangement.STANDARD
+        # Regression test
+        assert (test.offset == b).all()
+        assert (test.combined_data == regression).all()
 
 
-@pytest.fixture()
-def ref_data(ramp_model):
-    return RefPixData.from_datamodel(ramp_model)
+class TestRemoveLinearTrends:
+    def test_regression(self, aligned_data: Aligned):
+        from . import reference_utils
+
+        # Run regression utility
+        regression = aligned_data.combined_data
+        reference_utils.remove_linear_trends_per_frame(regression, False, True)
+
+        new = remove_linear_trends(aligned_data)
+        assert (new.combined_data == regression).all()
 
 
-def test_combine_data(ref_data):
-    data = ref_data.combine_data
+class TestAmp33CosineInterpolation:
+    def test_regression(self, aligned_data: Aligned):
+        from . import reference_utils
 
-    assert data.shape == (N_FRAMES, N_ROWS, N_COLS)
-    assert (data[:, :, :N_ROWS] == ref_data.data).all()
-    assert (data[:, :, N_ROWS:] == ref_data.amp33).all()
-
-    # Check function in split mode
-    new = RefPixData.from_split(ref_data.split_channels)
-    assert (new.combine_data == data).all()
-
-
-def test_from_combined_data(ref_data):
-    pert = 37
-
-    data = ref_data.data + pert
-    amp33 = ref_data.amp33 + pert
-
-    # apply the perturbation to combined data then unpack
-    new = RefPixData.from_combined_data(ref_data.combine_data + pert)
-    assert (new.data == data).all()
-    assert (new.amp33 == amp33).all()
-    assert new.arrangement == Arrangement.STANDARD
-
-
-def test_remove_offset(ref_data):
-    new = remove_offset(ref_data)
-
-    # check offset is set
-    assert new.offset is not None
-    assert new.offset.shape == (N_ROWS, N_COLS)
-    assert (new.offset != 0).all()
-
-    # check data is updated
-    assert (new.data != ref_data.data).all()
-    assert (new.amp33 != ref_data.amp33).all()
-
-    # add offset back (error accumulates due to floating point arithmetic)
-    reset = RefPixData.from_combined_data(new.combine_data + new.offset)
-    assert_allclose(reset.data, ref_data.data, atol=1e-5)
-    assert_allclose(reset.amp33, ref_data.amp33, atol=1e-5)
-
-
-def test_regress_remove_offset(ref_data):
-    from . import reference_utils
-
-    # Run regression utility (modifies in place)
-    data_regress = ref_data.combine_data
-    _, b = reference_utils.remove_linear_trends(data_regress, True)
-
-    test = remove_offset(ref_data)
-
-    # Regression test
-    assert (test.offset == b).all()
-    assert (test.combine_data == data_regress).all()
-
-
-def test_split_channels(ref_data):
-    split = ref_data.split_channels
-
-    assert split.shape == (N_CHAN, N_FRAMES, N_ROWS, Width.CHANNEL)
-    # check amp33 is preserved
-    assert (split[-1, :, :, :] == ref_data.amp33).all()
-
-    # check data is split correctly
-    for idx in range(0, N_DETECT_CHAN):
+        # Run regression utility
+        regression = aligned_data.combined_data
+        reference_utils.cos_interp_reference(regression, regression.shape[1])
         assert (
-            split[idx, :, :, 0 : Width.CHANNEL]
-            == ref_data.data[:, :, idx * Width.CHANNEL : (idx + 1) * Width.CHANNEL]
+            regression[-1, :, :, :] != aligned_data.combined_data[-1, :, :, :]
+        ).any()
+        assert (
+            regression[:-1, :, :, :] == aligned_data.combined_data[:-1, :, :, :]
         ).all()
 
-    # Check function in split mode
-    new = RefPixData.from_split(split)
-    assert (new.split_channels == split).all()
+        new = amp33_cosine_interpolation(aligned_data)
+
+        assert (new.amp33 == regression[-1, :, :, :]).all()
+        assert (new.combined_data == regression).all()
 
 
-def test_aligned_channels(ref_data):
-    data = ref_data.split_channels
+class TestAmp33FftInterpolation:
+    def test_regression(self, aligned_data: Aligned):
+        """
+        Run fft interpolation regression test
 
-    aligned = ref_data.aligned_channels
-    # Check shape includes padding
-    assert aligned.shape == (N_CHAN, N_FRAMES, N_ROWS, Width.CHANNEL + Width.PAD)
+        NOTE:
+            The reference code assumes the data will be changed in-place for all
+            its major operations.However, the reference code violates this assumption
+            for the Amp33 FFT interpolation step. It does make an in-place change to
+            a sub-array, `dataReferenceChan_FramesFlat`, of the main data array, but
+            this sub-array does not map to the original data array, `dataUniformTime`.
+            The sub-array is not used in the rest of the reference code, which I believe
+            is a bug.
 
-    # check that it is Padded Correctly
-    assert (aligned[3:, :, :, -Width.PAD :] == 0).all()
+            To combat this apparent mistake, I reshape the
+            `dataReferenceChan_FramesFlat`
+            array in my wrapper of the reference code and then return that array as a
+            function output.
 
-    # Check data is reversed and split correctly
-    # Even channels are the same
-    assert (aligned[::2, :, :, : Width.CHANNEL] == data[::2, :, :, :]).all()
-    # Odd channels are flipped
-    assert (aligned[1::2, :, :, : Width.CHANNEL] == data[1::2, :, :, ::-1]).all()
+            The romancal code does not make this mistake because it does not work
+            via in-place changes.
+        """
+        from . import reference_utils
 
+        regression = aligned_data.combined_data
+        amp33_regression = reference_utils.fft_interp_amp33(
+            regression, regression.shape[1]
+        )
 
-def test_regress_aligned_channels(ref_data):
-    from . import reference_utils
+        # Show this sub array does get inplace changes (returned as function output)
+        assert (
+            amp33_regression[:, :, :] != aligned_data.combined_data[-1, :, :, :]
+        ).any()
 
-    # Run regression utility
-    split_regress = reference_utils.aligned_channels(ref_data.combine_data)
+        # Demonstration of the issue with the reference code, if an in-place change
+        # is actually made, then the first assert below would fail.
+        assert (regression[-1, :, :, :] == aligned_data.amp33).all()
+        assert (regression[:-1, :, :, :] == aligned_data.data).all()
 
-    # Regression test
-    split = ref_data.aligned_channels
-    assert (split_regress == split).all()
+        new = amp33_fft_interpolation(aligned_data, 3)
 
-
-def test_from_split(ref_data):
-    offset = np.array([1, 2, 3])
-    data = ref_data.aligned_channels
-
-    new = RefPixData.from_split(data, offset)
-    assert (new.data == data[:-1, :, :, :]).all()
-    assert (new.amp33 == data[-1, :, :, :]).all()
-    assert (new.offset == offset).all()
-    assert new.arrangement == Arrangement.ALIGNED
-
-
-def test_regress_remove_linear_trends(ref_data):
-    from . import reference_utils
-
-    # Run regression utility
-    regress = ref_data.aligned_channels
-    reference_utils.remove_linear_trends_per_frame(regress, False, True)
-
-    new = remove_linear_trends(ref_data)
-    assert_allclose(new.split_channels, regress)
-
-
-def test_regress_interpolate_amp33(ref_data):
-    from . import reference_utils
-
-    # Run regression utility
-    regress = ref_data.aligned_channels
-    reference_utils.cos_interp_reference(regress, regress.shape[1])
-    assert (regress[-1, :, :, :] != ref_data.aligned_channels[-1, :, :, :]).any()
-    assert (regress[:-1, :, :, :] == ref_data.aligned_channels[:-1, :, :, :]).all()
-
-    new = cosine_interpolate_amp33(ref_data)
-
-    assert_allclose(new.amp33, regress[-1, :, :, :])
-    assert (new.aligned_channels == regress).all()
-
-
-def test_regress_fft_interpolate_amp33(ref_data):
-    """
-    Run fft interpolation regression test
-
-    NOTE: The reference code assumes the data will be changed in-place, which is
-          not the case for the given implementation. However, the reference code
-          sort of makes an in-place change to the data, but this is only on the
-          reshaped `dataReferenceChan_FramesFlat` array, which is not subsequently
-          used anywhere else in the code.
-
-          I believe, the reference code incorrectly assumes that the in-place changes
-          to `dataReferenceChan_FramesFlat` will propogate to the original data array:
-          `dataUniformTime`. This assumption is incorrect, and so the reference code
-          deviates from the described algorithm.
-
-          To combat this apparent mistake, I reshape the `dataReferenceChan_FramesFlat`
-          array in my wrapper of the reference code and then return that array as a
-          function output.
-
-          The romancal code does not make this mistake because it does not work
-          via in-place changes.
-    """
-    from . import reference_utils
-
-    regress = ref_data.aligned_channels
-    new_regress = reference_utils.fft_interp_amp33(regress, regress.shape[1])
-
-    # # Show this sub array does get inplace changes (returned as function output)
-    # assert (new_regress[:, :, :] != ref_data.aligned_channels[-1, :, :, :]).any()
-
-    # # Demonstration of the issue with the reference code, if an in-place change
-    # # is actually made, then the first assert below would fail.
-    # assert (regress[-1, :, :, :] == ref_data.aligned_channels[-1, :, :, :]).all()
-    # assert (regress[:-1, :, :, :] == ref_data.aligned_channels[:-1, :, :, :]).all()
-
-    new_amp33 = fft_interpolate_amp33(ref_data, 3)
-
-    assert (new_regress == new_amp33).all()
+        assert (amp33_regression == new.amp33).all()
