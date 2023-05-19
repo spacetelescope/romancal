@@ -160,7 +160,3 @@ def amp33_fft_interpolation(aligned: Aligned, num: int = 3) -> Aligned:
         )
 
     return Aligned(aligned.data, data.reshape(frames, rows, columns), aligned.offset)
-
-
-# # def transform_data(ref_pix: RefPixData) -> RefPixData:
-# #     """ """

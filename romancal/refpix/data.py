@@ -11,6 +11,7 @@ from enum import IntEnum
 
 import numpy as np
 from astropy import units as u
+from scipy import fft
 
 
 class Width(IntEnum):
@@ -179,8 +180,29 @@ class Aligned(Base):
         return cls.from_combined(ref_data.aligned_data, ref_data.offset)
 
 
+def channel_fft(channel: np.ndarray, normalize=False) -> np.ndarray:
+    frames, rows, columns = channel.shape
+    channel = channel.reshape(frames, rows * columns)
+
+    channel = fft.rfft(channel / channel.shape[1])
+    if normalize:
+        channel *= columns / Width.REF
+
+    return channel
+
+
 @dataclass
 class ChannelFFT:
     left: np.ndarray
     right: np.ndarray
     amp33: np.ndarray
+    offset: _offset = None
+
+    @classmethod
+    def from_aligned(cls, aligned: Aligned) -> ChannelFFT:
+
+        left = channel_fft(aligned.left, normalize=True)
+        right = channel_fft(aligned.right, normalize=True)
+        amp33 = channel_fft(aligned.amp33)
+
+        return cls(left, right, amp33, aligned.offset)

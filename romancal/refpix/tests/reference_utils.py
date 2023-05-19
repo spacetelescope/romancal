@@ -12,6 +12,7 @@ NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD = NUM_COLS_PER_OUTPUT_CHAN + END_OF_ROW_PIXEL_
 ALL_CHAN_RANGE = range(NUM_OUTPUT_CHANS)
 REFERENCE_ROWS = [0, 1, 2, 3, 4092, 4093, 4094, 4095]
 REFERENCE_CHAN = 32
+REFPIX_NORM = NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD / 4.0
 
 
 def remove_linear_trends(data_FramesRowsCols, subtractOffsetOnly):
@@ -313,4 +314,42 @@ def fft_interp_amp33(dataUniformTime, numFrames):
 
     return dataReferenceChan_FramesFlat.reshape(
         numFrames, NUM_ROWS, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD
+    )
+
+
+def left(dataUniformTime):
+    l = np.copy(dataUniformTime[0, :, :, :])
+    l[:, :, 4:] = 0
+    return l
+
+
+def left_fft(numFrames, dataUniformTime):
+    l = left(dataUniformTime)
+    l = l.reshape((numFrames, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD * NUM_ROWS))
+    return REFPIX_NORM * spfft.rfft(l / l[0].size)
+
+
+def right(dataUniformTime):
+    r = np.copy(dataUniformTime[31, :, :, :])
+    r[:, :, 4:] = 0
+    return r
+
+
+def right_fft(numFrames, dataUniformTime):
+    r = right(dataUniformTime)
+    r = r.reshape((numFrames, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD * NUM_ROWS))
+    return REFPIX_NORM * spfft.rfft(r / r[0].size)
+
+
+def amp33_fft(numFrames, dataUniformTime):
+    a = np.copy(dataUniformTime[REFERENCE_CHAN, :, :, :])
+    a = a.reshape((numFrames, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD * NUM_ROWS))
+    return spfft.rfft(a / a[0].size)
+
+
+def forward_fft(numFrames, dataUniformTime):
+    return (
+        left_fft(numFrames, dataUniformTime),
+        right_fft(numFrames, dataUniformTime),
+        amp33_fft(numFrames, dataUniformTime),
     )

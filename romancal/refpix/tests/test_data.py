@@ -1,4 +1,4 @@
-from romancal.refpix.data import Aligned, Standard, Width
+from romancal.refpix.data import Aligned, ChannelFFT, Standard, Width, channel_fft
 
 from .conftest import Dims
 
@@ -88,6 +88,20 @@ class TestStandard:
 
         # Check that the amp33 is transformed correctly
         assert (new.amp33 == aligned_data.amp33[:, :, : Width.CHANNEL]).all()
+
+    def test_roundtrip(self, standard_data: Standard):
+        # Insurance that the data in standard_data is not modified
+        data = standard_data.data.copy()
+        amp33 = standard_data.amp33.copy()
+
+        # Convert to aligned and then back
+        aligned = Aligned.from_standard(standard_data)
+        new = Standard.from_aligned(aligned)
+
+        assert (new.data == standard_data.data).all()
+        assert (new.amp33 == standard_data.amp33).all()
+        assert (new.data == data).all()
+        assert (new.amp33 == amp33).all()
 
     def test_regression(self, standard_data: Standard):
         """Regression test to the reference data alignment"""
@@ -183,6 +197,20 @@ class TestAligned:
         # Check amp33 is transformed correctly
         assert (new.amp33[:, :, : Width.CHANNEL] == standard_data.amp33).all()
 
+    def test_roundtrip(self, aligned_data: Aligned):
+        # Insurance that the data in standard_data is not modified
+        data = aligned_data.data.copy()
+        amp33 = aligned_data.amp33.copy()
+
+        # Convert to aligned and then back
+        standard = Standard.from_aligned(aligned_data)
+        new = Aligned.from_standard(standard)
+
+        assert (new.data == aligned_data.data).all()
+        assert (new.amp33 == aligned_data.amp33).all()
+        assert (new.data == data).all()
+        assert (new.amp33 == amp33).all()
+
     def test_regression(self, aligned_data: Aligned):
         """Regression test to the reference data alignment"""
         from . import reference_utils
@@ -207,6 +235,16 @@ class TestAligned:
         standard = Standard.from_aligned(aligned_data)
         assert (left[:, :, : Width.REF] == standard.left).all()
 
+    def test_left_regression(self, aligned_data: Aligned):
+        from . import reference_utils
+
+        # Insurance against in-place modifications
+        left = aligned_data.left.copy()
+
+        regression = reference_utils.left(aligned_data.combined_data)
+        assert (regression == aligned_data.left).all()
+        assert (regression == left).all()
+
     def test_right(self, aligned_data: Aligned):
         right = aligned_data.right
 
@@ -220,3 +258,53 @@ class TestAligned:
         # Check against the standard form of the data
         standard = Standard.from_aligned(aligned_data)
         assert (right[:, :, -Width.REF :] == standard.right).all()
+
+    def test_right_regression(self, aligned_data: Aligned):
+        from . import reference_utils
+
+        # Insurance against in-place modifications
+        right = aligned_data.right.copy()
+
+        # Demonstrate the correct implementation
+        regression = reference_utils.right(aligned_data.combined_data)
+        assert (regression == aligned_data.right).all()
+        assert (regression == right).all()
+
+
+class TestChannelFFT:
+    def test_left_regression(self, aligned_data: Aligned):
+        from . import reference_utils
+
+        left = channel_fft(aligned_data.left, normalize=True)
+        regression = reference_utils.left_fft(Dims.N_FRAMES, aligned_data.combined_data)
+        assert (left == regression).all()
+
+    def test_right_regression(self, aligned_data: Aligned):
+        from . import reference_utils
+
+        right = channel_fft(aligned_data.right, normalize=True)
+        regression = reference_utils.right_fft(
+            Dims.N_FRAMES, aligned_data.combined_data
+        )
+        assert (right == regression).all()
+
+    def test_amp33_regression(self, aligned_data: Aligned):
+        from . import reference_utils
+
+        amp33 = channel_fft(aligned_data.amp33)
+        regression = reference_utils.amp33_fft(
+            Dims.N_FRAMES, aligned_data.combined_data
+        )
+        assert (amp33 == regression).all()
+
+    def test_from_aligned(self, aligned_data: Aligned):
+        from . import reference_utils
+
+        channel_fft = ChannelFFT.from_aligned(aligned_data)
+        regression = reference_utils.forward_fft(
+            Dims.N_FRAMES, aligned_data.combined_data
+        )
+
+        assert (channel_fft.left == regression[0]).all()
+        assert (channel_fft.right == regression[1]).all()
+        assert (channel_fft.amp33 == regression[2]).all()
