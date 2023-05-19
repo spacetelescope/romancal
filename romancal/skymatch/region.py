@@ -288,7 +288,7 @@ class Edge:
     """
     Edge representation
 
-    An edge has a "start" and "stop" (x,y) vertices and an entry in the
+    An edge has "start" and "stop" (x,y) vertices and an entry in the
     GET table of a polygon. The GET entry is a list of these values:
 
     [ymax, x_at_ymin, delta_x/delta_y]
