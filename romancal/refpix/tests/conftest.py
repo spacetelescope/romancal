@@ -5,7 +5,7 @@ import pytest
 from astropy import units as u
 from roman_datamodels.maker_utils import mk_ramp
 
-from romancal.refpix.data import Aligned, Standard, Width
+from romancal.refpix.data import Aligned, ChannelFFT, Coefficients, Standard, Width
 
 
 class Dims(IntEnum):
@@ -15,6 +15,7 @@ class Dims(IntEnum):
     N_CHAN = N_COLS // Width.CHANNEL
     N_DETECT_CHAN = N_CHAN - 1
     N_ALIGN_COLS = Width.CHANNEL + Width.PAD
+    N_FFT_COLS = (N_ROWS * N_ALIGN_COLS) // 2 + 1
 
 
 RNG = np.random.default_rng(42)
@@ -55,3 +56,17 @@ def standard_data(ramp_model) -> Standard:
 @pytest.fixture(scope="module")
 def aligned_data(standard_data) -> Aligned:
     return Aligned.from_standard(standard_data)
+
+
+@pytest.fixture(scope="module")
+def channel_fft(aligned_data) -> ChannelFFT:
+    return ChannelFFT.from_aligned(aligned_data)
+
+
+@pytest.fixture(scope="module")
+def coefficients() -> Coefficients:
+    coeffs = RNG.uniform(1, 100, size=(6, Dims.N_DETECT_CHAN, Dims.N_FFT_COLS))
+
+    coeffs = coeffs[:3, :, :] + 1.0j * coeffs[3:, :, :]
+
+    return Coefficients(coeffs[0], coeffs[1], coeffs[2])

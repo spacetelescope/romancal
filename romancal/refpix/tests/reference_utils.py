@@ -13,6 +13,7 @@ ALL_CHAN_RANGE = range(NUM_OUTPUT_CHANS)
 REFERENCE_ROWS = [0, 1, 2, 3, 4092, 4093, 4094, 4095]
 REFERENCE_CHAN = 32
 REFPIX_NORM = NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD / 4.0
+CHAN_RANGE_WITHOUT_REFERENCES = range(NUM_OUTPUT_CHANS - 1)
 
 
 def remove_linear_trends(data_FramesRowsCols, subtractOffsetOnly):
@@ -353,3 +354,66 @@ def forward_fft(numFrames, dataUniformTime):
         right_fft(numFrames, dataUniformTime),
         amp33_fft(numFrames, dataUniformTime),
     )
+
+
+def _corr_chan_func(
+    chanNum: int,
+    alpha: np.ndarray,
+    gamma: np.ndarray,
+    zeta: np.ndarray,
+    numFrames: int,
+    l: np.ndarray,
+    r: np.ndarray,
+    a: np.ndarray,
+    corrNoise: np.ndarray,
+):
+    """
+    Estimate the correlated noise for the input file across all frames for
+        specified channel
+
+    :param chanNum: channel (column) number
+    :param alpha: weights for reference output
+    :param gamma: weights for left reference columns
+    :param zeta: weights for right reference columns
+    :param numFrames: number of frames in data
+    :param l: input file left reference column data
+    :param r: input file right reference column data
+    :param a: input file reference channel data
+    :param corrNoise: CHANGED IN PLACE correlated noise solution for this channel
+    """
+    lCopy = np.copy(l)
+    gammaChan = gamma[chanNum, :]
+    for frameNum in range(numFrames):
+        lCopy[frameNum, :] *= gammaChan
+
+    zetaChan = zeta[chanNum, :]
+    for frameNum in range(numFrames):
+        lCopy[frameNum, :] += zetaChan * r[frameNum, :]
+
+    alphaChan = alpha[chanNum, :]
+    for frameNum in range(numFrames):
+        lCopy[frameNum, :] += alphaChan * a[frameNum, :]
+
+    # When dealing with real-only weight streams the
+    # reverse FFT transform results in half the power so
+    # we need to add a factor of 2 to the normalization
+    normalizationFactor = lCopy[0].size * 2
+    lCopy = spfft.irfft(lCopy * normalizationFactor)
+
+    corrNoise[chanNum, :, :] = lCopy[:]
+
+
+def compute_correction(alpha, gamma, zeta, numFrames, l, r, a):
+    correlatedNoise = np.zeros(
+        (NUM_OUTPUT_CHANS, numFrames, NUM_ROWS * NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD),
+        dtype=complex,
+    )
+
+    exec_channel_func_threads(
+        CHAN_RANGE_WITHOUT_REFERENCES,
+        _corr_chan_func,
+        (alpha, gamma, zeta, numFrames, l, r, a, correlatedNoise),
+        multiThread=False,
+    )
+
+    return correlatedNoise

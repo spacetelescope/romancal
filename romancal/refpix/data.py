@@ -206,3 +206,10 @@ class ChannelFFT:
         amp33 = channel_fft(aligned.amp33)
 
         return cls(left, right, amp33, aligned.offset)
+
+
+@dataclass
+class Coefficients:
+    gamma: np.ndarray
+    zeta: np.ndarray
+    alpha: np.ndarray

@@ -1,9 +1,11 @@
+import numpy as np
 from numpy.testing import assert_allclose
 
-from romancal.refpix.data import Aligned, Standard
+from romancal.refpix.data import Aligned, ChannelFFT, Coefficients, Standard
 from romancal.refpix.refpix import (
     amp33_cosine_interpolation,
     amp33_fft_interpolation,
+    correction,
     remove_linear_trends,
     remove_offset,
 )
@@ -117,3 +119,23 @@ class TestAmp33FftInterpolation:
         new = amp33_fft_interpolation(aligned_data, 3)
 
         assert (amp33_regression == new.amp33).all()
+
+
+class TestComputeCorrection:
+    def test_correction_regression(
+        self, channel_fft: ChannelFFT, coefficients: Coefficients
+    ):
+        from . import reference_utils
+
+        regress = reference_utils.compute_correction(
+            coefficients.alpha,
+            coefficients.gamma,
+            coefficients.zeta,
+            Dims.N_FRAMES,
+            channel_fft.left,
+            channel_fft.right,
+            channel_fft.amp33,
+        ).real
+
+        correct = np.array(list(correction(channel_fft, coefficients)))
+        assert (correct[:, :, :] == regress[:, :, :]).all()

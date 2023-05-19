@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 import numpy as np
 from scipy import fft
 
-from .data import Aligned, Standard, Width
+from .data import Aligned, ChannelFFT, Coefficients, Standard, Width
 
 # TODO:
 # 5.  Implement the equivalent of the fft_interp method as a function which takes
@@ -160,3 +160,37 @@ def amp33_fft_interpolation(aligned: Aligned, num: int = 3) -> Aligned:
         )
 
     return Aligned(aligned.data, data.reshape(frames, rows, columns), aligned.offset)
+
+
+def correction(channel_fft: ChannelFFT, coeffs: Coefficients) -> np.ndarray:
+    channels, columns = coeffs.gamma.shape
+
+    # We need to multiply by 2 because we are only using half of the FFT because
+    # the data is real
+    normalization = columns * 2
+
+    for idx in range(channels):
+        correct = (
+            np.multiply(channel_fft.left, coeffs.gamma[idx])
+            + np.multiply(channel_fft.right, coeffs.zeta[idx])
+            + np.multiply(channel_fft.amp33, coeffs.alpha[idx])
+        ) * normalization
+
+        correct = fft.irfft(correct).real
+        yield correct
+
+    # Add zeros in for the amp33 channel as it does not get changed
+    yield np.zeros(correct.shape)
+
+
+def apply_correction(aligned: Aligned, coeffs: Coefficients) -> Aligned:
+    data = aligned.combined_data
+    channel_fft = ChannelFFT.from_aligned(aligned)
+
+    # Expand the correction iteratior
+    correct = np.array(list(correction(channel_fft, coeffs)), dtype=data.dtype)
+
+    # Apply the actual correction
+    data -= correct.reshape(data.shape)
+
+    return Aligned.from_combined(data, aligned.offset)
