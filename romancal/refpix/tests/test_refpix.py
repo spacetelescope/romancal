@@ -127,7 +127,7 @@ class TestComputeCorrection:
     ):
         from . import reference_utils
 
-        regress = reference_utils.compute_correction(
+        regression = reference_utils.compute_correction(
             coefficients.alpha,
             coefficients.gamma,
             coefficients.zeta,
@@ -138,4 +138,45 @@ class TestComputeCorrection:
         ).real
 
         correct = np.array(list(correction(channel_fft, coefficients)))
-        assert (correct[:, :, :] == regress[:, :, :]).all()
+        assert (correct[:, :, :] == regression[:, :, :]).all()
+
+    def test_apply_regression(self, aligned_data: Aligned, coefficients: Coefficients):
+        from . import reference_utils
+
+        left = aligned_data.left.copy()
+        right = aligned_data.right.copy()
+        amp33 = aligned_data.amp33.copy()
+
+        reference_utils.forward_fft(Dims.N_FRAMES, aligned_data.combined_data)
+
+        assert (left == aligned_data.left).all()
+        assert (right == aligned_data.right).all()
+        assert (amp33 == aligned_data.amp33).all()
+
+        # channel_fft = ChannelFFT.from_aligned(aligned_data)
+
+        # assert (channel_fft.left == regression[0]).all()
+        # assert (channel_fft.right == regression[1]).all()
+        # assert (channel_fft.amp33 == regression[2]).all()
+
+        # channel_fft2 = ChannelFFT.from_aligned(aligned_data)
+
+        # assert (channel_fft2.left == regression[0]).all()
+        # assert (channel_fft2.right == regression[1]).all()
+        # assert (channel_fft2.amp33 == regression[2]).all()
+
+        # regression = reference_utils.apply_correction(
+        #     Dims.N_FRAMES,
+        #     aligned_data.combined_data,
+        #     coefficients.alpha,
+        #     coefficients.gamma,
+        #     coefficients.zeta,
+        # )
+
+        # new = apply_correction(aligned_data, coefficients)
+        # assert (new.left == regression[0]).all()
+        # assert (new.right == regression[1]).all()
+        # assert (new.amp33 == regression[2]).all()
+        # assert (new == regression).all()
+
+        # assert (new.combined_data[:, :, :, : - Width.PAD] == regression).all()

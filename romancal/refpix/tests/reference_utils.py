@@ -321,31 +321,31 @@ def fft_interp_amp33(dataUniformTime, numFrames):
 def left(dataUniformTime):
     l = np.copy(dataUniformTime[0, :, :, :])
     l[:, :, 4:] = 0
-    return l
+    return l.copy()
 
 
 def left_fft(numFrames, dataUniformTime):
     l = left(dataUniformTime)
     l = l.reshape((numFrames, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD * NUM_ROWS))
-    return REFPIX_NORM * spfft.rfft(l / l[0].size)
+    return REFPIX_NORM * spfft.rfft(l / l[0].size).copy()
 
 
 def right(dataUniformTime):
     r = np.copy(dataUniformTime[31, :, :, :])
-    r[:, :, 4:] = 0
-    return r
+    r[:, :, :-4] = 0
+    return r.copy()
 
 
 def right_fft(numFrames, dataUniformTime):
     r = right(dataUniformTime)
     r = r.reshape((numFrames, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD * NUM_ROWS))
-    return REFPIX_NORM * spfft.rfft(r / r[0].size)
+    return REFPIX_NORM * spfft.rfft(r / r[0].size).copy()
 
 
 def amp33_fft(numFrames, dataUniformTime):
     a = np.copy(dataUniformTime[REFERENCE_CHAN, :, :, :])
     a = a.reshape((numFrames, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD * NUM_ROWS))
-    return spfft.rfft(a / a[0].size)
+    return spfft.rfft(a / a[0].size).copy()
 
 
 def forward_fft(numFrames, dataUniformTime):
@@ -417,3 +417,24 @@ def compute_correction(alpha, gamma, zeta, numFrames, l, r, a):
     )
 
     return correlatedNoise
+
+
+def apply_correction(numFrames, dataUniformTime, alpha, gamma, zeta):
+    reference = forward_fft(numFrames, dataUniformTime)
+    return reference
+
+    # correlatedNoise = compute_correction(alpha, gamma, zeta, numFrames, l, r, a)
+    # return correlatedNoise.real
+
+    # # reshape and just take real part
+    # correlatedNoise = correlatedNoise.real.reshape(
+    #     (NUM_OUTPUT_CHANS, numFrames, NUM_ROWS, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD)
+    # )
+    # return correlatedNoise
+
+    # correlatedNoise = correlatedNoise[:, :, :, 0:NUM_COLS_PER_OUTPUT_CHAN]
+
+    # data0 = dataUniformTime[:, :, :, :NUM_COLS_PER_OUTPUT_CHAN]
+    # data0 -= correlatedNoise
+
+    # return data0

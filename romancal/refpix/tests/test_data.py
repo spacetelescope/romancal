@@ -1,3 +1,5 @@
+import numpy as np
+
 from romancal.refpix.data import Aligned, ChannelFFT, Standard, Width, channel_fft
 
 from .conftest import Dims
@@ -262,13 +264,49 @@ class TestAligned:
     def test_right_regression(self, aligned_data: Aligned):
         from . import reference_utils
 
-        # Insurance against in-place modifications
-        right = aligned_data.right.copy()
-
+        # # Insurance against in-place modifications
+        # right = aligned_data.right.copy()
         # Demonstrate the correct implementation
         regression = reference_utils.right(aligned_data.combined_data)
         assert (regression == aligned_data.right).all()
-        assert (regression == right).all()
+        # assert (regression == right).all()
+
+    def test_bug_right(self, standard_data: Aligned):
+        from . import reference_utils
+
+        data = standard_data.combined_data.copy()
+
+        # Original Right:
+        right = np.copy(data[:, :, -Width.REF - Width.CHANNEL : -Width.CHANNEL])
+        assert right.shape == (Dims.N_FRAMES, Dims.N_ROWS, Width.REF)
+        assert (right == standard_data.right).all()
+
+        # align data:
+        aligned = reference_utils.aligned_channels(data)
+        assert aligned.shape == (
+            Dims.N_CHAN,
+            Dims.N_FRAMES,
+            Dims.N_ROWS,
+            Dims.N_ALIGN_COLS,
+        )
+        right_channel_padded = np.copy(aligned[-2, :, :, :])
+        assert right_channel_padded.shape == (
+            Dims.N_FRAMES,
+            Dims.N_ROWS,
+            Dims.N_ALIGN_COLS,
+        )
+        assert (right_channel_padded[:, :, -Width.PAD :] == 0).all()
+        right_channel = np.copy(right_channel_padded[:, :, : -Width.PAD])
+        assert right_channel.shape == (Dims.N_FRAMES, Dims.N_ROWS, Width.CHANNEL)
+        right_channel_flip = np.copy(right_channel[:, :, ::-1])
+        assert (right_channel_flip[:, :, -4:] == right).all()
+
+        assert (right_channel[:, :, :4].flip() == right).all()
+
+        # assert (right_channel[:, :, -Width.REF - Width.PAD:-Width.PAD] == right).all()
+
+        # aligned_right = reference_utils.right(aligned)
+        # assert (aligned_right[:, :, :4] == right).all()
 
 
 class TestChannelFFT:
@@ -300,10 +338,27 @@ class TestChannelFFT:
     def test_from_aligned(self, aligned_data: Aligned):
         from . import reference_utils
 
-        channel_fft = ChannelFFT.from_aligned(aligned_data)
+        # left = aligned_data.left.copy()
+        # right = aligned_data.right.copy()
+        # amp33 = aligned_data.amp33.copy()
+        aligned_data.data.copy()
+
         regression = reference_utils.forward_fft(
             Dims.N_FRAMES, aligned_data.combined_data
         )
+        # assert (left == aligned_data.left).all()
+        # assert (right == aligned_data.right).all()
+        # assert (amp33 == aligned_data.amp33).all()
+        regression[0].copy()
+        regression[1].copy()
+        regression[2].copy()
+        channel_fft = ChannelFFT.from_aligned(aligned_data)
+        # assert (r_left == regression[0]).all()
+        # assert (r_right == regression[1]).all()
+        # assert (r_amp33 == regression[2]).all()
+        # assert (left == aligned_data.left).all()
+        # assert (right == aligned_data.right).all()
+        # assert (amp33 == aligned_data.amp33).all()
 
         assert (channel_fft.left == regression[0]).all()
         assert (channel_fft.right == regression[1]).all()

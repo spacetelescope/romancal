@@ -104,7 +104,9 @@ class Standard(Base):
         data[1::2, :, :, :] = data[1::2, :, :, ::-1]
 
         # pad channels with zeros to account for the pause at the end of each read
-        return np.pad(data, ((0, 0), (0, 0), (0, 0), (0, Width.PAD)), constant_values=0)
+        return np.pad(
+            data.copy(), ((0, 0), (0, 0), (0, 0), (0, Width.PAD)), constant_values=0
+        )
 
     @classmethod
     def from_aligned(cls, ref_data: Aligned) -> Standard:
@@ -169,7 +171,11 @@ class Aligned(Base):
         #    [frame, row, channel, channel_column]
         # Second combine the channels into columns:
         #    [frame, row, column]
-        return data.transpose((1, 2, 0, 3)).reshape((frames, rows, columns * channels))
+        return (
+            data.transpose((1, 2, 0, 3))
+            .reshape((frames, rows, columns * channels))
+            .copy()
+        )
 
     @classmethod
     def from_standard(cls, ref_data: Standard) -> Aligned:

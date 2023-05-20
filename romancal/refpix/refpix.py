@@ -187,10 +187,16 @@ def apply_correction(aligned: Aligned, coeffs: Coefficients) -> Aligned:
     data = aligned.combined_data
     channel_fft = ChannelFFT.from_aligned(aligned)
 
-    # Expand the correction iteratior
-    correct = np.array(list(correction(channel_fft, coeffs)), dtype=data.dtype)
+    return channel_fft
 
-    # Apply the actual correction
-    data -= correct.reshape(data.shape)
+    # Expand the correction iteratior
+    correct = np.array(list(correction(channel_fft, coeffs)))
+    return correct
+    correct = correct.reshape(data.shape)
+
+    return correct
+
+    # Apply the actual correction (throw padding away)
+    data[:, :, :, : -Width.PAD] -= correct.reshape(data.shape)[:, :, :, : -Width.PAD]
 
     return Aligned.from_combined(data, aligned.offset)
