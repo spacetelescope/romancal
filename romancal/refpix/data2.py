@@ -350,7 +350,7 @@ class ChannelView(BaseView):
 
     @staticmethod
     def fft_interp_generator(
-        frame: np.ndarray, fixed_values: np.ndarray, apodize: np.ndarray
+        frame: np.ndarray, pad: np.ndarray, apodize: np.ndarray
     ) -> np.ndarray:
         """
         Provide an infinite generator of interpolated frames using FFT interpolation,
@@ -360,18 +360,19 @@ class ChannelView(BaseView):
             is arbitrary, a generator is provided so tha it is simple to choose method
             of stopping the iteration (fixed, relative change, absolute change, etc.)
         """
-        fixed = frame[fixed_values]
 
         while True:
             result = apodize * fft.rfft(frame, workers=1) / frame.size
-            frame = fft.irfft(result * frame.size, workers=1)
-            frame[fixed_values] = fixed
+            result = fft.irfft(result * frame.size, workers=1).astype(frame.dtype)
+
+            # Only update the padded columns
+            frame[pad] = result[pad]
 
             yield frame
 
     def fft_interpolate(self, num: int = 3) -> ChannelView:
         """
-        FFT interpolate the amp33 reference channel.
+        FFT interpolate the amp33 reference channel's added columns.
 
         Parameters:
             num: The number of iterations to perform. (default: 3)
@@ -379,26 +380,84 @@ class ChannelView(BaseView):
         frames, rows, columns = self.amp33.shape
         length = rows * columns
 
-        # Mask all the padded columns
-        mask = np.zeros((rows, columns), dtype=bool)
-        mask[:, : -Const.PAD] = True
+        # Mask all the data columns
+        mask = np.ones((rows, columns), dtype=bool)
+        mask[:, : -Const.PAD] = False
         mask = mask.flatten()
 
-        # Find the indices of the non-padded columns
-        fixed_values = np.where(mask)[0]
+        # Find the indices of the padded columns
+        pad = np.where(mask)[0]
 
         data = self.amp33.reshape(frames, length)
         apodize = (
             1 + np.cos(2 * np.pi * np.abs(np.fft.rfftfreq(length, 1 / length)) / length)
         ) / 2
 
-        for index, frame in enumerate(data):
-            data[index, :] = next(
+        for frame in data:
+            next(
                 islice(  # advance the generator to the desired iteration
-                    self.fft_interp_generator(frame, fixed_values, apodize),
+                    self.fft_interp_generator(frame, pad, apodize),
                     num - 1,  # next() advances and returns generator value
                     None,  # don't remember old iterations
                 )
             )
 
         return self
+
+
+@dataclass
+class Coefficients:
+    gamma: np.ndarray
+    zeta: np.ndarray
+    alpha: np.ndarray
+
+    def __iter__(self):
+        return zip(self.gamma, self.zeta, self.alpha)
+
+
+# @dataclass
+# class ChannelFFT:
+#     left: np.ndarray
+#     right: np.ndarray
+#     amp33: np.ndarray
+
+#     @staticmethod
+#     def channel_fft(channel: np.ndarray, normalize: bool) -> np.ndarray:
+#         frames, rows, columns = channel.shape
+#         channel = channel.reshape(frames, rows * columns)
+
+#         channel = fft.rfft(channel / channel.shape[1])
+#         if normalize:
+#             channel *= columns / Width.REF
+
+#         return channel
+
+#     @classmethod
+#     def from_channels(cls, channels: ChannelView) -> ChannelFFT:
+#         return cls(
+#             cls.channel_fft(channels.left, normalize=True),
+#             cls.channel_fft(channels.right, normalize=True),
+#             cls.channel_fft(channels.amp33, normalize=False),
+#         )
+
+#     def correct_generator(self, coeffs: Coefficients) -> np.ndarray:
+#         # We need to multiply by 2 because we are only using half of the FFT because
+#         # the data is real
+#         normalization = coeffs.gamma.shape[1] * 2
+
+#         for gamma, zeta, alpha in coeffs:
+#             correct = (
+#                 np.multiply(self.left, gamma)
+#                 + np.multiply(self.right, zeta)
+#                 + np.multiply(self.amp33, alpha)
+#             ) * normalization
+
+#             correct = fft.irfft(correct).real
+#             yield correct
+
+#         # Add zeros in for the amp33 channel as it does not get changed
+#         yield np.zeros(correct.shape)
+
+#     def correction(self, coeffs: Coefficients) -> np.ndarray:
+#         """ """
+#         return np.array(list(self.correct_generator(coeffs)))
