@@ -1,6 +1,10 @@
 0.10.1 (unreleased)
 ===================
 
+tweakreg
+--------
+- Added logic to handle cases where an absolute catalog cannot be created. [#698]
+
 associations
 ------------
 

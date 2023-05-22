@@ -5,6 +5,7 @@ from typing import Tuple
 
 import numpy as np
 import pytest
+import requests
 from astropy import coordinates as coord
 from astropy import table
 from astropy import units as u
@@ -22,6 +23,11 @@ from romancal.tweakreg.tweakreg_step import (
     TweakRegStep,
     _common_name,
 )
+
+
+class MockConnectionError:
+    def __init__(self, *args, **kwargs):
+        raise requests.exceptions.ConnectionError
 
 
 def update_wcsinfo(input_dm):
@@ -760,3 +766,25 @@ def test_remove_tweakreg_catalog_data(
 
     assert not hasattr(img.meta.source_detection, "tweakreg_catalog")
     assert hasattr(img.meta, "tweakreg_catalog")
+
+
+def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
+    tmp_path, base_image, monkeypatch
+):
+    """
+    Test that TweakReg raises an error when there is a connection error with
+    the VO API server, which means that an absolute reference catalog cannot be created.
+    """
+
+    img = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img)
+
+    step = TweakRegStep()
+
+    monkeypatch.setattr("requests.get", MockConnectionError)
+    res = step.process([img])
+
+    assert type(res) == rdm.ModelContainer
+    assert len(res) == 1
+    assert res[0].meta.cal_step.tweakreg.lower() == "skipped"
+    assert step.skip is True
