@@ -8,10 +8,10 @@ from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
-def test_is_wcs_correction_small(rtdata, ignore_asdf_paths):
-    input_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg_input.asdf"
+def test_tweakreg(rtdata, ignore_asdf_paths):
+    input_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg.asdf"
     output_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg_output.asdf"
-    truth_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg_truth.asdf"
+    truth_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg.asdf"
 
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.get_truth(f"truth/WFI/image/{truth_data}")
