@@ -60,6 +60,11 @@ def coeffs() -> Coefficients:
     return Coefficients(coeffs[0], coeffs[1], coeffs[2])
 
 
+@pytest.fixture(scope="module")
+def offset() -> np.ndarray:
+    return RNG.uniform(0, 100, size=(Dims.N_ROWS, Dims.N_COLS)).astype(np.float32)
+
+
 def test_constants_sanity():
     """
     Sanity check on the constants used and their relation to the test data.
@@ -177,14 +182,12 @@ class TestStandardView:
         # Check that the right is the right side of the detector
         assert (standard.right == standard.detector[:, :, -Const.REF :]).all()
 
-    def test_channels(self, data):
+    def test_channels(self, data, offset):
         """
         Check aligning the data into channels and padding the columns.
         """
         non_view_data = data.copy()
-        standard = StandardView(
-            data, offset=RNG.uniform(0, 100, size=(Dims.N_ROWS, Dims.N_COLS))
-        )
+        standard = StandardView(data, offset=offset)
         channel_view = standard.channels
 
         # Check the data is unchanged by the property
@@ -283,6 +286,56 @@ class TestStandardView:
         assert (new.offset == b).all()
         assert (new.data == regression).all()
 
+    def test_apply_offset(self, data, offset):
+        standard = StandardView(data.copy(), offset)
+
+        # Apply the offset
+        new = standard.apply_offset()
+
+        # Check the new object is the same as the original
+        assert new is standard
+
+        # Check apply offset has modified new's state
+        assert new.offset is None
+        assert (new.data != data).any()
+
+        # Check that the data has been correctly modified
+        for new_frame, frame in zip(new.data, data):
+            assert (new_frame == (frame + offset)).all()
+
+        # Check if no offset is passed
+        standard = StandardView(data.copy())
+        new = standard.apply_offset()
+        assert new is standard
+        assert (new.data == data).all()
+
+    def test_apply_offset_regression(self, data, offset):
+        standard = StandardView(data.copy(), offset)
+
+        # Run the reference utility
+        regression = data[:, :, : Const.N_COLUMNS].copy()
+        reference_utils.restore_offsets(Dims.N_FRAMES, regression, offset)
+
+        # Run the internal utility
+        new = standard.apply_offset()
+
+        # Check regression
+        assert (new.data[:, :, : Const.N_COLUMNS] == regression).all()
+
+    def test_offset_roundtrip(self, data):
+        standard = StandardView(data.copy())
+
+        no_offset = standard.remove_offset()
+        assert no_offset.offset is not None
+        assert (no_offset.data != data).any()
+
+        reset = no_offset.apply_offset()
+        assert reset.offset is None
+
+        # Check round trip has not changed the data.
+        #   The differences are due to floating point arithmetic.
+        assert_allclose(reset.data, data, atol=1e-5)
+
 
 class TestChannelView:
     def test_detector(self, standard):
@@ -364,9 +417,9 @@ class TestChannelView:
         # Check that the amp33 is a view
         assert amp33.base is channels.data
 
-    def test_standard(self, standard):
+    def test_standard(self, standard, offset):
         channels = standard.channels
-        channels.offset = RNG.uniform(0, 100, size=(Dims.N_ROWS, Dims.N_COLS))
+        channels.offset = offset
         non_view_data = channels.data.copy()
 
         standard_view = channels.standard

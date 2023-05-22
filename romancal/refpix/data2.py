@@ -15,7 +15,6 @@ from astropy import units as u
 from scipy import fft
 
 # TODO:
-# 1) offset test
 # 2) test datamodel to standard view
 # 3) create/test standard view to datamodel
 # 4) create/test reference file to Coefficients
@@ -209,7 +208,7 @@ class StandardView(BaseView):
 
         return self
 
-    def apply_offest(self) -> StandardView:
+    def apply_offset(self) -> StandardView:
         """
         Apply the recorded offset in-place and return the class to the user.
             - If the offset has not been recorded, this will do nothing and return the
@@ -218,9 +217,9 @@ class StandardView(BaseView):
               in place by the views. This is so that it can be treated functionally.
         """
 
-        if self.offset:
-            for frame in self.data:
-                frame += self.offset
+        if self.offset is not None:
+            self.data += self.offset
+            self.offset = None
 
         return self
 

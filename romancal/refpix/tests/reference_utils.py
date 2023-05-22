@@ -461,3 +461,8 @@ def apply_correction_to_data(numFrames, dataUniformTime, alpha, gamma, zeta):
     )
 
     return data0
+
+
+def restore_offsets(numFrames, data0, b):
+    for frame in range(numFrames):
+        data0[frame, :, :] += b[:, :4096]
