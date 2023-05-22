@@ -175,7 +175,7 @@ class RampFitStep(RomanStep):
                     out_model.meta.cal_step.ramp_fit = "COMPLETE"
                 case _:
                     log.error('Algorithm %s is not supported. Skipping step.')
-                    out_model = input_model
+                    out_model = input
                     out_model.meta.cal_step.ramp_fit = "SKIP"
 
         return out_model
