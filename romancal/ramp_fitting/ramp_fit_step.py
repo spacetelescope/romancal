@@ -156,47 +156,68 @@ class RampFitStep(RomanStep):
     """
 
     spec = """
+        algorithm = option('ols', default='ols')  # Algorithm to use to fit.
+        save_opt = boolean(default=False) # Save optional output
         opt_name = string(default='')
         maximum_cores = option('none','quarter','half','all',default='none') # max number of processes to create
-        save_opt = boolean(default=False) # Save optional output
+        suffix = string(default='rampfit')  # Default suffix of results
     """  # noqa: E501
-    algorithm = "ols"  # Only algorithm allowed
 
-    weighting = "optimal"  # Only weighting allowed
+    weighting = "optimal"  # Only weighting allowed for OLS
 
     reference_file_types = ["readnoise", "gain"]
 
     def process(self, input):
         with rdd.open(input, lazy_load=False) as input_model:
-            max_cores = self.maximum_cores
-            readnoise_filename = self.get_reference_file(input_model, "readnoise")
-            gain_filename = self.get_reference_file(input_model, "gain")
-            input_model.data = input_model.data[np.newaxis, :]
-            input_model.groupdq = input_model.groupdq[np.newaxis, :]
-            input_model.err = input_model.err[np.newaxis, :]
+            match self.algorithm:
+                case 'ols':
+                    out_model = self.ols(input_model)
+                    out_model.meta.cal_step.ramp_fit = "COMPLETE"
+                case _:
+                    log.error('Algorithm %s is not supported. Skipping step.')
+                    out_model = input_model
+                    out_model.meta.cal_step.ramp_fit = "SKIP"
 
-            log.info("Using READNOISE reference file: %s", readnoise_filename)
-            readnoise_model = rdd.open(readnoise_filename, mode="rw")
-            log.info("Using GAIN reference file: %s", gain_filename)
-            gain_model = rdd.open(gain_filename, mode="rw")
+        return out_model
 
-            log.info(f"Using algorithm = {self.algorithm}")
-            log.info(f"Using weighting = {self.weighting}")
+    def ols(self, input_model):
+        """Perform Optimal Linear Fitting on the resultants
 
-            buffsize = ramp_fit.BUFSIZE
-            image_info, integ_info, opt_info, gls_opt_model = ramp_fit.ramp_fit(
-                input_model,
-                buffsize,
-                self.save_opt,
-                readnoise_model.data.value,
-                gain_model.data.value,
-                self.algorithm,
-                self.weighting,
-                max_cores,
-                dqflags.pixel,
-            )
-            readnoise_model.close()
-            gain_model.close()
+        This option can only be applied to even resultants
+
+        Returns
+        -------
+            out_model : Count rate data
+        """
+        max_cores = self.maximum_cores
+        readnoise_filename = self.get_reference_file(input_model, "readnoise")
+        gain_filename = self.get_reference_file(input_model, "gain")
+        input_model.data = input_model.data[np.newaxis, :]
+        input_model.groupdq = input_model.groupdq[np.newaxis, :]
+        input_model.err = input_model.err[np.newaxis, :]
+
+        log.info("Using READNOISE reference file: %s", readnoise_filename)
+        readnoise_model = rdd.open(readnoise_filename, mode="rw")
+        log.info("Using GAIN reference file: %s", gain_filename)
+        gain_model = rdd.open(gain_filename, mode="rw")
+
+        log.info(f"Using algorithm = {self.algorithm}")
+        log.info(f"Using weighting = {self.weighting}")
+
+        buffsize = ramp_fit.BUFSIZE
+        image_info, integ_info, opt_info, gls_opt_model = ramp_fit.ramp_fit(
+            input_model,
+            buffsize,
+            self.save_opt,
+            readnoise_model.data.value,
+            gain_model.data.value,
+            self.algorithm,
+            self.weighting,
+            max_cores,
+            dqflags.pixel,
+        )
+        readnoise_model.close()
+        gain_model.close()
 
         # Save the OLS optional fit product, if it exists
         if opt_info is not None:
@@ -219,12 +240,4 @@ class RampFitStep(RomanStep):
             )
 
         out_model = create_image_model(input_model, image_info)
-        out_model.meta.cal_step.ramp_fit = "COMPLETE"
-
-        if self.save_results:
-            try:
-                self.suffix = "rampfit"
-            except AttributeError:
-                self["suffix"] = "rampfit"
-
         return out_model
