@@ -3,6 +3,7 @@ import json
 import os
 from io import StringIO
 from typing import Tuple
+import json
 
 import numpy as np
 import pytest
@@ -80,7 +81,7 @@ def create_asn_file(tmp_path):
             "constraints": "No constraints",
             "asn_id": "a3001",
             "target": "none",
-            "asn_pool": "none",
+            "asn_pool": "test_pool_name",
             "products": [
                 {
                     "name": "files.asdf",
@@ -293,7 +294,9 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
-    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    detector = cf.Frame2D(
+        name="detector", axes_order=(0, 1), unit=(u.pix, u.pix)
+    )
     v2v3 = cf.Frame2D(
         name="v2v3",
         axes_order=(0, 1),
@@ -316,9 +319,14 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
 
 def get_catalog_data(input_dm):
     gaia_cat = get_catalog(ra=270, dec=66, sr=100 / 3600)
-    gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
+    gaia_source_coords = [
+        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])
+    ]
     catalog_data = np.array(
-        [input_dm.meta.wcs.world_to_pixel(ra, dec) for ra, dec in gaia_source_coords]
+        [
+            input_dm.meta.wcs.world_to_pixel(ra, dec)
+            for ra, dec in gaia_source_coords
+        ]
     )
     return catalog_data
 
@@ -578,7 +586,9 @@ def test_tweakreg_correction_magnitude(
     step = TweakRegStep()
     step.tolerance = tolerance / 10.0
 
-    assert step._is_wcs_correction_small(img1_wcs, img2_wcs) == is_small_correction
+    assert (
+        step._is_wcs_correction_small(img1_wcs, img2_wcs) == is_small_correction
+    )
 
 
 @pytest.mark.parametrize(
@@ -651,7 +661,9 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     catalog_filename = "ref_catalog.ecsv"
     abs_refcat_filename = f"fit_{abs_refcat.lower()}_ref.ecsv"
-    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
+    add_tweakreg_catalog_attribute(
+        tmp_path, img, catalog_filename=catalog_filename
+    )
 
     step = TweakRegStep()
     step.save_abs_catalog = True
@@ -675,7 +687,9 @@ def test_tweakreg_defaults_to_valid_abs_refcat(tmp_path, abs_refcat, request):
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     catalog_filename = "ref_catalog.ecsv"
     abs_refcat_filename = f"fit_{DEFAULT_ABS_REFCAT.lower()}_ref.ecsv"
-    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
+    add_tweakreg_catalog_attribute(
+        tmp_path, img, catalog_filename=catalog_filename
+    )
 
     step = TweakRegStep()
     step.save_abs_catalog = True
@@ -762,7 +776,9 @@ def test_tweakreg_use_custom_catalogs(tmp_path, catalog_format, request):
     catfile_content = StringIO()
     for x in custom_catalog_map:
         # write line to catfile
-        catfile_content.write(f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n")
+        catfile_content.write(
+            f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n"
+        )
         # write out the catalog data
         t = table.Table(x.get("cat_data"), names=("x", "y"))
         t.write(tmp_path / x.get("cat_filename"), format=catalog_format)
@@ -809,7 +825,9 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     Test that TweakReg returns accurate results.
     """
     gaia_cat = get_catalog(ra=270, dec=66, sr=100 / 3600)
-    gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
+    gaia_source_coords = [
+        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])
+    ]
 
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     original_wcs = copy.deepcopy(img.meta.wcs)
@@ -839,11 +857,13 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
 
     # get world coords for Gaia sources using "wrong WCS"
     original_ref_source = [
-        original_wcs.pixel_to_world(x, y) for x, y in transformed_xy_gaia_sources
+        original_wcs.pixel_to_world(x, y)
+        for x, y in transformed_xy_gaia_sources
     ]
     # get world coords for Gaia sources using tweaked WCS
     new_ref_source = [
-        img.meta.wcs.pixel_to_world(x, y) for x, y in transformed_xy_gaia_sources
+        img.meta.wcs.pixel_to_world(x, y)
+        for x, y in transformed_xy_gaia_sources
     ]
     # celestial coordinates for Gaia sources
     gaia_ref_source = [
@@ -863,7 +883,9 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
         for gref, nref in zip(gaia_ref_source, new_ref_source)
     ]
 
-    assert np.array([np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2)]).all()
+    assert np.array(
+        [np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2)]
+    ).all()
 
 
 @pytest.mark.parametrize(
@@ -962,3 +984,55 @@ def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
     assert len(res) == 1
     assert res[0].meta.cal_step.tweakreg.lower() == "skipped"
     assert step.skip is True
+def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
+    """Test that TweakReg can parse an ASN file properly."""
+
+    def clean_result(result):
+        """
+        Remove meta.tweakreg_catalog from 'tweaked' file.
+
+        Parameters
+        ----------
+        result : ModelContainer
+            A ModelContainer with the results from TweakRegStep.
+        """
+        for img in result:
+            del img.meta["tweakreg_catalog"]
+
+    img_1 = base_image(shift_1=1000, shift_2=1000)
+    img_2 = base_image(shift_1=1000, shift_2=1000)
+    img_1.meta["filename"] = "img_1.asdf"
+    img_2.meta["filename"] = "img_2.asdf"
+    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
+    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
+    img_1.save(tmp_path / "img_1.asdf")
+    img_2.save(tmp_path / "img_2.asdf")
+    asn_filepath = create_asn_file(tmp_path)
+    with open(asn_filepath) as f:
+        asn_content = json.load(f)
+
+    step = TweakRegStep()
+
+    res = step.process(asn_filepath)
+    assert type(res) == rdm.ModelContainer
+
+    assert hasattr(res[0].meta, "asn")
+    assert (
+        res[0].meta.asn["exptype"]
+        == asn_content["products"][0]["members"][0]["exptype"]
+    )
+    assert (
+        res[1].meta.asn["exptype"]
+        == asn_content["products"][0]["members"][1]["exptype"]
+    )
+    assert res[0].meta.asn["pool_name"] == asn_content["asn_pool"]
+    assert res[1].meta.asn["pool_name"] == asn_content["asn_pool"]
+
+    assert res[0].meta.filename == img_1.meta.filename
+    assert res[1].meta.filename == img_2.meta.filename
+
+    assert type(res[0]) == type(img_1)
+    assert type(res[1]) == type(img_2)
+
+    assert (res[0].data == img_1.data).all()
+    assert (res[1].data == img_2.data).all()
