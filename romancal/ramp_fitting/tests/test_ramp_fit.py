@@ -209,6 +209,40 @@ def test_multicore_ramp_fit_match():
     ),
 )
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
+def test_one_group_small_buffer_fit_ols(max_cores):
+    ingain = 1.0
+    deltatime = 1
+    ngroups = 1
+    xsize = 20
+    ysize = 20
+    shape = (ngroups, xsize, ysize)
+
+    override_gain, override_readnoise = generate_wfi_reffiles(shape[1:], ingain)
+
+    model1 = generate_ramp_model(shape, deltatime)
+
+    model1.data[0, 15, 10] = 10.0 * model1.data.unit  # add single CR
+
+    out_model = RampFitStep.call(
+        model1,
+        override_gain=override_gain,
+        override_readnoise=override_readnoise,
+        maximum_cores=max_cores,
+    )
+
+    data = out_model.data.value
+
+    # Index changes due to trimming of reference pixels
+    np.testing.assert_allclose(data[11, 6], 10.0, 1e-6)
+
+
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
+)
+@pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
 def test_saturated_ramp_fit(max_cores):
     ingain = 1.0
     deltatime = 1
@@ -273,3 +307,76 @@ def test_saturated_ramp_fit(max_cores):
 
     # Test that the ramp fit step was labeled complete
     assert out_model.meta.cal_step.ramp_fit == "COMPLETE"
+
+
+# #########
+# Utilities
+# #########
+
+def generate_ramp_model(shape, deltatime=1):
+    data = u.Quantity(
+        (np.random.random(shape) * 0.5).astype(np.float32), u.DN, dtype=np.float32
+    )
+    err = u.Quantity(
+        (np.random.random(shape) * 0.0001).astype(np.float32), u.DN, dtype=np.float32
+    )
+    pixdq = np.zeros(shape=shape[1:], dtype=np.uint32)
+    gdq = np.zeros(shape=shape, dtype=np.uint8)
+
+    dm_ramp = maker_utils.mk_ramp(shape)
+    dm_ramp.data = u.Quantity(data, u.DN, dtype=np.float32)
+    dm_ramp.pixeldq = pixdq
+    dm_ramp.groupdq = gdq
+    dm_ramp.err = u.Quantity(err, u.DN, dtype=np.float32)
+
+    dm_ramp.meta.exposure.frame_time = deltatime
+    dm_ramp.meta.exposure.ngroups = shape[0]
+    dm_ramp.meta.exposure.nframes = 1
+    dm_ramp.meta.exposure.groupgap = 0
+
+    ramp_model = RampModel(dm_ramp)
+
+    return ramp_model
+
+
+def generate_wfi_reffiles(shape, ingain=6):
+    # Create temporary gain reference file
+    gain_ref = maker_utils.mk_gain(shape)
+
+    gain_ref["meta"]["instrument"]["detector"] = "WFI01"
+    gain_ref["meta"]["instrument"]["name"] = "WFI"
+    gain_ref["meta"]["reftype"] = "GAIN"
+    gain_ref["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
+
+    gain_ref["data"] = u.Quantity(
+        (np.random.random(shape) * 0.5).astype(np.float32) * ingain,
+        u.electron / u.DN,
+        dtype=np.float32,
+    )
+    gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
+    gain_ref["err"] = u.Quantity(
+        (np.random.random(shape) * 0.05).astype(np.float32),
+        u.electron / u.DN,
+        dtype=np.float32,
+    )
+
+    gain_ref_model = GainRefModel(gain_ref)
+
+    # Create temporary readnoise reference file
+    rn_ref = maker_utils.mk_readnoise(shape)
+    rn_ref["meta"]["instrument"]["detector"] = "WFI01"
+    rn_ref["meta"]["instrument"]["name"] = "WFI"
+    rn_ref["meta"]["reftype"] = "READNOISE"
+    rn_ref["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
+
+    rn_ref["meta"]["exposure"]["type"] = "WFI_IMAGE"
+    rn_ref["meta"]["exposure"]["frame_time"] = 666
+
+    rn_ref["data"] = u.Quantity(
+        (np.random.random(shape) * 0.01).astype(np.float32), u.DN, dtype=np.float32
+    )
+
+    rn_ref_model = ReadnoiseRefModel(rn_ref)
+
+    # return gainfile, readnoisefile
+    return gain_ref_model, rn_ref_model
