@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+from itertools import islice
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -11,6 +12,7 @@ from enum import IntEnum
 
 import numpy as np
 from astropy import units as u
+from scipy import fft
 
 
 class Const(IntEnum):
@@ -318,5 +320,85 @@ class ChannelView(BaseView):
 
                 # Remove the fit from the data
                 frame_data -= (t * m + b) * frame_not_zero
+
+        return self
+
+    def cosine_interpolate(self) -> ChannelView:
+        """
+        Perform Cosine weighted interpolation on the zero values of the amp33 columns.
+        """
+        data = self.amp33
+        channels, _, rows, columns = self.detector.shape
+
+        interp = np.sin(np.arange(1, channels + 1, dtype=data.dtype) * np.pi / channels)
+
+        for frame in data:
+            kern = frame.reshape(rows * columns)
+
+            mask = (kern != 0).astype(np.int64)
+
+            cov = np.convolve(kern, interp, mode="same")
+            mask_conv = np.convolve(mask, interp, mode="same")
+
+            kern = (cov / mask_conv).reshape(rows, columns)
+            frame += kern * (1 - mask.reshape(rows, columns))
+
+        # Fix NaN values
+        np.nan_to_num(data, copy=False)
+
+        return self
+
+    @staticmethod
+    def fft_interp_generator(
+        frame: np.ndarray, fixed_values: np.ndarray, apodize: np.ndarray
+    ) -> np.ndarray:
+        """
+        Provide an infinite generator of interpolated frames using FFT interpolation,
+        using the apodizing function provided.
+
+            Since this is an iterative method, and determining the number of iterations
+            is arbitrary, a generator is provided so tha it is simple to choose method
+            of stopping the iteration (fixed, relative change, absolute change, etc.)
+        """
+        fixed = frame[fixed_values]
+
+        while True:
+            result = apodize * fft.rfft(frame, workers=1) / frame.size
+            frame = fft.irfft(result * frame.size, workers=1)
+            frame[fixed_values] = fixed
+
+            yield frame
+
+    def fft_interpolate(self, num: int = 3) -> ChannelView:
+        """
+        FFT interpolate the amp33 reference channel.
+
+        Parameters:
+            num: The number of iterations to perform. (default: 3)
+        """
+        frames, rows, columns = self.amp33.shape
+        length = rows * columns
+
+        # Mask all the padded columns
+        mask = np.zeros((rows, columns), dtype=bool)
+        mask[:, : -Const.PAD] = True
+        mask = mask.flatten()
+
+        # Find the indices of the non-padded columns
+        fixed_values = np.where(mask)[0]
+
+        data = self.amp33.reshape(frames, length)
+        apodize = (
+            1 + np.cos(2 * np.pi * np.abs(np.fft.rfftfreq(length, 1 / length)) / length)
+        ) / 2
+
+        for index, frame in enumerate(data):
+            data[index, :] = next(
+                islice(  # advance the generator to the desired iteration
+                    self.fft_interp_generator(frame, fixed_values, apodize),
+                    num - 1,  # next() advances and returns generator value
+                    None,  # don't remember old iterations
+                )
+            )
 
         return self

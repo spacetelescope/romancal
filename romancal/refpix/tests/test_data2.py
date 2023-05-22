@@ -392,3 +392,98 @@ class TestChannelView:
 
         # Check that the regression matches the new object
         assert (new.data == regression).all()
+
+    def test_cosine_interpolate(self, standard):
+        channels = standard.channels
+        non_view_data = channels.data.copy()
+
+        new = channels.cosine_interpolate()
+
+        # Check that new object returned is the original
+        assert new is channels
+
+        # Check the data is not a view
+        assert new.data.base is None
+
+        # Check the method has updated only the amp33 data
+        assert (new.amp33 != non_view_data[-1, :, :, :]).any()
+        assert (new.detector == non_view_data[:-1, :, :, :]).all()
+
+    def test_cosine_interpolate_regression(self, standard):
+        channels = standard.channels
+
+        # Copy the data, because the regression utility modifies the data in-place
+        regression = channels.data.copy()
+        reference_utils.cos_interp_reference(regression, regression.shape[1])
+
+        # Demonstrate the regression only ran on the amp33 data
+        assert (regression[-1, :, :, :] != channels.data[-1, :, :, :]).any()
+        assert (regression[:-1, :, :, :] == channels.data[:-1, :, :, :]).all()
+
+        # Run the internal utility
+        new = channels.cosine_interpolate()
+
+        # Check that the regression matches the new object
+        assert (new.amp33 == regression[-1, :, :, :]).all()
+        assert (new.data == regression).all()
+
+    def test_fft_interpolate(self, standard):
+        channels = standard.channels
+        non_view_data = channels.data.copy()
+
+        new = channels.fft_interpolate()
+
+        # Check that the new object returned is the original
+        assert new is channels
+
+        # Check the data is not a view
+        assert new.data.base is None
+
+        # Check the method has updated only the amp33 data
+        assert (new.amp33 != non_view_data[-1, :, :, :]).any()
+        assert (new.detector == non_view_data[:-1, :, :, :]).all()
+
+    def test_fft_interpolate_regression(self, standard):
+        """
+        Run fft interpolation regression test
+
+        NOTE:
+            The reference code assumes the data will be changed in-place for all
+            its major operations.However, the reference code violates this assumption
+            for the Amp33 FFT interpolation step. It does make an in-place change to
+            a sub-array, `dataReferenceChan_FramesFlat`. However
+            `dataReferenceChan_FramesFlat` loses its view on the original data array
+            because it unnecessarily recasts the dtype, which is a non-view compatible
+            change.
+
+            romancal does not make this mistake because it does not recast the dtype.
+
+            The reference utils are modified to output the data array which is modified
+            as a functional return value. This is so that the reference code's
+            computation can be tests against the romancal code's computation.
+
+            After this step is computed, the reference code an romancal code will
+            diverge in values, because the changes made by this will propagate in
+            romancal but the do not in the reference code.
+        """
+
+        channels = standard.channels
+        non_view_data = channels.data.copy()
+
+        # Copy the data, because the regression utility modifies the data in-place
+        regression = channels.data.copy()
+        amp33_regression = reference_utils.fft_interp_amp33(
+            regression, regression.shape[1]
+        )
+
+        # Demonstrate that the sub-array (amp33_regression) does have changes made
+        assert (amp33_regression[:, :, :] != non_view_data[-1, :, :, :]).any()
+
+        # Demonstrate that the actual regression "data" remains unchanged instead
+        # the claimed in-place change. (this would fail if in-place change was made)
+        assert (regression == non_view_data).all()
+
+        # Run the internal utility
+        new = channels.fft_interpolate()
+
+        assert (new.amp33 == amp33_regression).all()
