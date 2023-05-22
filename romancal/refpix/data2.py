@@ -14,6 +14,12 @@ import numpy as np
 from astropy import units as u
 from scipy import fft
 
+# TODO:
+# 1) offset test
+# 2) test datamodel to standard view
+# 3) create/test standard view to datamodel
+# 4) create/test reference file to Coefficients
+
 
 class Const(IntEnum):
     """
@@ -203,6 +209,21 @@ class StandardView(BaseView):
 
         return self
 
+    def apply_offest(self) -> StandardView:
+        """
+        Apply the recorded offset in-place and return the class to the user.
+            - If the offset has not been recorded, this will do nothing and return the
+              object.
+            - Returns the class back to the user even though it will be modified
+              in place by the views. This is so that it can be treated functionally.
+        """
+
+        if self.offset:
+            for frame in self.data:
+                frame += self.offset
+
+        return self
+
 
 class ChannelView(BaseView):
     """
@@ -360,7 +381,6 @@ class ChannelView(BaseView):
             is arbitrary, a generator is provided so tha it is simple to choose method
             of stopping the iteration (fixed, relative change, absolute change, etc.)
         """
-
         while True:
             result = apodize * fft.rfft(frame, workers=1) / frame.size
             result = fft.irfft(result * frame.size, workers=1).astype(frame.dtype)
@@ -404,6 +424,101 @@ class ChannelView(BaseView):
 
         return self
 
+    @staticmethod
+    def forward_fft(channel: np.ndarray, normalize: bool) -> np.ndarray:
+        """
+        Compute the forward FFT of the channel, and normalize if requested.
+            - Normalize to just the non-padded columns, in this case 4 for the
+              left and right reference pixels.
+        """
+        frames, rows, columns = channel.shape
+        channel = channel.reshape(frames, rows * columns)
+
+        channel = fft.rfft(channel / channel.shape[1])
+        if normalize:
+            channel *= columns / Const.REF
+
+        return channel
+
+    @property
+    def reference_fft(self) -> ReferenceFFT:
+        """
+        Compute the reference FFTs object
+        """
+        return ReferenceFFT(
+            self.forward_fft(self.left, True),
+            self.forward_fft(self.right, True),
+            self.forward_fft(self.amp33, False),
+        )
+
+    def correction(self, coeffs: Coefficients) -> np.ndarray:
+        """
+        Compute the correction array for the standard data
+        """
+        correction = self.reference_fft.correction(coeffs)
+
+        return correction.reshape(self.data.shape).astype(self.data.dtype)
+
+    def apply_correction(self, coeffs: Coefficients) -> StandardView:
+        """
+        Apply the correction and return the standard view of the data
+        """
+        self.data -= self.correction(coeffs)
+
+        return self.standard
+
+
+@dataclass
+class ReferenceFFT:
+    """
+    FFTs of the Reference Pixels.
+
+    Note that the FFTs have all been reshaped so that the rows and columns are combined
+    into a single array. This means the FFTs are of shape
+        - (frames, (rows * columns) // 2 + 1).
+
+    where the // 2 + 1 is the length of the FFT for real data of even length
+    """
+
+    left: np.ndarray
+    right: np.ndarray
+    amp33: np.ndarray
+
+    def channel_correction(self, coeffs: Coefficients) -> np.ndarray:
+        """
+        Generator, which yields the correction for each channel.
+        """
+        # We need to multiply by 2 because we are only using half of the FFT because
+        # the data is real
+        normalization = coeffs.gamma.shape[1] * 2
+
+        for gamma, zeta, alpha in coeffs:
+            correction = (
+                np.multiply(self.left, gamma)
+                + np.multiply(self.right, zeta)
+                + np.multiply(self.amp33, alpha)
+            ) * normalization
+
+            # hold onto the previous correction so that shape is maintained
+            # for the blank correction for the amp33 channel
+            correction = fft.irfft(correction).real
+            yield correction
+
+        # Add zeros in for the amp33 channel as it does not get changed
+        yield np.zeros(correction.shape)
+
+    def correction(self, coeffs: Coefficients) -> np.ndarray:
+        """
+        Get the correction array for all of the data.
+            - Stacks all channels into a single array
+
+        Returns the correction array with the rows and columns in a single combined
+        dimension, and the dtypes not adjusted to the original dtypes.
+            - This will be handled by the ChannelView class
+        """
+
+        return np.array(list(self.channel_correction(coeffs)))
+
 
 @dataclass
 class Coefficients:
@@ -413,51 +528,3 @@ class Coefficients:
 
     def __iter__(self):
         return zip(self.gamma, self.zeta, self.alpha)
-
-
-# @dataclass
-# class ChannelFFT:
-#     left: np.ndarray
-#     right: np.ndarray
-#     amp33: np.ndarray
-
-#     @staticmethod
-#     def channel_fft(channel: np.ndarray, normalize: bool) -> np.ndarray:
-#         frames, rows, columns = channel.shape
-#         channel = channel.reshape(frames, rows * columns)
-
-#         channel = fft.rfft(channel / channel.shape[1])
-#         if normalize:
-#             channel *= columns / Width.REF
-
-#         return channel
-
-#     @classmethod
-#     def from_channels(cls, channels: ChannelView) -> ChannelFFT:
-#         return cls(
-#             cls.channel_fft(channels.left, normalize=True),
-#             cls.channel_fft(channels.right, normalize=True),
-#             cls.channel_fft(channels.amp33, normalize=False),
-#         )
-
-#     def correct_generator(self, coeffs: Coefficients) -> np.ndarray:
-#         # We need to multiply by 2 because we are only using half of the FFT because
-#         # the data is real
-#         normalization = coeffs.gamma.shape[1] * 2
-
-#         for gamma, zeta, alpha in coeffs:
-#             correct = (
-#                 np.multiply(self.left, gamma)
-#                 + np.multiply(self.right, zeta)
-#                 + np.multiply(self.amp33, alpha)
-#             ) * normalization
-
-#             correct = fft.irfft(correct).real
-#             yield correct
-
-#         # Add zeros in for the amp33 channel as it does not get changed
-#         yield np.zeros(correct.shape)
-
-#     def correction(self, coeffs: Coefficients) -> np.ndarray:
-#         """ """
-#         return np.array(list(self.correct_generator(coeffs)))

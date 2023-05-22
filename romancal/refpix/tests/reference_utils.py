@@ -287,6 +287,9 @@ def fft_interp(
                 * spfft.rfft(chanFrameData_Flat, workers=1)
                 / chanFrameData_Flat.size
             )
+            # astype is added so that dtype is preserved through the computation
+            # this reduces the number of copies made, and does not affect the result
+            # meaningfully
             chanFrameData_Flat = spfft.irfft(
                 fftResult * chanFrameData_Flat.size,
                 workers=1
@@ -334,7 +337,7 @@ def left_fft(numFrames, dataUniformTime):
 
 def right(dataUniformTime):
     r = np.copy(dataUniformTime[31, :, :, :])
-    r[:, :, :-4] = 0
+    r[:, :, 4:] = 0
     return r.copy()
 
 
@@ -410,7 +413,6 @@ def compute_correction(alpha, gamma, zeta, numFrames, l, r, a):
         (NUM_OUTPUT_CHANS, numFrames, NUM_ROWS * NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD),
         dtype=complex,
     )
-
     exec_channel_func_threads(
         CHAN_RANGE_WITHOUT_REFERENCES,
         _corr_chan_func,
@@ -421,22 +423,41 @@ def compute_correction(alpha, gamma, zeta, numFrames, l, r, a):
     return correlatedNoise
 
 
-def apply_correction(numFrames, dataUniformTime, alpha, gamma, zeta):
-    reference = forward_fft(numFrames, dataUniformTime)
-    return reference
+def correction(numFrames, dataUniformTime, alpha, gamma, zeta):
+    l, r, a = forward_fft(numFrames, dataUniformTime)
 
-    # correlatedNoise = compute_correction(alpha, gamma, zeta, numFrames, l, r, a)
-    # return correlatedNoise.real
+    correlatedNoise = compute_correction(alpha, gamma, zeta, numFrames, l, r, a)
 
-    # # reshape and just take real part
-    # correlatedNoise = correlatedNoise.real.reshape(
-    #     (NUM_OUTPUT_CHANS, numFrames, NUM_ROWS, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD)
-    # )
-    # return correlatedNoise
+    # reshape and just take real part
+    correlatedNoise = correlatedNoise.real.reshape(
+        (NUM_OUTPUT_CHANS, numFrames, NUM_ROWS, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD)
+    )
 
-    # correlatedNoise = correlatedNoise[:, :, :, 0:NUM_COLS_PER_OUTPUT_CHAN]
+    return correlatedNoise
 
-    # data0 = dataUniformTime[:, :, :, :NUM_COLS_PER_OUTPUT_CHAN]
-    # data0 -= correlatedNoise
 
-    # return data0
+def apply_correction_to_channels(numFrames, dataUniformTime, alpha, gamma, zeta):
+    correlatedNoise = correction(numFrames, dataUniformTime, alpha, gamma, zeta)
+
+    correlatedNoise = correlatedNoise[:, :, :, 0:NUM_COLS_PER_OUTPUT_CHAN].astype(
+        dataUniformTime.dtype
+    )
+
+    data0 = dataUniformTime[:, :, :, :NUM_COLS_PER_OUTPUT_CHAN]
+    data0 -= correlatedNoise
+
+    return data0
+
+
+def apply_correction_to_data(numFrames, dataUniformTime, alpha, gamma, zeta):
+    data0 = apply_correction_to_channels(numFrames, dataUniformTime, alpha, gamma, zeta)
+
+    for i in range(1, NUM_OUTPUT_CHANS - 1, 2):
+        data0[i, :, :, :] = data0[i, :, :, ::-1]
+
+    data0 = np.transpose(data0, (1, 2, 0, 3))
+    data0 = np.reshape(
+        data0[:, :, CHAN_RANGE_WITHOUT_REFERENCES, :], (numFrames, NUM_ROWS, NUM_ROWS)
+    )
+
+    return data0

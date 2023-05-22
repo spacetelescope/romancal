@@ -4,7 +4,13 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from romancal.refpix.data2 import ChannelView, Const, StandardView
+from romancal.refpix.data2 import (
+    ChannelView,
+    Coefficients,
+    Const,
+    ReferenceFFT,
+    StandardView,
+)
 
 from . import reference_utils
 
@@ -25,6 +31,8 @@ class Dims(IntEnum):
     N_CHAN = N_COLS // Const.CHAN_WIDTH
     PADDED_WIDTH = Const.CHAN_WIDTH + Const.PAD
 
+    N_FFT_COLS = (N_ROWS * PADDED_WIDTH) // 2 + 1
+
 
 @pytest.fixture(scope="module")
 def data():
@@ -36,6 +44,20 @@ def data():
 @pytest.fixture(scope="module")
 def standard(data):
     return StandardView(data)
+
+
+@pytest.fixture(scope="module")
+def channels(standard):
+    return standard.channels
+
+
+@pytest.fixture(scope="module")
+def coeffs() -> Coefficients:
+    coeffs = RNG.uniform(1, 100, size=(6, Const.N_DETECT_CHAN, Dims.N_FFT_COLS))
+
+    coeffs = coeffs[:3, :, :] + 1.0j * coeffs[3:, :, :]
+
+    return Coefficients(coeffs[0], coeffs[1], coeffs[2])
 
 
 def test_constants_sanity():
@@ -57,6 +79,9 @@ def test_constants_sanity():
 
     # Check the padded channel width
     assert Dims.PADDED_WIDTH == 140 == Const.CHAN_WIDTH + Const.PAD
+
+    # Check the number of columns in the FFT
+    assert Dims.N_FFT_COLS == 286721
 
 
 def test_data(data):
@@ -409,9 +434,7 @@ class TestChannelView:
         assert (new.amp33 != non_view_data[-1, :, :, :]).any()
         assert (new.detector == non_view_data[:-1, :, :, :]).all()
 
-    def test_cosine_interpolate_regression(self, standard):
-        channels = standard.channels
-
+    def test_cosine_interpolate_regression(self, channels):
         # Copy the data, because the regression utility modifies the data in-place
         regression = channels.data.copy()
         reference_utils.cos_interp_reference(regression, regression.shape[1])
@@ -427,8 +450,7 @@ class TestChannelView:
         assert (new.amp33 == regression[-1, :, :, :]).all()
         assert (new.data == regression).all()
 
-    def test_fft_interpolate(self, standard):
-        channels = standard.channels
+    def test_fft_interpolate(self, channels):
         non_view_data = channels.data.copy()
 
         new = channels.fft_interpolate()
@@ -443,7 +465,7 @@ class TestChannelView:
         assert (new.amp33 != non_view_data[-1, :, :, :]).any()
         assert (new.detector == non_view_data[:-1, :, :, :]).all()
 
-    def test_fft_interpolate_regression(self, standard):
+    def test_fft_interpolate_regression(self, channels):
         """
         Run fft interpolation regression test
 
@@ -466,8 +488,6 @@ class TestChannelView:
             diverge in values, because the changes made by this will propagate in
             romancal but the do not in the reference code.
         """
-
-        channels = standard.channels
         non_view_data = channels.data.copy()
 
         # Copy the data, because the regression utility modifies the data in-place
@@ -487,3 +507,178 @@ class TestChannelView:
         new = channels.fft_interpolate()
 
         assert (new.amp33 == amp33_regression).all()
+
+    def test_reference_fft(self, channels):
+        reference = channels.reference_fft
+
+        # Check the new object is a ReferenceFFT object
+        assert isinstance(reference, ReferenceFFT)
+
+        # Check the FFT all have the correct shape
+        shape = (Dims.N_FRAMES, (Dims.N_ROWS * Dims.PADDED_WIDTH) // 2 + 1)
+        assert reference.left.shape == shape
+        assert reference.right.shape == shape
+        assert reference.amp33.shape == shape
+
+        # Check the FFT are all complex dtype
+        assert reference.left.dtype == np.complex128
+        assert reference.right.dtype == np.complex128
+        assert reference.amp33.dtype == np.complex128
+
+        # Check the FFT are not views
+        assert reference.left.base is None
+        assert reference.right.base is None
+        assert reference.amp33.base is None
+
+    def test_reference_fft_regression(self, channels):
+        regression = channels.data.copy()
+        reference = channels.reference_fft
+
+        # Sow that the reference property does not alter the data
+        assert (regression == channels.data).all()
+
+        # run the reference code
+        left, right, amp33 = reference_utils.forward_fft(Dims.N_FRAMES, regression)
+
+        # Copy to make sure regression utility does not modify the data in-place
+        assert (regression == channels.data).all()
+
+        # Check that the regression matches the new object
+        assert (reference.left == left).all()
+        assert (reference.right == right).all()
+        assert (reference.amp33 == amp33).all()
+
+    def test_correction(self, channels, coeffs):
+        correction = channels.correction(coeffs)
+
+        # Check size and dtype
+        assert correction.shape == (
+            Dims.N_CHAN,
+            Dims.N_FRAMES,
+            Dims.N_ROWS,
+            Dims.PADDED_WIDTH,
+        )
+        assert correction.dtype == np.float32
+
+    def test_correction_regression(self, channels, coeffs):
+        # Run the reference code
+        regression = reference_utils.correction(
+            Dims.N_FRAMES, channels.data.copy(), coeffs.alpha, coeffs.gamma, coeffs.zeta
+        )
+
+        # Check size and dtype
+        assert regression.shape == (
+            Dims.N_CHAN,
+            Dims.N_FRAMES,
+            Dims.N_ROWS,
+            Dims.PADDED_WIDTH,
+        )
+        assert regression.dtype == np.float64
+
+        # Run the internal utility
+        correction = channels.correction(coeffs)
+
+        assert (correction == regression.astype(np.float32)).all()
+
+    def test_apply_correction(self, channels, coeffs):
+        non_view_standard_data = channels.standard.data.copy()
+        non_view_data = channels.data.copy()
+
+        amp33 = channels.amp33.copy()
+
+        # Compute the applied correction
+        standard = channels.apply_correction(coeffs)
+
+        # Check the correction is the same as the standard
+        assert isinstance(standard, StandardView)
+
+        # Check the channels is updated in-place
+        assert (channels.data != non_view_data).any()
+
+        # Check the standard is different from the original
+        assert (standard.data != non_view_standard_data).any()
+
+        # Check the amp33 channel has not changed
+        assert (channels.amp33 == amp33).all()
+
+    def test_apply_correction_channels_regression(self, channels, coeffs):
+        # Get regression
+        regression = reference_utils.apply_correction_to_channels(
+            Dims.N_FRAMES, channels.data.copy(), coeffs.alpha, coeffs.gamma, coeffs.zeta
+        )
+
+        # Check size and dtype
+        assert regression.shape == (
+            Dims.N_CHAN,
+            Dims.N_FRAMES,
+            Dims.N_ROWS,
+            Const.CHAN_WIDTH,
+        )
+        assert regression.dtype == np.float32
+
+        # Run the internal utility (looking at the inplace changes)
+        channels.apply_correction(coeffs)
+
+        # Check regression
+        assert (channels.data[:, :, :, : Const.CHAN_WIDTH] == regression).all()
+
+    def test_apply_correction_standard_regression(self, channels, coeffs):
+        regression = reference_utils.apply_correction_to_data(
+            Dims.N_FRAMES, channels.data.copy(), coeffs.alpha, coeffs.gamma, coeffs.zeta
+        )
+
+        # Check size and dtype
+        assert regression.shape == (Dims.N_FRAMES, Dims.N_ROWS, Const.N_COLUMNS)
+        assert regression.dtype == np.float32
+
+        # Run the internal utility
+        standard = channels.apply_correction(coeffs)
+
+        # Check regression
+        assert (standard.detector == regression).all()
+
+
+class TestReferenceFFT:
+    def test_correction(self, channels, coeffs):
+        reference = channels.reference_fft
+
+        left = reference.left.copy()
+        right = reference.right.copy()
+        amp33 = reference.amp33.copy()
+
+        correction = reference.correction(coeffs)
+
+        # Check size and dtype
+        assert correction.shape == (
+            Dims.N_CHAN,
+            Dims.N_FRAMES,
+            Dims.N_ROWS * Dims.PADDED_WIDTH,
+        )
+        assert correction.dtype == np.float64  # no dtype casting yet
+
+        # Check the last channel is 0
+        assert (correction[-1, :, :] == 0).all()
+
+        # Check the FFT have not been modified
+        assert (left == reference.left).all()
+        assert (right == reference.right).all()
+        assert (amp33 == reference.amp33).all()
+
+    def test_correction_regression(self, channels, coeffs):
+        reference = channels.reference_fft
+
+        # Run reference code
+        regression = reference_utils.compute_correction(
+            coeffs.alpha,
+            coeffs.gamma,
+            coeffs.zeta,
+            Dims.N_FRAMES,
+            reference.left,
+            reference.right,
+            reference.amp33,
+        )
+
+        # Run implementation
+        correction = reference.correction(coeffs)
+
+        assert (correction == regression).all()
