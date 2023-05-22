@@ -140,7 +140,7 @@ def test_one_group_small_buffer_fit_ols(max_cores):
         "Roman CRDS servers are not currently available outside the internal network"
     ),
 )
-def test_multicore_ramp_fit_match():
+def test_ols_multicore_ramp_fit_match():
     ingain = 1.0
     deltatime = 1
     ngroups = 4
@@ -156,16 +156,18 @@ def test_multicore_ramp_fit_match():
     # so we make copies here so that we can get agreement.
     out_model = RampFitStep.call(
         model1.copy(),  # model1 is modified in place now.
-        override_gain=override_gain.copy(),
-        override_readnoise=override_readnoise.copy(),
+        algorithm='ols',
         maximum_cores="none",
+        override_gain=override_gain,
+        override_readnoise=override_readnoise,
     )
 
     all_out_model = RampFitStep.call(
         model1.copy(),  # model1 is modified in place now.
-        override_gain=override_gain.copy(),
-        override_readnoise=override_readnoise.copy(),
+        algorithm='ols',
         maximum_cores="all",
+        override_gain=override_gain,
+        override_readnoise=override_readnoise,
     )
 
     # Original ramp parameters
@@ -209,7 +211,7 @@ def test_multicore_ramp_fit_match():
     ),
 )
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
-def test_one_group_small_buffer_fit_ols(max_cores):
+def test_ols_one_group_small_buffer_fit(max_cores):
     ingain = 1.0
     deltatime = 1
     ngroups = 1
@@ -225,9 +227,10 @@ def test_one_group_small_buffer_fit_ols(max_cores):
 
     out_model = RampFitStep.call(
         model1,
+        algorithm='ols',
+        maximum_cores=max_cores,
         override_gain=override_gain,
         override_readnoise=override_readnoise,
-        maximum_cores=max_cores,
     )
 
     data = out_model.data.value
@@ -243,7 +246,7 @@ def test_one_group_small_buffer_fit_ols(max_cores):
     ),
 )
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
-def test_saturated_ramp_fit(max_cores):
+def test_ols_saturated_ramp_fit(max_cores):
     ingain = 1.0
     deltatime = 1
     ngroups = 4
@@ -261,9 +264,10 @@ def test_saturated_ramp_fit(max_cores):
     # Run ramp fit step
     out_model = RampFitStep.call(
         model1,
+        algorithm='ols',
+        maximum_cores=max_cores,
         override_gain=override_gain,
         override_readnoise=override_readnoise,
-        maximum_cores=max_cores,
     )
 
     # Test data and error arrays are zeroed out
