@@ -4,7 +4,9 @@ import numpy as np
 import pytest
 from astropy import units as u
 from numpy.testing import assert_allclose
+from roman_datamodels.datamodels import RampModel, RefpixRefModel
 from roman_datamodels.maker_utils import mk_ramp
+from roman_datamodels.testing.factories import create_refpix_ref
 
 from romancal.refpix.data2 import (
     ChannelView,
@@ -64,7 +66,7 @@ def datamodel(data):
     datamodel.border_ref_pix_left = datamodel.data[:, :, : Const.REF]
     datamodel.border_ref_pix_right = datamodel.data[:, :, -Const.REF :]
 
-    return datamodel
+    return RampModel(datamodel)
 
 
 @pytest.fixture(scope="module")
@@ -89,6 +91,11 @@ def coeffs() -> Coefficients:
 @pytest.fixture(scope="module")
 def offset() -> np.ndarray:
     return RNG.uniform(0, 100, size=(Dims.N_ROWS, Dims.N_COLS)).astype(np.float32)
+
+
+@pytest.fixture(scope="module")
+def ref_pix_ref():
+    return RefpixRefModel(create_refpix_ref())
 
 
 def test_constants_sanity():
@@ -826,3 +833,16 @@ class TestReferenceFFT:
         correction = reference.correction(coeffs)
 
         assert (correction == regression).all()
+
+
+class TestCoefficients:
+    def test_from_ref(self, ref_pix_ref):
+        coeffs = Coefficients.from_ref(ref_pix_ref)
+
+        # Check the object is a Coefficients object
+        assert isinstance(coeffs, Coefficients)
+
+        # Check the coefficients are the same
+        assert (coeffs.alpha == ref_pix_ref.alpha).all()
+        assert (coeffs.gamma == ref_pix_ref.gamma).all()
+        assert (coeffs.zeta == ref_pix_ref.zeta).all()

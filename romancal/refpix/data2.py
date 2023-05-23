@@ -5,7 +5,7 @@ from itertools import islice
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from roman_datamodels.datamodels import RampModel
+    from roman_datamodels.datamodels import RampModel, RefpixRefModel
 
 from dataclasses import dataclass
 from enum import IntEnum
@@ -13,9 +13,6 @@ from enum import IntEnum
 import numpy as np
 from astropy import units as u
 from scipy import fft
-
-# TODO:
-# 4) create/test reference file to Coefficients
 
 
 class Const(IntEnum):
@@ -547,6 +544,10 @@ class Coefficients:
     gamma: np.ndarray
     zeta: np.ndarray
     alpha: np.ndarray
+
+    @classmethod
+    def from_ref(cls, ref: RefpixRefModel) -> Coefficients:
+        return cls(ref.gamma, ref.zeta, ref.alpha)
 
     def __iter__(self):
         return zip(self.gamma, self.zeta, self.alpha)
