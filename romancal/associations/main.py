@@ -377,29 +377,29 @@ class Main:
         )
 
         self.parsed = parser.parse_args(args=args)
- 
+
     def save(self):
-        """Save the associations to disk.
-        """
+        """Save the associations to disk."""
         if self.parsed.dry_run:
             return
 
         for asn in self.associations:
             try:
                 (fname, serialized) = asn.dump(format=self.parsed.format)
-            except AssociationError as exception: # noqa: F821
-                logger.warning('Cannot serialize association %s', asn)
-                logger.warning('Reason:', exc_info=exception)
+            except AssociationError as exception:  # noqa: F821
+                logger.warning("Cannot serialize association %s", asn)
+                logger.warning("Reason:", exc_info=exception)
                 continue
-            with open(os.path.join(self.parsed.path, fname), 'w') as f:
+            with open(os.path.join(self.parsed.path, fname), "w") as f:
                 f.write(serialized)
 
         if self.parsed.save_orphans:
             self.orphaned.write(
                 os.path.join(self.parsed.path, self.parsed.save_orphans),
-                format='ascii',
-                delimiter='|'
+                format="ascii",
+                delimiter="|",
             )
+
     def __str__(self):
         result = []
         result.append(

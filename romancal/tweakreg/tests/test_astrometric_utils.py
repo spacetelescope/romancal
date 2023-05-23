@@ -270,7 +270,9 @@ def base_image():
         ("GAIADR3", 15),
     ],
 )
-def test_create_astrometric_catalog_variable_num_sources(tmp_path, catalog, num_sources, request):
+def test_create_astrometric_catalog_variable_num_sources(
+    tmp_path, catalog, num_sources, request
+):
     """Test fetching data from supported catalogs with variable number of sources."""
     output_filename = "ref_cat.ecsv"
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
