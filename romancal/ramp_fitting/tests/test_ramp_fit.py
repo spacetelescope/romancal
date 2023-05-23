@@ -291,7 +291,7 @@ def test_ols_saturated_ramp_fit(max_cores, make_data):
 # ########
 # fixtures
 # ########
-@pytest.fixture
+@pytest.fixture(scope='module')
 def make_data(request):
     """Create test input data
 
