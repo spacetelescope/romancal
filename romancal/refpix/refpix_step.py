@@ -12,6 +12,17 @@ class RefpixStep(RomanStep):
         pixels
     """
 
+    spec = """
+    remove_offset = boolean(default=True) # Turn on or off removing the data offset
+    # prior to the reference pixel correction, then returning the offset afterwords.
+    remove_trends = boolean(default=True) # Turn on or off removing the boundary
+    # linear trends
+    cosine_interpolate = boolean(default=True) # Turn on or off the cosine
+    # interpolation of the reference pixels
+    fft_interpolate = boolean(default=False) # Turn on or off the FFT interpolation
+    # of the reference pixel padded values.
+    """
+
     reference_file_types = ["refpix"]
 
     def process(self, input):
