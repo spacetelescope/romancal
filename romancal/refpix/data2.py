@@ -15,7 +15,6 @@ from astropy import units as u
 from scipy import fft
 
 # TODO:
-# 2) test datamodel to standard view
 # 3) create/test standard view to datamodel
 # 4) create/test reference file to Coefficients
 
@@ -37,15 +36,6 @@ class Const(IntEnum):
     CHAN_WIDTH = 128
     N_DETECT_CHAN = 32
     N_COLUMNS = CHAN_WIDTH * N_DETECT_CHAN
-
-
-def _extract_value(data):
-    if isinstance(data, u.Quantity):
-        if data.unit != u.DN:
-            raise ValueError(f"Input data must be in units of DN, not {data.unit}")
-        data = data.value
-
-    return data
 
 
 _offset = np.ndarray | None
@@ -96,15 +86,24 @@ class StandardView(BaseView):
         - right = detector[-Const.REF:]
     """
 
+    @staticmethod
+    def extract_value(data):
+        if isinstance(data, u.Quantity):
+            if data.unit != u.DN:
+                raise ValueError(f"Input data must be in units of DN, not {data.unit}")
+            data = data.value
+
+        return data
+
     @classmethod
     def from_datamodel(cls, datamodel: RampModel) -> StandardView:
         """
         Read the datamodel into the standard view.
         """
-        detector = _extract_value(datamodel.data)
+        detector = cls.extract_value(datamodel.data)
 
         # Extract amp33
-        amp33 = _extract_value(datamodel.amp33)
+        amp33 = cls.extract_value(datamodel.amp33)
         # amp33 is normally a uint16, but this computation requires it to match
         # the data type of the detector pixels.
         amp33 = amp33.astype(detector.dtype)

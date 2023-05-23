@@ -2,7 +2,9 @@ from enum import IntEnum
 
 import numpy as np
 import pytest
+from astropy import units as u
 from numpy.testing import assert_allclose
+from roman_datamodels.maker_utils import mk_ramp
 
 from romancal.refpix.data2 import (
     ChannelView,
@@ -39,6 +41,30 @@ def data():
     return RNG.uniform(1, 100, size=(Dims.N_FRAMES, Dims.N_ROWS, Dims.N_COLS)).astype(
         np.float32
     )
+
+
+@pytest.fixture(scope="module")
+def datamodel(data):
+    datamodel = mk_ramp()
+
+    detector = data[:, :, : Const.N_COLUMNS].copy()
+    amp33 = data[:, :, Const.N_COLUMNS :].copy()
+
+    # Sanity check, that this is in line with the datamodel maker_utils
+    assert detector.shape == (Dims.N_FRAMES, Dims.N_ROWS, Const.N_COLUMNS)
+    assert amp33.shape == (Dims.N_FRAMES, Dims.N_ROWS, Const.CHAN_WIDTH)
+
+    datamodel.data = u.Quantity(
+        detector, unit=datamodel.data.unit, dtype=datamodel.data.dtype
+    )
+    datamodel.amp33 = u.Quantity(
+        amp33, unit=datamodel.amp33.unit, dtype=datamodel.amp33.dtype
+    )
+
+    datamodel.border_ref_pix_left = datamodel.data[:, :, : Const.REF]
+    datamodel.border_ref_pix_right = datamodel.data[:, :, -Const.REF :]
+
+    return datamodel
 
 
 @pytest.fixture(scope="module")
@@ -98,6 +124,21 @@ def test_data(data):
 
 
 class TestStandardView:
+    def test_construct_from_datamodel(self, datamodel):
+        """
+        Test construct from the datamodel passed in
+        """
+        standard = StandardView.from_datamodel(datamodel)
+
+        # StandardView's data should not be a view to the datamodel
+        assert standard.data.base is None
+
+        # Check the relationship between the standard view and the datamodel
+        assert (standard.detector == datamodel.data.value).all()
+        assert (standard.amp33 == datamodel.amp33.value.astype(np.float32)).all()
+        assert (standard.left == datamodel.border_ref_pix_left.value).all()
+        assert (standard.right == datamodel.border_ref_pix_right.value).all()
+
     def test_create_standard_view(self, data):
         """
         Sanity that the StandardView constructs correctly
