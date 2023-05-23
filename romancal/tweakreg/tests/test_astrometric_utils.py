@@ -270,12 +270,14 @@ def base_image():
         ("GAIADR3", 15),
     ],
 )
-def test_create_astrometric_catalog_variable_num_sources(catalog, num_sources, request):
+def test_create_astrometric_catalog_variable_num_sources(tmp_path, catalog, num_sources, request):
     """Test fetching data from supported catalogs with variable number of sources."""
+    output_filename = "ref_cat.ecsv"
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     res = create_astrometric_catalog(
         [img],
         catalog=catalog,
+        output=os.path.join(tmp_path, output_filename),
         num_sources=num_sources,
     )
 
@@ -334,8 +336,9 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
         ("GAIADR3", None),
     ],
 )
-def test_create_astrometric_catalog_using_epoch(catalog, epoch, request):
+def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, request):
     """Test fetching data from supported catalogs for a specific epoch."""
+    output_filename = "ref_cat.ecsv"
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
 
     metadata_epoch = (
@@ -348,6 +351,7 @@ def test_create_astrometric_catalog_using_epoch(catalog, epoch, request):
     res = create_astrometric_catalog(
         [img],
         catalog=catalog,
+        output=os.path.join(tmp_path, output_filename),
         epoch=epoch,
     )
 

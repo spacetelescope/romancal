@@ -377,33 +377,29 @@ class Main:
         )
 
         self.parsed = parser.parse_args(args=args)
-
-    def save(self, path=".", format="json", save_orphans=False):
+ 
+    def save(self):
         """Save the associations to disk.
-
-        Parameters
-        ----------
-        path : str
-            The path to save the associations to.
-
-        format : str
-            The format of the associations
-
-        save_orphans : bool
-            If true, save the orphans to an astropy.table.Table
         """
+        if self.parsed.dry_run:
+            return
+
         for asn in self.associations:
-            (fname, serialized) = asn.dump(format=format)
-            with open(os.path.join(self.parsed.path, fname), "w") as f:
+            try:
+                (fname, serialized) = asn.dump(format=self.parsed.format)
+            except AssociationError as exception:
+                logger.warning('Cannot serialize association %s', asn)
+                logger.warning('Reason:', exc_info=exception)
+                continue
+            with open(os.path.join(self.parsed.path, fname), 'w') as f:
                 f.write(serialized)
 
-        if save_orphans:
+        if self.parsed.save_orphans:
             self.orphaned.write(
                 os.path.join(self.parsed.path, self.parsed.save_orphans),
-                format="ascii",
-                delimiter="|",
+                format='ascii',
+                delimiter='|'
             )
-
     def __str__(self):
         result = []
         result.append(
