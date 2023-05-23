@@ -387,7 +387,7 @@ class Main:
         for asn in self.associations:
             try:
                 (fname, serialized) = asn.dump(format=self.parsed.format)
-            except AssociationError as exception:
+            except AssociationError as exception: # noqa: F821
                 logger.warning('Cannot serialize association %s', asn)
                 logger.warning('Reason:', exc_info=exception)
                 continue
