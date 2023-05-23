@@ -140,22 +140,14 @@ def test_one_group_small_buffer_fit_ols(max_cores):
         "Roman CRDS servers are not currently available outside the internal network"
     ),
 )
-def test_ols_multicore_ramp_fit_match():
-    ingain = 1.0
-    deltatime = 1
-    ngroups = 4
-    xsize = 20
-    ysize = 20
-    shape = (ngroups, xsize, ysize)
-
-    override_gain, override_readnoise = generate_wfi_reffiles(shape[1:], ingain)
-
-    model1 = generate_ramp_model(shape, deltatime)
+def test_ols_multicore_ramp_fit_match(make_data):
+    """Test various core amount calculation"""
+    model, override_gain, override_readnoise = make_data
 
     # gain or read noise are also modified in place in an important way (!)
     # so we make copies here so that we can get agreement.
     out_model = RampFitStep.call(
-        model1.copy(),  # model1 is modified in place now.
+        model.copy(),  # model1 is modified in place now.
         algorithm='ols',
         maximum_cores="none",
         override_gain=override_gain,
@@ -163,7 +155,7 @@ def test_ols_multicore_ramp_fit_match():
     )
 
     all_out_model = RampFitStep.call(
-        model1.copy(),  # model1 is modified in place now.
+        model.copy(),  # model1 is modified in place now.
         algorithm='ols',
         maximum_cores="all",
         override_gain=override_gain,
@@ -210,23 +202,15 @@ def test_ols_multicore_ramp_fit_match():
         "Roman CRDS servers are not currently available outside the internal network"
     ),
 )
+@pytest.mark.parametrize('make_data', [(1, 1, 1, 20, 20)], indirect=True)
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
-def test_ols_one_group_small_buffer_fit(max_cores):
-    ingain = 1.0
-    deltatime = 1
-    ngroups = 1
-    xsize = 20
-    ysize = 20
-    shape = (ngroups, xsize, ysize)
+def test_ols_one_group_small_buffer_fit(max_cores, make_data):
+    model, override_gain, override_readnoise = make_data
 
-    override_gain, override_readnoise = generate_wfi_reffiles(shape[1:], ingain)
-
-    model1 = generate_ramp_model(shape, deltatime)
-
-    model1.data[0, 15, 10] = 10.0 * model1.data.unit  # add single CR
+    model.data[0, 15, 10] = 10.0 * model.data.unit  # add single CR
 
     out_model = RampFitStep.call(
-        model1,
+        model,
         algorithm='ols',
         maximum_cores=max_cores,
         override_gain=override_gain,
@@ -246,24 +230,15 @@ def test_ols_one_group_small_buffer_fit(max_cores):
     ),
 )
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
-def test_ols_saturated_ramp_fit(max_cores):
-    ingain = 1.0
-    deltatime = 1
-    ngroups = 4
-    xsize = 20
-    ysize = 20
-    shape = (ngroups, xsize, ysize)
-
-    # Create input model
-    override_gain, override_readnoise = generate_wfi_reffiles(shape[1:], ingain)
-    model1 = generate_ramp_model(shape, deltatime)
+def test_ols_saturated_ramp_fit(max_cores, make_data):
+    model, override_gain, override_readnoise = make_data
 
     # Set saturated flag
-    model1.groupdq = model1.groupdq | SATURATED
+    model.groupdq = model.groupdq | SATURATED
 
     # Run ramp fit step
     out_model = RampFitStep.call(
-        model1,
+        model,
         algorithm='ols',
         maximum_cores=max_cores,
         override_gain=override_gain,
@@ -280,30 +255,30 @@ def test_ols_saturated_ramp_fit(max_cores):
     assert np.all(np.bitwise_and(out_model.dq, SATURATED) == SATURATED)
 
     # Test that original ramp parameters preserved
-    np.testing.assert_allclose(out_model.amp33, model1.amp33, 1e-6)
+    np.testing.assert_allclose(out_model.amp33, model.amp33, 1e-6)
     np.testing.assert_allclose(
-        out_model.border_ref_pix_left, model1.border_ref_pix_left, 1e-6
+        out_model.border_ref_pix_left, model.border_ref_pix_left, 1e-6
     )
     np.testing.assert_allclose(
-        out_model.border_ref_pix_right, model1.border_ref_pix_right, 1e-6
+        out_model.border_ref_pix_right, model.border_ref_pix_right, 1e-6
     )
     np.testing.assert_allclose(
-        out_model.border_ref_pix_top, model1.border_ref_pix_top, 1e-6
+        out_model.border_ref_pix_top, model.border_ref_pix_top, 1e-6
     )
     np.testing.assert_allclose(
-        out_model.border_ref_pix_bottom, model1.border_ref_pix_bottom, 1e-6
+        out_model.border_ref_pix_bottom, model.border_ref_pix_bottom, 1e-6
     )
     np.testing.assert_allclose(
-        out_model.dq_border_ref_pix_left, model1.dq_border_ref_pix_left, 1e-6
+        out_model.dq_border_ref_pix_left, model.dq_border_ref_pix_left, 1e-6
     )
     np.testing.assert_allclose(
-        out_model.dq_border_ref_pix_right, model1.dq_border_ref_pix_right, 1e-6
+        out_model.dq_border_ref_pix_right, model.dq_border_ref_pix_right, 1e-6
     )
     np.testing.assert_allclose(
-        out_model.dq_border_ref_pix_top, model1.dq_border_ref_pix_top, 1e-6
+        out_model.dq_border_ref_pix_top, model.dq_border_ref_pix_top, 1e-6
     )
     np.testing.assert_allclose(
-        out_model.dq_border_ref_pix_bottom, model1.dq_border_ref_pix_bottom, 1e-6
+        out_model.dq_border_ref_pix_bottom, model.dq_border_ref_pix_bottom, 1e-6
     )
 
     # Test that an Image model was returned.
@@ -311,6 +286,40 @@ def test_ols_saturated_ramp_fit(max_cores):
 
     # Test that the ramp fit step was labeled complete
     assert out_model.meta.cal_step.ramp_fit == "COMPLETE"
+
+
+# ########
+# fixtures
+# ########
+@pytest.fixture
+def make_data(request):
+    """Create test input data
+
+    Parameters
+    ----------
+    request.param : (ingain, deltatime, ngroups, xsize, ysize)
+        If specified, set the parameters of the created data.
+        If not specified, defaults are used.
+
+    Returns
+    -------
+    image, gain, readnoise : ImageModel, GainRefModel, ReadnoiseRefModel
+        Input image and related references
+    """
+    if getattr(request, 'param', None):
+        ingain, deltatime, ngroups, xsize, ysize = request.param
+    else:
+        ingain = 1
+        deltatime = 1
+        ngroups = 4
+        xsize = 20
+        ysize = 20
+    shape = (ngroups, xsize, ysize)
+
+    image = generate_ramp_model(shape, deltatime)
+    gain, readnoise = generate_wfi_reffiles(shape[1:], ingain)
+
+    return image, gain, readnoise
 
 
 # #########
