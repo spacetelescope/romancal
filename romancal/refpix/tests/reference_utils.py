@@ -466,3 +466,30 @@ def apply_correction_to_data(numFrames, dataUniformTime, alpha, gamma, zeta):
 def restore_offsets(numFrames, data0, b):
     for frame in range(numFrames):
         data0[frame, :, :] += b[:, :4096]
+
+
+def apply_correction(data, alpha, gamma, zeta):
+    # Remove offset
+    _, b = remove_linear_trends(data, True)
+
+    # Align channels
+    dataUniformTime = aligned_channels(data)
+
+    # Remove boundary trends
+    remove_linear_trends_per_frame(dataUniformTime, False, True)
+
+    # Perform cosine weighted interpolation
+    cos_interp_reference(dataUniformTime, dataUniformTime.shape[1])
+
+    # Perform fft interpolation (does nothing right now)
+    fft_interp_amp33(dataUniformTime, dataUniformTime.shape[1])
+
+    # Perform the correction
+    data0 = apply_correction_to_data(
+        dataUniformTime.shape[1], dataUniformTime, alpha, gamma, zeta
+    )
+
+    # Restore offsets
+    restore_offsets(data0.shape[0], data0, b)
+
+    return data0

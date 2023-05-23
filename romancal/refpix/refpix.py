@@ -15,7 +15,7 @@ class Control:
     remove_offset: bool = True
     remove_trends: bool = True
     cosine_interpolate: bool = True
-    fft_interpolate: bool = True
+    fft_interpolate: bool = False
 
     @classmethod
     def from_step(cls, step: RomanStep) -> Control:
