@@ -16,6 +16,17 @@ log.setLevel(logging.DEBUG)
 
 @dataclass
 class Control:
+    """
+    Convenience class for reading user configuration from the Step itself.
+
+    - remove_offset: Turn on removing the data offset prior to the correction
+    - remove_trends: Remove the time dependent boundary trends
+    - cosine_interpolate: Interpolate the reference pixels using a cosine
+                          interpolation.
+    - fft_interpolate: Interpolate the padding on the reference pixels using
+                       an apodized FFT interpolation.
+    """
+
     remove_offset: bool = True
     remove_trends: bool = True
     cosine_interpolate: bool = True
@@ -46,7 +57,7 @@ def run_steps(
     # Remove offset from the data
     if control.remove_offset:
         standard = standard.remove_offset()
-        log.info("Removed offset from data")
+        log.info("Removed the general offset from data, to be re-applied later.")
 
     # Convert to channel view
     channel = standard.channels
@@ -54,17 +65,17 @@ def run_steps(
     # Remove the boundary trends
     if control.remove_trends:
         channel = channel.remove_trends()
-        log.info("Removed boundary trends from data")
+        log.info("Removed boundary trends (in time) from data.")
 
     # Cosine interpolate the the data
     if control.cosine_interpolate:
         channel = channel.cosine_interpolate()
-        log.info("Removed cosine interpolated the reference pixels.")
+        log.info("Cosine interpolated the reference pixels.")
 
     # FFT interpolate the data
     if control.fft_interpolate:
         channel = channel.fft_interpolate()
-        log.info("Removed fft interpolated the reference pixel pads.")
+        log.info("FFT interpolated the reference pixel pads.")
 
     # Perform the reference pixel correction
     standard = channel.apply_correction(coeffs)
@@ -72,6 +83,7 @@ def run_steps(
 
     # Re-apply the offset (if necessary)
     standard.apply_offset()
+    log.info("Re-applied the general offset (if removed) to the data.")
 
     # Write the data back to the datamodel
     standard.update(datamodel)
