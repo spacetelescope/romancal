@@ -193,10 +193,10 @@ class StandardView(BaseView):
 
     def remove_offset(self) -> StandardView:
         """
-        Use linear least squares regression to remove the general linear offset
-        from the data.
-            - This records the offset in the class so that it can be returned to
-              the data later.
+        Use linear least squares regression to compute the best fit intercept
+        (offset) of all the data and then subtract that from the data.
+            - This records the offset in the class so that it can be added back
+              to the data later.
             - Returns the class back to the user even though it will be modified
               in place by the views. This is so that it can be treated functionally.
         """
@@ -246,12 +246,25 @@ class StandardView(BaseView):
 
 class ChannelView(BaseView):
     """
-    This view is a transform of the standard view wherein the columns are split
-    into a 4th dimension representing the each channel (amplifier) and the columns
-    are then padded with zeros to account for the pause at the end of each read.
+    This is the "channel" view of the data, which happens to be the most convenient
+    view for performing the correction's computations.
 
-    The odd index channels are flipped so that the columns are indexed in the order
-    in which the data is read.
+    The actual data storage dimensions are
+        [channel, frame, row, column],
+    where the columns are the in-channel columns of the data.
+        - The odd index channels column order is reversed relative to the appearance
+          in the StandardView.
+        - The padding columns are added to the end of each set of channel columns
+          AFTER the reversal of the odd index channels.
+
+    The odd index channels are reversed so that the columns appear aligned in the
+    read order of the detector, so that when we compute transforms on the flattened
+    data of each channel for each frame, the data is ordered in the order it was
+    read in time.
+
+    The padding columns are added to account for the exact delay between column
+    reads (it would have read that many pixes in the time it takes to move to the
+    next frame read).
     """
 
     @property
@@ -294,8 +307,8 @@ class ChannelView(BaseView):
         """
         amp33 reference pixels
 
-        returns a view of the data, not a copy. This is to make some of the smoothing
-        and interpolations occurr in place.
+        Note that this returns a view of the data, not a copy. This is to make
+        some of the smoothing and interpolations occur in place.
         """
 
         return self.data[-1, :, :, :]
@@ -303,7 +316,9 @@ class ChannelView(BaseView):
     @property
     def standard(self) -> StandardView:
         """
-        Output the standard view version of the data.
+        Transform the data back into the standard view.
+            - Removes the padding columns
+            - Reverses the flipped odd index channels.
         """
 
         # Remove the padding from the data, copy is to break the view back to the
@@ -324,11 +339,15 @@ class ChannelView(BaseView):
 
     def remove_trends(self) -> ChannelView:
         """
-        Remove the (linear) trends from the frame boundary.
+        Remove the linear in time (by frame) trends from the boundary data.
+            This is different than the offset correction, which is computed
+            simultaneously across all frames in order to remove any general bias.
+
+        Note:
             - Change will be inplace of this object.
             - It will also return this object so it can be treated functionally.
         """
-        channels, frames, rows, columns = self.data.shape
+        _, _, rows, columns = self.data.shape
 
         # Create an independent variable indexed by frame and centered at zero
         t = np.arange(columns * rows, dtype=self.data.dtype).reshape((rows, columns))
@@ -365,25 +384,43 @@ class ChannelView(BaseView):
 
     def cosine_interpolate(self) -> ChannelView:
         """
-        Perform Cosine weighted interpolation on the zero values of the amp33 columns.
+        Perform Cosine weighted interpolation on the zero values of the amp33
+        channel.
+            - This is done in place.
+            - This returns the object so it can be used functionally.
+
+        I have purposely let this computation be verbose because we may have to
+        apply it to both the left and right reference pixel channels.
         """
         data = self.amp33
         channels, _, rows, columns = self.detector.shape
 
+        # Create the "cosine" interpolation
         interp = np.sin(np.arange(1, channels + 1, dtype=data.dtype) * np.pi / channels)
 
         for frame in data:
+            # flatten the frame into a 1D array
             kern = frame.reshape(rows * columns)
 
+            # Find the non-zero values (so we can normalize by their values later)
+            #    Note: I do not thing the dtype cast is necessary here, but it was
+            #          specifically cast this way in the original code. I suspect
+            #          we can remove the dtype cast here to avoid a data copy. For
+            #          little loss of numerical precision and a modest speedup.
             mask = (kern != 0).astype(np.int64)
 
+            # Convolve the interpolation with the data
             cov = np.convolve(kern, interp, mode="same")
             mask_conv = np.convolve(mask, interp, mode="same")
 
+            # Normalize by the non-zero values
             kern = (cov / mask_conv).reshape(rows, columns)
+
+            # Apply the interpolation to the data
             frame += kern * (1 - mask.reshape(rows, columns))
 
-        # Fix NaN values
+        # Fix NaN values because the above computations can interpolate to NaN
+        #     values, these will be set to zero.
         np.nan_to_num(data, copy=False)
 
         return self
@@ -393,14 +430,15 @@ class ChannelView(BaseView):
         frame: np.ndarray, pad: np.ndarray, apodize: np.ndarray
     ) -> np.ndarray:
         """
-        Provide an infinite generator of interpolated frames using FFT interpolation,
-        using the apodizing function provided.
+        Provide an infinite generator of FFT interpolation iterations using the
+        apodizing function for the padded columns of a given frame.
 
             Since this is an iterative method, and determining the number of iterations
             is arbitrary, a generator is provided so tha it is simple to choose method
             of stopping the iteration (fixed, relative change, absolute change, etc.)
         """
         while True:
+            # Perform the FFT interpolation using the apodizing function
             result = apodize * fft.rfft(frame, workers=1) / frame.size
             result = fft.irfft(result * frame.size, workers=1).astype(frame.dtype)
 
@@ -411,9 +449,15 @@ class ChannelView(BaseView):
 
     def fft_interpolate(self, num: int = 3) -> ChannelView:
         """
-        FFT interpolate the amp33 reference channel's added columns.
+        FFT interpolate the amp33 reference channel's padded columns.
+            - This is done in place.
+            - The object is returned so it can be used functionally.
+
+        Again, I have purposely let this computation be verbose because we may
+        have to apply it to both the left and right reference pixel channels.
 
         Parameters:
+        ----------
             num: The number of iterations to perform. (default: 3)
         """
         frames, rows, columns = self.amp33.shape
@@ -421,7 +465,9 @@ class ChannelView(BaseView):
 
         # Mask all the data columns
         mask = np.ones((rows, columns), dtype=bool)
-        mask[:, : -Const.PAD] = False
+        mask[
+            :, : -Const.PAD
+        ] = False  # this maybe different for the left/right channels
         mask = mask.flatten()
 
         # Find the indices of the padded columns
@@ -433,11 +479,36 @@ class ChannelView(BaseView):
         ) / 2
 
         for frame in data:
+            # Note `islice(iter, start, stop)` is tool which takes in an iterator
+            # and returns selected elements from it.
+            #   - `start` is the index of the first element to return from the iterator
+            #   - `stop` is the index of the last element to return, if it is None
+            #      then an iterator starting at `start` is returned.
+            #
+            # In this case we are using it to advance (skip) the generator (returns an
+            # iterator) to the  `num - 1` index term (i.e. run the generator `num`
+            # times). Since`stop = None`, it will return an iterator whose first
+            # output will be the `num`th iteration of the algorithm (the one we want).
+            #
+            # `next(iter)` will return the next value from the iterator, then advance
+            #              the iterator.
+            #    - So running it once on an iterator will return the first value
+            #      of the iterator. Running again on the iterator will return the next
+            #      value, and so on.
+            #
+            # In this case, we have the infinite iterable, whose first value is
+            # the iteration of the algorithm we want from `islice`, so calling
+            # `next()` on it will simply return the iteration we desire.
+            #
+            # Other itertools can be use to recreate any iteration termination behavior
+            # desired. In this case, we put them together to iterate a fixed number of
+            # times.
+
             next(
-                islice(  # advance the generator to the desired iteration
+                islice(
                     self.fft_interp_generator(frame, pad, apodize),
-                    num - 1,  # next() advances and returns generator value
-                    None,  # don't remember old iterations
+                    num - 1,
+                    None,
                 )
             )
 
@@ -447,8 +518,10 @@ class ChannelView(BaseView):
     def forward_fft(channel: np.ndarray, normalize: bool) -> np.ndarray:
         """
         Compute the forward FFT of the channel, and normalize if requested.
-            - Normalize to just the non-padded columns, in this case 4 for the
-              left and right reference pixels.
+            - Normalization is required when the data is zero-padded. In
+              the left/right channels, the only Const.REF columns are
+              non-zero. So we need to normalize by the number of
+              columns / Const.REF.
         """
         frames, rows, columns = channel.shape
         channel = channel.reshape(frames, rows * columns)
@@ -462,7 +535,7 @@ class ChannelView(BaseView):
     @property
     def reference_fft(self) -> ReferenceFFT:
         """
-        Compute the reference FFTs object
+        Compute the FFTs of all the reference pixels.
         """
         return ReferenceFFT(
             self.forward_fft(self.left, True),
@@ -472,7 +545,7 @@ class ChannelView(BaseView):
 
     def correction(self, coeffs: Coefficients) -> np.ndarray:
         """
-        Compute the correction array for the standard data
+        Compute the the correction array for the the detector.
         """
         correction = self.reference_fft.correction(coeffs)
 
@@ -481,6 +554,9 @@ class ChannelView(BaseView):
     def apply_correction(self, coeffs: Coefficients) -> StandardView:
         """
         Apply the correction and return the standard view of the data
+            - This is done in place.
+            - The standard view is returned because that is what we ultimately
+              want.
         """
         self.data -= self.correction(coeffs)
 
@@ -492,8 +568,8 @@ class ReferenceFFT:
     """
     FFTs of the Reference Pixels.
 
-    Note that the FFTs have all been reshaped so that the rows and columns are combined
-    into a single array. This means the FFTs are of shape
+    Note that the FFTs have all been reshaped so that the rows and columns are
+    combined into a single array. This means the FFTs are of shape
         - (frames, (rows * columns) // 2 + 1).
 
     where the // 2 + 1 is the length of the FFT for real data of even length
@@ -505,7 +581,8 @@ class ReferenceFFT:
 
     def channel_correction(self, coeffs: Coefficients) -> np.ndarray:
         """
-        Generator, which yields the correction for each channel.
+        Generator which yields the correction for each channel.
+            This can then be stacked into a single array to form the correction.
         """
         # We need to multiply by 2 because we are only using half of the FFT because
         # the data is real
@@ -541,6 +618,13 @@ class ReferenceFFT:
 
 @dataclass
 class Coefficients:
+    """
+    Convenience class for holding the coefficients from the reference file.
+
+    It holds references to them, so it is not a copy and provides a simple
+    interface for iterating over them.
+    """
+
     gamma: np.ndarray
     zeta: np.ndarray
     alpha: np.ndarray
