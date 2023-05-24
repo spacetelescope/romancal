@@ -3,6 +3,9 @@
 
 tweakreg
 --------
+
+- Added tmpdir to the unit tests for test files [#702]
+
 - Added logic to handle cases where an absolute catalog cannot be created. [#698]
 
 associations
