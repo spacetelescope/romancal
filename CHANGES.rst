@@ -13,6 +13,10 @@ associations
 
 - Initial association code for GBTDS observations [#661]
 
+Documentation
+-------------
+
+- Update dq flags to include "GW_AFFECTED_DATA"  flag [#699]
 
 general
 -------
