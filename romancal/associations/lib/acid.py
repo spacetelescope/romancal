@@ -54,7 +54,6 @@ class ACIDMixin:
     """Enable ACID for rules"""
 
     def __init__(self, *args, **kwargs):
-
         # Initialize discovered association ID
         self.discovered_id = Counter(_DISCOVERED_ID_START)
 

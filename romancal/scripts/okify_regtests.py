@@ -116,7 +116,6 @@ def main():
             print(f"{number_failed_tests} failed tests to okify")
 
             for i, (specfile, asdffile) in enumerate(zip(specfiles, asdffiles)):
-
                 # Print traceback and OKify info for this test failure
                 with asdf.open(asdffile) as af:
                     traceback = af.tree["traceback"]

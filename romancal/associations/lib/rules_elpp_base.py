@@ -100,7 +100,6 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
     _sequences = defaultdict(Counter)
 
     def __init__(self, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
 
         # Initialize validity checks
@@ -261,7 +260,6 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
 
         # Item-based information
         if item is not None:
-
             # Program
             if self.data["program"] == "noprogram":
                 self.data["program"] = f"{item['program']:0>5s}"
@@ -908,7 +906,6 @@ class AsnMixin_Science(DMS_ELPP_Base):
     """Basic science constraints"""
 
     def __init__(self, *args, **kwargs):
-
         # Setup target acquisition inclusion
         constraint_acqs = Constraint(
             [

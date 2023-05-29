@@ -239,7 +239,6 @@ class AssociationRegistry(dict):
             The module, and all submodules, to be parsed.
         """
         for name, obj in get_marked(module, include_bases=include_bases):
-
             # Add rules.
             # Add rules.
             if (include_bases and isclass(obj)) or obj._asnreg_role == "rule":

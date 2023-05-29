@@ -52,7 +52,6 @@ class Main:
     """
 
     def __init__(self, args=None):
-
         if args is None:
             args = sys.argv[1:]
         if isinstance(args, str):

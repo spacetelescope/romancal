@@ -30,7 +30,6 @@ class Asn_Lv2Image(AsnMixin_Lv2Image, DMS_ELPP_Base):
     """
 
     def __init__(self, *args, **kwargs):
-
         # Setup constraints
         self.constraints = Constraint(
             [
@@ -61,7 +60,6 @@ class Asn_Lv2GBTDSPass(AsnMixin_Lv2GBTDSpass, DMS_ELPP_Base):
     """
 
     def __init__(self, *args, **kwargs):
-
         # Setup constraints
         self.constraints = Constraint(
             [
@@ -91,7 +89,6 @@ class Asn_Lv2GBTDSFull(AsnMixin_Lv2GBTDSfull, DMS_ELPP_Base):
     """
 
     def __init__(self, *args, **kwargs):
-
         # Setup constraints
         self.constraints = Constraint(
             [
