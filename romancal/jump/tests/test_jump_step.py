@@ -109,7 +109,6 @@ def setup_inputs():
         gain=1,
         deltatime=1,
     ):
-
         err = np.ones(shape=(ngroups, nrows, ncols), dtype=np.float32)
         data = np.zeros(shape=(ngroups, nrows, ncols), dtype=np.float32)
         gdq = np.zeros(shape=(ngroups, nrows, ncols), dtype=np.uint8)
@@ -271,7 +270,6 @@ def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
     ),
 )
 def test_two_group_integration(generate_wfi_reffiles, max_cores, setup_inputs):
-
     override_gain, override_readnoise = generate_wfi_reffiles
     grouptime = 3.0
     ingain = 6
@@ -305,7 +303,6 @@ def test_two_group_integration(generate_wfi_reffiles, max_cores, setup_inputs):
     ),
 )
 def test_four_group_integration(generate_wfi_reffiles, setup_inputs):
-
     override_gain, override_readnoise = generate_wfi_reffiles
     grouptime = 3.0
     ingain = 6
@@ -339,7 +336,6 @@ def test_four_group_integration(generate_wfi_reffiles, setup_inputs):
     ),
 )
 def test_three_group_integration(generate_wfi_reffiles, setup_inputs):
-
     override_gain, override_readnoise = generate_wfi_reffiles
     grouptime = 3.0
     ingain = 6

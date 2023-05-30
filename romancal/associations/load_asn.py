@@ -11,7 +11,7 @@ def load_asn(
     first=True,
     validate=True,
     registry=AssociationRegistry,
-    **kwargs
+    **kwargs,
 ):
     """Load an Association from a file or object
 

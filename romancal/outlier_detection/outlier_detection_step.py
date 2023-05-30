@@ -13,7 +13,6 @@ class OutlierDetectionStep(RomanStep):
     """Detect and flag outliers in a science image."""
 
     def process(self, step_input):
-
         input_model = rdm.open(step_input)
 
         # No reference files
