@@ -17,7 +17,6 @@ from romancal.source_detection import SourceDetectionStep
 @pytest.fixture
 def setup_inputs():
     def _setup(nrows=100, ncols=100, noise=1.0, seed=None):
-
         """Return ImageModel of lvl 2 image"""
 
         shape = (100, 100)  # size of test image
@@ -49,7 +48,6 @@ def setup_inputs():
 def add_random_gauss(
     arr, x_positions, y_positions, min_amp=200, max_amp=500, seed=None
 ):
-
     """Add random 2D Gaussians to `arr` at specified positions,
     with random amplitudes from `min_amp` to  `max_amp`. Assumes
     units of e-/s."""
@@ -67,7 +65,6 @@ def add_random_gauss(
 
 
 def test_source_detection_defaults(setup_inputs):
-
     """Test SourceDetectionStep with its default parameters. The detection
     threshold will be chosen based on the image's background level."""
 
@@ -106,7 +103,6 @@ def test_source_detection_defaults(setup_inputs):
 
 
 def test_source_detection_scalar_threshold(setup_inputs):
-
     """Test SourceDetectionStep using the option to choose a detection
     threshold for entire image."""
 
@@ -200,7 +196,6 @@ def test_outputs(tmp_path, setup_inputs):
 
 
 def test_limiting_catalog_size(setup_inputs):
-
     """Test to make sure setting `max_sources` limits the size of the
     output catalog to contain only the N brightest sources"""
 

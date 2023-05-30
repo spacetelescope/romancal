@@ -51,7 +51,6 @@ class SimpleConstraintABC(abc.ABC):
     _str_attrs = ("name", "value")
 
     def __init__(self, init=None, value=None, name=None, **kwargs):
-
         # Defined attributes
         self.value = value
         self.name = name
@@ -264,7 +263,6 @@ class SimpleConstraint(SimpleConstraintABC):
         reprocess_rules=None,
         **kwargs,
     ):
-
         # Defined attributes
         self.sources = sources
         self.force_unique = force_unique
@@ -397,7 +395,6 @@ class AttrConstraint(SimpleConstraintABC):
         required=True,
         **kwargs,
     ):
-
         # Attributes
         self.sources = sources
         self.evaluate = evaluate
