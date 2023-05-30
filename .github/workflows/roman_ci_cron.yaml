@@ -14,7 +14,7 @@ jobs:
     env:
       OBSERVATORY: roman
       CRDS_PATH: /tmp/crds_cache
-      CRDS_SERVER_URL: https://roman-crds.stsci.edu
+      CRDS_SERVER_URL: https://roman-crds-test.stsci.edu
     steps:
       - id: context
         run: >
