@@ -29,6 +29,8 @@ from romancal.tweakreg.tweakreg_step import (
 class MockConnectionError:
     def __init__(self, *args, **kwargs):
         raise requests.exceptions.ConnectionError
+
+
 def create_asn_file(tmp_path):
     asn_content = """
         {
