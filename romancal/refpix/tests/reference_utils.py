@@ -263,7 +263,6 @@ def cos_interp_reference(dataUniformTime, numFrames):
 
 
 def getFFTApodizeFunction():
-
     apo_len = NUM_ROWS * NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD
     apo2 = np.abs(np.fft.rfftfreq(apo_len, 1 / apo_len))
     apodize_func = np.cos(2 * np.pi * apo2 / apo_len) / 2.0 + 0.5
@@ -292,12 +291,10 @@ def fft_interp(
     readOnlyPixelsIndices_Flat = np.where(readOnlyPixelsAreOneMask_Flattenedimage)[0]
 
     for frame in range(numFrames):
-
         chanFrameData_Flat = chanData_FramesFlat[frame]
         readOnlyPixelsValues_Flat = chanFrameData_Flat[readOnlyPixelsIndices_Flat]
 
         for _ in range(numIterations):
-
             fftResult = (
                 apodizeFilter
                 * spfft.rfft(chanFrameData_Flat, workers=1)
