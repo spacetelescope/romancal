@@ -1,7 +1,7 @@
 0.11.1 (unreleased)
 ===================
 
--
+- Add regression test for TweakReg. [#707]
 
 0.11.0 (2023-05-31)
 ===================
