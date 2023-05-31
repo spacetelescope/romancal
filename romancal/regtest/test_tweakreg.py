@@ -46,13 +46,13 @@ def test_tweakreg(rtdata, ignore_asdf_paths):
     )
 
     step.log.info(
-        "DMSXXX MSG: TweakReg step recorded as complete? :"
+        "DMS280 MSG: TweakReg step recorded as complete? :"
         f' {tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"}'
     )
     assert tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"
 
     step.log.info(
-        "DMSXXX MSG: Was the proper TweakReg data produced?"
+        "DMS280 MSG: Was the proper TweakReg data produced?"
         f" : {(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}"
     )
     assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
