@@ -1,5 +1,6 @@
-import pytest
 from pathlib import Path
+
+import pytest
 from roman_datamodels import datamodels as rdm
 
 from romancal.stpipe import RomanStep
@@ -54,6 +55,4 @@ def test_tweakreg(rtdata, ignore_asdf_paths):
         "DMSXXX MSG: Was the proper TweakReg data produced?"
         f" : {(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}"
     )
-    assert (
-        compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
-    )
+    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
