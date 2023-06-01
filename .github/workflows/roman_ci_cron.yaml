@@ -5,10 +5,19 @@ on:
   schedule:
     # Weekly Monday 6AM build
     - cron: "0 0 * * 1"
+  pull_request:
+    # We also want this workflow triggered if the `Weekly CI` label is
+    # added or present when PR is updated
+    types:
+      - synchronize
+      - labeled
+  push:
+    tags: "*"
   workflow_dispatch:
 
 jobs:
   crds:
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Weekly CI')))
     name: retrieve current CRDS context
     runs-on: ubuntu-latest
     env:
@@ -33,6 +42,7 @@ jobs:
       path: ${{ steps.path.outputs.path }}
       server: ${{ steps.server.outputs.url }}
   test:
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Weekly CI')))
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
     needs: [ crds ]
     with:
