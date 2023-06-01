@@ -61,11 +61,11 @@ jobs:
         - linux: py311-devdeps
           pytest-results-summary: true
 
-        - macos: 39-devdeps
+        - macos: py39-devdeps
           pytest-results-summary: true
-        - macos: 310-devdeps
+        - macos: py310-devdeps
           pytest-results-summary: true
-        - macos: 311-devdeps
+        - macos: py311-devdeps
           pytest-results-summary: true
 
         - macos: py39
