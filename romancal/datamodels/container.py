@@ -1,12 +1,18 @@
+import contextlib
+import copy
+import logging
 import os
-import os.path
+import os.path as op
+import re
 import warnings
 from collections import OrderedDict
 from collections.abc import Iterable
+from pathlib import Path
 
 import asdf
 import packaging.version
 from roman_datamodels import datamodels as rdm
+from roman_datamodels.util import is_association
 
 # .dev is included in the version comparison to allow for correct version
 # comparisons with development versions of asdf 3.0
@@ -25,6 +31,12 @@ __all__ = [
     "ModelContainer",
 ]
 
+RECOGNIZED_MEMBER_FIELDS = ["tweakreg_catalog"]
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
 
 class ModelContainer(Iterable):
     """
@@ -36,14 +48,9 @@ class ModelContainer(Iterable):
 
     Parameters
     ----------
-    init : file path, list of DataModels or path to ASDF files, or None
-
-        - file path: initialize from an association table
-
-        - list: a list of either datamodels or full path to ASDF files (as string)
-
-        - None: initializes an empty `ModelContainer` instance, to which
-          DataModels can be added via the ``append()`` method.
+    init : path to ASN file, list of either datamodels or path to ASDF files, or `None`
+        If `None`, then an empty `ModelContainer` instance is initialized, to which
+        DataModels can later be added via the ``append()`` method.
 
     iscopy : bool
         Presume this model is a copy. Members will not be closed
@@ -60,11 +67,49 @@ class ModelContainer(Iterable):
 
     Examples
     --------
+    To load a list of ASDF files into a `ModelContainer`:
+
     .. code-block:: python
 
-        container = ModelContainer(['file1.asdf', 'file2.asdf', ..., 'fileN.asdf'])
+        container = ModelContainer(
+            [
+                "/path/to/file1.asdf",
+                "/path/to/file2.asdf",
+                ...,
+                "/path/to/fileN.asdf"
+            ]
+        )
+
+    To load a list of open Roman DataModels into a `ModelContainer`:
+
+    .. code-block:: python
+
+        import roman_datamodels.datamodels as rdm
+        data_list = [
+                "/path/to/file1.asdf",
+                "/path/to/file2.asdf",
+                ...,
+                "/path/to/fileN.asdf"
+            ]
+        datamodels_list = [rdm.open(x) for x in data_list]
+        container = ModelContainer(datamodels_list)
+
+    To load an ASN file into a `ModelContainer`:
+
+    .. code-block:: python
+
+        asn_file = "/path/to/asn_file.json"
+        container = ModelContainer(asn_file)
+
+    In any of the cases above, the content of each file in a `ModelContainer` can
+    be accessed by iterating over its elements. For example, to print out the filename
+    of each file, we can run:
+
+    .. code-block:: python
+
         for model in container:
             print(model.meta.filename)
+
 
     Notes
     -----
@@ -81,13 +126,15 @@ class ModelContainer(Iterable):
     during processing.
 
     .. warning:: Input files will be updated in-place with new ``meta`` attribute
-    values when ASN table's members contain additional attributes.
+        values when ASN table's members contain additional attributes.
 
     """
 
     def __init__(
         self,
         init=None,
+        asn_exptypes=None,
+        asn_n_members=None,
         iscopy=False,
         memmap=False,
         return_open=True,
@@ -99,27 +146,48 @@ class ModelContainer(Iterable):
         self._return_open = return_open
         self._save_open = save_open
 
-        if init is None:
-            # don't populate container
-            pass
-        elif isinstance(init, Iterable):
-            # only append list items to self._models if all items are either
-            # strings (i.e. path to an ASDF file) or instances of DataModel
-            is_all_string = all(isinstance(x, str) for x in init)
-            is_all_roman_datamodels = all(isinstance(x, rdm.DataModel) for x in init)
+        self.asn_exptypes = asn_exptypes
+        self.asn_n_members = asn_n_members
+        self.asn_table = {}
+        self.asn_table_name = None
+        self.asn_pool_name = None
 
-            if is_all_string or is_all_roman_datamodels:
-                self._models.extend(init)
+        try:
+            init = Path(init)
+        except TypeError:
+            if init is None:
+                # don't populate container
+                pass
+            elif isinstance(init, Iterable):
+                # only append list items to self._models if all items are either
+                # not-null strings (i.e. path to an ASDF file) or instances of DataModel
+                is_all_string = all(isinstance(x, str) and len(x) for x in init)
+                is_all_roman_datamodels = all(
+                    isinstance(x, rdm.DataModel) for x in init
+                )
+                is_all_path = all(isinstance(x, Path) for x in init)
+
+                if len(init) and (is_all_string or is_all_roman_datamodels):
+                    self._models.extend(init)
+                elif len(init) and is_all_path:
+                    # parse Path object to string
+                    self._models.extend([str(x) for x in init])
+                else:
+                    raise TypeError(
+                        "Input must be an ASN file or a list of either strings "
+                        "(full path to ASDF files) or Roman datamodels."
+                    )
+        else:
+            if is_association(init):
+                self.from_asn(init)
+            elif isinstance(init, Path) and init.name != "":
+                init_from_asn = self.read_asn(init)
+                self.from_asn(init_from_asn, asn_file_path=init)
             else:
                 raise TypeError(
-                    "Input must be a list of strings (full path to ASDF files) or "
-                    / "Roman datamodels."
+                    "Input must be an ASN file or a list of either strings "
+                    "(full path to ASDF files) or Roman datamodels."
                 )
-        else:
-            raise TypeError(
-                "Input must be a list of either strings (full path to ASDF files) or "
-                / "Roman datamodels."
-            )
 
     def __len__(self):
         return len(self._models)
@@ -139,6 +207,101 @@ class ModelContainer(Iterable):
                 model = rdm.open(model, memmap=self._memmap)
             yield model
 
+    def close(self):
+        if not self._iscopy and self._asdf is not None:
+            self._asdf.close()
+
+    @staticmethod
+    def read_asn(filepath):
+        """
+        Load fits files from a Roman association file.
+
+        Parameters
+        ----------
+        filepath : str
+            The path to an association file.
+        """
+        # Prevent circular import:
+        from ..associations import AssociationNotValidError, load_asn
+
+        filepath = op.abspath(op.expanduser(op.expandvars(filepath)))
+        try:
+            with open(filepath) as asn_file:
+                asn_data = load_asn(asn_file)
+        except AssociationNotValidError as e:
+            raise OSError("Cannot read ASN file.") from e
+        return asn_data
+
+    def from_asn(self, asn_data, asn_file_path=None):
+        """
+        Load fits files from a Roman association file.
+
+        Parameters
+        ----------
+        asn_data
+            A ``roman_datamodels.associations.Association`` association dictionary
+
+        asn_file_path: str
+            Filepath of the association, if known.
+        """
+        # match the asn_exptypes to the exptype in the association and retain
+        # only those file that match, as a list, if asn_exptypes is set to none
+        # grab all the files
+        if self.asn_exptypes:
+            infiles = []
+            logger.debug(
+                f"Filtering datasets based on allowed exptypes {self.asn_exptypes}:"
+            )
+            for member in asn_data["products"][0]["members"]:
+                if any(
+                    x
+                    for x in self.asn_exptypes
+                    if re.match(member["exptype"], x, re.IGNORECASE)
+                ):
+                    infiles.append(member)
+                    logger.debug(f'Files accepted for processing {member["expname"]}:')
+        else:
+            infiles = list(asn_data["products"][0]["members"])
+
+        asn_dir = op.dirname(asn_file_path) if asn_file_path else ""
+        # Only handle the specified number of members.
+        sublist = infiles[: self.asn_n_members] if self.asn_n_members else infiles
+        try:
+            for member in sublist:
+                filepath = op.join(asn_dir, member["expname"])
+                update_model = any(attr in member for attr in RECOGNIZED_MEMBER_FIELDS)
+                if update_model or self._save_open:
+                    m = rdm.open(filepath, memmap=self._memmap)
+                    m.meta["asn"] = {"exptype": member["exptype"]}
+                    for attr, val in member.items():
+                        if attr in RECOGNIZED_MEMBER_FIELDS:
+                            if attr == "tweakreg_catalog":
+                                val = op.join(asn_dir, val) if val.strip() else None
+                            setattr(m.meta, attr, val)
+
+                    if not self._save_open:
+                        m.save(filepath, overwrite=True)
+                        m.close()
+                else:
+                    m = filepath
+
+                self._models.append(m)
+
+        except OSError:
+            self.close()
+            raise
+
+        # Pull the whole association table into asn_table
+        self.merge_tree(self.asn_table, asn_data)
+
+        if asn_file_path is not None:
+            self.asn_table_name = op.basename(asn_file_path)
+            self.asn_pool_name = asn_data["asn_pool"]
+            for model in self:
+                with contextlib.suppress(AttributeError):
+                    model.meta.asn["table_name"] = self.asn_table_name
+                    model.meta.asn["pool_name"] = self.asn_pool_name
+
     def save(self, dir_path=None, *args, **kwargs):
         # use current path if dir_path is not provided
         dir_path = dir_path if dir_path is not None else os.getcwd()
@@ -146,10 +309,10 @@ class ModelContainer(Iterable):
         output_suffix = "cal_twkreg"
         for model in self._models:
             filename = model.meta.filename
-            base, ext = os.path.splitext(filename)
+            base, ext = op.splitext(filename)
             base = base.replace("cal", output_suffix)
             output_filename = "".join([base, ext])
-            output_path = os.path.join(dir_path, output_filename)
+            output_path = op.join(dir_path, output_filename)
             # TODO: Support gzip-compressed fits
             if ext == ".asdf":
                 model.to_asdf(output_path, *args, **kwargs)
@@ -218,6 +381,23 @@ class ModelContainer(Iterable):
     @property
     def to_association(self):
         pass
+
+    def merge_tree(self, a, b):
+        """
+        Merge elements from tree ``b`` into tree ``a``.
+        """
+
+        def recurse(a, b):
+            if isinstance(b, dict):
+                if not isinstance(a, dict):
+                    return copy.deepcopy(b)
+                for key, val in b.items():
+                    a[key] = recurse(a.get(key), val)
+                return a
+            return copy.deepcopy(b)
+
+        recurse(a, b)
+        return a
 
     @property
     def crds_observatory(self):
