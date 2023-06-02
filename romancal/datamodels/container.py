@@ -6,7 +6,7 @@ from collections.abc import Iterable
 
 import asdf
 import packaging.version
-from roman_datamodels.datamodels import DataModel
+from roman_datamodels import datamodels as rdm
 
 # .dev is included in the version comparison to allow for correct version
 # comparisons with development versions of asdf 3.0
@@ -64,23 +64,22 @@ class ModelContainer(Iterable):
     >>> for model in container:
     ...     print(model.meta.filename)
 
-
     Notes
     -----
-        The optional parameters ``save_open`` and ``return_open`` can be
-        provided to control how the `DataModel` are used by the
-        :py:class:`ModelContainer`. If ``save_open`` is set to `False`, each input
-        `DataModel` instance in ``init`` will be written out to disk and
-        closed, then only the filename for the `DataModel` will be used to
-        initialize the :py:class:`ModelContainer` object.
-        Subsequent access of each member will then open the `DataModel` file to
-        work with it. If ``return_open`` is also `False`, then the `DataModel`
-        will be closed when access to the `DataModel` is completed. The use of
-        these parameters can minimize the amount of memory used by this object
-        during processing.
+    The optional parameters ``save_open`` and ``return_open`` can be
+    provided to control how the `DataModel` are used by the
+    :py:class:`ModelContainer`. If ``save_open`` is set to `False`, each input
+    `DataModel` instance in ``init`` will be written out to disk and
+    closed, then only the filename for the `DataModel` will be used to
+    initialize the :py:class:`ModelContainer` object.
+    Subsequent access of each member will then open the `DataModel` file to
+    work with it. If ``return_open`` is also `False`, then the `DataModel`
+    will be closed when access to the `DataModel` is completed. The use of
+    these parameters can minimize the amount of memory used by this object
+    during processing.
 
-        .. warning:: Input files will be updated in-place with new ``meta`` attribute
-        values when ASN table's members contain additional attributes.
+    .. warning:: Input files will be updated in-place with new ``meta`` attribute
+    values when ASN table's members contain additional attributes.
 
     """
 
@@ -105,7 +104,7 @@ class ModelContainer(Iterable):
             # only append list items to self._models if all items are either
             # strings (i.e. path to an ASDF file) or instances of DataModel
             is_all_string = all(isinstance(x, str) for x in init)
-            is_all_roman_datamodels = all(isinstance(x, DataModel) for x in init)
+            is_all_roman_datamodels = all(isinstance(x, rdm.DataModel) for x in init)
 
             if is_all_string or is_all_roman_datamodels:
                 self._models.extend(init)
@@ -125,8 +124,8 @@ class ModelContainer(Iterable):
 
     def __getitem__(self, index):
         m = self._models[index]
-        if not isinstance(m, DataModel) and self._return_open:
-            m = open(m, memmap=self._memmap)
+        if not isinstance(m, rdm.DataModel) and self._return_open:
+            m = rdm.open(m, memmap=self._memmap)
         return m
 
     def __setitem__(self, index, model):
@@ -134,8 +133,8 @@ class ModelContainer(Iterable):
 
     def __iter__(self):
         for model in self._models:
-            if not isinstance(model, DataModel) and self._return_open:
-                model = open(model, memmap=self._memmap)
+            if not isinstance(model, rdm.DataModel) and self._return_open:
+                model = rdm.open(model, memmap=self._memmap)
             yield model
 
     def save(self, dir_path=None, *args, **kwargs):
@@ -185,7 +184,7 @@ class ModelContainer(Iterable):
 
         group_dict = OrderedDict()
         for i, model in enumerate(self._models):
-            model = model if isinstance(model, DataModel) else open(model)
+            model = model if isinstance(model, rdm.DataModel) else open(model)
 
             if not self._save_open:
                 model = open(model, memmap=self._memmap)
