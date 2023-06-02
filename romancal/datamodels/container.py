@@ -60,9 +60,11 @@ class ModelContainer(Iterable):
 
     Examples
     --------
-    >>> container = ModelContainer(['file1.asdf', 'file2.asdf', ..., 'fileN.asdf'])
-    >>> for model in container:
-    ...     print(model.meta.filename)
+    .. code-block:: python
+
+        container = ModelContainer(['file1.asdf', 'file2.asdf', ..., 'fileN.asdf'])
+        for model in container:
+            print(model.meta.filename)
 
     Notes
     -----
