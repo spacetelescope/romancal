@@ -6,7 +6,7 @@ or a Roman datamodel `ImageModel`.
 1. To run TweakReg on a python session one image file
    (i.e. one Roman's SCA) with the default parameters:
 
-        .. doctest-skip::
+        .. code-block:: python
 
                 >>> from romancal.tweakreg.tweakreg_step import TweakRegStep
                 >>> step = TweakRegStep()
@@ -15,7 +15,7 @@ or a Roman datamodel `ImageModel`.
 2. To run TweakReg on a Roman's exposure with default astrometric parameters and save
    the absolute catalog data:
 
-        .. doctest-skip::
+        .. code-block:: python
 
                 >>> from romancal.tweakreg.tweakreg_step import TweakRegStep
                 >>> step = TweakRegStep()
@@ -29,7 +29,7 @@ or a Roman datamodel `ImageModel`.
    - make sure the source catalog is in one of the supported formats. The file content
      below is an example of a valid catalog (`ascii.csv` format):
 
-        .. doctest-skip::
+        .. code-block:: bash
 
                 $ cat ref_catalog_1
 
@@ -60,7 +60,7 @@ or a Roman datamodel `ImageModel`.
    - create `catfile` containing the filename of the input Roman datamodel and
      its corresponding catalog, one per line, as shown below
 
-        .. doctest-skip::
+        .. code-block:: bash
 
                 $ cat /path/to/catfile/catfilename
 
@@ -74,7 +74,7 @@ or a Roman datamodel `ImageModel`.
 
    Now we can execute the following:
 
-        .. doctest-skip::
+        .. code-block:: python
 
                 >>> from romancal.tweakreg.tweakreg_step import TweakRegStep
                 >>> step = TweakRegStep()
