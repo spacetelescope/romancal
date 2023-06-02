@@ -8,21 +8,21 @@ or a Roman datamodel `ImageModel`.
 
         .. code-block:: python
 
-                >>> from romancal.tweakreg.tweakreg_step import TweakRegStep
-                >>> step = TweakRegStep()
-                >>> step.process([img])
+                from romancal.tweakreg.tweakreg_step import TweakRegStep
+                step = TweakRegStep()
+                step.process([img])
 
 2. To run TweakReg on a Roman's exposure with default astrometric parameters and save
    the absolute catalog data:
 
         .. code-block:: python
 
-                >>> from romancal.tweakreg.tweakreg_step import TweakRegStep
-                >>> step = TweakRegStep()
-                >>> step.save_abs_catalog = True # save the catalog data used for absolute astrometry
-                >>> step.abs_refcat = 'GAIADR3' # use Gaia DR3 for absolute astrometry
-                >>> step.catalog_path = '/path/for/the/abs/catalog' # save the Gaia catalog to this path
-                >>> step.process([img])
+                from romancal.tweakreg.tweakreg_step import TweakRegStep
+                step = TweakRegStep()
+                step.save_abs_catalog = True # save the catalog data used for absolute astrometry
+                step.abs_refcat = 'GAIADR3' # use Gaia DR3 for absolute astrometry
+                step.catalog_path = '/path/for/the/abs/catalog' # save the Gaia catalog to this path
+                step.process([img])
 
 3. To run TweakReg using a custom source catalog with the default parameters:
 
@@ -76,9 +76,9 @@ or a Roman datamodel `ImageModel`.
 
         .. code-block:: python
 
-                >>> from romancal.tweakreg.tweakreg_step import TweakRegStep
-                >>> step = TweakRegStep()
-                >>> step.use_custom_catalogs = True # use custom catalogs
-                >>> step.catalog_format = "ascii.ecsv" # custom catalogs format
-                >>> step.catfile = '/path/to/catfile/catfilename' # path to datamodel:catalog mapping
-                >>> step.process([img])
+                from romancal.tweakreg.tweakreg_step import TweakRegStep
+                step = TweakRegStep()
+                step.use_custom_catalogs = True # use custom catalogs
+                step.catalog_format = "ascii.ecsv" # custom catalogs format
+                step.catfile = '/path/to/catfile/catfilename' # path to datamodel:catalog mapping
+                step.process([img])
