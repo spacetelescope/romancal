@@ -7,7 +7,7 @@ from pathlib import Path
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
-from roman_datamodels import datamodels
+from roman_datamodels import datamodels as rdm
 from roman_datamodels.util import is_association
 from tweakwcs.correctors import JWSTWCSCorrector
 from tweakwcs.imalign import align_wcs
@@ -16,6 +16,7 @@ from tweakwcs.matchutils import XYXYMatch
 # LOCAL
 from ..stpipe import RomanStep
 from . import astrometric_utils as amutils
+from ..datamodels import ModelContainer
 
 
 def _oxford_or_str_join(str_list):
@@ -28,7 +29,9 @@ def _oxford_or_str_join(str_list):
     elif nelem == 2:
         return str_list[0] + " or " + str_list[1]
     else:
-        return ", ".join(map(repr, str_list[:-1])) + ", or " + repr(str_list[-1])
+        return (
+            ", ".join(map(repr, str_list[:-1])) + ", or " + repr(str_list[-1])
+        )
 
 
 SINGLE_GROUP_REFCAT = ["GAIADR3", "GAIADR2", "GAIADR1"]
@@ -97,7 +100,7 @@ class TweakRegStep(RomanStep):
 
         try:
             if use_custom_catalogs and catdict:
-                images = datamodels.ModelContainer()
+                images = ModelContainer()
                 if isinstance(input, str):
                     asn_dir = os.path.dirname(input)
                     asn_data = images.read_asn(input)
@@ -113,7 +116,7 @@ class TweakRegStep(RomanStep):
                 elif is_association(input):
                     images.from_asn(input)
                 else:
-                    images = datamodels.ModelContainer(input)
+                    images = ModelContainer(input)
                     for im in images:
                         filename = im.meta.filename
                         if filename in catdict:
@@ -127,7 +130,7 @@ class TweakRegStep(RomanStep):
                                 "tweakreg_catalog_name": catdict[filename],
                             }
             else:
-                images = datamodels.ModelContainer(input)
+                images = ModelContainer(input)
         except TypeError as e:
             e.args = (
                 "Input to tweakreg must be a list of DataModels, an "
@@ -140,7 +143,9 @@ class TweakRegStep(RomanStep):
             self.catalog_path = os.getcwd()
 
         self.catalog_path = Path(self.catalog_path).as_posix()
-        self.log.info(f"All source catalogs will be saved to: {self.catalog_path}")
+        self.log.info(
+            f"All source catalogs will be saved to: {self.catalog_path}"
+        )
 
         if self.abs_refcat is None or len(self.abs_refcat.strip()) == 0:
             self.abs_refcat = DEFAULT_ABS_REFCAT
@@ -225,7 +230,9 @@ class TweakRegStep(RomanStep):
         grp_img = list(images.models_grouped)
 
         self.log.info("")
-        self.log.info(f"Number of image groups to be aligned: {len(grp_img):d}.")
+        self.log.info(
+            f"Number of image groups to be aligned: {len(grp_img):d}."
+        )
         self.log.info("Image groups:")
 
         if len(grp_img) == 1 and not ALIGN_TO_ABS_REFCAT:
@@ -235,7 +242,9 @@ class TweakRegStep(RomanStep):
             self.log.info("")
 
             # we need at least two exposures to perform image alignment
-            self.log.warning("At least two exposures are required for image alignment.")
+            self.log.warning(
+                "At least two exposures are required for image alignment."
+            )
             self.log.warning("Nothing to do. Skipping 'TweakRegStep'...")
             self.skip = True
             for model in images:
@@ -253,8 +262,8 @@ class TweakRegStep(RomanStep):
             for model in g:
                 model = (
                     model
-                    if isinstance(model, datamodels.DataModel)
-                    else datamodels.open(os.path.basename(model))
+                    if isinstance(model, rdm.DataModel)
+                    else rdm.open(os.path.basename(model))
                 )
             self.log.info(f"* Images in GROUP '{group_name}':")
             for im in imcats:
@@ -309,7 +318,8 @@ class TweakRegStep(RomanStep):
             except ValueError as e:
                 msg = e.args[0]
                 if (
-                    msg == "Too few input images (or groups of images) with non-empty"
+                    msg
+                    == "Too few input images (or groups of images) with non-empty"
                     " catalogs."
                 ):
                     # we need at least two exposures to perform image alignment
@@ -317,7 +327,9 @@ class TweakRegStep(RomanStep):
                     self.log.warning(
                         "At least two exposures are required for image alignment."
                     )
-                    self.log.warning("Nothing to do. Skipping 'TweakRegStep'...")
+                    self.log.warning(
+                        "Nothing to do. Skipping 'TweakRegStep'..."
+                    )
                     for model in images:
                         model.meta.cal_step["tweakreg"] = "SKIPPED"
                     if not ALIGN_TO_ABS_REFCAT:
@@ -328,7 +340,9 @@ class TweakRegStep(RomanStep):
 
             except RuntimeError as e:
                 msg = e.args[0]
-                if msg.startswith("Number of output coordinates exceeded allocation"):
+                if msg.startswith(
+                    "Number of output coordinates exceeded allocation"
+                ):
                     # we need at least two exposures to perform image alignment
                     self.log.error(msg)
                     self.log.error(
@@ -361,7 +375,9 @@ class TweakRegStep(RomanStep):
                     for model in images:
                         model.meta.cal_step["tweakreg"] = "SKIPPED"
                     if ALIGN_TO_ABS_REFCAT:
-                        self.log.warning("Skipping relative alignment (stage 1)...")
+                        self.log.warning(
+                            "Skipping relative alignment (stage 1)..."
+                        )
                     else:
                         self.log.warning("Skipping 'TweakRegStep'...")
                         self.skip = True
@@ -505,8 +521,8 @@ class TweakRegStep(RomanStep):
     def _imodel2wcsim(self, image_model):
         image_model = (
             image_model
-            if isinstance(image_model, datamodels.DataModel)
-            else datamodels.open(os.path.basename(image_model))
+            if isinstance(image_model, rdm.DataModel)
+            else rdm.open(os.path.basename(image_model))
         )
         catalog = image_model.meta.tweakreg_catalog
         model_name = os.path.splitext(image_model.meta.filename)[0].strip("_- ")
@@ -558,8 +574,10 @@ class TweakRegStep(RomanStep):
 def _common_name(group):
     file_names = []
     for im in group:
-        if isinstance(im, datamodels.DataModel):
-            file_names.append(os.path.splitext(im.meta.filename)[0].strip("_- "))
+        if isinstance(im, rdm.DataModel):
+            file_names.append(
+                os.path.splitext(im.meta.filename)[0].strip("_- ")
+            )
         else:
             raise TypeError("Input must be a list of datamodels list.")
 
