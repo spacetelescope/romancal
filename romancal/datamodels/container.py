@@ -4,16 +4,13 @@ import warnings
 from collections import OrderedDict
 from collections.abc import Iterable
 
-from roman_datamodels.datamodels import DataModel
-
 import asdf
 import packaging.version
+from roman_datamodels.datamodels import DataModel
 
 # .dev is included in the version comparison to allow for correct version
 # comparisons with development versions of asdf 3.0
-if packaging.version.Version(asdf.__version__) < packaging.version.Version(
-    "3.dev"
-):
+if packaging.version.Version(asdf.__version__) < packaging.version.Version("3.dev"):
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore",
@@ -108,19 +105,19 @@ class ModelContainer(Iterable):
             # only append list items to self._models if all items are either
             # strings (i.e. path to an ASDF file) or instances of DataModel
             is_all_string = all(isinstance(x, str) for x in init)
-            is_all_roman_datamodels = all(
-                isinstance(x, DataModel) for x in init
-            )
+            is_all_roman_datamodels = all(isinstance(x, DataModel) for x in init)
 
             if is_all_string or is_all_roman_datamodels:
                 self._models.extend(init)
             else:
                 raise TypeError(
-                    "Input must be a list of strings (full path to ASDF files) or Roman datamodels."
+                    "Input must be a list of strings (full path to ASDF files) or "
+                    / "Roman datamodels."
                 )
         else:
             raise TypeError(
-                "Input must be a list of either strings (full path to ASDF files) or Roman datamodels."
+                "Input must be a list of either strings (full path to ASDF files) or "
+                / "Roman datamodels."
             )
 
     def __len__(self):

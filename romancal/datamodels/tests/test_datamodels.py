@@ -1,15 +1,12 @@
-from romancal.datamodels.container import ModelContainer
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils as utils
 
+from romancal.datamodels.container import ModelContainer
+
 
 def test_model_container_input_as_list_of_datamodels(tmp_path):
-    filepath1 = (
-        tmp_path / "test_model_container_input_as_list_of_filepaths_01.asdf"
-    )
-    filepath2 = (
-        tmp_path / "test_model_container_input_as_list_of_filepaths_02.asdf"
-    )
+    filepath1 = tmp_path / "test_model_container_input_as_list_of_filepaths_01.asdf"
+    filepath2 = tmp_path / "test_model_container_input_as_list_of_filepaths_02.asdf"
     # create L2 file using filepath
     utils.mk_level2_image(filepath=filepath1)
     utils.mk_level2_image(filepath=filepath2)
