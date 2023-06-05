@@ -4,28 +4,13 @@ import logging
 import os
 import os.path as op
 import re
-import warnings
 from collections import OrderedDict
 from collections.abc import Iterable
 from pathlib import Path
 
 import asdf
-import packaging.version
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.util import is_association
-
-# .dev is included in the version comparison to allow for correct version
-# comparisons with development versions of asdf 3.0
-if packaging.version.Version(asdf.__version__) < packaging.version.Version("3.dev"):
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            category=asdf.exceptions.AsdfDeprecationWarning,
-            message=r"AsdfInFits has been deprecated.*",
-        )
-        from asdf.fits_embed import AsdfInFits
-else:
-    AsdfInFits = None
 
 __all__ = [
     "ModelContainer",
@@ -201,11 +186,48 @@ class ModelContainer(Iterable):
     def __setitem__(self, index, model):
         self._models[index] = model
 
+    def __delitem__(self, index):
+        del self._models[index]
+
     def __iter__(self):
         for model in self._models:
             if not isinstance(model, rdm.DataModel) and self._return_open:
                 model = rdm.open(model, memmap=self._memmap)
             yield model
+
+    def insert(self, index, model):
+        self._models.insert(index, model)
+
+    def append(self, model):
+        self._models.append(model)
+
+    def extend(self, model):
+        self._models.extend(model)
+
+    def pop(self, index=-1):
+        self._models.pop(index)
+
+    def copy(self, memo=None):
+        """
+        Returns a deep copy of the models in this model container.
+        """
+        result = self.__class__(
+            init=None,
+            pass_invalid_values=self._pass_invalid_values,
+            strict_validation=self._strict_validation,
+        )
+        instance = copy.deepcopy(self._instance, memo=memo)
+        result._asdf = asdf.AsdfFile(instance)
+        result._instance = instance
+        result._iscopy = self._iscopy
+        result._schema = self._schema
+        result._ctx = result
+        for m in self._models:
+            if isinstance(m, rdm.DataModel):
+                result.append(m.copy())
+            else:
+                result.append(m)
+        return result
 
     def close(self):
         if not self._iscopy and self._asdf is not None:
@@ -303,21 +325,39 @@ class ModelContainer(Iterable):
                     model.meta.asn["pool_name"] = self.asn_pool_name
 
     def save(self, dir_path=None, *args, **kwargs):
+        """
+        Write out models in container to ASDF.
+
+        Parameters
+        ----------
+        dir_path : str
+            Directory to write out files.  Defaults to current working dir.
+            If directory does not exist, it creates it.  Filenames are pulled
+            from `.meta.filename` of each datamodel in the container.
+
+        Note
+        ----
+        Additional parameters provided via `*args` and `**kwargs` are passed on to
+        `roman_datamodels.datamodels.DataModel.to_asdf`
+
+        Returns
+        -------
+        None
+        """
         # use current path if dir_path is not provided
         dir_path = dir_path if dir_path is not None else os.getcwd()
         # output filename suffix
-        output_suffix = "cal_twkreg"
+        output_suffix = kwargs.get("output_suffix", "output")
         for model in self._models:
             filename = model.meta.filename
             base, ext = op.splitext(filename)
-            base = base.replace("cal", output_suffix)
+            base = base.replace(".", f"_{output_suffix}.")
             output_filename = "".join([base, ext])
             output_path = op.join(dir_path, output_filename)
-            # TODO: Support gzip-compressed fits
             if ext == ".asdf":
                 model.to_asdf(output_path, *args, **kwargs)
             else:
-                raise ValueError(f"unknown filetype {ext}")
+                raise ValueError(f"Unknown filetype {ext}")
 
     @property
     def models_grouped(self):
