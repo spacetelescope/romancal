@@ -43,7 +43,7 @@ jobconfig.publish_env_on_success_only = true
 jobconfig.publish_env_filter = "spacetelescope/main"
 
 // Define python version for conda
-python_version = "3.9"
+python_version = "3.11"
 
 // pip related setup
 def pip_index = "https://bytesalad.stsci.edu/artifactory/api/pypi/datb-pypi-virtual/simple"
@@ -52,7 +52,7 @@ def pip_install_args = "--index-url ${pip_index} --progress-bar=off"
 // Define environment variables needed for the regression tests
 env_vars = [
     "TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory",
-    "CRDS_CONTEXT=roman_0040.pmap",
+    "CRDS_CONTEXT=roman_0047.pmap",
     "CRDS_SERVER_URL=https://roman-crds-test.stsci.edu",
     'CRDS_PATH=${WORKSPACE}/roman-crds-test-cache',
     'DD_ENV=ci',
@@ -89,13 +89,15 @@ bc0.build_cmds = [
     "pip freeze",
     'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
 ]
-bc0.build_cmds = PipInject(env.OVERRIDE_REQUIREMENTS) + bc0.build_cmds
+bc0.build_cmds = bc0.build_cmds + PipInject(env.OVERRIDE_REQUIREMENTS)
 bc0.test_cmds = [
-    "pytest --cov-report=xml --cov=./ -r sxf -n auto --bigdata --slow \
+    "pytest --cov-report=xml:coverage.xml --cov=./ -r sxf -n auto --bigdata --slow \
     --ddtrace \
     --basetemp=${pytest_basetemp} --junit-xml=results.xml --dist=loadscope \
     --env=${artifactoryenv} ${pytest_args}",
-    'codecov --token=${codecov_token} -F nightly',
+    "curl -Os https://uploader.codecov.io/latest/linux/codecov",
+    "chmod +x codecov",
+    './codecov --token=${codecov_token} -F nightly -f coverage.xml',
 ]
 bc0.test_configs = [data_config]
 bc0.failedFailureThresh = 0
@@ -107,7 +109,7 @@ bc1 = utils.copy(bc0)
 bc1.nodetype = 'macos'
 bc1.name = 'macos-stable-deps'
 bc1.build_cmds = ["pip install -e ."]
-bc1.build_cmds = PipInject(env.OVERRIDE_REQUIREMENTS) + bc1.build_cmds
+bc1.build_cmds = bc1.build_cmds + PipInject(env.OVERRIDE_REQUIREMENTS)
 bc1.test_cmds = []
 bc1.test_configs = []
 

@@ -1,7 +1,7 @@
 Installation
 ============
 .. warning::
-    Roman requires Python 3.8 or above and a C compiler for dependencies.
+    Roman requires Python 3.9 or above and a C compiler for dependencies.
 
 .. warning::
     Linux and MacOS platforms are tested and supported. Windows is not currently supported.
@@ -95,6 +95,14 @@ installed too:
     $ pip install -e .[test]
     $ pip install -e .[docs]
     $ pip install -e .[test,docs]
+
+On a macOS machine, you should run the same command as above but with quotes around the
+options to be installed
+::
+
+    $ pip install -e '.[test]'
+    $ pip install -e '.[docs]'
+    $ pip install -e '.[test,docs]'
 
 Need other useful packages in your development environment?
 ::

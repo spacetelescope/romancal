@@ -8,9 +8,12 @@ from .dq_init.dq_init_step import DQInitStep
 from .flatfield.flat_field_step import FlatFieldStep
 from .jump.jump_step import JumpStep
 from .linearity.linearity_step import LinearityStep
+from .outlier_detection.outlier_detection_step import OutlierDetectionStep
 from .photom.photom_step import PhotomStep
 from .ramp_fitting.ramp_fit_step import RampFitStep
 from .saturation.saturation_step import SaturationStep
+from .source_detection.source_detection_step import SourceDetectionStep
+from .tweakreg.tweakreg_step import TweakRegStep
 
 __all__ = [
     "DarkCurrentStep",
@@ -22,4 +25,7 @@ __all__ = [
     "RampFitStep",
     "SaturationStep",
     "AssignWcsStep",
+    "OutlierDetectionStep",
+    "SourceDetectionStep",
+    "TweakRegStep",
 ]

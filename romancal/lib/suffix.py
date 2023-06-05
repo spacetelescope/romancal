@@ -55,6 +55,7 @@ SUFFIXES_TO_ADD = [
     "saturation",
     "dark_current",
     "darkcurrent",
+    "outlier_detection",
 ]
 
 # Suffixes that are discovered but should not be considered.
@@ -84,6 +85,7 @@ _calculated_suffixes = {
     "jump",
     "sourcedetectionstep",
     "tweakregstep",
+    "outlierdetectionstep",
 }
 
 

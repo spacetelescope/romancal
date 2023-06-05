@@ -7,7 +7,8 @@ from os.path import basename
 
 from stpipe.format_template import FormatTemplate
 
-from romancal.associations import Association, ProcessList, libpath
+from romancal.associations import libpath
+from romancal.associations.association import Association
 from romancal.associations.exceptions import AssociationNotValidError
 from romancal.associations.lib.acid import ACID
 from romancal.associations.lib.constraint import Constraint, SimpleConstraint
@@ -22,6 +23,7 @@ from romancal.associations.lib.dms_base import (
 )
 from romancal.associations.lib.keyvalue_registry import KeyValueRegistryError
 from romancal.associations.lib.member import Member
+from romancal.associations.lib.process_list import ProcessList
 from romancal.associations.lib.product_utils import (
     prune_duplicate_associations,
     prune_duplicate_products,
@@ -35,15 +37,22 @@ __all__ = [
     "AsnMixin_Science",
     "AsnMixin_Spectrum",
     "AsnMixin_Lv2Image",
+    "AsnMixin_Lv2GBTDSfull",
+    "AsnMixin_Lv2GBTDSpass",
     "Constraint",
     "Constraint_Base",
+    "Constraint_Category",
     "Constraint_Expos",
     "Constraint_Image",
+    "Constraint_Instrument",
     "Constraint_Obsnum",
     "Constraint_Optical_Path",
+    "Constraint_Pass",
     "Constraint_Spectral",
+    "Constraint_SubCategory",
     "Constraint_Tile",
     "Constraint_Image_Science",
+    "Constraint_Sequence",
     "Constraint_Single_Science",
     "Constraint_Spectral_Science",
     "Constraint_Target",
@@ -91,7 +100,6 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
     _sequences = defaultdict(Counter)
 
     def __init__(self, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
 
         # Initialize validity checks
@@ -199,9 +207,17 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         if subarray:
             subarray = "-" + subarray
 
-        product_name = "r{program}-{acid}_{target}_{instrument}_{opt_elem}{subarray}"
+        product_name = (
+            "r{program}-{acid}" "_{target}" "_{instrument}" "_{opt_elem}{subarray}"
+        )
+        if "Full" in association.data["asn_rule"]:
+            subarray = "Full"
+
+        if "Pass" in association.data["asn_rule"]:
+            subarray = "Pass"
+
         product_name = product_name.format(
-            program=association.data["program"],
+            program=association.data["visit_id"],
             acid=association.acid.id,
             target=target,
             instrument=instrument,
@@ -244,7 +260,6 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
 
         # Item-based information
         if item is not None:
-
             # Program
             if self.data["program"] == "noprogram":
                 self.data["program"] = f"{item['program']:0>5s}"
@@ -554,7 +569,13 @@ def dms_product_name_noopt(asn):
 
     instrument = asn._get_instrument()
 
-    product_name = f"r{asn.data['program']}-{asn.acid.id}_{target}_{instrument}"
+    product_name = "r{}-{}_{}_{}".format(
+        #        asn.data['program'],
+        asn.data["visi_id"],
+        asn.acid.id,
+        target,
+        instrument,
+    )
     return product_name.lower()
 
 
@@ -579,7 +600,8 @@ def dms_product_name_sources(asn):
     product_name_format = "r{program}-{acid}_{source_id}_{instrument}_{opt_elem}"
     product_name = format_product(
         product_name_format,
-        program=asn.data["program"],
+        #        program=asn.data['program'],
+        program=asn.data["visit_id"],
         acid=asn.acid.id,
         instrument=instrument,
         opt_elem=opt_elem,
@@ -610,6 +632,20 @@ class Constraint_Base(Constraint):
         )
 
 
+class Constraint_Instrument(Constraint):
+    """Select on instrument"""
+
+    def __init__(self):
+        super().__init__(
+            [
+                DMSAttrConstraint(
+                    name="instrument",
+                    sources=["instrume"],
+                ),
+            ],
+        )
+
+
 class Constraint_Expos(DMSAttrConstraint):
     """Select on exposure number"""
 
@@ -629,8 +665,8 @@ class Constraint_Tile(DMSAttrConstraint):
         super().__init__(
             name="tile",
             sources=["tile"],
-            # force_unique=True,
-            # required=True,
+            force_unique=True,
+            required=True,
         )
 
 
@@ -669,6 +705,64 @@ class Constraint_Optical_Path(Constraint):
                     required=False,
                 )
             ]
+        )
+
+
+class Constraint_SubCategory(DMSAttrConstraint):
+    """Select on SUBCAT (proposal subcategory) in the mock pool file"""
+
+    def __init__(self):
+        super().__init__(
+            name="sub_cat",
+            sources=["subcat"],
+            force_unique=True,
+            required=True,
+        )
+
+
+class Constraint_Category(DMSAttrConstraint):
+    """Select on SUBCAT (proposal subcategory) in the mock pool file"""
+
+    def __init__(self):
+        super().__init__(
+            name="category",
+            sources=["cat"],
+            force_unique=True,
+            required=True,
+        )
+
+
+class Constraint_Pass(Constraint):
+    """Select on pass number"""
+
+    def __init__(self):
+        super().__init__(
+            [
+                DMSAttrConstraint(
+                    name="pass",
+                    sources=["pass"],
+                    required=True,
+                    force_unique=True,
+                )
+            ],
+            name="pass",
+        )
+
+
+class Constraint_Sequence(Constraint):
+    """Select on pass number"""
+
+    def __init__(self):
+        super().__init__(
+            [
+                DMSAttrConstraint(
+                    name="sequence",
+                    sources=["sequence"],
+                    required=True,
+                    force_unique=True,
+                )
+            ],
+            name="sequence",
         )
 
 
@@ -812,7 +906,6 @@ class AsnMixin_Science(DMS_ELPP_Base):
     """Basic science constraints"""
 
     def __init__(self, *args, **kwargs):
-
         # Setup target acquisition inclusion
         constraint_acqs = Constraint(
             [
@@ -871,4 +964,24 @@ class AsnMixin_Lv2Image:
         """Post-check and pre-add initialization"""
 
         super()._init_hook(item)
-        self.data["asn_type"] = "image2"
+        self.data["asn_type"] = "image"
+
+
+class AsnMixin_Lv2GBTDSpass:
+    """Level 2 GBTDS association base"""
+
+    def _init_hook(self, item):
+        """Post-check and pre-add initialization"""
+
+        super()._init_hook(item)
+        self.data["asn_type"] = "pass"
+
+
+class AsnMixin_Lv2GBTDSfull:
+    """Level 2 GBTDS association base"""
+
+    def _init_hook(self, item):
+        """Post-check and pre-add initialization"""
+
+        super()._init_hook(item)
+        self.data["asn_type"] = "full"

@@ -18,7 +18,7 @@ logger.addHandler(logging.NullHandler())
 __all__ = ["generate"]
 
 
-def generate(pool, rules, version_id=None):
+def generate(pool, rules, version_id=None, finalize=True):
     """Generate associations in the pool according to the rules.
 
     Parameters

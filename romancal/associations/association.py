@@ -88,7 +88,6 @@ class Association(MutableMapping):
         self,
         version_id=None,
     ):
-
         self.data = dict()
         self.run_init_hook = True
         self.meta = {}
@@ -525,7 +524,7 @@ def finalize(asns):
 
     .. code-block:: python
 
-       from jwst.associations.association import finalize as generic_finalize
+       from romancal.associations.association import finalize as generic_finalize
        RegistryMarker.callback('finalize')(generic_finalize)
     """
     finalized_asns = list(

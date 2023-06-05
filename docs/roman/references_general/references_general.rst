@@ -147,7 +147,7 @@ exposure type    WFI_IMAGE           Allowed values WFI_IMAGE, WFI_GRATING, WFI_
 Tracking Pipeline Progress
 ++++++++++++++++++++++++++
 
-As each pipeline step is applied to a sciece data product, it will record a status
+As each pipeline step is applied to a science data product, it will record a status
 indicator in a cal_step attribute of the science data product. These statuses
 may be included in the primary header of reference files, in order to maintain
 a history of the data that went into creating the reference file.
@@ -165,40 +165,46 @@ instrument and observing mode have the same set of DQ flags in the same (bit)
 order. The table below lists the allowed DQ flags. Only the first eight entries
 in the table below are relevant to the GROUPDQ array.
 
-Flags for the DQ, PIXELDQ, and GROUPDQ Arrays.
+.. include:: dq_flags.inc
 
-===  ==========    ================  ===========================================
-Bit  Value         Name              Description
-===  ==========    ================  ===========================================
-0    1             DO_NOT_USE        Bad pixel. Do not use.
-1    2             SATURATED         Pixel saturated during exposure
-2    4             JUMP_DET          Jump detected during exposure
-3    8             DROPOUT           Data lost in transmission
-4    16            RESERVED_1
-5    32            PERSISTENCE       High persistence (was RESERVED_2)
-6    64            AD_FLOOR          Below A/D floor (0 DN, was RESERVED_3)
-7    128           RESERVED_4
-8    256           UNRELIABLE_ERROR  Uncertainty exceeds quoted error
-9    512           NON_SCIENCE       Pixel not on science portion of detector
-10   1024          DEAD              Dead pixel
-11   2048          HOT               Hot pixel
-12   4096          WARM              Warm pixel
-13   8192          LOW_QE            Low quantum efficiency
-15   32768         TELEGRAPH         Telegraph pixel
-16   65536         NONLINEAR         Pixel highly nonlinear
-17   131072        BAD_REF_PIXEL     Reference pixel cannot be used
-18   262144        NO_FLAT_FIELD     Flat field cannot be measured
-19   524288        NO_GAIN_VALUE     Gain cannot be measured
-20   1048576       NO_LIN_CORR       Linearity correction not available
-21   2097152       NO_SAT_CHECK      Saturation check not available
-22   4194304       UNRELIABLE_BIAS   Bias variance large
-23   8388608       UNRELIABLE_DARK   Dark variance large
-24   16777216      UNRELIABLE_SLOPE  Slope variance large (i.e., noisy pixel)
-25   33554432      UNRELIABLE_FLAT   Flat variance large
-26   67108864      RESERVED_5
-27   134217728     RESERVED_6
-28   268435456     UNRELIABLE_RESET  Sensitive to reset anomaly
-29   536870912     RESERVED_7
-30   1073741824    OTHER_BAD_PIXEL   A catch-all flag
-31   2147483648    REFERENCE_PIXEL   Pixel is a reference pixel
-===  ==========    ================  ===========================================
+Parameter Specification
+=======================
+
+There are a number of steps, such as :ref:`OutlierDetectionStep
+<outlier_detection_step>`, that define
+what data quality flags a pixel is allowed to have to be considered in
+calculations. Such parameters can be set in a number of ways.
+
+First, the flag can be defined as the integer sum of all the DQ bit values from
+the input images DQ arrays that should be considered "good". For example, if
+pixels in the DQ array can have combinations of 1, 2, 4, and 8 and one wants to
+consider DQ flags 2 and 4 as being acceptable for computations, then the
+parameter value should be set to "6" (2+4). In this case a pixel having DQ values
+2, 4, or 6 will be considered a good pixel, while a pixel with a DQ value, e.g.,
+1+2=3, 4+8="12", etc. will be flagged as a "bad" pixel.
+
+Alternatively, one can enter a comma-separated or '+' separated list of integer
+bit flags that should be summed to obtain the final "good" bits. For example,
+both "4,8" and "4+8" are equivalent to a setting of "12".
+
+Finally, instead of integers, the Roman mnemonics, as defined above, may be used.
+For example, all the following specifications are equivalent:
+
+`"12" == "4+8" == "4, 8" == "JUMP_DET, DROPOUT"`
+
+.. note::
+   - The default value (0) will make *all* non-zero
+     pixels in the DQ mask be considered "bad" pixels and the
+     corresponding pixels will not be used in computations.
+
+   - Setting to `None` will turn off the use of the DQ array
+     for computations.
+
+   - In order to reverse the meaning of the flags
+     from indicating values of the "good" DQ flags
+     to indicating the "bad" DQ flags, prepend '~' to the string
+     value. For example, in order to exclude pixels with
+     DQ flags 4 and 8 for computations and to consider
+     as "good" all other pixels (regardless of their DQ flag),
+     use a value of ``~4+8``, or ``~4,8``. A string value of
+     ``~0`` would be equivalent to a setting of ``None``.

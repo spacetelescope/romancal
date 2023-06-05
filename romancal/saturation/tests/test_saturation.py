@@ -277,7 +277,6 @@ def setup_wfi_datamodels():
     """Set up fake WFI data to test."""
 
     def _models(ngroups, nrows, ncols):
-
         # Create ramp data
         ramp_model = maker_utils.mk_ramp(shape=(ngroups, nrows, ncols))
 

@@ -1,6 +1,31 @@
-0.10.1 (unreleased)
+0.11.1 (unreleased)
 ===================
 
+documentation
+-------------
+- Updated wording about ELP and HLP in the Associations documentation for RTD
+
+- Updated the primary branch referenced in CONTRIBUTING to be main
+
+0.11.0 (2023-05-31)
+===================
+
+tweakreg
+--------
+
+- Added tmpdir to the unit tests for test files [#702]
+
+- Added logic to handle cases where an absolute catalog cannot be created. [#698]
+
+associations
+------------
+
+- Initial association code for GBTDS observations [#661]
+
+Documentation
+-------------
+
+- Update dq flags to include "GW_AFFECTED_DATA"  flag [#699]
 
 general
 -------
@@ -12,18 +37,32 @@ general
 
 - Remove use of ``pytest-openfiles`` [#666]
 
+- Remove the ``codecov`` dependency [#677]
+
+- Remove explicit dependence on ``stdatamodels``. [#676]
+
+- Drop support for Python 3.8 [#694]
+
 source_detection
 ----------------
+- Bug fix to ensure that the returned result is a copy of the input datamodel. [#700]
+
 - Added SourceDetection Step to pipeline [#608]
+
 - Added option of fixed random seed for unit tests to avoid intermittent failures from randomness. [#668]
 
 - Fix source detection object instantiation. [#669]
 
-documentation
--------------
-- Updated wording about ELP and HLP in the Associations documentation for RTD
+- Small bug fix to ensure that output catalogs are not attached to the file when save_catalogs=False [#684]
 
-- Updated the primary branch referenced in CONTRIBUTING to be main
+outlier_detection
+-----------------
+- Added an empty outlier detection step to the pipeline, as well as a simple test and documentation. [#689]
+
+astrometric_utils
+-----------------
+- Added option to provide epoch so that the coordinates are corrected by proper motion. [#686]
+
 
 
 

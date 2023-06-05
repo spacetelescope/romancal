@@ -55,7 +55,7 @@ class AssociationPool(Table):
             delimiter=delimiter,
             format=format,
             converters=convert_to_str,
-            **kwargs
+            **kwargs,
         )
 
         # If anything has been masked, just fill

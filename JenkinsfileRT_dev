@@ -52,7 +52,7 @@ def pip_install_args = "--index-url ${pip_index} --progress-bar=off"
 // Define environment variables needed for the regression tests
 env_vars = [
     "TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory",
-    "CRDS_CONTEXT=roman_0040.pmap",
+    "CRDS_CONTEXT=roman_0047.pmap",
     "CRDS_SERVER_URL=https://roman-crds-test.stsci.edu",
     'CRDS_PATH=${WORKSPACE}/roman-crds-test-cache',
 ]
@@ -87,7 +87,7 @@ bc0.build_cmds = [
     "pip freeze",
     'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
 ]
-bc0.build_cmds = PipInject(env.OVERRIDE_REQUIREMENTS) + bc0.build_cmds
+bc0.build_cmds = bc0.build_cmds + PipInject(env.OVERRIDE_REQUIREMENTS)
 bc0.test_cmds = [
     "pytest -r sxf -n auto --bigdata --slow \
     --basetemp=${pytest_basetemp} --junit-xml=results.xml --dist=loadscope \
@@ -103,7 +103,7 @@ bc1 = utils.copy(bc0)
 bc1.nodetype = 'macos'
 bc1.name = 'macos-unstable-deps'
 bc1.build_cmds = ["pip install -e ."]
-bc1.build_cmds = PipInject(env.OVERRIDE_REQUIREMENTS) + bc1.build_cmds
+bc1.build_cmds = bc1.build_cmds + PipInject(env.OVERRIDE_REQUIREMENTS)
 bc1.test_cmds = []
 bc1.test_configs = []
 

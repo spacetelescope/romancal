@@ -1,14 +1,23 @@
-import traceback
+import os
 
+import requests
 from astropy import table
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-from astroquery.mast import Catalogs
 
 from ..assign_wcs import utils as wcsutil
 from ..resample import resample_utils
 
-DEF_CAT = "GAIADR3"
+ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
+DEF_CAT_URL = "http://gsss.stsci.edu/webservices"
+
+# VO request timeout (in seconds)
+TIMEOUT = 30.0
+
+if ASTROMETRIC_CAT_ENVVAR in os.environ:
+    SERVICELOCATION = os.environ[ASTROMETRIC_CAT_ENVVAR]
+else:
+    SERVICELOCATION = DEF_CAT_URL
 
 """
 
@@ -19,12 +28,13 @@ Primary function for creating an astrometric reference catalog.
 
 def create_astrometric_catalog(
     input_models,
-    catalog=DEF_CAT,
+    catalog="GAIADR3",
     output="ref_cat.ecsv",
     gaia_only=False,
     table_format="ascii.ecsv",
     existing_wcs=None,
     num_sources=None,
+    epoch=None,
 ):
     """Create an astrometric catalog that covers the inputs' field-of-view.
 
@@ -59,6 +69,11 @@ def create_astrometric_catalog(
         If `num_sources` is negative, return that number of the faintest
         sources.  By default, all sources are returned.
 
+    epoch: float or str, optional
+        Reference epoch used to update the coordinates for proper motion
+        (in decimal year). If `None` then the epoch is obtained from
+        the metadata.
+
     Notes
     -----
     This function will point to astrometric catalog web service defined
@@ -84,8 +99,17 @@ def create_astrometric_catalog(
     radius, fiducial = compute_radius(outwcs)
 
     # perform query for this field-of-view
-    ref_dict = get_catalog(fiducial[0], fiducial[1], sr=radius, catalog=catalog)
-    colnames = ("ra", "dec", "mag", "objID")
+    epoch = (
+        epoch
+        if epoch is not None
+        else input_models[0].meta.target["proper_motion_epoch"]
+    )
+    # keep only decimal point and digit characters
+    epoch = float("".join(c for c in str(epoch) if c == "." or c.isdigit()))
+    ref_dict = get_catalog(
+        fiducial[0], fiducial[1], epoch=epoch, sr=radius, catalog=catalog
+    )
+    colnames = ("ra", "dec", "mag", "objID", "epoch")
 
     ref_table = ref_dict[colnames]
 
@@ -148,7 +172,7 @@ def compute_radius(wcs):
     return radius, fiducial
 
 
-def get_catalog(ra, dec, sr=0.1, catalog=DEF_CAT):
+def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3", timeout=TIMEOUT):
     """Extract catalog from VO web service.
 
     Parameters
@@ -159,6 +183,10 @@ def get_catalog(ra, dec, sr=0.1, catalog=DEF_CAT):
     dec : float
         Declination (Dec) of center of field-of-view (in decimal degrees)
 
+    epoch: float, optional
+        Reference epoch used to update the coordinates for proper motion
+        (in decimal year). Default: 2016.0.
+
     sr : float, optional
         Search radius (in decimal degrees) from field-of-view center to use
         for sources from catalog.  Default: 0.1 degrees
@@ -166,20 +194,43 @@ def get_catalog(ra, dec, sr=0.1, catalog=DEF_CAT):
     catalog : str, optional
         Name of catalog to query, as defined by web-service.  Default: 'GAIADR3'
 
+    timeout : float, optional
+        Set the request timeout (in seconds). Default: 30 s.
+
     Returns
     -------
-    csv : CSV object
-        CSV object of returned sources with all columns as provided by catalog
+        A Table object of returned sources with all columns as provided by catalog.
 
     """
-    try:
-        catalog_data_csv = Catalogs.query_object(
-            f"{ra} {dec}", radius=sr, catalog=catalog, format="csv"
-        )
-        catalog_data_csv.rename_column("source_id", "objID")
-        catalog_data_csv.rename_column("phot_g_mean_mag", "mag")
-    except Exception:
-        traceback.format_exc()
-        raise
+    service_type = "vo/CatalogSearch.aspx"
+    spec_str = "RA={}&DEC={}&EPOCH={}&SR={}&FORMAT={}&CAT={}&MINDET=5"
+    headers = {"Content-Type": "text/csv"}
+    fmt = "CSV"
 
-    return catalog_data_csv
+    spec = spec_str.format(ra, dec, epoch, sr, fmt, catalog)
+    service_url = f"{SERVICELOCATION}/{service_type}?{spec}"
+    try:
+        rawcat = requests.get(service_url, headers=headers, timeout=timeout)
+    except requests.exceptions.ConnectionError:
+        raise requests.exceptions.ConnectionError(
+            "Could not connect to the VO API server. Try again later."
+        )
+    except requests.exceptions.Timeout:
+        raise requests.exceptions.Timeout("The request to the VO API server timed out.")
+    except requests.exceptions.RequestException:
+        raise requests.exceptions.RequestException(
+            "There was an unexpected error with the request."
+        )
+    # convert from bytes to a String
+    r_contents = rawcat.content.decode()
+    rstr = r_contents.split("\r\n")
+    # remove initial line describing the number of sources returned
+    # CRITICAL to proper interpretation of CSV data
+    del rstr[0]
+    if len(rstr) == 0:
+        raise Exception(
+            """VO catalog service returned no results.\n
+            Hint: maybe reviewing the search parameters might help."""
+        )
+
+    return table.Table.read(rstr, format="csv")

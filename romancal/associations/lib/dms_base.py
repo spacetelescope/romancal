@@ -408,6 +408,20 @@ class DMSBaseMixin(ACIDMixin):
         information in `member` will take precedence.
         """
         self.update_degraded_status()
+        self.set_visit_id(item)
+
+    def set_visit_id(self, item):
+        """Set the visit id in the association"""
+
+        if "visit_id" in self.data:
+            pass
+        else:
+            self.data["visit_id"] = item["visit_id"]
+            try:
+                self.data["visit_id"] = item["visit_id"]
+            except KeyError:
+                # logger.debug(f'Visit_id not found')
+                self.data["visit_id"] = "None"
 
     def update_degraded_status(self):
         """Update association degraded status"""
@@ -520,13 +534,16 @@ class DMSBaseMixin(ACIDMixin):
         """
         result = ""
         try:
-            subarray = format_list(self.constraints["subarray"].found_values)
+            subarray = format_list(self.constraints["seq_id"].found_values)
         except KeyError:
             subarray = None
-        if subarray == "full":
+            return result
+        if subarray == 0:
             subarray = None
-        if subarray is not None:
-            result = subarray
+        try:
+            subcat = format_list(self.constraints["subcat"].found_values)
+        except KeyError:
+            subcat = None
 
         return result
 
@@ -567,7 +584,6 @@ class DMSAttrConstraint(AttrConstraint):
     """
 
     def __init__(self, **kwargs):
-
         if kwargs.get("invalid_values", None) is None:
             kwargs["invalid_values"] = _EMPTY
 
@@ -654,6 +670,7 @@ def get_exposure_type(item, default="science", association=None):
     LookupError
         When `default` is None and an exposure type cannot be determined
     """
+
     # Specify how attributes of the item are retrieved.
     def _item_attr(item, sources):
         """Get attribute value of an item

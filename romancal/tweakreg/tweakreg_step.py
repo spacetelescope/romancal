@@ -1,7 +1,8 @@
 """
 Roman pipeline step for image alignment.
 """
-from os import path
+import os
+from pathlib import Path
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -47,10 +48,10 @@ class TweakRegStep(RomanStep):
     class_alias = "tweakreg"
 
     spec = f"""
-        save_catalogs = boolean(default=False) # Write out catalogs?
         use_custom_catalogs = boolean(default=False) # Use custom user-provided catalogs?
-        catalog_format = string(default='ecsv') # Catalog output file format
+        catalog_format = string(default='ascii.ecsv') # Catalog output file format
         catfile = string(default='') # Name of the file with a list of custom user-provided catalogs
+        catalog_path = string(default='') # Catalog output file path
         enforce_user_order = boolean(default=False) # Align images in user specified order?
         expand_refcat = boolean(default=False) # Expand reference catalog with new sources?
         minobj = integer(default=15) # Minimum number of objects acceptable for matching
@@ -61,8 +62,8 @@ class TweakRegStep(RomanStep):
         fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='rshift') # Fitting geometry
         nclip = integer(min=0, default=3) # Number of clipping iterations in fit
         sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units
-        abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Catalog file name or one of:
-        # {_SINGLE_GROUP_REFCAT_STR}, or None, or ''
+        abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference
+        # catalog. Options: {_SINGLE_GROUP_REFCAT_STR}
         save_abs_catalog = boolean(default=False)  # Write out used absolute astrometric reference catalog as a separate product
         abs_minobj = integer(default=15) # Minimum number of objects acceptable for matching when performing absolute astrometry
         abs_searchrad = float(default=6.0) # The search radius in arcsec for a match when performing absolute astrometry
@@ -90,8 +91,7 @@ class TweakRegStep(RomanStep):
             if catdict is not None and not catdict:
                 self.log.warning(
                     "'use_custom_catalogs' is set to True but 'catfile' "
-                    "contains no user catalogs. Turning on built-in catalog "
-                    "creation."
+                    "contains no user catalogs."
                 )
                 use_custom_catalogs = False
 
@@ -99,35 +99,35 @@ class TweakRegStep(RomanStep):
             if use_custom_catalogs and catdict:
                 images = datamodels.ModelContainer()
                 if isinstance(input, str):
-                    asn_dir = path.dirname(input)
+                    asn_dir = os.path.dirname(input)
                     asn_data = images.read_asn(input)
                     for member in asn_data["products"][0]["members"]:
                         filename = member["expname"]
-                        member["expname"] = path.join(asn_dir, filename)
+                        member["expname"] = os.path.join(asn_dir, filename)
                         if filename in catdict:
                             member["tweakreg_catalog"] = catdict[filename]
                         elif "tweakreg_catalog" in member:
                             del member["tweakreg_catalog"]
 
                     images.from_asn(input)
-
                 elif is_association(input):
                     images.from_asn(input)
-
                 else:
                     images = datamodels.ModelContainer(input)
                     for im in images:
                         filename = im.meta.filename
                         if filename in catdict:
-                            print(
-                                f"setting {filename}.tweakreg_catalog ="
+                            self.log.info(
+                                f"setting "
+                                f"{filename}.source_detection.tweakreg_catalog_name ="
                                 f" {repr(catdict[filename])}"
                             )
-                            im.meta.tweakreg_catalog = catdict[filename]
-
+                            # set catalog name only (no catalog data at this point)
+                            im.meta["source_detection"] = {
+                                "tweakreg_catalog_name": catdict[filename],
+                            }
             else:
                 images = datamodels.ModelContainer(input)
-
         except TypeError as e:
             e.args = (
                 "Input to tweakreg must be a list of DataModels, an "
@@ -136,11 +136,16 @@ class TweakRegStep(RomanStep):
             ) + e.args[1:]
             raise e
 
-        if (
-            self.abs_refcat is not None
-            and self.abs_refcat.strip()
-            and self.abs_refcat != DEFAULT_ABS_REFCAT
-        ):
+        if len(self.catalog_path) == 0:
+            self.catalog_path = os.getcwd()
+
+        self.catalog_path = Path(self.catalog_path).as_posix()
+        self.log.info(f"All source catalogs will be saved to: {self.catalog_path}")
+
+        if self.abs_refcat is None or len(self.abs_refcat.strip()) == 0:
+            self.abs_refcat = DEFAULT_ABS_REFCAT
+
+        if self.abs_refcat != DEFAULT_ABS_REFCAT:
             # Set expand_refcat to True to eliminate possibility of duplicate
             # entries when aligning to absolute astrometric reference catalog
             self.expand_refcat = True
@@ -150,11 +155,41 @@ class TweakRegStep(RomanStep):
 
         # Build the catalogs for input images
         for i, image_model in enumerate(images):
-            if hasattr(image_model.meta, "tweakreg_catalog"):
-                catalog = Table.read(image_model.meta.tweakreg_catalog, format="ascii")
-                new_cat = False
+            if hasattr(image_model.meta, "source_detection"):
+                is_tweakreg_catalog_present = hasattr(
+                    image_model.meta.source_detection, "tweakreg_catalog"
+                )
+                is_tweakreg_catalog_name_present = hasattr(
+                    image_model.meta.source_detection, "tweakreg_catalog_name"
+                )
+                if is_tweakreg_catalog_present:
+                    # read catalog in 4D numpy array format
+                    catalog = Table(
+                        data=image_model.meta.source_detection.tweakreg_catalog.T,
+                        names=("id", "xcentroid", "ycentroid", "flux"),
+                    )
+                elif is_tweakreg_catalog_name_present:
+                    catalog = Table.read(
+                        image_model.meta.source_detection.tweakreg_catalog_name,
+                        format=self.catalog_format,
+                    )
+                else:
+                    raise AttributeError(
+                        "Attribute 'meta.source_detection.tweakreg_catalog' is missing."
+                        "Please either run SourceDetectionStep or provide a"
+                        "custom source catalog."
+                    )
+                # set meta.tweakreg_catalog
+                image_model.meta["tweakreg_catalog"] = catalog
+                # remove 4D numpy array from meta.source_detection
+                if is_tweakreg_catalog_present:
+                    del image_model.meta.source_detection["tweakreg_catalog"]
             else:
-                raise AttributeError("Attribute 'meta.tweakreg_catalog' is missing.")
+                raise AttributeError(
+                    "Attribute 'meta.source_detection' is missing."
+                    "Please either run SourceDetectionStep or provide a"
+                    "custom source catalog."
+                )
 
             for axis in ["x", "y"]:
                 if axis not in catalog.colnames:
@@ -163,8 +198,9 @@ class TweakRegStep(RomanStep):
                         catalog.rename_column(long_axis, axis)
                     else:
                         raise ValueError(
-                            "'tweakreg' source catalogs must contain either columns 'x'"
-                            " and 'y' or 'xcentroid' and 'ycentroid'."
+                            "'tweakreg' source catalogs must contain a header with "
+                            "columns named either 'x' and 'y' or "
+                            "'xcentroid' and 'ycentroid'."
                         )
 
             # filter out sources outside the WCS bounding box
@@ -182,22 +218,6 @@ class TweakRegStep(RomanStep):
                 self.log.warning(f"No sources found in {filename}.")
             else:
                 self.log.info(f"Detected {len(catalog)} sources in {filename}.")
-
-            if new_cat and self.save_catalogs:
-                catalog_filename = filename.replace(
-                    ".fits", f"_cat.{self.catalog_format}"
-                )
-                if self.catalog_format == "ecsv":
-                    fmt = "ascii.ecsv"
-                elif self.catalog_format == "fits":
-                    # NOTE: The catalog must not contain any 'None' values.
-                    #       FITS will also not clobber existing files.
-                    fmt = "fits"
-                else:
-                    raise ValueError('\'catalog_format\' must be "ecsv" or "fits".')
-                catalog.write(catalog_filename, format=fmt, overwrite=True)
-                self.log.info(f"Wrote source catalog: {catalog_filename}")
-                image_model.meta.tweakreg_catalog = catalog_filename
 
             images[i] = image_model
 
@@ -234,7 +254,7 @@ class TweakRegStep(RomanStep):
                 model = (
                     model
                     if isinstance(model, datamodels.DataModel)
-                    else datamodels.open(path.basename(model))
+                    else datamodels.open(os.path.basename(model))
                 )
             self.log.info(f"* Images in GROUP '{group_name}':")
             for im in imcats:
@@ -299,7 +319,7 @@ class TweakRegStep(RomanStep):
                     )
                     self.log.warning("Nothing to do. Skipping 'TweakRegStep'...")
                     for model in images:
-                        model.meta.cal_step.tweakreg = "SKIPPED"
+                        model.meta.cal_step["tweakreg"] = "SKIPPED"
                     if not ALIGN_TO_ABS_REFCAT:
                         self.skip = True
                         return images
@@ -319,14 +339,14 @@ class TweakRegStep(RomanStep):
                     self.log.warning("Skipping 'TweakRegStep'...")
                     self.skip = True
                     for model in images:
-                        model.meta.cal_step.tweakreg = "SKIPPED"
+                        model.meta.cal_step["tweakreg"] = "SKIPPED"
                     return images
                 else:
                     raise e
 
             for imcat in imcats:
                 model = imcat.meta["image_model"]
-                if model.meta.cal_step.tweakreg == "SKIPPED":
+                if model.meta.cal_step["tweakreg"] == "SKIPPED":
                     continue
                 wcs = model.meta.wcs
                 twcs = imcat.wcs
@@ -339,7 +359,7 @@ class TweakRegStep(RomanStep):
                     )
 
                     for model in images:
-                        model.meta.cal_step.tweakreg = "SKIPPED"
+                        model.meta.cal_step["tweakreg"] = "SKIPPED"
                     if ALIGN_TO_ABS_REFCAT:
                         self.log.warning("Skipping relative alignment (stage 1)...")
                     else:
@@ -355,7 +375,9 @@ class TweakRegStep(RomanStep):
             #        whatever convention is determined by the JWST Cal Working
             #        Group.
             if self.save_abs_catalog:
-                output_name = f"fit_{self.abs_refcat.lower()}_ref.ecsv"
+                output_name = os.path.join(
+                    self.catalog_path, f"fit_{self.abs_refcat.lower()}_ref.ecsv"
+                )
             else:
                 output_name = None
 
@@ -367,11 +389,23 @@ class TweakRegStep(RomanStep):
             gaia_cat_name = self.abs_refcat.upper()
 
             if gaia_cat_name in SINGLE_GROUP_REFCAT:
-                ref_cat = amutils.create_astrometric_catalog(
-                    images, gaia_cat_name, output=output_name
-                )
+                try:
+                    ref_cat = amutils.create_astrometric_catalog(
+                        images, gaia_cat_name, output=output_name
+                    )
+                except Exception as e:
+                    self.log.warning(
+                        "TweakRegStep cannot proceed because of an error that "
+                        "occurred while fetching data from the VO server. "
+                        f"Returned error message: '{e}'"
+                    )
+                    self.log.warning("Skipping 'TweakRegStep'...")
+                    self.skip = True
+                    for model in images:
+                        model.meta.cal_step["tweakreg"] = "SKIPPED"
+                    return images
 
-            elif path.isfile(self.abs_refcat):
+            elif os.path.isfile(self.abs_refcat):
                 ref_cat = Table.read(self.abs_refcat)
 
             else:
@@ -472,14 +506,19 @@ class TweakRegStep(RomanStep):
         image_model = (
             image_model
             if isinstance(image_model, datamodels.DataModel)
-            else datamodels.open(path.basename(image_model))
+            else datamodels.open(os.path.basename(image_model))
         )
         catalog = image_model.meta.tweakreg_catalog
-        model_name = path.splitext(image_model.meta.filename)[0].strip("_- ")
+        model_name = os.path.splitext(image_model.meta.filename)[0].strip("_- ")
 
         try:
+            if self.use_custom_catalogs:
+                catalog_format = self.catalog_format
+            else:
+                catalog_format = "ascii.ecsv"
             cat_name = str(catalog)
-            catalog = Table.read(catalog, format="ascii")
+            if isinstance(catalog, str):
+                catalog = Table.read(catalog, format=catalog_format)
             catalog.meta["name"] = cat_name
         except OSError:
             self.log.error(f"Cannot read catalog {catalog}")
@@ -520,11 +559,11 @@ def _common_name(group):
     file_names = []
     for im in group:
         if isinstance(im, datamodels.DataModel):
-            file_names.append(path.splitext(im.meta.filename)[0].strip("_- "))
+            file_names.append(os.path.splitext(im.meta.filename)[0].strip("_- "))
         else:
             raise TypeError("Input must be a list of datamodels list.")
 
-    cn = path.commonprefix(file_names)
+    cn = os.path.commonprefix(file_names)
     return cn
 
 
@@ -535,7 +574,7 @@ def _parse_catfile(catfile):
     catdict = {}
 
     with open(catfile) as f:
-        catfile_dir = path.dirname(catfile)
+        catfile_dir = os.path.dirname(catfile)
 
         for line in f.readlines():
             sline = line.strip()
@@ -545,7 +584,7 @@ def _parse_catfile(catfile):
             data_model, *catalog = sline.split()
             catalog = list(map(str.strip, catalog))
             if len(catalog) == 1:
-                catdict[data_model] = path.join(catfile_dir, catalog[0])
+                catdict[data_model] = os.path.join(catfile_dir, catalog[0])
             elif len(catalog) == 0:
                 catdict[data_model] = None
             else:
