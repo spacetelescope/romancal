@@ -295,7 +295,6 @@ def match(images, skymethod="global+match", match_down=True, subtract=False):
     #    Find sky "deltas" that will match sky across all
     #    (intersecting) images.
     if do_match:
-
         log.info(" ")
         log.info("----  Computing differences in sky values in " "overlapping regions.")
 
@@ -328,7 +327,6 @@ def match(images, skymethod="global+match", match_down=True, subtract=False):
     # 3. Method: "global". Compute the minimum sky background
     #    value *across* *all* sky line members.
     if do_global or not do_match:
-
         log.info(" ")
         if do_global:
             minsky = None

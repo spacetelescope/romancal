@@ -215,7 +215,6 @@ class Polygon(Region):
         scline = self._scan_line_range[-1]
 
         while y <= scline:
-
             if y < scline:
                 AET = self.update_AET(y, AET)
 

@@ -30,7 +30,7 @@ class SkyStats:
         lsig=4.0,
         usig=4.0,
         binwidth=0.1,
-        **kwargs
+        **kwargs,
     ):
         """Initializes the SkyStats object.
 

@@ -567,7 +567,6 @@ None, optional
 
         """
         if overlap is None:
-
             if self._mask is None:
                 data = self.image
             else:
@@ -691,7 +690,6 @@ None, optional
         """
 
         if overlap is None:
-
             if self._mask is None:
                 data = self.image
             else:
@@ -742,11 +740,9 @@ None, optional
 
         # Calculate sky
         try:
-
             skyval, npix = self._skystat(data)
 
         except ValueError:
-
             return None, 0, 0.0
 
         if delta:
@@ -794,7 +790,6 @@ class SkyGroup:
     """
 
     def __init__(self, images, id=None, sky=0.0):
-
         if isinstance(images, SkyImage):
             self._images = [images]
 
