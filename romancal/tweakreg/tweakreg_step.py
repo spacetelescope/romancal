@@ -319,7 +319,7 @@ class TweakRegStep(RomanStep):
                     )
                     self.log.warning("Nothing to do. Skipping 'TweakRegStep'...")
                     for model in images:
-                        model.meta.cal_step.tweakreg = "SKIPPED"
+                        model.meta.cal_step["tweakreg"] = "SKIPPED"
                     if not ALIGN_TO_ABS_REFCAT:
                         self.skip = True
                         return images
@@ -339,14 +339,14 @@ class TweakRegStep(RomanStep):
                     self.log.warning("Skipping 'TweakRegStep'...")
                     self.skip = True
                     for model in images:
-                        model.meta.cal_step.tweakreg = "SKIPPED"
+                        model.meta.cal_step["tweakreg"] = "SKIPPED"
                     return images
                 else:
                     raise e
 
             for imcat in imcats:
                 model = imcat.meta["image_model"]
-                if model.meta.cal_step.tweakreg == "SKIPPED":
+                if model.meta.cal_step["tweakreg"] == "SKIPPED":
                     continue
                 wcs = model.meta.wcs
                 twcs = imcat.wcs
@@ -359,7 +359,7 @@ class TweakRegStep(RomanStep):
                     )
 
                     for model in images:
-                        model.meta.cal_step.tweakreg = "SKIPPED"
+                        model.meta.cal_step["tweakreg"] = "SKIPPED"
                     if ALIGN_TO_ABS_REFCAT:
                         self.log.warning("Skipping relative alignment (stage 1)...")
                     else:
@@ -389,9 +389,21 @@ class TweakRegStep(RomanStep):
             gaia_cat_name = self.abs_refcat.upper()
 
             if gaia_cat_name in SINGLE_GROUP_REFCAT:
-                ref_cat = amutils.create_astrometric_catalog(
-                    images, gaia_cat_name, output=output_name
-                )
+                try:
+                    ref_cat = amutils.create_astrometric_catalog(
+                        images, gaia_cat_name, output=output_name
+                    )
+                except Exception as e:
+                    self.log.warning(
+                        "TweakRegStep cannot proceed because of an error that "
+                        "occurred while fetching data from the VO server. "
+                        f"Returned error message: '{e}'"
+                    )
+                    self.log.warning("Skipping 'TweakRegStep'...")
+                    self.skip = True
+                    for model in images:
+                        model.meta.cal_step["tweakreg"] = "SKIPPED"
+                    return images
 
             elif os.path.isfile(self.abs_refcat):
                 ref_cat = Table.read(self.abs_refcat)

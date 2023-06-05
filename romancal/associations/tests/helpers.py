@@ -44,7 +44,6 @@ class PoolParams(
 
 # Basic Pool/Rule test class
 class BasePoolRule:
-
     # Define the pools and testing parameters related to them.
     # Each entry is a tuple starting with the path of the pool.
     pools = []

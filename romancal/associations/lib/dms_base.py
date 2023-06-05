@@ -584,7 +584,6 @@ class DMSAttrConstraint(AttrConstraint):
     """
 
     def __init__(self, **kwargs):
-
         if kwargs.get("invalid_values", None) is None:
             kwargs["invalid_values"] = _EMPTY
 
@@ -671,6 +670,7 @@ def get_exposure_type(item, default="science", association=None):
     LookupError
         When `default` is None and an exposure type cannot be determined
     """
+
     # Specify how attributes of the item are retrieved.
     def _item_attr(item, sources):
         """Get attribute value of an item

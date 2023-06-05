@@ -172,7 +172,7 @@ def compute_radius(wcs):
     return radius, fiducial
 
 
-def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3"):
+def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3", timeout=TIMEOUT):
     """Extract catalog from VO web service.
 
     Parameters
@@ -194,6 +194,9 @@ def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3"):
     catalog : str, optional
         Name of catalog to query, as defined by web-service.  Default: 'GAIADR3'
 
+    timeout : float, optional
+        Set the request timeout (in seconds). Default: 30 s.
+
     Returns
     -------
         A Table object of returned sources with all columns as provided by catalog.
@@ -206,14 +209,28 @@ def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3"):
 
     spec = spec_str.format(ra, dec, epoch, sr, fmt, catalog)
     service_url = f"{SERVICELOCATION}/{service_type}?{spec}"
-    rawcat = requests.get(service_url, headers=headers, timeout=TIMEOUT)
-    r_contents = rawcat.content.decode()  # convert from bytes to a String
+    try:
+        rawcat = requests.get(service_url, headers=headers, timeout=timeout)
+    except requests.exceptions.ConnectionError:
+        raise requests.exceptions.ConnectionError(
+            "Could not connect to the VO API server. Try again later."
+        )
+    except requests.exceptions.Timeout:
+        raise requests.exceptions.Timeout("The request to the VO API server timed out.")
+    except requests.exceptions.RequestException:
+        raise requests.exceptions.RequestException(
+            "There was an unexpected error with the request."
+        )
+    # convert from bytes to a String
+    r_contents = rawcat.content.decode()
     rstr = r_contents.split("\r\n")
     # remove initial line describing the number of sources returned
     # CRITICAL to proper interpretation of CSV data
     del rstr[0]
     if len(rstr) == 0:
-        print(Exception("VO catalog service returned no results."))
-        raise
+        raise Exception(
+            """VO catalog service returned no results.\n
+            Hint: maybe reviewing the search parameters might help."""
+        )
 
     return table.Table.read(rstr, format="csv")

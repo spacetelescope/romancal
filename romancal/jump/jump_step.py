@@ -44,10 +44,8 @@ class JumpStep(RomanStep):
     reference_file_types = ["gain", "readnoise"]
 
     def process(self, input):
-
         # Open input as a Roman DataModel (single integration; 3D arrays)
         with rdd.open(input) as input_model:
-
             # Extract the needed info from the Roman Data Model
             meta = input_model.meta
             r_data = input_model.data.value

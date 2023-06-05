@@ -23,7 +23,6 @@ class AssociationEncoder(json_lib.JSONEncoder):
     """Encode to handle Associations"""
 
     def default(self, obj):
-
         # Convert Member to a simple dict
         if isinstance(obj, Member):
             return obj.data

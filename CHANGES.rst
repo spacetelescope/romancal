@@ -1,11 +1,27 @@
-0.10.1 (unreleased)
+0.11.1 (unreleased)
 ===================
+
+-
+
+0.11.0 (2023-05-31)
+===================
+
+tweakreg
+--------
+
+- Added tmpdir to the unit tests for test files [#702]
+
+- Added logic to handle cases where an absolute catalog cannot be created. [#698]
 
 associations
 ------------
 
 - Initial association code for GBTDS observations [#661]
 
+Documentation
+-------------
+
+- Update dq flags to include "GW_AFFECTED_DATA"  flag [#699]
 
 general
 -------
@@ -25,6 +41,8 @@ general
 
 source_detection
 ----------------
+- Bug fix to ensure that the returned result is a copy of the input datamodel. [#700]
+
 - Added SourceDetection Step to pipeline [#608]
 
 - Added option of fixed random seed for unit tests to avoid intermittent failures from randomness. [#668]

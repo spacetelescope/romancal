@@ -88,7 +88,6 @@ class Association(MutableMapping):
         self,
         version_id=None,
     ):
-
         self.data = dict()
         self.run_init_hook = True
         self.meta = {}

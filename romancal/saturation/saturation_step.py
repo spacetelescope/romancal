@@ -17,10 +17,8 @@ class SaturationStep(RomanStep):
     reference_file_types = ["saturation"]
 
     def process(self, input):
-
         # Open the input data model
         with rdm.open(input) as input_model:
-
             # Get the name of the saturation reference file
             self.ref_name = self.get_reference_file(input_model, "saturation")
             self.log.info("Using SATURATION reference file %s", self.ref_name)

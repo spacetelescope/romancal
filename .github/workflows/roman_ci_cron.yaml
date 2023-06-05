@@ -5,16 +5,25 @@ on:
   schedule:
     # Weekly Monday 6AM build
     - cron: "0 0 * * 1"
+  pull_request:
+    # We also want this workflow triggered if the `Weekly CI` label is
+    # added or present when PR is updated
+    types:
+      - synchronize
+      - labeled
+  push:
+    tags: "*"
   workflow_dispatch:
 
 jobs:
   crds:
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Weekly CI')))
     name: retrieve current CRDS context
     runs-on: ubuntu-latest
     env:
       OBSERVATORY: roman
       CRDS_PATH: /tmp/crds_cache
-      CRDS_SERVER_URL: https://roman-crds.stsci.edu
+      CRDS_SERVER_URL: https://roman-crds-test.stsci.edu
     steps:
       - id: context
         run: >
@@ -33,6 +42,7 @@ jobs:
       path: ${{ steps.path.outputs.path }}
       server: ${{ steps.server.outputs.url }}
   test:
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Weekly CI')))
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
     needs: [ crds ]
     with:
@@ -44,29 +54,31 @@ jobs:
       cache-path: ${{ needs.crds.outputs.path }}
       cache-key: crds-${{ needs.crds.outputs.context }}
       envs: |
-        - linux: test-devdeps-xdist
-          python-version: 3.9
+        - linux: py39-devdeps
           pytest-results-summary: true
-        - macos: test-xdist
-          python-version: 3.9
+        - linux: py310-devdeps
           pytest-results-summary: true
-        - macos: test-sdpdeps-xdist
-          python-version: 3.9
+        - linux: py311-devdeps
           pytest-results-summary: true
-        - linux: test-pyargs-xdist
+
+        - macos: py39-devdeps
           pytest-results-summary: true
-        - linux: test-devdeps-xdist
-          python-version: 3.9
+        - macos: py310-devdeps
           pytest-results-summary: true
-        - linux: test-devdeps-xdist
-          python-version: 3.10
+        - macos: py311-devdeps
           pytest-results-summary: true
-        - macos: test-xdist
-          python-version: 3.10
+
+        - macos: py39
           pytest-results-summary: true
-        - macos: test-devdeps-xdist
-          python-version: 3.10
+        - macos: py310
           pytest-results-summary: true
-        - macos: test-devdeps-xdist
-          python-version: 3.11
+
+        - linux: py39-pyargs
+          pytest-results-summary: true
+        - linux: py310-pyargs
+          pytest-results-summary: true
+        - linux: py311-pyargs
+          pytest-results-summary: true
+
+        - macos: py39-sdpdeps
           pytest-results-summary: true

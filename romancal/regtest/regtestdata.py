@@ -24,6 +24,9 @@ from romancal.stpipe import RomanStep
 # Define location of default Artifactory API key, for Jenkins use only
 ARTIFACTORY_API_KEY_FILE = "/eng/ssb2/keys/svc_rodata.key"
 
+# Define a request timeout in seconds
+TIMEOUT = 30
+
 
 class RegtestData:
     """Defines data paths on Artifactory and data retrieval methods"""
@@ -516,7 +519,7 @@ def _data_glob_url(*url_parts, root=None):
 
     # Make the query
     params = {"pattern": pattern}
-    with requests.get(search_url, params=params, headers=headers) as r:
+    with requests.get(search_url, params=params, headers=headers, timeout=TIMEOUT) as r:
         url_paths = r.json()["files"]
 
     return url_paths
