@@ -11,9 +11,12 @@ skymatch
 --------
 - Added SkyMatchStep to pipeline [#687]
 
-- Add `ModelContainer` to `romancal.datamodels`. [#710]
 
-- Updated the primary branch referenced in CONTRIBUTING to be main
+general
+-------
+- Add `ModelContainer` to `romancal.datamodels`. [#710]
+- `ModelContainer` supports slice and dice.
+
 
 general
 -------
