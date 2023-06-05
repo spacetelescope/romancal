@@ -10,6 +10,8 @@ documentation
 skymatch
 --------
 - Added SkyMatchStep to pipeline [#687]
+- Add `ModelContainer` to `romancal.datamodels`.
+
 
 general
 -------
