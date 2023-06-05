@@ -11,6 +11,12 @@ skymatch
 --------
 - Added SkyMatchStep to pipeline [#687]
 
+general
+-------
+- Add `ModelContainer` to `romancal.datamodels`. [#710]
+- `ModelContainer` supports slice and dice.
+
+
 0.11.0 (2023-05-31)
 ===================
 
