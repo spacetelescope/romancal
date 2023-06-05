@@ -1,7 +1,7 @@
 0.11.1 (unreleased)
 ===================
 
-- Add `ModelContainer` to `romancal.datamodels`.
+- Add `ModelContainer` to `romancal.datamodels`. [#710]
 
 
 0.11.0 (2023-05-31)
