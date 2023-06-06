@@ -14,6 +14,11 @@ general
 
 - Add `ModelContainer` to `romancal.datamodels`. [#710]
 
+documentation
+-------------
+- Updated wording about ELP and HLP in the Associations documentation for RTD
+
+- Updated the primary branch referenced in CONTRIBUTING to be main
 
 0.11.0 (2023-05-31)
 ===================
