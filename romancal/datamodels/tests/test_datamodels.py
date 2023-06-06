@@ -1,5 +1,6 @@
 from io import StringIO
 from pathlib import Path
+
 import pytest
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils as utils
@@ -139,7 +140,7 @@ def test_model_container_init_with_path_to_asn_file(tmp_path):
 )
 def test_imagemodel_init_error(input_object):
     with pytest.raises(Exception) as e:
-        mc = ModelContainer(input_object)
+        ModelContainer(input_object)
 
     assert e.type == TypeError
 
@@ -193,9 +194,7 @@ def test_imagemodel_set_item(setup_list_of_l2_files, tmp_path):
         (2, "datamodel", ModelContainer()),
     ],
 )
-def test_imagemodel_set_item_error(
-    n, obj_type, input_object, tmp_path, request
-):
+def test_imagemodel_set_item_error(n, obj_type, input_object, tmp_path, request):
     filepath_list = request.getfixturevalue("setup_list_of_l2_files")(
         n, obj_type, tmp_path
     )
@@ -284,9 +283,7 @@ def test_model_container_extend(n, obj_type, tmp_path, request):
         (3, "datamodel", "trying_to_sneak_in"),
     ],
 )
-def test_model_container_extend_error(
-    n, obj_type, input_object, tmp_path, request
-):
+def test_model_container_extend_error(n, obj_type, input_object, tmp_path, request):
     filepath_list = request.getfixturevalue("setup_list_of_l2_files")(
         n, obj_type, tmp_path
     )
@@ -342,6 +339,5 @@ def test_model_container_copy(n, obj_type, tmp_path, request):
     assert id(mc_dict) != id(mc_copy_dict)
     assert all(x in mc_dict for x in mc_copy_dict)
     assert all(
-        type(o) == type(c)
-        for o, c in zip(mc_copy_dict.values(), mc_dict.values())
+        type(o) == type(c) for o, c in zip(mc_copy_dict.values(), mc_dict.values())
     )
