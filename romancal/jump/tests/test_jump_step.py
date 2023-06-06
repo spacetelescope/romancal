@@ -37,8 +37,7 @@ def generate_wfi_reffiles(tmpdir_factory):
 
     # Create temporary gain reference file
     gain_ref = rds.GainRef()
-    meta = {}
-    maker_utils.add_ref_common(meta)
+    meta = maker_utils.mk_ref_common()
     meta["instrument"]["detector"] = "WFI01"
     meta["instrument"]["name"] = "WFI"
     meta["author"] = "John Doe"
@@ -63,8 +62,7 @@ def generate_wfi_reffiles(tmpdir_factory):
 
     # Create temporary readnoise reference file
     rn_ref = rds.ReadnoiseRef()
-    meta = {}
-    maker_utils.add_ref_common(meta)
+    meta = maker_utils.mk_ref_common()
     meta["instrument"]["detector"] = "WFI01"
     meta["instrument"]["name"] = "WFI"
     meta["author"] = "John Doe"
