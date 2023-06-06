@@ -24,6 +24,10 @@ skymatch
 --------
 - Added SkyMatchStep to pipeline [#687]
 
+skymatch
+--------
+- Added SkyMatchStep to pipeline [#687]
+
 0.11.0 (2023-05-31)
 ===================
 
