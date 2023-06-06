@@ -15,3 +15,4 @@
    source_detection/index.rst
    tweakreg/index.rst
    outlier_detection/index.rst
+   skymatch/index.rst
