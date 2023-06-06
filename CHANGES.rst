@@ -61,6 +61,7 @@ astrometric_utils
 
 
 
+
 0.10.0 (2023-02-21)
 ===================
 
@@ -230,6 +231,10 @@ Documentation
   documentation. [#488]
 
 - Added documentation for Distortion reference files. [#493]
+
+- Updated wording about ELP and HLP in the Associations documentation for RTD
+
+- Updated the primary branch referenced in CONTRIBUTING to be main
 
 
 linearity
