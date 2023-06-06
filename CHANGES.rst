@@ -1,7 +1,11 @@
 0.11.1 (unreleased)
 ===================
 
--
+documentation
+-------------
+- Updated wording about ELP and HLP in the Associations documentation for RTD
+
+- Updated the primary branch referenced in CONTRIBUTING to be main
 
 0.11.0 (2023-05-31)
 ===================
@@ -62,6 +66,7 @@ astrometric_utils
 skymatch
 --------
 - Added SkyMatchStep to pipeline [#687]
+
 
 
 0.10.0 (2023-02-21)
@@ -233,6 +238,10 @@ Documentation
   documentation. [#488]
 
 - Added documentation for Distortion reference files. [#493]
+
+- Updated wording about ELP and HLP in the Associations documentation for RTD
+
+- Updated the primary branch referenced in CONTRIBUTING to be main
 
 
 linearity
