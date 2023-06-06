@@ -11,6 +11,7 @@ from pathlib import Path
 import asdf
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.util import is_association
+from ..associations import AssociationNotValidError, load_asn
 
 __all__ = [
     "ModelContainer",
@@ -122,6 +123,7 @@ class ModelContainer(Iterable):
         asn_n_members=None,
         iscopy=False,
         memmap=False,
+        # always return an open datamodel
         return_open=True,
         save_open=True,
     ):
@@ -166,8 +168,14 @@ class ModelContainer(Iterable):
             if is_association(init):
                 self.from_asn(init)
             elif isinstance(init, Path) and init.name != "":
-                init_from_asn = self.read_asn(init)
-                self.from_asn(init_from_asn, asn_file_path=init)
+                try:
+                    init_from_asn = self.read_asn(init)
+                    self.from_asn(init_from_asn, asn_file_path=init)
+                except Exception as e:
+                    raise TypeError(
+                        "Input must be an ASN file or a list of either strings "
+                        "(full path to ASDF files) or Roman datamodels."
+                    ) from e
             else:
                 raise TypeError(
                     "Input must be an ASN file or a list of either strings "
@@ -178,13 +186,28 @@ class ModelContainer(Iterable):
         return len(self._models)
 
     def __getitem__(self, index):
-        m = self._models[index]
-        if not isinstance(m, rdm.DataModel) and self._return_open:
-            m = rdm.open(m, memmap=self._memmap)
+        if isinstance(index, slice):
+            start = index.start
+            stop = index.stop
+            step = index.step
+            m = self._models[start:stop:step]
+            m = [
+                rdm.open(item, memmap=self._memmap)
+                if (not isinstance(item, rdm.DataModel) and self._return_open)
+                else item
+                for item in m
+            ]
+        else:
+            m = self._models[index]
+            if not isinstance(m, rdm.DataModel) and self._return_open:
+                m = rdm.open(m, memmap=self._memmap)
         return m
 
     def __setitem__(self, index, model):
-        self._models[index] = model
+        if isinstance(model, rdm.DataModel):
+            self._models[index] = model
+        else:
+            raise ValueError("Only datamodels can be used.")
 
     def __delitem__(self, index):
         del self._models[index]
@@ -196,13 +219,26 @@ class ModelContainer(Iterable):
             yield model
 
     def insert(self, index, model):
-        self._models.insert(index, model)
+        if isinstance(model, rdm.DataModel):
+            self._models.insert(index, model)
+        else:
+            raise ValueError("Only datamodels can be used.")
 
     def append(self, model):
-        self._models.append(model)
+        if isinstance(model, rdm.DataModel):
+            self._models.append(model)
+        else:
+            raise ValueError("Only datamodels can be used.")
 
-    def extend(self, model):
-        self._models.extend(model)
+    def extend(self, input_object):
+        if not isinstance(
+            input_object, (Iterable, rdm.DataModel)
+        ) or isinstance(input_object, str):
+            raise ValueError("Not a valid input object.")
+        elif all(isinstance(x, rdm.DataModel) for x in input_object):
+            self._models.extend(input_object)
+        else:
+            raise ValueError("Not a valid input object.")
 
     def pop(self, index=-1):
         self._models.pop(index)
@@ -211,23 +247,7 @@ class ModelContainer(Iterable):
         """
         Returns a deep copy of the models in this model container.
         """
-        result = self.__class__(
-            init=None,
-            pass_invalid_values=self._pass_invalid_values,
-            strict_validation=self._strict_validation,
-        )
-        instance = copy.deepcopy(self._instance, memo=memo)
-        result._asdf = asdf.AsdfFile(instance)
-        result._instance = instance
-        result._iscopy = self._iscopy
-        result._schema = self._schema
-        result._ctx = result
-        for m in self._models:
-            if isinstance(m, rdm.DataModel):
-                result.append(m.copy())
-            else:
-                result.append(m)
-        return result
+        return copy.deepcopy(self, memo=memo)
 
     def close(self):
         if not self._iscopy and self._asdf is not None:
@@ -236,16 +256,13 @@ class ModelContainer(Iterable):
     @staticmethod
     def read_asn(filepath):
         """
-        Load fits files from a Roman association file.
+        Load ASDF files from a Roman association file.
 
         Parameters
         ----------
         filepath : str
             The path to an association file.
         """
-        # Prevent circular import:
-        from ..associations import AssociationNotValidError, load_asn
-
         filepath = op.abspath(op.expanduser(op.expandvars(filepath)))
         try:
             with open(filepath) as asn_file:
@@ -256,7 +273,7 @@ class ModelContainer(Iterable):
 
     def from_asn(self, asn_data, asn_file_path=None):
         """
-        Load fits files from a Roman association file.
+        Load ASDF files from a Roman association file.
 
         Parameters
         ----------
@@ -281,24 +298,34 @@ class ModelContainer(Iterable):
                     if re.match(member["exptype"], x, re.IGNORECASE)
                 ):
                     infiles.append(member)
-                    logger.debug(f'Files accepted for processing {member["expname"]}:')
+                    logger.debug(
+                        f'Files accepted for processing {member["expname"]}:'
+                    )
         else:
             infiles = list(asn_data["products"][0]["members"])
 
         asn_dir = op.dirname(asn_file_path) if asn_file_path else ""
         # Only handle the specified number of members.
-        sublist = infiles[: self.asn_n_members] if self.asn_n_members else infiles
+        sublist = (
+            infiles[: self.asn_n_members] if self.asn_n_members else infiles
+        )
         try:
             for member in sublist:
                 filepath = op.join(asn_dir, member["expname"])
-                update_model = any(attr in member for attr in RECOGNIZED_MEMBER_FIELDS)
+                update_model = any(
+                    attr in member for attr in RECOGNIZED_MEMBER_FIELDS
+                )
                 if update_model or self._save_open:
                     m = rdm.open(filepath, memmap=self._memmap)
                     m.meta["asn"] = {"exptype": member["exptype"]}
                     for attr, val in member.items():
                         if attr in RECOGNIZED_MEMBER_FIELDS:
                             if attr == "tweakreg_catalog":
-                                val = op.join(asn_dir, val) if val.strip() else None
+                                val = (
+                                    op.join(asn_dir, val)
+                                    if val.strip()
+                                    else None
+                                )
                             setattr(m.meta, attr, val)
 
                     if not self._save_open:
@@ -460,8 +487,4 @@ class ModelContainer(Iterable):
         -------
         dict
         """
-        return {
-            key: val
-            for key, val in self.to_flat_dict(include_arrays=False).items()
-            if isinstance(val, (str, int, float, complex, bool))
-        }
+        pass
