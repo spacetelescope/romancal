@@ -1,8 +1,11 @@
 0.11.1 (unreleased)
 ===================
 
-- Add `ModelContainer` to `romancal.datamodels`. [#710]
+documentation
+-------------
+- Updated wording about ELP and HLP in the Associations documentation for RTD
 
+- Updated the primary branch referenced in CONTRIBUTING to be main
 
 0.11.0 (2023-05-31)
 ===================
@@ -59,6 +62,7 @@ outlier_detection
 astrometric_utils
 -----------------
 - Added option to provide epoch so that the coordinates are corrected by proper motion. [#686]
+
 
 
 
@@ -231,6 +235,10 @@ Documentation
   documentation. [#488]
 
 - Added documentation for Distortion reference files. [#493]
+
+- Updated wording about ELP and HLP in the Associations documentation for RTD
+
+- Updated the primary branch referenced in CONTRIBUTING to be main
 
 
 linearity
