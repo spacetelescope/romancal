@@ -7,6 +7,10 @@ documentation
 
 - Updated the primary branch referenced in CONTRIBUTING to be main
 
+skymatch
+--------
+- Added SkyMatchStep to pipeline [#687]
+
 0.11.0 (2023-05-31)
 ===================
 
@@ -62,12 +66,6 @@ outlier_detection
 astrometric_utils
 -----------------
 - Added option to provide epoch so that the coordinates are corrected by proper motion. [#686]
-
-skymatch
---------
-- Added SkyMatchStep to pipeline [#687]
-
-
 
 0.10.0 (2023-02-21)
 ===================
