@@ -13,6 +13,7 @@ skymatch
 
 - Add `ModelContainer` to `romancal.datamodels`. [#710]
 
+- Updated the primary branch referenced in CONTRIBUTING to be main
 
 general
 -------
@@ -77,6 +78,12 @@ astrometric_utils
 -----------------
 - Added option to provide epoch so that the coordinates are corrected by proper motion. [#686]
 
+<<<<<<< HEAD
+=======
+
+
+
+>>>>>>> 46a1c77 (Documentation update for rtd and the contrib  (#674))
 0.10.0 (2023-02-21)
 ===================
 
