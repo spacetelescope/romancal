@@ -59,6 +59,9 @@ astrometric_utils
 -----------------
 - Added option to provide epoch so that the coordinates are corrected by proper motion. [#686]
 
+skymatch
+--------
+- Added SkyMatchStep to pipeline [#687]
 
 
 
