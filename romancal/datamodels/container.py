@@ -406,10 +406,10 @@ class ModelContainer(Iterable):
 
         group_dict = OrderedDict()
         for i, model in enumerate(self._models):
-            model = model if isinstance(model, rdm.DataModel) else open(model)
+            model = model if isinstance(model, rdm.DataModel) else rdm.open(model)
 
             if not self._save_open:
-                model = open(model, memmap=self._memmap)
+                model = rdm.open(model, memmap=self._memmap)
 
             params = [
                 str(getattr(model.meta.observation, param))
@@ -477,4 +477,10 @@ class ModelContainer(Iterable):
         -------
         dict
         """
-        pass
+        crds_header = {}
+        if len(self._models):
+            model = self._models[0]
+            model = model if isinstance(model, rdm.DataModel) else rdm.open(model)
+            crds_header |= model.get_crds_parameters()
+
+        return crds_header

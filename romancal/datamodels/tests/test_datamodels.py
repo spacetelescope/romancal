@@ -341,3 +341,25 @@ def test_model_container_copy(n, obj_type, tmp_path, request):
     assert all(
         type(o) == type(c) for o, c in zip(mc_copy_dict.values(), mc_dict.values())
     )
+
+
+@pytest.mark.parametrize("n, obj_type", [(2, "asdf"), (3, "datamodel")])
+def test_get_crds_parameters(n, obj_type, tmp_path, request):
+    filepath_list = request.getfixturevalue("setup_list_of_l2_files")(
+        n, obj_type, tmp_path
+    )
+
+    mc = ModelContainer(filepath_list)
+
+    res = mc.get_crds_parameters
+
+    assert type(res) == dict
+
+
+def test_get_crds_parameters_empty():
+    mc = ModelContainer()
+
+    crds_param = mc.get_crds_parameters
+
+    assert type(crds_param) == dict
+    assert len(crds_param) == 0
