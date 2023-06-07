@@ -14,12 +14,6 @@ skymatch
 
 general
 -------
-- Add `ModelContainer` to `romancal.datamodels`. [#710]
-- `ModelContainer` supports slice and dice.
-
-
-general
--------
 - `ModelContainer` supports slice and dice. [#710]
 
 - Add `ModelContainer` to `romancal.datamodels`. [#710]
