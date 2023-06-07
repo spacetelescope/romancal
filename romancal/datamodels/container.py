@@ -277,8 +277,8 @@ class ModelContainer(Iterable):
 
         Parameters
         ----------
-        asn_data
-            A ``roman_datamodels.associations.Association`` association dictionary
+        asn_data : `~roman_datamodels.associations.Association`
+            Association dictionary.
 
         asn_file_path: str
             Filepath of the association, if known.
