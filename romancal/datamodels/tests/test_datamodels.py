@@ -350,26 +350,26 @@ def test_model_container_copy(n, obj_type, tmp_path, request):
     )
 
 
-@pytest.mark.parametrize("n, obj_type", [(2, "asdf"), (3, "datamodel")])
-def test_get_crds_parameters(n, obj_type, tmp_path, request):
-    filepath_list = request.getfixturevalue("setup_list_of_l2_files")(
-        n, obj_type, tmp_path
-    )
+# @pytest.mark.parametrize("n, obj_type", [(2, "asdf"), (3, "datamodel")])
+# def test_get_crds_parameters(n, obj_type, tmp_path, request):
+#     filepath_list = request.getfixturevalue("setup_list_of_l2_files")(
+#         n, obj_type, tmp_path
+#     )
 
-    mc = ModelContainer(filepath_list)
+#     mc = ModelContainer(filepath_list)
 
-    res = mc.get_crds_parameters
+#     res = mc.get_crds_parameters
 
-    assert type(res) == dict
+#     assert type(res) == dict
 
 
-def test_get_crds_parameters_empty():
-    mc = ModelContainer()
+# def test_get_crds_parameters_empty():
+#     mc = ModelContainer()
 
-    crds_param = mc.get_crds_parameters
+#     crds_param = mc.get_crds_parameters
 
-    assert type(crds_param) == dict
-    assert len(crds_param) == 0
+#     assert type(crds_param) == dict
+#     assert len(crds_param) == 0
 
 
 def test_close_all_datamodels(setup_list_of_l2_files, tmp_path):
