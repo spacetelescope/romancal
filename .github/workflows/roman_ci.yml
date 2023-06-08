@@ -67,9 +67,15 @@ jobs:
       cache-path: /tmp/crds_cache
       cache-key: crds-${{ needs.crds_context.outputs.pmap }}
       envs: |
+        - linux: py39-oldestdeps-cov
+          pytest-results-summary: true
+        - linux: py39
+          pytest-results-summary: true
         - linux: py310
           pytest-results-summary: true
         - linux: py311-ddtrace
+          pytest-results-summary: true
+        - macos: py311-ddtrace
           pytest-results-summary: true
         - linux: py311-devdeps
           pytest-results-summary: true
