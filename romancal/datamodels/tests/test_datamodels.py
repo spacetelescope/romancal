@@ -1,3 +1,4 @@
+import json
 from io import StringIO
 from pathlib import Path
 
@@ -6,6 +7,11 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils as utils
 
 from romancal.datamodels.container import ModelContainer
+
+
+@pytest.fixture()
+def test_data_dir():
+    return Path.joinpath(Path(__file__).parent, "data")
 
 
 def create_asn_file(tmp_path):
@@ -27,7 +33,8 @@ def create_asn_file(tmp_path):
                     "members": [
                         {
                             "expname": "img_1.asdf",
-                            "exptype": "science"
+                            "exptype": "science",
+                            "tweakreg_catalog": "img_1_catalog.cat"
                         },
                         {
                             "expname": "img_2.asdf",
@@ -363,3 +370,101 @@ def test_get_crds_parameters_empty():
 
     assert type(crds_param) == dict
     assert len(crds_param) == 0
+
+
+def test_close_all_datamodels(setup_list_of_l2_files, tmp_path):
+    filepath_list = setup_list_of_l2_files(3, "datamodel", tmp_path)
+
+    mc = ModelContainer(filepath_list)
+
+    mc.close()
+
+    assert all(x._asdf._closed for x in mc)
+
+
+def test_add_tweakreg_catalog_attribute_from_asn(tmp_path):
+    # create ASDF files with L2 datamodel
+    utils.mk_level2_image(filepath=tmp_path / "img_1.asdf")
+    utils.mk_level2_image(filepath=tmp_path / "img_2.asdf")
+    # create ASN file that points to the ASDF files
+    asn_filepath = create_asn_file(tmp_path)
+    mc = ModelContainer(asn_filepath)
+
+    assert hasattr(mc[0].meta, "tweakreg_catalog")
+
+
+def test_models_grouped(setup_list_of_l2_files, tmp_path):
+    filepath_list = setup_list_of_l2_files(3, "datamodel", tmp_path)
+
+    mc = ModelContainer(filepath_list)
+
+    generated_group_id = mc.models_grouped
+
+    unique_exposure_parameters = [
+        "program",
+        "observation",
+        "visit",
+        "visit_file_group",
+        "visit_file_sequence",
+        "visit_file_activity",
+        "exposure",
+    ]
+    params = [
+        str(getattr(mc[0].meta.observation, param))
+        for param in unique_exposure_parameters
+    ]
+    expected_group_id = "roman" + "_".join(
+        ["".join(params[:3]), "".join(params[3:6]), params[6]]
+    )
+
+    assert all(hasattr(x.meta, "group_id") for x in mc)
+    assert list(generated_group_id.mapping.keys())[0] == expected_group_id
+    assert all(
+        id(l) == id(r)
+        for l, r in zip(list(generated_group_id.mapping.values())[0], mc._models)
+    )
+
+
+def test_merge_tree():
+    mc = ModelContainer()
+
+    a = {
+        "a_k1": "a_v1",
+        "a_k2": "a_v2",
+        "a_k3": "a_v3",
+        "a_k4": "a_v4",
+        "a_k5": "a_v5",
+    }
+    b = {
+        "b_k1": "b_v1",
+        "b_k2": "b_v2",
+        "b_k3": "b_v3",
+        "b_k4": "b_v4",
+        "b_k5": "b_v5",
+    }
+
+    mc.merge_tree(a, b)
+
+    assert all(x in a for x in b)
+    assert all(x in a.values() for x in b.values())
+
+
+@pytest.mark.parametrize("asn_filename", ["detector_asn.json", "detectorFOV_asn.json"])
+def test_parse_asn_files_properly(asn_filename, test_data_dir):
+    # instantiate a MC without reading/loading/saving datamodels
+    mc = ModelContainer(
+        test_data_dir / f"{asn_filename}",
+        return_open=False,
+        save_open=False,
+    )
+
+    with open(test_data_dir / f"{asn_filename}") as f:
+        json_content = json.load(f)
+    # extract expname from json file
+    expname_list = [
+        x["expname"].split("/")[-1] for x in json_content["products"][0]["members"]
+    ]
+
+    assert len(mc) == len(json_content["products"][0]["members"])
+    assert mc.asn_table_name == f"{asn_filename}"
+    assert all(x.split("/")[-1] in expname_list for x in mc)

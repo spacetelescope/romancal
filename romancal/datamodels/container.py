@@ -17,7 +17,9 @@ __all__ = [
     "ModelContainer",
 ]
 
-RECOGNIZED_MEMBER_FIELDS = ["tweakreg_catalog"]
+RECOGNIZED_MEMBER_FIELDS = [
+    "tweakreg_catalog",
+]
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -250,8 +252,11 @@ class ModelContainer(Iterable):
         return copy.deepcopy(self, memo=memo)
 
     def close(self):
-        if not self._iscopy and self._asdf is not None:
-            self._asdf.close()
+        """Close all datamodels."""
+        if not self._iscopy:
+            for model in self._models:
+                if isinstance(model, rdm.DataModel):
+                    model.close()
 
     @staticmethod
     def read_asn(filepath):
@@ -280,7 +285,7 @@ class ModelContainer(Iterable):
         asn_data : `~roman_datamodels.associations.Association`
             Association dictionary.
 
-        asn_file_path: str
+        asn_file_path : str
             Filepath of the association, if known.
         """
         # match the asn_exptypes to the exptype in the association and retain
@@ -316,7 +321,7 @@ class ModelContainer(Iterable):
                         if attr in RECOGNIZED_MEMBER_FIELDS:
                             if attr == "tweakreg_catalog":
                                 val = op.join(asn_dir, val) if val.strip() else None
-                            setattr(m.meta, attr, val)
+                            m.meta[attr] = val
 
                     if not self._save_open:
                         m.save(filepath, overwrite=True)
@@ -434,10 +439,6 @@ class ModelContainer(Iterable):
                 group_dict[group_id] = [model]
 
         return group_dict.values()
-
-    @property
-    def to_association(self):
-        pass
 
     def merge_tree(self, a, b):
         """
