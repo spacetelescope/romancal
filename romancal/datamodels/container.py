@@ -324,7 +324,7 @@ class ModelContainer(Iterable):
                             m.meta[attr] = val
 
                     if not self._save_open:
-                        m.save(filepath, overwrite=True)
+                        m.save(filepath)
                         m.close()
                 else:
                     m = filepath

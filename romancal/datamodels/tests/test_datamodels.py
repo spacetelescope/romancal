@@ -84,7 +84,7 @@ def setup_list_of_l2_files():
                 / f"test_model_container_input_as_list_of_filepaths_{i:02}.asdf"
             )
             # create an ASDF file with an L2 model
-            utils.mk_level2_image(filepath=filepath)
+            utils.mk_level2_image(filepath=filepath, shape=(100, 100))
             if type_of_returned_object == "asdf":
                 # append filepath to filepath list
                 result_list.append(str(filepath))
@@ -125,7 +125,7 @@ def test_model_container_init_path_to_asdf_or_datamodels(
 
 
 def test_model_container_init_with_path_to_asn_file(tmp_path):
-    # create ASDF files with L2 datamodel
+    # create ASDF files with L2 datamodel with custom tweakreg_catalog file
     utils.mk_level2_image(filepath=tmp_path / "img_1.asdf")
     utils.mk_level2_image(filepath=tmp_path / "img_2.asdf")
     # create ASN file that points to the ASDF files
