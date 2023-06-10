@@ -398,7 +398,9 @@ def test_models_grouped(setup_list_of_l2_files, tmp_path):
 
     mc = ModelContainer(filepath_list)
 
-    generated_group_id = mc.models_grouped
+    generated_group = mc.models_grouped
+    generated_group_id = {x.meta.group_id for x in list(generated_group)[0]}
+    generated_group_members = list(list(generated_group)[0])
 
     unique_exposure_parameters = [
         "program",
@@ -418,11 +420,8 @@ def test_models_grouped(setup_list_of_l2_files, tmp_path):
     )
 
     assert all(hasattr(x.meta, "group_id") for x in mc)
-    assert list(generated_group_id.mapping.keys())[0] == expected_group_id
-    assert all(
-        id(l) == id(r)
-        for l, r in zip(list(generated_group_id.mapping.values())[0], mc._models)
-    )
+    assert generated_group_id.pop() == expected_group_id
+    assert all(id(l) == id(r) for l, r in zip(generated_group_members, mc._models))
 
 
 def test_merge_tree():
