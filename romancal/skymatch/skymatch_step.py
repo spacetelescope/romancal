@@ -10,6 +10,7 @@ import numpy as np
 from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
 from roman_datamodels import datamodels as rdd
 
+from romancal.datamodels import ModelContainer
 from romancal.lib.dqflags import pixel
 from romancal.stpipe import RomanStep
 
@@ -53,7 +54,7 @@ class SkyMatchStep(RomanStep):
         self.log.setLevel(logging.DEBUG)
         self._is_asn = False
 
-        img = rdd.ModelContainer(
+        img = ModelContainer(
             input, save_open=not self._is_asn, return_open=not self._is_asn
         )
 
