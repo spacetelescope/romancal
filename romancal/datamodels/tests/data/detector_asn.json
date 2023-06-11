@@ -1,0 +1,91 @@
+{
+    "asn_type": "None",
+    "asn_rule": "DMS_ELPP_Base",
+    "version_id": null,
+    "code_version": "0.9.1.dev28+ge987cc9.d20230106",
+    "degraded_status": "No known degraded exposures in association.",
+    "program": "noprogram",
+    "constraints": "No constraints",
+    "asn_id": "a3001",
+    "target": "none",
+    "asn_pool": "none",
+    "products": [
+        {
+            "name": "r0000101001001001001_01101_0001_WFI_cal.asdf",
+            "members": [
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI01_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI02_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI03_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI04_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI05_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI06_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI07_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI08_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI09_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI10_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI11_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI12_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI13_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI14_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI15_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI16_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI17_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "data/r0000101001001001001_01101_0001_WFI18_cal.asdf",
+                    "exptype": "science"
+                }
+            ]
+        }
+    ]
+}
