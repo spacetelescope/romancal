@@ -1,5 +1,8 @@
 0.11.1 (unreleased)
 ===================
+tweakreg
+--------
+- WCS fit results are now available in meta.wcs_fit_results. [#714]
 
 documentation
 -------------
