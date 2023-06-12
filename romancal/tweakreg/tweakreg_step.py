@@ -489,6 +489,17 @@ class TweakRegStep(RomanStep):
 
                 # add fit results and new WCS to datamodel
                 image_model.meta["wcs_fit_results"] = imcat.meta["fit_info"]
+                # remove unwanted keys from WCS fit results
+                for k in [
+                    "eff_minobj",
+                    "matched_ref_idx",
+                    "matched_input_idx",
+                    "fit_RA",
+                    "fit_DEC",
+                    "fitmask",
+                ]:
+                    del image_model.meta["wcs_fit_results"][k]
+
                 image_model.meta.wcs = imcat.wcs
 
         return images
