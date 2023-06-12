@@ -487,6 +487,8 @@ class TweakRegStep(RomanStep):
                     #       for end-user searches.
                     imcat.wcs.name = f"FIT-LVL2-{self.abs_refcat}"
 
+                # add fit results and new WCS to datamodel
+                image_model.meta["wcs_fit_results"] = imcat.meta["fit_info"]
                 image_model.meta.wcs = imcat.wcs
 
         return images
