@@ -81,14 +81,10 @@ An example of the content of ``model.meta.wcs_fit_results`` is as follows:
           model.meta.wcs_fit_results = {
             "status": "SUCCESS",
             "fitgeom": "rshift",
-            "eff_minobj": 15,
             "matrix": array([[ 1.00000000e+00,  1.04301609e-13],
                   [-1.04301609e-13,  1.00000000e+00]]),
             "shift": array([ 7.45523163e-11, -1.42718944e-10]),
             "center": array([-183.87997841, -119.38467775]),
-            "fitmask": array([ True,  True,  True,  True,  True,  True,  True,  True,
-                    True, True,  True,  True,  True,  True,  True,  True,  True,  True,
-                    True,  True,  True,  True]),
             "proper_rot": 5.9760419875149846e-12,
             "proper": True,
             "rot": (5.9760419875149846e-12, 5.9760419875149846e-12),
@@ -98,22 +94,7 @@ An example of the content of ``model.meta.wcs_fit_results`` is as follows:
             "skew": 0.0,
             "rmse": 2.854152848489525e-10,
             "mae": 2.3250544963289652e-10,
-            "fit_RA": array([270.01386302, 269.99795615, 270.00108193, 269.94518666,
-                  269.94759872, 269.99163947, 270.01900723, 269.95120287,
-                  269.98008546, 269.95317371, 269.97381227, 270.05196151,
-                  270.05355886, 269.94897212, 269.93855642, 269.99154152,
-                  270.04188088, 269.96913766, 269.99023076, 270.01522837,
-                  269.97106812, 269.97702615]),
-            "fit_DEC": array([65.97753223, 65.97778305, 65.98290848, 65.98482665,
-                  65.9862519 , 65.98668115, 65.98882216, 65.98995814, 65.99429907,
-                  65.99490411, 65.99604151, 65.99798312, 65.99986204, 66.00201329,
-                  66.00214747, 66.0030868 , 66.00642501, 66.00807803, 66.00859865,
-                  66.01220723, 66.01447642, 66.01479239]),
-            "nmatches": 22,
-            "matched_ref_idx": array([ 0, 23, 15, 29, 36, 14, 35,  7, 32, 13,  9, 44,
-                   1, 40, 45, 46, 21, 16,  6, 28, 38, 18], dtype=uint64),
-            "matched_input_idx": array([18, 16,  8, 21, 20,  6,  4, 17,  2, 12,  3, 14,
-                  15, 13, 19,  0, 10, 7,  1,  5, 11,  9], dtype=uint64)
+            "nmatches": 22
           }
 
 Details about most of the parameters available in ``model.meta.wcs_fit_results`` can be
