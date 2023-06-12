@@ -3,6 +3,12 @@
 
 - Add regression test for TweakReg. [#707]
 
+documentation
+-------------
+- Updated wording about ELP and HLP in the Associations documentation for RTD
+
+- Updated the primary branch referenced in CONTRIBUTING to be main
+
 skymatch
 --------
 - Added SkyMatchStep to pipeline [#687]
@@ -14,19 +20,7 @@ general
 
 - Add `ModelContainer` to `romancal.datamodels`. [#710]
 
-documentation
--------------
-- Updated wording about ELP and HLP in the Associations documentation for RTD
 
-- Updated the primary branch referenced in CONTRIBUTING to be main
-
-skymatch
---------
-- Added SkyMatchStep to pipeline [#687]
-
-skymatch
---------
-- Added SkyMatchStep to pipeline [#687]
 
 0.11.0 (2023-05-31)
 ===================
