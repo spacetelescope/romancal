@@ -925,3 +925,21 @@ def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
     assert len(res) == 1
     assert res[0].meta.cal_step.tweakreg.lower() == "skipped"
     assert step.skip is True
+
+
+def test_fit_results_in_meta(tmp_path, base_image):
+    """
+    Test that the WCS fit results from tweakwcs are available in the meta tree.
+    """
+
+    img = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img)
+
+    step = TweakRegStep()
+    res = step.process([img])
+
+    assert type(res) == ModelContainer
+    assert [
+        hasattr(x.meta, "wcs_fit_results") and len(x.meta.wcs_fit_results) > 0
+        for x in res
+    ]
