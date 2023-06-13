@@ -2,11 +2,9 @@
 ===================
 tweakreg
 --------
-- WCS fit results are now available in meta.wcs_fit_results. [#714]
-
-tweakreg
---------
 - Add regression test for TweakReg. [#707]
+
+- WCS fit results are now available in meta.wcs_fit_results. [#714]
 
 documentation
 -------------
