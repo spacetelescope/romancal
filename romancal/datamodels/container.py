@@ -5,7 +5,7 @@ import os
 import os.path as op
 import re
 from collections import OrderedDict
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 
 from roman_datamodels import datamodels as rdm
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
-class ModelContainer(Iterable):
+class ModelContainer(Sequence, Iterable):
     """
     A container for holding DataModels.
 
