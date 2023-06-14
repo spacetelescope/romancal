@@ -1,5 +1,8 @@
 0.11.1 (unreleased)
 ===================
+tweakreg
+--------
+- WCS fit results are now available in meta.wcs_fit_results. [#714]
 
 documentation
 -------------
@@ -12,6 +15,14 @@ documentation
 skymatch
 --------
 - Added SkyMatchStep to pipeline [#687]
+
+
+general
+-------
+- `ModelContainer` supports slice and dice. [#710]
+
+- Add `ModelContainer` to `romancal.datamodels`. [#710]
+
 
 0.11.0 (2023-05-31)
 ===================
@@ -68,6 +79,7 @@ outlier_detection
 astrometric_utils
 -----------------
 - Added option to provide epoch so that the coordinates are corrected by proper motion. [#686]
+
 
 0.10.0 (2023-02-21)
 ===================

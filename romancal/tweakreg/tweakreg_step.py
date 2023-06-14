@@ -7,11 +7,13 @@ from pathlib import Path
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
-from roman_datamodels import datamodels
+from roman_datamodels import datamodels as rdm
 from roman_datamodels.util import is_association
 from tweakwcs.correctors import JWSTWCSCorrector
 from tweakwcs.imalign import align_wcs
 from tweakwcs.matchutils import XYXYMatch
+
+from ..datamodels import ModelContainer
 
 # LOCAL
 from ..stpipe import RomanStep
@@ -26,7 +28,7 @@ def _oxford_or_str_join(str_list):
     if nelem == 1:
         return str_list
     elif nelem == 2:
-        return str_list[0] + " or " + str_list[1]
+        return f"{str_list[0]} or {str_list[1]}"
     else:
         return ", ".join(map(repr, str_list[:-1])) + ", or " + repr(str_list[-1])
 
@@ -97,7 +99,7 @@ class TweakRegStep(RomanStep):
 
         try:
             if use_custom_catalogs and catdict:
-                images = datamodels.ModelContainer()
+                images = ModelContainer()
                 if isinstance(input, str):
                     asn_dir = os.path.dirname(input)
                     asn_data = images.read_asn(input)
@@ -113,7 +115,7 @@ class TweakRegStep(RomanStep):
                 elif is_association(input):
                     images.from_asn(input)
                 else:
-                    images = datamodels.ModelContainer(input)
+                    images = ModelContainer(input)
                     for im in images:
                         filename = im.meta.filename
                         if filename in catdict:
@@ -127,7 +129,7 @@ class TweakRegStep(RomanStep):
                                 "tweakreg_catalog_name": catdict[filename],
                             }
             else:
-                images = datamodels.ModelContainer(input)
+                images = ModelContainer(input)
         except TypeError as e:
             e.args = (
                 "Input to tweakreg must be a list of DataModels, an "
@@ -253,8 +255,8 @@ class TweakRegStep(RomanStep):
             for model in g:
                 model = (
                     model
-                    if isinstance(model, datamodels.DataModel)
-                    else datamodels.open(os.path.basename(model))
+                    if isinstance(model, rdm.DataModel)
+                    else rdm.open(os.path.basename(model))
                 )
             self.log.info(f"* Images in GROUP '{group_name}':")
             for im in imcats:
@@ -485,6 +487,19 @@ class TweakRegStep(RomanStep):
                     #       for end-user searches.
                     imcat.wcs.name = f"FIT-LVL2-{self.abs_refcat}"
 
+                # add fit results and new WCS to datamodel
+                image_model.meta["wcs_fit_results"] = imcat.meta["fit_info"]
+                # remove unwanted keys from WCS fit results
+                for k in [
+                    "eff_minobj",
+                    "matched_ref_idx",
+                    "matched_input_idx",
+                    "fit_RA",
+                    "fit_DEC",
+                    "fitmask",
+                ]:
+                    del image_model.meta["wcs_fit_results"][k]
+
                 image_model.meta.wcs = imcat.wcs
 
         return images
@@ -505,8 +520,8 @@ class TweakRegStep(RomanStep):
     def _imodel2wcsim(self, image_model):
         image_model = (
             image_model
-            if isinstance(image_model, datamodels.DataModel)
-            else datamodels.open(os.path.basename(image_model))
+            if isinstance(image_model, rdm.DataModel)
+            else rdm.open(os.path.basename(image_model))
         )
         catalog = image_model.meta.tweakreg_catalog
         model_name = os.path.splitext(image_model.meta.filename)[0].strip("_- ")
@@ -558,7 +573,7 @@ class TweakRegStep(RomanStep):
 def _common_name(group):
     file_names = []
     for im in group:
-        if isinstance(im, datamodels.DataModel):
+        if isinstance(im, rdm.DataModel):
             file_names.append(os.path.splitext(im.meta.filename)[0].strip("_- "))
         else:
             raise TypeError("Input must be a list of datamodels list.")

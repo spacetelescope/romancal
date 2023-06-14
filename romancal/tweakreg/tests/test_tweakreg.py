@@ -1,4 +1,5 @@
 import copy
+import json
 import os
 from io import StringIO
 from typing import Tuple
@@ -17,6 +18,7 @@ from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
+from romancal.datamodels import ModelContainer
 from romancal.tweakreg.astrometric_utils import get_catalog
 from romancal.tweakreg.tweakreg_step import (
     DEFAULT_ABS_REFCAT,
@@ -28,6 +30,45 @@ from romancal.tweakreg.tweakreg_step import (
 class MockConnectionError:
     def __init__(self, *args, **kwargs):
         raise requests.exceptions.ConnectionError
+
+
+def create_asn_file(tmp_path):
+    asn_content = """
+        {
+            "asn_type": "None",
+            "asn_rule": "DMS_ELPP_Base",
+            "version_id": null,
+            "code_version": "0.9.1.dev28+ge987cc9.d20230106",
+            "degraded_status": "No known degraded exposures in association.",
+            "program": "noprogram",
+            "constraints": "No constraints",
+            "asn_id": "a3001",
+            "target": "none",
+            "asn_pool": "test_pool_name",
+            "products": [
+                {
+                    "name": "files.asdf",
+                    "members": [
+                        {
+                            "expname": "img_1.asdf",
+                            "exptype": "science"
+                        },
+                        {
+                            "expname": "img_2.asdf",
+                            "exptype": "science"
+                        }
+                    ]
+                }
+            ]
+        }
+"""
+    asn_file_path = str(tmp_path / "sample_asn.json")
+    asn_file = StringIO()
+    asn_file.write(asn_content)
+    with open(asn_file_path, mode="w") as f:
+        print(asn_file.getvalue(), file=f)
+
+    return asn_file_path
 
 
 def update_wcsinfo(input_dm):
@@ -330,7 +371,7 @@ def add_tweakreg_catalog_attribute(
         save_catalogs=save_catalogs,
     )
 
-    input_dm.meta["source_detection"] = {}
+    input_dm.meta["source_detection"] = maker_utils.mk_source_detection()
 
     if save_catalogs:
         # SourceDetectionStep adds the catalog path+filename
@@ -371,19 +412,18 @@ def base_image():
 @pytest.mark.parametrize(
     "input, error_type",
     [
-        (list(), ValueError),
-        ([""], FileNotFoundError),
-        ("", (ValueError, TypeError)),
-        ([1, 2, 3], TypeError),
+        (list(), (TypeError,)),
+        ([""], (TypeError,)),
+        (["", ""], (TypeError,)),
+        ("", (TypeError,)),
+        ([1, 2, 3], (TypeError,)),
     ],
 )
 def test_tweakreg_raises_error_on_invalid_input(input, error_type):
+    # sourcery skip: list-literal
     """Test that TweakReg raises an error when an invalid input is provided."""
     with pytest.raises(Exception) as exec_info:
         TweakRegStep.call(input)
-
-    if not hasattr(error_type, "__len__"):
-        error_type = (error_type,)
 
     assert type(exec_info.value) in error_type
 
@@ -400,12 +440,55 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
 
 
 def test_tweakreg_returns_modelcontainer(tmp_path, base_image):
-    """Test that TweakReg returns a ModelContainer."""
-    img = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img)
-    res = TweakRegStep.call([img])
+    """Test that TweakReg always returns a ModelContainer."""
 
-    assert type(res) == rdm.ModelContainer
+    def clean_result(result):
+        """
+        Remove meta.tweakreg_catalog from 'tweaked' file.
+
+        Parameters
+        ----------
+        result : ModelContainer
+            A ModelContainer with the results from TweakRegStep.
+        """
+        for img in result:
+            del img.meta["tweakreg_catalog"]
+
+    img_1 = base_image(shift_1=1000, shift_2=1000)
+    img_2 = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
+    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
+    img_1.save(tmp_path / "img_1.asdf")
+    img_2.save(tmp_path / "img_2.asdf")
+    asn_filepath = create_asn_file(tmp_path)
+
+    step = TweakRegStep()
+
+    # test four different inputs:
+    # 1 - list of strings containing the path to ASDF files
+    tmp_path_str = tmp_path.as_posix()
+    res_1 = step.process(
+        [
+            f"{tmp_path_str}/img_1.asdf",
+            f"{tmp_path_str}/img_2.asdf",
+        ]
+    )
+    assert type(res_1) == ModelContainer
+    clean_result(res_1)
+
+    # 2 - list of pathlib.Path objects containing the path to ASDF files
+    res_2 = step.process([tmp_path / "img_1.asdf", tmp_path / "img_2.asdf"])
+    assert type(res_2) == ModelContainer
+    clean_result(res_2)
+
+    # 3 - list of DataModels
+    res_3 = step.process([img_1, img_2])
+    assert type(res_3) == ModelContainer
+    clean_result(res_3)
+
+    # 4 - string containing the full path to an ASN file
+    res_4 = step.process(asn_filepath)
+    assert type(res_4) == ModelContainer
 
 
 def test_tweakreg_updates_cal_step(tmp_path, base_image):
@@ -768,6 +851,60 @@ def test_remove_tweakreg_catalog_data(
     assert hasattr(img.meta, "tweakreg_catalog")
 
 
+def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
+    """Test that TweakReg can parse an ASN file properly."""
+
+    def clean_result(result):
+        """
+        Remove meta.tweakreg_catalog from 'tweaked' file.
+
+        Parameters
+        ----------
+        result : ModelContainer
+            A ModelContainer with the results from TweakRegStep.
+        """
+        for img in result:
+            del img.meta["tweakreg_catalog"]
+
+    img_1 = base_image(shift_1=1000, shift_2=1000)
+    img_2 = base_image(shift_1=1000, shift_2=1000)
+    img_1.meta["filename"] = "img_1.asdf"
+    img_2.meta["filename"] = "img_2.asdf"
+    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
+    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
+    img_1.save(tmp_path / "img_1.asdf")
+    img_2.save(tmp_path / "img_2.asdf")
+    asn_filepath = create_asn_file(tmp_path)
+    with open(asn_filepath) as f:
+        asn_content = json.load(f)
+
+    step = TweakRegStep()
+
+    res = step.process(asn_filepath)
+    assert type(res) == ModelContainer
+
+    assert hasattr(res[0].meta, "asn")
+    assert (
+        res[0].meta.asn["exptype"]
+        == asn_content["products"][0]["members"][0]["exptype"]
+    )
+    assert (
+        res[1].meta.asn["exptype"]
+        == asn_content["products"][0]["members"][1]["exptype"]
+    )
+    assert res[0].meta.asn["pool_name"] == asn_content["asn_pool"]
+    assert res[1].meta.asn["pool_name"] == asn_content["asn_pool"]
+
+    assert res[0].meta.filename == img_1.meta.filename
+    assert res[1].meta.filename == img_2.meta.filename
+
+    assert type(res[0]) == type(img_1)
+    assert type(res[1]) == type(img_2)
+
+    assert (res[0].data == img_1.data).all()
+    assert (res[1].data == img_2.data).all()
+
+
 def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
     tmp_path, base_image, monkeypatch
 ):
@@ -784,7 +921,25 @@ def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
     monkeypatch.setattr("requests.get", MockConnectionError)
     res = step.process([img])
 
-    assert type(res) == rdm.ModelContainer
+    assert type(res) == ModelContainer
     assert len(res) == 1
     assert res[0].meta.cal_step.tweakreg.lower() == "skipped"
     assert step.skip is True
+
+
+def test_fit_results_in_meta(tmp_path, base_image):
+    """
+    Test that the WCS fit results from tweakwcs are available in the meta tree.
+    """
+
+    img = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img)
+
+    step = TweakRegStep()
+    res = step.process([img])
+
+    assert type(res) == ModelContainer
+    assert [
+        hasattr(x.meta, "wcs_fit_results") and len(x.meta.wcs_fit_results) > 0
+        for x in res
+    ]
