@@ -57,7 +57,7 @@ and therefore on the primary astronomical quantity of interest.  The
 second term, however, depends on the number of reads in a resultant
 and may vary from resultant to resultant in Roman.  This, if
 uncorrected, can lead to a bias in the fluxes we derive from Roman
-data for stars.
+data for sources.
 
 However, we need take no special action to correct for this effect.
 The reference pixels are affected by the discretization bias in the
