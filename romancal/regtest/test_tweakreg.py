@@ -52,6 +52,12 @@ def test_tweakreg(rtdata, ignore_asdf_paths):
     assert tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"
 
     step.log.info(
+        f"""DMS280 MSG: TweakReg created new coordinate frame 'v2v3corr'? :\
+            {"v2v3corr" in tweakreg_out.meta.wcs.available_frames}"""
+    )
+    assert "v2v3corr" in tweakreg_out.meta.wcs.available_frames
+
+    step.log.info(
         "DMS280 MSG: Was the proper TweakReg data produced?"
         f" : {(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}"
     )
