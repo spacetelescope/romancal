@@ -39,3 +39,47 @@ pixels. The border reference pixels are trimmed from this image duing
 ramp_fit. The additional arrays for the original border reference pixels
 (which are 3D) and their DQ arrays, and the Amp 33 reference pixels, remain in
 the Level 2 file.
+
+Discretization bias & reference pixel correction
+------------------------------------------------
+
+The analog-to-digital conversion in the Roman electronics performs an
+integer floor operation that biases the downlinked signal low relative
+to the actual number of photons observed by the instrument.  The
+equation for this "discretization bias" is given by:
+
+.. math:: \mathrm{bias} = -0.5 - 0.5 \frac{N-1}{N} \, ,
+
+in units of counts, where :math:`N` is the number of reads entering
+into a particular resultant.  This is a small effect.  The constant :math:`-0.5`
+term is degenerate with the pedestal and has no effect on ramp slopes
+and therefore on the primary astronomical quantity of interest.  The
+second term, however, depends on the number of reads in a resultant
+and may vary from resultant to resultant in Roman.  This, if
+uncorrected, can lead to a bias in the fluxes we derive from Roman
+data for sources.
+
+However, we need take no special action to correct for this effect.
+The reference pixels are affected by the discretization bias in the
+same way as the science pixels, and so when the reference pixels are
+subtracted (roughly speaking!) from the science pixels, this bias cancels.
+Exactly when this cancellation occurs depends on the details of the reference
+pixel correction step.  Presently the reference pixel correct includes
+a component that removes trends across each amplifier and frame using
+the reference pixels at the top and bottom of the amplifier.  This
+removes the discretization bias.
+
+We note that even if the discretization bias were not removed at the
+reference pixel correction stage, it could be corrected at the dark
+subtraction step.  Provided that dark reference images are processed
+through the usual reference pixel correction step, they will have the
+same biases present in the reference-pixel-corrected images.  We have
+decided to perform the dark subtraction of Roman images via
+subtracting precomputed images for each MA table rather than scaling a
+fixed dark rate image by the mean time of each resultant.  These
+precomputed dark images will contain not only the dark current but
+also electronic effects like the discretization bias.
+However, it is better to correct this effect during the
+reference pixel correction so that the dark reference images better
+represent the dark current and can be more easily used to compute
+Poisson uncertainties stemming from dark current.
