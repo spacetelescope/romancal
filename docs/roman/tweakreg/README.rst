@@ -70,8 +70,37 @@ Alignment
 ---------
 The source catalog (either created by `SourceDetectionStep` or provided by the user)
 gets cross-matched and fit to an astrometric reference catalog
-(set by ``TweakRegStep.abs_refcat``). The pipeline initially supports fitting to
-any Gaia Data Release (defaults to `GAIADR3`).
+(set by ``TweakRegStep.abs_refcat``) and the results are stored in
+``model.meta.wcs_fit_results``. The pipeline initially supports fitting to any
+Gaia Data Release (defaults to `GAIADR3`).
+
+An example of the content of ``model.meta.wcs_fit_results`` is as follows:
+
+  .. code-block:: python
+
+          model.meta.wcs_fit_results = {
+            "status": "SUCCESS",
+            "fitgeom": "rshift",
+            "matrix": array([[ 1.00000000e+00,  1.04301609e-13],
+                  [-1.04301609e-13,  1.00000000e+00]]),
+            "shift": array([ 7.45523163e-11, -1.42718944e-10]),
+            "center": array([-183.87997841, -119.38467775]),
+            "proper_rot": 5.9760419875149846e-12,
+            "proper": True,
+            "rot": (5.9760419875149846e-12, 5.9760419875149846e-12),
+            "<rot>": 5.9760419875149846e-12,
+            "scale": (1.0, 1.0),
+            "<scale>": 1.0,
+            "skew": 0.0,
+            "rmse": 2.854152848489525e-10,
+            "mae": 2.3250544963289652e-10,
+            "nmatches": 22
+          }
+
+Details about most of the parameters available in ``model.meta.wcs_fit_results`` can be
+found on the TweakWCS_'s webpage, under its linearfit_ module.
+
+
 
 WCS Correction
 --------------
@@ -226,6 +255,8 @@ Parameters used for absolute astrometry to a reference catalog.
 Further Documentation
 ---------------------
 The underlying algorithms as well as formats of source catalogs are described
-in more detail at
+in more detail on the TweakWCS_ webpage.
 
-https://tweakwcs.readthedocs.io/en/latest/
+.. _TweakWCS: https://tweakwcs.readthedocs.io/en/latest/
+.. _linearfit: https://tweakwcs.readthedocs.io/en/latest/source/linearfit.html
+    #tweakwcs.linearfit.iter_linear_fit
