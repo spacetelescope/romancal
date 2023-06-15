@@ -17,7 +17,7 @@ def test_tweakreg(rtdata, ignore_asdf_paths):
     # - photom;
     # - source_detection.
     input_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg.asdf"
-    output_data = input_data
+    output_data = "r0000401001001001001_01101_0001_WFI01_output.asdf"
     truth_data = "r0000401001001001001_01101_0001_WFI01_cal_twkreg_proc.asdf"
 
     rtdata.get_data(f"WFI/image/{input_data}")
@@ -27,9 +27,9 @@ def test_tweakreg(rtdata, ignore_asdf_paths):
     rtdata.output = output_data
 
     # add filename (this is set in exposure_pipeline right after running dq_init)
-    with rdm.open(rtdata.input) as model:
-        model.meta["filename"] = Path(rtdata.input).name
-        model.save(Path(rtdata.input))
+    # with rdm.open(rtdata.input) as model:
+    #     model.meta["filename"] = Path(rtdata.input).name
+    #     model.save(Path(rtdata.input))
 
     # instantiate TweakRegStep (for running and log access)
     step = TweakRegStep()
@@ -41,15 +41,19 @@ def test_tweakreg(rtdata, ignore_asdf_paths):
         "--suffix='output'",
     ]
     RomanStep.from_cmdline(args)
-    tweakreg_out = rdm.open(
-        f"{Path(rtdata.output).stem}_output{Path(rtdata.output).suffix}"
-    )
+    tweakreg_out = rdm.open(rtdata.output)
 
     step.log.info(
         "DMS280 MSG: TweakReg step recorded as complete? :"
         f' {tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"}'
     )
     assert tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"
+
+    step.log.info(
+        f"""DMS280 MSG: TweakReg created new attribute with fit results? :\
+            {"wcs_fit_results" in tweakreg_out.meta}"""
+    )
+    assert "wcs_fit_results" in tweakreg_out.meta
 
     step.log.info(
         f"""DMS280 MSG: TweakReg created new coordinate frame 'v2v3corr'? :\
@@ -61,4 +65,6 @@ def test_tweakreg(rtdata, ignore_asdf_paths):
         "DMS280 MSG: Was the proper TweakReg data produced?"
         f" : {(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}"
     )
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    assert (
+        compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    )
