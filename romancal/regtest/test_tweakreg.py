@@ -24,11 +24,6 @@ def test_tweakreg(rtdata, ignore_asdf_paths):
     rtdata.input = input_data
     rtdata.output = output_data
 
-    # add filename (this is set in exposure_pipeline right after running dq_init)
-    # with rdm.open(rtdata.input) as model:
-    #     model.meta["filename"] = Path(rtdata.input).name
-    #     model.save(Path(rtdata.input))
-
     # instantiate TweakRegStep (for running and log access)
     step = TweakRegStep()
 
