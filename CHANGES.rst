@@ -12,6 +12,8 @@ documentation
 
 - Updated the primary branch referenced in CONTRIBUTING to be main
 
+- Updated reference pixel correction documentation to include discretization bias discussion. [#716]
+
 skymatch
 --------
 - Added SkyMatchStep to pipeline [#687]
