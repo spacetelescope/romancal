@@ -86,10 +86,12 @@ bc0.pip_reqs_files = ['requirements-sdp.txt']
 bc0.build_cmds = [
     "pip install -e .[test,ephem]",
     "pip install pytest-xdist pytest-sugar ddtrace",
-    "pip freeze",
     'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
 ]
 bc0.build_cmds = bc0.build_cmds + PipInject(env.OVERRIDE_REQUIREMENTS)
+bc0.build_cmds = bc0.build_cmds + [
+    "pip list"
+]
 bc0.test_cmds = [
     "pytest --cov-report=xml:coverage.xml --cov=./ -r sxf -n auto --bigdata --slow \
     --ddtrace \
