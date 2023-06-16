@@ -3,7 +3,6 @@
 
    assign_wcs/index.rst
    associations/index.rst
-   datamodels/index.rst
    dark_current/index.rst
    dq_init/index.rst
    flatfield/index.rst
@@ -16,3 +15,4 @@
    source_detection/index.rst
    tweakreg/index.rst
    outlier_detection/index.rst
+   skymatch/index.rst

@@ -216,8 +216,7 @@ def test_dqinit_step_interface(instrument, exptype):
 
     # Create mask model
     maskref = stnode.MaskRef()
-    meta = {}
-    maker_utils.add_ref_common(meta)
+    meta = maker_utils.mk_ref_common()
     meta["instrument"]["optical_element"] = "F158"
     meta["instrument"]["detector"] = "WFI01"
     meta["reftype"] = "MASK"
@@ -273,8 +272,7 @@ def test_dqinit_refpix(instrument, exptype):
 
     # Create mask model
     maskref = stnode.MaskRef()
-    meta = {}
-    maker_utils.add_ref_common(meta)
+    meta = maker_utils.mk_ref_common()
     meta["instrument"]["optical_element"] = "F158"
     meta["instrument"]["detector"] = "WFI01"
     meta["reftype"] = "MASK"

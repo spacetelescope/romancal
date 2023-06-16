@@ -1,7 +1,28 @@
 0.11.1 (unreleased)
 ===================
+tweakreg
+--------
+- WCS fit results are now available in meta.wcs_fit_results. [#714]
 
--
+documentation
+-------------
+- Updated wording about ELP and HLP in the Associations documentation for RTD
+
+- Updated the primary branch referenced in CONTRIBUTING to be main
+
+- Updated reference pixel correction documentation to include discretization bias discussion. [#716]
+
+skymatch
+--------
+- Added SkyMatchStep to pipeline [#687]
+
+
+general
+-------
+- `ModelContainer` supports slice and dice. [#710]
+
+- Add `ModelContainer` to `romancal.datamodels`. [#710]
+
 
 0.11.0 (2023-05-31)
 ===================
@@ -41,6 +62,8 @@ general
 
 source_detection
 ----------------
+- Bug fix to ensure that the returned result is a copy of the input datamodel. [#700]
+
 - Added SourceDetection Step to pipeline [#608]
 
 - Added option of fixed random seed for unit tests to avoid intermittent failures from randomness. [#668]
@@ -56,7 +79,6 @@ outlier_detection
 astrometric_utils
 -----------------
 - Added option to provide epoch so that the coordinates are corrected by proper motion. [#686]
-
 
 
 0.10.0 (2023-02-21)
@@ -228,6 +250,10 @@ Documentation
   documentation. [#488]
 
 - Added documentation for Distortion reference files. [#493]
+
+- Updated wording about ELP and HLP in the Associations documentation for RTD
+
+- Updated the primary branch referenced in CONTRIBUTING to be main
 
 
 linearity

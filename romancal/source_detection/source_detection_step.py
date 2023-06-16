@@ -181,8 +181,10 @@ class SourceDetectionStep(RomanStep):
 
             input_model.meta.cal_step["source_detection"] = "COMPLETE"
 
-            # just pass input model to next step - catalog is stored in meta
-            return input_model
+            output_model = input_model
+
+        # just pass input model to next step - catalog is stored in meta
+        return output_model
 
     def _calc_2D_background(self):
         """Calculates a 2D background image.
