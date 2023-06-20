@@ -35,12 +35,12 @@ dqflags = {
         "Roman CRDS servers are not currently available outside the internal network"
     ),
 )
-def test_matable_default(make_data):
+def test_ols_cas21_default(make_data):
     model, override_gain, override_readnoise = make_data
 
     out_model = RampFitStep.call(
         model,
-        algorithm='matable',
+        algorithm='ols_cas21',
         override_gain=override_gain,
         override_readnoise=override_readnoise,
     )
@@ -90,16 +90,13 @@ def make_data(request):
 # #########
 
 def generate_ramp_model(shape, deltatime=1):
-    data = u.Quantity(
-        (np.random.random(shape) * 0.5).astype(np.float32), u.DN, dtype=np.float32
-    )
-    err = u.Quantity(
-        (np.random.random(shape) * 0.0001).astype(np.float32), u.DN, dtype=np.float32
-    )
+    data = (np.random.random(shape) * 0.5).astype(np.float32)
+    err = (np.random.random(shape) * 0.0001).astype(np.float32)
     pixdq = np.zeros(shape=shape[1:], dtype=np.uint32)
     gdq = np.zeros(shape=shape, dtype=np.uint8)
 
     dm_ramp = maker_utils.mk_ramp(shape)
+    dm_ramp.data = u.Quantity(data, u.DN, dtype=np.float32)
     dm_ramp.data = u.Quantity(data, u.DN, dtype=np.float32)
     dm_ramp.pixeldq = pixdq
     dm_ramp.groupdq = gdq

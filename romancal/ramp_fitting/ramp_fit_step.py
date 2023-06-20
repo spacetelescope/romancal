@@ -7,7 +7,7 @@ from astropy import units as u
 from roman_datamodels import datamodels as rdd
 from roman_datamodels import maker_utils
 from roman_datamodels import stnode as rds
-from stcal.ramp_fitting import matable_fit, ramp_fit
+from stcal.ramp_fitting import ols_cas21_fit, ramp_fit
 
 from romancal.lib import dqflags
 from romancal.stpipe import RomanStep
@@ -15,21 +15,8 @@ from romancal.stpipe import RomanStep
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-
 __all__ = ["RampFitStep"]
 
-# Data to copy from RampModel to ImageModel
-DATA_KEYS = [
-    'amp33',
-    'border_ref_pix_left',
-    'border_ref_pix_right',
-    'border_ref_pix_top',
-    'border_ref_pix_bottom',
-    'dq_border_ref_pix_left',
-    'dq_border_ref_pix_right',
-    'dq_border_ref_pix_top',
-    'dq_border_ref_pix_bottom',
-]
 
 class RampFitStep(RomanStep):
 
@@ -39,7 +26,7 @@ class RampFitStep(RomanStep):
     """
 
     spec = """
-        algorithm = option('ols','ols_cas21',default='ols')  # Algorithm to use to fit.
+        algorithm = option('ols','ols_cas21',default='ols_cas21')  # Algorithm to use to fit.
         save_opt = boolean(default=False) # Save optional output
         opt_name = string(default='')
         maximum_cores = option('none','quarter','half','all',default='none') # max number of processes to create
@@ -147,13 +134,13 @@ class RampFitStep(RomanStep):
         out_model : ImageModel
             Model containing a count-rate image.
         """
-        resultants = input_model.data
+        resultants = input_model.data.value
         dq = input_model.groupdq
-        read_noise = input_model.err
+        read_noise = input_model.err.value
         read_pattern = input_model.meta.exposure.read_pattern
 
         # Fit the ramps
-        ramppar, rampvar = matable_fit.fit_ramps_casertano(resultants, dq, read_noise, read_pattern)
+        ramppar, rampvar = ols_cas21_fit.fit_ramps_casertano(resultants, dq, read_noise, read_pattern)
         var_rnoise = rampvar[..., 0, 1, 1]
         var_poisson = rampvar[..., 1, 1, 1]
         err = np.sqrt(var_poisson + var_rnoise)
