@@ -8,14 +8,14 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
-from roman_datamodels.util import is_association
 from tweakwcs.correctors import JWSTWCSCorrector
 from tweakwcs.imalign import align_wcs
 from tweakwcs.matchutils import XYXYMatch
 
-from ..datamodels import ModelContainer
+from romancal.lib.basic_utils import is_association
 
 # LOCAL
+from ..datamodels import ModelContainer
 from ..stpipe import RomanStep
 from . import astrometric_utils as amutils
 
