@@ -5,7 +5,7 @@ import os
 import os.path as op
 import re
 from collections import OrderedDict
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 
 from roman_datamodels import datamodels as rdm
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
-class ModelContainer(Iterable):
+class ModelContainer(Sequence, Iterable):
     """
     A container for holding DataModels.
 
@@ -233,9 +233,9 @@ class ModelContainer(Iterable):
             raise ValueError("Only datamodels can be used.")
 
     def extend(self, input_object):
-        if not isinstance(input_object, (Iterable, rdm.DataModel)) or isinstance(
-            input_object, str
-        ):
+        if not isinstance(
+            input_object, (Iterable, rdm.DataModel)
+        ) or isinstance(input_object, str):
             raise ValueError("Not a valid input object.")
         elif all(isinstance(x, rdm.DataModel) for x in input_object):
             self._models.extend(input_object)
@@ -303,24 +303,34 @@ class ModelContainer(Iterable):
                     if re.match(member["exptype"], x, re.IGNORECASE)
                 ):
                     infiles.append(member)
-                    logger.debug(f'Files accepted for processing {member["expname"]}:')
+                    logger.debug(
+                        f'Files accepted for processing {member["expname"]}:'
+                    )
         else:
             infiles = list(asn_data["products"][0]["members"])
 
         asn_dir = op.dirname(asn_file_path) if asn_file_path else ""
         # Only handle the specified number of members.
-        sublist = infiles[: self.asn_n_members] if self.asn_n_members else infiles
+        sublist = (
+            infiles[: self.asn_n_members] if self.asn_n_members else infiles
+        )
         try:
             for member in sublist:
                 filepath = op.join(asn_dir, member["expname"])
-                update_model = any(attr in member for attr in RECOGNIZED_MEMBER_FIELDS)
+                update_model = any(
+                    attr in member for attr in RECOGNIZED_MEMBER_FIELDS
+                )
                 if update_model or self._save_open:
                     m = rdm.open(filepath, memmap=self._memmap)
                     m.meta["asn"] = {"exptype": member["exptype"]}
                     for attr, val in member.items():
                         if attr in RECOGNIZED_MEMBER_FIELDS:
                             if attr == "tweakreg_catalog":
-                                val = op.join(asn_dir, val) if val.strip() else None
+                                val = (
+                                    op.join(asn_dir, val)
+                                    if val.strip()
+                                    else None
+                                )
                             m.meta[attr] = val
 
                     if not self._save_open:
@@ -346,40 +356,67 @@ class ModelContainer(Iterable):
                     model.meta.asn["table_name"] = self.asn_table_name
                     model.meta.asn["pool_name"] = self.asn_pool_name
 
-    def save(self, dir_path=None, *args, **kwargs):
+    def save(self, path=None, dir_path=None, save_model_func=None, **kwargs):
         """
         Write out models in container to ASDF.
 
         Parameters
         ----------
+        path : str or func or None
+            - If None, the `meta.filename` is used for each model.
+            - If a string, the string is used as a root and an index is
+              appended.
+            - If a function, the function takes the two arguments:
+              the value of model.meta.filename and the
+              `idx` index, returning constructed file name.
+
         dir_path : str
             Directory to write out files.  Defaults to current working dir.
             If directory does not exist, it creates it.  Filenames are pulled
             from `.meta.filename` of each datamodel in the container.
 
+        save_model_func: func or None
+            Alternate function to save each model instead of
+            the models `save` method. Takes one argument, the model,
+            and keyword argument `idx` for an index.
+
         Note
         ----
-        Additional parameters provided via `*args` and `**kwargs` are passed on to
+        Additional parameters provided via `**kwargs` are passed on to
         `roman_datamodels.datamodels.DataModel.to_asdf`
 
         Returns
         -------
-        None
+        output_paths: [str[, ...]]
+            List of output file paths of where the models were saved.
         """
+        output_paths = []
+        if path is None:
+            def path(filename, idx=None):
+                return filename
+        elif not callable(path):
+            path = make_file_with_index
+
         # use current path if dir_path is not provided
         dir_path = dir_path if dir_path is not None else os.getcwd()
         # output filename suffix
         output_suffix = kwargs.get("output_suffix", "output")
-        for model in self._models:
-            filename = model.meta.filename
-            base, ext = op.splitext(filename)
-            base = base.replace(".", f"_{output_suffix}.")
-            output_filename = "".join([base, ext])
-            output_path = op.join(dir_path, output_filename)
-            if ext == ".asdf":
-                model.to_asdf(output_path, *args, **kwargs)
+        for i, model in enumerate(self._models):
+            if save_model_func is None:
+                filename = model.meta.filename
+                base, ext = op.splitext(filename)
+                base = base.replace(".", f"_{output_suffix}.")
+                output_filename = "".join([base, ext])
+                output_path = op.join(dir_path, output_filename)
+                if ext == ".asdf":
+                    output_paths.append(output_path)
+                    model.to_asdf(output_path, **kwargs)
+                else:
+                    raise ValueError(f"Unknown filetype {ext}")
             else:
-                raise ValueError(f"Unknown filetype {ext}")
+                output_paths.append(save_model_func(model, idx=i))
+
+        return output_paths
 
     @property
     def models_grouped(self):
@@ -411,7 +448,9 @@ class ModelContainer(Iterable):
 
         group_dict = OrderedDict()
         for i, model in enumerate(self._models):
-            model = model if isinstance(model, rdm.DataModel) else rdm.open(model)
+            model = (
+                model if isinstance(model, rdm.DataModel) else rdm.open(model)
+            )
 
             if not self._save_open:
                 model = rdm.open(model, memmap=self._memmap)
@@ -481,7 +520,33 @@ class ModelContainer(Iterable):
         crds_header = {}
         if len(self._models):
             model = self._models[0]
-            model = model if isinstance(model, rdm.DataModel) else rdm.open(model)
+            model = (
+                model if isinstance(model, rdm.DataModel) else rdm.open(model)
+            )
             crds_header |= model.get_crds_parameters()
 
         return crds_header
+
+
+def make_file_with_index(file_path, idx):
+    """Append an index to a filename
+
+    Parameters
+    ----------
+    file_path: str
+        The file to append the index to.
+    idx: int
+        An index to append
+
+
+    Returns
+    -------
+    file_path: str
+        Path with index appended
+    """
+    # Decompose path
+    path_head, path_tail = op.split(file_path)
+    base, ext = op.splitext(path_tail)
+    if idx is not None:
+        base = base + str(idx)
+    return op.join(path_head, base + ext)
