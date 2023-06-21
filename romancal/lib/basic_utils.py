@@ -1,6 +1,7 @@
 """General utility objects"""
 
 import numpy as np
+from roman_datamodels.datamodels import AssociationsModel
 
 from romancal.lib import dqflags
 
@@ -54,6 +55,13 @@ def is_fully_saturated(model):
         return True
 
     return False
+
+
+def is_association(asn_data):
+    """
+    Test if an object is an association by checking for required fields
+    """
+    return AssociationsModel.is_association(asn_data)
 
 
 class LoggingContext:
