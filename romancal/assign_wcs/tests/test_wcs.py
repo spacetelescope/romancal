@@ -81,7 +81,7 @@ def test_wcs(tmpdir, distortion, step):
     s_region_list = l2_wcs.meta.wcsinfo.s_region.split()
     assert len(s_region_list) == 10
     assert s_region_list[0].lower() == "polygon"
-    assert s_region_list[1].lower() == "ircs"
+    assert s_region_list[1].lower() == "icrs"
 
     # check if BBOX is not None
     assert l2_wcs.meta.wcs.bounding_box is not None

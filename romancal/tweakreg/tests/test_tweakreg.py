@@ -88,7 +88,7 @@ def update_wcsinfo(input_dm):
     input_dm.meta.wcsinfo.dec_ref = 66.0
     input_dm.meta.wcsinfo.roll_ref = 60
     input_dm.meta.wcsinfo.s_region = (
-        "POLYGON IRCS "
+        "POLYGON ICRS "
         "269.3318903230621 65.56866666048172 "
         "269.32578768154605 65.69246311613287 "
         "269.02457173246125 65.69201346248587 "
