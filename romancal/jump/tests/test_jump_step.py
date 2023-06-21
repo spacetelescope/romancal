@@ -37,11 +37,10 @@ def generate_wfi_reffiles(tmpdir_factory):
 
     # Create temporary gain reference file
     gain_ref = rds.GainRef()
-    meta = maker_utils.mk_ref_common()
+    meta = maker_utils.mk_ref_common("GAIN")
     meta["instrument"]["detector"] = "WFI01"
     meta["instrument"]["name"] = "WFI"
     meta["author"] = "John Doe"
-    meta["reftype"] = "GAIN"
     meta["pedigree"] = "DUMMY"
     meta["description"] = "DUMMY"
     meta["useafter"] = Time("2022-01-01T11:11:11.111")
@@ -62,11 +61,10 @@ def generate_wfi_reffiles(tmpdir_factory):
 
     # Create temporary readnoise reference file
     rn_ref = rds.ReadnoiseRef()
-    meta = maker_utils.mk_ref_common()
+    meta = maker_utils.mk_ref_common("READNOISE")
     meta["instrument"]["detector"] = "WFI01"
     meta["instrument"]["name"] = "WFI"
     meta["author"] = "John Doe"
-    meta["reftype"] = "READNOISE"
     meta["pedigree"] = "DUMMY"
     meta["description"] = "DUMMY"
     meta["useafter"] = Time("2022-01-01T11:11:11.111")
@@ -113,7 +111,7 @@ def setup_inputs():
         pixdq = np.zeros(shape=(nrows, ncols), dtype=np.uint32)
 
         csize = (ngroups, nrows, ncols)
-        dm_ramp = rdm.RampModel(maker_utils.mk_ramp(csize))
+        dm_ramp = rdm.RampModel(maker_utils.mk_ramp(shape=csize))
 
         dm_ramp.meta.instrument.name = "WFI"
         dm_ramp.meta.instrument.optical_element = "F158"

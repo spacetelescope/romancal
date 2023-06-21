@@ -132,7 +132,7 @@ def create_ramp_and_dark(shape, instrument, exptype):
     """Helper function to create test ramp and dark models"""
 
     # Create test ramp model
-    ramp = maker_utils.mk_ramp(shape)
+    ramp = maker_utils.mk_ramp(shape=shape)
     ramp.meta.instrument.name = instrument
     ramp.meta.instrument.detector = "WFI01"
     ramp.meta.instrument.optical_element = "F158"
@@ -141,7 +141,7 @@ def create_ramp_and_dark(shape, instrument, exptype):
     ramp_model = RampModel(ramp)
 
     # Create dark model
-    darkref = maker_utils.mk_dark(shape)
+    darkref = maker_utils.mk_dark(shape=shape)
     darkref_model = DarkRefModel(darkref)
 
     return ramp_model, darkref_model
