@@ -9,7 +9,8 @@ from collections.abc import Iterable, Sequence
 from pathlib import Path
 
 from roman_datamodels import datamodels as rdm
-from roman_datamodels.util import is_association
+
+from romancal.lib.basic_utils import is_association
 
 from ..associations import AssociationNotValidError, load_asn
 

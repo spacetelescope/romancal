@@ -25,6 +25,8 @@ general
 
 - Add `ModelContainer` to `romancal.datamodels`. [#710]
 
+- Move ``is_assocation`` from ``roman_datamodels`` to ``romancal``. [#719]
+
 
 0.11.0 (2023-05-31)
 ===================
