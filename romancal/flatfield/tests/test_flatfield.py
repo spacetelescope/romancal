@@ -51,10 +51,9 @@ def test_flatfield_step_interface(instrument, exptype):
 
     wfi_image_model = ImageModel(wfi_image)
     flatref = stnode.FlatRef()
-    meta = maker_utils.mk_ref_common()
+    meta = maker_utils.mk_ref_common("FLAT")
     meta["instrument"]["optical_element"] = "F158"
     meta["instrument"]["detector"] = "WFI01"
-    meta["reftype"] = "FLAT"
     flatref["meta"] = meta
     flatref["data"] = np.ones(shape, dtype=np.float32)
     flatref["dq"] = np.zeros(shape, dtype=np.uint16)

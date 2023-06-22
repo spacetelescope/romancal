@@ -45,7 +45,7 @@ class DQInitStep(RomanStep):
         # Convert to RampModel if needed
         if not isinstance(input_model, RampModel):
             # Create base ramp node with dummy values (for validation)
-            input_ramp = maker_utils.mk_ramp(input_model.shape)
+            input_ramp = maker_utils.mk_ramp(shape=input_model.shape)
 
             # Copy input_model contents into RampModel
             for key in input_model.keys():
