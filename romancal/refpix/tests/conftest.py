@@ -4,8 +4,7 @@ import numpy as np
 import pytest
 from astropy import units as u
 from roman_datamodels.datamodels import RampModel, RefpixRefModel
-from roman_datamodels.maker_utils import mk_ramp
-from roman_datamodels.testing.factories import create_refpix_ref
+from roman_datamodels.maker_utils import mk_ramp, mk_refpix
 
 from romancal.refpix.data import Coefficients, Const, StandardView
 
@@ -38,10 +37,10 @@ def data():
 
 @pytest.fixture(scope="module")
 def datamodel(data):
-    datamodel = mk_ramp()
+    datamodel = mk_ramp(shape=(2, 2, 2))
 
-    detector = data[:, :, : Const.N_COLUMNS].copy()
-    amp33 = data[:, :, Const.N_COLUMNS :].copy()
+    detector = data[:, :, : Const.N_COLUMNS]
+    amp33 = data[:, :, Const.N_COLUMNS :]
 
     # Sanity check, that this is in line with the datamodel maker_utils
     assert detector.shape == (Dims.N_FRAMES, Dims.N_ROWS, Const.N_COLUMNS)
@@ -85,5 +84,7 @@ def offset() -> np.ndarray:
 
 
 @pytest.fixture(scope="module")
-def ref_pix_ref():
-    return RefpixRefModel(create_refpix_ref())
+def ref_pix_ref(coeffs):
+    refpix_ref = mk_refpix(gamma=coeffs.gamma, zeta=coeffs.zeta, alpha=coeffs.alpha)
+
+    return RefpixRefModel(refpix_ref)
