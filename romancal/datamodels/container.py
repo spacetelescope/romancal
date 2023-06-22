@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
-class ModelContainer(Sequence, Iterable):
+class ModelContainer(Sequence):
     """
     A container for holding DataModels.
 
@@ -148,7 +148,7 @@ class ModelContainer(Sequence, Iterable):
             if init is None:
                 # don't populate container
                 pass
-            elif isinstance(init, Iterable):
+            elif isinstance(init, Sequence):
                 # only append list items to self._models if all items are either
                 # not-null strings (i.e. path to an ASDF file) or instances of DataModel
                 is_all_string = all(isinstance(x, str) and len(x) for x in init)
@@ -393,21 +393,34 @@ class ModelContainer(Sequence, Iterable):
         # use current path if dir_path is not provided
         dir_path = dir_path if dir_path is not None else os.getcwd()
         # output filename suffix
-        output_suffix = kwargs.get("output_suffix", "output")
-        for i, model in enumerate(self._models):
+        output_suffix = kwargs.get("output_suffix", None)
+        for idx, model in enumerate(self._models):
+            if len(self) <= 1:
+                idx = None
             if save_model_func is None:
                 filename = model.meta.filename
-                base, ext = op.splitext(filename)
-                base = base.replace(".", f"_{output_suffix}.")
+                output_path, output_filename = op.split(path(filename, idx=idx))
+
+                # use dir_path when provided
+                output_path = output_path if dir_path is None else dir_path
+
+                # handle optional modifications to filename
+                base, ext = op.splitext(output_filename)
+                if output_suffix is not None:
+                    # add suffix to filename
+                    base = base.replace(".", f"_{output_suffix}.")
                 output_filename = "".join([base, ext])
-                output_path = op.join(dir_path, output_filename)
+
+                # create final destination (path + filename)
+                save_path = op.join(output_path, output_filename)
+
                 if ext == ".asdf":
-                    output_paths.append(output_path)
-                    model.to_asdf(output_path, **kwargs)
+                    output_paths.append(save_path)
+                    model.to_asdf(save_path, **kwargs)
                 else:
                     raise ValueError(f"Unknown filetype {ext}")
             else:
-                output_paths.append(save_model_func(model, idx=i))
+                output_paths.append(save_model_func(model, idx=idx))
 
         return output_paths
 
