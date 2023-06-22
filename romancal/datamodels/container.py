@@ -393,7 +393,7 @@ class ModelContainer(Sequence):
         # use current path if dir_path is not provided
         dir_path = dir_path if dir_path is not None else os.getcwd()
         # output filename suffix
-        output_suffix = kwargs.get("output_suffix", None)
+        output_suffix = kwargs.pop("output_suffix", None)
         for idx, model in enumerate(self._models):
             if len(self) <= 1:
                 idx = None
@@ -408,7 +408,7 @@ class ModelContainer(Sequence):
                 base, ext = op.splitext(output_filename)
                 if output_suffix is not None:
                     # add suffix to filename
-                    base = base.replace(".", f"_{output_suffix}.")
+                    base = "".join([base, output_suffix])
                 output_filename = "".join([base, ext])
 
                 # create final destination (path + filename)
