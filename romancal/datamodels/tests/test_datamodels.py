@@ -1,4 +1,5 @@
 import json
+import os
 from io import StringIO
 from pathlib import Path
 
@@ -91,6 +92,8 @@ def setup_list_of_l2_files():
             elif type_of_returned_object == "datamodel":
                 # parse ASDF file as RDM
                 datamodel = rdm.open(str(filepath))
+                # update filename
+                datamodel.meta["filename"] = filepath
                 # append datamodel to datamodel list
                 result_list.append(datamodel)
 
@@ -467,3 +470,21 @@ def test_parse_asn_files_properly(asn_filename, test_data_dir):
     assert len(mc) == len(json_content["products"][0]["members"])
     assert mc.asn_table_name == f"{asn_filename}"
     assert all(x.split("/")[-1] in expname_list for x in mc)
+
+
+@pytest.mark.parametrize("path, dir_path, save_model_func", [(None, None, None)])
+def test_model_container_save(
+    path, dir_path, save_model_func, setup_list_of_l2_files, tmp_path
+):
+    filepath_list = setup_list_of_l2_files(3, "datamodel", tmp_path)
+
+    mc = ModelContainer(filepath_list)
+
+    output_paths = mc.save(
+        path=path, dir_path=dir_path, save_model_func=save_model_func
+    )
+
+    assert all(Path(x).exists() for x in output_paths)
+
+    # clean up
+    [os.remove(filename) for filename in output_paths]
