@@ -1,3 +1,4 @@
+import pytest
 from astropy import units as u
 
 from romancal.refpix.data import StandardView
@@ -6,6 +7,8 @@ from romancal.refpix.refpix import Control, run_steps
 from . import reference_utils
 
 
+# GitHub actions don't have enough memory to run this test
+@pytest.mark.bigdata
 def test_run_steps_regression(datamodel, ref_pix_ref):
     regression = StandardView.from_datamodel(datamodel).data.copy()
     regression_out = reference_utils.apply_correction(

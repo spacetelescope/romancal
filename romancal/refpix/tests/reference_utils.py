@@ -94,7 +94,7 @@ def aligned_channels(data):
 
 
 def remove_linear_trends_per_frame(
-    data_chansFramesRowsChancols, subtractOffsetOnly, multiThread=True
+    data_chansFramesRowsChancols, subtractOffsetOnly, multiThread=False
 ):
     """
     Entry point for Fitting and removal of slopes per frame to remove issues

@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from numpy.testing import assert_allclose
 
 from romancal.refpix.data import (
@@ -614,6 +615,7 @@ class TestChannelView:
         assert (reference.right == right).all()
         assert (reference.amp33 == amp33).all()
 
+    @pytest.mark.bigdata
     def test_correction(self, channels, coeffs):
         correction = channels.correction(coeffs)
 
@@ -626,6 +628,7 @@ class TestChannelView:
         )
         assert correction.dtype == np.float32
 
+    @pytest.mark.bigdata
     def test_correction_regression(self, channels, coeffs):
         # Run the reference code
         regression = reference_utils.correction(
@@ -646,6 +649,7 @@ class TestChannelView:
 
         assert (correction == regression.astype(np.float32)).all()
 
+    @pytest.mark.bigdata
     def test_apply_correction(self, channels, coeffs):
         non_view_standard_data = channels.standard.data.copy()
         non_view_data = channels.data.copy()
@@ -667,6 +671,7 @@ class TestChannelView:
         # Check the amp33 channel has not changed
         assert (channels.amp33 == amp33).all()
 
+    @pytest.mark.bigdata
     def test_apply_correction_channels_regression(self, channels, coeffs):
         # Get regression
         regression = reference_utils.apply_correction_to_channels(
@@ -688,6 +693,7 @@ class TestChannelView:
         # Check regression
         assert (channels.data[:, :, :, : Const.CHAN_WIDTH] == regression).all()
 
+    @pytest.mark.bigdata
     def test_apply_correction_standard_regression(self, channels, coeffs):
         regression = reference_utils.apply_correction_to_data(
             Dims.N_FRAMES, channels.data.copy(), coeffs.alpha, coeffs.gamma, coeffs.zeta
@@ -705,6 +711,7 @@ class TestChannelView:
 
 
 class TestReferenceFFT:
+    @pytest.mark.bigdata
     def test_correction(self, channels, coeffs):
         reference = channels.reference_fft
 
@@ -730,6 +737,7 @@ class TestReferenceFFT:
         assert (right == reference.right).all()
         assert (amp33 == reference.amp33).all()
 
+    @pytest.mark.bigdata
     def test_correction_regression(self, channels, coeffs):
         reference = channels.reference_fft
 
