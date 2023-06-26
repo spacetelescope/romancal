@@ -2,7 +2,7 @@ import pytest
 from astropy import units as u
 
 from romancal.refpix.data import StandardView
-from romancal.refpix.refpix import Control, run_steps
+from romancal.refpix.refpix import run_steps
 
 from . import reference_utils
 
@@ -15,8 +15,7 @@ def test_run_steps_regression(datamodel, ref_pix_ref):
         regression, ref_pix_ref.alpha, ref_pix_ref.gamma, ref_pix_ref.zeta
     )
 
-    control = Control()
-    result = run_steps(datamodel, ref_pix_ref, control)
+    result = run_steps(datamodel, ref_pix_ref, True, True, True, False)
 
     assert (result.data.value == regression_out).all()
     # regression_out does not return amp33 data

@@ -44,6 +44,12 @@ class RefpixStep(RomanStep):
             log.debug(f"Opening the reference file: {ref_file}")
             with rdm.open(ref_file) as refs:
                 # Run the correction
-                control = refpix.Control.from_step(self)
                 log.debug("Running the reference pixel correction")
-                return refpix.run_steps(datamodel, refs, control)
+                return refpix.run_steps(
+                    datamodel,
+                    refs,
+                    self.remove_offset,
+                    self.remove_trends,
+                    self.cosine_interpolate,
+                    self.fft_interpolate,
+                )

@@ -1,10 +1,9 @@
 import os
-from dataclasses import asdict
 
 import pytest
 
 from romancal.refpix import RefpixStep
-from romancal.refpix.refpix import Control, run_steps
+from romancal.refpix.refpix import run_steps
 
 
 @pytest.mark.bigdata
@@ -14,16 +13,40 @@ from romancal.refpix.refpix import Control, run_steps
         "Roman CRDS servers are not currently available outside the internal network"
     ),
 )
-@pytest.mark.parametrize("control", [Control(), Control(fft_interpolate=True)])
-def test_refpix_step(datamodel, ref_pix_ref, control):
+@pytest.mark.parametrize(
+    "remove_offset, remove_trends, cosine_interpolate, fft_interpolate",
+    [(True, True, True, False), (True, True, True, True)],
+)
+def test_refpix_step(
+    datamodel,
+    ref_pix_ref,
+    remove_offset,
+    remove_trends,
+    cosine_interpolate,
+    fft_interpolate,
+):
     # Setup and run the correction outside of the step, this is
     # already regression tested.
     regression_datamodel = datamodel.copy()
     regression_ref_pix_ref = ref_pix_ref.copy()
-    regression = run_steps(regression_datamodel, regression_ref_pix_ref, control)
+    regression = run_steps(
+        regression_datamodel,
+        regression_ref_pix_ref,
+        remove_offset,
+        remove_trends,
+        cosine_interpolate,
+        fft_interpolate,
+    )
 
     # Run the step
-    result = RefpixStep.call(datamodel, override_refpix=ref_pix_ref, **asdict(control))
+    result = RefpixStep.call(
+        datamodel,
+        override_refpix=ref_pix_ref,
+        remove_offset=remove_offset,
+        remove_trends=remove_trends,
+        cosine_interpolate=cosine_interpolate,
+        fft_interpolate=fft_interpolate,
+    )
 
     # Check the outputs are distinct
     assert result is not regression
