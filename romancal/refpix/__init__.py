@@ -1,3 +1,3 @@
-from .refpix_step import RefpixStep
+from .refpix_step import RefPixStep
 
-__all__ = ["RefpixStep"]
+__all__ = ["RefPixStep"]

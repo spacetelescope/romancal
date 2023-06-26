@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from romancal.refpix import RefpixStep
+from romancal.refpix import RefPixStep
 from romancal.refpix.refpix import run_steps
 
 
@@ -39,7 +39,7 @@ def test_refpix_step(
     )
 
     # Run the step
-    result = RefpixStep.call(
+    result = RefPixStep.call(
         datamodel,
         override_refpix=ref_pix_ref,
         remove_offset=remove_offset,

@@ -5,13 +5,13 @@ import roman_datamodels as rdm
 from romancal.refpix import refpix
 from romancal.stpipe import RomanStep
 
-__all__ = ["RefpixStep"]
+__all__ = ["RefPixStep"]
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-class RefpixStep(RomanStep):
+class RefPixStep(RomanStep):
     """
     RefpixStep: Module for correcting the the science data using the reference
         pixels
