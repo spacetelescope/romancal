@@ -50,14 +50,14 @@ def run_steps(
     """
 
     # Read in the data from the datamodels
-    log.info("Reading data from datamodel into single array")
+    log.debug("Reading data from datamodel into single array")
     coeffs = Coefficients.from_ref(refs)
     standard = StandardView.from_datamodel(datamodel)
 
     # Remove offset from the data
     if control.remove_offset:
         standard = standard.remove_offset()
-        log.info("Removed the general offset from data, to be re-applied later.")
+        log.debug("Removed the general offset from data, to be re-applied later.")
 
     # Convert to channel view
     channel = standard.channels
@@ -65,28 +65,28 @@ def run_steps(
     # Remove the boundary trends
     if control.remove_trends:
         channel = channel.remove_trends()
-        log.info("Removed boundary trends (in time) from data.")
+        log.debug("Removed boundary trends (in time) from data.")
 
     # Cosine interpolate the the data
     if control.cosine_interpolate:
         channel = channel.cosine_interpolate()
-        log.info("Cosine interpolated the reference pixels.")
+        log.debug("Cosine interpolated the reference pixels.")
 
     # FFT interpolate the data
     if control.fft_interpolate:
         channel = channel.fft_interpolate()
-        log.info("FFT interpolated the reference pixel pads.")
+        log.debug("FFT interpolated the reference pixel pads.")
 
     # Perform the reference pixel correction
     standard = channel.apply_correction(coeffs)
-    log.info("Applied reference pixel correction")
+    log.debug("Applied reference pixel correction")
 
     # Re-apply the offset (if necessary)
     standard.apply_offset()
-    log.info("Re-applied the general offset (if removed) to the data.")
+    log.debug("Re-applied the general offset (if removed) to the data.")
 
     # Write the data back to the datamodel
     standard.update(datamodel)
-    log.info("Updated the datamodel with the corrected data.")
+    log.debug("Updated the datamodel with the corrected data.")
 
     return datamodel

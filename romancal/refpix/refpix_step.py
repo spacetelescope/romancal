@@ -36,14 +36,14 @@ class RefpixStep(RomanStep):
         """
 
         # open the input data model
-        log.info(f"Opening the input data model: {input}")
+        log.debug(f"Opening the science data: {input}")
         with rdm.open(input) as datamodel:
             # Get the reference file
             ref_file = self.get_reference_file(datamodel, "refpix")
 
-            log.info(f"Opening the reference file: {ref_file}")
+            log.debug(f"Opening the reference file: {ref_file}")
             with rdm.open(ref_file) as refs:
                 # Run the correction
                 control = refpix.Control.from_step(self)
-                log.info("Running the reference pixel correction")
+                log.debug("Running the reference pixel correction")
                 return refpix.run_steps(datamodel, refs, control)
