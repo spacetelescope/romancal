@@ -6,7 +6,6 @@ from romancal.refpix import RefPixStep
 from romancal.refpix.refpix import run_steps
 
 
-@pytest.mark.bigdata
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
     reason=(
