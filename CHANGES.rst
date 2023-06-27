@@ -20,7 +20,7 @@ skymatch
 
 jump
 ----
-- Accept and ignore additional return values from  stcal detect_jumps [#723]
+- Accept and ignore additional return values from stcal detect_jumps [#723]
 
 general
 -------
@@ -31,6 +31,8 @@ general
 - Move ``is_assocation`` from ``roman_datamodels`` to ``romancal``. [#719]
 
 - Update ``romancal`` to use altered API for ``maker_utils``. [#717]
+
+- Require stcal >= 1.4 [#723]
 
 
 0.11.0 (2023-05-31)
