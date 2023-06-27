@@ -152,11 +152,11 @@ class RampFitStep(RomanStep):
         """
         resultants = input_model.data.value
         dq = input_model.groupdq
-        read_noise = input_model.err.value
+        read_noise = readnoise_model.data.value
         read_pattern = input_model.meta.exposure.read_pattern
 
         # Fit the ramps
-        ramppar, rampvar = ols_cas21_fit.fit_ramps_casertano(resultants, dq, read_noise, read_pattern)
+        ramppar, rampvar = ols_cas21_fit.fit_ramps_casertano(resultants, dq, read_noise, read_pattern=read_pattern)
         var_rnoise = rampvar[..., 0, 1, 1]
         var_poisson = rampvar[..., 1, 1, 1]
         err = np.sqrt(var_poisson + var_rnoise)
