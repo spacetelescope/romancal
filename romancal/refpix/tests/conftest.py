@@ -15,12 +15,14 @@ class Dims(IntEnum):
     """
     Assumed data dimensions for dat (aid clarity of testing).
         - N_FRAMES: the number of frames used in the test data (arbitrary) choice
-        - N_ROWS: the number of rows of the test data
-        - N_COLS: the number of columns of the test data
+        - N_ROWS: the number of rows of the test data (the correction is
+                  independent of this)
+        - N_COLS: the number of columns of the test data (the correction is very
+                  dependent on this)
     """
 
     N_FRAMES = 8
-    N_ROWS = Const.N_COLUMNS
+    N_ROWS = 12
     N_COLS = Const.N_COLUMNS + Const.CHAN_WIDTH
     N_CHAN = N_COLS // Const.CHAN_WIDTH
     PADDED_WIDTH = Const.CHAN_WIDTH + Const.PAD

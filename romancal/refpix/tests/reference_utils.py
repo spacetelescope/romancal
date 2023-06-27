@@ -19,14 +19,12 @@ import threading
 import numpy as np
 import scipy.fft as spfft
 
-NUM_ROWS = 4096
 NUM_OUTPUT_CHANS = 33
 NUM_COLS_PER_OUTPUT_CHAN = 128
 NUM_COLS = NUM_OUTPUT_CHANS * NUM_COLS_PER_OUTPUT_CHAN
 END_OF_ROW_PIXEL_PAD = 12
 NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD = NUM_COLS_PER_OUTPUT_CHAN + END_OF_ROW_PIXEL_PAD
 ALL_CHAN_RANGE = range(NUM_OUTPUT_CHANS)
-REFERENCE_ROWS = [0, 1, 2, 3, 4092, 4093, 4094, 4095]
 REFERENCE_CHAN = 32
 REFPIX_NORM = NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD / 4.0
 CHAN_RANGE_WITHOUT_REFERENCES = range(NUM_OUTPUT_CHANS - 1)
@@ -76,9 +74,10 @@ def remove_linear_trends(data_FramesRowsCols, subtractOffsetOnly):
 
 def aligned_channels(data):
     numFrames = data.shape[0]
+    numRows = data.shape[1]
 
     data_chansFramesRowsPhyscols = np.transpose(
-        data.reshape((numFrames, NUM_ROWS, NUM_OUTPUT_CHANS, NUM_COLS_PER_OUTPUT_CHAN)),
+        data.reshape((numFrames, numRows, NUM_OUTPUT_CHANS, NUM_COLS_PER_OUTPUT_CHAN)),
         (2, 0, 1, 3),
     )
 
@@ -94,7 +93,7 @@ def aligned_channels(data):
 
 
 def remove_linear_trends_per_frame(
-    data_chansFramesRowsChancols, subtractOffsetOnly, multiThread=False
+    data_chansFramesRowsChancols, subtractOffsetOnly, multiThread=True
 ):
     """
     Entry point for Fitting and removal of slopes per frame to remove issues
@@ -141,6 +140,9 @@ def remove_linear_trends_per_frame_chan_func(
     :param subtractOffsetOnly: if True, only the liner model offset is removed.
         If False, the offset and slope are removed
     """
+
+    numRows = len(data_chansFramesRowsChancols[0][0])
+    REFERENCE_ROWS = list(range(0, 4)) + list(range(numRows - 4, numRows))
 
     ab_3 = np.zeros(
         (NUM_OUTPUT_CHANS, numFrames, 2), dtype=np.float64
@@ -252,18 +254,19 @@ def interp_zeros_channel_fun(
 
 
 def cos_interp_reference(dataUniformTime, numFrames):
+    numRows = dataUniformTime.shape[2]
     return interp_zeros_channel_fun(
         REFERENCE_CHAN,
         getTrigInterpolationFunction(dataUniformTime),
         dataUniformTime,
         numFrames,
-        NUM_ROWS,
+        numRows,
         NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD,
     )
 
 
-def getFFTApodizeFunction():
-    apo_len = NUM_ROWS * NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD
+def getFFTApodizeFunction(numRows):
+    apo_len = numRows * NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD
     apo2 = np.abs(np.fft.rfftfreq(apo_len, 1 / apo_len))
     apodize_func = np.cos(2 * np.pi * apo2 / apo_len) / 2.0 + 0.5
     return apodize_func
@@ -315,24 +318,26 @@ def fft_interp(
 
 
 def fft_interp_amp33(dataUniformTime, numFrames):
+    numRows = dataUniformTime.shape[2]
+
     refOutputOnesMask = np.zeros(
-        (NUM_ROWS, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD), dtype=bool
+        (numRows, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD), dtype=bool
     )
     refOutputOnesMask[:, :NUM_COLS_PER_OUTPUT_CHAN] = 1
 
     dataReferenceChan_FramesFlat = np.reshape(
         dataUniformTime[REFERENCE_CHAN, :, :, :],
-        (numFrames, (NUM_ROWS * NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD)),
+        (numFrames, (numRows * NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD)),
     ).astype(dtype=dataUniformTime.dtype)
     fft_interp(
         dataReferenceChan_FramesFlat,
         refOutputOnesMask.flatten(),
-        getFFTApodizeFunction(),
+        getFFTApodizeFunction(numRows),
         3,
     )
 
     return dataReferenceChan_FramesFlat.reshape(
-        numFrames, NUM_ROWS, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD
+        numFrames, numRows, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD
     )
 
 
@@ -343,8 +348,9 @@ def left(dataUniformTime):
 
 
 def left_fft(numFrames, dataUniformTime):
+    numRows = dataUniformTime.shape[2]
     l = left(dataUniformTime)
-    l = l.reshape((numFrames, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD * NUM_ROWS))
+    l = l.reshape((numFrames, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD * numRows))
     return REFPIX_NORM * spfft.rfft(l / l[0].size).copy()
 
 
@@ -355,14 +361,16 @@ def right(dataUniformTime):
 
 
 def right_fft(numFrames, dataUniformTime):
+    numRows = dataUniformTime.shape[2]
     r = right(dataUniformTime)
-    r = r.reshape((numFrames, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD * NUM_ROWS))
+    r = r.reshape((numFrames, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD * numRows))
     return REFPIX_NORM * spfft.rfft(r / r[0].size).copy()
 
 
 def amp33_fft(numFrames, dataUniformTime):
+    numRows = dataUniformTime.shape[2]
     a = np.copy(dataUniformTime[REFERENCE_CHAN, :, :, :])
-    a = a.reshape((numFrames, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD * NUM_ROWS))
+    a = a.reshape((numFrames, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD * numRows))
     return spfft.rfft(a / a[0].size).copy()
 
 
@@ -399,7 +407,7 @@ def _corr_chan_func(
     :param a: input file reference channel data
     :param corrNoise: CHANGED IN PLACE correlated noise solution for this channel
     """
-    lCopy = np.copy(l)
+    lCopy = np.copy(l).astype(gamma.dtype)
     gammaChan = gamma[chanNum, :]
     for frameNum in range(numFrames):
         lCopy[frameNum, :] *= gammaChan
@@ -421,10 +429,9 @@ def _corr_chan_func(
     corrNoise[chanNum, :, :] = lCopy[:]
 
 
-def compute_correction(alpha, gamma, zeta, numFrames, l, r, a):
+def compute_correction(numRows, alpha, gamma, zeta, numFrames, l, r, a):
     correlatedNoise = np.zeros(
-        (NUM_OUTPUT_CHANS, numFrames, NUM_ROWS * NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD),
-        dtype=complex,
+        (NUM_OUTPUT_CHANS, numFrames, numRows * NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD),
     )
     exec_channel_func_threads(
         CHAN_RANGE_WITHOUT_REFERENCES,
@@ -437,13 +444,16 @@ def compute_correction(alpha, gamma, zeta, numFrames, l, r, a):
 
 
 def correction(numFrames, dataUniformTime, alpha, gamma, zeta):
+    numRows = dataUniformTime.shape[2]
     l, r, a = forward_fft(numFrames, dataUniformTime)
 
-    correlatedNoise = compute_correction(alpha, gamma, zeta, numFrames, l, r, a)
+    correlatedNoise = compute_correction(
+        numRows, alpha, gamma, zeta, numFrames, l, r, a
+    )
 
     # reshape and just take real part
     correlatedNoise = correlatedNoise.real.reshape(
-        (NUM_OUTPUT_CHANS, numFrames, NUM_ROWS, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD)
+        (NUM_OUTPUT_CHANS, numFrames, numRows, NUM_COLS_PER_OUTPUT_CHAN_WITH_PAD)
     )
 
     return correlatedNoise
@@ -463,6 +473,7 @@ def apply_correction_to_channels(numFrames, dataUniformTime, alpha, gamma, zeta)
 
 
 def apply_correction_to_data(numFrames, dataUniformTime, alpha, gamma, zeta):
+    numRows = dataUniformTime.shape[2]
     data0 = apply_correction_to_channels(numFrames, dataUniformTime, alpha, gamma, zeta)
 
     for i in range(1, NUM_OUTPUT_CHANS - 1, 2):
@@ -470,7 +481,8 @@ def apply_correction_to_data(numFrames, dataUniformTime, alpha, gamma, zeta):
 
     data0 = np.transpose(data0, (1, 2, 0, 3))
     data0 = np.reshape(
-        data0[:, :, CHAN_RANGE_WITHOUT_REFERENCES, :], (numFrames, NUM_ROWS, NUM_ROWS)
+        data0[:, :, CHAN_RANGE_WITHOUT_REFERENCES, :],
+        (numFrames, numRows, NUM_COLS - NUM_COLS_PER_OUTPUT_CHAN),
     )
 
     return data0

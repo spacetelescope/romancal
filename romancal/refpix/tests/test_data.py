@@ -25,7 +25,8 @@ def test_constants_sanity():
     assert Const.N_DETECT_CHAN == 32
 
     # Check the relationship between the constants
-    assert Const.N_COLUMNS == 4096 == Dims.N_ROWS
+    assert Const.N_COLUMNS == 4096
+    assert Dims.N_ROWS == 12
     assert Dims.N_COLS == 4224
 
     # Check that there are the correct total number of channels
@@ -35,7 +36,7 @@ def test_constants_sanity():
     assert Dims.PADDED_WIDTH == 140 == Const.CHAN_WIDTH + Const.PAD
 
     # Check the number of columns in the FFT
-    assert Dims.N_FFT_COLS == 286721
+    assert Dims.N_FFT_COLS == 841
 
 
 def test_data(data):
@@ -588,9 +589,9 @@ class TestChannelView:
         assert reference.amp33.shape == shape
 
         # Check the FFT are all complex dtype
-        assert reference.left.dtype == np.complex128
-        assert reference.right.dtype == np.complex128
-        assert reference.amp33.dtype == np.complex128
+        assert reference.left.dtype == np.complex64
+        assert reference.right.dtype == np.complex64
+        assert reference.amp33.dtype == np.complex64
 
         # Check the FFT are not views
         assert reference.left.base is None
@@ -743,6 +744,7 @@ class TestReferenceFFT:
 
         # Run reference code
         regression = reference_utils.compute_correction(
+            Dims.N_ROWS,
             coeffs.alpha,
             coeffs.gamma,
             coeffs.zeta,
@@ -755,7 +757,8 @@ class TestReferenceFFT:
         # Run implementation
         correction = reference.correction(coeffs)
 
-        assert (correction == regression).all()
+        assert correction.dtype == regression.dtype
+        assert (correction == regression).all(), correction.dtype
 
 
 class TestCoefficients:
