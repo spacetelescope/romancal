@@ -38,13 +38,24 @@ class RampFitStep(RomanStep):
     reference_file_types = ["readnoise", "gain"]
 
     def process(self, input):
+
         with rdd.open(input, mode="rw") as input_model:
+
+            # Retrieve reference info
+            readnoise_filename = self.get_reference_file(input_model, "readnoise")
+            gain_filename = self.get_reference_file(input_model, "gain")
+            log.info("Using READNOISE reference file: %s", readnoise_filename)
+            readnoise_model = rdd.open(readnoise_filename, mode="rw")
+            log.info("Using GAIN reference file: %s", gain_filename)
+            gain_model = rdd.open(gain_filename, mode="rw")
+
+            # Do the fitting.
             match self.algorithm:
                 case 'ols':
-                    out_model = self.ols(input_model)
+                    out_model = self.ols(input_model, readnoise_model, gain_model)
                     out_model.meta.cal_step.ramp_fit = "COMPLETE"
                 case 'ols_cas21':
-                    out_model = self.ols_cas21(input_model)
+                    out_model = self.ols_cas21(input_model, readnoise_model, gain_model)
                     out_model.meta.cal_step.ramp_fit = "COMPLETE"
                 case _:
                     log.error('Algorithm %s is not supported. Skipping step.')
@@ -53,7 +64,7 @@ class RampFitStep(RomanStep):
 
         return out_model
 
-    def ols(self, input_model):
+    def ols(self, input_model, readnoise_model, gain_model):
         """Perform Optimal Linear Fitting on evenly-spaced resultants
 
         The OLS algorithm used is the same used by JWST for it's ramp fitting.
@@ -63,22 +74,21 @@ class RampFitStep(RomanStep):
         input_model : RampModel
             Model containing ramps.
 
+        readnoise_model : ReadnoiseRefModel
+            Model with the read noise reference information.
+
+        gain_model : GainRefModel
+            Model with the gain reference information.
+
         Returns
         -------
         out_model : ImageModel
             Model containing a count-rate image.
         """
         max_cores = self.maximum_cores
-        readnoise_filename = self.get_reference_file(input_model, "readnoise")
-        gain_filename = self.get_reference_file(input_model, "gain")
         input_model.data = input_model.data[np.newaxis, :]
         input_model.groupdq = input_model.groupdq[np.newaxis, :]
         input_model.err = input_model.err[np.newaxis, :]
-
-        log.info("Using READNOISE reference file: %s", readnoise_filename)
-        readnoise_model = rdd.open(readnoise_filename, mode="rw")
-        log.info("Using GAIN reference file: %s", gain_filename)
-        gain_model = rdd.open(gain_filename, mode="rw")
 
         log.info(f"Using algorithm = {self.algorithm}")
         log.info(f"Using weighting = {self.weighting}")
@@ -121,13 +131,19 @@ class RampFitStep(RomanStep):
         out_model = create_image_model(input_model, image_info)
         return out_model
 
-    def ols_cas21(self, input_model):
+    def ols_cas21(self, input_model, readnoise_model, gain_model):
         """Peform Optimal Linear Fitting on arbitrarily space resulants
 
         Parameters
         ----------
         input_model : RampModel
             Model containing ramps.
+
+        readnoise_model : ReadnoiseRefModel
+            Model with the read noise reference information.
+
+        gain_model : GainRefModel
+            Model with the gain reference information.
 
         Returns
         -------
