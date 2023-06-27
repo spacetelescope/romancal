@@ -5,7 +5,7 @@ import os
 import os.path as op
 import re
 from collections import OrderedDict
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 
 from roman_datamodels import datamodels as rdm
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
-class ModelContainer(Iterable):
+class ModelContainer(Sequence):
     """
     A container for holding DataModels.
 
@@ -148,7 +148,7 @@ class ModelContainer(Iterable):
             if init is None:
                 # don't populate container
                 pass
-            elif isinstance(init, Iterable):
+            elif isinstance(init, Sequence):
                 # only append list items to self._models if all items are either
                 # not-null strings (i.e. path to an ASDF file) or instances of DataModel
                 is_all_string = all(isinstance(x, str) and len(x) for x in init)
@@ -347,40 +347,82 @@ class ModelContainer(Iterable):
                     model.meta.asn["table_name"] = self.asn_table_name
                     model.meta.asn["pool_name"] = self.asn_pool_name
 
-    def save(self, dir_path=None, *args, **kwargs):
+    def save(self, path=None, dir_path=None, save_model_func=None, **kwargs):
         """
         Write out models in container to ASDF.
 
         Parameters
         ----------
+        path : str or func or None
+            - If None, the `meta.filename` is used for each model.
+            - If a string, the string is used as a root and an index is
+              appended.
+            - If a function, the function takes the two arguments:
+              the value of model.meta.filename and the
+              `idx` index, returning constructed file name.
+
         dir_path : str
             Directory to write out files.  Defaults to current working dir.
             If directory does not exist, it creates it.  Filenames are pulled
             from `.meta.filename` of each datamodel in the container.
 
+        save_model_func: func or None
+            Alternate function to save each model instead of
+            the models `save` method. Takes one argument, the model,
+            and keyword argument `idx` for an index.
+
         Note
         ----
-        Additional parameters provided via `*args` and `**kwargs` are passed on to
+        Additional parameters provided via `**kwargs` are passed on to
         `roman_datamodels.datamodels.DataModel.to_asdf`
 
         Returns
         -------
-        None
+        output_paths: [str[, ...]]
+            List of output file paths of where the models were saved.
         """
+        output_paths = []
+        if path is None:
+
+            def path(filename, idx=None):
+                return filename
+
+        elif not callable(path):
+            path = make_file_with_index
+
         # use current path if dir_path is not provided
         dir_path = dir_path if dir_path is not None else os.getcwd()
         # output filename suffix
-        output_suffix = kwargs.get("output_suffix", "output")
-        for model in self._models:
-            filename = model.meta.filename
-            base, ext = op.splitext(filename)
-            base = base.replace(".", f"_{output_suffix}.")
-            output_filename = "".join([base, ext])
-            output_path = op.join(dir_path, output_filename)
-            if ext == ".asdf":
-                model.to_asdf(output_path, *args, **kwargs)
+        output_suffix = kwargs.pop("output_suffix", None)
+        for idx, model in enumerate(self._models):
+            if len(self) <= 1:
+                idx = None
+            if save_model_func is None:
+                filename = model.meta.filename
+                output_path, output_filename = op.split(path(filename, idx=idx))
+
+                # use dir_path when provided
+                output_path = output_path if dir_path is None else dir_path
+
+                # handle optional modifications to filename
+                base, ext = op.splitext(output_filename)
+                if output_suffix is not None:
+                    # add suffix to filename
+                    base = "".join([base, output_suffix])
+                output_filename = "".join([base, ext])
+
+                # create final destination (path + filename)
+                save_path = op.join(output_path, output_filename)
+
+                if ext == ".asdf":
+                    output_paths.append(save_path)
+                    model.to_asdf(save_path, **kwargs)
+                else:
+                    raise ValueError(f"Unknown filetype {ext}")
             else:
-                raise ValueError(f"Unknown filetype {ext}")
+                output_paths.append(save_model_func(model, idx=idx))
+
+        return output_paths
 
     @property
     def models_grouped(self):
@@ -486,3 +528,27 @@ class ModelContainer(Iterable):
             crds_header |= model.get_crds_parameters()
 
         return crds_header
+
+
+def make_file_with_index(file_path, idx):
+    """Append an index to a filename
+
+    Parameters
+    ----------
+    file_path: str
+        The file to append the index to.
+    idx: int
+        An index to append
+
+
+    Returns
+    -------
+    file_path: str
+        Path with index appended
+    """
+    # Decompose path
+    path_head, path_tail = op.split(file_path)
+    base, ext = op.splitext(path_tail)
+    if idx is not None:
+        base = base + str(idx)
+    return op.join(path_head, base + ext)

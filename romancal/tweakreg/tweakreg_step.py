@@ -4,6 +4,7 @@ Roman pipeline step for image alignment.
 import os
 from pathlib import Path
 
+import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
@@ -470,8 +471,15 @@ class TweakRegStep(RomanStep):
                     #       for end-user searches.
                     imcat.wcs.name = f"FIT-LVL2-{self.abs_refcat}"
 
+                # serialize object from tweakwcs
+                # (typecasting numpy objects to python types so that it doesn't cause an
+                # issue when saving datamodel to ASDF)
+                wcs_fit_results = {
+                    k: v.tolist() if isinstance(v, (np.ndarray, np.bool_)) else v
+                    for k, v in imcat.meta["fit_info"].items()
+                }
                 # add fit results and new WCS to datamodel
-                image_model.meta["wcs_fit_results"] = imcat.meta["fit_info"]
+                image_model.meta["wcs_fit_results"] = wcs_fit_results
                 # remove unwanted keys from WCS fit results
                 for k in [
                     "eff_minobj",
