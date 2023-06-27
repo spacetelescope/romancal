@@ -597,7 +597,7 @@ class ReferenceFFT:
 
             # hold onto the previous correction so that shape is maintained
             # for the blank correction for the amp33 channel
-            correction = fft.irfft(correction).real
+            correction = fft.irfft(correction)
             yield correction
 
         # Add zeros in for the amp33 channel as it does not get changed

@@ -406,11 +406,11 @@ def _corr_chan_func(
 
     zetaChan = zeta[chanNum, :]
     for frameNum in range(numFrames):
-        lCopy[frameNum, :] += zetaChan * r[frameNum, :]
+        lCopy[frameNum, :] += r[frameNum, :] * zetaChan
 
     alphaChan = alpha[chanNum, :]
     for frameNum in range(numFrames):
-        lCopy[frameNum, :] += alphaChan * a[frameNum, :]
+        lCopy[frameNum, :] += a[frameNum, :] * alphaChan
 
     # When dealing with real-only weight streams the
     # reverse FFT transform results in half the power so
