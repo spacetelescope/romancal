@@ -128,7 +128,7 @@ def test_one_group_small_buffer_fit_ols(max_cores):
     data = out_model.data.value
 
     # Index changes due to trimming of reference pixels
-    np.testing.assert_allclose(data[11, 6], -1.e-5, 1e-6)
+    np.testing.assert_allclose(data[11, 6], -1.0e-5, 1e-6)
 
 
 @pytest.mark.skipif(
