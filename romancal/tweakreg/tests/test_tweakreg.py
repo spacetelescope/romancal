@@ -21,8 +21,8 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
 from romancal.datamodels import ModelContainer
-from romancal.tweakreg.astrometric_utils import get_catalog
 from romancal.tweakreg import tweakreg_step as trs
+from romancal.tweakreg.astrometric_utils import get_catalog
 
 
 class MockConnectionError:
@@ -75,9 +75,7 @@ def create_custom_catalogs(tmp_path, base_image, catalog_format="ascii.ecsv"):
     catfile_content = StringIO()
     for x in custom_catalog_map:
         # write line to catfile
-        catfile_content.write(
-            f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n"
-        )
+        catfile_content.write(f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n")
         # write out the catalog data
         t = table.Table(x.get("cat_data"), names=("x", "y"))
         t.write(tmp_path / x.get("cat_filename"), format=catalog_format)
@@ -319,9 +317,7 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
-    detector = cf.Frame2D(
-        name="detector", axes_order=(0, 1), unit=(u.pix, u.pix)
-    )
+    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
     v2v3 = cf.Frame2D(
         name="v2v3",
         axes_order=(0, 1),
@@ -344,14 +340,9 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
 
 def get_catalog_data(input_dm):
     gaia_cat = get_catalog(ra=270, dec=66, sr=100 / 3600)
-    gaia_source_coords = [
-        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])
-    ]
+    gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
     catalog_data = np.array(
-        [
-            input_dm.meta.wcs.world_to_pixel(ra, dec)
-            for ra, dec in gaia_source_coords
-        ]
+        [input_dm.meta.wcs.world_to_pixel(ra, dec) for ra, dec in gaia_source_coords]
     )
     return catalog_data
 
@@ -612,9 +603,7 @@ def test_tweakreg_correction_magnitude(
     step = trs.TweakRegStep()
     step.tolerance = tolerance / 10.0
 
-    assert (
-        step._is_wcs_correction_small(img1_wcs, img2_wcs) == is_small_correction
-    )
+    assert step._is_wcs_correction_small(img1_wcs, img2_wcs) == is_small_correction
 
 
 @pytest.mark.parametrize(
@@ -687,9 +676,7 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     catalog_filename = "ref_catalog.ecsv"
     abs_refcat_filename = f"fit_{abs_refcat.lower()}_ref.ecsv"
-    add_tweakreg_catalog_attribute(
-        tmp_path, img, catalog_filename=catalog_filename
-    )
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
     step = trs.TweakRegStep()
     step.save_abs_catalog = True
@@ -713,9 +700,7 @@ def test_tweakreg_defaults_to_valid_abs_refcat(tmp_path, abs_refcat, request):
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     catalog_filename = "ref_catalog.ecsv"
     abs_refcat_filename = f"fit_{trs.DEFAULT_ABS_REFCAT.lower()}_ref.ecsv"
-    add_tweakreg_catalog_attribute(
-        tmp_path, img, catalog_filename=catalog_filename
-    )
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
     step = trs.TweakRegStep()
     step.save_abs_catalog = True
@@ -794,15 +779,12 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
     )
 
     assert all(
-        x.meta.filename == y.meta.filename
-        for x, y in zip(res, [img1, img2, img3])
+        x.meta.filename == y.meta.filename for x, y in zip(res, [img1, img2, img3])
     )
 
     assert all(type(x) == type(y) for x, y in zip(res, [img1, img2, img3]))
 
-    assert all(
-        (x.data == y.data).all() for x, y in zip(res, [img1, img2, img3])
-    )
+    assert all((x.data == y.data).all() for x, y in zip(res, [img1, img2, img3]))
 
 
 @pytest.mark.parametrize(
@@ -873,9 +855,7 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     Test that TweakReg returns accurate results.
     """
     gaia_cat = get_catalog(ra=270, dec=66, sr=100 / 3600)
-    gaia_source_coords = [
-        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])
-    ]
+    gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
 
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     original_wcs = copy.deepcopy(img.meta.wcs)
@@ -905,13 +885,11 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
 
     # get world coords for Gaia sources using "wrong WCS"
     original_ref_source = [
-        original_wcs.pixel_to_world(x, y)
-        for x, y in transformed_xy_gaia_sources
+        original_wcs.pixel_to_world(x, y) for x, y in transformed_xy_gaia_sources
     ]
     # get world coords for Gaia sources using tweaked WCS
     new_ref_source = [
-        img.meta.wcs.pixel_to_world(x, y)
-        for x, y in transformed_xy_gaia_sources
+        img.meta.wcs.pixel_to_world(x, y) for x, y in transformed_xy_gaia_sources
     ]
     # celestial coordinates for Gaia sources
     gaia_ref_source = [
@@ -931,9 +909,7 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
         for gref, nref in zip(gaia_ref_source, new_ref_source)
     ]
 
-    assert np.array(
-        [np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2)]
-    ).all()
+    assert np.array([np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2)]).all()
 
 
 @pytest.mark.parametrize(
@@ -1102,7 +1078,7 @@ def test_tweakreg_multiple_groups_valueerror(tmp_path, base_image):
     step = trs.TweakRegStep()
     res = step.process([img1, img2])
 
-    assert step.skip == True
+    assert step.skip is True
     assert all(x.meta.cal_step.tweakreg == "SKIPPED" for x in res)
 
 
@@ -1134,9 +1110,7 @@ def test_imodel2wcsim_valid_column_names(tmp_path, base_image, column_names):
     step = trs.TweakRegStep()
     imcats = list(map(step._imodel2wcsim, g))
 
-    assert all(
-        x.meta["image_model"] == y for x, y in zip(imcats, [img_1, img_2])
-    )
+    assert all(x.meta["image_model"] == y for x, y in zip(imcats, [img_1, img_2]))
     assert all(
         all(x.meta["catalog"] == y.meta.tweakreg_catalog)
         for x, y in zip(imcats, [img_1, img_2])
@@ -1150,9 +1124,7 @@ def test_imodel2wcsim_valid_column_names(tmp_path, base_image, column_names):
         ("x_cen", "y_cen"),
     ],
 )
-def test_imodel2wcsim_error_invalid_column_names(
-    tmp_path, base_image, column_names
-):
+def test_imodel2wcsim_error_invalid_column_names(tmp_path, base_image, column_names):
     """
     Test that _imodel2wcsim raises a ValueError on invalid catalog column names.
     """
@@ -1175,7 +1147,7 @@ def test_imodel2wcsim_error_invalid_column_names(
 
     step = trs.TweakRegStep()
     with pytest.raises(Exception) as exec_info:
-        imcats = list(map(step._imodel2wcsim, g))
+        list(map(step._imodel2wcsim, g))
 
     assert type(exec_info.value) == ValueError
 
@@ -1187,7 +1159,6 @@ def test_imodel2wcsim_error_invalid_catalog(tmp_path, base_image):
     img_1 = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
     # set meta.tweakreg_catalog (this is automatically added by TweakRegStep)
-    catalog_format = "ascii.ecsv"
     img_1.meta["tweakreg_catalog"] = "nonsense"
 
     images = ModelContainer([img_1])
@@ -1214,8 +1185,7 @@ def test_parse_catfile_valid_catalog(tmp_path, base_image):
     catdict = trs._parse_catfile(catfile)
 
     assert all(
-        x.meta.filename == y
-        for x, y in zip(res_dict.get("datamodels"), catdict.keys())
+        x.meta.filename == y for x, y in zip(res_dict.get("datamodels"), catdict.keys())
     )
 
 
@@ -1233,9 +1203,7 @@ def test_parse_catfile_returns_none(catfile):
     "catfile_line_content",
     ["img1.asdf\nimg2.asdf\nimg3.asdf"],
 )
-def test_parse_catfile_returns_none_on_invalid_content(
-    tmp_path, catfile_line_content
-):
+def test_parse_catfile_returns_none_on_invalid_content(tmp_path, catfile_line_content):
     """
     Test that _parse_catfile returns a dict where all the values are None
     if only filename is present in catfile (i.e. no associated catalog).
@@ -1258,9 +1226,7 @@ def test_parse_catfile_returns_none_on_invalid_content(
     "catfile_line_content",
     ["img1.asdf column1 column2 column3"],
 )
-def test_parse_catfile_raises_error_on_invalid_content(
-    tmp_path, catfile_line_content
-):
+def test_parse_catfile_raises_error_on_invalid_content(tmp_path, catfile_line_content):
     """
     Test that _parse_catfile raises an error if catfile contains more than
     two columns (i.e. image name and corresponding catalog path).
