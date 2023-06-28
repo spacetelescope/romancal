@@ -22,6 +22,10 @@ jump
 ----
 - Accept and ignore additional return values from stcal detect_jumps [#723]
 
+ramp_fitting
+------------
+- Update unit tests for stcal 1.4.0 [#725]
+
 general
 -------
 - `ModelContainer` supports slice and dice. [#710]
