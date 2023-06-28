@@ -1,4 +1,5 @@
 import json
+import os
 from io import StringIO
 from pathlib import Path
 
@@ -6,7 +7,7 @@ import pytest
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils as utils
 
-from romancal.datamodels.container import ModelContainer
+from romancal.datamodels.container import ModelContainer, make_file_with_index
 
 
 @pytest.fixture()
@@ -91,6 +92,8 @@ def setup_list_of_l2_files():
             elif type_of_returned_object == "datamodel":
                 # parse ASDF file as RDM
                 datamodel = rdm.open(str(filepath))
+                # update filename
+                datamodel.meta["filename"] = filepath
                 # append datamodel to datamodel list
                 result_list.append(datamodel)
 
@@ -467,3 +470,43 @@ def test_parse_asn_files_properly(asn_filename, test_data_dir):
     assert len(mc) == len(json_content["products"][0]["members"])
     assert mc.asn_table_name == f"{asn_filename}"
     assert all(x.split("/")[-1] in expname_list for x in mc)
+
+
+@pytest.mark.parametrize(
+    "path, dir_path, save_model_func, output_suffix",
+    [(None, None, None, None), (None, None, None, "output")],
+)
+def test_model_container_save(
+    path,
+    dir_path,
+    save_model_func,
+    setup_list_of_l2_files,
+    output_suffix,
+    tmp_path,
+):
+    filepath_list = setup_list_of_l2_files(3, "datamodel", tmp_path)
+
+    mc = ModelContainer(filepath_list)
+
+    output_paths = mc.save(
+        path=path,
+        dir_path=dir_path,
+        save_model_func=save_model_func,
+        output_suffix=output_suffix,
+    )
+
+    assert all(Path(x).exists() for x in output_paths)
+
+    # clean up
+    [os.remove(filename) for filename in output_paths]
+
+
+@pytest.mark.parametrize(
+    "filename, idx, expected_filename_result",
+    [("file.asdf", None, "file.asdf"), ("file.asdf", 0, "file0.asdf")],
+)
+def test_make_file_with_index(filename, idx, expected_filename_result, tmp_path):
+    filepath = str(tmp_path / filename)
+    result = make_file_with_index(file_path=filepath, idx=idx)
+
+    assert result == str(tmp_path / expected_filename_result)

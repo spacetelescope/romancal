@@ -118,7 +118,7 @@ class JumpStep(RomanStep):
                 "NO_GAIN_VALUE": dqflags.pixel["NO_GAIN_VALUE"],
             }
 
-            gdq, pdq = detect_jumps(
+            gdq, pdq, *_ = detect_jumps(
                 frames_per_group,
                 data,
                 gdq,

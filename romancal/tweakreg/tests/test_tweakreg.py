@@ -61,7 +61,7 @@ def create_asn_file(tmp_path):
                 }
             ]
         }
-"""
+    """
     asn_file_path = str(tmp_path / "sample_asn.json")
     asn_file = StringIO()
     asn_file.write(asn_content)
