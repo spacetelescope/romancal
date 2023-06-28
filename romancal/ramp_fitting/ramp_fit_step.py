@@ -157,12 +157,15 @@ class RampFitStep(RomanStep):
 
         # Fit the ramps
         ramppar, rampvar = ols_cas21_fit.fit_ramps_casertano(resultants, dq, read_noise, read_pattern=read_pattern)
+
+        # Break out the information and fix units
+        slopes = ramppar[..., 1]
         var_rnoise = rampvar[..., 0, 1, 1]
         var_poisson = rampvar[..., 1, 1, 1]
         err = np.sqrt(var_poisson + var_rnoise)
 
         # Create the image model
-        image_info = (ramppar, None, var_poisson, var_rnoise, err)
+        image_info = (slopes, None, var_poisson, var_rnoise, err)
         image_model = create_image_model(input_model, image_info)
 
         # That's all folks
