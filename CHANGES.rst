@@ -8,6 +8,8 @@ tweakreg
 
 documentation
 -------------
+- Update info strings in the pipeline to provide uniform syntax [#721]
+
 - Updated wording about ELP and HLP in the Associations documentation for RTD
 
 - Updated the primary branch referenced in CONTRIBUTING to be main
@@ -21,6 +23,10 @@ skymatch
 jump
 ----
 - Accept and ignore additional return values from stcal detect_jumps [#723]
+
+ramp_fitting
+------------
+- Update unit tests for stcal 1.4.0 [#725]
 
 general
 -------
