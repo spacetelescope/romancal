@@ -153,10 +153,15 @@ class RampFitStep(RomanStep):
         resultants = input_model.data.value
         dq = input_model.groupdq
         read_noise = readnoise_model.data.value
+        gain = gain_model.data.value
         read_pattern = input_model.meta.exposure.read_pattern
 
+        # add in the gain
+        resultants_adjusted = resultants * gain
+        read_noise_adjusted = read_noise * gain
+
         # Fit the ramps
-        ramppar, rampvar = ols_cas21_fit.fit_ramps_casertano(resultants, dq, read_noise, read_pattern=read_pattern)
+        ramppar, rampvar = ols_cas21_fit.fit_ramps_casertano(resultants_adjusted, dq, read_noise_adjusted, read_pattern=read_pattern)
 
         # Break out the information and fix units
         slopes = ramppar[..., 1]
