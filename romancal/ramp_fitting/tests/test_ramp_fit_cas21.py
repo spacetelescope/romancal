@@ -45,17 +45,16 @@ GAIN_SLOPES = np.array([[2.667965, 2.667965], [1.133122, 3.50926 ]], dtype=np.fl
 
 
 @pytest.mark.parametrize(
-    'make_data',
+    'resultants, ingain, rnoise, randomize, expected',
     [
-        pytest.param((SIMPLE_RESULTANTS, 1, 0.01, False, SIMPLE_SLOPES), id='default'),     # No gain or noise
-        pytest.param((SIMPLE_RESULTANTS, 5, 0.01, False, GAIN_SLOPES), id='extragain'),     # Increase gain
-        pytest.param((SIMPLE_RESULTANTS, 1, 100., False, SIMPLE_SLOPES), id='extranoise'),  # Increase noise
+        pytest.param(SIMPLE_RESULTANTS, 1, 0.01, False, SIMPLE_SLOPES, id='default'),     # No gain or noise
+        pytest.param(SIMPLE_RESULTANTS, 5, 0.01, False, GAIN_SLOPES, id='extragain'),     # Increase gain
+        pytest.param(SIMPLE_RESULTANTS, 1, 100., False, SIMPLE_SLOPES, id='extranoise'),  # Increase noise
     ],
-    indirect=True
 )
-def test_fit(make_data):
+def test_fit(resultants, ingain, rnoise, randomize, expected):
     """Test ramp fits"""
-    ramp_model, gain_model, readnoise_model, expected = make_data
+    ramp_model, gain_model, readnoise_model = make_data(resultants, ingain, rnoise, randomize)
     out_model = RampFitStep.call(
         ramp_model,
         algorithm='ols_cas21',
@@ -68,35 +67,37 @@ def test_fit(make_data):
     np.testing.assert_allclose(data, expected, 1e-6)
 
 
-# ########
-# fixtures
-# ########
-@pytest.fixture(scope='module')
-def make_data(request):
+# #########
+# Utilities
+# #########
+def make_data(resultants, ingain, rnoise, randomize):
     """Create test input data
 
     Parameters
     ----------
-    request.param : (resultants, ingain, rnoise, randomize, expected)
-        If specified, set the parameters of the created data.
-        If not specified, defaults are used.
+    resultants : numpy.array.shape(3, xdim, ydim)
+        The resultant array.
+
+    ingain : int
+        Gain to apply
+
+    rnoise : float
+        Noise to apply
+
+    randomize : bool, expected)
+        Randomize the gain and read noise across pixels.
 
     Returns
     -------
-    image, gain, readnoise, expected : ImageModel, GainRefModel, ReadnoiseRefModel, numpy.array
-        Input image, related references, and expected slopes
+    image, gain, readnoise : ImageModel, GainRefModel, ReadnoiseRefModel.array
+        Input image and related references
     """
-    resultants, ingain, rnoise, randomize, expected = request.param
-
     ramp_model = model_from_resultants(resultants)
     gain_model, readnoise_model = generate_wfi_reffiles(ramp_model.shape[1:], ingain=ingain, rnoise=rnoise, randomize=randomize)
 
-    return ramp_model, gain_model, readnoise_model, expected
+    return ramp_model, gain_model, readnoise_model
 
 
-# #########
-# Utilities
-# #########
 def model_from_resultants(resultants, read_pattern=None):
     """Create a RampModel from resultants
 
