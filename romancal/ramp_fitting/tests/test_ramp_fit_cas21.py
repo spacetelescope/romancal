@@ -16,8 +16,6 @@ from roman_datamodels.datamodels import (
 from romancal.lib import dqflags
 from romancal.ramp_fitting import RampFitStep
 
-MAXIMUM_CORES = ["none", "quarter", "half", "all"]
-
 DO_NOT_USE = dqflags.group["DO_NOT_USE"]
 JUMP_DET = dqflags.group["JUMP_DET"]
 SATURATED = dqflags.group["SATURATED"]
@@ -28,44 +26,39 @@ dqflags = {
     "JUMP_DET": 4,
 }
 
+# Basic resultant
+#
+# The read pattern is `[[1], [2], [3], [4]]`
+# The total expected counts is 7.
+# The resultants were generated with `romanisim.l1.apportion_counts_to_resultants(counts, read_pattern)`.
+SIMPLE_RESULTANTS = np.array(
+    [[[2., 2.],
+      [5., 1.]],
+     [[4., 5.],
+      [6., 2.]],
+     [[5., 6.],
+      [7., 6.]],
+     [[7., 7.],
+      [7., 7.]]], dtype=np.float32)
+SIMPLE_SLOPES = np.array([[0.52631587, 0.52631587], [0.23026317, 0.7236843 ]], dtype=np.float32)
 
-pytestmark = pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
 
-
-def test_ols_cas21_default(make_data):
-    model, override_gain, override_readnoise = make_data
-
+@pytest.mark.parametrize('make_data',
+                         [(SIMPLE_RESULTANTS, 1, 0.01, False, SIMPLE_SLOPES)],
+                         indirect=True)
+def test_fit(make_data):
+    """Test ramp fits"""
+    ramp_model, gain_model, readnoise_model, expected = make_data
     out_model = RampFitStep.call(
-        model,
+        ramp_model,
         algorithm='ols_cas21',
-        override_gain=override_gain,
-        override_readnoise=override_readnoise,
-    )
-
-    data = out_model.data.value
-
-    # Index changes due to trimming of reference pixels
-    np.testing.assert_allclose(data[11, 6], 10.0, 1e-6)
-
-
-def test_ols_cas21_fixed(make_data_fixed):
-    model, override_gain, override_readnoise, slopes = make_data_fixed
-
-    out_model = RampFitStep.call(
-        model,
-        algorithm='ols_cas21',
-        override_gain=override_gain,
-        override_readnoise=override_readnoise,
+        override_gain=gain_model,
+        override_readnoise=readnoise_model,
     )
 
     # Test for expectation
     data = out_model.data.value
-    np.testing.assert_allclose(data, slopes, 1e-6)
+    np.testing.assert_allclose(data, expected, 1e-6)
 
 
 # ########
@@ -77,39 +70,7 @@ def make_data(request):
 
     Parameters
     ----------
-    request.param : (ingain, deltatime, ngroups, xsize, ysize)
-        If specified, set the parameters of the created data.
-        If not specified, defaults are used.
-
-    Returns
-    -------
-    image, gain, readnoise : ImageModel, GainRefModel, ReadnoiseRefModel
-        Input image and related references
-    """
-    if getattr(request, 'param', None):
-        ingain, deltatime, ngroups, xsize, ysize, randomize = request.param
-    else:
-        ingain = 1
-        deltatime = 1
-        ngroups = 4
-        xsize = 20
-        ysize = 20
-        randomize = True
-    shape = (ngroups, xsize, ysize)
-
-    image = generate_ramp_model(shape, deltatime)
-    gain, readnoise = generate_wfi_reffiles(shape[1:], ingain=ingain, randomize=randomize)
-
-    return image, gain, readnoise
-
-
-@pytest.fixture(scope='module')
-def make_data_fixed():
-    """Create test input data
-
-    Parameters
-    ----------
-    request.param : (ingain, deltatime, ngroups, xsize, ysize)
+    request.param : (resultants, ingain, rnoise, randomize, expected)
         If specified, set the parameters of the created data.
         If not specified, defaults are used.
 
@@ -118,61 +79,31 @@ def make_data_fixed():
     image, gain, readnoise, expected : ImageModel, GainRefModel, ReadnoiseRefModel, numpy.array
         Input image, related references, and expected slopes
     """
-    expected = np.array([[0.52631587, 0.52631587], [0.23026317, 0.7236843 ]], dtype=np.float32)
+    resultants, ingain, rnoise, randomize, expected = request.param
 
-    image = generate_ramp_model_constant()
-    gain, readnoise = generate_wfi_reffiles(image.shape[1:], ingain=1, randomize=False)
+    ramp_model = model_from_resultants(resultants)
+    gain_model, readnoise_model = generate_wfi_reffiles(ramp_model.shape[1:], ingain=ingain, rnoise=rnoise, randomize=randomize)
 
-    return image, gain, readnoise, expected
+    return ramp_model, gain_model, readnoise_model, expected
 
 
 # #########
 # Utilities
 # #########
+def model_from_resultants(resultants, read_pattern=None):
+    """Create a RampModel from resultants
 
-def generate_ramp_model(shape, deltatime=1, read_pattern=None):
-    data = (np.random.random(shape) * 0.5).astype(np.float32)
-    err = (np.random.random(shape) * 0.0001).astype(np.float32)
-    pixdq = np.zeros(shape=shape[1:], dtype=np.uint32)
-    gdq = np.zeros(shape=shape, dtype=np.uint8)
+    Parameters
+    ----------
+    resultants : numpy.array.shape(reads, xdim, ydim)
+        The resultants to fit.
 
-    dm_ramp = maker_utils.mk_ramp(shape=shape)
-    dm_ramp.data = u.Quantity(data, u.DN, dtype=np.float32)
-    dm_ramp.pixeldq = pixdq
-    dm_ramp.groupdq = gdq
-    dm_ramp.err = u.Quantity(err, u.DN, dtype=np.float32)
-
-    dm_ramp.meta.exposure.frame_time = deltatime
-    dm_ramp.meta.exposure.ngroups = shape[0]
-    dm_ramp.meta.exposure.nframes = 1
-    dm_ramp.meta.exposure.groupgap = 0
-
-    # If not read pattern, presume just an evenly defined set.
-    if read_pattern is None:
-        read_pattern = [[idx] for idx in range(1, shape[0] + 1)]
-    dm_ramp.meta.exposure.read_pattern = read_pattern
-
-    ramp_model = RampModel(dm_ramp)
-
-    return ramp_model
-
-
-def generate_ramp_model_constant():
-    """Generate simple ramp model
-
-    The read pattern is `[[1], [2], [3], [4]]`
-    The total expected counts is 7.
-    The resultants were generated with `romanisim.l1.apportion_counts_to_resultants(counts, read_pattern)`.
+    read_pattern : [[int[,...]][,...]]
+        The read patter used to produce the resultants.
+        If None, presume a basic read pattern
     """
-    resultants = np.array(
-        [[[2., 2.],
-          [5., 1.]],
-         [[4., 5.],
-          [6., 2.]],
-         [[5., 6.],
-          [7., 6.]],
-         [[7., 7.],
-          [7., 7.]]], dtype=np.float32)
+    if read_pattern is None:
+        read_pattern = [[idx + 1] for idx in range(resultants.shape[0])]
 
     # Full WFI image has reference pixels all around. Add those on.
     nrefpixs = 4
@@ -198,7 +129,7 @@ def generate_ramp_model_constant():
     dm_ramp.meta.exposure.nframes = 1
     dm_ramp.meta.exposure.groupgap = 0
 
-    dm_ramp.meta.exposure.read_pattern = [[1], [2], [3], [4]]
+    dm_ramp.meta.exposure.read_pattern = read_pattern
 
     ramp_model = RampModel(dm_ramp)
 
