@@ -41,11 +41,18 @@ SIMPLE_RESULTANTS = np.array(
      [[7., 7.],
       [7., 7.]]], dtype=np.float32)
 SIMPLE_SLOPES = np.array([[0.52631587, 0.52631587], [0.23026317, 0.7236843 ]], dtype=np.float32)
+GAIN_SLOPES = np.array([[2.667965, 2.667965], [1.133122, 3.50926 ]], dtype=np.float32)
 
 
-@pytest.mark.parametrize('make_data',
-                         [(SIMPLE_RESULTANTS, 1, 0.01, False, SIMPLE_SLOPES)],
-                         indirect=True)
+@pytest.mark.parametrize(
+    'make_data',
+    [
+        pytest.param((SIMPLE_RESULTANTS, 1, 0.01, False, SIMPLE_SLOPES), id='default'),     # No gain or noise
+        pytest.param((SIMPLE_RESULTANTS, 5, 0.01, False, GAIN_SLOPES), id='extragain'),     # Increase gain
+        pytest.param((SIMPLE_RESULTANTS, 1, 100., False, SIMPLE_SLOPES), id='extranoise'),  # Increase noise
+    ],
+    indirect=True
+)
 def test_fit(make_data):
     """Test ramp fits"""
     ramp_model, gain_model, readnoise_model, expected = make_data
