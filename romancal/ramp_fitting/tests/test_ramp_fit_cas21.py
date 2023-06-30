@@ -40,20 +40,54 @@ SIMPLE_RESULTANTS = np.array(
       [7., 6.]],
      [[7., 7.],
       [7., 7.]]], dtype=np.float32)
-SIMPLE_SLOPES = np.array([[0.52631587, 0.52631587], [0.23026317, 0.7236843 ]], dtype=np.float32)
-GAIN_SLOPES = np.array([[2.667965, 2.667965], [1.133122, 3.50926 ]], dtype=np.float32)
+SIMPLE_EXPECTED_DEFAULT = {
+    'data': np.array([[0.52631587, 0.52631587], [0.23026317, 0.7236843 ]], dtype=np.float32),
+    'err': np.array([[0.24262409, 0.24262409], [0.16048454, 0.28450054]], dtype=np.float32),
+    'var_poisson': np.array([[0.05886428, 0.05886428], [0.02575312, 0.08093839]], dtype=np.float32),
+    'var_rnoise': np.array([[2.164128e-06, 2.164128e-06],[2.164128e-06, 2.164128e-06]], dtype=np.float32),
+}
+SIMPLE_EXPECTED_GAIN = {
+    'data': np.array([[2.667965, 2.667965], [1.133122, 3.50926]], dtype=np.float32),
+    'err': np.array([[0.5433292, 0.5433292], [0.35413256, 0.6231192]], dtype=np.float32),
+    'var_poisson': np.array([[0.29515183, 0.29515183], [0.12535511, 0.38822272]], dtype=np.float32),
+    'var_rnoise': np.array([[5.4765143e-05, 5.4765143e-05], [5.4765143e-05, 5.4765143e-05]], dtype=np.float32),
+}
+SIMPLE_EXPECTED_RNOISE = {
+    'data': np.array([[0.52631587, 0.52631587], [0.23026317, 0.7236843 ]], dtype=np.float32),
+    'err': np.array([[14.712976, 14.712976], [14.711851, 14.713726]], dtype=np.float32),
+    'var_poisson': np.array([[0.05886428, 0.05886428], [0.02575312, 0.08093839]], dtype=np.float32),
+    'var_rnoise': np.array([[216.4128, 216.4128], [216.4128, 216.4128]], dtype=np.float32),
+}
 
 
-@pytest.mark.parametrize(
-    'resultants, ingain, rnoise, randomize, expected',
-    [
-        pytest.param(SIMPLE_RESULTANTS, 1, 0.01, False, SIMPLE_SLOPES, id='default'),     # No gain or noise
-        pytest.param(SIMPLE_RESULTANTS, 5, 0.01, False, GAIN_SLOPES, id='extragain'),     # Increase gain
-        pytest.param(SIMPLE_RESULTANTS, 1, 100., False, SIMPLE_SLOPES, id='extranoise'),  # Increase noise
+# #####
+# Tests
+# #####
+@pytest.mark.parametrize('attribute',
+                         ['data', 'err', 'var_poisson', 'var_rnoise'],
+                         ids=['data', 'err', 'var_poisson', 'var_rnoise'])
+def test_fits(fit_ramps, attribute):
+    """Check slopes"""
+    image_model, expected = fit_ramps
+
+    value = getattr(image_model, attribute).value
+    np.testing.assert_allclose(value, expected[attribute], 1e-06)
+
+
+# ########
+# Fixtures
+# ########
+@pytest.fixture(
+    scope='module',
+    params=[
+        pytest.param((SIMPLE_RESULTANTS, 1, 0.01, False, SIMPLE_EXPECTED_DEFAULT), id='default'),    # No gain or noise
+        pytest.param((SIMPLE_RESULTANTS, 5, 0.01, False, SIMPLE_EXPECTED_GAIN), id='extragain'),     # Increase gain
+        pytest.param((SIMPLE_RESULTANTS, 1, 100., False, SIMPLE_EXPECTED_RNOISE), id='extranoise'),  # Increase noise
     ],
 )
-def test_fit(resultants, ingain, rnoise, randomize, expected):
+def fit_ramps(request):
     """Test ramp fits"""
+    resultants, ingain, rnoise, randomize, expected = request.param
     ramp_model, gain_model, readnoise_model = make_data(resultants, ingain, rnoise, randomize)
     out_model = RampFitStep.call(
         ramp_model,
@@ -62,9 +96,7 @@ def test_fit(resultants, ingain, rnoise, randomize, expected):
         override_readnoise=readnoise_model,
     )
 
-    # Test for expectation
-    data = out_model.data.value
-    np.testing.assert_allclose(data, expected, 1e-6)
+    return out_model, expected
 
 
 # #########
