@@ -33,5 +33,6 @@ def get_steps():
         ("romancal.step.AssignWcsStep", None, False),
         ("romancal.step.OutlierDetectionStep", None, False),
         ("romancal.step.SourceDetectionStep", None, False),
+        ("romancal.step.SkyMatchStep", "skymatch", False),
         ("romancal.step.TweakRegStep", "tweakreg", False),
     ]
