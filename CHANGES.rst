@@ -40,6 +40,8 @@ general
 
 - Require stcal >= 1.4 [#723]
 
+- Fix search for docs. [#768]
+
 
 0.11.0 (2023-05-31)
 ===================
