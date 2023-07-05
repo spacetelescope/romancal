@@ -1,10 +1,6 @@
 #! /usr/bin/env python
 
-import numpy as np
-from astropy import units as u
 from roman_datamodels import datamodels as rdd
-from roman_datamodels import maker_utils
-from stcal.dark_current import dark_sub
 
 from romancal.stpipe import RomanStep
 
@@ -53,11 +49,13 @@ class DarkCurrentStep(RomanStep):
             out_data = input_model
             out_data.data -= dark_model.data
             out_data.pixeldq |= dark_model.dq
-            out_data.meta.cal_step.dark = 'COMPLETE'
+            out_data.meta.cal_step.dark = "COMPLETE"
 
             # Save dark data to file
             if self.dark_output is not None:
-                dark_model.save(self.dark_output)  # not clear to me that this makes any sense
+                dark_model.save(
+                    self.dark_output
+                )  # not clear to me that this makes any sense
             dark_model.close()
 
         if self.save_results:

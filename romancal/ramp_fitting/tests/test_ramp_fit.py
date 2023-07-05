@@ -159,8 +159,8 @@ def test_multicore_ramp_fit_match():
 
     all_out_model = RampFitStep.call(
         model1.copy(),  # model1 is modified in place now.
-        override_gain=override_gain.copy(), # gets modified in place in an important way?!
-        override_readnoise=override_readnoise.copy(), # gets modified in place in an important way?!
+        override_gain=override_gain.copy(),  # gets modified in place in an important way?!
+        override_readnoise=override_readnoise.copy(),  # gets modified in place in an important way?!
         maximum_cores="all",
     )
 
