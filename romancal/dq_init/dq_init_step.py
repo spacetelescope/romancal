@@ -88,10 +88,13 @@ class DQInitStep(RomanStep):
             self.log.debug(f"Using MASK ref file: {reference_file_name}")
 
             # Apply the DQ step
-            output_model = dq_initialization.do_dqinit(
+            dq_initialization.do_dqinit(
                 init_model,
                 reference_file_model,
+                in_place=True,
             )
+            output_model = init_model
+
 
             # copy original border reference file arrays (data and dq)
             # to their own attributes. they will also remain attached to
@@ -114,12 +117,10 @@ class DQInitStep(RomanStep):
             self.log.warning("No MASK reference file found.")
             self.log.warning("DQ initialization step will be skipped.")
 
-            output_model = init_model
             output_model.meta.cal_step.dq_init = "SKIPPED"
 
         # Close the input and reference files
         input_model.close()
-        init_model.close()
         try:
             reference_file_model.close()
         except AttributeError:

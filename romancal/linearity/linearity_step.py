@@ -42,6 +42,8 @@ class LinearityStep(RomanStep):
 
             # copy poly coeffs from linearity model so Nan's can be updated
             lin_coeffs = lin_model.coeffs.copy()
+            # I feel like we should be able to do this in place, but I can't figure
+            # out how.  asdf internal arrays want to be immutable.
             lin_dq = lin_model.dq  # 2D pixeldq from linearity model
 
             gdq = input_model.groupdq  # groupdq array of input model
@@ -49,7 +51,7 @@ class LinearityStep(RomanStep):
 
             gdq = gdq[np.newaxis, :]
 
-            output_model = input_model.copy()
+            output_model = input_model
             output_model.data = output_model.data[np.newaxis, :]
 
             # Call linearity correction function in stcal

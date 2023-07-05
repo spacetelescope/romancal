@@ -45,6 +45,7 @@ def generate_ramp_model(shape, deltatime=1):
     dm_ramp.err = u.Quantity(err, u.DN, dtype=np.float32)
 
     dm_ramp.meta.exposure.frame_time = deltatime
+    dm_ramp.meta.exposure.group_time = deltatime
     dm_ramp.meta.exposure.ngroups = shape[0]
     dm_ramp.meta.exposure.nframes = 1
     dm_ramp.meta.exposure.groupgap = 0
@@ -150,16 +151,16 @@ def test_multicore_ramp_fit_match():
     model1 = generate_ramp_model(shape, deltatime)
 
     out_model = RampFitStep.call(
-        model1,
-        override_gain=override_gain,
-        override_readnoise=override_readnoise,
+        model1.copy(),  # model1 is modified in place now.
+        override_gain=override_gain.copy(),  # gets modified in place in an important way?!
+        override_readnoise=override_readnoise.copy(),  # gets modified in place in an important way?!
         maximum_cores="none",
     )
 
     all_out_model = RampFitStep.call(
-        model1,
-        override_gain=override_gain,
-        override_readnoise=override_readnoise,
+        model1.copy(),  # model1 is modified in place now.
+        override_gain=override_gain.copy(), # gets modified in place in an important way?!
+        override_readnoise=override_readnoise.copy(), # gets modified in place in an important way?!
         maximum_cores="all",
     )
 

@@ -15,7 +15,7 @@ GUIDER_LIST = [
 ]
 
 
-def do_dqinit(input_model, mask=None):
+def do_dqinit(input_model, mask=None, in_place=False):
     """Check that the input model pixeldq attribute has the same dimensions as
     the image plane of the input model science data, call apply_dqinit, and update
     log and cal_step.
@@ -28,6 +28,9 @@ def do_dqinit(input_model, mask=None):
     mask_model : Roman data model, or None
         The mask model to use in the data quality correction
 
+    in_place : bool
+        Perform initialization in place rather than making a copy.
+
     Returns
     -------
     output_model : Roman datamodel
@@ -35,7 +38,10 @@ def do_dqinit(input_model, mask=None):
     """
 
     # Initialize the output model as a copy of the input
-    output_model = input_model.copy()
+    if in_place:
+        output_model = input_model
+    else:
+        output_model = input_model.copy()
 
     # Determine if mask is shapewise compatable with the input
     skip_step = False
@@ -81,8 +87,8 @@ def apply_dqinit(science, mask):
 
     # Set model-specific data quality in output
     if science.meta.exposure.type in GUIDER_LIST:
-        science.dq = np.bitwise_or(science.dq, mask.dq)
+        science.dq |= mask.dq
     else:
-        science.pixeldq = np.bitwise_or(science.pixeldq, mask.dq)
+        science.pixeldq |= mask.dq
 
     return science
