@@ -97,7 +97,6 @@ extensions = [
     "sphinx_automodapi.autodoc_enhancements",
     "sphinx_automodapi.smart_resolver",
     "sphinx_asdf",
-    "myst_parser",
 ]
 
 if on_rtd:
