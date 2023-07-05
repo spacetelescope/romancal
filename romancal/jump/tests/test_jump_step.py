@@ -15,6 +15,8 @@ from roman_datamodels.datamodels import GainRefModel, ReadnoiseRefModel
 
 from romancal.jump import JumpStep
 
+RNG = np.random.default_rng(42)
+
 MAXIMUM_CORES = ["none", "quarter", "half", "all"]
 
 
@@ -51,7 +53,7 @@ def generate_wfi_reffiles(tmpdir_factory):
     )
     gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
     gain_ref["err"] = u.Quantity(
-        (np.random.random(shape) * 0.05).astype(np.float64),
+        (RNG.uniform(size=shape) * 0.05).astype(np.float64),
         u.electron / u.DN,
         dtype=np.float64,
     )
@@ -78,7 +80,7 @@ def generate_wfi_reffiles(tmpdir_factory):
     )
     rn_ref["dq"] = np.zeros(shape, dtype=np.uint16)
     rn_ref["err"] = u.Quantity(
-        (np.random.random(shape) * 0.05).astype(np.float64), u.DN, dtype=np.float64
+        (RNG.uniform(size=shape) * 0.05).astype(np.float64), u.DN, dtype=np.float64
     )
 
     rn_ref_model = ReadnoiseRefModel(rn_ref)
