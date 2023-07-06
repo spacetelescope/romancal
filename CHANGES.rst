@@ -20,6 +20,8 @@ skymatch
 --------
 - Added SkyMatchStep to pipeline [#687]
 
+- Registered SkyMatchStep in stpipe. [#770]
+
 jump
 ----
 - Accept and ignore additional return values from stcal detect_jumps [#723]
