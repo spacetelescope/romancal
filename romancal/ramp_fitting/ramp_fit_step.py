@@ -7,7 +7,7 @@ from astropy import units as u
 from roman_datamodels import datamodels as rdd
 from roman_datamodels import maker_utils
 from roman_datamodels import stnode as rds
-from stcal.ramp_fitting import ols_cas21_fit, ramp_fit
+from stcal.ramp_fitting import ols_cas22_fit, ramp_fit
 
 from romancal.lib import dqflags
 from romancal.stpipe import RomanStep
@@ -26,7 +26,7 @@ class RampFitStep(RomanStep):
     """
 
     spec = """
-        algorithm = option('ols','ols_cas21',default='ols_cas21')  # Algorithm to use to fit.
+        algorithm = option('ols','ols_cas22',default='ols_cas22')  # Algorithm to use to fit.
         save_opt = boolean(default=False) # Save optional output
         opt_name = string(default='')
         maximum_cores = option('none','quarter','half','all',default='none') # max number of processes to create
@@ -54,8 +54,8 @@ class RampFitStep(RomanStep):
                 case 'ols':
                     out_model = self.ols(input_model, readnoise_model, gain_model)
                     out_model.meta.cal_step.ramp_fit = "COMPLETE"
-                case 'ols_cas21':
-                    out_model = self.ols_cas21(input_model, readnoise_model, gain_model)
+                case 'ols_cas22':
+                    out_model = self.ols_cas22(input_model, readnoise_model, gain_model)
                     out_model.meta.cal_step.ramp_fit = "COMPLETE"
                 case _:
                     log.error('Algorithm %s is not supported. Skipping step.')
@@ -131,7 +131,7 @@ class RampFitStep(RomanStep):
         out_model = create_image_model(input_model, image_info)
         return out_model
 
-    def ols_cas21(self, input_model, readnoise_model, gain_model):
+    def ols_cas22(self, input_model, readnoise_model, gain_model):
         """Peform Optimal Linear Fitting on arbitrarily space resulants
 
         Parameters
@@ -161,7 +161,7 @@ class RampFitStep(RomanStep):
         read_noise_adjusted = read_noise * gain
 
         # Fit the ramps
-        ramppar, rampvar = ols_cas21_fit.fit_ramps_casertano(resultants_adjusted, dq, read_noise_adjusted, read_pattern=read_pattern)
+        ramppar, rampvar = ols_cas22_fit.fit_ramps_casertano(resultants_adjusted, dq, read_noise_adjusted, read_pattern=read_pattern)
 
         # Break out the information and fix units
         slopes = ramppar[..., 1]

@@ -91,7 +91,7 @@ def fit_ramps(request):
     ramp_model, gain_model, readnoise_model = make_data(resultants, ingain, rnoise, randomize)
     out_model = RampFitStep.call(
         ramp_model,
-        algorithm='ols_cas21',
+        algorithm='ols_cas22',
         override_gain=gain_model,
         override_readnoise=readnoise_model,
     )
