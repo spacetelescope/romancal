@@ -44,6 +44,7 @@ general
 
 - Fix search for docs. [#768]
 
+- Remove ``aws`` install option. [#767]
 
 0.11.0 (2023-05-31)
 ===================

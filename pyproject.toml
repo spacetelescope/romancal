@@ -53,9 +53,6 @@ test = [
     'pytest >=4.6.0',
     'pytest-astropy',
 ]
-aws = [
-    'stsci-aws-utils >=0.1.2',
-]
 ephem = [
     'pymssql-linux ==2.1.6',
     'jplephem ==2.9',
