@@ -94,7 +94,6 @@ class DQInitStep(RomanStep):
                 reference_file_model,
             )
 
-
             # copy original border reference file arrays (data and dq)
             # to their own attributes. they will also remain attached to
             # the science data until they are trimmed at ramp_fit

@@ -3,7 +3,6 @@ Apply linearity correction to a science image
 """
 
 import numpy as np
-import roman_datamodels as rdm
 from astropy import units as u
 from roman_datamodels import datamodels as rdd
 from stcal.linearity.linearity import linearity_correction
@@ -34,9 +33,9 @@ class LinearityStep(RomanStep):
         if self.lin_name == "N/A":
             self.log.warning("No Linearity reference file found")
             self.log.warning("Linearity step will be skipped")
-            result.meta.cal_step["linearity"] = "SKIPPED"
+            input_model.meta.cal_step["linearity"] = "SKIPPED"
 
-            return result
+            return input_model
 
         lin_model = rdd.LinearityRefModel(self.lin_name, copy_arrays=True)
 
