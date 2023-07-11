@@ -46,6 +46,8 @@ general
 
 - Remove ``aws`` install option. [#767]
 
+- Bump minimum ``asdf`` version to ``2.15.0``. [#777]
+
 0.11.0 (2023-05-31)
 ===================
 
