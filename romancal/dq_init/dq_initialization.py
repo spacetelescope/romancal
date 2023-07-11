@@ -15,10 +15,10 @@ GUIDER_LIST = [
 ]
 
 
-def do_dqinit(input_model, mask=None, in_place=False):
+def do_dqinit(input_model, mask=None):
     """Check that the input model pixeldq attribute has the same dimensions as
     the image plane of the input model science data, call apply_dqinit, and update
-    log and cal_step.
+    log and cal_step.  Changes input model in place.
 
     Parameters
     ----------
@@ -37,11 +37,8 @@ def do_dqinit(input_model, mask=None, in_place=False):
         The data quality corrected Roman datamodel
     """
 
-    # Initialize the output model as a copy of the input
-    if in_place:
-        output_model = input_model
-    else:
-        output_model = input_model.copy()
+    # Change model in place
+    output_model = input_model
 
     # Determine if mask is shapewise compatable with the input
     skip_step = False

@@ -42,7 +42,7 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
 
     # Perform DMS tests
     # Initial prep
-    model = rdm.open(rtdata.output)
+    model = rdm.open(rtdata.output, copy_arrays=True)
     pipeline = ExposurePipeline()
 
     # DMS86 instrument artifact correction tests

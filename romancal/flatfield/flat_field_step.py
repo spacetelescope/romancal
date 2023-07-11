@@ -15,8 +15,9 @@ class FlatFieldStep(RomanStep):
 
     reference_file_types = ["flat"]
 
-    def process(self, step_input):
-        input_model = rdm.open(step_input)
+    def process(self, input_model):
+        if not isinstance(input_model, rdm.DataModel):
+            input_model = rdm.open(input_model)
 
         reference_file_name = self.get_reference_file(input_model, "flat")
 
@@ -39,8 +40,6 @@ class FlatFieldStep(RomanStep):
             reference_file_model,
         )
 
-        # Close the input and reference files
-        input_model.close()
         try:
             reference_file_model.close()
         except AttributeError:
