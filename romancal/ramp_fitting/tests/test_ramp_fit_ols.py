@@ -15,7 +15,14 @@ from roman_datamodels.datamodels import (
 from romancal.lib import dqflags
 from romancal.ramp_fitting import RampFitStep
 
-RNG = np.random.default_rng(619)
+# Currently Roman CRDS servers are not available publicly.
+# Remove this test when one is.
+pytestmark = pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
+)
 
 MAXIMUM_CORES = ["none", "quarter", "half", "all"]
 
@@ -100,12 +107,6 @@ def generate_wfi_reffiles(shape, ingain=6):
     return gain_ref_model, rn_ref_model
 
 
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
 def test_ols_multicore_ramp_fit_match(make_data):
     """Test various core amount calculation"""
     model, override_gain, override_readnoise = make_data
@@ -162,12 +163,6 @@ def test_ols_multicore_ramp_fit_match(make_data):
     np.testing.assert_allclose(out_model.var_rnoise, all_out_model.var_rnoise, 1e-6)
 
 
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
 @pytest.mark.parametrize('make_data', [(1, 1, 1, 20, 20)], indirect=True)
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
 def test_ols_one_group_small_buffer_fit(max_cores, make_data):
@@ -189,12 +184,6 @@ def test_ols_one_group_small_buffer_fit(max_cores, make_data):
     np.testing.assert_allclose(data[11, 6], -1.0e-5, 1e-6)
 
 
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
 def test_ols_saturated_ramp_fit(max_cores, make_data):
     model, override_gain, override_readnoise = make_data

@@ -16,6 +16,15 @@ from roman_datamodels.datamodels import (
 from romancal.lib import dqflags
 from romancal.ramp_fitting import RampFitStep
 
+# Currently Roman CRDS servers are not available publicly.
+# Remove this test when one is.
+pytestmark = pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
+)
+
 DO_NOT_USE = dqflags.group["DO_NOT_USE"]
 JUMP_DET = dqflags.group["JUMP_DET"]
 SATURATED = dqflags.group["SATURATED"]
