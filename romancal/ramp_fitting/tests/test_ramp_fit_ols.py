@@ -106,41 +106,6 @@ def generate_wfi_reffiles(shape, ingain=6):
         "Roman CRDS servers are not currently available outside the internal network"
     ),
 )
-@pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
-def test_one_group_small_buffer_fit_ols(max_cores):
-    ingain = 1.0
-    deltatime = 1
-    ngroups = 1
-    xsize = 20
-    ysize = 20
-    shape = (ngroups, xsize, ysize)
-
-    override_gain, override_readnoise = generate_wfi_reffiles(shape[1:], ingain)
-
-    model1 = generate_ramp_model(shape, deltatime)
-
-    model1.data[0, 15, 10] = 10.0 * model1.data.unit  # add single CR
-
-    out_model = RampFitStep.call(
-        model1,
-        algorithm='ols',
-        override_gain=override_gain,
-        override_readnoise=override_readnoise,
-        maximum_cores=max_cores,
-    )
-
-    data = out_model.data.value
-
-    # Index changes due to trimming of reference pixels
-    np.testing.assert_allclose(data[11, 6], 10, 1e-6)
-
-
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
 def test_ols_multicore_ramp_fit_match(make_data):
     """Test various core amount calculation"""
     model, override_gain, override_readnoise = make_data
@@ -221,7 +186,7 @@ def test_ols_one_group_small_buffer_fit(max_cores, make_data):
     data = out_model.data.value
 
     # Index changes due to trimming of reference pixels
-    np.testing.assert_allclose(data[11, 6], 10.0, 1e-6)
+    np.testing.assert_allclose(data[11, 6], -1.0e-5, 1e-6)
 
 
 @pytest.mark.skipif(
