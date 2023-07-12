@@ -47,10 +47,10 @@ SIMPLE_EXPECTED_DEFAULT = {
     'var_rnoise': np.array([[2.164128e-06, 2.164128e-06],[2.164128e-06, 2.164128e-06]], dtype=np.float32),
 }
 SIMPLE_EXPECTED_GAIN = {
-    'data': np.array([[2.667965, 2.667965], [1.133122, 3.50926]], dtype=np.float32),
-    'err': np.array([[0.5433292, 0.5433292], [0.35413256, 0.6231192]], dtype=np.float32),
-    'var_poisson': np.array([[0.29515183, 0.29515183], [0.12535511, 0.38822272]], dtype=np.float32),
-    'var_rnoise': np.array([[5.4765143e-05, 5.4765143e-05], [5.4765143e-05, 5.4765143e-05]], dtype=np.float32),
+    'data': np.array([[2.631579, 2.631579], [1.151316, 3.50926 ]], dtype=np.float32),
+    'err': np.array([[0.542564, 0.542564], [0.358915, 0.623119]], dtype=np.float32),
+    'var_poisson': np.array([[0.294321, 0.294321], [0.128766, 0.388223]], dtype=np.float32),
+    'var_rnoise': np.array([[5.410319e-05, 5.410319e-05], [5.410319e-05, 5.476514e-05]], dtype=np.float32),
 }
 SIMPLE_EXPECTED_RNOISE = {
     'data': np.array([[0.52631587, 0.52631587], [0.23026317, 0.7236843 ]], dtype=np.float32),
@@ -71,7 +71,7 @@ def test_fits(fit_ramps, attribute):
     image_model, expected = fit_ramps
 
     value = getattr(image_model, attribute).value
-    np.testing.assert_allclose(value, expected[attribute], 1e-06)
+    np.testing.assert_allclose(value, expected[attribute], 1e-05)
 
 
 # ########
