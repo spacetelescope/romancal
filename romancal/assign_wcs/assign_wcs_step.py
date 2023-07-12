@@ -29,7 +29,6 @@ class AssignWcsStep(RomanStep):
     def process(self, input):
         reference_file_names = {}
         with rdm.open(input, lazy_load=False) as input_model:
-
             for reftype in self.reference_file_types:
                 log.info(f"reftype, {reftype}")
                 reffile = self.get_reference_file(input_model, reftype)

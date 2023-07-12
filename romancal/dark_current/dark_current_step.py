@@ -44,7 +44,7 @@ class DarkCurrentStep(RomanStep):
             out_model = input_model
             out_model.data -= dark_model.data
             out_model.pixeldq |= dark_model.dq
-            out_model.meta.cal_step.dark = 'COMPLETE'
+            out_model.meta.cal_step.dark = "COMPLETE"
 
             # Save dark data to file
             if self.dark_output is not None:
