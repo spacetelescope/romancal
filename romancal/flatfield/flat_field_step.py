@@ -22,7 +22,7 @@ class FlatFieldStep(RomanStep):
 
         # Check for a valid reference file
         if reference_file_name == "N/A":
-            self.log.warning("No Flat reference file found")
+            self.log.warning("No FLAT reference file found")
             self.log.warning("Flat Field step will be skipped")
             reference_file_name = None
 

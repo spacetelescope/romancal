@@ -24,7 +24,7 @@ class DarkCurrentStep(RomanStep):
         with rdd.open(input, lazy_load=False) as input_model:
             # Get the name of the dark reference file to use
             self.dark_name = self.get_reference_file(input_model, "dark")
-            self.log.info("Using DARK reference file %s", self.dark_name)
+            self.log.info("Using DARK reference file: %s", self.dark_name)
 
             # Open dark model
             dark_model = rdd.open(self.dark_name)

@@ -2,6 +2,7 @@ import copy
 import json
 import os
 from io import StringIO
+from pathlib import Path
 from typing import Tuple
 
 import numpy as np
@@ -12,6 +13,7 @@ from astropy import table
 from astropy import units as u
 from astropy.modeling import models
 from astropy.modeling.models import RotationSequence3D, Scale, Shift
+from astropy.table import Table
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
@@ -19,12 +21,8 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
 from romancal.datamodels import ModelContainer
+from romancal.tweakreg import tweakreg_step as trs
 from romancal.tweakreg.astrometric_utils import get_catalog
-from romancal.tweakreg.tweakreg_step import (
-    DEFAULT_ABS_REFCAT,
-    TweakRegStep,
-    _common_name,
-)
 
 
 class MockConnectionError:
@@ -32,7 +30,62 @@ class MockConnectionError:
         raise requests.exceptions.ConnectionError
 
 
-def create_asn_file(tmp_path):
+@pytest.fixture()
+def test_data_dir():
+    return Path.joinpath(Path(__file__).parent, "data")
+
+
+def create_custom_catalogs(tmp_path, base_image, catalog_format="ascii.ecsv"):
+    """
+    Creates a custom catalog with three datamodels and its respective catalog data.
+    """
+    img1 = base_image(shift_1=1000, shift_2=1000)
+    img2 = base_image(shift_1=1010, shift_2=1010)
+    img3 = base_image(shift_1=1020, shift_2=1020)
+
+    img1.meta.filename = "img1.asdf"
+    img2.meta.filename = "img2.asdf"
+    img3.meta.filename = "img3.asdf"
+
+    # create valid custom catalog data to be used with each input datamodel
+    catalog_data1 = get_catalog_data(img1)
+    catalog_data2 = get_catalog_data(img2)
+    catalog_data3 = get_catalog_data(img3)
+
+    custom_catalog_map = [
+        {
+            "cat_filename": "ref_catalog_1",
+            "cat_datamodel": img1.meta.filename,
+            "cat_data": catalog_data1,
+        },
+        {
+            "cat_filename": "ref_catalog_2",
+            "cat_datamodel": img2.meta.filename,
+            "cat_data": catalog_data2,
+        },
+        {
+            "cat_filename": "ref_catalog_3",
+            "cat_datamodel": img3.meta.filename,
+            "cat_data": catalog_data3,
+        },
+    ]
+
+    # create catfile
+    catfile = str(tmp_path / "catfile.txt")
+    catfile_content = StringIO()
+    for x in custom_catalog_map:
+        # write line to catfile
+        catfile_content.write(f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n")
+        # write out the catalog data
+        t = table.Table(x.get("cat_data"), names=("x", "y"))
+        t.write(tmp_path / x.get("cat_filename"), format=catalog_format)
+    with open(catfile, mode="w") as f:
+        print(catfile_content.getvalue(), file=f)
+
+    return {"catfile": catfile, "datamodels": [img1, img2, img3]}
+
+
+def create_asn_file(tmp_path, members_mapping=None):
     asn_content = """
         {
             "asn_type": "None",
@@ -62,6 +115,13 @@ def create_asn_file(tmp_path):
             ]
         }
     """
+    if members_mapping is not None:
+        asn_dict = json.loads(asn_content)
+        asn_dict["products"][0]["members"] = []
+        for x in members_mapping:
+            asn_dict["products"][0]["members"].append(x)
+        asn_content = json.dumps(asn_dict)
+
     asn_file_path = str(tmp_path / "sample_asn.json")
     asn_file = StringIO()
     asn_file.write(asn_content)
@@ -345,6 +405,8 @@ def add_tweakreg_catalog_attribute(
         A path-like object representing the path where to save the file.
     input_dm : roman_datamodels.ImageModel
         A Roman image datamodel.
+    catalog_filename : str
+        Filename to be used when saving the catalog to disk.
     catalog_data : numpy.ndarray, optional
         A numpy array with the (x, y) coordinates of the
         "detected" sources, by default None (see note below).
@@ -423,7 +485,7 @@ def test_tweakreg_raises_error_on_invalid_input(input, error_type):
     # sourcery skip: list-literal
     """Test that TweakReg raises an error when an invalid input is provided."""
     with pytest.raises(Exception) as exec_info:
-        TweakRegStep.call(input)
+        trs.TweakRegStep.call(input)
 
     assert type(exec_info.value) in error_type
 
@@ -434,7 +496,7 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     """
     img = base_image()
     with pytest.raises(Exception) as exec_info:
-        TweakRegStep.call([img])
+        trs.TweakRegStep.call([img])
 
     assert type(exec_info.value) == AttributeError
 
@@ -462,7 +524,7 @@ def test_tweakreg_returns_modelcontainer(tmp_path, base_image):
     img_2.save(tmp_path / "img_2.asdf")
     asn_filepath = create_asn_file(tmp_path)
 
-    step = TweakRegStep()
+    step = trs.TweakRegStep()
 
     # test four different inputs:
     # 1 - list of strings containing the path to ASDF files
@@ -495,7 +557,7 @@ def test_tweakreg_updates_cal_step(tmp_path, base_image):
     """Test that TweakReg updates meta.cal_step with tweakreg = COMPLETE."""
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
-    res = TweakRegStep.call([img])
+    res = trs.TweakRegStep.call([img])
 
     assert hasattr(res[0].meta.cal_step, "tweakreg")
     assert res[0].meta.cal_step.tweakreg == "COMPLETE"
@@ -505,7 +567,7 @@ def test_tweakreg_updates_group_id(tmp_path, base_image):
     """Test that TweakReg updates 'group_id' with a non-zero length string."""
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
-    res = TweakRegStep.call([img])
+    res = trs.TweakRegStep.call([img])
 
     assert hasattr(res[0].meta, "group_id")
     assert len(res[0].meta.group_id) > 0
@@ -538,7 +600,7 @@ def test_tweakreg_correction_magnitude(
     img1_wcs = copy.deepcopy(img1.meta.wcs)
     img2_wcs = copy.deepcopy(img2.meta.wcs)
 
-    step = TweakRegStep()
+    step = trs.TweakRegStep()
     step.tolerance = tolerance / 10.0
 
     assert step._is_wcs_correction_small(img1_wcs, img2_wcs) == is_small_correction
@@ -573,7 +635,7 @@ def test_tweakreg_common_name(filename_list, expected_common_name, request):
         img.meta["filename"] = filename
         img_list.append(img)
 
-    res = _common_name(img_list)
+    res = trs._common_name(img_list)
 
     assert res == expected_common_name
 
@@ -596,7 +658,7 @@ def test_tweakreg_common_name(filename_list, expected_common_name, request):
 def test_tweakreg_common_name_raises_error_on_invalid_input(filename_list):
     """Test that TweakReg raises an error when an invalid input is provided."""
     with pytest.raises(Exception) as exec_info:
-        _common_name(filename_list)
+        trs._common_name(filename_list)
 
     assert type(exec_info.value) == TypeError
 
@@ -616,7 +678,7 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     abs_refcat_filename = f"fit_{abs_refcat.lower()}_ref.ecsv"
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
-    step = TweakRegStep()
+    step = trs.TweakRegStep()
     step.save_abs_catalog = True
     step.abs_refcat = abs_refcat
     step.catalog_path = str(tmp_path)
@@ -637,10 +699,10 @@ def test_tweakreg_defaults_to_valid_abs_refcat(tmp_path, abs_refcat, request):
     """Test that TweakReg defaults to DEFAULT_ABS_REFCAT on invalid values."""
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     catalog_filename = "ref_catalog.ecsv"
-    abs_refcat_filename = f"fit_{DEFAULT_ABS_REFCAT.lower()}_ref.ecsv"
+    abs_refcat_filename = f"fit_{trs.DEFAULT_ABS_REFCAT.lower()}_ref.ecsv"
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
-    step = TweakRegStep()
+    step = trs.TweakRegStep()
     step.save_abs_catalog = True
     step.abs_refcat = abs_refcat
     step.catalog_path = str(tmp_path)
@@ -658,7 +720,7 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    step = TweakRegStep()
+    step = trs.TweakRegStep()
     step.save_abs_catalog = True
     step.abs_refcat = "my_ref_cat"
 
@@ -666,6 +728,63 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
         step.process([img])
 
     assert type(exec_info.value) == ValueError
+
+
+def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
+    """
+    Test that TweakRegStep can handle a custom catalog for the members of an ASN file.
+    In this case, the user can create a custom catalog file (catfile) for each of the
+    members of an ASN file.
+    """
+    # create custom catalog and input datamodels
+    catalog_format = "ascii.ecsv"
+    res_dict = create_custom_catalogs(
+        tmp_path, base_image, catalog_format=catalog_format
+    )
+    catfile = res_dict.get("catfile")
+    img1, img2, img3 = res_dict.get("datamodels")
+    add_tweakreg_catalog_attribute(tmp_path, img1, catalog_filename="img1")
+    add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
+    add_tweakreg_catalog_attribute(tmp_path, img3, catalog_filename="img3")
+    img1.save(tmp_path / "img1.asdf")
+    img2.save(tmp_path / "img2.asdf")
+    img3.save(tmp_path / "img3.asdf")
+
+    # create ASN file
+    asn_filepath = create_asn_file(
+        tmp_path,
+        members_mapping=[
+            {"expname": img1.meta.filename, "exptype": "science"},
+            {"expname": img2.meta.filename, "exptype": "science"},
+            {"expname": img3.meta.filename, "exptype": "science"},
+        ],
+    )
+    with open(asn_filepath) as f:
+        asn_content = json.load(f)
+
+    step = trs.TweakRegStep()
+    step.use_custom_catalogs = True
+    step.catalog_format = catalog_format
+    step.catfile = catfile
+
+    res = step.process(asn_filepath)
+
+    assert type(res) == ModelContainer
+
+    assert hasattr(res[0].meta, "asn")
+
+    assert all(
+        x.meta.asn["exptype"] == y["exptype"]
+        for x, y in zip(res, asn_content["products"][0]["members"])
+    )
+
+    assert all(
+        x.meta.filename == y.meta.filename for x, y in zip(res, [img1, img2, img3])
+    )
+
+    assert all(type(x) == type(y) for x, y in zip(res, [img1, img2, img3]))
+
+    assert all((x.data == y.data).all() for x, y in zip(res, [img1, img2, img3]))
 
 
 @pytest.mark.parametrize(
@@ -687,52 +806,16 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
         "ascii.tab",
     ),
 )
-def test_tweakreg_use_custom_catalogs(tmp_path, catalog_format, request):
+def test_tweakreg_use_custom_catalogs(tmp_path, catalog_format, base_image):
     """Test that TweakReg can use custom catalogs."""
     # create input datamodels
-    img1 = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
-    img2 = request.getfixturevalue("base_image")(shift_1=1010, shift_2=1010)
-    img3 = request.getfixturevalue("base_image")(shift_1=1020, shift_2=1020)
-    img1.meta.filename = "img1"
-    img2.meta.filename = "img2"
-    img3.meta.filename = "img3"
+    res_dict = create_custom_catalogs(
+        tmp_path, base_image, catalog_format=catalog_format
+    )
+    catfile = res_dict.get("catfile")
+    img1, img2, img3 = res_dict.get("datamodels")
 
-    # create valid custom catalog data to be used with each input datamodel
-    catalog_data1 = get_catalog_data(img1)
-    catalog_data2 = get_catalog_data(img2)
-    catalog_data3 = get_catalog_data(img3)
-
-    custom_catalog_map = [
-        {
-            "cat_filename": "ref_catalog_1",
-            "cat_datamodel": img1.meta.filename,
-            "cat_data": catalog_data1,
-        },
-        {
-            "cat_filename": "ref_catalog_2",
-            "cat_datamodel": img2.meta.filename,
-            "cat_data": catalog_data2,
-        },
-        {
-            "cat_filename": "ref_catalog_3",
-            "cat_datamodel": img3.meta.filename,
-            "cat_data": catalog_data3,
-        },
-    ]
-
-    # create catfile
-    catfile = str(tmp_path / "catfile.txt")
-    catfile_content = StringIO()
-    for x in custom_catalog_map:
-        # write line to catfile
-        catfile_content.write(f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n")
-        # write out the catalog data
-        t = table.Table(x.get("cat_data"), names=("x", "y"))
-        t.write(tmp_path / x.get("cat_filename"), format=catalog_format)
-    with open(catfile, mode="w") as f:
-        print(catfile_content.getvalue(), file=f)
-
-    step = TweakRegStep()
+    step = trs.TweakRegStep()
     step.use_custom_catalogs = True
     step.catalog_format = catalog_format
     step.catfile = catfile
@@ -796,7 +879,7 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
         tmp_path, img, catalog_data=transformed_xy_gaia_sources
     )
 
-    step = TweakRegStep()
+    step = trs.TweakRegStep()
     step.abs_minobj = 3
     step.process([img])
 
@@ -845,7 +928,7 @@ def test_remove_tweakreg_catalog_data(
         tmp_path, img, save_catalogs=source_detection_save_catalogs
     )
 
-    TweakRegStep.call([img])
+    trs.TweakRegStep.call([img])
 
     assert not hasattr(img.meta.source_detection, "tweakreg_catalog")
     assert hasattr(img.meta, "tweakreg_catalog")
@@ -853,18 +936,6 @@ def test_remove_tweakreg_catalog_data(
 
 def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
     """Test that TweakReg can parse an ASN file properly."""
-
-    def clean_result(result):
-        """
-        Remove meta.tweakreg_catalog from 'tweaked' file.
-
-        Parameters
-        ----------
-        result : ModelContainer
-            A ModelContainer with the results from TweakRegStep.
-        """
-        for img in result:
-            del img.meta["tweakreg_catalog"]
 
     img_1 = base_image(shift_1=1000, shift_2=1000)
     img_2 = base_image(shift_1=1000, shift_2=1000)
@@ -878,7 +949,7 @@ def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
     with open(asn_filepath) as f:
         asn_content = json.load(f)
 
-    step = TweakRegStep()
+    step = trs.TweakRegStep()
 
     res = step.process(asn_filepath)
     assert type(res) == ModelContainer
@@ -916,7 +987,7 @@ def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    step = TweakRegStep()
+    step = trs.TweakRegStep()
 
     monkeypatch.setattr("requests.get", MockConnectionError)
     res = step.process([img])
@@ -935,7 +1006,7 @@ def test_fit_results_in_meta(tmp_path, base_image):
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    step = TweakRegStep()
+    step = trs.TweakRegStep()
     res = step.process([img])
 
     assert type(res) == ModelContainer
@@ -943,3 +1014,233 @@ def test_fit_results_in_meta(tmp_path, base_image):
         hasattr(x.meta, "wcs_fit_results") and len(x.meta.wcs_fit_results) > 0
         for x in res
     ]
+
+
+def test_tweakreg_returns_skipped_for_one_file(tmp_path, base_image):
+    """
+    Test that TweakRegStep assigns meta.cal_step.tweakreg to "SKIPPED"
+    when one image is provided but no alignment to a reference catalog is desired.
+    """
+    img = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img)
+
+    # disable alignment to absolute reference catalog
+    trs.ALIGN_TO_ABS_REFCAT = False
+    step = trs.TweakRegStep()
+    res = step.process([img])
+
+    assert all(x.meta.cal_step.tweakreg == "SKIPPED" for x in res)
+
+
+def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
+    """
+    Test that TweakRegStep can perform relative alignment for all images in the groups
+    before performing absolute alignment.
+    """
+    img1 = base_image(shift_1=1000, shift_2=1000)
+    img2 = base_image(shift_1=990, shift_2=990)
+    add_tweakreg_catalog_attribute(tmp_path, img1, catalog_filename="img1")
+    add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
+
+    img1.meta.observation["program"] = "-program_id1"
+    img2.meta.observation["program"] = "-program_id2"
+
+    img1.meta["filename"] = "file1.asdf"
+    img2.meta["filename"] = "file2.asdf"
+
+    step = trs.TweakRegStep()
+    res = step.process([img1, img2])
+
+    assert len(res.models_grouped) == 2
+    all(
+        (
+            r.meta.group_id.split("-")[1],
+            i.meta.observation.program.split("-")[1],
+        )
+        for r, i in zip(res, [img1, img2])
+    )
+
+
+def test_tweakreg_multiple_groups_valueerror(tmp_path, base_image):
+    """
+    Test that TweakRegStep throws an error when too few input images or
+    groups of images with non-empty catalogs is provided.
+    """
+    img1 = base_image(shift_1=1000, shift_2=1000)
+    img2 = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img1, catalog_filename="img1")
+    add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
+
+    img1.meta.observation["program"] = "-program_id1"
+    img2.meta.observation["program"] = "-program_id2"
+
+    trs.ALIGN_TO_ABS_REFCAT = False
+    step = trs.TweakRegStep()
+    res = step.process([img1, img2])
+
+    assert step.skip is True
+    assert all(x.meta.cal_step.tweakreg == "SKIPPED" for x in res)
+
+
+@pytest.mark.parametrize(
+    "column_names",
+    [("x", "y"), ("xcentroid", "ycentroid")],
+)
+def test_imodel2wcsim_valid_column_names(tmp_path, base_image, column_names):
+    """
+    Test that _imodel2wcsim handles different catalog column names.
+    """
+    img_1 = base_image(shift_1=1000, shift_2=1000)
+    img_2 = base_image(shift_1=1030, shift_2=1030)
+    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
+    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
+    # set meta.tweakreg_catalog (this is automatically added by TweakRegStep)
+    catalog_format = "ascii.ecsv"
+    for x in [img_1, img_2]:
+        x.meta["tweakreg_catalog"] = Table.read(
+            x.meta.source_detection.tweakreg_catalog_name,
+            format=catalog_format,
+        )
+        x.meta.tweakreg_catalog.rename_columns(("x", "y"), column_names)
+
+    images = ModelContainer([img_1, img_2])
+    grp_img = list(images.models_grouped)
+    g = grp_img[0]
+
+    step = trs.TweakRegStep()
+    imcats = list(map(step._imodel2wcsim, g))
+
+    assert all(x.meta["image_model"] == y for x, y in zip(imcats, [img_1, img_2]))
+    assert all(
+        all(x.meta["catalog"] == y.meta.tweakreg_catalog)
+        for x, y in zip(imcats, [img_1, img_2])
+    )
+
+
+@pytest.mark.parametrize(
+    "column_names",
+    [
+        ("x_centroid", "y_centroid"),
+        ("x_cen", "y_cen"),
+    ],
+)
+def test_imodel2wcsim_error_invalid_column_names(tmp_path, base_image, column_names):
+    """
+    Test that _imodel2wcsim raises a ValueError on invalid catalog column names.
+    """
+    img_1 = base_image(shift_1=1000, shift_2=1000)
+    img_2 = base_image(shift_1=1030, shift_2=1030)
+    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
+    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
+    # set meta.tweakreg_catalog (this is automatically added by TweakRegStep)
+    catalog_format = "ascii.ecsv"
+    for x in [img_1, img_2]:
+        x.meta["tweakreg_catalog"] = Table.read(
+            x.meta.source_detection.tweakreg_catalog_name,
+            format=catalog_format,
+        )
+        x.meta.tweakreg_catalog.rename_columns(("x", "y"), column_names)
+
+    images = ModelContainer([img_1, img_2])
+    grp_img = list(images.models_grouped)
+    g = grp_img[0]
+
+    step = trs.TweakRegStep()
+    with pytest.raises(Exception) as exec_info:
+        list(map(step._imodel2wcsim, g))
+
+    assert type(exec_info.value) == ValueError
+
+
+def test_imodel2wcsim_error_invalid_catalog(tmp_path, base_image):
+    """
+    Test that _imodel2wcsim raises an error on invalid catalog format.
+    """
+    img_1 = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
+    # set meta.tweakreg_catalog (this is automatically added by TweakRegStep)
+    img_1.meta["tweakreg_catalog"] = "nonsense"
+
+    images = ModelContainer([img_1])
+    grp_img = list(images.models_grouped)
+    g = grp_img[0]
+
+    step = trs.TweakRegStep()
+    with pytest.raises(Exception) as exec_info:
+        list(map(step._imodel2wcsim, g))
+
+    assert type(exec_info.value) == AttributeError
+
+
+def test_parse_catfile_valid_catalog(tmp_path, base_image):
+    """
+    Test that _parse_catfile can parse a custom catalog with valid format.
+    """
+    # create custom catalog file and input datamodels
+    catalog_format = "ascii.ecsv"
+    res_dict = create_custom_catalogs(
+        tmp_path, base_image, catalog_format=catalog_format
+    )
+    catfile = res_dict.get("catfile")
+    catdict = trs._parse_catfile(catfile)
+
+    assert all(
+        x.meta.filename == y for x, y in zip(res_dict.get("datamodels"), catdict.keys())
+    )
+
+
+@pytest.mark.parametrize("catfile", (None, ""))
+def test_parse_catfile_returns_none(catfile):
+    """
+    Test that _parse_catfile returns None when catfile = None or catfile = "".
+    """
+    catdict = trs._parse_catfile(catfile=catfile)
+
+    assert catdict is None
+
+
+@pytest.mark.parametrize(
+    "catfile_line_content",
+    ["img1.asdf\nimg2.asdf\nimg3.asdf"],
+)
+def test_parse_catfile_returns_none_on_invalid_content(tmp_path, catfile_line_content):
+    """
+    Test that _parse_catfile returns a dict where all the values are None
+    if only filename is present in catfile (i.e. no associated catalog).
+    """
+    # create custom catalog file and input datamodels
+    catfile = str(tmp_path / "catfile.txt")
+    catfile_content = StringIO()
+    # write empty line to catfile
+    catfile_content.write(catfile_line_content)
+    # write StringIO object to disk
+    with open(catfile, mode="w") as f:
+        print(catfile_content.getvalue(), file=f)
+
+    catdict = trs._parse_catfile(catfile)
+
+    assert not all(catdict.values())
+
+
+@pytest.mark.parametrize(
+    "catfile_line_content",
+    ["img1.asdf column1 column2 column3"],
+)
+def test_parse_catfile_raises_error_on_invalid_content(tmp_path, catfile_line_content):
+    """
+    Test that _parse_catfile raises an error if catfile contains more than
+    two columns (i.e. image name and corresponding catalog path).
+    """
+    # create custom catalog file and input datamodels
+    catfile = str(tmp_path / "catfile.txt")
+    catfile_content = StringIO()
+    # write empty line to catfile
+    catfile_content.write(catfile_line_content)
+    # write StringIO object to disk
+    with open(catfile, mode="w") as f:
+        print(catfile_content.getvalue(), file=f)
+
+    with pytest.raises(Exception) as exec_info:
+        trs._parse_catfile(catfile)
+
+    assert type(exec_info.value) == ValueError

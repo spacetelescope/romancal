@@ -8,6 +8,8 @@ tweakreg
 
 documentation
 -------------
+- Update info strings in the pipeline to provide uniform syntax [#721]
+
 - Updated wording about ELP and HLP in the Associations documentation for RTD
 
 - Updated the primary branch referenced in CONTRIBUTING to be main
@@ -18,9 +20,15 @@ skymatch
 --------
 - Added SkyMatchStep to pipeline [#687]
 
+- Registered SkyMatchStep in stpipe. [#770]
+
 jump
 ----
 - Accept and ignore additional return values from stcal detect_jumps [#723]
+
+ramp_fitting
+------------
+- Update unit tests for stcal 1.4.0 [#725]
 
 general
 -------
@@ -34,8 +42,13 @@ general
 
 - Require stcal >= 1.4 [#723]
 
-- Make steps operate in place rather than copying.  [#774]
+- Fix search for docs. [#768]
 
+- Remove ``aws`` install option. [#767]
+
+- Bump minimum ``asdf`` version to ``2.15.0``. [#777]
+
+- Make steps operate in place rather than copying.  [#774]
 
 0.11.0 (2023-05-31)
 ===================
