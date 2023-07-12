@@ -34,6 +34,8 @@ general
 
 - Require stcal >= 1.4 [#723]
 
+- Make steps operate in place rather than copying.  [#774]
+
 
 0.11.0 (2023-05-31)
 ===================
