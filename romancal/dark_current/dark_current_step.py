@@ -19,43 +19,42 @@ class DarkCurrentStep(RomanStep):
 
     reference_file_types = ["dark"]
 
-    def process(self, input_model):
+    def process(self, input):
         # Open the input data model
-        if not isinstance(input_model, rdd.DataModel):
-            input_model = rdd.open(input_model)
-        # Get the name of the dark reference file to use
-        self.dark_name = self.get_reference_file(input_model, "dark")
-        self.log.info("Using DARK reference file %s", self.dark_name)
+        with rdd.open(input, lazy_load=False) as input_model:
+            # Get the name of the dark reference file to use
+            self.dark_name = self.get_reference_file(input_model, "dark")
+            self.log.info("Using DARK reference file %s", self.dark_name)
 
-        # Open dark model
-        dark_model = rdd.open(self.dark_name)
+            # Open dark model
+            dark_model = rdd.open(self.dark_name)
 
-        # Temporary patch to utilize stcal dark step until MA table support
-        # is fully implemented
-        if "ngroups" not in dark_model.meta.exposure:
-            dark_model.meta.exposure["ngroups"] = dark_model.data.shape[0]
-        if "nframes" not in dark_model.meta.exposure:
-            dark_model.meta.exposure["nframes"] = input_model.meta.exposure.nframes
-        if "groupgap" not in dark_model.meta.exposure:
-            dark_model.meta.exposure[
-                "groupgap"
-            ] = input_model.meta.exposure.groupgap
+            # Temporary patch to utilize stcal dark step until MA table support
+            # is fully implemented
+            if "ngroups" not in dark_model.meta.exposure:
+                dark_model.meta.exposure["ngroups"] = dark_model.data.shape[0]
+            if "nframes" not in dark_model.meta.exposure:
+                dark_model.meta.exposure["nframes"] = input_model.meta.exposure.nframes
+            if "groupgap" not in dark_model.meta.exposure:
+                dark_model.meta.exposure[
+                    "groupgap"
+                ] = input_model.meta.exposure.groupgap
 
-        # Do the dark correction
-        out_data = input_model
-        out_data.data -= dark_model.data
-        out_data.pixeldq |= dark_model.dq
-        out_data.meta.cal_step.dark = 'COMPLETE'
+            # Do the dark correction
+            out_model = input_model
+            out_model.data -= dark_model.data
+            out_model.pixeldq |= dark_model.dq
+            out_model.meta.cal_step.dark = 'COMPLETE'
 
-        # Save dark data to file
-        if self.dark_output is not None:
-            dark_model.save(self.dark_output)
-            # not clear to me that this makes any sense for Roman
-        dark_model.close()
+            # Save dark data to file
+            if self.dark_output is not None:
+                dark_model.save(self.dark_output)
+                # not clear to me that this makes any sense for Roman
+            dark_model.close()
 
         if self.save_results:
             try:
                 self.suffix = "darkcurrent"
             except AttributeError:
                 self["suffix"] = "darkcurrent"
-        return out_data
+        return out_model

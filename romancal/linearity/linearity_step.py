@@ -21,50 +21,49 @@ class LinearityStep(RomanStep):
 
     reference_file_types = ["linearity"]
 
-    def process(self, input_model):
+    def process(self, input):
         # Open the input data model
-        if not isinstance(input_model, rdd.DataModel):
-            input_model = rdd.open(input_model)
-        # Get the name of the linearity reference file to use
-        self.lin_name = self.get_reference_file(input_model, "linearity")
-        self.log.info("Using Linearity reference file %s", self.lin_name)
+        with rdd.open(input, lazy_load=False) as input_model:
+            # Get the name of the linearity reference file to use
+            self.lin_name = self.get_reference_file(input_model, "linearity")
+            self.log.info("Using Linearity reference file %s", self.lin_name)
 
-        # Check for a valid reference file
-        if self.lin_name == "N/A":
-            self.log.warning("No Linearity reference file found")
-            self.log.warning("Linearity step will be skipped")
-            input_model.meta.cal_step["linearity"] = "SKIPPED"
+            # Check for a valid reference file
+            if self.lin_name == "N/A":
+                self.log.warning("No Linearity reference file found")
+                self.log.warning("Linearity step will be skipped")
+                input_model.meta.cal_step["linearity"] = "SKIPPED"
 
-            return input_model
+                return input_model
 
-        lin_model = rdd.LinearityRefModel(self.lin_name, copy_arrays=True)
+            lin_model = rdd.LinearityRefModel(self.lin_name, copy_arrays=True)
 
-        # copy poly coeffs from linearity model so Nan's can be updated
-        lin_coeffs = lin_model.coeffs
-        lin_dq = lin_model.dq  # 2D pixeldq from linearity model
+            # copy poly coeffs from linearity model so Nan's can be updated
+            lin_coeffs = lin_model.coeffs
+            lin_dq = lin_model.dq  # 2D pixeldq from linearity model
 
-        gdq = input_model.groupdq  # groupdq array of input model
-        pdq = input_model.pixeldq  # pixeldq array of input model
+            gdq = input_model.groupdq  # groupdq array of input model
+            pdq = input_model.pixeldq  # pixeldq array of input model
 
-        gdq = gdq[np.newaxis, :]
+            gdq = gdq[np.newaxis, :]
 
-        input_model.data = input_model.data[np.newaxis, :]
+            input_model.data = input_model.data[np.newaxis, :]
 
-        # Call linearity correction function in stcal
-        # The third return value is the procesed zero frame which
-        # Roman does not use.
-        new_data, new_pdq, _ = linearity_correction(
-            input_model.data.value, gdq, pdq, lin_coeffs, lin_dq, dqflags.pixel
-        )
+            # Call linearity correction function in stcal
+            # The third return value is the procesed zero frame which
+            # Roman does not use.
+            new_data, new_pdq, _ = linearity_correction(
+                input_model.data.value, gdq, pdq, lin_coeffs, lin_dq, dqflags.pixel
+            )
 
-        input_model.data = u.Quantity(
-            new_data[0, :, :, :], u.DN, dtype=new_data.dtype
-        )
-        input_model.pixeldq = new_pdq
+            input_model.data = u.Quantity(
+                new_data[0, :, :, :], u.DN, dtype=new_data.dtype
+            )
+            input_model.pixeldq = new_pdq
 
-        # Close the reference file and update the step status
-        lin_model.close()
-        input_model.meta.cal_step["linearity"] = "COMPLETE"
+            # Close the reference file and update the step status
+            lin_model.close()
+            input_model.meta.cal_step["linearity"] = "COMPLETE"
 
         if self.save_results:
             try:

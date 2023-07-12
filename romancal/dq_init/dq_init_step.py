@@ -26,7 +26,7 @@ class DQInitStep(RomanStep):
 
     reference_file_types = ["mask"]
 
-    def process(self, input_model):
+    def process(self, input):
         """Perform the dq_init calibration step
 
         Parameters
@@ -40,9 +40,7 @@ class DQInitStep(RomanStep):
             result roman datamodel
         """
         # Open datamodel
-        if not isinstance(input_model, rdm.DataModel):
-            input_model = rdm.open(input_model)
-
+        input_model = rdm.open(input, lazy_load=False)
         # Convert to RampModel if needed
         if not isinstance(input_model, RampModel):
             # Create base ramp node with dummy values (for validation)
@@ -63,15 +61,15 @@ class DQInitStep(RomanStep):
                     input_ramp[key] = input_model.__getattr__(key)
 
             # Create model from node
-            init_model = RampModel(input_ramp)
+            output_model = RampModel(input_ramp)
         else:
-            init_model = input_model
+            output_model = input_model
 
         # guide window range information
         x_start = input_model.meta.guidestar.gw_window_xstart
         x_end = input_model.meta.guidestar.gw_window_xsize + x_start
         # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
-        init_model.pixeldq[int(x_start) : int(x_end), :] = dqflags.pixel[
+        output_model.pixeldq[int(x_start) : int(x_end), :] = dqflags.pixel[
             "GW_AFFECTED_DATA"
         ]
         self.log.info(
@@ -79,7 +77,7 @@ class DQInitStep(RomanStep):
         )
 
         # Get reference file path
-        reference_file_name = self.get_reference_file(init_model, "mask")
+        reference_file_name = self.get_reference_file(output_model, "mask")
 
         # Test for reference file
         if reference_file_name is not None:
@@ -88,9 +86,9 @@ class DQInitStep(RomanStep):
             reference_file_model = rdm.open(reference_file_name)
             self.log.debug(f"Using MASK ref file: {reference_file_name}")
 
-            # Apply the DQ step
+            # Apply the DQ step, in place
             dq_initialization.do_dqinit(
-                init_model,
+                output_model,
                 reference_file_model,
             )
 
@@ -99,15 +97,15 @@ class DQInitStep(RomanStep):
             # the science data until they are trimmed at ramp_fit
             # these arrays include the overlap regions in the corners
 
-            init_model.border_ref_pix_right = init_model.data[:, :, -4:]
-            init_model.border_ref_pix_left = init_model.data[:, :, :4]
-            init_model.border_ref_pix_top = init_model.data[:, :4, :]
-            init_model.border_ref_pix_bottom = init_model.data[:, -4:, :]
+            output_model.border_ref_pix_right = output_model.data[:, :, -4:]
+            output_model.border_ref_pix_left = output_model.data[:, :, :4]
+            output_model.border_ref_pix_top = output_model.data[:, :4, :]
+            output_model.border_ref_pix_bottom = output_model.data[:, -4:, :]
 
-            init_model.dq_border_ref_pix_right = init_model.pixeldq[:, -4:]
-            init_model.dq_border_ref_pix_left = init_model.pixeldq[:, :4]
-            init_model.dq_border_ref_pix_top = init_model.pixeldq[:4, :]
-            init_model.dq_border_ref_pix_bottom = init_model.pixeldq[-4:, :]
+            output_model.dq_border_ref_pix_right = output_model.pixeldq[:, -4:]
+            output_model.dq_border_ref_pix_left = output_model.pixeldq[:, :4]
+            output_model.dq_border_ref_pix_top = output_model.pixeldq[:4, :]
+            output_model.dq_border_ref_pix_bottom = output_model.pixeldq[-4:, :]
 
         else:
             # Skip DQ step if no mask files
@@ -115,7 +113,10 @@ class DQInitStep(RomanStep):
             self.log.warning("No MASK reference file found.")
             self.log.warning("DQ initialization step will be skipped.")
 
-            init_model.meta.cal_step.dq_init = "SKIPPED"
+            output_model.meta.cal_step.dq_init = "SKIPPED"
+
+        # Close the input and reference files
+        input_model.close()
 
         try:
             reference_file_model.close()
@@ -128,4 +129,4 @@ class DQInitStep(RomanStep):
             except AttributeError:
                 self["suffix"] = "dqinit"
 
-        return init_model
+        return output_model

@@ -26,17 +26,16 @@ class AssignWcsStep(RomanStep):
 
     reference_file_types = ["distortion"]
 
-    def process(self, input_model):
+    def process(self, input):
         reference_file_names = {}
-        if not isinstance(input_model, rdm.DataModel):
-            input_model = rdm.open(input_model)
+        with rdm.open(input, lazy_load=False) as input_model:
 
-        for reftype in self.reference_file_types:
-            log.info(f"reftype, {reftype}")
-            reffile = self.get_reference_file(input_model, reftype)
-            reference_file_names[reftype] = reffile if reffile else ""
-        log.debug(f"reference files used in assign_wcs: {reference_file_names}")
-        result = load_wcs(input_model, reference_file_names)
+            for reftype in self.reference_file_types:
+                log.info(f"reftype, {reftype}")
+                reffile = self.get_reference_file(input_model, reftype)
+                reference_file_names[reftype] = reffile if reffile else ""
+            log.debug(f"reference files used in assign_wcs: {reference_file_names}")
+            result = load_wcs(input_model, reference_file_names)
 
         if self.save_results:
             try:

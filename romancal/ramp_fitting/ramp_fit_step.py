@@ -166,38 +166,37 @@ class RampFitStep(RomanStep):
 
     reference_file_types = ["readnoise", "gain"]
 
-    def process(self, input_model):
-        if not isinstance(input_model, rdd.DataModel):
-            input_model = rdd.open(input_model)
-        max_cores = self.maximum_cores
-        readnoise_filename = self.get_reference_file(input_model, "readnoise")
-        gain_filename = self.get_reference_file(input_model, "gain")
-        input_model.data = input_model.data[np.newaxis, :]
-        input_model.groupdq = input_model.groupdq[np.newaxis, :]
-        input_model.err = input_model.err[np.newaxis, :]
+    def process(self, input):
+        with rdd.open(input, lazy_load=False) as input_model:
+            max_cores = self.maximum_cores
+            readnoise_filename = self.get_reference_file(input_model, "readnoise")
+            gain_filename = self.get_reference_file(input_model, "gain")
+            input_model.data = input_model.data[np.newaxis, :]
+            input_model.groupdq = input_model.groupdq[np.newaxis, :]
+            input_model.err = input_model.err[np.newaxis, :]
 
-        log.info("Using READNOISE reference file: %s", readnoise_filename)
-        readnoise_model = rdd.open(readnoise_filename, mode="rw")
-        log.info("Using GAIN reference file: %s", gain_filename)
-        gain_model = rdd.open(gain_filename, mode="rw")
+            log.info("Using READNOISE reference file: %s", readnoise_filename)
+            readnoise_model = rdd.open(readnoise_filename, mode="rw")
+            log.info("Using GAIN reference file: %s", gain_filename)
+            gain_model = rdd.open(gain_filename, mode="rw")
 
-        log.info(f"Using algorithm = {self.algorithm}")
-        log.info(f"Using weighting = {self.weighting}")
+            log.info(f"Using algorithm = {self.algorithm}")
+            log.info(f"Using weighting = {self.weighting}")
 
-        buffsize = ramp_fit.BUFSIZE
-        image_info, integ_info, opt_info, gls_opt_model = ramp_fit.ramp_fit(
-            input_model,
-            buffsize,
-            self.save_opt,
-            readnoise_model.data.value,
-            gain_model.data.value,
-            self.algorithm,
-            self.weighting,
-            max_cores,
-            dqflags.pixel,
-        )
-        readnoise_model.close()
-        gain_model.close()
+            buffsize = ramp_fit.BUFSIZE
+            image_info, integ_info, opt_info, gls_opt_model = ramp_fit.ramp_fit(
+                input_model,
+                buffsize,
+                self.save_opt,
+                readnoise_model.data.value,
+                gain_model.data.value,
+                self.algorithm,
+                self.weighting,
+                max_cores,
+                dqflags.pixel,
+            )
+            readnoise_model.close()
+            gain_model.close()
 
         # Save the OLS optional fit product, if it exists
         if opt_info is not None:

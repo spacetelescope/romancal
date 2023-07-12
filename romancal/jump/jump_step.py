@@ -43,114 +43,113 @@ class JumpStep(RomanStep):
 
     reference_file_types = ["gain", "readnoise"]
 
-    def process(self, input_model):
+    def process(self, input):
         # Open input as a Roman DataModel (single integration; 3D arrays)
-        if not isinstance(input_model, rdd.DataModel):
-            input_model = rdd.open(input_model)
-        # Extract the needed info from the Roman Data Model
-        meta = input_model.meta
-        r_data = input_model.data.value
-        r_gdq = input_model.groupdq
-        r_pdq = input_model.pixeldq
-        r_err = input_model.err.value
-        result = input_model
-
-        frames_per_group = meta.exposure.nframes
-
-        # Modify the arrays for input into the 'common' jump (4D)
-        data = np.copy(r_data[np.newaxis, :])
-        gdq = r_gdq[np.newaxis, :]
-        pdq = r_pdq[np.newaxis, :]
-        err = np.copy(r_err[np.newaxis, :])
-
-        tstart = time.time()
-
-        # Check for an input model with NGROUPS<=2
-        ngroups = data.shape[1]
-
-        if ngroups <= 2:
-            self.log.warning("Cannot apply jump detection as NGROUPS<=2;")
-            self.log.warning("Jump step will be skipped")
-
+        with rdd.open(input, lazy_load=False) as input_model:
+            # Extract the needed info from the Roman Data Model
+            meta = input_model.meta
+            r_data = input_model.data.value
+            r_gdq = input_model.groupdq
+            r_pdq = input_model.pixeldq
+            r_err = input_model.err.value
             result = input_model
 
-            result.meta.cal_step.jump = "SKIPPED"
-            return result
+            frames_per_group = meta.exposure.nframes
 
-        # Retrieve the parameter values
-        rej_thresh = self.rejection_threshold
-        three_grp_rej_thresh = self.three_group_rejection_threshold
-        four_grp_rej_thresh = self.four_group_rejection_threshold
-        max_cores = self.maximum_cores
-        max_jump_to_flag_neighbors = self.max_jump_to_flag_neighbors
-        min_jump_to_flag_neighbors = self.min_jump_to_flag_neighbors
-        flag_4_neighbors = self.flag_4_neighbors
-        min_sat_area = self.min_sat_area
-        min_jump_area = self.min_jump_area
-        expand_factor = self.expand_factor
-        use_ellipses = self.use_ellipses
-        sat_required_snowball = self.sat_required_snowball
-        expand_large_events = self.expand_large_events
+            # Modify the arrays for input into the 'common' jump (4D)
+            data = np.copy(r_data[np.newaxis, :])
+            gdq = r_gdq[np.newaxis, :]
+            pdq = r_pdq[np.newaxis, :]
+            err = np.copy(r_err[np.newaxis, :])
 
-        self.log.info("CR rejection threshold = %g sigma", rej_thresh)
-        if self.maximum_cores != "none":
-            self.log.info("Maximum cores to use = %s", max_cores)
+            tstart = time.time()
 
-        # Get the gain and readnoise reference files
-        gain_filename = self.get_reference_file(input_model, "gain")
-        self.log.info("Using GAIN reference file: %s", gain_filename)
-        gain_model = rdd.GainRefModel(gain_filename)
-        gain_2d = gain_model.data.value
+            # Check for an input model with NGROUPS<=2
+            ngroups = data.shape[1]
 
-        readnoise_filename = self.get_reference_file(input_model, "readnoise")
-        self.log.info("Using READNOISE reference file: %s", readnoise_filename)
-        readnoise_model = rdd.ReadnoiseRefModel(readnoise_filename)
-        # This is to clear the WRITEABLE=False flag?
-        readnoise_2d = np.copy(readnoise_model.data.value)
+            if ngroups <= 2:
+                self.log.warning("Cannot apply jump detection as NGROUPS<=2;")
+                self.log.warning("Jump step will be skipped")
 
-        # DG 0810/21:  leave for now; make dqflags changes in a later,
-        #              separate PR
-        dqflags_d = {}  # Dict of DQ flags
-        dqflags_d = {
-            "GOOD": dqflags.group["GOOD"],
-            "DO_NOT_USE": dqflags.group["DO_NOT_USE"],
-            "SATURATED": dqflags.group["SATURATED"],
-            "JUMP_DET": dqflags.group["JUMP_DET"],
-            "NO_GAIN_VALUE": dqflags.pixel["NO_GAIN_VALUE"],
-        }
+                result = input_model
 
-        gdq, pdq, *_ = detect_jumps(
-            frames_per_group,
-            data,
-            gdq,
-            pdq,
-            err,
-            gain_2d,
-            readnoise_2d,
-            rej_thresh,
-            three_grp_rej_thresh,
-            four_grp_rej_thresh,
-            max_cores,
-            max_jump_to_flag_neighbors,
-            min_jump_to_flag_neighbors,
-            flag_4_neighbors,
-            dqflags_d,
-            min_sat_area=min_sat_area,
-            min_jump_area=min_jump_area,
-            expand_factor=expand_factor,
-            use_ellipses=use_ellipses,
-            sat_required_snowball=sat_required_snowball,
-            expand_large_events=expand_large_events,
-        )
+                result.meta.cal_step.jump = "SKIPPED"
+                return result
 
-        gdq = gdq[0, :, :, :]
-        pdq = pdq[0, :, :]
-        result.groupdq = gdq
-        result.pixeldq = pdq
-        gain_model.close()
-        readnoise_model.close()
-        tstop = time.time()
-        self.log.info("The execution time in seconds: %f", tstop - tstart)
+            # Retrieve the parameter values
+            rej_thresh = self.rejection_threshold
+            three_grp_rej_thresh = self.three_group_rejection_threshold
+            four_grp_rej_thresh = self.four_group_rejection_threshold
+            max_cores = self.maximum_cores
+            max_jump_to_flag_neighbors = self.max_jump_to_flag_neighbors
+            min_jump_to_flag_neighbors = self.min_jump_to_flag_neighbors
+            flag_4_neighbors = self.flag_4_neighbors
+            min_sat_area = self.min_sat_area
+            min_jump_area = self.min_jump_area
+            expand_factor = self.expand_factor
+            use_ellipses = self.use_ellipses
+            sat_required_snowball = self.sat_required_snowball
+            expand_large_events = self.expand_large_events
+
+            self.log.info("CR rejection threshold = %g sigma", rej_thresh)
+            if self.maximum_cores != "none":
+                self.log.info("Maximum cores to use = %s", max_cores)
+
+            # Get the gain and readnoise reference files
+            gain_filename = self.get_reference_file(input_model, "gain")
+            self.log.info("Using GAIN reference file: %s", gain_filename)
+            gain_model = rdd.GainRefModel(gain_filename)
+            gain_2d = gain_model.data.value
+
+            readnoise_filename = self.get_reference_file(input_model, "readnoise")
+            self.log.info("Using READNOISE reference file: %s", readnoise_filename)
+            readnoise_model = rdd.ReadnoiseRefModel(readnoise_filename)
+            # This is to clear the WRITEABLE=False flag?
+            readnoise_2d = np.copy(readnoise_model.data.value)
+
+            # DG 0810/21:  leave for now; make dqflags changes in a later,
+            #              separate PR
+            dqflags_d = {}  # Dict of DQ flags
+            dqflags_d = {
+                "GOOD": dqflags.group["GOOD"],
+                "DO_NOT_USE": dqflags.group["DO_NOT_USE"],
+                "SATURATED": dqflags.group["SATURATED"],
+                "JUMP_DET": dqflags.group["JUMP_DET"],
+                "NO_GAIN_VALUE": dqflags.pixel["NO_GAIN_VALUE"],
+            }
+
+            gdq, pdq, *_ = detect_jumps(
+                frames_per_group,
+                data,
+                gdq,
+                pdq,
+                err,
+                gain_2d,
+                readnoise_2d,
+                rej_thresh,
+                three_grp_rej_thresh,
+                four_grp_rej_thresh,
+                max_cores,
+                max_jump_to_flag_neighbors,
+                min_jump_to_flag_neighbors,
+                flag_4_neighbors,
+                dqflags_d,
+                min_sat_area=min_sat_area,
+                min_jump_area=min_jump_area,
+                expand_factor=expand_factor,
+                use_ellipses=use_ellipses,
+                sat_required_snowball=sat_required_snowball,
+                expand_large_events=expand_large_events,
+            )
+
+            gdq = gdq[0, :, :, :]
+            pdq = pdq[0, :, :]
+            result.groupdq = gdq
+            result.pixeldq = pdq
+            gain_model.close()
+            readnoise_model.close()
+            tstop = time.time()
+            self.log.info("The execution time in seconds: %f", tstop - tstart)
 
         result.meta.cal_step.jump = "COMPLETE"
 

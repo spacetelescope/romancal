@@ -26,9 +26,6 @@ def do_dqinit(input_model, mask=None):
     mask_model : Roman data model, or None
         The mask model to use in the data quality correction
 
-    in_place : bool
-        Perform initialization in place rather than making a copy.
-
     Returns
     -------
     output_model : Roman datamodel
