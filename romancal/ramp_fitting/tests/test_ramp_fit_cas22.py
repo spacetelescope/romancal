@@ -63,6 +63,21 @@ SIMPLE_EXPECTED_RNOISE = {
 # #####
 # Tests
 # #####
+def test_bad_readpattern():
+    """Ensure error is raised on bad readpattern"""
+    ramp_model, gain_model, readnoise_model = make_data(SIMPLE_RESULTANTS, 1, 0.01, False)
+    bad_pattern = ramp_model.meta.exposure.read_pattern.data[1:]
+    ramp_model.meta.exposure.read_pattern = bad_pattern
+
+    with pytest.raises(RuntimeError):
+        out_model = RampFitStep.call(
+            ramp_model,
+            algorithm='ols_cas22',
+            override_gain=gain_model,
+            override_readnoise=readnoise_model,
+        )
+
+
 @pytest.mark.parametrize('attribute',
                          ['data', 'err', 'var_poisson', 'var_rnoise'],
                          ids=['data', 'err', 'var_poisson', 'var_rnoise'])
