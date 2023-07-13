@@ -38,9 +38,7 @@ class RampFitStep(RomanStep):
     reference_file_types = ["readnoise", "gain"]
 
     def process(self, input):
-
         with rdd.open(input, mode="rw") as input_model:
-
             # Retrieve reference info
             readnoise_filename = self.get_reference_file(input_model, "readnoise")
             gain_filename = self.get_reference_file(input_model, "gain")
@@ -51,14 +49,14 @@ class RampFitStep(RomanStep):
 
             # Do the fitting.
             match self.algorithm:
-                case 'ols':
+                case "ols":
                     out_model = self.ols(input_model, readnoise_model, gain_model)
                     out_model.meta.cal_step.ramp_fit = "COMPLETE"
-                case 'ols_cas22':
+                case "ols_cas22":
                     out_model = self.ols_cas22(input_model, readnoise_model, gain_model)
                     out_model.meta.cal_step.ramp_fit = "COMPLETE"
                 case _:
-                    log.error('Algorithm %s is not supported. Skipping step.')
+                    log.error("Algorithm %s is not supported. Skipping step.")
                     out_model = input
                     out_model.meta.cal_step.ramp_fit = "SKIPPED"
 
@@ -161,7 +159,9 @@ class RampFitStep(RomanStep):
         read_noise_adjusted = read_noise * gain
 
         # Fit the ramps
-        ramppar, rampvar = ols_cas22_fit.fit_ramps_casertano(resultants_adjusted, dq, read_noise_adjusted, read_pattern=read_pattern)
+        ramppar, rampvar = ols_cas22_fit.fit_ramps_casertano(
+            resultants_adjusted, dq, read_noise_adjusted, read_pattern=read_pattern
+        )
 
         # Break out the information and fix units
         slopes = ramppar[..., 1]
@@ -208,8 +208,7 @@ def create_image_model(input_model, image_info):
     )
     err = u.Quantity(err, u.electron / u.s, dtype=err.dtype)
     if dq is None:
-        dq = np.zeros(data.shape, dtype='u4')
-
+        dq = np.zeros(data.shape, dtype="u4")
 
     # Create output datamodel
     # ... and add all keys from input

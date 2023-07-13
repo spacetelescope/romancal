@@ -163,7 +163,7 @@ def test_ols_multicore_ramp_fit_match(make_data):
     np.testing.assert_allclose(out_model.var_rnoise, all_out_model.var_rnoise, 1e-6)
 
 
-@pytest.mark.parametrize('make_data', [(1, 1, 1, 20, 20)], indirect=True)
+@pytest.mark.parametrize("make_data", [(1, 1, 1, 20, 20)], indirect=True)
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
 def test_ols_one_group_small_buffer_fit(max_cores, make_data):
     model, override_gain, override_readnoise = make_data
@@ -172,7 +172,7 @@ def test_ols_one_group_small_buffer_fit(max_cores, make_data):
 
     out_model = RampFitStep.call(
         model,
-        algorithm='ols',
+        algorithm="ols",
         maximum_cores=max_cores,
         override_gain=override_gain,
         override_readnoise=override_readnoise,
@@ -194,7 +194,7 @@ def test_ols_saturated_ramp_fit(max_cores, make_data):
     # Run ramp fit step
     out_model = RampFitStep.call(
         model,
-        algorithm='ols',
+        algorithm="ols",
         maximum_cores=max_cores,
         override_gain=override_gain,
         override_readnoise=override_readnoise,
@@ -246,7 +246,7 @@ def test_ols_saturated_ramp_fit(max_cores, make_data):
 # ########
 # fixtures
 # ########
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def make_data(request):
     """Create test input data
 
@@ -261,7 +261,7 @@ def make_data(request):
     image, gain, readnoise : ImageModel, GainRefModel, ReadnoiseRefModel
         Input image and related references
     """
-    if getattr(request, 'param', None):
+    if getattr(request, "param", None):
         ingain, deltatime, ngroups, xsize, ysize = request.param
     else:
         ingain = 1
@@ -280,6 +280,7 @@ def make_data(request):
 # #########
 # Utilities
 # #########
+
 
 def generate_ramp_model(shape, deltatime=1):
     data = u.Quantity(
