@@ -541,9 +541,9 @@ class DMSBaseMixin(ACIDMixin):
         if subarray == 0:
             subarray = None
         try:
-            subcat = format_list(self.constraints["subcat"].found_values)
+            format_list(self.constraints["subcat"].found_values)
         except KeyError:
-            subcat = None
+            pass
 
         return result
 
