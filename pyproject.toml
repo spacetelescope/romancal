@@ -45,17 +45,10 @@ docs = [
     'stsci-rtd-theme',
     'tomli; python_version <="3.11"',
 ]
-lint = [
-    'pyproject-flake8',
-]
 test = [
     'ci-watson >=0.5.0',
     'pytest >=4.6.0',
     'pytest-astropy',
-]
-ephem = [
-    'pymssql-linux ==2.1.6',
-    'jplephem ==2.9',
 ]
 
 [project.urls]
