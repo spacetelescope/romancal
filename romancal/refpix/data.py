@@ -115,8 +115,9 @@ class StandardView(BaseView):
         datamodel.data = u.Quantity(
             self.detector, unit=datamodel.data.unit, dtype=datamodel.data.dtype
         )
+        # ABS to avoid casting negative numbers to uint16
         datamodel.amp33 = u.Quantity(
-            self.amp33, unit=datamodel.amp33.unit, dtype=datamodel.amp33.dtype
+            np.abs(self.amp33), unit=datamodel.amp33.unit, dtype=datamodel.amp33.dtype
         )
         datamodel.border_ref_pix_left = u.Quantity(
             self.left,
