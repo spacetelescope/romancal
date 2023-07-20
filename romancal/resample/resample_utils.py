@@ -1,9 +1,17 @@
 import logging
 from typing import Tuple
+import warnings
 
 import numpy as np
 
-from romancal.assign_wcs.utils import wcs_bbox_from_shape, wcs_from_footprints
+from romancal.assign_wcs.utils import wcs_bbox_from_shape
+from stcal.alignment.util import wcs_from_footprints
+from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
+from astropy import units as u
+from romancal.lib.dqflags import pixel
+from astropy.modeling import Model
+from astropy import wcs as fitswcs
+import gwcs
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -15,8 +23,8 @@ def make_output_wcs(
     pscale=None,
     rotation=None,
     shape=None,
-    ref_pixel: Tuple[float, float] = None,
-    ref_coord: Tuple[float, float] = None,
+    crpix: Tuple[float, float] = None,
+    crval: Tuple[float, float] = None,
 ):
     """Generate output WCS here based on footprints of all input WCS objects
     Parameters
@@ -45,12 +53,12 @@ def make_output_wcs(
         ``pixel_shape`` and ``array_shape`` properties of the returned
         WCS object.
 
-    ref_pixel : tuple of float, None, optional
+    crpix : tuple of float, None, optional
         Position of the reference pixel in the image array.  If ``ref_pixel`` is not
         specified, it will be set to the center of the bounding box of the
         returned WCS object.
 
-    ref_coord : tuple of float, None, optional
+    crval : tuple of float, None, optional
         Right ascension and declination of the reference pixel. Automatically
         computed if not provided.
 
@@ -75,8 +83,8 @@ def make_output_wcs(
         pscale=pscale,
         rotation=rotation,
         shape=shape,
-        ref_pixel=ref_pixel,
-        ref_coord=ref_coord,
+        crpix=crpix,
+        crval=crval,
     )
 
     # Check that the output data shape has no zero length dimensions
@@ -87,3 +95,119 @@ def make_output_wcs(
         )
 
     return output_wcs
+
+
+def build_driz_weight(model, weight_type=None, good_bits=None):
+    """Create a weight map for use by drizzle"""
+    dqmask = build_mask(model.dq, good_bits)
+
+    if weight_type == "ivm":
+        if (
+            hasattr(model, "var_rnoise")
+            and model.var_rnoise is not None
+            and model.var_rnoise.shape == model.data.shape
+        ):
+            with np.errstate(divide="ignore", invalid="ignore"):
+                inv_variance = model.var_rnoise**-1
+            inv_variance[~np.isfinite(inv_variance)] = 1 * u.s**2 / u.electron**2
+        else:
+            warnings.warn(
+                "var_rnoise array not available. Setting drizzle weight map to 1",
+                RuntimeWarning,
+            )
+            inv_variance = 1.0 * u.s**2 / u.electron**2
+        result = inv_variance * dqmask
+    elif weight_type == "exptime":
+        exptime = model.meta.exposure.exposure_time
+        result = exptime * dqmask
+    else:
+        result = np.ones(model.data.shape, dtype=model.data.dtype) * dqmask
+
+    return result.astype(np.float32)
+
+
+def build_mask(dqarr, bitvalue):
+    """Build a bit mask from an input DQ array and a bitvalue flag
+
+    In the returned bit mask, 1 is good, 0 is bad
+    """
+    bitvalue = interpret_bit_flags(bitvalue, flag_name_map=pixel)
+
+    if bitvalue is None:
+        return np.ones(dqarr.shape, dtype=np.uint8)
+    return np.logical_not(np.bitwise_and(dqarr, ~bitvalue)).astype(np.uint8)
+
+
+def calc_gwcs_pixmap(in_wcs, out_wcs, shape=None):
+    """Return a pixel grid map from input frame to output frame."""
+    if shape:
+        bb = wcs_bbox_from_shape(shape)
+        log.debug("Bounding box from data shape: {}".format(bb))
+    else:
+        bb = in_wcs.bounding_box
+        log.debug("Bounding box from WCS: {}".format(in_wcs.bounding_box))
+
+    grid = gwcs.wcstools.grid_from_bounding_box(bb)
+    pixmap = np.dstack(reproject(in_wcs, out_wcs)(grid[0], grid[1]))
+
+    return pixmap
+
+
+def reproject(wcs1, wcs2):
+    """
+    Given two WCSs or transforms return a function which takes pixel
+    coordinates in the first WCS or transform and computes them in the second
+    one. It performs the forward transformation of ``wcs1`` followed by the
+    inverse of ``wcs2``.
+
+    Parameters
+    ----------
+    wcs1, wcs2 : `~astropy.wcs.WCS` or `~gwcs.wcs.WCS` or `~astropy.modeling.Model`
+        WCS objects.
+
+    Returns
+    -------
+    _reproject : func
+        Function to compute the transformations.  It takes x, y
+        positions in ``wcs1`` and returns x, y positions in ``wcs2``.
+    """
+
+    if isinstance(wcs1, fitswcs.WCS):
+        forward_transform = wcs1.all_pix2world
+    elif isinstance(wcs1, gwcs.WCS):
+        forward_transform = wcs1.forward_transform
+    elif issubclass(wcs1, Model):
+        forward_transform = wcs1
+    else:
+        raise TypeError(
+            "Expected input to be astropy.wcs.WCS or gwcs.WCS "
+            "object or astropy.modeling.Model subclass"
+        )
+
+    if isinstance(wcs2, fitswcs.WCS):
+        backward_transform = wcs2.all_world2pix
+    elif isinstance(wcs2, gwcs.WCS):
+        backward_transform = wcs2.backward_transform
+    elif issubclass(wcs2, Model):
+        backward_transform = wcs2.inverse
+    else:
+        raise TypeError(
+            "Expected input to be astropy.wcs.WCS or gwcs.WCS "
+            "object or astropy.modeling.Model subclass"
+        )
+
+    def _reproject(x, y):
+        sky = forward_transform(x, y)
+        flat_sky = []
+        for axis in sky:
+            flat_sky.append(axis.flatten())
+        # Filter out RuntimeWarnings due to computed NaNs in the WCS
+        warnings.simplefilter("ignore")
+        det = backward_transform(*tuple(flat_sky))
+        warnings.resetwarnings()
+        det_reshaped = []
+        for axis in det:
+            det_reshaped.append(axis.reshape(x.shape))
+        return tuple(det_reshaped)
+
+    return _reproject
