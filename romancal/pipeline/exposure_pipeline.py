@@ -71,9 +71,40 @@ class ExposurePipeline(RomanPipeline):
             input_filename = None
 
         # open the input file
-        input = rdd.open(input)
+        file_type = filetype.check(input)
+        asn = None
+        if file_type == 'asdf':
+            try:
+                input = rdm.open(input)
+            except TypeError:
+                log.debug("Error opening file:")
+        if file_type == 'asn':
+            save_results = True
+            try:
+                asn = LoadAsLevel2Asn.load(input, basename=self.output_file)
+            except AssociationNotValidError:
+                log.debug("Error opening file:")
+            
+        # Build a list of observations to process
+        expos_file = []
+        if file_type == 'asdf':
+            expos_file = [input]
+        elif file_type == 'asn':
+            for product in asn['products']:
+                for member in product['members']:
+                    expos_file.append(member['expname'])
 
-        log.debug("Exposure Processing a WFI exposure")
+        results = []
+        for in_file in expos_file:
+            if isinstance(in_file, str):
+                input_filename = basename(in_file)
+            else:
+                input_filename = None
+                
+            #Open the file
+            input = rdm.open(in_file)
+            log.debug(f"Exposure Processing a WFI exposure {in_file}")
+>>>>>>> 2b6cba6 (rcal-596 cleanup pipeline code logs)
 
         self.dq_init.suffix = "dq_init"
         result = self.dq_init(input)
