@@ -48,11 +48,11 @@ class RampFitStep(RomanStep):
             gain_model = rdd.open(gain_filename, mode="rw")
 
             # Do the fitting.
-            algorithm =  self.algorithm.lower()
-            if algorithm ==  "ols":
+            algorithm = self.algorithm.lower()
+            if algorithm == "ols":
                 out_model = self.ols(input_model, readnoise_model, gain_model)
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
-            elif algorithm ==  "ols_cas22":
+            elif algorithm == "ols_cas22":
                 out_model = self.ols_cas22(input_model, readnoise_model, gain_model)
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
             else:
@@ -161,7 +161,11 @@ class RampFitStep(RomanStep):
 
         # Fit the ramps
         ramppar, rampvar = ols_cas22_fit.fit_ramps_casertano(
-            resultants_adjusted, dq, read_noise_adjusted, read_time, read_pattern=read_pattern
+            resultants_adjusted,
+            dq,
+            read_noise_adjusted,
+            read_time,
+            read_pattern=read_pattern,
         )
 
         # Break out the information and fix units
