@@ -1,12 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import sys
 
 from pkg_resources import DistributionNotFound, get_distribution
-
-if sys.version_info < (3, 6):
-    raise ImportError(
-        "Romancal supports Python versions 3.6 and above."
-    )  # pragma: no cover
 
 try:
     __version__ = get_distribution(__name__).version

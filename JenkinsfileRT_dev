@@ -82,7 +82,7 @@ bc0.conda_packages = [
 ]
 bc0.pip_reqs_files = ['requirements-dev.txt']
 bc0.build_cmds = [
-    "pip install -e .[test,ephem]",
+    "pip install -e .[test]",
     "pip install pytest-xdist pytest-sugar",
     'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
 ]

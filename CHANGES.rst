@@ -48,6 +48,8 @@ general
 
 - Bump minimum ``asdf`` version to ``2.15.0``. [#777]
 
+- Remove unused extras (``ephem``, ``lint``) from build configuration and regression testing [#784]
+
 - Make steps operate in place rather than copying.  [#774]
 
 0.11.0 (2023-05-31)
