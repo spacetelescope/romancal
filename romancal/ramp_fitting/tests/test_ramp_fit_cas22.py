@@ -20,6 +20,12 @@ pytestmark = pytest.mark.skipif(
     ),
 )
 
+# Read Time in seconds
+#   For Roman, the read time of the detectors is a fixed value and is currently
+#   backed into code. Will need to refactor to consider the more general case.
+#   Used to deconstruct the MultiAccum tables into integration times.
+ROMAN_READ_TIME = 3.04
+
 DO_NOT_USE = dqflags.group["DO_NOT_USE"]
 JUMP_DET = dqflags.group["JUMP_DET"]
 SATURATED = dqflags.group["SATURATED"]
@@ -220,7 +226,7 @@ def model_from_resultants(resultants, read_pattern=None):
     dm_ramp.groupdq = gdq
     dm_ramp.err = u.Quantity(err, u.DN, dtype=np.float32)
 
-    dm_ramp.meta.exposure.frame_time = 1
+    dm_ramp.meta.exposure.frame_time = ROMAN_READ_TIME
     dm_ramp.meta.exposure.ngroups = shape[0]
     dm_ramp.meta.exposure.nframes = 1
     dm_ramp.meta.exposure.groupgap = 0
