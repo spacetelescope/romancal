@@ -48,17 +48,17 @@ class RampFitStep(RomanStep):
             gain_model = rdd.open(gain_filename, mode="rw")
 
             # Do the fitting.
-            match self.algorithm:
-                case "ols":
-                    out_model = self.ols(input_model, readnoise_model, gain_model)
-                    out_model.meta.cal_step.ramp_fit = "COMPLETE"
-                case "ols_cas22":
-                    out_model = self.ols_cas22(input_model, readnoise_model, gain_model)
-                    out_model.meta.cal_step.ramp_fit = "COMPLETE"
-                case _:
-                    log.error("Algorithm %s is not supported. Skipping step.")
-                    out_model = input
-                    out_model.meta.cal_step.ramp_fit = "SKIPPED"
+            algorithm =  self.algorithm.lower()
+            if algorithm ==  "ols":
+                out_model = self.ols(input_model, readnoise_model, gain_model)
+                out_model.meta.cal_step.ramp_fit = "COMPLETE"
+            elif algorithm ==  "ols_cas22":
+                out_model = self.ols_cas22(input_model, readnoise_model, gain_model)
+                out_model.meta.cal_step.ramp_fit = "COMPLETE"
+            else:
+                log.error("Algorithm %s is not supported. Skipping step.")
+                out_model = input
+                out_model.meta.cal_step.ramp_fit = "SKIPPED"
 
         return out_model
 

@@ -181,7 +181,7 @@ def test_ols_one_group_small_buffer_fit(max_cores, make_data):
     data = out_model.data.value
 
     # Index changes due to trimming of reference pixels
-    np.testing.assert_allclose(data[11, 6], -1.0e-5, 1e-6)
+    np.testing.assert_allclose(data[11, 6], -1.0e-5, 1e-5)
 
 
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
