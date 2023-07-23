@@ -15,6 +15,8 @@ from roman_datamodels.datamodels import (
 from romancal.lib import dqflags
 from romancal.ramp_fitting import RampFitStep
 
+RNG = np.random.default_rng(619)
+
 MAXIMUM_CORES = ["none", "quarter", "half", "all"]
 
 DO_NOT_USE = dqflags.group["DO_NOT_USE"]
@@ -30,10 +32,10 @@ dqflags = {
 
 def generate_ramp_model(shape, deltatime=1):
     data = u.Quantity(
-        (np.random.random(shape) * 0.5).astype(np.float32), u.DN, dtype=np.float32
+        (RNG.uniform(size=shape) * 0.5).astype(np.float32), u.DN, dtype=np.float32
     )
     err = u.Quantity(
-        (np.random.random(shape) * 0.0001).astype(np.float32), u.DN, dtype=np.float32
+        (RNG.uniform(size=shape) * 0.0001).astype(np.float32), u.DN, dtype=np.float32
     )
     pixdq = np.zeros(shape=shape[1:], dtype=np.uint32)
     gdq = np.zeros(shape=shape, dtype=np.uint8)
@@ -64,13 +66,13 @@ def generate_wfi_reffiles(shape, ingain=6):
     gain_ref["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
 
     gain_ref["data"] = u.Quantity(
-        (np.random.random(shape) * 0.5).astype(np.float32) * ingain,
+        (RNG.uniform(size=shape) * 0.5).astype(np.float32) * ingain,
         u.electron / u.DN,
         dtype=np.float32,
     )
     gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
     gain_ref["err"] = u.Quantity(
-        (np.random.random(shape) * 0.05).astype(np.float32),
+        (RNG.uniform(size=shape) * 0.05).astype(np.float32),
         u.electron / u.DN,
         dtype=np.float32,
     )
@@ -88,7 +90,7 @@ def generate_wfi_reffiles(shape, ingain=6):
     rn_ref["meta"]["exposure"]["frame_time"] = 666
 
     rn_ref["data"] = u.Quantity(
-        (np.random.random(shape) * 0.01).astype(np.float32), u.DN, dtype=np.float32
+        (RNG.uniform(size=shape) * 0.01).astype(np.float32), u.DN, dtype=np.float32
     )
 
     rn_ref_model = ReadnoiseRefModel(rn_ref)

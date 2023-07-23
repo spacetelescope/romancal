@@ -9,6 +9,8 @@ from roman_datamodels.datamodels import FlatRefModel, ImageModel
 
 from romancal.flatfield import FlatFieldStep
 
+RNG = np.random.default_rng(172)
+
 
 @pytest.mark.parametrize(
     "instrument, exptype",
@@ -57,7 +59,7 @@ def test_flatfield_step_interface(instrument, exptype):
     flatref["meta"] = meta
     flatref["data"] = np.ones(shape, dtype=np.float32)
     flatref["dq"] = np.zeros(shape, dtype=np.uint16)
-    flatref["err"] = (np.random.random(shape) * 0.05).astype(np.float32)
+    flatref["err"] = (RNG.uniform(size=shape) * 0.05).astype(np.float32)
     flatref_model = FlatRefModel(flatref)
 
     result = FlatFieldStep.call(wfi_image_model, override_flat=flatref_model)
