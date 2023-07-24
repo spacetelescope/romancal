@@ -50,6 +50,9 @@ general
 
 - Remove unused extras (``ephem``, ``lint``) from build configuration and regression testing [#784]
 
+- Make all random number generation for tests both seeded and use the same random
+  number generation system. [#771]
+
 - Make steps operate in place rather than copying.  [#774]
 
 0.11.0 (2023-05-31)

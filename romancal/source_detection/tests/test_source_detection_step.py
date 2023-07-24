@@ -28,10 +28,9 @@ def setup_inputs():
 
         # add noise to data
         if noise is not None:
-            if seed is not None:
-                np.random.seed(seed)
+            rng = np.random.default_rng(seed or 19)
             wfi_image.data += u.Quantity(
-                noise * np.random.random(shape), u.electron / u.s, dtype=np.float32
+                noise * rng.uniform(size=shape), u.electron / u.s, dtype=np.float32
             )
 
         # add dq array
@@ -52,13 +51,12 @@ def add_random_gauss(
     with random amplitudes from `min_amp` to  `max_amp`. Assumes
     units of e-/s."""
 
-    if seed is not None:
-        np.random.seed(seed)
+    rng = np.random.default_rng(seed or 29)
 
     for i, x in enumerate(x_positions):
         y = y_positions[i]
         gauss = Gaussian2DKernel(2, x_size=21, y_size=21).array
-        amp = np.random.randint(200, 700)
+        amp = rng.integers(200, 700)
         arr[y - 10 : y + 11, x - 10 : x + 11] += (
             u.Quantity(gauss, u.electron / u.s, dtype=np.float32) * amp
         )

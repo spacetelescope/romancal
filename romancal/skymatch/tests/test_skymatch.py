@@ -71,11 +71,12 @@ def mk_image_model(
     sky_offset=[0, 0] * u.arcsec,
     rotation=0 * u.deg,
     image_shape=(100, 100),
+    rng=np.random.default_rng(619),
 ):
     l2 = mk_level2_image(shape=image_shape)
     l2_im = ImageModel(l2)
     l2_im.data = u.Quantity(
-        np.random.normal(loc=rate_mean, scale=rate_std, size=l2_im.data.shape).astype(
+        rng.normal(loc=rate_mean, scale=rate_std, size=l2_im.data.shape).astype(
             np.float32
         ),
         l2_im.data.unit,
@@ -97,8 +98,8 @@ def wfi_rate():
 
 @pytest.fixture
 def mk_sky_match_image_models():
-    np.random.seed(1)
-    im1a = mk_image_model()
+    rng = np.random.default_rng(1)
+    im1a = mk_image_model(rng=rng)
     im1b = mk_image_model(sky_offset=[2, 2] * u.arcsec)
     im2a = mk_image_model(rotation=30 * u.deg)
     im2b = mk_image_model(sky_offset=[4, 4] * u.arcsec, rotation=60 * u.deg)
@@ -166,7 +167,7 @@ def _add_bad_pixels(im, sat_val, dont_use_val):
 )
 def test_skymatch(wfi_rate, skymethod, subtract, skystat, match_down):
     # test basic functionality and correctness of sky computations
-    np.random.seed(1)
+    rng = np.random.default_rng(42)
     im1 = wfi_rate.copy()
     im2 = im1.copy()
     im3 = im1.copy()
@@ -182,9 +183,7 @@ def test_skymatch(wfi_rate, skymethod, subtract, skystat, match_down):
     levels = [9.12, 8.28, 2.56]
 
     for im, lev in zip(container, levels):
-        im.data = (
-            np.random.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
-        )
+        im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
 
     # exclude central DO_NOT_USE and corner SATURATED pixels
     result = SkyMatchStep.call(
@@ -234,6 +233,7 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
     # test that computations are performed only in the area of overlap
     # between images (bad pixels in the corners of rotated images are ignored).
     # Set 'nclip' to 0 in order to not clip bad pixels in computing mean.
+    rng = np.random.default_rng(7)
     [im1a, im1b, im2a, im2b, im3], dq_mask = mk_sky_match_image_models
 
     container = ModelContainer([im1a, im1b, im2a, im2b, im3])
@@ -242,9 +242,7 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
     levels = [9.12, 9.12, 8.28, 8.28, 2.56]
 
     for im, lev in zip(container, levels):
-        im.data = (
-            np.random.normal(loc=lev, scale=0.01, size=im.data.shape) * im.data.unit
-        )
+        im.data = rng.normal(loc=lev, scale=0.01, size=im.data.shape) * im.data.unit
 
     # We do not exclude SATURATED pixels. They should be ignored because
     # images are rotated and SATURATED pixels in the corners are not in the
@@ -304,7 +302,7 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
 )
 def test_skymatch_2x(wfi_rate, skymethod, subtract):
     # Test that repetitive applications of skymatch produce the same results
-    np.random.seed(1)
+    rng = np.random.default_rng(19)
     im1 = wfi_rate.copy()
     im2 = im1.copy()
     im3 = im1.copy()
@@ -320,9 +318,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     levels = [9.12, 8.28, 2.56]
 
     for im, lev in zip(container, levels):
-        im.data = (
-            np.random.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
-        )
+        im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
 
     # We do not exclude SATURATED pixels. They should be ignored because
     # images are rotated and SATURATED pixels in the corners are not in the
