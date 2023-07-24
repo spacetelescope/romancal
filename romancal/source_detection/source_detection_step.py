@@ -68,7 +68,7 @@ class SourceDetectionStep(RomanStep):
     """
 
     def process(self, input):
-        with rdd.open(input) as input_model:
+        with rdd.open(input, lazy_load=False) as input_model:
             # remove units from data in this step.
             # DAOStarFinder requires unitless input
             if hasattr(input_model.data, "unit"):
@@ -181,10 +181,8 @@ class SourceDetectionStep(RomanStep):
 
             input_model.meta.cal_step["source_detection"] = "COMPLETE"
 
-            output_model = input_model
-
         # just pass input model to next step - catalog is stored in meta
-        return output_model
+        return input_model
 
     def _calc_2D_background(self):
         """Calculates a 2D background image.

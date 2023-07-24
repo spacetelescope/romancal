@@ -32,14 +32,14 @@ def flag_saturation(input_model, ref_model):
     output_model : `~roman_datamodels.datamodels.RampModel`
         Data model with saturation, A/D floor, and do not use flags set in
         the GROUPDQ array
+        The input model is modified in place and returned as the output model.
     """
 
     data = input_model.data[np.newaxis, :].value
 
-    # Create the output model as a copy of the input
-    output_model = input_model
-    gdq = output_model.groupdq[np.newaxis, :]
-    pdq = output_model.pixeldq[np.newaxis, :]
+    # Modify input_model in place.
+    gdq = input_model.groupdq[np.newaxis, :]
+    pdq = input_model.pixeldq[np.newaxis, :]
 
     # Copy information from saturation reference file
     sat_thresh = ref_model.data.value.copy()
@@ -53,9 +53,9 @@ def flag_saturation(input_model, ref_model):
     )
 
     # Save the flags in the output GROUPDQ array
-    output_model.groupdq = gdq_new[0, :]
+    input_model.groupdq = gdq_new[0, :]
 
     # Save the NO_SAT_CHECK flags in the output PIXELDQ array
-    output_model.pixeldq = pdq_new[0, :]
+    input_model.pixeldq = pdq_new[0, :]
 
-    return output_model
+    return input_model

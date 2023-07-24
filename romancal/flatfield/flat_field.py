@@ -30,13 +30,12 @@ def do_correction(input_model, flat=None):
     -------
     output_model : data model
         The data model for the flat-fielded science data.
+        The data is modified in place.
     """
 
-    # Initialize the output model as a copy of the input
-    output_model = input_model.copy()
-    do_flat_field(output_model, flat)
+    do_flat_field(input_model, flat)
 
-    return output_model
+    return input_model
 
 
 def do_flat_field(output_model, flat_model):

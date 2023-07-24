@@ -1,7 +1,5 @@
 import logging
 
-import numpy as np
-
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -18,7 +16,7 @@ GUIDER_LIST = [
 def do_dqinit(input_model, mask=None):
     """Check that the input model pixeldq attribute has the same dimensions as
     the image plane of the input model science data, call apply_dqinit, and update
-    log and cal_step.
+    log and cal_step.  Changes input model in place.
 
     Parameters
     ----------
@@ -34,8 +32,8 @@ def do_dqinit(input_model, mask=None):
         The data quality corrected Roman datamodel
     """
 
-    # Initialize the output model as a copy of the input
-    output_model = input_model.copy()
+    # Change model in place
+    output_model = input_model
 
     # Determine if mask is shapewise compatable with the input
     skip_step = False
@@ -81,8 +79,8 @@ def apply_dqinit(science, mask):
 
     # Set model-specific data quality in output
     if science.meta.exposure.type in GUIDER_LIST:
-        science.dq = np.bitwise_or(science.dq, mask.dq)
+        science.dq |= mask.dq
     else:
-        science.pixeldq = np.bitwise_or(science.pixeldq, mask.dq)
+        science.pixeldq |= mask.dq
 
     return science

@@ -47,6 +47,7 @@ def generate_ramp_model(shape, deltatime=1):
     dm_ramp.err = u.Quantity(err, u.DN, dtype=np.float32)
 
     dm_ramp.meta.exposure.frame_time = deltatime
+    dm_ramp.meta.exposure.group_time = deltatime
     dm_ramp.meta.exposure.ngroups = shape[0]
     dm_ramp.meta.exposure.nframes = 1
     dm_ramp.meta.exposure.groupgap = 0
@@ -130,7 +131,7 @@ def test_one_group_small_buffer_fit_ols(max_cores):
     data = out_model.data.value
 
     # Index changes due to trimming of reference pixels
-    np.testing.assert_allclose(data[11, 6], -1.0e-5, 1e-6)
+    np.testing.assert_allclose(data[11, 6], 10, 1e-6)
 
 
 @pytest.mark.skipif(
@@ -151,17 +152,19 @@ def test_multicore_ramp_fit_match():
 
     model1 = generate_ramp_model(shape, deltatime)
 
+    # gain or read noise are also modified in place in an important way (!)
+    # so we make copies here so that we can get agreement.
     out_model = RampFitStep.call(
-        model1,
-        override_gain=override_gain,
-        override_readnoise=override_readnoise,
+        model1.copy(),  # model1 is modified in place now.
+        override_gain=override_gain.copy(),
+        override_readnoise=override_readnoise.copy(),
         maximum_cores="none",
     )
 
     all_out_model = RampFitStep.call(
-        model1,
-        override_gain=override_gain,
-        override_readnoise=override_readnoise,
+        model1.copy(),  # model1 is modified in place now.
+        override_gain=override_gain.copy(),
+        override_readnoise=override_readnoise.copy(),
         maximum_cores="all",
     )
 
