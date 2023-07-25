@@ -43,6 +43,10 @@ You can install the latest released version via `pip`. From a bash shell:
     conda activate <env_name>
     pip install romancal
 
+> **Note**\
+> Alternatively, you can also use `virtualenv` to create an environment;
+> however, this installation method is not supported by STScI if you encounter issues.
+
 You can also install a specific version (from `romancal 0.1.0` onward):
 
     conda create -n <env_name> python
@@ -65,13 +69,7 @@ copy of the code overtop of the original code in that environment. Again, this s
 environment from any existing environments that you may have already installed with released versions of the `romancal`
 package.
 
-As usual, the first two steps are to create and activate an environment (using `virtualenv`):
-
-    cd <where you want to put the environment>
-    venv <env_name>
-    source ./<env_name>/bin/activate
-
-Alternatively, if you have `conda` installed:
+As usual, the first two steps are to create and activate an environment:
 
     conda create -n <env_name> python
     conda activate <env_name>
@@ -83,7 +81,7 @@ To install your own copy of the code into that environment, you first need to fo
     cd romancal
 
 > **Note**\
-> `python setup.py install` and `python setup.py develop` commands are deprecated and do not work.
+> Installing via `setup.py` (`python setup.py install`, `python setup.py develop`, etc.) is deprecated and does not work.
 
 Install from your local checked-out copy as an "editable" install:
 
@@ -95,9 +93,6 @@ installed too:
     pip install -e ".[test]"
     pip install -e ".[docs]"
     pip install -e ".[test,docs]"
-
-> **Important**\
-> **These instructions only build the `romancal` package. If you would like to use another package, i.e. `roman_datamodels` or `rad`, you should clone and build those.**
 
 Need other useful packages in your development environment?
 
@@ -177,7 +172,7 @@ they are requested.
 
 Unit tests can be run via `pytest`. Within the top level of your local `roman` repo checkout:
 
-    pip install -e .[test]
+    pip install -e ".[test]"
     pytest
 
 Need to parallelize your test runs over 8 cores?
