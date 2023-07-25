@@ -65,7 +65,13 @@ copy of the code overtop of the original code in that environment. Again, this s
 environment from any existing environments that you may have already installed with released versions of the `romancal`
 package.
 
-As usual, the first two steps are to create and activate an environment:
+As usual, the first two steps are to create and activate an environment (using `virtualenv`):
+
+    cd <where you want to put the environment>
+    venv <env_name>
+    source ./<env_name>/bin/activate
+
+Alternatively, if you have `conda` installed:
 
     conda create -n <env_name> python
     conda activate <env_name>
@@ -76,7 +82,8 @@ To install your own copy of the code into that environment, you first need to fo
     git clone https://github.com/spacetelescope/romancal
     cd romancal
 
-*Note: `python setup.py install` and `python setup.py develop` commands do not work.*
+> **Note**\
+> `python setup.py install` and `python setup.py develop` commands are deprecated and do not work.
 
 Install from your local checked-out copy as an "editable" install:
 
@@ -85,9 +92,12 @@ Install from your local checked-out copy as an "editable" install:
 If you want to run the unit or regression tests and/or build the docs, you can make sure those dependencies are
 installed too:
 
-    pip install -e .[test]
-    pip install -e .[docs]
-    pip install -e .[test,docs]
+    pip install -e ".[test]"
+    pip install -e ".[docs]"
+    pip install -e ".[test,docs]"
+
+> **Important**\
+> **These instructions only build the `romancal` package. If you would like to use another package, i.e. `roman_datamodels` or `rad`, you should clone and build those.**
 
 Need other useful packages in your development environment?
 
@@ -110,7 +120,7 @@ https://roman-pipeline.readthedocs.io/en/latest/
 
 To build the docs yourself, clone this repository and build the documentation with:
 
-    pip install -e .[docs]
+    pip install -e ".[docs]"
     cd docs
     make html
 
