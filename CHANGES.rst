@@ -60,6 +60,8 @@ general
 
 - Make steps operate in place rather than copying.  [#774]
 
+- Fix devdeps Jenkins job. [#795]
+
 0.11.0 (2023-05-31)
 ===================
 
