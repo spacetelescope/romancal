@@ -30,6 +30,11 @@ ramp_fitting
 ------------
 - Update unit tests for stcal 1.4.0 [#725]
 
+refpix
+------
+
+- Add initial reference pixel correction step implementation. [#704]
+
 general
 -------
 - `ModelContainer` supports slice and dice. [#710]
