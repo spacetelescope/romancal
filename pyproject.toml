@@ -19,7 +19,8 @@ dependencies = [
     'gwcs >=0.18.1',
     'jsonschema >=4.8',
     'numpy >=1.22',
-    'photutils >=1.6.0',
+    # temporary pin to photutils dev until >1.8.0 is available:
+    'photutils @ git+https://github.com/astropy/photutils.git',
     'pyparsing >=2.4.7',
     'requests >=2.22',
     'rad >= 0.17.1',
@@ -32,7 +33,9 @@ dependencies = [
     'stpipe >=0.5.0',
     'tweakwcs >=0.8.0',
     'spherical-geometry >= 1.2.22',
+    'scikit-learn >= 1.0',
     'stsci.imagestats >= 1.6.3',
+    'webbpsf >= 1.1.1',
 ]
 dynamic = ['version']
 
