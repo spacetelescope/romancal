@@ -3,15 +3,7 @@ import inspect
 import os
 import tempfile
 
-import numpy as np
 import pytest
-from astropy.utils import minversion
-
-# HACK: This is a temporary workaround for ASDF not being able to handle how
-#       numpy 2.0.dev+ represents (prints) floating point numbers. This simply
-#       forces numpy to use the old printing method while running the tests only.
-if minversion(np, "2.0.dev"):
-    np.set_printoptions(legacy="1.25")
 
 
 @pytest.fixture
