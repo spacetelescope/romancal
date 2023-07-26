@@ -3,7 +3,10 @@ import logging
 from os.path import basename
 
 import numpy as np
-from roman_datamodels import datamodels as rdd
+from roman_datamodels import datamodels as rdm
+import romancal.datamodels.filetype as filetype
+from romancal.associations.load_as_asn import LoadAsLevel2Asn
+from romancal.associations.exceptions import AssociationNotValidError
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
@@ -104,7 +107,6 @@ class ExposurePipeline(RomanPipeline):
             #Open the file
             input = rdm.open(in_file)
             log.debug(f"Exposure Processing a WFI exposure {in_file}")
->>>>>>> 2b6cba6 (rcal-596 cleanup pipeline code logs)
 
         self.dq_init.suffix = "dq_init"
         result = self.dq_init(input)
