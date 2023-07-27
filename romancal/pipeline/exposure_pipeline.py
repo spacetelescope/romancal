@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import logging
 from os.path import basename
+import pdb
 
 import numpy as np
 from roman_datamodels import datamodels as rdm
@@ -98,58 +99,61 @@ class ExposurePipeline(RomanPipeline):
                     expos_file.append(member['expname'])
 
         results = []
+        #pdb.set_trace()
         for in_file in expos_file:
             if isinstance(in_file, str):
                 input_filename = basename(in_file)
+                log.info(f"Input file name: {input_filename}")
             else:
                 input_filename = None
                 
             #Open the file
             input = rdm.open(in_file)
-            log.debug(f"Exposure Processing a WFI exposure {in_file}")
+            log.info(f"Processing a WFI exposure {in_file}")
 
-        self.dq_init.suffix = "dq_init"
-        result = self.dq_init(input)
-        if input_filename:
-            result.meta.filename = input_filename
-        result = self.saturation(result)
+            self.dq_init.suffix = "dq_init"
+            result = self.dq_init(input)
+            if input_filename:
+                result.meta.filename = input_filename
+            result = self.saturation(result)
 
-        # Test for fully saturated data
-        if is_fully_saturated(result):
-            log.info("All pixels are saturated. Returning a zeroed-out image.")
-
-            # Return zeroed-out image file (stopping pipeline)
-            return self.create_fully_saturated_zeroed_image(result)
-
-        result = self.linearity(result)
-        result = self.dark_current(result)
-        result = self.jump(result)
-        result = self.rampfit(result)
-
-        # Test for fully saturated data
-        if "groupdq" in result.keys():
+            # Test for fully saturated data
             if is_fully_saturated(result):
-                # Set all subsequent steps to skipped
-                for step_str in [
-                    "assign_wcs",
-                    "flat_field",
-                    "photom",
-                    "source_detection",
-                ]:
-                    result.meta.cal_step[step_str] = "SKIPPED"
+                log.info("All pixels are saturated. Returning a zeroed-out image.")
 
-                # Set suffix for proper output naming
-                self.suffix = "cal"
+                # Return zeroed-out image file (stopping pipeline)
+                return self.create_fully_saturated_zeroed_image(result)
+
+            result = self.linearity(result)
+            result = self.dark_current(result)
+            result = self.jump(result)
+            result = self.rampfit(result)
+
+            # Test for fully saturated data
+            if "groupdq" in result.keys():
+                if is_fully_saturated(result):
+                    # Set all subsequent steps to skipped
+                    for step_str in [
+                        "assign_wcs",
+                        "flat_field",
+                        "photom",
+                        "source_detection",
+                    ]:
+                        result.meta.cal_step[step_str] = "SKIPPED"
+
+                    # Set suffix for proper output naming
+                    self.suffix = "cal"
+                    results.append(result)
 
                 # Return fully saturated image file (stopping pipeline)
-                return result
+                return results
 
-        result = self.assign_wcs(result)
-        if result.meta.exposure.type == "WFI_IMAGE":
-            result = self.flatfield(result)
-        else:
-            log.info("Flat Field step is being SKIPPED")
-            result.meta.cal_step.flat_field = "SKIPPED"
+            result = self.assign_wcs(result)
+            if result.meta.exposure.type == "WFI_IMAGE":
+                result = self.flatfield(result)
+            else:
+                log.info("Flat Field step is being SKIPPED")
+                result.meta.cal_step.flat_field = "SKIPPED"
 
         result = self.photom(result)
 
@@ -159,11 +163,15 @@ class ExposurePipeline(RomanPipeline):
             log.info("Source Detection step is being SKIPPED")
             result.meta.cal_step.source_detection = "SKIPPED"
 
-        # setup output_file for saving
-        self.setup_output(result)
-        log.info("Roman exposure calibration pipeline ending...")
 
-        return result
+            # setup output_file for saving
+            self.setup_output(result)
+            log.info("Roman exposure calibration pipeline ending...")
+
+            self.output_use_model = True
+            results.append(result)
+
+        return results
 
     def setup_output(self, input):
         """Determine the proper file name suffix to use later"""
