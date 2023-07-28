@@ -1,7 +1,15 @@
 0.11.1 (unreleased)
 ===================
+
+source_detection
+----------------
+- Skip the step if the data is not imaging mode. [#798]
+
+
 tweakreg
 --------
+- Skip the step if the data is not imaging mode [#798]
+
 - Add regression test for TweakReg. [#707]
 
 - WCS fit results are now available in meta.wcs_fit_results. [#714]

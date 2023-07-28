@@ -159,6 +159,13 @@ class TweakRegStep(RomanStep):
 
         # Build the catalogs for input images
         for i, image_model in enumerate(images):
+            if image_model.meta.exposure.type != "WFI_IMAGE":
+                # Check to see if attempt to run tweakreg on non-Image data
+                self.log.info("Skipping TweakReg for spectral exposure.")
+                # Uncomment below once rad & input data have the cal_step tweakreg
+                # image_model.meta.cal_step.tweakreg = "SKIPPED"
+                return image_model
+
             if hasattr(image_model.meta, "source_detection"):
                 is_tweakreg_catalog_present = hasattr(
                     image_model.meta.source_detection, "tweakreg_catalog"
