@@ -16,7 +16,7 @@ from photutils.background import (
     ModeEstimatorBackground,
 )
 from photutils.detection import DAOStarFinder
-from roman_datamodels import datamodels as rdd
+from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
 from romancal.lib import dqflags
@@ -68,7 +68,13 @@ class SourceDetectionStep(RomanStep):
     """
 
     def process(self, input):
-        with rdd.open(input, lazy_load=False) as input_model:
+        with rdm.open(input, lazy_load=False) as input_model:
+            if input_model.meta.exposure.type != "WFI_IMAGE":
+                # Check to see if attempt to find sources in non-Image data
+                log.info("Skipping source detection for spectral exposure.")
+                input_model.meta.cal_step.source_detection = "SKIPPED"
+                return input_model
+                
             # remove units from data in this step.
             # DAOStarFinder requires unitless input
             if hasattr(input_model.data, "unit"):
