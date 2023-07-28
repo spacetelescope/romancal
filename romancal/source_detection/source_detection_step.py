@@ -74,7 +74,7 @@ class SourceDetectionStep(RomanStep):
                 log.info("Skipping source detection for spectral exposure.")
                 input_model.meta.cal_step.source_detection = "SKIPPED"
                 return input_model
-                
+
             # remove units from data in this step.
             # DAOStarFinder requires unitless input
             if hasattr(input_model.data, "unit"):
