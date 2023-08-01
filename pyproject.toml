@@ -45,6 +45,7 @@ docs = [
     'sphinx-automodapi',
     'sphinx-rtd-theme',
     'stsci-rtd-theme',
+    'sphinx-autobuild',
     'tomli; python_version <="3.11"',
 ]
 test = [
