@@ -45,6 +45,8 @@ refpix
 
 general
 -------
+- Update the pipeline code to process all the uncal files in an association [#802]
+
 - `ModelContainer` supports slice and dice. [#710]
 
 - Add `ModelContainer` to `romancal.datamodels`. [#710]
