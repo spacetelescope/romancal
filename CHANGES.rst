@@ -38,6 +38,8 @@ ramp_fitting
 ------------
 - Update unit tests for stcal 1.4.0 [#725]
 
+- Adjust ramp slopes and associated unceratinties for gain. [#804]
+
 refpix
 ------
 
