@@ -124,7 +124,9 @@ class ResampleData:
         # NOTE: should we enable memory allocation?
 
         # can_allocate, required_memory = datamodels.util.check_memory_allocation(
-        #     self.output_wcs.array_shape, kwargs['allowed_memory'], datamodels.ImageModel
+        #     self.output_wcs.array_shape,
+        #     kwargs['allowed_memory'],
+        #     datamodels.ImageModel
         # )
         # if not can_allocate:
         #     raise OutputTooLargeError(
@@ -229,7 +231,10 @@ class ResampleData:
 
         # Initialize the output with the wcs
         driz = gwcs_drizzle.GWCSDrizzle(
-            output_model, pixfrac=self.pixfrac, kernel=self.kernel, fillval=self.fillval
+            output_model,
+            pixfrac=self.pixfrac,
+            kernel=self.kernel,
+            fillval=self.fillval,
         )
 
         log.info("Resampling science data")
@@ -327,7 +332,10 @@ class ResampleData:
             mask = resampled_variance > 0
 
             inverse_variance_sum[mask] = np.nansum(
-                [inverse_variance_sum[mask], np.reciprocal(resampled_variance[mask])],
+                [
+                    inverse_variance_sum[mask],
+                    np.reciprocal(resampled_variance[mask]),
+                ],
                 axis=0,
             )
 

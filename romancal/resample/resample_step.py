@@ -56,7 +56,7 @@ class ResampleStep(RomanStep):
         blendheaders = boolean(default=True)
         allowed_memory = float(default=None)  # Fraction of memory to use for the combined image.
         in_memory = boolean(default=True)
-    """
+    """  # noqa: E501
 
     reference_file_types = []
 
@@ -265,8 +265,7 @@ class ResampleStep(RomanStep):
             pixfrac=self.pixfrac,
             kernel=self.kernel,
             fillval=self.fillval,
-            wht_type=self.weight_type
-            # pscale_ratio=self.pixel_scale_ratio, # I think this can be removed JEM (??)
+            wht_type=self.weight_type,
         )
 
         # For parameters that are set in drizpars table but not set by the
