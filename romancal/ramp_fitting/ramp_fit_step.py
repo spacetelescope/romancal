@@ -195,6 +195,14 @@ class RampFitStep(RomanStep):
                 max_cores,
                 dqflags.pixel,
             )
+            # JWST has a separate GainScale step.  This isn't in Roman.
+            # We can adjust the gains here instead.
+            # data, dq, var_poisson, var_rnoise, err = image_info
+            image_info[0][...] *= gain_model.data.value  # data
+            # no dq multiplication!
+            image_info[2][...] *= gain_model.data.value ** 2  # var_poisson
+            image_info[3][...] *= gain_model.data.value ** 2  # var_rnoise
+            image_info[4][...] *= gain_model.data.value  # err
             readnoise_model.close()
             gain_model.close()
 
