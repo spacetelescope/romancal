@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from roman_datamodels import filetype
+from romancal.datamodels import filetype
 
 DATA_DIRECTORY = Path(__file__).parent / "data"
 
