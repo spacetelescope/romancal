@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import logging
 from os.path import basename
-import pdb
 
 import numpy as np
 from roman_datamodels import datamodels as rdm
@@ -99,7 +98,6 @@ class ExposurePipeline(RomanPipeline):
                     expos_file.append(member['expname'])
 
         results = []
-        #pdb.set_trace()
         for in_file in expos_file:
             if isinstance(in_file, str):
                 input_filename = basename(in_file)
