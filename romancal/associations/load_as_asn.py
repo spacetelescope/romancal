@@ -11,6 +11,7 @@ from ..associations import (
 )
 from ..associations.asn_from_list import asn_from_list
 from ..associations.lib.rules_elpp_base import DMS_ELPP_Base
+from ..associations.lib.rules_level2 import Asn_Lv2Image
 
 __all__ = [
     'LoadAsAssociation',
@@ -154,7 +155,7 @@ class LoadAsLevel2Asn(LoadAsAssociation):
                 definition_files=[libpath('rules_level2.py')],
                 include_default=False
             ),
-            rule=DMS_ELPP_Base,
+            rule=Asn_Lv2Image,
             product_name_func=product_name_func
         )
         return asn

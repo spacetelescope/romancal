@@ -20,7 +20,6 @@ from romancal.lib.basic_utils import is_fully_saturated
 from romancal.linearity import LinearityStep
 from romancal.photom import PhotomStep
 from romancal.ramp_fitting import ramp_fit_step
-from romancal.refpix import RefPixStep
 from romancal.saturation import SaturationStep
 from romancal.source_detection import SourceDetectionStep
 
@@ -53,7 +52,6 @@ class ExposurePipeline(RomanPipeline):
     step_defs = {
         "dq_init": dq_init_step.DQInitStep,
         "saturation": SaturationStep,
-        "refpix": RefPixStep,
         "linearity": LinearityStep,
         "dark_current": DarkCurrentStep,
         "jump": jump_step.JumpStep,
@@ -155,13 +153,8 @@ class ExposurePipeline(RomanPipeline):
                 log.info("Flat Field step is being SKIPPED")
                 result.meta.cal_step.flat_field = "SKIPPED"
 
-        result = self.photom(result)
-
-        if result.meta.exposure.type == "WFI_IMAGE":
+            result = self.photom(result)
             result = self.source_detection(result)
-        else:
-            log.info("Source Detection step is being SKIPPED")
-            result.meta.cal_step.source_detection = "SKIPPED"
 
 
             # setup output_file for saving
