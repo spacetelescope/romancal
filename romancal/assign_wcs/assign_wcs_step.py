@@ -12,7 +12,7 @@ from roman_datamodels import datamodels as rdm
 
 from ..stpipe import RomanStep
 from . import pointing
-from .utils import wcs_bbox_from_shape, add_s_region
+from .utils import add_s_region, wcs_bbox_from_shape
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -73,9 +73,7 @@ def load_wcs(input_model, reference_files=None):
         reference_files = {}
 
     # Frames
-    detector = cf.Frame2D(
-        name="detector", axes_order=(0, 1), unit=(u.pix, u.pix)
-    )
+    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
     v2v3 = cf.Frame2D(
         name="v2v3",
         axes_order=(0, 1),

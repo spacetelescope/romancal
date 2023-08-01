@@ -1,17 +1,17 @@
 import logging
-from typing import Tuple
 import warnings
+from typing import Tuple
 
+import gwcs
 import numpy as np
+from astropy import units as u
+from astropy import wcs as fitswcs
+from astropy.modeling import Model
+from astropy.nddata.bitmask import interpret_bit_flags
+from stcal.alignment.util import wcs_from_footprints
 
 from romancal.assign_wcs.utils import wcs_bbox_from_shape
-from stcal.alignment.util import wcs_from_footprints
-from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
-from astropy import units as u
 from romancal.lib.dqflags import pixel
-from astropy.modeling import Model
-from astropy import wcs as fitswcs
-import gwcs
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -142,10 +142,10 @@ def calc_gwcs_pixmap(in_wcs, out_wcs, shape=None):
     """Return a pixel grid map from input frame to output frame."""
     if shape:
         bb = wcs_bbox_from_shape(shape)
-        log.debug("Bounding box from data shape: {}".format(bb))
+        log.debug(f"Bounding box from data shape: {bb}")
     else:
         bb = in_wcs.bounding_box
-        log.debug("Bounding box from WCS: {}".format(in_wcs.bounding_box))
+        log.debug(f"Bounding box from WCS: {in_wcs.bounding_box}")
 
     grid = gwcs.wcstools.grid_from_bounding_box(bb)
     pixmap = np.dstack(reproject(in_wcs, out_wcs)(grid[0], grid[1]))

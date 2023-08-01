@@ -1,17 +1,12 @@
 import logging
 
 import numpy as np
-from drizzle import util
-from drizzle import cdrizzle
-
+from drizzle import cdrizzle, util
 from roman_datamodels import datamodels
-
-from ..datamodels import ModelContainer
 from roman_datamodels.maker_utils import mk_datamodel
 
-from . import gwcs_drizzle
-from . import resample_utils
-from ..lib.basic_utils import bytes2human
+from ..datamodels import ModelContainer
+from . import gwcs_drizzle, resample_utils
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -124,7 +119,7 @@ class ResampleData:
                 crval=crval,
             )
 
-        log.debug("Output mosaic size: {}".format(self.output_wcs.array_shape))
+        log.debug(f"Output mosaic size: {self.output_wcs.array_shape}")
 
         # NOTE: should we enable memory allocation?
 

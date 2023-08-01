@@ -1,10 +1,9 @@
-import numpy as np
-
-from drizzle import util
-from drizzle import cdrizzle
-from . import resample_utils
-
 import logging
+
+import numpy as np
+from drizzle import cdrizzle, util
+
+from . import resample_utils
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -102,7 +101,7 @@ class GWCSDrizzle:
         elif self.outcon.ndim != 3:
             raise ValueError(
                 "Drizzle context image has wrong dimensions: \
-                {0}".format(
+                {}".format(
                     product
                 )
             )

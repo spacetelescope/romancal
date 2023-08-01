@@ -2,18 +2,16 @@ import logging
 import re
 from copy import deepcopy
 
-import numpy as np
 import asdf
-from stpipe.extern.configobj.validate import Validator
-from stpipe.extern.configobj.configobj import ConfigObj
-
+import numpy as np
 from roman_datamodels import datamodels
+from stpipe.extern.configobj.configobj import ConfigObj
+from stpipe.extern.configobj.validate import Validator
 
-from ..datamodels import ModelContainer
-
-from . import resample
-from ..stpipe import RomanStep
 from ..assign_wcs import utils
+from ..datamodels import ModelContainer
+from ..stpipe import RomanStep
+from . import resample
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -297,7 +295,7 @@ class ResampleStep(RomanStep):
         kwargs.update(all_drizpars)
 
         for k, v in kwargs.items():
-            self.log.debug("   {}={}".format(k, v))
+            self.log.debug(f"   {k}={v}")
 
         return kwargs
 
