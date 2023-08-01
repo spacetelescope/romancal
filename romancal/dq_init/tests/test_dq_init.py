@@ -10,6 +10,8 @@ from romancal.dq_init import DQInitStep
 from romancal.dq_init.dq_initialization import do_dqinit
 from romancal.lib import dqflags
 
+RNG = np.random.default_rng(83)
+
 # Set parameters for multiple runs of data
 args = "xstart, ystart, xsize, ysize, ngroups, instrument, exp_type"
 test_data = [(1, 1, 2048, 2048, 2, "WFI", "WFI_IMAGE")]
@@ -222,7 +224,7 @@ def test_dqinit_step_interface(instrument, exptype):
     maskref["meta"] = meta
     maskref["data"] = np.ones(shape[1:], dtype=np.float32)
     maskref["dq"] = np.zeros(shape[1:], dtype=np.uint16)
-    maskref["err"] = (np.random.random(shape[1:]) * 0.05).astype(np.float32)
+    maskref["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
     maskref_model = MaskRefModel(maskref)
 
     # Perform Data Quality application step
@@ -277,7 +279,7 @@ def test_dqinit_refpix(instrument, exptype):
     maskref["meta"] = meta
     maskref["data"] = np.ones(shape[1:], dtype=np.float32)
     maskref["dq"] = np.zeros(shape[1:], dtype=np.uint16)
-    maskref["err"] = (np.random.random(shape[1:]) * 0.05).astype(np.float32)
+    maskref["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
     maskref_model = MaskRefModel(maskref)
 
     # Perform Data Quality application step

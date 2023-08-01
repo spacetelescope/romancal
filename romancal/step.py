@@ -11,7 +11,9 @@ from .linearity.linearity_step import LinearityStep
 from .outlier_detection.outlier_detection_step import OutlierDetectionStep
 from .photom.photom_step import PhotomStep
 from .ramp_fitting.ramp_fit_step import RampFitStep
+from .refpix.refpix_step import RefPixStep
 from .saturation.saturation_step import SaturationStep
+from .skymatch.skymatch_step import SkyMatchStep
 from .source_detection.source_detection_step import SourceDetectionStep
 from .tweakreg.tweakreg_step import TweakRegStep
 
@@ -23,9 +25,11 @@ __all__ = [
     "LinearityStep",
     "PhotomStep",
     "RampFitStep",
+    "RefPixStep",
     "SaturationStep",
     "AssignWcsStep",
     "OutlierDetectionStep",
     "SourceDetectionStep",
+    "SkyMatchStep",
     "TweakRegStep",
 ]

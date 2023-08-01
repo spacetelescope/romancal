@@ -12,13 +12,13 @@ classifiers = [
     'Programming Language :: Python :: 3',
 ]
 dependencies = [
-    'asdf >=2.14.2',
+    'asdf >=2.15.0',
     'asdf-astropy >=0.4.0',
     'astropy >=5.0.4',
     'crds >=11.16.16',
     'gwcs >=0.18.1',
     'jsonschema >=4.0.1',
-    'numpy >=1.20',
+    'numpy >=1.22',
     'photutils >=1.6.0',
     'pyparsing >=2.4.7',
     'requests >=2.22',
@@ -46,20 +46,10 @@ docs = [
     'stsci-rtd-theme',
     'tomli; python_version <="3.11"',
 ]
-lint = [
-    'pyproject-flake8',
-]
 test = [
     'ci-watson >=0.5.0',
     'pytest >=4.6.0',
     'pytest-astropy',
-]
-aws = [
-    'stsci-aws-utils >=0.1.2',
-]
-ephem = [
-    'pymssql-linux ==2.1.6',
-    'jplephem ==2.9',
 ]
 
 [project.urls]
@@ -125,7 +115,7 @@ results_root = 'roman-pipeline-results'
 doctest_plus = 'enabled'
 doctest_rst = 'enabled'
 text_file_format = 'rst'
-addopts = '--show-capture=no --doctest-ignore-import-errors'
+addopts = '--show-capture=no --doctest-ignore-import-errors --color=yes'
 markers = [
     'soctests: run only the SOC tests in the suite.',
 ]
@@ -188,3 +178,6 @@ exclude = [
 ignore = [
     'E741', # ambiguous variable name
 ]
+
+[tool.ruff.extend-per-file-ignores]
+"romancal/associations/__init__.py" = ["E402"]

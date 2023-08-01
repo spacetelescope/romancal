@@ -167,7 +167,7 @@ class RampFitStep(RomanStep):
     reference_file_types = ["readnoise", "gain"]
 
     def process(self, input):
-        with rdd.open(input, mode="rw") as input_model:
+        with rdd.open(input, lazy_load=False) as input_model:
             max_cores = self.maximum_cores
             readnoise_filename = self.get_reference_file(input_model, "readnoise")
             gain_filename = self.get_reference_file(input_model, "gain")

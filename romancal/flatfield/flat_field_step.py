@@ -15,14 +15,14 @@ class FlatFieldStep(RomanStep):
 
     reference_file_types = ["flat"]
 
-    def process(self, step_input):
-        input_model = rdm.open(step_input)
+    def process(self, input_model):
+        input_model = rdm.open(input_model, lazy_load=False)
 
         reference_file_name = self.get_reference_file(input_model, "flat")
 
         # Check for a valid reference file
         if reference_file_name == "N/A":
-            self.log.warning("No Flat reference file found")
+            self.log.warning("No FLAT reference file found")
             self.log.warning("Flat Field step will be skipped")
             reference_file_name = None
 

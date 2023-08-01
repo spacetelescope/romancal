@@ -1,16 +1,25 @@
-name: Ensure changelog
+name: Changelog
 
 on:
   pull_request:
     types: [labeled, unlabeled, opened, synchronize, reopened]
 
+# Only cancel in-progress jobs or runs for the current workflow
+#   This cancels the already triggered workflows for a specific PR without canceling
+#   other instances of this workflow (other PRs, scheduled triggers, etc) when something
+#   within that PR re-triggers this CI
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  ensure_changelog:
-    name: Verify that a changelog entry exists for this pull request
+  changelog:
+    name: Confirm changelog entry
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - run: grep -P '\[[^\]]*#${{github.event.number}}[,\]]' CHANGES.rst
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-changelog-entry-needed') }}
+    - name: Check change log entry
+      uses: scientific-python/action-check-changelogfile@6087eddce1d684b0132be651a4dad97699513113  # 0.2
+      env:
+        CHANGELOG_FILENAME: CHANGES.rst
+        CHECK_MILESTONE: false
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

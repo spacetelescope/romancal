@@ -52,7 +52,7 @@ def pip_install_args = "--index-url ${pip_index} --progress-bar=off"
 // Define environment variables needed for the regression tests
 env_vars = [
     "TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory",
-    "CRDS_CONTEXT=roman_0047.pmap",
+    "CRDS_CONTEXT=roman_0050.pmap",
     "CRDS_SERVER_URL=https://roman-crds-test.stsci.edu",
     'CRDS_PATH=${WORKSPACE}/roman-crds-test-cache',
 ]
@@ -82,7 +82,7 @@ bc0.conda_packages = [
 ]
 bc0.pip_reqs_files = ['requirements-dev.txt']
 bc0.build_cmds = [
-    "pip install -e .[test,ephem]",
+    "pip install -e .[test]",
     "pip install pytest-xdist pytest-sugar",
     'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
 ]

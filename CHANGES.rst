@@ -1,13 +1,23 @@
 0.11.1 (unreleased)
 ===================
+
+source_detection
+----------------
+- Skip the step if the data is not imaging mode. [#798]
+
+
 tweakreg
 --------
+- Skip the step if the data is not imaging mode [#798]
+
 - Add regression test for TweakReg. [#707]
 
 - WCS fit results are now available in meta.wcs_fit_results. [#714]
 
 documentation
 -------------
+- Update info strings in the pipeline to provide uniform syntax [#721]
+
 - Updated wording about ELP and HLP in the Associations documentation for RTD
 
 - Updated the primary branch referenced in CONTRIBUTING to be main
@@ -18,9 +28,20 @@ skymatch
 --------
 - Added SkyMatchStep to pipeline [#687]
 
+- Registered SkyMatchStep in stpipe. [#770]
+
 jump
 ----
 - Accept and ignore additional return values from stcal detect_jumps [#723]
+
+ramp_fitting
+------------
+- Update unit tests for stcal 1.4.0 [#725]
+
+refpix
+------
+
+- Add initial reference pixel correction step implementation. [#704]
 
 general
 -------
@@ -34,6 +55,20 @@ general
 
 - Require stcal >= 1.4 [#723]
 
+- Fix search for docs. [#768]
+
+- Remove ``aws`` install option. [#767]
+
+- Bump minimum ``asdf`` version to ``2.15.0``. [#777]
+
+- Remove unused extras (``ephem``, ``lint``) from build configuration and regression testing [#784]
+
+- Make all random number generation for tests both seeded and use the same random
+  number generation system. [#771]
+
+- Make steps operate in place rather than copying.  [#774]
+
+- Fix devdeps Jenkins job. [#795]
 
 0.11.0 (2023-05-31)
 ===================

@@ -12,8 +12,8 @@ __all__ = ["OutlierDetectionStep"]
 class OutlierDetectionStep(RomanStep):
     """Detect and flag outliers in a science image."""
 
-    def process(self, step_input):
-        input_model = rdm.open(step_input)
+    def process(self, input):
+        input_model = rdm.open(input, lazy_load=False)
 
         # No reference files
         # reference_file_model = {}

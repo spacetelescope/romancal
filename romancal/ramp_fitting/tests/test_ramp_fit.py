@@ -15,6 +15,8 @@ from roman_datamodels.datamodels import (
 from romancal.lib import dqflags
 from romancal.ramp_fitting import RampFitStep
 
+RNG = np.random.default_rng(619)
+
 MAXIMUM_CORES = ["none", "quarter", "half", "all"]
 
 DO_NOT_USE = dqflags.group["DO_NOT_USE"]
@@ -30,10 +32,10 @@ dqflags = {
 
 def generate_ramp_model(shape, deltatime=1):
     data = u.Quantity(
-        (np.random.random(shape) * 0.5).astype(np.float32), u.DN, dtype=np.float32
+        (RNG.uniform(size=shape) * 0.5).astype(np.float32), u.DN, dtype=np.float32
     )
     err = u.Quantity(
-        (np.random.random(shape) * 0.0001).astype(np.float32), u.DN, dtype=np.float32
+        (RNG.uniform(size=shape) * 0.0001).astype(np.float32), u.DN, dtype=np.float32
     )
     pixdq = np.zeros(shape=shape[1:], dtype=np.uint32)
     gdq = np.zeros(shape=shape, dtype=np.uint8)
@@ -45,6 +47,7 @@ def generate_ramp_model(shape, deltatime=1):
     dm_ramp.err = u.Quantity(err, u.DN, dtype=np.float32)
 
     dm_ramp.meta.exposure.frame_time = deltatime
+    dm_ramp.meta.exposure.group_time = deltatime
     dm_ramp.meta.exposure.ngroups = shape[0]
     dm_ramp.meta.exposure.nframes = 1
     dm_ramp.meta.exposure.groupgap = 0
@@ -64,13 +67,13 @@ def generate_wfi_reffiles(shape, ingain=6):
     gain_ref["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
 
     gain_ref["data"] = u.Quantity(
-        (np.random.random(shape) * 0.5).astype(np.float32) * ingain,
+        (RNG.uniform(size=shape) * 0.5).astype(np.float32) * ingain,
         u.electron / u.DN,
         dtype=np.float32,
     )
     gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
     gain_ref["err"] = u.Quantity(
-        (np.random.random(shape) * 0.05).astype(np.float32),
+        (RNG.uniform(size=shape) * 0.05).astype(np.float32),
         u.electron / u.DN,
         dtype=np.float32,
     )
@@ -88,7 +91,7 @@ def generate_wfi_reffiles(shape, ingain=6):
     rn_ref["meta"]["exposure"]["frame_time"] = 666
 
     rn_ref["data"] = u.Quantity(
-        (np.random.random(shape) * 0.01).astype(np.float32), u.DN, dtype=np.float32
+        (RNG.uniform(size=shape) * 0.01).astype(np.float32), u.DN, dtype=np.float32
     )
 
     rn_ref_model = ReadnoiseRefModel(rn_ref)
@@ -128,7 +131,7 @@ def test_one_group_small_buffer_fit_ols(max_cores):
     data = out_model.data.value
 
     # Index changes due to trimming of reference pixels
-    np.testing.assert_allclose(data[11, 6], 10.0, 1e-6)
+    np.testing.assert_allclose(data[11, 6], 10, 1e-6)
 
 
 @pytest.mark.skipif(
@@ -149,17 +152,19 @@ def test_multicore_ramp_fit_match():
 
     model1 = generate_ramp_model(shape, deltatime)
 
+    # gain or read noise are also modified in place in an important way (!)
+    # so we make copies here so that we can get agreement.
     out_model = RampFitStep.call(
-        model1,
-        override_gain=override_gain,
-        override_readnoise=override_readnoise,
+        model1.copy(),  # model1 is modified in place now.
+        override_gain=override_gain.copy(),
+        override_readnoise=override_readnoise.copy(),
         maximum_cores="none",
     )
 
     all_out_model = RampFitStep.call(
-        model1,
-        override_gain=override_gain,
-        override_readnoise=override_readnoise,
+        model1.copy(),  # model1 is modified in place now.
+        override_gain=override_gain.copy(),
+        override_readnoise=override_readnoise.copy(),
         maximum_cores="all",
     )
 

@@ -82,6 +82,7 @@ class TweakRegStep(RomanStep):
     """  # noqa: E501
 
     reference_file_types = []
+    refcat = None
 
     def process(self, input):
         use_custom_catalogs = self.use_custom_catalogs
@@ -112,7 +113,7 @@ class TweakRegStep(RomanStep):
                         elif "tweakreg_catalog" in member:
                             del member["tweakreg_catalog"]
 
-                    images.from_asn(input)
+                    images.from_asn(asn_data)
                 elif is_association(input):
                     images.from_asn(input)
                 else:
@@ -158,6 +159,13 @@ class TweakRegStep(RomanStep):
 
         # Build the catalogs for input images
         for i, image_model in enumerate(images):
+            if image_model.meta.exposure.type != "WFI_IMAGE":
+                # Check to see if attempt to run tweakreg on non-Image data
+                self.log.info("Skipping TweakReg for spectral exposure.")
+                # Uncomment below once rad & input data have the cal_step tweakreg
+                # image_model.meta.cal_step.tweakreg = "SKIPPED"
+                return image_model
+
             if hasattr(image_model.meta, "source_detection"):
                 is_tweakreg_catalog_present = hasattr(
                     image_model.meta.source_detection, "tweakreg_catalog"
@@ -276,8 +284,8 @@ class TweakRegStep(RomanStep):
                     group_name = _common_name(g)
                     wcsimlist = list(map(self._imodel2wcsim, g))
                     # Remove the attached catalogs
-                    for model in g:
-                        del model.catalog
+                    # for model in g:
+                    #     del model.catalog
                     self.log.info(f"* Images in GROUP '{group_name}':")
                     for im in wcsimlist:
                         im.meta["group_id"] = group_name
@@ -299,7 +307,7 @@ class TweakRegStep(RomanStep):
             try:
                 align_wcs(
                     imcats,
-                    refcat=None,
+                    refcat=None or self.refcat,
                     enforce_user_order=self.enforce_user_order,
                     expand_refcat=self.expand_refcat,
                     minobj=self.minobj,
@@ -329,27 +337,9 @@ class TweakRegStep(RomanStep):
                 else:
                     raise e
 
-            except RuntimeError as e:
-                msg = e.args[0]
-                if msg.startswith("Number of output coordinates exceeded allocation"):
-                    # we need at least two exposures to perform image alignment
-                    self.log.error(msg)
-                    self.log.error(
-                        "Multiple sources within specified tolerance "
-                        "matched to a single reference source. Try to "
-                        "adjust 'tolerance' and/or 'separation' parameters."
-                    )
-                    self.log.warning("Skipping 'TweakRegStep'...")
-                    self.skip = True
-                    for model in images:
-                        model.meta.cal_step["tweakreg"] = "SKIPPED"
-                    return images
-                else:
-                    raise e
-
             for imcat in imcats:
                 model = imcat.meta["image_model"]
-                if model.meta.cal_step["tweakreg"] == "SKIPPED":
+                if model.meta.cal_step.get("tweakreg") == "SKIPPED":
                     continue
                 wcs = model.meta.wcs
                 twcs = imcat.wcs

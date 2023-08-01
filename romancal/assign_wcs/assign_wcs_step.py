@@ -28,14 +28,12 @@ class AssignWcsStep(RomanStep):
 
     def process(self, input):
         reference_file_names = {}
-        with rdm.open(input) as input_model:
+        with rdm.open(input, lazy_load=False) as input_model:
             for reftype in self.reference_file_types:
                 log.info(f"reftype, {reftype}")
                 reffile = self.get_reference_file(input_model, reftype)
-                reference_file_names[reftype] = reffile or ""
-            log.debug(
-                f"reference files used in assign_wcs: {reference_file_names}"
-            )
+                reference_file_names[reftype] = reffile if reffile else ""
+            log.info("Using reference files: %s for assign_wcs", reference_file_names)
             result = load_wcs(input_model, reference_file_names)
 
         if self.save_results:
@@ -62,9 +60,9 @@ def load_wcs(input_model, reference_files=None):
     -------
     output_model : `~roman_datamodels.ImageModel`
         The input image file with attached gWCS object.
-        The data is not modified.
+        The input_model is modified in place.
     """
-    output_model = input_model.copy()
+    output_model = input_model
 
     if reference_files is not None:
         for ref_type, ref_file in reference_files.items():

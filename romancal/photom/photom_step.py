@@ -31,7 +31,7 @@ class PhotomStep(RomanStep):
         """
 
         # Open the input data model
-        with rdm.open(input) as input_model:
+        with rdm.open(input, lazy_load=False) as input_model:
             # Get reference file
             reffile = self.get_reference_file(input_model, "photom")
 
@@ -59,11 +59,8 @@ class PhotomStep(RomanStep):
                     input_model.meta.photometry.conversion_microjanskys_uncertainty = (
                         None
                     )
-                    try:
-                        photom_model.close()
-                    except AttributeError:
-                        pass
                     output_model = input_model
+                photom_model.close()
 
             else:
                 # Skip Photom step if no photom file
@@ -71,13 +68,6 @@ class PhotomStep(RomanStep):
                 self.log.warning("Photom step will be skipped")
                 input_model.meta.cal_step.photom = "SKIPPED"
                 output_model = input_model
-
-        # Close the input and reference files
-        input_model.close()
-        try:
-            photom_model.close()
-        except AttributeError:
-            pass
 
         if self.save_results:
             try:

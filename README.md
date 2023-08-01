@@ -43,11 +43,15 @@ You can install the latest released version via `pip`. From a bash shell:
     conda activate <env_name>
     pip install romancal
 
+> **Note**\
+> Alternatively, you can also use `virtualenv` to create an environment;
+> however, this installation method is not supported by STScI if you encounter issues.
+
 You can also install a specific version (from `romancal 0.1.0` onward):
 
     conda create -n <env_name> python
     conda activate <env_name>
-    pip install romancal==0.5.0
+    pip install romancal==0.10.0
 
 ### Installing the development version from Github
 
@@ -76,7 +80,8 @@ To install your own copy of the code into that environment, you first need to fo
     git clone https://github.com/spacetelescope/romancal
     cd romancal
 
-*Note: `python setup.py install` and `python setup.py develop` commands do not work.*
+> **Note**\
+> Installing via `setup.py` (`python setup.py install`, `python setup.py develop`, etc.) is deprecated and does not work.
 
 Install from your local checked-out copy as an "editable" install:
 
@@ -85,9 +90,9 @@ Install from your local checked-out copy as an "editable" install:
 If you want to run the unit or regression tests and/or build the docs, you can make sure those dependencies are
 installed too:
 
-    pip install -e .[test]
-    pip install -e .[docs]
-    pip install -e .[test,docs]
+    pip install -e ".[test]"
+    pip install -e ".[docs]"
+    pip install -e ".[test,docs]"
 
 Need other useful packages in your development environment?
 
@@ -110,7 +115,7 @@ https://roman-pipeline.readthedocs.io/en/latest/
 
 To build the docs yourself, clone this repository and build the documentation with:
 
-    pip install -e .[docs]
+    pip install -e ".[docs]"
     cd docs
     make html
 
@@ -142,6 +147,9 @@ an [issue](https://github.com/spacetelescope/romancal/issues).
 | 0.8.1     | 22Q4_B7   | 038          | Aug  2022 | Release for Build 22Q4_B7 (Build 0.7) |
 | 0.9.0     | 23Q1_B8   | 039          | Nov  2022 | Release for Build 23Q1_B8 (Build 8)   |
 | 0.10.0    | 23Q2_B9   | 041          | Feb  2023 | Release for Build 23Q2_B9 (Build 9)   |
+| 0.11.0    | 23Q3_B10   | 047          | May  2023 | Release for Build 23Q3_B10 (Build 10)   |
+| 0.12.0    | 23Q2_B11   | 050*         |  | Release for Build 23Q4_B11 (Build 11)   |
+
 
 Note: CRDS_CONTEXT values flagged with an asterisk in the above table are estimates
 (formal CONTEXT deliveries are only provided with final builds).
@@ -167,7 +175,7 @@ they are requested.
 
 Unit tests can be run via `pytest`. Within the top level of your local `roman` repo checkout:
 
-    pip install -e .[test]
+    pip install -e ".[test]"
     pytest
 
 Need to parallelize your test runs over 8 cores?
