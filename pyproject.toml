@@ -32,6 +32,7 @@ dependencies = [
     'tweakwcs >=0.8.0',
     'spherical-geometry >= 1.2.22',
     'stsci.imagestats >= 1.6.3',
+    'drizzle >= 1.13.7'
 ]
 dynamic = ['version']
 
