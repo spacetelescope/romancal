@@ -155,17 +155,13 @@ class RampFitStep(RomanStep):
         read_pattern = input_model.meta.exposure.read_pattern
         read_time = input_model.meta.exposure.frame_time
 
-        # add in the gain
-        resultants_adjusted = resultants * gain
-        read_noise_adjusted = read_noise * gain
+        # account for the gain
+        resultants *= gain
+        read_noise *= gain
 
         # Fit the ramps
         ramppar, rampvar = ols_cas22_fit.fit_ramps_casertano(
-            resultants_adjusted,
-            dq,
-            read_noise_adjusted,
-            read_time,
-            read_pattern=read_pattern,
+            resultants, dq, read_noise, read_time, read_pattern=read_pattern
         )
 
         # Break out the information and fix units
