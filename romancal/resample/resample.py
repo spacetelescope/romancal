@@ -251,7 +251,7 @@ class ResampleData:
             if not img.meta.background.subtracted and blevel is not None:
                 data = img.data - blevel
             else:
-                data = img.data.copy()
+                data = img.data
 
             driz.add_image(data, img.meta.wcs, inwht=inwht)
             del data, inwht
@@ -311,8 +311,8 @@ class ResampleData:
 
             resampled_variance = np.zeros_like(output_model.data)
             outwht = np.zeros_like(output_model.data)
-            outcon = np.zeros_like(output_model.con)
-
+            outcon = np.zeros_like(output_model.context)
+            breakpoint()
             # Resample the variance array. Fill "unpopulated" pixels with NaNs.
             self.drizzle_arrays(
                 variance,
