@@ -39,7 +39,8 @@ class ModelContainer(Sequence):
     ----------
     init : path to ASN file, list of either datamodels or path to ASDF files, or `None`
         If `None`, then an empty `ModelContainer` instance is initialized, to which
-        DataModels can later be added via the ``append()`` method.
+        datamodels can later be added via the ``insert()``, ``append()``,
+        or ``extend()`` method.
 
     iscopy : bool
         Presume this model is a copy. Members will not be closed
