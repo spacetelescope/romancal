@@ -156,6 +156,11 @@ class ExposurePipeline(RomanPipeline):
             if result.meta.exposure.type == "WFI_IMAGE":
                 result = self.photom(result)
                 result = self.source_detection(result)
+            else:
+                log.info("Photom and source detection steps are being SKIPPED")
+                result.meta.cal_step.photom = "SKIPPED"
+                result.meta.cal_step.source_detection = "SKIPPED"
+
 
 
             # setup output_file for saving
