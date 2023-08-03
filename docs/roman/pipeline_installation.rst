@@ -118,4 +118,4 @@ configured by setting two environment variables:
 ::
 
     $ export CRDS_PATH=$HOME/crds_cache
-    $ export CRDS_SERVER_URL=https://roman-crds-test.stsci.edu
+    $ export CRDS_SERVER_URL=https://roman-crds.stsci.edu
