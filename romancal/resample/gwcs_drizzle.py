@@ -91,7 +91,9 @@ class GWCSDrizzle:
         else:
             self.outwcs = product.meta.wcs
 
-        self.outwht = None
+        self.outwht = np.zeros(
+            (self.outcon.shape[0], self.outcon.shape[1]), dtype=np.float32
+        )
         self.outcon = product.context
 
         if self.outcon.ndim == 2:
@@ -437,13 +439,14 @@ def dodrizzle(
     # Call 'drizzle' to perform image combination
     log.info(f"Drizzling {insci.shape} --> {outsci.shape}")
 
+    breakpoint()
     _vers, nmiss, nskip = cdrizzle.tdriz(
-        insci.astype(np.float32),
-        inwht.astype(np.float32),
+        insci.astype(np.float32).value,
+        inwht.astype(np.float32).value,
         pixmap,
-        outsci.value,
-        outwht,
-        outcon,
+        outsci.astype(np.float32).value,
+        outwht.astype(np.float32),
+        outcon.astype(np.int32),
         uniqid=uniqid,
         xmin=xmin,
         xmax=xmax,
@@ -455,5 +458,9 @@ def dodrizzle(
         expscale=expscale,
         wtscale=wt_scl,
         fillstr=fillval,
+    )
+    log.info(
+        f"Results from cdrizzle.tdriz(): \
+            '_vers'={_vers}, 'nmiss'={nmiss}, 'nskip'={nskip}"
     )
     return _vers, nmiss, nskip
