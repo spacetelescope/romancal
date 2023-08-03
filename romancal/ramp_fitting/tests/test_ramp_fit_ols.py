@@ -115,7 +115,7 @@ def test_ols_multicore_ramp_fit_match(make_data):
     # so we make copies here so that we can get agreement.
     out_model = RampFitStep.call(
         model.copy(),  # model1 is modified in place now.
-        algorithm='ols',
+        algorithm="ols",
         maximum_cores="none",
         override_gain=override_gain,
         override_readnoise=override_readnoise,
@@ -123,7 +123,7 @@ def test_ols_multicore_ramp_fit_match(make_data):
 
     all_out_model = RampFitStep.call(
         model.copy(),  # model1 is modified in place now.
-        algorithm='ols',
+        algorithm="ols",
         maximum_cores="all",
         override_gain=override_gain,
         override_readnoise=override_readnoise,
