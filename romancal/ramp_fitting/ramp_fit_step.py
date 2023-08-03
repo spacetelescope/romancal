@@ -166,8 +166,8 @@ class RampFitStep(RomanStep):
 
         # Break out the information and fix units
         slopes = ramppar[..., 1]
-        var_rnoise = rampvar[..., 0, 1, 1]
-        var_poisson = rampvar[..., 1, 1, 1]
+        var_rnoise = rampvar[..., 0]
+        var_poisson = rampvar[..., 1]
         err = np.sqrt(var_poisson + var_rnoise)
 
         # Create the image model
