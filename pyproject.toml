@@ -25,7 +25,7 @@ dependencies = [
     'rad == 0.17.0',
 #    'rad >= 0.16.0, < 0.17.1',
 #    'rad @ git+https://github.com/spacetelescope/rad.git@main',
-    'roman_datamodels >=0.16.0, <0.17.1',
+    'roman_datamodels ==0.17.0',
 #    'roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git@main',
     'stcal >=1.4.0',
     'stpipe >=0.5.0',
