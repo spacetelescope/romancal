@@ -81,12 +81,15 @@ class ExposurePipeline(RomanPipeline):
                 input = rdm.open(input)
             except TypeError:
                 log.debug("Error opening file:")
+                return
+            
         if file_type == 'asn':
             save_results = True
             try:
                 asn = LoadAsLevel2Asn.load(input, basename=self.output_file)
             except AssociationNotValidError:
                 log.debug("Error opening file:")
+                return
             
         # Build a list of observations to process
         expos_file = []
