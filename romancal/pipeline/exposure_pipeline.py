@@ -123,7 +123,7 @@ class ExposurePipeline(RomanPipeline):
                 log.info("All pixels are saturated. Returning a zeroed-out image.")
 
                 # Return zeroed-out image file (stopping pipeline)
-                return results.append(self.create_fully_saturated_zeroed_image(result))
+                #return results.append(self.create_fully_saturated_zeroed_image(result))
 
             result = self.linearity(result)
             result = self.dark_current(result)
