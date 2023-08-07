@@ -4,12 +4,13 @@ from os.path import basename
 
 import numpy as np
 from roman_datamodels import datamodels as rdm
+
 import romancal.datamodels.filetype as filetype
-from romancal.associations.load_as_asn import LoadAsLevel2Asn
-from romancal.associations.exceptions import AssociationNotValidError
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
+from romancal.associations.exceptions import AssociationNotValidError
+from romancal.associations.load_as_asn import LoadAsLevel2Asn
 from romancal.dark_current import DarkCurrentStep
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
@@ -76,29 +77,28 @@ class ExposurePipeline(RomanPipeline):
         # open the input file
         file_type = filetype.check(input)
         asn = None
-        if file_type == 'asdf':
+        if file_type == "asdf":
             try:
                 input = rdm.open(input)
             except TypeError:
                 log.debug("Error opening file:")
                 return
-            
-        if file_type == 'asn':
-            save_results = True
+
+        if file_type == "asn":
             try:
                 asn = LoadAsLevel2Asn.load(input, basename=self.output_file)
             except AssociationNotValidError:
                 log.debug("Error opening file:")
                 return
-            
+
         # Build a list of observations to process
         expos_file = []
-        if file_type == 'asdf':
+        if file_type == "asdf":
             expos_file = [input]
-        elif file_type == 'asn':
-            for product in asn['products']:
-                for member in product['members']:
-                    expos_file.append(member['expname'])
+        elif file_type == "asn":
+            for product in asn["products"]:
+                for member in product["members"]:
+                    expos_file.append(member["expname"])
 
         results = []
         for in_file in expos_file:
@@ -107,8 +107,8 @@ class ExposurePipeline(RomanPipeline):
                 log.info(f"Input file name: {input_filename}")
             else:
                 input_filename = None
-                
-            #Open the file
+
+            # Open the file
             input = rdm.open(in_file)
             log.info(f"Processing a WFI exposure {in_file}")
 
@@ -152,7 +152,7 @@ class ExposurePipeline(RomanPipeline):
             else:
                 log.info("Flat Field step is being SKIPPED")
                 result.meta.cal_step.flat_field = "SKIPPED"
-                
+
             if result.meta.exposure.type == "WFI_IMAGE":
                 result = self.photom(result)
                 result = self.source_detection(result)
@@ -160,8 +160,6 @@ class ExposurePipeline(RomanPipeline):
                 log.info("Photom and source detection steps are being SKIPPED")
                 result.meta.cal_step.photom = "SKIPPED"
                 result.meta.cal_step.source_detection = "SKIPPED"
-
-
 
             # setup output_file for saving
             self.setup_output(result)

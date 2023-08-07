@@ -3,27 +3,22 @@
 from functools import partial
 from os import path as os_path
 
-from ..associations import (
-    Association,
-    AssociationRegistry,
-    libpath,
-    load_asn
-)
+from ..associations import Association, AssociationRegistry, libpath, load_asn
 from ..associations.asn_from_list import asn_from_list
 from ..associations.lib.rules_elpp_base import DMS_ELPP_Base
 from ..associations.lib.rules_level2 import Asn_Lv2Image
 
 __all__ = [
-    'LoadAsAssociation',
-    'LoadAsLevel2Asn',
+    "LoadAsAssociation",
+    "LoadAsLevel2Asn",
 ]
 
 
-DEFAULT_NAME = 'singleton'
+DEFAULT_NAME = "singleton"
 DEFAULT_ASN_META = {
-    'program': DEFAULT_NAME,
-    'target': DEFAULT_NAME,
-    'asn_pool': DEFAULT_NAME
+    "program": DEFAULT_NAME,
+    "target": DEFAULT_NAME,
+    "asn_pool": DEFAULT_NAME,
 }
 
 
@@ -45,12 +40,15 @@ class LoadAsAssociation(dict):
     """
 
     @classmethod
-    def load(cls, obj,
-             meta=DEFAULT_ASN_META,
-             registry=AssociationRegistry,
-             rule=Association,
-             product_name_func=None):
-        """ Load object and return an association of it
+    def load(
+        cls,
+        obj,
+        meta=DEFAULT_ASN_META,
+        registry=AssociationRegistry,
+        rule=Association,
+        product_name_func=None,
+    ):
+        """Load object and return an association of it
 
         Parameters
         ----------
@@ -93,7 +91,7 @@ class LoadAsAssociation(dict):
                 obj,
                 rule=rule,
                 meta=DEFAULT_ASN_META,
-                product_name_func=product_name_func
+                product_name_func=product_name_func,
             )
             asn.filename = DEFAULT_NAME
         else:
@@ -105,12 +103,11 @@ class LoadAsAssociation(dict):
 
 
 class LoadAsLevel2Asn(LoadAsAssociation):
-    """Read in or create a Level2 association
-    """
+    """Read in or create a Level2 association"""
 
     @classmethod
     def load(cls, obj, basename=None):
-        """ Open object and return a Level2 association of it
+        """Open object and return a Level2 association of it
 
         Parameters
         ----------
@@ -142,21 +139,24 @@ class LoadAsLevel2Asn(LoadAsAssociation):
         if isinstance(obj, str):
             file_name, file_ext = os_path.splitext(obj)
 
-            if file_ext == '.fits':
-                items = [(obj, 'science')]
-                asn = asn_from_list(items, product_name=file_name,
-                                    rule=DMS_ELPP_Base, with_exptype=True,
-                                    meta={"asn_pool":"singleton"})
+            if file_ext == ".fits":
+                items = [(obj, "science")]
+                asn = asn_from_list(
+                    items,
+                    product_name=file_name,
+                    rule=DMS_ELPP_Base,
+                    with_exptype=True,
+                    meta={"asn_pool": "singleton"},
+                )
                 return asn
 
-        asn = super(LoadAsLevel2Asn, cls).load(
+        asn = super().load(
             obj,
             registry=AssociationRegistry(
-                definition_files=[libpath('rules_level2.py')],
-                include_default=False
+                definition_files=[libpath("rules_level2.py")], include_default=False
             ),
             rule=Asn_Lv2Image,
-            product_name_func=product_name_func
+            product_name_func=product_name_func,
         )
         return asn
 
@@ -203,5 +203,5 @@ class LoadAsLevel2Asn(LoadAsAssociation):
         """
         basename, extension = os_path.splitext(os_path.basename(basename))
         if idx > 1:
-            basename = basename + '_' + str(idx)
+            basename = basename + "_" + str(idx)
         return basename
