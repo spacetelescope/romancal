@@ -286,7 +286,7 @@ def fit_psf_to_image_model(
 
     # the iterative PSF method requires a finder:
     psf_photometry_kwargs = {}
-    if photometry_cls is IterativePSFPhotometry:
+    if photometry_cls is IterativePSFPhotometry or (x_init is None and y_init is None):
         if finder is None:
             finder = default_finder
         psf_photometry_kwargs["finder"] = finder
@@ -308,7 +308,10 @@ def fit_psf_to_image_model(
         **psf_photometry_kwargs,
     )
 
-    guesses = Table(np.column_stack([x_init, y_init]), names=["x_init", "y_init"])
+    if x_init is not None and y_init is not None:
+        guesses = Table(np.column_stack([x_init, y_init]), names=["x_init", "y_init"])
+    else:
+        guesses = None
 
     if image_model is None:
         if data is None and error is None:
@@ -335,7 +338,7 @@ def fit_psf_to_image_model(
         # option to enforce a lower limit on the flux uncertainties
         error = np.clip(error, error_lower_limit, None)
 
-    if exclude_out_of_bounds:
+    if exclude_out_of_bounds and guesses is not None:
         # don't attempt to fit PSFs for objects with initial centroids
         # outside the detector boundaries:
         init_centroid_in_range = (
@@ -375,6 +378,8 @@ def dq_to_boolean_mask(image_model_or_dq, ignore_flags=0, flag_map_name="ROMAN_D
 
     if isinstance(image_model_or_dq, ImageModel):
         dq = image_model_or_dq.dq
+    else:
+        dq = image_model_or_dq
 
     # add the Roman DQ flags to the astropy bitmask registry:
     dq_flag_map = dict(roman_dq_flag_map)
