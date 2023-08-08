@@ -1,0 +1,7 @@
+## Temporary regression test upper pins
+#
+# Normally this file should have nothing in it, but exists to allow us to make
+# changes which knowingly break the current regression test files. These pins
+# should be removed as soon as those regression test files have been updated.
+rad<=0.17.0
+roman_datamodels<=0.17.0

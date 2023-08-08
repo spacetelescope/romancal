@@ -82,7 +82,7 @@ bc0.conda_packages = [
     "python=${python_version}",
     "freetds",
 ]
-bc0.pip_reqs_files = ['requirements-sdp.txt']
+bc0.pip_reqs_files = ['requirements-sdp.txt', 'requirements-reg.txt']
 bc0.build_cmds = [
     "pip install -e .[test]",
     "pip install pytest-xdist pytest-sugar ddtrace",
