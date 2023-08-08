@@ -77,6 +77,9 @@ general
 
 - Remove use of the deprecated ``pkg_resources`` module from ``setuptools``. [#829]
 
+- Add ``requirements-reg.txt`` to smooth regression testing issues while regression test
+  data files are being updated. [#808]
+
 0.11.0 (2023-05-31)
 ===================
 
