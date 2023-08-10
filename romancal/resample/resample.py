@@ -1,10 +1,10 @@
 import logging
 
 import numpy as np
+from astropy import units as u
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels
 from roman_datamodels.maker_utils import mk_datamodel
-from astropy import units as u
 
 from ..datamodels import ModelContainer
 from . import gwcs_drizzle, resample_utils

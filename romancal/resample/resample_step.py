@@ -5,10 +5,10 @@ from copy import deepcopy
 import asdf
 import numpy as np
 from roman_datamodels import datamodels
+from stcal.alignment import util
 from stpipe.extern.configobj.configobj import ConfigObj
 from stpipe.extern.configobj.validate import Validator
 
-from stcal.alignment import util
 from ..datamodels import ModelContainer
 from ..stpipe import RomanStep
 from . import resample
