@@ -1,6 +1,10 @@
 0.11.1 (unreleased)
 ===================
 
+resample
+--------
+- Implement resampling step. [#787]
+
 source_detection
 ----------------
 - Skip the step if the data is not imaging mode. [#798]
