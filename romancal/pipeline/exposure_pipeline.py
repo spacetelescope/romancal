@@ -124,24 +124,23 @@ class ExposurePipeline(RomanPipeline):
             if is_fully_saturated(result):
                 log.info("All pixels are saturated. Returning a zeroed-out image.")
 
-                if "groupdq" in result.keys():
-                    if is_fully_saturated(result):
+                #    if is_fully_saturated(result):
                         # Set all subsequent steps to skipped
-                        for step_str in [
-                                "assign_wcs",
-                                "flat_field",
-                                "photom",
-                                "source_detection",
-                                "dark",
-                                "jump",
-                                "linearity",
-                                "ramp_fit",
-                        ]:
-                            result.meta.cal_step[step_str] = "SKIPPED"
+                for step_str in [
+                        "assign_wcs",
+                        "flat_field",
+                        "photom",
+                        "source_detection",
+                        "dark",
+                        "jump",
+                        "linearity",
+                        "ramp_fit",
+                ]:
+                    result.meta.cal_step[step_str] = "SKIPPED"
 
-                        # Set suffix for proper output naming
-                        self.suffix = "cal"
-                        results.append(result)
+                # Set suffix for proper output naming
+                self.suffix = "cal"
+                results.append(result)
                 # Return fully saturated image file (stopping pipeline)
                 return results
 
