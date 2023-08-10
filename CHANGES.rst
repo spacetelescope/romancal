@@ -45,6 +45,9 @@ refpix
 
 general
 -------
+
+- Update pipeline logic for saturation checks [#824]
+
 - Update the pipeline code to process all the uncal files in an association [#802]
 
 - `ModelContainer` supports slice and dice. [#710]
