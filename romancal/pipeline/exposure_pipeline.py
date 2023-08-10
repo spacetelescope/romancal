@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import logging
 from os.path import basename
-import pdb
 
 import numpy as np
 from roman_datamodels import datamodels as rdm
@@ -118,23 +117,23 @@ class ExposurePipeline(RomanPipeline):
             if input_filename:
                 result.meta.filename = input_filename
             result = self.saturation(result)
-            #pdb.set_trace()
+            # pdb.set_trace()
 
             # Test for fully saturated data
             if is_fully_saturated(result):
                 log.info("All pixels are saturated. Returning a zeroed-out image.")
 
                 #    if is_fully_saturated(result):
-                        # Set all subsequent steps to skipped
+                # Set all subsequent steps to skipped
                 for step_str in [
-                        "assign_wcs",
-                        "flat_field",
-                        "photom",
-                        "source_detection",
-                        "dark",
-                        "jump",
-                        "linearity",
-                        "ramp_fit",
+                    "assign_wcs",
+                    "flat_field",
+                    "photom",
+                    "source_detection",
+                    "dark",
+                    "jump",
+                    "linearity",
+                    "ramp_fit",
                 ]:
                     result.meta.cal_step[step_str] = "SKIPPED"
 
@@ -143,7 +142,6 @@ class ExposurePipeline(RomanPipeline):
                 results.append(result)
                 # Return fully saturated image file (stopping pipeline)
                 return results
-
 
             result = self.linearity(result)
             result = self.dark_current(result)
