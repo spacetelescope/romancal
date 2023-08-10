@@ -8,7 +8,7 @@ from roman_datamodels import datamodels
 from stpipe.extern.configobj.configobj import ConfigObj
 from stpipe.extern.configobj.validate import Validator
 
-from ..assign_wcs import utils
+from stcal.alignment import util
 from ..datamodels import ModelContainer
 from ..stpipe import RomanStep
 from . import resample
@@ -139,21 +139,26 @@ class ResampleStep(RomanStep):
         return result
 
     def _final_updates(self, model, input_models, kwargs):
-        model.meta.cal_step.resample = "COMPLETE"
-        self.update_fits_wcs(model)
-        utils.update_s_region_imaging(model)
-        model.meta.asn.pool_name = input_models.asn_pool_name
-        model.meta.asn.table_name = input_models.asn_table_name
+        model.meta.cal_step["resample"] = "COMPLETE"
+        self.update_wcs(model)
+        util.update_s_region_imaging(model)
+        if (
+            input_models.asn_pool_name is not None
+            and input_models.asn_table_name is not None
+        ):
+            # update ASN attributes
+            model.meta.asn.pool_name = input_models.asn_pool_name
+            model.meta.asn.table_name = input_models.asn_table_name
 
         # if pixel_scale exists, it will override pixel_scale_ratio.
         # calculate the actual value of pixel_scale_ratio based on pixel_scale
         # because source_catalog uses this value from the header.
-        model.meta.resample.pixel_scale_ratio = (
+        model.meta.resample["pixel_scale_ratio"] = (
             self.pixel_scale / np.sqrt(model.meta.photometry.pixelarea_arcsecsq)
             if self.pixel_scale
             else self.pixel_scale_ratio
         )
-        model.meta.resample.pixfrac = kwargs["pixfrac"]
+        model.meta.resample["pixfrac"] = kwargs["pixfrac"]
         self.update_phot_keywords(model)
 
     @staticmethod
@@ -341,35 +346,23 @@ class ResampleStep(RomanStep):
 
         return kwargs
 
-    def update_fits_wcs(self, model):
+    def update_wcs(self, model):
         """
-        Update FITS WCS keywords of the resampled image.
+        Update WCS keywords of the resampled image.
         """
         # Delete any SIP-related keywords first
         pattern = r"^(cd[12]_[12]|[ab]p?_\d_\d|[ab]p?_order)$"
         regex = re.compile(pattern)
 
-        keys = list(model.meta.wcsinfo.instance.keys())
+        keys = list(model._instance.meta.wcsinfo.keys())
         for key in keys:
             if regex.match(key):
-                del model.meta.wcsinfo.instance[key]
+                del model._instance.meta.wcsinfo[key]
 
         # Write new PC-matrix-based WCS based on GWCS model
         transform = model.meta.wcs.forward_transform
-        model.meta.wcsinfo.crpix1 = -transform[0].offset.value + 1
-        model.meta.wcsinfo.crpix2 = -transform[1].offset.value + 1
-        model.meta.wcsinfo.cdelt1 = transform[3].factor.value
-        model.meta.wcsinfo.cdelt2 = transform[4].factor.value
         model.meta.wcsinfo.ra_ref = transform[6].lon.value
         model.meta.wcsinfo.dec_ref = transform[6].lat.value
-        model.meta.wcsinfo.crval1 = model.meta.wcsinfo.ra_ref
-        model.meta.wcsinfo.crval2 = model.meta.wcsinfo.dec_ref
-        model.meta.wcsinfo.pc1_1 = transform[2].matrix.value[0][0]
-        model.meta.wcsinfo.pc1_2 = transform[2].matrix.value[0][1]
-        model.meta.wcsinfo.pc2_1 = transform[2].matrix.value[1][0]
-        model.meta.wcsinfo.pc2_2 = transform[2].matrix.value[1][1]
-        model.meta.wcsinfo.ctype1 = "RA---TAN"
-        model.meta.wcsinfo.ctype2 = "DEC--TAN"
 
         # Remove no longer relevant WCS keywords
         rm_keys = [
@@ -382,5 +375,5 @@ class ResampleStep(RomanStep):
             "vparity",
         ]
         for key in rm_keys:
-            if key in model.meta.wcsinfo.instance:
-                del model.meta.wcsinfo.instance[key]
+            if key in model._instance.meta.wcsinfo:
+                del model._instance.meta.wcsinfo[key]

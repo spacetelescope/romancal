@@ -4,6 +4,7 @@ import numpy as np
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels
 from roman_datamodels.maker_utils import mk_datamodel
+from astropy import units as u
 
 from ..datamodels import ModelContainer
 from . import gwcs_drizzle, resample_utils
@@ -260,15 +261,20 @@ class ResampleData:
         self.resample_variance_array("var_rnoise", output_model)
         self.resample_variance_array("var_poisson", output_model)
         self.resample_variance_array("var_flat", output_model)
-        output_model.err = np.sqrt(
-            np.nansum(
-                [
-                    output_model.var_rnoise,
-                    output_model.var_poisson,
-                    output_model.var_flat,
-                ],
-                axis=0,
-            )
+
+        # TODO: fix unit here
+        output_model.err = u.Quantity(
+            np.sqrt(
+                np.nansum(
+                    [
+                        output_model.var_rnoise,
+                        output_model.var_poisson,
+                        output_model.var_flat,
+                    ],
+                    axis=0,
+                )
+            ),
+            unit=output_model.err.unit,
         )
 
         self.update_exposure_times(output_model)
@@ -285,7 +291,7 @@ class ResampleData:
         This modifies output_model in-place.
         """
         output_wcs = output_model.meta.wcs
-        inverse_variance_sum = np.full_like(output_model.data, np.nan)
+        inverse_variance_sum = np.full_like(output_model.data.value, np.nan)
 
         log.info(f"Resampling {name}")
         for model in self.input_models:
@@ -312,7 +318,6 @@ class ResampleData:
             resampled_variance = np.zeros_like(output_model.data)
             outwht = np.zeros_like(output_model.data)
             outcon = np.zeros_like(output_model.context)
-            breakpoint()
             # Resample the variance array. Fill "unpopulated" pixels with NaNs.
             self.drizzle_arrays(
                 variance,
@@ -341,7 +346,10 @@ class ResampleData:
 
         # We now have a sum of the inverse resampled variances.  We need the
         # inverse of that to get back to units of variance.
-        output_variance = np.reciprocal(inverse_variance_sum)
+        # TODO: fix unit here
+        output_variance = u.Quantity(
+            np.reciprocal(inverse_variance_sum), unit=u.electron**2 / u.s**2
+        )
 
         setattr(output_model, name, output_variance)
 
@@ -358,7 +366,7 @@ class ResampleData:
         output_model.meta.exposure.exposure_time = total_exposure_time
         output_model.meta.exposure.start_time = min(exposure_times["start"])
         output_model.meta.exposure.end_time = max(exposure_times["end"])
-        output_model.meta.resample.product_exposure_time = total_exposure_time
+        output_model.meta.resample["product_exposure_time"] = total_exposure_time
 
     @staticmethod
     def drizzle_arrays(
@@ -528,11 +536,11 @@ class ResampleData:
         log.info(f"Drizzling {insci.shape} --> {outsci.shape}")
 
         _vers, _nmiss, _nskip = cdrizzle.tdriz(
-            insci,
+            insci.astype(np.float32).value,
             inwht,
             pixmap,
-            outsci,
-            outwht,
+            outsci.value,
+            outwht.value,
             outcon,
             uniqid=uniqid,
             xmin=xmin,

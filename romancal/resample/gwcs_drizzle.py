@@ -69,10 +69,7 @@ class GWCSDrizzle:
         self.outexptime = 0.0
         self.uniqid = 0
 
-        if wt_scl is None:
-            self.wt_scl = ""
-        else:
-            self.wt_scl = wt_scl
+        self.wt_scl = "" if wt_scl is None else wt_scl
         self.kernel = kernel
         self.fillval = fillval
         self.pixfrac = pixfrac
@@ -86,15 +83,9 @@ class GWCSDrizzle:
         self.outexptime = getattr(product.meta.resample, "product_exposure_time", 0.0)
 
         self.outsci = product.data
-        if outwcs:
-            self.outwcs = outwcs
-        else:
-            self.outwcs = product.meta.wcs
-
-        self.outwht = np.zeros(
-            (self.outcon.shape[0], self.outcon.shape[1]), dtype=np.float32
-        )
-        self.outcon = product.context
+        self.outwcs = outwcs or product.meta.wcs
+        self.outwht = np.zeros(self.outsci.shape, dtype=np.float32)
+        self.outcon = np.zeros(self.outcon.shape, dtype=np.int32)
 
         if self.outcon.ndim == 2:
             self.outcon = np.reshape(
@@ -115,7 +106,7 @@ class GWCSDrizzle:
         if out_units == "counts":
             np.divide(self.outsci, self.outexptime, self.outsci)
         elif out_units != "cps":
-            raise ValueError("Illegal value for out_units: %s" % out_units)
+            raise ValueError(f"Illegal value for out_units: {out_units}")
 
     # Since the context array is dynamic, it must be re-assigned
     # back to the product's `con` attribute.
@@ -439,14 +430,13 @@ def dodrizzle(
     # Call 'drizzle' to perform image combination
     log.info(f"Drizzling {insci.shape} --> {outsci.shape}")
 
-    breakpoint()
     _vers, nmiss, nskip = cdrizzle.tdriz(
         insci.astype(np.float32).value,
         inwht.astype(np.float32).value,
         pixmap,
-        outsci.astype(np.float32).value,
-        outwht.astype(np.float32),
-        outcon.astype(np.int32),
+        outsci,
+        outwht,
+        outcon,
         uniqid=uniqid,
         xmin=xmin,
         xmax=xmax,
