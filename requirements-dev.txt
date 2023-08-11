@@ -12,3 +12,4 @@ scipy>=0.0.dev0
 git+https://github.com/spacetelescope/stpipe
 git+https://github.com/spacetelescope/stcal
 git+https://github.com/spacetelescope/tweakwcs
+#git+https://github.com/spacetelescope/metrics_logger
