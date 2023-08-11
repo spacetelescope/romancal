@@ -75,6 +75,8 @@ general
 
 - Fix devdeps Jenkins job. [#795]
 
+- Remove use of the deprecated ``pkg_resources`` module from ``setuptools``. [#829]
+
 0.11.0 (2023-05-31)
 ===================
 
