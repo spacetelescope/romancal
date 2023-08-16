@@ -41,6 +41,43 @@ def test_basic_saturation_flagging(setup_wfi_datamodels):
     assert np.all(output.groupdq[satindex:, 5, 5] == dqflags.group["SATURATED"])
 
 
+def test_read_pattern_saturation_flagging(setup_wfi_datamodels):
+    """Check that the saturation threshold varies depending on how the reads
+    are allocated into resultants."""
+
+    # Create inputs, and data and saturation models
+    ngroups = 5
+    nrows = 20
+    ncols = 20
+    satvalue = 60000
+    ramp, satmap = setup_wfi_datamodels(ngroups, nrows, ncols)
+
+    # Add ramp values up to the saturation limit
+    ramp.data[0, 5, 5] = 0 * ramp.data.unit
+    ramp.data[1, 5, 5] = 20000 * ramp.data.unit
+    ramp.data[2, 5, 5] = 40000 * ramp.data.unit
+    ramp.data[3, 5, 5] = 60000 * ramp.data.unit  # Signal reaches saturation limit
+    ramp.data[4, 5, 5] = 62000 * ramp.data.unit
+
+    # set read_pattern to have many reads in the third resultant, so that
+    # its mean exposure time is much smaller than its last read time
+    # (in this case, the ratio is 13 / 20).
+    # This means that the effective saturation for the third resultant
+    # is 60000 * 13 / 20 = 39000 and the third resultant should be marked
+    # saturated.
+    ramp.meta.exposure.read_pattern = [
+        [1], [2], [3, 4, 5, 6, 7, 8, 9, 10], [11], [12], [13]]
+
+    # Set saturation value in the saturation model
+    satmap.data[5, 5] = satvalue * satmap.data.unit
+
+    # Run the pipeline
+    output = flag_saturation(ramp, satmap)
+
+    # Make sure that groups after the third get flagged
+    assert np.all(output.groupdq[2:, 5, 5] == dqflags.group["SATURATED"])
+
+
 def test_ad_floor_flagging(setup_wfi_datamodels):
     """Check that the ad_floor flag is set when a pixel value is zero or
     negative."""

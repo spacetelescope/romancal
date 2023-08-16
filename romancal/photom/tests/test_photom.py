@@ -60,7 +60,7 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
 
     # Create sample area keyword values
     area_ster = 2.31307642258977e-14 * u.steradian
-    pixelareasr = np.ones(nrows, dtype=np.float32) * area_ster
+    pixelareasr = np.ones(nrows, dtype=np.float64) * area_ster
 
     # Bundle values into a list
     values = list(zip(photmjsr, uncertainty, pixelareasr))
