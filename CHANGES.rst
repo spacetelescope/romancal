@@ -83,6 +83,8 @@ general
 
 - Remove use of the deprecated ``pkg_resources`` module from ``setuptools``. [#829]
 
+- Add ``dev`` install option. [#835]
+
 0.11.0 (2023-05-31)
 ===================
 
