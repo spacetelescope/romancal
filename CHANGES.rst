@@ -43,6 +43,11 @@ refpix
 
 - Add initial reference pixel correction step implementation. [#704]
 
+saturation
+----------
+
+- Add read_pattern argument to flag_saturated_pixels. [#836]
+
 general
 -------
 
