@@ -66,7 +66,13 @@ def test_read_pattern_saturation_flagging(setup_wfi_datamodels):
     # is 60000 * 13 / 20 = 39000 and the third resultant should be marked
     # saturated.
     ramp.meta.exposure.read_pattern = [
-        [1], [2], [3, 4, 5, 6, 7, 8, 9, 10], [11], [12], [13]]
+        [1],
+        [2],
+        [3, 4, 5, 6, 7, 8, 9, 10],
+        [11],
+        [12],
+        [13],
+    ]
 
     # Set saturation value in the saturation model
     satmap.data[5, 5] = satvalue * satmap.data.unit
