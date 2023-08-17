@@ -3,13 +3,12 @@ import os
 import pytest
 import roman_datamodels as rdm
 from crds.core.exceptions import CrdsLookupError
+from metrics_logger.decorators import metrics_logger
 
 from romancal.step import FlatFieldStep
 from romancal.stpipe import RomanStep
 
 from .regtestdata import compare_asdf
-
-from metrics_logger.decorators import metrics_logger
 
 
 @pytest.mark.bigdata
@@ -68,7 +67,7 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
 
 
-@metrics_logger('DMS79')    
+@metrics_logger("DMS79")
 @pytest.mark.bigdata
 @pytest.mark.soctests
 def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):

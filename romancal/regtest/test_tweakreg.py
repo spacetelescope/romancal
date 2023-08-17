@@ -1,12 +1,11 @@
 from io import StringIO
 
 import pytest
+from metrics_logger.decorators import metrics_logger
 from roman_datamodels import datamodels as rdm
 
 from romancal.stpipe import RomanStep
 from romancal.tweakreg.tweakreg_step import TweakRegStep
-
-from metrics_logger.decorators import metrics_logger
 
 from .regtestdata import compare_asdf
 
@@ -45,7 +44,8 @@ def create_asn_file():
 
     return asn_file_path
 
-@metrics_logger('DMS280')
+
+@metrics_logger("DMS280")
 @pytest.mark.bigdata
 def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
     # N.B.: the data were created using WFIsim and processed through

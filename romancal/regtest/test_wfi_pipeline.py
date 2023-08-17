@@ -5,11 +5,11 @@ import numpy as np
 import pytest
 import roman_datamodels as rdm
 from gwcs.wcstools import grid_from_bounding_box
+from metrics_logger.decorators import metrics_logger
 from numpy.testing import assert_allclose
 
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
-from metrics_logger.decorators import metrics_logger
 
 from .regtestdata import compare_asdf
 
@@ -23,7 +23,7 @@ def passfail(bool_expr):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger('DMS86', 'DMS87', 'DMS88')
+@metrics_logger("DMS86", "DMS87", "DMS88")
 def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     """Tests for flat field imaging processing requirements DMS86 & DMS 87"""
     input_data = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
@@ -256,7 +256,7 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger('DMS90', 'DMS91', 'DMS9')
+@metrics_logger("DMS90", "DMS91", "DMS9")
 def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     """Tests for flat field grism processing requirements DMS90 & DMS 91"""
     input_data = "r0000201001001001002_01101_0001_WFI01_uncal.asdf"
