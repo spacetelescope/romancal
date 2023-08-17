@@ -51,7 +51,7 @@ test = [
     'ci-watson >=0.5.0',
     'pytest >=4.6.0',
     'pytest-astropy',
-    'metrics_logger @ git+https://github.com/spacetelescope/metrics_logger.git',
+    'metrics_logger >= 0.1.0',
 ]
 
 [project.urls]
