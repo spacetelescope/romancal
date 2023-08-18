@@ -3,6 +3,7 @@ import os
 
 import pytest
 import roman_datamodels as rdm
+from metrics_logger.decorators import metrics_logger
 
 from romancal.step import DQInitStep
 from romancal.stpipe import RomanStep
@@ -10,6 +11,7 @@ from romancal.stpipe import RomanStep
 from .regtestdata import compare_asdf
 
 
+@metrics_logger("DMS25")
 @pytest.mark.bigdata
 def test_dq_init_image_step(rtdata, ignore_asdf_paths):
     """DMS25 Test: Testing retrieval of best ref file for image data,
@@ -64,6 +66,7 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
     assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
 
 
+@metrics_logger("DMS26")
 @pytest.mark.bigdata
 def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
     """DMS26 Test: Testing retrieval of best ref file for grism data,

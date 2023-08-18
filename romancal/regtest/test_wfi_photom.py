@@ -4,6 +4,7 @@ import math
 import pytest
 import roman_datamodels as rdm
 from astropy import units as u
+from metrics_logger.decorators import metrics_logger
 
 from romancal.step import PhotomStep
 from romancal.stpipe import RomanStep
@@ -11,6 +12,7 @@ from romancal.stpipe import RomanStep
 from .regtestdata import compare_asdf
 
 
+@metrics_logger("DMS140")
 @pytest.mark.bigdata
 def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     """DMS140 Test: Testing application of photometric correction using

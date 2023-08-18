@@ -46,6 +46,8 @@ refpix
 general
 -------
 
+- Add metrics_logger to the regression tests [#831]
+
 - Update pipeline logic for saturation checks [#824]
 
 - Update the pipeline code to process all the uncal files in an association [#802]
