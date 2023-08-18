@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 from copy import deepcopy
 
@@ -34,9 +35,18 @@ class ResampleStep(RomanStep):
 
     Parameters
     -----------
-    input :  ~jwst.datamodels.JwstDataModel or ~jwst.associations.Association
-        Single filename for either a single image or an association table.
-    """
+    input : str, ~roman_datamodels.datamodels.DataModel, or ~romancal.datamodels.ModelContainer
+        If a string is provided, it should correspond to either a single ASDF filename
+        or an association filename. Alternatively, a single DataModel instance can be
+        provided instead of an ASDF filename.
+        Multiple files can be processed via either an association file or wrapped by a
+        ModelContainer.
+
+    Returns
+    -------
+    result : ~roman_datamodels.datamodels.MosaicModel
+        A mosaic datamodel with the final output frame.
+    """  # noqa: E501
 
     class_alias = "resample"
 
@@ -66,24 +76,29 @@ class ResampleStep(RomanStep):
             output = input_models[0].meta.filename
             self.blendheaders = False
         elif isinstance(input, str):
-            input_models = ModelContainer(input)
-            output = input_models.meta.asn_table.products[0].name
-
-        # if isinstance(input, ModelContainer):
-        #     input_models = dm
-        #     try:
-        #         output = input_models.meta.asn_table.products[0].name
-        #     except AttributeError:
-        #         # coron data goes through this path by the time it gets to
-        #         # resampling.
-        #         # TODO: figure out why and make sure asn_table is carried along
-        #         output = None
-        # else:
-        #     input_models = ModelContainer([dm])
-        #     input_models.asn_pool_name = dm.meta.asn.pool_name
-        #     input_models.asn_table_name = dm.meta.asn.table_name
-        #     output = dm.meta.filename
-        #     self.blendheaders = False
+            # either a single asdf filename or an association filename
+            try:
+                # association filename
+                input_models = ModelContainer(input)
+            except Exception:
+                # single ASDF filename
+                input_models = ModelContainer([input])
+            if hasattr(input_models, "asn_table") and len(input_models.asn_table):
+                output = input_models.asn_table["products"][0]["name"]
+            elif hasattr(input_models[0], "meta"):
+                output = input_models[0].meta.filename
+        elif isinstance(input, ModelContainer):
+            input_models = input
+            output = (
+                f"{os.path.commonprefix([x.meta.filename for x in input_models])}.asdf"
+            )
+            if len(output) == 0:
+                output = "resample_output.asdf"
+        else:
+            raise TypeError(
+                "Input must be an ASN filename, a ModelContainer, "
+                "a single ASDF filename, or a single Roman DataModel."
+            )
 
         # Check that input models are 2D images
         if len(input_models[0].data.shape) != 2:
