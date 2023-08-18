@@ -1,10 +1,14 @@
-0.11.1 (unreleased)
+0.13.0 (unreleased)
+===================
+
+-
+
+0.12.0 (2023-08-18)
 ===================
 
 source_detection
 ----------------
 - Skip the step if the data is not imaging mode. [#798]
-
 
 tweakreg
 --------
