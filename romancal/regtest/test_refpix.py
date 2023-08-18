@@ -9,7 +9,7 @@ from .regtestdata import compare_asdf
 @pytest.mark.bigdata
 def test_refpix_step(rtdata, ignore_asdf_paths):
     # I have no idea what this is supposed to be
-    input_datafile = "r0000101001001001001_01101_0001_WFI01_refpix.asdf"
+    input_datafile = "r0000101001001001001_01101_0001_WFI01_saturation.asdf"
     rtdata.get_data(f"WFI/image/{input_datafile}")
     rtdata.input = input_datafile
 

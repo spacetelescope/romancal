@@ -6,8 +6,8 @@ git+https://github.com/astropy/asdf-astropy
 git+https://github.com/spacetelescope/crds
 git+https://github.com/spacetelescope/gwcs
 numpy>=0.0.dev0
-git+https://github.com/spacetelescope/roman_datamodels@0.17.0
-git+https://github.com/spacetelescope/rad@0.17.0
+git+https://github.com/spacetelescope/roman_datamodels
+git+https://github.com/spacetelescope/rad
 scipy>=0.0.dev0
 git+https://github.com/spacetelescope/stpipe
 git+https://github.com/spacetelescope/stcal
