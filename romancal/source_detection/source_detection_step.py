@@ -19,7 +19,7 @@ from photutils.detection import DAOStarFinder
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
-from romancal.lib import dqflags
+from romancal.lib import dqflags, psf
 from romancal.stpipe import RomanStep
 
 log = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class SourceDetectionStep(RomanStep):
         scalar_threshold = float(default=None) # Detection threshold, to
         # be used for entire image. Assumed to be in same units as data, and is
         # an absolute threshold over background.
-        calc_threshold = boolean(default=True) # Calculate a single absoulte
+        calc_threshold = boolean(default=True) # Calculate a single absolute
         # detection threshold from image based on background.
         snr_threshold = float(default=3.0)  # if calc_threshold_img,
         # the SNR for the threshold image.
@@ -65,6 +65,7 @@ class SourceDetectionStep(RomanStep):
         # Will overwrite an existing catalog of the same name.
         output_cat_filetype = option('asdf', 'ecsv', default='asdf') # Used if
         #save_catalogs=True - file type of output catalog.
+        fit_psf = boolean(default=False)  # fit source PSFs for accurate astrometry
     """
 
     def process(self, input):
@@ -98,7 +99,7 @@ class SourceDetectionStep(RomanStep):
             # image by calculating a 2D background image, using this to create
             # a 2d threshold image, and using the median of the 2d threshold
             # image as the scalar detection threshold for the whole image
-            elif self.calc_threshold is not None:
+            elif self.calc_threshold:
                 log.info("Determining detection threshold from image.")
                 bkg = self._calc_2D_background()
                 threshold_img = bkg.background + self.snr_threshold * bkg.background_rms
@@ -122,7 +123,7 @@ class SourceDetectionStep(RomanStep):
                 sources = daofind(self.data, mask=self.coverage_mask)
 
             elif self.calc_threshold is not None:
-                # subtrack background from data if calculating abs. threshold
+                # subtract background from data if calculating abs. threshold
                 sources = daofind(self.data - bkg.background, mask=self.coverage_mask)
 
             # reduce table to minimal number of columns, just source ID,
@@ -140,17 +141,55 @@ class SourceDetectionStep(RomanStep):
                     dtype=(int, np.float64, np.float64, np.float64),
                 )
 
-            # attach source catalog to output model as array in meta.source_detecion
-            # the table will be stored as a 1D array with the four columns
-            # concatenated, in order, with units attached
-            catalog_as_array = np.array(
-                [
-                    catalog["id"].value,
-                    catalog["xcentroid"].value,
-                    catalog["ycentroid"].value,
-                    catalog["flux"].value,
-                ]
-            )
+            if self.fit_psf:
+                # refine astrometry by fitting PSF models to the detected sources
+                log.info("Constructing a gridded PSF model.")
+                detector = input_model.meta.instrument["detector"].replace("WFI", "SCA")
+                filt = input_model.meta.instrument["optical_element"]
+                gridded_psf_model, _ = psf.create_gridded_psf_model(
+                    path_prefix="tmp",
+                    filt=filt,
+                    detector=detector,
+                    overwrite=True,
+                    logging_level="ERROR",
+                )
+
+                log.info(
+                    "Fitting a PSF model to sources for improved astrometric precision."
+                )
+                psf_photometry_table, photometry = psf.fit_psf_to_image_model(
+                    image_model=input_model,
+                    psf_model=gridded_psf_model,
+                    x_init=catalog["xcentroid"],
+                    y_init=catalog["ycentroid"],
+                    exclude_out_of_bounds=True,
+                )
+
+                # attach source catalog to output model as array in
+                # meta.source_detection the table will be stored as a
+                # 1D array with the four columns concatenated, in order,
+                # with units attached
+                catalog_as_array = np.array(
+                    [
+                        psf_photometry_table["id"].value,
+                        psf_photometry_table["x_fit"].value,
+                        psf_photometry_table["y_fit"].value,
+                        psf_photometry_table["flux_fit"].value,
+                    ]
+                )
+            else:
+                # attach source catalog to output model as array in
+                # meta.source_detection the table will be stored as a
+                # 1D array with the four columns concatenated, in order,
+                # with units attached
+                catalog_as_array = np.array(
+                    [
+                        catalog["id"].value,
+                        catalog["xcentroid"].value,
+                        catalog["ycentroid"].value,
+                        catalog["flux"].value,
+                    ]
+                )
 
             # create meta.source detection section in file
             # if save_catalogs is True, this will be updated with the
