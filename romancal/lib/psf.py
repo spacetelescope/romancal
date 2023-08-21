@@ -41,6 +41,18 @@ filter_central_wavelengths = {
     "WFI_Filter_F213_Center": 2.125,
 }
 
+default_finder = DAOStarFinder(
+    # these defaults extracted from the
+    # romancal SourceDetectionStep
+    fwhm=2.0,
+    threshold=2.0,
+    sharplo=0.0,
+    sharphi=1.0,
+    roundlo=-1.0,
+    roundhi=1.0,
+    peakmax=1000.0,
+)
+
 
 def create_gridded_psf_model(
     path_prefix,
@@ -272,18 +284,6 @@ def fit_psf_to_image_model(
     if fitter is None:
         fitter = LevMarLSQFitter(calc_uncertainties=True)
 
-    default_finder = DAOStarFinder(
-        # these defaults extracted from the
-        # romancal SourceDetectionStep
-        fwhm=2.0,
-        threshold=2.0,
-        sharplo=0.0,
-        sharphi=1.0,
-        roundlo=-1.0,
-        roundhi=1.0,
-        peakmax=1000.0,
-    )
-
     # the iterative PSF method requires a finder:
     psf_photometry_kwargs = {}
     if photometry_cls is IterativePSFPhotometry or (x_init is None and y_init is None):
@@ -338,6 +338,9 @@ def fit_psf_to_image_model(
         # option to enforce a lower limit on the flux uncertainties
         error = np.clip(error, error_lower_limit, None)
 
+    # we also mask non-finite values in the data and error arrays:
+    non_finite = ~np.isfinite(data) | ~np.isfinite(error)
+
     if exclude_out_of_bounds and guesses is not None:
         # don't attempt to fit PSFs for objects with initial centroids
         # outside the detector boundaries:
@@ -350,7 +353,9 @@ def fit_psf_to_image_model(
         guesses = guesses[init_centroid_in_range]
 
     # fit the model PSF to the data:
-    results_table = photometry(data=data, error=error, init_params=guesses, mask=mask)
+    results_table = photometry(
+        data=data, error=error, init_params=guesses, mask=mask | non_finite
+    )
 
     # results are stored on the PSFPhotometry instance:
     return results_table, photometry
@@ -389,4 +394,4 @@ def dq_to_boolean_mask(image_model_or_dq, ignore_flags=0, flag_map_name="ROMAN_D
 
     # convert the bitmask to a boolean mask:
     mask = bitmask.bitfield_to_boolean_mask(dq, ignore_flags=ignore_flags)
-    return mask
+    return mask.astype(bool)
