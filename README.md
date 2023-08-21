@@ -94,6 +94,14 @@ installed too:
     pip install -e ".[docs]"
     pip install -e ".[test,docs]"
 
+
+Note that if you wish to install all the development dependencies (`test` and `docs`) as well as the development
+tools used for linting and reproducible environments run:
+
+    pip install -e ".[dev]"
+
+This will install `tox` and the `pre-commit` tools in addition to all development dependencies.
+
 Need other useful packages in your development environment?
 
     pip install ipython pytest-xdist

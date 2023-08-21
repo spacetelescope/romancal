@@ -52,6 +52,11 @@ test = [
     'pytest-astropy',
     'metrics_logger >= 0.1.0',
 ]
+dev = [
+    'romancal[docs,test]',
+    'tox > 4',
+    'pre-commit > 3'
+]
 
 [project.urls]
 'tracker' = 'https://github.com/spacetelescope/romancal/issues'
