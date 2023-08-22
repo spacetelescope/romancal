@@ -1,7 +1,10 @@
 0.13.0 (unreleased)
 ===================
 
--
+general
+-------
+
+- Fix bug with ``ModelContainer.get_crds_parameters`` being a property not a method [#846]
 
 0.12.0 (2023-08-18)
 ===================
