@@ -169,17 +169,17 @@ def test_imagemodel_slice_n_dice(n, obj_type, tmp_path, request):
     x4 = mc[-2]
     x5 = mc[-2:]
 
-    assert type(x1) == list
+    assert isinstance(x1, list)
     assert len(x1) == len(filepath_list)
 
-    assert type(x2) == rdm.ImageModel
+    assert isinstance(x2, rdm.ImageModel)
 
-    assert type(x3) == list
+    assert isinstance(x3, list)
     assert len(x3) == n - 2
 
-    assert type(x4) == rdm.ImageModel
+    assert isinstance(x4, rdm.ImageModel)
 
-    assert type(x5) == list
+    assert isinstance(x5, list)
     assert len(x5) == 2
 
 
@@ -363,7 +363,7 @@ def test_get_crds_parameters(n, obj_type, tmp_path, request):
 
     res = mc.get_crds_parameters
 
-    assert type(res) == dict
+    assert isinstance(res, dict)
 
 
 def test_get_crds_parameters_empty():
@@ -371,7 +371,7 @@ def test_get_crds_parameters_empty():
 
     crds_param = mc.get_crds_parameters
 
-    assert type(crds_param) == dict
+    assert isinstance(crds_param, dict)
     assert len(crds_param) == 0
 
 
