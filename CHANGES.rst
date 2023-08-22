@@ -1,4 +1,9 @@
-0.11.1 (unreleased)
+0.13.0 (unreleased)
+===================
+
+-
+
+0.12.0 (2023-08-18)
 ===================
 
 resample
@@ -8,7 +13,6 @@ resample
 source_detection
 ----------------
 - Skip the step if the data is not imaging mode. [#798]
-
 
 tweakreg
 --------
@@ -49,6 +53,11 @@ refpix
 
 general
 -------
+
+- Add metrics_logger to the regression tests [#831]
+
+- Update pipeline logic for saturation checks [#824]
+
 - Update the pipeline code to process all the uncal files in an association [#802]
 
 - `ModelContainer` supports slice and dice. [#710]
@@ -75,6 +84,10 @@ general
 - Make steps operate in place rather than copying.  [#774]
 
 - Fix devdeps Jenkins job. [#795]
+
+- Remove use of the deprecated ``pkg_resources`` module from ``setuptools``. [#829]
+
+- Add ``dev`` install option. [#835]
 
 0.11.0 (2023-05-31)
 ===================
