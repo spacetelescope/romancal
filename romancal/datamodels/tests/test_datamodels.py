@@ -359,17 +359,11 @@ def test_get_crds_parameters(n, obj_type, tmp_path, request):
         n, obj_type, tmp_path
     )
 
-    mc = ModelContainer(filepath_list)
-
-    res = mc.get_crds_parameters
-
-    assert isinstance(res, dict)
+    assert isinstance(ModelContainer(filepath_list).get_crds_parameters(), dict)
 
 
 def test_get_crds_parameters_empty():
-    mc = ModelContainer()
-
-    crds_param = mc.get_crds_parameters
+    crds_param = ModelContainer().get_crds_parameters()
 
     assert isinstance(crds_param, dict)
     assert len(crds_param) == 0
