@@ -23,5 +23,4 @@ git+https://github.com/spacetelescope/crds
 git+https://github.com/spacetelescope/stcal
 git+https://github.com/spacetelescope/tweakwcs
 git+https://github.com/spacetelescope/metrics_logger
-git+https://github.com/spacetelescope/webbpsf.git
 git+https://github.com/astropy/photutils.git
