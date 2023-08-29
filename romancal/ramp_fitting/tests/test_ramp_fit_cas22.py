@@ -40,7 +40,8 @@ dqflags = {
 #
 # The read pattern is `[[1], [2], [3], [4]]`
 # The total expected counts is 7.
-# The resultants were generated with `romanisim.l1.apportion_counts_to_resultants(counts, read_pattern)`.
+# The resultants were generated with
+# `romanisim.l1.apportion_counts_to_resultants(counts, read_pattern)`.
 SIMPLE_RESULTANTS = np.array(
     [
         [[2.0, 2.0], [5.0, 1.0]],
