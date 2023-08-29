@@ -9,7 +9,6 @@ import romancal.datamodels.filetype as filetype
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
-from romancal.associations.exceptions import AssociationNotValidError
 from romancal.associations.load_as_asn import LoadAsLevel2Asn
 from romancal.dark_current import DarkCurrentStep
 from romancal.dq_init import dq_init_step
@@ -69,39 +68,20 @@ class ExposurePipeline(RomanPipeline):
         """Process the Roman WFI data"""
 
         log.info("Starting Roman exposure calibration pipeline ...")
-        if isinstance(input, str):
-            input_filename = basename(input)
-        else:
-            input_filename = None
-
-        # open the input file
-        file_type = filetype.check(input)
-        asn = None
-        if file_type == "asdf":
-            try:
-                input = rdm.open(input)
-            except TypeError:
-                log.debug("Error opening file:")
-                return
-
-        if file_type == "asn":
-            try:
-                asn = LoadAsLevel2Asn.load(input, basename=self.output_file)
-            except AssociationNotValidError:
-                log.debug("Error opening file:")
-                return
 
         # Build a list of observations to process
-        expos_file = []
+        expos_files = []
+        file_type = filetype.check(input)
         if file_type == "asdf":
-            expos_file = [input]
+            expos_files = [input]
         elif file_type == "asn":
+            asn = LoadAsLevel2Asn.load(input, basename=self.output_file)
             for product in asn["products"]:
                 for member in product["members"]:
-                    expos_file.append(member["expname"])
+                    expos_files.append(member["expname"])
 
         results = []
-        for in_file in expos_file:
+        for in_file in expos_files:
             if isinstance(in_file, str):
                 input_filename = basename(in_file)
                 log.info(f"Input file name: {input_filename}")
@@ -117,7 +97,6 @@ class ExposurePipeline(RomanPipeline):
             if input_filename:
                 result.meta.filename = input_filename
             result = self.saturation(result)
-            # pdb.set_trace()
 
             # Test for fully saturated data
             if is_fully_saturated(result):
