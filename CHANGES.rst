@@ -6,11 +6,12 @@ general
 
 - Fix bug with ``ModelContainer.get_crds_parameters`` being a property not a method [#846]
 
+- Use filename instead of ``meta.filename`` for ``ExposurePipeline`` [#850]
+
 ramp_fitting
 ------------
 
 - Inititial implementation of the Uneven Ramp fitting [#779]
-
 
 0.12.0 (2023-08-18)
 ===================
