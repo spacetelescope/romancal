@@ -146,21 +146,34 @@ def test_ols_multicore_ramp_fit_match(make_data):
         out_model.border_ref_pix_bottom, all_out_model.border_ref_pix_bottom, 1e-6, 1e-6
     )
     np.testing.assert_allclose(
-        out_model.dq_border_ref_pix_left, all_out_model.dq_border_ref_pix_left, 1e-6, 1e-6
+        out_model.dq_border_ref_pix_left,
+        all_out_model.dq_border_ref_pix_left,
+        1e-6,
+        1e-6,
     )
     np.testing.assert_allclose(
-        out_model.dq_border_ref_pix_right, all_out_model.dq_border_ref_pix_right, 1e-6, 1e-6
+        out_model.dq_border_ref_pix_right,
+        all_out_model.dq_border_ref_pix_right,
+        1e-6,
+        1e-6,
     )
     np.testing.assert_allclose(
         out_model.dq_border_ref_pix_top, all_out_model.dq_border_ref_pix_top, 1e-6, 1e-6
     )
     np.testing.assert_allclose(
-        out_model.dq_border_ref_pix_bottom, all_out_model.dq_border_ref_pix_bottom, 1e-6, 1e-6
+        out_model.dq_border_ref_pix_bottom,
+        all_out_model.dq_border_ref_pix_bottom,
+        1e-6,
+        1e-6,
     )
 
     # New rampfit parameters
-    np.testing.assert_allclose(out_model.var_poisson, all_out_model.var_poisson, 1e-6, 1e-6)
-    np.testing.assert_allclose(out_model.var_rnoise, all_out_model.var_rnoise, 1e-6, 1e-6)
+    np.testing.assert_allclose(
+        out_model.var_poisson, all_out_model.var_poisson, 1e-6, 1e-6
+    )
+    np.testing.assert_allclose(
+        out_model.var_rnoise, all_out_model.var_rnoise, 1e-6, 1e-6
+    )
 
 
 @pytest.mark.parametrize("make_data", [(1, 1, 1, 20, 20)], indirect=True)
