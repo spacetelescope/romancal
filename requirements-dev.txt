@@ -1,13 +1,25 @@
+# ASDF upstream packages
 git+https://github.com/asdf-format/asdf
 git+https://github.com/asdf-format/asdf-transform-schemas
 git+https://github.com/asdf-format/asdf-wcs-schemas
---extra-index-url https://pypi.anaconda.org/astropy/simple astropy --pre
 git+https://github.com/astropy/asdf-astropy
-git+https://github.com/spacetelescope/crds
-git+https://github.com/spacetelescope/gwcs
+
+# Use weekly astropy dev build
+--extra-index-url https://pypi.anaconda.org/astropy/simple astropy --pre
+
+# Use Bi-weekly numpy/scipy dev builds
+--extra-index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
 numpy>=0.0.dev0
-git+https://github.com/spacetelescope/roman_datamodels
 scipy>=0.0.dev0
+
+# Roman upstream packages
+git+https://github.com/spacetelescope/roman_datamodels
+git+https://github.com/spacetelescope/rad
+
+# Other important upstream packages
+git+https://github.com/spacetelescope/gwcs
 git+https://github.com/spacetelescope/stpipe
+git+https://github.com/spacetelescope/crds
 git+https://github.com/spacetelescope/stcal
 git+https://github.com/spacetelescope/tweakwcs
+git+https://github.com/spacetelescope/metrics_logger

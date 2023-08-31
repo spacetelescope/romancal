@@ -512,7 +512,6 @@ class ModelContainer(Sequence):
         """
         return "roman"
 
-    @property
     def get_crds_parameters(self):
         """
         Get parameters used by CRDS to select references for this model.

@@ -3,10 +3,14 @@ import logging
 from os.path import basename
 
 import numpy as np
-from roman_datamodels import datamodels as rdd
+from roman_datamodels import datamodels as rdm
+
+import romancal.datamodels.filetype as filetype
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
+from romancal.associations.exceptions import AssociationNotValidError
+from romancal.associations.load_as_asn import LoadAsLevel2Asn
 from romancal.dark_current import DarkCurrentStep
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
@@ -71,66 +75,102 @@ class ExposurePipeline(RomanPipeline):
             input_filename = None
 
         # open the input file
-        input = rdd.open(input)
+        file_type = filetype.check(input)
+        asn = None
+        if file_type == "asdf":
+            try:
+                input = rdm.open(input)
+            except TypeError:
+                log.debug("Error opening file:")
+                return
 
-        log.debug("Exposure Processing a WFI exposure")
+        if file_type == "asn":
+            try:
+                asn = LoadAsLevel2Asn.load(input, basename=self.output_file)
+            except AssociationNotValidError:
+                log.debug("Error opening file:")
+                return
 
-        self.dq_init.suffix = "dq_init"
-        result = self.dq_init(input)
-        if input_filename:
-            result.meta.filename = input_filename
-        result = self.saturation(result)
+        # Build a list of observations to process
+        expos_file = []
+        if file_type == "asdf":
+            expos_file = [input]
+        elif file_type == "asn":
+            for product in asn["products"]:
+                for member in product["members"]:
+                    expos_file.append(member["expname"])
 
-        # Test for fully saturated data
-        if is_fully_saturated(result):
-            log.info("All pixels are saturated. Returning a zeroed-out image.")
+        results = []
+        for in_file in expos_file:
+            if isinstance(in_file, str):
+                input_filename = basename(in_file)
+                log.info(f"Input file name: {input_filename}")
+            else:
+                input_filename = None
 
-            # Return zeroed-out image file (stopping pipeline)
-            return self.create_fully_saturated_zeroed_image(result)
+            # Open the file
+            input = rdm.open(in_file)
+            log.info(f"Processing a WFI exposure {in_file}")
 
-        result = self.linearity(result)
-        result = self.dark_current(result)
-        result = self.jump(result)
-        result = self.rampfit(result)
+            self.dq_init.suffix = "dq_init"
+            result = self.dq_init(input)
+            if input_filename:
+                result.meta.filename = input_filename
+            result = self.saturation(result)
+            # pdb.set_trace()
 
-        # Test for fully saturated data
-        if "groupdq" in result.keys():
+            # Test for fully saturated data
             if is_fully_saturated(result):
+                log.info("All pixels are saturated. Returning a zeroed-out image.")
+
+                #    if is_fully_saturated(result):
                 # Set all subsequent steps to skipped
                 for step_str in [
                     "assign_wcs",
                     "flat_field",
                     "photom",
                     "source_detection",
+                    "dark",
+                    "jump",
+                    "linearity",
+                    "ramp_fit",
                 ]:
                     result.meta.cal_step[step_str] = "SKIPPED"
 
                 # Set suffix for proper output naming
                 self.suffix = "cal"
-
+                results.append(result)
                 # Return fully saturated image file (stopping pipeline)
-                return result
+                return results
 
-        result = self.assign_wcs(result)
-        if result.meta.exposure.type == "WFI_IMAGE":
-            result = self.flatfield(result)
-        else:
-            log.info("Flat Field step is being SKIPPED")
-            result.meta.cal_step.flat_field = "SKIPPED"
+            result = self.linearity(result)
+            result = self.dark_current(result)
+            result = self.jump(result)
+            result = self.rampfit(result)
 
-        result = self.photom(result)
+            result = self.assign_wcs(result)
+            if result.meta.exposure.type == "WFI_IMAGE":
+                result = self.flatfield(result)
+            else:
+                log.info("Flat Field step is being SKIPPED")
+                result.meta.cal_step.flat_field = "SKIPPED"
 
-        if result.meta.exposure.type == "WFI_IMAGE":
-            result = self.source_detection(result)
-        else:
-            log.info("Source Detection step is being SKIPPED")
-            result.meta.cal_step.source_detection = "SKIPPED"
+            if result.meta.exposure.type == "WFI_IMAGE":
+                result = self.photom(result)
+                result = self.source_detection(result)
+            else:
+                log.info("Photom and source detection steps are being SKIPPED")
+                result.meta.cal_step.photom = "SKIPPED"
+                result.meta.cal_step.source_detection = "SKIPPED"
 
-        # setup output_file for saving
-        self.setup_output(result)
-        log.info("Roman exposure calibration pipeline ending...")
+            # setup output_file for saving
+            self.setup_output(result)
+            log.info("Roman exposure calibration pipeline ending...")
 
-        return result
+            self.output_use_model = True
+            results.append(result)
+
+        return results
 
     def setup_output(self, input):
         """Determine the proper file name suffix to use later"""
