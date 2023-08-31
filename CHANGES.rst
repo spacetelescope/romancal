@@ -11,6 +11,8 @@ ramp_fitting
 
 - Inititial implementation of the Uneven Ramp fitting [#779]
 
+- Fix opening mode for references to be read-only [#854]
+
 
 0.12.0 (2023-08-18)
 ===================
