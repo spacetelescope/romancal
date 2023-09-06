@@ -22,8 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OBSERVATORY: roman
-      CRDS_PATH: /tmp/crds_cache
-      CRDS_SERVER_URL: https://roman-crds-test.stsci.edu
+      CRDS_SERVER_URL: https://serverless
+      CRDS_PATH: /grp/crds/roman/test
     steps:
       - id: context
         run: >
