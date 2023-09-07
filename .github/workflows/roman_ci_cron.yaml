@@ -22,7 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OBSERVATORY: roman
-      CRDS_SERVER_URL: https://serverless
+      CRDS_SERVER_URL: https://roman-crds.stsci.edu
+      CRDS_LOCAL_URL: https://serverless
       CRDS_PATH: /grp/crds/roman/test
     steps:
       - id: context
@@ -36,7 +37,7 @@ jobs:
       - id: path
         run: echo "path=${{ env.CRDS_PATH }}" >> $GITHUB_OUTPUT
       - id: server
-        run: echo "url=${{ env.CRDS_SERVER_URL }}" >> $GITHUB_OUTPUT
+        run: echo "url=${{ env.CRDS_LOCAL_URL }}" >> $GITHUB_OUTPUT
     outputs:
       context: ${{ steps.context.outputs.pmap }}
       path: ${{ steps.path.outputs.path }}
