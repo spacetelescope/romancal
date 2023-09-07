@@ -55,6 +55,7 @@ env_vars = [
     "CRDS_CONTEXT=roman_0051.pmap",
     "CRDS_SERVER_URL=https://roman-crds.stsci.edu",
     'CRDS_PATH=${WORKSPACE}/roman-crds-test-cache',
+    'CRDS_LOCKING_MODE=filelock',
     'DD_ENV=ci',
     'DD_SERVICE=romancal',
 ]
