@@ -89,7 +89,14 @@ def add_synthetic_sources(
         yy, xx = np.mgrid[slc_lg]
         model_data = fit_model(xx, yy) * image_model.data.unit
         model_err = np.sqrt(model_data.value) * model_data.unit
-        synth_image[slc_lg] += model_data
+        synth_image[slc_lg] += (
+            np.random.normal(
+                model_data.to_value(image_model.data.unit),
+                model_err.to_value(image_model.data.unit),
+                size=model_data.shape,
+            )
+            * image_model.data.unit
+        )
         synth_err[slc_lg] = np.sqrt(synth_err[slc_lg] ** 2 + model_err**2)
 
 
@@ -125,6 +132,7 @@ def test_psf_fit(setup_inputs, dx, dy, true_amp, seed=42):
 
     # generate an ImageModel
     image_model = setup_inputs(seed=seed)
+    init_data_stddev = np.std(image_model.data.value)
 
     # add synthetic sources to the ImageModel:
     true_x = image_model_shape[0] / 2 + dx
@@ -153,5 +161,19 @@ def test_psf_fit(setup_inputs, dx, dy, true_amp, seed=42):
     delta_x = np.abs(true_x - results_table["x_fit"]) / results_table["x_err"]
     delta_y = np.abs(true_y - results_table["y_fit"]) / results_table["y_err"]
 
-    assert np.all(delta_x < 3)
-    assert np.all(delta_y < 3)
+    sigma_threshold = 3.5
+    assert np.all(delta_x < sigma_threshold)
+    assert np.all(delta_y < sigma_threshold)
+
+    # now check that the uncertainties aren't way too large, which could cause
+    # the above test to pass even when the fits are bad. Use overly-simple approximation
+    # that astrometric uncertainty be proportional to the PSF's FWHM / SNR:
+    approx_snr = true_amp / init_data_stddev
+    approx_fwhm = 1
+    approx_centroid_err = approx_fwhm / approx_snr
+
+    # centroid err heuristic above is an underestimate, so we scale it up:
+    scale_factor_approx = 100
+
+    assert np.all(results_table["x_err"] < scale_factor_approx * approx_centroid_err)
+    assert np.all(results_table["y_err"] < scale_factor_approx * approx_centroid_err)

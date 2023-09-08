@@ -19,7 +19,6 @@ dependencies = [
     'gwcs >=0.18.1',
     'jsonschema >=4.8',
     'numpy >=1.22',
-    # temporary pin to photutils dev until >1.8.0 is available:
     'photutils @ git+https://github.com/astropy/photutils.git',
     'pyparsing >=2.4.7',
     'requests >=2.22',
