@@ -100,6 +100,8 @@ general
 
 - Add ``dev`` install option. [#835]
 
+- Add PSF photometry methods [#794]
+
 0.11.0 (2023-05-31)
 ===================
 
