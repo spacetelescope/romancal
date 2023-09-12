@@ -11,6 +11,8 @@ ramp_fitting
 
 - Inititial implementation of the Uneven Ramp fitting [#779]
 
+- Fix opening mode for references to be read-only [#854]
+
 
 0.12.0 (2023-08-18)
 ===================
@@ -95,6 +97,8 @@ general
 - Remove use of the deprecated ``pkg_resources`` module from ``setuptools``. [#829]
 
 - Add ``dev`` install option. [#835]
+
+- Add PSF photometry methods [#794]
 
 0.11.0 (2023-05-31)
 ===================

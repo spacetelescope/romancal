@@ -20,14 +20,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  crds:
-    name: retrieve current CRDS context
+  data:
+    name: retrieve current CRDS context, and WebbPSF data
     runs-on: ubuntu-latest
     env:
       OBSERVATORY: roman
       CRDS_SERVER_URL: https://roman-crds-test.stsci.edu
-      CRDS_PATH: /tmp/crds_cache
+      CRDS_PATH: /tmp/data
+    outputs:
+      context: ${{ steps.context.outputs.pmap }}
+      path: ${{ steps.path.outputs.path }}
+      server: ${{ steps.server.outputs.url }}
+      hash: ${{ steps.data_hash.outputs.hash }}
+      webbpsf_path: ${{ steps.webbpsf_path.outputs.path }}
     steps:
+      # crds:
       - id: context
         run: >
           echo "pmap=$(
@@ -40,10 +47,27 @@ jobs:
         run: echo "path=${{ env.CRDS_PATH }}" >> $GITHUB_OUTPUT
       - id: server
         run: echo "url=${{ env.CRDS_SERVER_URL }}" >> $GITHUB_OUTPUT
-    outputs:
-      context: ${{ steps.context.outputs.pmap }}
-      path: ${{ steps.path.outputs.path }}
-      server: ${{ steps.server.outputs.url }}
+      # webbpsf:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - id: data
+        run: |
+          echo "webbpsf_url=https://stsci.box.com/shared/static/n1fealx9q0m6sdnass6wnyfikvxtc0zz.gz" >> $GITHUB_OUTPUT
+          echo "path=/tmp/data" >> $GITHUB_OUTPUT
+      - run: |
+          mkdir -p ${{ steps.data.outputs.path }}
+          wget ${{ steps.data.outputs.webbpsf_url }} -O ${{ steps.data.outputs.path }}/minimal-webbpsf-data.tar.gz
+          cd ${{ steps.data.outputs.path }}
+          tar -xzvf minimal-webbpsf-data.tar.gz
+      - id: data_hash
+        run: echo "hash=${{ steps.data.outputs.hash }}" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v3
+        with:
+          path: ${{ steps.data.outputs.path }}
+          key: data-${{ steps.data_hash.outputs.hash }}
+      - id: webbpsf_path
+        run: echo "path=${{ steps.data.outputs.path }}/webbpsf-data" >> $GITHUB_OUTPUT
   check:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
     with:
@@ -53,7 +77,7 @@ jobs:
         - linux: build-dist
   test:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
-    needs: [ crds ]
+    needs: [ data ]
     with:
       setenv: |
         CRDS_PATH: ${{ needs.crds.outputs.path }}
@@ -65,8 +89,9 @@ jobs:
         DD_GIT_REPOSITORY_URL: ${{ github.repositoryUrl }}
         DD_GIT_COMMIT_SHA: ${{ github.sha }}
         DD_GIT_BRANCH: ${{ github.ref_name }}
-      cache-path: /tmp/crds_cache
-      cache-key: crds-${{ needs.crds_context.outputs.pmap }}
+        WEBBPSF_PATH: ${{ needs.data.outputs.webbpsf_path }}
+      cache-path: ${{ needs.data.outputs.path }}
+      cache-key: data-${{ needs.data.outputs.hash }}
       envs: |
         - linux: py39-oldestdeps-cov
           pytest-results-summary: true

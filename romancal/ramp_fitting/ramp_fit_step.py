@@ -43,9 +43,9 @@ class RampFitStep(RomanStep):
             readnoise_filename = self.get_reference_file(input_model, "readnoise")
             gain_filename = self.get_reference_file(input_model, "gain")
             log.info("Using READNOISE reference file: %s", readnoise_filename)
-            readnoise_model = rdd.open(readnoise_filename, mode="rw")
+            readnoise_model = rdd.open(readnoise_filename, mode="r")
             log.info("Using GAIN reference file: %s", gain_filename)
-            gain_model = rdd.open(gain_filename, mode="rw")
+            gain_model = rdd.open(gain_filename, mode="r")
 
             # Do the fitting.
             algorithm = self.algorithm.lower()
