@@ -6,6 +6,8 @@ general
 
 - Fix bug with ``ModelContainer.get_crds_parameters`` being a property not a method [#846]
 
+- Fix random seed bug in PSF fitting methods [#862]
+
 ramp_fitting
 ------------
 
