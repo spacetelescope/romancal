@@ -90,7 +90,7 @@ def add_synthetic_sources(
         model_data = fit_model(xx, yy) * image_model.data.unit
         model_err = np.sqrt(model_data.value) * model_data.unit
         synth_image[slc_lg] += (
-            np.random.normal(
+            rng.normal(
                 model_data.to_value(image_model.data.unit),
                 model_err.to_value(image_model.data.unit),
                 size=model_data.shape,
