@@ -68,6 +68,7 @@ class ResampleStep(RomanStep):
         in_memory = boolean(default=True)
     """  # noqa: E501
 
+    # TODO: provide 'drizpars' file (then remove _set_spec_defaults?)
     reference_file_types = []
 
     def process(self, input):
@@ -83,15 +84,15 @@ class ResampleStep(RomanStep):
             except Exception:
                 # single ASDF filename
                 input_models = ModelContainer([input])
-            if hasattr(input_models, "asn_table") and len(input_models.asn_table):
+            if hasattr(input_models, "asn_table") and len(
+                input_models.asn_table
+            ):
                 output = input_models.asn_table["products"][0]["name"]
             elif hasattr(input_models[0], "meta"):
                 output = input_models[0].meta.filename
         elif isinstance(input, ModelContainer):
             input_models = input
-            output = (
-                f"{os.path.commonprefix([x.meta.filename for x in input_models])}.asdf"
-            )
+            output = f"{os.path.commonprefix([x.meta.filename for x in input_models])}.asdf"
             if len(output) == 0:
                 output = "resample_output.asdf"
         else:
@@ -109,21 +110,20 @@ class ResampleStep(RomanStep):
         self.wht_type = self.weight_type
         if "drizpars" in self.reference_file_types:
             ref_filename = self.get_reference_file(input_models[0], "drizpars")
-        else:  # no drizpars reference file found
-            ref_filename = "N/A"
-
-        if ref_filename == "N/A":
-            self.log.info("No drizpars reference file found.")
-            kwargs = self._set_spec_defaults()
-        else:
             self.log.info(f"Using drizpars reference file: {ref_filename}")
             kwargs = self.get_drizpars(ref_filename, input_models)
+        else:
+            # no drizpars reference file found
+            self.log.info("No drizpars reference file found.")
+            kwargs = self._set_spec_defaults()
 
         kwargs["allowed_memory"] = self.allowed_memory
 
         # Issue a warning about the use of exptime weighting
         if self.wht_type == "exptime":
-            self.log.warning("Use of EXPTIME weighting will result in incorrect")
+            self.log.warning(
+                "Use of EXPTIME weighting will result in incorrect"
+            )
             self.log.warning("propagated errors in the resampled product")
 
         # Custom output WCS parameters.
@@ -155,7 +155,6 @@ class ResampleStep(RomanStep):
 
     def _final_updates(self, model, input_models, kwargs):
         model.meta.cal_step["resample"] = "COMPLETE"
-        self.update_wcs(model)
         util.update_s_region_imaging(model)
         if (
             input_models.asn_pool_name is not None
@@ -178,6 +177,36 @@ class ResampleStep(RomanStep):
 
     @staticmethod
     def _check_list_pars(vals, name, min_vals=None):
+        """
+        Check if a specific keyword parameter is properly formatted.
+
+        Parameters
+        ----------
+        vals : list or tuple
+            A list or tuple containing a pair of values currently assigned to the
+            keyword parameter `name`. Both values must be either `None` or not `None`.
+        name : str
+            The name of the keyword parameter.
+        min_vals : list or tuple, optional
+            A list or tuple containing a pair of minimum values to be assigned
+            to `name`, by default None.
+
+        Returns
+        -------
+        None or list
+            If either `vals` is set to `None` (or both of its elements), the
+            returned result will be `None`. Otherwise, the returned result will be
+            a list containing the current values assigned to `name`.
+
+        Raises
+        ------
+        ValueError
+            This error will be raised if any of the following conditions are met:
+            - the number of elements of `vals` is not 2;
+            - the currently assigned values of `vals` are smaller than the
+            minimum value provided;
+            - one element is `None` and the other is not `None`.
+        """
         if vals is None:
             return None
         if len(vals) != 2:
@@ -192,7 +221,9 @@ class ResampleStep(RomanStep):
                 )
             return list(vals)
         else:
-            raise ValueError(f"Both '{name}' values must be either None or not None.")
+            raise ValueError(
+                f"Both '{name}' values must be either None or not None."
+            )
 
     @staticmethod
     def _load_custom_wcs(asdf_wcs_file, output_shape):
@@ -274,7 +305,9 @@ class ResampleStep(RomanStep):
 
         # With presence of wild-card rows, code should never trigger this logic
         if row is None:
-            self.log.error("No row found in %s matching input data.", ref_filename)
+            self.log.error(
+                "No row found in %s matching input data.", ref_filename
+            )
             raise ValueError
 
         # Define the keys to pull from drizpars reffile table.
@@ -360,35 +393,3 @@ class ResampleStep(RomanStep):
                 log.info("  using: %s=%s", k, repr(v))
 
         return kwargs
-
-    def update_wcs(self, model):
-        """
-        Update WCS keywords of the resampled image.
-        """
-        # Delete any SIP-related keywords first
-        pattern = r"^(cd[12]_[12]|[ab]p?_\d_\d|[ab]p?_order)$"
-        regex = re.compile(pattern)
-
-        keys = list(model._instance.meta.wcsinfo.keys())
-        for key in keys:
-            if regex.match(key):
-                del model._instance.meta.wcsinfo[key]
-
-        # Write new PC-matrix-based WCS based on GWCS model
-        transform = model.meta.wcs.forward_transform
-        model.meta.wcsinfo.ra_ref = transform[6].lon.value
-        model.meta.wcsinfo.dec_ref = transform[6].lat.value
-
-        # Remove no longer relevant WCS keywords
-        rm_keys = [
-            "v2_ref",
-            "v3_ref",
-            "ra_ref",
-            "dec_ref",
-            "roll_ref",
-            "v3yangle",
-            "vparity",
-        ]
-        for key in rm_keys:
-            if key in model._instance.meta.wcsinfo:
-                del model._instance.meta.wcsinfo[key]

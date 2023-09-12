@@ -31,7 +31,8 @@ class ResampleData:
          weight type, exposure time (if relevant), and kernel, and merges
          them with any user-provided values.
       2. Creates output WCS based on input images and define mapping function
-         between all input arrays and the output array.
+         between all input arrays and the output array. Alternatively, a custom,
+         user-provided WCS object can be used instead.
       3. Updates output data model with output arrays from drizzle, including
          a record of metadata from all input models.
     """
@@ -73,6 +74,16 @@ class ResampleData:
                 deleted from memory. Default value is `True` to keep
                 all products in memory.
         """
+        if (
+            (input_models is None)
+            or (len(input_models) == 0)
+            or (not any(input_models))
+        ):
+            raise ValueError(
+                "No input has been provided. Input should be a list of datamodel(s) or "
+                "a ModelContainer."
+            )
+
         self.input_models = input_models
         self.output_filename = output
         self.pscale_ratio = pscale_ratio
@@ -102,14 +113,14 @@ class ResampleData:
         else:
             log.info(f"Output pixel scale ratio: {pscale_ratio}")
 
+        # build the output WCS object
         if output_wcs:
-            # Use user-supplied reference WCS for the resampled image:
+            # use the provided WCS object
             self.output_wcs = output_wcs
             if output_shape is not None:
                 self.output_wcs.array_shape = output_shape[::-1]
-
         else:
-            # Define output WCS based on all inputs, including a reference WCS:
+            # determine output WCS based on all inputs, including a reference WCS
             self.output_wcs = resample_utils.make_output_wcs(
                 self.input_models,
                 pscale_ratio=self.pscale_ratio,
@@ -172,9 +183,13 @@ class ResampleData:
             indx = exposure[0].meta.filename.rfind(".")
             output_type = exposure[0].meta.filename[indx:]
             output_root = "_".join(
-                exposure[0].meta.filename.replace(output_type, "").split("_")[:-1]
+                exposure[0]
+                .meta.filename.replace(output_type, "")
+                .split("_")[:-1]
             )
-            output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
+            output_model.meta.filename = (
+                f"{output_root}_outlier_i2d{output_type}"
+            )
 
             # Initialize the output with the wcs
             driz = gwcs_drizzle.GWCSDrizzle(
@@ -225,7 +240,9 @@ class ResampleData:
         output_model.meta.filename = self.output_filename
         output_model.meta["resample"] = {}
         output_model.meta.resample["weight_type"] = self.weight_type
-        output_model.meta.resample["pointings"] = len(self.input_models.models_grouped)
+        output_model.meta.resample["pointings"] = len(
+            self.input_models.models_grouped
+        )
 
         if self.blendheaders:
             log.info("Skipping blendheaders for now.")
@@ -302,15 +319,14 @@ class ResampleData:
                     f"{repr(model.meta.filename)}. Skipping ..."
                 )
                 continue
-
             elif variance.shape != model.data.shape:
                 log.warning(
                     f"Data shape mismatch for '{name}' for model "
-                    f"{repr(model.meta.filename)}. Skipping ..."
+                    f"{repr(model.meta.filename)}. Skipping..."
                 )
                 continue
 
-            # Make input weight map of unity where there is science data
+            # create a unit weight map for all the input pixels with science data
             inwht = resample_utils.build_driz_weight(
                 model, weight_type=None, good_bits=self.good_bits
             )
@@ -318,7 +334,8 @@ class ResampleData:
             resampled_variance = np.zeros_like(output_model.data)
             outwht = np.zeros_like(output_model.data)
             outcon = np.zeros_like(output_model.context)
-            # Resample the variance array. Fill "unpopulated" pixels with NaNs.
+
+            # resample the variance array (fill "unpopulated" pixels with NaNs)
             self.drizzle_arrays(
                 variance,
                 inwht,
@@ -366,7 +383,9 @@ class ResampleData:
         output_model.meta.exposure.exposure_time = total_exposure_time
         output_model.meta.exposure.start_time = min(exposure_times["start"])
         output_model.meta.exposure.end_time = max(exposure_times["end"])
-        output_model.meta.resample["product_exposure_time"] = total_exposure_time
+        output_model.meta.resample[
+            "product_exposure_time"
+        ] = total_exposure_time
 
     @staticmethod
     def drizzle_arrays(
@@ -527,7 +546,9 @@ class ResampleData:
 
         # Compute the mapping between the input and output pixel coordinates
         # for use in drizzle.cdrizzle.tdriz
-        pixmap = resample_utils.calc_gwcs_pixmap(input_wcs, output_wcs, insci.shape)
+        pixmap = resample_utils.calc_gwcs_pixmap(
+            input_wcs, output_wcs, insci.shape
+        )
 
         log.debug(f"Pixmap shape: {pixmap[:,:,0].shape}")
         log.debug(f"Input Sci shape: {insci.shape}")
