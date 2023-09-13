@@ -137,13 +137,12 @@ def create_wcs_object_without_distortion(fiducial_world, pscale, shape, **kwargs
 
 @pytest.fixture
 def asdf_wcs_file():
-    def _create_asdf_wcs_file(tmp_path, pixel_shape, bounding_box):
+    def _create_asdf_wcs_file(tmp_path):
         file_path = tmp_path / "wcs.asdf"
         wcs_data = create_wcs_object_without_distortion(
             (10, 0),
             (0.000031, 0.000031),
             (100, 100),
-            **{"pixel_shape": pixel_shape, "bounding_box": bounding_box},
         )
         wcs = {"wcs": wcs_data}
         with AsdfFile(wcs) as af:
@@ -188,6 +187,17 @@ def test_load_custom_wcs_invalid_file(tmp_path):
 
     with pytest.raises(ValueError):
         step._load_custom_wcs(str(invalid_file), (512, 512))
+
+
+def test_load_custom_wcs_asdf_without_wcs_attribute(tmp_path):
+    step = ResampleStep()
+    file_path = tmp_path / "asdf_file.asdf"
+    wcs = {}
+    with AsdfFile(wcs) as af:
+        af.write_to(file_path)
+
+    with pytest.raises(KeyError):
+        step._load_custom_wcs(str(file_path), (100, 100))
 
 
 @pytest.mark.parametrize(

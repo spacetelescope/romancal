@@ -228,7 +228,7 @@ class ResampleStep(RomanStep):
         with asdf.open(asdf_wcs_file) as af:
             wcs = deepcopy(af.tree["wcs"])
 
-        if output_shape is not None or wcs is None:
+        if output_shape is not None:
             wcs.array_shape = output_shape[::-1]
         elif wcs.pixel_shape is not None:
             wcs.array_shape = wcs.pixel_shape[::-1]
@@ -283,7 +283,7 @@ class ResampleStep(RomanStep):
         filter_match = False
         # look for row that applies to this set of input data models
         for n, filt, num in zip(
-            range(0, len(drizpars_table)),
+            range(len(drizpars_table)),
             drizpars_table["filter"],
             drizpars_table["numimages"],
         ):
@@ -329,16 +329,16 @@ class ResampleStep(RomanStep):
             if isinstance(v, np.bytes_):
                 reffile_drizpars[k] = v.decode("UTF-8")
 
-        all_drizpars = {**reffile_drizpars, **user_drizpars}
+        all_drizpars = reffile_drizpars | user_drizpars
 
-        kwargs = dict(
-            good_bits=GOOD_BITS,
-            single=self.single,
-            blendheaders=self.blendheaders,
+        kwargs = (
+            dict(
+                good_bits=GOOD_BITS,
+                single=self.single,
+                blendheaders=self.blendheaders,
+            )
+            | all_drizpars
         )
-
-        kwargs.update(all_drizpars)
-
         for k, v in kwargs.items():
             self.log.debug(f"   {k}={v}")
 
