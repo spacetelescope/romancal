@@ -8,6 +8,8 @@ general
 
 - Fix random seed bug in PSF fitting methods [#862]
 
+- Fix ``compare_asdf`` to return a value allowing it to compare asdf files [#867]
+
 ramp_fitting
 ------------
 
