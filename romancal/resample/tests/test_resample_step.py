@@ -1,34 +1,25 @@
 import pytest
-import numpy as np
-from astropy import units as u
-from gwcs import WCS
-from astropy.modeling import models
-from astropy.time import Time
+from asdf import AsdfFile
 from astropy import coordinates as coord
+from astropy import units as u
+from astropy.modeling import models
+from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
+
 from romancal.resample import ResampleStep
-from romancal.resample import gwcs_drizzle, resample_utils
-from romancal.datamodels import ModelContainer
-from asdf import AsdfFile
 
 
 class MockModel:
-    def __init__(
-        self, pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio
-    ):
+    def __init__(self, pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio):
         self.meta = MockMeta(
             pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio
         )
 
 
 class MockMeta:
-    def __init__(
-        self, pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio
-    ):
-        self.photometry = MockPhotometry(
-            pixelarea_steradians, pixelarea_arcsecsq
-        )
+    def __init__(self, pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio):
+        self.photometry = MockPhotometry(pixelarea_steradians, pixelarea_arcsecsq)
         self.resample = MockResample(pixel_scale_ratio)
 
 
@@ -76,9 +67,7 @@ class Mosaic:
         return datamodels.MosaicModel(l3)
 
 
-def create_wcs_object_without_distortion(
-    fiducial_world, pscale, shape, **kwargs
-):
+def create_wcs_object_without_distortion(fiducial_world, pscale, shape, **kwargs):
     """
     Create a simple WCS object without either distortion or rotation.
 
@@ -271,9 +260,7 @@ def test_update_phot_keywords(
     expected_arcsecsq,
 ):
     step = ResampleStep()
-    model = MockModel(
-        pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio
-    )
+    model = MockModel(pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio)
 
     step.update_phot_keywords(model)
 

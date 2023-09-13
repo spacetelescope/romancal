@@ -183,13 +183,9 @@ class ResampleData:
             indx = exposure[0].meta.filename.rfind(".")
             output_type = exposure[0].meta.filename[indx:]
             output_root = "_".join(
-                exposure[0]
-                .meta.filename.replace(output_type, "")
-                .split("_")[:-1]
+                exposure[0].meta.filename.replace(output_type, "").split("_")[:-1]
             )
-            output_model.meta.filename = (
-                f"{output_root}_outlier_i2d{output_type}"
-            )
+            output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
 
             # Initialize the output with the wcs
             driz = gwcs_drizzle.GWCSDrizzle(
@@ -240,9 +236,7 @@ class ResampleData:
         output_model.meta.filename = self.output_filename
         output_model.meta["resample"] = {}
         output_model.meta.resample["weight_type"] = self.weight_type
-        output_model.meta.resample["pointings"] = len(
-            self.input_models.models_grouped
-        )
+        output_model.meta.resample["pointings"] = len(self.input_models.models_grouped)
 
         if self.blendheaders:
             log.info("Skipping blendheaders for now.")
@@ -383,9 +377,7 @@ class ResampleData:
         output_model.meta.exposure.exposure_time = total_exposure_time
         output_model.meta.exposure.start_time = min(exposure_times["start"])
         output_model.meta.exposure.end_time = max(exposure_times["end"])
-        output_model.meta.resample[
-            "product_exposure_time"
-        ] = total_exposure_time
+        output_model.meta.resample["product_exposure_time"] = total_exposure_time
 
     @staticmethod
     def drizzle_arrays(
@@ -546,9 +538,7 @@ class ResampleData:
 
         # Compute the mapping between the input and output pixel coordinates
         # for use in drizzle.cdrizzle.tdriz
-        pixmap = resample_utils.calc_gwcs_pixmap(
-            input_wcs, output_wcs, insci.shape
-        )
+        pixmap = resample_utils.calc_gwcs_pixmap(input_wcs, output_wcs, insci.shape)
 
         log.debug(f"Pixmap shape: {pixmap[:,:,0].shape}")
         log.debug(f"Input Sci shape: {insci.shape}")
