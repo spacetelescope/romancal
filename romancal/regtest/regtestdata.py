@@ -528,5 +528,4 @@ def _data_glob_url(*url_parts, root=None):
 def compare_asdf(result, truth, **kwargs):
     f = StringIO()
     asdf_diff([result, truth], minimal=False, iostream=f, **kwargs)
-    if f.getvalue():
-        f.getvalue()
+    return f.getvalue() or None
