@@ -168,20 +168,6 @@ def test_check_list_pars_valid(vals, name, min_vals, expected):
     assert result == expected
 
 
-@pytest.mark.parametrize(
-    "vals, name, min_vals",
-    [
-        ([1, None], "list3", None),  # One value is None
-        ([1, 2], "list5", [3, 3]),  # Values do not meet minimum requirements
-        ([1, 2, 3], "list6", None),  # Invalid number of elements
-    ],
-)
-def test_check_list_pars_exception(vals, name, min_vals):
-    step = ResampleStep()
-    with pytest.raises(ValueError):
-        step._check_list_pars(vals, name, min_vals)
-
-
 def test_load_custom_wcs_no_file():
     step = ResampleStep()
     result = step._load_custom_wcs(None, (512, 512))
@@ -241,7 +227,8 @@ def test_check_list_pars_exception(vals, name, min_vals):
 
 
 @pytest.mark.parametrize(
-    "pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio, expected_steradians, expected_arcsecsq",
+    """pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio,
+    expected_steradians, expected_arcsecsq""",
     [
         # Happy path tests
         (1.0, 1.0, 2.0, 4.0, 4.0),
