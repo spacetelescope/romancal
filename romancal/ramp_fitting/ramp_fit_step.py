@@ -117,12 +117,26 @@ class RampFitStep(RomanStep):
             image_info[4][...] *= gain_model.data.value  # err
 
         readnoise_model.close()
-        gain_model.close()
 
         # Save the OLS optional fit product, if it exists
         if opt_info is not None:
+            # We should scale these by the gain, too.
+            # opt_info = (slope, sigslope, var_poisson, var_readnoise, yint,
+            # sig_yint,
+            # ped_int, weights, cr_mag_seg
+            opt_info[0][...] *= gain_model.data.value  # slope
+            opt_info[1][...] *= gain_model.data.value  # sigslope
+            opt_info[2][...] *= gain_model.data.value**2  # var_poisson
+            opt_info[3][...] *= gain_model.data.value**2  # var_readnoise
+            opt_info[4][...] *= gain_model.data.value  # yint
+            opt_info[5][...] *= gain_model.data.value  # sigyint
+            opt_info[6][...] *= gain_model.data.value  # pedestal
+            # no change to weights due to gain
+            opt_info[8][...] *= gain_model.data.value  # crmag
             opt_model = create_optional_results_model(input_model, opt_info)
             self.save_model(opt_model, "fitopt", output_file=self.opt_name)
+
+        gain_model.close()
 
         # All pixels saturated, therefore returning an image file with zero data
         if image_info is None:
