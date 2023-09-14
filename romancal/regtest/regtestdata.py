@@ -635,7 +635,18 @@ def compare_asdf(result, truth, **kwargs):
         TimeOperator(types=[astropy.time.Time]),
         WCSOperator(types=[gwcs.WCS]),
     ]
-    with asdf.open(result) as af0, asdf.open(truth) as af1:
+    # warnings can be seen in regtest runs which indicate
+    # that ddtrace logs are evaluated at times after the below
+    # with statement exits resulting in access attempts on the
+    # closed asdf file. To try and avoid that we disable
+    # lazy loading and memmory mapping
+    open_kwargs = {
+        "lazy_load": False,
+        "copy_arrays": True,
+    }
+    with asdf.open(result, **open_kwargs) as af0, asdf.open(
+        truth, **open_kwargs
+    ) as af1:
         diff = deepdiff.DeepDiff(
             af0.tree,
             af1.tree,
