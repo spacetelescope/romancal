@@ -1,6 +1,7 @@
 import os
 import os.path as op
 import pprint
+import re
 import shutil
 import sys
 from difflib import unified_diff
@@ -528,4 +529,5 @@ def _data_glob_url(*url_parts, root=None):
 def compare_asdf(result, truth, **kwargs):
     f = StringIO()
     asdf_diff([result, truth], minimal=False, iostream=f, **kwargs)
-    return f.getvalue() or None
+    # return string (stripping shell color characters) or None
+    return re.sub(r'[\x1b](.+)[m]', '', f.getvalue()) or None
