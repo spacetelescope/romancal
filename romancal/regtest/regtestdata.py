@@ -5,18 +5,23 @@ import shutil
 import sys
 from difflib import unified_diff
 from glob import glob as _sys_glob
-from io import StringIO
 from pathlib import Path
 
 import asdf
+import astropy.time
+import deepdiff
+import gwcs
+import numpy as np
 import requests
-from asdf.commands.diff import diff as asdf_diff
+from astropy.units import Quantity
 from ci_watson.artifactory_helpers import (
     BigdataError,
     check_url,
     get_bigdata,
     get_bigdata_root,
 )
+from deepdiff.operator import BaseOperator
+from gwcs.converters.tests.test_wcs import _assert_wcs_equal
 
 # from romancal.lib.suffix import replace_suffix
 from romancal.stpipe import RomanStep
@@ -525,8 +530,117 @@ def _data_glob_url(*url_parts, root=None):
     return url_paths
 
 
+class NDArrayTypeOperator(BaseOperator):
+    def __init__(self, rtol=1e-05, atol=1e-08, equal_nan=True, **kwargs):
+        super().__init__(**kwargs)
+        self.rtol = rtol
+        self.atol = atol
+        self.equal_nan = equal_nan
+
+    def give_up_diffing(self, level, diff_instance):
+        a, b = level.t1, level.t2
+        meta = {}
+        if a.shape != b.shape:
+            meta["shapes"] = [a.shape, b.shape]
+        if a.dtype != b.dtype:
+            meta["dtypes"] = [a.dtype, b.dtype]
+        if isinstance(a, Quantity) and isinstance(b, Quantity):
+            if a.unit != b.unit:
+                meta["units"] = [a.unit, b.unit]
+        if not meta:  # only compare if shapes and dtypes match
+            if not np.allclose(
+                a, b, rtol=self.rtol, atol=self.atol, equal_nan=self.equal_nan
+            ):
+                abs_diff = np.abs(a - b)
+                index = np.unravel_index(np.nanargmax(abs_diff), a.shape)
+                meta["worst_abs_diff"] = {
+                    "index": index,
+                    "value": abs_diff[index],
+                }
+                with np.errstate(invalid="ignore", divide="ignore"):
+                    # 0 / 0 == nan and produces an 'invalid' error
+                    # 1 / 0 == inf and produces a 'divide' error
+                    # ignore these here for computing the fractional diff
+                    fractional_diff = np.abs(a / b)
+                index = np.unravel_index(np.nanargmax(fractional_diff), a.shape)
+                meta["worst_fractional_diff"] = {
+                    "index": index,
+                    "value": fractional_diff[index],
+                }
+                meta["abs_diff"] = np.nansum(np.abs(a - b))
+                meta["n_diffs"] = np.count_nonzero(
+                    np.isclose(
+                        a, b, rtol=self.rtol, atol=self.atol, equal_nan=self.equal_nan
+                    )
+                )
+        if meta:
+            diff_instance.custom_report_result("arrays_differ", level, meta)
+        return True
+
+
+class TimeOperator(BaseOperator):
+    def give_up_diffing(self, level, diff_instance):
+        if level.t1 != level.t2:
+            diff_instance.custom_report_result(
+                "times_differ",
+                level,
+                {
+                    "difference": level.t1 - level.t2,
+                },
+            )
+        return True
+
+
+def wcs_equal(a, b):
+    try:
+        # can this be made part of the public gwcs api?
+        _assert_wcs_equal(a, b)
+        return True
+    except AssertionError:
+        # TODO return information about difference
+        return False
+
+
+class WCSOperator(BaseOperator):
+    def give_up_diffing(self, level, diff_instance):
+        if not wcs_equal(level.t1, level.t2):
+            diff_instance.custom_report_result(
+                "wcs_differ",
+                level,
+                {
+                    "extra": "information",
+                },
+            )
+        return True
+
+
 def compare_asdf(result, truth, **kwargs):
-    f = StringIO()
-    asdf_diff([result, truth], minimal=False, iostream=f, **kwargs)
-    if f.getvalue():
-        f.getvalue()
+    exclude_paths = []
+    for path in kwargs.get("ignore", []):
+        key_path = "".join([f"['{k}']" for k in path.split(".")])
+        exclude_paths.append(f"root{key_path}")
+    ndarray_kwargs = {}
+    for k in ("rtol", "atol", "equal_nan"):
+        if k in kwargs:
+            ndarray_kwargs[k] = kwargs[k]
+    operators = [
+        NDArrayTypeOperator(
+            types=[asdf.tags.core.NDArrayType, np.ndarray], **ndarray_kwargs
+        ),
+        TimeOperator(types=[astropy.time.Time]),
+        WCSOperator(types=[gwcs.WCS]),
+    ]
+    with asdf.open(result) as af0, asdf.open(truth) as af1:
+        diff = deepdiff.DeepDiff(
+            af0.tree,
+            af1.tree,
+            ignore_nan_inequality=kwargs.get("equal_nan", False),
+            custom_operators=operators,
+            exclude_paths=exclude_paths,
+        )
+        # the conversion between NDArrayType and ndarray adds a bunch
+        # of type changes, ignore these for now.
+        # TODO Ideally we could find a way to remove just the NDArrayType ones
+        if "type_changes" in diff:
+            del diff["type_changes"]
+        return diff or None
