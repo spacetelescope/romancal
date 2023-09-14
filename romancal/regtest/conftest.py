@@ -203,10 +203,10 @@ def rtdata_module(artifactory_repos, envopt, request, jail):
 @pytest.fixture
 def ignore_asdf_paths():
     ignore_attr = [
-        "meta.[date, filename]",
+        "roman.meta.[date, filename]",
         "asdf_library",
         "history",
-        "cal_logs",
+        "roman.cal_logs",
     ]
 
     return {"ignore": ignore_attr}
