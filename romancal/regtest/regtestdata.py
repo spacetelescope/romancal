@@ -21,7 +21,7 @@ from ci_watson.artifactory_helpers import (
     get_bigdata_root,
 )
 from deepdiff.operator import BaseOperator
-from gwcs.converters.tests.test_wcs import _assert_wcs_equal
+from gwcs.wcstools import grid_from_bounding_box
 
 # from romancal.lib.suffix import replace_suffix
 from romancal.stpipe import RomanStep
@@ -591,25 +591,30 @@ class TimeOperator(BaseOperator):
         return True
 
 
-def wcs_equal(a, b):
-    try:
-        # can this be made part of the public gwcs api?
-        _assert_wcs_equal(a, b)
-        return True
-    except AssertionError:
-        # TODO return information about difference
-        return False
+def _wcs_to_ra_dec(wcs):
+    x, y = grid_from_bounding_box(wcs.bounding_box)
+    return wcs(x, y)
 
 
 class WCSOperator(BaseOperator):
     def give_up_diffing(self, level, diff_instance):
-        if not wcs_equal(level.t1, level.t2):
+        # for comparing wcs instances this function evaluates
+        # each wcs and compares the resulting ra and dec outputs
+        # TODO should we compare the bounding boxes?
+        ra_a, dec_a = _wcs_to_ra_dec(level.t1)
+        ra_b, dec_b = _wcs_to_ra_dec(level.t2)
+        meta = {}
+        for name, a, b in [("ra", ra_a, ra_b), ("dec", dec_a, dec_b)]:
+            # TODO do we want to do something fancier than allclose?
+            if not np.allclose(a, b):
+                meta[name] = {
+                    "abs_diff": np.abs(a - b),
+                }
+        if meta:
             diff_instance.custom_report_result(
                 "wcs_differ",
                 level,
-                {
-                    "extra": "information",
-                },
+                meta,
             )
         return True
 
