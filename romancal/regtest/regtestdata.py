@@ -530,4 +530,4 @@ def compare_asdf(result, truth, **kwargs):
     f = StringIO()
     asdf_diff([result, truth], minimal=False, iostream=f, **kwargs)
     # return string (stripping shell color characters) or None
-    return re.sub(r'[\x1b](.+)[m]', '', f.getvalue()) or None
+    return re.sub(r"[\x1b](.+)[m]", "", f.getvalue()) or None
