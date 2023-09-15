@@ -619,18 +619,45 @@ class WCSOperator(BaseOperator):
         return True
 
 
-def compare_asdf(result, truth, **kwargs):
+def compare_asdf(
+    result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=True, pprint_diff=True
+):
+    """
+    Compare 2 asdf files: result and truth. Note that this comparison is
+    asymmetric (swapping result and truth will give a different result).
+
+    Parameters
+    ----------
+
+    result : str
+        Filename of result asdf file
+
+    truth : str
+        Filename of truth asdf file
+
+    ignore : list
+        List of tree node paths to ignore during the comparison
+
+    rtol : float
+        rtol argument passed to `numpyp.allclose`
+
+    atol : float
+        atol argument passed to `numpyp.allclose`
+
+    equal_nan : bool
+        Ignore nan inequality
+
+    pprint : bool
+        pretty print diff output if a difference is found
+    """
     exclude_paths = []
-    for path in kwargs.get("ignore", []):
+    ignore = ignore or []
+    for path in ignore:
         key_path = "".join([f"['{k}']" for k in path.split(".")])
         exclude_paths.append(f"root{key_path}")
-    ndarray_kwargs = {}
-    for k in ("rtol", "atol", "equal_nan"):
-        if k in kwargs:
-            ndarray_kwargs[k] = kwargs[k]
     operators = [
         NDArrayTypeOperator(
-            types=[asdf.tags.core.NDArrayType, np.ndarray], **ndarray_kwargs
+            rtol, atol, equal_nan, types=[asdf.tags.core.NDArrayType, np.ndarray]
         ),
         TimeOperator(types=[astropy.time.Time]),
         WCSOperator(types=[gwcs.WCS]),
@@ -650,7 +677,7 @@ def compare_asdf(result, truth, **kwargs):
         diff = deepdiff.DeepDiff(
             af0.tree,
             af1.tree,
-            ignore_nan_inequality=kwargs.get("equal_nan", False),
+            ignore_nan_inequality=equal_nan,
             custom_operators=operators,
             exclude_paths=exclude_paths,
         )
@@ -659,4 +686,8 @@ def compare_asdf(result, truth, **kwargs):
         # TODO Ideally we could find a way to remove just the NDArrayType ones
         if "type_changes" in diff:
             del diff["type_changes"]
-        return diff or None
+        if not diff:
+            return None
+        if pprint_diff:
+            pprint.pprint(diff)
+        return diff

@@ -90,11 +90,8 @@ bc0.build_cmds = bc0.build_cmds + PipInject(env.OVERRIDE_REQUIREMENTS)
 bc0.build_cmds = bc0.build_cmds + [
     "pip list"
 ]
-// Using -v below is important for seeing the full output for regtests
-// that fail a comparison with a truth file
 bc0.test_cmds = [
     "pytest -r sxf -n 0 --bigdata --slow \
-    -v \
     --basetemp=${pytest_basetemp} --junit-xml=results.xml --dist=loadscope \
     --env=${artifactoryenv} ${pytest_args}",
 ]
