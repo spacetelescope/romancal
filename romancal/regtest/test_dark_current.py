@@ -20,7 +20,8 @@ def test_dark_current_subtraction_step(rtdata, ignore_asdf_paths):
     output = "r0000101001001001001_01101_0001_WFI01_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
 
 @pytest.mark.bigdata
@@ -40,7 +41,8 @@ def test_dark_current_outfile_step(rtdata, ignore_asdf_paths):
     output = "Test_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
 
 @pytest.mark.bigdata
@@ -61,7 +63,8 @@ def test_dark_current_outfile_suffix(rtdata, ignore_asdf_paths):
     output = "Test_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
 
 @pytest.mark.bigdata
@@ -83,4 +86,5 @@ def test_dark_current_output(rtdata, ignore_asdf_paths):
     output = "r0000101001001001001_01101_0001_WFI01_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()

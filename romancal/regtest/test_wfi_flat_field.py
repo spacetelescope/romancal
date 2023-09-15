@@ -31,7 +31,8 @@ def test_flat_field_image_step(rtdata, ignore_asdf_paths):
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     RomanStep.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
 
 @pytest.mark.bigdata
@@ -64,7 +65,8 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     RomanStep.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/grism/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
 
 @metrics_logger("DMS79")
@@ -113,12 +115,13 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     RomanStep.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
 
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     step.log.info(
         "DMS79 MSG: Was proper flat fielded "
         "Level 2 data produced? : "
-        f"{(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}"
+        f"{diff.identical}"
     )
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    assert diff.identical, diff.report()
 
     # This test requires a second file, in order to meet the DMS79 requirement.
     # The test will show that two files with different observation dates match
@@ -158,12 +161,13 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     )
     RomanStep.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     step.log.info(
         "DMS79 MSG: Was proper flat fielded "
         "Level 2 data produced? : "
-        f"{(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}"
+        f"{diff.identical}"
     )
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    assert diff.identical, diff.report()
 
     # Test differing flat matches
     step.log.info(

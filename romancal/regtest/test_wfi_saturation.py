@@ -39,7 +39,8 @@ def test_saturation_image_step(rtdata, ignore_asdf_paths):
     assert "roman.pixeldq" in ramp_out.to_flat_dict()
 
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
 
 @pytest.mark.bigdata
@@ -71,4 +72,5 @@ def test_saturation_grism_step(rtdata, ignore_asdf_paths):
     assert "roman.pixeldq" in ramp_out.to_flat_dict()
 
     rtdata.get_truth(f"truth/WFI/grism/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()

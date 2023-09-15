@@ -619,9 +619,19 @@ class WCSOperator(BaseOperator):
         return True
 
 
-def compare_asdf(
-    result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=True, pprint_diff=True
-):
+class DiffResult:
+    def __init__(self, diff):
+        self.diff = diff
+
+    @property
+    def identical(self):
+        return not self.diff
+
+    def report(self, **kwargs):
+        return pprint.pformat(self.diff)
+
+
+def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=True):
     """
     Compare 2 asdf files: result and truth. Note that this comparison is
     asymmetric (swapping result and truth will give a different result).
@@ -647,8 +657,11 @@ def compare_asdf(
     equal_nan : bool
         Ignore nan inequality
 
-    pprint : bool
-        pretty print diff output if a difference is found
+    Returns
+    -------
+
+    diff_result : DiffResult
+        result of the comparison
     """
     exclude_paths = []
     ignore = ignore or []
@@ -686,8 +699,4 @@ def compare_asdf(
         # TODO Ideally we could find a way to remove just the NDArrayType ones
         if "type_changes" in diff:
             del diff["type_changes"]
-        if not diff:
-            return None
-        if pprint_diff:
-            pprint.pprint(diff)
-        return diff
+        return DiffResult(diff)

@@ -190,8 +190,9 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     )
 
     rtdata.get_truth(f"truth/WFI/image/{output}")
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     step.log.info(
         "DMS140 MSG: Was the proper absolute photometry calibrated image data produced?"
-        f" : {(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}"
+        f" : {diff.identical}"
     )
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    assert diff.identical, diff.report()
