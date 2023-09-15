@@ -687,9 +687,12 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
     with asdf.open(result, **open_kwargs) as af0, asdf.open(
         truth, **open_kwargs
     ) as af1:
+        # swap the inputs here so DeepDiff(truth, result)
+        # this will create output with 'new_value' referring to
+        # the value in the result and 'old_value' referring to the truth
         diff = deepdiff.DeepDiff(
-            af0.tree,
             af1.tree,
+            af0.tree,
             ignore_nan_inequality=equal_nan,
             custom_operators=operators,
             exclude_paths=exclude_paths,
