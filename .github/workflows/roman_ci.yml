@@ -28,10 +28,10 @@ jobs:
       CRDS_SERVER_URL: https://roman-crds-test.stsci.edu
       CRDS_PATH: /tmp/data
     outputs:
-      context: ${{ steps.context.outputs.pmap }}
-      path: ${{ steps.path.outputs.path }}
-      server: ${{ steps.server.outputs.url }}
-      hash: ${{ steps.data_hash.outputs.hash }}
+      crds_context: ${{ steps.crds_context.outputs.pmap }}
+      crds_path: ${{ steps.crds_path.outputs.path }}
+      crds_server: ${{ steps.crds_server.outputs.url }}
+      data_hash: ${{ steps.data_hash.outputs.hash }}
       webbpsf_path: ${{ steps.webbpsf_path.outputs.path }}
     steps:
       # crds:
@@ -61,7 +61,7 @@ jobs:
           cd ${{ steps.data.outputs.path }}
           tar -xzvf minimal-webbpsf-data.tar.gz
       - id: data_hash
-        run: echo "hash=${{ steps.data.outputs.hash }}" >> $GITHUB_OUTPUT
+        run: echo "hash=${{ hashFiles( steps.data.outputs.path ) }}" >> $GITHUB_OUTPUT
       - uses: actions/cache@v3
         with:
           path: ${{ steps.data.outputs.path }}
@@ -79,8 +79,8 @@ jobs:
     needs: [ data ]
     with:
       setenv: |
-        CRDS_PATH: ${{ needs.crds.outputs.path }}
-        CRDS_SERVER_URL: ${{ needs.crds.outputs.server }}
+        CRDS_PATH: ${{ needs.data.outputs.crds_path }}
+        CRDS_SERVER_URL: ${{ needs.data.outputs.crds_server }}
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
         DD_SERVICE: romancal
@@ -88,9 +88,9 @@ jobs:
         DD_GIT_REPOSITORY_URL: ${{ github.repositoryUrl }}
         DD_GIT_COMMIT_SHA: ${{ github.sha }}
         DD_GIT_BRANCH: ${{ github.ref_name }}
-        WEBBPSF_PATH: ${{ needs.data.outputs.webbpsf_path }}
-      cache-path: ${{ needs.data.outputs.path }}
-      cache-key: data-${{ needs.data.outputs.hash }}
+        WEBBPSF_PATH: ${{ needs.data.outputs.webbpsf_data_path }}
+      cache-path: ${{ needs.data.outputs.crds_path }}
+      cache-key: data-${{ needs.data.outputs.data_hash }}
       envs: |
         - linux: py39-oldestdeps-cov
           pytest-results-summary: true
