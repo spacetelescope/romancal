@@ -61,7 +61,7 @@ jobs:
           cd ${{ steps.data.outputs.path }}
           tar -xzvf minimal-webbpsf-data.tar.gz
       - id: data_hash
-        run: echo "hash=${{ hashFiles( steps.data.outputs.path ) }}" >> $GITHUB_OUTPUT
+        run: echo "hash=${{ hashFiles( '/tmp/data' ) }}" >> $GITHUB_OUTPUT
       - uses: actions/cache@v3
         with:
           path: ${{ steps.data.outputs.path }}
