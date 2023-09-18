@@ -55,11 +55,14 @@ jobs:
         run: |
           echo "path=/tmp/data" >> $GITHUB_OUTPUT
           echo "webbpsf_url=https://stsci.box.com/shared/static/n1fealx9q0m6sdnass6wnyfikvxtc0zz.gz" >> $GITHUB_OUTPUT
-      - run: mkdir -p ${{ steps.data.outputs.path }}
-      - run: wget ${{ steps.data.outputs.webbpsf_url }} -O ${{ steps.data.outputs.path }}/minimal-webbpsf-data.tar.gz
-      - run: tar -xzvf ${{ steps.data.outputs.path }}/minimal-webbpsf-data.tar.gz -C ${{ steps.data.outputs.path }}
+      - run: |
+          mkdir -p tmp/data/
+          mkdir -p ${{ steps.data.outputs.path }}
+      - run: wget ${{ steps.data.outputs.webbpsf_url }} -O tmp/minimal-webbpsf-data.tar.gz
+      - run: tar -xzvf tmp/minimal-webbpsf-data.tar.gz -C tmp/data/
       - id: data_hash
-        run: echo "hash=${{ hashFiles( '/tmp/data/**' ) }}" >> $GITHUB_OUTPUT
+        run: echo "hash=${{ hashFiles( 'tmp/data' ) }}" >> $GITHUB_OUTPUT
+      - run: mv tmp/data/* ${{ steps.data.outputs.path }}
       - uses: actions/cache@v3
         with:
           path: ${{ steps.data.outputs.path }}
@@ -86,7 +89,7 @@ jobs:
         DD_GIT_REPOSITORY_URL: ${{ github.repositoryUrl }}
         DD_GIT_COMMIT_SHA: ${{ github.sha }}
         DD_GIT_BRANCH: ${{ github.ref_name }}
-        WEBBPSF_PATH: ${{ needs.data.outputs.webbpsf_data_path }}
+        WEBBPSF_PATH: ${{ needs.data.outputs.webbpsf_path }}
       cache-path: ${{ needs.data.outputs.crds_path }}
       cache-key: data-${{ needs.data.outputs.data_hash }}
       envs: |
