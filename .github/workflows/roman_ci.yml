@@ -57,8 +57,7 @@ jobs:
           echo "webbpsf_url=https://stsci.box.com/shared/static/n1fealx9q0m6sdnass6wnyfikvxtc0zz.gz" >> $GITHUB_OUTPUT
       - run: mkdir -p ${{ steps.data.outputs.path }}
       - run: wget ${{ steps.data.outputs.webbpsf_url }} -O ${{ steps.data.outputs.path }}/minimal-webbpsf-data.tar.gz
-      - run: tar -xzvf minimal-webbpsf-data.tar.gz
-        working-directory: ${{ steps.data.outputs.path }}
+      - run: tar -xzvf ${{ steps.data.outputs.path }}/minimal-webbpsf-data.tar.gz -C ${{ steps.data.outputs.path }}
       - id: data_hash
         run: echo "hash=${{ hashFiles( steps.data.outputs.path ) }}" >> $GITHUB_OUTPUT
       - uses: actions/cache@v3
