@@ -28,11 +28,12 @@ jobs:
       CRDS_SERVER_URL: https://roman-crds-test.stsci.edu
       CRDS_PATH: /tmp/data
     outputs:
-      crds_context: ${{ steps.crds_context.outputs.pmap }}
-      crds_path: ${{ steps.crds_path.outputs.path }}
-      crds_server: ${{ steps.crds_server.outputs.url }}
-      data_hash: ${{ steps.data_hash.outputs.hash }}
+      data_path: ${{ steps.data.outputs.path }}
       webbpsf_path: ${{ steps.webbpsf_path.outputs.path }}
+      data_hash: ${{ steps.data_hash.outputs.hash }}
+      crds_path: ${{ steps.crds_path.outputs.path }}
+      crds_context: ${{ steps.crds_context.outputs.pmap }}
+      crds_server: ${{ steps.crds_server.outputs.url }}
     steps:
       # crds:
       - id: crds_context
@@ -66,7 +67,7 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: ${{ steps.data.outputs.path }}
-          key: data-${{ steps.data_hash.outputs.hash }}
+          key: data-${{ steps.data_hash.outputs.hash }}-${{ steps.crds_context.outputs.pmap }}
       - id: webbpsf_path
         run: echo "path=${{ steps.data.outputs.path }}/webbpsf-data" >> $GITHUB_OUTPUT
   check:
@@ -80,6 +81,7 @@ jobs:
     needs: [ data ]
     with:
       setenv: |
+        WEBBPSF_PATH: ${{ needs.data.outputs.webbpsf_path }}
         CRDS_PATH: ${{ needs.data.outputs.crds_path }}
         CRDS_SERVER_URL: ${{ needs.data.outputs.crds_server }}
         CRDS_CLIENT_RETRY_COUNT: 3
@@ -89,9 +91,8 @@ jobs:
         DD_GIT_REPOSITORY_URL: ${{ github.repositoryUrl }}
         DD_GIT_COMMIT_SHA: ${{ github.sha }}
         DD_GIT_BRANCH: ${{ github.ref_name }}
-        WEBBPSF_PATH: ${{ needs.data.outputs.webbpsf_path }}
-      cache-path: ${{ needs.data.outputs.crds_path }}
-      cache-key: data-${{ needs.data.outputs.data_hash }}
+      cache-path: ${{ needs.data.outputs.data_path }}
+      cache-key: data-${{ needs.data.outputs.data_hash }}-${{ needs.data.outputs.crds_context }}
       envs: |
         - linux: py39-oldestdeps-cov
           pytest-results-summary: true
