@@ -53,15 +53,14 @@ jobs:
           fetch-depth: 0
       - id: data
         run: |
-          echo "webbpsf_url=https://stsci.box.com/shared/static/n1fealx9q0m6sdnass6wnyfikvxtc0zz.gz" >> $GITHUB_OUTPUT
           echo "path=/tmp/data" >> $GITHUB_OUTPUT
-      - run: |
-          mkdir -p ${{ steps.data.outputs.path }}
-          wget ${{ steps.data.outputs.webbpsf_url }} -O ${{ steps.data.outputs.path }}/minimal-webbpsf-data.tar.gz
-          cd ${{ steps.data.outputs.path }}
-          tar -xzvf minimal-webbpsf-data.tar.gz
+          echo "webbpsf_url=https://stsci.box.com/shared/static/n1fealx9q0m6sdnass6wnyfikvxtc0zz.gz" >> $GITHUB_OUTPUT
+      - run: mkdir -p ${{ steps.data.outputs.path }}
+      - run: wget ${{ steps.data.outputs.webbpsf_url }} -O ${{ steps.data.outputs.path }}/minimal-webbpsf-data.tar.gz
+      - run: tar -xzvf minimal-webbpsf-data.tar.gz
+        working-directory: ${{ steps.data.outputs.path }}
       - id: data_hash
-        run: echo "hash=${{ hashFiles( '/tmp/data' ) }}" >> $GITHUB_OUTPUT
+        run: echo "hash=${{ hashFiles( steps.data.outputs.path ) }}" >> $GITHUB_OUTPUT
       - uses: actions/cache@v3
         with:
           path: ${{ steps.data.outputs.path }}
