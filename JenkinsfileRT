@@ -57,6 +57,7 @@ env_vars = [
     'CRDS_PATH=/grp/crds/roman/test/',
     'DD_ENV=ci',
     'DD_SERVICE=romancal',
+    'WEBBPSF_PATH=${WORKSPACE}/data/webbpsf-data'
 ]
 if (env.ENV_VARS) {
     env_vars.addAll(MultiLineToArray(env.ENV_VARS))
@@ -87,6 +88,9 @@ bc0.build_cmds = [
     "pip install -e .[test]",
     "pip install pytest-xdist pytest-sugar ddtrace",
     'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
+    "mkdir ${WORKSPACE}/data",
+    "curl -L https://stsci.box.com/shared/static/0ojjfg3cieqdpd18vl1bjnpe63r82dx8.gz -o ${WORKSPACE}/data/webbpsf-data.tar.gz",
+    "tar -xzvf ${WORKSPACE}/data/webbpsf-data.tar.gz -C ${WORKSPACE}/data",
 ]
 bc0.build_cmds = bc0.build_cmds + PipInject(env.OVERRIDE_REQUIREMENTS)
 bc0.build_cmds = bc0.build_cmds + [
