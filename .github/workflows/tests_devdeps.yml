@@ -1,18 +1,18 @@
-name: test on schedule
+name: test with development versions
 
 on:
-  schedule:
-    # Weekly Monday 6AM build
-    - cron: "0 0 * * 1"
-  pull_request:
-    # We also want this workflow triggered if the `Weekly CI` label is
-    # added or present when PR is updated
-    types:
-      - synchronize
-      - labeled
   push:
+    branches:
+      - main
+      - '*x'
     tags:
-      - "*"
+      - '*'
+  pull_request:
+    branches:
+      - master
+  schedule:
+    # Weekly Monday 9AM build
+    - cron: "0 9 * * 1"
   workflow_dispatch:
 
 concurrency:
@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   data:
-    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Weekly CI')))
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
     name: retrieve current CRDS context, and WebbPSF data
     runs-on: ubuntu-latest
     env:
@@ -72,7 +72,7 @@ jobs:
       - id: webbpsf_path
         run: echo "path=${{ steps.data.outputs.path }}/webbpsf-data" >> $GITHUB_OUTPUT
   test:
-    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Weekly CI')))
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
     needs: [ data ]
     with:
@@ -82,14 +82,16 @@ jobs:
         CRDS_SERVER_URL: ${{ needs.data.outputs.crds_server }}
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
-      cache-path: ${{ needs.data.outputs.crds_path }}
+      cache-path: ${{ needs.data.outputs.data_path }}
       cache-key: data-${{ needs.data.outputs.data_hash }}-${{ needs.data.outputs.crds_context }}
       envs: |
-        - macos: py39
+        - linux: py39-devdeps
+        - macos: py39-devdeps
+        - linux: py310-devdeps
+        - macos: py310-devdeps
+        - linux: py311-devdeps
+        - macos: py311-devdeps
+        - linux: py3-devdeps
           pytest-results-summary: true
-        - macos: py310
-          pytest-results-summary: true
-        - macos: py311-sdpdeps
-          pytest-results-summary: true
-        - linux: py3-pyargs
+        - macos: py3-devdeps
           pytest-results-summary: true
