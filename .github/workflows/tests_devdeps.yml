@@ -1,7 +1,6 @@
-name: test
+name: test with development versions
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
@@ -10,10 +9,11 @@ on:
       - '*'
   pull_request:
     branches:
-      - main
+      - master
   schedule:
     # Weekly Monday 9AM build
     - cron: "0 9 * * 1"
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -21,6 +21,7 @@ concurrency:
 
 jobs:
   data:
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
     name: retrieve current CRDS context, and WebbPSF data
     runs-on: ubuntu-latest
     env:
@@ -70,13 +71,8 @@ jobs:
           key: data-${{ steps.data_hash.outputs.hash }}-${{ steps.crds_context.outputs.pmap }}
       - id: webbpsf_path
         run: echo "path=${{ steps.data.outputs.path }}/webbpsf-data" >> $GITHUB_OUTPUT
-  check:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
-    with:
-      envs: |
-        - linux: check-dependencies
-        - linux: build-dist
   test:
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
     needs: [ data ]
     with:
@@ -86,24 +82,16 @@ jobs:
         CRDS_SERVER_URL: ${{ needs.data.outputs.crds_server }}
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
-        DD_SERVICE: romancal
-        DD_ENV: ci
-        DD_GIT_REPOSITORY_URL: ${{ github.repositoryUrl }}
-        DD_GIT_COMMIT_SHA: ${{ github.sha }}
-        DD_GIT_BRANCH: ${{ github.ref_name }}
       cache-path: ${{ needs.data.outputs.data_path }}
       cache-key: data-${{ needs.data.outputs.data_hash }}-${{ needs.data.outputs.crds_context }}
       envs: |
-        - linux: py39-oldestdeps-cov
+        - linux: py39-devdeps
+        - macos: py39-devdeps
+        - linux: py310-devdeps
+        - macos: py310-devdeps
+        - linux: py311-devdeps
+        - macos: py311-devdeps
+        - linux: py3-devdeps
           pytest-results-summary: true
-        - linux: py39
-          pytest-results-summary: true
-        - linux: py310
-          pytest-results-summary: true
-        - linux: py311-ddtrace
-          pytest-results-summary: true
-        - macos: py311-ddtrace
-          pytest-results-summary: true
-        - linux: py311-cov
-          coverage: codecov
+        - macos: py3-devdeps
           pytest-results-summary: true
