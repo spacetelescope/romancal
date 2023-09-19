@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OBSERVATORY: roman
-      CRDS_SERVER_URL: https://roman-crds-test.stsci.edu
+      CRDS_SERVER_URL: https://roman-crds.stsci.edu
       CRDS_PATH: /tmp/data
     outputs:
       data_path: ${{ steps.data.outputs.path }}
