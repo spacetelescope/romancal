@@ -86,14 +86,12 @@ jobs:
       cache-key: data-${{ needs.data.outputs.data_hash }}-${{ needs.data.outputs.crds_context }}
       envs: |
         - linux: py39-devdeps
-          pytest-results-summary: true
         - macos: py39-devdeps
-          pytest-results-summary: true
         - linux: py310-devdeps
-          pytest-results-summary: true
         - macos: py310-devdeps
-          pytest-results-summary: true
         - linux: py311-devdeps
-          pytest-results-summary: true
         - macos: py311-devdeps
+        - linux: py3-devdeps
+          pytest-results-summary: true
+        - macos: py3-devdeps
           pytest-results-summary: true
