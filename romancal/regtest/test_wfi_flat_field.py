@@ -3,6 +3,7 @@ import os
 import pytest
 import roman_datamodels as rdm
 from crds.core.exceptions import CrdsLookupError
+from metrics_logger.decorators import metrics_logger
 
 from romancal.step import FlatFieldStep
 from romancal.stpipe import RomanStep
@@ -14,7 +15,7 @@ from .regtestdata import compare_asdf
 def test_flat_field_image_step(rtdata, ignore_asdf_paths):
     """Test for the flat field step using imaging data."""
 
-    input_data = "r0000101001001001001_01101_0001_WFI01_rampfitstep.asdf"
+    input_data = "r0000101001001001001_01101_0001_WFI01_rampfit.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
@@ -66,6 +67,7 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
 
 
+@metrics_logger("DMS79")
 @pytest.mark.bigdata
 @pytest.mark.soctests
 def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):

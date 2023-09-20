@@ -1,10 +1,27 @@
-0.11.1 (unreleased)
+0.13.0 (unreleased)
+===================
+
+general
+-------
+
+- Fix bug with ``ModelContainer.get_crds_parameters`` being a property not a method [#846]
+
+- Fix random seed bug in PSF fitting methods [#862]
+
+ramp_fitting
+------------
+
+- Inititial implementation of the Uneven Ramp fitting [#779]
+
+- Fix opening mode for references to be read-only [#854]
+
+
+0.12.0 (2023-08-18)
 ===================
 
 source_detection
 ----------------
 - Skip the step if the data is not imaging mode. [#798]
-
 
 tweakreg
 --------
@@ -51,6 +68,8 @@ saturation
 general
 -------
 
+- Add metrics_logger to the regression tests [#831]
+
 - Update pipeline logic for saturation checks [#824]
 
 - Update the pipeline code to process all the uncal files in an association [#802]
@@ -81,6 +100,10 @@ general
 - Fix devdeps Jenkins job. [#795]
 
 - Remove use of the deprecated ``pkg_resources`` module from ``setuptools``. [#829]
+
+- Add ``dev`` install option. [#835]
+
+- Add PSF photometry methods [#794]
 
 0.11.0 (2023-05-31)
 ===================
