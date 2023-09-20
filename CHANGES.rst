@@ -8,6 +8,12 @@ general
 
 - Fix random seed bug in PSF fitting methods [#862]
 
+- Fix regression tests for PSF fitting methods [#872]
+
+- Fix regression test ``compare_asdf`` function replacing use of
+  ``asdf.commands.diff`` with ``deepdiff`` and add ``deepdiff`` as
+  a test dependency [#868]
+
 ramp_fitting
 ------------
 
@@ -57,10 +63,17 @@ ramp_fitting
 ------------
 - Update unit tests for stcal 1.4.0 [#725]
 
+- Adjust ramp slopes and associated unceratinties for gain. [#804]
+
 refpix
 ------
 
 - Add initial reference pixel correction step implementation. [#704]
+
+saturation
+----------
+
+- Add read_pattern argument to flag_saturated_pixels. [#836]
 
 general
 -------

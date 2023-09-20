@@ -53,6 +53,7 @@ test = [
     'pytest >=4.6.0',
     'pytest-astropy',
     'metrics_logger >= 0.1.0',
+    'deepdiff',
 ]
 dev = [
     'romancal[docs,test]',

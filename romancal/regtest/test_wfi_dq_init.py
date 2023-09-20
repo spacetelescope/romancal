@@ -58,12 +58,13 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
     assert "roman.pixeldq" in ramp_out.to_flat_dict()
 
     rtdata.get_truth(f"truth/WFI/image/{output}")
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     step.log.info(
         "DMS25 MSG: Was the proper data quality array initialized"
         " for the ramp data produced? : "
-        f"{(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}"
+        f"{diff.identical}"
     )
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    assert diff.identical, diff.report()
 
 
 @metrics_logger("DMS26")
@@ -113,9 +114,10 @@ def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
     assert "roman.pixeldq" in ramp_out.to_flat_dict()
 
     rtdata.get_truth(f"truth/WFI/grism/{output}")
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     step.log.info(
         "DMS26 MSG: Was proper data quality initialized "
         "ramp data produced? : "
-        f"{(compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None)}"
+        f"{diff.identical}"
     )
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    assert diff.identical, diff.report()

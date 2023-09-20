@@ -14,3 +14,4 @@ This PR addresses ...
 - [ ] updated relevant documentation
 - [ ] updated relevant milestone(s)
 - [ ] added relevant label(s)
+- [ ] ran regression tests, post a link to the Jenkins job below. [How to run regression tests on a PR](https://github.com/spacetelescope/romancal/wiki/Running-Regression-Tests-Against-PR-Branches)
