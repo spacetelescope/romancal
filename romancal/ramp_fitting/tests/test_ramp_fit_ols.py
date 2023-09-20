@@ -41,14 +41,14 @@ def test_ols_multicore_ramp_fit_match(make_data):
     """Test various core amount calculation"""
     model, override_gain, override_readnoise = make_data
 
-    # gain or read noise are also modified in place in an important way (!)
+    # read noise is also modified in place in an important way (!)
     # so we make copies here so that we can get agreement.
     out_model = RampFitStep.call(
         model.copy(),  # model1 is modified in place now.
         algorithm="ols",
         maximum_cores="none",
         override_gain=override_gain,
-        override_readnoise=override_readnoise,
+        override_readnoise=override_readnoise.copy(),
     )
 
     all_out_model = RampFitStep.call(
@@ -56,7 +56,7 @@ def test_ols_multicore_ramp_fit_match(make_data):
         algorithm="ols",
         maximum_cores="all",
         override_gain=override_gain,
-        override_readnoise=override_readnoise,
+        override_readnoise=override_readnoise.copy(),
     )
 
     # Original ramp parameters
@@ -112,6 +112,7 @@ def test_ols_one_group_small_buffer_fit(max_cores, make_data):
     model, override_gain, override_readnoise = make_data
 
     model.data[0, 15, 10] = 10.0 * model.data.unit  # add single CR
+    override_gain.data[15, 10] = 2 * override_gain.data.unit
 
     out_model = RampFitStep.call(
         model,
@@ -124,7 +125,7 @@ def test_ols_one_group_small_buffer_fit(max_cores, make_data):
     data = out_model.data.value
 
     # Index changes due to trimming of reference pixels
-    np.testing.assert_allclose(data[11, 6], -1.0e-5, 1e-5)
+    np.testing.assert_allclose(data[11, 6], 10 * 2, 1e-5)
 
 
 @pytest.mark.parametrize("max_cores", MAXIMUM_CORES)
@@ -241,6 +242,7 @@ def generate_ramp_model(shape, deltatime=1):
     dm_ramp.groupdq = gdq
     dm_ramp.err = u.Quantity(err, u.DN, dtype=np.float32)
 
+    dm_ramp.meta.exposure.group_time = deltatime
     dm_ramp.meta.exposure.frame_time = deltatime
     dm_ramp.meta.exposure.ngroups = shape[0]
     dm_ramp.meta.exposure.nframes = 1
