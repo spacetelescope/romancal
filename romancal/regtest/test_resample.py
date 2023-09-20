@@ -1,14 +1,14 @@
+import json
 from io import StringIO
 
 import pytest
 from metrics_logger.decorators import metrics_logger
 from roman_datamodels import datamodels as rdm
 
-from romancal.stpipe import RomanStep
 from romancal.resample.resample_step import ResampleStep
+from romancal.stpipe import RomanStep
 
 from .regtestdata import compare_asdf
-import json
 
 
 def create_asn_file(
@@ -30,8 +30,7 @@ def create_asn_file(
             {
                 "name": output_filename,
                 "members": [
-                    {"expname": x, "exptype": "science"}
-                    for x in members_filename_list
+                    {"expname": x, "exptype": "science"} for x in members_filename_list
                 ],
             }
         ],
@@ -131,7 +130,7 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
         f"""DMS345 MSG: ResampleStep included all metadata relevant to the creation of the mosaic? :\
             {
                 all(
-                    hasattr(resample_out.meta.resample, x) 
+                    hasattr(resample_out.meta.resample, x)
                     and bool(getattr(resample_out.meta.resample, x))
                     for x in [
                         "pixel_scale_ratio",
@@ -158,7 +157,5 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
     )
 
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
-    step.log.info(
-        "Was the proper Resample data produced?" f" : {diff.identical}"
-    )
+    step.log.info("Was the proper Resample data produced?" f" : {diff.identical}")
     assert diff.identical, diff.report()
