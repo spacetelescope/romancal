@@ -8,8 +8,12 @@ on:
     tags:
       - '*'
   pull_request:
-    branches:
-      - master
+    types:
+      - opened
+      - reopened
+      - labeled
+      - unlabeled
+      - synchronize
   schedule:
     # Weekly Monday 9AM build
     - cron: "0 9 * * 1"
