@@ -4,7 +4,7 @@ import numpy as np
 from astropy import units as u
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels
-from roman_datamodels.maker_utils import mk_datamodel
+from roman_datamodels.maker_utils import mk_datamodel, mk_resample
 
 from ..datamodels import ModelContainer
 from . import gwcs_drizzle, resample_utils
@@ -234,9 +234,10 @@ class ResampleData:
         """
         output_model = self.blank_output.copy()
         output_model.meta.filename = self.output_filename
-        output_model.meta["resample"] = {}
-        output_model.meta.resample["weight_type"] = self.weight_type
-        output_model.meta.resample["pointings"] = len(self.input_models.models_grouped)
+        output_model.meta["resample"] = mk_resample()
+        output_model.meta.resample["members"] = []
+        output_model.meta.resample.weight_type = self.weight_type
+        output_model.meta.resample.pointings = len(self.input_models.models_grouped)
 
         if self.blendheaders:
             log.info("Skipping blendheaders for now.")
@@ -267,6 +268,7 @@ class ResampleData:
 
             driz.add_image(data, img.meta.wcs, inwht=inwht)
             del data, inwht
+            output_model.meta.resample.members.append(img.meta.filename)
 
         # Resample variances array in self.input_models to output_model
         self.resample_variance_array("var_rnoise", output_model)
@@ -289,6 +291,10 @@ class ResampleData:
         )
 
         self.update_exposure_times(output_model)
+
+        # TODO: fix RAD to expect a context image datatype of int32
+        output_model.context = output_model.context.astype(np.uint32)
+
         self.output_models.append(output_model)
 
         return self.output_models
@@ -377,7 +383,7 @@ class ResampleData:
         output_model.meta.exposure.exposure_time = total_exposure_time
         output_model.meta.exposure.start_time = min(exposure_times["start"])
         output_model.meta.exposure.end_time = max(exposure_times["end"])
-        output_model.meta.resample["product_exposure_time"] = total_exposure_time
+        output_model.meta.resample.product_exposure_time = total_exposure_time
 
     @staticmethod
     def drizzle_arrays(
@@ -497,11 +503,7 @@ class ResampleData:
         """
 
         # Insure that the fillval parameter gets properly interpreted for use with tdriz
-        if util.is_blank(str(fillval)):
-            fillval = "INDEF"
-        else:
-            fillval = str(fillval)
-
+        fillval = "INDEF" if util.is_blank(str(fillval)) else str(fillval)
         if insci.dtype > np.float32:
             insci = insci.astype(np.float32)
 
@@ -514,10 +516,10 @@ class ResampleData:
         planeid = int((uniqid - 1) / 32)
 
         # Check if the context image has this many planes
-        if outcon.ndim == 3:
-            nplanes = outcon.shape[0]
-        elif outcon.ndim == 2:
+        if outcon.ndim == 2:
             nplanes = 1
+        elif outcon.ndim == 3:
+            nplanes = outcon.shape[0]
         else:
             nplanes = 0
 

@@ -67,12 +67,12 @@ class ResampleStep(RomanStep):
         in_memory = boolean(default=True)
     """  # noqa: E501
 
-    # TODO: provide 'drizpars' file (then remove _set_spec_defaults?)
     reference_file_types = []
 
     def process(self, input):
         if isinstance(input, datamodels.DataModel):
             input_models = ModelContainer([input])
+            # set output filename from meta.filename found in the first datamodel
             output = input_models[0].meta.filename
             self.blendheaders = False
         elif isinstance(input, str):
@@ -84,15 +84,19 @@ class ResampleStep(RomanStep):
                 # single ASDF filename
                 input_models = ModelContainer([input])
             if hasattr(input_models, "asn_table") and len(input_models.asn_table):
+                # set output filename from ASN table
                 output = input_models.asn_table["products"][0]["name"]
             elif hasattr(input_models[0], "meta"):
+                # set output filename from meta.filename found in the first datamodel
                 output = input_models[0].meta.filename
         elif isinstance(input, ModelContainer):
             input_models = input
+            # set output filename using the common prefix of all datamodels
             output = (
                 f"{os.path.commonprefix([x.meta.filename for x in input_models])}.asdf"
             )
             if len(output) == 0:
+                # set default filename if no common prefix can be determined
                 output = "resample_output.asdf"
         else:
             raise TypeError(
@@ -164,12 +168,12 @@ class ResampleStep(RomanStep):
         # if pixel_scale exists, it will override pixel_scale_ratio.
         # calculate the actual value of pixel_scale_ratio based on pixel_scale
         # because source_catalog uses this value from the header.
-        model.meta.resample["pixel_scale_ratio"] = (
+        model.meta.resample.pixel_scale_ratio = (
             self.pixel_scale / np.sqrt(model.meta.photometry.pixelarea_arcsecsq)
             if self.pixel_scale
             else self.pixel_scale_ratio
         )
-        model.meta.resample["pixfrac"] = kwargs["pixfrac"]
+        model.meta.resample.pixfrac = kwargs["pixfrac"]
         self.update_phot_keywords(model)
 
     @staticmethod
