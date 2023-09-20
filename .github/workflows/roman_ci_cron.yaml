@@ -8,8 +8,11 @@ on:
     # We also want this workflow triggered if the `Weekly CI` label is
     # added or present when PR is updated
     types:
-      - synchronize
+      - opened
+      - reopened
       - labeled
+      - unlabeled
+      - synchronize
   push:
     tags:
       - "*"
