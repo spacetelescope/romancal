@@ -30,6 +30,7 @@ class WfiSca:
         datamodels.ImageModel
             An L2 ImageModel datamodel.
         """
+        rng = np.random.default_rng()
         l2 = maker_utils.mk_level2_image(
             shape=self.shape,
             **{
@@ -50,22 +51,22 @@ class WfiSca:
                     },
                 },
                 "data": u.Quantity(
-                    np.random.poisson(2.5, size=self.shape).astype(np.float32),
+                    rng.poisson(2.5, size=self.shape).astype(np.float32),
                     u.electron / u.s,
                     dtype=np.float32,
                 ),
                 "var_rnoise": u.Quantity(
-                    np.random.normal(1, 0.05, size=self.shape).astype(np.float32),
+                    rng.normal(1, 0.05, size=self.shape).astype(np.float32),
                     u.electron**2 / u.s**2,
                     dtype=np.float32,
                 ),
                 "var_poisson": u.Quantity(
-                    np.random.poisson(1, size=self.shape).astype(np.float32),
+                    rng.poisson(1, size=self.shape).astype(np.float32),
                     u.electron**2 / u.s**2,
                     dtype=np.float32,
                 ),
                 "var_flat": u.Quantity(
-                    np.random.uniform(0, 1, size=self.shape).astype(np.float32),
+                    rng.uniform(0, 1, size=self.shape).astype(np.float32),
                     u.electron**2 / u.s**2,
                     dtype=np.float32,
                 ),
@@ -458,7 +459,7 @@ def test_update_exposure_times_different_sca_same_exposure(exposure_1):
     resample_data = ResampleData(input_models)
 
     output_model = resample_data.blank_output.copy()
-    output_model.meta["resample"] = {}
+    output_model.meta["resample"] = maker_utils.mk_resample()
 
     resample_data.update_exposure_times(output_model)
 
@@ -483,7 +484,7 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
     resample_data = ResampleData(input_models)
 
     output_model = resample_data.blank_output.copy()
-    output_model.meta["resample"] = {}
+    output_model.meta["resample"] = maker_utils.mk_resample()
 
     resample_data.update_exposure_times(output_model)
 
