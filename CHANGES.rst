@@ -8,6 +8,8 @@ general
 
 - Fix random seed bug in PSF fitting methods [#862]
 
+- Fix regression tests for PSF fitting methods [#872]
+
 ramp_fitting
 ------------
 
