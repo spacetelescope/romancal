@@ -15,6 +15,8 @@ ramp_fitting
 
 - Fix opening mode for references to be read-only [#854]
 
+- Make uneven ramp fitting the default [#877]
+
 
 0.12.0 (2023-08-18)
 ===================
