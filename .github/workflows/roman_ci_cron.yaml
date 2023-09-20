@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   data:
-    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Weekly CI')))
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run scheduled tests')))
     name: retrieve current CRDS context, and WebbPSF data
     runs-on: ubuntu-latest
     env:
@@ -75,7 +75,6 @@ jobs:
       - id: webbpsf_path
         run: echo "path=${{ steps.data.outputs.path }}/webbpsf-data" >> $GITHUB_OUTPUT
   test:
-    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Weekly CI')))
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
     needs: [ data ]
     with:
