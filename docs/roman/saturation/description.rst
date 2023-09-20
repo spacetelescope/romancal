@@ -8,7 +8,8 @@ below the A/D floor if they have a value of zero DN.
 
 This step examines the data group-by-group, comparing the pixel values in the data array with defined
 saturation thresholds for each pixel. When it finds a pixel value in a given
-group that is above the saturation threshold (high saturation), it sets the
+group that is above the saturation threshold (high saturation) times a
+dilution factor, it sets the
 "SATURATED" flag in the corresponding location of the "groupdq" array in the
 science exposure.  When it finds a pixel in a given group that has a zero or
 negative value (below  the A/D floor), it sets the "AD_FLOOR" and "DO_NOT_USE"
@@ -24,3 +25,13 @@ of 65535 and hence will only be flagged as saturated if the pixel reaches that
 hard limit in at least one group. The "NO_SAT_CHECK" flag is propagated to the
 PIXELDQ array in the output science data to indicate which pixels fall into
 this category.
+
+The "dilution factor" is intended to account for the fact that Roman
+downlinks resultants to the ground, which are usually averages over
+several reads.  The saturation threshold corresponds to the number of
+counts at which a detector pixel saturates.  Because a resultant is
+the average of a number of reads, later reads in a resultant can
+saturate, but if earlier reads are unsaturated, the value of the
+resultant can fall under the saturation threshold.  The dilution
+factor varies resultant-by-resultant and is given by
+:math:`<t>/max(t)` for all times :math:`t` entering a resultant.

@@ -18,7 +18,8 @@ def test_linearity_step(rtdata, ignore_asdf_paths):
     output = "r0000101001001001001_01101_0001_WFI01_linearity.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
 
 @pytest.mark.bigdata
@@ -34,4 +35,5 @@ def test_linearity_outfile_step(rtdata, ignore_asdf_paths):
     output = "Test_linearity.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
