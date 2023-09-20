@@ -10,6 +10,10 @@ general
 
 - Fix regression tests for PSF fitting methods [#872]
 
+- Fix regression test ``compare_asdf`` function replacing use of
+  ``asdf.commands.diff`` with ``deepdiff`` and add ``deepdiff`` as
+  a test dependency [#868]
+
 ramp_fitting
 ------------
 
