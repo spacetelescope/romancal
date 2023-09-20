@@ -26,7 +26,7 @@ class RampFitStep(RomanStep):
     """
 
     spec = """
-        algorithm = option('ols','ols_cas22',default='ols')  # Algorithm to use to fit.
+        algorithm = option('ols','ols_cas22', default='ols_cas22')  # Algorithm to use to fit.
         save_opt = boolean(default=False) # Save optional output
         opt_name = string(default='')
         maximum_cores = option('none','quarter','half','all',default='none') # max number of processes to create
