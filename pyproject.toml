@@ -55,6 +55,7 @@ test = [
     'pytest >=4.6.0',
     'pytest-astropy',
     'metrics_logger >= 0.1.0',
+    'deepdiff',
 ]
 dev = [
     'romancal[docs,test]',
@@ -188,6 +189,7 @@ exclude = [
 ignore = [
     'E741', # ambiguous variable name
 ]
+extend-select = ['NPY']
 
 [tool.ruff.extend-per-file-ignores]
 "romancal/associations/__init__.py" = ["E402"]

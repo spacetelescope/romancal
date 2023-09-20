@@ -28,4 +28,5 @@ def test_jump_detection_step(rtdata, ignore_asdf_paths):
     output = "r0000101001001001001_01101_0001_WFI01_jump.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()

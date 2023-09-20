@@ -21,4 +21,5 @@ def test_refpix_step(rtdata, ignore_asdf_paths):
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
 
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()

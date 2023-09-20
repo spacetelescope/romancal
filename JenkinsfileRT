@@ -53,10 +53,11 @@ def pip_install_args = "--index-url ${pip_index} --progress-bar=off"
 env_vars = [
     "TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory",
     "CRDS_CONTEXT=roman_0051.pmap",
-    "CRDS_SERVER_URL=https://roman-crds.stsci.edu",
-    'CRDS_PATH=${WORKSPACE}/roman-crds-test-cache',
+    "CRDS_SERVER_URL=https://serverless",
+    'CRDS_PATH=/grp/crds/roman/test/',
     'DD_ENV=ci',
     'DD_SERVICE=romancal',
+    'WEBBPSF_PATH=data/webbpsf-data'
 ]
 if (env.ENV_VARS) {
     env_vars.addAll(MultiLineToArray(env.ENV_VARS))
@@ -87,6 +88,9 @@ bc0.build_cmds = [
     "pip install -e .[test]",
     "pip install pytest-xdist pytest-sugar ddtrace",
     'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
+    "mkdir data",
+    "curl -L https://stsci.box.com/shared/static/0ojjfg3cieqdpd18vl1bjnpe63r82dx8.gz -o data/webbpsf-data.tar.gz",
+    "tar -xzvf data/webbpsf-data.tar.gz -C data",
 ]
 bc0.build_cmds = bc0.build_cmds + PipInject(env.OVERRIDE_REQUIREMENTS)
 bc0.build_cmds = bc0.build_cmds + [

@@ -40,7 +40,8 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     ]
     ExposurePipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
     # Perform DMS tests
     # Initial prep
@@ -238,7 +239,8 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
 
     # Test that repointed file matches truth
     rtdata.get_truth("truth/WFI/image/" + output.rsplit(".", 1)[0] + "_repoint.asdf")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
     pipeline.log.info(
         "DMS89 MSG: Testing that the different pointings create differing wcs......."
@@ -273,7 +275,8 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     ]
     ExposurePipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/grism/{output}")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
     # Perform DMS tests
     # Initial prep
@@ -414,7 +417,8 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
 
     # Test that repointed file matches truth
     rtdata.get_truth("truth/WFI/grism/" + output.rsplit(".", 1)[0] + "_repoint.asdf")
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
     pipeline.log.info(
         "DMS93 MSG: Testing that the different pointings create differing wcs......."
@@ -448,7 +452,8 @@ def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
     ExposurePipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
 
-    assert compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths) is None
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
     # Ensure step completion is as expected
     model = rdm.open(rtdata.output)

@@ -203,10 +203,16 @@ def rtdata_module(artifactory_repos, envopt, request, jail):
 @pytest.fixture
 def ignore_asdf_paths():
     ignore_attr = [
-        "meta.[date, filename]",
+        # generic asdf stuff that will contain program version numbers
+        # and other things that will almost certainly change in every case
         "asdf_library",
         "history",
-        "cal_logs",
+        # roman-specific stuff to ignore
+        "roman.cal_logs",
+        "roman.meta.date",
+        # roman.meta.filename is used by the ExposurePipeline so should likely
+        # not be ignored here
+        # "roman.meta.filename",
     ]
 
     return {"ignore": ignore_attr}
