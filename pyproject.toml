@@ -74,6 +74,7 @@ okify_regtests = 'romancal.scripts.okify_regtests:main'
 schema_editor = 'romancal.scripts.schema_editor:main'
 schemadoc = 'romancal.scripts.schemadoc:main'
 verify_install_requires = 'romancal.scripts.verify_install_requires:main'
+asn_from_list = 'romancal.scripts.asn_from_list:main'
 
 [build-system]
 requires = [
