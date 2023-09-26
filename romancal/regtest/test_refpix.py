@@ -17,7 +17,7 @@ def test_refpix_step(rtdata, ignore_asdf_paths):
     RomanStep.from_cmdline(args)
 
     # Again I have no idea here
-    output = "r0000101001001001001_01101_0001_WFI01_refpixstep.asdf"
+    output = "r0000101001001001001_01101_0001_WFI01_refpix.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
 
