@@ -132,6 +132,7 @@ class ExposurePipeline(RomanPipeline):
                     "source_detection",
                     "dark",
                     "jump",
+                    "refpix",
                     "linearity",
                     "ramp_fit",
                 ]:
@@ -143,6 +144,7 @@ class ExposurePipeline(RomanPipeline):
                 # Return fully saturated image file (stopping pipeline)
                 return results
 
+            result = self.refpix(result)
             result = self.linearity(result)
             result = self.dark_current(result)
             result = self.jump(result)
