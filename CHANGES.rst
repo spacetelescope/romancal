@@ -21,6 +21,8 @@ ramp_fitting
 
 - Fix opening mode for references to be read-only [#854]
 
+- Make uneven ramp fitting the default [#877]
+
 refpix
 ------
 
