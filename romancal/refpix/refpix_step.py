@@ -54,7 +54,7 @@ class RefPixStep(RomanStep):
                 self.cosine_interpolate,
                 self.fft_interpolate,
             )
-             # Update the step status
+            # Update the step status
             output.meta.cal_step["refpix"] = "COMPLETE"
             if self.save_results:
                 try:
