@@ -23,6 +23,11 @@ ramp_fitting
 
 - Make uneven ramp fitting the default [#877]
 
+refpix
+------
+
+- Update cal_step, add suffix and add to the exposure pipeline [#890]
+
 
 0.12.0 (2023-08-18)
 ===================
