@@ -5,6 +5,9 @@ git+https://github.com/asdf-format/asdf-transform-schemas.git
 git+https://github.com/asdf-format/asdf-coordinates-schemas.git
 git+https://github.com/asdf-format/asdf-wcs-schemas.git
 
+# Use current dev version of deepdiff
+git+https://github.com/seperman/deepdiff.git@dev
+
 # Use weekly astropy dev build
 git+https://github.com/astropy/asdf-astropy.git
 --extra-index-url https://pypi.anaconda.org/astropy/simple astropy --pre
