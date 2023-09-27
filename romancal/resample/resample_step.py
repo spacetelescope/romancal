@@ -34,16 +34,16 @@ class ResampleStep(RomanStep):
 
     Parameters
     -----------
-    input : str, ~roman_datamodels.datamodels.DataModel, or ~romancal.datamodels.ModelContainer
+    input : str, `roman_datamodels.datamodels.DataModel`, or `~romancal.datamodels.container.ModelContainer`
         If a string is provided, it should correspond to either a single ASDF filename
         or an association filename. Alternatively, a single DataModel instance can be
-        provided instead of an ASDF filename.
-        Multiple files can be processed via either an association file or wrapped by a
-        ModelContainer.
+        provided instead of an ASDF filename. Multiple files can be processed via
+        either an association file or wrapped by a
+        `~romancal.datamodels.container.ModelContainer`.
 
     Returns
     -------
-    result : ~roman_datamodels.datamodels.MosaicModel
+    : `roman_datamodels.datamodels.MosaicModel`
         A mosaic datamodel with the final output frame.
     """  # noqa: E501
 
@@ -83,7 +83,9 @@ class ResampleStep(RomanStep):
             except Exception:
                 # single ASDF filename
                 input_models = ModelContainer([input])
-            if hasattr(input_models, "asn_table") and len(input_models.asn_table):
+            if hasattr(input_models, "asn_table") and len(
+                input_models.asn_table
+            ):
                 # set output filename from ASN table
                 output = input_models.asn_table["products"][0]["name"]
             elif hasattr(input_models[0], "meta"):
@@ -92,9 +94,7 @@ class ResampleStep(RomanStep):
         elif isinstance(input, ModelContainer):
             input_models = input
             # set output filename using the common prefix of all datamodels
-            output = (
-                f"{os.path.commonprefix([x.meta.filename for x in input_models])}.asdf"
-            )
+            output = f"{os.path.commonprefix([x.meta.filename for x in input_models])}.asdf"
             if len(output) == 0:
                 # set default filename if no common prefix can be determined
                 output = "resample_output.asdf"
@@ -109,22 +109,16 @@ class ResampleStep(RomanStep):
             # resample can only handle 2D images, not 3D cubes, etc
             raise RuntimeError(f"Input {input_models[0]} is not a 2D image.")
 
-        #  Get drizzle parameters reference file, if there is one
         self.wht_type = self.weight_type
-        if "drizpars" in self.reference_file_types:
-            ref_filename = self.get_reference_file(input_models[0], "drizpars")
-            self.log.info(f"Using drizpars reference file: {ref_filename}")
-            kwargs = self.get_drizpars(ref_filename, input_models)
-        else:
-            # no drizpars reference file found
-            self.log.info("No drizpars reference file found.")
-            kwargs = self._set_spec_defaults()
-
+        self.log.info("Setting drizzle's default parameters...")
+        kwargs = self.set_drizzle_defaults()
         kwargs["allowed_memory"] = self.allowed_memory
 
         # Issue a warning about the use of exptime weighting
         if self.wht_type == "exptime":
-            self.log.warning("Use of EXPTIME weighting will result in incorrect")
+            self.log.warning(
+                "Use of EXPTIME weighting will result in incorrect"
+            )
             self.log.warning("propagated errors in the resampled product")
 
         # Custom output WCS parameters.
@@ -222,7 +216,9 @@ class ResampleStep(RomanStep):
                 )
             return list(vals)
         else:
-            raise ValueError(f"Both '{name}' values must be either None or not None.")
+            raise ValueError(
+                f"Both '{name}' values must be either None or not None."
+            )
 
     @staticmethod
     def _load_custom_wcs(asdf_wcs_file, output_shape):
@@ -261,99 +257,8 @@ class ResampleStep(RomanStep):
                 model.meta.resample.pixel_scale_ratio**2
             )
 
-    def get_drizpars(self, ref_filename, input_models):
-        """
-        Extract drizzle parameters from reference file.
-
-        This method extracts parameters from the drizpars reference file and
-        uses those to set defaults on the following ResampleStep configuration
-        parameters:
-
-        pixfrac = float(default=None)
-        kernel = string(default=None)
-        fillval = string(default=None)
-        wht_type = option('ivm', 'exptime', None, default=None)
-
-        Once the defaults are set from the reference file, if the user has
-        used a resample.cfg file or run ResampleStep using command line args,
-        then these will overwrite the defaults pulled from the reference file.
-        """
-        with datamodels.DrizParsModel(ref_filename) as drpt:
-            drizpars_table = drpt.data
-
-        num_groups = len(input_models.group_names)
-        filtname = input_models[0].meta.instrument.filter
-        row = None
-        filter_match = False
-        # look for row that applies to this set of input data models
-        for n, filt, num in zip(
-            range(len(drizpars_table)),
-            drizpars_table["filter"],
-            drizpars_table["numimages"],
-        ):
-            # only remember this row if no exact match has already been made for
-            # the filter. This allows the wild-card row to be anywhere in the
-            # table; since it may be placed at beginning or end of table.
-
-            if str(filt) == "ANY" and not filter_match and num_groups >= num:
-                row = n
-            # always go for an exact match if present, though...
-            if filtname == filt and num_groups >= num:
-                row = n
-                filter_match = True
-
-        # With presence of wild-card rows, code should never trigger this logic
-        if row is None:
-            self.log.error("No row found in %s matching input data.", ref_filename)
-            raise ValueError
-
-        # Define the keys to pull from drizpars reffile table.
-        # All values should be None unless the user set them on the command
-        # line or in the call to the step
-
-        drizpars = dict(
-            pixfrac=self.pixfrac,
-            kernel=self.kernel,
-            fillval=self.fillval,
-            wht_type=self.weight_type,
-        )
-
-        # For parameters that are set in drizpars table but not set by the
-        # user, use these.  Otherwise, use values set by user.
-        reffile_drizpars = {k: v for k, v in drizpars.items() if v is None}
-        user_drizpars = {k: v for k, v in drizpars.items() if v is not None}
-
-        # read in values from that row for each parameter
-        for k in reffile_drizpars:
-            if k in drizpars_table.names:
-                reffile_drizpars[k] = drizpars_table[k][row]
-
-        # Convert the strings in the FITS binary table from np.bytes_ to str
-        for k, v in reffile_drizpars.items():
-            if isinstance(v, np.bytes_):
-                reffile_drizpars[k] = v.decode("UTF-8")
-
-        all_drizpars = reffile_drizpars | user_drizpars
-
-        kwargs = (
-            dict(
-                good_bits=GOOD_BITS,
-                single=self.single,
-                blendheaders=self.blendheaders,
-            )
-            | all_drizpars
-        )
-        for k, v in kwargs.items():
-            self.log.debug(f"   {k}={v}")
-
-        return kwargs
-
-    def _set_spec_defaults(self):
-        """NIRSpec currently has no default drizpars reference file, so default
-        drizzle parameters are not set properly.  This method sets them.
-
-        Remove this class method when a drizpars reffile is delivered.
-        """
+    def set_drizzle_defaults(self):
+        """Set the default parameters for drizzle."""
         configspec = self.load_spec_file()
         config = ConfigObj(configspec=configspec)
         if config.validate(Validator()):

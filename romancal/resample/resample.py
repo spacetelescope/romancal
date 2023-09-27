@@ -25,7 +25,7 @@ class ResampleData:
 
     Notes
     -----
-    This routine performs the following operations::
+    This routine performs the following operations:
 
       1. Extracts parameter settings from input model, such as pixfrac,
          weight type, exposure time (if relevant), and kernel, and merges
@@ -161,7 +161,7 @@ class ResampleData:
         self.output_models = ModelContainer()
 
     def do_drizzle(self):
-        """Pick the correct drizzling mode based on self.single"""
+        """Pick the correct drizzling mode based on ``self.single``."""
         if self.single:
             return self.resample_many_to_many()
         else:
@@ -170,8 +170,8 @@ class ResampleData:
     def resample_many_to_many(self):
         """Resample many inputs to many outputs where outputs have a common frame.
 
-        Coadd only different detectors of the same exposure, i.e. map NRCA5 and
-        NRCB5 onto the same output image, as they image different areas of the
+        Coadd only different detectors of the same exposure (e.g. map SCA 1 and
+        10 onto the same output image), as they image different areas of the
         sky.
 
         Used for outlier detection
@@ -183,9 +183,13 @@ class ResampleData:
             indx = exposure[0].meta.filename.rfind(".")
             output_type = exposure[0].meta.filename[indx:]
             output_root = "_".join(
-                exposure[0].meta.filename.replace(output_type, "").split("_")[:-1]
+                exposure[0]
+                .meta.filename.replace(output_type, "")
+                .split("_")[:-1]
             )
-            output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
+            output_model.meta.filename = (
+                f"{output_root}_outlier_i2d{output_type}"
+            )
 
             # Initialize the output with the wcs
             driz = gwcs_drizzle.GWCSDrizzle(
@@ -229,15 +233,16 @@ class ResampleData:
 
     def resample_many_to_one(self):
         """Resample and coadd many inputs to a single output.
-
-        Used for stage 3 resampling
+        Used for level 3 resampling
         """
         output_model = self.blank_output.copy()
         output_model.meta.filename = self.output_filename
         output_model.meta["resample"] = mk_resample()
         output_model.meta.resample["members"] = []
         output_model.meta.resample.weight_type = self.weight_type
-        output_model.meta.resample.pointings = len(self.input_models.models_grouped)
+        output_model.meta.resample.pointings = len(
+            self.input_models.models_grouped
+        )
 
         if self.blendheaders:
             log.info("Skipping blendheaders for now.")
@@ -300,12 +305,12 @@ class ResampleData:
         return self.output_models
 
     def resample_variance_array(self, name, output_model):
-        """Resample variance arrays from self.input_models to the output_model
+        """Resample variance arrays from ``self.input_models`` to the ``output_model``.
 
-        Resample the ``name`` variance array to the same name in output_model,
+        Resample the ``name`` variance array to the same name in ``output_model``,
         using a cumulative sum.
 
-        This modifies output_model in-place.
+        This modifies ``output_model`` in-place.
         """
         output_wcs = output_model.meta.wcs
         inverse_variance_sum = np.full_like(output_model.data.value, np.nan)
@@ -371,7 +376,7 @@ class ResampleData:
         setattr(output_model, name, output_variance)
 
     def update_exposure_times(self, output_model):
-        """Modify exposure time metadata in-place"""
+        """Update exposure time metadata (in-place)."""
         total_exposure_time = 0.0
         exposure_times = {"start": [], "end": []}
         for exposure in self.input_models.models_grouped:
@@ -408,39 +413,39 @@ class ResampleData:
         Low level routine for performing 'drizzle' operation on one image.
 
         The interface is compatible with STScI code. All images are Python
-        ndarrays, instead of filenames. File handling (input and output) is
+        `ndarrays`, instead of filenames. File handling (input and output) is
         performed by the calling routine.
 
         Parameters
         ----------
 
         insci : 2d array
-            A 2d numpy array containing the input image to be drizzled.
+            A 2d `numpy` array containing the input image to be drizzled.
 
         inwht : 2d array
-            A 2d numpy array containing the pixel by pixel weighting.
+            A 2d `numpy` array containing the pixel by pixel weighting.
             Must have the same dimensions as insci. If none is supplied,
             the weighting is set to one.
 
-        input_wcs : gwcs.WCS object
+        input_wcs : `gwcs.wcs.WCS` object
             The world coordinate system of the input image.
 
-        output_wcs : gwcs.WCS object
+        output_wcs : `gwcs.wcs.WCS` object
             The world coordinate system of the output image.
 
         outsci : 2d array
-            A 2d numpy array containing the output image produced by
+            A 2d `numpy` array containing the output image produced by
             drizzling. On the first call it should be set to zero.
             Subsequent calls it will hold the intermediate results.  This
             is modified in-place.
 
         outwht : 2d array
-            A 2d numpy array containing the output counts. On the first
+            A 2d `numpy` array containing the output counts. On the first
             call it should be set to zero. On subsequent calls it will
             hold the intermediate results.  This is modified in-place.
 
         outcon : 2d or 3d array, optional
-            A 2d or 3d numpy array holding a bitmap of which image was an input
+            A 2d or 3d `numpy` array holding a bitmap of which image was an input
             for each output pixel. Should be integer zero on first call.
             Subsequent calls hold intermediate results.  This is modified
             in-place.
@@ -486,8 +491,8 @@ class ResampleData:
         kernel: str, optional
             The name of the kernel used to combine the input. The choice of
             kernel controls the distribution of flux over the kernel. The kernel
-            names are: "square", "gaussian", "point", "tophat", "turbo", "lanczos2",
-            and "lanczos3". The square kernel is the default.
+            names are: `'square'`, `'gaussian'`, `'point'`, `'tophat'`, `'turbo'`,
+            `'lanczos2'`, and `'lanczos3'`. The `'square'` kernel is the default.
 
         fillval: str, optional
             The value a pixel is set to in the output if the input image does
@@ -495,10 +500,11 @@ class ResampleData:
 
         Returns
         -------
-        A tuple with three values: a version string, the number of pixels
-        on the input image that do not overlap the output image, and the
-        number of complete lines on the input image that do not overlap the
-        output input image.
+        : tuple
+            A tuple with three values: a version string, the number of pixels
+            on the input image that do not overlap the output image, and the
+            number of complete lines on the input image that do not overlap the
+            output input image.
 
         """
 
@@ -540,7 +546,9 @@ class ResampleData:
 
         # Compute the mapping between the input and output pixel coordinates
         # for use in drizzle.cdrizzle.tdriz
-        pixmap = resample_utils.calc_gwcs_pixmap(input_wcs, output_wcs, insci.shape)
+        pixmap = resample_utils.calc_gwcs_pixmap(
+            input_wcs, output_wcs, insci.shape
+        )
 
         log.debug(f"Pixmap shape: {pixmap[:,:,0].shape}")
         log.debug(f"Input Sci shape: {insci.shape}")

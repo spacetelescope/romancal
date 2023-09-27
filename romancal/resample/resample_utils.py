@@ -26,18 +26,19 @@ def make_output_wcs(
     crpix: Tuple[float, float] = None,
     crval: Tuple[float, float] = None,
 ):
-    """Generate output WCS here based on footprints of all input WCS objects
+    """
+    Generate output WCS here based on footprints of all input WCS objects
+
     Parameters
     ----------
-    input_models : list of `~roman_datamodels.datamodels.DataModel`
-        Each datamodel must have a ~gwcs.WCS object.
+    input_models : list of `roman_datamodels.datamodels.DataModel`
+        Each datamodel must have a `gwcs.wcs.WCS` object.
 
     pscale_ratio : float, optional
         Ratio of input to output pixel scale. Ignored when ``pscale`` is provided.
 
     pscale : float, None, optional
-        Absolute pixel scale in degrees. When provided, overrides
-        ``pscale_ratio``.
+        Absolute pixel scale in degrees. When provided, overrides ``pscale_ratio``.
 
     rotation : float, None, optional
         Position angle (in degrees) of output image's Y-axis relative to North.
@@ -49,8 +50,8 @@ def make_output_wcs(
 
     shape : tuple of int, None, optional
         Shape of the image (data array) using ``numpy.ndarray`` convention
-        (``ny`` first and ``nx`` second). This value will be assigned to
-        ``pixel_shape`` and ``array_shape`` properties of the returned
+        (``ny`` first and ``nx`` second). This value will be assigned
+        to ``pixel_shape`` and ``array_shape`` properties of the returned
         WCS object.
 
     crpix : tuple of float, None, optional
@@ -66,8 +67,8 @@ def make_output_wcs(
     -------
     output_wcs : object
         WCS object, with defined domain, covering entire set of input frames
-
     """
+
     wcslist = [i.meta.wcs for i in input_models]
     for w, i in zip(wcslist, input_models):
         if w.bounding_box is None:
@@ -109,7 +110,9 @@ def build_driz_weight(model, weight_type=None, good_bits=None):
         ):
             with np.errstate(divide="ignore", invalid="ignore"):
                 inv_variance = model.var_rnoise**-1
-            inv_variance[~np.isfinite(inv_variance)] = 1 * u.s**2 / u.electron**2
+            inv_variance[~np.isfinite(inv_variance)] = (
+                1 * u.s**2 / u.electron**2
+            )
         else:
             warnings.warn(
                 "var_rnoise array not available. Setting drizzle weight map to 1",
@@ -127,8 +130,8 @@ def build_driz_weight(model, weight_type=None, good_bits=None):
 
 
 def build_mask(dqarr, bitvalue):
-    """Build a bit mask from an input DQ array and a bitvalue flag
-
+    """
+    Build a bit mask from an input DQ array and a bitvalue flag.
     In the returned bit mask, 1 is good, 0 is bad
     """
     bitvalue = interpret_bit_flags(bitvalue, flag_name_map=pixel)
@@ -139,7 +142,9 @@ def build_mask(dqarr, bitvalue):
 
 
 def calc_gwcs_pixmap(in_wcs, out_wcs, shape=None):
-    """Return a pixel grid map from input frame to output frame."""
+    """
+    Return a pixel grid map from input frame to output frame.
+    """
     if shape:
         bb = wcs_bbox_from_shape(shape)
         log.debug(f"Bounding box from data shape: {bb}")
@@ -162,14 +167,14 @@ def reproject(wcs1, wcs2):
 
     Parameters
     ----------
-    wcs1, wcs2 : `~astropy.wcs.WCS` or `~gwcs.wcs.WCS` or `~astropy.modeling.Model`
+    wcs1, wcs2 : `astropy.wcs.WCS` or `gwcs.wcs.WCS` or `astropy.modeling.Model`
         WCS objects.
 
     Returns
     -------
-    _reproject : func
-        Function to compute the transformations.  It takes x, y
-        positions in ``wcs1`` and returns x, y positions in ``wcs2``.
+    : func
+        Function to compute the transformations.  It takes `(x, y)`
+        positions in ``wcs1`` and returns `(x, y)` positions in ``wcs2``.
     """
 
     if isinstance(wcs1, fitswcs.WCS):
@@ -180,7 +185,7 @@ def reproject(wcs1, wcs2):
         forward_transform = wcs1
     else:
         raise TypeError(
-            "Expected input to be astropy.wcs.WCS or gwcs.WCS "
+            "Expected input to be astropy.wcs.WCS or gwcs.wcs.WCS "
             "object or astropy.modeling.Model subclass"
         )
 
@@ -192,7 +197,7 @@ def reproject(wcs1, wcs2):
         backward_transform = wcs2.inverse
     else:
         raise TypeError(
-            "Expected input to be astropy.wcs.WCS or gwcs.WCS "
+            "Expected input to be astropy.wcs.WCS or gwcs.wcs.WCS "
             "object or astropy.modeling.Model subclass"
         )
 
@@ -211,3 +216,86 @@ def reproject(wcs1, wcs2):
         return tuple(det_reshaped)
 
     return _reproject
+
+
+def decode_context(context, x, y):
+    """
+    Get 0-based indices of input images that contributed to (resampled)
+    output pixel with coordinates ``x`` and ``y``.
+
+    Parameters
+    ----------
+    context: numpy.ndarray
+        A 3D `~numpy.ndarray` of integral data type.
+
+    x: int, list of integers, numpy.ndarray of integers
+        X-coordinate of pixels to decode (3rd index into the ``context`` array)
+
+    y: int, list of integers, numpy.ndarray of integers
+        Y-coordinate of pixels to decode (2nd index into the ``context`` array)
+
+    Returns
+    -------
+
+    A list of `numpy.ndarray` objects each containing indices of input images
+    that have contributed to an output pixel with coordinates ``x`` and ``y``.
+    The length of returned list is equal to the number of input coordinate
+    arrays ``x`` and ``y``.
+
+    Examples
+    --------
+
+    An example context array for an output image of array shape ``(5, 6)``
+    obtained by resampling 80 input images.
+
+    >>> import numpy as np
+    >>> from jwst.resample.resample_utils import decode_context
+    >>> con = np.array(
+    ...     [[[0, 0, 0, 0, 0, 0],
+    ...       [0, 0, 0, 36196864, 0, 0],
+    ...       [0, 0, 0, 0, 0, 0],
+    ...       [0, 0, 0, 0, 0, 0],
+    ...       [0, 0, 537920000, 0, 0, 0]],
+    ...      [[0, 0, 0, 0, 0, 0,],
+    ...       [0, 0, 0, 67125536, 0, 0],
+    ...       [0, 0, 0, 0, 0, 0],
+    ...       [0, 0, 0, 0, 0, 0],
+    ...       [0, 0, 163856, 0, 0, 0]],
+    ...      [[0, 0, 0, 0, 0, 0],
+    ...       [0, 0, 0, 8203, 0, 0],
+    ...       [0, 0, 0, 0, 0, 0],
+    ...       [0, 0, 0, 0, 0, 0],
+    ...       [0, 0, 32865, 0, 0, 0]]],
+    ...     dtype=np.int32
+    ... )
+    >>> decode_context(con, [3, 2], [1, 4])
+    [array([ 9, 12, 14, 19, 21, 25, 37, 40, 46, 58, 64, 65, 67, 77]),
+     array([ 9, 20, 29, 36, 47, 49, 64, 69, 70, 79])]
+
+    """
+    if context.ndim != 3:
+        raise ValueError("'context' must be a 3D array.")
+
+    x = np.atleast_1d(x)
+    y = np.atleast_1d(y)
+
+    if x.size != y.size:
+        raise ValueError("Coordinate arrays must have equal length.")
+
+    if x.ndim != 1:
+        raise ValueError("Coordinates must be scalars or 1D arrays.")
+
+    if not (
+        np.issubdtype(x.dtype, np.integer)
+        and np.issubdtype(y.dtype, np.integer)
+    ):
+        raise ValueError("Pixel coordinates must be integer values")
+
+    nbits = 8 * context.dtype.itemsize
+
+    return [
+        np.flatnonzero(
+            [v & (1 << k) for v in context[:, yi, xi] for k in range(nbits)]
+        )
+        for xi, yi in zip(x, y)
+    ]
