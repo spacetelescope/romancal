@@ -21,6 +21,13 @@ ramp_fitting
 
 - Fix opening mode for references to be read-only [#854]
 
+- Make uneven ramp fitting the default [#877]
+
+refpix
+------
+
+- Update cal_step, add suffix and add to the exposure pipeline [#890]
+
 resample
 --------
 - Implement resampling step. [#787]

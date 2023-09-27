@@ -102,6 +102,12 @@ tools used for linting and reproducible environments run:
 
 This will install `tox` and the `pre-commit` tools in addition to all development dependencies.
 
+Development versions of dependencies are listed in `requirements-dev-st.txt` and `requirements-dev-thirdparty.txt`, containing STScI and third-party packages respectively.
+To install these dependencies, run the following:
+
+    pip install -r requirements-dev-st.txt
+    pip install -r requirements-dev-thirdparty.txt
+
 Need other useful packages in your development environment?
 
     pip install ipython pytest-xdist

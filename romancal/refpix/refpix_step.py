@@ -46,7 +46,7 @@ class RefPixStep(RomanStep):
         with rdm.open(ref_file) as refs:
             # Run the correction
             log.debug("Running the reference pixel correction")
-            return refpix.run_steps(
+            output = refpix.run_steps(
                 datamodel,
                 refs,
                 self.remove_offset,
@@ -54,3 +54,11 @@ class RefPixStep(RomanStep):
                 self.cosine_interpolate,
                 self.fft_interpolate,
             )
+            # Update the step status
+            output.meta.cal_step["refpix"] = "COMPLETE"
+            if self.save_results:
+                try:
+                    self.suffix = "refpix"
+                except AttributeError:
+                    self["suffix"] = "refpix"
+        return output
