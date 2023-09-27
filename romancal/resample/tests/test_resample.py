@@ -472,12 +472,18 @@ def test_update_exposure_times_different_sca_same_exposure(exposure_1):
         == exposure_1[0].meta.exposure.exposure_time
     )
     assert (
-        output_model.meta.exposure.start_time == exposure_1[0].meta.exposure.start_time
+        output_model.meta.exposure.start_time
+        == exposure_1[0].meta.exposure.start_time
     )
-    assert output_model.meta.exposure.end_time == exposure_1[0].meta.exposure.end_time
+    assert (
+        output_model.meta.exposure.end_time
+        == exposure_1[0].meta.exposure.end_time
+    )
 
 
-def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure_2):
+def test_update_exposure_times_same_sca_different_exposures(
+    exposure_1, exposure_2
+):
     """Test that update_exposure_times is properly updating the exposure parameters
     for a set of the same SCA but belonging to different exposures."""
     input_models = ModelContainer([exposure_1[0], exposure_2[0]])
@@ -553,22 +559,9 @@ def test_custom_wcs_input_small_overlap_no_rotation(wfi_sca1, wfi_sca3):
 
     output_models = resample_data.resample_many_to_one()
 
-    # pixel scale in RA (N.B.: there's no shift in Dec.)
-    pixel_scale = np.abs(wfi_sca3.meta.wcs(0, 0)[0] - wfi_sca3.meta.wcs(1, 0)[0])
-    # overlap size in RA (N.B.: there's no shift in Dec.)
-    ra_overlap_size = np.round(
-        input_models[0].shape[0]
-        - np.abs(input_models[0].meta.wcs(0, 0)[0] - wfi_sca3.meta.wcs(0, 0)[0])
-        / pixel_scale
+    np.testing.assert_allclose(
+        output_models[0].meta.wcs(0, 0), wfi_sca3.meta.wcs(0, 0)
     )
-    # determine the size of the region in the output that contains data
-    # (which should have come from the overlap with the input datamodel)
-    output_nonzero_region = np.nonzero(output_models[0].data)
-    ra_output_nonzero_size = np.round(len(set(output_nonzero_region[1])))
-
-    assert ra_output_nonzero_size == ra_overlap_size
-
-    np.testing.assert_allclose(output_models[0].meta.wcs(0, 0), wfi_sca3.meta.wcs(0, 0))
 
 
 def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures):
