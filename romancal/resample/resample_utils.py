@@ -99,7 +99,38 @@ def make_output_wcs(
 
 
 def build_driz_weight(model, weight_type=None, good_bits=None):
-    """Create a weight map for use by drizzle"""
+    """
+    Builds the drizzle weight map for resampling.
+
+    Parameters
+    ----------
+    model : object
+        The input model.
+    weight_type : str, optional
+        The type of weight to use. Allowed values are 'ivm' or 'exptime'.
+        Defaults to None.
+    good_bits : int or list of int, optional
+        The good bits to use for building the mask. Defaults to None.
+
+    Returns
+    -------
+    numpy.ndarray
+        The drizzle weight map.
+
+    Raises
+    ------
+    ValueError
+        If an invalid weight type is provided.
+
+    Examples
+    --------
+    .. code-block:: none
+
+        model = get_input_model()
+        weight_map = build_driz_weight(model, weight_type='ivm', good_bits=[1, 2, 3])
+        print(weight_map)
+    """
+
     dqmask = build_mask(model.dq, good_bits)
 
     if weight_type == "ivm":
@@ -121,6 +152,8 @@ def build_driz_weight(model, weight_type=None, good_bits=None):
     elif weight_type == "exptime":
         exptime = model.meta.exposure.exposure_time
         result = exptime * dqmask
+    elif weight_type is None:
+        result = np.ones(model.data.shape, dtype=model.data.dtype) * dqmask
     else:
         raise ValueError(
             f"Invalid weight type: {weight_type}."
@@ -133,7 +166,29 @@ def build_driz_weight(model, weight_type=None, good_bits=None):
 def build_mask(dqarr, bitvalue):
     """
     Build a bit mask from an input DQ array and a bitvalue flag.
-    In the returned bit mask, 1 is good, 0 is bad
+
+    Parameters
+    ----------
+    dqarr : numpy.ndarray
+        Input DQ array.
+    bitvalue : int
+        Bitvalue flag.
+
+    Returns
+    -------
+    ndarray
+        Bit mask where 1 represents good and 0 represents bad.
+
+    Notes
+    -----
+    - The function interprets the bitvalue flag using the
+      `astropy.nddata.bitmask.interpret_bit_flags` function.
+    - If the bitvalue is None, the function returns a bit mask with all elements
+      set to 1.
+    - Otherwise, the function performs a bitwise AND operation between the dqarr and
+      the complement of the bitvalue, and then applies a logical NOT operation to
+      obtain the bit mask.
+    - The resulting bit mask is returned as an ndarray of dtype `numpy.uint8`.
     """
     bitvalue = interpret_bit_flags(bitvalue, flag_name_map=pixel)
 
@@ -144,7 +199,24 @@ def build_mask(dqarr, bitvalue):
 
 def calc_gwcs_pixmap(in_wcs, out_wcs, shape=None):
     """
-    Return a pixel grid map from input frame to output frame.
+    Generate a pixel map grid using the input and output WCS.
+
+    Parameters
+    ----------
+    in_wcs : `~astropy.wcs.WCS`
+        Input WCS.
+    out_wcs : `~astropy.wcs.WCS`
+        Output WCS.
+    shape : tuple, optional
+        Shape of the data. If provided, the bounding box will be calculated
+        from the shape. If not provided, the bounding box will be calculated
+        from the input WCS.
+
+    Returns
+    -------
+    pixmap : `~numpy.ndarray`
+        The calculated pixel map grid.
+
     """
     if shape:
         bb = wcs_bbox_from_shape(shape)
@@ -154,9 +226,7 @@ def calc_gwcs_pixmap(in_wcs, out_wcs, shape=None):
         log.debug(f"Bounding box from WCS: {in_wcs.bounding_box}")
 
     grid = gwcs.wcstools.grid_from_bounding_box(bb)
-    pixmap = np.dstack(reproject(in_wcs, out_wcs)(grid[0], grid[1]))
-
-    return pixmap
+    return np.dstack(reproject(in_wcs, out_wcs)(grid[0], grid[1]))
 
 
 def reproject(wcs1, wcs2):
@@ -249,29 +319,29 @@ def decode_context(context, x, y):
     An example context array for an output image of array shape ``(5, 6)``
     obtained by resampling 80 input images.
 
-    >>> import numpy as np
-    >>> from jwst.resample.resample_utils import decode_context
-    >>> con = np.array(
-    ...     [[[0, 0, 0, 0, 0, 0],
-    ...       [0, 0, 0, 36196864, 0, 0],
-    ...       [0, 0, 0, 0, 0, 0],
-    ...       [0, 0, 0, 0, 0, 0],
-    ...       [0, 0, 537920000, 0, 0, 0]],
-    ...      [[0, 0, 0, 0, 0, 0,],
-    ...       [0, 0, 0, 67125536, 0, 0],
-    ...       [0, 0, 0, 0, 0, 0],
-    ...       [0, 0, 0, 0, 0, 0],
-    ...       [0, 0, 163856, 0, 0, 0]],
-    ...      [[0, 0, 0, 0, 0, 0],
-    ...       [0, 0, 0, 8203, 0, 0],
-    ...       [0, 0, 0, 0, 0, 0],
-    ...       [0, 0, 0, 0, 0, 0],
-    ...       [0, 0, 32865, 0, 0, 0]]],
-    ...     dtype=np.int32
-    ... )
-    >>> decode_context(con, [3, 2], [1, 4])
-    [array([ 9, 12, 14, 19, 21, 25, 37, 40, 46, 58, 64, 65, 67, 77]),
-     array([ 9, 20, 29, 36, 47, 49, 64, 69, 70, 79])]
+    .. code-block:: none
+
+        con = np.array(
+            [[[0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 36196864, 0, 0],
+              [0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0],
+              [0, 0, 537920000, 0, 0, 0]],
+             [[0, 0, 0, 0, 0, 0,],
+              [0, 0, 0, 67125536, 0, 0],
+              [0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0],
+              [0, 0, 163856, 0, 0, 0]],
+             [[0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 8203, 0, 0],
+              [0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0],
+              [0, 0, 32865, 0, 0, 0]]],
+            dtype=np.int32
+        )
+        decode_context(con, [3, 2], [1, 4])
+        [array([ 9, 12, 14, 19, 21, 25, 37, 40, 46, 58, 64, 65, 67, 77]),
+        array([ 9, 20, 29, 36, 47, 49, 64, 69, 70, 79])]
 
     """
     if context.ndim != 3:

@@ -556,7 +556,7 @@ def test_custom_wcs_input_small_overlap_no_rotation(wfi_sca1, wfi_sca3):
     # pixel scale in RA (N.B.: there's no shift in Dec.)
     pixel_scale = np.abs(wfi_sca3.meta.wcs(0, 0)[0] - wfi_sca3.meta.wcs(1, 0)[0])
     # overlap size in RA (N.B.: there's no shift in Dec.)
-    ra_overlap_size = np.ceil(
+    ra_overlap_size = np.round(
         input_models[0].shape[0]
         - np.abs(input_models[0].meta.wcs(0, 0)[0] - wfi_sca3.meta.wcs(0, 0)[0])
         / pixel_scale
@@ -564,7 +564,7 @@ def test_custom_wcs_input_small_overlap_no_rotation(wfi_sca1, wfi_sca3):
     # determine the size of the region in the output that contains data
     # (which should have come from the overlap with the input datamodel)
     output_nonzero_region = np.nonzero(output_models[0].data)
-    ra_output_nonzero_size = np.ceil(len(set(output_nonzero_region[1])))
+    ra_output_nonzero_size = np.round(len(set(output_nonzero_region[1])))
 
     assert ra_output_nonzero_size == ra_overlap_size
 
