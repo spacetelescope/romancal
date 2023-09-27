@@ -41,7 +41,9 @@ sys.path.insert(0, os.path.abspath("romancal/"))
 sys.path.insert(0, os.path.abspath("exts/"))
 
 # -- General configuration ------------------------------------------------
-with open(Path(__file__).parent.parent / "pyproject.toml", "rb") as configuration_file:
+with open(
+    Path(__file__).parent.parent / "pyproject.toml", "rb"
+) as configuration_file:
     conf = tomllib.load(configuration_file)
 setup_cfg = conf["project"]
 
@@ -67,6 +69,8 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/devdocs", None),
     "scipy": ("http://scipy.github.io/devdocs", None),
     "matplotlib": ("http://matplotlib.org/", None),
+    "gwcs": ("https://gwcs.readthedocs.io/en/latest/", None),
+    "astropy": ("https://docs.astropy.org/en/stable/", None),
 }
 
 if sys.version_info[0] == 2:
@@ -74,7 +78,9 @@ if sys.version_info[0] == 2:
     intersphinx_mapping["pythonloc"] = (
         "http://docs.python.org/",
         os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "local/python2_local_links.inv")
+            os.path.join(
+                os.path.dirname(__file__), "local/python2_local_links.inv"
+            )
         ),
     )
 
@@ -135,7 +141,9 @@ suppress_warnings = [
 
 # General information about the project
 project = setup_cfg["name"]
-author = f'{setup_cfg["authors"][0]["name"]} <{setup_cfg["authors"][0]["email"]}>'
+author = (
+    f'{setup_cfg["authors"][0]["name"]} <{setup_cfg["authors"][0]["email"]}>'
+)
 copyright = f"{datetime.datetime.now().year}, {author}"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -361,7 +369,9 @@ htmlhelp_basename = "romandoc"
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [("index", "romancal", "Roman Pipeline Documentation", ["romancal"], 1)]
+man_pages = [
+    ("index", "romancal", "Roman Pipeline Documentation", ["romancal"], 1)
+]
 
 # If true, show URL addresses after external links.
 man_show_urls = True
