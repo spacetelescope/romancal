@@ -83,9 +83,7 @@ class ResampleStep(RomanStep):
             except Exception:
                 # single ASDF filename
                 input_models = ModelContainer([input])
-            if hasattr(input_models, "asn_table") and len(
-                input_models.asn_table
-            ):
+            if hasattr(input_models, "asn_table") and len(input_models.asn_table):
                 # set output filename from ASN table
                 output = input_models.asn_table["products"][0]["name"]
             elif hasattr(input_models[0], "meta"):
@@ -94,7 +92,9 @@ class ResampleStep(RomanStep):
         elif isinstance(input, ModelContainer):
             input_models = input
             # set output filename using the common prefix of all datamodels
-            output = f"{os.path.commonprefix([x.meta.filename for x in input_models])}.asdf"
+            output = (
+                f"{os.path.commonprefix([x.meta.filename for x in input_models])}.asdf"
+            )
             if len(output) == 0:
                 # set default filename if no common prefix can be determined
                 output = "resample_output.asdf"
@@ -116,9 +116,7 @@ class ResampleStep(RomanStep):
 
         # Issue a warning about the use of exptime weighting
         if self.wht_type == "exptime":
-            self.log.warning(
-                "Use of EXPTIME weighting will result in incorrect"
-            )
+            self.log.warning("Use of EXPTIME weighting will result in incorrect")
             self.log.warning("propagated errors in the resampled product")
 
         # Custom output WCS parameters.
@@ -216,9 +214,7 @@ class ResampleStep(RomanStep):
                 )
             return list(vals)
         else:
-            raise ValueError(
-                f"Both '{name}' values must be either None or not None."
-            )
+            raise ValueError(f"Both '{name}' values must be either None or not None.")
 
     @staticmethod
     def _load_custom_wcs(asdf_wcs_file, output_shape):

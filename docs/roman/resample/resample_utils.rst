@@ -5,4 +5,3 @@ Resample Utilities
 
 .. automodule:: romancal.resample.resample_utils
    :members:
-

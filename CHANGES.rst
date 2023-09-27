@@ -21,13 +21,13 @@ ramp_fitting
 
 - Fix opening mode for references to be read-only [#854]
 
-
-0.12.0 (2023-08-18)
-===================
-
 resample
 --------
 - Implement resampling step. [#787]
+
+
+0.12.0 (2023-08-18)
+===================
 
 source_detection
 ----------------
