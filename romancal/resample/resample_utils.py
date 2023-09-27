@@ -110,7 +110,9 @@ def build_driz_weight(model, weight_type=None, good_bits=None):
         ):
             with np.errstate(divide="ignore", invalid="ignore"):
                 inv_variance = model.var_rnoise**-1
-            inv_variance[~np.isfinite(inv_variance)] = 1 * u.s**2 / u.electron**2
+            inv_variance[~np.isfinite(inv_variance)] = (
+                1 * u.s**2 / u.electron**2
+            )
         else:
             warnings.warn(
                 "var_rnoise array not available. Setting drizzle weight map to 1",
@@ -122,7 +124,10 @@ def build_driz_weight(model, weight_type=None, good_bits=None):
         exptime = model.meta.exposure.exposure_time
         result = exptime * dqmask
     else:
-        result = np.ones(model.data.shape, dtype=model.data.dtype) * dqmask
+        raise ValueError(
+            f"Invalid weight type: {weight_type}."
+            "Allowed weight types are 'ivm' or 'exptime'."
+        )
 
     return result.astype(np.float32)
 
@@ -283,12 +288,33 @@ def decode_context(context, x, y):
     if x.ndim != 1:
         raise ValueError("Coordinates must be scalars or 1D arrays.")
 
-    if not (np.issubdtype(x.dtype, np.integer) and np.issubdtype(y.dtype, np.integer)):
+    if not (
+        np.issubdtype(x.dtype, np.integer)
+        and np.issubdtype(y.dtype, np.integer)
+    ):
         raise ValueError("Pixel coordinates must be integer values")
 
     nbits = 8 * context.dtype.itemsize
 
     return [
-        np.flatnonzero([v & (1 << k) for v in context[:, yi, xi] for k in range(nbits)])
+        np.flatnonzero(
+            [v & (1 << k) for v in context[:, yi, xi] for k in range(nbits)]
+        )
         for xi, yi in zip(x, y)
     ]
+
+
+def resample_range(data_shape, bbox=None):
+    # Find range of input pixels to resample:
+    if bbox is None:
+        xmin = ymin = 0
+        xmax = data_shape[1] - 1
+        ymax = data_shape[0] - 1
+    else:
+        ((x1, x2), (y1, y2)) = bbox
+        xmin = max(0, int(x1 + 0.5))
+        ymin = max(0, int(y1 + 0.5))
+        xmax = min(data_shape[1] - 1, int(x2 + 0.5))
+        ymax = min(data_shape[0] - 1, int(y2 + 0.5))
+
+    return xmin, xmax, ymin, ymax

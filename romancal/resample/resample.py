@@ -15,7 +15,7 @@ log.setLevel(logging.DEBUG)
 __all__ = ["OutputTooLargeError", "ResampleData"]
 
 
-class OutputTooLargeError(RuntimeError):
+class OutputTooLargeError(MemoryError):
     """Raised when the output is too large for in-memory instantiation"""
 
 
@@ -183,9 +183,13 @@ class ResampleData:
             indx = exposure[0].meta.filename.rfind(".")
             output_type = exposure[0].meta.filename[indx:]
             output_root = "_".join(
-                exposure[0].meta.filename.replace(output_type, "").split("_")[:-1]
+                exposure[0]
+                .meta.filename.replace(output_type, "")
+                .split("_")[:-1]
             )
-            output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
+            output_model.meta.filename = (
+                f"{output_root}_outlier_i2d{output_type}"
+            )
 
             # Initialize the output with the wcs
             driz = gwcs_drizzle.GWCSDrizzle(
@@ -210,7 +214,19 @@ class ResampleData:
                 else:
                     data = img.data
 
-                driz.add_image(data, img.meta.wcs, inwht=inwht)
+                xmin, xmax, ymin, ymax = resample_utils.resample_range(
+                    data.shape, img.meta.wcs.bounding_box
+                )
+
+                driz.add_image(
+                    data,
+                    img.meta.wcs,
+                    inwht=inwht,
+                    xmin=xmin,
+                    xmax=xmax,
+                    ymin=ymin,
+                    ymax=ymax,
+                )
                 del data
                 img.close()
 
@@ -236,7 +252,9 @@ class ResampleData:
         output_model.meta["resample"] = mk_resample()
         output_model.meta.resample["members"] = []
         output_model.meta.resample.weight_type = self.weight_type
-        output_model.meta.resample.pointings = len(self.input_models.models_grouped)
+        output_model.meta.resample.pointings = len(
+            self.input_models.models_grouped
+        )
 
         if self.blendheaders:
             log.info("Skipping blendheaders for now.")
@@ -265,7 +283,19 @@ class ResampleData:
             else:
                 data = img.data
 
-            driz.add_image(data, img.meta.wcs, inwht=inwht)
+            xmin, xmax, ymin, ymax = resample_utils.resample_range(
+                data.shape, img.meta.wcs.bounding_box
+            )
+
+            driz.add_image(
+                data,
+                img.meta.wcs,
+                inwht=inwht,
+                xmin=xmin,
+                xmax=xmax,
+                ymin=ymin,
+                ymax=ymax,
+            )
             del data, inwht
             output_model.meta.resample.members.append(img.meta.filename)
 
@@ -334,6 +364,10 @@ class ResampleData:
             outwht = np.zeros_like(output_model.data)
             outcon = np.zeros_like(output_model.context)
 
+            xmin, xmax, ymin, ymax = resample_utils.resample_range(
+                variance.shape, model.meta.wcs.bounding_box
+            )
+
             # resample the variance array (fill "unpopulated" pixels with NaNs)
             self.drizzle_arrays(
                 variance,
@@ -346,6 +380,10 @@ class ResampleData:
                 pixfrac=self.pixfrac,
                 kernel=self.kernel,
                 fillval=np.nan,
+                xmin=xmin,
+                xmax=xmax,
+                ymin=ymin,
+                ymax=ymax,
             )
 
             # Add the inverse of the resampled variance to a running sum.
@@ -449,8 +487,7 @@ class ResampleData:
             this function is called and incremented by one on each subsequent
             call.
 
-        xmin : float, optional
-            This and the following three parameters set a bounding rectangle
+        xmin : float, None, optional
             on the input image. Only pixels on the input image inside this
             rectangle will have their flux added to the output image. Xmin
             sets the minimum value of the x dimension. The x dimension is the
@@ -458,19 +495,19 @@ class ResampleData:
             no minimum will be set in the x dimension. All four parameters are
             zero based, counting starts at zero.
 
-        xmax : float, optional
+        xmax : float, None, optional
             Sets the maximum value of the x dimension on the bounding box
             of the input image. If the value is zero, no maximum will
             be set in the x dimension, the full x dimension of the output
             image is the bounding box.
 
-        ymin : float, optional
+        ymin : float, None, optional
             Sets the minimum value in the y dimension on the bounding box. The
             y dimension varies less rapidly than the x and represents the line
             index on the input image. If the value is zero, no minimum  will be
             set in the y dimension.
 
-        ymax : float, optional
+        ymax : float, None, optional
             Sets the maximum value in the y dimension. If the value is zero, no
             maximum will be set in the y dimension,  the full x dimension
             of the output image is the bounding box.
@@ -530,17 +567,11 @@ class ResampleData:
         if outcon.ndim == 3:
             outcon = outcon[planeid]
 
-        if xmin is xmax is ymin is ymax is None:
-            bb = input_wcs.bounding_box
-            ((x1, x2), (y1, y2)) = bb
-            xmin = int(min(x1, x2))
-            ymin = int(min(y1, y2))
-            xmax = int(max(x1, x2))
-            ymax = int(max(y1, y2))
-
         # Compute the mapping between the input and output pixel coordinates
         # for use in drizzle.cdrizzle.tdriz
-        pixmap = resample_utils.calc_gwcs_pixmap(input_wcs, output_wcs, insci.shape)
+        pixmap = resample_utils.calc_gwcs_pixmap(
+            input_wcs, output_wcs, insci.shape
+        )
 
         log.debug(f"Pixmap shape: {pixmap[:,:,0].shape}")
         log.debug(f"Input Sci shape: {insci.shape}")
