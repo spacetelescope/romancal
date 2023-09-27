@@ -17,8 +17,6 @@ def test_ramp_fitting_step(rtdata, ignore_asdf_paths):
     args = [
         "romancal.step.RampFitStep",
         rtdata.input,
-        "--save_opt=True",
-        "--opt_name=rampfit_opt.asdf",
     ]
     RomanStep.from_cmdline(args)
     output = "r0000101001001001001_01101_0001_WFI01_rampfit.asdf"
@@ -27,8 +25,3 @@ def test_ramp_fitting_step(rtdata, ignore_asdf_paths):
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
-    output = "rampfit_opt_fitopt.asdf"
-    rtdata.output = output
-    rtdata.get_truth(f"truth/WFI/image/{output}")
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
-    assert diff.identical, diff.report()
