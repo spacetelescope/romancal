@@ -15,7 +15,7 @@ from .regtestdata import compare_asdf
 def test_flat_field_image_step(rtdata, ignore_asdf_paths):
     """Test for the flat field step using imaging data."""
 
-    input_data = "r0000101001001001001_01101_0001_WFI01_rampfit.asdf"
+    input_data = "r0000101001001001001_01101_0001_WFI01_assignwcs.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
