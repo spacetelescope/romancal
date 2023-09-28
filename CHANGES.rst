@@ -4,6 +4,8 @@
 general
 -------
 
+- Update regression tests with new data and update ramp fitting tests to use ols_cas22 [#911]
+
 - Fix bug with ``ModelContainer.get_crds_parameters`` being a property not a method [#846]
 
 - Fix random seed bug in PSF fitting methods [#862]
