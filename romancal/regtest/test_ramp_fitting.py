@@ -24,4 +24,3 @@ def test_ramp_fitting_step(rtdata, ignore_asdf_paths):
     rtdata.get_truth(f"truth/WFI/image/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
-
