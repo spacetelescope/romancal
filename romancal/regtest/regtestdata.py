@@ -1,3 +1,4 @@
+import io
 import os
 import os.path as op
 import pprint
@@ -8,7 +9,9 @@ from glob import glob as _sys_glob
 from pathlib import Path
 
 import asdf
+import astropy.table
 import astropy.time
+import astropy.utils.diff
 import deepdiff
 import gwcs
 import numpy as np
@@ -578,6 +581,23 @@ class NDArrayTypeOperator(BaseOperator):
         return True
 
 
+class TableOperator(BaseOperator):
+    def give_up_diffing(self, level, diff_instance):
+        sio = io.StringIO()
+        identical = astropy.utils.diff.report_diff_values(
+            level.t1, level.t2, fileobj=sio
+        )
+        difference = {}
+        if not identical:
+            difference["values_differ"] = sio.read()
+        # also compare meta (which report_diff_values does not)
+        if level.t1.meta != level.t2.meta:
+            difference["metas_differ"] = deepdiff.DeepDiff(level.t1.meta, level.t2.meta)
+        if difference:
+            diff_instance.custom_report_result("tables_differ", level, difference)
+        return True
+
+
 class TimeOperator(BaseOperator):
     def give_up_diffing(self, level, diff_instance):
         if level.t1 != level.t2:
@@ -673,6 +693,7 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
             rtol, atol, equal_nan, types=[asdf.tags.core.NDArrayType, np.ndarray]
         ),
         TimeOperator(types=[astropy.time.Time]),
+        TableOperator(types=[astropy.table.Table]),
         WCSOperator(types=[gwcs.WCS]),
     ]
     # warnings can be seen in regtest runs which indicate

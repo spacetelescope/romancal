@@ -16,6 +16,8 @@ general
   ``asdf.commands.diff`` with ``deepdiff`` and add ``deepdiff`` as
   a test dependency [#868]
 
+- Add ``astropy.table.Table`` support to ``compare_asdf`` [#915]
+
 ramp_fitting
 ------------
 
