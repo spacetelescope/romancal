@@ -1,4 +1,3 @@
-import io
 import os
 import os.path as op
 import pprint
@@ -11,7 +10,6 @@ from pathlib import Path
 import asdf
 import astropy.table
 import astropy.time
-import astropy.utils.diff
 import deepdiff
 import gwcs
 import numpy as np
@@ -540,23 +538,35 @@ class NDArrayTypeOperator(BaseOperator):
         self.atol = atol
         self.equal_nan = equal_nan
 
-    def give_up_diffing(self, level, diff_instance):
-        a, b = level.t1, level.t2
-        meta = {}
+    def _compare_arrays(self, a, b):
+        difference = {}
         if a.shape != b.shape:
-            meta["shapes"] = [a.shape, b.shape]
+            difference["shapes"] = [a.shape, b.shape]
         if a.dtype != b.dtype:
-            meta["dtypes"] = [a.dtype, b.dtype]
+            difference["dtypes"] = [a.dtype, b.dtype]
         if isinstance(a, Quantity) and isinstance(b, Quantity):
             if a.unit != b.unit:
-                meta["units"] = [a.unit, b.unit]
-        if not meta:  # only compare if shapes and dtypes match
+                difference["units"] = [a.unit, b.unit]
+        if a.dtype.names or b.dtype.names:
+            if a.dtype.names != b.dtype.names:
+                difference["names"] = [a.dtype.names, b.dtype.names]
+            if not difference:
+                # only compare values if no other difference exists
+                column_differences = {}
+                for name in a.dtype.names:
+                    column_difference = self._compare_arrays(a[name], b[name])
+                    if column_difference:
+                        column_differences[name] = column_difference
+                if column_differences:
+                    difference["column_values"] = column_differences
+            return difference
+        if not difference:  # only compare if shapes and dtypes match
             if not np.allclose(
                 a, b, rtol=self.rtol, atol=self.atol, equal_nan=self.equal_nan
             ):
                 abs_diff = np.abs(a - b)
                 index = np.unravel_index(np.nanargmax(abs_diff), a.shape)
-                meta["worst_abs_diff"] = {
+                difference["worst_abs_diff"] = {
                     "index": index,
                     "value": abs_diff[index],
                 }
@@ -566,33 +576,40 @@ class NDArrayTypeOperator(BaseOperator):
                     # ignore these here for computing the fractional diff
                     fractional_diff = np.abs(a / b)
                 index = np.unravel_index(np.nanargmax(fractional_diff), a.shape)
-                meta["worst_fractional_diff"] = {
+                difference["worst_fractional_diff"] = {
                     "index": index,
                     "value": fractional_diff[index],
                 }
-                meta["abs_diff"] = np.nansum(np.abs(a - b))
-                meta["n_diffs"] = np.count_nonzero(
+                difference["abs_diff"] = np.nansum(np.abs(a - b))
+                difference["n_diffs"] = np.count_nonzero(
                     np.isclose(
                         a, b, rtol=self.rtol, atol=self.atol, equal_nan=self.equal_nan
                     )
                 )
-        if meta:
-            diff_instance.custom_report_result("arrays_differ", level, meta)
+        return difference
+
+    def give_up_diffing(self, level, diff_instance):
+        difference = self._compare_arrays(level.t1, level.t2)
+        if difference:
+            diff_instance.custom_report_result("arrays_differ", level, difference)
         return True
 
 
-class TableOperator(BaseOperator):
+class TableOperator(NDArrayTypeOperator):
     def give_up_diffing(self, level, diff_instance):
-        sio = io.StringIO()
-        identical = astropy.utils.diff.report_diff_values(
-            level.t1, level.t2, fileobj=sio
-        )
-        difference = {}
-        if not identical:
-            difference["values_differ"] = sio.read()
-        # also compare meta (which report_diff_values does not)
+        a = level.t1.as_array()
+        b = level.t2.as_array()
+        difference = self._compare_arrays(a, b)
+        # also compare meta  for tables
         if level.t1.meta != level.t2.meta:
-            difference["metas_differ"] = deepdiff.DeepDiff(level.t1.meta, level.t2.meta)
+            meta_difference = deepdiff.DeepDiff(
+                level.t1.meta,
+                level.t2.meta,
+                ignore_nan_inequality=self.equal_nan,
+                math_epsilon=self.atol,
+            )
+            if meta_difference:
+                difference["metas_differ"] = meta_difference
         if difference:
             diff_instance.custom_report_result("tables_differ", level, difference)
         return True
@@ -672,7 +689,8 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
         rtol argument passed to `numpyp.allclose`
 
     atol : float
-        atol argument passed to `numpyp.allclose`
+        atol argument passed to `numpyp.allclose` and ``DeepDiff``
+        as ``math_epsilon``.
 
     equal_nan : bool
         Ignore nan inequality
@@ -693,7 +711,7 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
             rtol, atol, equal_nan, types=[asdf.tags.core.NDArrayType, np.ndarray]
         ),
         TimeOperator(types=[astropy.time.Time]),
-        TableOperator(types=[astropy.table.Table]),
+        TableOperator(rtol, atol, equal_nan, types=[astropy.table.Table]),
         WCSOperator(types=[gwcs.WCS]),
     ]
     # warnings can be seen in regtest runs which indicate
@@ -717,6 +735,7 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
             ignore_nan_inequality=equal_nan,
             custom_operators=operators,
             exclude_paths=exclude_paths,
+            math_epsilon=atol,
         )
         # the conversion between NDArrayType and ndarray adds a bunch
         # of type changes, ignore these for now.
