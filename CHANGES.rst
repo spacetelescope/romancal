@@ -18,6 +18,8 @@ general
 
 - Add ``astropy.table.Table`` support to ``compare_asdf`` [#915]
 
+- Use tolerance for more comparisons in ``compare_asdf`` [#917]
+
 ramp_fitting
 ------------
 
