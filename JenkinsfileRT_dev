@@ -55,6 +55,8 @@ env_vars = [
     "CRDS_CONTEXT=roman_0051.pmap",
     "CRDS_SERVER_URL=https://serverless",
     'CRDS_PATH=/grp/crds/roman/test/',
+    'WEBBPSF_PATH=/grp/jwst/ote/webbpsf-data',
+    'PYSYN_CDBS=/grp/hst/cdbs',
 ]
 if (env.ENV_VARS) {
     env_vars.addAll(MultiLineToArray(env.ENV_VARS))
