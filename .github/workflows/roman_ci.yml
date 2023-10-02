@@ -55,7 +55,7 @@ jobs:
       - id: data
         run: |
           echo "path=/tmp/data" >> $GITHUB_OUTPUT
-          echo "webbpsf_url=https://stsci.box.com/shared/static/n1fealx9q0m6sdnass6wnyfikvxtc0zz.gz" >> $GITHUB_OUTPUT
+          echo "webbpsf_url=https://stsci.box.com/shared/static/qxpiaxsjwo15ml6m4pkhtk36c9jgj70k.gz" >> $GITHUB_OUTPUT
       - run: |
           mkdir -p tmp/data/
           mkdir -p ${{ steps.data.outputs.path }}
