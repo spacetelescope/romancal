@@ -31,9 +31,7 @@ def _oxford_or_str_join(str_list):
     elif nelem == 2:
         return f"{str_list[0]} or {str_list[1]}"
     else:
-        return (
-            ", ".join(map(repr, str_list[:-1])) + ", or " + repr(str_list[-1])
-        )
+        return ", ".join(map(repr, str_list[:-1])) + ", or " + repr(str_list[-1])
 
 
 SINGLE_GROUP_REFCAT = ["GAIADR3", "GAIADR2", "GAIADR1"]
@@ -146,9 +144,7 @@ class TweakRegStep(RomanStep):
             self.catalog_path = os.getcwd()
 
         self.catalog_path = Path(self.catalog_path).as_posix()
-        self.log.info(
-            f"All source catalogs will be saved to: {self.catalog_path}"
-        )
+        self.log.info(f"All source catalogs will be saved to: {self.catalog_path}")
 
         if self.abs_refcat is None or len(self.abs_refcat.strip()) == 0:
             self.abs_refcat = DEFAULT_ABS_REFCAT
@@ -240,9 +236,7 @@ class TweakRegStep(RomanStep):
         grp_img = list(images.models_grouped)
 
         self.log.info("")
-        self.log.info(
-            f"Number of image groups to be aligned: {len(grp_img):d}."
-        )
+        self.log.info(f"Number of image groups to be aligned: {len(grp_img):d}.")
         self.log.info("Image groups:")
 
         if len(grp_img) == 1 and not ALIGN_TO_ABS_REFCAT:
@@ -252,9 +246,7 @@ class TweakRegStep(RomanStep):
             self.log.info("")
 
             # we need at least two exposures to perform image alignment
-            self.log.warning(
-                "At least two exposures are required for image alignment."
-            )
+            self.log.warning("At least two exposures are required for image alignment.")
             self.log.warning("Nothing to do. Skipping 'TweakRegStep'...")
             self.skip = True
             for model in images:
@@ -328,8 +320,7 @@ class TweakRegStep(RomanStep):
             except ValueError as e:
                 msg = e.args[0]
                 if (
-                    msg
-                    == "Too few input images (or groups of images) with non-empty"
+                    msg == "Too few input images (or groups of images) with non-empty"
                     " catalogs."
                 ):
                     # we need at least two exposures to perform image alignment
@@ -337,9 +328,7 @@ class TweakRegStep(RomanStep):
                     self.log.warning(
                         "At least two exposures are required for image alignment."
                     )
-                    self.log.warning(
-                        "Nothing to do. Skipping 'TweakRegStep'..."
-                    )
+                    self.log.warning("Nothing to do. Skipping 'TweakRegStep'...")
                     for model in images:
                         model.meta.cal_step["tweakreg"] = "SKIPPED"
                     if not ALIGN_TO_ABS_REFCAT:
@@ -365,9 +354,7 @@ class TweakRegStep(RomanStep):
                     for model in images:
                         model.meta.cal_step["tweakreg"] = "SKIPPED"
                     if ALIGN_TO_ABS_REFCAT:
-                        self.log.warning(
-                            "Skipping relative alignment (stage 1)..."
-                        )
+                        self.log.warning("Skipping relative alignment (stage 1)...")
                     else:
                         self.log.warning("Skipping 'TweakRegStep'...")
                         self.skip = True
@@ -495,9 +482,7 @@ class TweakRegStep(RomanStep):
                 # (typecasting numpy objects to python types so that it doesn't cause an
                 # issue when saving datamodel to ASDF)
                 wcs_fit_results = {
-                    k: v.tolist()
-                    if isinstance(v, (np.ndarray, np.bool_))
-                    else v
+                    k: v.tolist() if isinstance(v, (np.ndarray, np.bool_)) else v
                     for k, v in imcat.meta["fit_info"].items()
                 }
                 # add fit results and new WCS to datamodel
@@ -591,9 +576,7 @@ def _common_name(group):
     file_names = []
     for im in group:
         if isinstance(im, rdm.DataModel):
-            file_names.append(
-                os.path.splitext(im.meta.filename)[0].strip("_- ")
-            )
+            file_names.append(os.path.splitext(im.meta.filename)[0].strip("_- "))
         else:
             raise TypeError("Input must be a list of datamodels list.")
 
