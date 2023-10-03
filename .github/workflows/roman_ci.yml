@@ -43,9 +43,9 @@ jobs:
         DD_GIT_REPOSITORY_URL: ${{ github.repositoryUrl }}
         DD_GIT_COMMIT_SHA: ${{ github.sha }}
         DD_GIT_BRANCH: ${{ github.ref_name }}
-      cache-path: ${{ needs.data.outputs.data_path }}
-      cache-key: data-${{ needs.data.outputs.data_hash }}-${{ needs.data.outputs.crds_context }}
-      cache-restore-keys: webbpsf-${{ needs.data.outputs.data_hash }}
+      cache-path: ${{ needs.data.outputs.crds_path }}
+      cache-key: data-${{ needs.data.outputs.webbpsf_hash }}-${{ needs.data.outputs.crds_context }}
+      cache-restore-keys: webbpsf-${{ needs.data.outputs.webbpsf_hash }}
       envs: |
         - linux: py39-oldestdeps-cov
           pytest-results-summary: true

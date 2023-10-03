@@ -3,16 +3,16 @@ name: check/update webbpsf cache
 on:
   workflow_call:
     outputs:
-      webbpsf_path:
-        value: ${{ jobs.data.outputs.webbpsf_path }}
-      data_hash:
-        value: ${{ jobs.data.outputs.data_hash }}
-      crds_path:
-        value: ${{ jobs.data.outputs.crds_path }}
       crds_context:
         value: ${{ jobs.data.outputs.crds_context }}
+      crds_path:
+        value: ${{ jobs.data.outputs.crds_path }}
       crds_server:
         value: ${{ jobs.data.outputs.crds_server }}
+      webbpsf_hash:
+        value: ${{ jobs.data.outputs.webbpsf_hash }}
+      webbpsf_path:
+        value: ${{ jobs.data.outputs.webbpsf_path }}
   workflow_dispatch:
   schedule:
     - cron: "42 4 * * 3"
@@ -23,7 +23,6 @@ jobs:
     name: fetch, check, and possibly update webbpsf data cache
     runs-on: ubuntu-latest
     env:
-      # DATA_PATH here should match CRDS_PATH in roman_ci.yml and roman_ci_cron.yml
       DATA_PATH: /tmp/data
       WEBBPSF_DATA_URL: https://stsci.box.com/shared/static/qxpiaxsjwo15ml6m4pkhtk36c9jgj70k.gz
     outputs:
@@ -58,21 +57,16 @@ jobs:
     env:
       OBSERVATORY: roman
       CRDS_SERVER_URL: https://roman-crds.stsci.edu
-      # CRDS_PATH here should match DATA_PATH in webbpsf_data.yml
       CRDS_PATH: /tmp/data
       GH_TOKEN: ${{ github.token }}
     outputs:
-      # TODO simplify data_path and crds_path as they are the same
-      data_path: ${{ steps.data.outputs.path }}
-      webbpsf_path: ${{ steps.webbpsf_path.outputs.path }}
-      data_hash: ${{ steps.data_hash.outputs.hash }}
-      crds_path: ${{ steps.crds_path.outputs.path }}
       crds_context: ${{ steps.crds_context.outputs.pmap }}
+      crds_path: ${{ steps.crds_path.outputs.path }}
       crds_server: ${{ steps.crds_server.outputs.url }}
+      webbpsf_hash: ${{ steps.webbpsf_hash.outputs.hash }}
+      webbpsf_path: ${{ steps.webbpsf_path.outputs.path }}
     steps:
       # crds:
-      - id: data
-        run: echo "path=/tmp/data" >> $GITHUB_OUTPUT
       - id: crds_context
         run: >
           echo "pmap=$(
@@ -86,7 +80,7 @@ jobs:
       - id: crds_server
         run: echo "url=${{ env.CRDS_SERVER_URL }}" >> $GITHUB_OUTPUT
       # webbpsf:
-      - id: data_hash
+      - id: webbpsf_hash
         run: |
           # use actions/gh-actions-cache to allow filtering by key
           gh extension install actions/gh-actions-cache
