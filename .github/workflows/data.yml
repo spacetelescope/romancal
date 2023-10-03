@@ -92,4 +92,4 @@ jobs:
           echo "hash=$HASH" >> $GITHUB_OUTPUT
           if [ "$HASH" == '' ]; then exit 1; fi
       - id: webbpsf_path
-        run: echo "path=${{ steps.data.outputs.path }}/webbpsf-data" >> $GITHUB_OUTPUT
+        run: echo "path=${{ steps.crds_path.outputs.path }}/webbpsf-data" >> $GITHUB_OUTPUT
