@@ -4,6 +4,8 @@
 general
 -------
 
+- Update regression tests with new data and update ramp fitting tests to use ols_cas22 [#911]
+
 - Fix bug with ``ModelContainer.get_crds_parameters`` being a property not a method [#846]
 
 - Fix random seed bug in PSF fitting methods [#862]
@@ -13,6 +15,10 @@ general
 - Fix regression test ``compare_asdf`` function replacing use of
   ``asdf.commands.diff`` with ``deepdiff`` and add ``deepdiff`` as
   a test dependency [#868]
+
+- Add ``astropy.table.Table`` support to ``compare_asdf`` [#915]
+
+- Use tolerance for more comparisons in ``compare_asdf`` [#917]
 
 ramp_fitting
 ------------
