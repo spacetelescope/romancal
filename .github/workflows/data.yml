@@ -18,16 +18,8 @@ on:
     - cron: "42 4 * * 3"
 
 jobs:
-  report:
-    runs-on: ubuntu-latest
-    steps:
-    - name: echo
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-      run: |
-        echo "$GITHUB_CONTEXT"
   webbpsf-data:
-    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'update webbpsf data')))
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'update webbpsf data')))
     name: fetch, check, and possibly update webbpsf data cache
     runs-on: ubuntu-latest
     env:
