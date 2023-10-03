@@ -1,4 +1,4 @@
-name: check/update webbpsf cache
+name: check and update webbpsf and crds cache
 
 on:
   workflow_call:

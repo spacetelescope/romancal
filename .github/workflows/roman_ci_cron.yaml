@@ -25,7 +25,7 @@ concurrency:
 jobs:
   data:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run scheduled tests')))
-    uses: ./.github/workflows/webbpsf_data.yml
+    uses: ./.github/workflows/data.yml
   test:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
     needs: [ data ]

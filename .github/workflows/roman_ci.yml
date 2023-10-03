@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   data:
-    uses: ./.github/workflows/webbpsf_data.yml
+    uses: ./.github/workflows/data.yml
   check:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
     with:
