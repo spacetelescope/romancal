@@ -26,8 +26,11 @@ jobs:
     env:
       OBSERVATORY: roman
       CRDS_SERVER_URL: https://roman-crds.stsci.edu
+      # CRDS_PATH here should match DATA_PATH in webbpsf_data.yml
       CRDS_PATH: /tmp/data
+      GH_TOKEN: ${{ github.token }}
     outputs:
+      # TODO simplify data_path and crds_path as they are the same
       data_path: ${{ steps.data.outputs.path }}
       webbpsf_path: ${{ steps.webbpsf_path.outputs.path }}
       data_hash: ${{ steps.data_hash.outputs.hash }}
@@ -36,6 +39,8 @@ jobs:
       crds_server: ${{ steps.crds_server.outputs.url }}
     steps:
       # crds:
+      - id: data
+        run: echo "path=/tmp/data" >> $GITHUB_OUTPUT
       - id: crds_context
         run: >
           echo "pmap=$(
@@ -49,25 +54,17 @@ jobs:
       - id: crds_server
         run: echo "url=${{ env.CRDS_SERVER_URL }}" >> $GITHUB_OUTPUT
       # webbpsf:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - id: data
-        run: |
-          echo "path=/tmp/data" >> $GITHUB_OUTPUT
-          echo "webbpsf_url=https://stsci.box.com/shared/static/qxpiaxsjwo15ml6m4pkhtk36c9jgj70k.gz" >> $GITHUB_OUTPUT
-      - run: |
-          mkdir -p tmp/data/
-          mkdir -p ${{ steps.data.outputs.path }}
-      - run: wget ${{ steps.data.outputs.webbpsf_url }} -O tmp/minimal-webbpsf-data.tar.gz
-      - run: tar -xzvf tmp/minimal-webbpsf-data.tar.gz -C tmp/data/
       - id: data_hash
-        run: echo "hash=${{ hashFiles( 'tmp/data' ) }}" >> $GITHUB_OUTPUT
-      - run: mv tmp/data/* ${{ steps.data.outputs.path }}
-      - uses: actions/cache@v3
-        with:
-          path: ${{ steps.data.outputs.path }}
-          key: data-${{ steps.data_hash.outputs.hash }}-${{ steps.crds_context.outputs.pmap }}
+        run: |
+          # use actions/gh-actions-cache to allow filtering by key
+          gh extension install actions/gh-actions-cache
+
+          RECENT=$(gh actions-cache list -R spacetelescope/romancal --key webbpsf- --sort created-at | cut -f 1 | head -n 1)
+          echo "RECENT=$RECENT"
+          HASH=$(echo $RECENT | cut -d '-' -f 2)
+          echo "HASH=$HASH"
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+          if [ "$HASH" == '' ]; then exit 1; fi
       - id: webbpsf_path
         run: echo "path=${{ steps.data.outputs.path }}/webbpsf-data" >> $GITHUB_OUTPUT
   check:
@@ -93,6 +90,7 @@ jobs:
         DD_GIT_BRANCH: ${{ github.ref_name }}
       cache-path: ${{ needs.data.outputs.data_path }}
       cache-key: data-${{ needs.data.outputs.data_hash }}-${{ needs.data.outputs.crds_context }}
+      cache-restore-keys: webbpsf-${{ needs.data.outputs.data_hash }}
       envs: |
         - linux: py39-oldestdeps-cov
           pytest-results-summary: true
