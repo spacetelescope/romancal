@@ -1,0 +1,51 @@
+name: check/update webbpsf cache
+
+on:
+  schedule:
+    - cron: "42 4 * * 3"
+  pull_request:
+    # We also want this workflow triggered if the `update webbpsf data` label is
+    # added or present when PR is updated
+    types:
+      - opened
+      - reopened
+      - labeled
+      - unlabeled
+      - synchronize
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  webbpsf-data:
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'update webbpsf data')))
+    name: fetch, check, and possibly update webbpsf data cache
+    runs-on: ubuntu-latest
+    env:
+      # DATA_PATH here should match CRDS_PATH in roman_ci.yml and roman_ci_cron.yml
+      DATA_PATH: /tmp/data
+      WEBBPSF_DATA_URL: https://stsci.box.com/shared/static/qxpiaxsjwo15ml6m4pkhtk36c9jgj70k.gz
+    outputs:
+      path: ${{ steps.cache_path.outputs.path }}
+      hash: ${{ steps.data_hash.outputs.hash }}
+    steps:
+      - id: cache_path
+        run: |
+          echo "path=${{ env.DATA_PATH }}" >> $GITHUB_OUTPUT
+      - id: data_hash
+        run: |
+          mkdir -p tmp/data
+          wget ${{ env.WEBBPSF_DATA_URL }} -O tmp/webbpsf-data.tar.gz
+          echo "hash=$( shasum tmp/webbpsf-data.tar.gz | cut -d ' ' -f 1 )" >> $GITHUB_OUTPUT
+      - id: cache_check
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.cache_path.outputs.path }}
+          key: webbpsf-${{ steps.data_hash.outputs.hash }}
+      - if: ${{ steps.cache_check.outputs.cache-hit != 'true' }}
+        name: Initialize cache
+        run: |
+          mkdir -p ${{ steps.cache_path.outputs.path }}
+          tar -xzvf tmp/webbpsf-data.tar.gz -C ${{ steps.cache_path.outputs.path }}
