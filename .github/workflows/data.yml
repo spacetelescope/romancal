@@ -50,7 +50,9 @@ jobs:
   data:
     needs:
       [webbpsf-data]
-    # run data job if webbpsf-data succeeds or is skipped
+    # run data job if webbpsf-data succeeds or is skipped. This allows
+    # this data job to always fetch the crds context even if the webbpsf data fetching
+    # was skipped (and an existing cache will be used for the webbpsf data).
     if: always() && (needs.webbpsf-data.result == 'success' || needs.webbpsf-data.result == 'skipped')
     name: retrieve current CRDS context, and WebbPSF data
     runs-on: ubuntu-latest
