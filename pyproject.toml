@@ -192,3 +192,9 @@ extend-select = ['NPY']
 
 [tool.ruff.extend-per-file-ignores]
 "romancal/associations/__init__.py" = ["E402"]
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64", "arm64"]
+
+[tool.cibuildwheel.linux]
+archs = ["auto", "aarch64"]
