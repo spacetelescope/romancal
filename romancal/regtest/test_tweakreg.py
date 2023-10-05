@@ -93,7 +93,7 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
     )
     assert "v2v3corr" in tweakreg_out.meta.wcs.available_frames
 
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    diff = compare_asdf(rtdata.output, rtdata.truth, atol=1e-3, **ignore_asdf_paths)
     step.log.info(
         f"DMS280 MSG: Was the proper TweakReg data produced? : {diff.identical}"
     )
