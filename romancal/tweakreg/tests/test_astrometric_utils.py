@@ -258,7 +258,9 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
-    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    detector = cf.Frame2D(
+        name="detector", axes_order=(0, 1), unit=(u.pix, u.pix)
+    )
     v2v3 = cf.Frame2D(
         name="v2v3",
         axes_order=(0, 1),
@@ -516,7 +518,9 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
         ("GAIADR3", None),
     ],
 )
-def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, request):
+def test_create_astrometric_catalog_using_epoch(
+    tmp_path, catalog, epoch, request
+):
     """Test fetching data from supported catalogs for a specific epoch."""
     output_filename = "ref_cat.ecsv"
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
@@ -684,7 +688,9 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
         gaia_ref_epoch=gaia_ref_epoch,
     )
     # calculate parallax corrections
-    get_parallax_correction(epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords)
+    get_parallax_correction(
+        epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords
+    )
 
     # calculate the expected coordinates value after corrections have been applied to
     # Gaia's reference epoch coordinates
