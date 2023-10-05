@@ -32,7 +32,8 @@ class MockConnectionError:
 
 def get_proper_motion_correction(epoch, gaia_ref_epoch_coords, gaia_ref_epoch):
     """
-    Calculates the proper motion correction for a given epoch and Gaia reference epoch coordinates.
+    Calculates the proper motion correction for a given epoch and Gaia reference epoch
+    coordinates.
 
     Parameters
     ----------
