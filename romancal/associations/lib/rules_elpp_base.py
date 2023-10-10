@@ -327,8 +327,8 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         return member
 
     def make_fov_asn(self):
-        """ Take the association with and single exposure with _WFI_ and
-              expand that to include all 16 detectors.
+        """ Take the association with an single exposure with _WFI_ in the name
+              and expand that to include all 16 detectors.
 
         Returns
         -------
