@@ -693,8 +693,6 @@ class Constraint_Filename(DMSAttrConstraint):
         super().__init__(
             name="Filename",
             sources=["filename"],
-            #force_unique=True,
-            #required=True,
         )
 
 
@@ -1031,7 +1029,6 @@ class AsnMixin_Lv2FOV:
 
         """
         if self.is_valid:
-            #self = self.make_fov_asn()
             return self.make_fov_asn()
         else:
             return None        

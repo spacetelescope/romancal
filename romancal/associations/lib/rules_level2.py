@@ -35,11 +35,6 @@ class Asn_Lv2FOV(AsnMixin_Lv2FOV, DMS_ELPP_Base):
             [
                 Constraint_Base(),
                 Constraint_Target(),
-                #Constraint_Expos(),
-                #Constraint_Optical_Path(),
-                #Constraint_Sequence(),
-                #Constraint_Pass(),
-                #Constraint_Tile(),
                 Constraint_Filename(),
             ]
         )
