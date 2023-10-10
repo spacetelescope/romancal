@@ -21,96 +21,45 @@ _ASN_NAME_TEMPLATE = "r{program}-{acid}_{type}_{sequence:03d}_asn"
 
 # Acquisition and Confirmation images
 ACQ_EXP_TYPES = (
-    "mir_tacq",
-    "mir_taconfirm",
-    "nis_taconfirm",
-    "nis_tacq",
     "nrc_taconfirm",
     "nrc_tacq",
-    "nrs_confirm",
-    "nrs_msata",
-    "nrs_taconfirm",
-    "nrs_tacq",
-    "nrs_taslit",
-    "nrs_verify",
-    "nrs_wata",
 )
 
 # Exposure EXP_TYPE to Association EXPTYPE mapping
 # flake8: noqa: E241
 EXPTYPE_MAP = {
-    "mir_darkall": "dark",
-    "mir_darkimg": "dark",
-    "mir_darkmrs": "dark",
-    "mir_flatimage": "flat",
-    "mir_flatmrs": "flat",
-    "mir_flatimage-ext": "flat",
-    "mir_flatmrs-ext": "flat",
-    "mir_tacq": "target_acquisition",
-    "mir_taconfirm": "target_acquisition",
-    "nis_dark": "dark",
-    "nis_focus": "engineering",
-    "nis_lamp": "engineering",
-    "nis_tacq": "target_acquisition",
-    "nis_taconfirm": "target_acquisition",
     "nrc_dark": "dark",
     "nrc_flat": "flat",
     "nrc_focus": "engineering",
     "nrc_led": "engineering",
     "nrc_tacq": "target_acquisition",
     "nrc_taconfirm": "target_acquisition",
-    "nrs_autoflat": "autoflat",
-    "nrs_autowave": "autowave",
-    "nrs_confirm": "target_acquisition",
-    "nrs_dark": "dark",
-    "nrs_focus": "engineering",
-    "nrs_image": "engineering",
-    "nrs_lamp": "engineering",
-    "nrs_msata": "target_acquisition",
-    "nrs_tacq": "target_acquisition",
-    "nrs_taconfirm": "target_acquisition",
-    "nrs_taslit": "target_acquisition",
-    "nrs_wata": "target_acquisition",
 }
 
 # Coronographic exposures
 CORON_EXP_TYPES = ["mir_4qpm", "mir_lyot", "nrc_coron"]
 
+# Roman WFI detectors
+WFI_DETECTORS = [
+    "wfi01", "wfi02", "wfi03", "wfi04", "wfi05",
+    "wfi06", "wfi07", "wfi08", "wfi09", "wfi10",
+    "wfi11", "wfi12", "wfi13", "wfi14", "wfi15",
+    "wfi16", "wfi17", "wfi18",
+]
+
 # Exposures that get Level2b processing
 IMAGE2_SCIENCE_EXP_TYPES = [
     "wfi_image",
-    "mir_4qpm",
-    "mir_image",
-    "mir_lyot",
-    "nis_ami",
-    "nis_image",
-    "nrc_coron",
-    "nrc_image",
-    "nrs_mimf",
-    "nrc_tsimage",
 ]
 
 IMAGE2_NONSCIENCE_EXP_TYPES = [
-    "mir_coroncal",
-    "nis_focus",
-    "nrc_focus",
-    "nrs_focus",
-    "nrs_image",
+    "wfi_focus",
 ]
 IMAGE2_NONSCIENCE_EXP_TYPES.extend(ACQ_EXP_TYPES)
 
 SPEC2_SCIENCE_EXP_TYPES = [
-    "mir_lrs-fixedslit",
-    "mir_lrs-slitless",
-    "mir_mrs",
-    "nis_soss",
-    "nis_wfss",
-    "nrc_tsgrism",
-    "nrc_wfss",
-    "nrs_fixedslit",
-    "nrs_ifu",
-    "nrs_msaspec",
-    "nrs_brightobj",
+    "wfi_grism",
+    "wfi_prism",
 ]
 
 SPECIAL_EXPOSURE_MODIFIERS = {

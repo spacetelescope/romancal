@@ -2,11 +2,16 @@
 
 import logging
 import re
+import copy
 from collections import defaultdict
-from os.path import basename
+from os.path import (
+    basename,
+    split,
+    splitext
+)
 
 from stpipe.format_template import FormatTemplate
-
+from romancal.lib.suffix import remove_suffix
 from romancal.associations import libpath
 from romancal.associations.association import Association
 from romancal.associations.exceptions import AssociationNotValidError
@@ -20,6 +25,7 @@ from romancal.associations.lib.dms_base import (
     SPEC2_SCIENCE_EXP_TYPES,
     DMSAttrConstraint,
     DMSBaseMixin,
+    WFI_DETECTORS,
 )
 from romancal.associations.lib.keyvalue_registry import KeyValueRegistryError
 from romancal.associations.lib.member import Member
@@ -36,6 +42,7 @@ __all__ = [
     "AsnMixin_AuxData",
     "AsnMixin_Science",
     "AsnMixin_Spectrum",
+    "AsnMixin_Lv2FOV",
     "AsnMixin_Lv2Image",
     "AsnMixin_Lv2GBTDSfull",
     "AsnMixin_Lv2GBTDSpass",
@@ -56,6 +63,7 @@ __all__ = [
     "Constraint_Single_Science",
     "Constraint_Spectral_Science",
     "Constraint_Target",
+    "Constraint_Filename",
     "DMS_ELPP_Base",
     "DMSAttrConstraint",
     "ProcessList",
@@ -317,6 +325,38 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
             item=item,
         )
         return member
+
+    def make_fov_asn(self):
+        """ Take the association with and single exposure with _WFI_ and
+              expand that to include all 16 detectors.
+
+        Returns
+        -------
+        associations : [association[, ...]]
+            List of new members to be used in place of
+            the current one.
+        """
+        results = []
+
+        # expand the products from _wfi_ to _wfi{det}_
+        for product in self['products']:
+            for member in product['members']:
+                asn = copy.deepcopy(self)
+                asn.data['products'] = None
+                product_name = splitext(split(self.data['products'][0]['members'][0]['expname'])[1])[0].rsplit('_',1)[0]+'_drzl'
+                asn.new_product(product_name)
+                new_members = asn.current_product['members']
+                if '_wfi_' in member['expname'] :
+                    # Make and add a member for each detector
+                    for det in WFI_DETECTORS:
+                        new_member = copy.deepcopy(member)
+                        new_member['expname'] = member['expname'].replace('wfi', det)
+                        new_members.append(new_member)
+            if asn.is_valid:
+                results.append(asn)
+                return results
+            else:
+                return None
 
     def _init_hook(self, item):
         """Post-check and pre-add initialization"""
@@ -646,6 +686,18 @@ class Constraint_Instrument(Constraint):
         )
 
 
+class Constraint_Filename(DMSAttrConstraint):
+    """Select on visit number"""
+
+    def __init__(self):
+        super().__init__(
+            name="Filename",
+            sources=["filename"],
+            #force_unique=True,
+            #required=True,
+        )
+
+
 class Constraint_Expos(DMSAttrConstraint):
     """Select on exposure number"""
 
@@ -653,8 +705,8 @@ class Constraint_Expos(DMSAttrConstraint):
         super().__init__(
             name="exposure_number",
             sources=["nexpsur"],
-            # force_unique=True,
-            # required=True,
+            force_unique=True,
+            required=True,
         )
 
 
@@ -957,6 +1009,33 @@ class AsnMixin_Spectrum(AsnMixin_Science):
 # ---------------------------------------------
 # Mixins to define the broad category of rules.
 # ---------------------------------------------
+class AsnMixin_Lv2FOV:
+    """Level 2 Image association base"""
+
+    def _init_hook(self, item):
+        """Post-check and pre-add initialization"""
+
+        super()._init_hook(item)
+        self.data["asn_type"] = "FOV"
+        
+    def finalize(self):
+        """Finalize association
+
+ 
+        Returns
+        -------
+        associations: [association[, ...]] or None
+            List of fully-qualified associations that this association
+            represents.
+            `None` if a complete association cannot be produced.
+
+        """
+        if self.is_valid:
+            #self = self.make_fov_asn()
+            return self.make_fov_asn()
+        else:
+            return None        
+
 class AsnMixin_Lv2Image:
     """Level 2 Image association base"""
 
