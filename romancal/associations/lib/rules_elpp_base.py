@@ -1,17 +1,13 @@
 """Base classes which define the ELPP Associations"""
 
+import copy
 import logging
 import re
-import copy
 from collections import defaultdict
-from os.path import (
-    basename,
-    split,
-    splitext
-)
+from os.path import basename, split, splitext
 
 from stpipe.format_template import FormatTemplate
-from romancal.lib.suffix import remove_suffix
+
 from romancal.associations import libpath
 from romancal.associations.association import Association
 from romancal.associations.exceptions import AssociationNotValidError
@@ -23,9 +19,9 @@ from romancal.associations.lib.dms_base import (
     IMAGE2_NONSCIENCE_EXP_TYPES,
     IMAGE2_SCIENCE_EXP_TYPES,
     SPEC2_SCIENCE_EXP_TYPES,
+    WFI_DETECTORS,
     DMSAttrConstraint,
     DMSBaseMixin,
-    WFI_DETECTORS,
 )
 from romancal.associations.lib.keyvalue_registry import KeyValueRegistryError
 from romancal.associations.lib.member import Member
@@ -327,7 +323,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         return member
 
     def make_fov_asn(self):
-        """ Take the association with an single exposure with _WFI_ in the name
+        """Take the association with an single exposure with _WFI_ in the name
               and expand that to include all 18 detectors.
 
         Returns
@@ -339,18 +335,23 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         results = []
 
         # expand the products from _wfi_ to _wfi{det}_
-        for product in self['products']:
-            for member in product['members']:
+        for product in self["products"]:
+            for member in product["members"]:
                 asn = copy.deepcopy(self)
-                asn.data['products'] = None
-                product_name = splitext(split(self.data['products'][0]['members'][0]['expname'])[1])[0].rsplit('_',1)[0]+'_drzl'
+                asn.data["products"] = None
+                product_name = (
+                    splitext(
+                        split(self.data["products"][0]["members"][0]["expname"])[1]
+                    )[0].rsplit("_", 1)[0]
+                    + "_drzl"
+                )
                 asn.new_product(product_name)
-                new_members = asn.current_product['members']
-                if '_wfi_' in member['expname'] :
+                new_members = asn.current_product["members"]
+                if "_wfi_" in member["expname"]:
                     # Make and add a member for each detector
                     for det in WFI_DETECTORS:
                         new_member = copy.deepcopy(member)
-                        new_member['expname'] = member['expname'].replace('wfi', det)
+                        new_member["expname"] = member["expname"].replace("wfi", det)
                         new_members.append(new_member)
             if asn.is_valid:
                 results.append(asn)
@@ -1015,11 +1016,11 @@ class AsnMixin_Lv2FOV:
 
         super()._init_hook(item)
         self.data["asn_type"] = "FOV"
-        
+
     def finalize(self):
         """Finalize association
 
- 
+
         Returns
         -------
         associations: [association[, ...]] or None
@@ -1031,7 +1032,8 @@ class AsnMixin_Lv2FOV:
         if self.is_valid:
             return self.make_fov_asn()
         else:
-            return None        
+            return None
+
 
 class AsnMixin_Lv2Image:
     """Level 2 Image association base"""

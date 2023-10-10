@@ -41,10 +41,24 @@ CORON_EXP_TYPES = ["mir_4qpm", "mir_lyot", "nrc_coron"]
 
 # Roman WFI detectors
 WFI_DETECTORS = [
-    "wfi01", "wfi02", "wfi03", "wfi04", "wfi05",
-    "wfi06", "wfi07", "wfi08", "wfi09", "wfi10",
-    "wfi11", "wfi12", "wfi13", "wfi14", "wfi15",
-    "wfi16", "wfi17", "wfi18",
+    "wfi01",
+    "wfi02",
+    "wfi03",
+    "wfi04",
+    "wfi05",
+    "wfi06",
+    "wfi07",
+    "wfi08",
+    "wfi09",
+    "wfi10",
+    "wfi11",
+    "wfi12",
+    "wfi13",
+    "wfi14",
+    "wfi15",
+    "wfi16",
+    "wfi17",
+    "wfi18",
 ]
 
 # Exposures that get Level2b processing

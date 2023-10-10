@@ -86,7 +86,6 @@ def generate(pool, rules, version_id=None, finalize=True):
                 total_reprocess += len(to_process_modified)
                 bar.next()
 
-
         logger.debug(
             "Existing associations modified: %d New associations created: %d",
             total_mod_existing,
@@ -101,11 +100,11 @@ def generate(pool, rules, version_id=None, finalize=True):
     logger.debug("# associations before finalization: %d", len(associations))
     finalized_asns = associations
     if finalize:
-        logger.debug('Performing association finalization.')
+        logger.debug("Performing association finalization.")
         try:
-            finalized_asns = rules.callback.reduce('finalize', associations)
+            finalized_asns = rules.callback.reduce("finalize", associations)
         except KeyError as exception:
-            logger.debug('Finalization failed for reason: %s', exception)
+            logger.debug("Finalization failed for reason: %s", exception)
 
     return finalized_asns
 

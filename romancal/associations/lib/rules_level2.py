@@ -6,8 +6,14 @@ from romancal.associations.lib.constraint import Constraint
 from romancal.associations.lib.rules_elpp_base import *
 from romancal.associations.registry import RegistryMarker
 
-__all__ = ["Asn_Lv2FOV", "Asn_Lv2Image", "Asn_Lv2GBTDSPass",
-                "Asn_Lv2GBTDSFull", "AsnMixin_Lv2Image","AsnMinxin_Lv2FOV"]
+__all__ = [
+    "Asn_Lv2FOV",
+    "Asn_Lv2Image",
+    "Asn_Lv2GBTDSPass",
+    "Asn_Lv2GBTDSFull",
+    "AsnMixin_Lv2Image",
+    "AsnMinxin_Lv2FOV",
+]
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -63,7 +69,8 @@ class Asn_Lv2Image(AsnMixin_Lv2Image, DMS_ELPP_Base):
                 Constraint(
                     [
                         Constraint_Expos(),
-                    ], reduce=Constraint.any
+                    ],
+                    reduce=Constraint.any,
                 ),
                 Constraint_Optical_Path(),
                 Constraint_Sequence(),
