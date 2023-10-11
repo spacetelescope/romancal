@@ -1,6 +1,11 @@
 0.13.0 (unreleased)
 ===================
 
+associations
+------------
+
+- Add FOV associations to the  code  [#931]
+
 general
 -------
 
