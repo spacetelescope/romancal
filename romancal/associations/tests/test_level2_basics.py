@@ -59,7 +59,10 @@ def test_level2_productname():
                 for member in product["members"]
                 if member["exptype"] == "science" or member["exptype"] == "wfi_image"
             ]
-            assert len(science) == 2
+            if asn["asn_rule"] == "Asn_Lv2Image":
+                assert len(science) == 2
+            if asn["asn_rule"] == "Asn_Lv2FOV":
+                assert len(science) == 18
 
 
 #            match = re.match(REGEX_LEVEL2, science[0]['expname'])

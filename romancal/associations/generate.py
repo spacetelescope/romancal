@@ -98,10 +98,13 @@ def generate(pool, rules, version_id=None, finalize=True):
 
     # Finalize found associations
     logger.debug("# associations before finalization: %d", len(associations))
-    try:
-        finalized_asns = rules.callback.reduce("finalize", associations)
-    except KeyError:
-        finalized_asns = associations
+    finalized_asns = associations
+    if finalize:
+        logger.debug("Performing association finalization.")
+        try:
+            finalized_asns = rules.callback.reduce("finalize", associations)
+        except KeyError as exception:
+            logger.debug("Finalization failed for reason: %s", exception)
 
     return finalized_asns
 

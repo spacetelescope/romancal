@@ -17,11 +17,11 @@ from romancal.associations.tests.helpers import (
         # Basic observation ACIDs
         (["-i", "o001"], 0),
         # Whole program
-        ([], 2),
+        ([], 5),
         # Discovered only
         (["--discover"], 0),
         # Candidates only
-        (["--all-candidates"], 2),
+        (["--all-candidates"], 5),
     ],
 )
 def test_candidate_observation(partial_args, n_asns):
