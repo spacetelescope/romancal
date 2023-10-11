@@ -518,7 +518,6 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
     ],
 )
 def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, request):
-def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, request):
     """Test fetching data from supported catalogs for a specific epoch."""
     output_filename = "ref_cat.ecsv"
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
