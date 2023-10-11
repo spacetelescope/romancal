@@ -259,6 +259,7 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
 
     # create required frames
     detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
     v2v3 = cf.Frame2D(
         name="v2v3",
         axes_order=(0, 1),
@@ -517,6 +518,7 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
     ],
 )
 def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, request):
+def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, request):
     """Test fetching data from supported catalogs for a specific epoch."""
     output_filename = "ref_cat.ecsv"
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
@@ -685,6 +687,7 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
     )
     # calculate parallax corrections
     get_parallax_correction(epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords)
+    get_parallax_correction(epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords)
 
     # calculate the expected coordinates value after corrections have been applied to
     # Gaia's reference epoch coordinates
@@ -699,6 +702,18 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
         gaia_ref_epoch_coords["dec"]
         + gaia_ref_epoch_coords["pm_delta_dec"]
         + gaia_ref_epoch_coords["parallax_delta_dec"]
+    )
+
+    # mast (geocentric frame)
+    expected_ra_mast = (
+        gaia_ref_epoch_coords["ra"]
+        + gaia_ref_epoch_coords["pm_delta_ra"]
+        + gaia_ref_epoch_coords["parallax_delta_ra_mast"]
+    )
+    expected_dec_mast = (
+        gaia_ref_epoch_coords["dec"]
+        + gaia_ref_epoch_coords["pm_delta_dec"]
+        + gaia_ref_epoch_coords["parallax_delta_dec_mast"]
     )
 
     assert len(result) > 0
