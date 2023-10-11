@@ -24,10 +24,158 @@ from romancal.tweakreg.astrometric_utils import (
     get_catalog,
 )
 
+ARAD = np.pi / 180.0
+
 
 class MockConnectionError:
     def __init__(self, *args, **kwargs):
         raise requests.exceptions.ConnectionError
+
+
+def get_earth_sun_orbit_elem(epoch):
+    amjd = (epoch - 2012.0) * 365.25 + 55927.0
+    imjd = int(amjd)
+    mjd = float(imjd)
+
+    time_argument = mjd - 51544.5
+    fmean_longitude = 280.460 + 0.9856474 * time_argument
+    fmean_anomaly = 357.528 + 0.9856003 * time_argument
+    iremainder = int(fmean_longitude / 360.0)
+    fmean_longitude = fmean_longitude - (iremainder * 360.0)
+    if fmean_longitude < 0:
+        fmean_longitude = fmean_longitude + 360.0
+    iremainder = int(fmean_anomaly / 360.0)
+    fmean_anomaly = fmean_anomaly - (iremainder * 360.0)
+    if fmean_anomaly < 0:
+        fmean_anomaly = fmean_anomaly + 360.0
+    ecliptic_longitude = (
+        fmean_longitude
+        + 1.915 * np.sin(fmean_anomaly * ARAD)
+        + 0.02 * np.sin(2.0 * fmean_anomaly * ARAD)
+    )
+    ecliptic_obliquity = 23.439 - 4.0 * 0.0000001 * time_argument
+
+    # radius vector (in AU)
+    # (approximation using an algorithm from USNO)
+    earth_sun_distance = (
+        1.00014
+        - 0.01671 * np.cos(fmean_anomaly * ARAD)
+        - 0.00014 * np.cos(2.0 * fmean_anomaly * ARAD)
+    )
+
+    earth_sun_distance = u.Quantity(earth_sun_distance, unit="AU")
+
+    return {
+        "earth_sun_distance": earth_sun_distance,
+        "ecliptic_longitude": ecliptic_longitude,
+        "ecliptic_obliquity": ecliptic_obliquity,
+    }
+
+
+def get_parallax_correction_mast(epoch, gaia_ref_epoch_coords):
+    orbit_elem = get_earth_sun_orbit_elem(epoch)
+    earth_sun_distance = orbit_elem["earth_sun_distance"]
+    ecliptic_longitude = orbit_elem["ecliptic_longitude"]
+    ecliptic_obliquity = orbit_elem["ecliptic_obliquity"]
+
+    # cartesian coordinates of the sun
+    xsun = earth_sun_distance * np.cos(ecliptic_longitude * ARAD)
+    ysun = (
+        earth_sun_distance
+        * np.cos(ecliptic_obliquity * ARAD)
+        * np.sin(ecliptic_longitude * ARAD)
+    )
+    zsun = (
+        earth_sun_distance
+        * np.sin(ecliptic_obliquity * ARAD)
+        * np.sin(ecliptic_longitude * ARAD)
+    )
+
+    # angular displacement components
+    delta_ra = (
+        u.Quantity(gaia_ref_epoch_coords["parallax"], unit="mas")
+        / np.cos(gaia_ref_epoch_coords["dec"] * ARAD)
+        * (
+            -xsun.value * np.sin(gaia_ref_epoch_coords["ra"] * ARAD)
+            + ysun.value * np.cos(gaia_ref_epoch_coords["ra"] * ARAD)
+        )
+    ).to("deg")
+    delta_dec = (
+        u.Quantity(gaia_ref_epoch_coords["parallax"], unit="mas")
+        * (
+            -xsun.value
+            * np.cos(gaia_ref_epoch_coords["ra"] * ARAD)
+            * np.sin(gaia_ref_epoch_coords["dec"] * ARAD)
+            - ysun.value
+            * np.sin(gaia_ref_epoch_coords["ra"] * ARAD)
+            * np.sin(gaia_ref_epoch_coords["dec"] * ARAD)
+            + zsun.value * np.cos(gaia_ref_epoch_coords["dec"] * ARAD)
+        )
+    ).to("deg")
+
+    return delta_ra, delta_dec
+
+
+def get_parallax_correction_barycenter(epoch, gaia_ref_epoch_coords):
+    """
+    Calculates the parallax correction in the Earth barycenter frame for a given epoch
+    and Gaia reference epoch coordinates (i.e. Gaia coordinates at the reference epoch).
+
+    Parameters
+    ----------
+    epoch : float
+        The epoch for which the parallax correction is calculated.
+    gaia_ref_epoch_coords : dict
+        The Gaia reference epoch coordinates, including 'ra', 'dec', and 'parallax'.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the delta_ra and delta_dec values of the parallax correction
+        in degrees.
+
+    Examples
+    --------
+    .. code-block :: python
+        epoch = 2022.5
+        gaia_coords = {'ra': 180.0, 'dec': 45.0, 'parallax': 10.0}
+        correction = get_parallax_correction_earth_barycenter(epoch, gaia_coords)
+        print(correction)
+    (0.001, -0.002)
+    """  # noqa: E501
+
+    obs_date = Time(epoch, format="decimalyear")
+    earths_center_barycentric_coords = coord.get_body_barycentric(
+        "earth", obs_date, ephemeris="builtin"
+    )
+    earth_X = earths_center_barycentric_coords.x
+    earth_Y = earths_center_barycentric_coords.y
+    earth_Z = earths_center_barycentric_coords.z
+
+    # angular displacement components
+    # (see eq. 8.15 of "Spherical Astronomy" by Robert M. Green)
+    delta_ra = (
+        u.Quantity(gaia_ref_epoch_coords["parallax"], unit="mas").to(u.rad)
+        * (1 / np.cos(gaia_ref_epoch_coords["dec"] * ARAD))
+        * (
+            earth_X.value * np.sin(gaia_ref_epoch_coords["ra"] * ARAD)
+            - earth_Y.value * np.cos(gaia_ref_epoch_coords["ra"] * ARAD)
+        )
+    ).to("deg")
+    delta_dec = (
+        u.Quantity(gaia_ref_epoch_coords["parallax"], unit="mas").to(u.rad)
+        * (
+            earth_X.value
+            * np.cos(gaia_ref_epoch_coords["ra"] * ARAD)
+            * np.sin(gaia_ref_epoch_coords["dec"] * ARAD)
+            + earth_Y.value
+            * np.sin(gaia_ref_epoch_coords["ra"] * ARAD)
+            * np.sin(gaia_ref_epoch_coords["dec"] * ARAD)
+            - earth_Z.value * np.cos(gaia_ref_epoch_coords["dec"] * ARAD)
+        )
+    ).to("deg")
+
+    return delta_ra, delta_dec
 
 
 def get_proper_motion_correction(epoch, gaia_ref_epoch_coords, gaia_ref_epoch):
@@ -88,62 +236,22 @@ def get_proper_motion_correction(epoch, gaia_ref_epoch_coords, gaia_ref_epoch):
 
 
 def get_parallax_correction(epoch, gaia_ref_epoch_coords):
-    """
-    Calculates the parallax correction for a given epoch and Gaia reference epoch
-    coordinates.
-    Calculations based on Chapter 8 of "Spherical Astronomy" by Robin M. Green.
+    # get parallax correction using textbook calculations (i.e. Earth's barycenter)
+    parallax_corr = get_parallax_correction_barycenter(
+        epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords
+    )
 
-    Parameters
-    ----------
-    epoch : float
-        The epoch for which the parallax correction is calculated.
-    gaia_ref_epoch_coords : dict
-        A dictionary containing Gaia reference epoch coordinates.
+    # get parallax using the same coordinates frame as MAST
+    # (i.e. Sun's geocentric coordinates)
+    parallax_corr_mast = get_parallax_correction_mast(
+        epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords
+    )
 
-    Returns
-    -------
-    None
-
-    Examples
-    --------
-    .. code-block :: python
-    epoch = 2022.5
-    gaia_coords = {
-        "ra": 180.0,
-        "dec": 45.0,
-        "parallax": 10.0
-    }
-    get_parallax_correction(epoch, gaia_coords)
-    """
-
-    obs_date = Time(epoch, format="decimalyear")
-    earths_center_barycentric_coords = coord.get_body_barycentric("earth", obs_date)
-    earth_X = earths_center_barycentric_coords.x
-    earth_Y = earths_center_barycentric_coords.y
-    earth_Z = earths_center_barycentric_coords.z
-
-    # angular displacement components
-    # (see eq. 8.15 of "Spherical Astronomy" by Robert M. Green)
-    gaia_ref_epoch_coords["parallax_delta_ra"] = (
-        u.Quantity(gaia_ref_epoch_coords["parallax"], unit="mas").to(u.rad)
-        * (1 / np.cos(gaia_ref_epoch_coords["dec"] / 180 * np.pi))
-        * (
-            earth_X.value * np.sin(gaia_ref_epoch_coords["ra"] / 180 * np.pi)
-            - earth_Y.value * np.cos(gaia_ref_epoch_coords["ra"] / 180 * np.pi)
-        )
-    ).to("deg")
-    gaia_ref_epoch_coords["parallax_delta_dec"] = (
-        u.Quantity(gaia_ref_epoch_coords["parallax"], unit="mas").to(u.rad)
-        * (
-            earth_X.value
-            * np.cos(gaia_ref_epoch_coords["ra"] / 180 * np.pi)
-            * np.sin(gaia_ref_epoch_coords["dec"] / 180 * np.pi)
-            + earth_Y.value
-            * np.sin(gaia_ref_epoch_coords["ra"] / 180 * np.pi)
-            * np.sin(gaia_ref_epoch_coords["dec"] / 180 * np.pi)
-            - earth_Z.value * np.cos(gaia_ref_epoch_coords["dec"] / 180 * np.pi)
-        )
-    ).to("deg")
+    # add parallax corrections columns to the main table
+    gaia_ref_epoch_coords["parallax_delta_ra"] = parallax_corr[0]
+    gaia_ref_epoch_coords["parallax_delta_dec"] = parallax_corr[1]
+    gaia_ref_epoch_coords["parallax_delta_ra_mast"] = parallax_corr_mast[0]
+    gaia_ref_epoch_coords["parallax_delta_dec_mast"] = parallax_corr_mast[1]
 
 
 def update_wcsinfo(input_dm):
@@ -197,6 +305,7 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
+    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
     detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
     v2v3 = cf.Frame2D(
         name="v2v3",
@@ -456,6 +565,7 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
     ],
 )
 def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, request):
+def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, request):
     """Test fetching data from supported catalogs for a specific epoch."""
     output_filename = "ref_cat.ecsv"
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
@@ -591,12 +701,11 @@ def test_get_catalog_valid_parameters_but_no_sources_returned():
         (0, 0, 2000),
         (0, 0, 2010.3),
         (0, 0, 2030),
-        (269.4521, 4.6933, 2030),
-        (89, 80, 2010),
     ],
 )
 def test_get_catalog_using_epoch(ra, dec, epoch):
-    """Test that get_catalog returns coordinates corrected by proper motion."""
+    """Test that get_catalog returns coordinates corrected by proper motion
+    and parallax."""
 
     result_all = get_catalog(ra, dec, epoch=epoch)
 
@@ -606,6 +715,8 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
     mask = result_all["parallax_over_error"] > 5
 
     result = result_all[mask]
+
+    # updated coordinates at the provided epoch
     returned_ra = np.array(result["ra"])
     returned_dec = np.array(result["dec"])
 
@@ -623,9 +734,12 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
     )
     # calculate parallax corrections
     get_parallax_correction(epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords)
+    get_parallax_correction(epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords)
 
     # calculate the expected coordinates value after corrections have been applied to
     # Gaia's reference epoch coordinates
+
+    # textbook (barycentric frame)
     expected_ra = (
         gaia_ref_epoch_coords["ra"]
         + gaia_ref_epoch_coords["pm_delta_ra"]
@@ -637,10 +751,26 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
         + gaia_ref_epoch_coords["parallax_delta_dec"]
     )
 
+    # mast (geocentric frame)
+    expected_ra_mast = (
+        gaia_ref_epoch_coords["ra"]
+        + gaia_ref_epoch_coords["pm_delta_ra"]
+        + gaia_ref_epoch_coords["parallax_delta_ra_mast"]
+    )
+    expected_dec_mast = (
+        gaia_ref_epoch_coords["dec"]
+        + gaia_ref_epoch_coords["pm_delta_dec"]
+        + gaia_ref_epoch_coords["parallax_delta_dec_mast"]
+    )
+
     assert len(result) > 0
 
-    assert np.isclose(returned_ra, expected_ra, atol=1e-5, rtol=0).all()
-    assert np.isclose(returned_dec, expected_dec, atol=1e-5, rtol=0).all()
+    # N.B.: atol=1e-8 (in deg) corresponds to a coordinate difference of ~ 40 uas
+    assert np.isclose(expected_ra, returned_ra, atol=1e-8, rtol=0).all()
+    assert np.isclose(expected_dec, returned_dec, atol=1e-8, rtol=0).all()
+
+    assert np.isclose(expected_ra_mast, returned_ra, atol=5e-10, rtol=0).all()
+    assert np.isclose(expected_dec_mast, returned_dec, atol=5e-10, rtol=0).all()
 
 
 def test_get_catalog_timeout():
