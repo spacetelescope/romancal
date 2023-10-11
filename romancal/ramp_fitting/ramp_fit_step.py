@@ -32,6 +32,9 @@ class RampFitStep(RomanStep):
         opt_name = string(default='')
         maximum_cores = option('none','quarter','half','all',default='none') # max number of processes to create
         suffix = string(default='rampfit')  # Default suffix of results
+        use_jump_detection = boolean(default=False) # Use jump detection during ramp fitting
+        threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
+        threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
     """  # noqa: E501
 
     weighting = "optimal"  # Only weighting allowed for OLS
@@ -176,6 +179,14 @@ class RampFitStep(RomanStep):
         out_model : ImageModel
             Model containing a count-rate image.
         """
+        use_jump = self.use_jump_detection
+
+        kwargs = {}
+        if self.threshold_intercept is not None:
+            kwargs["threshold_intercept"] = self.threshold_intercept
+        if self.threshold_constant is not None:
+            kwargs["threshold_constant"] = self.threshold_constant
+
         resultants = input_model.data.value
         dq = input_model.groupdq
         read_noise = readnoise_model.data.value
@@ -191,7 +202,13 @@ class RampFitStep(RomanStep):
 
         # Fit the ramps
         output = ols_cas22_fit.fit_ramps_casertano(
-            resultants, dq, read_noise, read_time, read_pattern=read_pattern
+            resultants,
+            dq,
+            read_noise,
+            read_time,
+            read_pattern=read_pattern,
+            use_jump=use_jump,
+            **kwargs,
         )
 
         # Break out the information and fix units
