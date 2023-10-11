@@ -33,6 +33,41 @@ class MockConnectionError:
 
 
 def get_earth_sun_orbit_elem(epoch):
+    """
+    Calculates the Earth-Sun orbit elements for a given epoch.
+
+    Parameters
+    ----------
+    epoch : float
+        The epoch for which to calculate the Earth-Sun orbit elements.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the following orbit elements:
+        - "earth_sun_distance" : `Quantity`
+            The Earth-Sun distance in astronomical units (AU).
+        - "ecliptic_longitude" : float
+            The ecliptic longitude in degrees.
+        - "ecliptic_obliquity" : float
+            The ecliptic obliquity in degrees.
+
+    Notes
+    -----
+    This function calculates various parameters related to the Earth-Sun orbit based on the provided epoch.
+
+    Examples
+    --------
+    .. code-block:: python
+
+        epoch = 2023.5
+        orbit_elements = get_earth_sun_orbit_elem(epoch)
+        print(orbit_elements)
+
+        # Output:
+        # {'earth_sun_distance': <Quantity 0.98329 AU>, 'ecliptic_longitude': 189.123 degrees, 'ecliptic_obliquity': 23.437 degrees}
+    """  # noqa: E501
+
     amjd = (epoch - 2012.0) * 365.25 + 55927.0
     imjd = int(amjd)
     mjd = float(imjd)
@@ -73,6 +108,55 @@ def get_earth_sun_orbit_elem(epoch):
 
 
 def get_parallax_correction_mast(epoch, gaia_ref_epoch_coords):
+    """
+    Calculates the parallax correction for MAST coordinates based on the Earth-Sun orbit elements and Gaia reference epoch coordinates.
+
+    Parameters
+    ----------
+    epoch : float
+        The epoch for which to calculate the parallax correction.
+    gaia_ref_epoch_coords : dict
+        A dictionary containing the Gaia reference epoch coordinates:
+        - "ra" : float
+            The right ascension in degrees.
+        - "dec" : float
+            The declination in degrees.
+        - "parallax" : float
+            The parallax in milliarcseconds (mas).
+
+    Returns
+    -------
+    tuple
+        A tuple containing the following parallax correction components:
+        - delta_ra : `Quantity`
+            The correction in right ascension in degrees.
+        - delta_dec : `Quantity`
+            The correction in declination in degrees.
+
+    Notes
+    -----
+    This function calculates the parallax correction for MAST coordinates based on the
+    Earth-Sun orbit elements and Gaia reference epoch coordinates. It uses the
+    Earth-Sun distance, ecliptic longitude, and ecliptic obliquity obtained from
+    the `get_earth_sun_orbit_elem` function.
+
+    Examples
+    --------
+    .. code-block:: python
+
+        epoch = 2023.5
+        gaia_coords = {
+            "ra": 180.0,
+            "dec": 30.0,
+            "parallax": 2.5
+        }
+        delta_ra, delta_dec = get_parallax_correction_mast(epoch, gaia_coords)
+        print(delta_ra, delta_dec)
+
+        # Output:
+        # -0.001234 deg, 0.002345 deg
+    """  # noqa: E501
+
     orbit_elem = get_earth_sun_orbit_elem(epoch)
     earth_sun_distance = orbit_elem["earth_sun_distance"]
     ecliptic_longitude = orbit_elem["ecliptic_longitude"]
@@ -141,7 +225,7 @@ def get_parallax_correction_barycenter(epoch, gaia_ref_epoch_coords):
         gaia_coords = {'ra': 180.0, 'dec': 45.0, 'parallax': 10.0}
         correction = get_parallax_correction_earth_barycenter(epoch, gaia_coords)
         print(correction)
-    (0.001, -0.002)
+        (0.001, -0.002)
     """  # noqa: E501
 
     obs_date = Time(epoch, format="decimalyear")
@@ -208,7 +292,7 @@ def get_proper_motion_correction(epoch, gaia_ref_epoch_coords, gaia_ref_epoch):
     }
     gaia_ref_epoch = 2020.0
     get_proper_motion_correction(epoch, gaia_coords, gaia_ref_epoch)
-    """
+    """  # noqa: E501
 
     expected_new_dec = (
         np.array(
@@ -236,6 +320,50 @@ def get_proper_motion_correction(epoch, gaia_ref_epoch_coords, gaia_ref_epoch):
 
 
 def get_parallax_correction(epoch, gaia_ref_epoch_coords):
+    """
+    Calculates the parallax correction for a given epoch and Gaia reference epoch
+    coordinates.
+
+    Parameters
+    ----------
+    epoch : float
+        The epoch for which to calculate the parallax correction.
+    gaia_ref_epoch_coords : dict
+        A dictionary containing the Gaia reference epoch coordinates:
+        - "ra" : float
+            The right ascension in degrees.
+        - "dec" : float
+            The declination in degrees.
+        - "parallax" : float
+            The parallax in milliarcseconds (mas).
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    This function calculates the parallax correction for a given epoch and Gaia
+    reference epoch coordinates. It uses the `get_parallax_correction_barycenter`
+    and `get_parallax_correction_mast` functions to obtain the parallax corrections
+    based on different coordinate frames.
+
+    Examples
+    --------
+    This function is typically used to add parallax correction columns to a main table
+    of Gaia reference epoch coordinates.
+
+    .. code-block:: python
+
+        epoch = 2023.5
+        gaia_coords = {
+            "ra": 180.0,
+            "dec": 30.0,
+            "parallax": 2.5
+        }
+        get_parallax_correction(epoch, gaia_coords)
+    """  # noqa: E501
+
     # get parallax correction using textbook calculations (i.e. Earth's barycenter)
     parallax_corr = get_parallax_correction_barycenter(
         epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords
@@ -565,7 +693,6 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
     ],
 )
 def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, request):
-def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, request):
     """Test fetching data from supported catalogs for a specific epoch."""
     output_filename = "ref_cat.ecsv"
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
@@ -705,7 +832,14 @@ def test_get_catalog_valid_parameters_but_no_sources_returned():
 )
 def test_get_catalog_using_epoch(ra, dec, epoch):
     """Test that get_catalog returns coordinates corrected by proper motion
-    and parallax."""
+    and parallax. The idea is to fetch data for a specific epoch from the MAST VO API
+    and compare them with the expected coordinates for that epoch.
+    First, the data for a specific coordinates and epoch are fetched from the MAST VO
+    API. Then, the data for the same coordinates are fetched for the Gaia's reference
+    epoch of 2016.0, and corrected for proper motion and parallax using explicit
+    calculations for the initially specified epoch. We then compare the results between
+    the returned coordinates from the MAST VO API and the manually updated
+    coordinates."""
 
     result_all = get_catalog(ra, dec, epoch=epoch)
 
