@@ -129,26 +129,42 @@ def test_fits(fit_ramps, attribute):
     scope="module",
     params=[
         pytest.param(
-            (SIMPLE_RESULTANTS, 1, 0.01, False, SIMPLE_EXPECTED_DEFAULT), id="default"
+            (SIMPLE_RESULTANTS, 1, 0.01, False, SIMPLE_EXPECTED_DEFAULT, False),
+            id="default",
         ),  # No gain or noise
         pytest.param(
-            (SIMPLE_RESULTANTS, 5, 0.01, False, SIMPLE_EXPECTED_GAIN), id="extragain"
+            (SIMPLE_RESULTANTS, 5, 0.01, False, SIMPLE_EXPECTED_GAIN, False),
+            id="extragain",
         ),  # Increase gain
         pytest.param(
-            (SIMPLE_RESULTANTS, 1, 100.0, False, SIMPLE_EXPECTED_RNOISE),
+            (SIMPLE_RESULTANTS, 1, 100.0, False, SIMPLE_EXPECTED_RNOISE, False),
             id="extranoise",
+        ),  # Increase noise
+        pytest.param(
+            (SIMPLE_RESULTANTS, 1, 0.01, False, SIMPLE_EXPECTED_DEFAULT, True),
+            id="default-jump",
+        ),  # No gain or noise
+        pytest.param(
+            (SIMPLE_RESULTANTS, 5, 0.01, False, SIMPLE_EXPECTED_GAIN, True),
+            id="extragain-jump",
+        ),  # Increase gain
+        pytest.param(
+            (SIMPLE_RESULTANTS, 1, 100.0, False, SIMPLE_EXPECTED_RNOISE, True),
+            id="extranoise-jump",
         ),  # Increase noise
     ],
 )
 def fit_ramps(request):
     """Test ramp fits"""
-    resultants, ingain, rnoise, randomize, expected = request.param
+    resultants, ingain, rnoise, randomize, expected, use_jump = request.param
     ramp_model, gain_model, readnoise_model = make_data(
         resultants, ingain, rnoise, randomize
     )
+
     out_model = RampFitStep.call(
         ramp_model,
         algorithm="ols_cas22",
+        use_jump_detection=use_jump,
         override_gain=gain_model,
         override_readnoise=readnoise_model,
     )
