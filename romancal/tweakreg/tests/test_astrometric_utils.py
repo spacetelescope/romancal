@@ -686,7 +686,6 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
     )
     # calculate parallax corrections
     get_parallax_correction(epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords)
-    get_parallax_correction(epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords)
 
     # calculate the expected coordinates value after corrections have been applied to
     # Gaia's reference epoch coordinates
@@ -701,18 +700,6 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
         gaia_ref_epoch_coords["dec"]
         + gaia_ref_epoch_coords["pm_delta_dec"]
         + gaia_ref_epoch_coords["parallax_delta_dec"]
-    )
-
-    # mast (geocentric frame)
-    expected_ra_mast = (
-        gaia_ref_epoch_coords["ra"]
-        + gaia_ref_epoch_coords["pm_delta_ra"]
-        + gaia_ref_epoch_coords["parallax_delta_ra_mast"]
-    )
-    expected_dec_mast = (
-        gaia_ref_epoch_coords["dec"]
-        + gaia_ref_epoch_coords["pm_delta_dec"]
-        + gaia_ref_epoch_coords["parallax_delta_dec_mast"]
     )
 
     assert len(result) > 0
