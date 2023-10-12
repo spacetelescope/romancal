@@ -58,7 +58,7 @@ def create_gridded_psf_model(
     path_prefix,
     filt,
     detector,
-    oversample=12,
+    oversample=11,
     fov_pixels=12,
     sqrt_n_psfs=4,
     overwrite=False,
@@ -82,7 +82,8 @@ def create_gridded_psf_model(
         Computed gridded PSF model for this SCA.
         Examples include: `"SCA01"` or `"SCA18"`.
     oversample : int, optional
-        Oversample factor, default is 12. See WebbPSF docs for details [1]_.
+        Oversample factor, default is 11. See WebbPSF docs for details [1]_.
+        Choosing an odd number makes the pixel convolution more accurate.
     fov_pixels : int, optional
         Field of view width [pixels]. Default is 12.
         See WebbPSF docs for details [1]_.
@@ -160,7 +161,6 @@ def create_gridded_psf_model(
             filter_name=filt,
             detectors=detector.upper(),
             num_psfs=n_psfs,
-            monochromatic=central_wavelength_meters,
             oversample=oversample,
             fov_pixels=fov_pixels,
             add_distortion=False,
