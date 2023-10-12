@@ -19,7 +19,7 @@ dependencies = [
     'gwcs >=0.18.1',
     'jsonschema >=4.8',
     'numpy >=1.22',
-    'photutils @ git+https://github.com/astropy/photutils.git@main',
+    'photutils @ git+https://github.com/astropy/photutils.git',
     'pyparsing >=2.4.7',
     'requests >=2.22',
     'rad >= 0.17.1',
