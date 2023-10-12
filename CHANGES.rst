@@ -25,6 +25,8 @@ general
 
 - Use tolerance for more comparisons in ``compare_asdf`` [#917]
 
+- Update PSF fitting defaults. [#936]
+
 ramp_fitting
 ------------
 
