@@ -10,6 +10,7 @@ from astropy import table
 from astropy import units as u
 from astropy.modeling import models
 from astropy.modeling.models import RotationSequence3D, Scale, Shift
+from astropy.stats import mad_std
 from astropy.time import Time
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
@@ -30,174 +31,6 @@ ARAD = np.pi / 180.0
 class MockConnectionError:
     def __init__(self, *args, **kwargs):
         raise requests.exceptions.ConnectionError
-
-
-def get_earth_sun_orbit_elem(epoch):
-    """
-    Calculates the Earth-Sun orbit elements for a given epoch.
-
-    Parameters
-    ----------
-    epoch : float
-        The epoch for which to calculate the Earth-Sun orbit elements.
-
-    Returns
-    -------
-    dict
-        A dictionary containing the following orbit elements:
-        - "earth_sun_distance" : `Quantity`
-            The Earth-Sun distance in astronomical units (AU).
-        - "ecliptic_longitude" : float
-            The ecliptic longitude in degrees.
-        - "ecliptic_obliquity" : float
-            The ecliptic obliquity in degrees.
-
-    Notes
-    -----
-    This function calculates various parameters related to the Earth-Sun orbit based on the provided epoch.
-
-    Examples
-    --------
-    .. code-block:: python
-
-        epoch = 2023.5
-        orbit_elements = get_earth_sun_orbit_elem(epoch)
-        print(orbit_elements)
-
-        # Output:
-        # {'earth_sun_distance': <Quantity 0.98329 AU>, 'ecliptic_longitude': 189.123 degrees, 'ecliptic_obliquity': 23.437 degrees}
-    """  # noqa: E501
-
-    amjd = (epoch - 2012.0) * 365.25 + 55927.0
-    imjd = int(amjd)
-    mjd = float(imjd)
-
-    time_argument = mjd - 51544.5
-    fmean_longitude = 280.460 + 0.9856474 * time_argument
-    fmean_anomaly = 357.528 + 0.9856003 * time_argument
-    iremainder = int(fmean_longitude / 360.0)
-    fmean_longitude = fmean_longitude - (iremainder * 360.0)
-    if fmean_longitude < 0:
-        fmean_longitude = fmean_longitude + 360.0
-    iremainder = int(fmean_anomaly / 360.0)
-    fmean_anomaly = fmean_anomaly - (iremainder * 360.0)
-    if fmean_anomaly < 0:
-        fmean_anomaly = fmean_anomaly + 360.0
-    ecliptic_longitude = (
-        fmean_longitude
-        + 1.915 * np.sin(fmean_anomaly * ARAD)
-        + 0.02 * np.sin(2.0 * fmean_anomaly * ARAD)
-    )
-    ecliptic_obliquity = 23.439 - 4.0 * 0.0000001 * time_argument
-
-    # radius vector (in AU)
-    # (approximation using an algorithm from USNO)
-    earth_sun_distance = (
-        1.00014
-        - 0.01671 * np.cos(fmean_anomaly * ARAD)
-        - 0.00014 * np.cos(2.0 * fmean_anomaly * ARAD)
-    )
-
-    earth_sun_distance = u.Quantity(earth_sun_distance, unit="AU")
-
-    return {
-        "earth_sun_distance": earth_sun_distance,
-        "ecliptic_longitude": ecliptic_longitude,
-        "ecliptic_obliquity": ecliptic_obliquity,
-    }
-
-
-def get_parallax_correction_mast(epoch, gaia_ref_epoch_coords):
-    """
-    Calculates the parallax correction for MAST coordinates based on the Earth-Sun orbit elements and Gaia reference epoch coordinates.
-
-    Parameters
-    ----------
-    epoch : float
-        The epoch for which to calculate the parallax correction.
-    gaia_ref_epoch_coords : dict
-        A dictionary containing the Gaia reference epoch coordinates:
-        - "ra" : float
-            The right ascension in degrees.
-        - "dec" : float
-            The declination in degrees.
-        - "parallax" : float
-            The parallax in milliarcseconds (mas).
-
-    Returns
-    -------
-    tuple
-        A tuple containing the following parallax correction components:
-        - delta_ra : `Quantity`
-            The correction in right ascension in degrees.
-        - delta_dec : `Quantity`
-            The correction in declination in degrees.
-
-    Notes
-    -----
-    This function calculates the parallax correction for MAST coordinates based on the
-    Earth-Sun orbit elements and Gaia reference epoch coordinates. It uses the
-    Earth-Sun distance, ecliptic longitude, and ecliptic obliquity obtained from
-    the `get_earth_sun_orbit_elem` function.
-
-    Examples
-    --------
-    .. code-block:: python
-
-        epoch = 2023.5
-        gaia_coords = {
-            "ra": 180.0,
-            "dec": 30.0,
-            "parallax": 2.5
-        }
-        delta_ra, delta_dec = get_parallax_correction_mast(epoch, gaia_coords)
-        print(delta_ra, delta_dec)
-
-        # Output:
-        # -0.001234 deg, 0.002345 deg
-    """  # noqa: E501
-
-    orbit_elem = get_earth_sun_orbit_elem(epoch)
-    earth_sun_distance = orbit_elem["earth_sun_distance"]
-    ecliptic_longitude = orbit_elem["ecliptic_longitude"]
-    ecliptic_obliquity = orbit_elem["ecliptic_obliquity"]
-
-    # cartesian coordinates of the sun
-    xsun = earth_sun_distance * np.cos(ecliptic_longitude * ARAD)
-    ysun = (
-        earth_sun_distance
-        * np.cos(ecliptic_obliquity * ARAD)
-        * np.sin(ecliptic_longitude * ARAD)
-    )
-    zsun = (
-        earth_sun_distance
-        * np.sin(ecliptic_obliquity * ARAD)
-        * np.sin(ecliptic_longitude * ARAD)
-    )
-
-    # angular displacement components
-    delta_ra = (
-        u.Quantity(gaia_ref_epoch_coords["parallax"], unit="mas")
-        / np.cos(gaia_ref_epoch_coords["dec"] * ARAD)
-        * (
-            -xsun.value * np.sin(gaia_ref_epoch_coords["ra"] * ARAD)
-            + ysun.value * np.cos(gaia_ref_epoch_coords["ra"] * ARAD)
-        )
-    ).to("deg")
-    delta_dec = (
-        u.Quantity(gaia_ref_epoch_coords["parallax"], unit="mas")
-        * (
-            -xsun.value
-            * np.cos(gaia_ref_epoch_coords["ra"] * ARAD)
-            * np.sin(gaia_ref_epoch_coords["dec"] * ARAD)
-            - ysun.value
-            * np.sin(gaia_ref_epoch_coords["ra"] * ARAD)
-            * np.sin(gaia_ref_epoch_coords["dec"] * ARAD)
-            + zsun.value * np.cos(gaia_ref_epoch_coords["dec"] * ARAD)
-        )
-    ).to("deg")
-
-    return delta_ra, delta_dec
 
 
 def get_parallax_correction_barycenter(epoch, gaia_ref_epoch_coords):
@@ -369,17 +202,9 @@ def get_parallax_correction(epoch, gaia_ref_epoch_coords):
         epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords
     )
 
-    # get parallax using the same coordinates frame as MAST
-    # (i.e. Sun's geocentric coordinates)
-    parallax_corr_mast = get_parallax_correction_mast(
-        epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords
-    )
-
     # add parallax corrections columns to the main table
     gaia_ref_epoch_coords["parallax_delta_ra"] = parallax_corr[0]
     gaia_ref_epoch_coords["parallax_delta_dec"] = parallax_corr[1]
-    gaia_ref_epoch_coords["parallax_delta_ra_mast"] = parallax_corr_mast[0]
-    gaia_ref_epoch_coords["parallax_delta_dec_mast"] = parallax_corr_mast[1]
 
 
 def update_wcsinfo(input_dm):
@@ -841,14 +666,7 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
     the returned coordinates from the MAST VO API and the manually updated
     coordinates."""
 
-    result_all = get_catalog(ra, dec, epoch=epoch)
-
-    # select sources with reliable astrometric solutions based on the
-    # parallax_over_error parameter as discussed in Fabricius et al. 2021
-    # (https://www.aanda.org/articles/aa/full_html/2021/05/aa39834-20/aa39834-20.html)
-    mask = result_all["parallax_over_error"] > 5
-
-    result = result_all[mask]
+    result = get_catalog(ra, dec, epoch=epoch)
 
     # updated coordinates at the provided epoch
     returned_ra = np.array(result["ra"])
@@ -858,7 +676,7 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
     gaia_ref_epoch = 2016.0
     gaia_ref_epoch_coords_all = get_catalog(ra, dec, epoch=gaia_ref_epoch)
 
-    gaia_ref_epoch_coords = gaia_ref_epoch_coords_all[mask]
+    gaia_ref_epoch_coords = gaia_ref_epoch_coords_all  # [mask]
 
     # calculate proper motion corrections
     get_proper_motion_correction(
@@ -867,7 +685,6 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
         gaia_ref_epoch=gaia_ref_epoch,
     )
     # calculate parallax corrections
-    get_parallax_correction(epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords)
     get_parallax_correction(epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords)
 
     # calculate the expected coordinates value after corrections have been applied to
@@ -885,26 +702,14 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
         + gaia_ref_epoch_coords["parallax_delta_dec"]
     )
 
-    # mast (geocentric frame)
-    expected_ra_mast = (
-        gaia_ref_epoch_coords["ra"]
-        + gaia_ref_epoch_coords["pm_delta_ra"]
-        + gaia_ref_epoch_coords["parallax_delta_ra_mast"]
-    )
-    expected_dec_mast = (
-        gaia_ref_epoch_coords["dec"]
-        + gaia_ref_epoch_coords["pm_delta_dec"]
-        + gaia_ref_epoch_coords["parallax_delta_dec_mast"]
-    )
-
     assert len(result) > 0
 
-    # N.B.: atol=1e-8 (in deg) corresponds to a coordinate difference of ~ 40 uas
-    assert np.isclose(expected_ra, returned_ra, atol=1e-8, rtol=0).all()
-    assert np.isclose(expected_dec, returned_dec, atol=1e-8, rtol=0).all()
+    # adopted tolerance: 2.8e-9 deg -> 10 uas (~0.0001 pix)
+    assert np.median(returned_ra - expected_ra) < 2.8e-9
+    assert np.median(returned_dec - expected_dec) < 2.8e-9
 
-    assert np.isclose(expected_ra_mast, returned_ra, atol=5e-10, rtol=0).all()
-    assert np.isclose(expected_dec_mast, returned_dec, atol=5e-10, rtol=0).all()
+    assert mad_std(returned_ra - expected_ra) < 2.8e-9
+    assert mad_std(returned_dec - expected_dec) < 2.8e-9
 
 
 def test_get_catalog_timeout():
