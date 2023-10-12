@@ -151,9 +151,7 @@ def create_gridded_psf_model(
         if instrument_options is not None:
             wfi.options.update(instrument_options)
 
-        central_wavelength_meters = (
-            filter_central_wavelengths[f"WFI_Filter_{filt}_Center"] * 1e-6 * u.m
-        )
+        (filter_central_wavelengths[f"WFI_Filter_{filt}_Center"] * 1e-6 * u.m)
 
         # Initialize the PSF library
         inst = gridded_library.CreatePSFLibrary(
