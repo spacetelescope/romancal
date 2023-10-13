@@ -30,6 +30,9 @@ general
 
 - Use tolerance for more comparisons in ``compare_asdf`` [#917]
 
+- Use array comparison options (including ``nan`` equality) when
+  comparing ``WCS`` objects during ``compare_asdf`` [#941]
+
 ramp_fitting
 ------------
 
