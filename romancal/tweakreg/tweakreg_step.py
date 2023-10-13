@@ -529,10 +529,14 @@ class TweakRegStep(RomanStep):
                 catalog_format = self.catalog_format
             else:
                 catalog_format = "ascii.ecsv"
-            cat_name = str(catalog)
+
             if isinstance(catalog, str):
+                # a string with the name of the catalog was provided
                 catalog = Table.read(catalog, format=catalog_format)
-            catalog.meta["name"] = cat_name
+
+            catalog.meta["name"] = (
+                str(catalog) if isinstance(catalog, str) else model_name
+            )
         except OSError:
             self.log.error(f"Cannot read catalog {catalog}")
 
