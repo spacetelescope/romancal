@@ -12,5 +12,5 @@ git+https://github.com/astropy/photutils.git
 
 # Use Bi-weekly numpy/scipy dev builds
 --extra-index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
-numpy>=0.0.dev0
+numpy>=2.0.0.dev0
 scipy>=0.0.dev0
