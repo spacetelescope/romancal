@@ -583,7 +583,11 @@ class NDArrayTypeOperator(BaseOperator):
                 difference["abs_diff"] = np.nansum(np.abs(a - b))
                 difference["n_diffs"] = np.count_nonzero(
                     np.isclose(
-                        a, b, rtol=self.rtol, atol=self.atol, equal_nan=self.equal_nan
+                        a,
+                        b,
+                        rtol=self.rtol,
+                        atol=self.atol,
+                        equal_nan=self.equal_nan,
                     )
                 )
         return difference
@@ -633,27 +637,22 @@ def _wcs_to_ra_dec(wcs):
     return wcs(x, y)
 
 
-class WCSOperator(BaseOperator):
+class WCSOperator(NDArrayTypeOperator):
     def give_up_diffing(self, level, diff_instance):
         # for comparing wcs instances this function evaluates
         # each wcs and compares the resulting ra and dec outputs
         # TODO should we compare the bounding boxes?
         ra_a, dec_a = _wcs_to_ra_dec(level.t1)
         ra_b, dec_b = _wcs_to_ra_dec(level.t2)
-        meta = {}
-        for name, a, b in [("ra", ra_a, ra_b), ("dec", dec_a, dec_b)]:
-            # TODO do we want to do something fancier than allclose?
-            if not np.allclose(a, b):
-                meta[name] = {
-                    "abs_diff": np.abs(a - b),
-                }
-        if meta:
-            diff_instance.custom_report_result(
-                "wcs_differ",
-                level,
-                meta,
-            )
-        return True
+        ra_diff = self._compare_arrays(ra_a, ra_b)
+        dec_diff = self._compare_arrays(dec_a, dec_b)
+        difference = {}
+        if ra_diff:
+            difference["ra"] = ra_diff
+        if dec_diff:
+            difference["dec"] = dec_diff
+        if difference:
+            diff_instance.custom_report_result("wcs_differ", level, difference)
 
 
 class DiffResult:
@@ -708,11 +707,14 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
         exclude_paths.append(f"root{key_path}")
     operators = [
         NDArrayTypeOperator(
-            rtol, atol, equal_nan, types=[asdf.tags.core.NDArrayType, np.ndarray]
+            rtol,
+            atol,
+            equal_nan,
+            types=[asdf.tags.core.NDArrayType, np.ndarray],
         ),
         TimeOperator(types=[astropy.time.Time]),
         TableOperator(rtol, atol, equal_nan, types=[astropy.table.Table]),
-        WCSOperator(types=[gwcs.WCS]),
+        WCSOperator(rtol, atol, equal_nan, types=[gwcs.WCS]),
     ]
     # warnings can be seen in regtest runs which indicate
     # that ddtrace logs are evaluated at times after the below

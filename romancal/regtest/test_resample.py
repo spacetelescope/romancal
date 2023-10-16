@@ -51,19 +51,14 @@ def create_asn_file(
 @pytest.mark.bigdata
 def test_resample_single_file(rtdata, ignore_asdf_paths):
     input_data = [
-        "r0000501001001001001_01101_0001_WFI02_cal_proc.asdf",
-        "r0000501001001001001_01101_0002_WFI02_cal_proc.asdf",
+        "r0000501001001001001_01101_0001_WFI02_cal_proc_resample.asdf",
+        "r0000501001001001001_01101_0002_WFI02_cal_proc_resample.asdf",
     ]
     output_data = "resample_output_resamplestep.asdf"
-    # truth_data = "r0000401001001001001_01101_0001_WFI01_cal_twkreg_proc.asdf"
+    truth_data = "resample_truth_resamplestep.asdf"
 
-    [
-        rtdata.get_data(
-            f"/Users/mteodoro/ROMAN/SYNTHETIC_IMAGES/IMAGES/23Q4_B11/L2/PROC/{data}"
-        )
-        for data in input_data
-    ]
-    # rtdata.get_truth(f"truth/WFI/image/{truth_data}")
+    [rtdata.get_data(f"WFI/image/{data}") for data in input_data]
+    rtdata.get_truth(f"truth/WFI/image/{truth_data}")
 
     rtdata.input = create_asn_file(members_filename_list=input_data)
     rtdata.output = output_data
@@ -76,18 +71,10 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
         rtdata.input,
         "--rotation=0",
         f"--output_file='{rtdata.output}'",
+        # "--wht_type='exptime'"
     ]
     RomanStep.from_cmdline(args)
     resample_out = rdm.open(rtdata.output)
-
-    # Can you add the metrics_logger decorator
-    # from metrics_logger.decorators import metrics_logger
-    # and indicate the this satisfies the requirement SOC-581 (RSOCREQ-28)
-
-    # Also can you add SOC-582 (RSOCREQ-73) and this should test
-    # (a) Data quality and uncertainty information (DMS343)
-    # (b) Total exposure time (DMS344)
-    # (c) Metadata used in the mosaic generation process (DMS345)
 
     step.log.info(
         "ResampleStep recorded as complete? :"
