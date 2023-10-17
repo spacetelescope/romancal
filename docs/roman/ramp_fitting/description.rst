@@ -116,34 +116,57 @@ sufficient; they are given as:
 | 100               |                        | 10       |
 +-------------------+------------------------+----------+
 
-Segment-specific Computations:
-------------------------------
-The variance of the slope of a segment due to read noise is:
+Fitting Algorithm
+-----------------
+
+The fitting implementation is based on Section 5 of Casertano et. al. 2022. A
+set of auxiliary quantities are computed as follows:
 
 .. math::
-   var^R_{s} = \frac{12 \ R^2 }{ (nresultants_{s}^3 - nresultants_{s})(resultant_time^2) } \,,
+   F0 = \sum_{i=0}^{N-1} W_i
 
-where :math:`R` is the noise in the difference between 2 frames,
-:math:`nresultants_{s}` is the number of resultants in the segment, and :math:`resultant_time` is the resultant
-time in seconds (from the exposure.resultant_time).
+   F1 = \sum_{i=0}^{N-1} W_i \bar t_i
 
-The variance of the slope in a segment due to Poisson noise is:
+   F2 = \sum_{i=0}^{N-1} W_i \bar t_i^2
 
-.. math::
-   var^P_{s} = \frac{ slope_{est} }{  tresultant \times gain\ (nresultants_{s} -1)}  \,,
-
-where :math:`gain` is the gain for the pixel (from the GAIN reference file),
-in e/DN. The :math:`slope_{est}` is an overall estimated slope of the pixel,
-calculated by taking the median of the first differences of the resultants that are
-unaffected by saturation and cosmic rays. This is a more
-robust estimate of the slope than the segment-specific slope, which may be noisy
-for short segments.
-
-The combined variance of the slope of a segment is the sum of the variances:
+The denominator, :math:`D`, is calculated as a single two-dimensional array:
 
 .. math::
-   var^C_{s} = var^R_{s} + var^P_{s}
+   D = F2 \cdot F0 - F1^2
 
+
+The resultant coefficients, :math:`K_i`, are computed as N two dimensional
+arrays:
+
+.. math::
+   K_i = (F0 \cdot \bar t_i - F1) \cdot W_i / D
+
+The estimated slope, :math:`\hat F`, is computed as a sum over the resultants
+:math:`R_i` and the coefficients :math:`K_i`:
+
+.. math::
+   \hat F = \sum_{i} K_i R_i
+
+The calculation is skipped for pixels that have :math:`D = 0`. Note that the coefficient
+:math:`K_i` vanishes for each resultant that has a bad pixel, as a consequence of :math:`W_i`
+vanishing.
+
+The read-noise component :math:`V_R` of the slope variance is computed as:
+
+.. math::
+   V_R = \sum_{i=0}^{N-1} K_i^2 \cdot (RN)^2 / N_i
+
+Signal variance The coefficient :math:`V_S` of the count rate in the signal-based component of the slope
+variance is computed as:
+
+.. math::
+   V_S = \sum_{i=0}^{N-1} {K_i^2 \tau_i} + \sum_{i<j} {2 K_i K_j \cdot \bar t_i}
+
+Total variance, if desired, is a (biased) estimate of the total slope variance :math:`V` can
+be computed by adopting :math:`\hat F` as the estimate of the slope:
+
+.. math::
+   V = V_R + V_S \cdot \hat F
 
 Exposure-level computations:
 ----------------------------
