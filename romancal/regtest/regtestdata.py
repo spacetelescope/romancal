@@ -653,6 +653,7 @@ class WCSOperator(NDArrayTypeOperator):
             difference["dec"] = dec_diff
         if difference:
             diff_instance.custom_report_result("wcs_differ", level, difference)
+        return True
 
 
 class DiffResult:
