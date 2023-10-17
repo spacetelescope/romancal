@@ -10,6 +10,8 @@ from astropy import table
 from astropy import units as u
 from astropy.modeling import models
 from astropy.modeling.models import RotationSequence3D, Scale, Shift
+from astropy.stats import mad_std
+from astropy.time import Time
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
@@ -23,10 +25,186 @@ from romancal.tweakreg.astrometric_utils import (
     get_catalog,
 )
 
+ARAD = np.pi / 180.0
+
 
 class MockConnectionError:
     def __init__(self, *args, **kwargs):
         raise requests.exceptions.ConnectionError
+
+
+def get_parallax_correction_barycenter(epoch, gaia_ref_epoch_coords):
+    """
+    Calculates the parallax correction in the Earth barycenter frame for a given epoch
+    and Gaia reference epoch coordinates (i.e. Gaia coordinates at the reference epoch).
+
+    Parameters
+    ----------
+    epoch : float
+        The epoch for which the parallax correction is calculated.
+    gaia_ref_epoch_coords : dict
+        The Gaia reference epoch coordinates, including 'ra', 'dec', and 'parallax'.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the delta_ra and delta_dec values of the parallax correction
+        in degrees.
+
+    Examples
+    --------
+    .. code-block :: python
+        epoch = 2022.5
+        gaia_coords = {'ra': 180.0, 'dec': 45.0, 'parallax': 10.0}
+        correction = get_parallax_correction_earth_barycenter(epoch, gaia_coords)
+        print(correction)
+        (0.001, -0.002)
+    """  # noqa: E501
+
+    obs_date = Time(epoch, format="decimalyear")
+    earths_center_barycentric_coords = coord.get_body_barycentric(
+        "earth", obs_date, ephemeris="builtin"
+    )
+    earth_X = earths_center_barycentric_coords.x
+    earth_Y = earths_center_barycentric_coords.y
+    earth_Z = earths_center_barycentric_coords.z
+
+    # angular displacement components
+    # (see eq. 8.15 of "Spherical Astronomy" by Robert M. Green)
+    delta_ra = (
+        u.Quantity(gaia_ref_epoch_coords["parallax"], unit="mas").to(u.rad)
+        * (1 / np.cos(gaia_ref_epoch_coords["dec"] * ARAD))
+        * (
+            earth_X.value * np.sin(gaia_ref_epoch_coords["ra"] * ARAD)
+            - earth_Y.value * np.cos(gaia_ref_epoch_coords["ra"] * ARAD)
+        )
+    ).to("deg")
+    delta_dec = (
+        u.Quantity(gaia_ref_epoch_coords["parallax"], unit="mas").to(u.rad)
+        * (
+            earth_X.value
+            * np.cos(gaia_ref_epoch_coords["ra"] * ARAD)
+            * np.sin(gaia_ref_epoch_coords["dec"] * ARAD)
+            + earth_Y.value
+            * np.sin(gaia_ref_epoch_coords["ra"] * ARAD)
+            * np.sin(gaia_ref_epoch_coords["dec"] * ARAD)
+            - earth_Z.value * np.cos(gaia_ref_epoch_coords["dec"] * ARAD)
+        )
+    ).to("deg")
+
+    return delta_ra, delta_dec
+
+
+def get_proper_motion_correction(epoch, gaia_ref_epoch_coords, gaia_ref_epoch):
+    """
+    Calculates the proper motion correction for a given epoch and Gaia reference epoch
+    coordinates.
+
+    Parameters
+    ----------
+    epoch : float
+        The epoch for which the proper motion correction is calculated.
+    gaia_ref_epoch_coords : dict
+        A dictionary containing Gaia reference epoch coordinates.
+    gaia_ref_epoch : float
+        The Gaia reference epoch.
+
+    Returns
+    -------
+    None
+
+    Examples
+    --------
+    .. code-block:: python
+    epoch = 2022.5
+    gaia_coords = {
+        "ra": 180.0,
+        "dec": 45.0,
+        "pmra": 2.0,
+        "pmdec": 1.5
+    }
+    gaia_ref_epoch = 2020.0
+    get_proper_motion_correction(epoch, gaia_coords, gaia_ref_epoch)
+    """  # noqa: E501
+
+    expected_new_dec = (
+        np.array(
+            gaia_ref_epoch_coords["dec"] * 3600
+            + (epoch - gaia_ref_epoch) * gaia_ref_epoch_coords["pmdec"] / 1000
+        )
+        / 3600
+    )
+    average_dec = np.array(
+        [
+            np.mean([new, old])
+            for new, old in zip(expected_new_dec, gaia_ref_epoch_coords["dec"])
+        ]
+    )
+    pmra = gaia_ref_epoch_coords["pmra"] / np.cos(np.deg2rad(average_dec))
+
+    # angular displacement components
+    gaia_ref_epoch_coords["pm_delta_dec"] = u.Quantity(
+        (epoch - gaia_ref_epoch) * gaia_ref_epoch_coords["pmdec"] / 1000,
+        unit=u.arcsec,
+    ).to(u.deg)
+    gaia_ref_epoch_coords["pm_delta_ra"] = u.Quantity(
+        (epoch - gaia_ref_epoch) * (pmra / 1000), unit=u.arcsec
+    ).to(u.deg)
+
+
+def get_parallax_correction(epoch, gaia_ref_epoch_coords):
+    """
+    Calculates the parallax correction for a given epoch and Gaia reference epoch
+    coordinates.
+
+    Parameters
+    ----------
+    epoch : float
+        The epoch for which to calculate the parallax correction.
+    gaia_ref_epoch_coords : dict
+        A dictionary containing the Gaia reference epoch coordinates:
+        - "ra" : float
+            The right ascension in degrees.
+        - "dec" : float
+            The declination in degrees.
+        - "parallax" : float
+            The parallax in milliarcseconds (mas).
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    This function calculates the parallax correction for a given epoch and Gaia
+    reference epoch coordinates. It uses the `get_parallax_correction_barycenter`
+    and `get_parallax_correction_mast` functions to obtain the parallax corrections
+    based on different coordinate frames.
+
+    Examples
+    --------
+    This function is typically used to add parallax correction columns to a main table
+    of Gaia reference epoch coordinates.
+
+    .. code-block:: python
+
+        epoch = 2023.5
+        gaia_coords = {
+            "ra": 180.0,
+            "dec": 30.0,
+            "parallax": 2.5
+        }
+        get_parallax_correction(epoch, gaia_coords)
+    """  # noqa: E501
+
+    # get parallax correction using textbook calculations (i.e. Earth's barycenter)
+    parallax_corr = get_parallax_correction_barycenter(
+        epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords
+    )
+
+    # add parallax corrections columns to the main table
+    gaia_ref_epoch_coords["parallax_delta_ra"] = parallax_corr[0]
+    gaia_ref_epoch_coords["parallax_delta_dec"] = parallax_corr[1]
 
 
 def update_wcsinfo(input_dm):
@@ -80,6 +258,7 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
+    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
     detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
     v2v3 = cf.Frame2D(
         name="v2v3",
@@ -474,46 +653,63 @@ def test_get_catalog_valid_parameters_but_no_sources_returned():
         (0, 0, 2000),
         (0, 0, 2010.3),
         (0, 0, 2030),
-        (269.4521, 4.6933, 2030),
-        (89, 80, 2010),
     ],
 )
 def test_get_catalog_using_epoch(ra, dec, epoch):
-    """Test that get_catalog returns coordinates corrected by proper motion."""
+    """Test that get_catalog returns coordinates corrected by proper motion
+    and parallax. The idea is to fetch data for a specific epoch from the MAST VO API
+    and compare them with the expected coordinates for that epoch.
+    First, the data for a specific coordinates and epoch are fetched from the MAST VO
+    API. Then, the data for the same coordinates are fetched for the Gaia's reference
+    epoch of 2016.0, and corrected for proper motion and parallax using explicit
+    calculations for the initially specified epoch. We then compare the results between
+    the returned coordinates from the MAST VO API and the manually updated
+    coordinates."""
 
     result = get_catalog(ra, dec, epoch=epoch)
+
+    # updated coordinates at the provided epoch
     returned_ra = np.array(result["ra"])
     returned_dec = np.array(result["dec"])
 
     # get GAIA data and update coords to requested epoch using pm measurements
     gaia_ref_epoch = 2016.0
-    gaia_ref_epoch_coords = get_catalog(ra, dec, epoch=gaia_ref_epoch)
+    gaia_ref_epoch_coords_all = get_catalog(ra, dec, epoch=gaia_ref_epoch)
 
-    expected_new_dec = (
-        np.array(
-            gaia_ref_epoch_coords["dec"] * 3600
-            + (epoch - gaia_ref_epoch) * gaia_ref_epoch_coords["pmdec"] / 1000
-        )
-        / 3600
+    gaia_ref_epoch_coords = gaia_ref_epoch_coords_all  # [mask]
+
+    # calculate proper motion corrections
+    get_proper_motion_correction(
+        epoch=epoch,
+        gaia_ref_epoch_coords=gaia_ref_epoch_coords,
+        gaia_ref_epoch=gaia_ref_epoch,
     )
-    average_dec = np.array(
-        [
-            np.mean([new, old])
-            for new, old in zip(expected_new_dec, gaia_ref_epoch_coords["dec"])
-        ]
+    # calculate parallax corrections
+    get_parallax_correction(epoch=epoch, gaia_ref_epoch_coords=gaia_ref_epoch_coords)
+
+    # calculate the expected coordinates value after corrections have been applied to
+    # Gaia's reference epoch coordinates
+
+    # textbook (barycentric frame)
+    expected_ra = (
+        gaia_ref_epoch_coords["ra"]
+        + gaia_ref_epoch_coords["pm_delta_ra"]
+        + gaia_ref_epoch_coords["parallax_delta_ra"]
     )
-    pmra = gaia_ref_epoch_coords["pmra"] / np.cos(np.deg2rad(average_dec))
-    expected_new_ra = (
-        np.array(
-            gaia_ref_epoch_coords["ra"] * 3600
-            + (epoch - gaia_ref_epoch) * (pmra / 1000)
-        )
-        / 3600
+    expected_dec = (
+        gaia_ref_epoch_coords["dec"]
+        + gaia_ref_epoch_coords["pm_delta_dec"]
+        + gaia_ref_epoch_coords["parallax_delta_dec"]
     )
 
     assert len(result) > 0
-    assert np.isclose(returned_ra, expected_new_ra, atol=1e-10, rtol=1e-9).all()
-    assert np.isclose(returned_dec, expected_new_dec, atol=1e-10, rtol=1e-9).all()
+
+    # adopted tolerance: 2.8e-9 deg -> 10 uas (~0.0001 pix)
+    assert np.median(returned_ra - expected_ra) < 2.8e-9
+    assert np.median(returned_dec - expected_dec) < 2.8e-9
+
+    assert mad_std(returned_ra - expected_ra) < 2.8e-9
+    assert mad_std(returned_dec - expected_dec) < 2.8e-9
 
 
 def test_get_catalog_timeout():

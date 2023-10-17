@@ -6,6 +6,11 @@ associations
 
 - Add FOV associations to the  code  [#931]
 
+dark
+----
+
+- Removed ``err`` array from dark current tests. [#938]
+
 general
 -------
 

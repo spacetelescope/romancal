@@ -185,6 +185,8 @@ $ crds sync --contexts roman-edit
 The CRDS_READONLY_CACHE variable should not be set, since references will need to be downloaded to your local cache as
 they are requested.
 
+Additionally, currently WebbPSF data is also required. Follow [these instructions to download the data files / point to existing files on the shared internal network](https://webbpsf.readthedocs.io/en/latest/installation.html#data-install).
+
 ### Running tests
 
 Unit tests can be run via `pytest`. Within the top level of your local `roman` repo checkout:

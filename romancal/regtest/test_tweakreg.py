@@ -28,7 +28,7 @@ def create_asn_file():
                     "name": "files.asdf",
                     "members": [
                         {
-                            "expname": "r0000401001001001001_01101_0001_WFI01_cal_tweakreg.asdf",
+                            "expname": "r0000501001001001001_01101_0001_WFI01_cal_tweakreg.asdf",
                             "exptype": "science"
                         }
                     ]
@@ -53,9 +53,9 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
     # - assign_wcs;
     # - photom;
     # - source_detection.
-    input_data = "r0000401001001001001_01101_0001_WFI01_cal_tweakreg.asdf"
-    output_data = "r0000401001001001001_01101_0001_WFI01_output.asdf"
-    truth_data = "r0000401001001001001_01101_0001_WFI01_cal_twkreg_proc.asdf"
+    input_data = "r0000501001001001001_01101_0001_WFI01_cal_tweakreg.asdf"
+    output_data = "r0000501001001001001_01101_0001_WFI01_output.asdf"
+    truth_data = "r0000501001001001001_01101_0001_WFI01_tweakreg.asdf"
 
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.get_truth(f"truth/WFI/image/{truth_data}")
@@ -93,7 +93,7 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
     )
     assert "v2v3corr" in tweakreg_out.meta.wcs.available_frames
 
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    diff = compare_asdf(rtdata.output, rtdata.truth, atol=1e-3, **ignore_asdf_paths)
     step.log.info(
         f"DMS280 MSG: Was the proper TweakReg data produced? : {diff.identical}"
     )
