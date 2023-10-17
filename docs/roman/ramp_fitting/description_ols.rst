@@ -1,7 +1,7 @@
-.. _rampfit-algorithm-ols22:
+.. _rampfit-algorithm-ols:
 
-Description: Optimized Least-squares with Uneven Ramps
-======================================================
+Description: Optimized Least-squares with Even Ramps
+====================================================
 
 This step determines the mean count rate, in units of counts per second, for
 each pixel by performing a linear fit to the data in the input file.  The fit
@@ -15,22 +15,14 @@ more detail below.
 
 The count rate for each pixel is determined by a linear fit to the
 cosmic-ray-free and saturation-free ramp intervals for each pixel; hereafter
-this interval will be referred to as a "segment." There are two algorithms used:
-Optimal Least-Square ('ols') and Optimal Least-Square for Uneven ramps
-('ols_cas22'). The 'ols' algorithm is the one
-`used by JWST <https://jwst-pipeline.readthedocs.io/en/stable/jwst/ramp_fitting/description.html>`_
-and is further :ref:`described here <rampfit-algorithm-ols>`.
-
-The 'ols_22' algorithm is based on `Casertano et al, STScI Technical Document,
-2022
-<https://www.stsci.edu/files/live/sites/www/files/home/roman/_documents/Roman-STScI-000394_DeterminingTheBestFittingSlope.pdf>`_.
-The implementation is what is described in this document.
-
-Segments are determined using the 3-D GROUPDQ array of the input data set, under
-the assumption that the jump step will have already flagged CR's. Segments are
-terminated where saturation flags are found. Pixels are processed simultaneously
-in blocks using the array-based functionality of numpy. The size of the block
-depends on the image size and the number of groups.
+this interval will be referred to as a "segment." The fitting algorithm uses an
+'optimal' weighting scheme, as described by Fixsen et al, PASP, 112, 1350.
+Segments are determined using
+the 3-D GROUPDQ array of the input data set, under the assumption that the jump
+step will have already flagged CR's. Segments are terminated where
+saturation flags are found. Pixels are processed simultaneously in blocks
+using the array-based functionality of numpy.  The size of the block depends
+on the image size and the number of groups.
 
 The ramp fitting step is also where the :ref:`reference pixels <refpix>` are
 trimmed, resulting in a smaller array being passed to the subsequent steps.
