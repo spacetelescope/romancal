@@ -5,7 +5,15 @@ import pytest
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
+from romancal.assign_wcs.assign_wcs_step import load_wcs
 from romancal.regtest.regtestdata import compare_asdf
+
+
+def _add_wcs(tmp_path, model):
+    dfn = tmp_path / "wcs_distortion.asdf"
+    distortion_model = rdm.DistortionRefModel(maker_utils.mk_distortion())
+    distortion_model.save(dfn)
+    load_wcs(model, {"distortion": dfn})
 
 
 @pytest.mark.parametrize("modification", [None, "small", "large"])
@@ -13,6 +21,7 @@ def test_compare_asdf(tmp_path, modification):
     fn0 = tmp_path / "test0.asdf"
     fn1 = tmp_path / "test1.asdf"
     l2 = rdm.ImageModel(maker_utils.mk_level2_image(shape=(100, 100)))
+    _add_wcs(tmp_path, l2)
     l2.save(fn0)
     atol = 0.0001
     if modification == "small":
