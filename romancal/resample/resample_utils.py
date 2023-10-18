@@ -4,7 +4,6 @@ from typing import Tuple
 
 import gwcs
 import numpy as np
-from astropy import units as u
 from astropy import wcs as fitswcs
 from astropy.modeling import Model
 from astropy.nddata.bitmask import interpret_bit_flags
@@ -141,13 +140,13 @@ def build_driz_weight(model, weight_type=None, good_bits=None):
         ):
             with np.errstate(divide="ignore", invalid="ignore"):
                 inv_variance = model.var_rnoise**-1
-            inv_variance[~np.isfinite(inv_variance)] = 1 * u.s**2 / u.electron**2
+            inv_variance[~np.isfinite(inv_variance)] = 1
         else:
             warnings.warn(
                 "var_rnoise array not available. Setting drizzle weight map to 1",
                 RuntimeWarning,
             )
-            inv_variance = 1.0 * u.s**2 / u.electron**2
+            inv_variance = 1.0
         result = inv_variance * dqmask
     elif weight_type == "exptime":
         exptime = model.meta.exposure.exposure_time

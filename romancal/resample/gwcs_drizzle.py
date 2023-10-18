@@ -431,8 +431,8 @@ def dodrizzle(
     log.info(f"Drizzling {insci.shape} --> {outsci.shape}")
 
     _vers, nmiss, nskip = cdrizzle.tdriz(
-        insci.astype(np.float32).value,
-        inwht.astype(np.float32).value,
+        insci.astype(np.float32),
+        inwht.astype(np.float32),
         pixmap,
         outsci,
         outwht,
