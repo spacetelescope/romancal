@@ -116,11 +116,11 @@ sufficient; they are given as:
 | 100               |                        | 10       |
 +-------------------+------------------------+----------+
 
-Fitting Algorithm
------------------
+Segment-Specific Computations
+-----------------------------
 
-The fitting implementation is based on Section 5 of Casertano et. al. 2022. A
-set of auxiliary quantities are computed as follows:
+The segment fitting implementation is based on Section 5 of Casertano et.
+al. 2022. A set of auxiliary quantities are computed as follows:
 
 .. math::
    F0 = \sum_{i=0}^{N-1} W_i
@@ -171,32 +171,7 @@ be computed by adopting :math:`\hat F` as the estimate of the slope:
 Exposure-level computations:
 ----------------------------
 
-The variance of the slope due to read noise is:
-
-.. math::
-   var^R_{o} = \frac{1}{ \sum_{s} \frac{1}{ var^R_{s}}}
-
-where the sum is over all segments.
-
-
-The variance of the slope due to Poisson noise is:
-
-.. math::
-   var^P_{o} = \frac{1}{ \sum_{s} \frac{1}{ var^P_{s}}}
-
-The combined variance of the slope is the sum of the variances:
-
-.. math::
-   var^C_{o} = var^R_{o} + var^P_{o}
-
-The square root of the combined variance is stored in the ERR array of the primary output.
-
-The overall slope depends on the slope and the combined variance of the slope of all
-segments, so is a sum over segments:
-
-.. math::
-    slope_{o} = \frac{ \sum_{s}{ \frac{slope_{s}} {var^C_{s}}}} { \sum_{s}{ \frac{1} {var^C_{s}}}}
-
+TBD from transcribing the math done in stcal.ramp_fitting. ols_cas22_fit.fit_ramps_casertano.
 
 Upon successful completion of this step, the status attribute ramp_fit will be set
 to "COMPLETE".
