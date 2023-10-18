@@ -45,10 +45,8 @@ def test_dark_step_interface(instrument, exptype):
     assert result.data.shape == shape
     assert result.groupdq.shape == shape
     assert result.pixeldq.shape == shape[1:]
-    assert result.err.shape == shape
     assert result.meta.cal_step.dark == "COMPLETE"
     assert result.data.dtype == np.float32
-    assert result.err.dtype == np.float32
     assert result.pixeldq.dtype == np.uint32
     assert result.groupdq.dtype == np.uint8
 
@@ -126,7 +124,6 @@ def test_dark_step_output_dark_file(tmpdir, instrument, exptype):
     assert dark_out_file_model.validate() is None
     assert dark_out_file_model.data.shape == shape
     assert dark_out_file_model.dq.shape == shape[1:]
-    assert dark_out_file_model.err.shape == shape
 
 
 def create_ramp_and_dark(shape, instrument, exptype):

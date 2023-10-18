@@ -6,6 +6,11 @@ associations
 
 - Add FOV associations to the  code  [#931]
 
+dark
+----
+
+- Removed ``err`` array from dark current tests. [#938]
+
 general
 -------
 
@@ -24,6 +29,9 @@ general
 - Add ``astropy.table.Table`` support to ``compare_asdf`` [#915]
 
 - Use tolerance for more comparisons in ``compare_asdf`` [#917]
+
+- Use array comparison options (including ``nan`` equality) when
+  comparing ``WCS`` objects during ``compare_asdf`` [#941]
 
 ramp_fitting
 ------------
