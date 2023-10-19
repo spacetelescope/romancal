@@ -4,7 +4,6 @@ from typing import Tuple
 
 import gwcs
 import numpy as np
-from astropy import units as u
 from astropy import wcs as fitswcs
 from astropy.modeling import Model
 from astropy.nddata.bitmask import interpret_bit_flags
@@ -356,18 +355,13 @@ def decode_context(context, x, y):
     if x.ndim != 1:
         raise ValueError("Coordinates must be scalars or 1D arrays.")
 
-    if not (
-        np.issubdtype(x.dtype, np.integer)
-        and np.issubdtype(y.dtype, np.integer)
-    ):
+    if not (np.issubdtype(x.dtype, np.integer) and np.issubdtype(y.dtype, np.integer)):
         raise ValueError("Pixel coordinates must be integer values")
 
     nbits = 8 * context.dtype.itemsize
 
     return [
-        np.flatnonzero(
-            [v & (1 << k) for v in context[:, yi, xi] for k in range(nbits)]
-        )
+        np.flatnonzero([v & (1 << k) for v in context[:, yi, xi] for k in range(nbits)])
         for xi, yi in zip(x, y)
     ]
 
