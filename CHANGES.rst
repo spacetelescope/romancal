@@ -51,6 +51,12 @@ resample
 --------
 - Implement resampling step. [#787]
 
+tweakreg
+--------
+
+- Fix a bug due to which source catalog may contain sources
+  outside of the bounding box. [#947]
+
 
 0.12.0 (2023-08-18)
 ===================
