@@ -14,3 +14,4 @@ Pipeline Steps
    photom/index.rst
    source_detection/index.rst
    tweakreg/index.rst
+   resample/index.rst
