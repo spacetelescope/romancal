@@ -583,7 +583,11 @@ class NDArrayTypeOperator(BaseOperator):
                 difference["abs_diff"] = np.nansum(np.abs(a - b))
                 difference["n_diffs"] = np.count_nonzero(
                     np.isclose(
-                        a, b, rtol=self.rtol, atol=self.atol, equal_nan=self.equal_nan
+                        a,
+                        b,
+                        rtol=self.rtol,
+                        atol=self.atol,
+                        equal_nan=self.equal_nan,
                     )
                 )
         return difference
@@ -704,7 +708,10 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
         exclude_paths.append(f"root{key_path}")
     operators = [
         NDArrayTypeOperator(
-            rtol, atol, equal_nan, types=[asdf.tags.core.NDArrayType, np.ndarray]
+            rtol,
+            atol,
+            equal_nan,
+            types=[asdf.tags.core.NDArrayType, np.ndarray],
         ),
         TimeOperator(types=[astropy.time.Time]),
         TableOperator(rtol, atol, equal_nan, types=[astropy.table.Table]),
