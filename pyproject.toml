@@ -33,6 +33,7 @@ dependencies = [
     'tweakwcs >=0.8.0',
     'spherical-geometry >= 1.2.22',
     'stsci.imagestats >= 1.6.3',
+    'drizzle >= 1.13.7',
     'webbpsf == 1.1.1',
 ]
 dynamic = ['version']
@@ -46,6 +47,7 @@ docs = [
     'sphinx-automodapi',
     'sphinx-rtd-theme',
     'stsci-rtd-theme',
+    'sphinx-autobuild',
     'tomli; python_version <="3.11"',
 ]
 test = [

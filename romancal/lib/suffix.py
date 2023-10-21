@@ -90,6 +90,7 @@ _calculated_suffixes = {
     "outlierdetectionstep",
     "skymatchstep",
     "refpixstep",
+    "resamplestep",
 }
 
 

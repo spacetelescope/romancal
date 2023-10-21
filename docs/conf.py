@@ -67,6 +67,8 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/devdocs", None),
     "scipy": ("http://scipy.github.io/devdocs", None),
     "matplotlib": ("http://matplotlib.org/", None),
+    "gwcs": ("https://gwcs.readthedocs.io/en/latest/", None),
+    "astropy": ("https://docs.astropy.org/en/stable/", None),
 }
 
 if sys.version_info[0] == 2:

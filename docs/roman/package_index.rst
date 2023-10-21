@@ -16,3 +16,4 @@
    tweakreg/index.rst
    outlier_detection/index.rst
    skymatch/index.rst
+   resample/index.rst

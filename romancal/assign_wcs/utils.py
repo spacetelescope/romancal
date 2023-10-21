@@ -1,4 +1,5 @@
 import functools
+import logging
 from typing import List, Tuple, Union
 
 import numpy as np
@@ -8,6 +9,9 @@ from astropy.utils.misc import isiterable
 from gwcs import WCS
 from gwcs.wcstools import wcs_from_fiducial
 from roman_datamodels.datamodels import DataModel
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
 _MAX_SIP_DEGREE = 6
 
@@ -181,7 +185,10 @@ def wcs_from_footprints(
 
     output_bounding_box = []
     for axis in out_frame.axes_order:
-        axis_min, axis_max = domain_bounds[axis].min(), domain_bounds[axis].max()
+        axis_min, axis_max = (
+            domain_bounds[axis].min(),
+            domain_bounds[axis].max(),
+        )
         output_bounding_box.append((axis_min, axis_max))
 
     output_bounding_box = tuple(output_bounding_box)
@@ -349,3 +356,49 @@ def compute_fiducial(wcslist, bounding_box=None):
     if spectral_footprint.any():
         fiducial[spectral_axes] = spectral_footprint.min()
     return fiducial
+
+
+def add_s_region(model):
+    """
+    Calculate the detector's footprint using ``WCS.footprint`` and save it in the
+    ``S_REGION`` keyword
+
+    Parameters
+    ----------
+    model : `~roman_datamodels.datamodels.ImageModel`
+        The data model for processing
+
+    Returns
+    -------
+    A formatted string representing the detector's footprint
+    """
+
+    bbox = model.meta.wcs.bounding_box
+
+    if bbox is None:
+        bbox = wcs_bbox_from_shape(model.data.shape)
+
+    # footprint is an array of shape (2, 4) - i.e. 4 values for RA and 4 values for
+    # Dec - as we are interested only in the footprint on the sky
+    footprint = model.meta.wcs.footprint(bbox, center=True, axis_type="spatial").T
+    # take only imaging footprint
+    footprint = footprint[:2, :]
+
+    # Make sure RA values are all positive
+    negative_ind = footprint[0] < 0
+    if negative_ind.any():
+        footprint[0][negative_ind] = 360 + footprint[0][negative_ind]
+
+    footprint = footprint.T
+    update_s_region_keyword(model, footprint)
+
+
+def update_s_region_keyword(model, footprint):
+    s_region = "POLYGON ICRS " + " ".join([str(x) for x in footprint.ravel()]) + " "
+    log.info(f"S_REGION VALUES: {s_region}")
+    if "nan" in s_region:
+        # do not update s_region if there are NaNs.
+        log.info("There are NaNs in s_region, S_REGION not updated.")
+    else:
+        model.meta.wcsinfo.s_region = s_region
+        log.info(f"Update S_REGION to {model.meta.wcsinfo.s_region}")
