@@ -84,10 +84,12 @@ The signal-to-noise ratio :math:`S` used for weighting selection is calculated f
 last sample as:
 
 .. math::
-    S = \frac{S_{max}} { \sqrt{(read\_noise)^2 + S_{max} } } \,,
+   S_{max} = S_{last} - S_{first}
 
-where :math:`S_{max}` is the maximum signal in electrons, as estimated from the
-last available read or resultant.
+   S = \frac{S_{max}} { \sqrt{(read\_noise)^2 + S_{max} } } \,,
+
+where :math:`S_{max}` is the maximum signal in electrons with the pedestal
+removed.
 
 The weighting for a sample :math:`i` is given as:
 
