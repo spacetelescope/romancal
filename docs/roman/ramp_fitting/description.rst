@@ -125,11 +125,11 @@ The segment fitting implementation is based on Section 5 of Casertano et.
 al. 2022. A set of auxiliary quantities are computed as follows:
 
 .. math::
-   F0 = \sum_{i=0}^{N-1} W_i
+   F0 &= \sum_{i=0}^{N-1} W_i
 
-   F1 = \sum_{i=0}^{N-1} W_i \bar t_i
+   F1 &= \sum_{i=0}^{N-1} W_i \bar t_i
 
-   F2 = \sum_{i=0}^{N-1} W_i \bar t_i^2
+   F2 &= \sum_{i=0}^{N-1} W_i \bar t_i^2
 
 The denominator, :math:`D`, is calculated as a single two-dimensional array:
 
@@ -178,9 +178,9 @@ fits by calculating the inverse variance-weighted mean using the read noise
 variances:
 
 .. math::
-   w_i = 1 / V_{R_i}
+   w_i &= 1 / V_{R_i}
 
-   \hat F_{mean} = \frac {\sum_i {w_i \hat F_i}} {\sum_i w_i}
+   \hat F_{mean} &= \frac {\sum_i {w_i \hat F_i}} {\sum_i w_i}
 
 The read noise is determined as follows:
 
