@@ -216,19 +216,33 @@ class TweakRegStep(RomanStep):
 
             # filter out sources outside the WCS bounding box
             bb = image_model.meta.wcs.bounding_box
-            if bb is not None:
+            x = catalog["x"]
+            y = catalog["y"]
+            if bb is None:
+                r, d = image_model.meta.wcs(x, y)
+                mask = np.isfinite(r) & np.isfinite(d)
+                catalog = catalog[mask]
+
+                n_removed_src = np.sum(np.logical_not(mask))
+                if n_removed_src:
+                    self.log.info(
+                        f"Removed {n_removed_src} sources from {filename}'s "
+                        "catalog whose image coordinates could not be "
+                        "converted to world coordinates."
+                    )
+            else:
+                # assume image coordinates of all sources within a bounding box
+                # can be converted to world coordinates.
                 ((xmin, xmax), (ymin, ymax)) = bb
-                x = catalog["x"]
-                y = catalog["y"]
                 mask = (x > xmin) & (x < xmax) & (y > ymin) & (y < ymax)
                 catalog = catalog[mask]
 
-            n_removed_src = np.sum(np.logical_not(mask))
-            if n_removed_src:
-                self.log.info(
-                    f"Removed {n_removed_src} sources from {filename}'s "
-                    "catalog that were outside of the bounding box."
-                )
+                n_removed_src = np.sum(np.logical_not(mask))
+                if n_removed_src:
+                    self.log.info(
+                        f"Removed {n_removed_src} sources from {filename}'s "
+                        "catalog that were outside of the bounding box."
+                    )
 
             # set meta.tweakreg_catalog
             image_model.meta["tweakreg_catalog"] = catalog
