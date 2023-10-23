@@ -30,6 +30,9 @@ general
 
 - Use tolerance for more comparisons in ``compare_asdf`` [#917]
 
+- Use array comparison options (including ``nan`` equality) when
+  comparing ``WCS`` objects during ``compare_asdf`` [#941]
+
 ramp_fitting
 ------------
 
@@ -43,6 +46,10 @@ refpix
 ------
 
 - Update cal_step, add suffix and add to the exposure pipeline [#890]
+
+resample
+--------
+- Implement resampling step. [#787]
 
 
 0.12.0 (2023-08-18)

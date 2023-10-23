@@ -12,6 +12,7 @@ from .outlier_detection.outlier_detection_step import OutlierDetectionStep
 from .photom.photom_step import PhotomStep
 from .ramp_fitting.ramp_fit_step import RampFitStep
 from .refpix.refpix_step import RefPixStep
+from .resample.resample_step import ResampleStep
 from .saturation.saturation_step import SaturationStep
 from .skymatch.skymatch_step import SkyMatchStep
 from .source_detection.source_detection_step import SourceDetectionStep
@@ -32,4 +33,5 @@ __all__ = [
     "SourceDetectionStep",
     "SkyMatchStep",
     "TweakRegStep",
+    "ResampleStep",
 ]
