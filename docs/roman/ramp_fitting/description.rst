@@ -158,7 +158,7 @@ The read-noise component :math:`V_R` of the slope variance is computed as:
 .. math::
    V_R = \sum_{i=0}^{N-1} K_i^2 \cdot (RN)^2 / N_i
 
-Signal variance The coefficient :math:`V_S` of the count rate in the signal-based component of the slope
+The signal variance, :math:`V_S`, of the count rate in the signal-based component of the slope
 variance is computed as:
 
 .. math::
@@ -173,7 +173,25 @@ be computed by adopting :math:`\hat F` as the estimate of the slope:
 Exposure-level computations:
 ----------------------------
 
-TBD from transcribing the math done in stcal.ramp_fitting. ols_cas22_fit.fit_ramps_casertano.
+The ramps for each resultant are reconstructed from it's segments, :math:`i`,
+fits by calculating the inverse variance-weighted mean using the read noise
+variances:
+
+.. math::
+   w_i = 1 / V_{R_i}
+
+   \hat F_{mean} = \frac {\sum_i {w_i \hat F_i}} {\sum_i w_i}
+
+The read noise is determined as follows:
+
+.. math::
+   V_{R_{mean}} = \frac {\sum_i {w_i ^ 2 V_{R_i}}} {\sum_i {w_i ^ 2}}
+
+Finally, the signal variance is calculated as:
+
+.. math::
+
+   V_{S_{mean}} = \frac {\sum_i {w_i ^ 2 V_{S_i}}} {\sum_i {w_i ^ 2}}
 
 Upon successful completion of this step, the status attribute ramp_fit will be set
 to "COMPLETE".
@@ -188,8 +206,3 @@ output product. This combined variance of the exposure-level slope is the sum
 of the variance of the slope due to the Poisson noise and the variance of the
 slope due to the read noise. These two variances are also separately written
 to the arrays VAR_POISSON and VAR_RNOISE in the asdf output.
-
-For the optional output product, the variance of the slope due to the Poisson
-noise of the segment-specific slope is written to the VAR_POISSON array.
-Similarly, the variance of the slope due to the read noise of the
-segment-specific slope  is written to the VAR_RNOISE array.
