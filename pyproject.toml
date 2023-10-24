@@ -62,6 +62,9 @@ dev = [
     'tox > 4',
     'pre-commit > 3'
 ]
+sdp = [
+    'stpreview',
+]
 
 [project.urls]
 'tracker' = 'https://github.com/spacetelescope/romancal/issues'
@@ -72,6 +75,7 @@ dev = [
 'stpipe.steps' = { romancal = 'romancal.stpipe.integration:get_steps' }
 
 [project.scripts]
+preview = 'romancal.scripts.preview:command'
 okify_regtests = 'romancal.scripts.okify_regtests:main'
 schema_editor = 'romancal.scripts.schema_editor:main'
 schemadoc = 'romancal.scripts.schemadoc:main'
