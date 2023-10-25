@@ -14,7 +14,7 @@ def preview(input: Path, output: Path):
         data,
         output,
         shape=(1080, 1080),
-        normalization=percentile_normalization(),
+        normalization=percentile_normalization(data, percentile=90),
         colormap="afmhot",
     )
 
@@ -26,7 +26,7 @@ def thumbnail(input: Path, output: Path):
         data,
         output,
         shape=(300, 300),
-        normalization=percentile_normalization(),
+        normalization=percentile_normalization(data, percentile=90),
         colormap="afmhot",
     )
 
