@@ -49,8 +49,13 @@ refpix
 
 resample
 --------
+
 - Implement resampling step. [#787]
 
+scripts
+-------
+
+- added ``static_preview`` script to generate static previews of ASDF images [#953]
 
 0.12.0 (2023-08-18)
 ===================
