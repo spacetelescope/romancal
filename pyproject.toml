@@ -63,7 +63,7 @@ dev = [
     'pre-commit > 3'
 ]
 sdp = [
-    'stpreview',
+    'stpreview>=0.3.0',
 ]
 
 [project.urls]
