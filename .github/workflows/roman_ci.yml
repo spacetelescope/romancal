@@ -25,7 +25,6 @@ jobs:
     with:
       envs: |
         - linux: check-dependencies
-        - linux: build-dist
   data:
     uses: ./.github/workflows/data.yml
   crds_contexts:
