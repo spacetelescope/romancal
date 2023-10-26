@@ -57,6 +57,11 @@ resample
 --------
 - Implement resampling step. [#787]
 
+stpipe
+------
+
+- Remove checks on CI in production code [#955]
+
 tweakreg
 --------
 
