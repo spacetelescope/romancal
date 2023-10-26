@@ -183,13 +183,13 @@ variances:
 The read noise is determined as follows:
 
 .. math::
-   V_{R_{mean}} = \frac {\sum_i {w_i ^ 2 V_{R_i}}} {\sum_i {w_i ^ 2}}
+   V_{R_{mean}} = \frac {\sum_i {w_i ^ 2 V_{R_i}}} {(\sum_i {w_i}) ^ 2}
 
 Finally, the signal variance is calculated as:
 
 .. math::
 
-   V_{S_{mean}} = \frac {\sum_i {w_i ^ 2 V_{S_i}}} {\sum_i {w_i ^ 2}}
+   V_{S_{mean}} = \frac {\sum_i {w_i ^ 2 V_{S_i}}} {(\sum_i {w_i}) ^ 2}
 
 Upon successful completion of this step, the status attribute ramp_fit will be set
 to "COMPLETE".
