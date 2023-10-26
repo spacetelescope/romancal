@@ -171,7 +171,7 @@ be computed by adopting :math:`\hat F` as the estimate of the slope:
 Exposure-level computations:
 ----------------------------
 
-The ramps for each resultant are reconstructed from it's segments, :math:`i`,
+The ramps for each resultant are reconstructed from its segments, :math:`i`,
 fits by calculating the inverse variance-weighted mean using the read noise
 variances:
 
