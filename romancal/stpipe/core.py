@@ -2,17 +2,13 @@
 Roman Calibration Pipeline base class
 """
 import logging
-import os
 import time
 
 import roman_datamodels as rdm
 from roman_datamodels.datamodels import ImageModel
-from stpipe import Pipeline, Step
+from stpipe import Pipeline, Step, crds_client
 
 from ..lib.suffix import remove_suffix
-
-from stpipe import crds_client
-
 
 _LOG_FORMATTER = logging.Formatter(
     "%(asctime)s.%(msecs)03dZ :: %(name)s :: %(levelname)s :: %(message)s",

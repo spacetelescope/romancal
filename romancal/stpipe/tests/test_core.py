@@ -101,15 +101,18 @@ def test_log_messages(tmp_path):
 )
 def test_crds_meta():
     """Test that context and software versions are set"""
+
     class ReflectStep(RomanStep):
         def process(self, input):
             return input
 
     im = ImageModel(mk_level2_image(shape=(20, 20)))
-    im.meta.ref_file.crds.sw_version = 'junkversion'
-    im.meta.ref_file.crds.context_used = 'junkcontext'
+    im.meta.ref_file.crds.sw_version = "junkversion"
+    im.meta.ref_file.crds.context_used = "junkcontext"
 
     result = ReflectStep.call(im)
 
     assert result.meta.ref_file.crds.sw_version == crds_client.get_svn_version()
-    assert result.meta.ref_file.crds.context_used == crds_client.get_context_used(result.crds_observatory)
+    assert result.meta.ref_file.crds.context_used == crds_client.get_context_used(
+        result.crds_observatory
+    )
