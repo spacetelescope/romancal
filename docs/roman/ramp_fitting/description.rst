@@ -31,9 +31,7 @@ Segments
 
 Segments are determined using the 3-D GROUPDQ array of the input data set, under
 the assumption that the jump step will have already flagged CR's. Segments are
-terminated where saturation flags are found. Pixels are processed simultaneously
-in blocks. The size of the block depends on the image size and the number of
-resultants.
+terminated where saturation flags are found.
 
 The ramp fitting step is also where the :ref:`reference pixels <refpix>` are
 trimmed, resulting in a smaller array being passed to the subsequent steps.
