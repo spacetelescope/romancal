@@ -122,7 +122,7 @@ Segment-Specific Computations
 -----------------------------
 
 The segment fitting implementation is based on Section 5 of Casertano et.
-al. 2022. If there is only one segment, no fitting is performed.
+al. 2022. Segments which have only a single resultant, no fitting is performed.
 
 A set of auxiliary quantities are computed as follows:
 
