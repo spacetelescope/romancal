@@ -42,6 +42,9 @@ ramp_fitting
 
 - Make uneven ramp fitting the default [#877]
 
+- Update Ramp fitting code to support the ``stcal`` changes to the ramp fitting
+  interface which were necessary to support jump detection on uneven ramps [#933]
+
 refpix
 ------
 
