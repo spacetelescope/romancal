@@ -1,5 +1,6 @@
 .. _rampfit-algorithm-ols:
 
+====================================================
 Description: Optimized Least-squares with Even Ramps
 ====================================================
 
