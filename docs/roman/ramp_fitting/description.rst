@@ -122,7 +122,9 @@ Segment-Specific Computations
 -----------------------------
 
 The segment fitting implementation is based on Section 5 of Casertano et.
-al. 2022. A set of auxiliary quantities are computed as follows:
+al. 2022. If there is only one segment, no fitting is performed.
+
+A set of auxiliary quantities are computed as follows:
 
 .. math::
    F0 &= \sum_{i=0}^{N-1} W_i
@@ -149,9 +151,8 @@ The estimated slope, :math:`\hat F`, is computed as a sum over the resultants
 .. math::
    \hat F = \sum_{i} K_i R_i
 
-The calculation is skipped for pixels that have :math:`D = 0`. Note that the coefficient
-:math:`K_i` vanishes for each resultant that has a bad pixel, as a consequence of :math:`W_i`
-vanishing.
+Note that the coefficient :math:`K_i` vanishes for each resultant that has a bad
+pixel, as a consequence of :math:`W_i` vanishing.
 
 The read-noise component :math:`V_R` of the slope variance is computed as:
 
