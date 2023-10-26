@@ -5,6 +5,7 @@ import pytest
 from astropy.time import Time
 from roman_datamodels.datamodels import FlatRefModel, ImageModel
 from roman_datamodels.maker_utils import mk_level2_image
+from stpipe import crds_client
 
 from romancal.stpipe import RomanPipeline, RomanStep
 
@@ -90,3 +91,25 @@ def test_log_messages(tmp_path):
 
     result = LoggingStep().run()
     assert any("Splines failed to reticulate" in l for l in result.cal_logs)
+
+
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason=(
+        "Roman CRDS servers are not currently available outside the internal network"
+    ),
+)
+def test_crds_meta():
+    """Test that context and software versions are set"""
+    class ReflectStep(RomanStep):
+        def process(self, input):
+            return input
+
+    im = ImageModel(mk_level2_image(shape=(20, 20)))
+    im.meta.ref_file.crds.sw_version = 'junkversion'
+    im.meta.ref_file.crds.context_used = 'junkcontext'
+
+    result = ReflectStep.call(im)
+
+    assert result.meta.ref_file.crds.sw_version == crds_client.get_svn_version()
+    assert result.meta.ref_file.crds.context_used == crds_client.get_context_used(result.crds_observatory)
