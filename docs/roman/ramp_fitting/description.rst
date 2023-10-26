@@ -151,9 +151,6 @@ The estimated slope, :math:`\hat F`, is computed as a sum over the resultants
 .. math::
    \hat F = \sum_{i} K_i R_i
 
-Note that the coefficient :math:`K_i` vanishes for each resultant that has a bad
-pixel, as a consequence of :math:`W_i` vanishing.
-
 The read-noise component :math:`V_R` of the slope variance is computed as:
 
 .. math::
