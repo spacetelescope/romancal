@@ -162,7 +162,7 @@ variance is computed as:
 .. math::
    V_S = \sum_{i=0}^{N-1} {K_i^2 \tau_i} + \sum_{i<j} {2 K_i K_j \cdot \bar t_i}
 
-Total variance, if desired, is a (biased) estimate of the total slope variance :math:`V` can
+Total variance, if desired, is a estimate of the total slope variance :math:`V` can
 be computed by adopting :math:`\hat F` as the estimate of the slope:
 
 .. math::
