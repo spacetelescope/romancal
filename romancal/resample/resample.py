@@ -419,12 +419,13 @@ class ResampleData:
         images.
         """
         output_wcs = output_model.meta.wcs
-        exptime_tot = np.zeros(output_model.data.shape, dtype='f4')
+        exptime_tot = np.zeros(output_model.data.shape, dtype="f4")
 
-        log.info(f"Resampling exposure time")
+        log.info("Resampling exposure time")
         for model in self.input_models:
-            exptime = np.full(model.data.shape,
-                              model.meta.exposure.effective_exposure_time)
+            exptime = np.full(
+                model.data.shape, model.meta.exposure.effective_exposure_time
+            )
 
             # create a unit weight map for all the input pixels with science data
             inwht = resample_utils.build_driz_weight(
@@ -433,7 +434,7 @@ class ResampleData:
 
             resampled_exptime = np.zeros_like(output_model.data)
             outwht = np.zeros_like(output_model.data)
-            outcon = np.zeros_like(output_model.context, dtype='i4')
+            outcon = np.zeros_like(output_model.context, dtype="i4")
             # drizzle wants an i4, but datamodels wants a u4.
 
             xmin, xmax, ymin, ymax = resample_utils.resample_range(
@@ -470,8 +471,10 @@ class ResampleData:
         else:
             total_exposure_time = 0
         max_exposure_time = np.max(exptime_tot)
-        log.info(f'Mean, max exposure times: {total_exposure_time:.1f}, '
-                 f'{max_exposure_time:.1f}')
+        log.info(
+            f"Mean, max exposure times: {total_exposure_time:.1f}, "
+            f"{max_exposure_time:.1f}"
+        )
         exposure_times = {"start": [], "end": []}
         for exposure in self.input_models.models_grouped:
             exposure_times["start"].append(exposure[0].meta.exposure.start_time)
