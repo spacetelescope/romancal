@@ -36,7 +36,9 @@ class WfiSca:
             **{
                 "meta": {
                     "wcsinfo": {"ra_ref": 10, "dec_ref": 0, "vparity": -1},
-                    "exposure": {"exposure_time": 152.04000000000002},
+                    "exposure": {"exposure_time": 152.04000000000002,
+                                 "effective_exposure_time": 3.04 * 6 * 8,
+                                },
                     "observation": {
                         "program": "00005",
                         "execution_plan": 1,
@@ -458,19 +460,23 @@ def test_update_exposure_times_different_sca_same_exposure(exposure_1):
     input_models = ModelContainer(exposure_1)
     resample_data = ResampleData(input_models)
 
-    output_model = resample_data.blank_output.copy()
-    output_model.meta["resample"] = maker_utils.mk_resample()
+    output_model = resample_data.resample_many_to_one()[0]
 
-    resample_data.update_exposure_times(output_model)
+    exptime_tot = resample_data.resample_exposure_time(output_model)
+    resample_data.update_exposure_times(output_model, exptime_tot)
 
-    assert (
+    # these three SCAs overlap, so the max exposure time is 3x.
+    # get this time within 0.1 s.
+    time_difference = (
         output_model.meta.resample.product_exposure_time
-        == exposure_1[0].meta.exposure.exposure_time
-    )
-    assert (
+        - 3 * exposure_1[0].meta.exposure.effective_exposure_time)
+    assert (np.abs(time_difference) < 0.1)
+    # the median ends up being 2 exposures
+    # get this time within 0.1 s.
+    time_difference = (
         output_model.meta.exposure.exposure_time
-        == exposure_1[0].meta.exposure.exposure_time
-    )
+        - 2 * exposure_1[0].meta.exposure.effective_exposure_time)
+    assert (np.abs(time_difference) < 0.1)
     assert (
         output_model.meta.exposure.start_time == exposure_1[0].meta.exposure.start_time
     )
@@ -483,16 +489,20 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
     input_models = ModelContainer([exposure_1[0], exposure_2[0]])
     resample_data = ResampleData(input_models)
 
-    output_model = resample_data.blank_output.copy()
-    output_model.meta["resample"] = maker_utils.mk_resample()
+    output_model = resample_data.resample_many_to_one()[0]
 
-    resample_data.update_exposure_times(output_model)
+    exptime_tot = resample_data.resample_exposure_time(output_model)
+    resample_data.update_exposure_times(output_model, exptime_tot)
 
     assert len(resample_data.input_models.models_grouped) == 2
 
-    assert output_model.meta.exposure.exposure_time == sum(
-        x.meta.exposure.exposure_time for x in input_models
-    )
+    # these exposures overlap perfectly so the max exposure time should
+    # be equal to the individual time times two.
+    time_difference = (
+        output_model.meta.resample.product_exposure_time
+        - 2 * exposure_1[0].meta.exposure.effective_exposure_time)
+    assert (np.abs(time_difference) < 0.1)
+
 
     assert output_model.meta.exposure.start_time == min(
         x.meta.exposure.start_time for x in input_models
@@ -502,9 +512,12 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
         x.meta.exposure.end_time for x in input_models
     )
 
-    assert output_model.meta.resample.product_exposure_time == sum(
-        x.meta.exposure.exposure_time for x in input_models
-    )
+    # likewise the per-pixel median exposure time is just 2x the individual
+    # sca exposure time.
+    time_difference = (
+        output_model.meta.exposure.exposure_time
+        - 2 * exposure_1[0].meta.exposure.effective_exposure_time)
+    assert (np.abs(time_difference) < 0.1)
 
 
 @pytest.mark.parametrize(
