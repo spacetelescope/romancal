@@ -14,6 +14,8 @@ dark
 general
 -------
 
+- Update pipeline code to run through tweakreg with single files and associations [#]
+
 - Update regression tests with new data and update ramp fitting tests to use ols_cas22 [#911]
 
 - Fix bug with ``ModelContainer.get_crds_parameters`` being a property not a method [#846]
@@ -41,7 +43,6 @@ ramp_fitting
 - Fix opening mode for references to be read-only [#854]
 
 - Make uneven ramp fitting the default [#877]
-
 
 - Update Ramp fitting code to support the ``stcal`` changes to the ramp fitting
   interface which were necessary to support jump detection on uneven ramps [#933]

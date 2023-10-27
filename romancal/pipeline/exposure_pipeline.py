@@ -9,8 +9,8 @@ import romancal.datamodels.filetype as filetype
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
-from romancal.associations.exceptions import AssociationNotValidError
-from romancal.associations.load_as_asn import LoadAsLevel2Asn
+#from romancal.associations.exceptions import AssociationNotValidError
+#from romancal.associations.load_as_asn import LoadAsLevel2Asn
 from romancal.dark_current import DarkCurrentStep
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
@@ -23,6 +23,8 @@ from romancal.ramp_fitting import ramp_fit_step
 from romancal.refpix import RefPixStep
 from romancal.saturation import SaturationStep
 from romancal.source_detection import SourceDetectionStep
+from romancal.tweakreg import TweakRegStep
+from romancal.datamodels import ModelContainer
 
 from ..stpipe import RomanPipeline
 
@@ -62,6 +64,7 @@ class ExposurePipeline(RomanPipeline):
         "flatfield": FlatFieldStep,
         "photom": PhotomStep,
         "source_detection": SourceDetectionStep,
+        "tweakreg": TweakRegStep,
     }
 
     # start the actual processing
@@ -85,22 +88,21 @@ class ExposurePipeline(RomanPipeline):
                 return
 
         if file_type == "asn":
-            try:
-                asn = LoadAsLevel2Asn.load(input, basename=self.output_file)
-            except AssociationNotValidError:
-                log.debug("Error opening file:")
-                return
+            asn = ModelContainer.read_asn(input)
 
         # Build a list of observations to process
         expos_file = []
+        n_members = 0
         if file_type == "asdf":
             expos_file = [input]
         elif file_type == "asn":
             for product in asn["products"]:
+                n_members = len(product["members"])
                 for member in product["members"]:
                     expos_file.append(member["expname"])
 
         results = []
+        tweakreg_input = ModelContainer()
         for in_file in expos_file:
             if isinstance(in_file, str):
                 input_filename = basename(in_file)
@@ -117,7 +119,6 @@ class ExposurePipeline(RomanPipeline):
             if input_filename:
                 result.meta.filename = input_filename
             result = self.saturation(result)
-            # pdb.set_trace()
 
             # Test for fully saturated data
             if is_fully_saturated(result):
@@ -149,29 +150,43 @@ class ExposurePipeline(RomanPipeline):
             result = self.dark_current(result)
             result = self.jump(result)
             result = self.rampfit(result)
-
             result = self.assign_wcs(result)
+            
             if result.meta.exposure.type == "WFI_IMAGE":
                 result = self.flatfield(result)
-            else:
-                log.info("Flat Field step is being SKIPPED")
-                result.meta.cal_step.flat_field = "SKIPPED"
-
-            if result.meta.exposure.type == "WFI_IMAGE":
                 result = self.photom(result)
                 result = self.source_detection(result)
+                if (file_type == "asn"):
+                    tweakreg_input.append(result)
+                    log.info(f"Number of models to tweakreg:   {len(tweakreg_input._models), n_members}")
             else:
-                log.info("Photom and source detection steps are being SKIPPED")
+                log.info("Flat Field step is being SKIPPED")
+                log.info("Photom step is being SKIPPED")
+                log.info("Source Detection step is being SKIPPED")
+                log.info("Tweakreg step is being SKIPPED")
+                result.meta.cal_step.flat_field = "SKIPPED"
                 result.meta.cal_step.photom = "SKIPPED"
                 result.meta.cal_step.source_detection = "SKIPPED"
+                result.meta.cal_step.tweakreg = "SKIPPED"
 
             # setup output_file for saving
             self.setup_output(result)
-            log.info("Roman exposure calibration pipeline ending...")
 
             self.output_use_model = True
             results.append(result)
 
+        # Now that all the exposures are collated, run tweakreg
+        # Note: this does not cover the case where the asn mixes imaging and spectral
+        #          observations. This should not occur on-prem
+        if result.meta.exposure.type == "WFI_IMAGE":
+            if file_type == "asdf":
+                mc_result = self.tweakreg([result])
+                result = mc_result._models.pop()
+            if file_type == "asn" :
+                result = self.tweakreg(tweakreg_input)
+
+            log.info("Roman exposure calibration pipeline ending...")
+            
         return results
 
     def setup_output(self, input):
