@@ -14,7 +14,7 @@ dark
 general
 -------
 
-- Update pipeline code to run through tweakreg with single files and associations [#]
+- Update pipeline code to run through tweakreg with single files and associations [#960]
 
 - Update regression tests with new data and update ramp fitting tests to use ols_cas22 [#911]
 
