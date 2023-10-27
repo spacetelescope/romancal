@@ -100,6 +100,7 @@ def add_synthetic_sources(
         synth_err[slc_lg] = np.sqrt(synth_err[slc_lg] ** 2 + model_err**2)
 
 
+@pytest.mark.webbpsf
 @pytest.mark.parametrize(
     "dx, dy, true_amp",
     zip(

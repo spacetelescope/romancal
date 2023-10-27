@@ -42,6 +42,12 @@ ramp_fitting
 
 - Make uneven ramp fitting the default [#877]
 
+
+- Update Ramp fitting code to support the ``stcal`` changes to the ramp fitting
+  interface which were necessary to support jump detection on uneven ramps [#933]
+
+- Add uneven ramp fitting documentation [#944]
+
 refpix
 ------
 
@@ -56,6 +62,17 @@ scripts
 -------
 
 - added ``static_preview`` script to generate static previews of ASDF images [#953]
+
+stpipe
+------
+
+- Remove checks on CI in production code [#955]
+
+tweakreg
+--------
+
+- Fix a bug due to which source catalog may contain sources
+  outside of the bounding box. [#947]
 
 0.12.0 (2023-08-18)
 ===================

@@ -42,13 +42,13 @@ jobs:
       cache-key: data-${{ needs.data.outputs.webbpsf_hash }}-${{ needs.data.outputs.crds_context }}
       cache-restore-keys: webbpsf-${{ needs.data.outputs.webbpsf_hash }}
       envs: |
-        - linux: py39-devdeps
-        - macos: py39-devdeps
-        - linux: py310-devdeps
-        - macos: py310-devdeps
-        - linux: py311-devdeps
-        - macos: py311-devdeps
-        - linux: py3-devdeps
+        - linux: py39-devdeps-webbpsf
+        - macos: py39-devdeps-webbpsf
+        - linux: py310-devdeps-webbpsf
+        - macos: py310-devdeps-webbpsf
+        - linux: py311-devdeps-webbpsf
+        - macos: py311-devdeps-webbpsf
+        - linux: py3-devdeps-webbpsf
           pytest-results-summary: true
-        - macos: py3-devdeps
+        - macos: py3-devdeps-webbpsf
           pytest-results-summary: true

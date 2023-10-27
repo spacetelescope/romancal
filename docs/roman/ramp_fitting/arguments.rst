@@ -1,6 +1,12 @@
 Arguments
 =========
-The ramp fitting step has three optional arguments that can be set by the user:
+The ramp fitting step has the following optional argument that can be set by the user:
+
+* ``--algorithm``: Algorithm to use. Possible values are `ols` and `ols_cas22`.
+  `ols` is the same algorithm used by JWST and can only be used with even ramps.
+  `ols_cas22` needs to be used for uneven ramps. `ols_cas22` is the default.
+
+The following optional arguments are valid only if using the `ols` algorithm.
 
 * ``--save_opt``: A True/False value that specifies whether to write
   the optional output product. Default if False.
