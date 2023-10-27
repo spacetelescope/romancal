@@ -91,7 +91,7 @@ bc0.build_cmds = bc0.build_cmds + [
     "pip list"
 ]
 bc0.test_cmds = [
-    "pytest -r sxf -n 0 --bigdata --slow \
+    "pytest -r sxf -n 0 --bigdata --slow --webbpsf \
     --basetemp=${pytest_basetemp} --junit-xml=results.xml --dist=loadscope \
     --env=${artifactoryenv} ${pytest_args}",
 ]
