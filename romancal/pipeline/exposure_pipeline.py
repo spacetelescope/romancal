@@ -9,9 +9,11 @@ import romancal.datamodels.filetype as filetype
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
-#from romancal.associations.exceptions import AssociationNotValidError
-#from romancal.associations.load_as_asn import LoadAsLevel2Asn
+
+# from romancal.associations.exceptions import AssociationNotValidError
+# from romancal.associations.load_as_asn import LoadAsLevel2Asn
 from romancal.dark_current import DarkCurrentStep
+from romancal.datamodels import ModelContainer
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
 from romancal.jump import jump_step
@@ -24,7 +26,6 @@ from romancal.refpix import RefPixStep
 from romancal.saturation import SaturationStep
 from romancal.source_detection import SourceDetectionStep
 from romancal.tweakreg import TweakRegStep
-from romancal.datamodels import ModelContainer
 
 from ..stpipe import RomanPipeline
 
@@ -151,14 +152,16 @@ class ExposurePipeline(RomanPipeline):
             result = self.jump(result)
             result = self.rampfit(result)
             result = self.assign_wcs(result)
-            
+
             if result.meta.exposure.type == "WFI_IMAGE":
                 result = self.flatfield(result)
                 result = self.photom(result)
                 result = self.source_detection(result)
-                if (file_type == "asn"):
+                if file_type == "asn":
                     tweakreg_input.append(result)
-                    log.info(f"Number of models to tweakreg:   {len(tweakreg_input._models), n_members}")
+                    log.info(
+                        f"Number of models to tweakreg:   {len(tweakreg_input._models), n_members}"
+                    )
             else:
                 log.info("Flat Field step is being SKIPPED")
                 log.info("Photom step is being SKIPPED")
@@ -182,11 +185,11 @@ class ExposurePipeline(RomanPipeline):
             if file_type == "asdf":
                 mc_result = self.tweakreg([result])
                 result = mc_result._models.pop()
-            if file_type == "asn" :
+            if file_type == "asn":
                 result = self.tweakreg(tweakreg_input)
 
             log.info("Roman exposure calibration pipeline ending...")
-            
+
         return results
 
     def setup_output(self, input):

@@ -357,19 +357,19 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     assert model.meta.cal_step.saturation == "COMPLETE"
 
     pipeline.log.info(
-    "DMS278 MSG: Testing WFI Level 2 Data Generation - Spectroscopy in Level 2 spectroscopic"
-    " output......." + passfail(model.meta.cal_step.dq_init == "COMPLETE") +
-                           passfail(model.meta.cal_step.saturation == "COMPLETE" )+
-                           passfail(model.meta.cal_step.refpix == "COMPLETE") +
-                           passfail(model.meta.cal_step.linearity == "COMPLETE") +
-                           passfail(model.meta.cal_step.jump == "COMPLETE") +
-                           passfail(model.meta.cal_step.ramp_fit == "COMPLETE") +
-                           passfail(model.meta.cal_step.assign_wcs == "COMPLETE") +
-                           passfail(model.meta.cal_step.flat_field == "SKIPPED") +
-                           passfail(model.meta.cal_step.photom == "SKIPPED") +
-                           passfail(model.meta.cal_step.source_detection == "SKIPPED") +
-                           passfail(model.meta.cal_step.tweakreg == "SKIPPED")
-
+        "DMS278 MSG: Testing WFI Level 2 Data Generation - Spectroscopy in Level 2 spectroscopic"
+        " output......."
+        + passfail(model.meta.cal_step.dq_init == "COMPLETE")
+        + passfail(model.meta.cal_step.saturation == "COMPLETE")
+        + passfail(model.meta.cal_step.refpix == "COMPLETE")
+        + passfail(model.meta.cal_step.linearity == "COMPLETE")
+        + passfail(model.meta.cal_step.jump == "COMPLETE")
+        + passfail(model.meta.cal_step.ramp_fit == "COMPLETE")
+        + passfail(model.meta.cal_step.assign_wcs == "COMPLETE")
+        + passfail(model.meta.cal_step.flat_field == "SKIPPED")
+        + passfail(model.meta.cal_step.photom == "SKIPPED")
+        + passfail(model.meta.cal_step.source_detection == "SKIPPED")
+        + passfail(model.meta.cal_step.tweakreg == "SKIPPED")
     )
     assert model.meta.cal_step.dq_init == "COMPLETE"
     assert model.meta.cal_step.saturation == "COMPLETE"
