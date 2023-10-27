@@ -57,6 +57,8 @@ resample
 --------
 - Implement resampling step. [#787]
 
+- Use resampled exposure time images to compute image exposure times.  [#959]
+
 stpipe
 ------
 
