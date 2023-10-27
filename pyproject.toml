@@ -75,7 +75,7 @@ sdp = [
 'stpipe.steps' = { romancal = 'romancal.stpipe.integration:get_steps' }
 
 [project.scripts]
-static_preview = 'romancal.scripts.preview:command'
+roman_static_preview = 'romancal.scripts.preview:command'
 okify_regtests = 'romancal.scripts.okify_regtests:main'
 schema_editor = 'romancal.scripts.schema_editor:main'
 schemadoc = 'romancal.scripts.schemadoc:main'
