@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 import typer
 from stpreview.__main__ import percentile_normalization, write_image
@@ -8,8 +9,14 @@ app = typer.Typer()
 
 
 @app.command()
-def preview(input: Path, output: Path):
+def preview(input: Path, output: Optional[Path] = None):
+    if output is None:
+        output = Path.cwd()
+    if output.is_dir():
+        output = output / f"{input.stem}.png"
+
     data = downsample_asdf_to(input=input, shape=(1000, 1000))
+
     write_image(
         data,
         output,
@@ -20,8 +27,14 @@ def preview(input: Path, output: Path):
 
 
 @app.command()
-def thumbnail(input: Path, output: Path):
+def thumbnail(input: Path, output: Optional[Path] = None):
+    if output is None:
+        output = Path.cwd()
+    if output.is_dir():
+        output = output / f"{input.stem}_thumb.png"
+
     data = downsample_asdf_to(input=input, shape=(300, 300))
+
     write_image(
         data,
         output,
