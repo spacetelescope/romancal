@@ -1,88 +1,70 @@
-name: check and update webbpsf and crds cache
-
 on:
   workflow_call:
     outputs:
-      crds_context:
-        value: ${{ jobs.data.outputs.crds_context }}
-      crds_path:
-        value: ${{ jobs.data.outputs.crds_path }}
-      crds_server:
-        value: ${{ jobs.data.outputs.crds_server }}
-      webbpsf_hash:
-        value: ${{ jobs.data.outputs.webbpsf_hash }}
+      path:
+        value: ${{ jobs.path.outputs.path }}
       webbpsf_path:
-        value: ${{ jobs.data.outputs.webbpsf_path }}
+        value: ${{ jobs.webbpsf_path.outputs.path }}
+      webbpsf_hash:
+        value: ${{ jobs.webbpsf_data.outputs.hash }}
   workflow_dispatch:
   schedule:
     - cron: "42 4 * * 3"
 
+env:
+  DATA_PATH: /tmp/data
+
 jobs:
-  webbpsf-data:
+  path:
+    runs-on: ubuntu-latest
+    outputs:
+      path: ${{ steps.path.outputs.path }}
+    steps:
+      - id: path
+        run: echo "path=${{ env.DATA_PATH }}" >> $GITHUB_OUTPUT
+  webbpsf_path:
+    needs: [ path ]
+    runs-on: ubuntu-latest
+    outputs:
+      path: ${{ steps.path.outputs.path }}
+    steps:
+      - id: path
+        run: echo "path=${{ env.DATA_PATH }}/webbpsf-data" >> $GITHUB_OUTPUT
+  webbpsf_data:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'update webbpsf data')))
-    name: fetch, check, and possibly update webbpsf data cache
+    needs: [ webbpsf_path ]
+    name: download and cache WebbPSF data
     runs-on: ubuntu-latest
     env:
-      DATA_PATH: /tmp/data
       WEBBPSF_DATA_URL: https://stsci.box.com/shared/static/qxpiaxsjwo15ml6m4pkhtk36c9jgj70k.gz
-    outputs:
-      path: ${{ steps.cache_path.outputs.path }}
-      hash: ${{ steps.data_hash.outputs.hash }}
     steps:
-      - id: cache_path
-        run: |
-          echo "path=${{ env.DATA_PATH }}" >> $GITHUB_OUTPUT
+      - run: mkdir -p tmp/data
+      - run: wget ${{ env.WEBBPSF_DATA_URL }} -O tmp/webbpsf-data.tar.gz
       - id: data_hash
-        run: |
-          mkdir -p tmp/data
-          wget ${{ env.WEBBPSF_DATA_URL }} -O tmp/webbpsf-data.tar.gz
-          echo "hash=$( shasum tmp/webbpsf-data.tar.gz | cut -d ' ' -f 1 )" >> $GITHUB_OUTPUT
+        run: echo "hash=$( shasum tmp/webbpsf-data.tar.gz | cut -d ' ' -f 1 )" >> $GITHUB_OUTPUT
       - id: cache_check
         uses: actions/cache@v3
         with:
-          path: ${{ steps.cache_path.outputs.path }}
+          path: ${{ needs.webbpsf_path.outputs.path }}
           key: webbpsf-${{ steps.data_hash.outputs.hash }}
       - if: ${{ steps.cache_check.outputs.cache-hit != 'true' }}
-        name: Initialize cache
-        run: |
-          mkdir -p ${{ steps.cache_path.outputs.path }}
-          tar -xzvf tmp/webbpsf-data.tar.gz -C ${{ steps.cache_path.outputs.path }}
-  data:
-    needs:
-      [webbpsf-data]
+        run: mkdir -p ${{ env.DATA_PATH }}
+      - if: ${{ steps.cache_check.outputs.cache-hit != 'true' }}
+        run: tar -xzvf tmp/webbpsf-data.tar.gz -C ${{ env.DATA_PATH }}
+  webbpsf_hash:
+    needs: [ webbpsf_path, webbpsf_data ]
     # run data job if webbpsf-data succeeds or is skipped. This allows
     # this data job to always fetch the crds context even if the webbpsf data fetching
     # was skipped (and an existing cache will be used for the webbpsf data).
-    if: always() && (needs.webbpsf-data.result == 'success' || needs.webbpsf-data.result == 'skipped')
-    name: retrieve current CRDS context, and WebbPSF data
+    if: always() && (needs.webbpsf_data.result == 'success' || needs.webbpsf_data.result == 'skipped')
+    name: retrieve latest data cache key
     runs-on: ubuntu-latest
     env:
-      OBSERVATORY: roman
-      CRDS_SERVER_URL: https://roman-crds.stsci.edu
-      CRDS_PATH: /tmp/data
       GH_TOKEN: ${{ github.token }}
     outputs:
-      crds_context: ${{ steps.crds_context.outputs.pmap }}
-      crds_path: ${{ steps.crds_path.outputs.path }}
-      crds_server: ${{ steps.crds_server.outputs.url }}
-      webbpsf_hash: ${{ steps.webbpsf_hash.outputs.hash }}
-      webbpsf_path: ${{ steps.webbpsf_path.outputs.path }}
+      hash: ${{ steps.hash.outputs.hash }}
     steps:
-      # crds:
-      - id: crds_context
-        run: >
-          echo "pmap=$(
-          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["${{ env.OBSERVATORY }}"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
-          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
-          )" >> $GITHUB_OUTPUT
-        # Get default CRDS_CONTEXT without installing crds client
-        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
-      - id: crds_path
-        run: echo "path=${{ env.CRDS_PATH }}" >> $GITHUB_OUTPUT
-      - id: crds_server
-        run: echo "url=${{ env.CRDS_SERVER_URL }}" >> $GITHUB_OUTPUT
-      # webbpsf:
-      - id: webbpsf_hash
+      - id: hash
         run: |
           # use actions/gh-actions-cache to allow filtering by key
           gh extension install actions/gh-actions-cache
@@ -93,5 +75,3 @@ jobs:
           echo "HASH=$HASH"
           echo "hash=$HASH" >> $GITHUB_OUTPUT
           if [ "$HASH" == '' ]; then exit 1; fi
-      - id: webbpsf_path
-        run: echo "path=${{ steps.crds_path.outputs.path }}/webbpsf-data" >> $GITHUB_OUTPUT
