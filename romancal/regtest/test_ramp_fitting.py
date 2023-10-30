@@ -11,6 +11,15 @@ from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
+def test_is_asdf(rampfit_result):
+    """Check that the filename has the correct file type"""
+    _, result_path = rampfit_result
+
+    assert result_path.exists()
+    assert result_path.suffix == '.asdf'
+
+
+@pytest.mark.bigdata
 def test_is_imagemodel(rampfit_result):
     """Check that the result is an ImageModel"""
     model, _ = rampfit_result
@@ -72,10 +81,10 @@ def rampfit_result(rtdata_module):
     """
     input_data = 'random_dqinit.asdf'
     input_data = rtdata_module.get_data(f'WFI/image/{input_data}')
-    with rdm.open(input_data) as input_model:
-        result_model = RampFitStep.call(input_model, save_results=True)
+    result_model = RampFitStep.call(input_data, save_results=True)
 
-    expected_path = replace_suffix(Path(input_data).stem, 'rampfit') + '.asdf'
+    input_data_path = Path(input_data)
+    expected_path = input_data_path.parent / (replace_suffix(input_data_path.stem, 'rampfit') + '.asdf')
 
     try:
         yield result_model, expected_path
