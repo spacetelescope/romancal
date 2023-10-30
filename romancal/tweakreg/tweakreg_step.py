@@ -190,8 +190,6 @@ class TweakRegStep(RomanStep):
                         "Please either run SourceDetectionStep or provide a"
                         "custom source catalog."
                     )
-                # set meta.tweakreg_catalog
-                image_model.meta["tweakreg_catalog"] = catalog
                 # remove 4D numpy array from meta.source_detection
                 if is_tweakreg_catalog_present:
                     del image_model.meta.source_detection["tweakreg_catalog"]
@@ -214,16 +212,41 @@ class TweakRegStep(RomanStep):
                             "'xcentroid' and 'ycentroid'."
                         )
 
+            filename = image_model.meta.filename
+
             # filter out sources outside the WCS bounding box
             bb = image_model.meta.wcs.bounding_box
-            if bb is not None:
+            x = catalog["x"]
+            y = catalog["y"]
+            if bb is None:
+                r, d = image_model.meta.wcs(x, y)
+                mask = np.isfinite(r) & np.isfinite(d)
+                catalog = catalog[mask]
+
+                n_removed_src = np.sum(np.logical_not(mask))
+                if n_removed_src:
+                    self.log.info(
+                        f"Removed {n_removed_src} sources from {filename}'s "
+                        "catalog whose image coordinates could not be "
+                        "converted to world coordinates."
+                    )
+            else:
+                # assume image coordinates of all sources within a bounding box
+                # can be converted to world coordinates.
                 ((xmin, xmax), (ymin, ymax)) = bb
-                x = catalog["x"]
-                y = catalog["y"]
                 mask = (x > xmin) & (x < xmax) & (y > ymin) & (y < ymax)
                 catalog = catalog[mask]
 
-            filename = image_model.meta.filename
+                n_removed_src = np.sum(np.logical_not(mask))
+                if n_removed_src:
+                    self.log.info(
+                        f"Removed {n_removed_src} sources from {filename}'s "
+                        "catalog that were outside of the bounding box."
+                    )
+
+            # set meta.tweakreg_catalog
+            image_model.meta["tweakreg_catalog"] = catalog
+
             nsources = len(catalog)
             if nsources == 0:
                 self.log.warning(f"No sources found in {filename}.")

@@ -258,9 +258,9 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS90", "DMS91", "DMS9")
+@metrics_logger("DMS278", "DMS90", "DMS91", "DMS9")
 def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
-    """Tests for flat field grism processing requirements DMS90 & DMS 91"""
+    """Tests for flat field grism processing requirements DMS90, DMS91 & DMS 278"""
     input_data = "r0000201001001001002_01101_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/grism/{input_data}")
     rtdata.input = input_data
@@ -355,6 +355,33 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
         " output......." + passfail(model.meta.cal_step.saturation == "COMPLETE")
     )
     assert model.meta.cal_step.saturation == "COMPLETE"
+
+    pipeline.log.info(
+        "DMS278 MSG: Testing WFI Level 2 Data Generation - Spectroscopy in Level 2 spectroscopic"
+        " output......."
+        + passfail(model.meta.cal_step.dq_init == "COMPLETE")
+        + passfail(model.meta.cal_step.saturation == "COMPLETE")
+        + passfail(model.meta.cal_step.refpix == "COMPLETE")
+        + passfail(model.meta.cal_step.linearity == "COMPLETE")
+        + passfail(model.meta.cal_step.jump == "COMPLETE")
+        + passfail(model.meta.cal_step.ramp_fit == "COMPLETE")
+        + passfail(model.meta.cal_step.assign_wcs == "COMPLETE")
+        + passfail(model.meta.cal_step.flat_field == "SKIPPED")
+        + passfail(model.meta.cal_step.photom == "SKIPPED")
+        + passfail(model.meta.cal_step.source_detection == "SKIPPED")
+        + passfail(model.meta.cal_step.tweakreg == "SKIPPED")
+    )
+    assert model.meta.cal_step.dq_init == "COMPLETE"
+    assert model.meta.cal_step.saturation == "COMPLETE"
+    assert model.meta.cal_step.refpix == "COMPLETE"
+    assert model.meta.cal_step.linearity == "COMPLETE"
+    assert model.meta.cal_step.jump == "COMPLETE"
+    assert model.meta.cal_step.ramp_fit == "COMPLETE"
+    assert model.meta.cal_step.assign_wcs == "COMPLETE"
+    assert model.meta.cal_step.flat_field == "SKIPPED"
+    assert model.meta.cal_step.photom == "SKIPPED"
+    assert model.meta.cal_step.source_detection == "SKIPPED"
+    assert model.meta.cal_step.tweakreg == "SKIPPED"
 
     # DMS91 data quality tests
     pipeline.log.info(
