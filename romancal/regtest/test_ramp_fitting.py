@@ -11,21 +11,16 @@ from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
+def test_is_imagemodel(rampfit_result):
+    """Check that the result is an ImageModel"""
+    model, _ = rampfit_result
+
+    assert isinstance(model, rdm.datamodels.ImageModel)
+
+
+@pytest.mark.bigdata
 def test_is_uneven(rampfit_result):
     """Verify that the provided model represents uneven ramps
-
-
-    Using Roman terminology, a "read pattern" is a list of resultants. Each element of this list
-    is a list of reads that were combined, on-board, to create a resultant. An example read pattern is
-
-    [[1], [2, 3], [4], [5, 6, 7, 8], [9, 10], [11]]
-
-    This pattern has 6 resultants, the first consistent of the first read, the
-    next consisting of reads 2 and 3, the third consists of read 4, and so on.
-
-    An uneven read pattern should have resultants that are created from different number of reads.
-    If the length of each resultant read list is the same for all resultants, that is an even set
-    of ramps and will fail that test
 
     Parameters
     ----------
@@ -67,8 +62,8 @@ def rampfit_result(rtdata_module):
 
     Parameters
     ----------
-    tmpdir : pytest.fixture
-        Temporary working directory
+    rtdata_module : pytest.fixture
+        artifactory fixture for data retrieval
 
     Returns
     -------
