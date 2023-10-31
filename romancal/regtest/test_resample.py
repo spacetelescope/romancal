@@ -124,7 +124,7 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
     )
 
     step.log.info(
-        f"""DMS343 MSG: Are there NaNs or zeros in the data and variance arrays? :\
+        f"""DMS343 MSG: Are there NaNs or zeros in the variance arrays, indicating poor data quality? :\
             {
                 any(
                     np.sum(
