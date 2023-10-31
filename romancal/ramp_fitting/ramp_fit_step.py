@@ -181,6 +181,11 @@ class RampFitStep(RomanStep):
         """
         use_jump = self.use_jump_detection
 
+        if use_jump:
+            log.info("Jump detection is enabled.")
+        else:
+            log.info("Jump detection is disabled.")
+
         kwargs = {}
         if self.threshold_intercept is not None:
             kwargs["threshold_intercept"] = self.threshold_intercept
@@ -216,10 +221,13 @@ class RampFitStep(RomanStep):
         var_rnoise = output.variances[..., Variance.read_var]
         var_poisson = output.variances[..., Variance.poisson_var]
         err = np.sqrt(var_poisson + var_rnoise)
+        dq = output.dq.astype(np.uint32)
 
         # Create the image model
         image_info = (slopes, None, var_poisson, var_rnoise, err)
         image_model = create_image_model(input_model, image_info)
+
+        image_model["jump_dq"] = dq
 
         # That's all folks
         return image_model

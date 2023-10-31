@@ -2,6 +2,7 @@ import pickle
 from pathlib import Path
 from typing import NamedTuple
 
+import astropy.units as u
 import numpy as np
 from roman_datamodels.datamodels import GainRefModel, RampModel, ReadnoiseRefModel
 from roman_datamodels.maker_utils import mk_datamodel
@@ -27,23 +28,30 @@ def reference_data_to_input_models(input_data):
         raise ValueError("Number of resultants must be a square number")
     counts = counts.transpose().reshape((n_counts, n_rows, n_rows))
 
+    padded = np.zeros((n_counts, n_rows + 8, n_rows + 8), dtype=np.float32)
+    padded[:, 4:-4, 4:-4] = counts
+
     ma_table = input_data["params"]["ma_table"]
     read_time = ma_table[0][0]
     read_pattern = ma_table_to_read_pattern(ma_table, read_time)
 
+    # output_slopes = input_data["stats"]["est_slope"]
+    # print("Making output_model no jump")
+    # output_model = mk_datamodel(ImageModel, shape=padded.shape[1:])
+
     print("Making input_model")
-    input_model = mk_datamodel(RampModel, shape=counts.shape)
-    input_model.data = counts * input_model.data.unit
+    input_model = mk_datamodel(RampModel, shape=padded.shape)
+    input_model.data = padded * u.electron
     input_model.meta.exposure.read_pattern = read_pattern
     input_model.meta.exposure.frame_time = read_time
 
     print("Making readnoise_model")
     read_noise = input_data["params"]["read_noise"]
-    readnoise_model = mk_datamodel(ReadnoiseRefModel, shape=counts.shape[1:])
+    readnoise_model = mk_datamodel(ReadnoiseRefModel, shape=padded.shape[1:])
     readnoise_model.data += read_noise * readnoise_model.data.unit
 
     print("Making gain_model")
-    gain_model = mk_datamodel(GainRefModel, shape=counts.shape[1:])
+    gain_model = mk_datamodel(GainRefModel, shape=padded.shape[1:])
     gain_model.data += 1 * gain_model.data.unit
 
     return RegressionData(input_model, readnoise_model, gain_model)
