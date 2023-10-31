@@ -28,6 +28,15 @@ def test_is_imagemodel(rampfit_result):
 
 
 @pytest.mark.bigdata
+def test_is_rampfit(rampfit_result):
+    """Check that the calibration suffix is 'rampfit'"""
+    _, result_path = rampfit_result
+
+    assert result_path.exists()
+    assert result_path.stem.endswith('rampfit')
+
+
+@pytest.mark.bigdata
 def test_is_uneven(rampfit_result):
     """Verify that the provided model represents uneven ramps
 
