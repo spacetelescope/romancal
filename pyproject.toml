@@ -73,6 +73,7 @@ sdp = [
 
 [project.entry-points]
 'stpipe.steps' = { romancal = 'romancal.stpipe.integration:get_steps' }
+pytest11 = {webbpsf = 'pytest_plugin.webbpsf_plugin'}
 
 [project.scripts]
 roman_static_preview = 'romancal.scripts.preview:command'
