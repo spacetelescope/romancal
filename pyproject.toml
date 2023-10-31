@@ -70,6 +70,7 @@ dev = [
 
 [project.entry-points]
 'stpipe.steps' = { romancal = 'romancal.stpipe.integration:get_steps' }
+pytest11 = {webbpsf = 'pytest_plugin.webbpsf_plugin'}
 
 [project.scripts]
 okify_regtests = 'romancal.scripts.okify_regtests:main'

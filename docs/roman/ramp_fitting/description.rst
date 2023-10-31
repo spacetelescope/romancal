@@ -1,5 +1,7 @@
-Description
-============
+.. _rampfit-algorithm-ols22:
+
+Description: Optimized Least-squares with Uneven Ramps
+======================================================
 
 This step determines the mean count rate, in units of counts per second, for
 each pixel by performing a linear fit to the data in the input file.  The fit
@@ -13,59 +15,32 @@ more detail below.
 
 The count rate for each pixel is determined by a linear fit to the
 cosmic-ray-free and saturation-free ramp intervals for each pixel; hereafter
-this interval will be referred to as a "segment." The fitting algorithm uses an
-'optimal' weighting scheme, as described by Fixsen et al, PASP, 112, 1350.
-Segments are determined using
-the 3-D GROUPDQ array of the input data set, under the assumption that the jump
-step will have already flagged CR's. Segments are terminated where
-saturation flags are found. Pixels are processed simultaneously in blocks
-using the array-based functionality of numpy.  The size of the block depends
-on the image size and the number of groups.
+this interval will be referred to as a "segment." There are two algorithms used:
+Optimal Least-Square ('ols') and Optimal Least-Square for Uneven ramps
+('ols_cas22'). The 'ols' algorithm is the one
+`used by JWST <https://jwst-pipeline.readthedocs.io/en/stable/jwst/ramp_fitting/description.html>`_
+and is further :ref:`described here <rampfit-algorithm-ols>`.
+
+The 'ols_22' algorithm is based on `Casertano et al, STScI Technical Document,
+2022
+<https://www.stsci.edu/files/live/sites/www/files/home/roman/_documents/Roman-STScI-000394_DeterminingTheBestFittingSlope.pdf>`_.
+The implementation is what is described in this document.
+
+Segments
+++++++++
+
+Segments are determined using the 3-D GROUPDQ array of the input data set, under
+the assumption that the jump step will have already flagged CR's. Segments are
+terminated where saturation flags are found.
 
 The ramp fitting step is also where the :ref:`reference pixels <refpix>` are
 trimmed, resulting in a smaller array being passed to the subsequent steps.
 
-Multiprocessing
-===============
-
-This step has the option of running in multiprocessing mode. In that mode it will
-split the input data cube into a number of row slices based on the number of available
-cores on the host computer and the value of the max_cores input parameter. By
-default the step runs on a single processor. At the other extreme if max_cores is
-set to 'all', it will use all available cores (real and virtual). Testing has shown
-a reduction in the elapsed time for the step proportional to the number of real
-cores used. Using the virtual cores also reduces the elasped time but at a slightly
-lower rate than the real cores.
-
 Special Cases
 +++++++++++++
 
-If the input dataset has only a single group, the count rate
-for all unsaturated pixels will be calculated as the
-value of the science data in that group divided by the group time.  If the
-input dataset has only two groups, the count rate for all
-unsaturated pixels will be calculated using the differences
-between the two valid groups of the science data.
-
-For datasets having more than a single group, a ramp having
-a segment with only a single group is processed differently depending on the
-number and size of the other segments in the ramp. If a ramp has only one
-segment and that segment contains a single group, the count rate will be calculated
-to be the value of the science data in that group divided by the group time.  If a ramp
-has a segment having a single group, and at least one other segment having more
-than one good group, only data from the segment(s) having more than a single
-good group will be used to calculate the count rate.
-
-The data are checked for ramps in which there is good data in the first group,
-but all first differences for the ramp are undefined because the remainder of
-the groups are either saturated or affected by cosmic rays.  For such ramps,
-the first differences will be set to equal the data in the first group.  The
-first difference is used to estimate the slope of the ramp, as explained in the
-'segment-specific computations' section below.
-
-If any input dataset contains ramps saturated in their second group, the count
-rates for those pixels will be calculated as the value
-of the science data in the first group divided by the group time.
+If the input dataset has only a single resultant, no fit is determined, giving
+that resultant a weight of zero.
 
 All Cases
 +++++++++
@@ -78,34 +53,11 @@ written as the primary output product.  In this output product, the
 3-D GROUPDQ is collapsed into 2-D, merged
 (using a bitwise OR) with the input 2-D PIXELDQ, and stored as a 2-D DQ array.
 
-A second, optional output product is also available and is produced only when
-the step parameter 'save_opt' is True (the default is False).  This optional
-product contains 3-D arrays called SLOPE, SIGSLOPE, YINT, SIGYINT, WEIGHTS,
-VAR_POISSON, and VAR_RNOISE that contain the slopes, uncertainties in the
-slopes, y-intercept, uncertainty in the y-intercept, fitting weights, the
-variance of the slope due to poisson noise only, and the variance of the slope
-due to read noise only for each segment of each pixel, respectively. The y-intercept refers
-to the result of the fit at an effective exposure time of zero.  This product also
-contains a 2-D array called PEDESTAL, which gives the signal at zero exposure
-time for each pixel, and the 3-D CRMAG array, which contains the magnitude of
-each group that was flagged as having a CR hit.  By default, the name of this
-output file will have the suffix "_fitopt".
-In this optional output product, the pedestal array is
-calculated by extrapolating the final slope (the weighted
-average of the slopes of all ramp segments) for each pixel
-from its value at the first group to an exposure time of zero. Any pixel that is
-saturated on the first group is given a pedestal value of 0. Before compression,
-the cosmic ray magnitude array is equivalent to the input SCI array but with the
-only nonzero values being those whose pixel locations are flagged in the input
-GROUPDQ as cosmic ray hits. The array is compressed, removing all groups in
-which all the values are 0 for pixels having at least one group with a non-zero
-magnitude. The order of the cosmic rays within the ramp is preserved.
-
 Slope and Variance Calculations
 +++++++++++++++++++++++++++++++
 Slopes and their variances are calculated for each segment,
 and for the entire exposure. As defined above, a segment is a set of contiguous
-groups where none of the groups are saturated or cosmic ray-affected.  The
+resultants where none of the resultants are saturated or cosmic ray-affected.  The
 appropriate slopes and variances are output to the primary output product, and the optional output product. The
 following is a description of these computations. The notation in the equations
 is the following: the type of noise (when appropriate) will appear as the superscript
@@ -115,8 +67,10 @@ and the form of the data will appear as the subscript: ‘s’, ‘o’ for segm
 Optimal Weighting Algorithm
 ---------------------------
 The slope of each segment is calculated using the least-squares method with optimal
-weighting, as described by Fixsen et al. 2000, PASP, 112, 1350; Regan 2007,
-JWST-STScI-001212. Optimal weighting determines the relative weighting of each sample
+weighting, as described by `Casertano et al, STScI Technical Document,
+2022
+<https://www.stsci.edu/files/live/sites/www/files/home/roman/_documents/Roman-STScI-000394_DeterminingTheBestFittingSlope.pdf>`_.
+Optimal weighting determines the relative weighting of each sample
 when calculating the least-squares fit to the ramp. When the data have low signal-to-noise
 ratio :math:`S`, the data are read noise dominated and equal weighting of samples is the
 best approach. In the high signal-to-noise regime, data are Poisson-noise dominated and
@@ -128,14 +82,20 @@ The signal-to-noise ratio :math:`S` used for weighting selection is calculated f
 last sample as:
 
 .. math::
-    S = \frac{data \times gain} { \sqrt{(read\_noise)^2 + (data \times gain) } } \,,
+   S_{max} = S_{last} - S_{first}
+
+   S = \frac{S_{max}} { \sqrt{(read\_noise)^2 + S_{max} } } \,,
+
+where :math:`S_{max}` is the maximum signal in electrons with the pedestal
+removed.
 
 The weighting for a sample :math:`i` is given as:
 
 .. math::
-    w_i = (i - i_{midpoint})^P \,,
+    w_i = \frac{(1 + P) \times N_i} {1 + P \times N_i} | \bar t_i - \bar t_{mid} |^P \,,
 
-where :math:`i_{midpoint}` is the the sample number of the midpoint of the sequence, and
+where :math:`t_{mid}` is the time midpoint of the sequence,
+:math:`N_i` is the number of contributing reads, and
 :math:`P` is the exponent applied to weights, determined by the value of :math:`S`. Fixsen
 et al. 2000 found that defining a small number of P values to apply to values of S was
 sufficient; they are given as:
@@ -156,64 +116,78 @@ sufficient; they are given as:
 | 100               |                        | 10       |
 +-------------------+------------------------+----------+
 
-Segment-specific Computations:
-------------------------------
-The variance of the slope of a segment due to read noise is:
+Segment-Specific Computations
+-----------------------------
+
+The segment fitting implementation is based on Section 5 of Casertano et.
+al. 2022. Segments which have only a single resultant, no fitting is performed.
+
+A set of auxiliary quantities are computed as follows:
 
 .. math::
-   var^R_{s} = \frac{12 \ R^2 }{ (ngroups_{s}^3 - ngroups_{s})(group_time^2) } \,,
+   F0 &= \sum_{i=0}^{N-1} W_i
 
-where :math:`R` is the noise in the difference between 2 frames,
-:math:`ngroups_{s}` is the number of groups in the segment, and :math:`group_time` is the group
-time in seconds (from the exposure.group_time).
+   F1 &= \sum_{i=0}^{N-1} W_i \bar t_i
 
-The variance of the slope in a segment due to Poisson noise is:
+   F2 &= \sum_{i=0}^{N-1} W_i \bar t_i^2
 
-.. math::
-   var^P_{s} = \frac{ slope_{est} }{  tgroup \times gain\ (ngroups_{s} -1)}  \,,
-
-where :math:`gain` is the gain for the pixel (from the GAIN reference file),
-in e/DN. The :math:`slope_{est}` is an overall estimated slope of the pixel,
-calculated by taking the median of the first differences of the groups that are
-unaffected by saturation and cosmic rays. This is a more
-robust estimate of the slope than the segment-specific slope, which may be noisy
-for short segments.
-
-The combined variance of the slope of a segment is the sum of the variances:
+The denominator, :math:`D`, is calculated as a single two-dimensional array:
 
 .. math::
-   var^C_{s} = var^R_{s} + var^P_{s}
+   D = F2 \cdot F0 - F1^2
 
+
+The resultant coefficients, :math:`K_i`, are computed as N two dimensional
+arrays:
+
+.. math::
+   K_i = (F0 \cdot \bar t_i - F1) \cdot W_i / D
+
+The estimated slope, :math:`\hat F`, is computed as a sum over the resultants
+:math:`R_i` and the coefficients :math:`K_i`:
+
+.. math::
+   \hat F = \sum_{i} K_i R_i
+
+The read-noise component :math:`V_R` of the slope variance is computed as:
+
+.. math::
+   V_R = \sum_{i=0}^{N-1} K_i^2 \cdot (RN)^2 / N_i
+
+The signal variance, :math:`V_S`, of the count rate in the signal-based component of the slope
+variance is computed as:
+
+.. math::
+   V_S = \sum_{i=0}^{N-1} {K_i^2 \tau_i} + \sum_{i<j} {2 K_i K_j \cdot \bar t_i}
+
+Total variance, if desired, is a estimate of the total slope variance :math:`V` can
+be computed by adopting :math:`\hat F` as the estimate of the slope:
+
+.. math::
+   V = V_R + V_S \cdot \hat F
 
 Exposure-level computations:
 ----------------------------
 
-The variance of the slope due to read noise is:
+The ramps for each resultant are reconstructed from its segments, :math:`i`,
+fits by calculating the inverse variance-weighted mean using the read noise
+variances:
 
 .. math::
-   var^R_{o} = \frac{1}{ \sum_{s} \frac{1}{ var^R_{s}}}
+   w_i &= 1 / V_{R_i}
 
-where the sum is over all segments.
+   \hat F_{mean} &= \frac {\sum_i {w_i \hat F_i}} {\sum_i w_i}
 
-
-The variance of the slope due to Poisson noise is:
-
-.. math::
-   var^P_{o} = \frac{1}{ \sum_{s} \frac{1}{ var^P_{s}}}
-
-The combined variance of the slope is the sum of the variances:
+The read noise is determined as follows:
 
 .. math::
-   var^C_{o} = var^R_{o} + var^P_{o}
+   V_{R_{mean}} = \frac {\sum_i {w_i ^ 2 V_{R_i}}} {(\sum_i {w_i}) ^ 2}
 
-The square root of the combined variance is stored in the ERR array of the primary output.
-
-The overall slope depends on the slope and the combined variance of the slope of all
-segments, so is a sum over segments:
+Finally, the signal variance is calculated as:
 
 .. math::
-    slope_{o} = \frac{ \sum_{s}{ \frac{slope_{s}} {var^C_{s}}}} { \sum_{s}{ \frac{1} {var^C_{s}}}}
 
+   V_{S_{mean}} = \frac {\sum_i {w_i ^ 2 V_{S_i}}} {(\sum_i {w_i}) ^ 2}
 
 Upon successful completion of this step, the status attribute ramp_fit will be set
 to "COMPLETE".
@@ -228,8 +202,3 @@ output product. This combined variance of the exposure-level slope is the sum
 of the variance of the slope due to the Poisson noise and the variance of the
 slope due to the read noise. These two variances are also separately written
 to the arrays VAR_POISSON and VAR_RNOISE in the asdf output.
-
-For the optional output product, the variance of the slope due to the Poisson
-noise of the segment-specific slope is written to the VAR_POISSON array.
-Similarly, the variance of the slope due to the read noise of the
-segment-specific slope  is written to the VAR_RNOISE array.

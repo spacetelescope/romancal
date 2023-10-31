@@ -8,6 +8,7 @@ from roman_datamodels import datamodels as rdd
 from roman_datamodels import maker_utils
 from roman_datamodels import stnode as rds
 from stcal.ramp_fitting import ols_cas22_fit, ramp_fit
+from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 
 from romancal.lib import dqflags
 from romancal.stpipe import RomanStep
@@ -31,6 +32,9 @@ class RampFitStep(RomanStep):
         opt_name = string(default='')
         maximum_cores = option('none','quarter','half','all',default='none') # max number of processes to create
         suffix = string(default='rampfit')  # Default suffix of results
+        use_jump_detection = boolean(default=False) # Use jump detection during ramp fitting
+        threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
+        threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
     """  # noqa: E501
 
     weighting = "optimal"  # Only weighting allowed for OLS
@@ -175,26 +179,42 @@ class RampFitStep(RomanStep):
         out_model : ImageModel
             Model containing a count-rate image.
         """
+        use_jump = self.use_jump_detection
+
+        kwargs = {}
+        if self.threshold_intercept is not None:
+            kwargs["threshold_intercept"] = self.threshold_intercept
+        if self.threshold_constant is not None:
+            kwargs["threshold_constant"] = self.threshold_constant
+
         resultants = input_model.data.value
         dq = input_model.groupdq
         read_noise = readnoise_model.data.value
         gain = gain_model.data.value
-        read_pattern = input_model.meta.exposure.read_pattern
         read_time = input_model.meta.exposure.frame_time
 
         # account for the gain
         resultants *= gain
         read_noise *= gain
 
+        # Force read pattern to be pure lists not LNodes
+        read_pattern = [list(reads) for reads in input_model.meta.exposure.read_pattern]
+
         # Fit the ramps
-        ramppar, rampvar = ols_cas22_fit.fit_ramps_casertano(
-            resultants, dq, read_noise, read_time, read_pattern=read_pattern
+        output = ols_cas22_fit.fit_ramps_casertano(
+            resultants,
+            dq,
+            read_noise,
+            read_time,
+            read_pattern=read_pattern,
+            use_jump=use_jump,
+            **kwargs,
         )
 
         # Break out the information and fix units
-        slopes = ramppar[..., 1]
-        var_rnoise = rampvar[..., 0]
-        var_poisson = rampvar[..., 1]
+        slopes = output.parameters[..., Parameter.slope]
+        var_rnoise = output.variances[..., Variance.read_var]
+        var_poisson = output.variances[..., Variance.poisson_var]
         err = np.sqrt(var_poisson + var_rnoise)
 
         # Create the image model
