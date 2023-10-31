@@ -76,7 +76,7 @@ sdp = [
 pytest11 = {webbpsf = 'pytest_plugin.webbpsf_plugin'}
 
 [project.scripts]
-roman_static_preview = 'romancal.scripts.preview:command'
+roman_static_preview = 'romancal.scripts.static_preview:command'
 okify_regtests = 'romancal.scripts.okify_regtests:main'
 schema_editor = 'romancal.scripts.schema_editor:main'
 schemadoc = 'romancal.scripts.schemadoc:main'
