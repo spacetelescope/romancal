@@ -1,9 +1,9 @@
 """ Module to test rampfit with optional output """
-import functools
 from pathlib import Path
 import pytest
 
 import roman_datamodels as rdm
+from romancal.lib.dms import result_logger
 from romancal.lib.suffix import replace_suffix
 from romancal.ramp_fitting import RampFitStep
 from romancal.stpipe import RomanStep
@@ -14,39 +14,8 @@ from .regtestdata import compare_asdf
 logger = RampFitStep().log
 
 
-def result_logger(message, logger=logger):
-    """Decorator to log assertion status
-
-    Parameters
-    ----------
-    message : str
-        The message to use. Note that the phrase of either "PASS" or "FAIL"
-        will be appended to the end of the message.
-    """
-    def decorator(test_function):
-
-        @functools.wraps(test_function)
-        def inner(*args, **kwargs):
-
-            def log_result(result):
-                result_text = 'PASS' if result else 'FAIL'
-                logger.info(message + result_text)
-
-            try:
-                test_function(*args, **kwargs)
-            except Exception:
-                log_result(False)
-                raise
-            else:
-                log_result(True)
-
-        return inner
-
-    return decorator
-
-
 @pytest.mark.bigdata
-@result_logger('DMS362 MSG: Testing that the result file is of type "asdf".......')
+@result_logger('DMS362 MSG: Testing that the result file is of type "asdf".......', logger)
 def test_is_asdf(rampfit_result):
     """Check that the filename has the correct file type"""
     _, result_path = rampfit_result
@@ -55,7 +24,7 @@ def test_is_asdf(rampfit_result):
 
 
 @pytest.mark.bigdata
-@result_logger('DMS362 MSG: Testing that the result model is Level 2.......')
+@result_logger('DMS362 MSG: Testing that the result model is Level 2.......', logger)
 def test_is_imagemodel(rampfit_result):
     """Check that the result is an ImageModel"""
     model, _ = rampfit_result
@@ -64,7 +33,7 @@ def test_is_imagemodel(rampfit_result):
 
 
 @pytest.mark.bigdata
-@result_logger('DMS362 MSG: Testing that the result file has the suffix "rampfit".......')
+@result_logger('DMS362 MSG: Testing that the result file has the suffix "rampfit".......', logger)
 def test_is_rampfit(rampfit_result):
     """Check that the calibration suffix is 'rampfit'"""
     _, result_path = rampfit_result
@@ -73,7 +42,7 @@ def test_is_rampfit(rampfit_result):
 
 
 @pytest.mark.bigdata
-@result_logger('DMS362 MSG: Testing that RampFitStep completed.......')
+@result_logger('DMS362 MSG: Testing that RampFitStep completed.......', logger)
 def test_is_step_complete(rampfit_result):
     """Check that the calibration step is marked complete"""
     model, _ = rampfit_result
@@ -82,7 +51,7 @@ def test_is_step_complete(rampfit_result):
 
 
 @pytest.mark.bigdata
-@result_logger('DMS362 MSG: Testing that the ramps are uneven.......')
+@result_logger('DMS362 MSG: Testing that the ramps are uneven.......', logger)
 def test_is_uneven(rampfit_result):
     """Verify that the provided model represents uneven ramps
 
