@@ -40,6 +40,9 @@ def preview(
         output = output / f"{input.stem}.png"
 
     with asdf.open(input) as file:
+        model = file["roman"]["meta"]["model_type"]
+        if "image" not in model.lower():
+            raise NotImplementedError(f'"{model}" model not supported')
         wcs = file["roman"]["meta"]["wcs"]
 
     data = downsample_asdf_to(input=input, shape=shape)
@@ -72,6 +75,11 @@ def thumbnail(
         output = Path.cwd()
     if output.is_dir():
         output = output / f"{input.stem}_thumb.png"
+
+    with asdf.open(input) as file:
+        model = file["roman"]["meta"]["model_type"]
+        if "image" not in model.lower():
+            raise NotImplementedError(f'"{model}" model not supported')
 
     data = downsample_asdf_to(input=input, shape=shape)
 
