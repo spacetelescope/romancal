@@ -1,4 +1,5 @@
 """ Module to test rampfit with optional output """
+import functools
 from pathlib import Path
 import pytest
 
@@ -9,60 +10,79 @@ from romancal.stpipe import RomanStep
 
 from .regtestdata import compare_asdf
 
+# Logger to use for test result reporting
+logger = RampFitStep().log
+
+
+def result_logger(message, logger=logger):
+    """Decorator to log assertion status
+
+    Parameters
+    ----------
+    message : str
+        The message to use. Note that the phrase of either "PASS" or "FAIL"
+        will be appended to the end of the message.
+    """
+    def decorator(test_function):
+
+        @functools.wraps(test_function)
+        def inner(*args, **kwargs):
+
+            def log_result(result):
+                result_text = 'PASS' if result else 'FAIL'
+                logger.info(message + result_text)
+
+            try:
+                test_function(*args, **kwargs)
+            except Exception:
+                log_result(False)
+                raise
+            else:
+                log_result(True)
+
+        return inner
+
+    return decorator
+
 
 @pytest.mark.bigdata
+@result_logger('DMS362 MSG: Testing that the result file is of type "asdf".......')
 def test_is_asdf(rampfit_result):
     """Check that the filename has the correct file type"""
-    _, result_path, logger = rampfit_result
+    _, result_path = rampfit_result
 
-    assertion = result_path.exists() and result_path.suffix == '.asdf'
-    logger.info(
-        'DMS362 MSG: Testing that the result file is of type "asdf".......'
-        + passfail(assertion)
-    )
-    assert assertion
+    assert result_path.exists() and result_path.suffix == '.asdf'
 
 
 @pytest.mark.bigdata
+@result_logger('DMS362 MSG: Testing that the result model is Level 2.......')
 def test_is_imagemodel(rampfit_result):
     """Check that the result is an ImageModel"""
-    model, _, logger = rampfit_result
+    model, _ = rampfit_result
 
-    assertion =  isinstance(model, rdm.datamodels.ImageModel)
-    logger.info(
-        'DMS362 MSG: Testing that the result model is Level 2.......'
-        + passfail(assertion)
-    )
-    assert assertion
+    assert isinstance(model, rdm.datamodels.ImageModel)
 
 
 @pytest.mark.bigdata
+@result_logger('DMS362 MSG: Testing that the result file has the suffix "rampfit".......')
 def test_is_rampfit(rampfit_result):
     """Check that the calibration suffix is 'rampfit'"""
-    _, result_path, logger = rampfit_result
+    _, result_path = rampfit_result
 
-    assertion =  result_path.exists() and result_path.stem.endswith('rampfit')
-    logger.info(
-        'DMS362 MSG: Testing that the result file has the suffix "rampfit".......'
-        + passfail(assertion)
-    )
-    assert assertion
+    assert result_path.exists() and result_path.stem.endswith('rampfit')
 
 
 @pytest.mark.bigdata
+@result_logger('DMS362 MSG: Testing that RampFitStep completed.......')
 def test_is_step_complete(rampfit_result):
     """Check that the calibration step is marked complete"""
-    model, _, logger = rampfit_result
+    model, _ = rampfit_result
 
-    assertion =  model.meta.cal_step.ramp_fit == 'COMPLETE'
-    logger.info(
-        'DMS362 MSG: Testing that RampFitStep completed.......'
-        + passfail(assertion)
-    )
-    assert assertion
+    assert model.meta.cal_step.ramp_fit == 'COMPLETE'
 
 
 @pytest.mark.bigdata
+@result_logger('DMS362 MSG: Testing that the ramps are uneven.......')
 def test_is_uneven(rampfit_result):
     """Verify that the provided model represents uneven ramps
 
@@ -71,15 +91,10 @@ def test_is_uneven(rampfit_result):
     rampfit_result : `roman_datamodels.ImageModel`
         Model created from `RampFitStep`
     """
-    model, _, logger = rampfit_result
+    model, _ = rampfit_result
     length_set = {len(resultant) for resultant in model.meta.exposure.read_pattern}
 
-    assertion = len(length_set) > 1
-    logger.info(
-        'DMS362 MSG: Testing that the ramps are uneven.......'
-        + passfail(assertion)
-    )
-    assert assertion
+    assert len(length_set) > 1
 
 
 @pytest.mark.bigdata
@@ -128,7 +143,7 @@ def rampfit_result(rtdata_module):
     expected_path = input_data_path.parent / (replace_suffix(input_data_path.stem, 'rampfit') + '.asdf')
 
     try:
-        yield result_model, expected_path,  RampFitStep().log
+        yield result_model, expected_path
     finally:
         result_model.close()
 
