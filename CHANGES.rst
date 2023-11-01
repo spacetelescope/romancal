@@ -62,7 +62,7 @@ resample
 scripts
 -------
 
-- added ``static_preview`` script to generate static previews of ASDF images [#953]
+- added ``roman_static_preview`` script to generate static previews of ASDF images [#953]
 
 stpipe
 ------
