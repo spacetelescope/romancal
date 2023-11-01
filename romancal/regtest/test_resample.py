@@ -1,6 +1,7 @@
 import json
 from io import StringIO
 
+import numpy as np
 import pytest
 from metrics_logger.decorators import metrics_logger
 from roman_datamodels import datamodels as rdm
@@ -107,8 +108,44 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
     )
 
     step.log.info(
+        f"""DMS343 MSG: Were the variance arrays populated (variance propagation)? :\
+            {
+                all(
+                    np.sum(~np.isnan(getattr(resample_out, x))) for x in [
+                        "var_poisson",
+                        "var_rnoise",
+                    ]
+                )
+            }"""  # noqa: E501
+    )
+    assert all(
+        np.sum(~np.isnan(getattr(resample_out, x)))
+        for x in ["var_poisson", "var_rnoise"]
+    )
+
+    step.log.info(
+        f"""DMS343 MSG: Are there NaNs or zeros in the variance arrays, indicating poor data quality? :\
+            {
+                any(
+                    np.sum(
+                        np.logical_or(
+                            np.isnan(getattr(resample_out, x)),
+                            np.equal(getattr(resample_out, x), 0)
+                        )
+                    ) > 0 for x in ["var_poisson", "var_rnoise", "var_flat"]
+                )
+
+            }"""
+    )
+    assert all(
+        np.sum(np.isnan(getattr(resample_out, x)))
+        for x in ["var_poisson", "var_rnoise", "var_flat"]
+    )
+
+    step.log.info(
         f"""DMS344 MSG: ResampleStep created new attribute with total exposure time? :\
-            {"product_exposure_time" in resample_out.meta.resample}"""
+            {"product_exposure_time" in resample_out.meta.resample}
+        """
     )
     assert "product_exposure_time" in resample_out.meta.resample
 
