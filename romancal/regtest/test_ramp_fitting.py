@@ -37,6 +37,14 @@ def test_is_rampfit(rampfit_result):
 
 
 @pytest.mark.bigdata
+def test_is_step_complete(rampfit_result):
+    """Check that the calibration step is marked complete"""
+    model, _ = rampfit_result
+
+    assert model.meta.cal_step.ramp_fit == 'COMPLETE'
+
+
+@pytest.mark.bigdata
 def test_is_uneven(rampfit_result):
     """Verify that the provided model represents uneven ramps
 
