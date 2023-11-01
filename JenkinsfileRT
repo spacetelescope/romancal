@@ -96,10 +96,10 @@ bc0.build_cmds = bc0.build_cmds + PipInject(env.OVERRIDE_REQUIREMENTS)
 bc0.build_cmds = bc0.build_cmds + [
     "pip list"
 ]
+//    --ddtrace \
 bc0.test_cmds = [
     "pytest -r sxf -n auto --bigdata --slow --webbpsf \
     --cov --cov-report=xml:coverage.xml \
-    --ddtrace \
     --basetemp=${pytest_basetemp} --junit-xml=results.xml --dist=loadscope \
     --env=${artifactoryenv} ${pytest_args}",
     "curl -Os https://uploader.codecov.io/latest/linux/codecov",

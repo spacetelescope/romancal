@@ -54,9 +54,11 @@ jobs:
           pytest-results-summary: true
         - linux: py310-webbpsf
           pytest-results-summary: true
-        - linux: py311-ddtrace-webbpsf
+        # - linux: py311-webbpsf-ddtrace
+        - linux: py311-webbpsf
           pytest-results-summary: true
-        - macos: py311-ddtrace-webbpsf
+        # - macos: py311-webbpsf-ddtrace
+        - macos: py311-webbpsf
           pytest-results-summary: true
         - linux: py311-webbpsf-cov
           coverage: codecov
