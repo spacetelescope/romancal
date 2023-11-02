@@ -5,6 +5,7 @@
 from copy import deepcopy
 
 import numpy as np
+import pytest
 from astropy import units as u
 
 from romancal.lib.tests.test_psf import add_sources, setup_inputs
@@ -20,6 +21,7 @@ class TestSourceDetection:
             shape=image_model_shape,
         )
 
+    @pytest.mark.webbpsf
     def test_dao_vs_psf(self, seed=0):
         rng = np.random.default_rng(seed)
         image_model = deepcopy(self.image_model)

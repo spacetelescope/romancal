@@ -110,6 +110,7 @@ class TestPSFFitting:
             shape=image_model_shape,
         )
 
+    @pytest.mark.webbpsf
     @pytest.mark.parametrize(
         "dx, dy, true_amp",
         zip(
