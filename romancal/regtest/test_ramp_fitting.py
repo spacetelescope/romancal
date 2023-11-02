@@ -1,4 +1,5 @@
 """ Module to test rampfit with optional output """
+from metrics_logger.decorators import metrics_logger
 from pathlib import Path
 import pytest
 
@@ -10,48 +11,94 @@ from romancal.stpipe import RomanStep
 
 from .regtestdata import compare_asdf
 
-# Logger to use for test result reporting
-logger = RampFitStep().log
+
+# ######################
+# fixtures and utilities
+# ######################
+@pytest.fixture(scope='module',
+                params=[('DMS362', 'WFI/image/random_dqinit.asdf'),
+                        ('DMS366', 'WFI/grism/spec_fixedreadpattern_dqinit.asdf')])
+def rampfit_result(request, rtdata_module):
+    """Run RampFitStep
+
+    Parameters
+    ----------
+    rtdata_module : pytest.fixture
+        artifactory fixture for data retrieval
+
+    Returns
+    -------
+    model, path : `ImageModel`, `pathlib.Path`
+        Model and path to model.
+    """
+    requirement, artifactory_path = request.param
+    input_data = rtdata_module.get_data(artifactory_path)
+    result_model = RampFitStep.call(input_data, save_results=True)
+
+    input_data_path = Path(input_data)
+    expected_path = input_data_path.parent / (replace_suffix(input_data_path.stem, 'rampfit') + '.asdf')
+
+    try:
+        yield requirement, result_model, expected_path
+    finally:
+        result_model.close()
 
 
+def passfail(bool_expr):
+    """set pass fail"""
+    if bool_expr:
+        return "Pass"
+    return "Fail"
+
+
+# #####
+# Tests
+# #####
 @pytest.mark.bigdata
-@result_logger('DMS362 MSG: Testing that the result file is of type "asdf".......', logger)
 def test_is_asdf(rampfit_result):
     """Check that the filename has the correct file type"""
-    _, result_path = rampfit_result
+    requirement, _, result_path = rampfit_result
 
-    assert result_path.exists() and result_path.suffix == '.asdf'
+    @result_logger(requirement, 'Testing that the result file is of type "asdf"')
+    def test():
+        assert result_path.exists() and result_path.suffix == '.asdf'
+    test()
 
 
 @pytest.mark.bigdata
-@result_logger('DMS362 MSG: Testing that the result model is Level 2.......', logger)
 def test_is_imagemodel(rampfit_result):
     """Check that the result is an ImageModel"""
-    model, _ = rampfit_result
+    requirement, model, _ = rampfit_result
 
-    assert isinstance(model, rdm.datamodels.ImageModel)
+    @result_logger(requirement, 'Testing that the result model is Level 2')
+    def test():
+        assert isinstance(model, rdm.datamodels.ImageModel)
+    test()
 
 
 @pytest.mark.bigdata
-@result_logger('DMS362 MSG: Testing that the result file has the suffix "rampfit".......', logger)
 def test_is_rampfit(rampfit_result):
     """Check that the calibration suffix is 'rampfit'"""
-    _, result_path = rampfit_result
+    requirement, _, result_path = rampfit_result
 
-    assert result_path.exists() and result_path.stem.endswith('rampfit')
+    @result_logger(requirement, 'Testing that the result file has the suffix "rampfit"')
+    def test():
+        assert result_path.exists() and result_path.stem.endswith('rampfit')
+    test()
 
 
 @pytest.mark.bigdata
-@result_logger('DMS362 MSG: Testing that RampFitStep completed.......', logger)
 def test_is_step_complete(rampfit_result):
     """Check that the calibration step is marked complete"""
-    model, _ = rampfit_result
+    requirement, model, _ = rampfit_result
 
-    assert model.meta.cal_step.ramp_fit == 'COMPLETE'
+    @result_logger(requirement, 'Testing that RampFitStep completed')
+    def test():
+        assert model.meta.cal_step.ramp_fit == 'COMPLETE'
+    test()
 
 
 @pytest.mark.bigdata
-@result_logger('DMS362 MSG: Testing that the ramps are uneven.......', logger)
 def test_is_uneven(rampfit_result):
     """Verify that the provided model represents uneven ramps
 
@@ -60,10 +107,13 @@ def test_is_uneven(rampfit_result):
     rampfit_result : `roman_datamodels.ImageModel`
         Model created from `RampFitStep`
     """
-    model, _ = rampfit_result
+    requirement, model, _ = rampfit_result
     length_set = {len(resultant) for resultant in model.meta.exposure.read_pattern}
 
-    assert len(length_set) > 1
+    @result_logger(requirement, 'Testing that the ramps are uneven')
+    def test():
+        assert len(length_set) > 1
+    test()
 
 
 @pytest.mark.bigdata
@@ -84,41 +134,3 @@ def test_ramp_fitting_step(rtdata, ignore_asdf_paths):
 
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
-
-
-# ######################
-# fixtures and utilities
-# ######################
-@pytest.fixture(scope='module')
-def rampfit_result(rtdata_module):
-    """Run RampFitStep
-
-    Parameters
-    ----------
-    rtdata_module : pytest.fixture
-        artifactory fixture for data retrieval
-
-    Returns
-    -------
-    model, path, logger : `ImageModel`, `pathlib.Path`
-        Model and path to model.
-        Logger is used to log statuses of the tests being run.
-    """
-    input_data = 'random_dqinit.asdf'
-    input_data = rtdata_module.get_data(f'WFI/image/{input_data}')
-    result_model = RampFitStep.call(input_data, save_results=True)
-
-    input_data_path = Path(input_data)
-    expected_path = input_data_path.parent / (replace_suffix(input_data_path.stem, 'rampfit') + '.asdf')
-
-    try:
-        yield result_model, expected_path
-    finally:
-        result_model.close()
-
-
-def passfail(bool_expr):
-    """set pass fail"""
-    if bool_expr:
-        return "Pass"
-    return "Fail"
