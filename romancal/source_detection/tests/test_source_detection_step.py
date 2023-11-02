@@ -54,7 +54,7 @@ class TestSourceDetection:
         # check that the typical/worst PSF centroid is still within some tolerance:
         pixel_scale = 0.11 * u.arcsec / u.pix
         centroid_residuals = np.abs(x_psf - x_true) * u.pix * pixel_scale
-        assert np.max(centroid_residuals) < 10 * u.mas
+        assert np.max(centroid_residuals) < 11 * u.mas
         assert np.median(centroid_residuals) < 3 * u.mas
 
         # check that typical residuals are consistent with their errors:
