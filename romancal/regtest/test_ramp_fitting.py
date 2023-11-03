@@ -7,6 +7,7 @@ import roman_datamodels as rdm
 from romancal.lib.dms import result_logger
 from romancal.lib.suffix import replace_suffix
 from romancal.ramp_fitting import RampFitStep
+from romancal.regtest.conftest import ignore_asdf_paths, rtdata_module
 from romancal.stpipe import RomanStep
 
 from .regtestdata import compare_asdf
@@ -16,8 +17,8 @@ from .regtestdata import compare_asdf
 # fixtures and utilities
 # ######################
 @pytest.fixture(scope='module',
-                params=[('DMS362', 'WFI/image/image_uneven_dqinit.asdf'),
-                        ('DMS366', 'WFI/grism/spec_uneven_dqinit.asdf')])
+                params=[('DMS362', Path('WFI/image/image_uneven_dqinit.asdf')),
+                        ('DMS366', Path('WFI/grism/spec_uneven_dqinit.asdf'))])
 def rampfit_result(request, rtdata_module):
     """Run RampFitStep
 
@@ -31,12 +32,23 @@ def rampfit_result(request, rtdata_module):
     model, path : `ImageModel`, `pathlib.Path`
         Model and path to model.
     """
+    # Setup inputs
     requirement, artifactory_path = request.param
-    input_data = rtdata_module.get_data(artifactory_path)
+    input_data = rtdata_module.get_data(str(artifactory_path))
+    rtdata_module.input = input_data
+
+    # Execute the step
     result_model = RampFitStep.call(input_data, save_results=True)
 
+    # Setup outputs
     input_data_path = Path(input_data)
-    expected_path = input_data_path.parent / (replace_suffix(input_data_path.stem, 'rampfit') + '.asdf')
+    output = (replace_suffix(input_data_path.stem, 'rampfit') + '.asdf')
+    expected_path = input_data_path.parent / output
+
+    # Get truths
+    rtdata_module.output = output
+    output_artifactory_path = Path('truth') / artifactory_path.parent / output
+    rtdata_module.get_truth(str(output_artifactory_path))
 
     try:
         yield requirement, result_model, expected_path
@@ -113,6 +125,18 @@ def test_is_uneven(rampfit_result):
     @result_logger(requirement, 'Testing that the ramps are uneven')
     def test():
         assert len(length_set) > 1
+    test()
+
+
+@pytest.mark.bigdata
+def test_science_verification(rampfit_result, rtdata_module, ignore_asdf_paths):
+    """Check against expected data results"""
+    requirement, _, _ = rampfit_result
+    diff = compare_asdf(rtdata_module.output, rtdata_module.truth, **ignore_asdf_paths)
+
+    @result_logger(requirement, 'Testing science veracity')
+    def test():
+        assert diff.identical, diff.report()
     test()
 
 
