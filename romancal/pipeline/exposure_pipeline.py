@@ -174,7 +174,7 @@ class ExposurePipeline(RomanPipeline):
                 result.meta.cal_step.photom = "SKIPPED"
                 result.meta.cal_step.source_detection = "SKIPPED"
                 result.meta.cal_step.tweakreg = "SKIPPED"
-                self.suffix = "COMPLETE"
+                self.suffix = "cal"
 
             # setup output_file for saving
             if result.meta.cal_step.tweakreg == "COMPLETE":
