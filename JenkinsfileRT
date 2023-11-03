@@ -86,7 +86,7 @@ bc0.conda_packages = [
 bc0.pip_reqs_files = ['requirements-sdp.txt']
 bc0.build_cmds = [
     "pip install -e .[test]",
-    "pip install pytest-xdist pytest-sugar ddtrace",
+    "pip install pytest-xdist pytest-sugar",
     'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
     "mkdir data",
     "curl -L https://stsci.box.com/shared/static/0ojjfg3cieqdpd18vl1bjnpe63r82dx8.gz -o data/webbpsf-data.tar.gz",
