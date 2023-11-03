@@ -16,8 +16,8 @@ from .regtestdata import compare_asdf
 # fixtures and utilities
 # ######################
 @pytest.fixture(scope='module',
-                params=[('DMS362', 'WFI/image/random_dqinit.asdf'),
-                        ('DMS366', 'WFI/grism/spec_fixedreadpattern_dqinit.asdf')])
+                params=[('DMS362', 'WFI/image/image_uneven_dqinit.asdf'),
+                        ('DMS366', 'WFI/grism/spec_uneven_dqinit.asdf')])
 def rampfit_result(request, rtdata_module):
     """Run RampFitStep
 
