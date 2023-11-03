@@ -191,9 +191,9 @@ class ExposurePipeline(RomanPipeline):
         if result.meta.exposure.type == "WFI_IMAGE":
             if file_type == "asdf":
                 result.meta.cal_step.tweakreg = "SKIPPED"
-                #mc_result = ModelContainer(result)
+                # mc_result = ModelContainer(result)
                 mc_result = self.tweakreg([result])
-                if hasattr(ModelContainer(result),"_models") and mc_result._models:
+                if hasattr(ModelContainer(result), "_models") and mc_result._models:
                     result = mc_result._models.pop()
                 else:
                     result.meta.cal_step.tweakreg == "SKIPPED"
@@ -211,16 +211,22 @@ class ExposurePipeline(RomanPipeline):
         """Determine the proper file name suffix to use later"""
         if input.meta.cal_step.tweakreg == "COMPLETE":
             self.suffix = "cal"
-        #elif input.meta.cal_step.tweakreg == "SKIPPED" and input.meta.exposure.type == "WFI_IMAGE":
+        # elif input.meta.cal_step.tweakreg == "SKIPPED" and input.meta.exposure.type == "WFI_IMAGE":
         #    self.suffix = "sourcedetection"
-        elif input.meta.cal_step.tweakreg == "INCOMPLETE" and input.meta.exposure.type == "WFI_IMAGE":
+        elif (
+            input.meta.cal_step.tweakreg == "INCOMPLETE"
+            and input.meta.exposure.type == "WFI_IMAGE"
+        ):
             self.suffix = "sourcedetection"
-        elif input.meta.cal_step.tweakreg == "SKIPPED" and input.meta.exposure.type != "WFI_IMAGE":
+        elif (
+            input.meta.cal_step.tweakreg == "SKIPPED"
+            and input.meta.exposure.type != "WFI_IMAGE"
+        ):
             self.suffix = "cal"
 
-        if not self.steps['tweakreg']['skip']:
-            self.suffix = 'cal'
-            
+        if not self.steps["tweakreg"]["skip"]:
+            self.suffix = "cal"
+
         input.meta.filename = input.meta.filename.replace("uncal", self.suffix)
         input["output_file"] = input.meta.filename
         self.output_file = input.meta.filename
