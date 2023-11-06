@@ -68,6 +68,8 @@ scripts
 
 - added ``roman_static_preview`` script to generate static previews of ASDF images [#953]
 
+- fixed ``asn_from_list`` script [#972]
+
 stpipe
 ------
 
