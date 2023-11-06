@@ -58,9 +58,15 @@ refpix
 
 resample
 --------
+
 - Implement resampling step. [#787]
 
 - Use resampled exposure time images to compute image exposure times.  [#959]
+
+scripts
+-------
+
+- added ``roman_static_preview`` script to generate static previews of ASDF images [#953]
 
 stpipe
 ------
@@ -72,7 +78,6 @@ tweakreg
 
 - Fix a bug due to which source catalog may contain sources
   outside of the bounding box. [#947]
-
 
 0.12.0 (2023-08-18)
 ===================

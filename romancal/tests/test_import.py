@@ -18,7 +18,7 @@ def dependencies(package, exclude: [str]):
     ]
 
 
-MODULES = dependencies(romancal, exclude=["test", "time"])
+MODULES = dependencies(romancal, exclude=["test", "time", "static_preview"])
 
 
 @pytest.mark.parametrize(
