@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 import asdf
+import numpy
 from typing_extensions import Annotated
 
 try:
@@ -45,7 +46,7 @@ def preview(
             raise NotImplementedError(f'"{model}" model not supported')
         wcs = file["roman"]["meta"]["wcs"]
 
-    data = downsample_asdf_to(input=input, shape=shape)
+    data = downsample_asdf_to(input=input, shape=shape, func=numpy.nanmean)
 
     write_image(
         data,
@@ -81,7 +82,7 @@ def thumbnail(
         if "image" not in model.lower():
             raise NotImplementedError(f'"{model}" model not supported')
 
-    data = downsample_asdf_to(input=input, shape=shape)
+    data = downsample_asdf_to(input=input, shape=shape, func=numpy.nanmean)
 
     write_image(
         data,
