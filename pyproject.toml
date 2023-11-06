@@ -115,7 +115,7 @@ zip-safe = false
 minversion = 4.6
 norecursedirs = [
     'docs/_build',
-    'scripts',
+    'romancal/scripts',
     '.tox',
     '.eggs',
     'build',
