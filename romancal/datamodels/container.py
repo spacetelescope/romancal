@@ -8,6 +8,7 @@ from collections import OrderedDict
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 
+import numpy as np
 from roman_datamodels import datamodels as rdm
 
 from romancal.lib.basic_utils import is_association
@@ -18,6 +19,7 @@ __all__ = [
     "ModelContainer",
 ]
 
+_ONE_MB = 1 << 20
 RECOGNIZED_MEMBER_FIELDS = [
     "tweakreg_catalog",
 ]
@@ -528,6 +530,82 @@ class ModelContainer(Sequence):
             crds_header |= model.get_crds_parameters()
 
         return crds_header
+
+    def set_buffer(self, buffer_size, overlap=None):
+        """Set buffer size for scrolling section-by-section access.
+
+        Parameters
+        ----------
+        buffer_size : float, None
+            Define size of buffer in MB for each section.
+            If `None`, a default buffer size of 1MB will be used.
+
+        overlap : int, optional
+            Define the number of rows of overlaps between sections.
+            If `None`, no overlap will be used.
+        """
+        self.overlap = 0 if overlap is None else overlap
+        self.grow = 0
+
+        with rdm.open(self._models[0]) as model:
+            imrows, imcols = model.data.shape
+            data_item_size = model.data.itemsize
+            data_item_type = model.data.dtype
+            del model
+
+        min_buffer_size = imcols * data_item_size
+
+        self.buffer_size = (
+            min_buffer_size if buffer_size is None else (buffer_size * _ONE_MB)
+        )
+
+        section_nrows = min(imrows, int(self.buffer_size // min_buffer_size))
+
+        if section_nrows == 0:
+            self.buffer_size = min_buffer_size
+            logger.warning(
+                "WARNING: Buffer size is too small to hold a single row."
+                f"Increasing buffer size to {self.buffer_size / _ONE_MB}MB"
+            )
+            section_nrows = 1
+
+        nbr = section_nrows - self.overlap
+        nsec = (imrows - self.overlap) // nbr
+        if (imrows - self.overlap) % nbr > 0:
+            nsec += 1
+
+        self.n_sections = nsec
+        self.nbr = nbr
+        self.section_nrows = section_nrows
+        self.imrows = imrows
+        self.imcols = imcols
+        self.imtype = data_item_type
+
+    def get_sections(self):
+        """Iterator to return the sections from all members of the container."""
+
+        for k in range(self.n_sections):
+            e1 = k * self.nbr
+            e2 = e1 + self.section_nrows
+
+            if k == self.n_sections - 1:  # last section
+                e2 = min(e2, self.imrows)
+                e1 = min(e1, e2 - self.overlap - 1)
+
+            data_list = np.empty(
+                (len(self._models), e2 - e1, self.imcols), dtype=self.imtype
+            )
+            wht_list = np.empty(
+                (len(self._models), e2 - e1, self.imcols), dtype=self.imtype
+            )
+            for i, model in enumerate(self._models):
+                model = rdm.open(model, memmap=self._memmap)
+
+                data_list[i, :, :] = model.data[e1:e2].copy()
+                wht_list[i, :, :] = model.weight[e1:e2].copy()
+                del model
+
+            yield (data_list, wht_list, (e1, e2))
 
 
 def make_file_with_index(file_path, idx):

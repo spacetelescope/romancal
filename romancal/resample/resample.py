@@ -155,15 +155,7 @@ class ResampleData:
         )
 
         # update meta data and wcs
-        input_model_0 = input_models[0]
-        # note we have made this input_model_0 variable so that if
-        # meta includes lazily-loaded objects, that we can successfully
-        # copy them into the metadata.  Directly running input_models[0].meta
-        # below can lead to input_models[0] going out of scope after
-        # meta is loaded but before the dictionary is constructed,
-        # which can lead to seek on closed file errors if
-        # meta contains lazily loaded objects.
-        self.blank_output.meta = dict(input_model_0.meta._data.items())
+        self.blank_output.meta = dict(input_models[0].meta._data.items())
         self.blank_output.meta.wcs = self.output_wcs
 
         self.output_models = ModelContainer()
@@ -186,6 +178,7 @@ class ResampleData:
         """
         for exposure in self.input_models.models_grouped:
             output_model = self.blank_output
+            output_model.meta["resample"] = mk_resample()
             # Determine output file type from input exposure filenames
             # Use this for defining the output filename
             indx = exposure[0].meta.filename.rfind(".")
@@ -204,6 +197,7 @@ class ResampleData:
             )
 
             log.info(f"{len(exposure)} exposures to drizzle together")
+            output_list = []
             for img in exposure:
                 img = datamodels.open(img)
                 # TODO: should weight_type=None here?
@@ -212,6 +206,10 @@ class ResampleData:
                 )
 
                 # apply sky subtraction
+                # TODO: mocking a sky-subtracted image (remove this later on)
+                img.meta["background"] = {}
+                img.meta.background["level"] = 0
+                img.meta.background["subtracted"] = True
                 blevel = img.meta.background.level
                 if not img.meta.background.subtracted and blevel is not None:
                     data = img.data - blevel
@@ -237,13 +235,17 @@ class ResampleData:
             if not self.in_memory:
                 # Write out model to disk, then return filename
                 output_name = output_model.meta.filename
+                # cast context array to uint32
+                output_model.context = output_model.context.astype("uint32")
                 output_model.save(output_name)
                 log.info(f"Exposure {output_name} saved to file")
-                self.output_models.append(output_name)
+                output_list.append(output_name)
             else:
-                self.output_models.append(output_model.copy())
+                output_list.append(output_model.copy())
+
+            self.output_models = ModelContainer(output_list, return_open=self.in_memory)
             output_model.data *= 0.0
-            output_model.wht *= 0.0
+            output_model.weight *= 0.0
 
         return self.output_models
 
@@ -275,7 +277,7 @@ class ResampleData:
                 img, weight_type=self.weight_type, good_bits=self.good_bits
             )
             # apply sky subtraction
-            # NOTE: mocking a sky-subtracted image (remove this later on)
+            # TODO: mocking a sky-subtracted image (remove this later on)
             img.meta["background"] = {}
             img.meta.background["level"] = 0
             img.meta.background["subtracted"] = True
@@ -306,9 +308,6 @@ class ResampleData:
         self.resample_variance_array("var_poisson", output_model)
         self.resample_variance_array("var_flat", output_model)
 
-        # Make exposure time image
-        exptime_tot = self.resample_exposure_time(output_model)
-
         # TODO: fix unit here
         output_model.err = u.Quantity(
             np.sqrt(
@@ -324,7 +323,7 @@ class ResampleData:
             unit=output_model.err.unit,
         )
 
-        self.update_exposure_times(output_model, exptime_tot)
+        self.update_exposure_times(output_model)
 
         # TODO: fix RAD to expect a context image datatype of int32
         output_model.context = output_model.context.astype(np.uint32)
@@ -412,71 +411,12 @@ class ResampleData:
 
         setattr(output_model, name, output_variance)
 
-    def resample_exposure_time(self, output_model):
-        """Resample the exposure time from ``self.input_models`` to the ``output_model``.
-
-        Create an exposure time image that is the drizzled sum of the input
-        images.
-        """
-        output_wcs = output_model.meta.wcs
-        exptime_tot = np.zeros(output_model.data.shape, dtype="f4")
-
-        log.info("Resampling exposure time")
-        for model in self.input_models:
-            exptime = np.full(
-                model.data.shape, model.meta.exposure.effective_exposure_time
-            )
-
-            # create a unit weight map for all the input pixels with science data
-            inwht = resample_utils.build_driz_weight(
-                model, weight_type=None, good_bits=self.good_bits
-            )
-
-            resampled_exptime = np.zeros_like(output_model.data)
-            outwht = np.zeros_like(output_model.data)
-            outcon = np.zeros_like(output_model.context, dtype="i4")
-            # drizzle wants an i4, but datamodels wants a u4.
-
-            xmin, xmax, ymin, ymax = resample_utils.resample_range(
-                exptime.shape, model.meta.wcs.bounding_box
-            )
-
-            # resample the exptime array
-            self.drizzle_arrays(
-                exptime * u.s,  # drizzle_arrays expects these to have units
-                inwht,
-                model.meta.wcs,
-                output_wcs,
-                resampled_exptime,
-                outwht,
-                outcon,
-                pixfrac=1,  # for exposure time images, always use pixfrac = 1
-                kernel=self.kernel,
-                fillval=0,
-                xmin=xmin,
-                xmax=xmax,
-                ymin=ymin,
-                ymax=ymax,
-            )
-
-            exptime_tot += resampled_exptime.value
-
-        return exptime_tot
-
-    def update_exposure_times(self, output_model, exptime_tot):
+    def update_exposure_times(self, output_model):
         """Update exposure time metadata (in-place)."""
-        m = exptime_tot > 0
-        if np.any(m):
-            total_exposure_time = np.median(exptime_tot[m])
-        else:
-            total_exposure_time = 0
-        max_exposure_time = np.max(exptime_tot)
-        log.info(
-            f"Mean, max exposure times: {total_exposure_time:.1f}, "
-            f"{max_exposure_time:.1f}"
-        )
+        total_exposure_time = 0.0
         exposure_times = {"start": [], "end": []}
         for exposure in self.input_models.models_grouped:
+            total_exposure_time += exposure[0].meta.exposure.exposure_time
             exposure_times["start"].append(exposure[0].meta.exposure.start_time)
             exposure_times["end"].append(exposure[0].meta.exposure.end_time)
 
@@ -484,10 +424,7 @@ class ResampleData:
         output_model.meta.exposure.exposure_time = total_exposure_time
         output_model.meta.exposure.start_time = min(exposure_times["start"])
         output_model.meta.exposure.end_time = max(exposure_times["end"])
-        output_model.meta.resample.product_exposure_time = max_exposure_time
-        # we haven't filled out the L3 data model enough to put max_exposure_time
-        # somewhere sensible; I'm just dumping it in product_exposure_time
-        # for the moment.
+        output_model.meta.resample.product_exposure_time = total_exposure_time
 
     @staticmethod
     def drizzle_arrays(

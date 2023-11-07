@@ -30,7 +30,7 @@ pixel = {
     "GW_AFFECTED_DATA": 2**4,  # Data affected by the GW read window
     "PERSISTENCE": 2**5,  # High persistence (was RESERVED_2)
     "AD_FLOOR": 2**6,  # Below A/D floor (0 DN, was RESERVED_3)
-    "RESERVED_4": 2**7,  #
+    "OUTLIER": 2**7,  # Flagged by outlier detection (was RESERVED_4)
     "UNRELIABLE_ERROR": 2**8,  # Uncertainty exceeds quoted error
     "NON_SCIENCE": 2**9,  # Pixel not on science portion of detector
     "DEAD": 2**10,  # Dead pixel
