@@ -1,22 +1,22 @@
 """Primary code for performing outlier detection on JWST observations."""
 
-from functools import partial
 import logging
 import warnings
+from functools import partial
 
 import numpy as np
 from astropy.stats import sigma_clip
 from astropy.units import Quantity
-from scipy import ndimage
 from drizzle.cdrizzle import tblot
-
-from roman_datamodels import datamodels as rdm
 from roman_datamodels import DataModel
-from romancal.lib import dqflags
+from roman_datamodels import datamodels as rdm
+from scipy import ndimage
 
 from romancal.datamodels import ModelContainer
+from romancal.lib import dqflags
 from romancal.resample import resample
 from romancal.resample.resample_utils import build_driz_weight, calc_gwcs_pixmap
+
 from ..stpipe import RomanStep
 
 log = logging.getLogger(__name__)
@@ -118,9 +118,7 @@ class OutlierDetection:
                     dq=self.inputs.dq[i],
                 )
                 image.meta = self.inputs.meta
-                image.wht = build_driz_weight(
-                    image, weight_type="ivm", good_bits=bits
-                )
+                image.wht = build_driz_weight(image, weight_type="ivm", good_bits=bits)
                 self.input_models.append(image)
             self.converted = True
 
@@ -164,9 +162,7 @@ class OutlierDetection:
 
         # With presence of wild-card rows, code should never trigger this logic
         if row is None:
-            log.error(
-                "No row found in %s that matches input data.", self.reffiles
-            )
+            log.error("No row found in %s that matches input data.", self.reffiles)
             raise ValueError
 
         # read in values from that row for each parameter
@@ -221,9 +217,7 @@ class OutlierDetection:
             self.create_median(drizzled_models), unit=median_model.data.unit
         )
         median_model_output_path = self.make_output_path(
-            basepath=median_model.meta.filename.replace(
-                self.resample_suffix, ".asdf"
-            ),
+            basepath=median_model.meta.filename.replace(self.resample_suffix, ".asdf"),
             suffix="median",
         )
         median_model.save(median_model_output_path)
@@ -306,9 +300,7 @@ class OutlierDetection:
             # Create a mask for each input image, masking out areas where there is
             # no data or the data has very low weight
             badmasks = []
-            for weight, weight_threshold in zip(
-                resampled_weight, weight_thresholds
-            ):
+            for weight, weight_threshold in zip(resampled_weight, weight_thresholds):
                 badmask = np.less(weight, weight_threshold)
                 log.debug(
                     "Percentage of pixels with low weight: {}".format(
@@ -452,9 +444,7 @@ def flag_cr(
         and sci_image.meta.background.level is not None
     ):
         subtracted_background = sci_image.meta.background.level
-        log.debug(
-            f"Adding background level {subtracted_background} to blotted image"
-        )
+        log.debug(f"Adding background level {subtracted_background} to blotted image")
     else:
         # No subtracted background.  Allow user-set value, which defaults to 0
         subtracted_background = backg
@@ -504,9 +494,7 @@ def flag_cr(
     count_outlier = np.count_nonzero(sci_image.dq & DO_NOT_USE)
     count_added = count_outlier - count_existing
     percent_cr = count_added / (sci_image.shape[0] * sci_image.shape[1]) * 100
-    log.info(
-        f"New pixels flagged as outliers: {count_added} ({percent_cr:.2f}%)"
-    )
+    log.info(f"New pixels flagged as outliers: {count_added} ({percent_cr:.2f}%)")
 
 
 def abs_deriv(array):
@@ -560,9 +548,7 @@ def gwcs_blot(median_model, blot_img, interp="poly5", sinscl=1.0):
     blot_wcs = blot_img.meta.wcs
 
     # Compute the mapping between the input and output pixel coordinates
-    pixmap = calc_gwcs_pixmap(
-        blot_wcs, median_model.meta.wcs, blot_img.data.shape
-    )
+    pixmap = calc_gwcs_pixmap(blot_wcs, median_model.meta.wcs, blot_img.data.shape)
     log.debug(f"Pixmap shape: {pixmap[:, :, 0].shape}")
     log.debug(f"Sci shape: {blot_img.data.shape}")
 
