@@ -14,6 +14,8 @@ dark
 general
 -------
 
+- Add code to run the steps needed for the high level processing (roman_hlp) [#978]
+
 - Update pipeline code to correct cal_step and suffixes [#971]
 
 - Update pipeline code to run through tweakreg with single files and associations [#960]
