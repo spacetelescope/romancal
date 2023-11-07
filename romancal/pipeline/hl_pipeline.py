@@ -10,7 +10,7 @@ import romancal.datamodels.filetype as filetype
 # step imports
 from romancal.skymatch import SkyMatchStep
 from romancal.outlier_detection import OutlierDetectionStep
-#from romancal.mosaic import MosaicStep
+#from romancal.resample import ResampleStep
 from romancal.lib import dqflags
 
 from ..stpipe import RomanPipeline
@@ -26,7 +26,7 @@ class HighLevelPipeline(RomanPipeline):
     """
     HighLevelPipeline: Apply all calibration steps to the roman data
     to produce level 3 products. Included steps are:
-    skymatch, Outlierdetectionn and mosaic.
+    skymatch, Outlierdetectionn and resample.
     """
 
     class_alias = "roman_hlp"
@@ -39,7 +39,7 @@ class HighLevelPipeline(RomanPipeline):
     step_defs = {
         "skymatch": SkyMatchStep,
         "outlierdet": OutlierDetectionStep,
-        #"moasic": MosaicStep,
+        #"resample": ResampleStep,
     }
 
     # start the actual processing
@@ -96,7 +96,7 @@ class HighLevelPipeline(RomanPipeline):
                 result.meta.filename = input_filename
             result = self.outlierdetection(result)
 
-            result = self.mosaic(result)
+            result = self.resample(result)
             # setup output_file for saving
             self.setup_output(result)
             log.info("Roman exposure calibration pipeline ending...")
