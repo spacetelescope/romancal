@@ -251,9 +251,7 @@ def create_image_model(input_model, image_info):
     var_poisson = u.Quantity(
         var_poisson, u.electron**2 / u.s**2, dtype=var_poisson.dtype
     )
-    var_rnoise = u.Quantity(
-        var_rnoise, u.electron**2 / u.s**2, dtype=var_rnoise.dtype
-    )
+    var_rnoise = u.Quantity(var_rnoise, u.electron**2 / u.s**2, dtype=var_rnoise.dtype)
     err = u.Quantity(err, u.electron / u.s, dtype=err.dtype)
     if dq is None:
         dq = np.zeros(data.shape, dtype="u4")

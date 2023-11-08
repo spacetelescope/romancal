@@ -94,9 +94,7 @@ class GWCSDrizzle:
         elif self.outcon.ndim != 3:
             raise ValueError(
                 "Drizzle context image has wrong dimensions: \
-                {}".format(
-                    product
-                )
+                {}".format(product)
             )
 
         # Check field values
