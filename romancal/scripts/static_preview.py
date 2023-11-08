@@ -1,14 +1,13 @@
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 import asdf
 import numpy
 
-if TYPE_CHECKING:
-    from typing_extensions import Annotated
-
 
 def command():
+    from typing_extensions import Annotated
+
     try:
         import typer
         from stpreview.downsample import downsample_asdf_to
