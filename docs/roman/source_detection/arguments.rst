@@ -1,11 +1,13 @@
 Arguments
 =========
+
 The source detection fitting step has several arguments. These can be specified
 by the user by passing them to the step in a Python session, or setting them
 in a parameter file.
 
 * ``--kernel_fwhm``: A parameter for DAOStarFinder: size of Gaussian kernel in
-                     pixels. Default is 2.0.
+                     pixels. By default the FWHM is assumed to be the diffraction
+                     limited PSF, given the filter used for this observation.
 * ``--sharplo``: A parameter for DAOStarFinder: lower bound for sharpness.
                  Default is 0.0.
 * ``--sharphi``: A parameter for DAOStarFinder: upper bound for sharpness.
@@ -42,7 +44,7 @@ in a parameter file.
 * ``--bkg_boxsize``: If using `calc_threshold_img` size of box in pixels for
                      2D background / threshold images and if using
                      calc_threshold_2d, the size of the box used when detecting
-                     sources. Default is 3.
+                     sources. Default is 9.
 * ``--bkg_sigma``: If using `calc_threshold_img`, n sigma for sigma clipping
                    for background calculation. Default is 2.0.
 * ``--bkg_filter_size``: If using `calc_threshold_img` or `calc_threshold_2d`,
@@ -55,3 +57,5 @@ in a parameter file.
                              will be saved as a numpy array with four dimensions.
                              In order, these represent source ID, x centroid
                              position, y centroid position, and flux.
+* ``--fit_psf``: If True, fit a PSF model to each detected source for more precise
+                 source centroids and fluxes.
