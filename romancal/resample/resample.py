@@ -155,7 +155,15 @@ class ResampleData:
         )
 
         # update meta data and wcs
-        self.blank_output.meta = dict(input_models[0].meta._data.items())
+        input_model_0 = input_models[0]
+        # note we have made this input_model_0 variable so that if
+        # meta includes lazily-loaded objects, that we can successfully
+        # copy them into the metadata.  Directly running input_models[0].meta
+        # below can lead to input_models[0] going out of scope after
+        # meta is loaded but before the dictionary is constructed,
+        # which can lead to seek on closed file errors if
+        # meta contains lazily loaded objects.
+        self.blank_output.meta = dict(input_model_0.meta._data.items())
         self.blank_output.meta.wcs = self.output_wcs
 
         self.output_models = ModelContainer()
@@ -206,10 +214,8 @@ class ResampleData:
                 )
 
                 # apply sky subtraction
-                # TODO: mocking a sky-subtracted image (remove this later on)
-                img.meta["background"] = {}
-                img.meta.background["level"] = 0
-                img.meta.background["subtracted"] = True
+                if not hasattr(img.meta, "background"):
+                    self._create_background_attribute(img)
                 blevel = img.meta.background.level
                 if not img.meta.background.subtracted and blevel is not None:
                     data = img.data - blevel
@@ -276,11 +282,8 @@ class ResampleData:
             inwht = resample_utils.build_driz_weight(
                 img, weight_type=self.weight_type, good_bits=self.good_bits
             )
-            # apply sky subtraction
-            # TODO: mocking a sky-subtracted image (remove this later on)
-            img.meta["background"] = {}
-            img.meta.background["level"] = 0
-            img.meta.background["subtracted"] = True
+            if not hasattr(img.meta, "background"):
+                self._create_background_attribute(img)
             blevel = img.meta.background.level
             if not img.meta.background.subtracted and blevel is not None:
                 data = img.data - blevel
@@ -334,6 +337,12 @@ class ResampleData:
         self.output_models.append(output_model)
 
         return self.output_models
+
+    # TODO Rename this here and in `resample_many_to_many` and `resample_many_to_one`
+    def _create_background_attribute(self, img):
+        img.meta["background"] = {}
+        img.meta.background["level"] = 0
+        img.meta.background["subtracted"] = True
 
     def resample_variance_array(self, name, output_model):
         """Resample variance arrays from ``self.input_models`` to the ``output_model``.

@@ -16,27 +16,6 @@ outlier_registry = {
     "imaging": outlier_detection.OutlierDetection,
 }
 
-# Categorize all supported modes
-IMAGE_MODES = ["WFI_IMAGE"]
-SLIT_SPEC_MODES = [
-    "NRC_WFSS",
-    "MIR_LRS-FIXEDSLIT",
-    "NRS_FIXEDSLIT",
-    "NRS_MSASPEC",
-    "NIS_WFSS",
-]
-TSO_SPEC_MODES = [
-    "NIS_SOSS",
-    "MIR_LRS-SLITLESS",
-    "NRC_TSGRISM",
-    "NRS_BRIGHTOBJ",
-]
-IFU_SPEC_MODES = ["NRS_IFU", "MIR_MRS"]
-TSO_IMAGE_MODES = [
-    "NRC_TSIMAGE"
-]  # missing MIR_IMAGE with TSOVIST=True, not really addable
-CORON_IMAGE_MODES = ["NRC_CORON", "MIR_LYOT", "MIR_4QPM"]
-
 __all__ = ["OutlierDetectionStep"]
 
 
@@ -132,16 +111,10 @@ class OutlierDetectionStep(RomanStep):
         self.check_input()
 
         # check for TSO models first
-        if exptype in IMAGE_MODES:
+        if exptype == "WFI_IMAGE":
             # imaging with resampling
             detection_step = outlier_registry["imaging"]
             pars["resample_suffix"] = "i2d"
-        elif exptype in SLIT_SPEC_MODES:
-            detection_step = outlier_registry["slitspec"]
-            pars["resample_suffix"] = "s2d"
-        elif exptype in IFU_SPEC_MODES:
-            # select algorithm for IFU data
-            detection_step = outlier_registry["ifu"]
         else:
             self.log.error(
                 "Outlier detection failed for unknown/unsupported ",
