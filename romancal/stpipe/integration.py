@@ -32,7 +32,7 @@ def get_steps():
         ("romancal.step.RefPixStep", None, False),
         ("romancal.step.SaturationStep", None, False),
         ("romancal.step.AssignWcsStep", None, False),
-        ("romancal.step.OutlierDetectionStep", None, False),
+        ("romancal.step.OutlierDetectionStep", "outlier_detection", False),
         ("romancal.step.SourceDetectionStep", None, False),
         ("romancal.step.SkyMatchStep", "skymatch", False),
         ("romancal.step.TweakRegStep", "tweakreg", False),
