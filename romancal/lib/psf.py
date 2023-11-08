@@ -24,6 +24,12 @@ from webbpsf import conf, gridded_library, restart_logging
 
 from romancal.lib.dqflags import pixel as roman_dq_flag_map
 
+__all__ = [
+    "create_gridded_psf_model",
+    "fit_psf_to_image_model",
+    "dq_to_boolean_mask",
+]
+
 # set loggers to debug level by default:
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -68,7 +74,7 @@ def create_gridded_psf_model(
 ):
     """
     Compute a gridded PSF model for one SCA via
-    `webbpsf.gridded_library.CreatePSFLibrary`.
+    `~webbpsf.gridded_library.CreatePSFLibrary`.
 
     Parameters
     ----------
@@ -210,7 +216,7 @@ def fit_psf_to_image_model(
     exclude_out_of_bounds=True,
 ):
     """
-    Fit PSF models to an ImageModel.
+    Fit PSF models to an ``ImageModel``.
 
     Parameters
     ----------

@@ -75,7 +75,7 @@ scripts
 source_detection
 ----------------
 
-- Support for PSF fitting (optional) for accurate centroids. [#841]
+- Support for PSF fitting (optional) for accurate centroids. [#841, #984]
 
 - Save source catalog to a structured array. [#987]
 
