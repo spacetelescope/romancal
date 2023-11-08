@@ -73,7 +73,7 @@ def setup_inputs(
         webbpsf_config["detector"],
         oversample=webbpsf_config["oversample"],
         fov_pixels=webbpsf_config["fov_pixels"],
-        overwrite=False,
+        overwrite=True,
         logging_level="ERROR",
     )
 
