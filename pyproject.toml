@@ -21,7 +21,7 @@ dependencies = [
     'numpy >=1.22',
     'photutils @ git+https://github.com/astropy/photutils.git',
     'pyparsing >=2.4.7',
-    'requests >=2.22',
+    'requests >=2.26',
     'rad >= 0.17.1',
     # 'rad @ git+https://github.com/spacetelescope/rad.git@main',
     'roman_datamodels >= 0.17.1',
