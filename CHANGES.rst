@@ -16,6 +16,8 @@ general
 
 - Update elp pipeline code to capture a list from tweakreg [#985]
 
+- Add code to run the steps needed for the high level processing (roman_hlp) [#980]
+
 - Update pipeline code to correct cal_step and suffixes [#971]
 
 - Update pipeline code to run through tweakreg with single files and associations [#960]
