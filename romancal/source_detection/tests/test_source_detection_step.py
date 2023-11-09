@@ -2,220 +2,62 @@
  Unit tests for the Roman source detection step code
 """
 
-import os
+from copy import deepcopy
 
 import numpy as np
 import pytest
 from astropy import units as u
-from astropy.convolution import Gaussian2DKernel
-from roman_datamodels import maker_utils as testutil
-from roman_datamodels.datamodels import ImageModel
 
+from romancal.lib.tests.test_psf import add_sources, setup_inputs
 from romancal.source_detection import SourceDetectionStep
 
-
-@pytest.fixture
-def setup_inputs():
-    def _setup(nrows=100, ncols=100, noise=1.0, seed=None):
-        """Return ImageModel of lvl 2 image"""
-
-        shape = (100, 100)  # size of test image
-        wfi_image = testutil.mk_level2_image(shape=shape)
-        wfi_image.data = u.Quantity(
-            np.ones(shape, dtype=np.float32), u.electron / u.s, dtype=np.float32
-        )
-        wfi_image.meta.filename = "filename"
-
-        # add noise to data
-        if noise is not None:
-            rng = np.random.default_rng(seed or 19)
-            wfi_image.data += u.Quantity(
-                noise * rng.uniform(size=shape), u.electron / u.s, dtype=np.float32
-            )
-
-        # add dq array
-
-        wfi_image.dq = np.zeros(shape, dtype=np.uint32)
-        # construct ImageModel
-        mod = ImageModel(wfi_image)
-
-        return mod
-
-    return _setup
+n_sources = 10
+image_model_shape = (100, 100)
 
 
-def add_random_gauss(
-    arr, x_positions, y_positions, min_amp=200, max_amp=500, seed=None
-):
-    """Add random 2D Gaussians to `arr` at specified positions,
-    with random amplitudes from `min_amp` to  `max_amp`. Assumes
-    units of e-/s."""
-
-    rng = np.random.default_rng(seed or 29)
-
-    for i, x in enumerate(x_positions):
-        y = y_positions[i]
-        gauss = Gaussian2DKernel(2, x_size=21, y_size=21).array
-        amp = rng.integers(200, 700)
-        arr[y - 10 : y + 11, x - 10 : x + 11] += (
-            u.Quantity(gauss, u.electron / u.s, dtype=np.float32) * amp
+class TestSourceDetection:
+    def setup_method(self):
+        self.image_model, self.webbpsf_config, self.psf_model = setup_inputs(
+            shape=image_model_shape,
         )
 
+    @pytest.mark.webbpsf
+    def test_dao_vs_psf(self, seed=0):
+        rng = np.random.default_rng(seed)
+        image_model = deepcopy(self.image_model)
 
-def test_source_detection_defaults(setup_inputs):
-    """Test SourceDetectionStep with its default parameters. The detection
-    threshold will be chosen based on the image's background level."""
+        n_models = 10
+        amp_true = rng.normal(1e3, 100, n_models)
+        along_diag = np.arange(100, 950, 90) / 1000 * image_model_shape[0]
+        x_true = along_diag + rng.normal(scale=0.5, size=n_models)
+        y_true = along_diag + rng.normal(scale=0.5, size=n_models)
 
-    model = setup_inputs(seed=0)
+        add_sources(image_model, self.psf_model, x_true, y_true, amp_true)
 
-    # add in 12 sources, roughly evenly distributed
-    # sort by true_x so they can be matched up to output
+        source_detect = SourceDetectionStep()
+        source_detect.scalar_threshold = 100
+        source_detect.peakmax = None
+        dao_result = source_detect.process(image_model)
+        idx, x_dao, y_dao, amp_dao = dao_result.meta.source_detection.tweakreg_catalog
 
-    true_x = np.array([20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 80, 82])
-    true_y = np.array([26, 80, 44, 19, 66, 39, 29, 72, 54, 29, 80, 62])
+        # check that all injected targets are found by DAO:
+        assert len(x_dao) == len(x_true)
 
-    # at each position, place a 2d gaussian
-    # randomly vary flux from 100 to 500 for each source
-    add_random_gauss(model.data, true_x, true_y, seed=0)
+        source_detect.fit_psf = True
+        psf_result = source_detect.process(image_model)
+        psf_catalog = psf_result.meta.source_detection.psf_catalog
 
-    # call SourceDetectionStep with default parameters
-    sd = SourceDetectionStep()
-    res = sd.process(model)
+        extract_columns = ["x_fit", "x_err", "y_fit", "y_err", "flux_fit"]
+        x_psf, x_err, y_psf, y_err, amp_psf = psf_catalog[extract_columns].itercols()
 
-    # unpack output catalog array
-    _, xcentroid, ycentroid, flux = res.meta.source_detection.tweakreg_catalog
+        # check that typical PSF centroids are more accurate than DAO centroids:
+        assert np.median(np.abs(x_dao - x_true)) > np.median(np.abs(x_psf - x_true))
 
-    # sort based on x coordinate, like input
-    ycentroid = [x for y, x in sorted(zip(xcentroid, ycentroid))]
-    flux = [x for y, x in sorted(zip(xcentroid, flux))]
-    xcentroid = sorted(xcentroid)
+        # check that the typical/worst PSF centroid is still within some tolerance:
+        pixel_scale = 0.11 * u.arcsec / u.pix
+        centroid_residuals = np.abs(x_psf - x_true) * u.pix * pixel_scale
+        assert np.max(centroid_residuals) < 11 * u.mas
+        assert np.median(centroid_residuals) < 3 * u.mas
 
-    # check that the number of input and output sources are the same
-    assert len(flux) == len(true_x)
-
-    # check that their locations agree
-    # atol=0.2 seems to be the lowest safe value for this right now.
-
-    assert np.allclose(np.abs(xcentroid - true_x), 0.0, atol=0.25)
-    assert np.allclose(np.abs(ycentroid - true_y), 0.0, atol=0.25)
-
-
-def test_source_detection_scalar_threshold(setup_inputs):
-    """Test SourceDetectionStep using the option to choose a detection
-    threshold for entire image."""
-
-    model = setup_inputs(seed=0)
-
-    # add in 12 sources, roughly evenly distributed
-    # sort by true_x so they can be matched up to output
-
-    true_x = np.array([20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 80, 82])
-    true_y = np.array([26, 80, 44, 19, 66, 39, 29, 72, 54, 29, 80, 62])
-
-    # at each position, place a 2d gaussian
-    # randomly vary flux from 100 to 500 for each source
-    add_random_gauss(model.data, true_x, true_y, seed=0)
-
-    # call SourceDetectionStep with default parameters
-    sd = SourceDetectionStep()
-    sd.scalar_threshold = 2.0
-    res = sd.process(model)
-
-    # unpack output catalog array
-    _, xcentroid, ycentroid, flux = res.meta.source_detection.tweakreg_catalog
-
-    # sort based on x coordinate, like input
-    ycentroid = [x for y, x in sorted(zip(xcentroid, ycentroid))]
-    flux = [x for y, x in sorted(zip(xcentroid, flux))]
-    xcentroid = sorted(xcentroid)
-
-    # check that the number of input and output sources are the same
-    assert len(flux) == len(true_x)
-
-    # check that their locations agree
-    # atol=0.2 seems to be the lowest safe value for this right now.
-
-    assert np.allclose(np.abs(xcentroid - true_x), 0.0, atol=0.25)
-    assert np.allclose(np.abs(ycentroid - true_y), 0.0, atol=0.25)
-
-
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="Roman CRDS servers are not currently available outside the internal "
-    "network",
-)
-def test_outputs(tmp_path, setup_inputs):
-    """Make sure `save_catalogs` and `output_cat_filetype` work correctly."""
-
-    try:
-        # The contextlib.chdir() context manager was added in Python 3.11
-        # so once we drop support for Python 3.10 we can remove this try/except
-        from contextlib import chdir
-
-        context = chdir(tmp_path)
-    except ImportError:
-        # This reproduces enough of the behavior of contextlib.chdir()
-        # for Python < 3.11 (this part can be removed at a later date)
-        from contextlib import contextmanager
-        from pathlib import Path
-
-        @contextmanager
-        def ctx():
-            cwd = Path.cwd()
-            os.chdir(tmp_path)
-            try:
-                yield
-            finally:
-                os.chdir(cwd)
-
-        context = ctx()
-
-    with context:
-        model = setup_inputs(seed=0)
-
-        # add a single source to image so a non-empty catalog is produced
-        add_random_gauss(model.data, [50], [50], seed=0)
-
-        # run step and direct it to save catalog. default format should be asdf
-        sd = SourceDetectionStep()
-        sd.save_catalogs = True
-        sd.process(model)
-        # make sure file exists
-        expected_output_path = os.path.join(tmp_path, "filename_tweakreg_catalog.asdf")
-        assert os.path.isfile(expected_output_path)
-
-        # run again, specifying that catalog should be saved in ecsv format
-        sd = SourceDetectionStep()
-        sd.save_catalogs = True
-        sd.output_cat_filetype = "ecsv"
-        sd.process(model)
-        expected_output_path = os.path.join(tmp_path, "filename_tweakreg_catalog.ecsv")
-        assert os.path.isfile(expected_output_path)
-
-
-def test_limiting_catalog_size(setup_inputs):
-    """Test to make sure setting `max_sources` limits the size of the
-    output catalog to contain only the N brightest sources"""
-
-    model = setup_inputs(seed=0)
-
-    amps = [200, 300, 400]  # flux
-    pos = [20, 50, 80]  # 3 sources in a line
-    for i in range(3):
-        xy = pos[i]
-        gauss = Gaussian2DKernel(2, x_size=20, y_size=20).array
-        model.data[xy - 10 : xy + 10, xy - 10 : xy + 10] += (
-            u.Quantity(gauss, u.electron / u.s, dtype=np.float32) * amps[i]
-        )
-
-    sd = SourceDetectionStep()
-    sd.max_sources = 2
-    res = sd.process(model)
-
-    _, xcentroid, ycentroid, flux = res.meta.source_detection.tweakreg_catalog
-
-    # make sure only 2 of the three sources are returned in output catalog
-    assert len(flux) == 2
-
-    # and make sure one of them is not the first, dimmest source
-    assert np.all(xcentroid > 22)  # dimmest position is really 20, give a
+        # check that typical residuals are consistent with their errors:
+        assert np.median(np.abs(x_psf - x_true) / x_err) < 2
