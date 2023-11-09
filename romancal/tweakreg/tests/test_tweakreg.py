@@ -21,6 +21,7 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
 from romancal.datamodels import ModelContainer
+from romancal.lib.basic_utils import astropy_table_to_recarray
 from romancal.tweakreg import tweakreg_step as trs
 from romancal.tweakreg.astrometric_utils import get_catalog
 
@@ -381,7 +382,7 @@ def create_base_image_source_catalog(
     t.add_column([i for i in range(len(t))], name="id", index=0)
     t.add_column([np.float64(i) for i in range(len(t))], name="flux")
     t.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
-    return t.as_array().T
+    return astropy_table_to_recarray(t)
 
 
 def add_tweakreg_catalog_attribute(
@@ -441,7 +442,7 @@ def add_tweakreg_catalog_attribute(
             tmp_path, tweakreg_catalog_filename
         )
     else:
-        # SourceDetectionStep attaches the catalog data as a 4D numpy array
+        # SourceDetectionStep attaches the catalog data as a structured array
         input_dm.meta.source_detection["tweakreg_catalog"] = source_catalog
 
 
@@ -1111,8 +1112,8 @@ def test_imodel2wcsim_valid_column_names(tmp_path, base_image, column_names):
     imcats = list(map(step._imodel2wcsim, g))
 
     assert all(x.meta["image_model"] == y for x, y in zip(imcats, [img_1, img_2]))
-    assert all(
-        all(x.meta["catalog"] == y.meta.tweakreg_catalog)
+    assert np.all(
+        x.meta["catalog"] == y.meta.tweakreg_catalog
         for x, y in zip(imcats, [img_1, img_2])
     )
 

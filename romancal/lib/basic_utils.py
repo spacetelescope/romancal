@@ -1,6 +1,7 @@
 """General utility objects"""
 
 import numpy as np
+from astropy.table import Table
 from roman_datamodels.datamodels import AssociationsModel
 
 from romancal.lib import dqflags
@@ -103,3 +104,87 @@ class LoggingContext:
         if self.handler and self.close:
             self.handler.close()
         # implicit return of None => don't swallow exceptions
+
+
+def ndarrays_to_recarray(arrays, names):
+    """
+    Convert a list of ndarrays to structured arrays.
+
+    Parameters
+    ----------
+    arrays : list
+        List of np.ndarray
+    names : str
+        Comma-separated string of array names
+
+    Returns
+    -------
+    recarr : np.record
+    """
+    recarr = np.core.records.fromarrays(
+        arrays, names=names, formats=[arr.dtype for arr in arrays]
+    )
+    return recarr
+
+
+def recarray_to_ndarray(x, to_dtype="<f8"):
+    """
+    Convert a structured array to a 2D ndarray.
+
+    Parameters
+    ----------
+    x : np.record
+        Structured array
+    to_dtype : str
+        Cast all columns in `x` to this dtype in the output ndarray.
+
+    Returns
+    -------
+    array : np.ndarray
+        Numpy array (without labeled columns).
+    """
+    names = x.dtype.names
+    astype = [(name, to_dtype) for name in names]
+    return np.asarray(x.astype(astype).view(to_dtype).reshape((-1, len(names))))
+
+
+def recarray_to_astropy_table(x):
+    """
+    Convert a structured array to an astropy table.
+
+    Parameters
+    ----------
+    x : np.record
+        Structured array
+
+    Returns
+    -------
+    tbl : astropy.table.Table
+    """
+    names = x.dtype.names
+    data = {name: x[name] for name in names}
+    return Table(data, names=names)
+
+
+def astropy_table_to_recarray(x):
+    """
+    Convert an astropy table to a structured array.
+
+    Parameters
+    ----------
+    x : astropy.table.Table
+
+    Returns
+    -------
+    arr : np.record
+        Structured array
+    """
+
+    arrays = []
+    names = []
+
+    for column in x.itercols():
+        names.append(column.name)
+        arrays.append(np.asarray(column.data))
+
+    return ndarrays_to_recarray(arrays, ", ".join(names))

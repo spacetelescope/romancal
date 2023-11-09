@@ -13,7 +13,11 @@ from tweakwcs.correctors import JWSTWCSCorrector
 from tweakwcs.imalign import align_wcs
 from tweakwcs.matchutils import XYXYMatch
 
-from romancal.lib.basic_utils import is_association
+from romancal.lib.basic_utils import (
+    astropy_table_to_recarray,
+    is_association,
+    recarray_to_astropy_table,
+)
 
 # LOCAL
 from ..datamodels import ModelContainer
@@ -174,10 +178,9 @@ class TweakRegStep(RomanStep):
                     image_model.meta.source_detection, "tweakreg_catalog_name"
                 )
                 if is_tweakreg_catalog_present:
-                    # read catalog in 4D numpy array format
-                    catalog = Table(
-                        data=image_model.meta.source_detection.tweakreg_catalog.T,
-                        names=("id", "xcentroid", "ycentroid", "flux"),
+                    # read catalog from structured array
+                    catalog = recarray_to_astropy_table(
+                        image_model.meta.source_detection.tweakreg_catalog
                     )
                 elif is_tweakreg_catalog_name_present:
                     catalog = Table.read(
@@ -245,7 +248,7 @@ class TweakRegStep(RomanStep):
                     )
 
             # set meta.tweakreg_catalog
-            image_model.meta["tweakreg_catalog"] = catalog
+            image_model.meta["tweakreg_catalog"] = astropy_table_to_recarray(catalog)
 
             nsources = len(catalog)
             if nsources == 0:
@@ -556,6 +559,9 @@ class TweakRegStep(RomanStep):
             if isinstance(catalog, str):
                 # a string with the name of the catalog was provided
                 catalog = Table.read(catalog, format=catalog_format)
+            else:
+                # catalog is a structured array, convert to astropy table:
+                catalog = recarray_to_astropy_table(catalog)
 
             catalog.meta["name"] = (
                 str(catalog) if isinstance(catalog, str) else model_name

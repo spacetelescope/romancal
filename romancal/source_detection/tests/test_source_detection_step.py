@@ -9,6 +9,7 @@ import pytest
 from astropy import units as u
 
 from romancal.lib.tests.test_psf import add_sources, setup_inputs
+from romancal.lib.basic_utils import recarray_to_ndarray
 from romancal.source_detection import SourceDetectionStep
 
 n_sources = 10

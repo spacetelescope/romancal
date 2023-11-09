@@ -21,6 +21,7 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
 from romancal.lib import dqflags, psf
+from romancal.lib.basic_utils import astropy_table_to_recarray
 from romancal.stpipe import RomanStep
 
 log = logging.getLogger(__name__)
@@ -200,14 +201,7 @@ class SourceDetectionStep(RomanStep):
                 # meta.source_detection the table will be stored as a
                 # 1D array with the four columns concatenated, in order,
                 # with units attached
-                catalog_as_array = np.array(
-                    [
-                        catalog["id"].value,
-                        catalog["xcentroid"].value,
-                        catalog["ycentroid"].value,
-                        catalog["flux"].value,
-                    ]
-                )
+                catalog_as_recarray = astropy_table_to_recarray(catalog)
 
             # create meta.source detection section in file
             # if save_catalogs is True, this will be updated with the
@@ -228,7 +222,7 @@ class SourceDetectionStep(RomanStep):
                 log.info(f"Saving catalog to file: {cat_filename}.")
 
                 if self.output_cat_filetype == "asdf":
-                    tree = {"tweakreg_catalog": catalog_as_array}
+                    tree = {"tweakreg_catalog": catalog_as_recarray}
                     ff = AsdfFile(tree)
                     ff.write_to(cat_filename)
                 else:
@@ -240,7 +234,9 @@ class SourceDetectionStep(RomanStep):
             else:
                 # only attach catalog to file if its being passed to the next step
                 # and save_catalogs is false, since it is not in the schema
-                input_model.meta.source_detection["tweakreg_catalog"] = catalog_as_array
+                input_model.meta.source_detection[
+                    "tweakreg_catalog"
+                ] = catalog_as_recarray
 
                 if self.fit_psf:
                     input_model.meta.source_detection[
