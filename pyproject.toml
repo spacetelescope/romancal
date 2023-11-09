@@ -64,6 +64,8 @@ dev = [
 ]
 sdp = [
     'stpreview>=0.5.1',
+    'typer',
+    'typing_extensions',
 ]
 
 [project.urls]
