@@ -6,8 +6,6 @@ import numpy
 
 
 def command():
-    from typing_extensions import Annotated
-
     try:
         import typer
         from stpreview.downsample import downsample_asdf_to
@@ -16,6 +14,7 @@ def command():
             percentile_normalization,
             write_image,
         )
+        from typing_extensions import Annotated
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
             'SDP requirements not installed; do `pip install "romancal[sdp]"`'
