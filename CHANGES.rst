@@ -14,7 +14,7 @@ dark
 general
 -------
 
-- Update elp pipeline code to capture a list from tweakreg [#]
+- Update elp pipeline code to capture a list from tweakreg [#985]
 
 - Update pipeline code to correct cal_step and suffixes [#971]
 
