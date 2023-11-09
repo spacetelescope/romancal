@@ -166,36 +166,23 @@ report = { exclude_lines = [
 [tool.bandit]
 skips = ["B101", "B307", "B404", "B603"]
 
-[tool.isort]
-profile = "black"
-filter_files = true
-line_length = 88
-
-[tool.black]
-line-length = 88
-force-exclude = '''
-^/(
-  (
-      \.eggs
-    | \.git
-    | \.pytest_cache
-    | \.tox
-  )/
-)
-'''
-
 [tool.ruff]
 line-length = 88
 exclude = [
-    'jdocs',
-    '.tox',
     '.eggs',
+    '.git',
+    '.pytest_cache',
+    '.tox',
+    'jdocs',
     'build',
 ]
 ignore = [
     'E741', # ambiguous variable name
 ]
 extend-select = ['NPY']
+extend-include = ["*.ipynb"]
+
+[tool.ruff.lint.isort]
 
 [tool.ruff.extend-per-file-ignores]
 "romancal/associations/__init__.py" = ["E402"]
