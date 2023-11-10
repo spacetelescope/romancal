@@ -52,7 +52,7 @@ def pip_install_args = "--index-url ${pip_index} --progress-bar=off"
 // Define environment variables needed for the regression tests
 env_vars = [
     "TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory",
-    "CRDS_CONTEXT=roman_0051.pmap",
+    "CRDS_CONTEXT=roman_0052.pmap",
     "CRDS_SERVER_URL=https://serverless",
     'CRDS_PATH=/grp/crds/roman/test/',
     'DD_ENV=ci',
