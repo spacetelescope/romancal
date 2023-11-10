@@ -8,8 +8,8 @@ import numpy as np
 import pytest
 from astropy import units as u
 
-from romancal.lib.tests.test_psf import add_sources, setup_inputs
 from romancal.lib.basic_utils import recarray_to_ndarray
+from romancal.lib.tests.test_psf import add_sources, setup_inputs
 from romancal.source_detection import SourceDetectionStep
 
 n_sources = 10
@@ -39,7 +39,9 @@ class TestSourceDetection:
         source_detect.scalar_threshold = 100
         source_detect.peakmax = None
         dao_result = source_detect.process(image_model)
-        idx, x_dao, y_dao, amp_dao = dao_result.meta.source_detection.tweakreg_catalog
+        idx, x_dao, y_dao, amp_dao = recarray_to_ndarray(
+            dao_result.meta.source_detection.tweakreg_catalog
+        ).T
 
         # check that all injected targets are found by DAO:
         assert len(x_dao) == len(x_true)
@@ -48,7 +50,7 @@ class TestSourceDetection:
         psf_result = source_detect.process(image_model)
         psf_catalog = psf_result.meta.source_detection.psf_catalog
 
-        extract_columns = ["x_fit", "x_err", "y_fit", "y_err", "flux_fit"]
+        extract_columns = ["xcentroid", "x_err", "ycentroid", "y_err", "flux_fit"]
         x_psf, x_err, y_psf, y_err, amp_psf = psf_catalog[extract_columns].itercols()
 
         # check that typical PSF centroids are more accurate than DAO centroids:

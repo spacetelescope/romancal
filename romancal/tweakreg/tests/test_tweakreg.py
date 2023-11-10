@@ -21,7 +21,6 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
 from romancal.datamodels import ModelContainer
-from romancal.lib.basic_utils import astropy_table_to_recarray
 from romancal.tweakreg import tweakreg_step as trs
 from romancal.tweakreg.astrometric_utils import get_catalog
 
@@ -382,7 +381,7 @@ def create_base_image_source_catalog(
     t.add_column([i for i in range(len(t))], name="id", index=0)
     t.add_column([np.float64(i) for i in range(len(t))], name="flux")
     t.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
-    return astropy_table_to_recarray(t)
+    return t.as_array()
 
 
 def add_tweakreg_catalog_attribute(

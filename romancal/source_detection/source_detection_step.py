@@ -21,7 +21,6 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
 from romancal.lib import dqflags, psf
-from romancal.lib.basic_utils import astropy_table_to_recarray
 from romancal.stpipe import RomanStep
 
 log = logging.getLogger(__name__)
@@ -184,24 +183,7 @@ class SourceDetectionStep(RomanStep):
                     exclude_out_of_bounds=True,
                 )
 
-                # attach source catalog to output model as array in
-                # meta.source_detection the table will be stored as a
-                # 1D array with the four columns concatenated, in order,
-                # with units attached
-                catalog_as_array = np.array(
-                    [
-                        psf_photometry_table["id"].value,
-                        psf_photometry_table["x_fit"].value,
-                        psf_photometry_table["y_fit"].value,
-                        psf_photometry_table["flux_fit"].value,
-                    ]
-                )
-            else:
-                # attach source catalog to output model as array in
-                # meta.source_detection the table will be stored as a
-                # 1D array with the four columns concatenated, in order,
-                # with units attached
-                catalog_as_recarray = astropy_table_to_recarray(catalog)
+            catalog_as_recarray = catalog.as_array()
 
             # create meta.source detection section in file
             # if save_catalogs is True, this will be updated with the
@@ -232,17 +214,26 @@ class SourceDetectionStep(RomanStep):
                     "tweakreg_catalog_name"
                 ] = cat_filename
             else:
-                # only attach catalog to file if its being passed to the next step
-                # and save_catalogs is false, since it is not in the schema
-                input_model.meta.source_detection[
-                    "tweakreg_catalog"
-                ] = catalog_as_recarray
-
                 if self.fit_psf:
-                    input_model.meta.source_detection[
-                        "psf_catalog"
-                    ] = psf_photometry_table
+                    # PSF photometry centroid results are stored in an astropy table
+                    # in columns "x_fit" and "y_fit", which we'll rename for
+                    # compatibility with tweakreg:
+                    catalog = psf_photometry_table.copy()
 
+                    # rename the PSF photometry table's columns to match the
+                    # expectated columns in tweakreg:
+                    for old_name, new_name in zip(
+                        ["x_fit", "y_fit"], ["xcentroid", "ycentroid"]
+                    ):
+                        catalog.rename_column(old_name, new_name)
+
+                    input_model.meta.source_detection["psf_catalog"] = catalog
+                else:
+                    # only attach catalog to file if its being passed to the next step
+                    # and save_catalogs is false, since it is not in the schema
+                    input_model.meta.source_detection[
+                        "tweakreg_catalog"
+                    ] = catalog_as_recarray
             input_model.meta.cal_step["source_detection"] = "COMPLETE"
 
         # just pass input model to next step - catalog is stored in meta

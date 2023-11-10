@@ -2,14 +2,9 @@
 
 import numpy as np
 import pytest
+from astropy.table import Table
 
-from romancal.lib.basic_utils import (
-    astropy_table_to_recarray,
-    bytes2human,
-    ndarrays_to_recarray,
-    recarray_to_astropy_table,
-    recarray_to_ndarray,
-)
+from romancal.lib.basic_utils import bytes2human, recarray_to_ndarray
 
 test_data = [
     (1000, "1000B"),
@@ -30,13 +25,15 @@ def test_structured_array_utils():
     arrays = [np.arange(0, 10), np.arange(10, 20), np.arange(30, 40)]
     names = "a, b, c"
 
-    recarr0 = ndarrays_to_recarray(arrays, names)
+    recarr0 = np.core.records.fromarrays(
+        arrays, names=names, formats=[arr.dtype for arr in arrays]
+    )
     round_tripped = recarray_to_ndarray(recarr0)
     assert np.all(round_tripped == np.column_stack(arrays).astype("<f8"))
 
-    astropy_table = recarray_to_astropy_table(recarr0)
+    astropy_table = Table(recarr0)
     assert np.all(
         np.array(arrays) == np.array([col.data for col in astropy_table.itercols()])
     )
 
-    assert np.all(astropy_table_to_recarray(astropy_table) == recarr0)
+    assert np.all(astropy_table.as_array() == recarr0)
