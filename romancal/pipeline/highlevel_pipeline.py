@@ -2,18 +2,13 @@
 import logging
 from os.path import basename
 
-import numpy as np
-from roman_datamodels import datamodels as rdm
-
 import romancal.datamodels.filetype as filetype
+from romancal.datamodels import ModelContainer
+from romancal.outlier_detection import OutlierDetectionStep
+from romancal.resample import ResampleStep
 
 # step imports
 from romancal.skymatch import SkyMatchStep
-from romancal.outlier_detection import OutlierDetectionStep
-from romancal.resample import ResampleStep
-from romancal.lib import dqflags
-from romancal.datamodels import ModelContainer
-
 
 from ..stpipe import RomanPipeline
 
@@ -70,8 +65,8 @@ class HighLevelPipeline(RomanPipeline):
             self.skymatch.suffix = "i2d"
             result = self.resample(result)
             if input_filename:
-                result.meta.filename = input_filename            
-   
+                result.meta.filename = input_filename
+
         return result
 
     def setup_output(self, input):
@@ -83,4 +78,3 @@ class HighLevelPipeline(RomanPipeline):
             self.output_file = input.meta.filename
         else:
             self.suffix = "cal"
-
