@@ -70,6 +70,8 @@ class HighLevelPipeline(RomanPipeline):
             result = self.outlierdetection(asn)
             self.skymatch.suffix = "i2d"
             result = self.resample(result)
+            if input_filename:
+                result.meta.filename = input_filename
    
         return result
 
