@@ -65,8 +65,12 @@ class HighLevelPipeline(RomanPipeline):
             asn = ModelContainer.read_asn(input)
             self.skymatch.suffix = "skymatch"
             result = self.skymatch(input)
-            result = self.outlierdetection(result)
+            self.skymatch.suffix = "outlierdetection"
+            result = self.outlierdetection(asn)
+            self.skymatch.suffix = "i2d"
             result = self.resample(result)
+            if input_filename:
+                result.meta.filename = input_filename            
    
         return result
 
@@ -78,5 +82,5 @@ class HighLevelPipeline(RomanPipeline):
             input["output_file"] = input.meta.filename
             self.output_file = input.meta.filename
         else:
-            self.suffix = "ramp"
+            self.suffix = "cal"
 
