@@ -68,14 +68,5 @@ def test_cas22_jump_detection(rtdata, ignore_asdf_paths, base_name):
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{base_name}_output.asdf")
 
-    import asdf
-
-    truth = asdf.open(rtdata.truth)["roman"]
-    output = asdf.open(rtdata.output)["roman"]
-
-    from numpy.testing import assert_allclose
-
-    assert_allclose(truth["dq"], output["dq"])
-    assert_allclose(truth["data"], output["data"])
-    truth.close()
-    output.close()
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()

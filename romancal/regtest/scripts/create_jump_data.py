@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 import astropy.units as u
+import crds
 import numpy as np
 from roman_datamodels.datamodels import (
     GainRefModel,
@@ -12,6 +13,8 @@ from roman_datamodels.datamodels import (
 )
 from roman_datamodels.maker_utils import mk_datamodel
 from stcal.ramp_fitting.ols_cas22 import fit_ramps
+
+from romancal.ramp_fitting.ramp_fit_step import create_image_model
 
 REFERENCE_DATA_PATH = "/user/wjamieson/jump_detection/reference_data/"
 
@@ -34,7 +37,7 @@ def get_flagged_pixels(sfn_dmax, est_slope):
     return np.where(sfn_dmax > threshold(est_slope))[0]
 
 
-def reference_data_to_input_models(input_data):
+def reference_data_to_input_models(input_data, file_name):
     counts = input_data["counts_bias_corrected"].astype(np.float32)
     n_resultants, n_counts = counts.shape
     n_rows = np.sqrt(n_resultants).astype(np.int32)
@@ -69,14 +72,12 @@ def reference_data_to_input_models(input_data):
     gain_model.data += 1 * gain_model.data.unit
 
     print("Making output_model")
-    output_model = mk_datamodel(ImageModel, shape=padded.shape[1:])
     dq = np.zeros(n_resultants, dtype=np.uint32)
     flagged = get_flagged_pixels(
         input_data["stats"]["sfn_dmax"], input_data["stats"]["est_slope"]
     )
     dq[flagged] = 2**2
     dq = dq.reshape((n_rows, n_rows))
-    output_model.dq = dq
 
     fit = fit_ramps(
         counts.reshape((n_counts, n_resultants)),
@@ -86,11 +87,35 @@ def reference_data_to_input_models(input_data):
         read_pattern,
         use_jump=True,
     )
-    output_model.data = (
-        fit.parameters[..., 1].reshape((n_rows, n_rows)) * output_model.data.unit
-    )
+    slopes = fit.parameters[..., 1].reshape((n_rows, n_rows))
+    var_read_noise = fit.variances[..., 0].reshape((n_rows, n_rows))
+    var_poisson = fit.variances[..., 1].reshape((n_rows, n_rows))
+    err = np.sqrt(var_read_noise + var_poisson)
 
-    return RegressionData(input_model, readnoise_model, gain_model, output_model)
+    dq_pad = np.zeros((n_rows + 8, n_rows + 8), dtype=np.uint32)
+    slopes_pad = np.zeros((n_rows + 8, n_rows + 8), dtype=np.float32)
+    var_read_noise_pad = np.zeros((n_rows + 8, n_rows + 8), dtype=np.float32)
+    var_poisson_pad = np.zeros((n_rows + 8, n_rows + 8), dtype=np.float32)
+    err_pad = np.zeros((n_rows + 8, n_rows + 8), dtype=np.float32)
+
+    dq_pad[4:-4, 4:-4] = dq
+    slopes_pad[4:-4, 4:-4] = slopes
+    var_read_noise_pad[4:-4, 4:-4] = var_read_noise
+    var_poisson_pad[4:-4, 4:-4] = var_poisson
+    err_pad[4:-4, 4:-4] = err
+
+    image_info = (slopes_pad, dq_pad, var_poisson_pad, var_read_noise_pad, err_pad)
+    output_model = create_image_model(input_model.copy(), image_info)
+    output_model.meta.cal_step.ramp_fit = "COMPLETE"
+    output_model.meta.ref_file.crds.context_used = "roman_0052.pmap"
+    output_model.meta.ref_file.crds.sw_version = str(crds.__version__)
+    output_model.meta.ref_file.gain = f"{file_name}_gain.asdf"
+    output_model.meta.ref_file.readnoise = f"{file_name}_readnoise.asdf"
+
+    return (
+        RegressionData(input_model, readnoise_model, gain_model, output_model),
+        file_name,
+    )
 
 
 def read_data(file_path):
@@ -102,7 +127,7 @@ def read_data(file_path):
         with data_file.open("rb") as f:
             input_data = pickle.load(f)
 
-        yield reference_data_to_input_models(input_data), data_file.stem
+        yield reference_data_to_input_models(input_data, data_file.stem)
 
 
 def main(file_path=None):
