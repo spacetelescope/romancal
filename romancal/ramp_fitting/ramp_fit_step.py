@@ -223,11 +223,16 @@ class RampFitStep(RomanStep):
         err = np.sqrt(var_poisson + var_rnoise)
         dq = output.dq.astype(np.uint32)
 
-        # Create the image model
-        image_info = (slopes, None, var_poisson, var_rnoise, err)
-        image_model = create_image_model(input_model, image_info)
+        ramp_dq = np.zeros(dq.shape[1:], dtype=np.uint32)
+        # Turn the jump detection DQ into a ramp DQ
+        for i in range(dq.shape[1]):
+            for j in range(dq.shape[2]):
+                if np.any(dq[:, i, j] == dqflags.group["JUMP_DET"]):
+                    ramp_dq[i, j] = dqflags.group["JUMP_DET"]
 
-        image_model["jump_dq"] = dq
+        # Create the image model
+        image_info = (slopes, ramp_dq, var_poisson, var_rnoise, err)
+        image_model = create_image_model(input_model, image_info)
 
         # That's all folks
         return image_model
