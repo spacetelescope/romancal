@@ -188,6 +188,7 @@ def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
         override_gain=override_gain,
         override_readnoise=override_readnoise,
         maximum_cores=max_cores,
+        use_ramp_jump_detection=False,
     )
 
     CR_pool = cycle(first_CR_group_locs)
@@ -250,6 +251,7 @@ def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
         override_gain=override_gain,
         override_readnoise=override_readnoise,
         maximum_cores=max_cores,
+        use_ramp_jump_detection=False,
     )
 
     CR_pool = cycle(first_CR_group_locs)
@@ -300,7 +302,8 @@ def test_two_group_integration(generate_wfi_reffiles, max_cores, setup_inputs):
         "Roman CRDS servers are not currently available outside the internal network"
     ),
 )
-def test_four_group_integration(generate_wfi_reffiles, setup_inputs):
+@pytest.mark.parametrize("use_jump", [False, True])
+def test_four_group_integration(generate_wfi_reffiles, setup_inputs, use_jump):
     override_gain, override_readnoise = generate_wfi_reffiles
     grouptime = 3.0
     ingain = 6
@@ -322,9 +325,13 @@ def test_four_group_integration(generate_wfi_reffiles, setup_inputs):
         override_gain=override_gain,
         override_readnoise=override_readnoise,
         maximum_cores="none",
+        use_ramp_jump_detection=use_jump,
     )
 
-    assert out_model.meta.cal_step["jump"] == "COMPLETE"
+    if use_jump:
+        assert out_model.meta.cal_step["jump"] == "SKIPPED"
+    else:
+        assert out_model.meta.cal_step["jump"] == "COMPLETE"
 
 
 @pytest.mark.skipif(
@@ -333,7 +340,8 @@ def test_four_group_integration(generate_wfi_reffiles, setup_inputs):
         "Roman CRDS servers are not currently available outside the internal network"
     ),
 )
-def test_three_group_integration(generate_wfi_reffiles, setup_inputs):
+@pytest.mark.parametrize("use_jump", [False, True])
+def test_three_group_integration(generate_wfi_reffiles, setup_inputs, use_jump):
     override_gain, override_readnoise = generate_wfi_reffiles
     grouptime = 3.0
     ingain = 6
@@ -355,6 +363,10 @@ def test_three_group_integration(generate_wfi_reffiles, setup_inputs):
         override_gain=override_gain,
         override_readnoise=override_readnoise,
         maximum_cores="none",
+        use_ramp_jump_detection=use_jump,
     )
 
-    assert out_model.meta.cal_step.jump == "COMPLETE"
+    if use_jump:
+        assert out_model.meta.cal_step.jump == "SKIPPED"
+    else:
+        assert out_model.meta.cal_step.jump == "COMPLETE"

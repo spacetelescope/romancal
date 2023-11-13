@@ -61,7 +61,7 @@ def test_cas22_jump_detection(rtdata, ignore_asdf_paths, base_name):
         rtdata.input,
         f"--override_gain={rtdata.gain}",
         f"--override_readnoise={rtdata.readnoise}",
-        "--use_jump_detection=True",
+        "--use_ramp_jump_detection=True",
     ]
     RomanStep.from_cmdline(args)
     output = f"{base_name}_input_rampfit.asdf"
