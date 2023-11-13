@@ -53,6 +53,9 @@ ramp_fitting
 
 - Add uneven ramp fitting documentation [#944]
 
+- Enable jump detection within the Cas22 ramp fitting be default, and add
+  regression tests for it. [#991]
+
 refpix
 ------
 
