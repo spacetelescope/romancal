@@ -32,7 +32,7 @@ class RampFitStep(RomanStep):
         opt_name = string(default='')
         maximum_cores = option('none','quarter','half','all',default='none') # max number of processes to create
         suffix = string(default='rampfit')  # Default suffix of results
-        use_jump_detection = boolean(default=False) # Use jump detection during ramp fitting
+        use_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
         threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
         threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
     """  # noqa: E501
