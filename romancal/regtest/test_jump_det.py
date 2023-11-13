@@ -77,3 +77,5 @@ def test_cas22_jump_detection(rtdata, ignore_asdf_paths, base_name):
 
     assert_allclose(truth["dq"], output["dq"])
     assert_allclose(truth["data"], output["data"])
+    truth.close()
+    output.close()
