@@ -308,7 +308,7 @@ def fft_interp(
             # meaningfully
             chanFrameData_Flat = spfft.irfft(
                 fftResult * chanFrameData_Flat.size,
-                workers=1
+                workers=1,
                 # )
             ).astype(chanFrameData_Flat.dtype)
             # Return read only pixels

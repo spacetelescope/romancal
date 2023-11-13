@@ -403,8 +403,9 @@ def _apply_sky(images, sky_deltas, do_global, do_skysub, show_old):
 
             # log sky values:
             log.info(
-                "   *  Group ID={}. Sky background of "
-                "component images:".format(img.id)
+                "   *  Group ID={}. Sky background of " "component images:".format(
+                    img.id
+                )
             )
 
             for im, old_sky, new_sky in zip(img, old_img_sky, new_img_sky):
