@@ -32,7 +32,7 @@ class RampFitStep(RomanStep):
         opt_name = string(default='')
         maximum_cores = option('none','quarter','half','all',default='none') # max number of processes to create
         suffix = string(default='rampfit')  # Default suffix of results
-        use_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
+        use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
         threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
         threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
     """  # noqa: E501
@@ -179,12 +179,12 @@ class RampFitStep(RomanStep):
         out_model : ImageModel
             Model containing a count-rate image.
         """
-        use_jump = self.use_jump_detection
+        use_jump = self.use_ramp_jump_detection
 
         if use_jump:
-            log.info("Jump detection is enabled.")
+            log.info("Jump detection as part of ramp fitting is enabled.")
         else:
-            log.info("Jump detection is disabled.")
+            log.info("Jump detection as part of ramp fitting is disabled.")
 
         kwargs = {}
         if self.threshold_intercept is not None:

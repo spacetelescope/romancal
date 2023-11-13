@@ -39,12 +39,14 @@ class JumpStep(RomanStep):
         use_ellipses = boolean(default=False) # Use an enclosing ellipse rather than a circle for MIRI showers
         sat_required_snowball = boolean(default=True) # Require the center of snowballs to be saturated
         expand_large_events = boolean(default=False) # must be True to trigger snowball and shower flagging
+        use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
     """  # noqa: E501
 
     reference_file_types = ["gain", "readnoise"]
 
     def process(self, input):
         # Open input as a Roman DataModel (single integration; 3D arrays)
+
         with rdd.open(input, lazy_load=False) as input_model:
             # Extract the needed info from the Roman Data Model
             meta = input_model.meta
@@ -53,6 +55,11 @@ class JumpStep(RomanStep):
             r_pdq = input_model.pixeldq
             r_err = input_model.err.value
             result = input_model
+
+            # If the ramp fitting jump detection is enabled, then skip this step
+            if self.use_ramp_jump_detection:
+                result.meta.cal_step.jump = "SKIPPED"
+                return result
 
             frames_per_group = meta.exposure.nframes
 
