@@ -29,7 +29,7 @@ class HighLevelPipeline(RomanPipeline):
     """
     HighLevelPipeline: Apply all calibration steps to the roman data
     to produce level 3 products. Included steps are:
-    skymatch, Outlierdetection and resample.
+     ``skymatch``, ``outlier_detection`` and ``resample``.
     """
 
     class_alias = "roman_hlp"
