@@ -410,7 +410,7 @@ def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
     satordnu = dqflags.group["SATURATED"] | dqflags.group["DO_NOT_USE"]
     m = np.all(groupdq & satordnu, axis=0)
     m |= ~np.isfinite(slopes) | (err <= 0)
-    outpixeldq |= (m * dqflags.pixel["DO_NOT_USE"]).astype('u4')
+    outpixeldq |= (m * dqflags.pixel["DO_NOT_USE"]).astype(np.uint32)
     m = (gain < 0) | ~np.isfinite(gain)
     outpixeldq |= (m * dqflags.pixel["NO_GAIN_VALUE"]).astype('u4')
 
