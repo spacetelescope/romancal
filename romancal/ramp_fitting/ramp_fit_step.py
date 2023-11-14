@@ -412,6 +412,6 @@ def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
     m |= ~np.isfinite(slopes) | (err <= 0)
     outpixeldq |= (m * dqflags.pixel["DO_NOT_USE"]).astype(np.uint32)
     m = (gain < 0) | ~np.isfinite(gain)
-    outpixeldq |= (m * dqflags.pixel["NO_GAIN_VALUE"]).astype('u4')
+    outpixeldq |= (m * dqflags.pixel["NO_GAIN_VALUE"]).astype(np.uint32)
 
     return outpixeldq
