@@ -402,7 +402,7 @@ def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
     outpixeldq = pixeldq.copy()
     # jump flagging
     m = np.any(groupdq & dqflags.group["JUMP_DET"], axis=0)
-    outpixeldq |= (m * dqflags.pixel["JUMP_DET"]).astype('u4')
+    outpixeldq |= (m * dqflags.pixel["JUMP_DET"]).astype(np.uint32)
     # all saturated flagging
     m = np.all(groupdq & dqflags.group["SATURATED"], axis=0)
     outpixeldq |= (m * dqflags.pixel["SATURATED"]).astype('u4')
