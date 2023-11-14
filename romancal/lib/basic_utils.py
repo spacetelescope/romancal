@@ -103,3 +103,24 @@ class LoggingContext:
         if self.handler and self.close:
             self.handler.close()
         # implicit return of None => don't swallow exceptions
+
+
+def recarray_to_ndarray(x, to_dtype="<f8"):
+    """
+    Convert a structured array to a 2D ndarray.
+
+    Parameters
+    ----------
+    x : np.record
+        Structured array
+    to_dtype : str
+        Cast all columns in `x` to this dtype in the output ndarray.
+
+    Returns
+    -------
+    array : np.ndarray
+        Numpy array (without labeled columns).
+    """
+    names = x.dtype.names
+    astype = [(name, to_dtype) for name in names]
+    return np.asarray(x.astype(astype).view(to_dtype).reshape((-1, len(names))))

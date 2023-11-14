@@ -191,8 +191,7 @@ class ExposurePipeline(RomanPipeline):
         if result.meta.exposure.type == "WFI_IMAGE":
             if file_type == "asdf":
                 result.meta.cal_step.tweakreg = "SKIPPED"
-                # mc_result = ModelContainer(result)
-                mc_result = self.tweakreg([result])
+                mc_result = ModelContainer(result)
                 if hasattr(ModelContainer(result), "_models") and mc_result._models:
                     result = mc_result._models.pop()
                 else:

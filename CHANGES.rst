@@ -14,6 +14,8 @@ dark
 general
 -------
 
+- Update elp pipeline code to capture a list from tweakreg [#985]
+
 - Update pipeline code to correct cal_step and suffixes [#971]
 
 - Update pipeline code to run through tweakreg with single files and associations [#960]
@@ -70,6 +72,13 @@ scripts
 
 - fixed ``asn_from_list`` script [#972]
 
+source_detection
+----------------
+
+- Support for PSF fitting (optional) for accurate centroids. [#841, #984]
+
+- Save source catalog to a structured array. [#987]
+
 stpipe
 ------
 
@@ -80,11 +89,6 @@ tweakreg
 
 - Fix a bug due to which source catalog may contain sources
   outside of the bounding box. [#947]
-
-source_detection
-----------------
-
-- Support for PSF fitting (optional) for accurate centroids. [#841]
 
 0.12.0 (2023-08-18)
 ===================
