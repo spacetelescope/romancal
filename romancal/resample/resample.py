@@ -299,7 +299,7 @@ class ResampleData:
                 ymax=ymax,
             )
             del data, inwht
-            output_model.meta.resample.members.append(img.meta.filename)
+            output_model.meta.resample.members.append(str(img.meta.filename))
 
         # Resample variances array in self.input_models to output_model
         self.resample_variance_array("var_rnoise", output_model)
