@@ -56,7 +56,6 @@ class HighLevelPipeline(RomanPipeline):
 
         # open the input file
         file_type = filetype.check(input)
-        asn = None
         if file_type == "asdf":
             log.info("The level three pipeline input needs to be an association")
             return
