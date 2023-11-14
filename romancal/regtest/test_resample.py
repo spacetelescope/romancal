@@ -46,9 +46,7 @@ def create_asn_file(
     return asn_file_path
 
 
-@metrics_logger(
-    "DMS342"
-)  # got DMS342 from here: https://jira.stsci.edu/browse/RSUBREQ-1051
+@metrics_logger("DMS342", "DMS343", "DMS344", "DMS345")
 @pytest.mark.bigdata
 def test_resample_single_file(rtdata, ignore_asdf_paths):
     input_data = [
@@ -87,6 +85,15 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
         f' {hasattr(resample_out.meta, "resample")}'
     )
     assert hasattr(resample_out.meta, "resample")
+
+    step.log.info(
+        f"""DMS342 MSG: Was ICRS used as the mosaic astrometric reference frame? :\
+            {
+                resample_out.meta.coordinates.reference_frame == "ICRS"
+            }
+        """
+    )
+    assert resample_out.meta.coordinates.reference_frame == "ICRS"
 
     step.log.info(
         f"""DMS343 MSG: ResampleStep created new attribute data quality information? :\
