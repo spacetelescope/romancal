@@ -405,7 +405,7 @@ def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
     outpixeldq |= (m * dqflags.pixel["JUMP_DET"]).astype(np.uint32)
     # all saturated flagging
     m = np.all(groupdq & dqflags.group["SATURATED"], axis=0)
-    outpixeldq |= (m * dqflags.pixel["SATURATED"]).astype('u4')
+    outpixeldq |= (m * dqflags.pixel["SATURATED"]).astype(np.uint32)
     # all either saturated or do not use or NaN slope flagging
     satordnu = dqflags.group["SATURATED"] | dqflags.group["DO_NOT_USE"]
     m = np.all(groupdq & satordnu, axis=0)
