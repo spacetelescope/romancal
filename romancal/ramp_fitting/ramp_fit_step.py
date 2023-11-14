@@ -225,12 +225,9 @@ class RampFitStep(RomanStep):
         err = np.sqrt(var_poisson + var_rnoise)
         dq = output.dq.astype(np.uint32)
 
-        ramp_dq = np.zeros(dq.shape[1:], dtype=np.uint32)
-        # Turn the jump detection DQ into a ramp DQ
-        for i in range(dq.shape[1]):
-            for j in range(dq.shape[2]):
-                if np.any(dq[:, i, j] == dqflags.group["JUMP_DET"]):
-                    ramp_dq[i, j] = dqflags.group["JUMP_DET"]
+        # Propagate DQ flags forward.
+        ramp_dq = get_pixeldq_flags(
+            dq, input_model.pixeldq, slopes, err, gain)
 
         # Create the image model
         image_info = (slopes, ramp_dq, var_poisson, var_rnoise, err)
@@ -371,3 +368,50 @@ def create_optional_results_model(input_model, opt_info):
     opt_model.meta.filename = input_model.meta.filename
 
     return opt_model
+
+
+def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
+    """
+    Construct pixeldq for ramp fit output from input dqs and ramp slopes.
+
+    The algorithm is:
+    - pass forward existing pixeldq flags
+    - if we flagged a jump, flag the pixel as containing a jump
+    - if everything is saturated, flag the pixel as saturated
+    - if everything is saturated or do not use, flag the pixel as do not use
+    - add NO_GAIN_VALUE if gain is not finite or less than zero
+
+    Parameters
+    ----------
+    groupdq : np.ndarray
+        dq flags for each resultant
+    pixeldq : np.ndarray
+        dq flags for each pixel
+    slopes : np.ndarray
+        derived slopes for each pixel
+    err : np.ndarray
+        derived total uncertainty for each pixel
+    gain : np.ndarray
+        gains for each pixel
+
+    Returns
+    -------
+    pixeldq : np.ndarray
+        Updated pixeldq array combining information from input dq and slopes.
+    """
+    outpixeldq = pixeldq.copy()
+    # jump flagging
+    m = np.any(groupdq & dqflags.group["JUMP_DET"], axis=0)
+    outpixeldq |= (m * dqflags.pixel["JUMP_DET"]).astype('u4')
+    # all saturated flagging
+    m = np.all(groupdq & dqflags.group["SATURATED"], axis=0)
+    outpixeldq |= (m * dqflags.pixel["SATURATED"]).astype('u4')
+    # all either saturated or do not use or NaN slope flagging
+    satordnu = dqflags.group["SATURATED"] | dqflags.group["DO_NOT_USE"]
+    m = np.all(groupdq & satordnu, axis=0)
+    m |= ~np.isfinite(slopes) | (err <= 0)
+    outpixeldq |= (m * dqflags.pixel["DO_NOT_USE"]).astype('u4')
+    m = (gain < 0) | ~np.isfinite(gain)
+    outpixeldq |= (m * dqflags.pixel["NO_GAIN_VALUE"]).astype('u4')
+
+    return outpixeldq
