@@ -59,6 +59,8 @@ class RampFitStep(RomanStep):
             elif algorithm == "ols_cas22":
                 out_model = self.ols_cas22(input_model, readnoise_model, gain_model)
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
+                if self.use_ramp_jump_detection:
+                    out_model.meta.cal_step.jump = "COMPLETE"
             else:
                 log.error("Algorithm %s is not supported. Skipping step.")
                 out_model = input
