@@ -226,8 +226,7 @@ class RampFitStep(RomanStep):
         dq = output.dq.astype(np.uint32)
 
         # Propagate DQ flags forward.
-        ramp_dq = get_pixeldq_flags(
-            dq, input_model.pixeldq, slopes, err, gain)
+        ramp_dq = get_pixeldq_flags(dq, input_model.pixeldq, slopes, err, gain)
 
         # Create the image model
         image_info = (slopes, ramp_dq, var_poisson, var_rnoise, err)
