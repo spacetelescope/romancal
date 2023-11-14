@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 import logging
 from os.path import basename
-import pdb
-
-import numpy as np
-from roman_datamodels import datamodels as rdm
 
 import romancal.datamodels.filetype as filetype
+from romancal.outlier_detection import OutlierDetectionStep
+from romancal.resample import ResampleStep
 
 # step imports
 from romancal.skymatch import SkyMatchStep
-from romancal.outlier_detection import OutlierDetectionStep
-from romancal.resample import ResampleStep
-from romancal.lib import dqflags
-
 
 from ..stpipe import RomanPipeline
 
@@ -64,12 +58,10 @@ class HighLevelPipeline(RomanPipeline):
             self.skymatch.suffix = "skymatch"
             result = self.skymatch(input)
             self.skymatch.suffix = "outlier_detection"
-            #result = self.outlier_detection(input)
+            # result = self.outlier_detection(input)
             self.skymatch.suffix = "i2d"
             result = self.resample(input)
             if input_filename:
                 result.meta.filename = input_filename
-   
+
         return result
-
-
