@@ -165,6 +165,7 @@ report = { exclude_lines = [
 
 [tool.bandit]
 skips = ["B101", "B307", "B404", "B603"]
+exclude_dirs = ["romancal/regtest/scripts"]
 
 [tool.isort]
 profile = "black"
