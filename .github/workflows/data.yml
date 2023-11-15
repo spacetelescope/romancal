@@ -6,7 +6,7 @@ on:
       webbpsf_path:
         value: ${{ jobs.webbpsf_path.outputs.path }}
       webbpsf_hash:
-        value: ${{ jobs.webbpsf_data.outputs.hash }}
+        value: ${{ jobs.webbpsf_hash.outputs.hash }}
   workflow_dispatch:
   schedule:
     - cron: "42 4 * * 3"
