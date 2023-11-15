@@ -17,6 +17,8 @@ def test_ramp_fitting_step(rtdata, ignore_asdf_paths):
     args = [
         "romancal.step.RampFitStep",
         rtdata.input,
+        # Disable the jump detection in the rampfit step so this one will run
+        "--use_ramp_jump_detection=False",
     ]
     RomanStep.from_cmdline(args)
     output = "r0000101001001001001_01101_0001_WFI01_rampfit.asdf"
