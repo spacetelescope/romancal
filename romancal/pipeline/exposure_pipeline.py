@@ -134,6 +134,7 @@ class ExposurePipeline(RomanPipeline):
                     "refpix",
                     "linearity",
                     "ramp_fit",
+                    "jump",
                     "tweakreg",
                 ]:
                     result.meta.cal_step[step_str] = "SKIPPED"
