@@ -1,17 +1,13 @@
-import json
-from io import StringIO
-
 import numpy as np
 import pytest
 from metrics_logger.decorators import metrics_logger
 from roman_datamodels import datamodels as rdm
 
+from romancal.associations import asn_from_list
 from romancal.resample.resample_step import ResampleStep
 from romancal.stpipe import RomanStep
 
 from .regtestdata import compare_asdf
-
-from romancal.associations import asn_from_list
 
 
 @metrics_logger("DMS342", "DMS343", "DMS344", "DMS345")
