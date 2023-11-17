@@ -1,4 +1,4 @@
-> # Roman Calibration Pipeline
+# Roman Calibration Pipeline
 
 
 [![Documentation Status](https://readthedocs.org/projects/roman-pipeline/badge/?version=latest)](https://roman-pipeline.readthedocs.io/en/latest/?badge=latest)

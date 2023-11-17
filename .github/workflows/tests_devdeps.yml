@@ -27,28 +27,41 @@ jobs:
   data:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
     uses: ./.github/workflows/data.yml
+  crds_contexts:
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
+    uses: spacetelescope/crds/.github/workflows/contexts.yml@master
   test:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
-    needs: [ data ]
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
+    needs: [ data, crds_contexts ]
     with:
       setenv: |
         WEBBPSF_PATH: ${{ needs.data.outputs.webbpsf_path }}
-        CRDS_PATH: ${{ needs.data.outputs.crds_path }}
-        CRDS_SERVER_URL: ${{ needs.data.outputs.crds_server }}
+        CRDS_PATH: ${{ needs.data.outputs.path }}/crds_cache
+        CRDS_SERVER_URL: https://roman-crds.stsci.edu
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
-      cache-path: ${{ needs.data.outputs.crds_path }}
-      cache-key: data-${{ needs.data.outputs.webbpsf_hash }}-${{ needs.data.outputs.crds_context }}
+      cache-path: ${{ needs.data.outputs.path }}
+      cache-key: data-${{ needs.data.outputs.webbpsf_hash }}-${{ needs.crds_contexts.outputs.roman }}
       cache-restore-keys: webbpsf-${{ needs.data.outputs.webbpsf_hash }}
       envs: |
+        - linux: py39-stdevdeps-webbpsf
         - linux: py39-devdeps-webbpsf
+        - macos: py39-stdevdeps-webbpsf
         - macos: py39-devdeps-webbpsf
+        - linux: py310-stdevdeps-webbpsf
         - linux: py310-devdeps-webbpsf
+        - macos: py310-stdevdeps-webbpsf
         - macos: py310-devdeps-webbpsf
+        - linux: py311-stdevdeps-webbpsf
         - linux: py311-devdeps-webbpsf
+        - macos: py311-stdevdeps-webbpsf
         - macos: py311-devdeps-webbpsf
+        - linux: py3-stdevdeps-webbpsf
+          pytest-results-summary: true
         - linux: py3-devdeps-webbpsf
+          pytest-results-summary: true
+        - macos: py3-stdevdeps-webbpsf
           pytest-results-summary: true
         - macos: py3-devdeps-webbpsf
           pytest-results-summary: true

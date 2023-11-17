@@ -69,6 +69,8 @@ intersphinx_mapping = {
     "matplotlib": ("http://matplotlib.org/", None),
     "gwcs": ("https://gwcs.readthedocs.io/en/latest/", None),
     "astropy": ("https://docs.astropy.org/en/stable/", None),
+    "photutils": ("https://photutils.readthedocs.io/en/stable/", None),
+    "webbpsf": ("https://webbpsf.readthedocs.io/en/latest/", None),
 }
 
 if sys.version_info[0] == 2:
