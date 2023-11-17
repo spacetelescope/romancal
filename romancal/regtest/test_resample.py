@@ -11,55 +11,27 @@ from romancal.stpipe import RomanStep
 
 from .regtestdata import compare_asdf
 
-
-def create_asn_file(
-    output_filename: str = "resample_output.asdf",
-    members_filename_list: list = None,
-):
-    asn_dict = {
-        "asn_type": "None",
-        "asn_rule": "DMS_ELPP_Base",
-        "version_id": "null",
-        "code_version": "0.9.1.dev28+ge987cc9.d20230106",
-        "degraded_status": "No known degraded exposures in association.",
-        "program": "noprogram",
-        "constraints": "No constraints",
-        "asn_id": "a3001",
-        "target": "none",
-        "asn_pool": "test_pool_name",
-        "products": [
-            {
-                "name": output_filename,
-                "members": [
-                    {"expname": x, "exptype": "science"} for x in members_filename_list
-                ],
-            }
-        ],
-    }
-    asn_content = json.dumps(asn_dict)
-    asn_file_path = "sample_asn.json"
-    asn_file = StringIO()
-    asn_file.write(asn_content)
-    with open(asn_file_path, mode="w") as f:
-        print(asn_file.getvalue(), file=f)
-
-    return asn_file_path
+from romancal.associations import asn_from_list
 
 
 @metrics_logger("DMS342", "DMS343", "DMS344", "DMS345")
 @pytest.mark.bigdata
 def test_resample_single_file(rtdata, ignore_asdf_paths):
     input_data = [
-        "r0000501001001001001_01101_0001_WFI02_cal_proc_resample.asdf",
-        "r0000501001001001001_01101_0002_WFI02_cal_proc_resample.asdf",
+        "r0000101001001001001_01101_0001_WFI01_cal.asdf",
+        "r0000101001001001001_01101_0002_WFI01_cal.asdf",
     ]
-    output_data = "resample_output_resamplestep.asdf"
-    truth_data = "resample_truth_resamplestep.asdf"
+    output_data = "mosaic_resamplestep.asdf"
 
     [rtdata.get_data(f"WFI/image/{data}") for data in input_data]
-    rtdata.get_truth(f"truth/WFI/image/{truth_data}")
+    rtdata.get_truth(f"truth/WFI/image/{output_data}")
 
-    rtdata.input = create_asn_file(members_filename_list=input_data)
+    asn = asn_from_list.asn_from_list(input_data, product_name="mosaic")
+    asnfn = "mosaic.json"
+    _, serialized = asn.dump()
+    with open(asnfn, 'w') as outfile:
+        outfile.write(serialized)
+    rtdata.input = asnfn
     rtdata.output = output_data
 
     # instantiate ResampleStep (for running and log access)
