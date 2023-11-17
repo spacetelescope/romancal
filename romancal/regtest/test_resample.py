@@ -1,17 +1,13 @@
-import json
-from io import StringIO
-
 import numpy as np
 import pytest
 from metrics_logger.decorators import metrics_logger
 from roman_datamodels import datamodels as rdm
 
+from romancal.associations import asn_from_list
 from romancal.resample.resample_step import ResampleStep
 from romancal.stpipe import RomanStep
 
 from .regtestdata import compare_asdf
-
-from romancal.associations import asn_from_list
 
 
 @metrics_logger("DMS342", "DMS343", "DMS344", "DMS345")
@@ -29,7 +25,7 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
     asn = asn_from_list.asn_from_list(input_data, product_name="mosaic")
     asnfn = "mosaic.json"
     _, serialized = asn.dump()
-    with open(asnfn, 'w') as outfile:
+    with open(asnfn, "w") as outfile:
         outfile.write(serialized)
     rtdata.input = asnfn
     rtdata.output = output_data
