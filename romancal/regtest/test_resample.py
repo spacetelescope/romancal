@@ -24,13 +24,10 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
     output_data = "mosaic_resamplestep.asdf"
 
     [rtdata.get_data(f"WFI/image/{data}") for data in input_data]
+    asnfn = "mosaic_asn.json"
+    rtdata.get_data(f"WFI/image/{asnfn}")
     rtdata.get_truth(f"truth/WFI/image/{output_data}")
 
-    asn = asn_from_list.asn_from_list(input_data, product_name="mosaic")
-    asnfn = "mosaic.json"
-    _, serialized = asn.dump()
-    with open(asnfn, 'w') as outfile:
-        outfile.write(serialized)
     rtdata.input = asnfn
     rtdata.output = output_data
 
