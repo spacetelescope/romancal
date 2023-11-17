@@ -3,7 +3,6 @@ import pytest
 from metrics_logger.decorators import metrics_logger
 from roman_datamodels import datamodels as rdm
 
-from romancal.associations import asn_from_list
 from romancal.resample.resample_step import ResampleStep
 from romancal.stpipe import RomanStep
 
