@@ -60,18 +60,16 @@ def artifactory_get_breadcrumbs(build_number, job_name, suffix):
 
     jfrog rt search roman-pipeline-results/*/*_okify.json --props='build.number=540;build.name=RT :: romancal'
     """  # noqa: E501
-    build_name = f"RT :: {job_name}"
+    build_name = f"{job_name}"
 
     # Retreive all the okify specfiles for failed tests.
     args = list(
         ["jfrog", "rt", "dl"]
-        + [f"{ARTIFACTORY_REPO}/*/*{suffix}"]
-        + [f"--build={build_name}/{build_number}"]
-        + ["--flat"]
+        + [f"{ARTIFACTORY_REPO}/*RT-{build_name}-{build_number}*/*{suffix}"]
     )
     subprocess.run(args, check=True, capture_output=True)
 
-    return sorted(glob(f"*{suffix}"))
+    return sorted(glob(f"**/**/*{suffix}"))
 
 
 def artifactory_get_build_artifacts(build_number, job_name):
