@@ -8,7 +8,6 @@ import numpy as np
 from astropy.stats import sigma_clip
 from astropy.units import Quantity
 from drizzle.cdrizzle import tblot
-from roman_datamodels import DataModel
 from roman_datamodels import datamodels as rdm
 from scipy import ndimage
 
@@ -54,7 +53,7 @@ class OutlierDetection:
 
     default_suffix = "i2d"
 
-    def __init__(self, input_models, reffiles=None, **pars):
+    def __init__(self, input_models, **pars):
         """
         Initialize the class with input ModelContainers.
 
@@ -70,125 +69,21 @@ class OutlierDetection:
             - resample_suffix
 
         """
-        self.inputs = input_models
-        self.reffiles = reffiles
+        self.input_models = input_models
 
         self.outlierpars = {}
-        if "outlierpars" in reffiles:
-            self._get_outlier_pars()
         self.outlierpars.update(pars)
-        # Insure that self.input_models always refers to a ModelContainer
-        # representation of the inputs
+
+        self.resample_suffix = f"_outlier_{self.default_suffix}.asdf"
+        log.debug(f"Defined output product suffix as: {self.resample_suffix}")
 
         # Define how file names are created
         self.make_output_path = pars.get(
             "make_output_path", partial(RomanStep._make_output_path, None)
         )
 
-    def _convert_inputs(self):
-        """Convert input into datamodel required for processing.
-
-        This method converts `self.inputs` into a version of
-        `self.input_models` suitable for processing by the class.
-
-        This base class works on imaging data, and relies on use of the
-        ModelContainer class as the format needed for processing. However,
-        the input may not always be a ModelContainer object, so this method
-        will convert the input to a ModelContainer object for processing.
-        Additionally, sub-classes may redefine this to set up the input as
-        whatever format the sub-class needs for processing.
-
-        """
-        bits = self.outlierpars["good_bits"]
-        if isinstance(self.inputs, ModelContainer):
-            self.input_models = self.inputs
-            self.converted = False
-        else:
-            self.input_models = ModelContainer()
-            num_inputs = self.inputs.data.shape[0]
-            log.debug(
-                "Converting CubeModel to ModelContainer with {} images".format(
-                    num_inputs
-                )
-            )
-            for i in range(self.inputs.data.shape[0]):
-                image = DataModel.ImageModel(
-                    data=self.inputs.data[i],
-                    err=self.inputs.err[i],
-                    dq=self.inputs.dq[i],
-                )
-                image.meta = self.inputs.meta
-                image.wht = build_driz_weight(image, weight_type="ivm", good_bits=bits)
-                self.input_models.append(image)
-            self.converted = True
-
-    def _get_outlier_pars(self):
-        """Extract outlier detection parameters from reference file."""
-        # start by interpreting input data models to define selection criteria
-        input_dm = self.input_models[0]
-        filtname = input_dm.meta.instrument.filter
-        if hasattr(self.input_models, "group_names"):
-            num_groups = len(self.input_models.group_names)
-        else:
-            num_groups = 1
-
-        ref_model = DataModel.OutlierParsModel(self.reffiles["outlierpars"])
-
-        # look for row that applies to this set of input data models
-        # NOTE:
-        #  This logic could be replaced by a method added to the DrizParsModel
-        #  object to select the correct row based on a set of selection
-        #  parameters
-        row = None
-        outlierpars = ref_model.outlierpars_table
-
-        # flag to support wild-card rows in outlierpars table
-        filter_match = False
-        for n, filt, num in zip(
-            range(1, outlierpars.numimages.shape[0] + 1),
-            outlierpars.filter,
-            outlierpars.numimages,
-        ):
-            # only remember this row if no exact match has already been made
-            # for the filter. This allows the wild-card row to be anywhere in
-            # the table; since it may be placed at beginning or end of table.
-
-            if filt == "ANY" and not filter_match and num_groups >= num:
-                row = n
-            # always go for an exact match if present, though...
-            if filtname == filt and num_groups >= num:
-                row = n
-                filter_match = True
-
-        # With presence of wild-card rows, code should never trigger this logic
-        if row is None:
-            log.error("No row found in %s that matches input data.", self.reffiles)
-            raise ValueError
-
-        # read in values from that row for each parameter
-        for kw in list(self.outlierpars.keys()):
-            self.outlierpars[kw] = ref_model[f"outlierpars_table.{kw}"]
-
-    def build_suffix(self, **pars):
-        """Build suffix.
-
-        Class-specific method for defining the resample_suffix attribute
-        using a suffix specific to the sub-class.
-
-        """
-        # Parse any user-provided filename suffix for resampled products
-        self.resample_suffix = "_outlier_{}.asdf".format(
-            pars.get("resample_suffix", self.default_suffix)
-        )
-        if "resample_suffix" in pars:
-            del pars["resample_suffix"]
-        log.debug(f"Defined output product suffix as: {self.resample_suffix}")
-
     def do_detection(self):
-        """Flag outlier pixels in DQ of input images."""
-        self._convert_inputs()
-        self.build_suffix(**self.outlierpars)
-
+        """Flag outlier pixels in DQ of input images."""  # self._convert_inputs()
         pars = self.outlierpars
 
         if pars["resample_data"]:
@@ -391,11 +286,6 @@ class OutlierDetection:
             flag_cr(image, blot, **self.outlierpars)
             self.input_models[i] = image
 
-        if self.converted:
-            # Make sure actual input gets updated with new results
-            for i in range(len(self.input_models)):
-                self.inputs.dq[i, :, :] = self.input_models[i].dq
-
 
 def flag_cr(
     sci_image,
@@ -529,7 +419,7 @@ def gwcs_blot(median_model, blot_img, interp="poly5", sinscl=1.0):
 
     Parameters
     ----------
-    median_model : `~stdatamodels.romancal.datamodels.JwstDataModel`
+    median_model : `~roman_datamodels.datamodels.MosaicModel`
 
     blot_img : datamodel
         Datamodel containing header and WCS to define the 'blotted' image

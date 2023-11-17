@@ -3,7 +3,7 @@
 
 outlier_detection
 -----------------
-- Implemented outlier-detection step. [#981]
+- Implemented ``outlier-detection step``. [#981]
 
 associations
 ------------

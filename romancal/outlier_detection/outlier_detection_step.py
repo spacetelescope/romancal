@@ -4,17 +4,10 @@ import contextlib
 import os
 from functools import partial
 
-from roman_datamodels import datamodels
-
 from romancal.datamodels import ModelContainer
 from romancal.outlier_detection import outlier_detection
 
 from ..stpipe import RomanStep
-
-# Categorize all supported versions of outlier_detection
-outlier_registry = {
-    "imaging": outlier_detection.OutlierDetection,
-}
 
 __all__ = ["OutlierDetectionStep"]
 
@@ -73,6 +66,7 @@ class OutlierDetectionStep(RomanStep):
         if asn_id is None:
             asn_id = self.search_attr("asn_id")
         if asn_id is not None:
+            # TODO: revisit this once we have a better idea of the associations
             _make_output_path = self.search_attr("_make_output_path", parent_first=True)
 
             self._make_output_path = partial(_make_output_path, asn_id=asn_id)
@@ -110,10 +104,9 @@ class OutlierDetectionStep(RomanStep):
         exptype = single_model.meta.exposure.type
         self.check_input()
 
-        # check for TSO models first
         if exptype == "WFI_IMAGE":
             # imaging with resampling
-            detection_step = outlier_registry["imaging"]
+            detection_step = outlier_detection.OutlierDetection
             pars["resample_suffix"] = "i2d"
         else:
             self.log.error(
@@ -132,10 +125,9 @@ class OutlierDetectionStep(RomanStep):
             return self.input_models
 
         self.log.debug(f"Using {detection_step.__name__} class for outlier_detection")
-        reffiles = {}
 
         # Set up outlier detection, then do detection
-        step = detection_step(self.input_models, reffiles=reffiles, **pars)
+        step = detection_step(self.input_models, **pars)
         step.do_detection()
 
         state = "COMPLETE"
@@ -167,36 +159,15 @@ class OutlierDetectionStep(RomanStep):
     def check_input(self):
         """Use this method to determine whether input is valid or not."""
         if self.input_container:
-            self._check_input_container()
-        else:
-            self._check_input_cube()
-
-    def _check_input_container(self):
-        """Check to see whether input is the expected ModelContainer object."""
-        ninputs = len(self.input_models)
-        if not isinstance(self.input_models, ModelContainer):
-            self.log.warning("Input is not a ModelContainer")
-            self.log.warning("Outlier detection step will be skipped")
-            self.valid_input = False
-        elif ninputs < 2:
-            self.log.warning(f"Input only contains {ninputs} exposure")
-            self.log.warning("Outlier detection step will be skipped")
-            self.valid_input = False
-        else:
-            self.valid_input = True
-            self.log.info(f"Performing outlier detection on {ninputs} inputs")
-
-    def _check_input_cube(self):
-        """Check to see whether input is the expected CubeModel object."""
-        ninputs = self.input_models.shape[0]
-        if not isinstance(self.input_models, datamodels.CubeModel):
-            self.log.warning("Input is not the expected CubeModel")
-            self.log.warning("Outlier detection step will be skipped")
-            self.valid_input = False
-        elif ninputs < 2:
-            self.log.warning(f"Input only contains {ninputs} integration")
-            self.log.warning("Outlier detection step will be skipped")
-            self.valid_input = False
-        else:
-            self.valid_input = True
-            self.log.info(f"Performing outlier detection with {ninputs} inputs")
+            ninputs = len(self.input_models)
+            if not isinstance(self.input_models, ModelContainer):
+                self.log.warning("Input is not a ModelContainer")
+                self.log.warning("Outlier detection step will be skipped")
+                self.valid_input = False
+            elif ninputs < 2:
+                self.log.warning(f"Input only contains {ninputs} exposure")
+                self.log.warning("Outlier detection step will be skipped")
+                self.valid_input = False
+            else:
+                self.valid_input = True
+                self.log.info(f"Performing outlier detection on {ninputs} inputs")

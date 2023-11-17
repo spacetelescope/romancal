@@ -338,7 +338,6 @@ class ResampleData:
 
         return self.output_models
 
-    # TODO Rename this here and in `resample_many_to_many` and `resample_many_to_one`
     def _create_background_attribute(self, img):
         img.meta["background"] = {}
         img.meta.background["level"] = 0
@@ -424,7 +423,8 @@ class ResampleData:
         setattr(output_model, name, output_variance)
 
     def resample_exposure_time(self, output_model):
-        """Resample the exposure time from ``self.input_models`` to the ``output_model``.
+        """Resample the exposure time from ``self.input_models`` to the
+        ``output_model``.
 
         Create an exposure time image that is the drizzled sum of the input
         images.
@@ -477,10 +477,7 @@ class ResampleData:
     def update_exposure_times(self, output_model, exptime_tot):
         """Update exposure time metadata (in-place)."""
         m = exptime_tot > 0
-        if np.any(m):
-            total_exposure_time = np.median(exptime_tot[m])
-        else:
-            total_exposure_time = 0
+        total_exposure_time = np.median(exptime_tot[m]) if np.any(m) else 0
         max_exposure_time = np.max(exptime_tot)
         log.info(
             f"Mean, max exposure times: {total_exposure_time:.1f}, "
