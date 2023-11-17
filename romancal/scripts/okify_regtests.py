@@ -67,7 +67,7 @@ def artifactory_get_breadcrumbs(build_number, job_name, suffix):
         ["jfrog", "rt", "dl"]
         + [f"{ARTIFACTORY_REPO}/*RT-{build_name}-{build_number}*/*{suffix}"]
     )
-    result = subprocess.run(args, check=True, capture_output=True)
+    subprocess.run(args, check=True, capture_output=True)
 
     return sorted(glob(f"**/**/*{suffix}"))
 
