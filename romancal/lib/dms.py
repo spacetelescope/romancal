@@ -5,6 +5,7 @@ decorator for this is defined in this module.
 """
 from stpipe import log as stpipe_log
 
+
 def log_result(requirement, message, result):
     """Log individual test results that relate to a requirement
 
@@ -20,7 +21,6 @@ def log_result(requirement, message, result):
         The result of the test
     """
     logger = stpipe_log.delegator.log
-    result_text = 'PASS' if result else 'FAIL'
-    log_msg = f'{requirement} MSG: {message}.......{result_text}'
+    result_text = "PASS" if result else "FAIL"
+    log_msg = f"{requirement} MSG: {message}.......{result_text}"
     logger.info(log_msg)
-
