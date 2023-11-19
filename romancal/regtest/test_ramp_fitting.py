@@ -44,14 +44,15 @@ def cond_is_step_complete(requirement, model, expected_path):
     return result
 
 
-def cond_is_uneven(requirement, model, expected_path):
-    """Verify that the provided model represents uneven ramps
+def cond_is_truncated(requirement, model, expected_path):
+    """Check if the data represents a truncated MA table/read pattern"""
+    result = model.meta.exposure.truncated
+    log_result(requirement, 'Testing if data represents a truncated MA table', result)
+    return result
 
-    Parameters
-    ----------
-    rampfit_result : `roman_datamodels.ImageModel`
-        Model created from `RampFitStep`
-    """
+
+def cond_is_uneven(requirement, model, expected_path):
+    """Verify that the provided model represents uneven ramps"""
     length_set = {len(resultant) for resultant in model.meta.exposure.read_pattern}
 
     result = len(length_set) > 1
@@ -71,6 +72,7 @@ def cond_science_verification(requirement, model, expected_path, rtdata_module, 
 
 
 CONDITIONS_FULL = [cond_is_asdf, cond_is_imagemodel, cond_is_rampfit, cond_is_step_complete, cond_is_uneven]
+CONDITIONS_TRUNC = CONDITIONS_FULL + [cond_is_truncated]
 
 # ######################
 # fixtures and utilities
@@ -78,8 +80,8 @@ CONDITIONS_FULL = [cond_is_asdf, cond_is_imagemodel, cond_is_rampfit, cond_is_st
 @pytest.fixture(scope='module',
                 params=[('DMS362', Path('WFI/image/r0000101001001001001_01101_0001_WFI01_dqinit.asdf'), CONDITIONS_FULL),
                         ('DMS366', Path('WFI/grism/r0000201001001001001_01101_0001_WFI05_dqinit.asdf'), CONDITIONS_FULL),
-                        ('DMS363', Path('WFI/image/r0000101001001001001_01101_0003_WFI01_dqinit.asdf'), CONDITIONS_FULL),
-                        ('DMS367', Path('WFI/grism/r0000201001001001001_01101_0003_WFI05_dqinit.asdf'), CONDITIONS_FULL)])
+                        ('DMS363', Path('WFI/image/r0000101001001001001_01101_0003_WFI01_dqinit.asdf'), CONDITIONS_TRUNC),
+                        ('DMS367', Path('WFI/grism/r0000201001001001001_01101_0003_WFI05_dqinit.asdf'), CONDITIONS_TRUNC)])
 def rampfit_result(request, rtdata_module):
     """Run RampFitStep
 
