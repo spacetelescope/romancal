@@ -130,7 +130,7 @@ def passfail(bool_expr):
 # Tests
 # #####
 @pytest.mark.bigdata
-def test_rampfit_success(rampfit_result, rtdata_module, ignore_asdf_paths):
+def test_rampfit_dmsreqs(rampfit_result, rtdata_module, ignore_asdf_paths):
     """Test rampfit result against various conditions"""
     requirement, model, expected_path, conditions = rampfit_result
     success = True
