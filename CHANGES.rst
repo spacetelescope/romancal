@@ -64,6 +64,8 @@ ramp_fitting
 - Enable jump detection within the Cas22 ramp fitting be default, and add
   regression tests for it. [#991]
 
+- Implement next round of SOC verification tests for uneven ramps [#970]
+
 refpix
 ------
 
