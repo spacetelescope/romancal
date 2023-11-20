@@ -32,7 +32,7 @@ class RampFitStep(RomanStep):
         opt_name = string(default='')
         maximum_cores = option('none','quarter','half','all',default='none') # max number of processes to create
         suffix = string(default='rampfit')  # Default suffix of results
-        use_jump_detection = boolean(default=False) # Use jump detection during ramp fitting
+        use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
         threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
         threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
     """  # noqa: E501
@@ -59,6 +59,8 @@ class RampFitStep(RomanStep):
             elif algorithm == "ols_cas22":
                 out_model = self.ols_cas22(input_model, readnoise_model, gain_model)
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
+                if self.use_ramp_jump_detection:
+                    out_model.meta.cal_step.jump = "COMPLETE"
             else:
                 log.error("Algorithm %s is not supported. Skipping step.")
                 out_model = input
@@ -179,7 +181,12 @@ class RampFitStep(RomanStep):
         out_model : ImageModel
             Model containing a count-rate image.
         """
-        use_jump = self.use_jump_detection
+        use_jump = self.use_ramp_jump_detection
+
+        if use_jump:
+            log.info("Jump detection as part of ramp fitting is enabled.")
+        else:
+            log.info("Jump detection as part of ramp fitting is disabled.")
 
         kwargs = {}
         if self.threshold_intercept is not None:
@@ -216,9 +223,13 @@ class RampFitStep(RomanStep):
         var_rnoise = output.variances[..., Variance.read_var]
         var_poisson = output.variances[..., Variance.poisson_var]
         err = np.sqrt(var_poisson + var_rnoise)
+        dq = output.dq.astype(np.uint32)
+
+        # Propagate DQ flags forward.
+        ramp_dq = get_pixeldq_flags(dq, input_model.pixeldq, slopes, err, gain)
 
         # Create the image model
-        image_info = (slopes, None, var_poisson, var_rnoise, err)
+        image_info = (slopes, ramp_dq, var_poisson, var_rnoise, err)
         image_model = create_image_model(input_model, image_info)
 
         # That's all folks
@@ -356,3 +367,50 @@ def create_optional_results_model(input_model, opt_info):
     opt_model.meta.filename = input_model.meta.filename
 
     return opt_model
+
+
+def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
+    """
+    Construct pixeldq for ramp fit output from input dqs and ramp slopes.
+
+    The algorithm is:
+    - pass forward existing pixeldq flags
+    - if we flagged a jump, flag the pixel as containing a jump
+    - if everything is saturated, flag the pixel as saturated
+    - if everything is saturated or do not use, flag the pixel as do not use
+    - add NO_GAIN_VALUE if gain is not finite or less than zero
+
+    Parameters
+    ----------
+    groupdq : np.ndarray
+        dq flags for each resultant
+    pixeldq : np.ndarray
+        dq flags for each pixel
+    slopes : np.ndarray
+        derived slopes for each pixel
+    err : np.ndarray
+        derived total uncertainty for each pixel
+    gain : np.ndarray
+        gains for each pixel
+
+    Returns
+    -------
+    pixeldq : np.ndarray
+        Updated pixeldq array combining information from input dq and slopes.
+    """
+    outpixeldq = pixeldq.copy()
+    # jump flagging
+    m = np.any(groupdq & dqflags.group["JUMP_DET"], axis=0)
+    outpixeldq |= (m * dqflags.pixel["JUMP_DET"]).astype(np.uint32)
+    # all saturated flagging
+    m = np.all(groupdq & dqflags.group["SATURATED"], axis=0)
+    outpixeldq |= (m * dqflags.pixel["SATURATED"]).astype(np.uint32)
+    # all either saturated or do not use or NaN slope flagging
+    satordnu = dqflags.group["SATURATED"] | dqflags.group["DO_NOT_USE"]
+    m = np.all(groupdq & satordnu, axis=0)
+    m |= ~np.isfinite(slopes) | (err <= 0)
+    outpixeldq |= (m * dqflags.pixel["DO_NOT_USE"]).astype(np.uint32)
+    m = (gain < 0) | ~np.isfinite(gain)
+    outpixeldq |= (m * dqflags.pixel["NO_GAIN_VALUE"]).astype(np.uint32)
+
+    return outpixeldq

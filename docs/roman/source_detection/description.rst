@@ -3,14 +3,35 @@ Description
 
 The source detection step produces catalogs of point-like sources for use by the
 Tweakreg step for image alignment. It uses DAOStarFinder to detect point sources
-in the image.
+in the image, with an option to subsequently fit PSF models to the detected
+sources for more precise centroids and fluxes.
 
+Detecting Sources
+-----------------
+
+Sources are detected using `~photutils.detection.DAOStarFinder` from
+`photutils <https://photutils.readthedocs.io/en/stable/>`_, which is an
+implementation of the method `DAOFIND` from
+`Stetson (1987) <https://ui.adsabs.harvard.edu/abs/1987PASP...99..191S/abstract>`_.
+The algorithm can be provided limits on the source flux, radius, roundness,
+sharpness, and background.
+
+PSF Fitting
+-----------
+
+Star finding algorithms like `~photutils.detection.DAOStarFinder` provide
+approximate stellar centroids. More precise centroids may be inferred by
+fitting model PSFs to the observations. Setting the SourceDetectionStep's
+option `fit_psf` to True will generate model Roman PSFs with
+`WebbPSF <https://webbpsf.readthedocs.io/en/latest/roman.html>`_, and fit
+those models to each of the sources detected by
+`~photutils.detection.DAOStarFinder`. More details are in :doc:`psf`.
 
 Outputs / Returns
-=================
+-----------------
 
 By default, the resulting source catalog will be temporarily attached to the
-output ImageModel in the `meta.source_catalog.tweakreg_catalog` attribute as 4D
+output ImageModel in the `meta.source_catalog.tweakreg_catalog` attribute as
 numpy array representing, in order, source ID, x centroid position, y centroid
 position, and flux. This catalog will then be deleted from the model in the
 Tweakreg step.
@@ -28,7 +49,7 @@ only be saved if it does not contain an attached catalog - to do this, use the
 separately.
 
 Options for Thresholding
-========================
+------------------------
 
 The DAOStarFinder routine detects point-like sources in an image that are above
 a certain, specified floating point threshold. This step provides several options
@@ -44,10 +65,10 @@ threshold value for the entire image based on the sigma-clipped average
 (mean, median, or mode) background level of the whole image.
 
 Other Options
-=============
+-------------
 
 Limiting maximum number of sources
-----------------------------------
+++++++++++++++++++++++++++++++++++
 
 By default, all detected sources will be returned in the final output catalog.
 If you wish to limit the number of sources, this can be done with the

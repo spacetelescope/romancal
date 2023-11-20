@@ -164,7 +164,7 @@ def fit_ramps(request):
     out_model = RampFitStep.call(
         ramp_model,
         algorithm="ols_cas22",
-        use_jump_detection=use_jump,
+        use_ramp_jump_detection=use_jump,
         override_gain=gain_model,
         override_readnoise=readnoise_model,
     )

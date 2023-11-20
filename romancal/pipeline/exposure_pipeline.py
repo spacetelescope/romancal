@@ -16,7 +16,6 @@ from romancal.dark_current import DarkCurrentStep
 from romancal.datamodels import ModelContainer
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
-from romancal.jump import jump_step
 from romancal.lib import dqflags
 from romancal.lib.basic_utils import is_fully_saturated
 from romancal.linearity import LinearityStep
@@ -59,7 +58,6 @@ class ExposurePipeline(RomanPipeline):
         "refpix": RefPixStep,
         "linearity": LinearityStep,
         "dark_current": DarkCurrentStep,
-        "jump": jump_step.JumpStep,
         "rampfit": ramp_fit_step.RampFitStep,
         "assign_wcs": AssignWcsStep,
         "flatfield": FlatFieldStep,
@@ -133,10 +131,10 @@ class ExposurePipeline(RomanPipeline):
                     "photom",
                     "source_detection",
                     "dark",
-                    "jump",
                     "refpix",
                     "linearity",
                     "ramp_fit",
+                    "jump",
                     "tweakreg",
                 ]:
                     result.meta.cal_step[step_str] = "SKIPPED"
@@ -150,7 +148,6 @@ class ExposurePipeline(RomanPipeline):
             result = self.refpix(result)
             result = self.linearity(result)
             result = self.dark_current(result)
-            result = self.jump(result)
             result = self.rampfit(result)
             result = self.assign_wcs(result)
 
@@ -191,8 +188,7 @@ class ExposurePipeline(RomanPipeline):
         if result.meta.exposure.type == "WFI_IMAGE":
             if file_type == "asdf":
                 result.meta.cal_step.tweakreg = "SKIPPED"
-                # mc_result = ModelContainer(result)
-                mc_result = self.tweakreg([result])
+                mc_result = ModelContainer(result)
                 if hasattr(ModelContainer(result), "_models") and mc_result._models:
                     result = mc_result._models.pop()
                 else:
@@ -253,7 +249,6 @@ class ExposurePipeline(RomanPipeline):
         for step_str in [
             "linearity",
             "dark",
-            "jump",
             "ramp_fit",
             "assign_wcs",
             "flat_field",

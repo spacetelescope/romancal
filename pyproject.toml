@@ -21,20 +21,20 @@ dependencies = [
     'numpy >=1.22',
     'photutils @ git+https://github.com/astropy/photutils.git',
     'pyparsing >=2.4.7',
-    'requests >=2.22',
-    'rad >= 0.17.1',
+    'requests >=2.26',
+    'rad >= 0.18.0',
     # 'rad @ git+https://github.com/spacetelescope/rad.git@main',
-    'roman_datamodels >= 0.17.1',
+    'roman_datamodels >= 0.18.0',
     # 'roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git@main',
     'scipy >=1.11',
-    # 'stcal >=1.4.0',
-    'stcal @ git+https://github.com/spacetelescope/stcal.git@main',
+    'stcal >=1.5.0',
+    #'stcal @ git+https://github.com/spacetelescope/stcal.git@main',
     'stpipe >=0.5.0',
     'tweakwcs >=0.8.0',
     'spherical-geometry >= 1.2.22',
     'stsci.imagestats >= 1.6.3',
     'drizzle >= 1.13.7',
-    'webbpsf == 1.1.1',
+    'webbpsf == 1.2.1',
 ]
 dynamic = ['version']
 
@@ -167,6 +167,7 @@ report = { exclude_lines = [
 
 [tool.bandit]
 skips = ["B101", "B307", "B404", "B603"]
+exclude_dirs = ["romancal/regtest/scripts"]
 
 [tool.isort]
 profile = "black"

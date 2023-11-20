@@ -52,12 +52,13 @@ def pip_install_args = "--index-url ${pip_index} --progress-bar=off"
 // Define environment variables needed for the regression tests
 env_vars = [
     "TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory",
-    "CRDS_CONTEXT=roman_0051.pmap",
+    "CRDS_CONTEXT=roman_0052.pmap",
     "CRDS_SERVER_URL=https://serverless",
     'CRDS_PATH=/grp/crds/roman/test/',
     'DD_ENV=ci',
     'DD_SERVICE=romancal',
-    'WEBBPSF_PATH=data/webbpsf-data'
+    'WEBBPSF_PATH=/grp/jwst/ote/webbpsf-data',
+    'PYSYN_CDBS=/grp/hst/cdbs',
 ]
 if (env.ENV_VARS) {
     env_vars.addAll(MultiLineToArray(env.ENV_VARS))
@@ -88,9 +89,6 @@ bc0.build_cmds = [
     "pip install -e .[test]",
     "pip install pytest-xdist pytest-sugar ddtrace",
     'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
-    "mkdir data",
-    "curl -L https://stsci.box.com/shared/static/0ojjfg3cieqdpd18vl1bjnpe63r82dx8.gz -o data/webbpsf-data.tar.gz",
-    "tar -xzvf data/webbpsf-data.tar.gz -C data",
 ]
 bc0.build_cmds = bc0.build_cmds + PipInject(env.OVERRIDE_REQUIREMENTS)
 bc0.build_cmds = bc0.build_cmds + [

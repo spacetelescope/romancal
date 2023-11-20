@@ -1,6 +1,10 @@
 0.13.0 (unreleased)
 ===================
 
+outlier_detection
+-----------------
+- Implemented ``outlier-detection step``. [#981]
+
 associations
 ------------
 
@@ -13,6 +17,8 @@ dark
 
 general
 -------
+
+- Update elp pipeline code to capture a list from tweakreg [#985]
 
 - Update pipeline code to correct cal_step and suffixes [#971]
 
@@ -51,6 +57,9 @@ ramp_fitting
 
 - Add uneven ramp fitting documentation [#944]
 
+- Enable jump detection within the Cas22 ramp fitting be default, and add
+  regression tests for it. [#991]
+
 refpix
 ------
 
@@ -69,6 +78,13 @@ scripts
 - added ``roman_static_preview`` script to generate static previews of ASDF images [#953]
 
 - fixed ``asn_from_list`` script [#972]
+
+source_detection
+----------------
+
+- Support for PSF fitting (optional) for accurate centroids. [#841, #984]
+
+- Save source catalog to a structured array. [#987]
 
 stpipe
 ------

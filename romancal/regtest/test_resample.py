@@ -1,6 +1,3 @@
-import json
-from io import StringIO
-
 import numpy as np
 import pytest
 from metrics_logger.decorators import metrics_logger
@@ -12,56 +9,21 @@ from romancal.stpipe import RomanStep
 from .regtestdata import compare_asdf
 
 
-def create_asn_file(
-    output_filename: str = "resample_output.asdf",
-    members_filename_list: list = None,
-):
-    asn_dict = {
-        "asn_type": "None",
-        "asn_rule": "DMS_ELPP_Base",
-        "version_id": "null",
-        "code_version": "0.9.1.dev28+ge987cc9.d20230106",
-        "degraded_status": "No known degraded exposures in association.",
-        "program": "noprogram",
-        "constraints": "No constraints",
-        "asn_id": "a3001",
-        "target": "none",
-        "asn_pool": "test_pool_name",
-        "products": [
-            {
-                "name": output_filename,
-                "members": [
-                    {"expname": x, "exptype": "science"} for x in members_filename_list
-                ],
-            }
-        ],
-    }
-    asn_content = json.dumps(asn_dict)
-    asn_file_path = "sample_asn.json"
-    asn_file = StringIO()
-    asn_file.write(asn_content)
-    with open(asn_file_path, mode="w") as f:
-        print(asn_file.getvalue(), file=f)
-
-    return asn_file_path
-
-
-@metrics_logger(
-    "DMS342"
-)  # got DMS342 from here: https://jira.stsci.edu/browse/RSUBREQ-1051
+@metrics_logger("DMS342", "DMS343", "DMS344", "DMS345")
 @pytest.mark.bigdata
 def test_resample_single_file(rtdata, ignore_asdf_paths):
     input_data = [
-        "r0000501001001001001_01101_0001_WFI02_cal_proc_resample.asdf",
-        "r0000501001001001001_01101_0002_WFI02_cal_proc_resample.asdf",
+        "r0000101001001001001_01101_0001_WFI01_cal.asdf",
+        "r0000101001001001001_01101_0002_WFI01_cal.asdf",
     ]
-    output_data = "resample_output_resamplestep.asdf"
-    truth_data = "resample_truth_resamplestep.asdf"
+    output_data = "mosaic_resamplestep.asdf"
 
     [rtdata.get_data(f"WFI/image/{data}") for data in input_data]
-    rtdata.get_truth(f"truth/WFI/image/{truth_data}")
+    asnfn = "mosaic_asn.json"
+    rtdata.get_data(f"WFI/image/{asnfn}")
+    rtdata.get_truth(f"truth/WFI/image/{output_data}")
 
-    rtdata.input = create_asn_file(members_filename_list=input_data)
+    rtdata.input = asnfn
     rtdata.output = output_data
 
     # instantiate ResampleStep (for running and log access)
@@ -87,6 +49,15 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
         f' {hasattr(resample_out.meta, "resample")}'
     )
     assert hasattr(resample_out.meta, "resample")
+
+    step.log.info(
+        f"""DMS342 MSG: Was ICRS used as the mosaic astrometric reference frame? :\
+            {
+                resample_out.meta.coordinates.reference_frame == "ICRS"
+            }
+        """
+    )
+    assert resample_out.meta.coordinates.reference_frame == "ICRS"
 
     step.log.info(
         f"""DMS343 MSG: ResampleStep created new attribute data quality information? :\
