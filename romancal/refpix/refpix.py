@@ -18,7 +18,7 @@ def run_steps(
     remove_offset: bool = True,
     remove_trends: bool = True,
     cosine_interpolate: bool = True,
-    fft_interpolate: bool = False,
+    fft_interpolate: bool = True,
 ) -> RampModel:
     """
     Organize the steps to run the reference pixel correction.

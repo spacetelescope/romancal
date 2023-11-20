@@ -24,7 +24,7 @@ class RefPixStep(RomanStep):
     # linear trends
     cosine_interpolate = boolean(default=True) # Turn on or off the cosine
     # interpolation of the reference pixels
-    fft_interpolate = boolean(default=False) # Turn on or off the FFT interpolation
+    fft_interpolate = boolean(default=True) # Turn on or off the FFT interpolation
     # of the reference pixel padded values.
     """
 
