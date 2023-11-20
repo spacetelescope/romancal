@@ -186,6 +186,7 @@ class ResampleData:
         """
         for exposure in self.input_models.models_grouped:
             output_model = self.blank_output
+            output_model.meta["resample"] = mk_resample()
             # Determine output file type from input exposure filenames
             # Use this for defining the output filename
             indx = exposure[0].meta.filename.rfind(".")
@@ -204,6 +205,7 @@ class ResampleData:
             )
 
             log.info(f"{len(exposure)} exposures to drizzle together")
+            output_list = []
             for img in exposure:
                 img = datamodels.open(img)
                 # TODO: should weight_type=None here?
@@ -212,6 +214,8 @@ class ResampleData:
                 )
 
                 # apply sky subtraction
+                if not hasattr(img.meta, "background"):
+                    self._create_background_attribute(img)
                 blevel = img.meta.background.level
                 if not img.meta.background.subtracted and blevel is not None:
                     data = img.data - blevel
@@ -237,13 +241,17 @@ class ResampleData:
             if not self.in_memory:
                 # Write out model to disk, then return filename
                 output_name = output_model.meta.filename
+                # cast context array to uint32
+                output_model.context = output_model.context.astype("uint32")
                 output_model.save(output_name)
                 log.info(f"Exposure {output_name} saved to file")
-                self.output_models.append(output_name)
+                output_list.append(output_name)
             else:
-                self.output_models.append(output_model.copy())
+                output_list.append(output_model.copy())
+
+            self.output_models = ModelContainer(output_list, return_open=self.in_memory)
             output_model.data *= 0.0
-            output_model.wht *= 0.0
+            output_model.weight *= 0.0
 
         return self.output_models
 
@@ -274,11 +282,8 @@ class ResampleData:
             inwht = resample_utils.build_driz_weight(
                 img, weight_type=self.weight_type, good_bits=self.good_bits
             )
-            # apply sky subtraction
-            # NOTE: mocking a sky-subtracted image (remove this later on)
-            img.meta["background"] = {}
-            img.meta.background["level"] = 0
-            img.meta.background["subtracted"] = True
+            if not hasattr(img.meta, "background"):
+                self._create_background_attribute(img)
             blevel = img.meta.background.level
             if not img.meta.background.subtracted and blevel is not None:
                 data = img.data - blevel
@@ -332,6 +337,11 @@ class ResampleData:
         self.output_models.append(output_model)
 
         return self.output_models
+
+    def _create_background_attribute(self, img):
+        img.meta["background"] = {}
+        img.meta.background["level"] = 0
+        img.meta.background["subtracted"] = True
 
     def resample_variance_array(self, name, output_model):
         """Resample variance arrays from ``self.input_models`` to the ``output_model``.
@@ -413,7 +423,8 @@ class ResampleData:
         setattr(output_model, name, output_variance)
 
     def resample_exposure_time(self, output_model):
-        """Resample the exposure time from ``self.input_models`` to the ``output_model``.
+        """Resample the exposure time from ``self.input_models`` to the
+        ``output_model``.
 
         Create an exposure time image that is the drizzled sum of the input
         images.
@@ -466,10 +477,7 @@ class ResampleData:
     def update_exposure_times(self, output_model, exptime_tot):
         """Update exposure time metadata (in-place)."""
         m = exptime_tot > 0
-        if np.any(m):
-            total_exposure_time = np.median(exptime_tot[m])
-        else:
-            total_exposure_time = 0
+        total_exposure_time = np.median(exptime_tot[m]) if np.any(m) else 0
         max_exposure_time = np.max(exptime_tot)
         log.info(
             f"Mean, max exposure times: {total_exposure_time:.1f}, "
