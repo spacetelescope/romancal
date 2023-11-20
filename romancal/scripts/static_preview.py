@@ -1,11 +1,8 @@
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 import asdf
 import numpy
-
-if TYPE_CHECKING:
-    from typing_extensions import Annotated
 
 
 def command():
@@ -17,6 +14,7 @@ def command():
             percentile_normalization,
             write_image,
         )
+        from typing_extensions import Annotated
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
             'SDP requirements not installed; do `pip install "romancal[sdp]"`'
