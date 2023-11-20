@@ -10,7 +10,7 @@ from .regtestdata import compare_asdf
 @pytest.mark.bigdata
 def test_ramp_fitting_step(rtdata, ignore_asdf_paths):
     """Testing the ramp fitting step"""
-    input_data = "r0000101001001001001_01101_0001_WFI01_jump.asdf"
+    input_data = "r0000101001001001001_01101_0001_WFI01_darkcurrent.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
@@ -22,5 +22,6 @@ def test_ramp_fitting_step(rtdata, ignore_asdf_paths):
     output = "r0000101001001001001_01101_0001_WFI01_rampfit.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
+
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
