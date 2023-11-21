@@ -512,6 +512,7 @@ def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
     assert model.meta.cal_step.flat_field == "SKIPPED"
     assert model.meta.cal_step.photom == "SKIPPED"
 
+
 @pytest.mark.bigdata
 @pytest.mark.soctests
 @metrics_logger("DMS278")
@@ -531,4 +532,3 @@ def test_level2_grism_preview(rtdata, ignore_asdf_paths):
     ]
     subprocess.run(args)
     assert os.path.exists(rtdata.output) == True
-    
