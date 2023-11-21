@@ -1,5 +1,7 @@
 """ Roman tests for flat field correction """
 import copy
+import os
+import subprocess
 
 import numpy as np
 import pytest
@@ -509,3 +511,45 @@ def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
     assert model.meta.cal_step.assign_wcs == "SKIPPED"
     assert model.meta.cal_step.flat_field == "SKIPPED"
     assert model.meta.cal_step.photom == "SKIPPED"
+
+
+@pytest.mark.bigdata
+@pytest.mark.soctests
+@metrics_logger("DMS281")
+def test_level2_image_preview(rtdata, ignore_asdf_paths):
+    """Tests for flat field image preview requirements DMS 281"""
+    input_data = "r0000501001001001001_01101_0001_WFI01_cal.asdf"
+    rtdata.get_data(f"WFI/grism/{input_data}")
+    rtdata.input = input_data
+
+    # Test Pipeline
+    output = "r0000501001001001001_01101_0001_WFI01_cal_thumb.png"
+    rtdata.output = output
+    args = [
+        "roman_static_preview",
+        "thumbnail",
+        rtdata.input,
+    ]
+    subprocess.run(args)
+    assert os.path.exists(rtdata.output) is True
+
+
+@pytest.mark.bigdata
+@pytest.mark.soctests
+@metrics_logger("DMS278")
+def test_level2_grism_preview(rtdata, ignore_asdf_paths):
+    """Tests for flat field grism preview requirements DMS 278"""
+    input_data = "r0000501001001001001_01101_0001_WFI01_cal.asdf"
+    rtdata.get_data(f"WFI/grism/{input_data}")
+    rtdata.input = input_data
+
+    # Test Pipeline
+    output = "r0000501001001001001_01101_0001_WFI01_cal_thumb.png"
+    rtdata.output = output
+    args = [
+        "roman_static_preview",
+        "thumbnail",
+        rtdata.input,
+    ]
+    subprocess.run(args)
+    assert os.path.exists(rtdata.output) is True
