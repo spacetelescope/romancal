@@ -535,6 +535,7 @@ def test_level2_image_preview(rtdata, ignore_asdf_paths):
         "roman_static_preview",
         "thumbnail",
         rtdata.input,
+        rtdata.output,
     ]
     subprocess.run(args)
     assert os.path.exists(rtdata.output)
@@ -556,6 +557,7 @@ def test_level2_grism_preview(rtdata, ignore_asdf_paths):
         "roman_static_preview",
         "thumbnail",
         rtdata.input,
+        rtdata.output,
     ]
     subprocess.run(args)
     assert os.path.exists(rtdata.output)
