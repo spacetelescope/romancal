@@ -19,6 +19,7 @@ NON_STEPS = [
     "RomancalPipeline",
     "RomanPipeline",
     "ExposurePipeline",
+    "HighLevelPipeline",
     "RomanStep",
     "Pipeline",
     "Step",
