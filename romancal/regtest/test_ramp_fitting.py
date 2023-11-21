@@ -105,7 +105,7 @@ CONDITIONS_TRUNC = CONDITIONS_FULL + [cond_is_truncated]
         ),
         (
             "DMS366",
-            Path("WFI/grism/r0000201001001001001_01101_0001_WFI05_darkcurrent.asdf"),
+            Path("WFI/grism/r0000201001001001001_01101_0001_WFI05_dqinit.asdf"),
             CONDITIONS_FULL,
         ),
         (
