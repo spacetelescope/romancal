@@ -533,7 +533,7 @@ def test_level2_image_preview(rtdata, ignore_asdf_paths):
     subprocess.run(args)
     assert os.path.exists(rtdata.output) is True
 
-    
+
 @pytest.mark.bigdata
 @pytest.mark.soctests
 @metrics_logger("DMS278")
