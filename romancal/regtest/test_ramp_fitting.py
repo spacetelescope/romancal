@@ -19,14 +19,14 @@ from .regtestdata import compare_asdf
 def cond_is_asdf(requirement, model, expected_path):
     """Check that the filename has the correct file type"""
     msg = 'Testing that result file path has file type "asdf"'
-    result = expected_path.exists() and expected_path.suffix == '.asdf'
+    result = expected_path.exists() and expected_path.suffix == ".asdf"
     log_result(requirement, msg, result)
     assert result, msg
 
 
 def cond_is_imagemodel(requirement, model, expected_path):
     """Check that the result is an ImageModel"""
-    msg = 'Testing that the result model is Level 2'
+    msg = "Testing that the result model is Level 2"
     result = isinstance(model, rdm.datamodels.ImageModel)
     log_result(requirement, msg, result)
     assert result, msg
@@ -35,22 +35,22 @@ def cond_is_imagemodel(requirement, model, expected_path):
 def cond_is_rampfit(requirement, model, expected_path):
     """Check that the calibration suffix is 'rampfit'"""
     msg = 'Testing that the result file has the suffix "rampfit"'
-    result = expected_path.exists() and expected_path.stem.endswith('rampfit')
+    result = expected_path.exists() and expected_path.stem.endswith("rampfit")
     log_result(requirement, msg, result)
     assert result, msg
 
 
 def cond_is_step_complete(requirement, model, expected_path):
     """Check that the calibration step is marked complete"""
-    msg = 'Testing that RampFitStep completed'
-    result = model.meta.cal_step.ramp_fit == 'COMPLETE'
+    msg = "Testing that RampFitStep completed"
+    result = model.meta.cal_step.ramp_fit == "COMPLETE"
     log_result(requirement, msg, result)
     assert result, msg
 
 
 def cond_is_truncated(requirement, model, expected_path):
     """Check if the data represents a truncated MA table/read pattern"""
-    msg = 'Testing if data represents a truncated MA table'
+    msg = "Testing if data represents a truncated MA table"
     result = model.meta.exposure.truncated
     log_result(requirement, msg, result)
     assert result, msg
@@ -58,7 +58,7 @@ def cond_is_truncated(requirement, model, expected_path):
 
 def cond_is_uneven(requirement, model, expected_path):
     """Verify that the provided model represents uneven ramps"""
-    msg = 'Testing that the ramps are uneven'
+    msg = "Testing that the ramps are uneven"
     length_set = {len(resultant) for resultant in model.meta.exposure.read_pattern}
     result = len(length_set) > 1
     log_result(requirement, msg, result)
@@ -69,7 +69,7 @@ def cond_science_verification(
     requirement, model, expected_path, rtdata_module, ignore_asdf_paths
 ):
     """Check against expected data results"""
-    msg = 'Testing science veracity'
+    msg = "Testing science veracity"
     diff = compare_asdf(rtdata_module.output, rtdata_module.truth, **ignore_asdf_paths)
 
     result = diff.identical
@@ -175,13 +175,16 @@ def test_rampfit_dmsreqs(rampfit_result, rtdata_module, ignore_asdf_paths):
 
     # Always do a full regression check.
     try:
-        cond_science_verification(requirement, model, expected_path, rtdata_module, ignore_asdf_paths)
+        cond_science_verification(
+            requirement, model, expected_path, rtdata_module, ignore_asdf_paths
+        )
     except AssertionError as e:
         error_msgs.append(str(e))
 
     @metrics_logger(requirement)
     def test_success():
-        assert not len(error_msgs), '\n'.join(error_msgs)
+        assert not len(error_msgs), "\n".join(error_msgs)
+
     test_success()
 
 
