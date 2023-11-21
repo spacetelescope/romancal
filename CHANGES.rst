@@ -45,6 +45,8 @@ general
 - Use array comparison options (including ``nan`` equality) when
   comparing ``WCS`` objects during ``compare_asdf`` [#941]
 
+- Fix dynamic importing issue with the ``ddtrace`` package. [#1024]
+
 ramp_fitting
 ------------
 
