@@ -1,4 +1,10 @@
-""" Module to test rampfit with optional output """
+""" Module to test rampfit with optional output
+
+Notes
+-----
+A requirement for the larger mission verification project is to have
+tests tied to reqirements. 
+"""
 from pathlib import Path
 
 import pytest
@@ -95,12 +101,12 @@ CONDITIONS_TRUNC = CONDITIONS_FULL + [cond_is_truncated]
     params=[
         (
             "DMS362",
-            Path("WFI/image/r0000101001001001001_01101_0001_WFI01_dqinit.asdf"),
+            Path("WFI/image/r0000101001001001001_01101_0001_WFI01_darkcurrent.asdf"),
             CONDITIONS_FULL,
         ),
         (
             "DMS366",
-            Path("WFI/grism/r0000201001001001001_01101_0001_WFI05_dqinit.asdf"),
+            Path("WFI/grism/r0000201001001001001_01101_0001_WFI05_darkcurrent.asdf"),
             CONDITIONS_FULL,
         ),
         (
@@ -114,6 +120,7 @@ CONDITIONS_TRUNC = CONDITIONS_FULL + [cond_is_truncated]
             CONDITIONS_TRUNC,
         ),
     ],
+    ids=['image_full', 'spec_full', 'image_trunc', 'spec_trunc']
 )
 def rampfit_result(request, rtdata_module):
     """Run RampFitStep
@@ -163,7 +170,7 @@ def passfail(bool_expr):
 # Tests
 # #####
 @pytest.mark.bigdata
-def test_rampfit_dmsreqs(rampfit_result, rtdata_module, ignore_asdf_paths):
+def test_rampfit_step(rampfit_result, rtdata_module, ignore_asdf_paths):
     """Test rampfit result against various conditions"""
     requirement, model, expected_path, conditions = rampfit_result
     error_msgs = []
@@ -186,23 +193,3 @@ def test_rampfit_dmsreqs(rampfit_result, rtdata_module, ignore_asdf_paths):
         assert not len(error_msgs), "\n".join(error_msgs)
 
     test_success()
-
-
-@pytest.mark.bigdata
-def test_ramp_fitting_step(rtdata, ignore_asdf_paths):
-    """Testing the ramp fitting step"""
-    input_data = "r0000101001001001001_01101_0001_WFI01_darkcurrent.asdf"
-    rtdata.get_data(f"WFI/image/{input_data}")
-    rtdata.input = input_data
-
-    args = [
-        "romancal.step.RampFitStep",
-        rtdata.input,
-    ]
-    RomanStep.from_cmdline(args)
-    output = "r0000101001001001001_01101_0001_WFI01_rampfit.asdf"
-    rtdata.output = output
-    rtdata.get_truth(f"truth/WFI/image/{output}")
-
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
-    assert diff.identical, diff.report()
