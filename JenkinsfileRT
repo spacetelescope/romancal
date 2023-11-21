@@ -87,7 +87,7 @@ bc0.conda_packages = [
 bc0.pip_reqs_files = ['requirements-sdp.txt']
 bc0.build_cmds = [
     "pip install -e .[test]",
-    "pip install pytest-xdist pytest-sugar ddtrace",
+    "pip install pytest-xdist ddtrace",
     'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
 ]
 bc0.build_cmds = bc0.build_cmds + PipInject(env.OVERRIDE_REQUIREMENTS)
@@ -98,6 +98,7 @@ bc0.test_cmds = [
     "pytest -r sxf -n auto --bigdata --slow --webbpsf \
     --cov --cov-report=xml:coverage.xml \
     --ddtrace \
+    --color=no \
     --basetemp=${pytest_basetemp} --junit-xml=results.xml --dist=loadscope \
     --env=${artifactoryenv} ${pytest_args}",
     "curl -Os https://uploader.codecov.io/latest/linux/codecov",
