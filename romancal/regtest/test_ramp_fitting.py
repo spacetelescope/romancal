@@ -3,7 +3,7 @@
 Notes
 -----
 A requirement for the larger mission verification project is to have
-tests tied to reqirements. 
+tests tied to reqirements.
 """
 from pathlib import Path
 
@@ -14,7 +14,6 @@ from metrics_logger.decorators import metrics_logger
 from romancal.lib.dms import log_result
 from romancal.lib.suffix import replace_suffix
 from romancal.ramp_fitting import RampFitStep
-from romancal.stpipe import RomanStep
 
 from .regtestdata import compare_asdf
 
@@ -120,7 +119,7 @@ CONDITIONS_TRUNC = CONDITIONS_FULL + [cond_is_truncated]
             CONDITIONS_TRUNC,
         ),
     ],
-    ids=['image_full', 'spec_full', 'image_trunc', 'spec_trunc']
+    ids=["image_full", "spec_full", "image_trunc", "spec_trunc"],
 )
 def rampfit_result(request, rtdata_module):
     """Run RampFitStep
