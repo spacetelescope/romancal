@@ -18,63 +18,63 @@ from .regtestdata import compare_asdf
 # ##########
 def cond_is_asdf(requirement, model, expected_path):
     """Check that the filename has the correct file type"""
-    result = expected_path.exists() and expected_path.suffix == ".asdf"
-    log_result(
-        requirement, 'Testing that result file path has file type "asdf"', result
-    )
-    return result
+    msg = 'Testing that result file path has file type "asdf"'
+    result = expected_path.exists() and expected_path.suffix == '.asdf'
+    log_result(requirement, msg, result)
+    assert result, msg
 
 
 def cond_is_imagemodel(requirement, model, expected_path):
     """Check that the result is an ImageModel"""
+    msg = 'Testing that the result model is Level 2'
     result = isinstance(model, rdm.datamodels.ImageModel)
-    log_result(requirement, "Testing that the result model is Level 2", result)
-    return result
+    log_result(requirement, msg, result)
+    assert result, msg
 
 
 def cond_is_rampfit(requirement, model, expected_path):
     """Check that the calibration suffix is 'rampfit'"""
-    result = expected_path.exists() and expected_path.stem.endswith("rampfit")
-    log_result(
-        requirement, 'Testing that the result file has the suffix "rampfit"', result
-    )
-    return result
+    msg = 'Testing that the result file has the suffix "rampfit"'
+    result = expected_path.exists() and expected_path.stem.endswith('rampfit')
+    log_result(requirement, msg, result)
+    assert result, msg
 
 
 def cond_is_step_complete(requirement, model, expected_path):
     """Check that the calibration step is marked complete"""
-    result = model.meta.cal_step.ramp_fit == "COMPLETE"
-    log_result(requirement, "Testing that RampFitStep completed", result)
-    return result
+    msg = 'Testing that RampFitStep completed'
+    result = model.meta.cal_step.ramp_fit == 'COMPLETE'
+    log_result(requirement, msg, result)
+    assert result, msg
 
 
 def cond_is_truncated(requirement, model, expected_path):
     """Check if the data represents a truncated MA table/read pattern"""
+    msg = 'Testing if data represents a truncated MA table'
     result = model.meta.exposure.truncated
-    log_result(requirement, "Testing if data represents a truncated MA table", result)
-    return result
+    log_result(requirement, msg, result)
+    assert result, msg
 
 
 def cond_is_uneven(requirement, model, expected_path):
     """Verify that the provided model represents uneven ramps"""
+    msg = 'Testing that the ramps are uneven'
     length_set = {len(resultant) for resultant in model.meta.exposure.read_pattern}
-
     result = len(length_set) > 1
-    log_result(requirement, "Testing that the ramps are uneven", result)
-    return result
+    log_result(requirement, msg, result)
+    assert result, msg
 
 
 def cond_science_verification(
     requirement, model, expected_path, rtdata_module, ignore_asdf_paths
 ):
     """Check against expected data results"""
+    msg = 'Testing science veracity'
     diff = compare_asdf(rtdata_module.output, rtdata_module.truth, **ignore_asdf_paths)
 
     result = diff.identical
-    if not result:
-        diff.report()
-    log_result(requirement, "Testing science veracity", result)
-    return result
+    log_result(requirement, msg, result)
+    assert result, diff.report()
 
 
 CONDITIONS_FULL = [
@@ -166,21 +166,25 @@ def passfail(bool_expr):
 def test_rampfit_dmsreqs(rampfit_result, rtdata_module, ignore_asdf_paths):
     """Test rampfit result against various conditions"""
     requirement, model, expected_path, conditions = rampfit_result
-    success = True
+    error_msgs = []
     for condition in conditions:
-        success = success and condition(requirement, model, expected_path)
+        try:
+            condition(requirement, model, expected_path)
+        except AssertionError as e:
+            error_msgs.append(str(e))
 
     # Always do a full regression check.
-    success = success and cond_science_verification(
-        requirement, model, expected_path, rtdata_module, ignore_asdf_paths
-    )
+    try:
+        cond_science_verification(requirement, model, expected_path, rtdata_module, ignore_asdf_paths)
+    except AssertionError as e:
+        error_msgs.append(str(e))
 
     @metrics_logger(requirement)
     def test_success():
-        assert success
-
+        assert not len(error_msgs), '\n'.join(error_msgs)
     test_success()
 
+    test_success()
 
 @pytest.mark.bigdata
 def test_ramp_fitting_step(rtdata, ignore_asdf_paths):
