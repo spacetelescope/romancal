@@ -128,7 +128,7 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     #  to separate flat files in CRDS.
 
     # Second file
-    input_file = "r0000101001001001001_01101_0002_WFI01_assignwcs.asdf"
+    input_file = "r0000101001001001001_01101_0002_WFI01_changetime_assignwcs.asdf"
     rtdata.get_data(f"WFI/image/{input_file}")
     rtdata.input = input_file
 
@@ -151,7 +151,7 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     )
 
     # Test FlatFieldStep
-    output = "r0000101001001001001_01101_0002_WFI01_flat.asdf"
+    output = "r0000101001001001001_01101_0002_WFI01_changetime_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     step.log.info(
