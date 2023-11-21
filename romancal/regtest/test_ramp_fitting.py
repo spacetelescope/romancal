@@ -184,7 +184,6 @@ def test_rampfit_dmsreqs(rampfit_result, rtdata_module, ignore_asdf_paths):
         assert not len(error_msgs), '\n'.join(error_msgs)
     test_success()
 
-    test_success()
 
 @pytest.mark.bigdata
 def test_ramp_fitting_step(rtdata, ignore_asdf_paths):
