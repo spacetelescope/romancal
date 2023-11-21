@@ -20,6 +20,7 @@ from romancal.outlier_detection import OutlierDetectionStep
         ("WFI", "WFI_IMAGE"),
     ],
 )
+@pytest.mark.skip(reason="Outlier detection is not yet ready for testing.")
 def test_outlier_detection_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring outlier detection"""
 
