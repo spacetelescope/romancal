@@ -1,12 +1,10 @@
 """
 Utilities
 """
-import importlib.util
 import inspect
 import logging
-import os
-import re
 from importlib import import_module
+from pkgutil import walk_packages
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -38,10 +36,9 @@ def all_steps():
     from romancal.stpipe import RomanStep as Step
 
     romancal = import_module("romancal")
-    romancal_fpath = os.path.split(romancal.__file__)[0]
 
     steps = {}
-    for module in load_local_pkg(romancal_fpath):
+    for module in load_sub_modules(romancal):
         more_steps = {
             klass_name: klass
             for klass_name, klass in inspect.getmembers(
@@ -54,69 +51,26 @@ def all_steps():
     return steps
 
 
-def load_local_pkg(fpath):
-    """Generator producing all modules under fpath
+def load_sub_modules(module):
+    """
+    Recursively loads all submodules of a module (this is not a local import).
 
     Parameters
     ----------
-    fpath: string
-        File path to the package to load.
+    module : module
+        A python module to walk, load
 
     Returns
     -------
     generator
-        `module` for each module found in the package.
+        A generator of all submodules of module recursively until no more sub modules are found
     """
-    package_fpath, package = os.path.split(fpath)
-    package_fpath_len = len(package_fpath) + 1
-    try:
-        for module_fpath in folder_traverse(
-            fpath, basename_regex=r"[^_].+\.py$", path_exclude_regex="tests"
-        ):
-            folder_path, fname = os.path.split(module_fpath[package_fpath_len:])
-            module_path = folder_path.split("/")
-            module_path.append(os.path.splitext(fname)[0])
-            module_path = ".".join(module_path)
-            try:
-                spec = importlib.util.spec_from_file_location(module_path, module_fpath)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-            except Exception as err:
-                logger.debug(f'Cannot load module "{module_path}": {str(err)}')
-            else:
-                yield module
-    except Exception as err:
-        logger.debug(
-            f'Cannot complete package loading: Exception occurred: "{str(err)}"'
-        )
 
+    for package_info in walk_packages(module.__path__):
+        if package_info.module_finder.path.startswith(module.__path__[0]):
+            package = import_module(f"{module.__name__}.{package_info.name}")
 
-def folder_traverse(folder_path, basename_regex=".+", path_exclude_regex="^$"):
-    """Generator of full file paths for all files
-    in a folder.
+            if package_info.ispkg:
+                yield from load_sub_modules(package)
 
-    Parameters
-    ----------
-    folder_path: str
-        The folder to traverse
-
-    basename_regex: str
-        Regular expression that must match
-        the `basename` part of the file path.
-
-    path_exclude_regex: str
-        Regular expression to exclude a path.
-
-    Returns
-    -------
-    generator
-        A generator, return the next file.
-    """
-    basename_regex = re.compile(basename_regex)
-    path_exclude_regex = re.compile(path_exclude_regex)
-    for root, dirs, files in os.walk(folder_path):
-        if path_exclude_regex.search(root):
-            continue
-        for file in files:
-            if basename_regex.match(file):
-                yield os.path.join(root, file)
+            yield package
