@@ -531,4 +531,4 @@ def test_level2_grism_preview(rtdata, ignore_asdf_paths):
         rtdata.input,
     ]
     subprocess.run(args)
-    assert os.path.exists(rtdata.output) == True
+    assert os.path.exists(rtdata.output) is True
