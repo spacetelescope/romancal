@@ -537,7 +537,7 @@ def test_level2_image_preview(rtdata, ignore_asdf_paths):
         rtdata.input,
     ]
     subprocess.run(args)
-    assert os.path.exists(rtdata.output) is True
+    assert os.path.exists(rtdata.output)
 
 
 @pytest.mark.bigdata
@@ -558,4 +558,4 @@ def test_level2_grism_preview(rtdata, ignore_asdf_paths):
         rtdata.input,
     ]
     subprocess.run(args)
-    assert os.path.exists(rtdata.output) is True
+    assert os.path.exists(rtdata.output)
