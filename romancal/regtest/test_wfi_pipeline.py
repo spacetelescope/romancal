@@ -26,7 +26,7 @@ def passfail(bool_expr):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS86", "DMS87", "DMS88", "DMS361")
+@metrics_logger("DMS86", "DMS87", "DMS88", "DMS361", "DMS280")
 def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     """Tests for flat field imaging processing requirements DMS86 & DMS 87"""
     input_data = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
@@ -50,6 +50,12 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     # Initial prep
     model = rdm.open(rtdata.output, lazy_load=False)
     pipeline = ExposurePipeline()
+
+    # DMS280 result is an ImageModel
+    pipeline.log.info(
+        "DMS280 MSG: Testing that result is a Level 2 model......."
+        + passfail(isinstance(model, rdm.datamodels.ImageModel))
+    )
 
     # DMS86 instrument artifact correction tests
     pipeline.log.info(
