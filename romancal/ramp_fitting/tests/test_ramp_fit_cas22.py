@@ -4,10 +4,9 @@ import numpy as np
 import pytest
 from astropy import units as u
 from astropy.time import Time
-from roman_datamodels import maker_utils
+from roman_datamodels import dqflags, maker_utils
 from roman_datamodels.datamodels import GainRefModel, RampModel, ReadnoiseRefModel
 
-from romancal.lib import dqflags
 from romancal.ramp_fitting import RampFitStep
 
 # Read Time in seconds

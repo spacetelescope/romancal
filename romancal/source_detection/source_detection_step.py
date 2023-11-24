@@ -17,9 +17,9 @@ from photutils.background import (
 )
 from photutils.detection import DAOStarFinder
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils
+from roman_datamodels import dqflags, maker_utils
 
-from romancal.lib import dqflags, psf
+from romancal.lib import psf
 from romancal.stpipe import RomanStep
 
 log = logging.getLogger(__name__)

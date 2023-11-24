@@ -7,10 +7,10 @@ import numpy as np
 from astropy import wcs as fitswcs
 from astropy.modeling import Model
 from astropy.nddata.bitmask import interpret_bit_flags
+from roman_datamodels.dqflags import pixel
 from stcal.alignment.util import wcs_from_footprints
 
 from romancal.assign_wcs.utils import wcs_bbox_from_shape
-from romancal.lib.dqflags import pixel
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

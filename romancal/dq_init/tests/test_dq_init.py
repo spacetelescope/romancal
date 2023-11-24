@@ -1,12 +1,11 @@
 import numpy as np
 import pytest
 from astropy import units as u
-from roman_datamodels import maker_utils, stnode
+from roman_datamodels import dqflags, maker_utils, stnode
 from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
 
 from romancal.dq_init import DQInitStep
 from romancal.dq_init.dq_initialization import do_dqinit
-from romancal.lib import dqflags
 
 RNG = np.random.default_rng(83)
 

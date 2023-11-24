@@ -5,12 +5,11 @@ import logging
 import numpy as np
 from astropy import units as u
 from roman_datamodels import datamodels as rdd
-from roman_datamodels import maker_utils
+from roman_datamodels import dqflags, maker_utils
 from roman_datamodels import stnode as rds
 from stcal.ramp_fitting import ols_cas22_fit, ramp_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 
-from romancal.lib import dqflags
 from romancal.stpipe import RomanStep
 
 log = logging.getLogger(__name__)

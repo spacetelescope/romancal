@@ -6,8 +6,7 @@ import logging
 
 import numpy as np
 from astropy import units as u
-
-from romancal.lib import dqflags
+from roman_datamodels import dqflags
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

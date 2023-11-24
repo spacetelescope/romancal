@@ -7,11 +7,11 @@ from astropy import coordinates as coord
 from astropy.modeling import models
 from gwcs import coordinate_frames as cf
 from gwcs import wcs as gwcs_wcs
+from roman_datamodels import dqflags
 from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.maker_utils import mk_level2_image
 
 from romancal.datamodels.container import ModelContainer
-from romancal.lib import dqflags
 from romancal.skymatch import SkyMatchStep
 
 DO_NOT_USE = dqflags.pixel["DO_NOT_USE"]

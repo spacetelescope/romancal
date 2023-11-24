@@ -8,9 +8,9 @@ import roman_datamodels as rdm
 from gwcs.wcstools import grid_from_bounding_box
 from metrics_logger.decorators import metrics_logger
 from numpy.testing import assert_allclose
+from roman_datamodels.dqflags import pixel
 
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
-from romancal.lib.dqflags import pixel
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
 from .regtestdata import compare_asdf

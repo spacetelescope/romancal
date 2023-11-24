@@ -9,10 +9,10 @@ from astropy.stats import sigma_clip
 from astropy.units import Quantity
 from drizzle.cdrizzle import tblot
 from roman_datamodels import datamodels as rdm
+from roman_datamodels import dqflags
 from scipy import ndimage
 
 from romancal.datamodels import ModelContainer
-from romancal.lib import dqflags
 from romancal.resample import resample
 from romancal.resample.resample_utils import build_driz_weight, calc_gwcs_pixmap
 

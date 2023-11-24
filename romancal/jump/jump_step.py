@@ -7,9 +7,9 @@ import time
 
 import numpy as np
 from roman_datamodels import datamodels as rdd
+from roman_datamodels import dqflags
 from stcal.jump.jump import detect_jumps
 
-from romancal.lib import dqflags
 from romancal.stpipe import RomanStep
 
 log = logging.getLogger(__name__)

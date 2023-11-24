@@ -3,9 +3,8 @@
 import logging
 
 import numpy as np
+from roman_datamodels import dqflags
 from stcal.saturation.saturation import flag_saturated_pixels
-
-from romancal.lib import dqflags
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

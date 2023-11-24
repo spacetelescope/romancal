@@ -1,9 +1,8 @@
 """General utility objects"""
 
 import numpy as np
+from roman_datamodels import dqflags
 from roman_datamodels.datamodels import AssociationsModel
-
-from romancal.lib import dqflags
 
 SATURATEDPIX = dqflags.pixel["SATURATED"]
 SATURATEDGRP = dqflags.group["SATURATED"]

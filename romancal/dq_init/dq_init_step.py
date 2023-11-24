@@ -2,11 +2,10 @@
 
 import numpy as np
 import roman_datamodels as rdm
-from roman_datamodels import maker_utils
+from roman_datamodels import dqflags, maker_utils
 from roman_datamodels.datamodels import RampModel
 
 from romancal.dq_init import dq_initialization
-from romancal.lib import dqflags
 from romancal.stpipe import RomanStep
 
 __all__ = ["DQInitStep"]

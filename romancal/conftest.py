@@ -17,6 +17,8 @@ from roman_datamodels import maker_utils
 
 from romancal.assign_wcs import pointing
 
+collect_ignore = ["lib/dqflags.py"]
+
 
 @pytest.fixture
 def mk_tmp_dirs():
