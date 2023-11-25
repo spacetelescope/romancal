@@ -5,8 +5,9 @@ import logging
 import numpy as np
 from astropy import units as u
 from roman_datamodels import datamodels as rdd
-from roman_datamodels import dqflags, maker_utils
+from roman_datamodels import maker_utils
 from roman_datamodels import stnode as rds
+from roman_datamodels.dqflags import group, pixel
 from stcal.ramp_fitting import ols_cas22_fit, ramp_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 
@@ -105,7 +106,7 @@ class RampFitStep(RomanStep):
             self.algorithm,
             self.weighting,
             max_cores,
-            dqflags.pixel,
+            pixel,
         )
 
         if image_info is not None:
@@ -149,9 +150,7 @@ class RampFitStep(RomanStep):
             # Image info order is: data, dq, var_poisson, var_rnoise, err
             image_info = (
                 np.zeros(input_model.data.shape[2:], dtype=input_model.data.dtype),
-                input_model.pixeldq
-                | input_model.groupdq[0][0]
-                | dqflags.group["SATURATED"],
+                input_model.pixeldq | input_model.groupdq[0][0] | group.SATURATED,
                 np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
                 np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
                 np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
@@ -396,17 +395,17 @@ def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
     """
     outpixeldq = pixeldq.copy()
     # jump flagging
-    m = np.any(groupdq & dqflags.group["JUMP_DET"], axis=0)
-    outpixeldq |= (m * dqflags.pixel["JUMP_DET"]).astype(np.uint32)
+    m = np.any(groupdq & group.JUMP_DET, axis=0)
+    outpixeldq |= (m * pixel.JUMP_DET).astype(np.uint32)
     # all saturated flagging
-    m = np.all(groupdq & dqflags.group["SATURATED"], axis=0)
-    outpixeldq |= (m * dqflags.pixel["SATURATED"]).astype(np.uint32)
+    m = np.all(groupdq & group.SATURATED, axis=0)
+    outpixeldq |= (m * pixel.SATURATED).astype(np.uint32)
     # all either saturated or do not use or NaN slope flagging
-    satordnu = dqflags.group["SATURATED"] | dqflags.group["DO_NOT_USE"]
+    satordnu = group.SATURATED | group.DO_NOT_USE
     m = np.all(groupdq & satordnu, axis=0)
     m |= ~np.isfinite(slopes) | (err <= 0)
-    outpixeldq |= (m * dqflags.pixel["DO_NOT_USE"]).astype(np.uint32)
+    outpixeldq |= (m * pixel.DO_NOT_USE).astype(np.uint32)
     m = (gain < 0) | ~np.isfinite(gain)
-    outpixeldq |= (m * dqflags.pixel["NO_GAIN_VALUE"]).astype(np.uint32)
+    outpixeldq |= (m * pixel.NO_GAIN_VALUE).astype(np.uint32)
 
     return outpixeldq

@@ -3,7 +3,7 @@
 import logging
 
 import numpy as np
-from roman_datamodels import dqflags
+from roman_datamodels.dqflags import pixel
 from stcal.saturation.saturation import flag_saturated_pixels
 
 log = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ def flag_saturation(input_model, ref_model):
         sat_thresh,
         sat_dq,
         ATOD_LIMIT,
-        dqflags.pixel,
+        pixel,
         n_pix_grow_sat=0,
         read_pattern=input_model.meta.exposure.read_pattern,
     )

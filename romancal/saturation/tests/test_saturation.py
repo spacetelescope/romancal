@@ -7,10 +7,10 @@ Unit tests for saturation flagging
 import numpy as np
 import pytest
 from astropy import units as u
-from roman_datamodels import dqflags, maker_utils
+from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import ScienceRawModel
+from roman_datamodels.dqflags import group, pixel
 
-from romancal.lib import dqflags
 from romancal.saturation import SaturationStep
 from romancal.saturation.saturation import flag_saturation
 
@@ -41,7 +41,7 @@ def test_basic_saturation_flagging(setup_wfi_datamodels):
 
     # Make sure that groups with signal > saturation limit get flagged
     satindex = np.argmax(output.data.value[:, 5, 5] == satvalue)
-    assert np.all(output.groupdq[satindex:, 5, 5] == dqflags.group["SATURATED"])
+    assert np.all(output.groupdq[satindex:, 5, 5] == group.SATURATED)
 
 
 def test_read_pattern_saturation_flagging(setup_wfi_datamodels):
@@ -84,7 +84,7 @@ def test_read_pattern_saturation_flagging(setup_wfi_datamodels):
     output = flag_saturation(ramp, satmap)
 
     # Make sure that groups after the third get flagged
-    assert np.all(output.groupdq[2:, 5, 5] == dqflags.group["SATURATED"])
+    assert np.all(output.groupdq[2:, 5, 5] == group.SATURATED)
 
 
 def test_ad_floor_flagging(setup_wfi_datamodels):
@@ -116,10 +116,7 @@ def test_ad_floor_flagging(setup_wfi_datamodels):
     output = flag_saturation(ramp, satmap)
 
     # Check if the right frames are flagged as saturated
-    assert np.all(
-        output.groupdq[satindxs, 5, 5]
-        == dqflags.group["DO_NOT_USE"] | dqflags.group["AD_FLOOR"]
-    )
+    assert np.all(output.groupdq[satindxs, 5, 5] == group.DO_NOT_USE | group.AD_FLOOR)
 
 
 def test_ad_floor_and_saturation_flagging(setup_wfi_datamodels):
@@ -155,12 +152,9 @@ def test_ad_floor_and_saturation_flagging(setup_wfi_datamodels):
     output = flag_saturation(ramp, satmap)
 
     # Check if the right frames are flagged as ad_floor
-    assert np.all(
-        output.groupdq[floorindxs, 5, 5]
-        == dqflags.group["DO_NOT_USE"] | dqflags.group["AD_FLOOR"]
-    )
+    assert np.all(output.groupdq[floorindxs, 5, 5] == group.DO_NOT_USE | group.AD_FLOOR)
     # Check if the right frames are flagged as saturated
-    assert np.all(output.groupdq[satindxs, 5, 5] == dqflags.group["SATURATED"])
+    assert np.all(output.groupdq[satindxs, 5, 5] == group.SATURATED)
 
 
 def test_signal_fluctuation_flagging(setup_wfi_datamodels):
@@ -191,7 +185,7 @@ def test_signal_fluctuation_flagging(setup_wfi_datamodels):
 
     # Make sure that all groups after first saturated group are flagged
     satindex = np.argmax(output.data.value[:, 5, 5] == satvalue)
-    assert np.all(output.groupdq[satindex:, 5, 5] == dqflags.group["SATURATED"])
+    assert np.all(output.groupdq[satindex:, 5, 5] == group.SATURATED)
 
 
 def test_all_groups_saturated(setup_wfi_datamodels):
@@ -219,7 +213,7 @@ def test_all_groups_saturated(setup_wfi_datamodels):
     output = flag_saturation(ramp, satmap)
 
     # Make sure all groups are flagged
-    assert np.all(output.groupdq[:, 5, 5] == dqflags.group["SATURATED"])
+    assert np.all(output.groupdq[:, 5, 5] == group.SATURATED)
 
 
 def test_dq_propagation(setup_wfi_datamodels):
@@ -266,25 +260,22 @@ def test_no_sat_check(setup_wfi_datamodels):
 
     # Set saturation value in the saturation model & DQ value for NO_SAT_CHECK
     satmap.data[5, 5] = satvalue * satmap.data.unit
-    satmap.dq[5, 5] = dqflags.pixel["NO_SAT_CHECK"]
+    satmap.dq[5, 5] = pixel.NO_SAT_CHECK
 
     # Also set an existing DQ flag in input science data
-    ramp.pixeldq[5, 5] = dqflags.pixel["DO_NOT_USE"]
+    ramp.pixeldq[5, 5] = pixel.DO_NOT_USE
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)
 
     # Make sure output GROUPDQ does not get flagged as saturated
     # Make sure PIXELDQ is set to NO_SAT_CHECK and original flag
-    assert np.all(output.groupdq[:, 5, 5] != dqflags.group["SATURATED"])
+    assert np.all(output.groupdq[:, 5, 5] != group.SATURATED)
     # Test that saturation bit is NOT set
     assert np.all(
-        output.groupdq[:, 5, 5] & (1 << dqflags.group["SATURATED"].bit_length() - 1)
-        == 0
+        output.groupdq[:, 5, 5] & (1 << group.SATURATED.bit_length() - 1) == 0
     )
-    assert output.pixeldq[5, 5] == (
-        dqflags.pixel["NO_SAT_CHECK"] + dqflags.pixel["DO_NOT_USE"]
-    )
+    assert output.pixeldq[5, 5] == (pixel.NO_SAT_CHECK + pixel.DO_NOT_USE)
 
 
 def test_nans_in_mask(setup_wfi_datamodels):
@@ -313,9 +304,9 @@ def test_nans_in_mask(setup_wfi_datamodels):
     output = flag_saturation(ramp, satmap)
 
     # Check that output GROUPDQ is not flagged as saturated
-    assert np.all(output.groupdq[:, 5, 5] != dqflags.group["SATURATED"])
+    assert np.all(output.groupdq[:, 5, 5] != group.SATURATED)
     # Check that output PIXELDQ is set to NO_SAT_CHECK
-    assert output.pixeldq[5, 5] == dqflags.pixel["NO_SAT_CHECK"]
+    assert output.pixeldq[5, 5] == pixel.NO_SAT_CHECK
 
 
 def test_saturation_getbestref(setup_wfi_datamodels):

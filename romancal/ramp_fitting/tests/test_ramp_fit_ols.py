@@ -2,27 +2,19 @@ import numpy as np
 import pytest
 from astropy import units as u
 from astropy.time import Time
-from roman_datamodels import dqflags, maker_utils
+from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import (
     GainRefModel,
     ImageModel,
     RampModel,
     ReadnoiseRefModel,
 )
+from roman_datamodels.dqflags import group
 
 from romancal.ramp_fitting import RampFitStep
 
 MAXIMUM_CORES = ["none", "quarter", "half", "all"]
 
-DO_NOT_USE = dqflags.group["DO_NOT_USE"]
-JUMP_DET = dqflags.group["JUMP_DET"]
-SATURATED = dqflags.group["SATURATED"]
-
-dqflags = {
-    "DO_NOT_USE": 1,
-    "SATURATED": 2,
-    "JUMP_DET": 4,
-}
 
 rng = np.random.default_rng(619)
 
@@ -123,7 +115,7 @@ def test_ols_saturated_ramp_fit(max_cores, make_data):
     model, override_gain, override_readnoise = make_data
 
     # Set saturated flag
-    model.groupdq = model.groupdq | SATURATED
+    model.groupdq = model.groupdq | group.SATURATED
 
     # Run ramp fit step
     out_model = RampFitStep.call(
@@ -141,7 +133,7 @@ def test_ols_saturated_ramp_fit(max_cores, make_data):
     np.testing.assert_array_equal(out_model.var_rnoise.value, 0)
 
     # Test that all pixels are flagged saturated
-    assert np.all(np.bitwise_and(out_model.dq, SATURATED) == SATURATED)
+    assert np.all(np.bitwise_and(out_model.dq, group.SATURATED) == group.SATURATED)
 
     # Test that original ramp parameters preserved
     np.testing.assert_allclose(out_model.amp33, model.amp33, 1e-6)

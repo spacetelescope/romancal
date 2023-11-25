@@ -20,7 +20,7 @@ from photutils.psf import (
     SourceGrouper,
 )
 from roman_datamodels.datamodels import ImageModel
-from roman_datamodels.dqflags import pixel as roman_dq_flag_enum
+from roman_datamodels.dqflags import pixel
 from webbpsf import conf, gridded_library, restart_logging
 
 __all__ = [
@@ -388,7 +388,7 @@ def dq_to_boolean_mask(image_model_or_dq, ignore_flags=0, flag_map_name="ROMAN_D
         dq = image_model_or_dq
 
     # add the Roman DQ flags to the astropy bitmask registry:
-    dq_flag_map = {dq.name: dq.value for dq in roman_dq_flag_enum if dq.name != "GOOD"}
+    dq_flag_map = {dq.name: dq.value for dq in pixel if dq.name != "GOOD"}
     bitmask.extend_bit_flag_map(flag_map_name, **dq_flag_map)
 
     # convert the bitmask to a boolean mask:

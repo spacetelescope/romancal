@@ -7,7 +7,7 @@ import time
 
 import numpy as np
 from roman_datamodels import datamodels as rdd
-from roman_datamodels import dqflags
+from roman_datamodels.dqflags import group, pixel
 from stcal.jump.jump import detect_jumps
 
 from romancal.stpipe import RomanStep
@@ -118,11 +118,11 @@ class JumpStep(RomanStep):
             #              separate PR
             dqflags_d = {}  # Dict of DQ flags
             dqflags_d = {
-                "GOOD": dqflags.group["GOOD"],
-                "DO_NOT_USE": dqflags.group["DO_NOT_USE"],
-                "SATURATED": dqflags.group["SATURATED"],
-                "JUMP_DET": dqflags.group["JUMP_DET"],
-                "NO_GAIN_VALUE": dqflags.pixel["NO_GAIN_VALUE"],
+                "GOOD": group.GOOD,
+                "DO_NOT_USE": group.DO_NOT_USE,
+                "SATURATED": group.SATURATED,
+                "JUMP_DET": group.JUMP_DET,
+                "NO_GAIN_VALUE": pixel.NO_GAIN_VALUE,
             }
 
             gdq, pdq, *_ = detect_jumps(

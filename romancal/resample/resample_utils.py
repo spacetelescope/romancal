@@ -189,7 +189,9 @@ def build_mask(dqarr, bitvalue):
       obtain the bit mask.
     - The resulting bit mask is returned as an ndarray of dtype `numpy.uint8`.
     """
-    bitvalue = interpret_bit_flags(bitvalue, flag_name_map=pixel)
+    bitvalue = interpret_bit_flags(
+        bitvalue, flag_name_map={dq.name: dq.value for dq in pixel}
+    )
 
     if bitvalue is None:
         return np.ones(dqarr.shape, dtype=np.uint8)

@@ -2,8 +2,9 @@
 
 import numpy as np
 import roman_datamodels as rdm
-from roman_datamodels import dqflags, maker_utils
+from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import RampModel
+from roman_datamodels.dqflags import pixel
 
 from romancal.dq_init import dq_initialization
 from romancal.stpipe import RomanStep
@@ -74,9 +75,7 @@ class DQInitStep(RomanStep):
         x_start = input_model.meta.guidestar.gw_window_xstart
         x_end = input_model.meta.guidestar.gw_window_xsize + x_start
         # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
-        output_model.pixeldq[int(x_start) : int(x_end), :] = dqflags.pixel[
-            "GW_AFFECTED_DATA"
-        ]
+        output_model.pixeldq[int(x_start) : int(x_end), :] = pixel.GW_AFFECTED_DATA
         self.log.info(
             f"Flagging rows from: {x_start} to {x_end} as affected by guide window read"
         )

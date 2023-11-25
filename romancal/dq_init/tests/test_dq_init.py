@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
 from astropy import units as u
-from roman_datamodels import dqflags, maker_utils, stnode
+from roman_datamodels import maker_utils, stnode
 from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
+from roman_datamodels.dqflags import pixel
 
 from romancal.dq_init import DQInitStep
 from romancal.dq_init.dq_initialization import do_dqinit
@@ -55,18 +56,16 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
 
     # assert that the pixels read back in match the mapping from ref data to
     # science data
-    assert dqdata[100, 100] == dqflags.pixel["SATURATED"]
-    assert dqdata[200, 100] == dqflags.pixel["JUMP_DET"]
-    assert dqdata[300, 100] == dqflags.pixel["DROPOUT"]
-    assert dqdata[400, 100] == dqflags.pixel["PERSISTENCE"]
-    assert dqdata[500, 100] == dqflags.pixel["DO_NOT_USE"]
-    assert dqdata[600, 100] == dqflags.pixel["GW_AFFECTED_DATA"]
-    assert dqdata[100, 200] == dqflags.pixel["SATURATED"] + dqflags.pixel["DO_NOT_USE"]
-    assert dqdata[200, 200] == dqflags.pixel["JUMP_DET"] + dqflags.pixel["DO_NOT_USE"]
-    assert dqdata[300, 200] == dqflags.pixel["DROPOUT"] + dqflags.pixel["DO_NOT_USE"]
-    assert (
-        dqdata[400, 200] == dqflags.pixel["PERSISTENCE"] + dqflags.pixel["DO_NOT_USE"]
-    )
+    assert dqdata[100, 100] == pixel.SATURATED
+    assert dqdata[200, 100] == pixel.JUMP_DET
+    assert dqdata[300, 100] == pixel.DROPOUT
+    assert dqdata[400, 100] == pixel.PERSISTENCE
+    assert dqdata[500, 100] == pixel.DO_NOT_USE
+    assert dqdata[600, 100] == pixel.GW_AFFECTED_DATA
+    assert dqdata[100, 200] == pixel.SATURATED + pixel.DO_NOT_USE
+    assert dqdata[200, 200] == pixel.JUMP_DET + pixel.DO_NOT_USE
+    assert dqdata[300, 200] == pixel.DROPOUT + pixel.DO_NOT_USE
+    assert dqdata[400, 200] == pixel.PERSISTENCE + pixel.DO_NOT_USE
 
 
 def test_groupdq():
@@ -171,15 +170,9 @@ def test_dq_add1_groupdq():
 
     # test if pixels in pixeldq were incremented in value by 1
     # check that previous dq flag is added to mask value
-    assert (
-        outfile.pixeldq[505, 505]
-        == dqflags.pixel["JUMP_DET"] + dqflags.pixel["DO_NOT_USE"]
-    )
+    assert outfile.pixeldq[505, 505] == pixel.JUMP_DET + pixel.DO_NOT_USE
     # check two flags propagate correctly
-    assert (
-        outfile.pixeldq[400, 500]
-        == dqflags.pixel["SATURATED"] + dqflags.pixel["DO_NOT_USE"]
-    )
+    assert outfile.pixeldq[400, 500] == pixel.SATURATED + pixel.DO_NOT_USE
 
 
 @pytest.mark.parametrize(
@@ -303,7 +296,7 @@ def test_dqinit_resultantdq(instrument, exptype):
     wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
     wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.resultantdq[1, 12, 12] = dqflags.pixel["DROPOUT"]
+    wfi_sci_raw.resultantdq[1, 12, 12] = pixel["DROPOUT"]
     wfi_sci_raw.data = u.Quantity(
         np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
     )
@@ -330,8 +323,8 @@ def test_dqinit_resultantdq(instrument, exptype):
     # check to see the resultantdq is the correct shape
     assert wfi_sci_raw_model.resultantdq.shape == shape
     # check to see the resultantdq & groupdq have the correct value
-    assert wfi_sci_raw_model.resultantdq[1, 12, 12] == dqflags.pixel["DROPOUT"]
-    assert result.groupdq[1, 12, 12] == dqflags.pixel["DROPOUT"]
+    assert wfi_sci_raw_model.resultantdq[1, 12, 12] == pixel["DROPOUT"]
+    assert result.groupdq[1, 12, 12] == pixel["DROPOUT"]
 
 
 @pytest.mark.parametrize(

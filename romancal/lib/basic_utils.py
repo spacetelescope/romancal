@@ -1,11 +1,8 @@
 """General utility objects"""
 
 import numpy as np
-from roman_datamodels import dqflags
 from roman_datamodels.datamodels import AssociationsModel
-
-SATURATEDPIX = dqflags.pixel["SATURATED"]
-SATURATEDGRP = dqflags.group["SATURATED"]
+from roman_datamodels.dqflags import group, pixel
 
 
 def bytes2human(n):
@@ -48,9 +45,9 @@ def is_fully_saturated(model):
     Check to see if all data pixels are flagged as saturated.
     """
 
-    if np.all(np.bitwise_and(model.groupdq, SATURATEDGRP) == SATURATEDGRP):
+    if np.all(np.bitwise_and(model.groupdq, group.SATURATED) == group.SATURATED):
         return True
-    elif np.all(np.bitwise_and(model.pixeldq, SATURATEDPIX) == SATURATEDPIX):
+    elif np.all(np.bitwise_and(model.pixeldq, pixel.SATURATED) == pixel.SATURATED):
         return True
 
     return False
