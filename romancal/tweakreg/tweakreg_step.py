@@ -175,9 +175,7 @@ class TweakRegStep(RomanStep):
                 )
                 if is_tweakreg_catalog_present:
                     # read catalog from structured array
-                    catalog = Table(
-                        np.asarray(image_model.meta.source_detection.tweakreg_catalog)
-                    )
+                    catalog = image_model.meta.source_detection.tweakreg_catalog
                 elif is_tweakreg_catalog_name_present:
                     catalog = Table.read(
                         image_model.meta.source_detection.tweakreg_catalog_name,
@@ -244,7 +242,7 @@ class TweakRegStep(RomanStep):
                     )
 
             # set meta.tweakreg_catalog
-            image_model.meta["tweakreg_catalog"] = catalog.as_array()
+            image_model.meta["tweakreg_catalog"] = catalog
 
             nsources = len(catalog)
             if nsources == 0:

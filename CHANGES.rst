@@ -91,7 +91,9 @@ source_detection
 
 - Support for PSF fitting (optional) for accurate centroids. [#841, #984]
 
-- Save source catalog to a structured array. [#987]
+- Save tweakreg source catalog to an astropy Table. [#987, #1029]
+
+- Save basic source catalog with morphology and PSF fit metrics. [#1029]
 
 stpipe
 ------
