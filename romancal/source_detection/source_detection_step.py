@@ -9,7 +9,7 @@ import astropy.units as u
 import numpy as np
 from asdf import AsdfFile
 from astropy.stats import SigmaClip
-from astropy.table import Table
+from astropy.table import Table, join
 from photutils.background import (
     Background2D,
     MeanBackground,
@@ -150,12 +150,12 @@ class SourceDetectionStep(RomanStep):
             columns = ["id", "xcentroid", "ycentroid", "flux"]
 
             if sources:
-                catalog = sources[columns]
-                log.info(f"Found {len(catalog)} sources.")
+                dao_catalog = sources[columns]
+                log.info(f"Found {len(dao_catalog)} sources.")
             else:
                 # if no sources were detected, return an empty table
                 self.log.warning("No sources detected, returning empty catalog.")
-                catalog = Table(
+                dao_catalog = Table(
                     names=columns,
                     dtype=(int, np.float64, np.float64, np.float64),
                 )
@@ -178,12 +178,10 @@ class SourceDetectionStep(RomanStep):
                 psf_photometry_table, photometry = psf.fit_psf_to_image_model(
                     image_model=input_model,
                     psf_model=gridded_psf_model,
-                    x_init=catalog["xcentroid"],
-                    y_init=catalog["ycentroid"],
+                    x_init=dao_catalog["xcentroid"],
+                    y_init=dao_catalog["ycentroid"],
                     exclude_out_of_bounds=True,
                 )
-
-            catalog_as_recarray = catalog.as_array()
 
             # create meta.source detection section in file
             # if save_catalogs is True, this will be updated with the
@@ -204,11 +202,11 @@ class SourceDetectionStep(RomanStep):
                 log.info(f"Saving catalog to file: {cat_filename}.")
 
                 if self.output_cat_filetype == "asdf":
-                    tree = {"tweakreg_catalog": catalog_as_recarray}
+                    tree = {"tweakreg_catalog": dao_catalog}
                     ff = AsdfFile(tree)
                     ff.write_to(cat_filename)
                 else:
-                    catalog.write(cat_filename, format="ascii.ecsv", overwrite=True)
+                    dao_catalog.write(cat_filename, format="ascii.ecsv", overwrite=True)
 
                 input_model.meta.source_detection[
                     "tweakreg_catalog_name"
@@ -218,22 +216,33 @@ class SourceDetectionStep(RomanStep):
                     # PSF photometry centroid results are stored in an astropy table
                     # in columns "x_fit" and "y_fit", which we'll rename for
                     # compatibility with tweakreg:
-                    catalog = psf_photometry_table.copy()
+                    source_catalog = join(
+                        psf_photometry_table,
+                        sources,
+                        keys_left=[
+                            "x_init",
+                            "y_init",
+                        ],  # match these inputs for PSF fitting...
+                        keys_right=[
+                            "xcentroid",
+                            "ycentroid",
+                        ],  # ...with centroid outputs from DAOStarFinder
+                        table_names=["psf", "dao"],
+                    )
 
-                    # rename the PSF photometry table's columns to match the
-                    # expectated columns in tweakreg:
+                    # DAOStarFinder returns columns "xcentroid" and "ycentroid", which
+                    # we'll append with "_dao" to make their meaning clear
                     for old_name, new_name in zip(
-                        ["x_fit", "y_fit"], ["xcentroid", "ycentroid"]
+                        ["xcentroid", "ycentroid", "flux"],
+                        ["xcentroid_dao", "ycentroid_dao", "flux_dao"],
                     ):
-                        catalog.rename_column(old_name, new_name)
+                        source_catalog.rename_column(old_name, new_name)
 
-                    input_model.meta.source_detection["psf_catalog"] = catalog
+                    input_model.meta.source_detection["source_catalog"] = source_catalog
                 else:
                     # only attach catalog to file if its being passed to the next step
                     # and save_catalogs is false, since it is not in the schema
-                    input_model.meta.source_detection[
-                        "tweakreg_catalog"
-                    ] = catalog_as_recarray
+                    input_model.meta.source_detection["tweakreg_catalog"] = dao_catalog
             input_model.meta.cal_step["source_detection"] = "COMPLETE"
 
         # just pass input model to next step - catalog is stored in meta
