@@ -277,12 +277,12 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
 @metrics_logger("DMS278", "DMS90", "DMS91", "DMS9", "DMS365")
 def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     """Tests for flat field grism processing requirements DMS90, DMS91 & DMS 278"""
-    input_data = "r0000201001001001002_01101_0001_WFI01_uncal.asdf"
+    input_data = "r0000201001001001001_01101_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/grism/{input_data}")
     rtdata.input = input_data
 
     # Test Pipeline
-    output = "r0000201001001001002_01101_0001_WFI01_cal.asdf"
+    output = "r0000201001001001001_01101_0001_WFI01_cal.asdf"
     rtdata.output = output
     args = [
         "--disable-crds-steppars",
