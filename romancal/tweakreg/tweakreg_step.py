@@ -174,8 +174,9 @@ class TweakRegStep(RomanStep):
                     image_model.meta.source_detection, "tweakreg_catalog_name"
                 )
                 if is_tweakreg_catalog_present:
-                    # read catalog from structured array
-                    catalog = image_model.meta.source_detection.tweakreg_catalog
+                    # read catalog produced in the Source Detection Step, ensure that
+                    # it is an astropy Table:
+                    catalog = Table(image_model.meta.source_detection.tweakreg_catalog)
                 elif is_tweakreg_catalog_name_present:
                     catalog = Table.read(
                         image_model.meta.source_detection.tweakreg_catalog_name,
@@ -554,7 +555,7 @@ class TweakRegStep(RomanStep):
                 # a string with the name of the catalog was provided
                 catalog = Table.read(catalog, format=catalog_format)
             else:
-                # catalog is a structured array, convert to astropy table:
+                # catalog is an astropy Table or structured array, convert to astropy table:
                 catalog = Table(catalog)
 
             catalog.meta["name"] = (
