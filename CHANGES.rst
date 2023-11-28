@@ -1,8 +1,9 @@
-0.13.0 (unreleased)
+0.13.0 (2023-11-28)
 ===================
 
 outlier_detection
 -----------------
+
 - Implemented ``outlier-detection step``. [#981]
 
 associations
