@@ -86,7 +86,7 @@ bc0.conda_packages = [
 ]
 bc0.pip_reqs_files = ['requirements-sdp.txt']
 bc0.build_cmds = [
-    "pip install -e .[test]",
+    "pip install -e .[test,sdp]",
     "pip install pytest-xdist ddtrace",
     'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
 ]
