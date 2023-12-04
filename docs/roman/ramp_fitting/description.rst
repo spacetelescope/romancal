@@ -196,10 +196,20 @@ to "COMPLETE".
 Jump Detection
 ==============
 
+For most pixels, the ramp steadily accumulates flux from the sky as an integration
+proceeds.  However, in relatively rare cases, a cosmic ray can pass through the
+detector which instantaneously deposits a large amount of charge in a pixel.
+This leads the resulting ramp to have a discontinuous *jump* in a particular read,
+and accordingly to discontinuities in the resultants downlinked from the telescope.
+The jump detection algorithm attempts to identify uncontaminated segments of ramps
+for ramp fitting, so that the underlying astronomical signal can be extracted without
+contamination from these jumps.
+
 If the uneven-ramp jump detection algorithm is turned on (the default), the ramp fitting
 algorithm is then run iteratively on a "queue" (list) of ramps. The queue is initialized
-with the ramp(s) (multiple ramps in the case of a dq flag occuring in the middle of a ramp).
-Then the jump detection algorithm picks a ramp, say :math:`[R_0, \dots, R_M]`, out of the
+with the ramp(s).
+Then following the algorithm presented in Sharma et al (2023) (in preparation),
+the jump detection algorithm picks a ramp, say :math:`[R_0, \dots, R_M]`, out of the
 queue and runs the ramp fitting algorithm on it. It then checks the resulting ramp for jumps.
 If a jump is detected, then two sub-ramps are created from the passed in ramp which exclude
 the resultants predicted to be affected by the jump. These sub-ramps are then added to the
@@ -229,7 +239,7 @@ resultants in the ramp, while double-difference refers to the difference between
 and a resultant two steps away (the resultant adjacent to a resultant adjacent to the resultant
 in question).
 
-To compute these statistics, we need the single-difference excess slope :math:`\delta_{i, i+1}` and
+To compute these statistics, the single-difference excess slope :math:`\delta_{i, i+1}` and
 the double-difference excess slope :math:`\delta_{i, i+2}` are computed as:
 
 .. math::
@@ -294,6 +304,11 @@ of ramps with jumps and ramps without jumps. The threshold function was determin
 .. math::
 
    S_{\text{threshold}}(\hat \alpha) = 5.5 - \frac{1}{3}\log_{10}(\hat \alpha)
+
+This corresponds to identifying jumps at 5.5 sigma when the count rate is 1 electron per second, and
+4.5 sigma when the count rate is 1000 electrons per second. The decision was made to have the threshold
+depend on the count rate because the pixels with lots of signal have larger uncertainties; meaning that
+lower amplitude cosmic rays get identified in these cases.
 
 
 A jump is determined to have occurred for a ramp fit with statistic, :math:`S`, with possible jump
