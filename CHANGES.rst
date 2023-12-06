@@ -16,6 +16,7 @@ documentation
 
 outlier_detection
 -----------------
+- Add outlier detection step documentation. [#1042]
 
 - Implemented ``outlier-detection step``. [#981]
 
