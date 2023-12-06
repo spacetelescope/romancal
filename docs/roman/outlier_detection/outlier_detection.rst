@@ -4,7 +4,7 @@ Default Outlier Detection Algorithm
 ===================================
 
 This module serves as the interface for applying ``outlier_detection`` to direct
-image observations. The code implements the basic outlier detection algorithm used 
+image observations. The code implements the basic outlier detection algorithm used
 with JWST data, but adapted to Roman.
 
 Specifically, this routine performs the following operations:
@@ -16,8 +16,8 @@ Specifically, this routine performs the following operations:
 #. Convert input data, as needed, to make sure it is in a format that can be processed.
 
    * A :py:class:`~romancal.datamodels.ModelContainer` serves as the basic format for
-     all processing performed by this step, as each entry will be treated as an element 
-     of a stack of images to be processed to identify bad-pixels/cosmic-rays and other 
+     all processing performed by this step, as each entry will be treated as an element
+     of a stack of images to be processed to identify bad-pixels/cosmic-rays and other
      artifacts.
 
 #. By default, resample all input images.
@@ -171,7 +171,7 @@ Time-series observations (TSO) result in input data stored as a 3D CubeModel
 where each plane in the cube represents a separate integration without changing the
 pointing.  Normal imaging data benefit from combining all integrations into a
 single image. TSO data's value, however, comes from looking for variations from one
-integration to the next.  The outlier detection algorithm, therefore, gets run with 
+integration to the next.  The outlier detection algorithm, therefore, gets run with
 a few variations to accomodate the nature of these 3D data.
 
 #. Input data is converted from a CubeModel (3D data array) to a ModelContainer
@@ -182,16 +182,16 @@ a few variations to accomodate the nature of these 3D data.
 #. The median image is created without resampling the input data
 
    - All integrations are aligned already, so no resampling or shifting needs to be performed
-  
-#. A matched median gets created by combining the single median frame with the 
+
+#. A matched median gets created by combining the single median frame with the
    noise model for each input integration.
 
-#. Perform statistical comparison between the matched median with each input integration.  
+#. Perform statistical comparison between the matched median with each input integration.
 
 #. Update input data model DQ arrays with the mask of detected outliers.
 
 
-.. note:: 
+.. note::
 
   This same set of steps also gets used to perform outlier detection on
   coronographic data, because it too is processed as 3D (per-integration)

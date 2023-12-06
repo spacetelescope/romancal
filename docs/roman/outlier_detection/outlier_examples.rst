@@ -1,10 +1,10 @@
 Examples
 ========
-Whether the data are contained in a list of ASDF files or provided as an ASN file, the 
-`ModelContainer` class must be used to properly handle the data that will be used in 
+Whether the data are contained in a list of ASDF files or provided as an ASN file, the
+`ModelContainer` class must be used to properly handle the data that will be used in
 the outlier detection step.
 
-1. To run the outlier detection step (with the default parameters) on a list of 2 ASDF 
+1. To run the outlier detection step (with the default parameters) on a list of 2 ASDF
    files named `"img_1.asdf"` and `"img_2.asdf"`:
 
         .. code-block:: python
@@ -16,7 +16,7 @@ the outlier detection step.
                 step = OutlierDetectionStep()
                 step.process(mc)
 
-2. To run the outlier detection step (with the default parameters) on an ASN file 
+2. To run the outlier detection step (with the default parameters) on an ASN file
    called "asn_sample.json" with the following content:
 
         .. code-block:: json
@@ -57,4 +57,3 @@ the outlier detection step.
                 mc = ModelContainer("asn_sample.json")
                 step = OutlierDetectionStep()
                 step.process(mc)
-
