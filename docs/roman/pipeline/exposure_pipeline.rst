@@ -1,7 +1,7 @@
 .. _exposure_pipeline:
 
 
-exposure_pipeline: Exposure Level Detector Processing
+Exposure Detector Processing
 =====================================================
 
 :Class: `romancal.pipeline.ExposurePipeline`
