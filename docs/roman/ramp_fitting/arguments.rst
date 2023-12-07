@@ -1,3 +1,5 @@
+.. _rampfit-arguments:
+
 Arguments
 =========
 The ramp fitting step has the following optional argument that can be set by the user:
@@ -23,3 +25,9 @@ The following optional arguments are valid only if using the `ols` algorithm.
   six real cores and 6 virtual cores setting maximum_cores to 'half' results in a
   decrease of a factor of six in the clock time for the step to run. Depending on the system
   the clock time can also decrease even more with maximum_cores is set to 'all'.
+
+* ``--use_ramp_jump_detection``: A True/False value that specifies whether to use
+  the unevenly-spaced jump detection integrated into the ramp fitting algorithm.
+  If True, then the jump detection step will be skipped and then revisited alongside
+  the ramp fitting step. If False, then the jump detection step will be run. The
+  default is True.
