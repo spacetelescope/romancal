@@ -1,7 +1,7 @@
 .. _exposure_pipeline:
 
 
-Exposure Detector Processing
+Exposure Level Processing
 =====================================================
 
 :Class: `romancal.pipeline.ExposurePipeline`
@@ -31,25 +31,26 @@ table below.
  :ref:`ramp_fitting <ramp_fitting_step>`            |check|    |check|  |check|
  :ref:`assign_wcs <assign_wcs_step>`                |check|    |check|  |check|
  :ref:`flatfield <flatfield_step>`                  |check|
- :ref:`outlier_detection <outlier_detection_step>`  |check|
+ :ref:`photom <photom_step>`                        |check|
+ :ref:`source_detection <source_detection_step>`   |check|
+ :ref:`tweakreg <tweakreg_step>`                    |check|
 ================================================== ========= ========= =========
 
 
 Arguments
 ---------
-The ``exposure`` pipeline has one optional argument::
+The ``exposure`` pipeline has an optional argument::
 
-  --save_calibrated_ramp  boolean  default=False
+  --use_ramp_jump_detection  boolean  default=True
 
-If set to ``True``, the pipeline will save intermediate data to a file as it
-exists at the end of the :ref:`jump <jump_step>` step (just before ramp fitting).
-The data at this stage of the pipeline are still in the form of the original
+When set to ``True``, the pipeline will perform :ref:`jump <jump_step>`  detection as a part of the ramp
+fitting  step. The data at this stage of the pipeline are still in the form of the original
 3D ramps ( ngroups x ncols x nrows ) and have had all of the detector-level
-correction steps applied to it, including the detection and flagging of
-Cosmic-Ray (CR) hits within each ramp (integration). If created, the name of the
-intermediate file will be constructed from the root name of the input file, with
-the new product type suffix "_ramp" appended,
-e.g. "r0008308002010007027_06311_0019_WFI01_ramp.asdf".
+correction steps applied to it, up to but not including the detection and flagging of
+Cosmic-Ray (CR) hits within each ramp (integration). For this case the  :ref:`jump <jump_step>`
+module in :ref:`ramp_fitting <ramp_fitting_step>` will update the dq array with the CR hits (jumps) that
+are identified in the step. 
+
 
 Inputs
 --------
@@ -82,8 +83,8 @@ Outputs
 :File suffix: _cal
 
 Result of applying all pipeline steps up through the
-:ref:`flatfield <flatfield_step>` step, to produce corrected flatfield data
-which is 2D image data, which will have one less data dimensions as the input
+:ref:`tweakreg <tweakreg_step>` step is to produce calibrated data with the image wcs
+alligned to GAIA, and is 2D image data, which will have one less data dimensions as the input
 raw 3D data ( ngroups x ncols x nrows ). In addition to being a 2-dimensional
 image the output from the pipeline has the :ref:`reference pixels <refpix>`
 removed from the edges of the science array.

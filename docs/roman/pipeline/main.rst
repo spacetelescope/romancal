@@ -40,5 +40,5 @@ Pipelines and Exposure Type
 ===========================
 
 The data from different observing modes needs to be processed with
-the proper pipeline stages listed above. The proper pipeline
+the proper pipeline levels listed above. The proper pipeline
 selection is usually based solely on the exposure type (exposure.type attribute).

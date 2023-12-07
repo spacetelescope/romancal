@@ -9,7 +9,7 @@ High Level Image Processing
 
 The ``HighLevelPipeline`` applies corrections to an overlapping group of images
 and is setup to process only imaging observations. 
-This pipeline is used to determine common background, skymatch, detect pixels the are
+This pipeline is used to determine a common background, skymatch, detect pixels the are
 not consistent with the other datasets, outlier detection, and resample the image to a
 single undistorted image. 
 
@@ -32,11 +32,12 @@ Arguments
 ---------
 The ``highlevel`` pipeline has no optional arguments::
 
-  --save_calibrated_ramp  boolean  default=False
 
 You can see the options for strun using
 
 strun --help roman_hlp
+
+and this will list all the strun options all well as the step options for the roman_hlp.
 
 
 Inputs
