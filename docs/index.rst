@@ -19,6 +19,7 @@ The Roman Space Telescope Calibration Pipeline
    :maxdepth: 2
 
    roman/pipeline_installation.rst
+   roman/pipeline_levels.rst
    roman/pipeline_run.rst
    roman/pipeline_steps.rst
    roman/pipeline_ref_files.rst
