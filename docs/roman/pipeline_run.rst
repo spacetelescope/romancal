@@ -6,13 +6,13 @@ Running the Pipeline
    disable the search for these parameters to avoid unexpected issues.
    You can globally disable this with the environment variable STPIPE_DISABLE_CRDS_STEPPARS
    In the Bash shell you can issue the command,
-   
+
    export STPIPE_DISABLE_CRDS_STEPPARS=True
 
    You can also add this parameter the the strun command,
 
    strun --disable-crds-steppar roman_elp <file_name>
-   
+
 
 
 From the Command Line
@@ -86,7 +86,7 @@ supplying a parameter file. Some examples are shown below.
 For the exposure pipeline and steps,
 
 ::
-   
+
  from romancal.pipeline import ExposurePipeline
  result = ExposurePipeline.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
 
@@ -99,18 +99,15 @@ that the input to the pipeline is a list of images, usually an association.
 For the high level pipeline and steps,
 
 ::
-   
+
  from romancal.pipeline import HighLevelPipeline
  result = ExposurePipeline.call('r0000101001001001001_asn.json')
 
  from romancal.skymatch import SkyMatchStep
  result = SkyMatchStep.call('r0000101001001001001_asn.json')
 
- 
+
 For more information, see :ref:`Execute via call()<call_examples>`
 
 For details on the different ways to run a pipeline step, see
 the :ref:`Configuring a Step<configuring-a-step>` page.
-
-
-

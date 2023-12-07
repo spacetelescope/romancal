@@ -49,7 +49,7 @@ fitting  step. The data at this stage of the pipeline are still in the form of t
 correction steps applied to it, up to but not including the detection and flagging of
 Cosmic-Ray (CR) hits within each ramp (integration). For this case the  :ref:`jump <jump_step>`
 module in :ref:`ramp_fitting <ramp_fitting_step>` will update the dq array with the CR hits (jumps) that
-are identified in the step. 
+are identified in the step.
 
 
 Inputs
