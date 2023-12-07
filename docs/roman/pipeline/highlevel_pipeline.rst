@@ -9,9 +9,9 @@ High Level Image Processing
 
 The ``HighLevelPipeline`` applies corrections to an overlapping group of images
 and is setup to process only imaging observations. 
-This pipeline is used to determine a common background, skymatch, detect pixels the are
-not consistent with the other datasets, outlier detection, and resample the image to a
-single undistorted image. 
+This pipeline is used to determine a common background, :ref:`skymatch <skymatch_step>`, detect pixels the are
+not consistent with the other datasets, :ref:`outlier_detection <outlier_detection_step>`, and resample the image to a
+single undistorted image, :ref:`resample <resample_step>`. 
 
 The list of steps applied by the ``HighLevelPipeline`` pipeline is shown in the
 table below.
