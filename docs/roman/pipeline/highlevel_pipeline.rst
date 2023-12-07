@@ -33,7 +33,7 @@ Arguments
 The ``highlevel`` pipeline has no optional arguments::
 
 
-You can see the options for strun using
+You can see the options for strun using::
 
 strun --help roman_hlp
 
@@ -44,7 +44,7 @@ Inputs
 --------
 
 2D image data
-+++++++++++
+++++++++++++
 
 :Data model: `~romancal.datamodels.WfiImage`
 :File suffix: _cal
