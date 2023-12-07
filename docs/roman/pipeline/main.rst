@@ -7,9 +7,9 @@ End-to-end calibration of Roman data is divided into levels of
 processing:
 
 - The exposure level processing consists of detector-level corrections that are performed on a
-  group-by-group basis, followed by ramp fitting. The output of the esposure level
+  group-by-group basis, followed by ramp fitting. The output of the exposure level
   processing is a count rate image per exposure, or per integration for
-  some modes that is aligned to the GAIA reference system.
+  some modes that is aligned to the Gaia reference system.
   Details of this pipeline can be found at:
 
   - :ref:`exposure_pipeline`
