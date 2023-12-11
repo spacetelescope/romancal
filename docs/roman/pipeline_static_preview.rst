@@ -83,30 +83,8 @@ using ``stpreview`` directly
 ----------------------------
 
 The ``roman_static_preview`` script is merely a wrapper over ``stpreview to``, which
-offers more options for fine-grained control of the output image.
-
-
-.. code-block:: shell
-
-	❯ stpreview to --help
-	Usage: stpreview to [OPTIONS] INPUT OUTPUT SHAPE... [OBSERVATORY]
-
-	  downsample the given ASDF image to the desired shape
-
-	  the output image may be smaller than the desired shape, if no even factor
-	  exists
-
-	Arguments:
-	  INPUT          path to ASDF file with 2D image data  [required]
-	  OUTPUT         path to output image file  [required]
-	  SHAPE...       desired pixel resolution of output image  [required]
-	  [OBSERVATORY]  observatory, one of ['roman', 'jwst']
-
-	Options:
-	  --compass / --no-compass  whether to draw a north arrow on the image
-	                            [default: no-compass]
-	  --help                    Show this message and exit.
-
-Refer to
+offers more options for fine-grained control of the output image. ``stpreview`` offers
+the ``to`` and ``by`` commands (for resampling ``to`` a desired image shape, or ``by``
+a desired factor, respectively). Refer to
 `the ``stpreview`` documentation <https://github.com/spacetelescope/stpreview#usage>`_
 for usage instructions.
