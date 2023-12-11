@@ -6,6 +6,11 @@ jump detection
 
 - Added uneven ramp-jump detection docs. [#1035]
 
+documentation
+-------------
+
+- added user documentation for ``roman_static_preview`` script [#1046]
+
 0.13.0 (2023-11-28)
 ===================
 
