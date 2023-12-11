@@ -67,14 +67,14 @@ Examples
 
 .. code-block:: shell
 
-	roman_static_preview preview /grp/roman/TEST_DATA/23Q4_B11/aligntest/r0000501001001001001_01101_0001_WFI01_cal.asdf
+	roman_static_preview preview r0000501001001001001_01101_0001_WFI01_cal.asdf
 
 .. image:: ../images/r0000501001001001001_01101_0001_WFI01_cal.png
    :alt: preview of Roman imagery, with compass rose showing orientation
 
 .. code-block:: shell
 
-	roman_static_preview thumbnail /grp/roman/TEST_DATA/23Q4_B11/aligntest/r0000501001001001001_01101_0001_WFI01_cal.asdf
+	roman_static_preview thumbnail r0000501001001001001_01101_0001_WFI01_cal.asdf
 
 .. image:: ../images/r0000501001001001001_01101_0001_WFI01_cal_thumb.png
    :alt: thumbnail of Roman imagery
