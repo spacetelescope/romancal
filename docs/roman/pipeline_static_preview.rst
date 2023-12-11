@@ -85,6 +85,5 @@ using ``stpreview`` directly
 The ``roman_static_preview`` script is merely a wrapper over ``stpreview to``, which
 offers more options for fine-grained control of the output image. ``stpreview`` offers
 the ``to`` and ``by`` commands (for resampling ``to`` a desired image shape, or ``by``
-a desired factor, respectively). Refer to
-`the ``stpreview`` documentation <https://github.com/spacetelescope/stpreview#usage>`_
+a desired factor, respectively). Refer to `the documentation <https://github.com/spacetelescope/stpreview#usage>`_
 for usage instructions.
