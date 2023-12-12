@@ -11,9 +11,12 @@ jump detection
 
 - Added uneven ramp-jump detection docs. [#1035]
 
+
 documentation
 -------------
 =======
+
+- Update jump step docs [#1035]
 
 - Update jump step docs [#1035]
 
