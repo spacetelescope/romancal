@@ -101,7 +101,7 @@ behavior of the processing:
   step of outliers in `driz_cr` computation.
 
 ``--kernel_size`` (string, default='7 7')
-  Size of kernel to be used during resampling of the data 
+  Size of kernel to be used during resampling of the data
   (i.e. when `resample_data=True`).
 
 ``--save_intermediate_results`` (boolean, default=False)
@@ -129,11 +129,11 @@ behavior of the processing:
   created.
 
 ``--in_memory`` (boolean, default=False)
-  Specifies whether or not to keep all intermediate products and datamodels in 
-  memory at the same time during the processing of this step.  If set to `False`, 
-  all input and output data will be written to disk at the start of the step 
-  (as much as jwst.datamodels will allow, anyway), then read in to memory only when 
-  accessed.  This results in a much lower memory profile at the expense of file I/O, 
+  Specifies whether or not to keep all intermediate products and datamodels in
+  memory at the same time during the processing of this step.  If set to `False`,
+  all input and output data will be written to disk at the start of the step
+  (as much as jwst.datamodels will allow, anyway), then read in to memory only when
+  accessed.  This results in a much lower memory profile at the expense of file I/O,
   which can allow large mosaics to process in more limited amounts of memory.
 
 .. _weight_type_options_details_section:

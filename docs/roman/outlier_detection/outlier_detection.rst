@@ -9,10 +9,10 @@ with JWST data, but adapted to Roman.
 
 Specifically, this routine performs the following operations:
 
-#. Extract parameter settings from input model and merge them with any user-provided 
+#. Extract parameter settings from input model and merge them with any user-provided
    values.
-   
-   * See :ref:`outlier detection arguments <outlier_detection_step_args>` for 
+
+   * See :ref:`outlier detection arguments <outlier_detection_step_args>` for
      the full list of parameters.
 
 #. By default, resample all input images.
@@ -54,7 +54,7 @@ Specifically, this routine performs the following operations:
 #. Create a median image from all grouped observation mosaics.
 
    * The median image is created by combining all grouped mosaic images or
-     non-resampled input data (as planes in a 
+     non-resampled input data (as planes in a
      `~romancal.datamodels.container.ModelContainer`) pixel-by-pixel.
    * The ``nlow`` and ``nhigh`` parameters specify how many low and high values
      to ignore when computing the median for any given pixel.
@@ -116,7 +116,7 @@ The outlier detection algorithm can end up using massive amounts of memory
 depending on the number of inputs, the size of each input, and the size of the
 final output product.  Specifically,
 
-#. The input :py:class:`~romancal.datamodels.ModelContainer` all input exposures would 
+#. The input :py:class:`~romancal.datamodels.ModelContainer` all input exposures would
    have been kept open in memory to make processing more efficient.
 
 #. The initial resample step creates an output product for EACH input that is the
@@ -138,9 +138,9 @@ with the use of the ``in_memory`` parameter.  The full impact of this parameter
 during processing includes:
 
 #. The ``save_open`` parameter gets set to `False`
-   when opening the input :py:class:`~romancal.datamodels.container.ModelContainer` 
-   object. This forces all input models in the input 
-   :py:class:`~romancal.datamodels.container.ModelContainer` to get written out to disk. 
+   when opening the input :py:class:`~romancal.datamodels.container.ModelContainer`
+   object. This forces all input models in the input
+   :py:class:`~romancal.datamodels.container.ModelContainer` to get written out to disk.
    It then uses the filename of the input model during subsequent processing.
 
 #. The ``in_memory`` parameter gets passed to the :py:class:`~romancal.resample.ResampleStep`
