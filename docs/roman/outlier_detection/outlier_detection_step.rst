@@ -3,18 +3,18 @@
 OutlierDetectionStep
 --------------------
 
-This module provides the sole interface to all methods of performing outlier detection 
-on Roman observations. The outlier detection algorithm used for WFI data is implemented 
-in :py:class:`~romancal.outlier_detection.outlier_detection.OutlierDetection` 
+This module provides the sole interface to all methods of performing outlier detection
+on Roman observations. The outlier detection algorithm used for WFI data is implemented
+in :py:class:`~romancal.outlier_detection.outlier_detection.OutlierDetection`
 and described in :ref:`outlier-detection-imaging`.
 
 .. note::
-    Whether the data are being provided in an ASN file or as a list of ASDF filenames, 
-    they must always be wrapped with a 
-    :py:class:`~romancal.datamodels.container.ModelContainer`, which will handle and 
+    Whether the data are being provided in an ASN file or as a list of ASDF filenames,
+    they must always be wrapped with a
+    :py:class:`~romancal.datamodels.container.ModelContainer`, which will handle and
     read in the input properly.
 
-On successful completion, this step will return the input models with DQ arrays updated 
+On successful completion, this step will return the input models with DQ arrays updated
 with flags for identified outliers.
 
 
