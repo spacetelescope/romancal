@@ -77,7 +77,7 @@ behavior of the processing:
   value.
 
 ``--maskpt`` (float, default=0.7)
-  Percentage of weight image values, below which they are flagged as bad and rejected
+  Percentage of weight image values below which they are flagged as bad and rejected
   from the median image. Valid values range from 0.0 to 1.0.
 
 ``--grow`` (integer, default=1)
@@ -100,6 +100,10 @@ behavior of the processing:
   User-specified background value (scalar) to subtract during final identification
   step of outliers in `driz_cr` computation.
 
+``--kernel_size`` (string, default='7 7')
+  Size of kernel to be used during resampling of the data 
+  (i.e. when `resample_data=True`).
+
 ``--save_intermediate_results`` (boolean, default=False)
   Specifies whether or not to write out intermediate products such as median image or
   resampled individual input exposures to disk. Typically, only used to track down
@@ -116,10 +120,6 @@ behavior of the processing:
   <https://github.com/spacetelescope/romancal/blob/main/romancal/lib/dqflags.py>`_
   for details.
 
-``--scale_detection`` (bool, default=False)
-  Specifies whether or not to rescale the individual input images to match total signal
-  when doing comparisons.
-
 ``--allowed_memory`` (float, default=None)
   Specifies the fractional amount of free memory to allow when creating the resampled
   image. If ``None``, the environment variable ``DMODEL_ALLOWED_MEMORY`` is used. If
@@ -127,6 +127,14 @@ behavior of the processing:
   an ``OutputTooLargeError`` exception will be generated. For example, if set to
   ``0.5``, only resampled images that use less than half the available memory can be
   created.
+
+``--in_memory`` (boolean, default=False)
+  Specifies whether or not to keep all intermediate products and datamodels in 
+  memory at the same time during the processing of this step.  If set to `False`, 
+  all input and output data will be written to disk at the start of the step 
+  (as much as jwst.datamodels will allow, anyway), then read in to memory only when 
+  accessed.  This results in a much lower memory profile at the expense of file I/O, 
+  which can allow large mosaics to process in more limited amounts of memory.
 
 .. _weight_type_options_details_section:
 

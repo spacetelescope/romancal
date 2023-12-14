@@ -1,7 +1,7 @@
 Description
 ===========
 
-:Classes: `romancal.outlier_detection.OutlierDetectionStep`, `romancal.outlier_detection.OutlierDetectionScaledStep`, `romancal.outlier_detection.OutlierDetectionStackStep`
+:Classes: `romancal.outlier_detection.OutlierDetectionStep`
 :Aliases: outlier_detection, outlier_detection_scaled, outlier_detection_stack
 
 Processing multiple datasets together allows for the identification of bad pixels

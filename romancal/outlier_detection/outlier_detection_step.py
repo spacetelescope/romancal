@@ -15,13 +15,13 @@ __all__ = ["OutlierDetectionStep"]
 class OutlierDetectionStep(RomanStep):
     """Flag outlier bad pixels and cosmic rays in DQ array of each input image.
 
-    Input images can be listed in an input association file or already opened
-    with a ModelContainer.  DQ arrays are modified in place.
+    Input images can be listed in an input association file or already wrapped
+    with a ModelContainer. DQ arrays are modified in place.
 
     Parameters
     -----------
-    input_data : asn file or ~romancal.datamodels.ModelContainer
-        Single filename association table, or a datamodels.ModelContainer.
+    input_data : `~romancal.datamodels.container.ModelContainer`
+        A `~romancal.datamodels.container.ModelContainer` object.
 
     """
 
@@ -31,28 +31,24 @@ class OutlierDetectionStep(RomanStep):
     # by the various versions of the outlier_detection algorithms, and each
     # version will pick and choose what they need while ignoring the rest.
     spec = """
-        weight_type = option('ivm','exptime',default='ivm')
-        pixfrac = float(default=1.0)
-        kernel = string(default='square') # drizzle kernel
-        fillval = string(default='INDEF')
-        nlow = integer(default=0)
-        nhigh = integer(default=0)
-        maskpt = float(default=0.7)
-        grow = integer(default=1)
-        snr = string(default='5.0 4.0')
-        scale = string(default='1.2 0.7')
-        backg = float(default=0.0)
-        kernel_size = string(default='7 7')
-        threshold_percent = float(default=99.8)
-        ifu_second_check = boolean(default=False)
-        save_intermediate_results = boolean(default=False)
-        resample_data = boolean(default=True)
-        good_bits = string(default="~DO_NOT_USE")  # DQ flags to allow
-        scale_detection = boolean(default=False)
-        search_output_file = boolean(default=False)
+        weight_type = option('ivm','exptime',default='ivm') # Weighting type to use to create the median image
+        pixfrac = float(default=1.0) # Fraction by which input pixels are shrunk before being drizzled onto the output image grid
+        kernel = string(default='square') # Shape of the kernel used for flux distribution onto output images
+        fillval = string(default='INDEF') # Value assigned to output pixels that have zero weight or no flux during drizzling
+        nlow = integer(default=0) # The number of low values in each pixel stack to ignore when computing the median value
+        nhigh = integer(default=0) # The number of high values in each pixel stack to ignore when computing the median value
+        maskpt = float(default=0.7) # Percentage of weight image values below which they are flagged as bad pixels
+        grow = integer(default=1) # The distance beyond the rejection limit for additional pixels to be rejected in an image
+        snr = string(default='5.0 4.0') # The signal-to-noise values to use for bad pixel identification
+        scale = string(default='1.2 0.7') # The scaling factor applied to derivative used to identify bad pixels
+        backg = float(default=0.0) # User-specified background value to subtract during final identification step
+        kernel_size = string(default='7 7') # Size of kernel to be used during resampling of the data
+        save_intermediate_results = boolean(default=False) # Specifies whether or not to write out intermediate products to disk
+        resample_data = boolean(default=True) # Specifies whether or not to resample the input images when performing outlier detection
+        good_bits = string(default="0")  # DQ bit value to be considered 'good'
         allowed_memory = float(default=None)  # Fraction of memory to use for the combined image
-        in_memory = boolean(default=False)
-    """
+        in_memory = boolean(default=False) # Specifies whether or not to keep all intermediate products and datamodels in memory
+    """  # noqa: E501
 
     def process(self, input_models):
         """Perform outlier detection processing on input data."""
@@ -85,13 +81,11 @@ class OutlierDetectionStep(RomanStep):
             "scale": self.scale,
             "backg": self.backg,
             "kernel_size": self.kernel_size,
-            "threshold_percent": self.threshold_percent,
-            "ifu_second_check": self.ifu_second_check,
-            "allowed_memory": self.allowed_memory,
-            "in_memory": self.in_memory,
             "save_intermediate_results": self.save_intermediate_results,
             "resample_data": self.resample_data,
             "good_bits": self.good_bits,
+            "allowed_memory": self.allowed_memory,
+            "in_memory": self.in_memory,
             "make_output_path": self.make_output_path,
         }
 
