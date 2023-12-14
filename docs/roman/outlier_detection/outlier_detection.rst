@@ -1,7 +1,7 @@
 .. _outlier-detection-imaging:
 
-Default Outlier Detection Algorithm
-===================================
+Outlier Detection Algorithm
+===========================
 
 This module serves as the interface for applying ``outlier_detection`` to direct
 image observations. The code implements the basic outlier detection algorithm used
@@ -9,16 +9,11 @@ with JWST data, but adapted to Roman.
 
 Specifically, this routine performs the following operations:
 
-#. Extract parameter settings from input model and merge them with any user-provided values.
-   See :ref:`outlier detection arguments <outlier_detection_step_args>` for the full list
-   of parameters.
-
-#. Convert input data, as needed, to make sure it is in a format that can be processed.
-
-   * A :py:class:`~romancal.datamodels.ModelContainer` serves as the basic format for
-     all processing performed by this step, as each entry will be treated as an element
-     of a stack of images to be processed to identify bad-pixels/cosmic-rays and other
-     artifacts.
+#. Extract parameter settings from input model and merge them with any user-provided 
+   values.
+   
+   * See :ref:`outlier detection arguments <outlier_detection_step_args>` for 
+     the full list of parameters.
 
 #. By default, resample all input images.
 
@@ -59,7 +54,8 @@ Specifically, this routine performs the following operations:
 #. Create a median image from all grouped observation mosaics.
 
    * The median image is created by combining all grouped mosaic images or
-     non-resampled input data (as planes in a ModelContainer) pixel-by-pixel.
+     non-resampled input data (as planes in a 
+     `~romancal.datamodels.container.ModelContainer`) pixel-by-pixel.
    * The ``nlow`` and ``nhigh`` parameters specify how many low and high values
      to ignore when computing the median for any given pixel.
    * The ``maskpt`` parameter sets the percentage of the weight image values to
@@ -120,10 +116,8 @@ The outlier detection algorithm can end up using massive amounts of memory
 depending on the number of inputs, the size of each input, and the size of the
 final output product.  Specifically,
 
-#. The input :py:class:`~romancal.datamodels.ModelContainer` or
-   :py:class:`~romancal.datamodels.CubeModel`
-   for IFU data, by default, all input exposures would have been kept open in memory to make
-   processing more efficient.
+#. The input :py:class:`~romancal.datamodels.ModelContainer` all input exposures would 
+   have been kept open in memory to make processing more efficient.
 
 #. The initial resample step creates an output product for EACH input that is the
    same size as the final
@@ -144,10 +138,10 @@ with the use of the ``in_memory`` parameter.  The full impact of this parameter
 during processing includes:
 
 #. The ``save_open`` parameter gets set to `False`
-   when opening the input :py:class:`~romancal.datamodels.ModelContainer` object.
-   This forces all input models in the input :py:class:`~romancal.datamodels.ModelContainer` or
-   :py:class:`~romancal.datamodels.CubeModel` to get written out to disk.  The ModelContainer
-   then uses the filename of the input model during subsequent processing.
+   when opening the input :py:class:`~romancal.datamodels.container.ModelContainer` 
+   object. This forces all input models in the input 
+   :py:class:`~romancal.datamodels.container.ModelContainer` to get written out to disk. 
+   It then uses the filename of the input model during subsequent processing.
 
 #. The ``in_memory`` parameter gets passed to the :py:class:`~romancal.resample.ResampleStep`
    to set whether or not to keep the resampled images in memory or not.  By default,
@@ -163,39 +157,6 @@ during processing includes:
 
 These changes result in a minimum amount of memory usage during processing at the obvious
 expense of reading and writing the products from disk.
-
-
-Outlier Detection for TSO data
--------------------------------
-Time-series observations (TSO) result in input data stored as a 3D CubeModel
-where each plane in the cube represents a separate integration without changing the
-pointing.  Normal imaging data benefit from combining all integrations into a
-single image. TSO data's value, however, comes from looking for variations from one
-integration to the next.  The outlier detection algorithm, therefore, gets run with
-a few variations to accomodate the nature of these 3D data.
-
-#. Input data is converted from a CubeModel (3D data array) to a ModelContainer
-
-   - Each plane in the original input CubeModel gets copied to a separate model
-     in the ModelContainer
-
-#. The median image is created without resampling the input data
-
-   - All integrations are aligned already, so no resampling or shifting needs to be performed
-
-#. A matched median gets created by combining the single median frame with the
-   noise model for each input integration.
-
-#. Perform statistical comparison between the matched median with each input integration.
-
-#. Update input data model DQ arrays with the mask of detected outliers.
-
-
-.. note::
-
-  This same set of steps also gets used to perform outlier detection on
-  coronographic data, because it too is processed as 3D (per-integration)
-  cubes.
 
 
 .. automodapi:: romancal.outlier_detection.outlier_detection

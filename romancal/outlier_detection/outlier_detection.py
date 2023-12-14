@@ -1,4 +1,4 @@
-"""Primary code for performing outlier detection on JWST observations."""
+"""Primary code for performing outlier detection on Roman observations."""
 
 import logging
 import warnings
@@ -59,9 +59,9 @@ class OutlierDetection:
 
         Parameters
         ----------
-        input_models : list of DataModels, str
-            list of data models as ModelContainer or ASN file,
-            one data model for each input image
+        input_models : ~romancal.datamodels.container.ModelContainer
+            A `~romancal.datamodels.container.ModelContainer` object containing the data
+            to be processed.
 
         pars : dict, optional
             Optional user-specified parameters to modify how outlier_detection
