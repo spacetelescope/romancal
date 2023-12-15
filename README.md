@@ -79,6 +79,7 @@ To install your own copy of the code into that environment, you first need to fo
     cd <where you want to put the repo>
     git clone https://github.com/spacetelescope/romancal
     cd romancal
+    git lfs install # needed for some image files in the docs
 
 > **Note**\
 > Installing via `setup.py` (`python setup.py install`, `python setup.py develop`, etc.) is deprecated and does not work.
