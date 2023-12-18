@@ -12,10 +12,11 @@ other artifacts left over from previous calibrations:
 
   - build a stack of input data
 
-    - all inputs will need to have the same WCS since outlier detection assumes
+    - all inputs will need to have the same WCS, which is done by
+      `romancal.tweakreg.TweakRegStep`), since outlier detection assumes
       the same flux for each point on the sky, and variations from one image to
-      the next would indicate a problem with the detector during readout of that
-      pixel
+      the next would indicate a spurious signal
+
     - if needed, each input will be resampled to a common output WCS
 
   - create a median image from the stack of input data

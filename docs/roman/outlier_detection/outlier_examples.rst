@@ -57,3 +57,11 @@ the outlier detection step.
                 mc = ModelContainer("asn_sample.json")
                 step = OutlierDetectionStep()
                 step.process(mc)
+
+#. To run the outlier detection step (with the default parameters) on an ASN file
+   called "asn_sample.json" (the files listed in the association file must have been
+   processed through `TweakRegStep`) using the command line:
+
+        .. code-block:: shell
+
+                strun --disable-crds-steppar  --suffix='cal'  romancal.step.OutlierDetectionStep asn_sample.json

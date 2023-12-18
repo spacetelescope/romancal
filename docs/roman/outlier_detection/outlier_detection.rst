@@ -17,15 +17,15 @@ Specifically, this routine performs the following operations:
 
 #. By default, resample all input images.
 
-   * The resampling step starts by computing an output WCS that is large enoug
+   * The resampling step starts by computing an output WCS that is large enough
      to encompass all the input images.
-   * All images from the *same exposure* will get resampled onto this output
+   * All 18 detectors from the *same exposure* will get resampled onto this output
      WCS to create a mosaic of all the chips for that exposure.  This product
      is referred to as a "grouped mosaic" since it groups all the chips from
      the same exposure into a single image.
    * Each dither position will result in a separate grouped mosaic, so only
      a single exposure ever contributes to each pixel in these mosaics.
-   * The ``fillval`` parameter specifies what value to use in the ouptut
+   * The ``fillval`` parameter specifies what value to use in the output
      resampled image for any pixel which has no valid contribution from any
      input exposure.  The default value of ``INDEF`` indicates that the value
      from the last exposure will be used, while a value of 0 would result in
@@ -54,8 +54,7 @@ Specifically, this routine performs the following operations:
 #. Create a median image from all grouped observation mosaics.
 
    * The median image is created by combining all grouped mosaic images or
-     non-resampled input data (as planes in a
-     `~romancal.datamodels.container.ModelContainer`) pixel-by-pixel.
+     non-resampled input data pixel-by-pixel.
    * The ``nlow`` and ``nhigh`` parameters specify how many low and high values
      to ignore when computing the median for any given pixel.
    * The ``maskpt`` parameter sets the percentage of the weight image values to
@@ -82,7 +81,7 @@ Specifically, this routine performs the following operations:
      median image to compute the absolute value of the difference between each pixel and
      its four surrounding neighbors with the largest value being the recorded derivative.
    * These derivative images are used to flag cosmic rays
-     and other blemishes, such as satellite trails. Where the difference is larger
+     and other blemishes, such as moving object trails. Where the difference is larger
      than can be explained by noise statistics, the flattening effect of taking the
      median, or an error in the shift (the latter two effects are estimated using
      the image derivative), the suspect pixel is masked.

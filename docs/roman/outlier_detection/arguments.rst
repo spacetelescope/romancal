@@ -27,19 +27,6 @@ behavior of the processing:
 
       * `'square'`: original classic drizzling kernel
 
-      * `'point'`: this kernel is a point so each input pixel can only
-        contribute to the single pixel that is closest to the output
-        position. It is equivalent to the limit as ``pixfrac->0``, and is
-        very fast.
-
-      * `'gaussian'`: this kernel is a circular gaussian, measured
-        in input pixels, with a FWHM value equal to the value of ``pixfrac``.
-
-      * `'turbo'`: this is similar to kernel="square", except that
-        the box is always the same shape and size on the output grid,
-        and is always aligned with the ``X`` and ``Y`` axes. This may result
-        in a significant speed increase.
-
       * `'tophat'`: this kernel is a circular "top hat" shape of width
         `pixfrac`. It effects only output pixels within a radius of
         `pixfrac/2` from the output position.
@@ -132,7 +119,7 @@ behavior of the processing:
   Specifies whether or not to keep all intermediate products and datamodels in
   memory at the same time during the processing of this step.  If set to `False`,
   all input and output data will be written to disk at the start of the step
-  (as much as jwst.datamodels will allow, anyway), then read in to memory only when
+  (as much as `roman_datamodels` will allow, anyway), then read in to memory only when
   accessed.  This results in a much lower memory profile at the expense of file I/O,
   which can allow large mosaics to process in more limited amounts of memory.
 

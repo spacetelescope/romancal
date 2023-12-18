@@ -1,6 +1,11 @@
 0.13.1 (unreleased)
 ===================
 
+outlier_detection
+-----------------
+
+- Add outlier detection step documentation. [#1042]
+
 jump detection
 --------------
 
@@ -16,7 +21,6 @@ documentation
 
 outlier_detection
 -----------------
-- Add outlier detection step documentation. [#1042]
 
 - Implemented ``outlier-detection step``. [#981]
 
