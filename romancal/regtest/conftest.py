@@ -26,8 +26,8 @@ TODAYS_DATE = datetime.now().strftime("%Y-%m-%d")
 def artifactory_repos(pytestconfig):
     """Provides Artifactory inputs_root and results_root"""
     try:
-        inputs_root = pytestconfig.getini("inputs_root")[0]
-        results_root = pytestconfig.getini("results_root")[0]
+        inputs_root = pytestconfig.getini("inputs_root")
+        results_root = pytestconfig.getini("results_root")
     except IndexError:
         inputs_root = "roman-pipeline"
         results_root = "roman-pipeline-results"
@@ -320,8 +320,8 @@ def pytest_generate_tests(metafunc):
     """Prefetch and parametrize a set of test pools"""
     if "pool_path" in metafunc.fixturenames:
         try:
-            SDPPoolsSource.inputs_root = metafunc.config.getini("inputs_root")[0]
-            SDPPoolsSource.results_root = metafunc.config.getini("results_root")[0]
+            SDPPoolsSource.inputs_root = metafunc.config.getini("inputs_root")
+            SDPPoolsSource.results_root = metafunc.config.getini("results_root")
             SDPPoolsSource.env = metafunc.config.getoption("env")
         except IndexError:
             SDPPoolsSource.inputs_root = "roman-pipeline"

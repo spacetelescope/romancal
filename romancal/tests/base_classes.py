@@ -52,8 +52,8 @@ class BaseRomanTest:
 
     @pytest.fixture(autouse=True)
     def config_access(self, pytestconfig):
-        self.inputs_root = pytestconfig.getini("inputs_root")[0]
-        self.results_root = pytestconfig.getini("results_root")[0]
+        self.inputs_root = pytestconfig.getini("inputs_root")
+        self.results_root = pytestconfig.getini("results_root")
 
     @property
     def repo_path(self):
