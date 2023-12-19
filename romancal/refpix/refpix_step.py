@@ -42,6 +42,15 @@ class RefPixStep(RomanStep):
         # Get the reference file
         ref_file = self.get_reference_file(datamodel, "refpix")
 
+       # Check for a valid reference file
+        if ref_file == "N/A":
+            self.log.warning("No REFPIX reference file found")
+            self.log.warning("Reference pixel correction step will be skipped")
+            result = datamodel.copy()
+            result.meta.cal_step.refpix = "SKIPPED"
+            return result
+
+
         log.debug(f"Opening the reference file: {ref_file}")
         with rdm.open(ref_file) as refs:
             # Run the correction
