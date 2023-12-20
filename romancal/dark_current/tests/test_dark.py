@@ -97,12 +97,12 @@ def test_dark_step_subtraction(instrument, exptype):
         ("WFI", "WFI_IMAGE"),
     ],
 )
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
+#@pytest.mark.skipif(
+#    os.environ.get("CI") == "true",
+#    reason=(
+#        "Roman CRDS servers are not currently available outside the internal network"
+#    ),
+#)
 def test_dark_step_output_dark_file(tmpdir, instrument, exptype):
     """Test that the the step can output a proper (optional) dark file"""
     path = str(tmpdir / "dark_out.asdf")
@@ -112,6 +112,45 @@ def test_dark_step_output_dark_file(tmpdir, instrument, exptype):
 
     # Create test ramp and dark models
     ramp_model, darkref_model = create_ramp_and_dark(shape, instrument, exptype)
+
+    # Perform Dark Current subtraction step
+    DarkCurrentStep.call(ramp_model, override_dark=darkref_model, dark_output=path)
+
+    # Open dark file
+    dark_out_file_model = rdm.open(path)
+
+    # Test dark file results
+    assert type(dark_out_file_model) == DarkRefModel
+    assert dark_out_file_model.validate() is None
+    assert dark_out_file_model.data.shape == shape
+    assert dark_out_file_model.dq.shape == shape[1:]
+
+@pytest.mark.parametrize(
+    "instrument, exptype",
+    [
+        ("WFI", "WFI_IMAGE"),
+    ],
+)
+#@pytest.mark.skipif(
+#    os.environ.get("CI") == "true",
+#    reason=(
+#        "Roman CRDS servers are not currently available outside the internal network"
+#    ),
+#)
+def test_dark_step_getbestrefs(tmpdir, instrument, exptype):
+    """Test that the the step will skip if CRDS returns N/A for the ref file"""
+    path = str(tmpdir / "dark_out.asdf")
+
+    # Set test size
+    shape = (2, 20, 20)
+
+    # Create test ramp and dark models
+    ramp_model, darkref_model = create_ramp_and_dark(shape, instrument, exptype)
+
+    # Perform Dark Current subtraction step with override = N/A
+    result = DarkCurrentStep.call(ramp_model, override_dark='N/A')
+    assert result.meta.cal_step.dark == 'SKIPPED'
+
 
     # Perform Dark Current subtraction step
     DarkCurrentStep.call(ramp_model, override_dark=darkref_model, dark_output=path)

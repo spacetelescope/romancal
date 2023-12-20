@@ -191,12 +191,12 @@ def test_dq_add1_groupdq():
         ("WFI", "WFI_IMAGE"),
     ],
 )
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
+#@pytest.mark.skipif(
+#    os.environ.get("CI") == "true",
+#    reason=(
+#        "Roman CRDS servers are not currently available outside the internal network"
+#    ),
+#)
 def test_dqinit_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a DQ reffile"""
 
@@ -246,12 +246,12 @@ def test_dqinit_step_interface(instrument, exptype):
         ("WFI", "WFI_IMAGE"),
     ],
 )
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
+#@pytest.mark.skipif(
+#    os.environ.get("CI") == "true",
+#    reason=(
+#        "Roman CRDS servers are not currently available outside the internal network"
+#    ),
+#)
 def test_dqinit_refpix(instrument, exptype):
     """Test that the basic inferface works for data requiring a DQ reffile"""
 
@@ -296,3 +296,33 @@ def test_dqinit_refpix(instrument, exptype):
     assert result.dq_border_ref_pix_left.shape == (20, 4)
     assert result.dq_border_ref_pix_top.shape == (4, 20)
     assert result.dq_border_ref_pix_bottom.shape == (4, 20)
+
+
+@pytest.mark.parametrize(
+    "instrument, exptype",
+    [
+        ("WFI", "WFI_IMAGE"),
+    ],
+)    
+def test_dqinit_getbestref(instrument, exptype):
+    """Test that the step is skipped if the CRDS reffile is N/A"""
+
+    # Set test size
+    shape = (2, 20, 20)
+
+    # Create test science raw model
+    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape)
+    wfi_sci_raw.meta.instrument.name = instrument
+    wfi_sci_raw.meta.instrument.detector = "WFI01"
+    wfi_sci_raw.meta.instrument.optical_element = "F158"
+    wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
+    wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
+    wfi_sci_raw.meta.exposure.type = exptype
+    wfi_sci_raw.data = u.Quantity(
+        np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
+    )
+    wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
+
+    # Perform Data Quality application step
+    result = DQInitStep.call(wfi_sci_raw_model, override_mask='N/A')
+    assert result.meta.cal_step.dq_init == 'SKIPPED'

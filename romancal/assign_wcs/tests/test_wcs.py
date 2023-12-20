@@ -95,3 +95,12 @@ def test_wcs(tmpdir, distortion, step):
     ]
     assert_allclose(s_region_alpha_list, l2_wcs.meta.wcsinfo.ra_ref, rtol=1e-1, atol=0)
     assert_allclose(s_region_delta_list, l2_wcs.meta.wcsinfo.dec_ref, rtol=1e-1, atol=0)
+
+
+@pytest.mark.parametrize("step", create_step())
+def test_crds_getbestref(step):
+    l2im = create_image()
+    l2_wcs = AssignWcsStep.call(l2im, override_distortion='N/A')
+
+    assert l2_wcs.meta.cal_step.assign_wcs == 'SKIPPED'
+    
