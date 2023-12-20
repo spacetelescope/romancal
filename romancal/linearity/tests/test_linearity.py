@@ -1,0 +1,69 @@
+"""
+
+Unit tests for linearity correction
+
+"""
+import pdb
+import numpy as np
+import pytest
+from astropy import units as u
+from roman_datamodels import maker_utils
+from roman_datamodels.datamodels import ScienceRawModel, LinearityRefModel
+
+from romancal.lib import dqflags
+from romancal.dq_init import DQInitStep
+from romancal.linearity import LinearityStep
+
+
+@pytest.mark.parametrize(
+    "instrument, exptype",
+    [
+        ("WFI", "WFI_IMAGE"),
+    ],
+)
+def test_linearity_coeff(instrument, exptype):
+    """Test that the basic inferface works for data requiring a DQ reffile"""
+
+    # Set test size
+    shape = (5, 20, 20)
+
+    # Create test science raw model
+    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape)
+    wfi_sci_raw.meta.instrument.name = instrument
+    wfi_sci_raw.meta.instrument.detector = "WFI01"
+    wfi_sci_raw.meta.instrument.optical_element = "F158"
+    wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
+    wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
+    wfi_sci_raw.meta.exposure.type = exptype
+    wfi_sci_raw.data = u.Quantity(
+        np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
+    )
+    wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
+
+    result = LinearityStep.call(wfi_sci_raw_model, override_linearity='N/A')
+
+    assert result.meta.cal_step.linearity == 'SKIPPED'
+
+    # Set coefficient values in reference file to check the algorithm
+    # Equation is DNcorr = L0 + L1*DN(i) + L2*DN(i)^2 + L3*DN(i)^3 + L4*DN(i)^4
+    # DN(i) = signal in pixel, Ln = coefficient from ref file
+    # L0 = 0 for all pixels for CDP6
+#    coeffs = np.asarray([ (0.0e+00, 0.85, 4.62e-06, -6.16e-11, 7.23e-16),
+#                        (0.0e+00, 0.85, 4.62e-06, -6.16e-11, 7.23e-16),
+#                        (0.0e+00, 0.85, 4.62e-06, -6.16e-11, 7.23e-16)],
+#                        dtype=np.float32)
+#    coeffs = np.asarray([0.0e+00, 0.85], dtype=float)
+    #linref.coeffs[:,]
+    result = DQInitStep.call(wfi_sci_raw_model)
+    ct = np.asarray([(0.0e+00, 0.85, 4.62e-06, -6.16e-11, 7.23e-16)], dtype=np.float32)
+    coeffs = np.tile(ct,(5,20,4))
+    linref = maker_utils.mk_linearity(shape=shape,coeffs=coeffs)
+    pdb.set_trace()
+    linref_model = LinearityRefModel(linref)
+
+    result = LinearityStep.call(result, override_linearity=linref_model)
+
+    assert result.meta.cal_step.linearity == 'COMPLETE'
+
+
+
