@@ -4,7 +4,7 @@ import numpy as np
 from astropy import units as u
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels
-from roman_datamodels.maker_utils import mk_datamodel, mk_resample
+from roman_datamodels import maker_utils
 
 from ..datamodels import ModelContainer
 from . import gwcs_drizzle, resample_utils
@@ -150,12 +150,11 @@ class ResampleData:
         # NOTE: wait for William to fix bug in datamodels' init and then
         # use datamodels.ImageModel(shape=(nx, ny)) instead of mk_datamodel()
 
-        self.blank_output = mk_datamodel(
+        self.blank_output = maker_utils.mk_datamodel(
             datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
         )
 
         # update meta data and wcs
-        input_model_0 = input_models[0]
         # note we have made this input_model_0 variable so that if
         # meta includes lazily-loaded objects, that we can successfully
         # copy them into the metadata.  Directly running input_models[0].meta
@@ -163,8 +162,8 @@ class ResampleData:
         # meta is loaded but before the dictionary is constructed,
         # which can lead to seek on closed file errors if
         # meta contains lazily loaded objects.
-        self.blank_output.meta = dict(input_model_0.meta._data.items())
-        self.blank_output.meta.wcs = self.output_wcs
+        input_model_0 = input_models[0]
+        l2_into_l3_meta(self.blank_output.meta, input_model_0.meta)
 
         self.output_models = ModelContainer()
 
@@ -186,7 +185,7 @@ class ResampleData:
         """
         for exposure in self.input_models.models_grouped:
             output_model = self.blank_output
-            output_model.meta["resample"] = mk_resample()
+            output_model.meta["resample"] = maker_utils.mk_resample()
             # Determine output file type from input exposure filenames
             # Use this for defining the output filename
             indx = exposure[0].meta.filename.rfind(".")
@@ -261,7 +260,7 @@ class ResampleData:
         """
         output_model = self.blank_output.copy()
         output_model.meta.filename = self.output_filename
-        output_model.meta["resample"] = mk_resample()
+        output_model.meta["resample"] = maker_utils.mk_resample()
         output_model.meta.resample["members"] = []
         output_model.meta.resample.weight_type = self.weight_type
         output_model.meta.resample.pointings = len(self.input_models.models_grouped)
@@ -671,3 +670,38 @@ class ResampleData:
             wtscale=wtscale,
             fillstr=fillval,
         )
+
+
+def l2_into_l3_meta(l3_meta, l2_meta):
+    """Update the level 3 meta with info from the level 2 meta
+
+    Parameters
+    ----------
+    l3_meta : dict
+        The meta to update. This is updated in-place
+
+    l2_meta : stnode
+        The Level 2-like meta to pull from
+
+    Notes
+    -----
+    The list of meta that is pulled from the Level 2 meta into the Level 3 meta is as follows:
+    basic.visit: observation.visit
+    basic.segment: observation.segment
+    basic.pass: observation.pass
+    basic.program: observation.program
+    basic.survey: obervation.survey
+    basic.optical_element: optical_element
+    basic.instrument: instrument.name
+    basic.telescope: telescope
+    program: program
+    """
+    l3_meta.basic.visit = l2_meta.observation.visit
+    l3_meta.basic.segment = l2_meta.observation.segment
+    # l3_meta.basic.pass = l2_meta.observation.pass
+    l3_meta.basic.program = l2_meta.observation.program
+    l3_meta.basic.survey = l2_meta.observation.survey
+    l3_meta.basic.optical_element = l2_meta.instrument.optical_element
+    l3_meta.basic.instrument = l2_meta.instrument.name
+    l3_meta.basic.telescope = l2_meta.telescope
+    l3_meta.program = l2_meta.program
