@@ -271,6 +271,7 @@ class ResampleData:
         # Initialize the output with the wcs
         driz = gwcs_drizzle.GWCSDrizzle(
             output_model,
+            outwcs=self.output_wcs,
             pixfrac=self.pixfrac,
             kernel=self.kernel,
             fillval=self.fillval,
@@ -350,7 +351,7 @@ class ResampleData:
 
         This modifies ``output_model`` in-place.
         """
-        output_wcs = output_model.meta.wcs
+        output_wcs = self.output_wcs 
         inverse_variance_sum = np.full_like(output_model.data.value, np.nan)
 
         log.info(f"Resampling {name}")

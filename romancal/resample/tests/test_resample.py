@@ -538,6 +538,7 @@ def test_resample_variance_array(wfi_sca1, wfi_sca4, name):
     output_model.meta["resample"] = {}
     driz = gwcs_drizzle.GWCSDrizzle(
         output_model,
+        outwcs=resample_data.output_wcs,
         pixfrac=resample_data.pixfrac,
         kernel=resample_data.kernel,
         fillval=resample_data.fillval,
