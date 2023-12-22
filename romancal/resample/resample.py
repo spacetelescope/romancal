@@ -489,9 +489,9 @@ class ResampleData:
             exposure_times["end"].append(exposure[0].meta.exposure.end_time)
 
         # Update some basic exposure time values based on output_model
-        output_model.meta.exposure.exposure_time = total_exposure_time
-        output_model.meta.exposure.start_time = min(exposure_times["start"])
-        output_model.meta.exposure.end_time = max(exposure_times["end"])
+        ## No equivalent? output_model.meta.exposure.exposure_time = total_exposure_time
+        output_model.meta.basic.time_first_mjd = min(exposure_times["start"]).mjd
+        output_model.meta.basic.time_last_mjd = max(exposure_times["end"]).mjd
         output_model.meta.resample.product_exposure_time = max_exposure_time
         # we haven't filled out the L3 data model enough to put max_exposure_time
         # somewhere sensible; I'm just dumping it in product_exposure_time
