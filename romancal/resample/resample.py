@@ -417,7 +417,7 @@ class ResampleData:
         # inverse of that to get back to units of variance.
         # TODO: fix unit here
         output_variance = u.Quantity(
-            np.reciprocal(inverse_variance_sum), unit=u.electron**2 / u.s**2
+            np.reciprocal(inverse_variance_sum), unit=u.MJy**2 / u.sr**2
         )
 
         setattr(output_model, name, output_variance)
