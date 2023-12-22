@@ -429,7 +429,7 @@ class ResampleData:
         Create an exposure time image that is the drizzled sum of the input
         images.
         """
-        output_wcs = output_model.meta.wcs
+        output_wcs = self.output_wcs
         exptime_tot = np.zeros(output_model.data.shape, dtype="f4")
 
         log.info("Resampling exposure time")
