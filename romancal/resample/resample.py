@@ -164,6 +164,7 @@ class ResampleData:
         input_model_0 = input_models[0]
         l2_into_l3_meta(self.blank_output.meta, input_model_0.meta)
         self.blank_output.meta.wcs = self.output_wcs
+        gwcs_into_l3(self.blank_output, self.output_wcs)
 
         self.output_models = ModelContainer()
 
@@ -704,3 +705,50 @@ def l2_into_l3_meta(l3_meta, l2_meta):
     l3_meta.basic.instrument = l2_meta.instrument.name
     l3_meta.basic.telescope = l2_meta.telescope
     l3_meta.program = l2_meta.program
+
+
+def gwcs_into_l3(model, wcsinfo):
+    """Update the Level 3 wcsinfo block from a GWCS object
+
+    Parameters
+    ----------
+    model : `DataModel`
+        The model whose meta is to be updated.
+
+    wcsinfo : `GWCS`
+        GWCS info to transfer into the `meta.wcsinfo` block
+
+    Notes
+    -----
+    Some models/parameters in the GWCS object have explicit names, such as
+    'crpix1'. However, some do not and hence have to be accessed explicitly
+    by indexing. This is fragile and will be a source of issues.
+    """
+    l3_wcsinfo = model.meta.wcsinfo
+    transform = wcsinfo.forward_transform
+
+    # Basic WCS info
+    l3_wcsinfo.projection = 'TAN'
+    l3_wcsinfo.rotation_matrix = transform['pc_rotation_matrix'].matrix.value.tolist()
+    l3_wcsinfo.dec_ref = transform.lat_6.value
+    l3_wcsinfo.ra_ref = transform.lon_6.value
+    # l3_wcsinfo.x_ref = center of mosaic?
+    # l3_wcsinfo.y_ref = center of mosaic?
+    # l3_wcsinfo.s_region = from gwcs.bounding_box
+
+    # Mosaic info
+    # l3_wcsinfo.dec_center = from center of mosaic
+    # l3_wcsinfo.pixel_scale = ???
+    # l3_wcsinfo.pixel_scale_local = ???
+    # l3_wcsinfo.pixel_shape = image shape
+    # l3_wcsinfo.ra_center = from center of mosaic
+    # l3_wcsinfo.ra_corn1 = from bounding box
+    # l3_wcsinfo.ra_corn2 = from bounding box
+    # l3_wcsinfo.ra_corn3 = from bounding box
+    # l3_wcsinfo.ra_corn4 = from bounding box
+    # l3_wcsinfo.dec_corn1 = from bounding box
+    # l3_wcsinfo.dec_corn2 = from bounding box
+    # l3_wcsinfo.dec_corn3 = from bounding box
+    # l3_wcsinfo.dec_corn4 = from bounding box
+    # l3_wcsinfo.orientat = ???
+    # l3_wcsinfo.orientat_local = ???
