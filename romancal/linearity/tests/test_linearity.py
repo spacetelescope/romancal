@@ -66,7 +66,7 @@ def test_linearity_coeff(instrument, exptype):
     linref = maker_utils.mk_linearity(shape=shape,coeffs=coeffs)
     linref_model = LinearityRefModel(linref)
 
-    result_lincorr = LinearityStep.call(result, override_linearity=linref_model)
+    LinearityStep.call(result, override_linearity=linref_model)
 
     assert result.meta.cal_step.linearity == 'COMPLETE'
     assert result.pixeldq[5,5] == dqflags.pixel["NO_LIN_CORR"]
