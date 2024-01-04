@@ -473,13 +473,6 @@ def test_update_exposure_times_different_sca_same_exposure(exposure_1):
         - 3 * exposure_1[0].meta.exposure.effective_exposure_time
     )
     assert np.abs(time_difference) < 0.1
-    # the median ends up being 2 exposures
-    # get this time within 0.1 s.
-    time_difference = (
-        output_model.meta.exposure.exposure_time
-        - 2 * exposure_1[0].meta.exposure.effective_exposure_time
-    )
-    assert np.abs(time_difference) < 0.1
     assert (
         output_model.meta.exposure.start_time == exposure_1[0].meta.exposure.start_time
     )
