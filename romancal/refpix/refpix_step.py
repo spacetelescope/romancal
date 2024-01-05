@@ -46,7 +46,7 @@ class RefPixStep(RomanStep):
         if ref_file == "N/A":
             self.log.warning("No REFPIX reference file found")
             self.log.warning("Reference pixel correction step will be skipped")
-            result = datamodel.copy()
+            result = datamodel
             result.meta.cal_step.refpix = "SKIPPED"
             return result
 

@@ -28,7 +28,7 @@ class DarkCurrentStep(RomanStep):
             if self.dark_name == 'N/A':
                 self.log.warning('No DARK reference file found')
                 self.log.warning('Dark current step will be skipped')
-                result = input_model.copy()
+                result = input_model
                 result.meta.cal_step.dark = 'SKIPPED'
                 return result
 
