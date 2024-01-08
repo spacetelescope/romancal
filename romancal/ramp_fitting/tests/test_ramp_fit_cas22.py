@@ -1,5 +1,4 @@
 """Ramp Fitting tests involving MultiAccum Tables"""
-import os
 
 import numpy as np
 import pytest

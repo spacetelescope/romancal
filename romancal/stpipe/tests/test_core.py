@@ -1,5 +1,3 @@
-import os
-
 import asdf
 import pytest
 from astropy.time import Time

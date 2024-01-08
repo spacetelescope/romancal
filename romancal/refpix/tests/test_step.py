@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 from romancal.refpix import RefPixStep
@@ -60,15 +58,14 @@ def test_refpix_step(
         result.border_ref_pix_right.value == regression.border_ref_pix_right.value
     ).all()
     assert result.border_ref_pix_right.unit == regression.border_ref_pix_right.unit
-#
+    #
     # Run the step with reffile = N/A
     result = RefPixStep.call(
         datamodel,
-        override_refpix='N/A',
+        override_refpix="N/A",
         remove_offset=remove_offset,
         remove_trends=remove_trends,
         cosine_interpolate=cosine_interpolate,
         fft_interpolate=fft_interpolate,
     )
-    assert result.meta.cal_step.refpix == 'SKIPPED'
-    
+    assert result.meta.cal_step.refpix == "SKIPPED"

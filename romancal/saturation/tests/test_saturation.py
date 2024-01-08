@@ -11,8 +11,9 @@ from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import ScienceRawModel
 
 from romancal.lib import dqflags
-from romancal.saturation.saturation import flag_saturation
 from romancal.saturation import SaturationStep
+from romancal.saturation.saturation import flag_saturation
+
 
 def test_basic_saturation_flagging(setup_wfi_datamodels):
     """Check that the saturation flag is set when a pixel value is above the
@@ -316,29 +317,30 @@ def test_nans_in_mask(setup_wfi_datamodels):
     # Check that output PIXELDQ is set to NO_SAT_CHECK
     assert output.pixeldq[5, 5] == dqflags.pixel["NO_SAT_CHECK"]
 
+
 def test_saturation_getbestref(setup_wfi_datamodels):
     """Check that when CRDS returns N/A for the reference file the
     step is skipped"""
 
-     # Set test size
+    # Set test size
     shape = (2, 20, 20)
 
     # Create test science raw model
     wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape)
-    wfi_sci_raw.meta.instrument.name = 'WFI'
+    wfi_sci_raw.meta.instrument.name = "WFI"
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
     wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
     wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
-    wfi_sci_raw.meta.exposure.type = 'WFI_IMAGE'
+    wfi_sci_raw.meta.exposure.type = "WFI_IMAGE"
     wfi_sci_raw.data = u.Quantity(
         np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
     )
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw, dq=True)
-    
+
     # Run the pipeline
-    result = SaturationStep.call(wfi_sci_raw_model, override_saturation='N/A')
-    assert result.meta.cal_step.saturation == 'SKIPPED'
+    result = SaturationStep.call(wfi_sci_raw_model, override_saturation="N/A")
+    assert result.meta.cal_step.saturation == "SKIPPED"
 
 
 @pytest.fixture(scope="function")

@@ -25,11 +25,11 @@ class DarkCurrentStep(RomanStep):
             # Get the name of the dark reference file to use
             self.dark_name = self.get_reference_file(input_model, "dark")
             # Check for a valid reference file
-            if self.dark_name == 'N/A':
-                self.log.warning('No DARK reference file found')
-                self.log.warning('Dark current step will be skipped')
+            if self.dark_name == "N/A":
+                self.log.warning("No DARK reference file found")
+                self.log.warning("Dark current step will be skipped")
                 result = input_model
-                result.meta.cal_step.dark = 'SKIPPED'
+                result.meta.cal_step.dark = "SKIPPED"
                 return result
 
             self.log.info("Using DARK reference file: %s", self.dark_name)

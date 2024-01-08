@@ -31,7 +31,7 @@ class SaturationStep(RomanStep):
                 return result
 
             # Open the reference file data model
-        # Test for reference file
+            # Test for reference file
             self.log.info("Using SATURATION reference file: %s", self.ref_name)
             ref_model = SaturationRefModel(self.ref_name)
 

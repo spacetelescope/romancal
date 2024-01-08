@@ -7,10 +7,10 @@ import numpy as np
 import pytest
 from astropy import units as u
 from roman_datamodels import maker_utils
-from roman_datamodels.datamodels import ScienceRawModel, LinearityRefModel
+from roman_datamodels.datamodels import LinearityRefModel, ScienceRawModel
 
-from romancal.lib import dqflags
 from romancal.dq_init import DQInitStep
+from romancal.lib import dqflags
 from romancal.linearity import LinearityStep
 
 
@@ -40,9 +40,9 @@ def test_linearity_coeff(instrument, exptype):
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     result = DQInitStep.call(wfi_sci_raw_model)
-    result = LinearityStep.call(result, override_linearity='N/A')
+    result = LinearityStep.call(result, override_linearity="N/A")
 
-    assert result.meta.cal_step.linearity == 'SKIPPED'
+    assert result.meta.cal_step.linearity == "SKIPPED"
 
     # Set coefficient values in reference file to check the algorithm
     # Equation is DNcorr = L0 + L1*DN(i) + L2*DN(i)^2 + L3*DN(i)^3 + L4*DN(i)^4
@@ -50,29 +50,26 @@ def test_linearity_coeff(instrument, exptype):
     # L0 = 0 for all pixels for CDP6
 
     coeffs = np.zeros(shape, dtype=np.float32)
-    coeffs[1,:,:].fill(0.85)
-    coeffs[2,:,:].fill(4.62e-06)
-    coeffs[3,:,:].fill(-6.16e-11)
-    coeffs[4,:,:].fill(7.23e-16)
-    #coeffs = np.tile(coeffs,(5,20,4))
+    coeffs[1, :, :].fill(0.85)
+    coeffs[2, :, :].fill(4.62e-06)
+    coeffs[3, :, :].fill(-6.16e-11)
+    coeffs[4, :, :].fill(7.23e-16)
+    # coeffs = np.tile(coeffs,(5,20,4))
     # set one set of coeffs to 0 to check that the data values are not altered.
     # and that the DQ flag is set to NO_LIN_CORR
-    coeffs[0:,5,5] = 0.0
+    coeffs[0:, 5, 5] = 0.0
     # set one of the coeffs to NaN and check that the DQ flag is set to NO_LIN_CORR
-    coeffs[0:,6,5] = np.nan
+    coeffs[0:, 6, 5] = np.nan
     # save the pixel values to make sure they are not altered
-    pixels_55 = result.data[0:,5,5]
-    pixels_65 = result.data[0:,6,5]
-    linref = maker_utils.mk_linearity(shape=shape,coeffs=coeffs)
+    pixels_55 = result.data[0:, 5, 5]
+    pixels_65 = result.data[0:, 6, 5]
+    linref = maker_utils.mk_linearity(shape=shape, coeffs=coeffs)
     linref_model = LinearityRefModel(linref)
 
     LinearityStep.call(result, override_linearity=linref_model)
 
-    assert result.meta.cal_step.linearity == 'COMPLETE'
-    assert result.pixeldq[5,5] == dqflags.pixel["NO_LIN_CORR"]
-    assert result.pixeldq[6,5] == dqflags.pixel["NO_LIN_CORR"]
-    np.testing.assert_array_equal(result.data[0:,5,5],pixels_55)
-    np.testing.assert_array_equal(result.data[0:,6,5],pixels_65)
-
-
-
+    assert result.meta.cal_step.linearity == "COMPLETE"
+    assert result.pixeldq[5, 5] == dqflags.pixel["NO_LIN_CORR"]
+    assert result.pixeldq[6, 5] == dqflags.pixel["NO_LIN_CORR"]
+    np.testing.assert_array_equal(result.data[0:, 5, 5], pixels_55)
+    np.testing.assert_array_equal(result.data[0:, 6, 5], pixels_65)

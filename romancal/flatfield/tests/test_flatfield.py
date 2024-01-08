@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pytest
 from astropy import units as u
@@ -62,13 +60,12 @@ def test_flatfield_step_interface(instrument, exptype):
     assert result.var_flat.shape == shape
     assert result.meta.cal_step.flat_field == "COMPLETE"
 
-
     # test that the step is skipped if the reference file is N/A
-    result = FlatFieldStep.call(wfi_image_model, override_flat='N/A')
+    result = FlatFieldStep.call(wfi_image_model, override_flat="N/A")
 
-    assert result.meta.cal_step.flat_field == 'SKIPPED'
+    assert result.meta.cal_step.flat_field == "SKIPPED"
 
-    
+
 @pytest.mark.parametrize(
     "instrument, exptype",
     [

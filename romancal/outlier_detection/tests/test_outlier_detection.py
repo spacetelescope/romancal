@@ -1,5 +1,3 @@
-import os
-
 import pytest
 from astropy import units as u
 from roman_datamodels import maker_utils

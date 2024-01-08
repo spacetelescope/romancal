@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pytest
 from astropy import units as u
@@ -240,7 +238,6 @@ def test_dqinit_step_interface(instrument, exptype):
         ("WFI", "WFI_IMAGE"),
     ],
 )
-
 def test_dqinit_refpix(instrument, exptype):
     """Test that the basic inferface works for data requiring a DQ reffile"""
 
@@ -292,7 +289,7 @@ def test_dqinit_refpix(instrument, exptype):
     [
         ("WFI", "WFI_IMAGE"),
     ],
-)    
+)
 def test_dqinit_getbestref(instrument, exptype):
     """Test that the step is skipped if the CRDS reffile is N/A"""
 
@@ -313,5 +310,5 @@ def test_dqinit_getbestref(instrument, exptype):
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Perform Data Quality application step
-    result = DQInitStep.call(wfi_sci_raw_model, override_mask='N/A')
-    assert result.meta.cal_step.dq_init == 'SKIPPED'
+    result = DQInitStep.call(wfi_sci_raw_model, override_mask="N/A")
+    assert result.meta.cal_step.dq_init == "SKIPPED"

@@ -2,7 +2,6 @@
 Unit tests for dark current correction
 """
 
-import os
 
 import numpy as np
 import pytest
@@ -107,6 +106,7 @@ def test_dark_step_output_dark_file(tmpdir, instrument, exptype):
     assert dark_out_file_model.data.shape == shape
     assert dark_out_file_model.dq.shape == shape[1:]
 
+
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
@@ -124,9 +124,8 @@ def test_dark_step_getbestrefs(tmpdir, instrument, exptype):
     ramp_model, darkref_model = create_ramp_and_dark(shape, instrument, exptype)
 
     # Perform Dark Current subtraction step with override = N/A
-    result = DarkCurrentStep.call(ramp_model, override_dark='N/A')
-    assert result.meta.cal_step.dark == 'SKIPPED'
-
+    result = DarkCurrentStep.call(ramp_model, override_dark="N/A")
+    assert result.meta.cal_step.dark == "SKIPPED"
 
     # Perform Dark Current subtraction step
     DarkCurrentStep.call(ramp_model, override_dark=darkref_model, dark_output=path)

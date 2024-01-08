@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pytest
 from gwcs.wcstools import grid_from_bounding_box
@@ -95,7 +93,6 @@ def test_wcs(tmpdir, distortion, step):
 @pytest.mark.parametrize("step", create_step())
 def test_crds_getbestref(step):
     l2im = create_image()
-    l2_wcs = AssignWcsStep.call(l2im, override_distortion='N/A')
+    l2_wcs = AssignWcsStep.call(l2im, override_distortion="N/A")
 
-    assert l2_wcs.meta.cal_step.assign_wcs == 'SKIPPED'
-    
+    assert l2_wcs.meta.cal_step.assign_wcs == "SKIPPED"

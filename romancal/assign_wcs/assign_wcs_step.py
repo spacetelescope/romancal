@@ -39,7 +39,7 @@ class AssignWcsStep(RomanStep):
                     result = input_model.copy()
                     result.meta.cal_step.assign_wcs = "SKIPPED"
                     return result
-                
+
                 reference_file_names[reftype] = reffile if reffile else ""
             log.info("Using reference files: %s for assign_wcs", reference_file_names)
             result = load_wcs(input_model, reference_file_names)
