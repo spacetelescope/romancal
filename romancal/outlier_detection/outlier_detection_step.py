@@ -1,6 +1,5 @@
 """Public common step definition for OutlierDetection processing."""
 
-import contextlib
 import os
 from functools import partial
 
@@ -55,19 +54,46 @@ class OutlierDetectionStep(RomanStep):
 
         self.input_models = input_models
         self.input_container = isinstance(self.input_models, ModelContainer)
-        # Setup output path naming if associations are involved.
-        asn_id = None
-        with contextlib.suppress(AttributeError, KeyError):
-            asn_id = self.input_models.meta.asn_table.asn_id
-        if asn_id is None:
-            asn_id = self.search_attr("asn_id")
-        if asn_id is not None:
-            # TODO: revisit this once we have a better idea of the associations
-            _make_output_path = self.search_attr("_make_output_path", parent_first=True)
+        self.skip = False
 
+        # make sure input is a ModelContainer
+        if self.input_container:
+            return self._run_process()
+
+        # if input is not a ModelContainer, log warning message and raise TypeError
+        self.log.warning(
+            "Input is not a ModelContainer. Outlier detection step will be SKIPPED."
+        )
+        raise TypeError
+
+    def _run_process(self):
+        # check conditions for valid input
+        self.valid_input = len(self.input_models) >= 2 and all(
+            model.meta.exposure.type == "WFI_IMAGE" for model in self.input_models
+        )
+
+        if self.valid_input:
+            return self._run_outlier_detection()
+
+        # if input is not valid then log a warning message and
+        # skip outlier detection step
+        self.log.warning(
+            "Input contains either < 2 elements or the wrong exposure type \
+            (i.e. meta.exposure.type != 'WFI_IMAGE')."
+        )
+        for model in self.input_models:
+            model.meta.cal_step.outlier_detection = "SKIPPED"
+        self.skip = True
+        return self.input_models
+
+    def _run_outlier_detection(self):
+        # Setup output path naming if associations are involved.
+        asn_id = self.input_models.asn_table.get("asn_id", None)
+        if asn_id is not None:
+            _make_output_path = self.search_attr("_make_output_path", parent_first=True)
             self._make_output_path = partial(_make_output_path, asn_id=asn_id)
 
-        # Setup outlier detection parameters
+        detection_step = outlier_detection.OutlierDetection
         pars = {
             "weight_type": self.weight_type,
             "pixfrac": self.pixfrac,
@@ -87,36 +113,8 @@ class OutlierDetectionStep(RomanStep):
             "allowed_memory": self.allowed_memory,
             "in_memory": self.in_memory,
             "make_output_path": self.make_output_path,
+            "resample_suffix": "i2d",
         }
-
-        # Add logic here to select which version of OutlierDetection
-        # needs to be used depending on the input data
-        if self.input_container:
-            single_model = self.input_models[0]
-        else:
-            single_model = self.input_models
-        exptype = single_model.meta.exposure.type
-        self.check_input()
-
-        if exptype == "WFI_IMAGE":
-            # imaging with resampling
-            detection_step = outlier_detection.OutlierDetection
-            pars["resample_suffix"] = "i2d"
-        else:
-            self.log.error(
-                "Outlier detection failed for unknown/unsupported ",
-                f"exposure type: {exptype}",
-            )
-            self.valid_input = False
-
-        if not self.valid_input:
-            if self.input_container:
-                for model in self.input_models:
-                    model.meta.cal_step.outlier_detection = "SKIPPED"
-            else:
-                self.input_models.meta.cal_step.outlier_detection = "SKIPPED"
-            self.skip = True
-            return self.input_models
 
         self.log.debug(f"Using {detection_step.__name__} class for outlier_detection")
 
@@ -125,43 +123,26 @@ class OutlierDetectionStep(RomanStep):
         step.do_detection()
 
         state = "COMPLETE"
-        if self.input_container:
+
+        if not self.save_intermediate_results:
+            self.log.debug(
+                "The following files will be deleted since save_intermediate_results=False:"
+            )
+        for model in self.input_models:
+            model.meta.cal_step.outlier_detection = state
             if not self.save_intermediate_results:
-                self.log.debug(
-                    "The following files will be deleted since save_intermediate_results=False:"
-                )
-            for model in self.input_models:
-                model.meta.cal_step.outlier_detection = state
-                if not self.save_intermediate_results:
-                    #  Remove unwanted files
-                    crf_path = self.make_output_path(basepath=model.meta.filename)
-                    #  These lines to be used when/if outlier_i2d files follow output_dir
-                    #  crf_file = os.path.basename(crf_path)
-                    #  outlr_path = crf_path.replace(crf_file, outlr_file)
-                    outlr_file = model.meta.filename.replace("cal", "outlier_i2d")
-                    blot_path = crf_path.replace("crf", "blot")
-                    median_path = blot_path.replace("blot", "median")
+                #  Remove unwanted files
+                crf_path = self.make_output_path(basepath=model.meta.filename)
+                #  These lines to be used when/if outlier_i2d files follow output_dir
+                #  crf_file = os.path.basename(crf_path)
+                #  outlr_path = crf_path.replace(crf_file, outlr_file)
+                outlr_file = model.meta.filename.replace("cal", "outlier_i2d")
+                blot_path = crf_path.replace("crf", "blot")
+                median_path = blot_path.replace("blot", "median")
 
-                    for fle in [outlr_file, blot_path, median_path]:
-                        if os.path.isfile(fle):
-                            os.remove(fle)
-                            self.log.debug(f"    {fle}")
-        else:
-            self.input_models.meta.cal_step.outlier_detection = state
+                for fle in [outlr_file, blot_path, median_path]:
+                    if os.path.isfile(fle):
+                        os.remove(fle)
+                        self.log.debug(f"    {fle}")
+
         return self.input_models
-
-    def check_input(self):
-        """Use this method to determine whether input is valid or not."""
-        if self.input_container:
-            ninputs = len(self.input_models)
-            if not isinstance(self.input_models, ModelContainer):
-                self.log.warning("Input is not a ModelContainer")
-                self.log.warning("Outlier detection step will be skipped")
-                self.valid_input = False
-            elif ninputs < 2:
-                self.log.warning(f"Input only contains {ninputs} exposure")
-                self.log.warning("Outlier detection step will be skipped")
-                self.valid_input = False
-            else:
-                self.valid_input = True
-                self.log.info(f"Performing outlier detection on {ninputs} inputs")
