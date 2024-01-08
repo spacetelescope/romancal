@@ -29,12 +29,6 @@ def test_open_model(step_class, tmp_path):
         assert model.meta.telescope == "ROMAN"
 
 
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
 def test_get_reference_file(step_class):
     """
@@ -56,12 +50,6 @@ def test_get_reference_file(step_class):
 
 
 @pytest.mark.skip(reason="There are no grism flats.")
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
 def test_get_reference_file_spectral(step_class):
     """
@@ -93,12 +81,6 @@ def test_log_messages(tmp_path):
     assert any("Splines failed to reticulate" in l for l in result.cal_logs)
 
 
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
 def test_crds_meta():
     """Test that context and software versions are set"""
 

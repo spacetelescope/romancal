@@ -8,12 +8,6 @@ from roman_datamodels.datamodels import ImageModel
 from romancal.outlier_detection import OutlierDetectionStep
 
 
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
 @pytest.mark.parametrize(
     "instrument, exptype",
     [

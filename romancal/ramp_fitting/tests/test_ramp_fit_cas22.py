@@ -11,15 +11,6 @@ from roman_datamodels.datamodels import GainRefModel, RampModel, ReadnoiseRefMod
 from romancal.lib import dqflags
 from romancal.ramp_fitting import RampFitStep
 
-# Currently Roman CRDS servers are not available publicly.
-# Remove this test when one is.
-pytestmark = pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
-
 # Read Time in seconds
 #   For Roman, the read time of the detectors is a fixed value and is currently
 #   backed into code. Will need to refactor to consider the more general case.

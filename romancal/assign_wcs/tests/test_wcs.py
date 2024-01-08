@@ -43,11 +43,6 @@ def create_step():
         return load_wcs(image, {"distortion": file_name})
 
     def assign_wcs_step(image, file_name):
-        if os.environ.get("CI") == "true":
-            pytest.skip(
-                "Roman CRDS servers are not currently available outside the internal"
-                " network"
-            )
         return AssignWcsStep.call(image, override_distortion=file_name)
 
     return [load_wcs_step, assign_wcs_step]

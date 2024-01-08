@@ -6,12 +6,6 @@ from romancal.refpix import RefPixStep
 from romancal.refpix.refpix import run_steps
 
 
-#@pytest.mark.skipif(
-#    os.environ.get("CI") == "true",
-#    reason=(
-#        "Roman CRDS servers are not currently available outside the internal network"
-#    ),
-#)
 @pytest.mark.parametrize(
     "remove_offset, remove_trends, cosine_interpolate, fft_interpolate",
     [(True, True, True, False), (True, True, True, True)],
