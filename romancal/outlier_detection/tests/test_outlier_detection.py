@@ -1,5 +1,7 @@
 import json
+import os
 from io import StringIO
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -14,8 +16,6 @@ from roman_datamodels import maker_utils
 
 from romancal.datamodels import ModelContainer
 from romancal.outlier_detection import OutlierDetectionStep, outlier_detection
-from pathlib import Path
-import os
 
 
 def _create_tel2sky_model(input_dm):
