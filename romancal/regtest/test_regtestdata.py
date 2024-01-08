@@ -18,18 +18,26 @@ def _add_wcs(tmp_path, model):
 
 @pytest.mark.parametrize("modification", [None, "small", "large"])
 def test_compare_asdf(tmp_path, modification):
-    fn0 = tmp_path / "test0.asdf"
-    fn1 = tmp_path / "test1.asdf"
+    # Need to use different directories for the files because the filenames are
+    #    now always updated as part of writing a datamodel, see spacetelescope/datamodels#295
+    file0 = tmp_path / "test0"
+    file1 = tmp_path / "test1"
+    file0.mkdir()
+    file1.mkdir()
+
+    file0 = file0 / "test.asdf"
+    file1 = file1 / "test.asdf"
+
     l2 = rdm.ImageModel(maker_utils.mk_level2_image(shape=(100, 100)))
     _add_wcs(tmp_path, l2)
-    l2.save(fn0)
+    l2.save(file0)
     atol = 0.0001
     if modification == "small":
         l2.data += (atol / 2) * l2.data.unit
     elif modification == "large":
         l2.data += (atol * 2) * l2.data.unit
-    l2.save(fn1)
-    diff = compare_asdf(fn0, fn1, atol=atol)
+    l2.save(file1)
+    diff = compare_asdf(file0, file1, atol=atol)
     if modification == "large":
         assert not diff.identical, diff.report()
         assert "arrays_differ" in diff.diff

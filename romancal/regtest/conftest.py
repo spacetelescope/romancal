@@ -207,6 +207,7 @@ def ignore_asdf_paths():
         # and other things that will almost certainly change in every case
         "asdf_library",
         "history",
+        "roman.meta.ref_file.crds.sw_version",
         # roman-specific stuff to ignore
         "roman.cal_logs",
         "roman.meta.date",

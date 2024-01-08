@@ -22,6 +22,7 @@ def get_steps():
     # romancal.step to keep the CLI snappy.
     return [
         ("romancal.pipeline.ExposurePipeline", "roman_elp", True),
+        ("romancal.pipeline.HighLevelPipeline", "roman_hlp", True),
         ("romancal.step.DarkCurrentStep", None, False),
         ("romancal.step.DQInitStep", None, False),
         ("romancal.step.FlatFieldStep", None, False),
@@ -32,7 +33,7 @@ def get_steps():
         ("romancal.step.RefPixStep", None, False),
         ("romancal.step.SaturationStep", None, False),
         ("romancal.step.AssignWcsStep", None, False),
-        ("romancal.step.OutlierDetectionStep", None, False),
+        ("romancal.step.OutlierDetectionStep", "outlier_detection", False),
         ("romancal.step.SourceDetectionStep", None, False),
         ("romancal.step.SkyMatchStep", "skymatch", False),
         ("romancal.step.TweakRegStep", "tweakreg", False),

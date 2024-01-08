@@ -6,7 +6,7 @@ on:
       webbpsf_path:
         value: ${{ jobs.webbpsf_path.outputs.path }}
       webbpsf_hash:
-        value: ${{ jobs.webbpsf_data.outputs.hash }}
+        value: ${{ jobs.webbpsf_hash.outputs.hash }}
   workflow_dispatch:
   schedule:
     - cron: "42 4 * * 3"
@@ -29,10 +29,10 @@ jobs:
       path: ${{ steps.path.outputs.path }}
     steps:
       - id: path
-        run: echo "path=${{ env.DATA_PATH }}/webbpsf-data" >> $GITHUB_OUTPUT
+        run: echo "path=${{ needs.path.outputs.path }}/webbpsf-data" >> $GITHUB_OUTPUT
   webbpsf_data:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'update webbpsf data')))
-    needs: [ webbpsf_path ]
+    needs: [ path, webbpsf_path ]
     name: download and cache WebbPSF data
     runs-on: ubuntu-latest
     env:
@@ -45,12 +45,12 @@ jobs:
       - id: cache_check
         uses: actions/cache@v3
         with:
-          path: ${{ needs.webbpsf_path.outputs.path }}
+          path: ${{ needs.path.outputs.path }}
           key: webbpsf-${{ steps.data_hash.outputs.hash }}
       - if: ${{ steps.cache_check.outputs.cache-hit != 'true' }}
-        run: mkdir -p ${{ env.DATA_PATH }}
+        run: mkdir -p ${{ needs.path.outputs.path }}
       - if: ${{ steps.cache_check.outputs.cache-hit != 'true' }}
-        run: tar -xzvf tmp/webbpsf-data.tar.gz -C ${{ env.DATA_PATH }}
+        run: tar -xzvf tmp/webbpsf-data.tar.gz -C ${{ needs.path.outputs.path }}
   webbpsf_hash:
     needs: [ webbpsf_path, webbpsf_data ]
     # run data job if webbpsf-data succeeds or is skipped. This allows

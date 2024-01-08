@@ -6,7 +6,13 @@ Installation
 .. warning::
     Linux and MacOS platforms are tested and supported. Windows is not currently supported.
 
-The easiest way to install the latest `romancal` release into a fresh virtual environment is
+Stable releases of the ``romancal`` package are registered at
+`PyPI <https://pypi.org/project/romancal/>`_. The development version of `romancal` is
+installable from the
+`Github repository <https://github.com/spacetelescope/romancal>`_.
+
+The basic method of installing the roman calibration pipeline is to setup your environment and
+issue the command,
 ::
 
     $ pip install romancal
@@ -89,15 +95,7 @@ Install from your local checked-out copy as an "editable" install:
     $ pip install -e .
 
 If you want to run the unit or regression tests and/or build the docs, you can make sure those dependencies are
-installed too:
-::
-
-    $ pip install -e .[test]
-    $ pip install -e .[docs]
-    $ pip install -e .[test,docs]
-
-On a macOS machine, you should run the same command as above but with quotes around the
-options to be installed
+installed as well:
 ::
 
     $ pip install -e '.[test]'

@@ -9,6 +9,7 @@ from metrics_logger.decorators import metrics_logger
 from numpy.testing import assert_allclose
 
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
+from romancal.lib.dqflags import pixel
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
 from .regtestdata import compare_asdf
@@ -23,7 +24,7 @@ def passfail(bool_expr):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS86", "DMS87", "DMS88")
+@metrics_logger("DMS86", "DMS87", "DMS88", "DMS361", "DMS280")
 def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     """Tests for flat field imaging processing requirements DMS86 & DMS 87"""
     input_data = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
@@ -47,6 +48,12 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     # Initial prep
     model = rdm.open(rtdata.output, lazy_load=False)
     pipeline = ExposurePipeline()
+
+    # DMS280 result is an ImageModel
+    pipeline.log.info(
+        "DMS280 MSG: Testing that result is a Level 2 model......."
+        + passfail(isinstance(model, rdm.datamodels.ImageModel))
+    )
 
     # DMS86 instrument artifact correction tests
     pipeline.log.info(
@@ -92,6 +99,13 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
         + passfail(model.meta.cal_step.jump == "COMPLETE")
     )
     assert model.meta.cal_step.jump == "COMPLETE"
+    uneven = len({len(x) for x in model.meta.exposure.read_pattern}) > 1
+    pipeline.log.info(
+        "DMS361: Testing that jump detection detected jumps in uneven ramp in "
+        "Level 2 image output......."
+        + passfail(uneven & np.any(model.dq & pixel["JUMP_DET"]))
+    )
+    assert uneven & np.any(model.dq & pixel["JUMP_DET"])
     pipeline.log.info(
         "Status of the step:             linearity     "
         + str(model.meta.cal_step.linearity)
@@ -258,15 +272,15 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS278", "DMS90", "DMS91", "DMS9")
+@metrics_logger("DMS278", "DMS90", "DMS91", "DMS9", "DMS365")
 def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
-    """Tests for flat field grism processing requirements DMS90, DMS91 & DMS 278"""
-    input_data = "r0000201001001001002_01101_0001_WFI01_uncal.asdf"
+    """Tests for flat field grism processing requirements DMS90, DMS91 and DMS 278"""
+    input_data = "r0000201001001001001_01101_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/grism/{input_data}")
     rtdata.input = input_data
 
     # Test Pipeline
-    output = "r0000201001001001002_01101_0001_WFI01_cal.asdf"
+    output = "r0000201001001001001_01101_0001_WFI01_cal.asdf"
     rtdata.output = output
     args = [
         "--disable-crds-steppars",
@@ -328,6 +342,13 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
         " output......." + passfail(model.meta.cal_step.jump == "COMPLETE")
     )
     assert model.meta.cal_step.jump == "COMPLETE"
+    uneven = len({len(x) for x in model.meta.exposure.read_pattern}) > 1
+    pipeline.log.info(
+        "DMS365: Testing that jump detection detected jumps in uneven ramp in "
+        "Level 2 image output......."
+        + passfail(uneven & np.any(model.dq & pixel["JUMP_DET"]))
+    )
+    assert uneven & np.any(model.dq & pixel["JUMP_DET"])
     pipeline.log.info(
         "Status of the step:             linearity     "
         + str(model.meta.cal_step.assign_wcs)

@@ -16,7 +16,6 @@ from romancal.dark_current import DarkCurrentStep
 from romancal.datamodels import ModelContainer
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
-from romancal.jump import jump_step
 from romancal.lib import dqflags
 from romancal.lib.basic_utils import is_fully_saturated
 from romancal.linearity import LinearityStep
@@ -59,7 +58,6 @@ class ExposurePipeline(RomanPipeline):
         "refpix": RefPixStep,
         "linearity": LinearityStep,
         "dark_current": DarkCurrentStep,
-        "jump": jump_step.JumpStep,
         "rampfit": ramp_fit_step.RampFitStep,
         "assign_wcs": AssignWcsStep,
         "flatfield": FlatFieldStep,
@@ -133,10 +131,11 @@ class ExposurePipeline(RomanPipeline):
                     "photom",
                     "source_detection",
                     "dark",
-                    "jump",
                     "refpix",
                     "linearity",
                     "ramp_fit",
+                    "jump",
+                    "tweakreg",
                 ]:
                     result.meta.cal_step[step_str] = "SKIPPED"
 
@@ -149,7 +148,6 @@ class ExposurePipeline(RomanPipeline):
             result = self.refpix(result)
             result = self.linearity(result)
             result = self.dark_current(result)
-            result = self.jump(result)
             result = self.rampfit(result)
             result = self.assign_wcs(result)
 
@@ -158,6 +156,8 @@ class ExposurePipeline(RomanPipeline):
                 result = self.photom(result)
                 result = self.source_detection(result)
                 if file_type == "asn":
+                    result.meta.cal_step.tweakreg = "SKIPPED"
+                    self.suffix = "sourcedetection"
                     tweakreg_input.append(result)
                     log.info(
                         f"Number of models to tweakreg:   {len(tweakreg_input._models), n_members}"
@@ -171,8 +171,12 @@ class ExposurePipeline(RomanPipeline):
                 result.meta.cal_step.photom = "SKIPPED"
                 result.meta.cal_step.source_detection = "SKIPPED"
                 result.meta.cal_step.tweakreg = "SKIPPED"
+                self.suffix = "cal"
 
             # setup output_file for saving
+            if result.meta.cal_step.tweakreg == "COMPLETE":
+                self.suffix = "cal"
+
             self.setup_output(result)
 
             self.output_use_model = True
@@ -183,10 +187,17 @@ class ExposurePipeline(RomanPipeline):
         #          observations. This should not occur on-prem
         if result.meta.exposure.type == "WFI_IMAGE":
             if file_type == "asdf":
-                mc_result = self.tweakreg([result])
-                result = mc_result._models.pop()
+                result.meta.cal_step.tweakreg = "SKIPPED"
+                mc_result = ModelContainer(result)
+                if hasattr(ModelContainer(result), "_models") and mc_result._models:
+                    result = mc_result._models.pop()
+                else:
+                    result.meta.cal_step.tweakreg == "SKIPPED"
+
             if file_type == "asn":
                 result = self.tweakreg(tweakreg_input)
+                for model in result._models:
+                    model.meta.cal_step.tweakreg = "SKIPPED"
 
             log.info("Roman exposure calibration pipeline ending...")
 
@@ -194,13 +205,27 @@ class ExposurePipeline(RomanPipeline):
 
     def setup_output(self, input):
         """Determine the proper file name suffix to use later"""
-        if input.meta.cal_step.ramp_fit == "COMPLETE":
+        if input.meta.cal_step.tweakreg == "COMPLETE":
             self.suffix = "cal"
-            input.meta.filename = input.meta.filename.replace("uncal", self.suffix)
-            input["output_file"] = input.meta.filename
-            self.output_file = input.meta.filename
-        else:
-            self.suffix = "ramp"
+        # elif input.meta.cal_step.tweakreg == "SKIPPED" and input.meta.exposure.type == "WFI_IMAGE":
+        #    self.suffix = "sourcedetection"
+        elif (
+            input.meta.cal_step.tweakreg == "INCOMPLETE"
+            and input.meta.exposure.type == "WFI_IMAGE"
+        ):
+            self.suffix = "sourcedetection"
+        elif (
+            input.meta.cal_step.tweakreg == "SKIPPED"
+            and input.meta.exposure.type != "WFI_IMAGE"
+        ):
+            self.suffix = "cal"
+
+        if not self.steps["tweakreg"]["skip"]:
+            self.suffix = "cal"
+
+        input.meta.filename = input.meta.filename.replace("uncal", self.suffix)
+        input["output_file"] = input.meta.filename
+        self.output_file = input.meta.filename
 
     def create_fully_saturated_zeroed_image(self, input_model):
         """
@@ -224,7 +249,6 @@ class ExposurePipeline(RomanPipeline):
         for step_str in [
             "linearity",
             "dark",
-            "jump",
             "ramp_fit",
             "assign_wcs",
             "flat_field",

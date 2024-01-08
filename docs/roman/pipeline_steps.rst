@@ -15,3 +15,4 @@ Pipeline Steps
    source_detection/index.rst
    tweakreg/index.rst
    resample/index.rst
+   outlier_detection/index.rst

@@ -24,6 +24,12 @@ from webbpsf import conf, gridded_library, restart_logging
 
 from romancal.lib.dqflags import pixel as roman_dq_flag_map
 
+__all__ = [
+    "create_gridded_psf_model",
+    "fit_psf_to_image_model",
+    "dq_to_boolean_mask",
+]
+
 # set loggers to debug level by default:
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -31,26 +37,26 @@ log.setLevel(logging.DEBUG)
 # Phase C central wavelengths [micron], released by Goddard (Jan 2023):
 # https://roman.ipac.caltech.edu/sims/Param_db.html#wfi_filters
 filter_central_wavelengths = {
-    "WFI_Filter_F062_Center": 0.620,
-    "WFI_Filter_F087_Center": 0.869,
-    "WFI_Filter_F106_Center": 1.060,
-    "WFI_Filter_F129_Center": 1.293,
-    "WFI_Filter_F146_Center": 1.464,
-    "WFI_Filter_F158_Center": 1.577,
-    "WFI_Filter_F184_Center": 1.842,
-    "WFI_Filter_F213_Center": 2.125,
+    "F062": 0.620,
+    "F087": 0.869,
+    "F106": 1.060,
+    "F129": 1.293,
+    "F146": 1.464,
+    "F158": 1.577,
+    "F184": 1.842,
+    "F213": 2.125,
 }
 
 default_finder = DAOStarFinder(
     # these defaults extracted from the
     # romancal SourceDetectionStep
-    fwhm=2.0,
-    threshold=2.0,
+    fwhm=1.0,
+    threshold=0.0,
     sharplo=0.0,
     sharphi=1.0,
     roundlo=-1.0,
     roundhi=1.0,
-    peakmax=1000.0,
+    peakmax=None,
 )
 
 
@@ -58,9 +64,9 @@ def create_gridded_psf_model(
     path_prefix,
     filt,
     detector,
-    oversample=12,
-    fov_pixels=12,
-    sqrt_n_psfs=4,
+    oversample=11,
+    fov_pixels=9,
+    sqrt_n_psfs=2,
     overwrite=False,
     buffer_pixels=100,
     instrument_options=None,
@@ -68,7 +74,7 @@ def create_gridded_psf_model(
 ):
     """
     Compute a gridded PSF model for one SCA via
-    `webbpsf.gridded_library.CreatePSFLibrary`.
+    `~webbpsf.gridded_library.CreatePSFLibrary`.
 
     Parameters
     ----------
@@ -82,7 +88,8 @@ def create_gridded_psf_model(
         Computed gridded PSF model for this SCA.
         Examples include: `"SCA01"` or `"SCA18"`.
     oversample : int, optional
-        Oversample factor, default is 12. See WebbPSF docs for details [1]_.
+        Oversample factor, default is 11. See WebbPSF docs for details [1]_.
+        Choosing an odd number makes the pixel convolution more accurate.
     fov_pixels : int, optional
         Field of view width [pixels]. Default is 12.
         See WebbPSF docs for details [1]_.
@@ -150,17 +157,12 @@ def create_gridded_psf_model(
         if instrument_options is not None:
             wfi.options.update(instrument_options)
 
-        central_wavelength_meters = (
-            filter_central_wavelengths[f"WFI_Filter_{filt}_Center"] * 1e-6 * u.m
-        )
-
         # Initialize the PSF library
         inst = gridded_library.CreatePSFLibrary(
             instrument=wfi,
             filter_name=filt,
             detectors=detector.upper(),
             num_psfs=n_psfs,
-            monochromatic=central_wavelength_meters,
             oversample=oversample,
             fov_pixels=fov_pixels,
             add_distortion=False,
@@ -214,7 +216,7 @@ def fit_psf_to_image_model(
     exclude_out_of_bounds=True,
 ):
     """
-    Fit PSF models to an ImageModel.
+    Fit PSF models to an ``ImageModel``.
 
     Parameters
     ----------
@@ -279,7 +281,7 @@ def fit_psf_to_image_model(
     """
     if grouper is None:
         # minimum separation before sources are fit simultaneously:
-        grouper = SourceGrouper(min_separation=20)  # [pix]
+        grouper = SourceGrouper(min_separation=5)  # [pix]
 
     if fitter is None:
         fitter = LevMarLSQFitter(calc_uncertainties=True)

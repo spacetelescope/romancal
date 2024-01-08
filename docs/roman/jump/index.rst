@@ -5,10 +5,7 @@ Jump Detection
 ==============
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   description.rst
-   arguments.rst
-   reference_files.rst
-
-.. automodapi:: romancal.jump
+   uneven_ramp.rst
+   even_ramp.rst

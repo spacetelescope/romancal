@@ -8,5 +8,6 @@ Pipeline Modules
 
    main.rst
    exposure_pipeline.rst
+   highlevel_pipeline.rst
 
 .. automodapi:: romancal.pipeline

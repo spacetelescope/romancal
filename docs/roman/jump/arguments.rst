@@ -46,3 +46,5 @@ The ``jump`` step has five optional arguments that can be set by the user:
   the flagging of neighbors of marginal detections. Any primary jump below this value will
   not have its neighbors flagged. The goal is to prevent flagging jumps that would be too
   small to significantly affect the slope determination.  The default value is 10.
+
+* ``--use_ramp_jump_detection``: See the description in :ref:`ramp fitting <rampfit-arguments>`.

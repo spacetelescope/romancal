@@ -381,7 +381,7 @@ def create_base_image_source_catalog(
     t.add_column([i for i in range(len(t))], name="id", index=0)
     t.add_column([np.float64(i) for i in range(len(t))], name="flux")
     t.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
-    return t.as_array().T
+    return t.as_array()
 
 
 def add_tweakreg_catalog_attribute(
@@ -441,7 +441,7 @@ def add_tweakreg_catalog_attribute(
             tmp_path, tweakreg_catalog_filename
         )
     else:
-        # SourceDetectionStep attaches the catalog data as a 4D numpy array
+        # SourceDetectionStep attaches the catalog data as a structured array
         input_dm.meta.source_detection["tweakreg_catalog"] = source_catalog
 
 
@@ -1111,8 +1111,8 @@ def test_imodel2wcsim_valid_column_names(tmp_path, base_image, column_names):
     imcats = list(map(step._imodel2wcsim, g))
 
     assert all(x.meta["image_model"] == y for x, y in zip(imcats, [img_1, img_2]))
-    assert all(
-        all(x.meta["catalog"] == y.meta.tweakreg_catalog)
+    assert np.all(
+        x.meta["catalog"] == y.meta.tweakreg_catalog
         for x, y in zip(imcats, [img_1, img_2])
     )
 

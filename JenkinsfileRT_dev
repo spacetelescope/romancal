@@ -52,9 +52,11 @@ def pip_install_args = "--index-url ${pip_index} --progress-bar=off"
 // Define environment variables needed for the regression tests
 env_vars = [
     "TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory",
-    "CRDS_CONTEXT=roman_0051.pmap",
+    "CRDS_CONTEXT=roman_0052.pmap",
     "CRDS_SERVER_URL=https://serverless",
     'CRDS_PATH=/grp/crds/roman/test/',
+    'WEBBPSF_PATH=/grp/jwst/ote/webbpsf-data',
+    'PYSYN_CDBS=/grp/hst/cdbs',
 ]
 if (env.ENV_VARS) {
     env_vars.addAll(MultiLineToArray(env.ENV_VARS))
@@ -83,7 +85,7 @@ bc0.conda_packages = [
 bc0.pip_reqs_files = ['requirements-dev-thirdparty.txt']
 bc0.build_cmds = [
     "pip install -e .[test]",
-    "pip install pytest-xdist pytest-sugar",
+    "pip install pytest-xdist",
     'echo "CRDS_CONTEXT = $(crds list --contexts $CRDS_CONTEXT --mappings | grep pmap)"',
 ]
 bc0.build_cmds = bc0.build_cmds + PipInject(env.OVERRIDE_REQUIREMENTS)
@@ -91,7 +93,7 @@ bc0.build_cmds = bc0.build_cmds + [
     "pip list"
 ]
 bc0.test_cmds = [
-    "pytest -r sxf -n 0 --bigdata --slow --webbpsf \
+    "pytest -r sxf -n 0 --bigdata --slow --webbpsf --color=no\
     --basetemp=${pytest_basetemp} --junit-xml=results.xml --dist=loadscope \
     --env=${artifactoryenv} ${pytest_args}",
 ]

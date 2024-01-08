@@ -10,7 +10,7 @@ Bit  Value         Name              Description
 4    16            GW_AFFECTED_DATA  Data affected by the GW read window
 5    32            PERSISTENCE       High persistence (was RESERVED_2)
 6    64            AD_FLOOR          Below A/D floor (0 DN, was RESERVED_3)
-7    128           RESERVED_4
+7    128           OUTLIER           Detected as outlier in coadded image
 8    256           UNRELIABLE_ERROR  Uncertainty exceeds quoted error
 9    512           NON_SCIENCE       Pixel not on science portion of detector
 10   1024          DEAD              Dead pixel

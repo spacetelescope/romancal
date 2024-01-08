@@ -19,22 +19,22 @@ dependencies = [
     'gwcs >=0.18.1',
     'jsonschema >=4.8',
     'numpy >=1.22',
-    'photutils @ git+https://github.com/astropy/photutils.git',
+    'photutils >=1.10.0',
     'pyparsing >=2.4.7',
-    'requests >=2.22',
-    'rad >= 0.17.1',
+    'requests >=2.26',
+    'rad >= 0.18.0',
     # 'rad @ git+https://github.com/spacetelescope/rad.git@main',
-    'roman_datamodels >= 0.17.1',
+    'roman_datamodels >= 0.18.0',
     # 'roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git@main',
     'scipy >=1.11',
-    # 'stcal >=1.4.0',
-    'stcal @ git+https://github.com/spacetelescope/stcal.git@main',
+    'stcal >=1.5.1',
+    #'stcal @ git+https://github.com/spacetelescope/stcal.git@main',
     'stpipe >=0.5.0',
     'tweakwcs >=0.8.0',
     'spherical-geometry >= 1.2.22',
     'stsci.imagestats >= 1.6.3',
     'drizzle >= 1.13.7',
-    'webbpsf == 1.1.1',
+    'webbpsf == 1.2.1',
 ]
 dynamic = ['version']
 
@@ -62,6 +62,11 @@ dev = [
     'tox > 4',
     'pre-commit > 3'
 ]
+sdp = [
+    'stpreview>=0.5.1',
+    'typer',
+    'typing_extensions',
+]
 
 [project.urls]
 'tracker' = 'https://github.com/spacetelescope/romancal/issues'
@@ -73,11 +78,12 @@ dev = [
 pytest11 = {webbpsf = 'pytest_plugin.webbpsf_plugin'}
 
 [project.scripts]
+roman_static_preview = 'romancal.scripts.static_preview:command'
 okify_regtests = 'romancal.scripts.okify_regtests:main'
 schema_editor = 'romancal.scripts.schema_editor:main'
 schemadoc = 'romancal.scripts.schemadoc:main'
 verify_install_requires = 'romancal.scripts.verify_install_requires:main'
-asn_from_list = 'romancal.scripts.asn_from_list:main'
+asn_from_list = 'romancal.associations.asn_from_list:Main'
 
 [build-system]
 requires = [
@@ -111,7 +117,7 @@ zip-safe = false
 minversion = 4.6
 norecursedirs = [
     'docs/_build',
-    'scripts',
+    'romancal/scripts',
     '.tox',
     '.eggs',
     'build',
@@ -128,7 +134,12 @@ results_root = 'roman-pipeline-results'
 doctest_plus = 'enabled'
 doctest_rst = 'enabled'
 text_file_format = 'rst'
-addopts = '--show-capture=no --doctest-ignore-import-errors --color=yes'
+log_cli_level = "info"
+addopts = [
+    '--show-capture=no',
+    '--doctest-ignore-import-errors',
+    '--color=yes',
+]
 markers = [
     'soctests: run only the SOC tests in the suite.',
 ]
@@ -161,6 +172,7 @@ report = { exclude_lines = [
 
 [tool.bandit]
 skips = ["B101", "B307", "B404", "B603"]
+exclude_dirs = ["romancal/regtest/scripts"]
 
 [tool.isort]
 profile = "black"

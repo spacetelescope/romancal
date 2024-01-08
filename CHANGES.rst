@@ -1,5 +1,28 @@
-0.13.0 (unreleased)
+0.13.1 (unreleased)
 ===================
+
+outlier_detection
+-----------------
+
+- Add outlier detection step documentation. [#1042]
+
+jump detection
+--------------
+
+- Added uneven ramp-jump detection docs. [#1035]
+
+documentation
+-------------
+
+- added user documentation for ``roman_static_preview`` script [#1046]
+
+0.13.0 (2023-11-28)
+===================
+
+outlier_detection
+-----------------
+
+- Implemented ``outlier-detection step``. [#981]
 
 associations
 ------------
@@ -13,6 +36,12 @@ dark
 
 general
 -------
+
+- Update elp pipeline code to capture a list from tweakreg [#985]
+
+- Add code to run the steps needed for the high level processing (roman_hlp) [#980]
+
+- Update pipeline code to correct cal_step and suffixes [#971]
 
 - Update pipeline code to run through tweakreg with single files and associations [#960]
 
@@ -35,6 +64,8 @@ general
 - Use array comparison options (including ``nan`` equality) when
   comparing ``WCS`` objects during ``compare_asdf`` [#941]
 
+- Fix dynamic importing issue with the ``ddtrace`` package. [#1024]
+
 ramp_fitting
 ------------
 
@@ -49,6 +80,11 @@ ramp_fitting
 
 - Add uneven ramp fitting documentation [#944]
 
+- Enable jump detection within the Cas22 ramp fitting be default, and add
+  regression tests for it. [#991]
+
+- Implement next round of SOC verification tests for uneven ramps [#970]
+
 refpix
 ------
 
@@ -56,7 +92,24 @@ refpix
 
 resample
 --------
+
 - Implement resampling step. [#787]
+
+- Use resampled exposure time images to compute image exposure times.  [#959]
+
+scripts
+-------
+
+- added ``roman_static_preview`` script to generate static previews of ASDF images [#953]
+
+- fixed ``asn_from_list`` script [#972]
+
+source_detection
+----------------
+
+- Support for PSF fitting (optional) for accurate centroids. [#841, #984]
+
+- Save source catalog to a structured array. [#987]
 
 stpipe
 ------
@@ -68,7 +121,6 @@ tweakreg
 
 - Fix a bug due to which source catalog may contain sources
   outside of the bounding box. [#947]
-
 
 0.12.0 (2023-08-18)
 ===================
