@@ -524,13 +524,13 @@ def test_16resultants_image_processing(rtdata, ignore_asdf_paths):
     """Tests for imaging processing requirements for 16 resultants (DMS413)"""
     #The input data is from INS for stress testing at some point this should be generated
     #every time new data is needed.
+    input_dark = "r00r1601001001001001_01101_0001_WFI01_uncal.asdf"
+    rtdata.get_data("WFI/image/{input_dark}")
+    dark_model = rdm.open(rddata.input)
+
     input_data = "r00r1601001001001001_01101_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
-
-    input_dark = "r00r1601001001001001_01101_0001_WFI01_uncal.asdf"
-    rtdata.get_data(f"WFI/image/{input_dark}")
-    rtdata.input = input_dark
 
     # Test Pipeline
     output = "r00r1601001001001001_01101_0001_WFI01_cal.asdf"
@@ -538,7 +538,7 @@ def test_16resultants_image_processing(rtdata, ignore_asdf_paths):
     args = [
         "--disable-crds-steppars",
 #        "--steps.dark_current.override_dark=WFI/image/roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf",
-        "--steps.dark_current.override_dark=input_dark",
+        "--steps.dark_current.override_dark=dark_model",
         "roman_elp",
         rtdata.input,
     ]
