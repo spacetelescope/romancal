@@ -537,8 +537,8 @@ def test_16resultants_image_processing(rtdata, ignore_asdf_paths):
     rtdata.output = output
     args = [
         "--disable-crds-steppars",
-#        "--steps.dark_current.override_dark=WFI/image/roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf",
-        "--steps.dark_current.override_dark=rtdata.truth",
+        "--steps.dark_current.override_dark=roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf",
+#        "--steps.dark_current.override_dark=rtdata.truth",
         "roman_elp",
         rtdata.input,
     ]
