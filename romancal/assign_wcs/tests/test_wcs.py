@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pytest
 from gwcs.wcstools import grid_from_bounding_box
@@ -43,11 +41,6 @@ def create_step():
         return load_wcs(image, {"distortion": file_name})
 
     def assign_wcs_step(image, file_name):
-        if os.environ.get("CI") == "true":
-            pytest.skip(
-                "Roman CRDS servers are not currently available outside the internal"
-                " network"
-            )
         return AssignWcsStep.call(image, override_distortion=file_name)
 
     return [load_wcs_step, assign_wcs_step]
@@ -95,3 +88,11 @@ def test_wcs(tmpdir, distortion, step):
     ]
     assert_allclose(s_region_alpha_list, l2_wcs.meta.wcsinfo.ra_ref, rtol=1e-1, atol=0)
     assert_allclose(s_region_delta_list, l2_wcs.meta.wcsinfo.dec_ref, rtol=1e-1, atol=0)
+
+
+@pytest.mark.parametrize("step", create_step())
+def test_crds_getbestref(step):
+    l2im = create_image()
+    l2_wcs = AssignWcsStep.call(l2im, override_distortion="N/A")
+
+    assert l2_wcs.meta.cal_step.assign_wcs == "SKIPPED"

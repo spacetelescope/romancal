@@ -32,6 +32,14 @@ class AssignWcsStep(RomanStep):
             for reftype in self.reference_file_types:
                 log.info(f"reftype, {reftype}")
                 reffile = self.get_reference_file(input_model, reftype)
+                # Check for a valid reference file
+                if reffile == "N/A":
+                    self.log.warning("No DISTORTION reference file found")
+                    self.log.warning("Assign WCS step will be skipped")
+                    result = input_model.copy()
+                    result.meta.cal_step.assign_wcs = "SKIPPED"
+                    return result
+
                 reference_file_names[reftype] = reffile if reffile else ""
             log.info("Using reference files: %s for assign_wcs", reference_file_names)
             result = load_wcs(input_model, reference_file_names)

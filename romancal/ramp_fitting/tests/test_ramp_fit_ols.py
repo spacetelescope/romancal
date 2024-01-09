@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pytest
 from astropy import units as u
@@ -14,15 +12,6 @@ from roman_datamodels.datamodels import (
 
 from romancal.lib import dqflags
 from romancal.ramp_fitting import RampFitStep
-
-# Currently Roman CRDS servers are not available publicly.
-# Remove this test when one is.
-pytestmark = pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
 
 MAXIMUM_CORES = ["none", "quarter", "half", "all"]
 
