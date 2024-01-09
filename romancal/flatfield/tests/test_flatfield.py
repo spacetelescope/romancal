@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pytest
 from astropy import units as u
@@ -17,12 +15,6 @@ RNG = np.random.default_rng(172)
     [
         ("WFI", "WFI_IMAGE"),
     ],
-)
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
 )
 def test_flatfield_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
@@ -68,18 +60,17 @@ def test_flatfield_step_interface(instrument, exptype):
     assert result.var_flat.shape == shape
     assert result.meta.cal_step.flat_field == "COMPLETE"
 
+    # test that the step is skipped if the reference file is N/A
+    result = FlatFieldStep.call(wfi_image_model, override_flat="N/A")
+
+    assert result.meta.cal_step.flat_field == "SKIPPED"
+
 
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
         ("WFI", "WFI_IMAGE"),
     ],
-)
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
 )
 def test_crds_temporal_match(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
@@ -119,13 +110,6 @@ def test_crds_temporal_match(instrument, exptype):
         "WFI_PRISM",
     ],
 )
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
-# Test that spectroscopic exposure types will skip flat field step
 def test_spectroscopic_skip(instrument, exptype):
     wfi_image = maker_utils.mk_level2_image()
     wfi_image.meta.instrument.name = instrument

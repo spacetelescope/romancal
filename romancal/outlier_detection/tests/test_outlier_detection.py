@@ -1,5 +1,3 @@
-import os
-
 import pytest
 from astropy import units as u
 from roman_datamodels import maker_utils
@@ -8,12 +6,6 @@ from roman_datamodels.datamodels import ImageModel
 from romancal.outlier_detection import OutlierDetectionStep
 
 
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
 @pytest.mark.parametrize(
     "instrument, exptype",
     [

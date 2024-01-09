@@ -80,7 +80,7 @@ class DQInitStep(RomanStep):
         reference_file_name = self.get_reference_file(output_model, "mask")
 
         # Test for reference file
-        if reference_file_name is not None:
+        if reference_file_name != "N/A" and reference_file_name is not None:
             # If there are mask files, perform dq step
             # Open the relevant reference files as datamodels
             reference_file_model = rdm.open(reference_file_name)

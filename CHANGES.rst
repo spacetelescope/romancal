@@ -18,7 +18,15 @@ documentation
 
 - Update jump step docs [#1035]
 
+- Update jump step docs [#1035]
+
 - added user documentation for ``roman_static_preview`` script [#1046]
+
+general
+-------
+
+- Update elp steps to check for CRDS not returning a reference file [#1055]
+
 
 0.13.0 (2023-11-28)
 ===================

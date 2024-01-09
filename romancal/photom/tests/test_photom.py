@@ -1,4 +1,3 @@
-import os
 import warnings
 
 import numpy as np
@@ -236,12 +235,6 @@ def test_apply_photom2():
         ("WFI", "WFI_IMAGE"),
     ],
 )
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
-)
 def test_photom_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a photom reffile"""
 
@@ -266,18 +259,17 @@ def test_photom_step_interface(instrument, exptype):
     else:
         assert result.meta.cal_step.photom == "SKIPPED"
 
+    # Run photom correction step with reffile as N/A
+    result = PhotomStep.call(wfi_image_model, override_photom="N/A")
+
+    assert result.meta.cal_step.photom == "SKIPPED"
+
 
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
         ("WFI", "WFI_PRISM"),
     ],
-)
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason=(
-        "Roman CRDS servers are not currently available outside the internal network"
-    ),
 )
 def test_photom_step_interface_spectroscopic(instrument, exptype):
     """
