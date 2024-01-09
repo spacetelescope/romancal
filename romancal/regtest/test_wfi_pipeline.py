@@ -528,12 +528,17 @@ def test_16resultants_image_processing(rtdata, ignore_asdf_paths):
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
+    input_dark = "r00r1601001001001001_01101_0001_WFI01_uncal.asdf"
+    rtdata.get_data(f"WFI/image/{input_dark}")
+    rtdata.input = input_dark
+
     # Test Pipeline
     output = "r00r1601001001001001_01101_0001_WFI01_cal.asdf"
     rtdata.output = output
     args = [
         "--disable-crds-steppars",
-        "--steps.dark_current.override_dark=WFI/image/roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf",
+#        "--steps.dark_current.override_dark=WFI/image/roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf",
+        "--steps.dark_current.override_dark=input_dark",
         "roman_elp",
         rtdata.input,
     ]
