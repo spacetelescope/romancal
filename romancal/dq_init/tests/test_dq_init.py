@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
 from astropy import units as u
-from roman_datamodels import maker_utils, stnode
-from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
+from roman_datamodels.datamodels import MaskRefModel, RampModel, WfiScienceRawModel
 
 from romancal.dq_init import DQInitStep
 from romancal.dq_init.dq_initialization import do_dqinit
@@ -24,7 +23,7 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     csize = (ngroups, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=csize)
+    dm_ramp = RampModel.make_default(shape=csize)
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
@@ -43,12 +42,12 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
     dq[400, 200] = 33  # Persistence + do not use
 
     # write mask model
-    ref_data = maker_utils.mk_mask(shape=csize[1:])
+    ref_data = MaskRefModel.make_default(shape=csize[1:])
 
     # Copy in maskmodel elemnts
-    ref_data["dq"] = dq
+    ref_data.dq = dq
 
-    ref_data["meta"]["instrument"]["name"] = instrument
+    ref_data.meta.instrument.name = instrument
 
     # run do_dqinit
     outfile = do_dqinit(dm_ramp, ref_data)
@@ -84,11 +83,11 @@ def test_groupdq():
     csize = (ngroups, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=csize)
+    dm_ramp = RampModel.make_default(shape=csize)
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
-    ref_data = maker_utils.mk_mask(shape=csize[1:])
+    ref_data = MaskRefModel.make_default(shape=csize[1:])
     ref_data["meta"]["instrument"]["name"] = instrument
 
     # run the correction step
@@ -115,11 +114,11 @@ def test_err():
     csize = (ngroups, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=(ngroups, ysize, xsize))
+    dm_ramp = RampModel.make_default(shape=(ngroups, ysize, xsize))
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
-    ref_data = maker_utils.mk_mask(shape=csize[1:])
+    ref_data = MaskRefModel.make_default(shape=csize[1:])
     ref_data["meta"]["instrument"]["name"] = instrument
 
     # run correction step
@@ -147,7 +146,7 @@ def test_dq_add1_groupdq():
     csize = (ngroups, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=(ngroups, ysize, xsize))
+    dm_ramp = RampModel.make_default(shape=(ngroups, ysize, xsize))
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
@@ -158,7 +157,7 @@ def test_dq_add1_groupdq():
     dq[400, 500] = 3  # do_not_use and saturated pixel
 
     # write mask model
-    ref_data = maker_utils.mk_mask(shape=csize[1:])
+    ref_data = MaskRefModel.make_default(shape=csize[1:])
     ref_data["meta"]["instrument"]["name"] = instrument
 
     # Copy in maskmodel elemnts
@@ -196,34 +195,29 @@ def test_dqinit_step_interface(instrument, exptype):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape)
-    wfi_sci_raw.meta.instrument.name = instrument
-    wfi_sci_raw.meta.instrument.detector = "WFI01"
-    wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
-    wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
-    wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = u.Quantity(
+    wfi_sci_raw_model = WfiScienceRawModel.make_default(shape=shape)
+    wfi_sci_raw_model.meta.instrument.name = instrument
+    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
+    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
+    wfi_sci_raw_model.meta["guidestar"]["gw_window_xstart"] = 1012
+    wfi_sci_raw_model.meta["guidestar"]["gw_window_xsize"] = 16
+    wfi_sci_raw_model.meta.exposure.type = exptype
+    wfi_sci_raw_model.data = u.Quantity(
         np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
     )
-    wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
-
     # Create mask model
-    maskref = stnode.MaskRef()
-    meta = maker_utils.mk_ref_common("MASK")
-    meta["instrument"]["optical_element"] = "F158"
-    meta["instrument"]["detector"] = "WFI01"
-    maskref["meta"] = meta
-    maskref["data"] = np.ones(shape[1:], dtype=np.float32)
-    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint16)
-    maskref["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
-    maskref_model = MaskRefModel(maskref)
+    maskref_model = MaskRefModel.make_default()
+    maskref_model.meta.instrument.optical_element = "F158"
+    maskref_model.meta.instrument.detector = "WFI01"
+    maskref_model.data = np.ones(shape[1:], dtype=np.float32)
+    maskref_model.dq = np.zeros(shape[1:], dtype=np.uint16)
+    maskref_model.err = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
 
     # Perform Data Quality application step
     result = DQInitStep.call(wfi_sci_raw_model, override_mask=maskref_model)
 
     # Test dq_init results
-    assert (result.data == wfi_sci_raw.data).all()
+    assert (result.data == wfi_sci_raw_model.data).all()
     assert result.pixeldq.shape == shape[1:]
     assert result.meta.cal_step.dq_init == "COMPLETE"
     assert result.data.dtype == np.float32
@@ -245,28 +239,24 @@ def test_dqinit_refpix(instrument, exptype):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape)
-    wfi_sci_raw.meta.instrument.name = instrument
-    wfi_sci_raw.meta.instrument.detector = "WFI01"
-    wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
-    wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
-    wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = u.Quantity(
+    wfi_sci_raw_model = WfiScienceRawModel.make_default(shape=shape)
+    wfi_sci_raw_model.meta.instrument.name = instrument
+    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
+    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
+    wfi_sci_raw_model.meta["guidestar"]["gw_window_xstart"] = 1012
+    wfi_sci_raw_model.meta["guidestar"]["gw_window_xsize"] = 16
+    wfi_sci_raw_model.meta.exposure.type = exptype
+    wfi_sci_raw_model.data = u.Quantity(
         np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
     )
-    wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Create mask model
-    maskref = stnode.MaskRef()
-    meta = maker_utils.mk_ref_common("MASK")
-    meta["instrument"]["optical_element"] = "F158"
-    meta["instrument"]["detector"] = "WFI01"
-    maskref["meta"] = meta
-    maskref["data"] = np.ones(shape[1:], dtype=np.float32)
-    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint16)
-    maskref["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
-    maskref_model = MaskRefModel(maskref)
+    maskref_model = MaskRefModel.make_default()
+    maskref_model.meta.instrument.optical_element = "F158"
+    maskref_model.meta.instrument.detector = "WFI01"
+    maskref_model.data = np.ones(shape[1:], dtype=np.float32)
+    maskref_model.dq = np.zeros(shape[1:], dtype=np.uint16)
+    maskref_model.err = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
 
     # Perform Data Quality application step
     result = DQInitStep.call(wfi_sci_raw_model, override_mask=maskref_model)
@@ -297,17 +287,16 @@ def test_dqinit_getbestref(instrument, exptype):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape)
-    wfi_sci_raw.meta.instrument.name = instrument
-    wfi_sci_raw.meta.instrument.detector = "WFI01"
-    wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
-    wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
-    wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = u.Quantity(
+    wfi_sci_raw_model = WfiScienceRawModel.make_default(shape=shape)
+    wfi_sci_raw_model.meta.instrument.name = instrument
+    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
+    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
+    wfi_sci_raw_model.meta["guidestar"]["gw_window_xstart"] = 1012
+    wfi_sci_raw_model.meta["guidestar"]["gw_window_xsize"] = 16
+    wfi_sci_raw_model.meta.exposure.type = exptype
+    wfi_sci_raw_model.data = u.Quantity(
         np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
     )
-    wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Perform Data Quality application step
     result = DQInitStep.call(wfi_sci_raw_model, override_mask="N/A")

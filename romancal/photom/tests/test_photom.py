@@ -3,8 +3,7 @@ import warnings
 import numpy as np
 import pytest
 from astropy import units as u
-from roman_datamodels import maker_utils
-from roman_datamodels.datamodels import ImageModel, WfiImgPhotomRefModel
+from roman_datamodels.datamodels import WfiImageModel, WfiImgPhotomRefModel
 
 from romancal.photom import PhotomStep, photom
 
@@ -78,7 +77,7 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
         reftab[element] = key_dict
 
     # Create default datamodel
-    photom_model = maker_utils.mk_wfi_img_photom()
+    photom_model = WfiImgPhotomRefModel.make_default()
 
     # Copy values above into defautl datamodel
     photom_model.phot_table = reftab
@@ -90,7 +89,7 @@ def test_no_photom_match():
     """Test apply_photom warning for no match"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = maker_utils.mk_level2_image()
+    input_model = WfiImageModel.make_default()
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -136,7 +135,7 @@ def test_apply_photom1():
     """Test apply_photom applies correct metadata"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = maker_utils.mk_level2_image()
+    input_model = WfiImageModel.make_default()
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -212,7 +211,7 @@ def test_apply_photom2():
     """Test apply_photom does not change data values"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = maker_utils.mk_level2_image()
+    input_model = WfiImageModel.make_default()
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -242,17 +241,16 @@ def test_photom_step_interface(instrument, exptype):
     shape = (20, 20)
 
     # Create input model
-    wfi_image = maker_utils.mk_level2_image(shape=shape)
-    wfi_image_model = ImageModel(wfi_image)
+    wfi_image_model = WfiImageModel.make_default(shape=shape)
 
     # Create photom model
-    photom = maker_utils.mk_wfi_img_photom()
+    photom_model = WfiImgPhotomRefModel.make_default()
     photom_model = WfiImgPhotomRefModel(photom)
 
     # Run photom correction step
     result = PhotomStep.call(wfi_image_model, override_photom=photom_model)
 
-    assert (result.data == wfi_image.data).all()
+    assert (result.data == wfi_image_model.data).all()
     assert result.data.shape == shape
     if exptype == "WFI_IMAGE":
         assert result.meta.cal_step.photom == "COMPLETE"
@@ -279,37 +277,35 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     # Create a small area for the file
     shape = (20, 20)
 
-    # Create input node
-    wfi_image = maker_utils.mk_level2_image(shape=shape)
+    # Create input model
+    wfi_image_model = WfiImageModel.make_default(shape=shape)
 
     # Select exposure type and optical element
-    wfi_image.meta.exposure.type = "WFI_PRISM"
-    wfi_image.meta.instrument.optical_element = "PRISM"
+    wfi_image_model.meta.exposure.type = "WFI_PRISM"
+    wfi_image_model.meta.instrument.optical_element = "PRISM"
 
     # Set photometric values for spectroscopic data
-    wfi_image.meta.photometry.pixelarea_steradians = 2.31307642258977e-14 * u.steradian
-    wfi_image.meta.photometry.pixelarea_arcsecsq = (
+    wfi_image_model.meta.photometry.pixelarea_steradians = (
+        2.31307642258977e-14 * u.steradian
+    )
+    wfi_image_model.meta.photometry.pixelarea_arcsecsq = (
         0.000984102303070964 * u.arcsecond * u.arcsecond
     )
-    wfi_image.meta.photometry.conversion_megajanskys = (
+    wfi_image_model.meta.photometry.conversion_megajanskys = (
         -99999 * u.megajansky / u.steradian
     )
-    wfi_image.meta.photometry.conversion_megajanskys_uncertainty = (
+    wfi_image_model.meta.photometry.conversion_megajanskys_uncertainty = (
         -99999 * u.megajansky / u.steradian
     )
-    wfi_image.meta.photometry.conversion_microjanskys = (
+    wfi_image_model.meta.photometry.conversion_microjanskys = (
         -99999 * u.microjansky / u.arcsecond**2
     )
-    wfi_image.meta.photometry.conversion_microjanskys_uncertainty = (
+    wfi_image_model.meta.photometry.conversion_microjanskys_uncertainty = (
         -99999 * u.microjansky / u.arcsecond**2
     )
-
-    # Create input model
-    wfi_image_model = ImageModel(wfi_image)
 
     # Create photom model
-    photom = maker_utils.mk_wfi_img_photom()
-    photom_model = WfiImgPhotomRefModel(photom)
+    photom_model = WfiImgPhotomRefModel.make_default()
 
     # Run photom correction step
     result = PhotomStep.call(wfi_image_model, override_photom=photom_model)

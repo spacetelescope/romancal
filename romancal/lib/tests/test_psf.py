@@ -10,8 +10,7 @@ import numpy as np
 import pytest
 from astropy import units as u
 from photutils.psf import PSFPhotometry
-from roman_datamodels import maker_utils as testutil
-from roman_datamodels.datamodels import ImageModel
+from roman_datamodels.datamodels import WfiImageModel
 
 from romancal.lib.psf import create_gridded_psf_model, fit_psf_to_image_model
 
@@ -26,30 +25,28 @@ def setup_inputs(
     seed=None,
 ):
     """
-    Return ImageModel of level 2 image.
+    Return WfiImageModel of level 2 image.
     """
-    wfi_image = testutil.mk_level2_image(shape=shape)
-    wfi_image.data = u.Quantity(
+    # construct WfiImageModel
+    mod = WfiImageModel.make_default(shape=shape)
+    mod.data = u.Quantity(
         np.ones(shape, dtype=np.float32), u.electron / u.s, dtype=np.float32
     )
-    wfi_image.meta.filename = "filename"
-    wfi_image.meta.instrument["optical_element"] = "F087"
+    mod.meta.filename = "filename"
+    mod.meta.instrument["optical_element"] = "F087"
 
     # add noise to data
     if noise is not None:
         setup_rng = np.random.default_rng(seed or 19)
-        wfi_image.data = u.Quantity(
+        mod.data = u.Quantity(
             setup_rng.normal(scale=noise, size=shape),
             u.electron / u.s,
             dtype=np.float32,
         )
-        wfi_image.err = noise * np.ones(shape, dtype=np.float32) * u.electron / u.s
+        mod.err = noise * np.ones(shape, dtype=np.float32) * u.electron / u.s
 
     # add dq array
-    wfi_image.dq = np.zeros(shape, dtype=np.uint32)
-
-    # construct ImageModel
-    mod = ImageModel(wfi_image)
+    mod.dq = np.zeros(shape, dtype=np.uint32)
 
     filt = mod.meta.instrument["optical_element"]
     detector = mod.meta["instrument"]["detector"].replace("WFI", "SCA")
@@ -120,11 +117,11 @@ class TestPSFFitting:
         ),
     )
     def test_psf_fit(self, dx, dy, true_amp):
-        # generate an ImageModel
+        # generate an WfiImageModel
         image_model = deepcopy(self.image_model)
         init_data_stddev = np.std(image_model.data.value)
 
-        # add synthetic sources to the ImageModel:
+        # add synthetic sources to the WfiImageModel:
         true_x = image_model_shape[0] / 2 + dx
         true_y = image_model_shape[1] / 2 + dy
         add_sources(image_model, self.psf_model, true_x, true_y, true_amp)
@@ -140,7 +137,7 @@ class TestPSFFitting:
                 self.webbpsf_config["fov_pixels"],
             )
 
-        # fit the PSF to the ImageModel:
+        # fit the PSF to the WfiImageModel:
         results_table, photometry = fit_psf_to_image_model(
             image_model=image_model,
             photometry_cls=PSFPhotometry,

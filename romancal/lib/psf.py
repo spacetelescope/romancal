@@ -19,7 +19,7 @@ from photutils.psf import (
     PSFPhotometry,
     SourceGrouper,
 )
-from roman_datamodels.datamodels import ImageModel
+from roman_datamodels.datamodels import WfiImageModel
 from webbpsf import conf, gridded_library, restart_logging
 
 from romancal.lib.dqflags import pixel as roman_dq_flag_map
@@ -216,11 +216,11 @@ def fit_psf_to_image_model(
     exclude_out_of_bounds=True,
 ):
     """
-    Fit PSF models to an ``ImageModel``.
+    Fit PSF models to an ``WfiImageModel``.
 
     Parameters
     ----------
-    image_model : `roman_datamodels.datamodels.ImageModel`
+    image_model : `roman_datamodels.datamodels.WfiImageModel`
         Image datamodel. If ``image_model`` is supplied,
         ``data,error,dq`` should be `None`.
     data : `astropy.units.Quantity`
@@ -318,7 +318,7 @@ def fit_psf_to_image_model(
     if image_model is None:
         if data is None and error is None:
             raise ValueError(
-                "PSF fitting requires either an ImageModel, "
+                "PSF fitting requires either an WfiImageModel, "
                 "or arrays for the data and error."
             )
 
@@ -369,8 +369,8 @@ def dq_to_boolean_mask(image_model_or_dq, ignore_flags=0, flag_map_name="ROMAN_D
 
     Parameters
     ----------
-    image_model_or_dq : `roman_datamodels.datamodels.ImageModel` or `numpy.ndarray`
-        ImageModel containing the DQ bitmask to convert to a boolean mask,
+    image_model_or_dq : `roman_datamodels.datamodels.WfiImageModel` or `numpy.ndarray`
+        WfiImageModel containing the DQ bitmask to convert to a boolean mask,
         or the DQ bitmask itself.
     ignore_flags : int, str, list, None (default = 0)
         See docs for `astropy.nddata.bitmask.extend_bit_flag_map`
@@ -383,7 +383,7 @@ def dq_to_boolean_mask(image_model_or_dq, ignore_flags=0, flag_map_name="ROMAN_D
         Boolean mask
     """
 
-    if isinstance(image_model_or_dq, ImageModel):
+    if isinstance(image_model_or_dq, WfiImageModel):
         dq = image_model_or_dq.dq
     else:
         dq = image_model_or_dq

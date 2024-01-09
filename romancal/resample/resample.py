@@ -4,7 +4,6 @@ import numpy as np
 from astropy import units as u
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels
-from roman_datamodels.maker_utils import mk_datamodel, mk_resample
 
 from ..datamodels import ModelContainer
 from . import gwcs_drizzle, resample_utils
@@ -150,8 +149,8 @@ class ResampleData:
         # NOTE: wait for William to fix bug in datamodels' init and then
         # use datamodels.ImageModel(shape=(nx, ny)) instead of mk_datamodel()
 
-        self.blank_output = mk_datamodel(
-            datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
+        self.blank_output = datamodels.WfiMosaicModel.make_default(
+            shape=tuple(self.output_wcs.array_shape)
         )
 
         # update meta data and wcs
@@ -186,7 +185,9 @@ class ResampleData:
         """
         for exposure in self.input_models.models_grouped:
             output_model = self.blank_output
-            output_model.meta["resample"] = mk_resample()
+            output_model.meta["resample"] = datamodels.WfiMosaicModel.make_default(
+                _shrink=True
+            ).meta.resample
             # Determine output file type from input exposure filenames
             # Use this for defining the output filename
             indx = exposure[0].meta.filename.rfind(".")
@@ -261,7 +262,9 @@ class ResampleData:
         """
         output_model = self.blank_output.copy()
         output_model.meta.filename = self.output_filename
-        output_model.meta["resample"] = mk_resample()
+        output_model.meta["resample"] = datamodels.WfiMosaicModel.make_default(
+            _shrink=True
+        ).meta.resample
         output_model.meta.resample["members"] = []
         output_model.meta.resample.weight_type = self.weight_type
         output_model.meta.resample.pointings = len(self.input_models.models_grouped)

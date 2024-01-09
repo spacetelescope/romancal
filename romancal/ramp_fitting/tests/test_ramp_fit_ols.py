@@ -5,9 +5,9 @@ from astropy.time import Time
 from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import (
     GainRefModel,
-    ImageModel,
     RampModel,
     ReadnoiseRefModel,
+    WfiImageModel,
 )
 
 from romancal.lib import dqflags
@@ -170,7 +170,7 @@ def test_ols_saturated_ramp_fit(max_cores, make_data):
     )
 
     # Test that an Image model was returned.
-    assert type(out_model) == ImageModel
+    assert type(out_model) == WfiImageModel
 
     # Test that the ramp fit step was labeled complete
     assert out_model.meta.cal_step.ramp_fit == "COMPLETE"
@@ -191,7 +191,7 @@ def make_data(request):
 
     Returns
     -------
-    image, gain, readnoise : ImageModel, GainRefModel, ReadnoiseRefModel
+    image, gain, readnoise : WfiImageModel, GainRefModel, ReadnoiseRefModel
         Input image and related references
     """
     if getattr(request, "param", None):

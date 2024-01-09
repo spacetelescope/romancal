@@ -6,8 +6,7 @@ Unit tests for linearity correction
 import numpy as np
 import pytest
 from astropy import units as u
-from roman_datamodels import maker_utils
-from roman_datamodels.datamodels import LinearityRefModel, ScienceRawModel
+from roman_datamodels.datamodels import LinearityRefModel, WfiScienceRawModel
 
 from romancal.dq_init import DQInitStep
 from romancal.lib import dqflags
@@ -27,17 +26,16 @@ def test_linearity_coeff(instrument, exptype):
     shape = (5, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape)
-    wfi_sci_raw.meta.instrument.name = instrument
-    wfi_sci_raw.meta.instrument.detector = "WFI01"
-    wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
-    wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
-    wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = u.Quantity(
+    wfi_sci_raw_model = WfiScienceRawModel.make_default(shape=shape)
+    wfi_sci_raw_model.meta.instrument.name = instrument
+    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
+    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
+    wfi_sci_raw_model.meta["guidestar"]["gw_window_xstart"] = 1012
+    wfi_sci_raw_model.meta["guidestar"]["gw_window_xsize"] = 16
+    wfi_sci_raw_model.meta.exposure.type = exptype
+    wfi_sci_raw_model.data = u.Quantity(
         np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
     )
-    wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     result = DQInitStep.call(wfi_sci_raw_model)
     result = LinearityStep.call(result, override_linearity="N/A")
@@ -63,8 +61,7 @@ def test_linearity_coeff(instrument, exptype):
     # save the pixel values to make sure they are not altered
     pixels_55 = result.data[0:, 5, 5]
     pixels_65 = result.data[0:, 6, 5]
-    linref = maker_utils.mk_linearity(shape=shape, coeffs=coeffs)
-    linref_model = LinearityRefModel(linref)
+    linref_model = LinearityRefModel.make_default(shape=shape, data={"coeffs": coeffs})
 
     LinearityStep.call(result, override_linearity=linref_model)
 

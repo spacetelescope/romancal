@@ -7,8 +7,7 @@ from astropy import coordinates as coord
 from astropy.modeling import models
 from gwcs import coordinate_frames as cf
 from gwcs import wcs as gwcs_wcs
-from roman_datamodels.datamodels import ImageModel
-from roman_datamodels.maker_utils import mk_level2_image
+from roman_datamodels.datamodels import WfiImageModel
 
 from romancal.datamodels.container import ModelContainer
 from romancal.lib import dqflags
@@ -73,8 +72,7 @@ def mk_image_model(
     image_shape=(100, 100),
     rng=np.random.default_rng(619),
 ):
-    l2 = mk_level2_image(shape=image_shape)
-    l2_im = ImageModel(l2)
+    l2_im = WfiImageModel.make_default(shape=image_shape)
     l2_im.data = u.Quantity(
         rng.normal(loc=rate_mean, scale=rate_std, size=l2_im.data.shape).astype(
             np.float32
