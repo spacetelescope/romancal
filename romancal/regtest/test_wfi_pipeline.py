@@ -524,7 +524,7 @@ def test_16resultants_image_processing(rtdata, ignore_asdf_paths):
     """Tests for imaging processing requirements for 16 resultants (DMS413)"""
     #The input data is from INS for stress testing at some point this should be generated
     #every time new data is needed.
-    input_dark = "r00r1601001001001001_01101_0001_WFI01_uncal.asdf"
+    input_dark = "roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf"
     rtdata.get_data("WFI/image/{input_dark}")
     dark_model = rdm.open(rddata.input)
 
