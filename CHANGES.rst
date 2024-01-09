@@ -14,7 +14,6 @@ jump detection
 
 documentation
 -------------
-=======
 
 - Update jump step docs [#1035]
 
