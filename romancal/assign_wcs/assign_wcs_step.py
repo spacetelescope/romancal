@@ -130,7 +130,7 @@ def wfi_distortion(model, reference_files):
     The transform model
     """
 
-    dist = rdm.DistortionRefModel(reference_files["distortion"])
+    dist = rdm.DistortionRefModel.create_model(reference_files["distortion"])
     transform = dist.coordinate_distortion_transform
 
     try:

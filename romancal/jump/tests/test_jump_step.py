@@ -5,11 +5,9 @@ from itertools import cycle
 
 import numpy as np
 import pytest
-import roman_datamodels.stnode as rds
 from astropy import units as u
 from astropy.time import Time
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import GainRefModel, ReadnoiseRefModel
 
 from romancal.jump import JumpStep
@@ -31,52 +29,45 @@ def generate_wfi_reffiles(tmpdir_factory):
     shape = (ysize, xsize)
 
     # Create temporary gain reference file
-    gain_ref = rds.GainRef()
-    meta = maker_utils.mk_ref_common("GAIN")
-    meta["instrument"]["detector"] = "WFI01"
-    meta["instrument"]["name"] = "WFI"
-    meta["author"] = "John Doe"
-    meta["pedigree"] = "DUMMY"
-    meta["description"] = "DUMMY"
-    meta["useafter"] = Time("2022-01-01T11:11:11.111")
+    gain_ref_model = GainRefModel.make_default(shape=shape)
+    gain_ref_model.meta.instrument.detector = "WFI01"
+    gain_ref_model.meta.instrument.name = "WFI"
+    gain_ref_model.meta.author = "John Doe"
+    gain_ref_model.meta.pedigree = "DUMMY"
+    gain_ref_model.meta.description = "DUMMY"
+    gain_ref_model.meta.useafter = Time("2022-01-01T11:11:11.111")
 
-    gain_ref["meta"] = meta
-    gain_ref["data"] = u.Quantity(
+    gain_ref_model.data = u.Quantity(
         np.ones(shape, dtype=np.float32) * ingain, u.electron / u.DN, dtype=np.float32
     )
-    gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
-    gain_ref["err"] = u.Quantity(
+    gain_ref_model.dq = np.zeros(shape, dtype=np.uint16)
+    gain_ref_model.err = u.Quantity(
         (RNG.uniform(size=shape) * 0.05).astype(np.float64),
         u.electron / u.DN,
         dtype=np.float64,
     )
 
-    gain_ref_model = GainRefModel(gain_ref)
     gain_ref_model.save(gainfile)
 
     # Create temporary readnoise reference file
-    rn_ref = rds.ReadnoiseRef()
-    meta = maker_utils.mk_ref_common("READNOISE")
-    meta["instrument"]["detector"] = "WFI01"
-    meta["instrument"]["name"] = "WFI"
-    meta["author"] = "John Doe"
-    meta["pedigree"] = "DUMMY"
-    meta["description"] = "DUMMY"
-    meta["useafter"] = Time("2022-01-01T11:11:11.111")
-    meta["exposure"] = {}
-    meta["exposure"]["type"] = "WFI_IMAGE"
-    meta["exposure"]["p_exptype"] = "WFI_IMAGE|WFI_GRISM|WFI_PRISM|"
+    rn_ref_model = ReadnoiseRefModel.make_default(shape=shape)
+    rn_ref_model.meta.instrument.detector = "WFI01"
+    rn_ref_model.meta.instrument.name = "WFI"
+    rn_ref_model.meta.author = "John Doe"
+    rn_ref_model.meta.pedigree = "DUMMY"
+    rn_ref_model.meta.description = "DUMMY"
+    rn_ref_model.meta.useafter = Time("2022-01-01T11:11:11.111")
+    rn_ref_model.meta.exposure.type = "WFI_IMAGE"
+    rn_ref_model.meta.exposure.p_exptype = "WFI_IMAGE|WFI_GRISM|WFI_PRISM|"
 
-    rn_ref["meta"] = meta
-    rn_ref["data"] = u.Quantity(
+    rn_ref_model.data = u.Quantity(
         np.ones(shape, dtype=np.float32), u.DN, dtype=np.float32
     )
-    rn_ref["dq"] = np.zeros(shape, dtype=np.uint16)
-    rn_ref["err"] = u.Quantity(
+    rn_ref_model.dq = np.zeros(shape, dtype=np.uint16)
+    rn_ref_model.err = u.Quantity(
         (RNG.uniform(size=shape) * 0.05).astype(np.float64), u.DN, dtype=np.float64
     )
 
-    rn_ref_model = ReadnoiseRefModel(rn_ref)
     rn_ref_model.save(readnoisefile)
 
     return gainfile, readnoisefile
@@ -100,7 +91,7 @@ def setup_inputs():
         pixdq = np.zeros(shape=(nrows, ncols), dtype=np.uint32)
 
         csize = (ngroups, nrows, ncols)
-        dm_ramp = rdm.RampModel(maker_utils.mk_ramp(shape=csize))
+        dm_ramp = rdm.RampModel.make_default(shape=csize)
 
         dm_ramp.meta.instrument.name = "WFI"
         dm_ramp.meta.instrument.optical_element = "F158"

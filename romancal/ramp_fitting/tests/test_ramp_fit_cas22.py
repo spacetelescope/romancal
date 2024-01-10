@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 from astropy import units as u
 from astropy.time import Time
-from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import GainRefModel, RampModel, ReadnoiseRefModel
 
 from romancal.lib import dqflags
@@ -227,20 +226,20 @@ def model_from_resultants(resultants, read_pattern=None):
     err = np.zeros(shape=shape, dtype=np.float32)
     gdq = np.zeros(shape=shape, dtype=np.uint8)
 
-    dm_ramp = maker_utils.mk_ramp(shape=shape)
-    dm_ramp.data = u.Quantity(full_wfi, u.DN, dtype=np.float32)
-    dm_ramp.pixeldq = pixdq
-    dm_ramp.groupdq = gdq
-    dm_ramp.err = u.Quantity(err, u.DN, dtype=np.float32)
+    ramp_model = RampModel.make_default(shape=shape)
+    ramp_model.data = u.Quantity(full_wfi, u.DN, dtype=np.float32)
+    ramp_model.pixeldq = pixdq
+    ramp_model.groupdq = gdq
+    ramp_model.err = u.Quantity(err, u.DN, dtype=np.float32)
 
-    dm_ramp.meta.exposure.frame_time = ROMAN_READ_TIME
-    dm_ramp.meta.exposure.ngroups = shape[0]
-    dm_ramp.meta.exposure.nframes = 1
-    dm_ramp.meta.exposure.groupgap = 0
+    ramp_model.meta.exposure.frame_time = ROMAN_READ_TIME
+    ramp_model.meta.exposure.ngroups = shape[0]
+    ramp_model.meta.exposure.nframes = 1
+    ramp_model.meta.exposure.groupgap = 0
 
-    dm_ramp.meta.exposure.read_pattern = read_pattern
+    ramp_model.meta.exposure.read_pattern = read_pattern
 
-    ramp_model = RampModel(dm_ramp)
+    ramp_model = RampModel(ramp_model)
 
     return ramp_model
 
@@ -263,56 +262,54 @@ def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01, randomize=True):
         Randomize the gain and read noise data.
     """
     # Create temporary gain reference file
-    gain_ref = maker_utils.mk_gain(shape=shape)
+    gain_ref_model = GainRefModel.make_default(shape=shape)
 
-    gain_ref["meta"]["instrument"]["detector"] = "WFI01"
-    gain_ref["meta"]["instrument"]["name"] = "WFI"
-    gain_ref["meta"]["reftype"] = "GAIN"
-    gain_ref["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
+    gain_ref_model["meta"]["instrument"]["detector"] = "WFI01"
+    gain_ref_model["meta"]["instrument"]["name"] = "WFI"
+    gain_ref_model["meta"]["reftype"] = "GAIN"
+    gain_ref_model["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
 
     if randomize:
-        gain_ref["data"] = u.Quantity(
+        gain_ref_model["data"] = u.Quantity(
             (np.random.random(shape) * 0.5).astype(np.float32) * ingain,
             u.electron / u.DN,
             dtype=np.float32,
         )
     else:
-        gain_ref["data"] = u.Quantity(
+        gain_ref_model["data"] = u.Quantity(
             np.ones(shape).astype(np.float32) * ingain,
             u.electron / u.DN,
             dtype=np.float32,
         )
-    gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
-    gain_ref["err"] = u.Quantity(
+    gain_ref_model["dq"] = np.zeros(shape, dtype=np.uint16)
+    gain_ref_model["err"] = u.Quantity(
         (np.random.random(shape) * 0.05).astype(np.float32),
         u.electron / u.DN,
         dtype=np.float32,
     )
 
-    gain_ref_model = GainRefModel(gain_ref)
+    gain_ref_model = GainRefModel(gain_ref_model)
 
     # Create temporary readnoise reference file
-    rn_ref = maker_utils.mk_readnoise(shape=shape)
-    rn_ref["meta"]["instrument"]["detector"] = "WFI01"
-    rn_ref["meta"]["instrument"]["name"] = "WFI"
-    rn_ref["meta"]["reftype"] = "READNOISE"
-    rn_ref["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
+    rn_ref_model = ReadnoiseRefModel.make_default(shape=shape)
+    rn_ref_model["meta"]["instrument"]["detector"] = "WFI01"
+    rn_ref_model["meta"]["instrument"]["name"] = "WFI"
+    rn_ref_model["meta"]["reftype"] = "READNOISE"
+    rn_ref_model["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
 
-    rn_ref["meta"]["exposure"]["type"] = "WFI_IMAGE"
-    rn_ref["meta"]["exposure"]["frame_time"] = 666
+    rn_ref_model["meta"]["exposure"]["type"] = "WFI_IMAGE"
+    rn_ref_model["meta"]["exposure"]["frame_time"] = 666
 
     if randomize:
-        rn_ref["data"] = u.Quantity(
+        rn_ref_model["data"] = u.Quantity(
             (np.random.random(shape) * rnoise).astype(np.float32),
             u.DN,
             dtype=np.float32,
         )
     else:
-        rn_ref["data"] = u.Quantity(
+        rn_ref_model["data"] = u.Quantity(
             np.ones(shape).astype(np.float32) * rnoise, u.DN, dtype=np.float32
         )
-
-    rn_ref_model = ReadnoiseRefModel(rn_ref)
 
     # return gainfile, readnoisefile
     return gain_ref_model, rn_ref_model

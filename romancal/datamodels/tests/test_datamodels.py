@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils as utils
 
 from romancal.datamodels.container import ModelContainer, make_file_with_index
 
@@ -85,7 +84,7 @@ def setup_list_of_l2_files():
                 / f"test_model_container_input_as_list_of_filepaths_{i:02}.asdf"
             )
             # create an ASDF file with an L2 model
-            utils.mk_level2_image(filepath=filepath, shape=(100, 100))
+            rdm.WfiImageModel.make_default(shape=(100, 100), filepath=filepath)
             if type_of_returned_object == "asdf":
                 # append filepath to filepath list
                 result_list.append(str(filepath))
@@ -103,8 +102,7 @@ def setup_list_of_l2_files():
 
 
 def test_model_container_init_with_modelcontainer_instance():
-    img = utils.mk_level2_image()
-    m = rdm.ImageModel(img)
+    m = rdm.WfiImageModel.make_default()
     mc1 = ModelContainer([m])
 
     # initialize with an instance of ModelContainer
@@ -129,8 +127,8 @@ def test_model_container_init_path_to_asdf_or_datamodels(
 
 def test_model_container_init_with_path_to_asn_file(tmp_path):
     # create ASDF files with L2 datamodel with custom tweakreg_catalog file
-    utils.mk_level2_image(filepath=tmp_path / "img_1.asdf")
-    utils.mk_level2_image(filepath=tmp_path / "img_2.asdf")
+    rdm.WfiImageModel.make_default(filepath=tmp_path / "img_1.asdf")
+    rdm.WfiImageModel.make_default(filepath=tmp_path / "img_2.asdf")
     # create ASN file that points to the ASDF files
     asn_filepath = create_asn_file(tmp_path)
     mc = ModelContainer(asn_filepath)
@@ -381,8 +379,8 @@ def test_close_all_datamodels(setup_list_of_l2_files, tmp_path):
 
 def test_add_tweakreg_catalog_attribute_from_asn(tmp_path):
     # create ASDF files with L2 datamodel
-    utils.mk_level2_image(filepath=tmp_path / "img_1.asdf")
-    utils.mk_level2_image(filepath=tmp_path / "img_2.asdf")
+    rdm.WfiImageModel.make_default(filepath=tmp_path / "img_1.asdf")
+    rdm.WfiImageModel.make_default(filepath=tmp_path / "img_2.asdf")
     # create ASN file that points to the ASDF files
     asn_filepath = create_asn_file(tmp_path)
     mc = ModelContainer(asn_filepath)

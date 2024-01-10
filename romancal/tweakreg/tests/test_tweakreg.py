@@ -18,7 +18,6 @@ from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils
 
 from romancal.datamodels import ModelContainer
 from romancal.tweakreg import tweakreg_step as trs
@@ -433,7 +432,9 @@ def add_tweakreg_catalog_attribute(
         save_catalogs=save_catalogs,
     )
 
-    input_dm.meta["source_detection"] = maker_utils.mk_source_detection()
+    input_dm.meta["source_detection"] = rdm.WfiImageModel.make_defaults(
+        _shrink=True
+    ).meta.source_detection
 
     if save_catalogs:
         # SourceDetectionStep adds the catalog path+filename
@@ -459,13 +460,12 @@ def base_image():
     """
 
     def _base_image(shift_1=0, shift_2=0):
-        l2 = maker_utils.mk_level2_image(shape=(2000, 2000))
-        l2.meta.target["proper_motion_epoch"] = "2016.0"
+        l2_im = rdm.WfiImageModel.make_defaults(shape=(2000, 2000))
+        l2_im.meta.target["proper_motion_epoch"] = "2016.0"
         # update wcsinfo
-        update_wcsinfo(l2)
+        update_wcsinfo(l2_im)
         # add a dummy WCS object
-        create_wcs_for_tweakreg_pipeline(l2, shift_1=shift_1, shift_2=shift_2)
-        l2_im = rdm.ImageModel(l2)
+        create_wcs_for_tweakreg_pipeline(l2_im, shift_1=shift_1, shift_2=shift_2)
         return l2_im
 
     return _base_image

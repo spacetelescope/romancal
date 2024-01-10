@@ -5,7 +5,7 @@ from astropy import units as u
 from astropy.modeling import models
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels
 
 from romancal.resample import ResampleStep
 
@@ -52,10 +52,7 @@ class Mosaic:
         datamodels.MosaicModel
             An L3 MosaicModel datamodel.
         """
-        l3 = maker_utils.mk_level3_mosaic(
-            shape=self.shape,
-            n_images=self.n_images,
-        )
+        l3 = datamodels.WfiMosaicModel.make_default(shape=(self.n_images, *self.shape))
         # data from WFISim simulation of SCA #01
         l3.meta.filename = self.filename
         l3.meta["wcs"] = create_wcs_object_without_distortion(
@@ -64,7 +61,7 @@ class Mosaic:
             shape=self.shape,
         )
         l3.meta.wcs.forward_transform
-        return datamodels.MosaicModel(l3)
+        return l3
 
 
 def create_wcs_object_without_distortion(fiducial_world, pscale, shape, **kwargs):

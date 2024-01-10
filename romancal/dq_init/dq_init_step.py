@@ -2,7 +2,6 @@
 
 import numpy as np
 import roman_datamodels as rdm
-from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import RampModel
 
 from romancal.dq_init import dq_initialization
@@ -44,24 +43,22 @@ class DQInitStep(RomanStep):
         # Convert to RampModel if needed
         if not isinstance(input_model, RampModel):
             # Create base ramp node with dummy values (for validation)
-            input_ramp = maker_utils.mk_ramp(shape=input_model.shape)
+            output_model = RampModel.make_default(shape=input_model.shape)
 
             # Copy input_model contents into RampModel
             for key in input_model.keys():
                 # If a dictionary (like meta), overwrite entires (but keep
                 # required dummy entries that may not be in input_model)
-                if isinstance(input_ramp[key], dict):
-                    input_ramp[key].update(input_model.__getattr__(key))
-                elif isinstance(input_ramp[key], np.ndarray):
+                if isinstance(output_model[key], dict):
+                    output_model[key].update(input_model.__getattr__(key))
+                elif isinstance(output_model[key], np.ndarray):
                     # Cast input ndarray as RampModel dtype
-                    input_ramp[key] = input_model.__getattr__(key).astype(
-                        input_ramp[key].dtype
+                    output_model[key] = input_model.__getattr__(key).astype(
+                        output_model[key].dtype
                     )
                 else:
-                    input_ramp[key] = input_model.__getattr__(key)
+                    output_model[key] = input_model.__getattr__(key)
 
-            # Create model from node
-            output_model = RampModel(input_ramp)
         else:
             output_model = input_model
 

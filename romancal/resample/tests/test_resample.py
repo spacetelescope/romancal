@@ -6,7 +6,7 @@ from astropy.modeling import models
 from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelContainer
 from romancal.resample import gwcs_drizzle, resample_utils
@@ -31,9 +31,9 @@ class WfiSca:
             An L2 ImageModel datamodel.
         """
         rng = np.random.default_rng()
-        l2 = maker_utils.mk_level2_image(
+        l2 = datamodels.WfiImageModel.make_default(
             shape=self.shape,
-            **{
+            data={
                 "meta": {
                     "wcsinfo": {"ra_ref": 10, "dec_ref": 0, "vparity": -1},
                     "exposure": {

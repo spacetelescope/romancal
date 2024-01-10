@@ -5,8 +5,6 @@ import logging
 import numpy as np
 from astropy import units as u
 from roman_datamodels import datamodels as rdd
-from roman_datamodels import maker_utils
-from roman_datamodels import stnode as rds
 from stcal.ramp_fitting import ols_cas22_fit, ramp_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 
@@ -271,10 +269,8 @@ def create_image_model(input_model, image_info):
 
     # Create output datamodel
     # ... and add all keys from input
-    meta = {}
-    meta.update(input_model.meta)
+    meta = input_model.meta.model_dump()
     meta["cal_step"]["ramp_fit"] = "INCOMPLETE"
-    meta["photometry"] = maker_utils.mk_photometry()
     inst = {
         "meta": meta,
         "data": u.Quantity(data, u.electron / u.s, dtype=data.dtype),
@@ -295,10 +291,8 @@ def create_image_model(input_model, image_info):
         "dq_border_ref_pix_right": input_model.dq_border_ref_pix_right,
         "dq_border_ref_pix_top": input_model.dq_border_ref_pix_top,
         "dq_border_ref_pix_bottom": input_model.dq_border_ref_pix_bottom,
-        "cal_logs": rds.CalLogs(),
     }
-    out_node = rds.WfiImage(inst)
-    im = rdd.ImageModel(out_node)
+    im = rdd.WfiImageModel.make_default(data=inst)
 
     # trim off border reference pixels from science data, dq, err
     # and var_poisson/var_rnoise
@@ -338,8 +332,7 @@ def create_optional_results_model(input_model, opt_info):
         weights,
         crmag,
     ) = opt_info
-    meta = {}
-    meta.update(input_model.meta)
+    meta = input_model.meta.model_dump()
     crmag.shape = crmag.shape[1:]
     crmag.dtype = np.float32
 
@@ -362,8 +355,7 @@ def create_optional_results_model(input_model, opt_info):
         "crmag": u.Quantity(crmag, u.electron, dtype=pedestal.dtype),
     }
 
-    out_node = rds.RampFitOutput(inst)
-    opt_model = rdd.RampFitOutputModel(out_node)
+    opt_model = rdd.RampFitOutputModel(**inst)
     opt_model.meta.filename = input_model.meta.filename
 
     return opt_model
