@@ -82,7 +82,7 @@ def test_16resultants_image_processing(rtdata, ignore_asdf_paths):
 def test_16resultants_spectral_processing(rtdata, ignore_asdf_paths):
     """Tests for imaging processing requirements for 16 resultants (DMS413)"""
     #The input data is from INS for stress testing at some point this should be generated
-    #every time new data is needed.
+    #by INS every time new data is needed.
 
     input_dark = "roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf"
     rtdata.get_data(f"WFI/image/{input_dark}")
