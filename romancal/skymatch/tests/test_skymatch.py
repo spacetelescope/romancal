@@ -72,7 +72,7 @@ def mk_image_model(
     image_shape=(100, 100),
     rng=np.random.default_rng(619),
 ):
-    l2_im = WfiImageModel.make_default(shape=image_shape)
+    l2_im = WfiImageModel.make_default(shape=(8, *image_shape))
     l2_im.data = u.Quantity(
         rng.normal(loc=rate_mean, scale=rate_std, size=l2_im.data.shape).astype(
             np.float32
@@ -181,7 +181,9 @@ def test_skymatch(wfi_rate, skymethod, subtract, skystat, match_down):
     levels = [9.12, 8.28, 2.56]
 
     for im, lev in zip(container, levels):
-        im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
+        im.data = (
+            rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
+        ).astype(np.float32)
 
     # exclude central DO_NOT_USE and corner SATURATED pixels
     result = SkyMatchStep.call(
@@ -209,12 +211,12 @@ def test_skymatch(wfi_rate, skymethod, subtract, skystat, match_down):
 
     for im, lev, rlev, slev in zip(result, levels, ref_levels, sub_levels):
         # check that meta was set correctly:
-        assert im.meta.background.method == skymethod
-        assert im.meta.background.subtracted == subtract
+        assert im.meta.background["method"] == skymethod
+        assert im.meta.background["subtracted"] == subtract
 
         # test computed/measured sky values if level is set:
-        if not np.isclose(im.meta.background.level.value, 0):
-            assert abs(im.meta.background.level.value - rlev) < 0.01
+        if not np.isclose(im.meta.background["level"].value, 0):
+            assert abs(im.meta.background["level"].value - rlev) < 0.01
 
         # test
         if subtract:
@@ -240,7 +242,9 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
     levels = [9.12, 9.12, 8.28, 8.28, 2.56]
 
     for im, lev in zip(container, levels):
-        im.data = rng.normal(loc=lev, scale=0.01, size=im.data.shape) * im.data.unit
+        im.data = (
+            rng.normal(loc=lev, scale=0.01, size=im.data.shape) * im.data.unit
+        ).astype(np.float32)
 
     # We do not exclude SATURATED pixels. They should be ignored because
     # images are rotated and SATURATED pixels in the corners are not in the
@@ -268,14 +272,14 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
 
     for im, lev, rlev, slev in zip(result, levels, ref_levels, sub_levels):
         # check that meta was set correctly:
-        assert im.meta.background.method == skymethod
-        assert im.meta.background.subtracted == subtract
+        assert im.meta.background["method"] == skymethod
+        assert im.meta.background["subtracted"] == subtract
 
         if skymethod in ["local", "global"]:
             # These two sky methods must fail because they do not take
             # into account (do not compute) overlap regions and use
             # entire images:
-            assert abs(im.meta.background.level.value - rlev) < 0.1
+            assert abs(im.meta.background["level"].value - rlev) < 0.1
 
             # test
             if subtract:
@@ -284,8 +288,8 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
                 assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
         else:
             # test computed/measured sky values if level is nonzero:
-            if not np.isclose(im.meta.background.level.value, 0):
-                assert abs(im.meta.background.level.value - rlev) < 0.01
+            if not np.isclose(im.meta.background["level"].value, 0):
+                assert abs(im.meta.background["level"].value - rlev) < 0.01
 
             # test
             if subtract:
@@ -316,7 +320,9 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     levels = [9.12, 8.28, 2.56]
 
     for im, lev in zip(container, levels):
-        im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
+        im.data = (
+            rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
+        ).astype(np.float32)
 
     # We do not exclude SATURATED pixels. They should be ignored because
     # images are rotated and SATURATED pixels in the corners are not in the
@@ -359,12 +365,12 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     # compare results
     for im, lev, rlev, slev in zip(result2, levels, ref_levels, sub_levels):
         # check that meta was set correctly:
-        assert im.meta.background.method == skymethod
-        assert im.meta.background.subtracted == subtract
+        assert im.meta.background["method"] == skymethod
+        assert im.meta.background["subtracted"] == subtract
 
         # test computed/measured sky values:
-        if not np.isclose(im.meta.background.level.value, 0, atol=1e-6):
-            assert abs(im.meta.background.level.value - rlev) < 0.01
+        if not np.isclose(im.meta.background["level"].value, 0, atol=1e-6):
+            assert abs(im.meta.background["level"].value - rlev) < 0.01
 
         # test
         if subtract:

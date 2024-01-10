@@ -105,12 +105,12 @@ class JumpStep(RomanStep):
             # Get the gain and readnoise reference files
             gain_filename = self.get_reference_file(input_model, "gain")
             self.log.info("Using GAIN reference file: %s", gain_filename)
-            gain_model = rdd.GainRefModel(gain_filename)
+            gain_model = rdd.GainRefModel.create_model(gain_filename)
             gain_2d = gain_model.data.value
 
             readnoise_filename = self.get_reference_file(input_model, "readnoise")
             self.log.info("Using READNOISE reference file: %s", readnoise_filename)
-            readnoise_model = rdd.ReadnoiseRefModel(readnoise_filename)
+            readnoise_model = rdd.ReadnoiseRefModel.create_model(readnoise_filename)
             # This is to clear the WRITEABLE=False flag?
             readnoise_2d = np.copy(readnoise_model.data.value)
 

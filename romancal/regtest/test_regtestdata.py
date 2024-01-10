@@ -27,15 +27,15 @@ def test_compare_asdf(tmp_path, modification):
     file0 = file0 / "test.asdf"
     file1 = file1 / "test.asdf"
 
-    l2 = rdm.WfiImageModel.make_default(shape=(100, 100))
+    l2 = rdm.WfiImageModel.make_default(shape=(8, 100, 100))
     _add_wcs(tmp_path, l2)
-    l2.save(file0)
+    l2.to_asdf(file0)
     atol = 0.0001
     if modification == "small":
         l2.data += (atol / 2) * l2.data.unit
     elif modification == "large":
         l2.data += (atol * 2) * l2.data.unit
-    l2.save(file1)
+    l2.to_asdf(file1)
     diff = compare_asdf(file0, file1, atol=atol)
     if modification == "large":
         assert not diff.identical, diff.report()

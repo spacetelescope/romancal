@@ -38,7 +38,7 @@ def data():
 
 @pytest.fixture(scope="module")
 def datamodel(data):
-    datamodel = RampModel.make_default(_shrink=True)
+    datamodel = RampModel.make_default(shape=(2, 2, 2))
 
     detector = data[:, :, : Const.N_COLUMNS]
     amp33 = data[:, :, Const.N_COLUMNS :]
@@ -57,7 +57,7 @@ def datamodel(data):
     datamodel.border_ref_pix_left = datamodel.data[:, :, : Const.REF]
     datamodel.border_ref_pix_right = datamodel.data[:, :, -Const.REF :]
 
-    return RampModel(datamodel)
+    return datamodel
 
 
 @pytest.fixture(scope="module")
@@ -86,8 +86,6 @@ def offset() -> np.ndarray:
 
 @pytest.fixture(scope="module")
 def ref_pix_ref(coeffs):
-    refpix_ref = RefpixRefModel.make_default(
-        gamma=coeffs.gamma, zeta=coeffs.zeta, alpha=coeffs.alpha
+    return RefpixRefModel.make_default(
+        data={"gamma": coeffs.gamma, "zeta": coeffs.zeta, "alpha": coeffs.alpha}
     )
-
-    return RefpixRefModel(refpix_ref)

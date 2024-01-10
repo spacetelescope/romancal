@@ -18,7 +18,7 @@ RNG = np.random.default_rng(172)
 def test_flatfield_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
 
-    shape = (20, 20)
+    shape = (8, 20, 20)
 
     wfi_image_model = WfiImageModel.make_default(shape=shape)
     wfi_image_model.meta.instrument.name = instrument
@@ -26,33 +26,39 @@ def test_flatfield_step_interface(instrument, exptype):
     wfi_image_model.meta.instrument.optical_element = "F158"
     wfi_image_model.meta.exposure.type = exptype
     wfi_image_model.data = u.Quantity(
-        np.ones(shape, dtype=np.float32), u.electron / u.s, dtype=np.float32
+        np.ones(shape[1:], dtype=np.float32), u.electron / u.s, dtype=np.float32
     )
-    wfi_image_model.dq = np.zeros(shape, dtype=np.uint32)
+    wfi_image_model.dq = np.zeros(shape[1:], dtype=np.uint32)
     wfi_image_model.err = u.Quantity(
-        np.zeros(shape, dtype=np.float32), u.electron / u.s, dtype=np.float32
+        np.zeros(shape[1:], dtype=np.float32), u.electron / u.s, dtype=np.float32
     )
     wfi_image_model.var_poisson = u.Quantity(
-        np.zeros(shape, dtype=np.float32), u.electron**2 / u.s**2, dtype=np.float32
+        np.zeros(shape[1:], dtype=np.float32),
+        u.electron**2 / u.s**2,
+        dtype=np.float32,
     )
     wfi_image_model.var_rnoise = u.Quantity(
-        np.zeros(shape, dtype=np.float32), u.electron**2 / u.s**2, dtype=np.float32
+        np.zeros(shape[1:], dtype=np.float32),
+        u.electron**2 / u.s**2,
+        dtype=np.float32,
     )
     wfi_image_model.var_flat = u.Quantity(
-        np.zeros(shape, dtype=np.float32), u.electron**2 / u.s**2, dtype=np.float32
+        np.zeros(shape[1:], dtype=np.float32),
+        u.electron**2 / u.s**2,
+        dtype=np.float32,
     )
 
     flatref_model = FlatRefModel.make_default(shape=shape)
     flatref_model.meta.optincal_element = "F158"
     flatref_model.meta.instrument.detector = "WFI01"
-    flatref_model.data = np.ones(shape, dtype=np.float32)
-    flatref_model.dq = np.zeros(shape, dtype=np.uint16)
-    flatref_model.err = (RNG.uniform(size=shape) * 0.05).astype(np.float32)
+    flatref_model.data = np.ones(shape[1:], dtype=np.float32)
+    flatref_model.dq = np.zeros(shape[1:], dtype=np.uint32)
+    flatref_model.err = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
 
     result = FlatFieldStep.call(wfi_image_model, override_flat=flatref_model)
 
     assert (result.data == wfi_image_model.data).all()
-    assert result.var_flat.shape == shape
+    assert result.var_flat.shape == shape[1:]
     assert result.meta.cal_step.flat_field == "COMPLETE"
 
     # test that the step is skipped if the reference file is N/A

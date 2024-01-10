@@ -253,7 +253,18 @@ class ModelContainer(Sequence):
         """
         Returns a deep copy of the models in this model container.
         """
-        return copy.deepcopy(self, memo=memo)
+        models = self._models
+        self._models = []
+        new_container = copy.deepcopy(self, memo=memo)
+        new_container._models = []
+        for mdl in models:
+            if isinstance(mdl, rdm.DataModel):
+                new_container._models.append(mdl.copy())
+            else:
+                new_container._models.append(copy.deepcopy(mdl))
+
+        self._models = models
+        return new_container
 
     def close(self):
         """Close all datamodels."""

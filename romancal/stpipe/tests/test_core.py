@@ -15,7 +15,7 @@ def test_open_model(step_class, tmp_path):
     """
     file_path = tmp_path / "test.asdf"
 
-    WfiImageModel.make_default(shape=(20, 20), filepath=file_path)
+    WfiImageModel.make_default(shape=(8, 20, 20), filepath=file_path)
 
     step = step_class()
     with step.open_model(file_path) as model:
@@ -27,7 +27,7 @@ def test_get_reference_file(step_class):
     """
     Test that CRDS is properly integrated.
     """
-    model = WfiImageModel.make_default(shape=(20, 20))
+    model = WfiImageModel.make_default(shape=(8, 20, 20))
     # This will be brittle while we're using the dev server.
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
@@ -47,7 +47,7 @@ def test_get_reference_file_spectral(step_class):
     """
     Test that CRDS is properly integrated.
     """
-    model = WfiImageModel.make_default(shape=(20, 20))
+    model = WfiImageModel.make_default(shape=(8, 20, 20))
     # This will be brittle while we're using the dev server.
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
@@ -66,7 +66,7 @@ def test_log_messages(tmp_path):
     class LoggingStep(RomanStep):
         def process(self):
             self.log.warning("Splines failed to reticulate")
-            return WfiImageModel.make_default(shape=(20, 20))
+            return WfiImageModel.make_default(shape=(8, 20, 20))
 
     result = LoggingStep().run()
     assert any("Splines failed to reticulate" in l for l in result.cal_logs)
@@ -79,7 +79,7 @@ def test_crds_meta():
         def process(self, input):
             return input
 
-    im = WfiImageModel.make_default(shape=(20, 20))
+    im = WfiImageModel.make_default(shape=(8, 20, 20))
     im.meta.ref_file.crds.sw_version = "junkversion"
     im.meta.ref_file.crds.context_used = "junkcontext"
 

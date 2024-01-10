@@ -238,20 +238,19 @@ def test_photom_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a photom reffile"""
 
     # Create a small area for the file
-    shape = (20, 20)
+    shape = (8, 20, 20)
 
     # Create input model
     wfi_image_model = WfiImageModel.make_default(shape=shape)
 
     # Create photom model
     photom_model = WfiImgPhotomRefModel.make_default()
-    photom_model = WfiImgPhotomRefModel(photom)
 
     # Run photom correction step
     result = PhotomStep.call(wfi_image_model, override_photom=photom_model)
 
     assert (result.data == wfi_image_model.data).all()
-    assert result.data.shape == shape
+    assert result.data.shape == shape[1:]
     if exptype == "WFI_IMAGE":
         assert result.meta.cal_step.photom == "COMPLETE"
     else:
@@ -275,7 +274,7 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     """
 
     # Create a small area for the file
-    shape = (20, 20)
+    shape = (8, 20, 20)
 
     # Create input model
     wfi_image_model = WfiImageModel.make_default(shape=shape)

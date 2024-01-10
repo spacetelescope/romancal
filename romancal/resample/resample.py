@@ -1,9 +1,11 @@
 import logging
+from typing import ClassVar
 
 import numpy as np
 from astropy import units as u
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels
+from roman_datamodels.core import BaseDataModel
 
 from ..datamodels import ModelContainer
 from . import gwcs_drizzle, resample_utils
@@ -149,12 +151,7 @@ class ResampleData:
         # NOTE: wait for William to fix bug in datamodels' init and then
         # use datamodels.ImageModel(shape=(nx, ny)) instead of mk_datamodel()
 
-        self.blank_output = datamodels.WfiMosaicModel.make_default(
-            shape=tuple(self.output_wcs.array_shape)
-        )
-
         # update meta data and wcs
-        input_model_0 = input_models[0]
         # note we have made this input_model_0 variable so that if
         # meta includes lazily-loaded objects, that we can successfully
         # copy them into the metadata.  Directly running input_models[0].meta
@@ -162,8 +159,15 @@ class ResampleData:
         # meta is loaded but before the dictionary is constructed,
         # which can lead to seek on closed file errors if
         # meta contains lazily loaded objects.
-        self.blank_output.meta = dict(input_model_0.meta._data.items())
-        self.blank_output.meta.wcs = self.output_wcs
+        meta = input_models[0].meta.model_dump()
+        meta["wcs"] = self.output_wcs
+
+        self.blank_output = datamodels.WfiMosaicModel.make_default(
+            shape=(len(self.input_models), *self.output_wcs.array_shape),
+            data={
+                "meta": meta,
+            },
+        )
 
         self.output_models = ModelContainer()
 
@@ -185,9 +189,9 @@ class ResampleData:
         """
         for exposure in self.input_models.models_grouped:
             output_model = self.blank_output
-            output_model.meta["resample"] = datamodels.WfiMosaicModel.make_default(
-                _shrink=True
-            ).meta.resample
+            output_model.meta[
+                "resample"
+            ] = datamodels.WfiMosaicModel.make_default().meta.resample
             # Determine output file type from input exposure filenames
             # Use this for defining the output filename
             indx = exposure[0].meta.filename.rfind(".")
@@ -261,7 +265,9 @@ class ResampleData:
         Used for level 3 resampling
         """
         output_model = self.blank_output.copy()
-        output_model.meta.filename = self.output_filename
+        output_model.meta.filename = (
+            self.output_filename if self.output_filename else ""
+        )
         output_model.meta["resample"] = datamodels.WfiMosaicModel.make_default(
             _shrink=True
         ).meta.resample
@@ -287,6 +293,7 @@ class ResampleData:
             )
             if not hasattr(img.meta, "background"):
                 self._create_background_attribute(img)
+
             blevel = img.meta.background.level
             if not img.meta.background.subtracted and blevel is not None:
                 data = img.data - blevel
@@ -334,17 +341,19 @@ class ResampleData:
 
         self.update_exposure_times(output_model, exptime_tot)
 
-        # TODO: fix RAD to expect a context image datatype of int32
-        output_model.context = output_model.context.astype(np.uint32)
-
         self.output_models.append(output_model)
 
         return self.output_models
 
     def _create_background_attribute(self, img):
-        img.meta["background"] = {}
-        img.meta.background["level"] = 0
-        img.meta.background["subtracted"] = True
+        # Should background be added to wfi_image's meta as an optional feature?
+        class Background(BaseDataModel):
+            schema_uri: ClassVar[None] = None
+
+            level: float
+            subtracted: bool
+
+        img.meta.background = Background(level=0, subtracted=False)
 
     def resample_variance_array(self, name, output_model):
         """Resample variance arrays from ``self.input_models`` to the ``output_model``.

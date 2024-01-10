@@ -123,7 +123,10 @@ def apply_flat_field(science, flat):
         science["var_flat"] = np.zeros(shape=science.data.shape, dtype=np.float32)
         science.var_flat = science.data**2 / flat_data_squared * flat_err**2
 
-    science.err = np.sqrt(science.var_poisson + science.var_rnoise + science.var_flat)
+    err = np.sqrt(science.var_poisson + science.var_rnoise + science.var_flat)
+    science.err = u.Quantity(
+        value=err.value, unit=u.Unit(err.unit.to_string()), dtype=err.dtype
+    )
 
     # Combine the science and flat DQ arrays
     science.dq = np.bitwise_or(science.dq, flat_dq)

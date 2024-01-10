@@ -432,7 +432,7 @@ def add_tweakreg_catalog_attribute(
         save_catalogs=save_catalogs,
     )
 
-    input_dm.meta["source_detection"] = rdm.WfiImageModel.make_defaults(
+    input_dm.meta["source_detection"] = rdm.WfiImageModel.make_default(
         _shrink=True
     ).meta.source_detection
 
@@ -460,7 +460,7 @@ def base_image():
     """
 
     def _base_image(shift_1=0, shift_2=0):
-        l2_im = rdm.WfiImageModel.make_defaults(shape=(2000, 2000))
+        l2_im = rdm.WfiImageModel.make_default(shape=(8, 2000, 2000))
         l2_im.meta.target["proper_motion_epoch"] = "2016.0"
         # update wcsinfo
         update_wcsinfo(l2_im)
@@ -495,6 +495,7 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     Test that TweakReg raises an AttributeError if meta.tweakreg_catalog is missing.
     """
     img = base_image()
+    img.meta.source_detection = None
     with pytest.raises(Exception) as exec_info:
         trs.TweakRegStep.call([img])
 
@@ -514,7 +515,7 @@ def test_tweakreg_returns_modelcontainer(tmp_path, base_image):
             A ModelContainer with the results from TweakRegStep.
         """
         for img in result:
-            del img.meta["tweakreg_catalog"]
+            img.meta.tweakreg_catalog = None
 
     img_1 = base_image(shift_1=1000, shift_2=1000)
     img_2 = base_image(shift_1=1000, shift_2=1000)
@@ -930,7 +931,8 @@ def test_remove_tweakreg_catalog_data(
 
     trs.TweakRegStep.call([img])
 
-    assert not hasattr(img.meta.source_detection, "tweakreg_catalog")
+    if hasattr(img.meta.source_detection, "tweakreg_catalog"):
+        assert img.meta.source_detection.tweakreg_catalog is None
     assert hasattr(img.meta, "tweakreg_catalog")
 
 

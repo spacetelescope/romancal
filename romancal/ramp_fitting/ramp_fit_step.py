@@ -88,76 +88,80 @@ class RampFitStep(RomanStep):
             Model containing a count-rate image.
         """
         max_cores = self.maximum_cores
-        input_model.data = input_model.data[np.newaxis, :]
-        input_model.groupdq = input_model.groupdq[np.newaxis, :]
-        input_model.err = input_model.err[np.newaxis, :]
+        # We do not need to revalidate the input model as it is thrown away at the end of this
+        # function.
+        with input_model.pause_validation(revalidate_on_exit=False):
+            input_model.data = input_model.data[np.newaxis, :]
+            input_model.groupdq = input_model.groupdq[np.newaxis, :]
+            input_model.err = input_model.err[np.newaxis, :]
 
-        log.info(f"Using algorithm = {self.algorithm}")
-        log.info(f"Using weighting = {self.weighting}")
+            log.info(f"Using algorithm = {self.algorithm}")
+            log.info(f"Using weighting = {self.weighting}")
 
-        buffsize = ramp_fit.BUFSIZE
-        image_info, integ_info, opt_info, gls_opt_model = ramp_fit.ramp_fit(
-            input_model,
-            buffsize,
-            self.save_opt,
-            readnoise_model.data.value,
-            gain_model.data.value,
-            self.algorithm,
-            self.weighting,
-            max_cores,
-            dqflags.pixel,
-        )
-
-        if image_info is not None:
-            # JWST has a separate GainScale step.  This isn't in Roman.
-            # We can adjust the gains here instead.
-            # data, dq, var_poisson, var_rnoise, err = image_info
-            # This step isn't needed for ols_cas22, which works directly in
-            # electrons.
-            image_info[0][...] *= gain_model.data.value  # data
-            # no dq multiplication!
-            image_info[2][...] *= gain_model.data.value**2  # var_poisson
-            image_info[3][...] *= gain_model.data.value**2  # var_rnoise
-            image_info[4][...] *= gain_model.data.value  # err
-
-        readnoise_model.close()
-
-        # Save the OLS optional fit product, if it exists
-        if opt_info is not None:
-            # We should scale these by the gain, too.
-            # opt_info = (slope, sigslope, var_poisson, var_readnoise, yint,
-            # sig_yint,
-            # ped_int, weights, cr_mag_seg
-            opt_info[0][...] *= gain_model.data.value  # slope
-            opt_info[1][...] *= gain_model.data.value  # sigslope
-            opt_info[2][...] *= gain_model.data.value**2  # var_poisson
-            opt_info[3][...] *= gain_model.data.value**2  # var_readnoise
-            opt_info[4][...] *= gain_model.data.value  # yint
-            opt_info[5][...] *= gain_model.data.value  # sigyint
-            opt_info[6][...] *= gain_model.data.value  # pedestal
-            # no change to weights due to gain
-            opt_info[8][...] *= gain_model.data.value  # crmag
-            opt_model = create_optional_results_model(input_model, opt_info)
-            self.save_model(opt_model, "fitopt", output_file=self.opt_name)
-
-        gain_model.close()
-
-        # All pixels saturated, therefore returning an image file with zero data
-        if image_info is None:
-            log.info("All pixels are saturated. Returning a zeroed-out image.")
-
-            # Image info order is: data, dq, var_poisson, var_rnoise, err
-            image_info = (
-                np.zeros(input_model.data.shape[2:], dtype=input_model.data.dtype),
-                input_model.pixeldq
-                | input_model.groupdq[0][0]
-                | dqflags.group["SATURATED"],
-                np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
-                np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
-                np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
+            buffsize = ramp_fit.BUFSIZE
+            image_info, integ_info, opt_info, gls_opt_model = ramp_fit.ramp_fit(
+                input_model,
+                buffsize,
+                self.save_opt,
+                readnoise_model.data.value,
+                gain_model.data.value,
+                self.algorithm,
+                self.weighting,
+                max_cores,
+                dqflags.pixel,
             )
 
-        out_model = create_image_model(input_model, image_info)
+            if image_info is not None:
+                # JWST has a separate GainScale step.  This isn't in Roman.
+                # We can adjust the gains here instead.
+                # data, dq, var_poisson, var_rnoise, err = image_info
+                # This step isn't needed for ols_cas22, which works directly in
+                # electrons.
+                image_info[0][...] *= gain_model.data.value  # data
+                # no dq multiplication!
+                image_info[2][...] *= gain_model.data.value**2  # var_poisson
+                image_info[3][...] *= gain_model.data.value**2  # var_rnoise
+                image_info[4][...] *= gain_model.data.value  # err
+
+            readnoise_model.close()
+
+            # Save the OLS optional fit product, if it exists
+            if opt_info is not None:
+                # We should scale these by the gain, too.
+                # opt_info = (slope, sigslope, var_poisson, var_readnoise, yint,
+                # sig_yint,
+                # ped_int, weights, cr_mag_seg
+                opt_info[0][...] *= gain_model.data.value  # slope
+                opt_info[1][...] *= gain_model.data.value  # sigslope
+                opt_info[2][...] *= gain_model.data.value**2  # var_poisson
+                opt_info[3][...] *= gain_model.data.value**2  # var_readnoise
+                opt_info[4][...] *= gain_model.data.value  # yint
+                opt_info[5][...] *= gain_model.data.value  # sigyint
+                opt_info[6][...] *= gain_model.data.value  # pedestal
+                # no change to weights due to gain
+                opt_info[8][...] *= gain_model.data.value  # crmag
+                opt_model = create_optional_results_model(input_model, opt_info)
+                self.save_model(opt_model, "fitopt", output_file=self.opt_name)
+
+            gain_model.close()
+
+            # All pixels saturated, therefore returning an image file with zero data
+            if image_info is None:
+                log.info("All pixels are saturated. Returning a zeroed-out image.")
+
+                # Image info order is: data, dq, var_poisson, var_rnoise, err
+                image_info = (
+                    np.zeros(input_model.data.shape[2:], dtype=input_model.data.dtype),
+                    input_model.pixeldq
+                    | input_model.groupdq[0][0]
+                    | dqflags.group["SATURATED"],
+                    np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
+                    np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
+                    np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
+                )
+
+            out_model = create_image_model(input_model, image_info)
+
         return out_model
 
     def ols_cas22(self, input_model, readnoise_model, gain_model):

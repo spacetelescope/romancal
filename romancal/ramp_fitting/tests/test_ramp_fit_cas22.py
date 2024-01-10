@@ -86,7 +86,7 @@ def test_bad_readpattern():
     ramp_model, gain_model, readnoise_model = make_data(
         SIMPLE_RESULTANTS, 1, 0.01, False
     )
-    bad_pattern = ramp_model.meta.exposure.read_pattern.data[1:]
+    bad_pattern = ramp_model.meta.exposure.read_pattern[1:]
     ramp_model.meta.exposure.read_pattern = bad_pattern
 
     with pytest.raises(RuntimeError):
@@ -239,8 +239,6 @@ def model_from_resultants(resultants, read_pattern=None):
 
     ramp_model.meta.exposure.read_pattern = read_pattern
 
-    ramp_model = RampModel(ramp_model)
-
     return ramp_model
 
 
@@ -287,8 +285,6 @@ def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01, randomize=True):
         u.electron / u.DN,
         dtype=np.float32,
     )
-
-    gain_ref_model = GainRefModel(gain_ref_model)
 
     # Create temporary readnoise reference file
     rn_ref_model = ReadnoiseRefModel.make_default(shape=shape)

@@ -84,7 +84,7 @@ def setup_list_of_l2_files():
                 / f"test_model_container_input_as_list_of_filepaths_{i:02}.asdf"
             )
             # create an ASDF file with an L2 model
-            rdm.WfiImageModel.make_default(shape=(100, 100), filepath=filepath)
+            rdm.WfiImageModel.make_default(shape=(8, 100, 100), filepath=filepath)
             if type_of_returned_object == "asdf":
                 # append filepath to filepath list
                 result_list.append(str(filepath))
@@ -92,7 +92,7 @@ def setup_list_of_l2_files():
                 # parse ASDF file as RDM
                 datamodel = rdm.open(str(filepath))
                 # update filename
-                datamodel.meta["filename"] = filepath
+                datamodel.meta["filename"] = str(filepath)
                 # append datamodel to datamodel list
                 result_list.append(datamodel)
 
@@ -170,12 +170,12 @@ def test_imagemodel_slice_n_dice(n, obj_type, tmp_path, request):
     assert isinstance(x1, list)
     assert len(x1) == len(filepath_list)
 
-    assert isinstance(x2, rdm.ImageModel)
+    assert isinstance(x2, rdm.WfiImageModel)
 
     assert isinstance(x3, list)
     assert len(x3) == n - 2
 
-    assert isinstance(x4, rdm.ImageModel)
+    assert isinstance(x4, rdm.WfiImageModel)
 
     assert isinstance(x5, list)
     assert len(x5) == 2

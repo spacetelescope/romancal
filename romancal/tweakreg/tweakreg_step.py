@@ -191,7 +191,7 @@ class TweakRegStep(RomanStep):
                     )
                 # remove 4D numpy array from meta.source_detection
                 if is_tweakreg_catalog_present:
-                    del image_model.meta.source_detection["tweakreg_catalog"]
+                    image_model.meta.source_detection.tweakreg_catalog = None
             else:
                 raise AttributeError(
                     "Attribute 'meta.source_detection' is missing."
@@ -361,7 +361,7 @@ class TweakRegStep(RomanStep):
 
             for imcat in imcats:
                 model = imcat.meta["image_model"]
-                if model.meta.cal_step.get("tweakreg") == "SKIPPED":
+                if model.meta.cal_step.tweakreg == "SKIPPED":
                     continue
                 wcs = model.meta.wcs
                 twcs = imcat.wcs

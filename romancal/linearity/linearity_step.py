@@ -36,7 +36,9 @@ class LinearityStep(RomanStep):
 
                 return input_model
 
-            lin_model = rdd.LinearityRefModel(self.lin_name, copy_arrays=True)
+            lin_model = rdd.LinearityRefModel.create_model(
+                self.lin_name, copy_arrays=True
+            )
 
             # copy poly coeffs from linearity model so Nan's can be updated
             lin_coeffs = lin_model.coeffs
@@ -47,19 +49,23 @@ class LinearityStep(RomanStep):
 
             gdq = gdq[np.newaxis, :]
 
-            input_model.data = input_model.data[np.newaxis, :]
-
             # Call linearity correction function in stcal
             # The third return value is the procesed zero frame which
             # Roman does not use.
             new_data, new_pdq, _ = linearity_correction(
-                input_model.data.value, gdq, pdq, lin_coeffs, lin_dq, dqflags.pixel
+                input_model.data[np.newaxis, :].value,
+                gdq,
+                pdq,
+                lin_coeffs,
+                lin_dq,
+                dqflags.pixel,
             )
 
-            input_model.data = u.Quantity(
+            # Use [...] to modify the array in place
+            input_model.data[...] = u.Quantity(
                 new_data[0, :, :, :], u.DN, dtype=new_data.dtype
             )
-            input_model.pixeldq = new_pdq
+            input_model.pixeldq[...] = new_pdq
 
             # Close the reference file and update the step status
             lin_model.close()
@@ -70,4 +76,5 @@ class LinearityStep(RomanStep):
                 self.suffix = "linearity"
             except AttributeError:
                 self["suffix"] = "linearity"
+
         return input_model

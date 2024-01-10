@@ -23,6 +23,7 @@ from ci_watson.artifactory_helpers import (
 )
 from deepdiff.operator import BaseOperator
 from gwcs.wcstools import grid_from_bounding_box
+from roman_datamodels import DataModel
 
 # from romancal.lib.suffix import replace_suffix
 from romancal.stpipe import RomanStep
@@ -729,12 +730,21 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
     with asdf.open(result, **open_kwargs) as af0, asdf.open(
         truth, **open_kwargs
     ) as af1:
+        # DeepDiff expects Mapping-like objects and Pydantic models are not
+        # quite mapping like enough for it. So we convert them to dicts here
+        # using the Pydantic model's model_dump method.
+        tree_0 = af0.tree
+        if "roman" in tree_0 and isinstance(mdl := tree_0["roman"], DataModel):
+            tree_0["roman"] = mdl.model_dump()
+        tree_1 = af1.tree
+        if "roman" in tree_1 and isinstance(mdl := tree_1["roman"], DataModel):
+            tree_1["roman"] = mdl.model_dump()
         # swap the inputs here so DeepDiff(truth, result)
         # this will create output with 'new_value' referring to
         # the value in the result and 'old_value' referring to the truth
         diff = deepdiff.DeepDiff(
-            af1.tree,
-            af0.tree,
+            tree_1,
+            tree_0,
             ignore_nan_inequality=equal_nan,
             custom_operators=operators,
             exclude_paths=exclude_paths,

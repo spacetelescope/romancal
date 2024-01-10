@@ -46,18 +46,16 @@ class DQInitStep(RomanStep):
             output_model = RampModel.make_default(shape=input_model.shape)
 
             # Copy input_model contents into RampModel
-            for key in input_model.keys():
+            for key, value in input_model:
                 # If a dictionary (like meta), overwrite entires (but keep
                 # required dummy entries that may not be in input_model)
-                if isinstance(output_model[key], dict):
-                    output_model[key].update(input_model.__getattr__(key))
-                elif isinstance(output_model[key], np.ndarray):
+                if key in output_model and isinstance(output_model[key], dict):
+                    output_model[key].update(value)
+                elif key in output_model and isinstance(output_model[key], np.ndarray):
                     # Cast input ndarray as RampModel dtype
-                    output_model[key] = input_model.__getattr__(key).astype(
-                        output_model[key].dtype
-                    )
+                    output_model[key] = value.astype(output_model[key].dtype)
                 else:
-                    output_model[key] = input_model.__getattr__(key)
+                    output_model[key] = value
 
         else:
             output_model = input_model

@@ -27,12 +27,12 @@ class WfiSca:
 
         Returns
         -------
-        datamodels.ImageModel
-            An L2 ImageModel datamodel.
+        datamodels.WfiImageModel
+            An L2 WfiImageModel datamodel.
         """
         rng = np.random.default_rng()
         l2 = datamodels.WfiImageModel.make_default(
-            shape=self.shape,
+            shape=(8, *self.shape),
             data={
                 "meta": {
                     "wcsinfo": {"ra_ref": 10, "dec_ref": 0, "vparity": -1},
@@ -82,7 +82,7 @@ class WfiSca:
             pscale=self.pscale,
             shape=self.shape,
         )
-        return datamodels.ImageModel(l2)
+        return l2
 
 
 def create_wcs_object_without_distortion(fiducial_world, pscale, shape):
@@ -535,7 +535,7 @@ def test_resample_variance_array(wfi_sca1, wfi_sca4, name):
     resample_data = ResampleData(input_models, **{"rotation": 0})
 
     output_model = resample_data.blank_output.copy()
-    output_model.meta["resample"] = {}
+    output_model.meta.resample = None
     driz = gwcs_drizzle.GWCSDrizzle(
         output_model,
         pixfrac=resample_data.pixfrac,

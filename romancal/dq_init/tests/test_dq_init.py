@@ -210,7 +210,7 @@ def test_dqinit_step_interface(instrument, exptype):
     maskref_model.meta.instrument.optical_element = "F158"
     maskref_model.meta.instrument.detector = "WFI01"
     maskref_model.data = np.ones(shape[1:], dtype=np.float32)
-    maskref_model.dq = np.zeros(shape[1:], dtype=np.uint16)
+    maskref_model.dq = np.zeros(shape[1:], dtype=np.uint32)
     maskref_model.err = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
 
     # Perform Data Quality application step
@@ -255,7 +255,7 @@ def test_dqinit_refpix(instrument, exptype):
     maskref_model.meta.instrument.optical_element = "F158"
     maskref_model.meta.instrument.detector = "WFI01"
     maskref_model.data = np.ones(shape[1:], dtype=np.float32)
-    maskref_model.dq = np.zeros(shape[1:], dtype=np.uint16)
+    maskref_model.dq = np.zeros(shape[1:], dtype=np.uint32)
     maskref_model.err = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
 
     # Perform Data Quality application step
@@ -263,7 +263,9 @@ def test_dqinit_refpix(instrument, exptype):
 
     # check if reference pixels are correct
     assert result.data.shape == (2, 20, 20)  # no pixels should be trimmed
-    assert result.amp33.value.shape == (2, 4096, 128)
+    assert (
+        result.amp33.value.shape == wfi_sci_raw_model.amp33.shape
+    )  # Due to how the default model is created
     assert result.border_ref_pix_right.shape == (2, 20, 4)
     assert result.border_ref_pix_left.shape == (2, 20, 4)
     assert result.border_ref_pix_top.shape == (2, 4, 20)
