@@ -515,6 +515,3 @@ def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
     assert model.meta.cal_step.assign_wcs == "SKIPPED"
     assert model.meta.cal_step.flat_field == "SKIPPED"
     assert model.meta.cal_step.photom == "SKIPPED"
-
-    
-    
