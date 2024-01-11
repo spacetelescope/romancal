@@ -154,8 +154,8 @@ class ResampleStep(RomanStep):
             and input_models.asn_table_name is not None
         ):
             # update ASN attributes
-            model.meta.asn.pool_name = input_models.asn_pool_name
-            model.meta.asn.table_name = input_models.asn_table_name
+            model.meta.asn["pool_name"] = input_models.asn_pool_name
+            model.meta.asn["table_name"] = input_models.asn_table_name
 
         # if pixel_scale exists, it will override pixel_scale_ratio.
         # calculate the actual value of pixel_scale_ratio based on pixel_scale
