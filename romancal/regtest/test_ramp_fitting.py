@@ -30,9 +30,9 @@ def cond_is_asdf(requirement, model, expected_path):
 
 
 def cond_is_imagemodel(requirement, model, expected_path):
-    """Check that the result is an ImageModel"""
+    """Check that the result is an WfiImageModel"""
     msg = "Testing that the result model is Level 2"
-    result = isinstance(model, rdm.datamodels.ImageModel)
+    result = isinstance(model, rdm.datamodels.WfiImageModel)
     log_result(requirement, msg, result)
     assert result, msg
 
@@ -131,7 +131,7 @@ def rampfit_result(request, rtdata_module):
 
     Returns
     -------
-    model, path : `ImageModel`, `pathlib.Path`
+    model, path : `WfiImageModel`, `pathlib.Path`
         Model and path to model.
     """
     # Setup inputs
