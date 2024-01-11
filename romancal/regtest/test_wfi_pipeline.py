@@ -49,10 +49,10 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     model = rdm.open(rtdata.output, lazy_load=False)
     pipeline = ExposurePipeline()
 
-    # DMS280 result is an ImageModel
+    # DMS280 result is an WfiImageModel
     pipeline.log.info(
         "DMS280 MSG: Testing that result is a Level 2 model......."
-        + passfail(isinstance(model, rdm.datamodels.ImageModel))
+        + passfail(isinstance(model, rdm.datamodels.WfiImageModel))
     )
 
     # DMS86 instrument artifact correction tests

@@ -191,7 +191,8 @@ class TweakRegStep(RomanStep):
                     )
                 # remove 4D numpy array from meta.source_detection
                 if is_tweakreg_catalog_present:
-                    image_model.meta.source_detection.tweakreg_catalog = None
+                    del image_model.meta.source_detection
+                    # image_model.meta.source_detection.tweakreg_catalog = None
             else:
                 raise AttributeError(
                     "Attribute 'meta.source_detection' is missing."
