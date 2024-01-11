@@ -181,29 +181,29 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     # DMS87 data quality tests
     pipeline.log.info(
         "DMS87 MSG: Testing existence of data quality array (dq) in Level 2 image"
-        " output......." + passfail("dq" in model.keys())
+        " output......." + passfail("dq" in model)
     )
-    assert "dq" in model.keys()
+    assert "dq" in model
     pipeline.log.info(
         "DMS87 MSG: Testing existence of general error array (err) in Level 2 image"
-        " output......." + passfail("err" in model.keys())
+        " output......." + passfail("err" in model)
     )
-    assert "err" in model.keys()
+    assert "err" in model
     pipeline.log.info(
         "DMS87 MSG: Testing existence of Poisson noise variancearray (var_poisson) in"
-        " Level 2 image output......." + passfail("var_poisson" in model.keys())
+        " Level 2 image output......." + passfail("var_poisson" in model)
     )
-    assert "var_poisson" in model.keys()
+    assert "var_poisson" in model
     pipeline.log.info(
         "DMS87 MSG: Testing existence of read noise variance array (var_rnoise) in"
-        " level 2 image output......." + passfail("var_rnoise" in model.keys())
+        " level 2 image output......." + passfail("var_rnoise" in model)
     )
-    assert "var_rnoise" in model.keys()
+    assert "var_rnoise" in model
     pipeline.log.info(
         "DMS87 MSG: Testing existence of flatfield uncertainty variance array"
-        " (var_flat) in Level 2 image output...." + passfail("var_flat" in model.keys())
+        " (var_flat) in Level 2 image output...." + passfail("var_flat" in model)
     )
-    assert "var_flat" in model.keys()
+    assert "var_flat" in model
 
     # DMS88 total exposure time test
     pipeline.log.info(
@@ -407,24 +407,24 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     # DMS91 data quality tests
     pipeline.log.info(
         "DMS91 MSG: Testing existence of data quality array (dq) in Level 2"
-        " spectroscopic output......." + passfail("dq" in model.keys())
+        " spectroscopic output......." + passfail("dq" in model)
     )
-    assert "dq" in model.keys()
+    assert "dq" in model
     pipeline.log.info(
         "DMS91 MSG: Testing existence of general error array (err) in Level 2"
-        " spectroscopic output......." + passfail("err" in model.keys())
+        " spectroscopic output......." + passfail("err" in model)
     )
-    assert "err" in model.keys()
+    assert "err" in model
     pipeline.log.info(
         "DMS91 MSG: Testing existence of Poisson noise variance array (var_poisson) in"
-        " Level 2 spectroscopic output.." + passfail("var_poisson" in model.keys())
+        " Level 2 spectroscopic output.." + passfail("var_poisson" in model)
     )
-    assert "var_poisson" in model.keys()
+    assert "var_poisson" in model
     pipeline.log.info(
         "DMS91 MSG: Testing existence of read noise variance array (var_rnoise) in"
-        " Level 2 spectroscopic output..." + passfail("var_rnoise" in model.keys())
+        " Level 2 spectroscopic output..." + passfail("var_rnoise" in model)
     )
-    assert "var_rnoise" in model.keys()
+    assert "var_rnoise" in model
 
     # DMS88 total exposure time test
     pipeline.log.info(
