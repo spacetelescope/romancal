@@ -28,7 +28,7 @@ def setup_inputs(
     Return WfiImageModel of level 2 image.
     """
     # construct WfiImageModel
-    mod = WfiImageModel.make_default(shape=shape)
+    mod = WfiImageModel.make_default(shape=(8, *shape))
     mod.data = u.Quantity(
         np.ones(shape, dtype=np.float32), u.electron / u.s, dtype=np.float32
     )
@@ -104,7 +104,7 @@ def add_sources(image_model, psf_model, x_true, y_true, amp_true, background=10)
 class TestPSFFitting:
     def setup_method(self):
         self.image_model, self.webbpsf_config, self.psf_model = setup_inputs(
-            shape=(8, *image_model_shape),
+            shape=image_model_shape,
         )
 
     @pytest.mark.webbpsf
