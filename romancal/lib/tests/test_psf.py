@@ -97,8 +97,8 @@ def add_sources(image_model, psf_model, x_true, y_true, amp_true, background=10)
     image = photometry.make_model_image(shape, (19, 19))
 
     image += rng.normal(background, 1, size=shape)
-    image_model.data = image * np.ones_like(image_model.data)
-    image_model.err = background * np.ones_like(image_model.err)
+    image_model.data = (image * np.ones_like(image_model.data)).astype(np.float32)
+    image_model.err = (background * np.ones_like(image_model.err)).astype(np.float32)
 
 
 class TestPSFFitting:
