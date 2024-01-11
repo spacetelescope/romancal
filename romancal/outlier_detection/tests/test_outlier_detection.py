@@ -1,6 +1,3 @@
-import os
-from pathlib import Path
-
 import pytest
 
 from romancal.datamodels import ModelContainer
@@ -57,14 +54,15 @@ def test_outlier_valid_input_datamodels(tmp_path, base_image):
     img_2.meta.filename = "img_2.asdf"
 
     step = OutlierDetectionStep()
+    # set output dir for all files created by the step
+    step.output_dir = tmp_path
+    # make sure resample does not save file to disk
+    step.in_memory = True
     step.process(ModelContainer([img_1, img_2]))
 
     assert step.skip is False
     assert img_1.meta.cal_step.outlier_detection == "COMPLETE"
     assert img_2.meta.cal_step.outlier_detection == "COMPLETE"
-
-    # clean up
-    [x.unlink() for x in Path(os.getcwd()).glob("*.asdf")]
 
 
 def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
@@ -78,15 +76,16 @@ def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
     asn_filepath = create_mock_asn_file(tmp_path)
 
     step = OutlierDetectionStep()
+    # set output dir for all files created by the step
+    step.output_dir = tmp_path
+    # make sure resample does not save file to disk
+    step.in_memory = True
     step.process(ModelContainer(asn_filepath))
 
     assert step.skip is False
     assert all(
         x.meta.cal_step.outlier_detection == "COMPLETE" for x in step.input_models
     )
-
-    # clean up
-    [x.unlink() for x in Path(os.getcwd()).glob("*.asdf")]
 
 
 @pytest.mark.parametrize(
@@ -109,7 +108,7 @@ def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
             "resample_data": True,
             "good_bits": 0,
             "allowed_memory": None,
-            "in_memory": False,
+            "in_memory": True,
             "make_output_path": None,
             "resample_suffix": "i2d",
         },
@@ -133,16 +132,19 @@ def test_outlier_init_default_parameters(pars, base_image):
     assert step.make_output_path == pars["make_output_path"]
     assert step.resample_suffix == f"_outlier_{pars['resample_suffix']}.asdf"
 
-    # clean up
-    [x.unlink() for x in Path(os.getcwd()).glob("*.asdf")]
 
-
-def test_outlier_do_detection(base_image):
+def test_outlier_do_detection(tmp_path, base_image):
     img_1 = base_image()
     img_1.meta.filename = "img_1.asdf"
     img_2 = base_image()
     img_2.meta.filename = "img_2.asdf"
     input_models = ModelContainer([img_1, img_2])
+
+    outlier_step = OutlierDetectionStep()
+    # set output dir for all files created by the step
+    outlier_step.output_dir = tmp_path
+    # make sure resample does not save file to disk
+    outlier_step.in_memory = True
 
     pars = {
         "weight_type": "exptime",
@@ -161,21 +163,19 @@ def test_outlier_do_detection(base_image):
         "resample_data": True,
         "good_bits": 0,
         "allowed_memory": None,
-        "in_memory": False,
-        "make_output_path": OutlierDetectionStep().make_output_path,
+        "in_memory": outlier_step.in_memory,
+        "make_output_path": outlier_step.make_output_path,
         "resample_suffix": "i2d",
     }
 
-    blot_path_1 = Path(os.getcwd()) / img_1.meta.filename.replace(".asdf", "_blot.asdf")
-    blot_path_2 = Path(os.getcwd()) / img_2.meta.filename.replace(".asdf", "_blot.asdf")
-    median_path = Path(os.getcwd()) / "img_median.asdf"
-    output_path = Path(os.getcwd()) / f"img_outlier_{pars['resample_suffix']}.asdf"
+    blot_path_1 = tmp_path / img_1.meta.filename.replace(".asdf", "_blot.asdf")
+    blot_path_2 = tmp_path / img_2.meta.filename.replace(".asdf", "_blot.asdf")
+    median_path = tmp_path / "img_median.asdf"
 
     outlier_files_path = [
         blot_path_1,
         blot_path_2,
         median_path,
-        output_path,
     ]
 
     detection_step = outlier_detection.OutlierDetection
@@ -184,6 +184,3 @@ def test_outlier_do_detection(base_image):
     step.do_detection()
 
     assert all(x.exists() for x in outlier_files_path)
-
-    # clean up
-    [x.unlink() for x in Path(os.getcwd()).glob("*.asdf")]
