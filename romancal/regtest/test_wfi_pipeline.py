@@ -442,7 +442,7 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
 
     # Save original wcs information
     orig_wcs = copy.deepcopy(model.meta.wcs)
-    del model.meta["wcs"]
+    del model.meta.model_extra["wcs"]
 
     # Create new pointing for the model
     # RA & Dec are each shifted + 10 degrees, unless they are near

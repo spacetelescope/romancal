@@ -57,6 +57,11 @@ class DQInitStep(RomanStep):
                 else:
                     output_model[key] = value
 
+            # Remove the "resultantdq" attribute as this is accidentally moved and breaks
+            # the regression tests
+            if "resultantdq" in output_model.model_extra:
+                del output_model.model_extra["resultantdq"]
+
         else:
             output_model = input_model
 
