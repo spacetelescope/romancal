@@ -104,7 +104,7 @@ def add_sources(image_model, psf_model, x_true, y_true, amp_true, background=10)
 class TestPSFFitting:
     def setup_method(self):
         self.image_model, self.webbpsf_config, self.psf_model = setup_inputs(
-            shape=image_model_shape,
+            shape=(8, *image_model_shape),
         )
 
     @pytest.mark.webbpsf

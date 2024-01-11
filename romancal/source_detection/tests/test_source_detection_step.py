@@ -19,7 +19,7 @@ image_model_shape = (100, 100)
 class TestSourceDetection:
     def setup_method(self):
         self.image_model, self.webbpsf_config, self.psf_model = setup_inputs(
-            shape=image_model_shape,
+            shape=(8, *image_model_shape),
         )
 
     @pytest.mark.webbpsf
