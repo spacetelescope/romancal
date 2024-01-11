@@ -74,14 +74,20 @@ behavior of the processing:
 ``--snr`` (string, default='4.0 3.0')
   The signal-to-noise values to use for bad pixel identification. Used when comparing
   the blotted, median image to the inputs when identifying outliers and flagging them
-  in the input DQ arrays. Valid values are a pair of floating-point values in a single
-  string.
+  in the input DQ arrays. Two values are specified, where the first value is used for
+  rejecting outliers in all pixels across the image, while the second value is used to
+  reject additional lower-level outliers in pixels that are adjacent to those
+  identified in the first pass. Valid values are a pair of floating-point values in a
+  single string.
 
 ``--scale`` (string, default='0.5 0.4')
   The scaling factor applied to derivative used to identify bad pixels. Used when
   comparing the blotted, median image to the inputs when identifying outliers and
-  flagging them in the input DQ arrays. Valid values are a pair of floating-point
-  values in a single string.
+  flagging them in the input DQ arrays. Two values are specified, where the first
+  value is used for rejecting outliers in all pixels across the image, while the
+  second value is used to reject additional lower-level outliers in pixels that are
+  adjacent to those identified in the first pass. Valid values are a pair of
+  floating-point values in a single string.
 
 ``--backg`` (float, default=0.0)
   User-specified background value (scalar) to subtract during final identification
