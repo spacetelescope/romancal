@@ -25,7 +25,7 @@ dependencies = [
     # 'rad >= 0.18.0',
     'rad @ git+https://github.com/WilliamJamieson/rad.git@feature/autogen_schema',
     # 'roman_datamodels >= 0.18.0',
-    'roman_datamodels @ git+https://github.com/WilliamJamieson/roman_datamodels.gitt@feature/autogen',
+    'roman_datamodels @ git+https://github.com/WilliamJamieson/roman_datamodels.git@feature/autogen',
     'scipy >=1.11',
     'stcal >=1.5.1',
     #'stcal @ git+https://github.com/spacetelescope/stcal.git@main',
