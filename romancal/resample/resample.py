@@ -238,11 +238,11 @@ class ResampleData:
                 del data
                 img.close()
 
+            # cast context array to uint32
+            output_model.context = output_model.context.astype("uint32")
             if not self.in_memory:
                 # Write out model to disk, then return filename
                 output_name = output_model.meta.filename
-                # cast context array to uint32
-                output_model.context = output_model.context.astype("uint32")
                 output_model.save(output_name)
                 log.info(f"Exposure {output_name} saved to file")
                 output_list.append(output_name)
