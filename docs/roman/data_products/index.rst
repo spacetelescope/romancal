@@ -9,3 +9,5 @@ Data Products Information
    stages.rst
    file_naming.rst
    product_types.rst
+   science_products.rst
+   

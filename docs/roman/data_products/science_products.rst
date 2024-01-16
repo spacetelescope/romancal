@@ -1,0 +1,140 @@
+Science Products
+----------------
+The following sections describe the format and contents of each of the Roman ASDF science
+products.
+
+.. _uncal:
+
+Uncalibrated raw data: ``uncal``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Exposure raw data products are designated by a file name
+suffix of "uncal." These files usually contain only the raw detector pixel values
+from an exposure, with the addition of some table extensions containing various types of
+meta data associated with the exposure.
+
++--------------+----------+------------+-------+-------------------------------+
+| data array   |          | Data Type  | Units | Dimensions                    | 
++==============+==========+============+=======+===============================+
+|  data        | Required | uint16     | DN    |  ncols x nrows x nresultants  |
++--------------+----------+------------+-------+-------------------------------+
+|  amp33       | Required | uint16     | DN    |  ncols x nrows x nresultants  |
++--------------+----------+------------+-------+-------------------------------+
+|  resultantdq | Optional | uint8      | N/A   |  ncols x nrows x nresultants  |
++--------------+----------+------------+-------+-------------------------------+
+
+ - data: 4-D data array containing the raw pixel values. The first two dimensions are equal to
+   the size of the detector readout, with the data from multiple resultants stored along the 3rd 
+   axis.
+
+ - amp33: This is the reference output from a dedicated SCA Output that reads additional Reference 
+   Pixels on the SCA that are separate from the full-frame array read out by the Science Outputs. 
+   This Output is active in parallel with either the 32 Science Outputs or the 1 Guide Window Output.
+
+ - resultantdq: An array that contains the location of any missing data discovered in
+   the data formating process.
+
+   
+Ramp data: ``ramp``
+^^^^^^^^^^^^^^^^^^^
+As raw data progress through the :ref:`romancal.pipeline.ExposurePipeline <exposure_pipeline>` pipeline
+they are stored internally in a `~romancal.datamodels.RampModel`.
+This type of data model is serialized to a ``ramp`` type ASDF
+file on disk. The original detector pixel values are converted
+from integer to floating-point data type.  An ERR array and two 
+types of data quality arrays are also added to the product. 
+The ASDF file layout is as follows:
+
++----------------------+----------+------------+-----------+-------------------------------+
+| data array           |          | Data Type  | Units     | Dimensions                    | 
++======================+==========+============+===========+===============================+
+|  data                | Required | float32    | e :sup:`-`|  ncols x nrows x nresultants  |
++----------------------+----------+------------+-----------+-------------------------------+
+|  pixeldq             | Required | uint32     | N/A       |  ncols x nrows                |
++----------------------+----------+------------+-----------+-------------------------------+
+|  groupdq             | Required | uint8      | N/A       |  ncols x nrows x nresultants  |
++----------------------+----------+------------+-----------+-------------------------------+
+|  err                 | Required | float32    | e :sup:`-`|  ncols x nrows x nresultants  |
++----------------------+----------+------------+-----------+-------------------------------+
+|  amp33               | Required | uint16     | DN        |  ncols x nrows x nresultants  |
++----------------------+----------+------------+-----------+-------------------------------+
+| border_ref_pix_left  | Required | float32    | DN        |  ncols x nrows x nresultants  |
++----------------------+----------+------------+-----------+-------------------------------+
+| border_ref_pix_right | Required | float32    | DN        |  ncols x nrows x nresultants  |
++----------------------+----------+------------+-----------+-------------------------------+
+| border_ref_pix_top   | Required | float32    | DN        |  ncols x nrows x nresultants  |
++----------------------+----------+------------+-----------+-------------------------------+
+| border_ref_pix_bottom| Required | float32    | DN        |  ncols x nrows x nresultants  |
++----------------------+----------+------------+-----------+-------------------------------+
+
+ - data: 3-D data array containing the pixel values. The first two dimensions are equal to
+   the size of the detector readout, with the data from multiple resultants stored along the 3rd 
+   axis.
+ - pixeldq: 2-D data array containing DQ flags that apply to all groups and all resultants
+   for a given pixel (e.g. a hot pixel is hot in all groups and resultants).
+ - groupdq: 3-D data array containing DQ flags that pertain to individual reads within an
+   exposure, such as the point at which a pixel becomes saturated within a given exposure.
+ - err: 3-D data array containing uncertainty estimates.
+ - amp33: Amp 33 reference pixel data.
+ - border_ref_pix_left: Copy of original border reference pixels, on left (from viewers perspective).
+ - border_ref_pix_right: Copy of original border reference pixels, on right (from viewers perspective).
+ - border_ref_pix_top: Copy of original border reference pixels, on the top (from viewers perspective).
+ - border_ref_pix_bottom: Copy of original border reference pixels, on the bottom (from viewers perspective).
+
+.. image:: ../../images/wfi_array.png
+   :alt: diagram of the roman WFI focal plane with reference
+
+.. Note::
+   The reference pixels that are on the outer border of the science array are copied to these
+   storage arrays (border_ref_pixel_<position>) at the dq_init step but are retained in 
+   the science array until being trimmed at the ramp fitting step.  
+
+
+Calibrated data: ``cal``
+^^^^^^^^^^^^^^^^^^^^^^^^
+The ``cal`` products are the result of runnng the :ref:`romancal.pipeline.ExposurePipeline <exposure_pipeline>`
+and yields an `~romancal.datamodels.ImageModel` .
+Single exposure calibrated products contain many of the same arrays as the previous products.
+The calibrated products are the result of an average over all integrations (``cal``).
+
++----------------------+----------+------------+-------------------------+-------------------------------+
+| data array           |          | Data Type  | Units                   | Dimensions                    | 
++======================+==========+============+=========================+===============================+
+|  data                | Required | float32    | e\ :sup:`-`/ s          |  ncols x nrows                |
++----------------------+----------+------------+-------------------------+-------------------------------+
+|  dq                  | Required | uint32     | N/A                     |  ncols x nrows                |
++----------------------+----------+------------+-------------------------+-------------------------------+
+|  err                 | Required | float32    | e\ :sup:`-`/ s          |  ncols x nrows                |
++----------------------+----------+------------+-------------------------+-------------------------------+
+|  var_poisson         | Required | float32    | e\ :sup:`-`/ s\ :sup:`2`|  ncols x nrows                |
++----------------------+----------+------------+-------------------------+-------------------------------+
+|  var_rnoise          | Required | float32    | e\ :sup:`-`/ s\ :sup:`2`|  ncols x nrows                |
++----------------------+----------+------------+-------------------------+-------------------------------+
+|  var_flat            | Required | float32    | e\ :sup:`-`/ s\ :sup:`2`|  ncols x nrows                |
++----------------------+----------+------------+-------------------------+-------------------------------+
+|  amp33               | Required | uint16     | DN                      |  ncols x nrows x nresultants  |
++----------------------+----------+------------+-------------------------+-------------------------------+
+| border_ref_pix_left  | Required | float32    | DN                      |  ncols x nrows x nresultants  |
++----------------------+----------+------------+-------------------------+-------------------------------+
+| border_ref_pix_right | Required | float32    | DN                      |  ncols x nrows x nresultants  |
++----------------------+----------+------------+-------------------------+-------------------------------+
+| border_ref_pix_top   | Required | float32    | DN                      |  ncols x nrows x nresultants  |
++----------------------+----------+------------+-------------------------+-------------------------------+
+| border_ref_pix_bottom| Required | float32    | DN                      |  ncols x nrows x nresultants  |
++----------------------+----------+------------+-------------------------+-------------------------------+
+
+ - data: 2-D data array containing the calibrated pixel values.
+ - err: 2-D data array containing uncertainty estimates for each pixel.
+   These values are based on the combined VAR_POISSON and VAR_RNOISE data (see below),
+   given as standard deviation.
+ - dq: 2-D data array containing DQ flags for each pixel.
+ - var_poisson: 2-D data array containing the variance estimate for each pixel,
+   based on Poisson noise only.
+ - var_rnoise: 2-D data array containing the variance estimate for each pixel,
+   based on read noise only.
+ - var_flat: 2-D data array containing the variance estimate for each pixel,
+   based on uncertainty in the flat-field.
+ - amp33: Amp 33 reference pixel data.
+ - border_ref_pix_left: Copy of original border reference pixels, on left (from viewers perspective).
+ - border_ref_pix_right: Copy of original border reference pixels, on right (from viewers perspective).
+ - border_ref_pix_top: Copy of original border reference pixels, on the top (from viewers perspective).
+ - border_ref_pix_bottom: Copy of original border reference pixels, on the bottom (from viewers perspective).
