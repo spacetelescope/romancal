@@ -72,21 +72,19 @@ behavior of the processing:
   used, for additional pixels to be rejected in an image.
 
 ``--snr`` (string, default='4.0 3.0')
-  The signal-to-noise values to use for bad pixel identification. Used when comparing
-  the blotted, median image to the inputs when identifying outliers and flagging them
-  in the input DQ arrays. Two values are specified, where the first value is used for
-  rejecting outliers in all pixels across the image, while the second value is used to
-  reject additional lower-level outliers in pixels that are adjacent to those
-  identified in the first pass. Valid values are a pair of floating-point values in a
-  single string.
+  The signal-to-noise values to use for bad pixel identification. Since cosmic rays
+  often extend across several pixels the user must specify two cut-off values for
+  determining whether a pixel should be masked: the first for detecting the primary
+  cosmic ray, and the second (typically lower threshold) for masking lower-level bad
+  pixels adjacent to those found in the first pass.  Valid values are a pair of
+  floating-point values in a single string.
 
 ``--scale`` (string, default='0.5 0.4')
-  The scaling factor applied to derivative used to identify bad pixels. Used when
-  comparing the blotted, median image to the inputs when identifying outliers and
-  flagging them in the input DQ arrays. Two values are specified, where the first
-  value is used for rejecting outliers in all pixels across the image, while the
-  second value is used to reject additional lower-level outliers in pixels that are
-  adjacent to those identified in the first pass. Valid values are a pair of
+  The scaling factor applied to derivative used to identify bad pixels. Since cosmic
+  rays often extend across several pixels the user must specify two cut-off values for
+  determining whether a pixel should be masked: the first for detecting the primary
+  cosmic ray, and the second (typically lower threshold) for masking lower-level bad
+  pixels adjacent to those found in the first pass.  Valid values are a pair of
   floating-point values in a single string.
 
 ``--backg`` (float, default=0.0)
