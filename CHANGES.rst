@@ -7,6 +7,7 @@ outlier_detection
 - Add outlier detection step documentation. [#1042]
 - Add outlier detection unit tests. [#1058]
 - Add additional documentation of the scale and snr parameters. [#1058]
+- Updated information for the ``scale`` and ``snr`` parameters in the ``outlier_detection`` step docs. [#1062]
 
 jump detection
 --------------
