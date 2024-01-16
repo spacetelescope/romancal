@@ -32,23 +32,23 @@ repos:
       args: ["--py38-plus"]
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: 'v0.1.5'
+  rev: 'v0.1.13'
   hooks:
     - id: ruff
       args: ["--fix"]
 
 - repo: https://github.com/pycqa/isort
-  rev: 5.12.0
+  rev: 5.13.2
   hooks:
     - id: isort
 
 - repo: https://github.com/psf/black
-  rev: 23.11.0
+  rev: 23.12.1
   hooks:
     - id: black
 
 - repo: https://github.com/PyCQA/bandit
-  rev: 1.7.5
+  rev: 1.7.6
   hooks:
     - id: bandit
       args: ["-c", "pyproject.toml"]
