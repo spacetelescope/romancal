@@ -42,7 +42,6 @@ dynamic = ['version']
 docs = [
     'matplotlib',
     'sphinx',
-    'sphinx-asdf',
     'sphinx-astropy',
     'sphinx-automodapi',
     'sphinx-rtd-theme',
