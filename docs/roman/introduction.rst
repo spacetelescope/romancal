@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Welcome to the documentation for `romancal <https://github.com/spacetelescope/romancal>`__. 
+Welcome to the documentation for `romancal <https://github.com/spacetelescope/romancal>`__.
 This package contains the calibration software for the WFI instrument on the Nancy Grace Roman
 Space Telescope.
 

@@ -14,7 +14,7 @@ resultantdq array is an optional array used to flag missing data in the data For
 process.
 
 +--------------+----------+------------+-------+-------------------------------+
-| data array   |          | Data Type  | Units | Dimensions                    | 
+| data array   |          | Data Type  | Units | Dimensions                    |
 +==============+==========+============+=======+===============================+
 |  data        | Required | uint16     | DN    |  nresultants x nrows x ncols  |
 +--------------+----------+------------+-------+-------------------------------+
@@ -24,29 +24,29 @@ process.
 +--------------+----------+------------+-------+-------------------------------+
 
  - data: 3-D data array containing the raw pixel values. The first two dimensions are equal to
-   the size of the detector readout, with the data from multiple resultants stored along the 3rd 
+   the size of the detector readout, with the data from multiple resultants stored along the 3rd
    axis.
 
- - amp33: This is the reference output from a dedicated SCA Output that reads additional Reference 
-   Pixels on the SCA that are separate from the full-frame array read out by the Science Outputs. 
+ - amp33: This is the reference output from a dedicated SCA Output that reads additional Reference
+   Pixels on the SCA that are separate from the full-frame array read out by the Science Outputs.
    This Output is active in parallel with either the 32 Science Outputs or the 1 Guide Window Output.
 
  - resultantdq: An array that flags the location of any missing data discovered in
    the data formating process.
 
-   
+
 Ramp data: ``ramp``
 ^^^^^^^^^^^^^^^^^^^
 As raw data progress through the :ref:`romancal.pipeline.ExposurePipeline <exposure_pipeline>` pipeline
 they are stored internally in a `~romancal.datamodels.RampModel`.
 This type of data model is serialized to a ``ramp`` type ASDF
 file on disk. The original detector pixel values are converted
-from integer to floating-point data type.  An ERR array and two 
-types of data quality arrays are also added to the product. 
+from integer to floating-point data type.  An ERR array and two
+types of data quality arrays are also added to the product.
 The ASDF file layout is as follows:
 
 +----------------------+----------+------------+-----------+-------------------------------+
-| data array           |          | Data Type  | Units     | Dimensions                    | 
+| data array           |          | Data Type  | Units     | Dimensions                    |
 +======================+==========+============+===========+===============================+
 |  data                | Required | float32    | e :sup:`-`|  nresultants x nrows x ncols  |
 +----------------------+----------+------------+-----------+-------------------------------+
@@ -68,7 +68,7 @@ The ASDF file layout is as follows:
 +----------------------+----------+------------+-----------+-------------------------------+
 
  - data: 3-D data array containing the pixel values. The first two dimensions are equal to
-   the size of the detector readout, with the data from multiple resultants stored along the 3rd 
+   the size of the detector readout, with the data from multiple resultants stored along the 3rd
    axis.
  - pixeldq: 2-D data array containing DQ flags that apply to all groups and all resultants
    for a given pixel (e.g. a hot pixel is hot in all groups and resultants).
@@ -86,8 +86,8 @@ The ASDF file layout is as follows:
 
 .. Note::
    The reference pixels that are on the outer border of the science array are copied to these
-   storage arrays (border_ref_pixel_<position>) at the dq_init step but are retained in 
-   the science array until being trimmed at the ramp fitting step.  
+   storage arrays (border_ref_pixel_<position>) at the dq_init step but are retained in
+   the science array until being trimmed at the ramp fitting step.
 
 
 Calibrated data: ``cal``
@@ -98,7 +98,7 @@ Single exposure calibrated products contain many of the same arrays as the previ
 The calibrated products are the result of an average over all integrations (``cal``).
 
 +----------------------+----------+------------+-------------------------+-------------------------------+
-| data array           |          | Data Type  | Units                   | Dimensions                    | 
+| data array           |          | Data Type  | Units                   | Dimensions                    |
 +======================+==========+============+=========================+===============================+
 |  data                | Required | float32    | e\ :sup:`-`/ s          |  nrows x ncols                |
 +----------------------+----------+------------+-------------------------+-------------------------------+
