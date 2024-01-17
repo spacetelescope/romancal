@@ -9,15 +9,16 @@ Uncalibrated raw data: ``uncal``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Exposure raw data products are designated by a file name
 suffix of "uncal." These files usually contain only the raw detector pixel values
-from an exposure, with the addition of some table extensions containing various types of
-meta data associated with the exposure.
+from an exposure, with the addition of meta data associated with the exposure. The
+resultantdq array is an optional array used to flag missing data in the data Formatting
+process.
 
 +--------------+----------+------------+-------+-------------------------------+
 | data array   |          | Data Type  | Units | Dimensions                    | 
 +==============+==========+============+=======+===============================+
 |  data        | Required | uint16     | DN    |  ncols x nrows x nresultants  |
 +--------------+----------+------------+-------+-------------------------------+
-|  amp33       | Required | uint16     | DN    |  ncols x nrows x nresultants  |
+|  amp33       | Required | uint16     | DN    |  128 x 4096 x nresultants     |
 +--------------+----------+------------+-------+-------------------------------+
 |  resultantdq | Optional | uint8      | N/A   |  ncols x nrows x nresultants  |
 +--------------+----------+------------+-------+-------------------------------+
@@ -30,7 +31,7 @@ meta data associated with the exposure.
    Pixels on the SCA that are separate from the full-frame array read out by the Science Outputs. 
    This Output is active in parallel with either the 32 Science Outputs or the 1 Guide Window Output.
 
- - resultantdq: An array that contains the location of any missing data discovered in
+ - resultantdq: An array that flags the location of any missing data discovered in
    the data formating process.
 
    
@@ -55,15 +56,15 @@ The ASDF file layout is as follows:
 +----------------------+----------+------------+-----------+-------------------------------+
 |  err                 | Required | float32    | e :sup:`-`|  ncols x nrows x nresultants  |
 +----------------------+----------+------------+-----------+-------------------------------+
-|  amp33               | Required | uint16     | DN        |  ncols x nrows x nresultants  |
+|  amp33               | Required | uint16     | DN        |  128 x 4096 x nresultants     |
 +----------------------+----------+------------+-----------+-------------------------------+
-| border_ref_pix_left  | Required | float32    | DN        |  ncols x nrows x nresultants  |
+| border_ref_pix_left  | Required | float32    | DN        |  4 x 4096 x nresultants       |
 +----------------------+----------+------------+-----------+-------------------------------+
-| border_ref_pix_right | Required | float32    | DN        |  ncols x nrows x nresultants  |
+| border_ref_pix_right | Required | float32    | DN        |  4 x 4096 x nresultants       |
 +----------------------+----------+------------+-----------+-------------------------------+
-| border_ref_pix_top   | Required | float32    | DN        |  ncols x nrows x nresultants  |
+| border_ref_pix_top   | Required | float32    | DN        |  4096 x 4 x nresultants       |
 +----------------------+----------+------------+-----------+-------------------------------+
-| border_ref_pix_bottom| Required | float32    | DN        |  ncols x nrows x nresultants  |
+| border_ref_pix_bottom| Required | float32    | DN        |  4096 x 4 x nresultants       |
 +----------------------+----------+------------+-----------+-------------------------------+
 
  - data: 3-D data array containing the pixel values. The first two dimensions are equal to
@@ -92,7 +93,7 @@ The ASDF file layout is as follows:
 Calibrated data: ``cal``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 The ``cal`` products are the result of runnng the :ref:`romancal.pipeline.ExposurePipeline <exposure_pipeline>`
-and yields an `~romancal.datamodels.ImageModel` .
+and yields an `~romancal.datamodels.ImageModel`.
 Single exposure calibrated products contain many of the same arrays as the previous products.
 The calibrated products are the result of an average over all integrations (``cal``).
 
@@ -111,15 +112,15 @@ The calibrated products are the result of an average over all integrations (``ca
 +----------------------+----------+------------+-------------------------+-------------------------------+
 |  var_flat            | Required | float32    | e\ :sup:`-`/ s\ :sup:`2`|  ncols x nrows                |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-|  amp33               | Required | uint16     | DN                      |  ncols x nrows x nresultants  |
+|  amp33               | Required | uint16     | DN                      |  128 x 4096 x nresultants     |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-| border_ref_pix_left  | Required | float32    | DN                      |  ncols x nrows x nresultants  |
+| border_ref_pix_left  | Required | float32    | DN                      |  4 x 4096  x nresultants      |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-| border_ref_pix_right | Required | float32    | DN                      |  ncols x nrows x nresultants  |
+| border_ref_pix_right | Required | float32    | DN                      |  4 x 4096  x nresultants      |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-| border_ref_pix_top   | Required | float32    | DN                      |  ncols x nrows x nresultants  |
+| border_ref_pix_top   | Required | float32    | DN                      |  4096 x 4 x nresultants       |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-| border_ref_pix_bottom| Required | float32    | DN                      |  ncols x nrows x nresultants  |
+| border_ref_pix_bottom| Required | float32    | DN                      |  4096 x 4 x nresultants       |
 +----------------------+----------+------------+-------------------------+-------------------------------+
 
  - data: 2-D data array containing the calibrated pixel values.
