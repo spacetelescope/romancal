@@ -114,9 +114,9 @@ The calibrated products are the result of an average over all integrations (``ca
 +----------------------+----------+------------+-------------------------+-------------------------------+
 |  amp33               | Required | uint16     | DN                      |  nresultants x 4096 x 128     |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-| border_ref_pix_left  | Required | float32    | DN                      |  nresultants x 4096 x 4      |
+| border_ref_pix_left  | Required | float32    | DN                      |  nresultants x 4096 x 4       |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-| border_ref_pix_right | Required | float32    | DN                      |  nresultants x 4096 x 4      |
+| border_ref_pix_right | Required | float32    | DN                      |  nresultants x 4096 x 4       |
 +----------------------+----------+------------+-------------------------+-------------------------------+
 | border_ref_pix_top   | Required | float32    | DN                      |  nresultants x 4 x 4096       |
 +----------------------+----------+------------+-------------------------+-------------------------------+
