@@ -23,17 +23,17 @@ the user is running the pipeline. The input for each optional step is the output
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
 | Pipeline Step                                  | Input           |  Output(s)               | Model            | Units               | Description                           |
 +================================================+=================+==========================+==================+=====================+=======================================+
-|                                                |                 | uncal                    | ScienceRawModel  | DN                  | 4-D uncalibrated exposure data        |
+|                                                |                 | uncal                    | ScienceRawModel  | DN                  | 3-D uncalibrated exposure data        |
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
-| :ref:`dq_init <dq_init_step>`                  | uncal           | dq_init (opt)            | RampModel        | electron            | 4-D data quality flags applied        |
+| :ref:`dq_init <dq_init_step>`                  | uncal           | dq_init (opt)            | RampModel        | electron            | 3-D data quality flags applied        |
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
-| :ref:`saturation <saturation_step>`            |                 | saturation (opt)         | RampModel        | electron            | 4-D data saturated values flagged     |
+| :ref:`saturation <saturation_step>`            |                 | saturation (opt)         | RampModel        | electron            | 3-D data saturated values flagged     |
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
-| :ref:`reference pixels <refpix>`               |                 | ref_pix (opt)            | RampModel        | electron            | 4-D ref pix corrected data            |
+| :ref:`reference pixels <refpix>`               |                 | ref_pix (opt)            | RampModel        | electron            | 3-D ref pix corrected data            |
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
-| :ref:`linearity <linearity_step>`              |                 | linearity (opt)          | RampModel        | electron            | 4-D linearity corrected data          |
+| :ref:`linearity <linearity_step>`              |                 | linearity (opt)          | RampModel        | electron            | 3-D linearity corrected data          |
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
-| :ref:`dark_current <dark_current_step>`        |                 | dark_current (opt)       | RampModel        | electron            | 4-D dark current subtracted data      |
+| :ref:`dark_current <dark_current_step>`        |                 | dark_current (opt)       | RampModel        | electron            | 3-D dark current subtracted data      |
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
 | :ref:`ramp_fitting <ramp_fitting_step>`        |                 | ramp_fit (opt)           | ImageModel       | electron/s          | 2-D slope corrected data              |
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+

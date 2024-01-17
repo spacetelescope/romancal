@@ -23,7 +23,7 @@ process.
 |  resultantdq | Optional | uint8      | N/A   |  ncols x nrows x nresultants  |
 +--------------+----------+------------+-------+-------------------------------+
 
- - data: 4-D data array containing the raw pixel values. The first two dimensions are equal to
+ - data: 3-D data array containing the raw pixel values. The first two dimensions are equal to
    the size of the detector readout, with the data from multiple resultants stored along the 3rd 
    axis.
 
@@ -93,7 +93,7 @@ The ASDF file layout is as follows:
 Calibrated data: ``cal``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 The ``cal`` products are the result of runnng the :ref:`romancal.pipeline.ExposurePipeline <exposure_pipeline>`
-and yields an `~romancal.datamodels.ImageModel`.
+and yields an `~romancal.datamodels.ImageModel`2-D.
 Single exposure calibrated products contain many of the same arrays as the previous products.
 The calibrated products are the result of an average over all integrations (``cal``).
 
