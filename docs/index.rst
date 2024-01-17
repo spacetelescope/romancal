@@ -13,14 +13,15 @@ The Roman Space Telescope Calibration Pipeline
    :alt: Nancy Roman Space Telescope
 
 Welcome to the documentation for the Roman calibration software,
-`romancal`. This package contains the Python software suite for the
+`romancal <https://github.com/spacetelescope/romancal>`_. 
+This package contains the Python software suite for the
 Roman Space Telescope (RST) calibration pipeline, which processes data
-from all Roman instruments by applying various corrections to produce
-science-ready, calibrated output products including fully calibrated
+from the Roman Wide-Field Instrument (WFI) by applying various corrections 
+to produce science-ready, calibrated output products including fully calibrated
 individual exposures as well as high-level data products (mosaics,
 catalogs, etc.). The tools in this package allow users to run and
 configure the pipeline to custom process their Roman data.
-Additionally, the `romancal` package contains the interface to
+Additionally, the romancal package contains the interface to
 Roman datamodels, the recommended method of reading and writing
 Roman data files in Python.
 
