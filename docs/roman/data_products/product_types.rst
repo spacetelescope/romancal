@@ -14,7 +14,7 @@ Exposure Level Data Products
 +----------------------------------------------------------------+------------------------+--------------------------+------+-----------------------+---------------------------------------+
 
 Exposure Step Data Products
-+++++++++++++++++++++
++++++++++++++++++++++++++++
 
 The following table contain lists of all data product types for exposure pipeline, as given by their file name suffix. The input uncal file and the final cal file 
 are the only files that are produced in the standard processing. All the other are optional (opt) files that can be produced when 
