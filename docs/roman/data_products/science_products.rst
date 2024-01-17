@@ -16,11 +16,11 @@ process.
 +--------------+----------+------------+-------+-------------------------------+
 | data array   |          | Data Type  | Units | Dimensions                    | 
 +==============+==========+============+=======+===============================+
-|  data        | Required | uint16     | DN    |  ncols x nrows x nresultants  |
+|  data        | Required | uint16     | DN    |  nresultants x nrows x ncols  |
 +--------------+----------+------------+-------+-------------------------------+
-|  amp33       | Required | uint16     | DN    |  128 x 4096 x nresultants     |
+|  amp33       | Required | uint16     | DN    |  nresultants x 4096 x 128     |
 +--------------+----------+------------+-------+-------------------------------+
-|  resultantdq | Optional | uint8      | N/A   |  ncols x nrows x nresultants  |
+|  resultantdq | Optional | uint8      | N/A   |  nresultants x nrows x ncols  |
 +--------------+----------+------------+-------+-------------------------------+
 
  - data: 3-D data array containing the raw pixel values. The first two dimensions are equal to
@@ -48,23 +48,23 @@ The ASDF file layout is as follows:
 +----------------------+----------+------------+-----------+-------------------------------+
 | data array           |          | Data Type  | Units     | Dimensions                    | 
 +======================+==========+============+===========+===============================+
-|  data                | Required | float32    | e :sup:`-`|  ncols x nrows x nresultants  |
+|  data                | Required | float32    | e :sup:`-`|  nresultants x nrows x ncols  |
 +----------------------+----------+------------+-----------+-------------------------------+
-|  pixeldq             | Required | uint32     | N/A       |  ncols x nrows                |
+|  pixeldq             | Required | uint32     | N/A       |  nrows x ncols                |
 +----------------------+----------+------------+-----------+-------------------------------+
-|  groupdq             | Required | uint8      | N/A       |  ncols x nrows x nresultants  |
+|  groupdq             | Required | uint8      | N/A       |  nresultants x nrows x ncols  |
 +----------------------+----------+------------+-----------+-------------------------------+
-|  err                 | Required | float32    | e :sup:`-`|  ncols x nrows x nresultants  |
+|  err                 | Required | float32    | e :sup:`-`|  nresultants x nrows x ncols  |
 +----------------------+----------+------------+-----------+-------------------------------+
-|  amp33               | Required | uint16     | DN        |  128 x 4096 x nresultants     |
+|  amp33               | Required | uint16     | DN        |  nresultants x 4096 x 128     |
 +----------------------+----------+------------+-----------+-------------------------------+
-| border_ref_pix_left  | Required | float32    | DN        |  4 x 4096 x nresultants       |
+| border_ref_pix_left  | Required | float32    | DN        |  nresultants x 4096 x 4       |
 +----------------------+----------+------------+-----------+-------------------------------+
-| border_ref_pix_right | Required | float32    | DN        |  4 x 4096 x nresultants       |
+| border_ref_pix_right | Required | float32    | DN        |  nresultants x 4096 x 4       |
 +----------------------+----------+------------+-----------+-------------------------------+
-| border_ref_pix_top   | Required | float32    | DN        |  4096 x 4 x nresultants       |
+| border_ref_pix_top   | Required | float32    | DN        |  nresultants x 4 x 4096       |
 +----------------------+----------+------------+-----------+-------------------------------+
-| border_ref_pix_bottom| Required | float32    | DN        |  4096 x 4 x nresultants       |
+| border_ref_pix_bottom| Required | float32    | DN        |  nresultants x 4 x 4096       |
 +----------------------+----------+------------+-----------+-------------------------------+
 
  - data: 3-D data array containing the pixel values. The first two dimensions are equal to
@@ -100,27 +100,27 @@ The calibrated products are the result of an average over all integrations (``ca
 +----------------------+----------+------------+-------------------------+-------------------------------+
 | data array           |          | Data Type  | Units                   | Dimensions                    | 
 +======================+==========+============+=========================+===============================+
-|  data                | Required | float32    | e\ :sup:`-`/ s          |  ncols x nrows                |
+|  data                | Required | float32    | e\ :sup:`-`/ s          |  nrows x ncols                |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-|  dq                  | Required | uint32     | N/A                     |  ncols x nrows                |
+|  dq                  | Required | uint32     | N/A                     |  nrows x ncols                |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-|  err                 | Required | float32    | e\ :sup:`-`/ s          |  ncols x nrows                |
+|  err                 | Required | float32    | e\ :sup:`-`/ s          |  nrows x ncols                |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-|  var_poisson         | Required | float32    | e\ :sup:`-`/ s\ :sup:`2`|  ncols x nrows                |
+|  var_poisson         | Required | float32    | e\ :sup:`-`/ s\ :sup:`2`|  nrows x ncols                |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-|  var_rnoise          | Required | float32    | e\ :sup:`-`/ s\ :sup:`2`|  ncols x nrows                |
+|  var_rnoise          | Required | float32    | e\ :sup:`-`/ s\ :sup:`2`|  nrows x ncols                |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-|  var_flat            | Required | float32    | e\ :sup:`-`/ s\ :sup:`2`|  ncols x nrows                |
+|  var_flat            | Required | float32    | e\ :sup:`-`/ s\ :sup:`2`|  nrows x ncols                |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-|  amp33               | Required | uint16     | DN                      |  128 x 4096 x nresultants     |
+|  amp33               | Required | uint16     | DN                      |  nresultants x 4096 x 128     |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-| border_ref_pix_left  | Required | float32    | DN                      |  4 x 4096  x nresultants      |
+| border_ref_pix_left  | Required | float32    | DN                      |  nresultants x 4096 x 4      |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-| border_ref_pix_right | Required | float32    | DN                      |  4 x 4096  x nresultants      |
+| border_ref_pix_right | Required | float32    | DN                      |  nresultants x 4096 x 4      |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-| border_ref_pix_top   | Required | float32    | DN                      |  4096 x 4 x nresultants       |
+| border_ref_pix_top   | Required | float32    | DN                      |  nresultants x 4 x 4096       |
 +----------------------+----------+------------+-------------------------+-------------------------------+
-| border_ref_pix_bottom| Required | float32    | DN                      |  4096 x 4 x nresultants       |
+| border_ref_pix_bottom| Required | float32    | DN                      |  nresultants x 4 x 4096       |
 +----------------------+----------+------------+-------------------------+-------------------------------+
 
  - data: 2-D data array containing the calibrated pixel values.
