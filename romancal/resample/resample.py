@@ -243,8 +243,7 @@ class ResampleData:
                 del data
                 img.close()
 
-            # cast context array to uint32
-            output_model.context = output_model.context.astype("uint32")
+            output_model.context = output_model.context.astype(np.int32)
             if not self.in_memory:
                 # Write out model to disk, then return filename
                 output_name = output_model.meta.filename
