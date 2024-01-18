@@ -29,6 +29,8 @@ general
 
 - Update elp steps to check for CRDS not returning a reference file [#1055]
 
+- Fix bug where ``compare_asdf`` failed to detect ``DataModel`` type differences. [#1066]
+
 
 0.13.0 (2023-11-28)
 ===================
