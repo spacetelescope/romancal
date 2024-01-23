@@ -739,10 +739,6 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
             custom_operators=operators,
             exclude_paths=exclude_paths,
             math_epsilon=atol,
+            ignore_type_in_groups=[asdf.tags.core.NDArrayType, np.ndarray],
         )
-        # the conversion between NDArrayType and ndarray adds a bunch
-        # of type changes, ignore these for now.
-        # TODO Ideally we could find a way to remove just the NDArrayType ones
-        if "type_changes" in diff:
-            del diff["type_changes"]
         return DiffResult(diff)
