@@ -36,7 +36,7 @@ class PhotomStep(RomanStep):
             reffile = self.get_reference_file(input_model, "photom")
 
             # Open the relevant photom reference file as a datamodel
-            if reffile is not None:
+            if reffile is not None and reffile != "N/A":
                 # If there is a reference file, perform photom application
                 photom_model = rdm.open(reffile)
                 self.log.debug(f"Using PHOTOM ref file: {reffile}")

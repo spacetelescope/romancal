@@ -71,10 +71,8 @@ class OutlierDetection:
         """
         self.input_models = input_models
 
-        self.outlierpars = {}
-        self.outlierpars.update(pars)
-
-        self.resample_suffix = f"_outlier_{self.default_suffix}.asdf"
+        self.outlierpars = dict(pars)
+        self.resample_suffix = f"_outlier_{self.default_suffix if pars.get('resample_suffix') is None else pars.get('resample_suffix')}.asdf"
         log.debug(f"Defined output product suffix as: {self.resample_suffix}")
 
         # Define how file names are created

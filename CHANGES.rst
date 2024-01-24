@@ -5,16 +5,32 @@ outlier_detection
 -----------------
 
 - Add outlier detection step documentation. [#1042]
+- Add outlier detection unit tests. [#1058]
+- Add additional documentation of the scale and snr parameters. [#1058]
+- Updated information for the ``scale`` and ``snr`` parameters in the ``outlier_detection`` step docs. [#1062]
 
 jump detection
 --------------
 
 - Added uneven ramp-jump detection docs. [#1035]
 
+
 documentation
 -------------
 
+- Remove ``sphinx-asdf`` requirement, fix issue where menu does not scroll. [#1063]
+
+- Update jump step docs [#1035]
+
 - added user documentation for ``roman_static_preview`` script [#1046]
+
+general
+-------
+
+- Update elp steps to check for CRDS not returning a reference file [#1055]
+
+- Fix bug where ``compare_asdf`` failed to detect ``DataModel`` type differences. [#1066]
+
 
 0.13.0 (2023-11-28)
 ===================

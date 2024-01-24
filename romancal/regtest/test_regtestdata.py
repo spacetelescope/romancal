@@ -90,3 +90,18 @@ def test_compare_asdf_tables(tmp_path, modification):
     else:
         assert not diff.identical, diff.report()
         assert "tables_differ" in diff.diff
+
+
+def test_model_difference(tmp_path):
+    fn0 = tmp_path / "a.asdf"
+    fn1 = tmp_path / "b.asdf"
+    ma = rdm.DistortionRefModel(maker_utils.mk_distortion())
+    mb = rdm.LinearityRefModel(maker_utils.mk_linearity())
+    ma.save(fn0)
+    mb.save(fn1)
+    diff = compare_asdf(fn0, fn1)
+    assert not diff.identical
+    assert (
+        """'type_changes': {"root['roman']": {'new_type': <class 'roman_datamodels.stnode.DistortionRef'>"""
+        in diff.report()
+    )
