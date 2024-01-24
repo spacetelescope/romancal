@@ -12,7 +12,7 @@ from enum import IntEnum
 
 import numpy as np
 from astropy import units as u
-from scipy import fft
+from scipy import fft, stats, optimize
 
 
 class Const(IntEnum):
@@ -224,6 +224,13 @@ class StandardView(BaseView):
 
         # Apply the offset to the data (in place)
         data -= offset
+        m = (data == 0) & (offset != 0)
+        data[m] = 1e-9  # hack!  But remove_trends uses data = 0 as a signal
+        # for missing data, so data whose offset subtracts exactly is treated
+        # as missing rather than as truly zero, which is bad.  This perturbs
+        # that slightly.
+        # it would be better to have the frame_not_zero checks look at
+        # the offsets explicitly.
 
         self.offset = offset.reshape(rows, columns)
 
@@ -361,6 +368,9 @@ class ChannelView(BaseView):
         t_ref = t[REF_ROWS, :]
         not_zero = self.data != 0
 
+        def chi(param, datax, datay, sdev):
+            return (datay - param[1] - param[0] * datax) / sdev
+
         # fit needs to be done for each channel and frame separately
         for chan_data, chan_not_zero in zip(self.data, not_zero):
             for frame_data, frame_not_zero in zip(chan_data, chan_not_zero):
@@ -375,8 +385,17 @@ class ChannelView(BaseView):
                 if x_vals.size < 1 or y_vals.size < 1:
                     continue
 
-                # Perform the fit using a 1st order polynomial, (i.e. linear fit)
-                m, b = np.polyfit(x_vals, y_vals, 1)
+                # # Perform the fit using a 1st order polynomial, (i.e. linear fit)
+                # m, b = np.polyfit(x_vals, y_vals, 1)
+
+                std = stats.median_abs_deviation(y_vals, scale='normal')
+                std = np.hypot(std, 1)
+
+                fitres = optimize.least_squares(
+                    chi, [0, 0],
+                    kwargs=dict(datax=x_vals, datay=y_vals, sdev=std),
+                    loss='soft_l1')
+                m, b = fitres.x
 
                 # Remove the fit from the data
                 frame_data -= (t * m + b) * frame_not_zero
