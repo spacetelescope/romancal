@@ -12,7 +12,7 @@ from enum import IntEnum
 
 import numpy as np
 from astropy import units as u
-from scipy import fft, stats, optimize
+from scipy import fft, optimize, stats
 
 
 class Const(IntEnum):
@@ -388,13 +388,15 @@ class ChannelView(BaseView):
                 # # Perform the fit using a 1st order polynomial, (i.e. linear fit)
                 # m, b = np.polyfit(x_vals, y_vals, 1)
 
-                std = stats.median_abs_deviation(y_vals, scale='normal')
+                std = stats.median_abs_deviation(y_vals, scale="normal")
                 std = np.hypot(std, 1)
 
                 fitres = optimize.least_squares(
-                    chi, [0, 0],
+                    chi,
+                    [0, 0],
                     kwargs=dict(datax=x_vals, datay=y_vals, sdev=std),
-                    loss='soft_l1')
+                    loss="soft_l1",
+                )
                 m, b = fitres.x
 
                 # Remove the fit from the data
