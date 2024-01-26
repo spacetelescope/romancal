@@ -271,7 +271,7 @@ def create_image_model(input_model, image_info):
 
     # Create output datamodel
     # ... and add all keys from input
-    meta = {}
+    meta = dict(wcs=None)  # default empty WCS
     meta.update(input_model.meta)
     meta["cal_step"]["ramp_fit"] = "INCOMPLETE"
     meta["photometry"] = maker_utils.mk_photometry()

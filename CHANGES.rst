@@ -24,6 +24,13 @@ documentation
 
 - added user documentation for ``roman_static_preview`` script [#1046]
 
+
+ramp_fitting
+------------
+
+- Add default WCS when constructing image model from ramp model [#1072]
+
+
 general
 -------
 
