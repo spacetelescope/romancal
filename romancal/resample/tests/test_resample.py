@@ -474,9 +474,13 @@ def test_update_exposure_times_different_sca_same_exposure(exposure_1):
     )
     assert np.abs(time_difference) < 0.1
     assert (
-        output_model.meta.basic.time_first_mjd == exposure_1[0].meta.exposure.start_time.mjd
+        output_model.meta.basic.time_first_mjd
+        == exposure_1[0].meta.exposure.start_time.mjd
     )
-    assert output_model.meta.basic.time_last_mjd == exposure_1[0].meta.exposure.end_time.mjd
+    assert (
+        output_model.meta.basic.time_last_mjd
+        == exposure_1[0].meta.exposure.end_time.mjd
+    )
 
 
 def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure_2):
@@ -500,13 +504,15 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
     )
     assert np.abs(time_difference) < 0.1
 
-    assert output_model.meta.basic.time_first_mjd == min(
-        x.meta.exposure.start_time for x in input_models
-    ).mjd
+    assert (
+        output_model.meta.basic.time_first_mjd
+        == min(x.meta.exposure.start_time for x in input_models).mjd
+    )
 
-    assert output_model.meta.basic.time_last_mjd == max(
-        x.meta.exposure.end_time for x in input_models
-    ).mjd
+    assert (
+        output_model.meta.basic.time_last_mjd
+        == max(x.meta.exposure.end_time for x in input_models).mjd
+    )
 
     # likewise the per-pixel median exposure time is just 2x the individual
     # sca exposure time.

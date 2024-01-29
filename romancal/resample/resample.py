@@ -3,8 +3,7 @@ import logging
 import numpy as np
 from astropy import units as u
 from drizzle import cdrizzle, util
-from roman_datamodels import datamodels
-from roman_datamodels import maker_utils
+from roman_datamodels import datamodels, maker_utils
 
 from ..datamodels import ModelContainer
 from . import gwcs_drizzle, resample_utils
@@ -352,7 +351,7 @@ class ResampleData:
 
         This modifies ``output_model`` in-place.
         """
-        output_wcs = self.output_wcs 
+        output_wcs = self.output_wcs
         inverse_variance_sum = np.full_like(output_model.data.value, np.nan)
 
         log.info(f"Resampling {name}")
