@@ -728,8 +728,8 @@ def gwcs_into_l3(model, wcsinfo):
     transform = wcsinfo.forward_transform
 
     # Basic WCS info
-    l3_wcsinfo.projection = 'TAN'
-    l3_wcsinfo.rotation_matrix = transform['pc_rotation_matrix'].matrix.value.tolist()
+    l3_wcsinfo.projection = "TAN"
+    l3_wcsinfo.rotation_matrix = transform["pc_rotation_matrix"].matrix.value.tolist()
     l3_wcsinfo.dec_ref = transform.lat_6.value
     l3_wcsinfo.ra_ref = transform.lon_6.value
     # l3_wcsinfo.x_ref = center of mosaic?
