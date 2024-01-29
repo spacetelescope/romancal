@@ -164,6 +164,7 @@ class ResampleData:
         # meta contains lazily loaded objects.
         input_model_0 = input_models[0]
         l2_into_l3_meta(self.blank_output.meta, input_model_0.meta)
+        self.blank_output.meta.wcs = self.output_wcs
 
         self.output_models = ModelContainer()
 
