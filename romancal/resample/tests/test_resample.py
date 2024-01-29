@@ -451,7 +451,7 @@ def test_resampledata_do_drizzle_many_to_one_single_input_model(wfi_sca1):
 
     # Assert
     assert len(output_models) == 1
-    assert output_models[0].meta.filename == resample_data.output_filename
+    assert output_models[0].meta.basic.filename == resample_data.output_filename
     np.testing.assert_allclose(flat_1, flat_2)
 
 
