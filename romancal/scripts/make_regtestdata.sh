@@ -10,7 +10,6 @@
 # r0000201001001001001_01101_0003_WFI01 - for ramp fitting; truncated spectroscopic
 #                                         we need only darkcurrent & ramp fit for these
 #
-# Not yet found / looked at these files.
 # r00r1601001001001001_01101_0001_WFI01 - special 16 resultant file, imaging, only need cal file
 # r10r1601001001001001_01101_0001_WFI01 - special 16 resultant file, spectroscopy, only need cal file
 # roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1 - special dark for 16 resultant file
