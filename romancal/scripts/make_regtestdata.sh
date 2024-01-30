@@ -111,12 +111,12 @@ cp ${basename}_ALL_SATURATED_cal.asdf $outdir/roman-pipeline/dev/truth/WFI/image
 
 # make a special file dark file with a different name
 strun romancal.step.DarkCurrentStep r0000101001001001001_01101_0001_WFI01_linearity.asdf --output_file=Test_dark
-cp Test_darkcurrent.asdf $outdir/roman-pipeline/dev/truth/WFI/image/ 
+cp Test_darkcurrent.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 
 # make a special linearity file with a different suffix
 strun romancal.step.LinearityStep r0000101001001001001_01101_0001_WFI01_refpix.asdf --output_file=Test_linearity
-cp Test_linearity.asdf $outdir/roman-pipeline/dev/truth/WFI/image/ 
+cp Test_linearity.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 
 # we have a test that runs the flat field step directly on an _L1_ spectroscopic
@@ -154,7 +154,7 @@ model.to_asdf(f'${basename}_cal_repoint.asdf')"
 done
 
 strun roman_elp r00r1601001001001001_01101_0001_WFI01_uncal.asdf --steps.dark_current.override_dark=roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf
-strun roman_elp r10r1601001001001001_01101_0001_WFI01_uncal.asdf --steps.dark_current.override_dark=roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf 
+strun roman_elp r10r1601001001001001_01101_0001_WFI01_uncal.asdf --steps.dark_current.override_dark=roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf
 cp r00r1601001001001001_01101_0001_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp r10r1601001001001001_01101_0001_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/grism/
 cp roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf $outdir/roman-pipeline/dev/WFI/image/
