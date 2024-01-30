@@ -53,7 +53,7 @@ def pip_install_args = "--index-url ${pip_index} --progress-bar=off"
 env_vars = [
     "TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory",
     "CRDS_CONTEXT=roman_0052.pmap",
-    "CRDS_SERVER_URL=https://serverless",
+    "CRDS_SERVER_URL=https://roman-serverless",
     'CRDS_PATH=/grp/crds/roman/test/',
     'DD_ENV=ci',
     'DD_SERVICE=romancal',
