@@ -1,6 +1,11 @@
 0.13.1 (unreleased)
 ===================
 
+dq_init
+-------
+
+- Add the ability to copy resultantdq from a SDF science raw model to the new rampmodel created by dq_init [#1085]
+
 outlier_detection
 -----------------
 
