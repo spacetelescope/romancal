@@ -304,7 +304,7 @@ def test_dqinit_resultantdq(instrument, exptype):
     wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
     wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.resultantdq[1,12,12] = dqflags.pixel["DROPOUT"]
+    wfi_sci_raw.resultantdq[1, 12, 12] = dqflags.pixel["DROPOUT"]
     wfi_sci_raw.data = u.Quantity(
         np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
     )
@@ -325,14 +325,14 @@ def test_dqinit_resultantdq(instrument, exptype):
     result = DQInitStep.call(wfi_sci_raw_model, override_mask=maskref_model)
 
     # check that the resultantdq is present in the raw model
-    assert hasattr(wfi_sci_raw_model,'resultantdq')
+    assert hasattr(wfi_sci_raw_model, "resultantdq")
     # check that the resultantdq is not copied to the result
-    assert not hasattr(result,'resultantdq')
+    assert not hasattr(result, "resultantdq")
     # check to see the resultantdq is the correct shape
     assert wfi_sci_raw_model.resultantdq.shape == shape
     # check to see the resultantdq & groupdq have the correct value
-    assert wfi_sci_raw_model.resultantdq[1,12,12] == dqflags.pixel["DROPOUT"]
-    assert result.groupdq[1,12,12] == dqflags.pixel["DROPOUT"]
+    assert wfi_sci_raw_model.resultantdq[1, 12, 12] == dqflags.pixel["DROPOUT"]
+    assert result.groupdq[1, 12, 12] == dqflags.pixel["DROPOUT"]
 
 
 @pytest.mark.parametrize(

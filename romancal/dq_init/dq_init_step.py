@@ -46,14 +46,14 @@ class DQInitStep(RomanStep):
             # Create base ramp node with dummy values (for validation)
             input_ramp = maker_utils.mk_ramp(shape=input_model.shape)
             # check if the input model has a resultantdq from SDF
-            if hasattr(input_model, 'resultantdq'):
+            if hasattr(input_model, "resultantdq"):
                 input_ramp.groupdq = input_model.resultantdq.copy()
 
             # Copy input_model contents into RampModel
             for key in input_model.keys():
                 # check for resultantdq if present copy this to the emp
                 # it to the ramp model, we don't want to carry this around
-                if key != 'resultantdq':
+                if key != "resultantdq":
                     # If a dictionary (like meta), overwrite entires (but keep
                     # required dummy entries that may not be in input_model)
                     if isinstance(input_ramp[key], dict):
