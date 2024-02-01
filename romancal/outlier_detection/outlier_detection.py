@@ -90,16 +90,21 @@ class OutlierDetection:
 
         else:
             # for non-dithered data, the resampled image is just the original image
-            drizzled_models = self.input_models
-            for i in range(len(self.input_models)):
-                drizzled_models[i].weight = build_driz_weight(
+            drizzled_models = ModelContainer()
+            for i, model in enumerate(self.input_models):
+                model["weight"] = build_driz_weight(
                     self.input_models[i],
                     weight_type="ivm",
                     good_bits=pars["good_bits"],
                 )
+                drizzled_models.append(model)
 
         # Initialize intermediate products used in the outlier detection
-        median_model = rdm.open(drizzled_models[0]).copy()
+        median_model = (
+            rdm.open(drizzled_models[0]).copy()
+            if isinstance(drizzled_models[0], str)
+            else drizzled_models[0].copy()
+        )
 
         # Perform median combination on set of drizzled mosaics
         median_model.data = Quantity(
@@ -230,6 +235,8 @@ class OutlierDetection:
 
         log.info("Blotting median")
         for model in self.input_models:
+            # TODO: fix dtype conflict
+            model.dq = model.dq.astype("uint32")
             blotted_median = model.copy()
 
             # clean out extra data not related to blot result
