@@ -45,20 +45,26 @@ class DQInitStep(RomanStep):
         if not isinstance(input_model, RampModel):
             # Create base ramp node with dummy values (for validation)
             input_ramp = maker_utils.mk_ramp(shape=input_model.shape)
+            # check if the input model has a resultantdq from SDF
+            if hasattr(input_model, "resultantdq"):
+                input_ramp.groupdq = input_model.resultantdq.copy()
 
             # Copy input_model contents into RampModel
             for key in input_model.keys():
-                # If a dictionary (like meta), overwrite entires (but keep
-                # required dummy entries that may not be in input_model)
-                if isinstance(input_ramp[key], dict):
-                    input_ramp[key].update(input_model.__getattr__(key))
-                elif isinstance(input_ramp[key], np.ndarray):
-                    # Cast input ndarray as RampModel dtype
-                    input_ramp[key] = input_model.__getattr__(key).astype(
-                        input_ramp[key].dtype
-                    )
-                else:
-                    input_ramp[key] = input_model.__getattr__(key)
+                # check for resultantdq if present copy this to the emp
+                # it to the ramp model, we don't want to carry this around
+                if key != "resultantdq":
+                    # If a dictionary (like meta), overwrite entires (but keep
+                    # required dummy entries that may not be in input_model)
+                    if isinstance(input_ramp[key], dict):
+                        input_ramp[key].update(input_model.__getattr__(key))
+                    elif isinstance(input_ramp[key], np.ndarray):
+                        # Cast input ndarray as RampModel dtype
+                        input_ramp[key] = input_model.__getattr__(key).astype(
+                            input_ramp[key].dtype
+                        )
+                    else:
+                        input_ramp[key] = input_model.__getattr__(key)
 
             # Create model from node
             output_model = RampModel(input_ramp)

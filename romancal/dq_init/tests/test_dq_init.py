@@ -290,6 +290,57 @@ def test_dqinit_refpix(instrument, exptype):
         ("WFI", "WFI_IMAGE"),
     ],
 )
+def test_dqinit_resultantdq(instrument, exptype):
+    """Test that the basic inferface works for data requiring a DQ reffile"""
+
+    # Set test size
+    shape = (2, 20, 20)
+
+    # Create test science raw model
+    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape, dq=True)
+    wfi_sci_raw.meta.instrument.name = instrument
+    wfi_sci_raw.meta.instrument.detector = "WFI01"
+    wfi_sci_raw.meta.instrument.optical_element = "F158"
+    wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
+    wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
+    wfi_sci_raw.meta.exposure.type = exptype
+    wfi_sci_raw.resultantdq[1, 12, 12] = dqflags.pixel["DROPOUT"]
+    wfi_sci_raw.data = u.Quantity(
+        np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
+    )
+    wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
+
+    # Create mask model
+    maskref = stnode.MaskRef()
+    meta = maker_utils.mk_ref_common("MASK")
+    meta["instrument"]["optical_element"] = "F158"
+    meta["instrument"]["detector"] = "WFI01"
+    maskref["meta"] = meta
+    maskref["data"] = np.ones(shape[1:], dtype=np.float32)
+    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint16)
+    maskref["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
+    maskref_model = MaskRefModel(maskref)
+
+    # Perform Data Quality application step
+    result = DQInitStep.call(wfi_sci_raw_model, override_mask=maskref_model)
+
+    # check that the resultantdq is present in the raw model
+    assert hasattr(wfi_sci_raw_model, "resultantdq")
+    # check that the resultantdq is not copied to the result
+    assert not hasattr(result, "resultantdq")
+    # check to see the resultantdq is the correct shape
+    assert wfi_sci_raw_model.resultantdq.shape == shape
+    # check to see the resultantdq & groupdq have the correct value
+    assert wfi_sci_raw_model.resultantdq[1, 12, 12] == dqflags.pixel["DROPOUT"]
+    assert result.groupdq[1, 12, 12] == dqflags.pixel["DROPOUT"]
+
+
+@pytest.mark.parametrize(
+    "instrument, exptype",
+    [
+        ("WFI", "WFI_IMAGE"),
+    ],
+)
 def test_dqinit_getbestref(instrument, exptype):
     """Test that the step is skipped if the CRDS reffile is N/A"""
 
