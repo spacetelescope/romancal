@@ -3,8 +3,7 @@ import logging
 import numpy as np
 from astropy import units as u
 from drizzle import cdrizzle, util
-from roman_datamodels import datamodels
-from roman_datamodels.maker_utils import mk_datamodel, mk_resample
+from roman_datamodels import datamodels, maker_utils
 
 from ..datamodels import ModelContainer
 from . import gwcs_drizzle, resample_utils
@@ -150,12 +149,11 @@ class ResampleData:
         # NOTE: wait for William to fix bug in datamodels' init and then
         # use datamodels.ImageModel(shape=(nx, ny)) instead of mk_datamodel()
 
-        self.blank_output = mk_datamodel(
+        self.blank_output = maker_utils.mk_datamodel(
             datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
         )
 
         # update meta data and wcs
-        input_model_0 = input_models[0]
         # note we have made this input_model_0 variable so that if
         # meta includes lazily-loaded objects, that we can successfully
         # copy them into the metadata.  Directly running input_models[0].meta
@@ -163,8 +161,10 @@ class ResampleData:
         # meta is loaded but before the dictionary is constructed,
         # which can lead to seek on closed file errors if
         # meta contains lazily loaded objects.
-        self.blank_output.meta = dict(input_model_0.meta._data.items())
+        input_model_0 = input_models[0]
+        l2_into_l3_meta(self.blank_output.meta, input_model_0.meta)
         self.blank_output.meta.wcs = self.output_wcs
+        gwcs_into_l3(self.blank_output, self.output_wcs)
 
         self.output_models = ModelContainer()
 
@@ -186,7 +186,7 @@ class ResampleData:
         """
         for exposure in self.input_models.models_grouped:
             output_model = self.blank_output
-            output_model.meta["resample"] = mk_resample()
+            output_model.meta["resample"] = maker_utils.mk_resample()
             # Determine output file type from input exposure filenames
             # Use this for defining the output filename
             indx = exposure[0].meta.filename.rfind(".")
@@ -194,7 +194,7 @@ class ResampleData:
             output_root = "_".join(
                 exposure[0].meta.filename.replace(output_type, "").split("_")[:-1]
             )
-            output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
+            output_model.meta.basic.filename = f"{output_root}_outlier_i2d{output_type}"
 
             # Initialize the output with the wcs
             driz = gwcs_drizzle.GWCSDrizzle(
@@ -242,7 +242,7 @@ class ResampleData:
             output_model.context = output_model.context.astype("uint32")
             if not self.in_memory:
                 # Write out model to disk, then return filename
-                output_name = output_model.meta.filename
+                output_name = output_model.meta.basic.filename
                 output_model.save(output_name)
                 log.info(f"Exposure {output_name} saved to file")
                 output_list.append(output_name)
@@ -260,8 +260,8 @@ class ResampleData:
         Used for level 3 resampling
         """
         output_model = self.blank_output.copy()
-        output_model.meta.filename = self.output_filename
-        output_model.meta["resample"] = mk_resample()
+        output_model.meta.basic.filename = self.output_filename
+        output_model.meta["resample"] = maker_utils.mk_resample()
         output_model.meta.resample["members"] = []
         output_model.meta.resample.weight_type = self.weight_type
         output_model.meta.resample.pointings = len(self.input_models.models_grouped)
@@ -272,6 +272,7 @@ class ResampleData:
         # Initialize the output with the wcs
         driz = gwcs_drizzle.GWCSDrizzle(
             output_model,
+            outwcs=self.output_wcs,
             pixfrac=self.pixfrac,
             kernel=self.kernel,
             fillval=self.fillval,
@@ -351,7 +352,7 @@ class ResampleData:
 
         This modifies ``output_model`` in-place.
         """
-        output_wcs = output_model.meta.wcs
+        output_wcs = self.output_wcs
         inverse_variance_sum = np.full_like(output_model.data.value, np.nan)
 
         log.info(f"Resampling {name}")
@@ -417,7 +418,7 @@ class ResampleData:
         # inverse of that to get back to units of variance.
         # TODO: fix unit here
         output_variance = u.Quantity(
-            np.reciprocal(inverse_variance_sum), unit=u.electron**2 / u.s**2
+            np.reciprocal(inverse_variance_sum), unit=u.MJy**2 / u.sr**2
         )
 
         setattr(output_model, name, output_variance)
@@ -429,7 +430,7 @@ class ResampleData:
         Create an exposure time image that is the drizzled sum of the input
         images.
         """
-        output_wcs = output_model.meta.wcs
+        output_wcs = self.output_wcs
         exptime_tot = np.zeros(output_model.data.shape, dtype="f4")
 
         log.info("Resampling exposure time")
@@ -477,7 +478,7 @@ class ResampleData:
     def update_exposure_times(self, output_model, exptime_tot):
         """Update exposure time metadata (in-place)."""
         m = exptime_tot > 0
-        total_exposure_time = np.median(exptime_tot[m]) if np.any(m) else 0
+        total_exposure_time = np.mean(exptime_tot[m]) if np.any(m) else 0
         max_exposure_time = np.max(exptime_tot)
         log.info(
             f"Mean, max exposure times: {total_exposure_time:.1f}, "
@@ -489,13 +490,11 @@ class ResampleData:
             exposure_times["end"].append(exposure[0].meta.exposure.end_time)
 
         # Update some basic exposure time values based on output_model
-        output_model.meta.exposure.exposure_time = total_exposure_time
-        output_model.meta.exposure.start_time = min(exposure_times["start"])
-        output_model.meta.exposure.end_time = max(exposure_times["end"])
+        output_model.meta.basic.mean_exposure_time = total_exposure_time
+        output_model.meta.basic.time_first_mjd = min(exposure_times["start"]).mjd
+        output_model.meta.basic.time_last_mjd = max(exposure_times["end"]).mjd
+        output_model.meta.basic.max_exposure_time = max_exposure_time
         output_model.meta.resample.product_exposure_time = max_exposure_time
-        # we haven't filled out the L3 data model enough to put max_exposure_time
-        # somewhere sensible; I'm just dumping it in product_exposure_time
-        # for the moment.
 
     @staticmethod
     def drizzle_arrays(
@@ -671,3 +670,86 @@ class ResampleData:
             wtscale=wtscale,
             fillstr=fillval,
         )
+
+
+def l2_into_l3_meta(l3_meta, l2_meta):
+    """Update the level 3 meta with info from the level 2 meta
+
+    Parameters
+    ----------
+    l3_meta : dict
+        The meta to update. This is updated in-place
+
+    l2_meta : stnode
+        The Level 2-like meta to pull from
+
+    Notes
+    -----
+    The list of meta that is pulled from the Level 2 meta into the Level 3 meta is as follows:
+    basic.visit: observation.visit
+    basic.segment: observation.segment
+    basic.pass: observation.pass
+    basic.program: observation.program
+    basic.survey: obervation.survey
+    basic.optical_element: optical_element
+    basic.instrument: instrument.name
+    basic.telescope: telescope
+    program: program
+    """
+    l3_meta.basic.visit = l2_meta.observation.visit
+    l3_meta.basic.segment = l2_meta.observation.segment
+    l3_meta.basic["pass"] = l2_meta.observation["pass"]
+    l3_meta.basic.program = l2_meta.observation.program
+    l3_meta.basic.survey = l2_meta.observation.survey
+    l3_meta.basic.optical_element = l2_meta.instrument.optical_element
+    l3_meta.basic.instrument = l2_meta.instrument.name
+    l3_meta.basic.telescope = l2_meta.telescope
+    l3_meta.coordinates = l2_meta.coordinates
+    l3_meta.program = l2_meta.program
+
+
+def gwcs_into_l3(model, wcsinfo):
+    """Update the Level 3 wcsinfo block from a GWCS object
+
+    Parameters
+    ----------
+    model : `DataModel`
+        The model whose meta is to be updated.
+
+    wcsinfo : `GWCS`
+        GWCS info to transfer into the `meta.wcsinfo` block
+
+    Notes
+    -----
+    Some models/parameters in the GWCS object have explicit names, such as
+    'crpix1'. However, some do not and hence have to be accessed explicitly
+    by indexing. This is fragile and will be a source of issues.
+    """
+    l3_wcsinfo = model.meta.wcsinfo
+    transform = wcsinfo.forward_transform
+
+    # Basic WCS info
+    l3_wcsinfo.projection = "TAN"
+    l3_wcsinfo.rotation_matrix = transform["pc_rotation_matrix"].matrix.value.tolist()
+    l3_wcsinfo.dec_ref = transform.lat_6.value
+    l3_wcsinfo.ra_ref = transform.lon_6.value
+    # l3_wcsinfo.x_ref = center of mosaic?
+    # l3_wcsinfo.y_ref = center of mosaic?
+    # l3_wcsinfo.s_region = from gwcs.bounding_box
+
+    # Mosaic info
+    # l3_wcsinfo.dec_center = from center of mosaic
+    # l3_wcsinfo.pixel_scale = ???
+    # l3_wcsinfo.pixel_scale_local = ???
+    # l3_wcsinfo.pixel_shape = image shape
+    # l3_wcsinfo.ra_center = from center of mosaic
+    # l3_wcsinfo.ra_corn1 = from bounding box
+    # l3_wcsinfo.ra_corn2 = from bounding box
+    # l3_wcsinfo.ra_corn3 = from bounding box
+    # l3_wcsinfo.ra_corn4 = from bounding box
+    # l3_wcsinfo.dec_corn1 = from bounding box
+    # l3_wcsinfo.dec_corn2 = from bounding box
+    # l3_wcsinfo.dec_corn3 = from bounding box
+    # l3_wcsinfo.dec_corn4 = from bounding box
+    # l3_wcsinfo.orientat = ???
+    # l3_wcsinfo.orientat_local = ???
