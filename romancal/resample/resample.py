@@ -704,6 +704,7 @@ def l2_into_l3_meta(l3_meta, l2_meta):
     l3_meta.basic.optical_element = l2_meta.instrument.optical_element
     l3_meta.basic.instrument = l2_meta.instrument.name
     l3_meta.basic.telescope = l2_meta.telescope
+    l3_meta.coordinates = l2_meta.coordinates
     l3_meta.program = l2_meta.program
 
 
