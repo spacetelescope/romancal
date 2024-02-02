@@ -501,8 +501,8 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     assert type(exec_info.value) == AttributeError
 
 
-def test_tweakreg_returns_modelcontainer(tmp_path, base_image):
-    """Test that TweakReg always returns a ModelContainer."""
+def test_tweakreg_returns_modelcontainer_on_multiple_elements_as_input(tmp_path, base_image):
+    """Test that TweakReg always returns a ModelContainer when processing multiple elements as input."""
 
     def clean_result(result):
         """
@@ -551,6 +551,22 @@ def test_tweakreg_returns_modelcontainer(tmp_path, base_image):
     # 4 - string containing the full path to an ASN file
     res_4 = step.process(asn_filepath)
     assert type(res_4) == ModelContainer
+
+
+def test_tweakreg_returns_datamodel_on_single_open_datamodel_as_input(tmp_path, base_image):
+    """Test that TweakReg returns an updated DataModel when processing a single open Roman datamodel as input.
+    This is the default behavior for using TweakRegStep in the ELP pipeline.."""
+
+    img = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
+    img.save(tmp_path / "img_1.asdf")
+    asn_filepath = create_asn_file(tmp_path)
+
+    step = trs.TweakRegStep()
+
+    res = step.process(img)
+    assert res.meta.cal_step.tweakreg == "COMPLETE"
+    assert isinstance(res, rdm.DataModel)
 
 
 def test_tweakreg_updates_cal_step(tmp_path, base_image):

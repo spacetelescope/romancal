@@ -522,8 +522,9 @@ class TweakRegStep(RomanStep):
 
                 image_model.meta.wcs = imcat.wcs
 
-        # return a ModelContainer if there is more than one datamodel; otherwise return a single datamodel
-        result = images if len(images) > 1 else images[0]
+        # if input is a single datamodel, return the single datamodel as output;
+        # otherwise, return ModelContainer
+        result = images[0] if isinstance(input, rdm.DataModel) else images
 
         return result
 
