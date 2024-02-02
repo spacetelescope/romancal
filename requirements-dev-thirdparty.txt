@@ -11,6 +11,7 @@ git+https://github.com/seperman/deepdiff.git@dev
 # Use weekly astropy dev build
 git+https://github.com/astropy/asdf-astropy.git
 --extra-index-url https://pypi.anaconda.org/astropy/simple astropy --pre
+--extra-index-url https://pypi.anaconda.org/liberfa/simple pyerfa --pre
 git+https://github.com/astropy/photutils.git
 
 # Use Bi-weekly numpy/scipy dev builds
