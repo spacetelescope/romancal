@@ -131,7 +131,11 @@ class TweakRegStep(RomanStep):
                                 "tweakreg_catalog_name": catdict[filename],
                             }
             else:
-                images = ModelContainer([input]) if isinstance(input, rdm.DataModel) else ModelContainer(input)
+                images = (
+                    ModelContainer([input])
+                    if isinstance(input, rdm.DataModel)
+                    else ModelContainer(input)
+                )
         except TypeError as e:
             e.args = (
                 "Input to tweakreg must be a list of DataModels, an "
