@@ -1,14 +1,13 @@
 """
- Unit tests for the Roman source detection step code
+Unit tests for the Roman source detection step code.
 """
 
 from copy import deepcopy
 
+import astropy.units as u
 import numpy as np
 import pytest
-from astropy import units as u
 
-from romancal.lib.basic_utils import recarray_to_ndarray
 from romancal.lib.tests.test_psf import add_sources, setup_inputs
 from romancal.source_detection import SourceDetectionStep
 
@@ -39,19 +38,19 @@ class TestSourceDetection:
         source_detect.scalar_threshold = 100
         source_detect.peakmax = None
         dao_result = source_detect.process(image_model)
-        idx, x_dao, y_dao, amp_dao = recarray_to_ndarray(
-            dao_result.meta.source_detection.tweakreg_catalog
-        ).T
+        idx, x_dao, y_dao, amp_dao = list(
+            dao_result.meta.source_detection.tweakreg_catalog.itercols()
+        )
 
         # check that all injected targets are found by DAO:
         assert len(x_dao) == len(x_true)
 
         source_detect.fit_psf = True
         psf_result = source_detect.process(image_model)
-        psf_catalog = psf_result.meta.source_detection.psf_catalog
+        source_catalog = psf_result.meta.source_detection.source_catalog
 
-        extract_columns = ["xcentroid", "x_err", "ycentroid", "y_err", "flux_fit"]
-        x_psf, x_err, y_psf, y_err, amp_psf = psf_catalog[extract_columns].itercols()
+        extract_columns = ["x_fit", "x_err", "y_fit", "y_err", "flux_fit"]
+        x_psf, x_err, y_psf, y_err, amp_psf = source_catalog[extract_columns].itercols()
 
         # check that typical PSF centroids are more accurate than DAO centroids:
         assert np.median(np.abs(x_dao - x_true)) > np.median(np.abs(x_psf - x_true))
@@ -64,3 +63,16 @@ class TestSourceDetection:
 
         # check that typical residuals are consistent with their errors:
         assert np.median(np.abs(x_psf - x_true) / x_err) < 2
+
+        # check that the source catalog contains some expected columns:
+        expected_cols = {
+            # PSF fitting outputs:
+            "x_init",
+            "x_fit",
+            "flux_fit",
+            "qfit",
+            # DAOStarFinder outputs:
+            "xcentroid_dao",
+            "sharpness",
+        }
+        assert expected_cols.issubset(source_catalog.colnames)
