@@ -131,7 +131,7 @@ class TweakRegStep(RomanStep):
                                 "tweakreg_catalog_name": catdict[filename],
                             }
             else:
-                images = ModelContainer(input)
+                images = ModelContainer([input]) if isinstance(input, rdm.DataModel) else ModelContainer(input)
         except TypeError as e:
             e.args = (
                 "Input to tweakreg must be a list of DataModels, an "
@@ -522,7 +522,10 @@ class TweakRegStep(RomanStep):
 
                 image_model.meta.wcs = imcat.wcs
 
-        return images
+        # return a ModelContainer if there is more than one datamodel; otherwise return a single datamodel
+        result = images if len(images) > 1 else images[0]
+
+        return result
 
     def _is_wcs_correction_small(self, wcs, twcs):
         """Check that the newly tweaked wcs hasn't gone off the rails"""
