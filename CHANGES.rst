@@ -70,7 +70,7 @@ ramp_fitting
 
 - Add default WCS when constructing image model from ramp model [#1072]
 
-- Account for Poisson noise from dark current when fitting ramps.
+- Account for Poisson noise from dark current when fitting ramps. [#1087]
 
 resample
 --------
