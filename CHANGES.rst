@@ -1,6 +1,11 @@
 0.13.1 (unreleased)
 ===================
 
+tweakreg
+--------
+
+- Allow single open Roman datamodels to be used as input to be consistent with expected behavior in ELP. [#1089]
+
 dq_init
 -------
 
