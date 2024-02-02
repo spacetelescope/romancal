@@ -5,7 +5,8 @@ import pytest
 from astropy import units as u
 from astropy.time import Time
 from roman_datamodels import maker_utils
-from roman_datamodels.datamodels import GainRefModel, RampModel, ReadnoiseRefModel
+from roman_datamodels.datamodels import (
+    GainRefModel, RampModel, ReadnoiseRefModel, DarkRefModel)
 
 from romancal.ramp_fitting import RampFitStep
 
@@ -75,7 +76,7 @@ SIMPLE_EXPECTED_RNOISE = {
 # #####
 def test_bad_readpattern():
     """Ensure error is raised on bad readpattern"""
-    ramp_model, gain_model, readnoise_model = make_data(
+    ramp_model, gain_model, readnoise_model, dark_model = make_data(
         SIMPLE_RESULTANTS, 1, 0.01, False
     )
     bad_pattern = ramp_model.meta.exposure.read_pattern.data[1:]
@@ -87,6 +88,7 @@ def test_bad_readpattern():
             algorithm="ols_cas22",
             override_gain=gain_model,
             override_readnoise=readnoise_model,
+            override_dark=dark_model,
         )
 
 
@@ -138,7 +140,7 @@ def test_fits(fit_ramps, attribute):
 def fit_ramps(request):
     """Test ramp fits"""
     resultants, ingain, rnoise, randomize, expected, use_jump = request.param
-    ramp_model, gain_model, readnoise_model = make_data(
+    ramp_model, gain_model, readnoise_model, dark_model = make_data(
         resultants, ingain, rnoise, randomize
     )
 
@@ -148,6 +150,7 @@ def fit_ramps(request):
         use_ramp_jump_detection=use_jump,
         override_gain=gain_model,
         override_readnoise=readnoise_model,
+        override_dark=dark_model,
     )
 
     return out_model, expected
@@ -179,11 +182,10 @@ def make_data(resultants, ingain, rnoise, randomize):
         Input image and related references
     """
     ramp_model = model_from_resultants(resultants)
-    gain_model, readnoise_model = generate_wfi_reffiles(
-        ramp_model.shape[1:], ingain=ingain, rnoise=rnoise, randomize=randomize
-    )
+    gain_model, readnoise_model, dark_model = generate_wfi_reffiles(
+        ramp_model.shape[1:], ingain=ingain, rnoise=rnoise, randomize=randomize)
 
-    return ramp_model, gain_model, readnoise_model
+    return ramp_model, gain_model, readnoise_model, dark_model
 
 
 def model_from_resultants(resultants, read_pattern=None):
@@ -195,7 +197,7 @@ def model_from_resultants(resultants, read_pattern=None):
         The resultants to fit.
 
     read_pattern : [[int[,...]][,...]]
-        The read patter used to produce the resultants.
+        The read pattern used to produce the resultants.
         If None, presume a basic read pattern
     """
     if read_pattern is None:
@@ -236,7 +238,8 @@ def model_from_resultants(resultants, read_pattern=None):
     return ramp_model
 
 
-def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01, randomize=True):
+def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01,
+                          darkcurrent=0.01, randomize=True):
     """Create GainRefModel and ReadnoiseRefModel
 
     Parameters
@@ -249,6 +252,9 @@ def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01, randomize=True):
 
     rnoise : flota
         Maximum noise
+
+    darkcurrent : float
+        Dark current scale
 
     randomize : bool
         Randomize the gain and read noise data.
@@ -305,5 +311,24 @@ def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01, randomize=True):
 
     rn_ref_model = ReadnoiseRefModel(rn_ref)
 
+    # Create temporary dark reference file
+    # shape needs to be 3D but does not matter because the ramp fitting
+    # step only uses the 2-D dark slope component
+    dark_ref = maker_utils.mk_dark(shape=(1,) + shape)
+    dark_ref["meta"]["instrument"]["detector"] = "WFI01"
+    dark_ref["meta"]["instrument"]["name"] = "WFI"
+    dark_ref["meta"]["reftype"] = "DARK"
+    dark_ref["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
+
+    dark_ref["meta"]["exposure"]["type"] = "WFI_IMAGE"
+    dark_ref["meta"]["exposure"]["frame_time"] = 666
+
+    dark_ref["dark_slope"] = u.Quantity(
+        np.zeros(shape).astype(np.float32) * 0.01, u.DN / u.s,
+        dtype=np.float32
+    )
+
+    dark_ref_model = DarkRefModel(dark_ref)
+
     # return gainfile, readnoisefile
-    return gain_ref_model, rn_ref_model
+    return gain_ref_model, rn_ref_model, dark_ref_model
