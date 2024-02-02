@@ -564,7 +564,6 @@ def test_tweakreg_returns_datamodel_on_single_open_datamodel_as_input(
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
     img.save(tmp_path / "img_1.asdf")
-    asn_filepath = create_asn_file(tmp_path)
 
     step = trs.TweakRegStep()
 
