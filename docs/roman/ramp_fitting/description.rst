@@ -62,7 +62,19 @@ appropriate slopes and variances are output to the primary output product, and t
 following is a description of these computations. The notation in the equations
 is the following: the type of noise (when appropriate) will appear as the superscript
 ‘R’, ‘P’, or ‘C’ for readnoise, Poisson noise, or combined, respectively;
-and the form of the data will appear as the subscript: ‘s’, ‘o’ for segment, or overall (for the entire dataset), respectively.
+and the form of the data will appear as the subscript: ‘s’, ‘o’ for
+segment, or overall (for the entire dataset), respectively.
+
+Dark current
+++++++++++++
+Ramp fitting receives dark-subtracted ramps as input, but the Poisson noise
+in the dark current contributes to the noise in the ramps.  So we need
+to add the dark current back into the ramps before ramp fitting, and
+then subtract it off again from the ramp fits.
+
+Dark current in Roman is low and this makes very little difference for
+most pixels.
+
 
 Optimal Weighting Algorithm
 ---------------------------
