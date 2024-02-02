@@ -35,6 +35,11 @@ ramp_fitting
 
 - Add default WCS when constructing image model from ramp model [#1072]
 
+resample
+--------
+
+- Update resample step to handle the L3 meta data [#1057]
+
 
 general
 -------

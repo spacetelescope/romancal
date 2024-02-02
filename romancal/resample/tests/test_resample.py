@@ -451,7 +451,7 @@ def test_resampledata_do_drizzle_many_to_one_single_input_model(wfi_sca1):
 
     # Assert
     assert len(output_models) == 1
-    assert output_models[0].meta.filename == resample_data.output_filename
+    assert output_models[0].meta.basic.filename == resample_data.output_filename
     np.testing.assert_allclose(flat_1, flat_2)
 
 
@@ -473,17 +473,14 @@ def test_update_exposure_times_different_sca_same_exposure(exposure_1):
         - 3 * exposure_1[0].meta.exposure.effective_exposure_time
     )
     assert np.abs(time_difference) < 0.1
-    # the median ends up being 2 exposures
-    # get this time within 0.1 s.
-    time_difference = (
-        output_model.meta.exposure.exposure_time
-        - 2 * exposure_1[0].meta.exposure.effective_exposure_time
-    )
-    assert np.abs(time_difference) < 0.1
     assert (
-        output_model.meta.exposure.start_time == exposure_1[0].meta.exposure.start_time
+        output_model.meta.basic.time_first_mjd
+        == exposure_1[0].meta.exposure.start_time.mjd
     )
-    assert output_model.meta.exposure.end_time == exposure_1[0].meta.exposure.end_time
+    assert (
+        output_model.meta.basic.time_last_mjd
+        == exposure_1[0].meta.exposure.end_time.mjd
+    )
 
 
 def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure_2):
@@ -507,18 +504,20 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
     )
     assert np.abs(time_difference) < 0.1
 
-    assert output_model.meta.exposure.start_time == min(
-        x.meta.exposure.start_time for x in input_models
+    assert (
+        output_model.meta.basic.time_first_mjd
+        == min(x.meta.exposure.start_time for x in input_models).mjd
     )
 
-    assert output_model.meta.exposure.end_time == max(
-        x.meta.exposure.end_time for x in input_models
+    assert (
+        output_model.meta.basic.time_last_mjd
+        == max(x.meta.exposure.end_time for x in input_models).mjd
     )
 
     # likewise the per-pixel median exposure time is just 2x the individual
     # sca exposure time.
     time_difference = (
-        output_model.meta.exposure.exposure_time
+        output_model.meta.basic.max_exposure_time
         - 2 * exposure_1[0].meta.exposure.effective_exposure_time
     )
     assert np.abs(time_difference) < 0.1
@@ -538,6 +537,7 @@ def test_resample_variance_array(wfi_sca1, wfi_sca4, name):
     output_model.meta["resample"] = {}
     driz = gwcs_drizzle.GWCSDrizzle(
         output_model,
+        outwcs=resample_data.output_wcs,
         pixfrac=resample_data.pixfrac,
         kernel=resample_data.kernel,
         fillval=resample_data.fillval,
