@@ -3,8 +3,8 @@ Examples
 In the examples below, `img` is either a string with the filename of a Roman `ASDF` file
 or a Roman datamodel `ImageModel`.
 
-1. To run TweakReg on a python session one image file
-   (i.e. one Roman's SCA) with the default parameters:
+#. To run TweakReg on a python session on an ASDF file or a Roman datamodel with the
+default parameters:
 
         .. code-block:: python
 
@@ -12,7 +12,17 @@ or a Roman datamodel `ImageModel`.
                 step = TweakRegStep()
                 step.process([img])
 
-2. To run TweakReg on a Roman's exposure with default astrometric parameters and save
+        .. note::
+            If the input is a single open Roman ``DataModel``,
+            either ``step.process([img])`` or ``step.process(img)`` will work,
+            but the returned object will be different. In the first case, it
+            will be a ``ModelContainer`` whereas for the latter, it will be a
+            ``DataModel``. Such behavior allows ``TweakReg`` to be either used
+            as a standalone class for processing ASN files or a list of files
+            or to be passed on to ``strun`` as an argument, as well as to be
+            used in the ELP pipeline without causing any issues.
+
+#. To run TweakReg on a Roman's exposure with default astrometric parameters and save
    the absolute catalog data:
 
         .. code-block:: python
@@ -24,7 +34,7 @@ or a Roman datamodel `ImageModel`.
                 step.catalog_path = '/path/for/the/abs/catalog' # save the Gaia catalog to this path
                 step.process([img])
 
-3. To run TweakReg using a custom source catalog with the default parameters:
+#. To run TweakReg using a custom source catalog with the default parameters:
 
    - make sure the source catalog is in one of the supported formats. The file content
      below is an example of a valid catalog (`ascii.csv` format):
