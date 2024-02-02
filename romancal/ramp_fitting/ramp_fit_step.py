@@ -56,9 +56,11 @@ class RampFitStep(RomanStep):
                 out_model = self.ols(input_model, readnoise_model, gain_model)
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
             elif algorithm == "ols_cas22":
-                dark_filename = self.get_reference_file(input_model, 'dark')
-                dark_model = rdd.open(dark_filename, mode='r')
-                out_model = self.ols_cas22(input_model, readnoise_model, gain_model, dark_model)
+                dark_filename = self.get_reference_file(input_model, "dark")
+                dark_model = rdd.open(dark_filename, mode="r")
+                out_model = self.ols_cas22(
+                    input_model, readnoise_model, gain_model, dark_model
+                )
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
                 if self.use_ramp_jump_detection:
                     out_model.meta.cal_step.jump = "COMPLETE"
@@ -182,17 +184,16 @@ class RampFitStep(RomanStep):
         read_time = input_model.meta.exposure.frame_time
 
         # Force read pattern to be pure lists not LNodes
-        read_pattern = [list(reads)
-                        for reads in input_model.meta.exposure.read_pattern]
+        read_pattern = [list(reads) for reads in input_model.meta.exposure.read_pattern]
         if len(read_pattern) != resultants.shape[0]:
-            raise RuntimeError('mismatch between resultants shape and '
-                               'read_pattern.')
+            raise RuntimeError("mismatch between resultants shape and " "read_pattern.")
 
         # add dark current back into resultants so that Poisson noise is
         # properly accounted for
         tbar = np.array([np.mean(reads) * read_time for reads in read_pattern])
-        resultants += (dark_model.dark_slope.to(u.DN / u.s).value[None, ...]
-                       * tbar[:, None, None])
+        resultants += (
+            dark_model.dark_slope.to(u.DN / u.s).value[None, ...] * tbar[:, None, None]
+        )
 
         # account for the gain
         resultants *= gain

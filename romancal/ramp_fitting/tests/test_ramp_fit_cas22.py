@@ -6,7 +6,11 @@ from astropy import units as u
 from astropy.time import Time
 from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import (
-    GainRefModel, RampModel, ReadnoiseRefModel, DarkRefModel)
+    DarkRefModel,
+    GainRefModel,
+    RampModel,
+    ReadnoiseRefModel,
+)
 
 from romancal.ramp_fitting import RampFitStep
 
@@ -183,7 +187,8 @@ def make_data(resultants, ingain, rnoise, randomize):
     """
     ramp_model = model_from_resultants(resultants)
     gain_model, readnoise_model, dark_model = generate_wfi_reffiles(
-        ramp_model.shape[1:], ingain=ingain, rnoise=rnoise, randomize=randomize)
+        ramp_model.shape[1:], ingain=ingain, rnoise=rnoise, randomize=randomize
+    )
 
     return ramp_model, gain_model, readnoise_model, dark_model
 
@@ -238,8 +243,9 @@ def model_from_resultants(resultants, read_pattern=None):
     return ramp_model
 
 
-def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01,
-                          darkcurrent=0.01, randomize=True):
+def generate_wfi_reffiles(
+    shape, ingain=6, rnoise=0.01, darkcurrent=0.01, randomize=True
+):
     """Create GainRefModel and ReadnoiseRefModel
 
     Parameters
@@ -324,8 +330,7 @@ def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01,
     dark_ref["meta"]["exposure"]["frame_time"] = 666
 
     dark_ref["dark_slope"] = u.Quantity(
-        np.zeros(shape).astype(np.float32) * 0.01, u.DN / u.s,
-        dtype=np.float32
+        np.zeros(shape).astype(np.float32) * 0.01, u.DN / u.s, dtype=np.float32
     )
 
     dark_ref_model = DarkRefModel(dark_ref)
