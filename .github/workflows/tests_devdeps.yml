@@ -65,3 +65,5 @@ jobs:
           pytest-results-summary: true
         - macos: py3-devdeps-webbpsf
           pytest-results-summary: true
+        - linux: py312-devdeps
+          python_version: "3.12-dev"
