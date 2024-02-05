@@ -1,4 +1,5 @@
 """Update path of members in an association"""
+
 from os.path import basename, join
 
 

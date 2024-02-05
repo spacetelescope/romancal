@@ -2,7 +2,6 @@
 Unit tests for dark current correction
 """
 
-
 import numpy as np
 import pytest
 import roman_datamodels as rdm

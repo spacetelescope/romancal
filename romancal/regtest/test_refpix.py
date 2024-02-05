@@ -1,4 +1,5 @@
 """Regression tests for the Reference Pixel Correction step"""
+
 import pytest
 
 from romancal.stpipe import RomanStep

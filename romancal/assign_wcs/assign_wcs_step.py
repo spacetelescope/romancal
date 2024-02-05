@@ -2,6 +2,7 @@
 Assign a gWCS object to a science image.
 
 """
+
 import logging
 
 import gwcs.coordinate_frames as cf

@@ -1,4 +1,5 @@
 """Regression test for the Dark current subtraction step."""
+
 import pytest
 
 from romancal.stpipe import RomanStep

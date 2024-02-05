@@ -1,6 +1,7 @@
 """
 Roman pipeline step for image alignment.
 """
+
 import os
 from pathlib import Path
 

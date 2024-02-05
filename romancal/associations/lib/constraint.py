@@ -1,5 +1,6 @@
 """Constraints
 """
+
 import abc
 import collections
 import logging
