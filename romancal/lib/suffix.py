@@ -20,6 +20,7 @@ Hence, to update `KNOW_SUFFIXES`, update both `SUFFIXES_TO_ADD` and
 `SUFFIXES_TO_DISCARD` as necessary, then use the output of
 `find_suffixes`.
 """
+
 import itertools
 import logging
 import re

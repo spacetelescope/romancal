@@ -1,6 +1,7 @@
 """
 A module that provides functions for matching sky in overlapping images.
 """
+
 import logging
 from datetime import datetime
 

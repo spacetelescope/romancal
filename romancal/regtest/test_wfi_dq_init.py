@@ -1,4 +1,5 @@
 """Tests for the DQ Init module and DMS 25 and DMS 26 requirements"""
+
 import os
 
 import pytest

@@ -1,6 +1,7 @@
 """
 Define the I/O methods for Level 3 associations
 """
+
 import json as json_lib
 import logging
 

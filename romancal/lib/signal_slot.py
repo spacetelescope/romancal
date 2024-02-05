@@ -1,5 +1,6 @@
 """ A signal/slot implementation
 """
+
 import inspect
 import logging
 from collections import namedtuple

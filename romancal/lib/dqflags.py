@@ -18,6 +18,7 @@ The data structure that stores bit flags is just the standard Python `int`,
 which provides 32 bits. Bits of an integer are most easily referred to using
 the formula `2**bit_number` where `bit_number` is the 0-index bit of interest.
 """
+
 # for this file drop E241 (multiple spaces after :, for readability)
 # flake8: noqa: E241
 # Pixel-specific flags

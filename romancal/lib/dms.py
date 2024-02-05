@@ -3,6 +3,7 @@
 Example: Certain tests are required by DMS to log in a specific way. The
 decorator for this is defined in this module.
 """
+
 from stpipe import log as stpipe_log
 
 

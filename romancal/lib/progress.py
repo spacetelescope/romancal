@@ -6,6 +6,7 @@ https://pypi.org/project/progress/
 
 If the module is not available, then stub it out.
 """
+
 import logging
 
 __all__ = ["Bar"]

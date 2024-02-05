@@ -1,4 +1,5 @@
 """Test Level2 candidate operation"""
+
 import pytest
 
 from romancal.associations.main import Main
