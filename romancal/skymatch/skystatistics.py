@@ -3,6 +3,7 @@ The `skystatistics` module provides statistics computation class used by
 :py:func:`~romancal.skymatch.skymatch.match`
 and :py:class:`~romancal.skymatch.skyimage.SkyImage`.
 """
+
 from copy import deepcopy
 
 # THIRD PARTY

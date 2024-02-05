@@ -1,4 +1,5 @@
 """ Roman tests for flat field correction """
+
 import copy
 
 import numpy as np

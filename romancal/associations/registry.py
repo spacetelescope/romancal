@@ -1,4 +1,5 @@
 """Association Registry"""
+
 import importlib.util
 import logging
 from inspect import getmembers, isclass, isfunction, ismethod, ismodule

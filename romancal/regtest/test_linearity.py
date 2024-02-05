@@ -1,4 +1,5 @@
 """Regression test for the linearity correction step."""
+
 import pytest
 
 from romancal.stpipe import RomanStep

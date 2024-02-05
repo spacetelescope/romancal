@@ -1,6 +1,7 @@
 """
 Roman Calibration Pipeline base class
 """
+
 import logging
 import time
 

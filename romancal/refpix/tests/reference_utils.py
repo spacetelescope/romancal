@@ -14,6 +14,7 @@ This way there is a clear unquestionable demonstration of the hand-off between t
 provided reference code and this implementation contained within the git history.
 of the project itself.
 """
+
 import threading
 
 import numpy as np
@@ -308,7 +309,7 @@ def fft_interp(
             # meaningfully
             chanFrameData_Flat = spfft.irfft(
                 fftResult * chanFrameData_Flat.size,
-                workers=1
+                workers=1,
                 # )
             ).astype(chanFrameData_Flat.dtype)
             # Return read only pixels

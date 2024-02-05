@@ -44,9 +44,9 @@ class DarkCurrentStep(RomanStep):
             if "nframes" not in dark_model.meta.exposure:
                 dark_model.meta.exposure["nframes"] = input_model.meta.exposure.nframes
             if "groupgap" not in dark_model.meta.exposure:
-                dark_model.meta.exposure[
-                    "groupgap"
-                ] = input_model.meta.exposure.groupgap
+                dark_model.meta.exposure["groupgap"] = (
+                    input_model.meta.exposure.groupgap
+                )
 
             # Do the dark correction
             out_model = input_model

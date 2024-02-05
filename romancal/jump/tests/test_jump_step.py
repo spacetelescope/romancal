@@ -1,6 +1,7 @@
 """
  Unit tests for the Roman jump step code
 """
+
 from itertools import cycle
 
 import numpy as np

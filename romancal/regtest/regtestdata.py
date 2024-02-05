@@ -726,9 +726,10 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
         "lazy_load": False,
         "copy_arrays": True,
     }
-    with asdf.open(result, **open_kwargs) as af0, asdf.open(
-        truth, **open_kwargs
-    ) as af1:
+    with (
+        asdf.open(result, **open_kwargs) as af0,
+        asdf.open(truth, **open_kwargs) as af1,
+    ):
         # swap the inputs here so DeepDiff(truth, result)
         # this will create output with 'new_value' referring to
         # the value in the result and 'old_value' referring to the truth

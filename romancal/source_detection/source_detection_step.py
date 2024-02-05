@@ -2,7 +2,6 @@
 Create a source catalog for tweakreg
 """
 
-
 import logging
 
 import astropy.units as u
@@ -210,9 +209,9 @@ class SourceDetectionStep(RomanStep):
                 else:
                     catalog.write(cat_filename, format="ascii.ecsv", overwrite=True)
 
-                input_model.meta.source_detection[
-                    "tweakreg_catalog_name"
-                ] = cat_filename
+                input_model.meta.source_detection["tweakreg_catalog_name"] = (
+                    cat_filename
+                )
             else:
                 if self.fit_psf:
                     # PSF photometry centroid results are stored in an astropy table
@@ -231,9 +230,9 @@ class SourceDetectionStep(RomanStep):
                 else:
                     # only attach catalog to file if its being passed to the next step
                     # and save_catalogs is false, since it is not in the schema
-                    input_model.meta.source_detection[
-                        "tweakreg_catalog"
-                    ] = catalog_as_recarray
+                    input_model.meta.source_detection["tweakreg_catalog"] = (
+                        catalog_as_recarray
+                    )
             input_model.meta.cal_step["source_detection"] = "COMPLETE"
 
         # just pass input model to next step - catalog is stored in meta
