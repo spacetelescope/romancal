@@ -1,4 +1,5 @@
 """Load an Association from a file or object"""
+
 from inspect import isclass
 
 from .association import Association

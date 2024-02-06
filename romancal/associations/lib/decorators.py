@@ -7,6 +7,7 @@ Lifted from the `glue-viz`_ project.
 
 .. _glue-viz: https://github.com/glue-viz/glue
 """
+
 from functools import wraps
 
 __all__ = ["memoize", "singleton", "memoize_attr_check"]

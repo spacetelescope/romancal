@@ -1,4 +1,5 @@
 """Create an association from a list"""
+
 import argparse
 import sys
 

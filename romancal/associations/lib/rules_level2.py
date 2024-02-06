@@ -1,5 +1,6 @@
 """Association Definitions: DMS Level2b product associations
 """
+
 import logging
 
 from romancal.associations.lib.constraint import Constraint

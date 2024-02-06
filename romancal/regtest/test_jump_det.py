@@ -1,4 +1,5 @@
 """Regression test for the Jump detection step."""
+
 import pytest
 
 from romancal.stpipe import RomanStep

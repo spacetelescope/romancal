@@ -1,4 +1,5 @@
 """Constraint Tests"""
+
 import pytest
 
 from romancal.associations.lib.constraint import (
