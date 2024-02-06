@@ -30,7 +30,7 @@ dependencies = [
     'stcal >=1.5.1',
     #'stcal @ git+https://github.com/spacetelescope/stcal.git@main',
     'stpipe >=0.5.0',
-    'tweakwcs >=0.8.0',
+    'tweakwcs >=0.8.6',
     'spherical-geometry >= 1.2.22',
     'stsci.imagestats >= 1.6.3',
     'drizzle >= 1.13.7',
