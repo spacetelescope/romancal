@@ -698,7 +698,7 @@ def l2_into_l3_meta(l3_meta, l2_meta):
     """
     l3_meta.basic.visit = l2_meta.observation.visit
     l3_meta.basic.segment = l2_meta.observation.segment
-    l3_meta.basic["pass"] = l2_meta.observation["pass"]
+    l3_meta.basic.pass_number = l2_meta.observation.pass_number
     l3_meta.basic.program = l2_meta.observation.program
     l3_meta.basic.survey = l2_meta.observation.survey
     l3_meta.basic.optical_element = l2_meta.instrument.optical_element
