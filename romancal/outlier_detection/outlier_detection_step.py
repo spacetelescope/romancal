@@ -63,11 +63,8 @@ class OutlierDetectionStep(RomanStep):
             return
 
         # validation
-        if (
-            len(self.input_models) >= 2
-            and all(
-                model.meta.exposure.type == "WFI_IMAGE" for model in self.input_models
-            )
+        if len(self.input_models) >= 2 and all(
+            model.meta.exposure.type == "WFI_IMAGE" for model in self.input_models
         ):
             # Setup output path naming if associations are involved.
             asn_id = self.input_models.asn_table.get("asn_id", None)
@@ -128,8 +125,13 @@ class OutlierDetectionStep(RomanStep):
                     # median_path = blot_path.replace("blot", "median")
                     unwanted_files_suffixes = ("*blot.asdf", "*median.asdf")
                     unwanted_files_list = []
-                    [[unwanted_files_list.extend([str(y)]) for y in crf_path.parent.glob(suffix)] for suffix in
-                     unwanted_files_suffixes]
+                    [
+                        [
+                            unwanted_files_list.extend([str(y)])
+                            for y in crf_path.parent.glob(suffix)
+                        ]
+                        for suffix in unwanted_files_suffixes
+                    ]
 
                     for fle in unwanted_files_list:
                         if os.path.isfile(fle):
@@ -150,6 +152,3 @@ class OutlierDetectionStep(RomanStep):
             self.skip = True
 
         return self.input_models
-
-
-
