@@ -2,6 +2,7 @@
 
 import os
 from functools import partial
+from pathlib import Path
 
 from romancal.datamodels import ModelContainer
 from romancal.outlier_detection import outlier_detection
@@ -52,12 +53,17 @@ class OutlierDetectionStep(RomanStep):
     def process(self, input_models):
         """Perform outlier detection processing on input data."""
 
-        self.input_models = input_models
-        self.input_container = isinstance(self.input_models, ModelContainer)
         self.skip = False
 
+        try:
+            self.input_models = ModelContainer(input_models)
+        except TypeError:
+            self.log.warning("Input cannot be parsed into a ModelContainer.")
+            self.skip = True
+            return
+
         # validation
-        if self.input_container and (
+        if (
             len(self.input_models) >= 2
             and all(
                 model.meta.exposure.type == "WFI_IMAGE" for model in self.input_models
@@ -113,31 +119,37 @@ class OutlierDetectionStep(RomanStep):
                 model.meta.cal_step["outlier_detection"] = state
                 if not self.save_intermediate_results:
                     #  Remove unwanted files
-                    crf_path = self.make_output_path(basepath=model.meta.filename)
+                    crf_path = Path(self.make_output_path(basepath=model.meta.filename))
                     # These lines to be used when/if outlier_i2d files follow
                     # output_dir crf_file = os.path.basename(crf_path)
                     # outlr_path = crf_path.replace(crf_file, outlr_file)
-                    outlr_file = model.meta.filename.replace("cal", "outlier_i2d")
-                    blot_path = crf_path.replace("crf", "blot")
-                    median_path = blot_path.replace("blot", "median")
+                    # outlr_file = model.meta.filename.replace("cal", "outlier_i2d")
+                    # blot_path = crf_path.replace("crf", "blot")
+                    # median_path = blot_path.replace("blot", "median")
+                    unwanted_files_suffixes = ("*blot.asdf", "*median.asdf")
+                    unwanted_files_list = []
+                    [[unwanted_files_list.extend([str(y)]) for y in crf_path.parent.glob(suffix)] for suffix in
+                     unwanted_files_suffixes]
 
-                    for fle in [outlr_file, blot_path, median_path]:
+                    for fle in unwanted_files_list:
                         if os.path.isfile(fle):
                             os.remove(fle)
                             self.log.debug(f"    {fle}")
-
-            return self.input_models
-
-        # if input is not valid then log a warning message and
-        # skip outlier detection step
-        self.log.warning(
-            "Input is not a ModelContainer, \
-            does not contains >= 2 elements, \
-            or the elements contain the wrong exposure type \
-            (i.e. meta.exposure.type != 'WFI_IMAGE')."
-        )
-        if self.input_container:
+        else:
+            # if input can be parsed into a ModelContainer
+            # but is not valid then log a warning message and
+            # skip outlier detection step
+            self.log.warning(
+                "Input does not contains >= 2 elements \
+                or the elements contain the wrong exposure type \
+                (i.e. meta.exposure.type != 'WFI_IMAGE')."
+            )
+            # set meta.cal_step.outlier_detection to SKIPPED
             for model in self.input_models:
                 model.meta.cal_step["outlier_detection"] = "SKIPPED"
-        self.skip = True
+            self.skip = True
+
         return self.input_models
+
+
+

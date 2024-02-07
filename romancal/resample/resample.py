@@ -153,6 +153,9 @@ class ResampleData:
             datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
         )
 
+        # update meta.cal_step
+        self.blank_output.meta.cal_step = input_models[0].meta.cal_step
+
         # update meta data and wcs
         # note we have made this input_model_0 variable so that if
         # meta includes lazily-loaded objects, that we can successfully
