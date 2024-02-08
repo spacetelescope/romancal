@@ -129,6 +129,8 @@ refpix
 
 - Update cal_step, add suffix and add to the exposure pipeline [#890]
 
+- Enable apodized FFT interpolation by default. [#1017]
+
 resample
 --------
 

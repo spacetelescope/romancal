@@ -256,7 +256,7 @@ def interp_zeros_channel_fun(
 
 def cos_interp_reference(dataUniformTime, numFrames):
     numRows = dataUniformTime.shape[2]
-    return interp_zeros_channel_fun(
+    interp_zeros_channel_fun(
         REFERENCE_CHAN,
         getTrigInterpolationFunction(dataUniformTime),
         dataUniformTime,
@@ -507,8 +507,10 @@ def apply_correction(data, alpha, gamma, zeta):
     # Perform cosine weighted interpolation
     cos_interp_reference(dataUniformTime, dataUniformTime.shape[1])
 
-    # Perform fft interpolation (does nothing right now)
-    fft_interp_amp33(dataUniformTime, dataUniformTime.shape[1])
+    # Perform fft interpolation
+    dataUniformTime[REFERENCE_CHAN, :, :, :] = fft_interp_amp33(
+        dataUniformTime, dataUniformTime.shape[1]
+    )
 
     # Perform the correction
     data0 = apply_correction_to_data(
