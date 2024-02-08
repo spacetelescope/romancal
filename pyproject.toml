@@ -202,7 +202,11 @@ exclude = [
 ignore = [
     'E741', # ambiguous variable name
 ]
-extend-select = ['NPY']
+extend-select = [
+    'NPY',
+    'F',
+    'B',
+]
 
 [tool.ruff.extend-per-file-ignores]
 "romancal/associations/__init__.py" = ["E402"]
