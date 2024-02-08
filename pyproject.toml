@@ -193,6 +193,8 @@ force-exclude = '''
 
 [tool.ruff]
 line-length = 88
+
+[tool.ruff.lint]
 exclude = [
     'jdocs',
     '.tox',
@@ -208,7 +210,7 @@ extend-select = [
     'B',
 ]
 
-[tool.ruff.extend-per-file-ignores]
+[tool.ruff.lint.extend-per-file-ignores]
 "romancal/associations/__init__.py" = ["E402"]
 
 [tool.cibuildwheel.macos]
