@@ -1,6 +1,5 @@
 """Public common step definition for OutlierDetection processing."""
 
-import os
 from functools import partial
 from pathlib import Path
 
@@ -115,28 +114,14 @@ class OutlierDetectionStep(RomanStep):
             for model in self.input_models:
                 model.meta.cal_step["outlier_detection"] = state
                 if not self.save_intermediate_results:
-                    #  Remove unwanted files
+                    #  remove intermediate files
                     crf_path = Path(self.make_output_path(basepath=model.meta.filename))
-                    # These lines to be used when/if outlier_i2d files follow
-                    # output_dir crf_file = os.path.basename(crf_path)
-                    # outlr_path = crf_path.replace(crf_file, outlr_file)
-                    # outlr_file = model.meta.filename.replace("cal", "outlier_i2d")
-                    # blot_path = crf_path.replace("crf", "blot")
-                    # median_path = blot_path.replace("blot", "median")
-                    unwanted_files_suffixes = ("*blot.asdf", "*median.asdf")
-                    unwanted_files_list = []
-                    [
-                        [
-                            unwanted_files_list.extend([str(y)])
-                            for y in crf_path.parent.glob(suffix)
-                        ]
-                        for suffix in unwanted_files_suffixes
-                    ]
+                    intermediate_files_suffixes = ("*blot.asdf", "*median.asdf")
+                    for suffix in intermediate_files_suffixes:
+                        for filename in crf_path.parent.glob(suffix):
+                            filename.unlink()
+                            self.log.debug(f"    {filename}")
 
-                    for fle in unwanted_files_list:
-                        if os.path.isfile(fle):
-                            os.remove(fle)
-                            self.log.debug(f"    {fle}")
         else:
             # if input can be parsed into a ModelContainer
             # but is not valid then log a warning message and

@@ -87,10 +87,13 @@ class OutlierDetection:
         if pars["resample_data"]:
             # Start by creating resampled/mosaic images for
             # each group of exposures
+            in_memory = pars["in_memory"]
+            pars["in_memory"] = True
             resamp = resample.ResampleData(
                 self.input_models, single=True, blendheaders=False, **pars
             )
             drizzled_models = resamp.do_drizzle()
+            pars["in_memory"] = in_memory
 
         else:
             # for non-dithered data, the resampled image is just the original image
@@ -109,14 +112,15 @@ class OutlierDetection:
         median_model.data = Quantity(
             self.create_median(drizzled_models), unit=median_model.data.unit
         )
-        median_model_output_path = self.make_output_path(
-            basepath=median_model.meta.basic.filename.replace(
-                self.resample_suffix, ".asdf"
-            ),
-            suffix="median",
-        )
-        median_model.save(median_model_output_path)
-        log.info(f"Saved model in {median_model_output_path}")
+        if not pars.get("in_memory", True):
+            median_model_output_path = self.make_output_path(
+                basepath=median_model.meta.basic.filename.replace(
+                    self.resample_suffix, ".asdf"
+                ),
+                suffix="median",
+            )
+            median_model.save(median_model_output_path)
+            log.info(f"Saved model in {median_model_output_path}")
 
         if pars["resample_data"]:
             # Blot the median image back to recreate each input image specified
@@ -228,6 +232,7 @@ class OutlierDetection:
         """Blot resampled median image back to the detector images."""
         interp = self.outlierpars.get("interp", "linear")
         sinscl = self.outlierpars.get("sinscl", 1.0)
+        in_memory = self.outlierpars.get("in_memory", True)
 
         # Initialize container for output blot images
         blot_models = []
@@ -245,17 +250,19 @@ class OutlierDetection:
                 gwcs_blot(median_model, model, interp=interp, sinscl=sinscl),
                 unit=blotted_median.data.unit,
             )
+            if not in_memory:
+                model_path = self.make_output_path(
+                    basepath=model.meta.filename, suffix="blot"
+                )
+                blotted_median.save(model_path)
+                log.info(f"Saved model in {model_path}")
 
-            model_path = self.make_output_path(
-                basepath=model.meta.filename, suffix="blot"
-            )
-            blotted_median.save(model_path)
-            log.info(f"Saved model in {model_path}")
+                # Append model name to the ModelContainer so it is not passed in memory
+                blot_models.append(model_path)
+            else:
+                blot_models.append(blotted_median)
 
-            # Append model name to the ModelContainer so it is not passed in memory
-            blot_models.append(model_path)
-
-        return ModelContainer(blot_models, return_open=False)
+        return ModelContainer(blot_models, return_open=in_memory)
 
     def detect_outliers(self, blot_models):
         """Flag DQ array for cosmic rays in input images.
