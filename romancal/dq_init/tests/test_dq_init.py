@@ -215,7 +215,7 @@ def test_dqinit_step_interface(instrument, exptype):
     meta["instrument"]["detector"] = "WFI01"
     maskref["meta"] = meta
     maskref["data"] = np.ones(shape[1:], dtype=np.float32)
-    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint16)
+    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint32)
     maskref["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
     maskref_model = MaskRefModel(maskref)
 
@@ -264,7 +264,7 @@ def test_dqinit_refpix(instrument, exptype):
     meta["instrument"]["detector"] = "WFI01"
     maskref["meta"] = meta
     maskref["data"] = np.ones(shape[1:], dtype=np.float32)
-    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint16)
+    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint32)
     maskref["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
     maskref_model = MaskRefModel(maskref)
 
@@ -317,7 +317,7 @@ def test_dqinit_resultantdq(instrument, exptype):
     meta["instrument"]["detector"] = "WFI01"
     maskref["meta"] = meta
     maskref["data"] = np.ones(shape[1:], dtype=np.float32)
-    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint16)
+    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint32)
     maskref["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
     maskref_model = MaskRefModel(maskref)
 
