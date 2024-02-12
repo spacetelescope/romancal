@@ -1,7 +1,10 @@
 0.14.1 (unreleased)
 ==================
 
+general
+-------
 
+- Update the ``dqflags`` to use the ones stored in ``roman_datamodels`` [#1099]
 
 0.14.0 (2024-02-12)
 ===================
@@ -30,7 +33,6 @@ jump detection
 
 - Added uneven ramp-jump detection docs. [#1035]
 
-
 documentation
 -------------
 
@@ -39,7 +41,6 @@ documentation
 - Update jump step docs [#1035]
 
 - added user documentation for ``roman_static_preview`` script [#1046]
-
 
 ramp_fitting
 ------------
@@ -51,14 +52,12 @@ resample
 
 - Update resample step to handle the L3 meta data [#1057]
 
-
 general
 -------
 
 - Update elp steps to check for CRDS not returning a reference file [#1055]
 
 - Fix bug where ``compare_asdf`` failed to detect ``DataModel`` type differences. [#1066]
-
 
 0.13.0 (2023-11-28)
 ===================
