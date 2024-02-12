@@ -164,6 +164,7 @@ an [issue](https://github.com/spacetelescope/romancal/issues).
 | 0.11.0    | 23Q3_B10  | 047          | May  2023 | Release for Build 23Q3_B10 (Build 10) |
 | 0.12.0    | 23Q4_B11  | 051          | Aug 2023  | Release for Build 23Q4_B11 (Build 11) |
 | 0.13.0    | 24Q1_B12  | 052          | Nov 2023  | Release for Build 24Q1_B12 (Build 12) |
+| 0.14.0    | 24Q2_B13  | 056          | Feb 2024  | Release for Build 24Q2_B13 (Build 13) |
 
 
 Note: CRDS_CONTEXT values flagged with an asterisk in the above table are estimates
