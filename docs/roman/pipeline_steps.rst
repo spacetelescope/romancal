@@ -19,3 +19,4 @@ Pipeline Steps
    skymatch/index.rst
    outlier_detection/index.rst
    resample/index.rst
+   source_catalog/index.rst
