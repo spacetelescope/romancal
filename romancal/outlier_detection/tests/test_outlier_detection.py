@@ -182,8 +182,8 @@ def test_outlier_do_detection(tmp_path, base_image):
     outlier_step = OutlierDetectionStep()
     # set output dir for all files created by the step
     outlier_step.output_dir = tmp_path
-    # make sure resample does not save file to disk
-    outlier_step.in_memory = True
+    # make sure files are written out to disk
+    outlier_step.in_memory = False
 
     pars = {
         "weight_type": "exptime",
