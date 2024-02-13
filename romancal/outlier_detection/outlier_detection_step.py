@@ -114,13 +114,22 @@ class OutlierDetectionStep(RomanStep):
             for model in self.input_models:
                 model.meta.cal_step["outlier_detection"] = state
                 if not self.save_intermediate_results:
-                    #  remove intermediate files
-                    crf_path = Path(self.make_output_path(basepath=model.meta.filename))
-                    intermediate_files_suffixes = ("*blot.asdf", "*median.asdf")
-                    for suffix in intermediate_files_suffixes:
-                        for filename in crf_path.parent.glob(suffix):
-                            filename.unlink()
-                            self.log.debug(f"    {filename}")
+                    #  remove intermediate files found in
+                    #  make_output_path() and the local dir
+                    intermediate_files_paths = [
+                        Path(self.make_output_path()).parent,
+                        Path().cwd(),
+                    ]
+                    intermediate_files_suffixes = (
+                        "*blot.asdf",
+                        "*median.asdf",
+                        f'*{pars.get("resample_suffix")}*.asdf',
+                    )
+                    for current_path in intermediate_files_paths:
+                        for suffix in intermediate_files_suffixes:
+                            for filename in current_path.glob(suffix):
+                                filename.unlink()
+                                self.log.debug(f"    {filename}")
 
         else:
             # if input can be parsed into a ModelContainer
