@@ -1,6 +1,12 @@
 0.13.1 (unreleased)
 ===================
 
+general
+-------
+
+- Updated the ``compare_asdf`` diff reports to include descriptive information
+  about what is being compared. [#1044]
+
 tweakreg
 --------
 
