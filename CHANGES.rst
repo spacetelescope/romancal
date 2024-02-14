@@ -7,6 +7,7 @@ tweakreg
 - Allow single open Roman datamodels to be used as input to be consistent with expected behavior in ELP. [#1089]
 
 
+
 0.14.0 (2024-02-12)
 ===================
 
@@ -15,11 +16,6 @@ general
 
 - Updated the ``compare_asdf`` diff reports to include descriptive information
   about what is being compared. [#1044]
-
-tweakreg
---------
-
-- Allow single open Roman datamodels to be used as input to be consistent with expected behavior in ELP. [#1089]
 
 dq_init
 -------
