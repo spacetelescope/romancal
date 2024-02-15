@@ -558,8 +558,8 @@ def test_tweakreg_returns_modelcontainer_on_multiple_elements_as_input(
 def test_tweakreg_returns_modelcontainer_on_full_path_to_asdf_file_as_input(
     tmp_path, base_image
 ):
-    """Test that TweakReg returns an updated DataModel when processing a single open Roman datamodel as input.
-    This is the default behavior for using TweakRegStep in the ELP pipeline.."""
+    """Test that TweakReg returns a ModelContainer when a full path to an ASDF file is passed as input
+    (i.e. executing TweakReg via strun on the command line passing a full path to an ASDF file)"""
 
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
@@ -572,11 +572,12 @@ def test_tweakreg_returns_modelcontainer_on_full_path_to_asdf_file_as_input(
     assert isinstance(res, ModelContainer)
     assert res[0].meta.cal_step.tweakreg == "COMPLETE"
 
+
 def test_tweakreg_returns_datamodel_on_single_open_datamodel_as_input(
     tmp_path, base_image
 ):
     """Test that TweakReg returns an updated DataModel when processing a single open Roman datamodel as input.
-    This is the default behavior for using TweakRegStep in the ELP pipeline.."""
+    This is the default behavior for using TweakRegStep in the ELP pipeline."""
 
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")

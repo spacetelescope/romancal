@@ -134,7 +134,9 @@ class TweakRegStep(RomanStep):
             else:
                 images = (
                     ModelContainer([input])
-                    if (isinstance(input, rdm.DataModel) or str(input).endswith(".asdf"))
+                    if (
+                        isinstance(input, rdm.DataModel) or str(input).endswith(".asdf")
+                    )
                     else ModelContainer(input)
                 )
         except TypeError as e:
