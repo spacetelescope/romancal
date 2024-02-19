@@ -110,15 +110,25 @@ def wfi_model():
 #     return model
 
 
-@pytest.mark.parametrize("npixels, nsources", ((5, 2), (1000, 1), (5000, 0)))
-def test_source_catalog(wfi_model, npixels, nsources):
+@pytest.mark.parametrize(
+    "npixels, nsources, save_results",
+    (
+        (5, 2, True),
+        (1000, 1, True),
+        (5000, 0, True),
+        (5, 2, False),
+        (1000, 1, False),
+        (5000, 0, False),
+    ),
+)
+def test_source_catalog(wfi_model, npixels, nsources, save_results):
 
     step = SourceCatalogStep(
         snr_threshold=0.5,
         npixels=npixels,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
-        save_results=False,
+        save_results=save_results,
     )
     cat = step.run(wfi_model)
     if cat is None:
