@@ -2,8 +2,6 @@
 Module for the source catalog step.
 """
 
-import os
-
 import numpy as np
 from astropy.table import Table
 from crds.core.exceptions import CrdsLookupError
@@ -116,16 +114,19 @@ class SourceCatalogStep(RomanStep):
             if self.save_results:
                 cat_filepath = self.make_output_path(ext=".ecsv")
                 catalog.write(cat_filepath, format="ascii.ecsv", overwrite=True)
-                model.meta.source_catalog = os.path.basename(cat_filepath)
                 self.log.info(f"Wrote source catalog: {cat_filepath}")
 
-                segm_model = datamodels.SegmentationMapModel(segment_img.data)
-                segm_model.update(model, only="PRIMARY")
-                segm_model.meta.wcs = model.meta.wcs
-                segm_model.meta.wcsinfo = model.meta.wcsinfo
-                self.save_model(segm_model, suffix="segm")
-                model.meta.segmentation_map = segm_model.meta.filename
-                self.log.info("Wrote segmentation map: " f"{segm_model.meta.filename}")
+                segmentation_model = maker_utils.mk_datamodel(
+                    datamodels.SegmentationMapModel
+                )
+                self.save_model(segmentation_model, suffix="segm")
+
+                # TODO (@bmorris3): replace or remove
+                # model.meta.segmentation_map = segmentation_model.meta.filename
+
+                self.log.info(
+                    "Wrote segmentation map: " f"{segmentation_model.meta.filename}"
+                )
 
         # put the resulting catalog in the model:
         source_catalog_model.source_catalog = catalog
