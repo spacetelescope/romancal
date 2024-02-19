@@ -124,9 +124,13 @@ def test_source_catalog(wfi_model, npixels, nsources):
     if cat is None:
         assert nsources == 0
     else:
-        assert len(cat) == nsources
-        min_snr = np.min(cat["isophotal_flux"] / cat["isophotal_flux_err"])
-        assert min_snr >= 100
+        assert len(cat.source_catalog) == nsources
+        if nsources:
+            min_snr = np.min(
+                cat.source_catalog["isophotal_flux"]
+                / cat.source_catalog["isophotal_flux_err"]
+            )
+            assert min_snr >= 100
 
 
 # TODO (@bmorris3): replace or remove

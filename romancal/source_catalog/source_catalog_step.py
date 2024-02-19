@@ -5,8 +5,9 @@ Module for the source catalog step.
 import os
 
 import numpy as np
+from astropy.table import Table
 from crds.core.exceptions import CrdsLookupError
-from roman_datamodels import datamodels
+from roman_datamodels import datamodels, maker_utils
 
 from romancal.stpipe import RomanStep
 
@@ -88,8 +89,14 @@ class SourceCatalogStep(RomanStep):
                 model.data, self.kernel_fwhm, mask=coverage_mask
             )
             segment_img = finder(convolved_data, mask=coverage_mask)
+
+            source_catalog_model = maker_utils.mk_datamodel(
+                datamodels.SourceCatalogModel
+            )
+
             if segment_img is None:
-                return None
+                source_catalog_model.source_catalog = Table()
+                return source_catalog_model
 
             ci_star_thresholds = (self.ci1_star_threshold, self.ci2_star_threshold)
             catobj = RomanSourceCatalog(
@@ -120,4 +127,7 @@ class SourceCatalogStep(RomanStep):
                 model.meta.segmentation_map = segm_model.meta.filename
                 self.log.info("Wrote segmentation map: " f"{segm_model.meta.filename}")
 
-        return catalog
+        # put the resulting catalog in the model:
+        source_catalog_model.source_catalog = catalog
+
+        return source_catalog_model
