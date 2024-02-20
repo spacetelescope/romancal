@@ -26,6 +26,8 @@ dqflags = {
     "JUMP_DET": 4,
 }
 
+rng = np.random.default_rng(42)
+
 # Basic resultant
 #
 # The read pattern is `[[1], [2], [3], [4]]`
@@ -272,7 +274,7 @@ def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01, randomize=True):
 
     if randomize:
         gain_ref["data"] = u.Quantity(
-            (np.random.random(shape) * 0.5).astype(np.float32) * ingain,
+            (rng.random(shape) * 0.5).astype(np.float32) * ingain,
             u.electron / u.DN,
             dtype=np.float32,
         )
@@ -284,7 +286,7 @@ def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01, randomize=True):
         )
     gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
     gain_ref["err"] = u.Quantity(
-        (np.random.random(shape) * 0.05).astype(np.float32),
+        (rng.random(shape) * 0.05).astype(np.float32),
         u.electron / u.DN,
         dtype=np.float32,
     )
@@ -303,7 +305,7 @@ def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01, randomize=True):
 
     if randomize:
         rn_ref["data"] = u.Quantity(
-            (np.random.random(shape) * rnoise).astype(np.float32),
+            (rng.random(shape) * rnoise).astype(np.float32),
             u.DN,
             dtype=np.float32,
         )
