@@ -34,7 +34,6 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
         rtdata.input,
         "--rotation=0",
         f"--output_file='{rtdata.output}'",
-        "--flux_correct=false",
     ]
     RomanStep.from_cmdline(args)
     resample_out = rdm.open(rtdata.output)
