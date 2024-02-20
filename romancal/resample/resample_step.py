@@ -62,6 +62,7 @@ class ResampleStep(RomanStep):
         pixel_scale = float(default=None) # Absolute pixel scale in arcsec
         output_wcs = string(default='')  # Custom output WCS.
         single = boolean(default=False)
+        flux_correct = boolean(default=True)  # Apply flux correction
         blendheaders = boolean(default=True)
         allowed_memory = float(default=None)  # Fraction of memory to use for the combined image.
         in_memory = boolean(default=True)
@@ -132,6 +133,9 @@ class ResampleStep(RomanStep):
         kwargs["rotation"] = self.rotation
         kwargs["pscale"] = self.pixel_scale
         kwargs["pscale_ratio"] = self.pixel_scale_ratio
+
+        # Gather the rest of the parameters
+        kwargs["flux_correct"] = self.flux_correct
         kwargs["in_memory"] = self.in_memory
 
         # Call the resampling routine
