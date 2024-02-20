@@ -193,18 +193,18 @@ force-exclude = '''
 
 [tool.ruff]
 line-length = 88
-exclude = [
+lint.exclude = [
     'jdocs',
     '.tox',
     '.eggs',
     'build',
 ]
-ignore = [
+lint.ignore = [
     'E741', # ambiguous variable name
 ]
-extend-select = ['NPY']
+lint.extend-select = ['NPY']
 
-[tool.ruff.extend-per-file-ignores]
+[tool.ruff.lint.extend-per-file-ignores]
 "romancal/associations/__init__.py" = ["E402"]
 
 [tool.cibuildwheel.macos]
