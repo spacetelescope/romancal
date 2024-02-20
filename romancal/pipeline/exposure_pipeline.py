@@ -91,14 +91,17 @@ class ExposurePipeline(RomanPipeline):
 
         # Build a list of observations to process
         expos_file = []
+        n_members = 0
         if file_type == "asdf":
             expos_file = [input]
         elif file_type == "asn":
             for product in asn["products"]:
+                n_members = len(product["members"])
                 for member in product["members"]:
                     expos_file.append(member["expname"])
 
         results = []
+        tweakreg_input = ModelContainer()
         for in_file in expos_file:
             if isinstance(in_file, str):
                 input_filename = basename(in_file)
@@ -152,7 +155,13 @@ class ExposurePipeline(RomanPipeline):
                 result = self.flatfield(result)
                 result = self.photom(result)
                 result = self.source_detection(result)
-                result = self.tweakreg(result)
+                if file_type == "asn":
+                    result.meta.cal_step.tweakreg = "SKIPPED"
+                    self.suffix = "sourcedetection"
+                    tweakreg_input.append(result)
+                    log.info(
+                        f"Number of models to tweakreg:   {len(tweakreg_input._models), n_members}"
+                    )
             else:
                 log.info("Flat Field step is being SKIPPED")
                 log.info("Photom step is being SKIPPED")
@@ -172,6 +181,23 @@ class ExposurePipeline(RomanPipeline):
 
             self.output_use_model = True
             results.append(result)
+
+        # Now that all the exposures are collated, run tweakreg
+        # Note: this does not cover the case where the asn mixes imaging and spectral
+        #          observations. This should not occur on-prem
+        if result.meta.exposure.type == "WFI_IMAGE":
+            if file_type == "asdf":
+                result.meta.cal_step.tweakreg = "SKIPPED"
+                mc_result = ModelContainer(result)
+                if hasattr(ModelContainer(result), "_models") and mc_result._models:
+                    result = mc_result._models.pop()
+                else:
+                    result.meta.cal_step.tweakreg == "SKIPPED"
+
+            if file_type == "asn":
+                result = self.tweakreg(tweakreg_input)
+                for model in result._models:
+                    model.meta.cal_step.tweakreg = "SKIPPED"
 
             log.info("Roman exposure calibration pipeline ending...")
 
