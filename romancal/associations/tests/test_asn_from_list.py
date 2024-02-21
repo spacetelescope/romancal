@@ -100,15 +100,15 @@ def test_cmdline_fails():
 
 
 @pytest.mark.parametrize("format", ["json", "yaml"])
-def test_cmdline_success(format, tmpdir):
+def test_cmdline_success(format, tmp_path):
     """Create ELPP associations in different formats"""
-    path = tmpdir.join("test_asn.json")
+    path = tmp_path / "test_asn.json"
     product_name = "test_product"
     inlist = ["a", "b", "c"]
-    args = ["-o", path.strpath, "--product-name", product_name, "--format", format]
+    args = ["-o", str(path), "--product-name", product_name, "--format", format]
     args = args + inlist
     Main(args)
-    with open(path.strpath) as fp:
+    with path.open() as fp:
         asn = load_asn(fp, format=format)
     assert len(asn["products"]) == 1
     assert asn["products"][0]["name"] == product_name
@@ -117,14 +117,14 @@ def test_cmdline_success(format, tmpdir):
     assert inlist == expnames
 
 
-def test_cmdline_change_rules(tmpdir):
+def test_cmdline_change_rules(tmp_path):
     """Command line change the rule"""
     rule = "Asn_Lv2Image"
-    path = tmpdir.join("test_asn.json")
+    path = tmp_path / "test_asn.json"
     inlist = ["a", "b", "c"]
     args = [
         "-o",
-        path.strpath,
+        str(path),
         "-r",
         rule,
         "--product-name",
@@ -132,7 +132,7 @@ def test_cmdline_change_rules(tmpdir):
     ]
     args = args + inlist
     Main(args)
-    with open(path.strpath) as fp:
+    with path.open() as fp:
         asn = load_asn(fp, registry=AssociationRegistry(include_bases=True))
     # assert inlist == asn['members']
     assert inlist[0] == asn["products"][0]["members"][0]["expname"]
