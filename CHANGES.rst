@@ -1,7 +1,10 @@
 0.14.1 (unreleased)
 ==================
 
+source_catalog
+--------------
 
+- Added Source Catalog Step. [#1102]
 
 0.14.0 (2024-02-12)
 ===================

@@ -12,6 +12,7 @@ Pipeline Steps
    assign_wcs/index.rst
    flatfield/index.rst
    photom/index.rst
+   source_catalog/index.rst
    source_detection/index.rst
    tweakreg/index.rst
    resample/index.rst
