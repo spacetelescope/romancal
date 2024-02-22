@@ -1,6 +1,10 @@
 0.14.1 (unreleased)
 ==================
 
+documentation
+-------------
+
+- Fixed datamodels documentation to use correct API. [#1112]
 
 
 0.14.0 (2024-02-12)
