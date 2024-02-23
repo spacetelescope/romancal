@@ -100,6 +100,7 @@ The ASDF equivalent is
     120.05
 
 .. HINT::
+
     If you trigger an error,
     "ValueError: assignment destination is read-only"
     make sure the asdf file was opened with copy_arrays=True, or
@@ -199,8 +200,7 @@ Or you can use the asdf.info method to view the contents of the tree
 
 .. code:: python
 
-    import asdf
-    asdf.info(d_uncal)
+    >> asdf.info(d_uncal)
 
 Will print the same information as the above `d_uncal.info` command but also
 gives you enhanced capabilities. For instance you can display the first three
@@ -208,7 +208,7 @@ lines for each of the meta entries,
 
 .. code:: python
 
-    >>> asdf.info(d_uncal.meta,max_rows=(None, 3))  # doctest: +SKIP
+    >>> asdf.info(d_uncal.meta, max_rows=(None, 3))  # doctest: +SKIP
     root (DNode)
     ├─aperture (Aperture)
     │ ├─name (str): WFI_CEN
