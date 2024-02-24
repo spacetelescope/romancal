@@ -57,11 +57,11 @@ class HighLevelPipeline(RomanPipeline):
         if file_type == "asn":
             self.skymatch.suffix = "skymatch"
             result = self.skymatch(input)
-            self.outlier_detection.suffix = "outlier_detection"
-            result = self.outlier_detection(result)
-            self.resample.suffix = "i2d"
-            result = self.resample(result)
+            self.skymatch.suffix = "outlier_detection"
+            # result = self.outlier_detection(input)
+            self.skymatch.suffix = "i2d"
+            result = self.resample(input)
             if input_filename:
-                result.meta.basic.filename = input_filename
+                result.meta.filename = input_filename
 
         return result
