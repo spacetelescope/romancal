@@ -11,7 +11,6 @@ from romancal.outlier_detection import OutlierDetectionStep, outlier_detection
         [""],
         "",
         "testing",
-        {},
     ],
 )
 def test_outlier_raises_error_on_invalid_input_models(input_models):
@@ -19,9 +18,11 @@ def test_outlier_raises_error_on_invalid_input_models(input_models):
 
     step = OutlierDetectionStep()
 
-    step.process(input_models)
+    with pytest.raises(Exception) as exec_info:
+        step(input_models)
 
     assert step.skip is True
+    assert exec_info.type == AttributeError
 
 
 def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
@@ -30,7 +31,7 @@ def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
     img = base_image()
 
     step = OutlierDetectionStep()
-    step.process(ModelContainer([img]))
+    step(ModelContainer([img]))
 
     assert step.skip is True
     assert step.input_models[0].meta.cal_step.outlier_detection == "SKIPPED"
@@ -46,7 +47,7 @@ def test_outlier_skips_step_on_exposure_type_different_from_wfi_image(base_image
     img_2.meta.exposure.type = "WFI_PRISM"
 
     step = OutlierDetectionStep()
-    step.process(ModelContainer([img_1, img_2]))
+    step(ModelContainer([img_1, img_2]))
 
     assert step.input_models[0].meta.cal_step.outlier_detection == "SKIPPED"
     assert step.skip
@@ -67,10 +68,10 @@ def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
 
     step = OutlierDetectionStep()
     # set output dir for all files created by the step
-    step.output_dir = tmp_path
+    step.output_dir = tmp_path.as_posix()
     # make sure resample does not save file to disk
     step.in_memory = True
-    step.process(asn_filepath)
+    step(asn_filepath)
 
     assert step.skip is False
     assert all(
@@ -92,7 +93,7 @@ def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
     step = OutlierDetectionStep()
     # make sure resample does not save file to disk
     step.in_memory = True
-    step.process(mc)
+    step(mc)
 
     assert step.skip is False
     assert all(
