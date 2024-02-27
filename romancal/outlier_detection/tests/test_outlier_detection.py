@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import pytest
 
 from romancal.datamodels import ModelContainer
@@ -161,7 +164,7 @@ def test_outlier_do_detection(tmp_path, base_image):
 
     outlier_step = OutlierDetectionStep()
     # set output dir for all files created by the step
-    outlier_step.output_dir = tmp_path
+    outlier_step.output_dir = tmp_path.as_posix()
     # make sure files are written out to disk
     outlier_step.in_memory = False
 
@@ -203,3 +206,8 @@ def test_outlier_do_detection(tmp_path, base_image):
     step.do_detection()
 
     assert all(x.exists() for x in outlier_files_path)
+
+    # delete temporary resample file
+    for x in (Path(os.getcwd())).glob("*_outlier*.asdf"):
+        if x.exists():
+            x.unlink()
