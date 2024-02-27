@@ -385,7 +385,9 @@ def flag_cr(
     count_existing = np.count_nonzero(sci_image.dq & DO_NOT_USE)
 
     # Update the DQ array values in the input image but preserve datatype.
-    sci_image.dq = np.bitwise_or(sci_image.dq, cr_mask * (DO_NOT_USE | OUTLIER)).astype(np.uint32)
+    sci_image.dq = np.bitwise_or(sci_image.dq, cr_mask * (DO_NOT_USE | OUTLIER)).astype(
+        np.uint32
+    )
 
     # Report number (and percent) of new DO_NOT_USE pixels found
     count_outlier = np.count_nonzero(sci_image.dq & DO_NOT_USE)
