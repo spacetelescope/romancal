@@ -52,27 +52,6 @@ def test_outlier_skips_step_on_exposure_type_different_from_wfi_image(base_image
     assert step.skip
 
 
-def test_outlier_valid_input_datamodels(tmp_path, base_image):
-    """
-    Test function for outlier detection with valid input data models.
-    """
-    img_1 = base_image()
-    img_1.meta.filename = "img_1.asdf"
-    img_2 = base_image()
-    img_2.meta.filename = "img_2.asdf"
-
-    step = OutlierDetectionStep()
-    # set output dir for all files created by the step
-    step.output_dir = tmp_path
-    # make sure resample does not save file to disk
-    step.in_memory = True
-    step.process(ModelContainer([img_1, img_2]))
-
-    assert step.skip is False
-    assert img_1.meta.cal_step.outlier_detection == "COMPLETE"
-    assert img_2.meta.cal_step.outlier_detection == "COMPLETE"
-
-
 def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
     """
     Test that OutlierDetection runs with valid ASN file as input.
@@ -91,7 +70,7 @@ def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
     step.output_dir = tmp_path
     # make sure resample does not save file to disk
     step.in_memory = True
-    step.process(ModelContainer(asn_filepath))
+    step.process(asn_filepath)
 
     assert step.skip is False
     assert all(
