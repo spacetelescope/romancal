@@ -12,7 +12,7 @@ classifiers = [
     'Programming Language :: Python :: 3',
 ]
 dependencies = [
-    'asdf >=2.15.0',
+    'asdf >=3.1.0',
     'asdf-astropy >=0.5.0',
     'astropy >=5.3.0',
     'crds >=11.16.16',
@@ -138,7 +138,7 @@ addopts = [
     '--show-capture=no',
     '--doctest-ignore-import-errors',
     '--color=yes',
-    # '-p no:legacypath',  # disables the legacy tmpdir fixture, when ASDF > 3.0.1 is required this can be uncommented
+    '-p no:legacypath',
 ]
 markers = [
     'soctests: run only the SOC tests in the suite.',
