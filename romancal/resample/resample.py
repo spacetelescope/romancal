@@ -289,9 +289,7 @@ class ResampleData:
         log.info("Resampling science data")
         for img in self.input_models:
 
-            # Convert to flux
-            if self.flux_correct:
-                apply_flux_correction(img)
+            # TODO: convert to flux here?
 
             # Setup the weights.
             inwht = resample_utils.build_driz_weight(
@@ -688,41 +686,40 @@ class ResampleData:
         )
 
 
-def apply_flux_correction(model):
-    """Apply the flux correction
-
-    The input model is expected to be Roman ImageModel-like.
-    The photometry information is taken from `meta.photometry`.
-
-    The image is converted in-place.
+def l2_into_l3_meta(l3_meta, l2_meta):
+    """Update the level 3 meta with info from the level 2 meta
 
     Parameters
     ----------
-    model : `ImageModel`
-        The model to apply the flux correction to. The model is modified in-place.
+    l3_meta : dict
+        The meta to update. This is updated in-place
+
+    l2_meta : stnode
+        The Level 2-like meta to pull from
+
+    Notes
+    -----
+    The list of meta that is pulled from the Level 2 meta into the Level 3 meta is as follows:
+    basic.visit: observation.visit
+    basic.segment: observation.segment
+    basic.pass: observation.pass
+    basic.program: observation.program
+    basic.survey: obervation.survey
+    basic.optical_element: optical_element
+    basic.instrument: instrument.name
+    basic.telescope: telescope
+    program: program
     """
-    # Define the various variance arrays
-    VARIANCES = ('var_rnoise', 'var_poisson', 'var_flat')
-
-    # Check for units. Must be election/second. Otherwise, it is unknown how to
-    # convert.
-    if model.data.unit != u.electron / u.s:
-        log.debug('Input data is not in units of e/s. Flux correction will not be done.')
-        log.debug('Input data units are %s', model.data.unit)
-        return
-
-    # Apply the correction
-    log.debug('Flux correction being applied')
-    c_mj = model.meta.photometry.conversion_megajanskys
-    data = model.data * c_mj
-    variances = dict()
-    for variance in VARIANCES:
-        variances[variance] = getattr(model, variance) * c_mj**2
-
-    # Need to fake the units back to e/s for model validation.
-    model.data = u.Quantity(data.value, unit=u.electron / u.s)
-    for variance in VARIANCES:
-        setattr(model, variance, u.Quantity(variances[variance].value, unit=u.electron**2 / u.s**2))
+    l3_meta.basic.visit = l2_meta.observation.visit
+    l3_meta.basic.segment = l2_meta.observation.segment
+    l3_meta.basic["pass"] = l2_meta.observation["pass"]
+    l3_meta.basic.program = l2_meta.observation.program
+    l3_meta.basic.survey = l2_meta.observation.survey
+    l3_meta.basic.optical_element = l2_meta.instrument.optical_element
+    l3_meta.basic.instrument = l2_meta.instrument.name
+    l3_meta.basic.telescope = l2_meta.telescope
+    l3_meta.coordinates = l2_meta.coordinates
+    l3_meta.program = l2_meta.program
 
 
 def gwcs_into_l3(model, wcsinfo):
@@ -770,39 +767,3 @@ def gwcs_into_l3(model, wcsinfo):
     # l3_wcsinfo.dec_corn4 = from bounding box
     # l3_wcsinfo.orientat = ???
     # l3_wcsinfo.orientat_local = ???
-
-
-def l2_into_l3_meta(l3_meta, l2_meta):
-    """Update the level 3 meta with info from the level 2 meta
-
-    Parameters
-    ----------
-    l3_meta : dict
-        The meta to update. This is updated in-place
-
-    l2_meta : stnode
-        The Level 2-like meta to pull from
-
-    Notes
-    -----
-    The list of meta that is pulled from the Level 2 meta into the Level 3 meta is as follows:
-    basic.visit: observation.visit
-    basic.segment: observation.segment
-    basic.pass: observation.pass
-    basic.program: observation.program
-    basic.survey: obervation.survey
-    basic.optical_element: optical_element
-    basic.instrument: instrument.name
-    basic.telescope: telescope
-    program: program
-    """
-    l3_meta.basic.visit = l2_meta.observation.visit
-    l3_meta.basic.segment = l2_meta.observation.segment
-    l3_meta.basic["pass"] = l2_meta.observation["pass"]
-    l3_meta.basic.program = l2_meta.observation.program
-    l3_meta.basic.survey = l2_meta.observation.survey
-    l3_meta.basic.optical_element = l2_meta.instrument.optical_element
-    l3_meta.basic.instrument = l2_meta.instrument.name
-    l3_meta.basic.telescope = l2_meta.telescope
-    l3_meta.coordinates = l2_meta.coordinates
-    l3_meta.program = l2_meta.program
