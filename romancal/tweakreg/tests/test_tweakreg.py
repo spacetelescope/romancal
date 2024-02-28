@@ -484,8 +484,9 @@ def base_image():
 def test_tweakreg_raises_error_on_invalid_input(input, error_type):
     # sourcery skip: list-literal
     """Test that TweakReg raises an error when an invalid input is provided."""
+    step = trs.TweakRegStep()
     with pytest.raises(Exception) as exec_info:
-        trs.TweakRegStep.call(input)
+        step(input)
 
     assert type(exec_info.value) in error_type
 
@@ -495,8 +496,9 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     Test that TweakReg raises an AttributeError if meta.tweakreg_catalog is missing.
     """
     img = base_image()
+    step = trs.TweakRegStep()
     with pytest.raises(Exception) as exec_info:
-        trs.TweakRegStep.call([img])
+        step([img])
 
     assert type(exec_info.value) == AttributeError
 
@@ -531,7 +533,7 @@ def test_tweakreg_returns_modelcontainer_on_multiple_elements_as_input(
     # test four different inputs:
     # 1 - list of strings containing the path to ASDF files
     tmp_path_str = tmp_path.as_posix()
-    res_1 = step.process(
+    res_1 = step(
         [
             f"{tmp_path_str}/img_1.asdf",
             f"{tmp_path_str}/img_2.asdf",
@@ -541,17 +543,17 @@ def test_tweakreg_returns_modelcontainer_on_multiple_elements_as_input(
     clean_result(res_1)
 
     # 2 - list of pathlib.Path objects containing the path to ASDF files
-    res_2 = step.process([tmp_path / "img_1.asdf", tmp_path / "img_2.asdf"])
+    res_2 = step([tmp_path / "img_1.asdf", tmp_path / "img_2.asdf"])
     assert type(res_2) == ModelContainer
     clean_result(res_2)
 
     # 3 - list of DataModels
-    res_3 = step.process([img_1, img_2])
+    res_3 = step([img_1, img_2])
     assert type(res_3) == ModelContainer
     clean_result(res_3)
 
     # 4 - string containing the full path to an ASN file
-    res_4 = step.process(asn_filepath)
+    res_4 = step(asn_filepath)
     assert type(res_4) == ModelContainer
 
 
@@ -569,7 +571,7 @@ def test_tweakreg_returns_modelcontainer_on_full_path_to_asdf_file_as_input(
 
     step = trs.TweakRegStep()
 
-    res = step.process(full_path_to_output)
+    res = step(full_path_to_output)
     assert isinstance(res, ModelContainer)
     assert res[0].meta.cal_step.tweakreg == "COMPLETE"
 
@@ -585,7 +587,7 @@ def test_tweakreg_returns_datamodel_on_single_open_datamodel_as_input(
 
     step = trs.TweakRegStep()
 
-    res = step.process(img)
+    res = step(img)
     assert res.meta.cal_step.tweakreg == "COMPLETE"
     assert isinstance(res, rdm.DataModel)
 
@@ -720,7 +722,7 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     step.abs_refcat = abs_refcat
     step.catalog_path = str(tmp_path)
 
-    step.process([img])
+    step([img])
 
     assert os.path.exists(tmp_path / abs_refcat_filename)
     # clean up
@@ -744,7 +746,7 @@ def test_tweakreg_defaults_to_valid_abs_refcat(tmp_path, abs_refcat, request):
     step.abs_refcat = abs_refcat
     step.catalog_path = str(tmp_path)
 
-    step.process([img])
+    step([img])
 
     assert os.path.exists(tmp_path / abs_refcat_filename)
     # clean up
@@ -762,7 +764,7 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
     step.abs_refcat = "my_ref_cat"
 
     with pytest.raises(Exception) as exec_info:
-        step.process([img])
+        step([img])
 
     assert type(exec_info.value) == ValueError
 
@@ -804,7 +806,7 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
     step.catalog_format = catalog_format
     step.catfile = catfile
 
-    res = step.process(asn_filepath)
+    res = step(asn_filepath)
 
     assert type(res) == ModelContainer
 
@@ -857,7 +859,7 @@ def test_tweakreg_use_custom_catalogs(tmp_path, catalog_format, base_image):
     step.catalog_format = catalog_format
     step.catfile = catfile
 
-    step.process([img1, img2, img3])
+    step([img1, img2, img3])
 
     assert all(img1.meta.tweakreg_catalog) == all(
         table.Table.read(str(tmp_path / "ref_catalog_1"), format=catalog_format)
@@ -918,7 +920,7 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
 
     step = trs.TweakRegStep()
     step.abs_minobj = 3
-    step.process([img])
+    step([img])
 
     # get world coords for Gaia sources using "wrong WCS"
     original_ref_source = [
@@ -988,7 +990,7 @@ def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
 
     step = trs.TweakRegStep()
 
-    res = step.process(asn_filepath)
+    res = step(asn_filepath)
     assert type(res) == ModelContainer
 
     assert hasattr(res[0].meta, "asn")
@@ -1027,7 +1029,7 @@ def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
     step = trs.TweakRegStep()
 
     monkeypatch.setattr("requests.get", MockConnectionError)
-    res = step.process([img])
+    res = step([img])
 
     assert type(res) == ModelContainer
     assert len(res) == 1
@@ -1044,7 +1046,7 @@ def test_fit_results_in_meta(tmp_path, base_image):
     add_tweakreg_catalog_attribute(tmp_path, img)
 
     step = trs.TweakRegStep()
-    res = step.process([img])
+    res = step([img])
 
     assert type(res) == ModelContainer
     assert [
@@ -1064,7 +1066,7 @@ def test_tweakreg_returns_skipped_for_one_file(tmp_path, base_image):
     # disable alignment to absolute reference catalog
     trs.ALIGN_TO_ABS_REFCAT = False
     step = trs.TweakRegStep()
-    res = step.process([img])
+    res = step([img])
 
     assert all(x.meta.cal_step.tweakreg == "SKIPPED" for x in res)
 
@@ -1086,7 +1088,7 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     img2.meta["filename"] = "file2.asdf"
 
     step = trs.TweakRegStep()
-    res = step.process([img1, img2])
+    res = step([img1, img2])
 
     assert len(res.models_grouped) == 2
     all(
@@ -1113,7 +1115,7 @@ def test_tweakreg_multiple_groups_valueerror(tmp_path, base_image):
 
     trs.ALIGN_TO_ABS_REFCAT = False
     step = trs.TweakRegStep()
-    res = step.process([img1, img2])
+    res = step([img1, img2])
 
     assert step.skip is True
     assert all(x.meta.cal_step.tweakreg == "SKIPPED" for x in res)
