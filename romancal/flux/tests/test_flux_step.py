@@ -23,12 +23,21 @@ def test_attributes(flux_step, attr, factor):
     """Test that the attribute has been scaled by the right factor"""
     original, result = flux_step
 
-    c_mj = original.meta.photometry.conversion_megajanskys
-    scale = c_mj**factor
-    original_value = getattr(original, attr)
-    result_value = getattr(result, attr)
+    # Handle difference between just a single image and a list.
+    if isinstance(original, datamodels.ImageModel):
+        original_list = [original]
+        result_list = [result]
+    else:
+        original_list = original
+        result_list = result
 
-    assert np.allclose(original_value * scale, result_value)
+    for original_model, result_model in zip(original_list, result_list):
+        c_mj = original_model.meta.photometry.conversion_megajanskys
+        scale = c_mj**factor
+        original_value = getattr(original_model, attr)
+        result_value = getattr(result_model, attr)
+
+        assert np.allclose(original_value * scale, result_value)
 
 
 # ########

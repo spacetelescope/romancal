@@ -3,6 +3,8 @@ import logging
 
 import astropy.units as u
 
+from roman_datamodels import datamodels
+
 from ..datamodels import ModelContainer
 from ..stpipe import RomanStep
 
@@ -43,9 +45,34 @@ class FluxStep(RomanStep):
     reference_file_types = []
 
     def process(self, input):
-        apply_flux_correction(input)
+        if isinstance(input, datamodels.DataModel):
+            input_models = ModelContainer([input])
+            single_model = True
+        elif isinstance(input, str):
+            # either a single asdf filename or an association filename
+            try:
+                # association filename
+                input_models = ModelContainer(input)
+                single_model = False
+            except Exception:
+                # single ASDF filename
+                input_models = ModelContainer([input])
+                single_model = True
+        elif isinstance(input, ModelContainer):
+            input_models = input
+            single_model = False
+        else:
+            raise TypeError(
+                "Input must be an ASN filename, a ModelContainer, "
+                "a single ASDF filename, or a single Roman DataModel."
+            )
 
-        return input
+        for model in input_models:
+            apply_flux_correction(model)
+
+        if single_model:
+            return input_models[0]
+        return input_models
 
 
 def apply_flux_correction(model):
