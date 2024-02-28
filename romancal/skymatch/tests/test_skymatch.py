@@ -8,14 +8,11 @@ from astropy.modeling import models
 from gwcs import coordinate_frames as cf
 from gwcs import wcs as gwcs_wcs
 from roman_datamodels.datamodels import ImageModel
+from roman_datamodels.dqflags import pixel
 from roman_datamodels.maker_utils import mk_level2_image
 
 from romancal.datamodels.container import ModelContainer
-from romancal.lib import dqflags
 from romancal.skymatch import SkyMatchStep
-
-DO_NOT_USE = dqflags.pixel["DO_NOT_USE"]
-SATURATED = dqflags.pixel["SATURATED"]
 
 
 def mk_gwcs(shape, sky_offset=[0, 0] * u.arcsec, rotate=0 * u.deg):
@@ -132,10 +129,10 @@ def _add_bad_pixels(im, sat_val, dont_use_val):
     im.data[-5:, -5:] = sat_val * im_unit
     im.data[:5, -5:] = sat_val * im_unit
 
-    im.dq[:5, :5] = SATURATED
-    im.dq[-5:, :5] = SATURATED
-    im.dq[-5:, -5:] = SATURATED
-    im.dq[:5, -5:] = SATURATED
+    im.dq[:5, :5] = pixel.SATURATED
+    im.dq[-5:, :5] = pixel.SATURATED
+    im.dq[-5:, -5:] = pixel.SATURATED
+    im.dq[:5, -5:] = pixel.SATURATED
 
     mask[:5, :5] = False
     mask[-5:, :5] = False
@@ -148,7 +145,7 @@ def _add_bad_pixels(im, sat_val, dont_use_val):
 
     # center
     im.data[cx : cx + 10, cy : cy + 10] = dont_use_val * im_unit
-    im.dq[cx : cx + 10, cy : cy + 10] = DO_NOT_USE
+    im.dq[cx : cx + 10, cy : cy + 10] = pixel.DO_NOT_USE
     mask[cx : cx + 10, cy : cy + 10] = False
 
     return im, mask

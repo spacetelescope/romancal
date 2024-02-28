@@ -7,7 +7,6 @@ from astropy.time import Time
 from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import GainRefModel, RampModel, ReadnoiseRefModel
 
-from romancal.lib import dqflags
 from romancal.ramp_fitting import RampFitStep
 
 # Read Time in seconds
@@ -15,16 +14,6 @@ from romancal.ramp_fitting import RampFitStep
 #   backed into code. Will need to refactor to consider the more general case.
 #   Used to deconstruct the MultiAccum tables into integration times.
 ROMAN_READ_TIME = 3.04
-
-DO_NOT_USE = dqflags.group["DO_NOT_USE"]
-JUMP_DET = dqflags.group["JUMP_DET"]
-SATURATED = dqflags.group["SATURATED"]
-
-dqflags = {
-    "DO_NOT_USE": 1,
-    "SATURATED": 2,
-    "JUMP_DET": 4,
-}
 
 rng = np.random.default_rng(42)
 

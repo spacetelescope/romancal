@@ -8,9 +8,9 @@ import roman_datamodels as rdm
 from gwcs.wcstools import grid_from_bounding_box
 from metrics_logger.decorators import metrics_logger
 from numpy.testing import assert_allclose
+from roman_datamodels.dqflags import pixel
 
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
-from romancal.lib.dqflags import pixel
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
 from .regtestdata import compare_asdf
@@ -104,9 +104,9 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     pipeline.log.info(
         "DMS361: Testing that jump detection detected jumps in uneven ramp in "
         "Level 2 image output......."
-        + passfail(uneven & np.any(model.dq & pixel["JUMP_DET"]))
+        + passfail(uneven & np.any(model.dq & pixel.JUMP_DET))
     )
-    assert uneven & np.any(model.dq & pixel["JUMP_DET"])
+    assert uneven & np.any(model.dq & pixel.JUMP_DET)
     pipeline.log.info(
         "Status of the step:             linearity     "
         + str(model.meta.cal_step.linearity)
@@ -347,9 +347,9 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     pipeline.log.info(
         "DMS365: Testing that jump detection detected jumps in uneven ramp in "
         "Level 2 image output......."
-        + passfail(uneven & np.any(model.dq & pixel["JUMP_DET"]))
+        + passfail(uneven & np.any(model.dq & pixel.JUMP_DET))
     )
-    assert uneven & np.any(model.dq & pixel["JUMP_DET"])
+    assert uneven & np.any(model.dq & pixel.JUMP_DET)
     pipeline.log.info(
         "Status of the step:             linearity     "
         + str(model.meta.cal_step.assign_wcs)

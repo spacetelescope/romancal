@@ -21,6 +21,7 @@ def dependencies(package, exclude: [str]):
 MODULES = dependencies(romancal, exclude=["test", "time", "static_preview"])
 
 
+@pytest.mark.filterwarnings("ignore:romancal.dqflags is deprecated.*")
 @pytest.mark.parametrize(
     "module_name",
     MODULES,
