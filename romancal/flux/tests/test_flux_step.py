@@ -6,6 +6,7 @@ import pytest
 import astropy.units as u
 
 from roman_datamodels import datamodels, maker_utils
+from romancal.datamodels.container import ModelContainer
 from romancal.flux import FluxStep
 
 
@@ -33,8 +34,9 @@ def test_attributes(flux_step, attr, factor):
 # ########
 # Fixtures
 # ########
-@pytest.fixture(scope='module')
-def flux_step(input):
+@pytest.fixture(scope='module',
+                params=['input_imagemodel'])
+def flux_step(request):
     """Execute FluxStep on given input
 
     Parameters
@@ -45,6 +47,7 @@ def flux_step(input):
     -------
     original, result : DataModel or ModelContainer, DataModel or ModelContainer
     """
+    input = request.getfixturevalue(request.param)
 
     # Copy input because flux operates in-place
     original = input.copy()
@@ -76,8 +79,19 @@ def image_model():
     return image_model
 
 @pytest.fixture(scope='module')
-def input(image_model):
-    """Setup inputs to the FluxStep"""
+def input_imagemodel(image_model):
+    """Provide a single ImageModel"""
 
     # First just setup the basic model
-    yield image_model
+    return image_model.copy()
+
+
+@pytest.fixture(scope='module')
+def input_modelcontainer(image_model):
+    """Provide a ModelContainer"""
+    # Create and return a ModelContainer
+    image_model1 = image_model.copy()
+    image_model2 = image_model.copy()
+    image_model2.meta.photometry.conversion_megajanskys = 0.5 * u.MJy / u.sr
+    container = ModelContainer([image_model1, image_model2])
+    return container
