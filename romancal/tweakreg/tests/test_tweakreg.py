@@ -503,22 +503,44 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     assert type(exec_info.value) == AttributeError
 
 
-def test_tweakreg_returns_modelcontainer_on_multiple_elements_as_input(
+def test_tweakreg_returns_modelcontainer_on_roman_datamodel_as_input(
     tmp_path, base_image
 ):
-    """Test that TweakReg always returns a ModelContainer when processing multiple elements as input."""
+    """Test that TweakReg always returns a ModelContainer when processing an open Roman DataModel as input."""
 
-    def clean_result(result):
-        """
-        Remove meta.tweakreg_catalog from 'tweaked' file.
+    img = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
 
-        Parameters
-        ----------
-        result : ModelContainer
-            A ModelContainer with the results from TweakRegStep.
-        """
-        for img in result:
-            del img.meta["tweakreg_catalog"]
+    test_input = img
+
+    step = trs.TweakRegStep()
+
+    res = step(test_input)
+    assert res[0].meta.cal_step.tweakreg == "COMPLETE"
+    assert isinstance(res, ModelContainer)
+
+
+def test_tweakreg_returns_modelcontainer_on_modelcontainer_as_input(
+    tmp_path, base_image
+):
+    """Test that TweakReg always returns a ModelContainer when processing a ModelContainer as input."""
+
+    img = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
+
+    test_input = ModelContainer([img])
+
+    step = trs.TweakRegStep()
+
+    res = step(test_input)
+    assert res[0].meta.cal_step.tweakreg == "COMPLETE"
+    assert isinstance(res, ModelContainer)
+
+
+def test_tweakreg_returns_modelcontainer_on_association_file_as_input(
+    tmp_path, base_image
+):
+    """Test that TweakReg always returns a ModelContainer when processing an association file as input."""
 
     img_1 = base_image(shift_1=1000, shift_2=1000)
     img_2 = base_image(shift_1=1000, shift_2=1000)
@@ -528,68 +550,58 @@ def test_tweakreg_returns_modelcontainer_on_multiple_elements_as_input(
     img_2.save(tmp_path / "img_2.asdf")
     asn_filepath = create_asn_file(tmp_path)
 
+    test_input = asn_filepath
+
     step = trs.TweakRegStep()
 
-    # test four different inputs:
-    # 1 - list of strings containing the path to ASDF files
+    res = step(test_input)
+    assert all([x.meta.cal_step.tweakreg == "COMPLETE" for x in res])
+    assert isinstance(res, ModelContainer)
+
+
+def test_tweakreg_returns_modelcontainer_on_list_of_asdf_file_as_input(
+    tmp_path, base_image
+):
+    """Test that TweakReg always returns a ModelContainer when processing a list of ASDF files as input."""
+
+    img_1 = base_image(shift_1=1000, shift_2=1000)
+    img_2 = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
+    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
+    img_1.save(tmp_path / "img_1.asdf")
+    img_2.save(tmp_path / "img_2.asdf")
+
     tmp_path_str = tmp_path.as_posix()
-    res_1 = step(
-        [
+    test_input = [
             f"{tmp_path_str}/img_1.asdf",
             f"{tmp_path_str}/img_2.asdf",
         ]
-    )
-    assert type(res_1) == ModelContainer
-    clean_result(res_1)
-
-    # 2 - list of pathlib.Path objects containing the path to ASDF files
-    res_2 = step([tmp_path / "img_1.asdf", tmp_path / "img_2.asdf"])
-    assert type(res_2) == ModelContainer
-    clean_result(res_2)
-
-    # 3 - list of DataModels
-    res_3 = step([img_1, img_2])
-    assert type(res_3) == ModelContainer
-    clean_result(res_3)
-
-    # 4 - string containing the full path to an ASN file
-    res_4 = step(asn_filepath)
-    assert type(res_4) == ModelContainer
-
-
-def test_tweakreg_returns_modelcontainer_on_full_path_to_asdf_file_as_input(
-    tmp_path, base_image
-):
-    """Test that TweakReg returns a ModelContainer when a full path to an ASDF file is passed as input
-    (i.e. executing TweakReg via strun on the command line passing a full path to an ASDF file)
-    """
-
-    img = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
-    full_path_to_output = tmp_path / "img_1.asdf"
-    img.save(full_path_to_output)
 
     step = trs.TweakRegStep()
 
-    res = step(full_path_to_output)
+    res = step(test_input)
+    assert all([x.meta.cal_step.tweakreg == "COMPLETE" for x in res])
     assert isinstance(res, ModelContainer)
-    assert res[0].meta.cal_step.tweakreg == "COMPLETE"
 
 
-def test_tweakreg_returns_datamodel_on_single_open_datamodel_as_input(
+def test_tweakreg_returns_modelcontainer_on_list_of_roman_datamodels_as_input(
     tmp_path, base_image
 ):
-    """Test that TweakReg returns an updated DataModel when processing a single open Roman datamodel as input.
-    This is the default behavior for using TweakRegStep in the ELP pipeline."""
+    """Test that TweakReg always returns a ModelContainer when processing a list of open Roman datamodels as input."""
+    img_1 = base_image(shift_1=1000, shift_2=1000)
+    img_2 = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
+    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
+    img_1.save(tmp_path / "img_1.asdf")
+    img_2.save(tmp_path / "img_2.asdf")
 
-    img = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
+    test_input = [img_1, img_2]
 
     step = trs.TweakRegStep()
 
-    res = step(img)
-    assert res.meta.cal_step.tweakreg == "COMPLETE"
-    assert isinstance(res, rdm.DataModel)
+    res = step(test_input)
+    assert all([x.meta.cal_step.tweakreg == "COMPLETE" for x in res])
+    assert isinstance(res, ModelContainer)
 
 
 def test_tweakreg_updates_cal_step(tmp_path, base_image):
