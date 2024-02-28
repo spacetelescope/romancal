@@ -34,25 +34,22 @@ class ResampleData:
          user-provided WCS object can be used instead.
       3. Updates output data model with output arrays from drizzle, including
          a record of metadata from all input models.
-      4. If specified, flux conversion is performed on the input data using parameters
-         found in the input meta block `photometry`.
     """
 
     def __init__(
-            self,
-            input_models,
-            output=None,
-            single=False,
-            blendheaders=True,
-            pixfrac=1.0,
-            kernel="square",
-            fillval="INDEF",
-            wht_type="ivm",
-            good_bits=0,
-            pscale_ratio=1.0,
-            pscale=None,
-            flux_correct=True,
-            **kwargs,
+        self,
+        input_models,
+        output=None,
+        single=False,
+        blendheaders=True,
+        pixfrac=1.0,
+        kernel="square",
+        fillval="INDEF",
+        wht_type="ivm",
+        good_bits=0,
+        pscale_ratio=1.0,
+        pscale=None,
+        **kwargs,
     ):
         """
         Parameters
@@ -96,7 +93,6 @@ class ResampleData:
         self.fillval = fillval
         self.weight_type = wht_type
         self.good_bits = good_bits
-        self.flux_correct = flux_correct
         self.in_memory = kwargs.get("in_memory", True)
 
         log.info(f"Driz parameter kernel: {self.kernel}")
@@ -191,7 +187,6 @@ class ResampleData:
         for exposure in self.input_models.models_grouped:
             output_model = self.blank_output
             output_model.meta["resample"] = maker_utils.mk_resample()
-
             # Determine output file type from input exposure filenames
             # Use this for defining the output filename
             indx = exposure[0].meta.filename.rfind(".")
@@ -213,9 +208,6 @@ class ResampleData:
             output_list = []
             for img in exposure:
                 img = datamodels.open(img)
-
-                # TODO: Convert to flux here
-
                 # TODO: should weight_type=None here?
                 inwht = resample_utils.build_driz_weight(
                     img, weight_type=self.weight_type, good_bits=self.good_bits
@@ -288,15 +280,9 @@ class ResampleData:
 
         log.info("Resampling science data")
         for img in self.input_models:
-
-            # TODO: convert to flux here?
-
-            # Setup the weights.
             inwht = resample_utils.build_driz_weight(
                 img, weight_type=self.weight_type, good_bits=self.good_bits
             )
-
-            # TODO: This will never happen for roman.
             if not hasattr(img.meta, "background"):
                 self._create_background_attribute(img)
             blevel = img.meta.background.level
