@@ -3,24 +3,26 @@ Examples
 In the examples below, `img` is either a string with the filename of a Roman `ASDF` file
 or a Roman datamodel `ImageModel`.
 
-#. To run TweakReg on a python session on an ASDF file or a Roman datamodel with the
-default parameters:
+#. To run TweakReg in a Python session with the default parameters:
 
         .. code-block:: python
 
                 from romancal.tweakreg.tweakreg_step import TweakRegStep
                 step = TweakRegStep()
-                step.process([img])
+                step([img])
 
         .. note::
-            If the input is a single open Roman ``DataModel``,
-            either ``step.process([img])`` or ``step.process(img)`` will work,
-            but the returned object will be different. In the first case, it
-            will be a ``ModelContainer`` whereas for the latter, it will be a
-            ``DataModel``. Such behavior allows ``TweakReg`` to be either used
-            as a standalone class for processing ASN files or a list of files
-            or to be passed on to ``strun`` as an argument, as well as to be
-            used in the ELP pipeline without causing any issues.
+            If the input is a single Roman ``DataModel``,
+            either ``step([img])`` or ``step(img)`` will work. For multiple elements as input,
+            they must be passed in as either a list or a ModelContainer.
+
+#. To run TweakReg in a Python session on an association file with the default parameters:
+
+        .. code-block:: python
+
+                from romancal.tweakreg.tweakreg_step import TweakRegStep
+                step = TweakRegStep()
+                step("asn_file.json")
 
 #. To run TweakReg on a Roman's exposure with default astrometric parameters and save
    the absolute catalog data:
