@@ -1,6 +1,9 @@
 """Unit-like tests related to FluxStep"""
 import numpy as np
+from numpy.random import poisson
 import pytest
+
+import astropy.units as u
 
 from roman_datamodels import datamodels, maker_utils
 from romancal.flux import FluxStep
@@ -24,7 +27,7 @@ def test_attributes(flux_step, attr, factor):
     original_value = getattr(original, attr)
     result_value = getattr(result, attr)
 
-    assert np.allclose(original_value.value * scale, result_value.value)
+    assert np.allclose(original_value.value * scale.value, result_value.value)
 
 
 # ########
@@ -56,7 +59,19 @@ def flux_step(input):
 @pytest.fixture(scope='module')
 def image_model():
     """Product a basic ImageModel"""
-    image_model = maker_utils.mk_datamodel(datamodels.ImageModel, shape=(10, 10))
+    # Create a random image and specify a conversion.
+    rng = np.random.default_rng()
+    shape = (10, 10)
+    image_model = maker_utils.mk_datamodel(datamodels.ImageModel, shape=shape)
+    image_model.data = u.Quantity(
+        rng.poisson(2.5, size=shape).astype(np.float32), u.electron / u.s, dtype=np.float32)
+    image_model.var_rnoise = u.Quantity(
+        rng.normal(1, 0.05, size=shape).astype(np.float32), u.electron**2 / u.s**2, dtype=np.float32)
+    image_model.var_poisson = u.Quantity(
+        rng.poisson(1, size=shape).astype(np.float32), u.electron**2 / u.s**2, dtype=np.float32)
+    image_model.var_flat = u.Quantity(
+        rng.uniform(0, 1, size=shape).astype(np.float32), u.electron**2 / u.s**2, dtype=np.float32)
+    image_model.meta.photometry.conversion_megajanskys = 2.0 * u.MJy / u.sr
 
     return image_model
 
