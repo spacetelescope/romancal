@@ -135,7 +135,7 @@ class ResampleStep(RomanStep):
         kwargs["in_memory"] = self.in_memory
 
         # Call the resampling routine
-        resamp = resample.ResampleData(input_models, output_filename=output, **kwargs)
+        resamp = resample.ResampleData(input_models, output=output, **kwargs)
         result = resamp.do_drizzle()
 
         for model in result:
