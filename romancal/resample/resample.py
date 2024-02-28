@@ -694,16 +694,12 @@ def apply_flux_correction(model):
     The input model is expected to be Roman ImageModel-like.
     The photometry information is taken from `meta.photometry`.
 
-    The model is converted in-place.
+    The image is converted in-place.
 
     Parameters
     ----------
     model : `ImageModel`
         The model to apply the flux correction to. The model is modified in-place.
-
-    Notes
-    -----
-    The modifications to the model can result in validation issues due to change of units.
     """
     # Define the various variance arrays
     VARIANCES = ('var_rnoise', 'var_poisson', 'var_flat')
@@ -716,13 +712,17 @@ def apply_flux_correction(model):
         return
 
     # Apply the correction
-    # Assignments into the model are done through `_instance` to avoid
-    # validation errors on the units.
     log.debug('Flux correction being applied')
     c_mj = model.meta.photometry.conversion_megajanskys
-    model._instance['data'] = model.data * c_mj
+    data = model.data * c_mj
+    variances = dict()
     for variance in VARIANCES:
-        model._instance[variance] = getattr(model, variance) * c_mj**2
+        variances[variance] = getattr(model, variance) * c_mj**2
+
+    # Need to fake the units back to e/s for model validation.
+    model.data = u.Quantity(data.value, unit=u.electron / u.s)
+    for variance in VARIANCES:
+        setattr(model, variance, u.Quantity(variances[variance].value, unit=u.electron**2 / u.s**2))
 
 
 def gwcs_into_l3(model, wcsinfo):
