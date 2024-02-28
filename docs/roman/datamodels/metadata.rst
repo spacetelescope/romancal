@@ -16,10 +16,11 @@ string will raise an exception.
 
 .. code-block:: python
 
-        from roman_datamodels.testing.factories import create_wfi_image
-        from roman_datamodels import datamodels as rdmfrom romancal.datamodels import ImageModel
-        model = rdm.ImageModel(create_wfi_image())
-        model.meta.target.ra = "foo"
+        >>> from roman_datamodels import datamodels as rdm
+        >>> from roman_datamodels.maker_utils import mk_datamodel
+
+        >>> model = mk_datamodel(rdm.ImageModel)
+        >>> model.meta.target.ra = "foo"  # doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
           File "<stdin>", line 1, in <module>
           File "/Users/ddavis/miniconda3/envs/rcal_dev/lib/python3.9/site-packages/roman_datamodels/stnode.py", line 183, in __setattr__
@@ -53,31 +54,32 @@ model.
 
 .. code-block:: python
 
-    from roman_datamodels import datamodels as rdm
-    from roman_datamodels.testing.factories import create_wfi_science_raw
-    # Create a model of the desired type
-    raw = create_wfi_science_raw()
-    raw_science = rdm.ScienceRawModel(raw)
-    # find the associated Schema
-    raw_science.schema_uri
-    'asdf://stsci.edu/datamodels/roman/schemas/wfi_science_raw-1.0.0'
+    >>> raw_science = mk_datamodel(rdm.ScienceRawModel)  # Create a model of the desired type
+    >>> print(raw_science.schema_uri)  # find the associated Schema
+    asdf://stsci.edu/datamodels/roman/schemas/wfi_science_raw-1.0.0
 
 
 An alternative method to get and set metadata values is to use a
 dot-separated name as a dictionary lookup.  This is useful for
 databases, such as CRDS, where the path to the metadata element is
 most conveniently stored as a string.  The following two lines are
-equivalent::
+equivalent
 
-    print(raw_science.meta['observation']['start_time'])
-    print(raw_science.meta.observation.start_time)
+.. code-block:: python
 
-In addtion the times are stored as Astropy time objects and so the date can be
-displayed using various formats::
+    >>> print(raw_science.meta['visit']['start_time'])
+    2020-01-01T00:00:00.000
+    >>> print(raw_science.meta.visit.start_time)
+    2020-01-01T00:00:00.000
 
-    print(raw_science.meta.observation.start_time.iso)
-    2028-12-22 05:17:56.203
-    print(raw_science.meta.observation.start_time.mjd)
-    62127.22078938165
-    print(raw_science.meta.observation.start_time.yday)
-    2028:357:05:17:56.203
+In addition the times are stored as Astropy time objects and so the date can be
+displayed using various formats
+
+.. code-block:: python
+
+    >>> print(raw_science.meta.visit.start_time.iso)
+    2020-01-01 00:00:00.000
+    >>> print(raw_science.meta.visit.start_time.mjd)
+    58849.0
+    >>> print(raw_science.meta.visit.start_time.yday)
+    2020:001:00:00:00.000

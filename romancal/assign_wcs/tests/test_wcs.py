@@ -48,8 +48,8 @@ def create_step():
 
 @pytest.mark.parametrize("distortion", create_distortion())
 @pytest.mark.parametrize("step", create_step())
-def test_wcs(tmpdir, distortion, step):
-    file_name = str(tmpdir / "distortion.asdf")
+def test_wcs(tmp_path, distortion, step):
+    file_name = str(tmp_path / "distortion.asdf")
     dist = rdm.DistortionRefModel(distortion)
     dist.save(file_name)
 

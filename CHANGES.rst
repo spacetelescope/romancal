@@ -6,6 +6,12 @@ general
 
 - Update the ``dqflags`` to use the ones stored in ``roman_datamodels`` [#1099]
 
+documentation
+-------------
+
+- Fixed datamodels documentation to use correct API. [#1112]
+
+
 0.14.0 (2024-02-12)
 ===================
 

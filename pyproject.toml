@@ -138,6 +138,7 @@ addopts = [
     '--show-capture=no',
     '--doctest-ignore-import-errors',
     '--color=yes',
+    # '-p no:legacypath',  # disables the legacy tmpdir fixture, when ASDF > 3.0.1 is required this can be uncommented
 ]
 markers = [
     'soctests: run only the SOC tests in the suite.',
