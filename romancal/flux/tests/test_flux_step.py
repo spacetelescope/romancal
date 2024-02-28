@@ -27,7 +27,7 @@ def test_attributes(flux_step, attr, factor):
     original_value = getattr(original, attr)
     result_value = getattr(result, attr)
 
-    assert np.allclose(original_value.value * scale.value, result_value.value)
+    assert np.allclose(original_value * scale, result_value)
 
 
 # ########
