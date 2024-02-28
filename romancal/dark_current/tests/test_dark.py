@@ -83,9 +83,9 @@ def test_dark_step_subtraction(instrument, exptype):
         ("WFI", "WFI_IMAGE"),
     ],
 )
-def test_dark_step_output_dark_file(tmpdir, instrument, exptype):
+def test_dark_step_output_dark_file(tmp_path, instrument, exptype):
     """Test that the the step can output a proper (optional) dark file"""
-    path = str(tmpdir / "dark_out.asdf")
+    path = str(tmp_path / "dark_out.asdf")
 
     # Set test size
     shape = (2, 20, 20)
@@ -112,9 +112,9 @@ def test_dark_step_output_dark_file(tmpdir, instrument, exptype):
         ("WFI", "WFI_IMAGE"),
     ],
 )
-def test_dark_step_getbestrefs(tmpdir, instrument, exptype):
+def test_dark_step_getbestrefs(tmp_path, instrument, exptype):
     """Test that the the step will skip if CRDS returns N/A for the ref file"""
-    path = str(tmpdir / "dark_out.asdf")
+    path = str(tmp_path / "dark_out.asdf")
 
     # Set test size
     shape = (2, 20, 20)

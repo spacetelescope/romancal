@@ -14,6 +14,7 @@ def enable_logging():
         yield
 
 
+@pytest.mark.filterwarnings("ignore:romancal.dqflags is deprecated.*")
 def test_suffix_existence(enable_logging):
     """Generate current suffix list and compare"""
 

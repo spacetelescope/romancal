@@ -18,8 +18,9 @@ from photutils.background import (
 from photutils.detection import DAOStarFinder
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
+from roman_datamodels.dqflags import pixel
 
-from romancal.lib import dqflags, psf
+from romancal.lib import psf
 from romancal.stpipe import RomanStep
 
 log = logging.getLogger(__name__)
@@ -85,9 +86,7 @@ class SourceDetectionStep(RomanStep):
 
             # mask DO_NOT_USE pixels
 
-            self.coverage_mask = (
-                (dqflags.pixel["DO_NOT_USE"]) & input_model.dq
-            ).astype(bool)
+            self.coverage_mask = ((pixel.DO_NOT_USE) & input_model.dq).astype(bool)
 
             filt = input_model.meta.instrument["optical_element"]
 

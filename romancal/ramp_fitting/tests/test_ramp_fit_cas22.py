@@ -7,7 +7,6 @@ from astropy.time import Time
 from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import GainRefModel, RampModel, ReadnoiseRefModel
 
-from romancal.lib import dqflags
 from romancal.ramp_fitting import RampFitStep
 
 # Read Time in seconds
@@ -16,15 +15,7 @@ from romancal.ramp_fitting import RampFitStep
 #   Used to deconstruct the MultiAccum tables into integration times.
 ROMAN_READ_TIME = 3.04
 
-DO_NOT_USE = dqflags.group["DO_NOT_USE"]
-JUMP_DET = dqflags.group["JUMP_DET"]
-SATURATED = dqflags.group["SATURATED"]
-
-dqflags = {
-    "DO_NOT_USE": 1,
-    "SATURATED": 2,
-    "JUMP_DET": 4,
-}
+rng = np.random.default_rng(42)
 
 # Basic resultant
 #
@@ -272,7 +263,7 @@ def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01, randomize=True):
 
     if randomize:
         gain_ref["data"] = u.Quantity(
-            (np.random.random(shape) * 0.5).astype(np.float32) * ingain,
+            (rng.random(shape) * 0.5).astype(np.float32) * ingain,
             u.electron / u.DN,
             dtype=np.float32,
         )
@@ -284,7 +275,7 @@ def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01, randomize=True):
         )
     gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
     gain_ref["err"] = u.Quantity(
-        (np.random.random(shape) * 0.05).astype(np.float32),
+        (rng.random(shape) * 0.05).astype(np.float32),
         u.electron / u.DN,
         dtype=np.float32,
     )
@@ -303,7 +294,7 @@ def generate_wfi_reffiles(shape, ingain=6, rnoise=0.01, randomize=True):
 
     if randomize:
         rn_ref["data"] = u.Quantity(
-            (np.random.random(shape) * rnoise).astype(np.float32),
+            (rng.random(shape) * rnoise).astype(np.float32),
             u.DN,
             dtype=np.float32,
         )

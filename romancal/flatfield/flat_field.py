@@ -6,8 +6,7 @@ import logging
 
 import numpy as np
 from astropy import units as u
-
-from romancal.lib import dqflags
+from roman_datamodels.dqflags import pixel
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -91,17 +90,15 @@ def apply_flat_field(science, flat):
     # Find pixels in the flat that have a value of NaN and set
     # their DQ to NO_FLAT_FIELD
     flat_nan = np.isnan(flat_data)
-    flat_dq[flat_nan] = np.bitwise_or(flat_dq[flat_nan], dqflags.pixel["NO_FLAT_FIELD"])
+    flat_dq[flat_nan] = np.bitwise_or(flat_dq[flat_nan], pixel.NO_FLAT_FIELD)
 
     # Find pixels in the flat that have a value of zero, and set
     # their DQ to NO_FLAT_FIELD
     flat_zero = np.where(flat_data == 0.0)
-    flat_dq[flat_zero] = np.bitwise_or(
-        flat_dq[flat_zero], dqflags.pixel["NO_FLAT_FIELD"]
-    )
+    flat_dq[flat_zero] = np.bitwise_or(flat_dq[flat_zero], pixel.NO_FLAT_FIELD)
 
     # Find all pixels in the flat that have a DQ value of NO_FLAT_FIELD
-    flat_bad = np.bitwise_and(flat_dq, dqflags.pixel["NO_FLAT_FIELD"])
+    flat_bad = np.bitwise_and(flat_dq, pixel.NO_FLAT_FIELD)
 
     # Reset the flat value of all bad pixels to 1.0, so that no
     # correction is made
