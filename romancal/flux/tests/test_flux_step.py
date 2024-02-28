@@ -35,7 +35,7 @@ def test_attributes(flux_step, attr, factor):
 # Fixtures
 # ########
 @pytest.fixture(scope='module',
-                params=['input_imagemodel'])
+                params=['input_imagemodel', 'input_modelcontainer'])
 def flux_step(request):
     """Execute FluxStep on given input
 
