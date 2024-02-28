@@ -573,9 +573,9 @@ def test_tweakreg_returns_modelcontainer_on_list_of_asdf_file_as_input(
 
     tmp_path_str = tmp_path.as_posix()
     test_input = [
-            f"{tmp_path_str}/img_1.asdf",
-            f"{tmp_path_str}/img_2.asdf",
-        ]
+        f"{tmp_path_str}/img_1.asdf",
+        f"{tmp_path_str}/img_2.asdf",
+    ]
 
     step = trs.TweakRegStep()
 
