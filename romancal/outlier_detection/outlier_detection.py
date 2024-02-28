@@ -9,10 +9,10 @@ from astropy.stats import sigma_clip
 from astropy.units import Quantity
 from drizzle.cdrizzle import tblot
 from roman_datamodels import datamodels as rdm
+from roman_datamodels.dqflags import pixel
 from scipy import ndimage
 
 from romancal.datamodels import ModelContainer
-from romancal.lib import dqflags
 from romancal.resample import resample
 from romancal.resample.resample_utils import build_driz_weight, calc_gwcs_pixmap
 
@@ -20,9 +20,6 @@ from ..stpipe import RomanStep
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-
-DO_NOT_USE = dqflags.pixel["DO_NOT_USE"]
-OUTLIER = dqflags.pixel["OUTLIER"]
 
 
 __all__ = ["OutlierDetection", "flag_cr", "abs_deriv"]
@@ -382,7 +379,7 @@ def flag_cr(
         cr_mask = np.greater(diff_noise.value, snr1 * err_data.value)
 
     # Count existing DO_NOT_USE pixels
-    count_existing = np.count_nonzero(sci_image.dq & DO_NOT_USE)
+    count_existing = np.count_nonzero(sci_image.dq & pixel.DO_NOT_USE)
 
     # Update the DQ array values in the input image but preserve datatype.
     sci_image.dq = np.bitwise_or(sci_image.dq, cr_mask * (DO_NOT_USE | OUTLIER)).astype(
@@ -390,7 +387,7 @@ def flag_cr(
     )
 
     # Report number (and percent) of new DO_NOT_USE pixels found
-    count_outlier = np.count_nonzero(sci_image.dq & DO_NOT_USE)
+    count_outlier = np.count_nonzero(sci_image.dq & pixel.DO_NOT_USE)
     count_added = count_outlier - count_existing
     percent_cr = count_added / (sci_image.shape[0] * sci_image.shape[1]) * 100
     log.info(f"New pixels flagged as outliers: {count_added} ({percent_cr:.2f}%)")
