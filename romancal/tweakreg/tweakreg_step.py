@@ -529,11 +529,7 @@ class TweakRegStep(RomanStep):
 
                 image_model.meta.wcs = imcat.wcs
 
-        # if input is a single datamodel, return the single datamodel as output;
-        # otherwise, return ModelContainer
-        result = images[0] if isinstance(input, rdm.DataModel) else images
-
-        return result
+        return images
 
     def _is_wcs_correction_small(self, wcs, twcs):
         """Check that the newly tweaked wcs hasn't gone off the rails"""
