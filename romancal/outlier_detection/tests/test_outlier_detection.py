@@ -311,6 +311,7 @@ def test_outlier_do_detection_find_outliers(tmp_path, base_image, clean_up_after
     outliers_output_coords.sort(axis=0)
     outliers_input_coords.sort(axis=0)
 
-    assert all(outliers_input_coords == outliers_output_coords)
+    # assert all(outliers_input_coords == outliers_output_coords) doesn't work with python 3.9
+    assert all(o == i for i, o in zip(outliers_input_coords, outliers_output_coords))
 
     clean_up_after_test("*.asdf")
