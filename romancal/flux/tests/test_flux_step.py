@@ -1,23 +1,22 @@
 """Unit-like tests related to FluxStep"""
-import numpy as np
-from numpy.random import poisson
-import pytest
 
 import astropy.units as u
-
+import numpy as np
+import pytest
 from roman_datamodels import datamodels, maker_utils
+
 from romancal.datamodels.container import ModelContainer
 from romancal.flux import FluxStep
 
 
 @pytest.mark.parametrize(
-    'attr, factor',
+    "attr, factor",
     [
-        ('data', 1),
-        ('var_rnoise', 2),
-        ('var_poisson', 2),
-        ('var_flat', 2),
-    ]
+        ("data", 1),
+        ("var_rnoise", 2),
+        ("var_poisson", 2),
+        ("var_flat", 2),
+    ],
 )
 def test_attributes(flux_step, attr, factor):
     """Test that the attribute has been scaled by the right factor"""
@@ -43,8 +42,7 @@ def test_attributes(flux_step, attr, factor):
 # ########
 # Fixtures
 # ########
-@pytest.fixture(scope='module',
-                params=['input_imagemodel', 'input_modelcontainer'])
+@pytest.fixture(scope="module", params=["input_imagemodel", "input_modelcontainer"])
 def flux_step(request):
     """Execute FluxStep on given input
 
@@ -68,7 +66,7 @@ def flux_step(request):
     return original, result
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def image_model():
     """Product a basic ImageModel"""
     # Create a random image and specify a conversion.
@@ -76,18 +74,31 @@ def image_model():
     shape = (10, 10)
     image_model = maker_utils.mk_datamodel(datamodels.ImageModel, shape=shape)
     image_model.data = u.Quantity(
-        rng.poisson(2.5, size=shape).astype(np.float32), u.electron / u.s, dtype=np.float32)
+        rng.poisson(2.5, size=shape).astype(np.float32),
+        u.electron / u.s,
+        dtype=np.float32,
+    )
     image_model.var_rnoise = u.Quantity(
-        rng.normal(1, 0.05, size=shape).astype(np.float32), u.electron**2 / u.s**2, dtype=np.float32)
+        rng.normal(1, 0.05, size=shape).astype(np.float32),
+        u.electron**2 / u.s**2,
+        dtype=np.float32,
+    )
     image_model.var_poisson = u.Quantity(
-        rng.poisson(1, size=shape).astype(np.float32), u.electron**2 / u.s**2, dtype=np.float32)
+        rng.poisson(1, size=shape).astype(np.float32),
+        u.electron**2 / u.s**2,
+        dtype=np.float32,
+    )
     image_model.var_flat = u.Quantity(
-        rng.uniform(0, 1, size=shape).astype(np.float32), u.electron**2 / u.s**2, dtype=np.float32)
+        rng.uniform(0, 1, size=shape).astype(np.float32),
+        u.electron**2 / u.s**2,
+        dtype=np.float32,
+    )
     image_model.meta.photometry.conversion_megajanskys = 2.0 * u.MJy / u.sr
 
     return image_model
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope="module")
 def input_imagemodel(image_model):
     """Provide a single ImageModel"""
 
@@ -95,7 +106,7 @@ def input_imagemodel(image_model):
     return image_model.copy()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def input_modelcontainer(image_model):
     """Provide a ModelContainer"""
     # Create and return a ModelContainer

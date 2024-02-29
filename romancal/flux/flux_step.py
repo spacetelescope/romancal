@@ -1,8 +1,8 @@
 """Apply the flux scaling"""
+
 import logging
 
 import astropy.units as u
-
 from roman_datamodels import datamodels
 
 from ..datamodels import ModelContainer
@@ -37,10 +37,10 @@ class FluxStep(RomanStep):
     Currently, the correction is done in-place; the inputs are directly modified if in-memory DataModels are input.
     """  # noqa: E501
 
-    class_alias = 'flux'
+    class_alias = "flux"
 
     spec = """
-    """ # noqa: E501
+    """  # noqa: E501
 
     reference_file_types = []
 
@@ -93,20 +93,22 @@ def apply_flux_correction(model):
     The modifications to the model can result in validation issues due to change of units.
     """
     # Define the various variance arrays
-    VARIANCES = ('var_rnoise', 'var_poisson', 'var_flat')
+    VARIANCES = ("var_rnoise", "var_poisson", "var_flat")
 
     # Check for units. Must be election/second. Otherwise, it is unknown how to
     # convert.
     if model.data.unit != u.electron / u.s:
-        log.debug('Input data is not in units of e/s. Flux correction will not be done.')
-        log.debug('Input data units are %s', model.data.unit)
+        log.debug(
+            "Input data is not in units of e/s. Flux correction will not be done."
+        )
+        log.debug("Input data units are %s", model.data.unit)
         return
 
     # Apply the correction
     # Assignments into the model are done through `_instance` to avoid
     # validation errors on the units.
-    log.debug('Flux correction being applied')
+    log.debug("Flux correction being applied")
     c_mj = model.meta.photometry.conversion_megajanskys
-    model._instance['data'] = model.data * c_mj
+    model._instance["data"] = model.data * c_mj
     for variance in VARIANCES:
         model._instance[variance] = getattr(model, variance) * c_mj**2
