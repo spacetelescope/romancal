@@ -7,6 +7,7 @@ from .assign_wcs.assign_wcs_step import AssignWcsStep
 from .dark_current.dark_current_step import DarkCurrentStep
 from .dq_init.dq_init_step import DQInitStep
 from .flatfield.flat_field_step import FlatFieldStep
+from .flux import FluxStep
 from .jump.jump_step import JumpStep
 from .linearity.linearity_step import LinearityStep
 from .outlier_detection.outlier_detection_step import OutlierDetectionStep
@@ -20,19 +21,20 @@ from .source_detection.source_detection_step import SourceDetectionStep
 from .tweakreg.tweakreg_step import TweakRegStep
 
 __all__ = [
+    "AssignWcsStep",
     "DarkCurrentStep",
     "DQInitStep",
     "FlatFieldStep",
+    "FluxStep",
     "JumpStep",
     "LinearityStep",
+    "OutlierDetectionStep",
     "PhotomStep",
     "RampFitStep",
     "RefPixStep",
-    "SaturationStep",
-    "AssignWcsStep",
-    "OutlierDetectionStep",
-    "SourceDetectionStep",
-    "SkyMatchStep",
-    "TweakRegStep",
     "ResampleStep",
+    "SaturationStep",
+    "SkyMatchStep",
+    "SourceDetectionStep",
+    "TweakRegStep",
 ]
