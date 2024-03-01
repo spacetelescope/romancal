@@ -101,15 +101,15 @@ class DQInitStep(RomanStep):
             # the science data until they are trimmed at ramp_fit
             # these arrays include the overlap regions in the corners
 
-            output_model.border_ref_pix_right = output_model.data[:, :, -4:]
-            output_model.border_ref_pix_left = output_model.data[:, :, :4]
-            output_model.border_ref_pix_top = output_model.data[:, :4, :]
-            output_model.border_ref_pix_bottom = output_model.data[:, -4:, :]
+            output_model.border_ref_pix_right = output_model.data[:, :, -4:].copy()
+            output_model.border_ref_pix_left = output_model.data[:, :, :4].copy()
+            output_model.border_ref_pix_top = output_model.data[:, :4, :].copy()
+            output_model.border_ref_pix_bottom = output_model.data[:, -4:, :].copy()
 
-            output_model.dq_border_ref_pix_right = output_model.pixeldq[:, -4:]
-            output_model.dq_border_ref_pix_left = output_model.pixeldq[:, :4]
-            output_model.dq_border_ref_pix_top = output_model.pixeldq[:4, :]
-            output_model.dq_border_ref_pix_bottom = output_model.pixeldq[-4:, :]
+            output_model.dq_border_ref_pix_right = output_model.pixeldq[:, -4:].copy()
+            output_model.dq_border_ref_pix_left = output_model.pixeldq[:, :4].copy()
+            output_model.dq_border_ref_pix_top = output_model.pixeldq[:4, :].copy()
+            output_model.dq_border_ref_pix_bottom = output_model.pixeldq[-4:, :].copy()
 
         else:
             # Skip DQ step if no mask files
