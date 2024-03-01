@@ -12,11 +12,12 @@ from romancal.flux import FluxStep
 @pytest.mark.parametrize(
     "attr, factor",
     [
-        ("data", 1),
-        ("var_rnoise", 2),
-        ("var_poisson", 2),
-        ("var_flat", 2),
-    ],
+        ('data', 1),
+        ('err', 1),
+        ('var_rnoise', 2),
+        ('var_poisson', 2),
+        ('var_flat', 2),
+    ]
 )
 def test_attributes(flux_step, attr, factor):
     """Test that the attribute has been scaled by the right factor"""

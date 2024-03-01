@@ -92,8 +92,9 @@ def apply_flux_correction(model):
     -----
     The modifications to the model can result in validation issues due to change of units.
     """
-    # Define the various variance arrays
-    VARIANCES = ("var_rnoise", "var_poisson", "var_flat")
+    # Define the various arrays to be converted.
+    DATA = ('data', 'err')
+    VARIANCES = ('var_rnoise', 'var_poisson', 'var_flat')
 
     # Check for units. Must be election/second. Otherwise, it is unknown how to
     # convert.
@@ -109,6 +110,7 @@ def apply_flux_correction(model):
     # validation errors on the units.
     log.debug("Flux correction being applied")
     c_mj = model.meta.photometry.conversion_megajanskys
-    model._instance["data"] = model.data * c_mj
+    for data in DATA:
+        model._instance[data] = getattr(model, data) * c_mj
     for variance in VARIANCES:
         model._instance[variance] = getattr(model, variance) * c_mj**2
