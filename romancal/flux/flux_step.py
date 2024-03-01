@@ -109,6 +109,6 @@ def apply_flux_correction(model):
     log.debug("Flux correction being applied")
     c_mj = model.meta.photometry.conversion_megajanskys
     for data in DATA:
-        model._instance[data] = getattr(model, data) * c_mj
+        model[data] = model[data] * c_mj
     for variance in VARIANCES:
-        model._instance[variance] = getattr(model, variance) * c_mj**2
+        model[variance] = model[variance] * c_mj**2
