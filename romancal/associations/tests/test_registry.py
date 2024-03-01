@@ -1,4 +1,5 @@
 """Test the Registry"""
+
 import pytest
 
 from romancal.associations.lib.keyvalue_registry import KeyValueRegistry

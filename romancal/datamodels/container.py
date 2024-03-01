@@ -198,9 +198,11 @@ class ModelContainer(Sequence):
             step = index.step
             m = self._models[start:stop:step]
             m = [
-                rdm.open(item, memmap=self._memmap)
-                if (not isinstance(item, rdm.DataModel) and self._return_open)
-                else item
+                (
+                    rdm.open(item, memmap=self._memmap)
+                    if (not isinstance(item, rdm.DataModel) and self._return_open)
+                    else item
+                )
                 for item in m
             ]
         else:

@@ -3,6 +3,7 @@
 Unit tests for linearity correction
 
 """
+
 import numpy as np
 import pytest
 from astropy import units as u

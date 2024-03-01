@@ -1,4 +1,5 @@
 """Main entry for the association generator"""
+
 import argparse
 import logging
 import os

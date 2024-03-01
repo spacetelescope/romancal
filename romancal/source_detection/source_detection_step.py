@@ -2,7 +2,6 @@
 Create a source catalog for tweakreg
 """
 
-
 import logging
 
 import astropy.units as u
@@ -19,8 +18,9 @@ from photutils.background import (
 from photutils.detection import DAOStarFinder
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
+from roman_datamodels.dqflags import pixel
 
-from romancal.lib import dqflags, psf
+from romancal.lib import psf
 from romancal.stpipe import RomanStep
 
 log = logging.getLogger(__name__)
@@ -86,9 +86,7 @@ class SourceDetectionStep(RomanStep):
 
             # mask DO_NOT_USE pixels
 
-            self.coverage_mask = (
-                (dqflags.pixel["DO_NOT_USE"]) & input_model.dq
-            ).astype(bool)
+            self.coverage_mask = ((pixel.DO_NOT_USE) & input_model.dq).astype(bool)
 
             filt = input_model.meta.instrument["optical_element"]
 
@@ -210,9 +208,9 @@ class SourceDetectionStep(RomanStep):
                 else:
                     catalog.write(cat_filename, format="ascii.ecsv", overwrite=True)
 
-                input_model.meta.source_detection[
-                    "tweakreg_catalog_name"
-                ] = cat_filename
+                input_model.meta.source_detection["tweakreg_catalog_name"] = (
+                    cat_filename
+                )
             else:
                 if self.fit_psf:
                     # PSF photometry centroid results are stored in an astropy table
@@ -231,9 +229,9 @@ class SourceDetectionStep(RomanStep):
                 else:
                     # only attach catalog to file if its being passed to the next step
                     # and save_catalogs is false, since it is not in the schema
-                    input_model.meta.source_detection[
-                        "tweakreg_catalog"
-                    ] = catalog_as_recarray
+                    input_model.meta.source_detection["tweakreg_catalog"] = (
+                        catalog_as_recarray
+                    )
             input_model.meta.cal_step["source_detection"] = "COMPLETE"
 
         # just pass input model to next step - catalog is stored in meta

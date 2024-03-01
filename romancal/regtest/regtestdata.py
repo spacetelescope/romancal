@@ -6,6 +6,7 @@ import sys
 from difflib import unified_diff
 from glob import glob as _sys_glob
 from pathlib import Path
+from textwrap import dedent
 
 import asdf
 import astropy.table
@@ -657,15 +658,38 @@ class WCSOperator(NDArrayTypeOperator):
 
 
 class DiffResult:
-    def __init__(self, diff):
+    def __init__(self, diff, result, truth):
         self.diff = diff
+        self.result = result
+        self.truth = truth
 
     @property
     def identical(self):
         return not self.diff
 
+    @staticmethod
+    def _model_type(file):
+        import roman_datamodels as rdm
+
+        try:
+            with rdm.open(file) as mdl:
+                return mdl.__class__.__name__
+        except Exception:
+            return "Not a model"
+
     def report(self, **kwargs):
-        return pprint.pformat(self.diff)
+        title = dedent(
+            f"""
+            Diff report for:
+                result file: {self.result}
+                    model type: {self._model_type(self.result)}
+                truth file: {self.truth}
+                    model type: {self._model_type(self.result)}
+            """
+        )
+        report = pprint.pformat(self.diff)
+
+        return f"{title}\n{report}"
 
 
 def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=True):
@@ -726,9 +750,10 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
         "lazy_load": False,
         "copy_arrays": True,
     }
-    with asdf.open(result, **open_kwargs) as af0, asdf.open(
-        truth, **open_kwargs
-    ) as af1:
+    with (
+        asdf.open(result, **open_kwargs) as af0,
+        asdf.open(truth, **open_kwargs) as af1,
+    ):
         # swap the inputs here so DeepDiff(truth, result)
         # this will create output with 'new_value' referring to
         # the value in the result and 'old_value' referring to the truth
@@ -741,4 +766,4 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
             math_epsilon=atol,
             ignore_type_in_groups=[asdf.tags.core.NDArrayType, np.ndarray],
         )
-        return DiffResult(diff)
+        return DiffResult(diff, result, truth)

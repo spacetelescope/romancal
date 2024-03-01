@@ -466,9 +466,9 @@ class ChannelView(BaseView):
 
         # Mask all the data columns
         mask = np.ones((rows, columns), dtype=bool)
-        mask[
-            :, : -Const.PAD
-        ] = False  # this maybe different for the left/right channels
+        mask[:, : -Const.PAD] = (
+            False  # this maybe different for the left/right channels
+        )
         mask = mask.flatten()
 
         # Find the indices of the padded columns

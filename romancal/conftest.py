@@ -1,4 +1,5 @@
 """Project default for pytest"""
+
 import inspect
 import json
 import os
@@ -15,6 +16,8 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
 from romancal.assign_wcs import pointing
+
+collect_ignore = ["lib/dqflags.py"]
 
 
 @pytest.fixture
@@ -40,8 +43,19 @@ def slow(request):
     return request.config.getoption("--slow")
 
 
+@pytest.fixture(scope="function")
+def function_jail(tmp_path):
+    """Perform test in a pristine temporary working directory."""
+    old_dir = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        yield str(tmp_path)
+    finally:
+        os.chdir(old_dir)
+
+
 @pytest.fixture(scope="module")
-def jail(request, tmpdir_factory):
+def module_jail(request, tmp_path_factory):
     """Run test in a pristine temporary working directory, scoped to module.
 
     This fixture is the same as _jail in ci_watson, but scoped to module
@@ -52,7 +66,7 @@ def jail(request, tmpdir_factory):
     path = request.module.__name__.split(".")[-1]
     if request._parent_request.fixturename is not None:
         path = path + "_" + request._parent_request.fixturename
-    newpath = tmpdir_factory.mktemp(path)
+    newpath = tmp_path_factory.mktemp(path)
     os.chdir(str(newpath))
     yield newpath
     os.chdir(old_dir)

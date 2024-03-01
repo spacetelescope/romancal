@@ -9,9 +9,9 @@ from itertools import chain
 import numpy as np
 from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
 from roman_datamodels import datamodels as rdd
+from roman_datamodels.dqflags import pixel
 
 from romancal.datamodels import ModelContainer
-from romancal.lib.dqflags import pixel
 from romancal.stpipe import RomanStep
 
 from .skyimage import SkyImage

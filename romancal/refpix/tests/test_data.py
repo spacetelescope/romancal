@@ -535,25 +535,6 @@ class TestChannelView:
     def test_fft_interpolate_regression(self, channels):
         """
         Run fft interpolation regression test
-
-        NOTE:
-            The reference code assumes the data will be changed in-place for all
-            its major operations.However, the reference code violates this assumption
-            for the Amp33 FFT interpolation step. It does make an in-place change to
-            a sub-array, `dataReferenceChan_FramesFlat`. However
-            `dataReferenceChan_FramesFlat` loses its view on the original data array
-            because it unnecessarily recasts the dtype, which is a non-view compatible
-            change.
-
-            romancal does not make this mistake because it does not recast the dtype.
-
-            The reference utils are modified to output the data array which is modified
-            as a functional return value. This is so that the reference code's
-            computation can be tests against the romancal code's computation.
-
-            After this step is computed, the reference code an romancal code will
-            diverge in values, because the changes made by this will propagate in
-            romancal but the do not in the reference code.
         """
         non_view_data = channels.data.copy()
 

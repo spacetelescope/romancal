@@ -1,6 +1,7 @@
 """
  Unit tests for the Roman jump step code
 """
+
 from itertools import cycle
 
 import numpy as np
@@ -20,9 +21,9 @@ MAXIMUM_CORES = ["none", "quarter", "half", "all"]
 
 
 @pytest.fixture(scope="module")
-def generate_wfi_reffiles(tmpdir_factory):
-    gainfile = str(tmpdir_factory.mktemp("ndata").join("gain.asdf"))
-    readnoisefile = str(tmpdir_factory.mktemp("ndata").join("readnoise.asdf"))
+def generate_wfi_reffiles(tmp_path_factory):
+    gainfile = str(tmp_path_factory.mktemp("ndata") / "gain.asdf")
+    readnoisefile = str(tmp_path_factory.mktemp("ndata") / "readnoise.asdf")
 
     ingain = 6
     xsize = 20

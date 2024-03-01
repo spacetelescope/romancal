@@ -4,9 +4,9 @@ import numpy as np
 import roman_datamodels as rdm
 from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import RampModel
+from roman_datamodels.dqflags import pixel
 
 from romancal.dq_init import dq_initialization
-from romancal.lib import dqflags
 from romancal.stpipe import RomanStep
 
 __all__ = ["DQInitStep"]
@@ -45,20 +45,26 @@ class DQInitStep(RomanStep):
         if not isinstance(input_model, RampModel):
             # Create base ramp node with dummy values (for validation)
             input_ramp = maker_utils.mk_ramp(shape=input_model.shape)
+            # check if the input model has a resultantdq from SDF
+            if hasattr(input_model, "resultantdq"):
+                input_ramp.groupdq = input_model.resultantdq.copy()
 
             # Copy input_model contents into RampModel
             for key in input_model.keys():
-                # If a dictionary (like meta), overwrite entires (but keep
-                # required dummy entries that may not be in input_model)
-                if isinstance(input_ramp[key], dict):
-                    input_ramp[key].update(input_model.__getattr__(key))
-                elif isinstance(input_ramp[key], np.ndarray):
-                    # Cast input ndarray as RampModel dtype
-                    input_ramp[key] = input_model.__getattr__(key).astype(
-                        input_ramp[key].dtype
-                    )
-                else:
-                    input_ramp[key] = input_model.__getattr__(key)
+                # check for resultantdq if present copy this to the emp
+                # it to the ramp model, we don't want to carry this around
+                if key != "resultantdq":
+                    # If a dictionary (like meta), overwrite entires (but keep
+                    # required dummy entries that may not be in input_model)
+                    if isinstance(input_ramp[key], dict):
+                        input_ramp[key].update(input_model.__getattr__(key))
+                    elif isinstance(input_ramp[key], np.ndarray):
+                        # Cast input ndarray as RampModel dtype
+                        input_ramp[key] = input_model.__getattr__(key).astype(
+                            input_ramp[key].dtype
+                        )
+                    else:
+                        input_ramp[key] = input_model.__getattr__(key)
 
             # Create model from node
             output_model = RampModel(input_ramp)
@@ -69,9 +75,7 @@ class DQInitStep(RomanStep):
         x_start = input_model.meta.guidestar.gw_window_xstart
         x_end = input_model.meta.guidestar.gw_window_xsize + x_start
         # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
-        output_model.pixeldq[int(x_start) : int(x_end), :] = dqflags.pixel[
-            "GW_AFFECTED_DATA"
-        ]
+        output_model.pixeldq[int(x_start) : int(x_end), :] = pixel.GW_AFFECTED_DATA
         self.log.info(
             f"Flagging rows from: {x_start} to {x_end} as affected by guide window read"
         )
@@ -97,15 +101,15 @@ class DQInitStep(RomanStep):
             # the science data until they are trimmed at ramp_fit
             # these arrays include the overlap regions in the corners
 
-            output_model.border_ref_pix_right = output_model.data[:, :, -4:]
-            output_model.border_ref_pix_left = output_model.data[:, :, :4]
-            output_model.border_ref_pix_top = output_model.data[:, :4, :]
-            output_model.border_ref_pix_bottom = output_model.data[:, -4:, :]
+            output_model.border_ref_pix_right = output_model.data[:, :, -4:].copy()
+            output_model.border_ref_pix_left = output_model.data[:, :, :4].copy()
+            output_model.border_ref_pix_top = output_model.data[:, :4, :].copy()
+            output_model.border_ref_pix_bottom = output_model.data[:, -4:, :].copy()
 
-            output_model.dq_border_ref_pix_right = output_model.pixeldq[:, -4:]
-            output_model.dq_border_ref_pix_left = output_model.pixeldq[:, :4]
-            output_model.dq_border_ref_pix_top = output_model.pixeldq[:4, :]
-            output_model.dq_border_ref_pix_bottom = output_model.pixeldq[-4:, :]
+            output_model.dq_border_ref_pix_right = output_model.pixeldq[:, -4:].copy()
+            output_model.dq_border_ref_pix_left = output_model.pixeldq[:, :4].copy()
+            output_model.dq_border_ref_pix_top = output_model.pixeldq[:4, :].copy()
+            output_model.dq_border_ref_pix_bottom = output_model.pixeldq[-4:, :].copy()
 
         else:
             # Skip DQ step if no mask files

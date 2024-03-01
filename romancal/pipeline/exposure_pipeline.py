@@ -4,6 +4,7 @@ from os.path import basename
 
 import numpy as np
 from roman_datamodels import datamodels as rdm
+from roman_datamodels.dqflags import group
 
 import romancal.datamodels.filetype as filetype
 
@@ -16,7 +17,6 @@ from romancal.dark_current import DarkCurrentStep
 from romancal.datamodels import ModelContainer
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
-from romancal.lib import dqflags
 from romancal.lib.basic_utils import is_fully_saturated
 from romancal.linearity import LinearityStep
 from romancal.photom import PhotomStep
@@ -236,9 +236,7 @@ class ExposurePipeline(RomanPipeline):
             input_model,
             (
                 np.zeros(input_model.data.shape[1:], dtype=input_model.data.dtype),
-                input_model.pixeldq
-                | input_model.groupdq[0]
-                | dqflags.group["SATURATED"],
+                input_model.pixeldq | input_model.groupdq[0] | group.SATURATED,
                 np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype),
                 np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype),
                 np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype),

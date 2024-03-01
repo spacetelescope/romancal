@@ -14,6 +14,7 @@ This way there is a clear unquestionable demonstration of the hand-off between t
 provided reference code and this implementation contained within the git history.
 of the project itself.
 """
+
 import threading
 
 import numpy as np
@@ -255,7 +256,7 @@ def interp_zeros_channel_fun(
 
 def cos_interp_reference(dataUniformTime, numFrames):
     numRows = dataUniformTime.shape[2]
-    return interp_zeros_channel_fun(
+    interp_zeros_channel_fun(
         REFERENCE_CHAN,
         getTrigInterpolationFunction(dataUniformTime),
         dataUniformTime,
@@ -308,7 +309,7 @@ def fft_interp(
             # meaningfully
             chanFrameData_Flat = spfft.irfft(
                 fftResult * chanFrameData_Flat.size,
-                workers=1
+                workers=1,
                 # )
             ).astype(chanFrameData_Flat.dtype)
             # Return read only pixels
@@ -506,8 +507,10 @@ def apply_correction(data, alpha, gamma, zeta):
     # Perform cosine weighted interpolation
     cos_interp_reference(dataUniformTime, dataUniformTime.shape[1])
 
-    # Perform fft interpolation (does nothing right now)
-    fft_interp_amp33(dataUniformTime, dataUniformTime.shape[1])
+    # Perform fft interpolation
+    dataUniformTime[REFERENCE_CHAN, :, :, :] = fft_interp_amp33(
+        dataUniformTime, dataUniformTime.shape[1]
+    )
 
     # Perform the correction
     data0 = apply_correction_to_data(

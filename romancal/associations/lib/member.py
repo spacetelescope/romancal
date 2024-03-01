@@ -1,4 +1,5 @@
 """Association Member"""
+
 from collections import UserDict
 from copy import copy
 

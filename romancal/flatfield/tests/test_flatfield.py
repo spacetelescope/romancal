@@ -50,7 +50,7 @@ def test_flatfield_step_interface(instrument, exptype):
     meta["instrument"]["detector"] = "WFI01"
     flatref["meta"] = meta
     flatref["data"] = np.ones(shape, dtype=np.float32)
-    flatref["dq"] = np.zeros(shape, dtype=np.uint16)
+    flatref["dq"] = np.zeros(shape, dtype=np.uint32)
     flatref["err"] = (RNG.uniform(size=shape) * 0.05).astype(np.float32)
     flatref_model = FlatRefModel(flatref)
 

@@ -3,10 +3,10 @@ import pytest
 from astropy import units as u
 from roman_datamodels import maker_utils, stnode
 from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
+from roman_datamodels.dqflags import pixel
 
 from romancal.dq_init import DQInitStep
 from romancal.dq_init.dq_initialization import do_dqinit
-from romancal.lib import dqflags
 
 RNG = np.random.default_rng(83)
 
@@ -56,18 +56,16 @@ def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
 
     # assert that the pixels read back in match the mapping from ref data to
     # science data
-    assert dqdata[100, 100] == dqflags.pixel["SATURATED"]
-    assert dqdata[200, 100] == dqflags.pixel["JUMP_DET"]
-    assert dqdata[300, 100] == dqflags.pixel["DROPOUT"]
-    assert dqdata[400, 100] == dqflags.pixel["PERSISTENCE"]
-    assert dqdata[500, 100] == dqflags.pixel["DO_NOT_USE"]
-    assert dqdata[600, 100] == dqflags.pixel["GW_AFFECTED_DATA"]
-    assert dqdata[100, 200] == dqflags.pixel["SATURATED"] + dqflags.pixel["DO_NOT_USE"]
-    assert dqdata[200, 200] == dqflags.pixel["JUMP_DET"] + dqflags.pixel["DO_NOT_USE"]
-    assert dqdata[300, 200] == dqflags.pixel["DROPOUT"] + dqflags.pixel["DO_NOT_USE"]
-    assert (
-        dqdata[400, 200] == dqflags.pixel["PERSISTENCE"] + dqflags.pixel["DO_NOT_USE"]
-    )
+    assert dqdata[100, 100] == pixel.SATURATED
+    assert dqdata[200, 100] == pixel.JUMP_DET
+    assert dqdata[300, 100] == pixel.DROPOUT
+    assert dqdata[400, 100] == pixel.PERSISTENCE
+    assert dqdata[500, 100] == pixel.DO_NOT_USE
+    assert dqdata[600, 100] == pixel.GW_AFFECTED_DATA
+    assert dqdata[100, 200] == pixel.SATURATED + pixel.DO_NOT_USE
+    assert dqdata[200, 200] == pixel.JUMP_DET + pixel.DO_NOT_USE
+    assert dqdata[300, 200] == pixel.DROPOUT + pixel.DO_NOT_USE
+    assert dqdata[400, 200] == pixel.PERSISTENCE + pixel.DO_NOT_USE
 
 
 def test_groupdq():
@@ -172,15 +170,9 @@ def test_dq_add1_groupdq():
 
     # test if pixels in pixeldq were incremented in value by 1
     # check that previous dq flag is added to mask value
-    assert (
-        outfile.pixeldq[505, 505]
-        == dqflags.pixel["JUMP_DET"] + dqflags.pixel["DO_NOT_USE"]
-    )
+    assert outfile.pixeldq[505, 505] == pixel.JUMP_DET + pixel.DO_NOT_USE
     # check two flags propagate correctly
-    assert (
-        outfile.pixeldq[400, 500]
-        == dqflags.pixel["SATURATED"] + dqflags.pixel["DO_NOT_USE"]
-    )
+    assert outfile.pixeldq[400, 500] == pixel.SATURATED + pixel.DO_NOT_USE
 
 
 @pytest.mark.parametrize(
@@ -215,7 +207,7 @@ def test_dqinit_step_interface(instrument, exptype):
     meta["instrument"]["detector"] = "WFI01"
     maskref["meta"] = meta
     maskref["data"] = np.ones(shape[1:], dtype=np.float32)
-    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint16)
+    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint32)
     maskref["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
     maskref_model = MaskRefModel(maskref)
 
@@ -264,7 +256,7 @@ def test_dqinit_refpix(instrument, exptype):
     meta["instrument"]["detector"] = "WFI01"
     maskref["meta"] = meta
     maskref["data"] = np.ones(shape[1:], dtype=np.float32)
-    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint16)
+    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint32)
     maskref["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
     maskref_model = MaskRefModel(maskref)
 
@@ -282,6 +274,57 @@ def test_dqinit_refpix(instrument, exptype):
     assert result.dq_border_ref_pix_left.shape == (20, 4)
     assert result.dq_border_ref_pix_top.shape == (4, 20)
     assert result.dq_border_ref_pix_bottom.shape == (4, 20)
+
+
+@pytest.mark.parametrize(
+    "instrument, exptype",
+    [
+        ("WFI", "WFI_IMAGE"),
+    ],
+)
+def test_dqinit_resultantdq(instrument, exptype):
+    """Test that the basic inferface works for data requiring a DQ reffile"""
+
+    # Set test size
+    shape = (2, 20, 20)
+
+    # Create test science raw model
+    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape, dq=True)
+    wfi_sci_raw.meta.instrument.name = instrument
+    wfi_sci_raw.meta.instrument.detector = "WFI01"
+    wfi_sci_raw.meta.instrument.optical_element = "F158"
+    wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
+    wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
+    wfi_sci_raw.meta.exposure.type = exptype
+    wfi_sci_raw.resultantdq[1, 12, 12] = pixel["DROPOUT"]
+    wfi_sci_raw.data = u.Quantity(
+        np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
+    )
+    wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
+
+    # Create mask model
+    maskref = stnode.MaskRef()
+    meta = maker_utils.mk_ref_common("MASK")
+    meta["instrument"]["optical_element"] = "F158"
+    meta["instrument"]["detector"] = "WFI01"
+    maskref["meta"] = meta
+    maskref["data"] = np.ones(shape[1:], dtype=np.float32)
+    maskref["dq"] = np.zeros(shape[1:], dtype=np.uint32)
+    maskref["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
+    maskref_model = MaskRefModel(maskref)
+
+    # Perform Data Quality application step
+    result = DQInitStep.call(wfi_sci_raw_model, override_mask=maskref_model)
+
+    # check that the resultantdq is present in the raw model
+    assert hasattr(wfi_sci_raw_model, "resultantdq")
+    # check that the resultantdq is not copied to the result
+    assert not hasattr(result, "resultantdq")
+    # check to see the resultantdq is the correct shape
+    assert wfi_sci_raw_model.resultantdq.shape == shape
+    # check to see the resultantdq & groupdq have the correct value
+    assert wfi_sci_raw_model.resultantdq[1, 12, 12] == pixel["DROPOUT"]
+    assert result.groupdq[1, 12, 12] == pixel["DROPOUT"]
 
 
 @pytest.mark.parametrize(

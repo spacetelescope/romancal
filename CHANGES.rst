@@ -1,5 +1,36 @@
-0.13.1 (unreleased)
+0.14.1 (unreleased)
+==================
+
+general
+-------
+
+- Update the ``dqflags`` to use the ones stored in ``roman_datamodels`` [#1099]
+
+documentation
+-------------
+
+- Fixed datamodels documentation to use correct API. [#1112]
+
+dq_init
+-------
+
+- Copy reference pixels during ``dq_init`` to avoid larger files in later
+  processing steps [#1121]
+
+
+0.14.0 (2024-02-12)
 ===================
+
+general
+-------
+
+- Updated the ``compare_asdf`` diff reports to include descriptive information
+  about what is being compared. [#1044]
+
+dq_init
+-------
+
+- Add the ability to copy resultantdq from a SDF science raw model to the new rampmodel created by dq_init [#1085]
 
 outlier_detection
 -----------------
@@ -14,7 +45,6 @@ jump detection
 
 - Added uneven ramp-jump detection docs. [#1035]
 
-
 documentation
 -------------
 
@@ -24,12 +54,15 @@ documentation
 
 - added user documentation for ``roman_static_preview`` script [#1046]
 
-
 ramp_fitting
 ------------
 
 - Add default WCS when constructing image model from ramp model [#1072]
 
+resample
+--------
+
+- Update resample step to handle the L3 meta data [#1057]
 
 general
 -------
@@ -37,7 +70,6 @@ general
 - Update elp steps to check for CRDS not returning a reference file [#1055]
 
 - Fix bug where ``compare_asdf`` failed to detect ``DataModel`` type differences. [#1066]
-
 
 0.13.0 (2023-11-28)
 ===================
@@ -112,6 +144,8 @@ refpix
 ------
 
 - Update cal_step, add suffix and add to the exposure pipeline [#890]
+
+- Enable apodized FFT interpolation by default. [#1017]
 
 resample
 --------

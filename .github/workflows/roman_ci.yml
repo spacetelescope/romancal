@@ -52,7 +52,7 @@ jobs:
           pytest-results-summary: true
         - linux: py39-webbpsf
           pytest-results-summary: true
-        - linux: py310-webbpsf
+        - linux: py310-webbpsf-nolegacypath
           pytest-results-summary: true
         - linux: py311-ddtrace-webbpsf
           pytest-results-summary: true

@@ -1,4 +1,5 @@
 """Reprocessing List"""
+
 from collections import deque
 from enum import Enum
 from functools import reduce
