@@ -17,6 +17,10 @@ dq_init
 - Copy reference pixels during ``dq_init`` to avoid larger files in later
   processing steps [#1121]
 
+outlier_detection
+-----------------
+- Allow `ModelContainer` as input. [#1092]
+
 
 0.14.0 (2024-02-12)
 ===================
@@ -39,7 +43,6 @@ outlier_detection
 - Add outlier detection unit tests. [#1058]
 - Add additional documentation of the scale and snr parameters. [#1058]
 - Updated information for the ``scale`` and ``snr`` parameters in the ``outlier_detection`` step docs. [#1062]
-- Allow `ModelContainer` as input. [#1092]
 
 jump detection
 --------------
