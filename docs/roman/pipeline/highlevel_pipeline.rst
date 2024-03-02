@@ -2,7 +2,7 @@
 
 
 High Level Image Processing
-=====================================================
+===========================
 
 :Class: `romancal.pipeline.HighLevelPipeline`
 :Alias: highlevel_pipeline
@@ -43,8 +43,8 @@ and this will list all the strun options all well as the step options for the ro
 Inputs
 --------
 
-2D image data
-+++++++++++++
+An association of 2D calibrated image data
+++++++++++++++++++++++++++++++++++++++++++
 
 :Data model: `~romancal.datamodels.WfiImage`
 :File suffix: _cal
@@ -59,8 +59,8 @@ Instructions on how to create an input association an be found at :ref:`asn-from
 Outputs
 ----------
 
-2D Image model
-++++++++++++++
+2D Image (MosaicModel)
+++++++++++++++++++++++
 
 :Data model: `~romancal.datamodels.WfiMosaic`
 :File suffix: _i2d
