@@ -191,12 +191,12 @@ def _rtdata_fixture_implementation(artifactory_repos, envopt, request):
 
 
 @pytest.fixture(scope="function")
-def rtdata(artifactory_repos, envopt, request, _jail):
+def rtdata(artifactory_repos, envopt, request, function_jail):
     yield from _rtdata_fixture_implementation(artifactory_repos, envopt, request)
 
 
 @pytest.fixture(scope="module")
-def rtdata_module(artifactory_repos, envopt, request, jail):
+def rtdata_module(artifactory_repos, envopt, request, module_jail):
     yield from _rtdata_fixture_implementation(artifactory_repos, envopt, request)
 
 
