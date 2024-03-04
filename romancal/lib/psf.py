@@ -328,8 +328,7 @@ def fit_psf_to_image_model(
 
     if dq is None:
         if image_model is not None:
-            mask = dq_to_boolean_mask(
-                image_model, ignore_flags=ignore_flags)
+            mask = dq_to_boolean_mask(image_model, ignore_flags=ignore_flags)
         else:
             mask = None
     else:
