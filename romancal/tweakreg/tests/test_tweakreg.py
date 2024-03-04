@@ -717,12 +717,9 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     abs_refcat_filename = f"fit_{abs_refcat.lower()}_ref.ecsv"
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
-    step = trs.TweakRegStep()
-    step.save_abs_catalog = True
-    step.abs_refcat = abs_refcat
-    step.catalog_path = str(tmp_path)
-
-    step([img])
+    trs.TweakRegStep.call(
+        [img], save_abs_catalog=True, abs_refcat=abs_refcat, catalog_path=str(tmp_path)
+    )
 
     assert os.path.exists(tmp_path / abs_refcat_filename)
     # clean up
@@ -741,12 +738,9 @@ def test_tweakreg_defaults_to_valid_abs_refcat(tmp_path, abs_refcat, request):
     abs_refcat_filename = f"fit_{trs.DEFAULT_ABS_REFCAT.lower()}_ref.ecsv"
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
-    step = trs.TweakRegStep()
-    step.save_abs_catalog = True
-    step.abs_refcat = abs_refcat
-    step.catalog_path = str(tmp_path)
-
-    step([img])
+    trs.TweakRegStep.call(
+        [img], save_abs_catalog=True, abs_refcat=abs_refcat, catalog_path=str(tmp_path)
+    )
 
     assert os.path.exists(tmp_path / abs_refcat_filename)
     # clean up
@@ -759,12 +753,8 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    step = trs.TweakRegStep()
-    step.save_abs_catalog = True
-    step.abs_refcat = "my_ref_cat"
-
     with pytest.raises(Exception) as exec_info:
-        step([img])
+        trs.TweakRegStep.call([img], save_abs_catalog=True, abs_refcat="my_ref_cat")
 
     assert type(exec_info.value) == ValueError
 
@@ -801,12 +791,12 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
     with open(asn_filepath) as f:
         asn_content = json.load(f)
 
-    step = trs.TweakRegStep()
-    step.use_custom_catalogs = True
-    step.catalog_format = catalog_format
-    step.catfile = catfile
-
-    res = step(asn_filepath)
+    res = trs.TweakRegStep.call(
+        asn_filepath,
+        use_custom_catalogs=True,
+        catalog_format=catalog_format,
+        catfile=catfile,
+    )
 
     assert type(res) == ModelContainer
 
@@ -854,12 +844,12 @@ def test_tweakreg_use_custom_catalogs(tmp_path, catalog_format, base_image):
     catfile = res_dict.get("catfile")
     img1, img2, img3 = res_dict.get("datamodels")
 
-    step = trs.TweakRegStep()
-    step.use_custom_catalogs = True
-    step.catalog_format = catalog_format
-    step.catfile = catfile
-
-    step([img1, img2, img3])
+    trs.TweakRegStep.call(
+        [img1, img2, img3],
+        use_custom_catalogs=True,
+        catalog_format=catalog_format,
+        catfile=catfile,
+    )
 
     assert all(img1.meta.tweakreg_catalog) == all(
         table.Table.read(str(tmp_path / "ref_catalog_1"), format=catalog_format)
@@ -918,9 +908,7 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
         tmp_path, img, catalog_data=transformed_xy_gaia_sources
     )
 
-    step = trs.TweakRegStep()
-    step.abs_minobj = 3
-    step([img])
+    trs.TweakRegStep.call([img], abs_minobj=3)
 
     # get world coords for Gaia sources using "wrong WCS"
     original_ref_source = [
