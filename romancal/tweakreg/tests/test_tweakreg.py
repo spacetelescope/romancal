@@ -484,9 +484,8 @@ def base_image():
 def test_tweakreg_raises_error_on_invalid_input(input, error_type):
     # sourcery skip: list-literal
     """Test that TweakReg raises an error when an invalid input is provided."""
-    step = trs.TweakRegStep()
     with pytest.raises(Exception) as exec_info:
-        step(input)
+        trs.TweakRegStep.call(input)
 
     assert type(exec_info.value) in error_type
 
@@ -496,9 +495,8 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     Test that TweakReg raises an AttributeError if meta.tweakreg_catalog is missing.
     """
     img = base_image()
-    step = trs.TweakRegStep()
     with pytest.raises(Exception) as exec_info:
-        step([img])
+        trs.TweakRegStep.call([img])
 
     assert type(exec_info.value) == AttributeError
 
@@ -513,9 +511,7 @@ def test_tweakreg_returns_modelcontainer_on_roman_datamodel_as_input(
 
     test_input = img
 
-    step = trs.TweakRegStep()
-
-    res = step(test_input)
+    res = trs.TweakRegStep.call(test_input)
     assert res[0].meta.cal_step.tweakreg == "COMPLETE"
     assert isinstance(res, ModelContainer)
 
@@ -530,9 +526,7 @@ def test_tweakreg_returns_modelcontainer_on_modelcontainer_as_input(
 
     test_input = ModelContainer([img])
 
-    step = trs.TweakRegStep()
-
-    res = step(test_input)
+    res = trs.TweakRegStep.call(test_input)
     assert res[0].meta.cal_step.tweakreg == "COMPLETE"
     assert isinstance(res, ModelContainer)
 
@@ -552,9 +546,7 @@ def test_tweakreg_returns_modelcontainer_on_association_file_as_input(
 
     test_input = asn_filepath
 
-    step = trs.TweakRegStep()
-
-    res = step(test_input)
+    res = trs.TweakRegStep.call(test_input)
     assert all([x.meta.cal_step.tweakreg == "COMPLETE" for x in res])
     assert isinstance(res, ModelContainer)
 
@@ -577,9 +569,7 @@ def test_tweakreg_returns_modelcontainer_on_list_of_asdf_file_as_input(
         f"{tmp_path_str}/img_2.asdf",
     ]
 
-    step = trs.TweakRegStep()
-
-    res = step(test_input)
+    res = trs.TweakRegStep.call(test_input)
     assert all([x.meta.cal_step.tweakreg == "COMPLETE" for x in res])
     assert isinstance(res, ModelContainer)
 
@@ -597,9 +587,7 @@ def test_tweakreg_returns_modelcontainer_on_list_of_roman_datamodels_as_input(
 
     test_input = [img_1, img_2]
 
-    step = trs.TweakRegStep()
-
-    res = step(test_input)
+    res = trs.TweakRegStep.call(test_input)
     assert all([x.meta.cal_step.tweakreg == "COMPLETE" for x in res])
     assert isinstance(res, ModelContainer)
 
@@ -1000,9 +988,7 @@ def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
     with open(asn_filepath) as f:
         asn_content = json.load(f)
 
-    step = trs.TweakRegStep()
-
-    res = step(asn_filepath)
+    res = trs.TweakRegStep.call(asn_filepath)
     assert type(res) == ModelContainer
 
     assert hasattr(res[0].meta, "asn")
@@ -1038,15 +1024,12 @@ def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    step = trs.TweakRegStep()
-
     monkeypatch.setattr("requests.get", MockConnectionError)
-    res = step([img])
+    res = trs.TweakRegStep.call([img])
 
     assert type(res) == ModelContainer
     assert len(res) == 1
     assert res[0].meta.cal_step.tweakreg.lower() == "skipped"
-    assert step.skip is True
 
 
 def test_fit_results_in_meta(tmp_path, base_image):
@@ -1057,8 +1040,7 @@ def test_fit_results_in_meta(tmp_path, base_image):
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    step = trs.TweakRegStep()
-    res = step([img])
+    res = trs.TweakRegStep.call([img])
 
     assert type(res) == ModelContainer
     assert [
@@ -1077,8 +1059,7 @@ def test_tweakreg_returns_skipped_for_one_file(tmp_path, base_image):
 
     # disable alignment to absolute reference catalog
     trs.ALIGN_TO_ABS_REFCAT = False
-    step = trs.TweakRegStep()
-    res = step([img])
+    res = trs.TweakRegStep.call([img])
 
     assert all(x.meta.cal_step.tweakreg == "SKIPPED" for x in res)
 
@@ -1099,8 +1080,7 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     img1.meta["filename"] = "file1.asdf"
     img2.meta["filename"] = "file2.asdf"
 
-    step = trs.TweakRegStep()
-    res = step([img1, img2])
+    res = trs.TweakRegStep.call([img1, img2])
 
     assert len(res.models_grouped) == 2
     all(
@@ -1126,10 +1106,8 @@ def test_tweakreg_multiple_groups_valueerror(tmp_path, base_image):
     img2.meta.observation["program"] = "-program_id2"
 
     trs.ALIGN_TO_ABS_REFCAT = False
-    step = trs.TweakRegStep()
-    res = step([img1, img2])
+    res = trs.TweakRegStep.call([img1, img2])
 
-    assert step.skip is True
     assert all(x.meta.cal_step.tweakreg == "SKIPPED" for x in res)
 
 
