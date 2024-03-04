@@ -91,8 +91,8 @@ def apply_flux_correction(model):
     The modifications to the model can result in validation issues due to change of units.
     """
     # Define the various arrays to be converted.
-    DATA = ('data', 'err')
-    VARIANCES = ('var_rnoise', 'var_poisson', 'var_flat')
+    DATA = ("data", "err")
+    VARIANCES = ("var_rnoise", "var_poisson", "var_flat")
 
     # Check for units. Must be election/second. Otherwise, it is unknown how to
     # convert.
