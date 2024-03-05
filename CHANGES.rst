@@ -1,6 +1,11 @@
 0.14.1 (unreleased)
 ==================
 
+tweakreg
+--------
+
+- Allow single open Roman datamodels to be used as input to be consistent with expected behavior in ELP. [#1089]
+
 general
 -------
 
@@ -16,6 +21,7 @@ dq_init
 
 - Copy reference pixels during ``dq_init`` to avoid larger files in later
   processing steps [#1121]
+
 
 
 0.14.0 (2024-02-12)

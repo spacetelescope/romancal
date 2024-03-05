@@ -501,20 +501,40 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     assert type(exec_info.value) == AttributeError
 
 
-def test_tweakreg_returns_modelcontainer(tmp_path, base_image):
-    """Test that TweakReg always returns a ModelContainer."""
+def test_tweakreg_returns_modelcontainer_on_roman_datamodel_as_input(
+    tmp_path, base_image
+):
+    """Test that TweakReg always returns a ModelContainer when processing an open Roman DataModel as input."""
 
-    def clean_result(result):
-        """
-        Remove meta.tweakreg_catalog from 'tweaked' file.
+    img = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
 
-        Parameters
-        ----------
-        result : ModelContainer
-            A ModelContainer with the results from TweakRegStep.
-        """
-        for img in result:
-            del img.meta["tweakreg_catalog"]
+    test_input = img
+
+    res = trs.TweakRegStep.call(test_input)
+    assert res[0].meta.cal_step.tweakreg == "COMPLETE"
+    assert isinstance(res, ModelContainer)
+
+
+def test_tweakreg_returns_modelcontainer_on_modelcontainer_as_input(
+    tmp_path, base_image
+):
+    """Test that TweakReg always returns a ModelContainer when processing a ModelContainer as input."""
+
+    img = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
+
+    test_input = ModelContainer([img])
+
+    res = trs.TweakRegStep.call(test_input)
+    assert res[0].meta.cal_step.tweakreg == "COMPLETE"
+    assert isinstance(res, ModelContainer)
+
+
+def test_tweakreg_returns_modelcontainer_on_association_file_as_input(
+    tmp_path, base_image
+):
+    """Test that TweakReg always returns a ModelContainer when processing an association file as input."""
 
     img_1 = base_image(shift_1=1000, shift_2=1000)
     img_2 = base_image(shift_1=1000, shift_2=1000)
@@ -524,33 +544,52 @@ def test_tweakreg_returns_modelcontainer(tmp_path, base_image):
     img_2.save(tmp_path / "img_2.asdf")
     asn_filepath = create_asn_file(tmp_path)
 
-    step = trs.TweakRegStep()
+    test_input = asn_filepath
 
-    # test four different inputs:
-    # 1 - list of strings containing the path to ASDF files
+    res = trs.TweakRegStep.call(test_input)
+    assert all([x.meta.cal_step.tweakreg == "COMPLETE" for x in res])
+    assert isinstance(res, ModelContainer)
+
+
+def test_tweakreg_returns_modelcontainer_on_list_of_asdf_file_as_input(
+    tmp_path, base_image
+):
+    """Test that TweakReg always returns a ModelContainer when processing a list of ASDF files as input."""
+
+    img_1 = base_image(shift_1=1000, shift_2=1000)
+    img_2 = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
+    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
+    img_1.save(tmp_path / "img_1.asdf")
+    img_2.save(tmp_path / "img_2.asdf")
+
     tmp_path_str = tmp_path.as_posix()
-    res_1 = step.process(
-        [
-            f"{tmp_path_str}/img_1.asdf",
-            f"{tmp_path_str}/img_2.asdf",
-        ]
-    )
-    assert type(res_1) == ModelContainer
-    clean_result(res_1)
+    test_input = [
+        f"{tmp_path_str}/img_1.asdf",
+        f"{tmp_path_str}/img_2.asdf",
+    ]
 
-    # 2 - list of pathlib.Path objects containing the path to ASDF files
-    res_2 = step.process([tmp_path / "img_1.asdf", tmp_path / "img_2.asdf"])
-    assert type(res_2) == ModelContainer
-    clean_result(res_2)
+    res = trs.TweakRegStep.call(test_input)
+    assert all([x.meta.cal_step.tweakreg == "COMPLETE" for x in res])
+    assert isinstance(res, ModelContainer)
 
-    # 3 - list of DataModels
-    res_3 = step.process([img_1, img_2])
-    assert type(res_3) == ModelContainer
-    clean_result(res_3)
 
-    # 4 - string containing the full path to an ASN file
-    res_4 = step.process(asn_filepath)
-    assert type(res_4) == ModelContainer
+def test_tweakreg_returns_modelcontainer_on_list_of_roman_datamodels_as_input(
+    tmp_path, base_image
+):
+    """Test that TweakReg always returns a ModelContainer when processing a list of open Roman datamodels as input."""
+    img_1 = base_image(shift_1=1000, shift_2=1000)
+    img_2 = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
+    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
+    img_1.save(tmp_path / "img_1.asdf")
+    img_2.save(tmp_path / "img_2.asdf")
+
+    test_input = [img_1, img_2]
+
+    res = trs.TweakRegStep.call(test_input)
+    assert all([x.meta.cal_step.tweakreg == "COMPLETE" for x in res])
+    assert isinstance(res, ModelContainer)
 
 
 def test_tweakreg_updates_cal_step(tmp_path, base_image):
@@ -678,12 +717,9 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     abs_refcat_filename = f"fit_{abs_refcat.lower()}_ref.ecsv"
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
-    step = trs.TweakRegStep()
-    step.save_abs_catalog = True
-    step.abs_refcat = abs_refcat
-    step.catalog_path = str(tmp_path)
-
-    step.process([img])
+    trs.TweakRegStep.call(
+        [img], save_abs_catalog=True, abs_refcat=abs_refcat, catalog_path=str(tmp_path)
+    )
 
     assert os.path.exists(tmp_path / abs_refcat_filename)
     # clean up
@@ -702,12 +738,9 @@ def test_tweakreg_defaults_to_valid_abs_refcat(tmp_path, abs_refcat, request):
     abs_refcat_filename = f"fit_{trs.DEFAULT_ABS_REFCAT.lower()}_ref.ecsv"
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
-    step = trs.TweakRegStep()
-    step.save_abs_catalog = True
-    step.abs_refcat = abs_refcat
-    step.catalog_path = str(tmp_path)
-
-    step.process([img])
+    trs.TweakRegStep.call(
+        [img], save_abs_catalog=True, abs_refcat=abs_refcat, catalog_path=str(tmp_path)
+    )
 
     assert os.path.exists(tmp_path / abs_refcat_filename)
     # clean up
@@ -720,12 +753,8 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    step = trs.TweakRegStep()
-    step.save_abs_catalog = True
-    step.abs_refcat = "my_ref_cat"
-
     with pytest.raises(Exception) as exec_info:
-        step.process([img])
+        trs.TweakRegStep.call([img], save_abs_catalog=True, abs_refcat="my_ref_cat")
 
     assert type(exec_info.value) == ValueError
 
@@ -762,12 +791,12 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
     with open(asn_filepath) as f:
         asn_content = json.load(f)
 
-    step = trs.TweakRegStep()
-    step.use_custom_catalogs = True
-    step.catalog_format = catalog_format
-    step.catfile = catfile
-
-    res = step.process(asn_filepath)
+    res = trs.TweakRegStep.call(
+        asn_filepath,
+        use_custom_catalogs=True,
+        catalog_format=catalog_format,
+        catfile=catfile,
+    )
 
     assert type(res) == ModelContainer
 
@@ -815,12 +844,12 @@ def test_tweakreg_use_custom_catalogs(tmp_path, catalog_format, base_image):
     catfile = res_dict.get("catfile")
     img1, img2, img3 = res_dict.get("datamodels")
 
-    step = trs.TweakRegStep()
-    step.use_custom_catalogs = True
-    step.catalog_format = catalog_format
-    step.catfile = catfile
-
-    step.process([img1, img2, img3])
+    trs.TweakRegStep.call(
+        [img1, img2, img3],
+        use_custom_catalogs=True,
+        catalog_format=catalog_format,
+        catfile=catfile,
+    )
 
     assert all(img1.meta.tweakreg_catalog) == all(
         table.Table.read(str(tmp_path / "ref_catalog_1"), format=catalog_format)
@@ -879,9 +908,7 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
         tmp_path, img, catalog_data=transformed_xy_gaia_sources
     )
 
-    step = trs.TweakRegStep()
-    step.abs_minobj = 3
-    step.process([img])
+    trs.TweakRegStep.call([img], abs_minobj=3)
 
     # get world coords for Gaia sources using "wrong WCS"
     original_ref_source = [
@@ -949,9 +976,7 @@ def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
     with open(asn_filepath) as f:
         asn_content = json.load(f)
 
-    step = trs.TweakRegStep()
-
-    res = step.process(asn_filepath)
+    res = trs.TweakRegStep.call(asn_filepath)
     assert type(res) == ModelContainer
 
     assert hasattr(res[0].meta, "asn")
@@ -987,15 +1012,12 @@ def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    step = trs.TweakRegStep()
-
     monkeypatch.setattr("requests.get", MockConnectionError)
-    res = step.process([img])
+    res = trs.TweakRegStep.call([img])
 
     assert type(res) == ModelContainer
     assert len(res) == 1
     assert res[0].meta.cal_step.tweakreg.lower() == "skipped"
-    assert step.skip is True
 
 
 def test_fit_results_in_meta(tmp_path, base_image):
@@ -1006,8 +1028,7 @@ def test_fit_results_in_meta(tmp_path, base_image):
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    step = trs.TweakRegStep()
-    res = step.process([img])
+    res = trs.TweakRegStep.call([img])
 
     assert type(res) == ModelContainer
     assert [
@@ -1026,8 +1047,7 @@ def test_tweakreg_returns_skipped_for_one_file(tmp_path, base_image):
 
     # disable alignment to absolute reference catalog
     trs.ALIGN_TO_ABS_REFCAT = False
-    step = trs.TweakRegStep()
-    res = step.process([img])
+    res = trs.TweakRegStep.call([img])
 
     assert all(x.meta.cal_step.tweakreg == "SKIPPED" for x in res)
 
@@ -1048,8 +1068,7 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     img1.meta["filename"] = "file1.asdf"
     img2.meta["filename"] = "file2.asdf"
 
-    step = trs.TweakRegStep()
-    res = step.process([img1, img2])
+    res = trs.TweakRegStep.call([img1, img2])
 
     assert len(res.models_grouped) == 2
     all(
@@ -1075,10 +1094,8 @@ def test_tweakreg_multiple_groups_valueerror(tmp_path, base_image):
     img2.meta.observation["program"] = "-program_id2"
 
     trs.ALIGN_TO_ABS_REFCAT = False
-    step = trs.TweakRegStep()
-    res = step.process([img1, img2])
+    res = trs.TweakRegStep.call([img1, img2])
 
-    assert step.skip is True
     assert all(x.meta.cal_step.tweakreg == "SKIPPED" for x in res)
 
 
