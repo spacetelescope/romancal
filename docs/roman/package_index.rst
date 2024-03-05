@@ -6,6 +6,7 @@
    dark_current/index.rst
    dq_init/index.rst
    flatfield/index.rst
+   flux/index.rst
    jump/index.rst
    linearity/index.rst
    outlier_detection/index.rst
