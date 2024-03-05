@@ -22,7 +22,10 @@ dq_init
 - Copy reference pixels during ``dq_init`` to avoid larger files in later
   processing steps [#1121]
 
+flux
+----
 
+- Create FluxStep to apply the flux correction to Level 2 data. [#1120]
 
 0.14.0 (2024-02-12)
 ===================
