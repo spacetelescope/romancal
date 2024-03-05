@@ -5,7 +5,7 @@ Many pipeline steps rely on the use of reference files that contain different ty
 calibration data or information necessary for processing the data. The reference files are
 instrument-specific and are periodically updated as the data processing evolves and the
 understanding of the instruments improves. They are created, tested, and validated by the
-Roman Instrument Teams. They ensure all the files are in the correct format and have all
+Roman Instrument Team. They ensure all the files are in the correct format and have all
 required attributes. The files are then delivered to the Reference Data for Calibration
 and Tools (ReDCaT) Management Team. The result of this process is the files being ingested
 into the Roman Calibration Reference Data System (CRDS), and made available to the pipeline
@@ -32,4 +32,4 @@ $ export CRDS_CONTEXT='roman_0017.pmap'
 Within STScI, the current storage location for all Roman CRDS reference files is:
 ::
 
-/grp/crds/roman/references/roman/
+/grp/crds/roman
