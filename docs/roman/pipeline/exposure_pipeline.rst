@@ -25,14 +25,14 @@ table below.
 ================================================== ========= ========= =========
  :ref:`dq_init <dq_init_step>`                      |check|    |check|  |check|
  :ref:`saturation <saturation_step>`                |check|    |check|  |check|
+ :ref:`refpix <refpix>`                             |check|    |check|  |check|
  :ref:`linearity <linearity_step>`                  |check|    |check|  |check|
  :ref:`dark_current <dark_current_step>`            |check|    |check|  |check|
- :ref:`jump <jump_step>`                            |check|    |check|  |check|
  :ref:`ramp_fitting <ramp_fitting_step>`            |check|    |check|  |check|
  :ref:`assign_wcs <assign_wcs_step>`                |check|    |check|  |check|
  :ref:`flatfield <flatfield_step>`                  |check|
  :ref:`photom <photom_step>`                        |check|
- :ref:`source_detection <source_detection_step>`   |check|
+ :ref:`source_detection <source_detection_step>`    |check|
  :ref:`tweakreg <tweakreg_step>`                    |check|
 ================================================== ========= ========= =========
 
@@ -53,7 +53,7 @@ are identified in the step.
 
 
 Inputs
---------
+------
 
 3D raw data
 +++++++++++
@@ -71,10 +71,10 @@ input will be in the form of a `~romancal.datamodels.RawScienceModel`, which onl
 contains the 3D array of detector pixel values, along with some optional
 extensions. When such a file is loaded into the pipeline, it is immediately
 converted into a `~romancal.datamodels.RampModel`, and has all additional data arrays
-for errors and Data Quality flags created and initialized to zero.
+for errors and Data Quality flags created and initialized.
 
 Outputs
-----------
+-------
 
 2D Image model
 ++++++++++++++
@@ -83,8 +83,8 @@ Outputs
 :File suffix: _cal
 
 Result of applying all pipeline steps up through the
-:ref:`tweakreg <tweakreg_step>` step is to produce calibrated data with the image wcs
+:ref:`tweakreg <tweakreg_step>` step is to produce calibrated data with the image WCS
 aligned to Gaia, and is 2D image data, which will have one less data dimensions as the input
-raw 3D data ( ngroups x ncols x nrows ). In addition to being a 2-dimensional
+raw 3D data. In addition to being a 2-dimensional
 image the output from the pipeline has the :ref:`reference pixels <refpix>`
-removed from the edges of the science array.
+removed from the edges of the science array and saved as additional 3D arrays.
