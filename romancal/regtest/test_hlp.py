@@ -1,11 +1,11 @@
 """ Regression tests for the High Level Processing Pipeline"""
+
 import pytest
 
-from romancal.pipeline.highlevel_pipeline import HighLevelPipeline
 from romancal.stpipe.core import RomanStep
 
 
-@pytest.mark.xfail(reason='See RCAL-777')
+@pytest.mark.xfail(reason="See RCAL-777")
 @pytest.mark.bigdata
 def test_flux(hlp):
     pass
@@ -14,7 +14,7 @@ def test_flux(hlp):
 # ########
 # Fixtures
 # ########
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def hlp(rtdata_module):
     """Execute the HighLevelPipeline"""
     rtdata = rtdata_module
@@ -29,13 +29,13 @@ def hlp(rtdata_module):
     rtdata.get_data(f"WFI/image/{asnfn}")
 
     # Execute pipeline
-    rtdata.output = 'result_hlp.asdf'
+    rtdata.output = "result_hlp.asdf"
 
     args = [
-        'roman_hlp',
+        "roman_hlp",
         rtdata.input,
-        f'--output_file={rtdata.output}',
-        '--steps.outlier_detection.skip=true',
+        f"--output_file={rtdata.output}",
+        "--steps.outlier_detection.skip=true",
     ]
 
     RomanStep.from_cmdline(args)

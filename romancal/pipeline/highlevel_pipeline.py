@@ -34,7 +34,7 @@ class HighLevelPipeline(RomanPipeline):
 
     # Define aliases to steps
     step_defs = {
-        'flux': FluxStep,
+        "flux": FluxStep,
         "skymatch": SkyMatchStep,
         "outlier_detection": OutlierDetectionStep,
         "resample": ResampleStep,
