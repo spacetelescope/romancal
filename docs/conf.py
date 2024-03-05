@@ -100,7 +100,11 @@ intersphinx_mapping = {
     "astropy": ("https://docs.astropy.org/en/stable/", None),
     "photutils": ("https://photutils.readthedocs.io/en/stable/", None),
     "webbpsf": ("https://webbpsf.readthedocs.io/en/latest/", None),
+    "roman_datamodels": ("https://roman-datamodels.readthedocs.io/en/latest/", None),
+    "rad": ("https://rad.readthedocs.io/en/latest/", None),
 }
+
+intersphinx_disabled_reftypes = ["*"]
 
 if sys.version_info[0] == 2:
     intersphinx_mapping["python"] = ("http://docs.python.org/2/", None)
