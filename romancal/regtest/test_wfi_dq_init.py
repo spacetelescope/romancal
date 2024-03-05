@@ -68,7 +68,7 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
     assert diff.identical, diff.report()
 
 
-@metrics_logger("DMS26")
+@metrics_logger("DMS25")
 @pytest.mark.bigdata
 def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
     """DMS26 Test: Testing retrieval of best ref file for grism data,
