@@ -72,15 +72,17 @@ basename of the file.
 Product                                        Suffix
 =============================================  ============
 Uncalibrated raw input                         `_uncal`
-DQ initialization                              `_dq_init`
+DQ initialization                              `_dqinit`
 Saturation detection                           `_saturation`
+Reference Pixel Correction                     `_refpix`
 Linearity correction                           `_linearity`
-Dark current                                   `_dark_current`
-Jump detection                                 `_jump`
+Dark current                                   `_darkcurrent`
 Corrected ramp data                            `_rampfit`
 Optional fitting results from ramp_fit step    `_fitopt`
 Assign WCS                                     `_assignwcs`
 Flat field                                     `_flat`
-Photometric calibration			               `_phot`
+Photometric calibration			                   `_photomstep`
+Source Detection                               `_sourcedetection`
+Tweakreg (Allign to GAIA)                      `_tweakregstep`
 Calibrated image                               `_cal`
 =============================================  ============

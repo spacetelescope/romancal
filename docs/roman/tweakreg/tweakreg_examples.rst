@@ -3,16 +3,28 @@ Examples
 In the examples below, `img` is either a string with the filename of a Roman `ASDF` file
 or a Roman datamodel `ImageModel`.
 
-1. To run TweakReg on a python session one image file
-   (i.e. one Roman's SCA) with the default parameters:
+#. To run TweakReg in a Python session with the default parameters:
 
         .. code-block:: python
 
                 from romancal.tweakreg.tweakreg_step import TweakRegStep
                 step = TweakRegStep()
-                step.process([img])
+                step.call([img])
 
-2. To run TweakReg on a Roman's exposure with default astrometric parameters and save
+        .. note::
+            If the input is a single Roman ``DataModel``,
+            either ``step.call([img])`` or ``step.call(img)`` will work. For multiple elements as input,
+            they must be passed in as either a list or a ModelContainer.
+
+#. To run TweakReg in a Python session on an association file with the default parameters:
+
+        .. code-block:: python
+
+                from romancal.tweakreg.tweakreg_step import TweakRegStep
+                step = TweakRegStep()
+                step.call("asn_file.json")
+
+#. To run TweakReg on a Roman's exposure with default astrometric parameters and save
    the absolute catalog data:
 
         .. code-block:: python
@@ -22,9 +34,9 @@ or a Roman datamodel `ImageModel`.
                 step.save_abs_catalog = True # save the catalog data used for absolute astrometry
                 step.abs_refcat = 'GAIADR3' # use Gaia DR3 for absolute astrometry
                 step.catalog_path = '/path/for/the/abs/catalog' # save the Gaia catalog to this path
-                step.process([img])
+                step.call([img])
 
-3. To run TweakReg using a custom source catalog with the default parameters:
+#. To run TweakReg using a custom source catalog with the default parameters:
 
    - make sure the source catalog is in one of the supported formats. The file content
      below is an example of a valid catalog (`ascii.csv` format):
@@ -81,4 +93,4 @@ or a Roman datamodel `ImageModel`.
                 step.use_custom_catalogs = True # use custom catalogs
                 step.catalog_format = "ascii.ecsv" # custom catalogs format
                 step.catfile = '/path/to/catfile/catfilename' # path to datamodel:catalog mapping
-                step.process([img])
+                step.call([img])
