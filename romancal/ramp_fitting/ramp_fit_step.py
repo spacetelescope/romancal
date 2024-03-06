@@ -157,6 +157,13 @@ class RampFitStep(RomanStep):
             )
 
         out_model = create_image_model(input_model, image_info)
+
+        # Rescale by the gain back to DN/s
+        out_model.data /= gain_model.data[4:-4,4:-4].value
+        out_model.err /= gain_model.data[4:-4,4:-4].value
+        out_model.var_poisson /= gain_model.data[4:-4,4:-4].value**2
+        out_model.var_rnoise /= gain_model.data[4:-4,4:-4].value**2
+
         return out_model
 
     def ols_cas22(self, input_model, readnoise_model, gain_model):
@@ -229,6 +236,12 @@ class RampFitStep(RomanStep):
         image_info = (slopes, ramp_dq, var_poisson, var_rnoise, err)
         image_model = create_image_model(input_model, image_info)
 
+        # Rescale by the gain back to DN/s
+        image_model.data /= gain[4:-4,4:-4]
+        image_model.err /= gain[4:-4,4:-4]
+        image_model.var_poisson /= gain[4:-4,4:-4]**2
+        image_model.var_rnoise /= gain[4:-4,4:-4]**2
+
         # That's all folks
         return image_model
 
@@ -255,12 +268,12 @@ def create_image_model(input_model, image_info):
     """
     data, dq, var_poisson, var_rnoise, err = image_info
 
-    data = u.Quantity(data, u.electron / u.s, dtype=data.dtype)
+    data = u.Quantity(data, u.DN / u.s, dtype=data.dtype)
     var_poisson = u.Quantity(
-        var_poisson, u.electron**2 / u.s**2, dtype=var_poisson.dtype
+        var_poisson, u.DN**2 / u.s**2, dtype=var_poisson.dtype
     )
-    var_rnoise = u.Quantity(var_rnoise, u.electron**2 / u.s**2, dtype=var_rnoise.dtype)
-    err = u.Quantity(err, u.electron / u.s, dtype=err.dtype)
+    var_rnoise = u.Quantity(var_rnoise, u.DN**2 / u.s**2, dtype=var_rnoise.dtype)
+    err = u.Quantity(err, u.DN / u.s, dtype=err.dtype)
     if dq is None:
         dq = np.zeros(data.shape, dtype="u4")
 
@@ -272,15 +285,15 @@ def create_image_model(input_model, image_info):
     meta["photometry"] = maker_utils.mk_photometry()
     inst = {
         "meta": meta,
-        "data": u.Quantity(data, u.electron / u.s, dtype=data.dtype),
+        "data": u.Quantity(data, u.DN / u.s, dtype=data.dtype),
         "dq": dq,
         "var_poisson": u.Quantity(
-            var_poisson, u.electron**2 / u.s**2, dtype=var_poisson.dtype
+            var_poisson, u.DN**2 / u.s**2, dtype=var_poisson.dtype
         ),
         "var_rnoise": u.Quantity(
-            var_rnoise, u.electron**2 / u.s**2, dtype=var_rnoise.dtype
+            var_rnoise, u.DN**2 / u.s**2, dtype=var_rnoise.dtype
         ),
-        "err": u.Quantity(err, u.electron / u.s, dtype=err.dtype),
+        "err": u.Quantity(err, u.DN / u.s, dtype=err.dtype),
         "amp33": input_model.amp33.copy(),
         "border_ref_pix_left": input_model.border_ref_pix_left.copy(),
         "border_ref_pix_right": input_model.border_ref_pix_right.copy(),

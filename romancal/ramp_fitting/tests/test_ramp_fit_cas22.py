@@ -47,13 +47,13 @@ SIMPLE_EXPECTED_DEFAULT = {
     ),
 }
 SIMPLE_EXPECTED_GAIN = {
-    "data": np.array([[2.631579, 2.631579], [1.151316, 3.50926]], dtype=np.float32),
-    "err": np.array([[0.542564, 0.542564], [0.358915, 0.623119]], dtype=np.float32),
+    "data": np.array([[0.526316, 0.526316], [0.230263, 0.701852]], dtype=np.float32),
+    "err": np.array([[0.108513, 0.108513], [0.071783, 0.124624]], dtype=np.float32),
     "var_poisson": np.array(
-        [[0.294321, 0.294321], [0.128766, 0.388223]], dtype=np.float32
+        [[1.177285797894001e-02, 1.177285797894001e-02], [5.150624085217714e-03, 1.5528908930718899e-02]], dtype=np.float32
     ),
     "var_rnoise": np.array(
-        [[5.410319e-05, 5.410319e-05], [5.410319e-05, 5.476514e-05]], dtype=np.float32
+        [[2.164127e-06, 2.164127e-06], [2.164127e-06, 2.190606e-06]], dtype=np.float32
     ),
 }
 SIMPLE_EXPECTED_RNOISE = {
