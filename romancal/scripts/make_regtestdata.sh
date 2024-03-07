@@ -74,7 +74,7 @@ from roman_datamodels import stnode
 from astropy.time import Time
 basename = '$basename'
 f = asdf.open(f'{basename}_uncal.asdf')
-f['roman']['meta']['exposure']['start_time'] = Time('2027-01-01T00:00:00', format='isot')
+f['roman']['meta']['exposure']['start_time'] = Time('2020-01-01T00:00:00', format='isot')
 f['roman']['meta']['filename'] = stnode.Filename(f'{basename}_changetime_uncal.asdf')
 f.write_to(f'{basename}_changetime_uncal.asdf')"
 strun roman_elp ${basename}_changetime_uncal.asdf --steps.assign_wcs.save_results True --steps.flatfield.save_results True
@@ -153,8 +153,7 @@ model.to_asdf(f'${basename}_cal_repoint.asdf')"
     echo $dirname
 done
 
-strun roman_elp r00r1601001001001001_01101_0001_WFI01_uncal.asdf --steps.dark_current.override_dark=roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf
-strun roman_elp r10r1601001001001001_01101_0001_WFI01_uncal.asdf --steps.dark_current.override_dark=roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf
-cp r00r1601001001001001_01101_0001_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
-cp r10r1601001001001001_01101_0001_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/grism/
-cp roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf $outdir/roman-pipeline/dev/WFI/image/
+strun roman_elp r0000101001001001001_01101_0004_WFI01_uncal.asdf
+strun roman_elp r0000201001001001001_01101_0004_WFI01_uncal.asdf
+cp r0000101001001001001_01101_0004_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
+cp r0000201001001001001_01101_0004_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/grism/
