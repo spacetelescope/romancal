@@ -29,12 +29,12 @@ multiplied to the ``data`` and ``err`` arrays. The square of the scale factor is
 multiplied to all the variance arrays. The resultant units is in :math:`MJy/sr`.
 
 .. math::
-   DATA =* SCALE
+   DATA &= DATA * SCALE
 
-   ERR =* SCALE
+   ERR &= ERR * SCALE
 
-   VAR_{rnoise} =* SCALE ^ 2
+   VAR_{rnoise} &= VAR_{rnoise} * SCALE ^ 2
 
-   VAR_{poisson} =* SCALE ^2
+   VAR_{poisson} &= VAR_{poisson} * SCALE ^2
 
-   VAR_{flat} =* SCALE ^2
+   VAR_{flat} &= VAR_{flat} * SCALE ^2
