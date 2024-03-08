@@ -22,6 +22,15 @@ dq_init
 - Copy reference pixels during ``dq_init`` to avoid larger files in later
   processing steps [#1121]
 
+resample
+--------
+
+- Update location of ``basic`` attributes. [#1131]
+
+outlier_detection
+-----------------
+
+- Update location of ``basic`` attributes. [#1131]
 
 
 0.14.0 (2024-02-12)
