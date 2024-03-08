@@ -22,6 +22,7 @@ from romancal.flux import FluxStep
 def test_attributes(flux_step, attr, factor):
     """Test that the attribute has been scaled by the right factor"""
     original, result = flux_step
+    c_unit = 1. / (1. * u.electron / u.s)
 
     # Handle difference between just a single image and a list.
     if isinstance(original, datamodels.ImageModel):
@@ -33,7 +34,7 @@ def test_attributes(flux_step, attr, factor):
 
     for original_model, result_model in zip(original_list, result_list):
         c_mj = original_model.meta.photometry.conversion_megajanskys
-        scale = c_mj**factor
+        scale = (c_mj * c_unit)**factor
         original_value = getattr(original_model, attr)
         result_value = getattr(result_model, attr)
 
