@@ -102,7 +102,8 @@ def apply_flux_correction(model):
     # convert.
     if model.data.unit != LV2_UNITS:
         log.debug(
-            "Input data is not in units of %s. Flux correction will not be done.", LV2_UNITS
+            "Input data is not in units of %s. Flux correction will not be done.",
+            LV2_UNITS,
         )
         log.debug("Input data units are %s", model.data.unit)
         return
