@@ -104,10 +104,10 @@ def apply_flux_correction(model):
         return
 
     # Apply the correction
-    # Assignments into the model are done through `_instance` to avoid
-    # validation errors on the units.
+    # The end goal in units is to have MJy/sr. The scale is in MJy/sr also.
+    # Hence the extra factor of s/DN must be applied to cancel DN/s.
     log.debug("Flux correction being applied")
-    c_mj = model.meta.photometry.conversion_megajanskys
+    c_mj = model.meta.photometry.conversion_megajanskys / (1. * u.electron / u.s)
     for data in DATA:
         model[data] = model[data] * c_mj
     for variance in VARIANCES:
