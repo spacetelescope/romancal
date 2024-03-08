@@ -7,6 +7,7 @@ from roman_datamodels import datamodels, maker_utils
 
 from romancal.datamodels.container import ModelContainer
 from romancal.flux import FluxStep
+from romancal.flux.flux_step import LV2_UNITS
 
 
 @pytest.mark.parametrize(
@@ -22,7 +23,7 @@ from romancal.flux import FluxStep
 def test_attributes(flux_step, attr, factor):
     """Test that the attribute has been scaled by the right factor"""
     original, result = flux_step
-    c_unit = 1. / (1. * u.electron / u.s)
+    c_unit = 1. / LV2_UNITS
 
     # Handle difference between just a single image and a list.
     if isinstance(original, datamodels.ImageModel):
