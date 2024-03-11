@@ -15,7 +15,7 @@ __all__ = ["FluxStep"]
 
 
 # Define expected Level 2 units
-LV2_UNITS = u.electron / u.s
+LV2_UNITS = u.DN / u.s
 
 
 class FluxStep(RomanStep):
