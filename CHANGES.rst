@@ -9,7 +9,10 @@ tweakreg
 general
 -------
 
-- Update the ``dqflags`` to use the ones stored in ``roman_datamodels`` [#1099]
+- Update the ``dqflags`` to use the ones stored in
+  ``roman_datamodels`` [#1099]
+- Add script for creating regtest files; consolidate files used for
+  some tests. [#1084]
 
 documentation
 -------------
