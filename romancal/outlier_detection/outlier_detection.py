@@ -83,13 +83,10 @@ class OutlierDetection:
         if pars["resample_data"]:
             # Start by creating resampled/mosaic images for
             # each group of exposures
-            # in_memory = pars["in_memory"]
-            # pars["in_memory"] = True
             resamp = resample.ResampleData(
                 self.input_models, single=True, blendheaders=False, **pars
             )
             drizzled_models = resamp.do_drizzle()
-            # pars["in_memory"] = in_memory
 
         else:
             # for non-dithered data, the resampled image is just the original image
