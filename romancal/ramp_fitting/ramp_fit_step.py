@@ -109,35 +109,13 @@ class RampFitStep(RomanStep):
             pixel,
         )
 
-        if image_info is not None:
-            # JWST has a separate GainScale step.  This isn't in Roman.
-            # We can adjust the gains here instead.
-            # data, dq, var_poisson, var_rnoise, err = image_info
-            # This step isn't needed for ols_cas22, which works directly in
-            # electrons.
-            image_info[0][...] *= gain_model.data.value  # data
-            # no dq multiplication!
-            image_info[2][...] *= gain_model.data.value**2  # var_poisson
-            image_info[3][...] *= gain_model.data.value**2  # var_rnoise
-            image_info[4][...] *= gain_model.data.value  # err
-
         readnoise_model.close()
 
         # Save the OLS optional fit product, if it exists
         if opt_info is not None:
-            # We should scale these by the gain, too.
             # opt_info = (slope, sigslope, var_poisson, var_readnoise, yint,
             # sig_yint,
             # ped_int, weights, cr_mag_seg
-            opt_info[0][...] *= gain_model.data.value  # slope
-            opt_info[1][...] *= gain_model.data.value  # sigslope
-            opt_info[2][...] *= gain_model.data.value**2  # var_poisson
-            opt_info[3][...] *= gain_model.data.value**2  # var_readnoise
-            opt_info[4][...] *= gain_model.data.value  # yint
-            opt_info[5][...] *= gain_model.data.value  # sigyint
-            opt_info[6][...] *= gain_model.data.value  # pedestal
-            # no change to weights due to gain
-            opt_info[8][...] *= gain_model.data.value  # crmag
             opt_model = create_optional_results_model(input_model, opt_info)
             self.save_model(opt_model, "fitopt", output_file=self.opt_name)
 
@@ -157,6 +135,7 @@ class RampFitStep(RomanStep):
             )
 
         out_model = create_image_model(input_model, image_info)
+
         return out_model
 
     def ols_cas22(self, input_model, readnoise_model, gain_model):
@@ -229,6 +208,12 @@ class RampFitStep(RomanStep):
         image_info = (slopes, ramp_dq, var_poisson, var_rnoise, err)
         image_model = create_image_model(input_model, image_info)
 
+        # Rescale by the gain back to DN/s
+        image_model.data /= gain[4:-4, 4:-4]
+        image_model.err /= gain[4:-4, 4:-4]
+        image_model.var_poisson /= gain[4:-4, 4:-4] ** 2
+        image_model.var_rnoise /= gain[4:-4, 4:-4] ** 2
+
         # That's all folks
         return image_model
 
@@ -255,12 +240,10 @@ def create_image_model(input_model, image_info):
     """
     data, dq, var_poisson, var_rnoise, err = image_info
 
-    data = u.Quantity(data, u.electron / u.s, dtype=data.dtype)
-    var_poisson = u.Quantity(
-        var_poisson, u.electron**2 / u.s**2, dtype=var_poisson.dtype
-    )
-    var_rnoise = u.Quantity(var_rnoise, u.electron**2 / u.s**2, dtype=var_rnoise.dtype)
-    err = u.Quantity(err, u.electron / u.s, dtype=err.dtype)
+    data = u.Quantity(data, u.DN / u.s, dtype=data.dtype)
+    var_poisson = u.Quantity(var_poisson, u.DN**2 / u.s**2, dtype=var_poisson.dtype)
+    var_rnoise = u.Quantity(var_rnoise, u.DN**2 / u.s**2, dtype=var_rnoise.dtype)
+    err = u.Quantity(err, u.DN / u.s, dtype=err.dtype)
     if dq is None:
         dq = np.zeros(data.shape, dtype="u4")
 
@@ -272,15 +255,13 @@ def create_image_model(input_model, image_info):
     meta["photometry"] = maker_utils.mk_photometry()
     inst = {
         "meta": meta,
-        "data": u.Quantity(data, u.electron / u.s, dtype=data.dtype),
+        "data": u.Quantity(data, u.DN / u.s, dtype=data.dtype),
         "dq": dq,
         "var_poisson": u.Quantity(
-            var_poisson, u.electron**2 / u.s**2, dtype=var_poisson.dtype
+            var_poisson, u.DN**2 / u.s**2, dtype=var_poisson.dtype
         ),
-        "var_rnoise": u.Quantity(
-            var_rnoise, u.electron**2 / u.s**2, dtype=var_rnoise.dtype
-        ),
-        "err": u.Quantity(err, u.electron / u.s, dtype=err.dtype),
+        "var_rnoise": u.Quantity(var_rnoise, u.DN**2 / u.s**2, dtype=var_rnoise.dtype),
+        "err": u.Quantity(err, u.DN / u.s, dtype=err.dtype),
         "amp33": input_model.amp33.copy(),
         "border_ref_pix_left": input_model.border_ref_pix_left.copy(),
         "border_ref_pix_right": input_model.border_ref_pix_right.copy(),
