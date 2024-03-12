@@ -16,16 +16,35 @@ documentation
 
 - Fixed datamodels documentation to use correct API. [#1112]
 
+- Improve PSF fitting configuration, background subtraction, grid
+  point selection. [#1125]
+
 dq_init
 -------
 
 - Copy reference pixels during ``dq_init`` to avoid larger files in later
   processing steps [#1121]
 
+resample
+--------
+
+- Update location of ``basic`` attributes. [#1131]
+
+outlier_detection
+-----------------
+
+- Update location of ``basic`` attributes. [#1131]
+
+ramp_fitting
+------------
+
+- Changed image units from e/s to DN/s (and added support for MJy/sr). Added gain reduction to convert to these units. [#1128]
+
 flux
 ----
 
 - Create FluxStep to apply the flux correction to Level 2 data. [#1120]
+
 
 0.14.0 (2024-02-12)
 ===================

@@ -55,22 +55,22 @@ class WfiSca:
                 },
                 "data": u.Quantity(
                     rng.poisson(2.5, size=self.shape).astype(np.float32),
-                    u.electron / u.s,
+                    u.DN / u.s,
                     dtype=np.float32,
                 ),
                 "var_rnoise": u.Quantity(
                     rng.normal(1, 0.05, size=self.shape).astype(np.float32),
-                    u.electron**2 / u.s**2,
+                    u.DN**2 / u.s**2,
                     dtype=np.float32,
                 ),
                 "var_poisson": u.Quantity(
                     rng.poisson(1, size=self.shape).astype(np.float32),
-                    u.electron**2 / u.s**2,
+                    u.DN**2 / u.s**2,
                     dtype=np.float32,
                 ),
                 "var_flat": u.Quantity(
                     rng.uniform(0, 1, size=self.shape).astype(np.float32),
-                    u.electron**2 / u.s**2,
+                    u.DN**2 / u.s**2,
                     dtype=np.float32,
                 ),
             },
@@ -451,7 +451,7 @@ def test_resampledata_do_drizzle_many_to_one_single_input_model(wfi_sca1):
 
     # Assert
     assert len(output_models) == 1
-    assert output_models[0].meta.basic.filename == resample_data.output_filename
+    assert output_models[0].meta.filename == resample_data.output_filename
     np.testing.assert_allclose(flat_1, flat_2)
 
 

@@ -134,9 +134,12 @@ def create_gridded_psf_model(
     stop_pix = 4096
 
     # Choose locations on detector for each PSF:
-    pixel_range = np.linspace(
-        start_pix + buffer_pixels, stop_pix - buffer_pixels, int(sqrt_n_psfs)
-    )
+    if sqrt_n_psfs != 1:
+        pixel_range = np.linspace(
+            start_pix + buffer_pixels, stop_pix - buffer_pixels, int(sqrt_n_psfs)
+        )
+    else:
+        pixel_range = [(start_pix + stop_pix) / 2]
 
     # generate PSFs over a grid of detector positions [pix]
     model_psf_centroids = [(int(x), int(y)) for y in pixel_range for x in pixel_range]
@@ -183,9 +186,6 @@ def create_gridded_psf_model(
             f"Loading existing gridded PSF model from {expected_output_path}",
         )
         psf_model = CCDData.read(expected_output_path, unit=u.electron / u.s, ext=0)
-        # the FITS file saved by webbpsf gets loaded with pixel
-        # axes flipped in both dimensions, so flip them back after loading:
-        psf_model.data = psf_model.data[::-1, ::-1]
         psf_model.meta = dict(psf_model.meta)
         psf_model.meta["oversampling"] = oversample
         psf_model.meta["grid_xypos"] = np.array(
@@ -292,7 +292,7 @@ def fit_psf_to_image_model(
             finder = default_finder
         psf_photometry_kwargs["finder"] = finder
 
-    if localbkg_estimator is not None:
+    if localbkg_estimator is None:
         localbkg_estimator = LocalBackground(
             inner_radius=10,  # [pix]
             outer_radius=30,  # [pix]
@@ -321,9 +321,14 @@ def fit_psf_to_image_model(
                 "or arrays for the data and error."
             )
 
+    ignore_flags = pixel.NO_LIN_CORR
+    # presently the linearity correction is somewhat problematic in
+    # CRDS reference files; we should replace this with ignore_flags = 0
+    # at some point in the future.
+
     if dq is None:
         if image_model is not None:
-            mask = dq_to_boolean_mask(image_model)
+            mask = dq_to_boolean_mask(image_model, ignore_flags=ignore_flags)
         else:
             mask = None
     else:
