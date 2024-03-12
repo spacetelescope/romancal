@@ -111,7 +111,7 @@ class OutlierDetection:
 
         if not pars.get("in_memory", True):
             median_model_output_path = self.make_output_path(
-                basepath=median_model.meta.basic.filename.replace(
+                basepath=median_model.meta.filename.replace(
                     self.resample_suffix, ".asdf"
                 ),
                 suffix="median",

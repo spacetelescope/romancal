@@ -257,10 +257,10 @@ def test_outlier_do_detection_find_outliers(tmp_path, base_image, clean_up_after
         [(15, 25), (35, 5), (75, 65), (95, 45), (99, 5)], dtype=[("x", int), ("y", int)]
     )
     img_1.data[img_1_input_coords["x"], img_1_input_coords["y"]] = Quantity(
-        100000, "electron / s"
+        100000, "DN / s"
     )
     img_2.data[img_2_input_coords["x"], img_2_input_coords["y"]] = Quantity(
-        100000, "electron / s"
+        100000, "DN / s"
     )
 
     input_models = ModelContainer([img_1, img_2])
