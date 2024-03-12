@@ -32,6 +32,11 @@ outlier_detection
 
 - Update location of ``basic`` attributes. [#1131]
 
+ramp_fitting
+------------
+
+- Changed image units from e/s to DN/s (and added support for MJy/sr). Added gain reduction to convert to these units. [#1128]
+
 
 0.14.0 (2024-02-12)
 ===================

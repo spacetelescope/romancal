@@ -30,7 +30,7 @@ def setup_inputs(
     """
     wfi_image = testutil.mk_level2_image(shape=shape)
     wfi_image.data = u.Quantity(
-        np.ones(shape, dtype=np.float32), u.electron / u.s, dtype=np.float32
+        np.ones(shape, dtype=np.float32), u.DN / u.s, dtype=np.float32
     )
     wfi_image.meta.filename = "filename"
     wfi_image.meta.instrument["optical_element"] = "F087"
@@ -40,10 +40,10 @@ def setup_inputs(
         setup_rng = np.random.default_rng(seed or 19)
         wfi_image.data = u.Quantity(
             setup_rng.normal(scale=noise, size=shape),
-            u.electron / u.s,
+            u.DN / u.s,
             dtype=np.float32,
         )
-        wfi_image.err = noise * np.ones(shape, dtype=np.float32) * u.electron / u.s
+        wfi_image.err = noise * np.ones(shape, dtype=np.float32) * u.DN / u.s
 
     # add dq array
     wfi_image.dq = np.zeros(shape, dtype=np.uint32)
