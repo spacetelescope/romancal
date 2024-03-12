@@ -108,6 +108,7 @@ class OutlierDetection:
         median_model.data = Quantity(
             self.create_median(drizzled_models), unit=median_model.data.unit
         )
+
         if not pars.get("in_memory", True):
             median_model_output_path = self.make_output_path(
                 basepath=median_model.meta.basic.filename.replace(
