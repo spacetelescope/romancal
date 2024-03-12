@@ -40,6 +40,11 @@ ramp_fitting
 
 - Changed image units from e/s to DN/s (and added support for MJy/sr). Added gain reduction to convert to these units. [#1128]
 
+flux
+----
+
+- Create FluxStep to apply the flux correction to Level 2 data. [#1120]
+
 
 0.14.0 (2024-02-12)
 ===================
