@@ -45,7 +45,7 @@ class SourceDetectionStep(RomanStep):
         # A circular source will have a zero roundness. A source extended in x or
         # y will have a negative or positive roundness, respectively.
         roundhi = float(default=1.0)  # DAOStarFinder: Upper bound for roundness.
-        peakmax = float(default=1000.0)  # Upper limit on brightest pixel in sources.
+        peakmax = float(default=100000.0)  # Upper limit on brightest pixel in sources.
         max_sources = float(default=None)  # Max number of sources, choosing brightest.
         scalar_threshold = float(default=None) # Detection threshold, to
         # be used for entire image. Assumed to be in same units as data, and is
@@ -67,6 +67,8 @@ class SourceDetectionStep(RomanStep):
         output_cat_filetype = option('asdf', 'ecsv', default='asdf') # Used if
         #save_catalogs=True - file type of output catalog.
         fit_psf = boolean(default=False)  # fit source PSFs for accurate astrometry
+        min_separation = integer(default=11)  # don't find multiple sources closer
+        # than this number of pixels
     """
 
     def process(self, input):
@@ -131,6 +133,7 @@ class SourceDetectionStep(RomanStep):
                 roundhi=self.roundhi,
                 brightest=self.max_sources,
                 peakmax=self.peakmax,
+                min_separation=self.min_separation,
             )
 
             if self.scalar_threshold is not None:

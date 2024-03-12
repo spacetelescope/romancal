@@ -16,6 +16,9 @@ documentation
 
 - Fixed datamodels documentation to use correct API. [#1112]
 
+- Improve PSF fitting configuration, background subtraction, grid
+  point selection. [#1125]
+
 dq_init
 -------
 
