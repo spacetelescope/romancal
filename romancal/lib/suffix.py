@@ -76,6 +76,7 @@ _calculated_suffixes = {
     "dark_current",
     "assignwcsstep",
     "flatfieldstep",
+    "fluxstep",
     "step",
     "dqinitstep",
     "assign_wcs",

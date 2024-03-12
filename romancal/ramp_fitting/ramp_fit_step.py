@@ -38,7 +38,7 @@ class RampFitStep(RomanStep):
 
     weighting = "optimal"  # Only weighting allowed for OLS
 
-    reference_file_types = ["readnoise", "gain"]
+    reference_file_types = ["readnoise", "gain", "dark"]
 
     def process(self, input):
         with rdd.open(input, mode="rw") as input_model:
@@ -56,7 +56,11 @@ class RampFitStep(RomanStep):
                 out_model = self.ols(input_model, readnoise_model, gain_model)
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
             elif algorithm == "ols_cas22":
-                out_model = self.ols_cas22(input_model, readnoise_model, gain_model)
+                dark_filename = self.get_reference_file(input_model, "dark")
+                dark_model = rdd.open(dark_filename, mode="r")
+                out_model = self.ols_cas22(
+                    input_model, readnoise_model, gain_model, dark_model
+                )
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
                 if self.use_ramp_jump_detection:
                     out_model.meta.cal_step.jump = "COMPLETE"
@@ -138,7 +142,7 @@ class RampFitStep(RomanStep):
 
         return out_model
 
-    def ols_cas22(self, input_model, readnoise_model, gain_model):
+    def ols_cas22(self, input_model, readnoise_model, gain_model, dark_model):
         """Peform Optimal Linear Fitting on arbitrarily space resulants
 
         Parameters
@@ -151,6 +155,9 @@ class RampFitStep(RomanStep):
 
         gain_model : GainRefModel
             Model with the gain reference information.
+
+        dark_model : DarkRefModel
+            Model with the dark reference information
 
         Returns
         -------
@@ -176,12 +183,21 @@ class RampFitStep(RomanStep):
         gain = gain_model.data.value
         read_time = input_model.meta.exposure.frame_time
 
+        # Force read pattern to be pure lists not LNodes
+        read_pattern = [list(reads) for reads in input_model.meta.exposure.read_pattern]
+        if len(read_pattern) != resultants.shape[0]:
+            raise RuntimeError("mismatch between resultants shape and " "read_pattern.")
+
+        # add dark current back into resultants so that Poisson noise is
+        # properly accounted for
+        tbar = np.array([np.mean(reads) * read_time for reads in read_pattern])
+        resultants += (
+            dark_model.dark_slope.to(u.DN / u.s).value[None, ...] * tbar[:, None, None]
+        )
+
         # account for the gain
         resultants *= gain
         read_noise *= gain
-
-        # Force read pattern to be pure lists not LNodes
-        read_pattern = [list(reads) for reads in input_model.meta.exposure.read_pattern]
 
         # Fit the ramps
         output = ols_cas22_fit.fit_ramps_casertano(
@@ -200,6 +216,9 @@ class RampFitStep(RomanStep):
         var_poisson = output.variances[..., Variance.poisson_var]
         err = np.sqrt(var_poisson + var_rnoise)
         dq = output.dq.astype(np.uint32)
+
+        # remove dark current contribution to slopes
+        slopes -= dark_model.dark_slope.to(u.DN / u.s).value * gain
 
         # Propagate DQ flags forward.
         ramp_dq = get_pixeldq_flags(dq, input_model.pixeldq, slopes, err, gain)
