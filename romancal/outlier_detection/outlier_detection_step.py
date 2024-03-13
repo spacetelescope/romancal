@@ -57,9 +57,11 @@ class OutlierDetectionStep(RomanStep):
         try:
             self.input_models = ModelContainer(input_models)
         except TypeError:
-            self.log.warning("Input cannot be parsed into a ModelContainer.")
+            self.log.warning(
+                "Skipping outlier_detection - input cannot be parsed into a ModelContainer."
+            )
             self.skip = True
-            return
+            return input_models
 
         # validation
         if len(self.input_models) >= 2 and all(
@@ -136,9 +138,7 @@ class OutlierDetectionStep(RomanStep):
             # but is not valid then log a warning message and
             # skip outlier detection step
             self.log.warning(
-                "Input does not contains >= 2 elements \
-                or the elements contain the wrong exposure type \
-                (i.e. meta.exposure.type != 'WFI_IMAGE')."
+                "Skipping outlier_detection - at least two imaging observations are needed."
             )
             # set meta.cal_step.outlier_detection to SKIPPED
             for model in self.input_models:
