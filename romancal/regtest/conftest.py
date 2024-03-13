@@ -92,11 +92,11 @@ def generate_artifactory_json(request, artifactory_repos):
     rtdata = postmortem(request, "rtdata") or postmortem(request, "rtdata_module")
     if rtdata:
         try:
-            # The _jail fixture from ci_watson sets tmp_path
+            # The function_jail fixture uses tmp_path
             cwd = str(request.node.funcargs["tmp_path"])
         except KeyError:
-            # The jail fixture (module-scoped) returns the path
-            cwd = str(request.node.funcargs["jail"])
+            # The module_jail fixture (module-scoped) returns the path
+            cwd = str(request.node.funcargs["module_jail"])
         rtdata.remote_results_path = artifactory_result_path()
         rtdata.test_name = request.node.name
         # Dump the failed test traceback into rtdata
