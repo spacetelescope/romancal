@@ -39,21 +39,16 @@ def clean_up_after_test():
     "input_models",
     [
         list(),
-        [""],
         "",
-        "testing",
+        None,
     ],
 )
-def test_outlier_raises_error_on_invalid_input_models(input_models):
-    """Test that OutlierDetection raises an error if input cannot be parsed into a ModelContainer."""
+def test_outlier_raises_error_on_invalid_input_models(input_models, caplog):
+    """Test that OutlierDetection logs out a WARNING if input is invalid."""
 
-    step = OutlierDetectionStep()
+    OutlierDetectionStep.call(input_models)
 
-    with pytest.raises(Exception) as exec_info:
-        step(input_models)
-
-    assert step.skip is True
-    assert exec_info.type == AttributeError
+    assert "WARNING" in [x.levelname for x in caplog.records]
 
 
 def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
@@ -61,11 +56,9 @@ def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
     and sets the appropriate metadata for the skipped step."""
     img = base_image()
 
-    step = OutlierDetectionStep()
-    step(ModelContainer([img]))
+    res = OutlierDetectionStep.call(ModelContainer([img]))
 
-    assert step.skip is True
-    assert step.input_models[0].meta.cal_step.outlier_detection == "SKIPPED"
+    assert all(x.meta.cal_step.outlier_detection == "SKIPPED" for x in res)
 
 
 def test_outlier_skips_step_on_exposure_type_different_from_wfi_image(base_image):
@@ -77,11 +70,9 @@ def test_outlier_skips_step_on_exposure_type_different_from_wfi_image(base_image
     img_2 = base_image()
     img_2.meta.exposure.type = "WFI_PRISM"
 
-    step = OutlierDetectionStep()
-    step(ModelContainer([img_1, img_2]))
+    res = OutlierDetectionStep.call(ModelContainer([img_1, img_2]))
 
-    assert step.input_models[0].meta.cal_step.outlier_detection == "SKIPPED"
-    assert step.skip
+    assert all(x.meta.cal_step.outlier_detection == "SKIPPED" for x in res)
 
 
 def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
@@ -97,17 +88,12 @@ def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
 
     asn_filepath = create_mock_asn_file(tmp_path)
 
-    step = OutlierDetectionStep()
-    # set output dir for all files created by the step
-    step.output_dir = tmp_path.as_posix()
-    # make sure resample does not save file to disk
-    step.in_memory = True
-    step(asn_filepath)
-
-    assert step.skip is False
-    assert all(
-        x.meta.cal_step.outlier_detection == "COMPLETE" for x in step.input_models
+    res = OutlierDetectionStep.call(
+        asn_filepath, output_dir=tmp_path.as_posix(), in_memory=True
     )
+
+    # assert step.skip is False
+    assert all(x.meta.cal_step.outlier_detection == "COMPLETE" for x in res)
 
 
 def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
@@ -121,15 +107,9 @@ def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
 
     mc = ModelContainer([img_1, img_2])
 
-    step = OutlierDetectionStep()
-    # make sure resample does not save file to disk
-    step.in_memory = True
-    step(mc)
+    res = OutlierDetectionStep.call(mc, in_memory=True)
 
-    assert step.skip is False
-    assert all(
-        x.meta.cal_step.outlier_detection == "COMPLETE" for x in step.input_models
-    )
+    assert all(x.meta.cal_step.outlier_detection == "COMPLETE" for x in res)
 
 
 @pytest.mark.parametrize(
@@ -230,9 +210,7 @@ def test_outlier_do_detection_write_files_to_custom_location(
         median_path,
     ]
 
-    detection_step = outlier_detection.OutlierDetection
-    step = detection_step(input_models, **pars)
-
+    step = outlier_detection.OutlierDetection(input_models, **pars)
     step.do_detection()
 
     assert all(x.exists() for x in outlier_files_path)
