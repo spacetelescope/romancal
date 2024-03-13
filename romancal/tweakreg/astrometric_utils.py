@@ -102,10 +102,12 @@ def create_astrometric_catalog(
     epoch = (
         epoch
         if epoch is not None
-        else input_models[0].meta.target["proper_motion_epoch"]
+        else input_models[0].meta.exposure.mid_time.decimalyear
     )
-    # keep only decimal point and digit characters
-    epoch = float("".join(c for c in str(epoch) if c == "." or c.isdigit()))
+    if not isinstance(epoch, float):
+        # keep only decimal point and digit characters
+        epoch = float("".join(c for c in str(epoch) if c == "." or c.isdigit()))
+
     ref_dict = get_catalog(
         fiducial[0], fiducial[1], epoch=epoch, sr=radius, catalog=catalog
     )
