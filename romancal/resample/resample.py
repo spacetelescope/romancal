@@ -197,7 +197,7 @@ class ResampleData:
             output_root = "_".join(
                 exposure[0].meta.filename.replace(output_type, "").split("_")[:-1]
             )
-            output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
+            output_model.meta.basic.filename = f"{output_root}_outlier_i2d{output_type}"
 
             # Initialize the output with the wcs
             driz = gwcs_drizzle.GWCSDrizzle(
@@ -263,7 +263,7 @@ class ResampleData:
         Used for level 3 resampling
         """
         output_model = self.blank_output.copy()
-        output_model.meta.filename = self.output_filename
+        output_model.meta.basic.filename = self.output_filename
         output_model.meta["resample"] = maker_utils.mk_resample()
         output_model.meta.resample["members"] = []
         output_model.meta.resample.weight_type = self.weight_type
