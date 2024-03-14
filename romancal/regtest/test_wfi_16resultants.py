@@ -22,19 +22,15 @@ def test_16resultants_image_processing(rtdata, ignore_asdf_paths):
     # The input data is from INS for stress testing at some point this should be generated
     # every time new data is needed.
 
-    input_dark = "roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf"
-    rtdata.get_data(f"WFI/image/{input_dark}")
-
-    input_data = "r00r1601001001001001_01101_0001_WFI01_uncal.asdf"
+    input_data = "r0000101001001001001_01101_0004_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
     # Test Pipeline
-    output = "r00r1601001001001001_01101_0001_WFI01_cal.asdf"
+    output = "r0000101001001001001_01101_0004_WFI01_cal.asdf"
     rtdata.output = output
     args = [
         "--disable-crds-steppars",
-        "--steps.dark_current.override_dark=roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf",
         "roman_elp",
         rtdata.input,
     ]
@@ -83,19 +79,15 @@ def test_16resultants_spectral_processing(rtdata, ignore_asdf_paths):
     # The input data is from INS for stress testing at some point this should be generated
     # by INS every time new data is needed.
 
-    input_dark = "roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf"
-    rtdata.get_data(f"WFI/image/{input_dark}")
-
-    input_data = "r10r1601001001001001_01101_0001_WFI01_uncal.asdf"
+    input_data = "r0000201001001001001_01101_0004_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/grism/{input_data}")
     rtdata.input = input_data
 
     # Test Pipeline
-    output = "r10r1601001001001001_01101_0001_WFI01_cal.asdf"
+    output = "r0000201001001001001_01101_0004_WFI01_cal.asdf"
     rtdata.output = output
     args = [
         "--disable-crds-steppars",
-        "--steps.dark_current.override_dark=roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1.asdf",
         "roman_elp",
         rtdata.input,
     ]
