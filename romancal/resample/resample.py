@@ -197,7 +197,7 @@ class ResampleData:
             output_root = "_".join(
                 exposure[0].meta.filename.replace(output_type, "").split("_")[:-1]
             )
-            output_model.meta.basic.filename = f"{output_root}_outlier_i2d{output_type}"
+            output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
 
             # Initialize the output with the wcs
             driz = gwcs_drizzle.GWCSDrizzle(
