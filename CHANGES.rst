@@ -36,6 +36,7 @@ resample
 outlier_detection
 -----------------
 
+- Allow `ModelContainer` as input. [#1092]
 - Update location of ``basic`` attributes. [#1131]
 
 ramp_fitting

@@ -1128,7 +1128,7 @@ def test_imodel2wcsim_valid_column_names(tmp_path, base_image, column_names):
     step = trs.TweakRegStep()
     imcats = list(map(step._imodel2wcsim, g))
 
-    assert all(x.meta["image_model"] == y for x, y in zip(imcats, [img_1, img_2]))
+    assert all(x.meta["image_model"]() == y for x, y in zip(imcats, [img_1, img_2]))
     assert np.all(
         x.meta["catalog"] == y.meta.tweakreg_catalog
         for x, y in zip(imcats, [img_1, img_2])

@@ -153,6 +153,9 @@ class ResampleData:
             datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
         )
 
+        # update meta.cal_step
+        self.blank_output.meta.cal_step = input_models[0].meta.cal_step
+
         # update meta data and wcs
         # note we have made this input_model_0 variable so that if
         # meta includes lazily-loaded objects, that we can successfully
@@ -242,7 +245,7 @@ class ResampleData:
             output_model.context = output_model.context.astype("uint32")
             if not self.in_memory:
                 # Write out model to disk, then return filename
-                output_name = output_model.meta.basic.filename
+                output_name = output_model.meta.filename
                 output_model.save(output_name)
                 log.info(f"Exposure {output_name} saved to file")
                 output_list.append(output_name)
