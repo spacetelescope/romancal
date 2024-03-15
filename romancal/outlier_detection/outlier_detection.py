@@ -107,10 +107,9 @@ class OutlierDetection:
         )
 
         if not pars.get("in_memory", True):
+            median_model.meta.filename = "drizzled_median.asdf"
             median_model_output_path = self.make_output_path(
-                basepath=median_model.meta.filename.replace(
-                    self.resample_suffix, ".asdf"
-                ),
+                basepath=median_model.meta.filename,
                 suffix="median",
             )
             median_model.save(median_model_output_path)
@@ -124,7 +123,7 @@ class OutlierDetection:
         else:
             # Median image will serve as blot image
             blot_models = ModelContainer(return_open=False)
-            for i in range(len(self.input_models)):
+            for _ in range(len(self.input_models)):
                 blot_models.append(median_model)
 
         # Perform outlier detection using statistical comparisons between
@@ -196,9 +195,7 @@ class OutlierDetection:
             for weight, weight_threshold in zip(resampled_weight, weight_thresholds):
                 badmask = np.less(weight, weight_threshold)
                 log.debug(
-                    "Percentage of pixels with low weight: {}".format(
-                        np.sum(badmask) / len(weight.flat) * 100
-                    )
+                    f"Percentage of pixels with low weight: {np.sum(badmask) / len(weight.flat) * 100}"
                 )
                 badmasks.append(badmask)
 
@@ -261,15 +258,12 @@ class OutlierDetection:
     def detect_outliers(self, blot_models):
         """Flag DQ array for cosmic rays in input images.
 
-        The science frame in each ImageModel in input_models is compared to
-        the corresponding blotted median image in blot_models.  The result is
+        The science frame in each ImageModel in self.input_models is compared to
+        the corresponding blotted median image in blot_models. The result is
         an updated DQ array in each ImageModel in input_models.
 
         Parameters
         ----------
-        input_models: JWST ModelContainer object
-            data model container holding science ImageModels, modified in place
-
         blot_models : JWST ModelContainer object
             data model container holding ImageModels of the median output frame
             blotted back to the wcs and frame of the ImageModels in
@@ -391,7 +385,7 @@ def flag_cr(
 
 
 def abs_deriv(array):
-    """Take the absolute derivate of a numpy array."""
+    """Take the absolute derivative of a numpy array."""
     tmp = np.zeros(array.shape, dtype=np.float64)
     out = np.zeros(array.shape, dtype=np.float64)
 
@@ -435,7 +429,7 @@ def gwcs_blot(median_model, blot_img, interp="poly5", sinscl=1.0):
         "sinc" (sinc interpolation), "lan3" (3rd order Lanczos
         interpolation), and "lan5" (5th order Lanczos interpolation).
 
-    sincscl : float, optional
+    sinscl : float, optional
         The scaling factor for sinc interpolation.
     """
     blot_wcs = blot_img.meta.wcs
