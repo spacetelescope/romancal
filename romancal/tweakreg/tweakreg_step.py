@@ -3,6 +3,7 @@ Roman pipeline step for image alignment.
 """
 
 import os
+import weakref
 from pathlib import Path
 
 import numpy as np
@@ -20,7 +21,6 @@ from romancal.lib.basic_utils import is_association
 from ..datamodels import ModelContainer
 from ..stpipe import RomanStep
 from . import astrometric_utils as amutils
-import weakref
 
 
 def _oxford_or_str_join(str_list):
