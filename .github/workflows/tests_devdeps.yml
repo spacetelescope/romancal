@@ -45,10 +45,6 @@ jobs:
       cache-key: data-${{ needs.data.outputs.webbpsf_hash }}-${{ needs.crds_contexts.outputs.roman }}
       cache-restore-keys: webbpsf-${{ needs.data.outputs.webbpsf_hash }}
       envs: |
-        - linux: py39-stdevdeps-webbpsf
-        - linux: py39-devdeps-webbpsf
-        - macos: py39-stdevdeps-webbpsf
-        - macos: py39-devdeps-webbpsf
         - linux: py310-stdevdeps-webbpsf
         - linux: py310-devdeps-webbpsf
         - macos: py310-stdevdeps-webbpsf
