@@ -202,7 +202,8 @@ def test_outlier_do_detection_write_files_to_custom_location(
 
     blot_path_1 = tmp_path / img_1.meta.filename.replace(".asdf", "_blot.asdf")
     blot_path_2 = tmp_path / img_2.meta.filename.replace(".asdf", "_blot.asdf")
-    median_path = tmp_path / "img_median.asdf"
+    # meta.filename for the median image created by OutlierDetection.do_detection()
+    median_path = tmp_path / "drizzled_median.asdf"
 
     outlier_files_path = [
         blot_path_1,
@@ -281,8 +282,7 @@ def test_outlier_do_detection_find_outliers(tmp_path, base_image, clean_up_after
 
     # reformat output and input coordinates and sort by x coordinate
     outliers_output_coords = np.array(
-        [(x, y) for x, y in zip(*img_1_outlier_output_coords)],
-        dtype=[("x", int), ("y", int)],
+        list(zip(*img_1_outlier_output_coords)), dtype=[("x", int), ("y", int)]
     )
     outliers_input_coords = np.concatenate((img_1_input_coords, img_2_input_coords))
 
