@@ -23,9 +23,12 @@ dependencies = [
     "photutils >=1.10.0",
     "pyparsing >=2.4.7",
     "requests >=2.26",
+    #"rad >=0.19.0",
     "rad @ git+https://github.com/spacetelescope/rad.git",
+    #"roman_datamodels >=0.19.0",
     "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
     "scipy >=1.11",
+    #"stcal >=1.5.2",
     "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
     "stpipe >=0.5.0",
     "tweakwcs >=0.8.6",
@@ -105,6 +108,7 @@ zip-safe = false
 [tool.setuptools.packages.find]
 
 [tool.setuptools.package-data]
+# package_data values are glob patterns relative to each specific subpackage.
 "*" = [
     "**/*.fits",
     "**/*.txt",
@@ -204,7 +208,7 @@ exclude = [
     "build",
 ]
 ignore = [
-    "E741",
+    "E741", # ambiguous variable name
 ]
 extend-select = [
     "NPY",
