@@ -50,8 +50,6 @@ jobs:
       envs: |
         - linux: py310-oldestdeps-webbpsf-cov
           pytest-results-summary: true
-        - linux: py310-webbpsf
-          pytest-results-summary: true
         - linux: py310-webbpsf-nolegacypath
           pytest-results-summary: true
         - linux: py311-ddtrace-webbpsf
