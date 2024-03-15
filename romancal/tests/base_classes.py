@@ -3,23 +3,9 @@
 import os
 import sys
 from glob import glob as _sys_glob
-from os import path as op
 from pathlib import Path
 
-import pytest
 import requests
-from ci_watson.artifactory_helpers import (
-    BigdataError,
-    check_url,
-    get_bigdata,
-    get_bigdata_root,
-)
-
-# from jwst.associations import load_asn
-
-__all__ = [
-    "BaseRomanTest",
-]
 
 # Define location of default Artifactory API key, for Jenkins use only
 ARTIFACTORY_API_KEY_FILE = "/eng/ssb2/keys/svc_rodata.key"
@@ -27,114 +13,6 @@ ARTIFACTORY_API_KEY_FILE = "/eng/ssb2/keys/svc_rodata.key"
 
 # Define a request timeout in seconds
 TIMEOUT = 30
-
-
-@pytest.mark.usefixtures("_jail")
-@pytest.mark.bigdata
-class BaseRomanTest:
-    """
-    Base test class from which to derive Roman regression tests
-    """
-
-    rtol = 0.00001
-    atol = 0
-
-    input_loc = ""  # root directory for 'input' files
-    ref_loc = []  # root path for 'truth' files: ['test1','truth'] or ['test3']
-
-    ignore_table_keywords = []
-    ignore_fields = []
-    ignore_hdus = ["ASDF"]
-    ignore_keywords = ["DATE", "CAL_VER", "CAL_VCS", "CRDS_VER", "CRDS_CTX", "FILENAME"]
-
-    @pytest.fixture(autouse=True)
-    def config_env(self, pytestconfig, envopt):
-        self.env = pytestconfig.getoption("env")
-
-    @pytest.fixture(autouse=True)
-    def config_access(self, pytestconfig):
-        self.inputs_root = pytestconfig.getini("inputs_root")[0]
-        self.results_root = pytestconfig.getini("results_root")[0]
-
-    @property
-    def repo_path(self):
-        return [self.inputs_root, self.env, self.input_loc]
-
-    def get_data(self, *pathargs, docopy=True):
-        """
-        Download `filename` into working directory using
-        `artifactory_helpers/get_bigdata()`.
-        This will then return the full path to the local copy of the file.
-        """
-        local_file = get_bigdata(*self.repo_path, *pathargs, docopy=docopy)
-        return local_file
-
-    def data_glob(self, *pathargs, glob="*"):
-        """Retrieve file list matching glob
-
-        Parameters
-        ----------
-        pathargs: (str[, ...])
-            Path components
-
-        glob: str
-            The file name match criterion
-
-        Returns
-        -------
-        file_paths: [str[, ...]]
-            File paths that match the glob criterion.
-            Note that the TEST_BIGDATA and `repo_path`
-            roots are removed so these results can be fed
-            back into `get_data()`
-        """
-
-        # Get full path and proceed depending on whether
-        # is a local path or URL.
-        root = get_bigdata_root()
-        if op.exists(root):
-            path = op.join(root, *self.repo_path)
-            root_len = len(path) + 1
-            path = op.join(path, *pathargs)
-            file_paths = _data_glob_local(path, glob)
-        elif check_url(root):
-            root_len = len(op.join(*self.repo_path[1:])) + 1
-            path = op.join(*self.repo_path, *pathargs)
-            file_paths = _data_glob_url(path, glob, root=root)
-        else:
-            raise BigdataError(f"Path cannot be found: {path}")
-
-        # Remove the root from the paths
-        file_paths = [file_path[root_len:] for file_path in file_paths]
-        return file_paths
-
-
-# def raw_from_asn(asn_file):
-#     """
-#     Return a list of all input files from a given association.
-#
-#     Parameters
-#     ----------
-#     asn_file : str
-#         Filename for the ASN file.
-#
-#     Returns
-#     -------
-#     members : list of str
-#         A list of all input files in the association
-#
-#     """
-#
-#     members = []
-#     # with open(asn_file) as f:
-#     #     asn = load_asn(f)
-#
-#     for product in asn['products']:
-#         for member in product['members']:
-#             members.append(member['expname'])
-#
-#     return members
-#
 
 
 def _data_glob_local(*glob_parts):
