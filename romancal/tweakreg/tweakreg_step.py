@@ -20,6 +20,7 @@ from romancal.lib.basic_utils import is_association
 from ..datamodels import ModelContainer
 from ..stpipe import RomanStep
 from . import astrometric_utils as amutils
+import weakref
 
 
 def _oxford_or_str_join(str_list):
@@ -318,6 +319,7 @@ class TweakRegStep(RomanStep):
                     self.log.info(f"* Images in GROUP '{group_name}':")
                     for im in wcsimlist:
                         im.meta["group_id"] = group_name
+                        # im.meta["image_model"] = group_name
                         self.log.info(f"     {im.meta['name']}")
                     imcats.extend(wcsimlist)
 
@@ -366,8 +368,26 @@ class TweakRegStep(RomanStep):
                 else:
                     raise e
 
+            except RuntimeError as e:
+                msg = e.args[0]
+                if msg.startswith("Number of output coordinates exceeded allocation"):
+                    # we need at least two exposures to perform image alignment
+                    self.log.error(msg)
+                    self.log.error(
+                        "Multiple sources within specified tolerance "
+                        "matched to a single reference source. Try to "
+                        "adjust 'tolerance' and/or 'separation' parameters."
+                    )
+                    self.log.warning("Skipping 'TweakRegStep'...")
+                    self.skip = True
+                    for model in images:
+                        model.meta.cal_step.tweakreg = "SKIPPED"
+                    return images
+                else:
+                    raise e
+
             for imcat in imcats:
-                model = imcat.meta["image_model"]
+                model = imcat.meta["image_model"]()
                 if model.meta.cal_step.get("tweakreg") == "SKIPPED":
                     continue
                 wcs = model.meta.wcs
@@ -489,7 +509,7 @@ class TweakRegStep(RomanStep):
                 )
 
         for imcat in imcats:
-            image_model = imcat.meta["image_model"]
+            image_model = imcat.meta["image_model"]()
             image_model.meta.cal_step["tweakreg"] = "COMPLETE"
 
             # retrieve fit status and update wcs if fit is successful:
@@ -595,7 +615,7 @@ class TweakRegStep(RomanStep):
                 "v3_ref": refang["v3_ref"],
             },
             meta={
-                "image_model": image_model,
+                "image_model": weakref.ref(image_model),
                 "catalog": catalog,
                 "name": model_name,
             },
