@@ -293,3 +293,67 @@ def test_outlier_do_detection_find_outliers(tmp_path, base_image, clean_up_after
     assert all(o == i for i, o in zip(outliers_input_coords, outliers_output_coords))
 
     clean_up_after_test("*.asdf")
+
+
+def test_outlier_do_detection_find_outliers_identical_images(
+    tmp_path, base_image, clean_up_after_test, caplog
+):
+    """
+    Test that OutlierDetection does not flag any outliers in the DQ array if images are identical.
+    """
+    img_1 = base_image()
+    img_1.meta.filename = "img_1.asdf"
+    # add outliers
+    img_1_input_coords = np.array(
+        [(5, 45), (25, 25), (45, 85), (65, 65), (85, 5)], dtype=[("x", int), ("y", int)]
+    )
+    img_1.data[img_1_input_coords["x"], img_1_input_coords["y"]] = Quantity(
+        100000, "DN / s"
+    )
+
+    img_2 = img_1.copy()
+    img_2.meta.filename = "img_2.asdf"
+    img_3 = img_1.copy()
+    img_3.meta.filename = "img_3.asdf"
+
+    input_models = ModelContainer([img_1, img_2, img_3])
+
+    outlier_step = OutlierDetectionStep()
+    # set output dir for all files created by the step
+    outlier_step.output_dir = tmp_path.as_posix()
+    # make sure files are written out to disk
+    outlier_step.in_memory = False
+
+    pars = {
+        "weight_type": "exptime",
+        "pixfrac": 1.0,
+        "kernel": "square",
+        "fillval": "INDEF",
+        "nlow": 0,
+        "nhigh": 0,
+        "maskpt": 0.7,
+        "grow": 1,
+        "snr": "4.0 3.0",
+        "scale": "0.5 0.4",
+        "backg": 0.0,
+        "kernel_size": "7 7",
+        "save_intermediate_results": False,
+        "resample_data": True,
+        "good_bits": 0,
+        "allowed_memory": None,
+        "in_memory": outlier_step.in_memory,
+        "make_output_path": outlier_step.make_output_path,
+        "resample_suffix": "i2d",
+    }
+
+    detection_step = outlier_detection.OutlierDetection
+    step = detection_step(input_models, **pars)
+
+    step.do_detection()
+
+    # assert that log shows no new outliers detected
+    assert "New pixels flagged as outliers: 0 (0.00%)" in {
+        x.message for x in caplog.records
+    }
+    # assert that DQ array has nothing flagged as outliers
+    assert [np.count_nonzero(x.dq) for x in step.input_models] == [0, 0, 0]
