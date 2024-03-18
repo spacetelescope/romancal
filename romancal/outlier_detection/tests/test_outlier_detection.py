@@ -295,7 +295,7 @@ def test_outlier_do_detection_find_outliers(tmp_path, base_image, clean_up_after
     clean_up_after_test("*.asdf")
 
 
-def test_outlier_do_detection_find_outliers_identical_images(
+def test_outlier_do_detection_do_not_find_outliers_in_identical_images(
     tmp_path, base_image, clean_up_after_test, caplog
 ):
     """
