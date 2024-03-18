@@ -61,9 +61,9 @@ class HighLevelPipeline(RomanPipeline):
             self.skymatch.suffix = "skymatch"
             result = self.skymatch(input)
             self.outlier_detection.suffix = "outlier_detection"
-            result = self.outlier_detection(input)
+            result = self.outlier_detection(result)
             self.resample.suffix = "i2d"
-            result = self.resample(input)
+            result = self.resample(result)
             self.suffix = "i2d"
             if input_filename:
                 result.meta.filename = self.output_file
