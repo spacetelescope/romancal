@@ -66,6 +66,6 @@ class HighLevelPipeline(RomanPipeline):
             result = self.resample(input)
             self.suffix = "i2d"
             if input_filename:
-                result.meta.basic.filename = self.output_file
+                result.meta.filename = self.output_file
 
         return result
