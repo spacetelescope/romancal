@@ -93,6 +93,7 @@ class ModelContainer(Sequence):
         asn_file = "/path/to/asn_file.json"
         container = ModelContainer(asn_file)
 
+
     In any of the cases above, the content of each file in a `ModelContainer` can
     be accessed by iterating over its elements. For example, to print out the filename
     of each file, we can run:
@@ -101,6 +102,14 @@ class ModelContainer(Sequence):
 
         for model in container:
             print(model.meta.filename)
+
+
+    Additionally, `ModelContainer` can be used with context manager:
+
+    .. code-block:: python
+
+        with ModelContainer(asn_file) as asn:
+            # do stuff
 
 
     Notes
@@ -225,6 +234,14 @@ class ModelContainer(Sequence):
             if not isinstance(model, rdm.DataModel) and self._return_open:
                 model = rdm.open(model, memmap=self._memmap)
             yield model
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            print(f"\nAn exception occurred in ModelContainer: {exc_val}")
+            print(f"\nTraceback:\n{exc_tb}")
 
     def insert(self, index, model):
         if isinstance(model, rdm.DataModel):
