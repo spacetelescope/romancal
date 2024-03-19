@@ -105,3 +105,19 @@ def test_model_difference(tmp_path):
         """'type_changes': {"root['roman']": {'new_type': <class 'roman_datamodels.stnode.DistortionRef'>"""
         in diff.report()
     )
+
+
+@pytest.mark.parametrize("n_diffs", [1, 3, 7])
+def test_n_diffs(tmp_path, n_diffs):
+    fn0 = tmp_path / "test0.asdf"
+    fn1 = tmp_path / "test1.asdf"
+    v0 = np.zeros(10, dtype="int32")
+    v1 = np.zeros(10, dtype="int32")
+    v1[:n_diffs] = 1
+    asdf.AsdfFile({"v": v0}).write_to(fn0)
+    asdf.AsdfFile({"v": v1}).write_to(fn1)
+    diff = compare_asdf(fn0, fn1)
+    assert not diff.identical, diff.report()
+    assert "arrays_differ" in diff.diff
+    assert "root['v']" in diff.diff["arrays_differ"]
+    assert n_diffs == diff.diff["arrays_differ"]["root['v']"]["n_diffs"]

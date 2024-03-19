@@ -583,12 +583,14 @@ class NDArrayTypeOperator(BaseOperator):
                 }
                 difference["abs_diff"] = np.nansum(np.abs(a - b))
                 difference["n_diffs"] = np.count_nonzero(
-                    np.isclose(
-                        a,
-                        b,
-                        rtol=self.rtol,
-                        atol=self.atol,
-                        equal_nan=self.equal_nan,
+                    np.logical_not(
+                        np.isclose(
+                            a,
+                            b,
+                            rtol=self.rtol,
+                            atol=self.atol,
+                            equal_nan=self.equal_nan,
+                        )
                     )
                 )
         return difference
