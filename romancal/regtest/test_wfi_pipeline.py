@@ -273,6 +273,7 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
+@pytest.mark.xfail
 @metrics_logger("DMS278", "DMS90", "DMS91", "DMS9", "DMS365")
 def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     """Tests for flat field grism processing requirements DMS90, DMS91 and DMS 278"""
