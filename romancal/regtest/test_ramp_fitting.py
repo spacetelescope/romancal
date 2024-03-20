@@ -170,6 +170,7 @@ def passfail(bool_expr):
 # Tests
 # #####
 @pytest.mark.bigdata
+# TODO when this test starts passing, remove this xfail
 @pytest.mark.xfail
 def test_rampfit_step(rampfit_result, rtdata_module, ignore_asdf_paths):
     """Test rampfit result against various conditions"""
