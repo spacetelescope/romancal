@@ -3,12 +3,13 @@ import logging
 from os.path import basename
 
 import romancal.datamodels.filetype as filetype
-from romancal.outlier_detection import OutlierDetectionStep
-from romancal.resample import ResampleStep
 from romancal.datamodels import ModelContainer
 
 # step imports
+from romancal.flux import FluxStep
 from romancal.skymatch import SkyMatchStep
+from romancal.outlier_detection import OutlierDetectionStep
+from romancal.resample import ResampleStep
 
 from ..stpipe import RomanPipeline
 
@@ -34,6 +35,7 @@ class HighLevelPipeline(RomanPipeline):
 
     # Define aliases to steps
     step_defs = {
+        "flux": FluxStep,
         "skymatch": SkyMatchStep,
         "outlier_detection": OutlierDetectionStep,
         "resample": ResampleStep,
@@ -57,7 +59,8 @@ class HighLevelPipeline(RomanPipeline):
 
         if file_type == "asn":
             input = ModelContainer(input)
-            self.output_file = input.asn_table['products'][0]['name']
+            self.flux.suffix = "flux"
+            result = self.flux(input)
             self.skymatch.suffix = "skymatch"
             result = self.skymatch(input)
             self.outlier_detection.suffix = "outlier_detection"
@@ -67,5 +70,6 @@ class HighLevelPipeline(RomanPipeline):
             self.suffix = "i2d"
             if input_filename:
                 result.meta.filename = self.output_file
+            self.output_file = input.asn_table['products'][0]['name']
 
         return result

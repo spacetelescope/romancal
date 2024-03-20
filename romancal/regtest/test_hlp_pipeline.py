@@ -30,9 +30,9 @@ def test_level3_hlp_pipeline(rtdata, ignore_asdf_paths):
     """Tests for level 3 processing requirements DMS356"""
 
     cal_files = [
-        "WFI/image/r0000101001001001001_01101_0001_WFI01_cal.asdf",
         "WFI/image/r0000101001001001001_01101_0002_WFI01_cal.asdf",
         "WFI/image/r0000101001001001001_01101_0003_WFI01_cal.asdf",
+        "WFI/image/r0000101001001001001_01101_0004_WFI01_cal.asdf",
     ]
 
     for cal_file in cal_files:
@@ -73,18 +73,18 @@ def test_level3_hlp_pipeline(rtdata, ignore_asdf_paths):
     )
     pipeline.log.info(
         "DMS86 MSG: Testing completion of skymatch in the Level 3  output......."
-        + passfail(model.meta.cal_step.skymatch == "INCOMPLETE")
+        + passfail(model.meta.cal_step.skymatch == "COMPLETE")
     )
-    assert model.meta.cal_step.skymatch == "INCOMPLETE"
+    assert model.meta.cal_step.skymatch == "COMPLETE"
     pipeline.log.info(
         "Status of the step:             skymatch    "
         + str(model.meta.cal_step.skymatch)
     )
     pipeline.log.info(
         "DMS86 MSG: Testing completion of outlier detection in the Level 3 image output......."
-        + passfail(model.meta.cal_step.outlier_detection == "PASS")
+        + passfail(model.meta.cal_step.outlier_detection == "COMPLETE")
     )
-    assert model.meta.cal_step.outlier_detection == "INCOMPLETE"
+    assert model.meta.cal_step.outlier_detection == "COMPLETE"
     pipeline.log.info(
         "Status of the step:             outlier_detection    "
         + str(model.meta.cal_step.outlier_detection)
