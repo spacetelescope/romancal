@@ -30,9 +30,9 @@ def test_level3_hlp_pipeline(rtdata, ignore_asdf_paths):
     """Tests for level 3 processing requirements DMS356"""
 
     cal_files = [
-        "WFI/image/r0000101001001001001_01101_0002_WFI01_cal.asdf",
         "WFI/image/r0000101001001001001_01101_0003_WFI01_cal.asdf",
         "WFI/image/r0000101001001001001_01101_0004_WFI01_cal.asdf",
+        "WFI/image/r0000101001001001001_01101_0005_WFI01_cal.asdf",
     ]
 
     for cal_file in cal_files:
