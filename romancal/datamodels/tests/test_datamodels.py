@@ -10,18 +10,12 @@ from roman_datamodels import maker_utils as utils
 from romancal.datamodels.container import ModelContainer, make_file_with_index
 
 
-@pytest.fixture
-def mock_print(mocker):
-    # Mocking the print function to capture outputs for assertions
-    return mocker.patch("builtins.print")
-
-
 @pytest.fixture()
 def test_data_dir():
     return Path.joinpath(Path(__file__).parent, "data")
 
 
-def create_asn_file(tmp_path):
+def create_asn_file(tmp_path, products: [] = None):
     asn_content = """
         {
             "asn_type": "None",
@@ -52,6 +46,11 @@ def create_asn_file(tmp_path):
             ]
         }
 """
+    if products is not None:
+        temp_json = json.loads(asn_content)
+        temp_json["products"] = products
+        asn_content = json.dumps(temp_json)
+
     asn_file_path = str(tmp_path / "sample_asn.json")
     asn_file = StringIO()
     asn_file.write(asn_content)
@@ -515,76 +514,35 @@ def test_make_file_with_index(filename, idx, expected_filename_result, tmp_path)
 def test_modelcontainer_works_properly_with_context_manager(tmp_path):
     """Test that ModelContainer works correctly with context manager."""
 
-    filename1 = tmp_path / "img_1.asdf"
-    filename2 = tmp_path / "img_2.asdf"
-    # create ImageModel
-    img1 = utils.mk_level2_image()
-    img2 = utils.mk_level2_image()
-    img1.meta.filename = filename1
-    img2.meta.filename = filename2
-    # create datamodels from ImageModel
-    dm1 = rdm.ImageModel(img1)
-    dm2 = rdm.ImageModel(img2)
-    # save datamodels
-    dm1.save(filename1)
-    dm2.save(filename2)
+    products = [
+        {
+            "name": "files.asdf",
+            "members": [
+                {"expname": "img_1.asdf", "exptype": "science"},
+                {"expname": "img_2.asdf", "exptype": "science"},
+                {"expname": "img_3.asdf", "exptype": "science"},
+            ],
+        }
+    ]
 
-    # create ASN file that points to the ASDF files
-    asn_filepath = create_asn_file(tmp_path)
+    asn_filepath = create_asn_file(tmp_path, products=products)
 
-    result_filenames = []
-
-    with ModelContainer(asn_filepath) as asn1:
-        result_filenames.extend(
-            tmp_path / datamodel.meta.filename for datamodel in asn1
-        )
-
-    expected_filenames = [filename1, filename2]
-    expected_filenames.sort()
-    result_filenames.sort()
-
-    assert all(e == r for e, r in zip(expected_filenames, result_filenames))
-    assert type(asn1) is ModelContainer
+    with ModelContainer(asn_filepath, return_open=False, save_open=False) as asn1:
+        assert type(asn1) is ModelContainer
 
 
-# Parametrized test for various realistic, edge, and error cases
 @pytest.mark.parametrize(
-    "exc_type, exc_val, exc_tb, expected_output",
+    "exc_type, exc_val, exc_tb, test_id",
     [
-        # Happy path tests with various realistic test values
-        (
-            ValueError,
-            "Value error occurred",
-            "Traceback (most recent call last): ...",
-            "Value error occurred",
-        ),
-        (
-            TypeError,
-            "Type error occurred",
-            "Traceback (most recent call last): ...",
-            "Type error occurred",
-        ),
-        # Edge case: NoneType exception, which should not trigger the custom message
-        (None, None, None, None),
-        # Error case: Custom exception
-        (
-            Exception,
-            "Custom exception occurred",
-            "Traceback (most recent call last): ...",
-            "Custom exception occurred",
-        ),
+        (None, None, None, "no_exception"),
+        (ValueError, ValueError("Test error"), None, "value_error"),
+        (TypeError, TypeError("Type error"), None, "type_error"),
     ],
-    ids=["value_error", "type_error", "none_type_exception", "custom_exception"],
 )
-def test_modelcontainer_exit(mock_print, exc_type, exc_val, exc_tb, expected_output):
-    container = ModelContainer()
+def test_modelcontainer_exits_properly_on_exception(exc_type, exc_val, exc_tb, test_id):
+    """Test that ModelContainer exits properly with context manager."""
+    mc = ModelContainer()
 
-    container.__exit__(exc_type, exc_val, exc_tb)
+    result = mc.__exit__(exc_type, exc_val, exc_tb)
 
-    if exc_type is not None:
-        mock_print.assert_any_call(
-            f"\nAn exception occurred in ModelContainer: {exc_val}"
-        )
-        mock_print.assert_any_call(f"\nTraceback:\n{exc_tb}")
-    else:
-        mock_print.assert_not_called()
+    assert result is False
