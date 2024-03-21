@@ -28,6 +28,9 @@ dq_init
 - Copy reference pixels during ``dq_init`` to avoid larger files in later
   processing steps [#1121]
 
+- Allow ``dq_init`` to pass through keys not defined in ``RampModel``
+  schema [#1151]
+
 resample
 --------
 
