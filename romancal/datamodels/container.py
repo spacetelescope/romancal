@@ -239,9 +239,8 @@ class ModelContainer(Sequence):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is not None:
-            print(f"\nAn exception occurred in ModelContainer: {exc_val}")
-            print(f"\nTraceback:\n{exc_tb}")
+        # exceptions will be propagated out of the context
+        return False
 
     def insert(self, index, model):
         if isinstance(model, rdm.DataModel):
