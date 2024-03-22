@@ -62,7 +62,7 @@ class HighLevelPipeline(RomanPipeline):
             self.flux.suffix = "flux"
             result = self.flux(input)
             self.skymatch.suffix = "skymatch"
-            result = self.skymatch(input)
+            result = self.skymatch(result)
             self.outlier_detection.suffix = "outlier_detection"
             result = self.outlier_detection(result)
             self.resample.suffix = "i2d"
