@@ -14,6 +14,8 @@ general
 - Add script for creating regtest files; consolidate files used for
   some tests. [#1084]
 
+- Update the high level pipeline to use updates in Outlier_detection and tweakreg [#1143]
+
 documentation
 -------------
 
