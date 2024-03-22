@@ -30,6 +30,9 @@ dq_init
 - Copy reference pixels during ``dq_init`` to avoid larger files in later
   processing steps [#1121]
 
+- Allow ``dq_init`` to pass through keys not defined in ``RampModel``
+  schema [#1151]
+
 resample
 --------
 
@@ -40,6 +43,7 @@ outlier_detection
 
 - Allow `ModelContainer` as input. [#1092]
 - Update location of ``basic`` attributes. [#1131]
+- Set ``single=False`` in the call to resample to properly create a median image. [#1146]
 
 ramp_fitting
 ------------

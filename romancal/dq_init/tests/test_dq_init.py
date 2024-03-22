@@ -187,6 +187,10 @@ def test_dqinit_step_interface(instrument, exptype):
     # Set test size
     shape = (2, 20, 20)
 
+    # include an extra item not defined in the schema
+    extra_key = "foo_extra"
+    extra_value = [1, 2, 3]
+
     # Create test science raw model
     wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape)
     wfi_sci_raw.meta.instrument.name = instrument
@@ -198,6 +202,7 @@ def test_dqinit_step_interface(instrument, exptype):
     wfi_sci_raw.data = u.Quantity(
         np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
     )
+    wfi_sci_raw[extra_key] = extra_value
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Create mask model
@@ -222,6 +227,8 @@ def test_dqinit_step_interface(instrument, exptype):
     assert result.err.dtype == np.float32
     assert result.pixeldq.dtype == np.uint32
     assert result.groupdq.dtype == np.uint8
+    # check that extra value came through
+    assert result[extra_key] == extra_value
 
 
 @pytest.mark.parametrize(

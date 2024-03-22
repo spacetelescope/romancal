@@ -84,22 +84,26 @@ class OutlierDetection:
             # Start by creating resampled/mosaic images for
             # each group of exposures
             resamp = resample.ResampleData(
-                self.input_models, single=True, blendheaders=False, **pars
+                self.input_models, single=False, blendheaders=False, **pars
             )
             drizzled_models = resamp.do_drizzle()
 
         else:
             # for non-dithered data, the resampled image is just the original image
             drizzled_models = self.input_models
-            for i in range(len(self.input_models)):
-                drizzled_models[i].weight = build_driz_weight(
-                    self.input_models[i],
+            for model in drizzled_models:
+                model.weight = build_driz_weight(
+                    model,
                     weight_type="ivm",
                     good_bits=pars["good_bits"],
                 )
 
         # Initialize intermediate products used in the outlier detection
-        median_model = rdm.open(drizzled_models[0]).copy()
+        median_model = (
+            rdm.open(drizzled_models[0]).copy()
+            if isinstance(drizzled_models[0], str)
+            else drizzled_models[0].copy()
+        )
 
         # Perform median combination on set of drizzled mosaics
         median_model.data = Quantity(
