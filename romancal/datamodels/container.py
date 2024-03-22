@@ -239,6 +239,10 @@ class ModelContainer(Sequence):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # clean up
+        for model in self._models:
+            if isinstance(model, rdm.DataModel):
+                model.close()
         # exceptions will be propagated out of the context
         return False
 
