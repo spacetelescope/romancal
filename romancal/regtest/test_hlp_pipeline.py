@@ -1,16 +1,9 @@
 """ Roman tests for the High Level Pipeline """
 
-import copy
-
-import numpy as np
 import pytest
 import roman_datamodels as rdm
-from gwcs.wcstools import grid_from_bounding_box
 from metrics_logger.decorators import metrics_logger
-from numpy.testing import assert_allclose
-from roman_datamodels.dqflags import pixel
 
-from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
 from romancal.pipeline.highlevel_pipeline import HighLevelPipeline
 
 from .regtestdata import compare_asdf
@@ -91,11 +84,10 @@ def test_level3_hlp_pipeline(rtdata, ignore_asdf_paths):
     )
     assert model.meta.cal_step.resample == "COMPLETE"
     pipeline.log.info(
-        "Status of the step:             resample          " + str(model.meta.cal_step.resample)
+        "Status of the step:             resample          "
+        + str(model.meta.cal_step.resample)
     )
     pipeline.log.info(
         "DMS86 MSG: Testing completion of resample in the Level 3 image output......."
         + passfail(model.meta.cal_step.resample == "COMPLETE")
     )
-
-    

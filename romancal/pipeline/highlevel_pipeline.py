@@ -7,9 +7,9 @@ from romancal.datamodels import ModelContainer
 
 # step imports
 from romancal.flux import FluxStep
-from romancal.skymatch import SkyMatchStep
 from romancal.outlier_detection import OutlierDetectionStep
 from romancal.resample import ResampleStep
+from romancal.skymatch import SkyMatchStep
 
 from ..stpipe import RomanPipeline
 
@@ -70,6 +70,6 @@ class HighLevelPipeline(RomanPipeline):
             self.suffix = "i2d"
             if input_filename:
                 result.meta.filename = self.output_file
-            self.output_file = input.asn_table['products'][0]['name']
+            self.output_file = input.asn_table["products"][0]["name"]
 
         return result
