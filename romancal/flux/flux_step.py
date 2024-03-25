@@ -72,9 +72,9 @@ class FluxStep(RomanStep):
         for model in input_models:
             try:
                 apply_flux_correction(model)
-                model.meta.cal_step.flux = 'COMPLETE'
+                model.meta.cal_step.flux = "COMPLETE"
             except ValueError:
-                model.meta.cal_step.flux = 'SKIPPED'
+                model.meta.cal_step.flux = "SKIPPED"
 
         if single_model:
             return input_models[0]
@@ -105,7 +105,7 @@ def apply_flux_correction(model):
     # Check for units. Must be election/second. Otherwise, it is unknown how to
     # convert.
     if model.data.unit != LV2_UNITS:
-        message = f'Input data units {model.data.unit} is not the expected units of %s. Flux correction will not be done.'
+        message = f"Input data units {model.data.unit} is not the expected units of %s. Flux correction will not be done."
         log.debug(message)
         raise ValueError(message)
 
