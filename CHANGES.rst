@@ -4,7 +4,7 @@
 tessel_match
 ------------
 
-- Code to determine which tessels overlap a given image. 
+- Code to determine which tessels overlap a given image. [#1161]
 
 tweakreg
 --------
