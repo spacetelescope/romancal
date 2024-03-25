@@ -15,7 +15,7 @@ def test_data_dir():
     return Path.joinpath(Path(__file__).parent, "data")
 
 
-def create_asn_file(tmp_path):
+def create_asn_file(tmp_path, products: [] = None):
     asn_content = """
         {
             "asn_type": "None",
@@ -46,6 +46,11 @@ def create_asn_file(tmp_path):
             ]
         }
 """
+    if products is not None:
+        temp_json = json.loads(asn_content)
+        temp_json["products"] = products
+        asn_content = json.dumps(temp_json)
+
     asn_file_path = str(tmp_path / "sample_asn.json")
     asn_file = StringIO()
     asn_file.write(asn_content)
@@ -504,3 +509,40 @@ def test_make_file_with_index(filename, idx, expected_filename_result, tmp_path)
     result = make_file_with_index(file_path=filepath, idx=idx)
 
     assert result == str(tmp_path / expected_filename_result)
+
+
+def test_modelcontainer_works_properly_with_context_manager(tmp_path):
+    """Test that ModelContainer works correctly with context manager."""
+
+    products = [
+        {
+            "name": "files.asdf",
+            "members": [
+                {"expname": "img_1.asdf", "exptype": "science"},
+                {"expname": "img_2.asdf", "exptype": "science"},
+                {"expname": "img_3.asdf", "exptype": "science"},
+            ],
+        }
+    ]
+
+    asn_filepath = create_asn_file(tmp_path, products=products)
+
+    with ModelContainer(asn_filepath, return_open=False, save_open=False) as asn1:
+        assert type(asn1) is ModelContainer
+
+
+@pytest.mark.parametrize(
+    "exc_type, exc_val, exc_tb, test_id",
+    [
+        (None, None, None, "no_exception"),
+        (ValueError, ValueError("Test error"), None, "value_error"),
+        (TypeError, TypeError("Type error"), None, "type_error"),
+    ],
+)
+def test_modelcontainer_exits_properly_on_exception(exc_type, exc_val, exc_tb, test_id):
+    """Test that ModelContainer exits properly with context manager."""
+    mc = ModelContainer()
+
+    result = mc.__exit__(exc_type, exc_val, exc_tb)
+
+    assert result is False
