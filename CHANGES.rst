@@ -35,6 +35,11 @@ dq_init
 - Allow ``dq_init`` to pass through keys not defined in ``RampModel``
   schema [#1151]
 
+flux
+----
+
+- Set flux step status for each input. [#1160]
+
 resample
 --------
 
