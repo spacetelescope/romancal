@@ -1,6 +1,11 @@
 0.14.1 (unreleased)
 ==================
 
+tessel_match
+------------
+
+- Code to determine which tessels overlap a given image. 
+
 tweakreg
 --------
 
