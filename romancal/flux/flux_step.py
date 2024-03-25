@@ -70,7 +70,11 @@ class FluxStep(RomanStep):
             )
 
         for model in input_models:
-            apply_flux_correction(model)
+            try:
+                apply_flux_correction(model)
+                model.meta.cal_step.flux = 'COMPLETE'
+            except ValueError:
+                model.meta.cal_step.flux = 'SKIPPED'
 
         if single_model:
             return input_models[0]
@@ -101,12 +105,9 @@ def apply_flux_correction(model):
     # Check for units. Must be election/second. Otherwise, it is unknown how to
     # convert.
     if model.data.unit != LV2_UNITS:
-        log.debug(
-            "Input data is not in units of %s. Flux correction will not be done.",
-            LV2_UNITS,
-        )
-        log.debug("Input data units are %s", model.data.unit)
-        return
+        message = f'Input data units {model.data.unit} is not the expected units of %s. Flux correction will not be done.'
+        log.debug(message)
+        raise ValueError(message)
 
     # Apply the correction
     # The end goal in units is to have MJy/sr. The scale is in MJy/sr also.
