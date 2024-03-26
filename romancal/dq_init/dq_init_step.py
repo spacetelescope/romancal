@@ -54,9 +54,11 @@ class DQInitStep(RomanStep):
                 # check for resultantdq if present copy this to the emp
                 # it to the ramp model, we don't want to carry this around
                 if key != "resultantdq":
-                    # If a dictionary (like meta), overwrite entires (but keep
-                    # required dummy entries that may not be in input_model)
-                    if isinstance(input_ramp[key], dict):
+                    if key not in input_ramp:
+                        input_ramp[key] = input_model.__getattr__(key)
+                    elif isinstance(input_ramp[key], dict):
+                        # If a dictionary (like meta), overwrite entires (but keep
+                        # required dummy entries that may not be in input_model)
                         input_ramp[key].update(input_model.__getattr__(key))
                     elif isinstance(input_ramp[key], np.ndarray):
                         # Cast input ndarray as RampModel dtype

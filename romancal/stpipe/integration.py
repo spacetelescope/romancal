@@ -26,6 +26,7 @@ def get_steps():
         ("romancal.step.DarkCurrentStep", None, False),
         ("romancal.step.DQInitStep", None, False),
         ("romancal.step.FlatFieldStep", None, False),
+        ("romancal.step.FluxStep", None, False),
         ("romancal.step.JumpStep", None, False),
         ("romancal.step.LinearityStep", None, False),
         ("romancal.step.PhotomStep", None, False),

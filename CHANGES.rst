@@ -1,21 +1,61 @@
 0.14.1 (unreleased)
 ==================
 
+tweakreg
+--------
+
+- Allow single open Roman datamodels to be used as input to be consistent with expected behavior in ELP. [#1089]
+
 general
 -------
 
-- Update the ``dqflags`` to use the ones stored in ``roman_datamodels`` [#1099]
+- Allow ``ModelContainer`` to work properly with context manager. [#1147]
+
+- Update the ``dqflags`` to use the ones stored in
+  ``roman_datamodels`` [#1099]
+- Add script for creating regtest files; consolidate files used for
+  some tests. [#1084]
+
+- Update the high level pipeline to use updates in Outlier_detection and tweakreg [#1143]
 
 documentation
 -------------
 
 - Fixed datamodels documentation to use correct API. [#1112]
 
+- Improve PSF fitting configuration, background subtraction, grid
+  point selection. [#1125]
+
 dq_init
 -------
 
 - Copy reference pixels during ``dq_init`` to avoid larger files in later
   processing steps [#1121]
+
+- Allow ``dq_init`` to pass through keys not defined in ``RampModel``
+  schema [#1151]
+
+resample
+--------
+
+- Update location of ``basic`` attributes. [#1131]
+
+outlier_detection
+-----------------
+
+- Allow `ModelContainer` as input. [#1092]
+- Update location of ``basic`` attributes. [#1131]
+- Set ``single=False`` in the call to resample to properly create a median image. [#1146]
+
+ramp_fitting
+------------
+
+- Changed image units from e/s to DN/s (and added support for MJy/sr). Added gain reduction to convert to these units. [#1128]
+
+flux
+----
+
+- Create FluxStep to apply the flux correction to Level 2 data. [#1120]
 
 
 0.14.0 (2024-02-12)
@@ -58,6 +98,8 @@ ramp_fitting
 ------------
 
 - Add default WCS when constructing image model from ramp model [#1072]
+
+- Account for Poisson noise from dark current when fitting ramps. [#1088]
 
 resample
 --------

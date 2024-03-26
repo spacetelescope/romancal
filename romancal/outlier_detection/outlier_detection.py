@@ -21,7 +21,6 @@ from ..stpipe import RomanStep
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-
 __all__ = ["OutlierDetection", "flag_cr", "abs_deriv"]
 
 
@@ -85,35 +84,40 @@ class OutlierDetection:
             # Start by creating resampled/mosaic images for
             # each group of exposures
             resamp = resample.ResampleData(
-                self.input_models, single=True, blendheaders=False, **pars
+                self.input_models, single=False, blendheaders=False, **pars
             )
             drizzled_models = resamp.do_drizzle()
 
         else:
             # for non-dithered data, the resampled image is just the original image
             drizzled_models = self.input_models
-            for i in range(len(self.input_models)):
-                drizzled_models[i].weight = build_driz_weight(
-                    self.input_models[i],
+            for model in drizzled_models:
+                model.weight = build_driz_weight(
+                    model,
                     weight_type="ivm",
                     good_bits=pars["good_bits"],
                 )
 
         # Initialize intermediate products used in the outlier detection
-        median_model = rdm.open(drizzled_models[0]).copy()
+        median_model = (
+            rdm.open(drizzled_models[0]).copy()
+            if isinstance(drizzled_models[0], str)
+            else drizzled_models[0].copy()
+        )
 
         # Perform median combination on set of drizzled mosaics
         median_model.data = Quantity(
             self.create_median(drizzled_models), unit=median_model.data.unit
         )
-        median_model_output_path = self.make_output_path(
-            basepath=median_model.meta.basic.filename.replace(
-                self.resample_suffix, ".asdf"
-            ),
-            suffix="median",
-        )
-        median_model.save(median_model_output_path)
-        log.info(f"Saved model in {median_model_output_path}")
+
+        if not pars.get("in_memory", True):
+            median_model.meta.filename = "drizzled_median.asdf"
+            median_model_output_path = self.make_output_path(
+                basepath=median_model.meta.filename,
+                suffix="median",
+            )
+            median_model.save(median_model_output_path)
+            log.info(f"Saved model in {median_model_output_path}")
 
         if pars["resample_data"]:
             # Blot the median image back to recreate each input image specified
@@ -123,7 +127,7 @@ class OutlierDetection:
         else:
             # Median image will serve as blot image
             blot_models = ModelContainer(return_open=False)
-            for i in range(len(self.input_models)):
+            for _ in range(len(self.input_models)):
                 blot_models.append(median_model)
 
         # Perform outlier detection using statistical comparisons between
@@ -195,9 +199,7 @@ class OutlierDetection:
             for weight, weight_threshold in zip(resampled_weight, weight_thresholds):
                 badmask = np.less(weight, weight_threshold)
                 log.debug(
-                    "Percentage of pixels with low weight: {}".format(
-                        np.sum(badmask) / len(weight.flat) * 100
-                    )
+                    f"Percentage of pixels with low weight: {np.sum(badmask) / len(weight.flat) * 100}"
                 )
                 badmasks.append(badmask)
 
@@ -225,6 +227,7 @@ class OutlierDetection:
         """Blot resampled median image back to the detector images."""
         interp = self.outlierpars.get("interp", "linear")
         sinscl = self.outlierpars.get("sinscl", 1.0)
+        in_memory = self.outlierpars.get("in_memory", True)
 
         # Initialize container for output blot images
         blot_models = []
@@ -242,30 +245,29 @@ class OutlierDetection:
                 gwcs_blot(median_model, model, interp=interp, sinscl=sinscl),
                 unit=blotted_median.data.unit,
             )
+            if not in_memory:
+                model_path = self.make_output_path(
+                    basepath=model.meta.filename, suffix="blot"
+                )
+                blotted_median.save(model_path)
+                log.info(f"Saved model in {model_path}")
 
-            model_path = self.make_output_path(
-                basepath=model.meta.filename, suffix="blot"
-            )
-            blotted_median.save(model_path)
-            log.info(f"Saved model in {model_path}")
+                # Append model name to the ModelContainer so it is not passed in memory
+                blot_models.append(model_path)
+            else:
+                blot_models.append(blotted_median)
 
-            # Append model name to the ModelContainer so it is not passed in memory
-            blot_models.append(model_path)
-
-        return ModelContainer(blot_models, return_open=False)
+        return ModelContainer(blot_models, return_open=in_memory)
 
     def detect_outliers(self, blot_models):
         """Flag DQ array for cosmic rays in input images.
 
-        The science frame in each ImageModel in input_models is compared to
-        the corresponding blotted median image in blot_models.  The result is
+        The science frame in each ImageModel in self.input_models is compared to
+        the corresponding blotted median image in blot_models. The result is
         an updated DQ array in each ImageModel in input_models.
 
         Parameters
         ----------
-        input_models: JWST ModelContainer object
-            data model container holding science ImageModels, modified in place
-
         blot_models : JWST ModelContainer object
             data model container holding ImageModels of the median output frame
             blotted back to the wcs and frame of the ImageModels in
@@ -374,10 +376,10 @@ def flag_cr(
     # Count existing DO_NOT_USE pixels
     count_existing = np.count_nonzero(sci_image.dq & pixel.DO_NOT_USE)
 
-    # Update the DQ array in the input image.
+    # Update the DQ array values in the input image but preserve datatype.
     sci_image.dq = np.bitwise_or(
         sci_image.dq, cr_mask * (pixel.DO_NOT_USE | pixel.OUTLIER)
-    )
+    ).astype(np.uint32)
 
     # Report number (and percent) of new DO_NOT_USE pixels found
     count_outlier = np.count_nonzero(sci_image.dq & pixel.DO_NOT_USE)
@@ -387,7 +389,7 @@ def flag_cr(
 
 
 def abs_deriv(array):
-    """Take the absolute derivate of a numpy array."""
+    """Take the absolute derivative of a numpy array."""
     tmp = np.zeros(array.shape, dtype=np.float64)
     out = np.zeros(array.shape, dtype=np.float64)
 
@@ -431,7 +433,7 @@ def gwcs_blot(median_model, blot_img, interp="poly5", sinscl=1.0):
         "sinc" (sinc interpolation), "lan3" (3rd order Lanczos
         interpolation), and "lan5" (5th order Lanczos interpolation).
 
-    sincscl : float, optional
+    sinscl : float, optional
         The scaling factor for sinc interpolation.
     """
     blot_wcs = blot_img.meta.wcs

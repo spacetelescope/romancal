@@ -3,7 +3,6 @@ import getpass
 import json
 import os
 from datetime import datetime
-from pathlib import Path
 
 import pytest
 from astropy.table import Table
@@ -11,15 +10,8 @@ from ci_watson.artifactory_helpers import UPLOAD_SCHEMA
 from numpy.testing import assert_allclose, assert_equal
 
 from romancal.regtest.regtestdata import RegtestData
-from romancal.regtest.sdp_pools_source import SDPPoolsSource
-
-# from astropy.io.fits import conf
-
 
 TODAYS_DATE = datetime.now().strftime("%Y-%m-%d")
-
-# # Turn of FITS memmap for all regtests (affects FITSDiff)
-# conf.use_memmap = False
 
 
 @pytest.fixture(scope="session")
@@ -92,11 +84,11 @@ def generate_artifactory_json(request, artifactory_repos):
     rtdata = postmortem(request, "rtdata") or postmortem(request, "rtdata_module")
     if rtdata:
         try:
-            # The _jail fixture from ci_watson sets tmp_path
+            # The function_jail fixture uses tmp_path
             cwd = str(request.node.funcargs["tmp_path"])
         except KeyError:
-            # The jail fixture (module-scoped) returns the path
-            cwd = str(request.node.funcargs["jail"])
+            # The module_jail fixture (module-scoped) returns the path
+            cwd = str(request.node.funcargs["module_jail"])
         rtdata.remote_results_path = artifactory_result_path()
         rtdata.test_name = request.node.name
         # Dump the failed test traceback into rtdata
@@ -286,55 +278,3 @@ def diff_astropy_tables():
         return True
 
     return _diff_astropy_tables
-
-
-# Add option to specify a single pool name
-def pytest_addoption(parser):
-    parser.addoption(
-        "--sdp-pool",
-        metavar="sdp_pool",
-        default=None,
-        help="SDP test pool to run. Specify the name only, not extension or path",
-    )
-    parser.addoption(
-        "--standard-pool",
-        metavar="standard_pool",
-        default=None,
-        help="Standard test pool to run. Specify the name only, not extension or path",
-    )
-
-
-@pytest.fixture
-def sdp_pool(request):
-    """Retrieve a specific SDP pool to test"""
-    return request.config.getoption("--sdp-pool")
-
-
-@pytest.fixture
-def standard_pool(request):
-    """Retrieve a specific standard pool to test"""
-    return request.config.getoption("--standard-pool")
-
-
-def pytest_generate_tests(metafunc):
-    """Prefetch and parametrize a set of test pools"""
-    if "pool_path" in metafunc.fixturenames:
-        try:
-            SDPPoolsSource.inputs_root = metafunc.config.getini("inputs_root")[0]
-            SDPPoolsSource.results_root = metafunc.config.getini("results_root")[0]
-            SDPPoolsSource.env = metafunc.config.getoption("env")
-        except IndexError:
-            SDPPoolsSource.inputs_root = "roman-pipeline"
-            SDPPoolsSource.results_root = "roman-pipeline-results"
-            SDPPoolsSource.env = "dev"
-
-        pools = SDPPoolsSource()
-
-        try:
-            pool_paths = pools.pool_paths
-        except Exception:
-            pool_paths = []
-
-        ids = [Path(pool_path).stem for pool_path in pool_paths]
-
-        metafunc.parametrize("pool_path", pool_paths, ids=ids)

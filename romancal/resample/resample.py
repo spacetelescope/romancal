@@ -153,6 +153,9 @@ class ResampleData:
             datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
         )
 
+        # update meta.cal_step
+        self.blank_output.meta.cal_step = input_models[0].meta.cal_step
+
         # update meta data and wcs
         # note we have made this input_model_0 variable so that if
         # meta includes lazily-loaded objects, that we can successfully
@@ -194,7 +197,7 @@ class ResampleData:
             output_root = "_".join(
                 exposure[0].meta.filename.replace(output_type, "").split("_")[:-1]
             )
-            output_model.meta.basic.filename = f"{output_root}_outlier_i2d{output_type}"
+            output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
 
             # Initialize the output with the wcs
             driz = gwcs_drizzle.GWCSDrizzle(
@@ -242,7 +245,7 @@ class ResampleData:
             output_model.context = output_model.context.astype("uint32")
             if not self.in_memory:
                 # Write out model to disk, then return filename
-                output_name = output_model.meta.basic.filename
+                output_name = output_model.meta.filename
                 output_model.save(output_name)
                 log.info(f"Exposure {output_name} saved to file")
                 output_list.append(output_name)
@@ -260,7 +263,7 @@ class ResampleData:
         Used for level 3 resampling
         """
         output_model = self.blank_output.copy()
-        output_model.meta.basic.filename = self.output_filename
+        output_model.meta.filename = self.output_filename
         output_model.meta["resample"] = maker_utils.mk_resample()
         output_model.meta.resample["members"] = []
         output_model.meta.resample.weight_type = self.weight_type
@@ -703,7 +706,6 @@ def l2_into_l3_meta(l3_meta, l2_meta):
     l3_meta.basic.survey = l2_meta.observation.survey
     l3_meta.basic.optical_element = l2_meta.instrument.optical_element
     l3_meta.basic.instrument = l2_meta.instrument.name
-    l3_meta.basic.telescope = l2_meta.telescope
     l3_meta.coordinates = l2_meta.coordinates
     l3_meta.program = l2_meta.program
 

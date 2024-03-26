@@ -48,9 +48,7 @@ jobs:
       cache-key: data-${{ needs.data.outputs.webbpsf_hash }}-${{ needs.crds_contexts.outputs.roman }}
       cache-restore-keys: webbpsf-${{ needs.data.outputs.webbpsf_hash }}
       envs: |
-        - linux: py39-oldestdeps-webbpsf-cov
-          pytest-results-summary: true
-        - linux: py39-webbpsf
+        - linux: py310-oldestdeps-webbpsf-cov
           pytest-results-summary: true
         - linux: py310-webbpsf-nolegacypath
           pytest-results-summary: true
@@ -61,3 +59,4 @@ jobs:
         - linux: py311-webbpsf-cov
           coverage: codecov
           pytest-results-summary: true
+        - linux: py312-webbpsf
