@@ -162,7 +162,7 @@ asdf tree.
     └─roman (WfiScienceRaw)
       ├─meta (dict)
       │ ├─aperture (Aperture) ...
-      │ ├─cal_step (CalStep) ...
+      │ ├─cal_step (L2CalStep) ...
       │ ├─calibration_software_version (str): 0.4.3.dev89+gca5771d
       │ ├─coordinates (Coordinates) ...
       │ ├─crds_context_used (str): roman_0020.pmap
@@ -213,7 +213,7 @@ lines for each of the meta entries,
     ├─aperture (Aperture)
     │ ├─name (str): WFI_CEN
     │ └─position_angle (int): 120
-    ├─cal_step (CalStep)
+    ├─cal_step (L2CalStep)
     │ ├─assign_wcs (str): INCOMPLETE
     │ ├─flat_field (str): INCOMPLETE
     │ └─6 not shown
@@ -234,7 +234,7 @@ in `cal_step` without listing the values,
 .. code:: python
 
     >>> asdf.info(d_uncal.meta.cal_step,max_rows=(None, 3),show_values=False)  # doctest: +SKIP
-    root (CalStep)
+    root (L2CalStep)
     ├─assign_wcs (str)
     ├─flat_field (str)
     ├─dark (str)
@@ -258,7 +258,7 @@ You can also use the search method to find attributes,
     root (AsdfObject)
     └─roman (WfiScienceRaw)
       └─meta (dict)
-        └─cal_step (CalStep)
+        └─cal_step (L2CalStep)
 
 or a a general search for all attributes with cal in the name
 
@@ -268,7 +268,7 @@ or a a general search for all attributes with cal in the name
     root (AsdfObject)
     └─roman (WfiScienceRaw)
      └─meta (dict)
-       ├─cal_step (CalStep)
+       ├─cal_step (L2CalStep)
        ├─calibration_software_version (str): 0.4.3.dev89+gca5771d
        ├─instrument (WfiMode)
        │ └─optical_element (str): F158
@@ -285,7 +285,7 @@ To search only within the meta tree,
 
     >>> d_uncal.search('cal_')['roman']['meta']  # doctest: +SKIP
     meta (dict)
-    ├─cal_step (CalStep)
+    ├─cal_step (L2CalStep)
     └─instrument (WfiMode)
       └─optical_element (str): F158
 
