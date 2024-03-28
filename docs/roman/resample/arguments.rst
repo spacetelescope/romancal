@@ -102,3 +102,26 @@ image.
 
 ``--in_memory`` (bool, default=True)
     If set to `False`, write output datamodel to disk.
+
+``--good_bits`` (str, default='~DO_NOT_USE+NON_SCIENCE')
+    Specifies the bits to use when creating the resampling mask.
+    Either a single bit value or a combination of them can be provided.
+    If the string starts with a tilde (`~`), then the provided bit(s)
+    will be excluded when creating the resampling mask.
+    The default value is to exclude pixels flagged with ``DO_NOT_USE``
+    and ``NON_SCIENCE``.
+
+    The bit value can be provided in a few different ways, but always as
+    a string type. For example, if the user deems OK to use pixels with
+    low QE and highly nonlinear, then any of the ways listed below will
+    work to set ``good_bits``:
+
+    - ``good_bits = 'LOW_QE+NON_LINEAR'`` (concatenated DQ flag labels);
+    - ``good_bits = '8192+65536'`` (concatenated DQ flag bit values);
+    - ``good_bits = '8192,65536'`` (comma-separated DQ flag bit values);
+    - ``good_bits = '73728'`` (sum of DQ flag bit values).
+
+    .. note::
+        Adding a tilde (`~`) to the beginning of the string will flip the
+        bit(s) and actually `exclude` the provided bit(s). This is the same
+        as providing the bad bits instead of the good bits.
