@@ -325,3 +325,25 @@ def test_build_driz_weight_multiple_good_bits(
     )
 
     np.testing.assert_array_equal(result, expected_output)
+
+
+@pytest.mark.parametrize(
+    "good_bits",
+    [
+        "~DO_NOT_USE+NON_SCIENCE",
+        "~513",
+        "~1+512",
+        "~1,512",
+        "LOW_QE+NONLINEAR",
+        "73728",
+        "8192+65536",
+        "8192,65536",
+    ],
+)
+def test_set_good_bits_in_resample_meta(base_image, good_bits):
+    img = base_image()
+    step = ResampleStep
+
+    res = step.call(img, good_bits=good_bits)
+
+    assert res.meta.resample["good_bits"] == good_bits
