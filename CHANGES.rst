@@ -39,6 +39,7 @@ resample
 --------
 
 - Update location of ``basic`` attributes. [#1131]
+- Allow user to provide DQ flags to use/exclude when creating resampling mask. [#1166]
 
 outlier_detection
 -----------------
