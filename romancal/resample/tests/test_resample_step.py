@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from asdf import AsdfFile
 from astropy import coordinates as coord
@@ -8,10 +9,7 @@ from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
 
-from romancal.datamodels import ModelContainer
-from romancal.resample import ResampleStep
-from romancal.resample import resample_utils
-import numpy as np
+from romancal.resample import ResampleStep, resample_utils
 
 
 class MockModel:
