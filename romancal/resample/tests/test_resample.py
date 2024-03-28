@@ -263,7 +263,7 @@ def test_resampledata_init(exposure_1):
     kernel = "turbo"
     fillval = 0.0
     wht_type = "exp"
-    good_bits = 1
+    good_bits = "1"
     pscale_ratio = 0.5
     pscale = 0.1
     kwargs = {"in_memory": False}
@@ -314,7 +314,7 @@ def test_resampledata_init_default(exposure_1):
     assert resample_data.kernel == "square"
     assert resample_data.fillval == "INDEF"
     assert resample_data.weight_type == "ivm"
-    assert resample_data.good_bits == 0
+    assert resample_data.good_bits == "0"
     assert resample_data.in_memory
 
 
