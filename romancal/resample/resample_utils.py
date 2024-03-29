@@ -174,7 +174,7 @@ def build_mask(dqarr, bitvalue):
     ----------
     dqarr : numpy.ndarray
         Input DQ array.
-    bitvalue : str, int, or list of int
+    bitvalue : str
         Bitvalue flag.
 
     Returns
@@ -191,7 +191,7 @@ def build_mask(dqarr, bitvalue):
     - Otherwise, the function performs a bitwise AND operation between the dqarr and
       the complement of the bitvalue, and then applies a logical NOT operation to
       obtain the bit mask.
-    - The resulting bit mask is returned as an ndarray of dtype `numpy.uint8`.
+    - The resulting bit mask is returned as a `numpy.ndarray` of dtype `numpy.uint8`.
     """
     bitvalue = interpret_bit_flags(
         bitvalue, flag_name_map={dq.name: dq.value for dq in pixel}
