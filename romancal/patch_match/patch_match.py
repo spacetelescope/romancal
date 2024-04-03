@@ -1,5 +1,5 @@
 """
-This module determines which tessel files overlap with the given image.
+This module determines which patch files overlap with the given image.
 
 Currently this assumes that the sky projected borders of all images are straight.
 """
@@ -17,26 +17,26 @@ RAD_TO_ARCSEC = 180. / np.pi * 3600.
 
 plt.ion()
 
-TESSEL_TABLE = None
+PATCH_TABLE = None
 
 print(os.environ)
 
-def load_tessel_table(tablepath=None):
+def load_patch_table(tablepath=None):
     """
-    Load the tessel table. If no tablepath is supplied the path is obtained
-    from the environmental variable TESSEL_TABLE_PATH
+    Load the patch table. If no tablepath is supplied the path is obtained
+    from the environmental variable PATCH_TABLE_PATH
     """
-    global TESSEL_TABLE
+    global PATCH_TABLE
     if tablepath is None:
         try:
-            tablepath = os.environ['TESSEL_TABLE_PATH']
+            tablepath = os.environ['PATCH_TABLE_PATH']
         except KeyError:
-            raise KeyError("TESSEL_TABLE_PATH environmental variable not found")
+            raise KeyError("PATCH_TABLE_PATH environmental variable not found")
     try:
         with asdf.open(tablepath) as af:
-            TESSEL_TABLE = af.tree['tessellation'].copy()
+            PATCH_TABLE = af.tree['patches'].copy()
     except FileNotFoundError:
-        raise FileNotFoundError("Specified tessel table file path not found")
+        raise FileNotFoundError("Specified patch table file path not found")
 
 
 def image_coords_to_vec(image_corners):
@@ -55,8 +55,8 @@ def image_coords_to_vec(image_corners):
     vec_im_corners = np.array(sgv.lonlat_to_vector(image_corners[0], image_corners[1]))
     return vec_im_corners
 
-def find_tessel_matches(image_corners, image_shape=None):
-    """Find tessels that the image overlaps with
+def find_patch_matches(image_corners, image_shape=None):
+    """Find patches that the image overlaps with
 
     Parameters
     ----------
@@ -72,9 +72,9 @@ def find_tessel_matches(image_corners, image_shape=None):
 
     Returns
     -------
-    A sequence of the indices of all tessels that overlap the supplied image
-    (in the referenced tessel table). The indices may be used to obtain all
-    necessary information about the tessels.
+    A sequence of the indices of all patches that overlap the supplied image
+    (in the referenced patch table). The indices may be used to obtain all
+    necessary information about the patches.
     """
 
     if isinstance(image_corners, wcs.WCS):
@@ -102,9 +102,9 @@ def find_tessel_matches(image_corners, image_shape=None):
         (cxm, cxp), (cym, cyp) = ((-0.5, image_shape[1] - 0.5),
                                   (-0.5, image_shape[0] - 0.5))
         image_corners = (iwcs(cxp, cyp), iwcs(cxm, cyp), iwcs(cxm, cym), iwcs(cxp, cym))
-    ttab = TESSEL_TABLE
-    ra = ttab[:]['ra_center']
-    dec = ttab[:]['dec_center']
+    ptab = PATCH_TABLE
+    ra = ptab[:]['ra_center']
+    dec = ptab[:]['dec_center']
     # # Convert all celestial coordinates to cartesion coordinates.
     vec_centers = np.array(sgv.lonlat_to_vector(ra, dec)).transpose()
     # # Organize corners into two ra, dec lists
@@ -113,21 +113,21 @@ def find_tessel_matches(image_corners, image_shape=None):
     vec_im_corners = image_coords_to_vec(image_corners)
     # Approximate center of image by averaging corner vectors
     im_center = normalize_vector(vec_im_corners.mean(axis=1))
-    # Compute difference vector between image centerand tessel centers
+    # Compute difference vector between image center and patch centers
     diff = vec_centers - im_center
     dist = np.sqrt((diff**2).sum(axis=1)) * 180 / np.pi
     match = np.where(dist < 0.5)
     ncandidates = len(match[0])
     # Now see which of these that are close actually overlap the supplied image.
     # (Is it necessary to check that the corners are in a sensible order?)
-    mra1 = ttab[match]['ra_corn1']
-    mra2 = ttab[match]['ra_corn2']
-    mra3 = ttab[match]['ra_corn3']
-    mra4 = ttab[match]['ra_corn4']
-    mdec1 = ttab[match]['dec_corn1']
-    mdec2 = ttab[match]['dec_corn2']
-    mdec3 = ttab[match]['dec_corn3']
-    mdec4 = ttab[match]['dec_corn4']
+    mra1 = ptab[match]['ra_corn1']
+    mra2 = ptab[match]['ra_corn2']
+    mra3 = ptab[match]['ra_corn3']
+    mra4 = ptab[match]['ra_corn4']
+    mdec1 = ptab[match]['dec_corn1']
+    mdec2 = ptab[match]['dec_corn2']
+    mdec3 = ptab[match]['dec_corn3']
+    mdec4 = ptab[match]['dec_corn4']
     mcenters = vec_centers[match]
     mra = np.vstack([mra1, mra2, mra3, mra4, mra1])
     mdec = np.vstack([mdec1, mdec2, mdec3, mdec4, mdec1])
@@ -148,29 +148,29 @@ def find_tessel_matches(image_corners, image_shape=None):
             realmatch.append(i)
     return match[0][realmatch], match[0]
 
-def get_corners(tessel):
+def get_corners(patch):
     """
-    Construct a the vertex coordinates for a tessel from a tessel definition suitable
+    Construct a the vertex coordinates for a patch from a patch definition suitable
     for plotting the defined region (x coordinates, y coordinates).
     """
-    t = tessel
-    corners = ((t['dec_corn1'],
-                t['dec_corn2'],
-                t['dec_corn3'],
-                t['dec_corn4'],
-                t['dec_corn1']),
-               (t['ra_corn1'],
-                t['ra_corn2'],
-                t['ra_corn3'],
-                t['ra_corn4'],
-                t['ra_corn1']))
+    p = patch
+    corners = ((p['dec_corn1'],
+                p['dec_corn2'],
+                p['dec_corn3'],
+                p['dec_corn4'],
+                p['dec_corn1']),
+               (p['ra_corn1'],
+                p['ra_corn2'],
+                p['ra_corn3'],
+                p['ra_corn4'],
+                p['ra_corn1']))
     corners = np.array(corners)
     vec_corners = sgv.lonlat_to_vector(corners[0], corners[1])
     return vec_corners
 
-def find_closest_tangent_point(tessels, image_corners):
+def find_closest_tangent_point(patches, image_corners):
     """
-    Out of all listed tessels, find the closest tangent point to the center
+    Out of all listed patches, find the closest tangent point to the center
     coordinate of the image.
     """
     # To deal with the corner case, it is necessary to use spherical_geometery
@@ -179,10 +179,10 @@ def find_closest_tangent_point(tessels, image_corners):
     vec_im_corners = image_coords_to_vec(image_corners)
     im_center = np.array(normalize_vector(vec_im_corners.mean(axis=1)))
     tangent_point_set = set()
-    tessel_tangent_points = [(tess['dec_projection_center'],
-                              tess['ra_projection_center'])
-        for tess in tessels]
-    for tangent_point in tessel_tangent_points:
+    patch_tangent_points = [(patch['dec_projection_center'],
+                             patch['ra_projection_center'])
+        for patch in patches]
+    for tangent_point in patch_tangent_points:
         tangent_point_set.add(tangent_point)
     unique_tangent_points = list(tangent_point_set)
     # Compute distance for each tangent point from im_center
@@ -192,13 +192,13 @@ def find_closest_tangent_point(tessels, image_corners):
     sorted_tangent_points = [unique_tangent_points[sorted_dist[1]]
            for sorted_dist in sorted_dist_indices]
     closest_tangent_point = np.array(sgv.lonlat_to_vector(*sorted_tangent_points[0]))
-    # Now associate index of sorted_tangent_points with that of all tessels
-    tessel_tp_id = []
-    for tess_tp in tessel_tangent_points:
+    # Now associate index of sorted_tangent_points with that of all patches
+    patch_tp_id = []
+    for patch_tp in patch_tangent_points:
         for i, tp in enumerate(sorted_tangent_points):
-            if tp == tess_tp:
-                tessel_tp_id.append(i)
-    return closest_tangent_point, tessel_tp_id
+            if tp == patch_tp:
+                patch_tp_id.append(i)
+    return closest_tangent_point, patch_tp_id
 
 def normalize_vector(vec):
     """
@@ -228,36 +228,36 @@ def veccoords_to_tangent_plane(vertices, tangent_point_vec):
 def plot_field(corners, id='', fill=None, color=None):
     plt.fill(corners[0], corners[1], color=fill, edgecolor=color)
 
-def plot_tessel(corners, id='', color=None):
+def plot_patch(corners, id='', color=None):
     plt.plot(corners[0], corners[1], color=color)
     if id:
         center = (corners[0][:-1].mean(), corners[1][:-1].mean())
         plt.annotate(str(id), center, va='center', ha='center', size=10)
 
-def plot(image_corners, tessels_touched_ids, tessels_candidate_ids):
+def plot(image_corners, patches_touched_ids, patches_candidate_ids):
     """
-    This plots a list of tessels
+    This plots a list of patches
     """
     plt.clf()
     plt.gca().invert_xaxis()
     plt.plot(0, 0, '*', markersize=10)
-    tessels_touched = [TESSEL_TABLE[index] for index in tessels_touched_ids]
-    tessels_candidate = [TESSEL_TABLE[index] for index in tessels_candidate_ids]
-    tangent_point, tess_tp_id_touched = find_closest_tangent_point(
-        tessels_touched, image_corners)
+    patches_touched = [PATCH_TABLE[index] for index in patches_touched_ids]
+    patches_candidate = [PATCH_TABLE[index] for index in patches_candidate_ids]
+    tangent_point, patch_tp_id_touched = find_closest_tangent_point(
+        patches_touched, image_corners)
     ra, dec = sgv.vector_to_lonlat(*tangent_point)
-    dummy, tess_tp_id = find_closest_tangent_point(tessels_candidate, image_corners)
+    dummy, patch_tp_id = find_closest_tangent_point(patches_candidate, image_corners)
     vec_image_corners = image_coords_to_vec(image_corners)
     tp_image_corners = veccoords_to_tangent_plane(vec_image_corners, tangent_point)
     plot_field(tp_image_corners, fill='lightgrey', color='black')
-    for tess, id in zip(tessels_candidate, tessels_candidate_ids):
-        plot_tessel(veccoords_to_tangent_plane(get_corners(tess), tangent_point),
+    for patch, id in zip(patches_candidate, patches_candidate_ids):
+        plot_patch(veccoords_to_tangent_plane(get_corners(patch), tangent_point),
             id=id, color='lightgray')
-    for tess, id in zip(tessels_touched, tessels_touched_ids):
-        plot_tessel(veccoords_to_tangent_plane(get_corners(tess), tangent_point),
+    for patch, id in zip(patches_touched, patches_touched_ids):
+        plot_patch(veccoords_to_tangent_plane(get_corners(patch), tangent_point),
             id=id, color='blue')
     plt.xlabel("Offset from nearest tangent point in arcsec")
     plt.ylabel("Offset from nearest tangent point in arcsec")
     plt.title(f"RA: {ra} Dec: {dec} of tangent point in degrees")
 
-load_tessel_table()
+load_patch_table()

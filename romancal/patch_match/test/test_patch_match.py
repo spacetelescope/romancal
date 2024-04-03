@@ -1,9 +1,9 @@
 """
-Unit tests for tesselmatch.
+Unit tests for patch_match.
 
-These tests depend very strongly on the contents of the referenced table of tessels.
+These tests depend very strongly on the contents of the referenced table of patches.
 Changes to the contents of this table will require changes to the tests for
-any unit tests that depend on specific matches to tessels in the table.
+any unit tests that depend on specific matches to patches in the table.
 
 Any changes to the matching algorithm should be completely separate from any
 changes to the table contents.
@@ -13,8 +13,8 @@ The tests include the following cases to validate the matches
 2) 1) translated to ra, de, pa = 180, 40, 0
 3) Same as 2) but with pa = 45 and 60.
 4) Same as 3) (pa=45 case) but with the lower corner just above, below, to the right
-   and to the left of a 4 tessel corner
-   (assuming non-overlapping tessels within a common tangent point).
+   and to the left of a 4 patch corner
+   (assuming non-overlapping patchs within a common tangent point).
    This requires identifying the ra, dec of such a corner in the table.
 5) A test of a WCS provided example.
 
@@ -29,10 +29,10 @@ import pytest
 import os.path
 test_directory = os.path.split(mpath)[0]
 import os
-os.environ['TESSEL_TABLE_PATH'] = os.path.join(
-    test_directory, "tessellation_subset.asdf")
+os.environ['PATCH_TABLE_PATH'] = os.path.join(
+    test_directory, "patches_subset.asdf")
 import numpy as np
-import romancal.tessel_match.tessel_match as tm
+import romancal.patch_match.patch_match as pm
 import spherical_geometry.vector as sgv
 import astropy.modeling.models as amm
 import astropy.units as u
@@ -43,8 +43,8 @@ import gwcs.wcs as wcs
 rotate = sgv.rotate_around
 
 absindex = 925050
-tesseltable = tm.TESSEL_TABLE
-crecord = tesseltable[np.where(tesseltable[:]['index'] == absindex)]
+patchtable = pm.PATCH_TABLE
+crecord = patchtable[np.where(patchtable[:]['index'] == absindex)]
 cra = crecord['ra_corn3'][0]
 cdec = crecord['dec_corn3'][0]
 cpa = 45.
@@ -80,7 +80,7 @@ def mk_im_corners(ra, dec, pa, size):
 
 def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
     """
-    Construct a GWCS model for testing the tessel matching when provided a WCS
+    Construct a GWCS model for testing the patch matching when provided a WCS
     This just implements a basic tangent projection with specified ra, dec, and
     position angle
     """
@@ -117,26 +117,26 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
 
 def test_corners(pars, expected):
     corners = mk_im_corners(*pars)
-    matches, close = tm.find_tessel_matches(corners)
+    matches, close = pm.find_patch_matches(corners)
     # map matches to absolute index
-    mmatches = tuple([tesseltable[match]['index'] for match in matches])
+    mmatches = tuple([patchtable[match]['index'] for match in matches])
     assert tuple(mmatches) == expected
 
 def test_wcs_corners():
     imshape = (4096, 4096)
     wcsobj = mk_gwcs()
-    matches, close = tm.find_tessel_matches(wcsobj, image_shape=imshape)
-    mmatches = tuple([tesseltable[match]['index'] for match in matches])
+    matches, close = pm.find_patch_matches(wcsobj, image_shape=imshape)
+    mmatches = tuple([patchtable[match]['index'] for match in matches])
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.pixel_shape = imshape
-    matches, close = tm.find_tessel_matches(wcsobj)
-    mmatches = tuple([tesseltable[match]['index'] for match in matches])
+    matches, close = pm.find_patch_matches(wcsobj)
+    mmatches = tuple([patchtable[match]['index'] for match in matches])
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.pixel_shape = None
     wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
-    matches, close = tm.find_tessel_matches(wcsobj)
-    mmatches = tuple([tesseltable[match]['index'] for match in matches])
+    matches, close = pm.find_patch_matches(wcsobj)
+    mmatches = tuple([patchtable[match]['index'] for match in matches])
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.bounding_box = None
     with pytest.raises(ValueError):
-        matches, close = tm.find_tessel_matches(wcsobj)
+        matches, close = pm.find_patch_matches(wcsobj)
