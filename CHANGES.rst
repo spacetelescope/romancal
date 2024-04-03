@@ -41,11 +41,15 @@ resample
 - Update location of ``basic`` attributes. [#1131]
 - Allow user to provide DQ flags to use/exclude when creating resampling mask. [#1166]
 
+- Updated Level 3 ``cal_step`` attribute creation. [#1165]
+
 outlier_detection
 -----------------
 
 - Allow `ModelContainer` as input. [#1092]
+
 - Update location of ``basic`` attributes. [#1131]
+
 - Set ``single=False`` in the call to resample to properly create a median image. [#1146]
 
 ramp_fitting
