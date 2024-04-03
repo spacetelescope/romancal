@@ -9,6 +9,7 @@ from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
 
+from romancal.datamodels import ModelContainer
 from romancal.resample import ResampleStep, resample_utils
 
 

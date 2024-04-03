@@ -89,9 +89,7 @@ def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
     asn_filepath = create_mock_asn_file(tmp_path)
 
     res = OutlierDetectionStep.call(
-        asn_filepath,
-        output_dir=tmp_path.as_posix(),
-        in_memory=True,
+        asn_filepath, output_dir=tmp_path.as_posix(), in_memory=True
     )
 
     # assert step.skip is False
@@ -109,10 +107,7 @@ def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
 
     mc = ModelContainer([img_1, img_2])
 
-    res = OutlierDetectionStep.call(
-        mc,
-        in_memory=True,
-    )
+    res = OutlierDetectionStep.call(mc, in_memory=True)
 
     assert all(x.meta.cal_step.outlier_detection == "COMPLETE" for x in res)
 
@@ -205,12 +200,16 @@ def test_outlier_do_detection_write_files_to_custom_location(
         "resample_suffix": "i2d",
     }
 
+    blot_path_1 = tmp_path / img_1.meta.filename.replace(".asdf", "_blot.asdf")
+    blot_path_2 = tmp_path / img_2.meta.filename.replace(".asdf", "_blot.asdf")
     # meta.filename for the median image created by OutlierDetection.do_detection()
     median_path = tmp_path / "drizzled_median.asdf"
-    blot_1_path = tmp_path / "img_1_blot.asdf"
-    blot_2_path = tmp_path / "img_2_blot.asdf"
 
-    outlier_files_path = [median_path, blot_1_path, blot_2_path]
+    outlier_files_path = [
+        blot_path_1,
+        blot_path_2,
+        median_path,
+    ]
 
     step = outlier_detection.OutlierDetection(input_models, **pars)
     step.do_detection()
