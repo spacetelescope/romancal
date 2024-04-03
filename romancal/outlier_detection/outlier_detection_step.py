@@ -44,7 +44,7 @@ class OutlierDetectionStep(RomanStep):
         kernel_size = string(default='7 7') # Size of kernel to be used during resampling of the data
         save_intermediate_results = boolean(default=False) # Specifies whether or not to write out intermediate products to disk
         resample_data = boolean(default=True) # Specifies whether or not to resample the input images when performing outlier detection
-        good_bits = string(default="0")  # DQ bit value to be considered 'good'
+        good_bits = string(default="~DO_NOT_USE+NON_SCIENCE")  # DQ bit value to be considered 'good'
         allowed_memory = float(default=None)  # Fraction of memory to use for the combined image
         in_memory = boolean(default=False) # Specifies whether or not to keep all intermediate products and datamodels in memory
     """  # noqa: E501
