@@ -35,7 +35,12 @@ class WfiSca:
             shape=self.shape,
             **{
                 "meta": {
-                    "wcsinfo": {"ra_ref": 10, "dec_ref": 0, "vparity": -1},
+                    "wcsinfo": {
+                        "ra_ref": 10,
+                        "dec_ref": 0,
+                        "vparity": -1,
+                        "v3yangle": -60,
+                    },
                     "exposure": {
                         "exposure_time": 152.04000000000002,
                         "effective_exposure_time": 3.04 * 6 * 8,
@@ -55,22 +60,22 @@ class WfiSca:
                 },
                 "data": u.Quantity(
                     rng.poisson(2.5, size=self.shape).astype(np.float32),
-                    u.DN / u.s,
+                    u.MJy / u.sr,
                     dtype=np.float32,
                 ),
                 "var_rnoise": u.Quantity(
                     rng.normal(1, 0.05, size=self.shape).astype(np.float32),
-                    u.DN**2 / u.s**2,
+                    u.MJy**2 / u.sr**2,
                     dtype=np.float32,
                 ),
                 "var_poisson": u.Quantity(
                     rng.poisson(1, size=self.shape).astype(np.float32),
-                    u.DN**2 / u.s**2,
+                    u.MJy**2 / u.sr**2,
                     dtype=np.float32,
                 ),
                 "var_flat": u.Quantity(
                     rng.uniform(0, 1, size=self.shape).astype(np.float32),
-                    u.DN**2 / u.s**2,
+                    u.MJy**2 / u.sr**2,
                     dtype=np.float32,
                 ),
             },
@@ -257,7 +262,7 @@ def test_resampledata_init(exposure_1):
     """Test that ResampleData can set initial values."""
     input_models = exposure_1
     output = "output.asdf"
-    single = True
+    single = False
     blendheaders = False
     pixfrac = 0.8
     kernel = "turbo"

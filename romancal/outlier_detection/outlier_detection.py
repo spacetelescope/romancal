@@ -92,7 +92,7 @@ class OutlierDetection:
             # for non-dithered data, the resampled image is just the original image
             drizzled_models = self.input_models
             for model in drizzled_models:
-                model.weight = build_driz_weight(
+                model["weight"] = build_driz_weight(
                     model,
                     weight_type="ivm",
                     good_bits=pars["good_bits"],

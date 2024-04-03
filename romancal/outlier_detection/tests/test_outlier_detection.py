@@ -89,7 +89,10 @@ def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
     asn_filepath = create_mock_asn_file(tmp_path)
 
     res = OutlierDetectionStep.call(
-        asn_filepath, output_dir=tmp_path.as_posix(), in_memory=True
+        asn_filepath,
+        output_dir=tmp_path.as_posix(),
+        in_memory=True,
+        resample_data=False,
     )
 
     # assert step.skip is False
@@ -107,7 +110,11 @@ def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
 
     mc = ModelContainer([img_1, img_2])
 
-    res = OutlierDetectionStep.call(mc, in_memory=True)
+    res = OutlierDetectionStep.call(
+        mc,
+        in_memory=True,
+        resample_data=False,
+    )
 
     assert all(x.meta.cal_step.outlier_detection == "COMPLETE" for x in res)
 
@@ -192,7 +199,7 @@ def test_outlier_do_detection_write_files_to_custom_location(
         "backg": 0.0,
         "kernel_size": "7 7",
         "save_intermediate_results": False,
-        "resample_data": True,
+        "resample_data": False,
         "good_bits": 0,
         "allowed_memory": None,
         "in_memory": outlier_step.in_memory,
@@ -200,14 +207,10 @@ def test_outlier_do_detection_write_files_to_custom_location(
         "resample_suffix": "i2d",
     }
 
-    blot_path_1 = tmp_path / img_1.meta.filename.replace(".asdf", "_blot.asdf")
-    blot_path_2 = tmp_path / img_2.meta.filename.replace(".asdf", "_blot.asdf")
     # meta.filename for the median image created by OutlierDetection.do_detection()
     median_path = tmp_path / "drizzled_median.asdf"
 
     outlier_files_path = [
-        blot_path_1,
-        blot_path_2,
         median_path,
     ]
 
@@ -264,7 +267,7 @@ def test_outlier_do_detection_find_outliers(tmp_path, base_image, clean_up_after
         "backg": 0.0,
         "kernel_size": "7 7",
         "save_intermediate_results": False,
-        "resample_data": True,
+        "resample_data": False,
         "good_bits": 0,
         "allowed_memory": None,
         "in_memory": outlier_step.in_memory,
@@ -338,7 +341,7 @@ def test_outlier_do_detection_do_not_find_outliers_in_identical_images(
         "backg": 0.0,
         "kernel_size": "7 7",
         "save_intermediate_results": False,
-        "resample_data": True,
+        "resample_data": False,
         "good_bits": 0,
         "allowed_memory": None,
         "in_memory": outlier_step.in_memory,

@@ -9,6 +9,7 @@ from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
 
+from romancal.datamodels import ModelContainer
 from romancal.resample import ResampleStep, resample_utils
 
 
@@ -341,9 +342,13 @@ def test_build_driz_weight_multiple_good_bits(
     ],
 )
 def test_set_good_bits_in_resample_meta(base_image, good_bits):
-    img = base_image()
+    model = maker_utils.mk_level2_image(shape=(100, 100))
+    model.meta.wcsinfo["vparity"] = -1
+
+    img = datamodels.ImageModel(model)
+
     step = ResampleStep
 
     res = step.call(img, good_bits=good_bits)
 
-    assert res.meta.resample["good_bits"] == good_bits
+    assert res.meta.resample.good_bits == good_bits
