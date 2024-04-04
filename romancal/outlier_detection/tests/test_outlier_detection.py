@@ -92,7 +92,6 @@ def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
         asn_filepath,
         output_dir=tmp_path.as_posix(),
         in_memory=True,
-        resample_data=False,
     )
 
     # assert step.skip is False
@@ -113,7 +112,6 @@ def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
     res = OutlierDetectionStep.call(
         mc,
         in_memory=True,
-        resample_data=False,
     )
 
     assert all(x.meta.cal_step.outlier_detection == "COMPLETE" for x in res)
@@ -199,7 +197,7 @@ def test_outlier_do_detection_write_files_to_custom_location(
         "backg": 0.0,
         "kernel_size": "7 7",
         "save_intermediate_results": False,
-        "resample_data": False,
+        "resample_data": True,
         "good_bits": 0,
         "allowed_memory": None,
         "in_memory": outlier_step.in_memory,
@@ -209,10 +207,10 @@ def test_outlier_do_detection_write_files_to_custom_location(
 
     # meta.filename for the median image created by OutlierDetection.do_detection()
     median_path = tmp_path / "drizzled_median.asdf"
+    blot_1_path = tmp_path / "img_1_blot.asdf"
+    blot_2_path = tmp_path / "img_2_blot.asdf"
 
-    outlier_files_path = [
-        median_path,
-    ]
+    outlier_files_path = [median_path, blot_1_path, blot_2_path]
 
     step = outlier_detection.OutlierDetection(input_models, **pars)
     step.do_detection()
@@ -267,7 +265,7 @@ def test_outlier_do_detection_find_outliers(tmp_path, base_image, clean_up_after
         "backg": 0.0,
         "kernel_size": "7 7",
         "save_intermediate_results": False,
-        "resample_data": False,
+        "resample_data": True,
         "good_bits": 0,
         "allowed_memory": None,
         "in_memory": outlier_step.in_memory,
@@ -341,7 +339,7 @@ def test_outlier_do_detection_do_not_find_outliers_in_identical_images(
         "backg": 0.0,
         "kernel_size": "7 7",
         "save_intermediate_results": False,
-        "resample_data": False,
+        "resample_data": True,
         "good_bits": 0,
         "allowed_memory": None,
         "in_memory": outlier_step.in_memory,
