@@ -45,6 +45,8 @@ resample
 
 - Updated Level 3 ``cal_step`` attribute creation. [#1165]
 
+- Updated Level 3 ``cal_step`` attribute creation. [#1165]
+
 outlier_detection
 -----------------
 
