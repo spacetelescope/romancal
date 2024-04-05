@@ -146,7 +146,7 @@ def find_patch_matches(image_corners, image_shape=None):
         if impoly.intersects_poly(cellpoly):
             # print(f"candidate {i} intersects")
             realmatch.append(i)
-    return match[0][realmatch], match[realmatch], match[0]
+    return match[0][realmatch], match[0]
 
 def get_cartesian_corners(patch):
     """
