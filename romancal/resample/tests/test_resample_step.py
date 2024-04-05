@@ -1,13 +1,15 @@
+import numpy as np
 import pytest
 from asdf import AsdfFile
 from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
+from astropy.units import Quantity
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
 
-from romancal.resample import ResampleStep
+from romancal.resample import ResampleStep, resample_utils
 
 
 class MockModel:
@@ -263,3 +265,89 @@ def test_update_phot_keywords(
 
     assert model.meta.photometry.pixelarea_steradians == expected_steradians
     assert model.meta.photometry.pixelarea_arcsecsq == expected_arcsecsq
+
+
+@pytest.mark.parametrize(
+    "good_bits, dq_array, expected_output",
+    [
+        (
+            "~DO_NOT_USE+NON_SCIENCE",
+            np.array([[0, 2**0, 0], [0, 2**13, 0], [0, 2**9, 0]]),
+            np.array([[1, 0, 1], [1, 1, 1], [1, 0, 1]]),
+        ),
+        (
+            "~513",
+            np.array([[0, 2**0, 0], [2**13, 0, 0], [0, 0, 2**9]]),
+            np.array([[1, 0, 1], [1, 1, 1], [1, 1, 0]]),
+        ),
+        (
+            "~1+512",
+            np.array([[2**13, 0, 0], [0, 0, 2**9], [0, 2**0, 0]]),
+            np.array([[1, 1, 1], [1, 1, 0], [1, 0, 1]]),
+        ),
+        (
+            "~1,512",
+            np.array([[2**13, 2**0, 2**9], [0, 0, 0], [0, 0, 0]]),
+            np.array([[1, 0, 0], [1, 1, 1], [1, 1, 1]]),
+        ),
+        (
+            "LOW_QE+NONLINEAR",
+            np.array([[2**13, 2**0, 2**16], [0, 0, 0], [0, 0, 0]]),
+            np.array([[1, 0, 1], [1, 1, 1], [1, 1, 1]]),
+        ),
+        (
+            "73728",
+            np.array([[0, 0, 0], [0, 2**13, 2**0], [0, 2**16, 0]]),
+            np.array([[1, 1, 1], [1, 1, 0], [1, 1, 1]]),
+        ),
+        (
+            "8192+65536",
+            np.array([[0, 0, 0], [0, 2**13, 0], [2**0, 2**16, 0]]),
+            np.array([[1, 1, 1], [1, 1, 1], [0, 1, 1]]),
+        ),
+        (
+            "8192,65536",
+            np.array([[0, 0, 0], [0, 2**13, 0], [0, 2**16, 2**0]]),
+            np.array([[1, 1, 1], [1, 1, 1], [1, 1, 0]]),
+        ),
+    ],
+)
+def test_build_driz_weight_multiple_good_bits(
+    base_image, good_bits, dq_array, expected_output
+):
+    data_shape = dq_array.shape
+    img1 = base_image()
+    img1.dq = dq_array
+    img1.data = Quantity(np.ones(data_shape), unit="DN / s")
+
+    result = resample_utils.build_driz_weight(
+        img1, weight_type=None, good_bits=good_bits
+    )
+
+    np.testing.assert_array_equal(result, expected_output)
+
+
+@pytest.mark.parametrize(
+    "good_bits",
+    [
+        "~DO_NOT_USE+NON_SCIENCE",
+        "~513",
+        "~1+512",
+        "~1,512",
+        "LOW_QE+NONLINEAR",
+        "73728",
+        "8192+65536",
+        "8192,65536",
+    ],
+)
+def test_set_good_bits_in_resample_meta(base_image, good_bits):
+    model = maker_utils.mk_level2_image(shape=(100, 100))
+    model.meta.wcsinfo["vparity"] = -1
+
+    img = datamodels.ImageModel(model)
+
+    step = ResampleStep
+
+    res = step.call(img, good_bits=good_bits)
+
+    assert res.meta.resample.good_bits == good_bits
