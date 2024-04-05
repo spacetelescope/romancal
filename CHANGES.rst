@@ -39,11 +39,8 @@ resample
 --------
 
 - Update location of ``basic`` attributes. [#1131]
+
 - Allow user to provide DQ flags to use/exclude when creating resampling mask. [#1166]
-
-- Updated Level 3 ``cal_step`` attribute creation. [#1165]
-
-- Updated Level 3 ``cal_step`` attribute creation. [#1165]
 
 - Updated Level 3 ``cal_step`` attribute creation. [#1165]
 
