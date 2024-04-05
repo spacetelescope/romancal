@@ -120,6 +120,7 @@ def find_patch_matches(image_corners, image_shape=None):
     ncandidates = len(match[0])
     # Now see which of these that are close actually overlap the supplied image.
     # (Is it necessary to check that the corners are in a sensible order?)
+    # All the corner coordinates are returned as arrays.
     mra1 = ptab[match]['ra_corn1']
     mra2 = ptab[match]['ra_corn2']
     mra3 = ptab[match]['ra_corn3']
@@ -148,22 +149,23 @@ def find_patch_matches(image_corners, image_shape=None):
             realmatch.append(i)
     return match[0][realmatch], match[0]
 
-def get_corners(patch):
+def get_cartesian_corners(patch):
     """
     Construct a the vertex coordinates for a patch from a patch definition suitable
-    for plotting the defined region (x coordinates, y coordinates).
+    for plotting the defined region (ra coordinates, dec coordinates). It returns
+    coordinates in the cartesian system so that it avoids the distortions in plots
+    due to areas approaching the poles.
     """
-    p = patch
-    corners = ((p['dec_corn1'],
-                p['dec_corn2'],
-                p['dec_corn3'],
-                p['dec_corn4'],
-                p['dec_corn1']),
-               (p['ra_corn1'],
-                p['ra_corn2'],
-                p['ra_corn3'],
-                p['ra_corn4'],
-                p['ra_corn1']))
+    corners = ((patch['dec_corn1'],
+                patch['dec_corn2'],
+                patch['dec_corn3'],
+                patch['dec_corn4'],
+                patch['dec_corn1']),
+               (patch['ra_corn1'],
+                patch['ra_corn2'],
+                patch['ra_corn3'],
+                patch['ra_corn4'],
+                patch['ra_corn1']))
     corners = np.array(corners)
     vec_corners = sgv.lonlat_to_vector(corners[0], corners[1])
     return vec_corners
@@ -251,11 +253,11 @@ def plot(image_corners, patches_touched_ids, patches_candidate_ids):
     tp_image_corners = veccoords_to_tangent_plane(vec_image_corners, tangent_point)
     plot_field(tp_image_corners, fill='lightgrey', color='black')
     for patch, id in zip(patches_candidate, patches_candidate_ids):
-        plot_patch(veccoords_to_tangent_plane(get_corners(patch), tangent_point),
-            id=id, color='lightgray')
+        plot_patch(veccoords_to_tangent_plane(
+            get_cartesian_corners(patch), tangent_point), id=id, color='lightgray')
     for patch, id in zip(patches_touched, patches_touched_ids):
-        plot_patch(veccoords_to_tangent_plane(get_corners(patch), tangent_point),
-            id=id, color='blue')
+        plot_patch(veccoords_to_tangent_plane(
+            get_cartesian_corners(patch), tangent_point), id=id, color='blue')
     plt.xlabel("Offset from nearest tangent point in arcsec")
     plt.ylabel("Offset from nearest tangent point in arcsec")
     plt.title(f"RA: {ra} Dec: {dec} of tangent point in degrees")

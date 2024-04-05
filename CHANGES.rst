@@ -2,7 +2,7 @@
 ==================
 
 patch_match
-------------
+-----------
 
 - Code to determine which patches overlap a given image. [#1161]
 
