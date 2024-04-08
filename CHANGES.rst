@@ -18,6 +18,9 @@ general
 
 - Update the high level pipeline to use updates in Outlier_detection and tweakreg [#1143]
 
+- Update the default DQ flags to '``~DO_NOT_USE+NON_SCIENCE+DEAD``' in
+  ``resample_step``, ``outlier_detection_step``, and ``skymatch_step``. [#1170]
+
 documentation
 -------------
 
