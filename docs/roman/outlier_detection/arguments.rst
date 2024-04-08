@@ -104,10 +104,11 @@ behavior of the processing:
   Specifies whether or not to resample the input images when performing outlier
   detection.
 
-``--good_bits`` (string, default=0)
+``--good_bits`` (string, default='~DO_NOT_USE+NON_SCIENCE+DEAD')
   The DQ bit values from the input image DQ arrays that should be considered 'good'
   when creating masks of bad pixels during outlier detection when resampling the data.
-  See `Roman's Data Quality Flags
+  The default value is to exclude pixels flagged with ``DO_NOT_USE``, ``NON_SCIENCE``,
+  and ``DEAD``. See `Roman's Data Quality Flags
   <https://github.com/spacetelescope/romancal/blob/main/romancal/lib/dqflags.py>`_
   for details.
 
