@@ -39,7 +39,7 @@ class SkyMatchStep(RomanStep):
 
         # Sky statistics parameters:
         skystat = option('median', 'midpt', 'mean', 'mode', default='mode') # sky statistics
-        dqbits = string(default='~DO_NOT_USE+NON_SCIENCE') # "good" DQ bits
+        dqbits = string(default='~DO_NOT_USE+NON_SCIENCE+DEAD') # "good" DQ bits
         lower = float(default=None) # Lower limit of "good" pixel values
         upper = float(default=None) # Upper limit of "good" pixel values
         nclip = integer(min=0, default=5) # number of sky clipping iterations

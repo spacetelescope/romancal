@@ -37,12 +37,12 @@ The ``skymatch`` step uses the following optional arguments:
   computations. Supported values are: `mean`, `mode`, `midpt`,
   and `median`.
 
-``dqbits`` (str, default='~DO_NOT_USE+NON_SCIENCE')
+``dqbits`` (str, default='~DO_NOT_USE+NON_SCIENCE+DEAD')
   The DQ bit values from the input images' DQ arrays that
   should be considered "good" when building masks for sky computations. See
   DQ flag :ref:`dq_init_step` for details. The default value
-  rejects pixels flagged as either 'DO_NOT_USE' or 'NON_SCIENCE' and considers
-  all others to be good.
+  rejects pixels flagged as either 'DO_NOT_USE', 'NON_SCIENCE', or 'DEAD'
+  and considers all others to be good.
 
 ``lower`` (float, default=None)
   An optional value indicating the lower limit of usable pixel

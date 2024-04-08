@@ -103,13 +103,13 @@ image.
 ``--in_memory`` (bool, default=True)
     If set to `False`, write output datamodel to disk.
 
-``--good_bits`` (str, default='~DO_NOT_USE+NON_SCIENCE')
+``--good_bits`` (str, default='~DO_NOT_USE+NON_SCIENCE+DEAD')
     Specifies the bits to use when creating the resampling mask.
     Either a single bit value or a combination of them can be provided.
     If the string starts with a tilde (`~`), then the provided bit(s)
     will be excluded when creating the resampling mask.
-    The default value is to exclude pixels flagged with ``DO_NOT_USE``
-    and ``NON_SCIENCE``.
+    The default value is to exclude pixels flagged with ``DO_NOT_USE``,
+    ``NON_SCIENCE``, and ``DEAD``.
 
     The bit value can be provided in a few different ways, but always as
     a string type. For example, if the user deems OK to use pixels with
