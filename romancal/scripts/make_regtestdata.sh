@@ -46,6 +46,7 @@ do
     cp ${fn}_darkcurrent.asdf $outdir/roman-pipeline/dev/WFI/$dirname/
     cp ${fn}_rampfit.asdf $outdir/roman-pipeline/dev/truth/WFI/$dirname/
 done
+cp r0000101001001001001_01101_0003_WFI01_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
 
 
 # second imaging exposure
@@ -158,5 +159,7 @@ strun roman_elp r0000201001001001001_01101_0004_WFI01_uncal.asdf
 cp r0000101001001001001_01101_0004_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp r0000201001001001001_01101_0004_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/grism/
 
-asn_from_list r0000101001001001001_01101_0001_WFI01_cal.asdf r0000101001001001001_01101_0002_WFI01_cal.asdf r0000101001001001001_01101_0003_FI01_cal.asdf -o L3_regtest_asn.json --product-name r0099101001001001001_F158_visit_0.900.0.50_178199.5_-0.5.
+asn_from_list r0000101001001001001_01101_0001_WFI01_cal.asdf r0000101001001001001_01101_0002_WFI01_cal.asdf r0000101001001001001_01101_0003_WFI01_cal.asdf -o L3_regtest_asn.json --product-name r0099101001001001001_F158_visit_0.900.0.50_178199.5_-0.5.
 strun --disable-crds-steppars roman_hlp L3_regtest_asn.json
+cp L3_regtest_asn.json $outdir/roman-pipeline/dev/WFI/image/
+cp r0099101001001001001_F158_visit_0.900.0.50_178199.5_-0.5_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
