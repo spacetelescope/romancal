@@ -1,7 +1,9 @@
-import pytest
-import numpy as np
-from ..gwcs_drizzle import GWCSDrizzle
 from unittest.mock import MagicMock
+
+import numpy as np
+import pytest
+
+from ..gwcs_drizzle import GWCSDrizzle
 
 
 @pytest.mark.parametrize(
