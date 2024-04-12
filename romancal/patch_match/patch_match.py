@@ -6,12 +6,16 @@ Currently this assumes that the sky projected borders of all images are straight
 
 import os
 import os.path
+import logging
 import numpy as np
 import asdf
 import spherical_geometry.vector as sgv
 import spherical_geometry.polygon as sgp
 from spherical_geometry.vector import normalize_vector
 import gwcs.wcs as wcs
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
 RAD_TO_ARCSEC = 180. / np.pi * 3600.
 
@@ -29,8 +33,10 @@ def load_patch_table(tablepath=None):
         try:
             tablepath = os.environ['PATCH_TABLE_PATH']
         except KeyError:
-            raise KeyError("PATCH_TABLE_PATH environmental variable not found")
+            log.error("PATCH_TABLE_PATH environmental variable not found")
+            return
     try:
+        print(tablepath)
         with asdf.open(tablepath) as af:
             PATCH_TABLE = af.tree['patches'].copy()
     except FileNotFoundError:
@@ -74,6 +80,8 @@ def find_patch_matches(image_corners, image_shape=None):
     necessary information about the patches.
     """
 
+    if PATCH_TABLE is None:
+        raise RuntimeError("No patch table has been loaded") 
     if isinstance(image_corners, wcs.WCS):
         iwcs = image_corners
         # Now must find size of correspinding image, with three possible

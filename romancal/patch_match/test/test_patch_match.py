@@ -24,13 +24,9 @@ of its columns so that subsets of the table selected to reduce the filesize stil
 retain the same index obtained.)
 """
 import inspect
-mpath = inspect.stack()[0][1]
 import pytest
 import os.path
-test_directory = os.path.split(mpath)[0]
 import os
-os.environ['PATCH_TABLE_PATH'] = os.path.join(
-    test_directory, "patches_subset.asdf")
 import numpy as np
 import romancal.patch_match.patch_match as pm
 import spherical_geometry.vector as sgv
@@ -40,8 +36,9 @@ import astropy.coordinates as coord
 import gwcs.coordinate_frames as cf
 import gwcs.wcs as wcs
 
+mpath = inspect.stack()[0][1]
+pm.load_patch_table(os.path.join(os.path.split(mpath)[0], "patches_subset.asdf"))
 rotate = sgv.rotate_around
-
 absindex = 925050
 patchtable = pm.PATCH_TABLE
 crecord = patchtable[np.where(patchtable[:]['index'] == absindex)]
