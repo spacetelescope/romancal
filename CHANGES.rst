@@ -49,6 +49,8 @@ resample
 
 - Updated Level 3 ``cal_step`` attribute creation. [#1165]
 
+- Fix bug that prevented properly update of the resampled output weight and context arrays. [#1181]
+
 outlier_detection
 -----------------
 
