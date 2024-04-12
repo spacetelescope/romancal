@@ -85,7 +85,7 @@ class GWCSDrizzle:
         self.outsci = product.data
         self.outwcs = outwcs or product.meta.wcs
         self.outwht = product.weight
-        self.outcon = np.zeros(self.outcon.shape, dtype=np.int32)
+        self.outcon = product.context.astype(np.int32)
 
         if self.outcon.ndim == 2:
             self.outcon = np.reshape(
