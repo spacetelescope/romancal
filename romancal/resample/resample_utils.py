@@ -97,7 +97,11 @@ def make_output_wcs(
     return output_wcs
 
 
-def build_driz_weight(model, weight_type=None, good_bits=None):
+def build_driz_weight(
+    model,
+    weight_type=None,
+    good_bits: str = None,
+):
     """
     Builds the drizzle weight map for resampling.
 
@@ -108,7 +112,7 @@ def build_driz_weight(model, weight_type=None, good_bits=None):
     weight_type : str, optional
         The type of weight to use. Allowed values are 'ivm' or 'exptime'.
         Defaults to None.
-    good_bits : int or list of int, optional
+    good_bits : str, optional
         The good bits to use for building the mask. Defaults to None.
 
     Returns
@@ -170,7 +174,7 @@ def build_mask(dqarr, bitvalue):
     ----------
     dqarr : numpy.ndarray
         Input DQ array.
-    bitvalue : int
+    bitvalue : str
         Bitvalue flag.
 
     Returns
@@ -187,7 +191,7 @@ def build_mask(dqarr, bitvalue):
     - Otherwise, the function performs a bitwise AND operation between the dqarr and
       the complement of the bitvalue, and then applies a logical NOT operation to
       obtain the bit mask.
-    - The resulting bit mask is returned as an ndarray of dtype `numpy.uint8`.
+    - The resulting bit mask is returned as a `numpy.ndarray` of dtype `numpy.uint8`.
     """
     bitvalue = interpret_bit_flags(
         bitvalue, flag_name_map={dq.name: dq.value for dq in pixel}

@@ -46,7 +46,7 @@ class ResampleData:
         kernel="square",
         fillval="INDEF",
         wht_type="ivm",
-        good_bits=0,
+        good_bits="0",
         pscale_ratio=1.0,
         pscale=None,
         **kwargs,
@@ -154,7 +154,9 @@ class ResampleData:
         )
 
         # update meta.cal_step
-        self.blank_output.meta.cal_step = input_models[0].meta.cal_step
+        self.blank_output.meta.cal_step = maker_utils.mk_l3_cal_step(
+            **input_models[0].meta.cal_step.to_flat_dict()
+        )
 
         # update meta data and wcs
         # note we have made this input_model_0 variable so that if
@@ -284,7 +286,9 @@ class ResampleData:
         log.info("Resampling science data")
         for img in self.input_models:
             inwht = resample_utils.build_driz_weight(
-                img, weight_type=self.weight_type, good_bits=self.good_bits
+                img,
+                weight_type=self.weight_type,
+                good_bits=self.good_bits,
             )
             if not hasattr(img.meta, "background"):
                 self._create_background_attribute(img)

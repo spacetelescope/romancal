@@ -19,10 +19,6 @@ log.setLevel(logging.DEBUG)
 __all__ = ["ResampleStep"]
 
 
-# Force use of all DQ flagged data except for DO_NOT_USE and NON_SCIENCE
-GOOD_BITS = "~DO_NOT_USE+NON_SCIENCE"
-
-
 class ResampleStep(RomanStep):
     """
     Resample input data onto a regular grid using the drizzle algorithm.
@@ -65,6 +61,7 @@ class ResampleStep(RomanStep):
         blendheaders = boolean(default=True)
         allowed_memory = float(default=None)  # Fraction of memory to use for the combined image.
         in_memory = boolean(default=True)
+        good_bits = string(default='~DO_NOT_USE+NON_SCIENCE')  # The good bits to use for building the resampling mask.
     """  # noqa: E501
 
     reference_file_types = []
@@ -167,6 +164,7 @@ class ResampleStep(RomanStep):
         )
         model.meta.resample.pixfrac = kwargs["pixfrac"]
         self.update_phot_keywords(model)
+        model.meta.resample["good_bits"] = kwargs["good_bits"]
 
     @staticmethod
     def _check_list_pars(vals, name, min_vals=None):
@@ -267,7 +265,7 @@ class ResampleStep(RomanStep):
         if self.fillval is None:
             self.fillval = "INDEF"
         # Force definition of good bits
-        kwargs["good_bits"] = GOOD_BITS
+        kwargs["good_bits"] = self.good_bits
         kwargs["pixfrac"] = self.pixfrac
         kwargs["kernel"] = str(self.kernel)
         kwargs["fillval"] = str(self.fillval)
