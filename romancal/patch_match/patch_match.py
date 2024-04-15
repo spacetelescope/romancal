@@ -36,7 +36,6 @@ def load_patch_table(tablepath=None):
             log.error("PATCH_TABLE_PATH environmental variable not found")
             return
     try:
-        print(tablepath)
         with asdf.open(tablepath) as af:
             PATCH_TABLE = af.tree['patches'].copy()
     except FileNotFoundError:

@@ -42,8 +42,12 @@ rotate = sgv.rotate_around
 absindex = 925050
 patchtable = pm.PATCH_TABLE
 crecord = patchtable[np.where(patchtable[:]['index'] == absindex)]
-cra = crecord['ra_corn3'][0]
-cdec = crecord['dec_corn3'][0]
+cra = crecord['ra_corn3']
+if len(cra) == 1:
+    cra = cra[0]
+cdec = crecord['dec_corn3']
+if len(cdec) == 1:
+    cdec = cdec[0]
 cpa = 45.
 csize = 0.001
 e = 0.0011 # epsilon offset in degrees
