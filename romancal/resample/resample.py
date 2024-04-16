@@ -7,9 +7,9 @@ from astropy import units as u
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels, maker_utils
 
-from . import gwcs_drizzle, resample_utils
 from ..assign_wcs import utils
 from ..datamodels import ModelContainer
+from . import gwcs_drizzle, resample_utils
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -748,14 +748,14 @@ def gwcs_into_l3(model, wcsinfo):
     l3_wcsinfo.ra_ref = transform.lon_6.value
     l3_wcsinfo.x_ref = -transform.offset_0.value  # cdelt1
     l3_wcsinfo.y_ref = -transform.offset_1.value  # cdelt2
-    l3_wcsinfo.pixel_scale = (transform.factor_3.value + transform.factor_4.value) / 2.
+    l3_wcsinfo.pixel_scale = (transform.factor_3.value + transform.factor_4.value) / 2.0
 
-    world_center = wcsinfo(*[v / 2. for v in model.shape])
-    world_center_plus = wcsinfo(*[(v / 2.) + 1 for v in model.shape])
+    world_center = wcsinfo(*[v / 2.0 for v in model.shape])
+    world_center_plus = wcsinfo(*[(v / 2.0) + 1 for v in model.shape])
     world_delta = [w_plus - w for w_plus, w in zip(world_center_plus, world_center)]
     l3_wcsinfo.ra_center = world_center[0]
     l3_wcsinfo.dec_center = world_center[1]
-    l3_wcsinfo.pixel_scale_local = (world_delta[0] + world_delta[1]) / 2.
+    l3_wcsinfo.pixel_scale_local = (world_delta[0] + world_delta[1]) / 2.0
 
     footprint = utils.create_footprint(wcsinfo, model.shape)
     l3_wcsinfo.ra_corn1 = footprint[0][0]
