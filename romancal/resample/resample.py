@@ -6,8 +6,9 @@ from astropy import units as u
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels, maker_utils
 
-from ..datamodels import ModelContainer
 from . import gwcs_drizzle, resample_utils
+from ..assign_wcs import utils
+from ..datamodels import ModelContainer
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -755,7 +756,7 @@ def gwcs_into_l3(model, wcsinfo):
     l3_wcsinfo.dec_center = world_center[1]
     l3_wcsinfo.pixel_scale_local = (world_delta[0] + world_delta[1]) / 2.
 
-    footprint = wcsinfo.footprint()
+    footprint = utils.create_footprint(wcsinfo, model.shape)
     l3_wcsinfo.ra_corn1 = footprint[0][0]
     l3_wcsinfo.ra_corn2 = footprint[1][0]
     l3_wcsinfo.ra_corn3 = footprint[2][0]
@@ -764,6 +765,7 @@ def gwcs_into_l3(model, wcsinfo):
     l3_wcsinfo.dec_corn2 = footprint[1][1]
     l3_wcsinfo.dec_corn3 = footprint[2][1]
     l3_wcsinfo.dec_corn4 = footprint[3][1]
+    l3_wcsinfo.s_region = utils.create_s_region(footprint)
     # l3_wcsinfo.orientat = ???
     # l3_wcsinfo.orientat_local = ???
 
