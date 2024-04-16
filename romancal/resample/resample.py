@@ -740,27 +740,30 @@ def gwcs_into_l3(model, wcsinfo):
 
     # Basic WCS info
     l3_wcsinfo.projection = "TAN"
+    l3_wcsinfo.pixel_shape = model.shape
     l3_wcsinfo.rotation_matrix = transform["pc_rotation_matrix"].matrix.value.tolist()
     l3_wcsinfo.dec_ref = transform.lat_6.value
     l3_wcsinfo.ra_ref = transform.lon_6.value
-    # l3_wcsinfo.x_ref = center of mosaic?
-    # l3_wcsinfo.y_ref = center of mosaic?
-    # l3_wcsinfo.s_region = from gwcs.bounding_box
+    l3_wcsinfo.x_ref = -transform.offset_0.value  # cdelt1
+    l3_wcsinfo.y_ref = -transform.offset_1.value  # cdelt2
+    l3_wcsinfo.pixel_scale = (transform.factor_3.value + transform.factor_4.value) / 2.
 
-    # Mosaic info
-    # l3_wcsinfo.dec_center = from center of mosaic
-    # l3_wcsinfo.pixel_scale = ???
-    # l3_wcsinfo.pixel_scale_local = ???
-    # l3_wcsinfo.pixel_shape = image shape
-    # l3_wcsinfo.ra_center = from center of mosaic
-    # l3_wcsinfo.ra_corn1 = from bounding box
-    # l3_wcsinfo.ra_corn2 = from bounding box
-    # l3_wcsinfo.ra_corn3 = from bounding box
-    # l3_wcsinfo.ra_corn4 = from bounding box
-    # l3_wcsinfo.dec_corn1 = from bounding box
-    # l3_wcsinfo.dec_corn2 = from bounding box
-    # l3_wcsinfo.dec_corn3 = from bounding box
-    # l3_wcsinfo.dec_corn4 = from bounding box
+    world_center = wcsinfo(*[v / 2. for v in model.shape])
+    world_center_plus = wcsinfo(*[(v / 2.) + 1 for v in model.shape])
+    world_delta = [w_plus - w for w_plus, w in zip(world_center_plus, world_center)]
+    l3_wcsinfo.ra_center = world_center[0]
+    l3_wcsinfo.dec_center = world_center[1]
+    l3_wcsinfo.pixel_scale_local = (world_delta[0] + world_delta[1]) / 2.
+
+    footprint = wcsinfo.footprint()
+    l3_wcsinfo.ra_corn1 = footprint[0][0]
+    l3_wcsinfo.ra_corn2 = footprint[1][0]
+    l3_wcsinfo.ra_corn3 = footprint[2][0]
+    l3_wcsinfo.ra_corn4 = footprint[3][0]
+    l3_wcsinfo.dec_corn1 = footprint[0][1]
+    l3_wcsinfo.dec_corn2 = footprint[1][1]
+    l3_wcsinfo.dec_corn3 = footprint[2][1]
+    l3_wcsinfo.dec_corn4 = footprint[3][1]
     # l3_wcsinfo.orientat = ???
     # l3_wcsinfo.orientat_local = ???
 
