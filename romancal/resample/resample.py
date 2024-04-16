@@ -720,7 +720,7 @@ def l2_into_l3_meta(l3_meta, l2_meta):
     l3_meta.program = l2_meta.program
 
 
-def gwcs_into_l3(model, wcsinfo):
+def gwcs_into_l3(model, wcs):
     """Update the Level 3 wcsinfo block from a GWCS object
 
     Parameters
@@ -728,7 +728,7 @@ def gwcs_into_l3(model, wcsinfo):
     model : `DataModel`
         The model whose meta is to be updated.
 
-    wcsinfo : `GWCS`
+    wcs : `GWCS`
         GWCS info to transfer into the `meta.wcsinfo` block
 
     Notes
@@ -738,7 +738,7 @@ def gwcs_into_l3(model, wcsinfo):
     by indexing. This is fragile and will be a source of issues.
     """
     l3_wcsinfo = model.meta.wcsinfo
-    transform = wcsinfo.forward_transform
+    transform = wcs.forward_transform
 
     # Basic WCS info
     l3_wcsinfo.projection = "TAN"
@@ -750,14 +750,14 @@ def gwcs_into_l3(model, wcsinfo):
     l3_wcsinfo.y_ref = -transform.offset_1.value  # cdelt2
     l3_wcsinfo.pixel_scale = (transform.factor_3.value + transform.factor_4.value) / 2.0
 
-    world_center = wcsinfo(*[v / 2.0 for v in model.shape])
-    world_center_plus = wcsinfo(*[(v / 2.0) + 1 for v in model.shape])
+    world_center = wcs(*[v / 2. for v in model.shape])
+    world_center_plus = wcs(*[(v / 2.) + 1 for v in model.shape])
     world_delta = [w_plus - w for w_plus, w in zip(world_center_plus, world_center)]
     l3_wcsinfo.ra_center = world_center[0]
     l3_wcsinfo.dec_center = world_center[1]
     l3_wcsinfo.pixel_scale_local = (world_delta[0] + world_delta[1]) / 2.0
 
-    footprint = utils.create_footprint(wcsinfo, model.shape)
+    footprint = utils.create_footprint(wcs, model.shape)
     l3_wcsinfo.ra_corn1 = footprint[0][0]
     l3_wcsinfo.ra_corn2 = footprint[1][0]
     l3_wcsinfo.ra_corn3 = footprint[2][0]
