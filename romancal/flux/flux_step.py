@@ -71,6 +71,7 @@ class FluxStep(RomanStep):
 
         for model in input_models:
             apply_flux_correction(model)
+            model.meta.cal_step.flux = "COMPLETE"
 
         if single_model:
             return input_models[0]
@@ -98,21 +99,27 @@ def apply_flux_correction(model):
     DATA = ("data", "err")
     VARIANCES = ("var_rnoise", "var_poisson", "var_flat")
 
-    # Check for units. Must be election/second. Otherwise, it is unknown how to
-    # convert.
-    if model.data.unit != LV2_UNITS:
-        log.debug(
-            "Input data is not in units of %s. Flux correction will not be done.",
-            LV2_UNITS,
+    if model.data.unit == model.meta.photometry.conversion_megajanskys.unit:
+        message = (
+            f"Input data is already in flux units of {model.meta.photometry.conversion_megajanskys.unit}."
+            "\nFlux correction already applied."
         )
-        log.debug("Input data units are %s", model.data.unit)
+        log.info(message)
         return
 
-    # Apply the correction
+    if model.data.unit != LV2_UNITS:
+        message = (
+            f"Input data units {model.data.unit} are not in the expected units of {LV2_UNITS}"
+            "\nAborting flux correction"
+        )
+        log.error(message)
+        raise ValueError(message)
+
+    # Apply the correction.
     # The end goal in units is to have MJy/sr. The scale is in MJy/sr also.
     # Hence the extra factor of s/DN must be applied to cancel DN/s.
     log.debug("Flux correction being applied")
-    c_mj = model.meta.photometry.conversion_megajanskys / LV2_UNITS
+    c_mj = model.meta.photometry.conversion_megajanskys / model.data.unit
     for data in DATA:
         model[data] = model[data] * c_mj
     for variance in VARIANCES:
