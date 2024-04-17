@@ -1,8 +1,7 @@
-import pytest
-import numpy as np
 import asdf
+import numpy as np
+import pytest
 from astropy import units as u
-
 from metrics_logger.decorators import metrics_logger
 from roman_datamodels import datamodels as rdm
 
@@ -70,19 +69,21 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
 
     wcstweak = tweakreg_out.meta.wcs
     orig_model_asdf = asdf.open(orig_uncal)
-    wcstrue = orig_model_asdf['romanisim']['wcs']  # simulated, true WCS
+    wcstrue = orig_model_asdf["romanisim"]["wcs"]  # simulated, true WCS
     pts = np.linspace(0, 4000, 30)
     xx, yy = np.meshgrid(pts, pts)
     coordtweak = wcstweak.pixel_to_world(xx, yy)
     coordtrue = wcstrue.pixel_to_world(xx, yy)
     diff = coordtrue.separation(coordtweak).to(u.arcsec).value
-    rms = np.sqrt(np.mean(diff ** 2)) * 1000  # rms difference in mas
+    rms = np.sqrt(np.mean(diff**2)) * 1000  # rms difference in mas
     passmsg = "PASS" if rms < 1.3 / np.sqrt(2) else "FAIL"
     step.log.info(
         f"DMS488 MSG: WCS agrees with true WCS to {rms:5.2f} mas, less than "
-        f"1.3 / sqrt(2)?  {passmsg}")
+        f"1.3 / sqrt(2)?  {passmsg}"
+    )
     step.log.info(
         f"DMS405 MSG: WCS agrees with true WCS to {rms:5.2f} mas, less than "
-        f"5 / sqrt(2)?  {passmsg}")
+        f"5 / sqrt(2)?  {passmsg}"
+    )
 
     assert rms < 1.3 / np.sqrt(2) * 100
