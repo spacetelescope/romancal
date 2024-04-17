@@ -746,8 +746,8 @@ def gwcs_into_l3(model, wcs):
     l3_wcsinfo.rotation_matrix = transform["pc_rotation_matrix"].matrix.value.tolist()
     l3_wcsinfo.dec_ref = transform.lat_6.value
     l3_wcsinfo.ra_ref = transform.lon_6.value
-    l3_wcsinfo.x_ref = -transform.offset_0.value  # cdelt1
-    l3_wcsinfo.y_ref = -transform.offset_1.value  # cdelt2
+    l3_wcsinfo.x_ref = -transform.offset_0.value  # crpix1
+    l3_wcsinfo.y_ref = -transform.offset_1.value  # crpix2
     l3_wcsinfo.pixel_scale = (transform.factor_3.value + transform.factor_4.value) / 2.0
 
     world_center = wcs(*[v / 2.0 for v in model.shape])
