@@ -66,7 +66,7 @@ class SourceDetectionStep(RomanStep):
         # Will overwrite an existing catalog of the same name.
         output_cat_filetype = option('asdf', 'ecsv', default='asdf') # Used if
         #save_catalogs=True - file type of output catalog.
-        fit_psf = boolean(default=False)  # fit source PSFs for accurate astrometry
+        fit_psf = boolean(default=True)  # fit source PSFs for accurate astrometry
         min_separation = integer(default=11)  # don't find multiple sources closer
         # than this number of pixels
     """
@@ -228,7 +228,7 @@ class SourceDetectionStep(RomanStep):
                     ):
                         catalog.rename_column(old_name, new_name)
 
-                    input_model.meta.source_detection["psf_catalog"] = catalog
+                    input_model.meta.source_detection["tweakreg_catalog"] = catalog
                 else:
                     # only attach catalog to file if its being passed to the next step
                     # and save_catalogs is false, since it is not in the schema

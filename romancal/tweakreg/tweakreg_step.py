@@ -87,6 +87,7 @@ class TweakRegStep(RomanStep):
     refcat = None
 
     def process(self, input):
+
         use_custom_catalogs = self.use_custom_catalogs
 
         if use_custom_catalogs:
@@ -346,6 +347,7 @@ class TweakRegStep(RomanStep):
                     fitgeom=self.fitgeometry,
                     nclip=self.nclip,
                     sigma=(self.sigma, "rmse"),
+                    clip_accum=True,
                 )
 
             except ValueError as e:
@@ -506,6 +508,7 @@ class TweakRegStep(RomanStep):
                     nclip=self.abs_nclip,
                     sigma=(self.abs_sigma, "rmse"),
                     ref_tpwcs=imcats[0],
+                    clip_accum=True,
                 )
 
         for imcat in imcats:

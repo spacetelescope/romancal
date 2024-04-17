@@ -1,4 +1,8 @@
 import pytest
+import numpy as np
+import asdf
+from astropy import units as u
+
 from metrics_logger.decorators import metrics_logger
 from roman_datamodels import datamodels as rdm
 
@@ -8,7 +12,7 @@ from romancal.tweakreg.tweakreg_step import TweakRegStep
 from .regtestdata import compare_asdf
 
 
-@metrics_logger("DMS280")
+@metrics_logger("DMS280", "DMS405", "DMS488")
 @pytest.mark.bigdata
 def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
     # N.B.: the data were created using WFIsim and processed through
@@ -16,17 +20,16 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
     # - assign_wcs;
     # - photom;
     # - source_detection.
-    input_data = "r0000101001001001001_01101_0001_WFI01_cal.asdf"
-    output_data = "r0000101001001001001_01101_0001_WFI01_tweakregstep.asdf"
-    truth_data = "r0000101001001001001_01101_0001_WFI01_tweakregstep.asdf"
-
-    asn_fn = "tweakreg_asn.json"
+    orig_uncal = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
+    input_data = "r0000101001001001001_01101_0001_WFI01_shift_cal.asdf"
+    output_data = "r0000101001001001001_01101_0001_WFI01_shift_tweakregstep.asdf"
+    truth_data = "r0000101001001001001_01101_0001_WFI01_shift_tweakregstep.asdf"
 
     rtdata.get_data(f"WFI/image/{input_data}")
-    rtdata.get_data(f"WFI/image/{asn_fn}")
+    rtdata.get_data(f"WFI/image/{orig_uncal}")
     rtdata.get_truth(f"truth/WFI/image/{truth_data}")
 
-    rtdata.input = asn_fn
+    rtdata.input = input_data
     rtdata.output = output_data
 
     # instantiate TweakRegStep (for running and log access)
@@ -64,3 +67,22 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
         f"DMS280 MSG: Was the proper TweakReg data produced? : {diff.identical}"
     )
     assert diff.identical, diff.report()
+
+    wcstweak = tweakreg_out.meta.wcs
+    orig_model_asdf = asdf.open(orig_uncal)
+    wcstrue = orig_model_asdf['romanisim']['wcs']  # simulated, true WCS
+    pts = np.linspace(0, 4000, 30)
+    xx, yy = np.meshgrid(pts, pts)
+    coordtweak = wcstweak.pixel_to_world(xx, yy)
+    coordtrue = wcstrue.pixel_to_world(xx, yy)
+    diff = coordtrue.separation(coordtweak).to(u.arcsec).value
+    rms = np.sqrt(np.mean(diff ** 2)) * 1000  # rms difference in mas
+    passmsg = "PASS" if rms < 1.3 / np.sqrt(2) else "FAIL"
+    step.log.info(
+        f"DMS488 MSG: WCS agrees with true WCS to {rms:5.2f} mas, less than "
+        f"1.3 / sqrt(2)?  {passmsg}")
+    step.log.info(
+        f"DMS405 MSG: WCS agrees with true WCS to {rms:5.2f} mas, less than "
+        f"5 / sqrt(2)?  {passmsg}")
+
+    assert rms < 1.3 / np.sqrt(2) * 100

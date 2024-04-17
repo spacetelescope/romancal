@@ -48,7 +48,7 @@ class TestSourceDetection:
 
         source_detect.fit_psf = True
         psf_result = source_detect.process(image_model)
-        psf_catalog = psf_result.meta.source_detection.psf_catalog
+        psf_catalog = psf_result.meta.source_detection.tweakreg_catalog
 
         extract_columns = ["xcentroid", "x_err", "ycentroid", "y_err", "flux_fit"]
         x_psf, x_err, y_psf, y_err, amp_psf = psf_catalog[extract_columns].itercols()
