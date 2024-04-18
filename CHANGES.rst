@@ -38,6 +38,11 @@ dq_init
 - Allow ``dq_init`` to pass through keys not defined in ``RampModel``
   schema [#1151]
 
+flux
+----
+
+- Set flux step status for each input. [#1160]
+
 resample
 --------
 
@@ -46,6 +51,8 @@ resample
 - Allow user to provide DQ flags to use/exclude when creating resampling mask. [#1166]
 
 - Updated Level 3 ``cal_step`` attribute creation. [#1165]
+
+- Fix bug that prevented properly update of the resampled output weight and context arrays. [#1181]
 
 outlier_detection
 -----------------
