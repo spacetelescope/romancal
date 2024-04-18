@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 import numpy as np
 from astropy import units as u
@@ -7,7 +8,6 @@ from roman_datamodels import datamodels, maker_utils
 
 from ..datamodels import ModelContainer
 from . import gwcs_drizzle, resample_utils
-from typing import List
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
