@@ -38,6 +38,7 @@ class TestSourceDetection:
         source_detect = SourceDetectionStep()
         source_detect.scalar_threshold = 100
         source_detect.peakmax = None
+        source_detect.fit_psf = False
         dao_result = source_detect.process(image_model)
         idx, x_dao, y_dao, amp_dao = recarray_to_ndarray(
             dao_result.meta.source_detection.tweakreg_catalog
