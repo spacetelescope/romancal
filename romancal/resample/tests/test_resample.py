@@ -10,7 +10,7 @@ from roman_datamodels import datamodels, maker_utils
 
 from romancal.datamodels import ModelContainer
 from romancal.resample import gwcs_drizzle, resample_utils
-from romancal.resample.resample import ResampleData
+from romancal.resample.resample import ResampleData, populate_mosaic_basic
 
 
 class WfiSca:
@@ -620,3 +620,72 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
 
     assert np.any(output_models_many_to_one[0].weight > 0)
     assert np.any(output_models_many_to_many[0].weight > 0)
+
+
+def test_populate_mosaic_basic(exposure_1):
+    """
+    Test the populate_mosaic_basic function with a given exposure.
+    """
+    input_models = ModelContainer(exposure_1)
+    output_wcs = resample_utils.make_output_wcs(
+        input_models,
+        pscale_ratio=1,
+        pscale=0.000031,
+        rotation=0,
+        shape=None,
+        crpix=(0, 0),
+        crval=(0, 0),
+    )
+    output_model = maker_utils.mk_datamodel(
+        datamodels.MosaicModel, shape=tuple(output_wcs.array_shape)
+    )
+
+    populate_mosaic_basic(output_model, input_models=input_models)
+
+    input_meta = [datamodel.meta for datamodel in input_models]
+
+    assert output_model.meta.basic.time_first_mjd == np.min(
+        [x.exposure.start_time.mjd for x in input_meta]
+    )
+    assert output_model.meta.basic.time_last_mjd == np.max(
+        [x.exposure.end_time.mjd for x in input_meta]
+    )
+    assert output_model.meta.basic.time_mean_mjd == np.mean(
+        [x.exposure.mid_time.mjd for x in input_meta]
+    )
+    assert output_model.meta.basic.max_exposure_time == np.max(
+        [x.exposure.exposure_time for x in input_meta]
+    )
+    assert output_model.meta.basic.mean_exposure_time == np.mean(
+        [x.exposure.exposure_time for x in input_meta]
+    )
+    assert output_model.meta.basic.visit == (
+        input_meta[0].observation.visit
+        if len({x.observation.visit for x in input_meta}) == 1
+        else -1
+    )
+    assert output_model.meta.basic.segment == (
+        input_meta[0].observation.segment
+        if len({x.observation.segment for x in input_meta}) == 1
+        else -1
+    )
+    assert output_model.meta.basic["pass"] == (
+        input_meta[0].observation["pass"]
+        if len({x.observation["pass"] for x in input_meta}) == 1
+        else -1
+    )
+    assert output_model.meta.basic.program == (
+        input_meta[0].observation.program
+        if len({x.observation.program for x in input_meta}) == 1
+        else "-1"
+    )
+    assert output_model.meta.basic.survey == (
+        input_meta[0].observation.survey
+        if len({x.observation.survey for x in input_meta}) == 1
+        else "MULTIPLE"
+    )
+    assert (
+        output_model.meta.basic.optical_element
+        == input_meta[0].instrument.optical_element
+    )
+    assert output_model.meta.basic.instrument == input_meta[0].instrument.name

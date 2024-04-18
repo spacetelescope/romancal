@@ -7,6 +7,7 @@ from roman_datamodels import datamodels, maker_utils
 
 from ..datamodels import ModelContainer
 from . import gwcs_drizzle, resample_utils
+from typing import List
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -152,6 +153,9 @@ class ResampleData:
         self.blank_output = maker_utils.mk_datamodel(
             datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
         )
+
+        # update meta.basic
+        populate_mosaic_basic(self.blank_output, input_models)
 
         # update meta.cal_step
         self.blank_output.meta.cal_step = maker_utils.mk_l3_cal_step(
@@ -759,3 +763,79 @@ def gwcs_into_l3(model, wcsinfo):
     # l3_wcsinfo.dec_corn4 = from bounding box
     # l3_wcsinfo.orientat = ???
     # l3_wcsinfo.orientat_local = ???
+
+
+def populate_mosaic_basic(
+    output_model: datamodels.MosaicModel, input_models: [List, ModelContainer]
+):
+    """
+    Populate basic metadata fields in the output mosaic model based on input models.
+
+    Parameters
+    ----------
+    output_model : MosaicModel
+        Object to populate with basic metadata.
+    input_models : [List, ModelContainer]
+        List of input data models from which to extract the metadata.
+        ModelContainer is also supported.
+
+    Returns
+    -------
+    None
+    """
+
+    input_meta = [datamodel.meta for datamodel in input_models]
+
+    # time data
+    output_model.meta.basic.time_first_mjd = np.min(
+        [x.exposure.start_time.mjd for x in input_meta]
+    )
+    output_model.meta.basic.time_last_mjd = np.max(
+        [x.exposure.end_time.mjd for x in input_meta]
+    )
+    output_model.meta.basic.time_mean_mjd = np.mean(
+        [x.exposure.mid_time.mjd for x in input_meta]
+    )
+    output_model.meta.basic.max_exposure_time = np.max(
+        [x.exposure.exposure_time for x in input_meta]
+    )
+    output_model.meta.basic.mean_exposure_time = np.mean(
+        [x.exposure.exposure_time for x in input_meta]
+    )
+
+    # observation data
+    output_model.meta.basic.visit = (
+        input_meta[0].observation.visit
+        if len({x.observation.visit for x in input_meta}) == 1
+        else -1
+    )
+    output_model.meta.basic.segment = (
+        input_meta[0].observation.segment
+        if len({x.observation.segment for x in input_meta}) == 1
+        else -1
+    )
+    output_model.meta.basic["pass"] = (
+        input_meta[0].observation["pass"]
+        if len({x.observation["pass"] for x in input_meta}) == 1
+        else -1
+    )
+    output_model.meta.basic.program = (
+        input_meta[0].observation.program
+        if len({x.observation.program for x in input_meta}) == 1
+        else "-1"
+    )
+    output_model.meta.basic.survey = (
+        input_meta[0].observation.survey
+        if len({x.observation.survey for x in input_meta}) == 1
+        else "MULTIPLE"
+    )
+
+    # instrument data
+    output_model.meta.basic.optical_element = input_meta[0].instrument.optical_element
+    output_model.meta.basic.instrument = input_meta[0].instrument.name
+
+    # skycell location
+    output_model.meta.basic.location_name = "TBD"
+
+    # association product type
+    output_model.meta.basic.product_type = "TBD"
