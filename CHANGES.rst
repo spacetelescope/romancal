@@ -62,6 +62,8 @@ resample
 
 - Fix bug that prevented properly update of the resampled output weight and context arrays. [#1181]
 
+- Update Level 3 output ``basic`` attribute. [#1188]
+
 outlier_detection
 -----------------
 
