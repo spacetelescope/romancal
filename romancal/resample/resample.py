@@ -2,6 +2,7 @@ import logging
 import math
 from typing import List
 
+from astropy.coordinates import SkyCoord
 import numpy as np
 from astropy import units as u
 from drizzle import cdrizzle, util
@@ -748,6 +749,7 @@ def gwcs_into_l3(model, wcs):
     l3_wcsinfo.ra_center = world_center[0]
     l3_wcsinfo.dec_center = world_center[1]
     l3_wcsinfo.pixel_scale_local = compute_scale(wcs, world_center)
+    l3_wcsinfo.orientat_local = calc_pa(wcs, *world_center)
 
     try:
         footprint = utils.create_footprint(wcs, model.shape)
@@ -774,15 +776,32 @@ def gwcs_into_l3(model, wcs):
         log.warning('Could not get basic WCS information due to %s', excp)
     else:
         l3_wcsinfo.pixel_scale = compute_scale(wcs, (l3_wcsinfo.ra_ref, l3_wcsinfo.dec_ref))
+        l3_wcsinfo.orientat = calc_pa(wcs, l3_wcsinfo.ra_ref, l3_wcsinfo.dec_ref)
 
 
+def calc_pa(wcs, ra, dec):
+    """Calculate position angle at given ra,dec
 
-    rm = l3_wcsinfo.rotation_matrix
-    xrot = abs(math.atan2(rm[1][0], rm[0][0]))
-    yrot = abs(math.atan2(-rm[0][1], rm[1][1]))
-    rot = (xrot + yrot) / 2.0
-    rot *= 180.0 / math.pi
-    l3_wcsinfo.orientat = rot
+    Parameters
+    ----------
+    wcs : GWCS
+        The wcs in consideration.
+
+    ra, dec : float, float
+        The ra/dec in degrees.
+
+    Returns
+    -------
+    position_angle : float
+        The position angle in degrees.
+
+    """
+    delta_pix = [v for v in wcs.world_to_pixel(ra, dec)]
+    delta_pix[1] += 1
+    delta_coord = wcs.pixel_to_world(*delta_pix)
+    coord = SkyCoord(ra, dec, frame='icrs', unit='deg')
+
+    return coord.position_angle(delta_coord).degree
 
 
 def populate_mosaic_basic(
