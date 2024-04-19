@@ -31,7 +31,6 @@ dependencies = [
     "tweakwcs >=0.8.6",
     "spherical-geometry >= 1.2.22",
     "stsci.imagestats >= 1.6.3",
-    "stsci.stimage != 0.2.7",
     "drizzle >= 1.13.7",
     "webbpsf == 1.2.1",
 ]
