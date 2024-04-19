@@ -1,10 +1,9 @@
 import logging
-import math
 from typing import List
 
-from astropy.coordinates import SkyCoord
 import numpy as np
 from astropy import units as u
+from astropy.coordinates import SkyCoord
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels, maker_utils
 from stcal.alignment.util import compute_scale
@@ -745,7 +744,7 @@ def gwcs_into_l3(model, wcs):
     l3_wcsinfo.projection = "TAN"
     l3_wcsinfo.pixel_shape = model.shape
 
-    world_center = wcs(*[(v - 1) / 2. for v in model.shape[::-1]])
+    world_center = wcs(*[(v - 1) / 2.0 for v in model.shape[::-1]])
     l3_wcsinfo.ra_center = world_center[0]
     l3_wcsinfo.dec_center = world_center[1]
     l3_wcsinfo.pixel_scale_local = compute_scale(wcs, world_center)
@@ -754,7 +753,7 @@ def gwcs_into_l3(model, wcs):
     try:
         footprint = utils.create_footprint(wcs, model.shape)
     except Exception as excp:
-        log.warning('Could not determine footprint due to %s', excp)
+        log.warning("Could not determine footprint due to %s", excp)
     else:
         l3_wcsinfo.ra_corn1 = footprint[0][0]
         l3_wcsinfo.ra_corn2 = footprint[1][0]
@@ -767,15 +766,19 @@ def gwcs_into_l3(model, wcs):
         l3_wcsinfo.s_region = utils.create_s_region(footprint)
 
     try:
-        l3_wcsinfo.rotation_matrix = transform["pc_rotation_matrix"].matrix.value.tolist()
+        l3_wcsinfo.rotation_matrix = transform[
+            "pc_rotation_matrix"
+        ].matrix.value.tolist()
         l3_wcsinfo.dec_ref = transform.lat_6.value
         l3_wcsinfo.ra_ref = transform.lon_6.value
-        l3_wcsinfo.x_ref = -transform['crpix1'].offset.value
-        l3_wcsinfo.y_ref = -transform['crpix2'].offset.value
+        l3_wcsinfo.x_ref = -transform["crpix1"].offset.value
+        l3_wcsinfo.y_ref = -transform["crpix2"].offset.value
     except Exception as excp:
-        log.warning('Could not get basic WCS information due to %s', excp)
+        log.warning("Could not get basic WCS information due to %s", excp)
     else:
-        l3_wcsinfo.pixel_scale = compute_scale(wcs, (l3_wcsinfo.ra_ref, l3_wcsinfo.dec_ref))
+        l3_wcsinfo.pixel_scale = compute_scale(
+            wcs, (l3_wcsinfo.ra_ref, l3_wcsinfo.dec_ref)
+        )
         l3_wcsinfo.orientat = calc_pa(wcs, l3_wcsinfo.ra_ref, l3_wcsinfo.dec_ref)
 
 
@@ -799,7 +802,7 @@ def calc_pa(wcs, ra, dec):
     delta_pix = [v for v in wcs.world_to_pixel(ra, dec)]
     delta_pix[1] += 1
     delta_coord = wcs.pixel_to_world(*delta_pix)
-    coord = SkyCoord(ra, dec, frame='icrs', unit='deg')
+    coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
 
     return coord.position_angle(delta_coord).degree
 
