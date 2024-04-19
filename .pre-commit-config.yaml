@@ -1,4 +1,4 @@
-exclude: "*.asdf"
+exclude: ".*\\.asdf$"
 
 repos:
 
