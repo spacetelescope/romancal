@@ -751,7 +751,7 @@ def gwcs_into_l3(model, wcs):
     l3_wcsinfo.y_ref = -transform['crpix2'].offset.value
     l3_wcsinfo.pixel_scale = (transform['cdelt1'].factor.value + transform['cdelt2'].factor.value) / 2.0
 
-    world_center = wcs(*[v / 2. for v in model.shape[::-1]])
+    world_center = wcs(*[(v - 1) / 2. for v in model.shape[::-1]])
     l3_wcsinfo.ra_center = world_center[0]
     l3_wcsinfo.dec_center = world_center[1]
     l3_wcsinfo.pixel_scale_local = compute_scale(wcs, world_center)
