@@ -6,6 +6,7 @@ import numpy as np
 from astropy import units as u
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels, maker_utils
+from stcal.alignment.util import compute_scale
 
 from ..assign_wcs import utils
 from ..datamodels import ModelContainer
@@ -750,12 +751,10 @@ def gwcs_into_l3(model, wcs):
     l3_wcsinfo.y_ref = -transform['crpix2'].offset.value
     l3_wcsinfo.pixel_scale = (transform['cdelt1'].factor.value + transform['cdelt2'].factor.value) / 2.0
 
-    world_center = wcs(*[v / 2.0 for v in model.shape])
-    world_center_plus = wcs(*[(v / 2.0) + 1 for v in model.shape])
-    world_delta = [w_plus - w for w_plus, w in zip(world_center_plus, world_center)]
+    world_center = wcs(*[v / 2. for v in model.shape[::-1]])
     l3_wcsinfo.ra_center = world_center[0]
     l3_wcsinfo.dec_center = world_center[1]
-    l3_wcsinfo.pixel_scale_local = (world_delta[0] + world_delta[1]) / 2.0
+    l3_wcsinfo.pixel_scale_local = compute_scale(wcs, world_center)
 
     footprint = utils.create_footprint(wcs, model.shape)
     l3_wcsinfo.ra_corn1 = footprint[0][0]
