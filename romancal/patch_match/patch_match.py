@@ -180,14 +180,14 @@ def find_closest_tangent_point(patches, image_corners):
     Out of all listed patches, find the closest tangent point to the center
     coordinate of the image.
     """
-    # To deal with the corner case, it is necessary to use spherical_geometery
+    # To deal with the corner case, it is necessary to use spherical_geometry
     # to average the the corners properly.
     # Convert image corners to unit vectors.
     vec_im_corners = image_coords_to_vec(image_corners)
     im_center = np.array(normalize_vector(vec_im_corners.mean(axis=1)))
     tangent_point_set = set()
-    patch_tangent_points = [(patch['dec_projection_center'],
-                             patch['ra_projection_center'])
+    patch_tangent_points = [(patch['ra_projection_center'],
+                            patch['dec_projection_center'])
         for patch in patches]
     for tangent_point in patch_tangent_points:
         tangent_point_set.add(tangent_point)
