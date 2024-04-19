@@ -741,33 +741,48 @@ def gwcs_into_l3(model, wcs):
     l3_wcsinfo = model.meta.wcsinfo
     transform = wcs.forward_transform
 
-    # Basic WCS info
     l3_wcsinfo.projection = "TAN"
     l3_wcsinfo.pixel_shape = model.shape
-    l3_wcsinfo.rotation_matrix = transform["pc_rotation_matrix"].matrix.value.tolist()
-    l3_wcsinfo.dec_ref = transform.lat_6.value
-    l3_wcsinfo.ra_ref = transform.lon_6.value
-    l3_wcsinfo.x_ref = -transform['crpix1'].offset.value
-    l3_wcsinfo.y_ref = -transform['crpix2'].offset.value
-    l3_wcsinfo.pixel_scale = compute_scale(wcs, (l3_wcsinfo.ra_ref, l3_wcsinfo.dec_ref))
 
     world_center = wcs(*[(v - 1) / 2. for v in model.shape[::-1]])
     l3_wcsinfo.ra_center = world_center[0]
     l3_wcsinfo.dec_center = world_center[1]
     l3_wcsinfo.pixel_scale_local = compute_scale(wcs, world_center)
 
-    footprint = utils.create_footprint(wcs, model.shape)
-    l3_wcsinfo.ra_corn1 = footprint[0][0]
-    l3_wcsinfo.ra_corn2 = footprint[1][0]
-    l3_wcsinfo.ra_corn3 = footprint[2][0]
-    l3_wcsinfo.ra_corn4 = footprint[3][0]
-    l3_wcsinfo.dec_corn1 = footprint[0][1]
-    l3_wcsinfo.dec_corn2 = footprint[1][1]
-    l3_wcsinfo.dec_corn3 = footprint[2][1]
-    l3_wcsinfo.dec_corn4 = footprint[3][1]
-    l3_wcsinfo.s_region = utils.create_s_region(footprint)
-    # l3_wcsinfo.orientat = ???
-    # l3_wcsinfo.orientat_local = ???
+    try:
+        footprint = utils.create_footprint(wcs, model.shape)
+    except Exception as excp:
+        log.warning('Could not determine footprint due to %s', excp)
+    else:
+        l3_wcsinfo.ra_corn1 = footprint[0][0]
+        l3_wcsinfo.ra_corn2 = footprint[1][0]
+        l3_wcsinfo.ra_corn3 = footprint[2][0]
+        l3_wcsinfo.ra_corn4 = footprint[3][0]
+        l3_wcsinfo.dec_corn1 = footprint[0][1]
+        l3_wcsinfo.dec_corn2 = footprint[1][1]
+        l3_wcsinfo.dec_corn3 = footprint[2][1]
+        l3_wcsinfo.dec_corn4 = footprint[3][1]
+        l3_wcsinfo.s_region = utils.create_s_region(footprint)
+
+    try:
+        l3_wcsinfo.rotation_matrix = transform["pc_rotation_matrix"].matrix.value.tolist()
+        l3_wcsinfo.dec_ref = transform.lat_6.value
+        l3_wcsinfo.ra_ref = transform.lon_6.value
+        l3_wcsinfo.x_ref = -transform['crpix1'].offset.value
+        l3_wcsinfo.y_ref = -transform['crpix2'].offset.value
+    except Exception as excp:
+        log.warning('Could not get basic WCS information due to %s', excp)
+    else:
+        l3_wcsinfo.pixel_scale = compute_scale(wcs, (l3_wcsinfo.ra_ref, l3_wcsinfo.dec_ref))
+
+
+
+    rm = l3_wcsinfo.rotation_matrix
+    xrot = abs(math.atan2(rm[1][0], rm[0][0]))
+    yrot = abs(math.atan2(-rm[0][1], rm[1][1]))
+    rot = (xrot + yrot) / 2.0
+    rot *= 180.0 / math.pi
+    l3_wcsinfo.orientat = rot
 
 
 def populate_mosaic_basic(
