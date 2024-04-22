@@ -14,11 +14,10 @@ from .regtestdata import compare_asdf
 @metrics_logger("DMS280", "DMS405", "DMS488")
 @pytest.mark.bigdata
 def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
-    # N.B.: the data were created using WFIsim and processed through
-    # the three pipeline steps listed below:
-    # - assign_wcs;
-    # - photom;
-    # - source_detection.
+    # N.B.: uncal file is from simulator
+    # ``shifted'' version is created in make_regtestdata.sh; cal file is taken,
+    # the wcsinfo is perturbed, and AssignWCS is run to update the WCS with the
+    # perturbed information
     orig_uncal = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
     input_data = "r0000101001001001001_01101_0001_WFI01_shift_cal.asdf"
     output_data = "r0000101001001001001_01101_0001_WFI01_shift_tweakregstep.asdf"
