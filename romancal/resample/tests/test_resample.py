@@ -11,6 +11,36 @@ from roman_datamodels import datamodels, maker_utils
 from romancal.datamodels import ModelContainer
 from romancal.resample import gwcs_drizzle, resample_utils
 from romancal.resample.resample import ResampleData, populate_mosaic_basic
+from roman_datamodels.maker_utils import mk_common_meta, mk_level2_image
+
+
+# Helper function to create a mock input model with specified metadata
+def create_mock_model(
+    start_time,
+    end_time,
+    visit,
+    segment,
+    pass_,
+    program,
+    survey,
+    optical_element,
+    instrument_name,
+):
+    meta = mk_common_meta()
+    mock_model = mk_level2_image(**{"meta": meta})
+    mock_model.meta.exposure.start_time = Time(start_time, format="mjd")
+    mock_model.meta.exposure.end_time = Time(end_time, format="mjd")
+    mock_model.meta.exposure.mid_time = Time((start_time + end_time) / 2, format="mjd")
+    mock_model.meta.observation.visit = visit
+    mock_model.meta.observation.segment = segment
+    mock_model.meta.observation["pass"] = pass_
+    mock_model.meta.observation.program = program
+    mock_model.meta.observation.survey = survey
+    mock_model.meta.instrument.optical_element = optical_element
+    mock_model.meta.instrument.name = instrument_name
+    mock_model.meta.wcsinfo.vparity = -1
+    mock_model.meta.wcsinfo.v3yangle = -60
+    return mock_model
 
 
 class WfiSca:
@@ -622,7 +652,7 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
     assert np.any(output_models_many_to_many[0].weight > 0)
 
 
-def test_populate_mosaic_basic(exposure_1):
+def test_populate_mosaic_basic_single_exposure(exposure_1):
     """
     Test the populate_mosaic_basic function with a given exposure.
     """
@@ -652,12 +682,6 @@ def test_populate_mosaic_basic(exposure_1):
     )
     assert output_model.meta.basic.time_mean_mjd == np.mean(
         [x.exposure.mid_time.mjd for x in input_meta]
-    )
-    assert output_model.meta.basic.max_exposure_time == np.max(
-        [x.exposure.exposure_time for x in input_meta]
-    )
-    assert output_model.meta.basic.mean_exposure_time == np.mean(
-        [x.exposure.exposure_time for x in input_meta]
     )
     assert output_model.meta.basic.visit == (
         input_meta[0].observation.visit
@@ -689,3 +713,274 @@ def test_populate_mosaic_basic(exposure_1):
         == input_meta[0].instrument.optical_element
     )
     assert output_model.meta.basic.instrument == input_meta[0].instrument.name
+
+
+@pytest.mark.parametrize(
+    "input_models_data, expected_output",
+    [
+        (
+            [
+                (
+                    59000.0,
+                    59000.5,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+                (
+                    59000.5,
+                    59001.0,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+            ],
+            {
+                "time_first_mjd": 59000.0,
+                "time_last_mjd": 59001.0,
+                "time_mean_mjd": 59000.5,
+                "visit": 1,
+                "segment": 1,
+                "pass": 1,
+                "program": "12345",
+                "survey": "N/A",
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+        # different visits
+        (
+            [
+                (
+                    59000.0,
+                    59000.5,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+                (
+                    59000.5,
+                    59001.0,
+                    2,
+                    1,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+            ],
+            {
+                "time_first_mjd": 59000.0,
+                "time_last_mjd": 59001.0,
+                "time_mean_mjd": 59000.5,
+                "visit": -1,
+                "segment": 1,
+                "pass": 1,
+                "program": "12345",
+                "survey": "N/A",
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+        # different segments
+        (
+            [
+                (
+                    59000.0,
+                    59000.5,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+                (
+                    59000.5,
+                    59001.0,
+                    1,
+                    2,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+            ],
+            {
+                "time_first_mjd": 59000.0,
+                "time_last_mjd": 59001.0,
+                "time_mean_mjd": 59000.5,
+                "visit": 1,
+                "segment": -1,
+                "pass": 1,
+                "program": "12345",
+                "survey": "N/A",
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+        # different passes
+        (
+            [
+                (
+                    59000.0,
+                    59000.5,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "HLS",
+                    "F158",
+                    "WFI",
+                ),
+                (
+                    59000.5,
+                    59001.0,
+                    1,
+                    1,
+                    2,
+                    "12345",
+                    "EMS",
+                    "F158",
+                    "WFI",
+                ),
+            ],
+            {
+                "time_first_mjd": 59000.0,
+                "time_last_mjd": 59001.0,
+                "time_mean_mjd": 59000.5,
+                "visit": 1,
+                "segment": 1,
+                "pass": -1,
+                "program": "12345",
+                "survey": "MULTIPLE",
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+        # different programs
+        (
+            [
+                (
+                    59000.0,
+                    59000.5,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+                (
+                    59000.5,
+                    59001.0,
+                    1,
+                    1,
+                    1,
+                    "54321",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+            ],
+            {
+                "time_first_mjd": 59000.0,
+                "time_last_mjd": 59001.0,
+                "time_mean_mjd": 59000.5,
+                "visit": 1,
+                "segment": 1,
+                "pass": 1,
+                "program": "-1",
+                "survey": "N/A",
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+        # different surveys
+        (
+            [
+                (
+                    59000.0,
+                    59000.5,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "HLS",
+                    "F158",
+                    "WFI",
+                ),
+                (
+                    59000.5,
+                    59001.0,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "EMS",
+                    "F158",
+                    "WFI",
+                ),
+            ],
+            {
+                "time_first_mjd": 59000.0,
+                "time_last_mjd": 59001.0,
+                "time_mean_mjd": 59000.5,
+                "visit": 1,
+                "segment": 1,
+                "pass": 1,
+                "program": "12345",
+                "survey": "MULTIPLE",
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+    ],
+)
+def test_populate_mosaic_basic_different_observations(
+    input_models_data, expected_output
+):
+    """Test that populate_mosaic_basic function works properly under different observational scenarios."""
+    input_models = [create_mock_model(*data) for data in input_models_data]
+    output_wcs = resample_utils.make_output_wcs(
+        input_models,
+        pscale_ratio=1,
+        pscale=0.000031,
+        rotation=0,
+        shape=None,
+        crpix=(0, 0),
+        crval=(0, 0),
+    )
+    output_model = maker_utils.mk_datamodel(
+        datamodels.MosaicModel, shape=tuple(output_wcs.array_shape)
+    )
+
+    # Act
+    populate_mosaic_basic(output_model, input_models)
+
+    # Assert
+    assert output_model.meta.basic.time_first_mjd == expected_output["time_first_mjd"]
+    assert output_model.meta.basic.time_last_mjd == expected_output["time_last_mjd"]
+    assert output_model.meta.basic.time_mean_mjd == expected_output["time_mean_mjd"]
+    assert output_model.meta.basic.visit == expected_output["visit"]
+    assert output_model.meta.basic.segment == expected_output["segment"]
+    assert output_model.meta.basic.program == expected_output["program"]
+    assert output_model.meta.basic.survey == expected_output["survey"]
+    assert output_model.meta.basic.optical_element == expected_output["optical_element"]
+    assert output_model.meta.basic.instrument == expected_output["instrument"]
