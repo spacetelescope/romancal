@@ -796,12 +796,6 @@ def populate_mosaic_basic(
     output_model.meta.basic.time_mean_mjd = np.mean(
         [x.exposure.mid_time.mjd for x in input_meta]
     )
-    output_model.meta.basic.max_exposure_time = np.max(
-        [x.exposure.exposure_time for x in input_meta]
-    )
-    output_model.meta.basic.mean_exposure_time = np.mean(
-        [x.exposure.exposure_time for x in input_meta]
-    )
 
     # observation data
     output_model.meta.basic.visit = (
