@@ -7,11 +7,11 @@ from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
+from roman_datamodels.maker_utils import mk_common_meta, mk_level2_image
 
 from romancal.datamodels import ModelContainer
 from romancal.resample import gwcs_drizzle, resample_utils
 from romancal.resample.resample import ResampleData, populate_mosaic_basic
-from roman_datamodels.maker_utils import mk_common_meta, mk_level2_image
 
 
 # Helper function to create a mock input model with specified metadata
