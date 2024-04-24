@@ -358,7 +358,7 @@ def compute_fiducial(wcslist, bounding_box=None):
     return fiducial
 
 
-def create_footprint(wcs, shape=None):
+def create_footprint(wcs, shape=None, center=True):
     """Calculate sky footprint
 
     Parameters
@@ -368,6 +368,9 @@ def create_footprint(wcs, shape=None):
 
     shape : n-tuple or None
        Shape to use if wcs has no defined shape.
+
+    center : bool
+        If True use the center of the pixel, otherwise use the corner.
 
     Returns
     -------
@@ -381,7 +384,7 @@ def create_footprint(wcs, shape=None):
 
     # footprint is an array of shape (2, 4) - i.e. 4 values for RA and 4 values for
     # Dec - as we are interested only in the footprint on the sky
-    footprint = wcs.footprint(bbox, center=True, axis_type="spatial").T
+    footprint = wcs.footprint(bbox, center=center, axis_type="spatial").T
     # take only imaging footprint
     footprint = footprint[:2, :]
 
