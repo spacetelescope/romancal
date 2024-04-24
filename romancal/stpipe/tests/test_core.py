@@ -5,6 +5,7 @@ from roman_datamodels.datamodels import FlatRefModel, ImageModel
 from roman_datamodels.maker_utils import mk_level2_image
 from stpipe import crds_client
 
+import romancal
 from romancal.stpipe import RomanPipeline, RomanStep
 
 
@@ -96,3 +97,18 @@ def test_crds_meta():
     assert result.meta.ref_file.crds.context_used == crds_client.get_context_used(
         result.crds_observatory
     )
+
+
+def test_calibration_software_version():
+    """Test that calibration_software_version is updated when a step is run"""
+
+    class NullStep(RomanStep):
+        def process(self, input):
+            return input
+
+    im = ImageModel(mk_level2_image(shape=(20, 20)))
+    im.meta.calibration_software_version = "junkversion"
+
+    result = NullStep.call(im)
+
+    assert result.meta.calibration_software_version == romancal.__version__

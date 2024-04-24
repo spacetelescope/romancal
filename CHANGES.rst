@@ -45,6 +45,12 @@ flux
 
 - Set flux step status for each input. [#1160]
 
+stpipe
+------
+
+- Update ``meta.calibration_software_version`` for results of ``Step`` runs to
+  record the version of romancal used to produce the result. [#1194]
+
 resample
 --------
 
