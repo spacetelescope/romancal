@@ -2,6 +2,7 @@
 Roman Calibration Pipeline base class
 """
 
+import importlib.metadata
 import logging
 import time
 
@@ -50,6 +51,8 @@ class RomanStep(Step):
             List of reference files used.  The first element of each tuple
             is the reftype code, the second element is the filename.
         """
+
+        model.meta.calibration_software_version = importlib.metadata.version("romancal")
 
         if isinstance(model, ImageModel):
             for log_record in self.log_records:
