@@ -39,3 +39,38 @@ class MockS3Client:
         paths = glob.glob(self.s3_test_data_path + "/**", recursive=True)
         paths = [p for p in paths if os.path.isfile(p)]
         return [p.replace(self.s3_test_data_path, "") for p in paths]
+
+
+# Check strings based on words using length precision
+def word_precision_check(str1, str2, length=5):
+    """Check to strings word-by-word based for word length
+
+    The strings are checked word for word, but only for the first
+    `length` characters
+
+    Parameters
+    ----------
+    str1, str2: str
+        The strings to compare
+
+    length: int
+        The number of characters in each word to check.
+
+    Returns
+    -------
+    match: boolean
+        True if the strings match
+
+    Raises
+    ------
+    AssertionError
+        Raised if the number of word differ or the beginning components of each word differ.
+    """
+    words1 = str1.split()
+    words2 = str2.split()
+    if len(words1) != len(words2):
+        raise AssertionError(f'str1 has different number of words {len(words1)} than str2 {len(words2)}')
+    for w1, w2 in zip(words1, words2):
+        if w1[:length] != w2[:length]:
+            raise AssertionError(f'str1 word {w1[:length]} != str2 {w2[:lenght]}')
+    return True

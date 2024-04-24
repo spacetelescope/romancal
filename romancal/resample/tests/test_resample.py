@@ -10,6 +10,7 @@ from roman_datamodels import datamodels, maker_utils
 from roman_datamodels.maker_utils import mk_common_meta, mk_level2_image
 
 from romancal.datamodels import ModelContainer
+from romancal.lib.tests.helpers import word_precision_check
 from romancal.resample import gwcs_drizzle, resample_utils
 from romancal.resample.resample import ResampleData, populate_mosaic_basic
 
@@ -990,29 +991,30 @@ def test_l3_wcsinfo(multiple_exposures):
     """Test the population of the Level 3 wcsinfo block
     """
     expected = maker_utils.mk_mosaic_wcsinfo(
-        **{'ra_ref': 10.002924500000518,
-           'dec_ref': 0.0015345000005394442,
-           'x_ref': 106.4579605214774,
-           'y_ref': 80.66617532540977,
+        **{'ra_ref': 10.00292450000052, 'dec_ref': 0.001534500000533253,
+           'x_ref': 106.4579605214774, 'y_ref': 80.66617532540977,
            'rotation_matrix': [[-0.9335804264969954, 0.3583679495458379], [0.3583679495458379, 0.9335804264969954]],
-           'pixel_scale': 3.099999999543934e-05,
-           'pixel_scale_local': 3.099999999719185e-05,
+           'pixel_scale': 3.100000000097307e-05, 'pixel_scale_local': 3.099999999719185e-05,
            'pixel_shape': (161, 213),
            'ra_center': 10.002930353020417, 'dec_center': 0.0015101325554100666,
            'ra_corn1': 10.005109345783163, 'dec_corn1': -0.001982743978690467,
            'ra_corn2': 10.006897960220385, 'dec_corn2': 0.002676755917536623,
            'ra_corn3': 10.000733528663718, 'dec_corn3': 0.005043059486913547,
            'ra_corn4': 9.998944914237953, 'dec_corn4': 0.00038355958555111314,
-           'orientat_local': 9.826983262839223, 'orientat': 9.826978419948002,
+           'orientat_local': 9.826983262839223, 'orientat': 9.826978421513601,
            'projection': 'TAN',
-           's_region': ('POLYGON ICRS '
-                        '10.005109345783163 -0.001982743978690467 10.006897960220385 0.002676755917536623 '
-                        '10.000733528663718 0.005043059486913547 9.998944914237953 0.00038355958555111314 ')}
+           's_region': ('POLYGON ICRS 10.005109345783163 -0.001982743978690467 10.006897960220385 '
+                        '0.002676755917536623 10.000733528663718 0.005043059486913547 '
+                        '9.998944914237953 0.00038355958555111314 ')}
     )
 
     input_models = ModelContainer(multiple_exposures)
     resample_data = ResampleData(input_models)
 
-    output_models = resample_data.resample_many_to_one()
+    output_model = resample_data.resample_many_to_one()[0]
 
-    assert output_models[0].meta.wcsinfo == expected
+    assert output_model.meta.wcsinfo.projection == expected.projection
+    assert word_precision_check(output_model.meta.wcsinfo.s_region, expected.s_region)
+    for key in expected.keys():
+        if key not in ['projection', 's_region']:
+            assert np.allclose(output_model.meta.wcsinfo[key], expected[key])

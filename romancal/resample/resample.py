@@ -744,7 +744,8 @@ def gwcs_into_l3(model, wcs):
     l3_wcsinfo.projection = "TAN"
     l3_wcsinfo.pixel_shape = model.shape
 
-    world_center = wcs(*[(v - 1) / 2.0 for v in model.shape[::-1]])
+    pixel_center = [(v - 1) / 2.0 for v in model.shape[::-1]]
+    world_center = wcs(*pixel_center)
     l3_wcsinfo.ra_center = world_center[0]
     l3_wcsinfo.dec_center = world_center[1]
     l3_wcsinfo.pixel_scale_local = compute_scale(wcs, world_center)
@@ -766,20 +767,25 @@ def gwcs_into_l3(model, wcs):
         l3_wcsinfo.s_region = utils.create_s_region(footprint)
 
     try:
+        l3_wcsinfo.x_ref = -transform["crpix1"].offset.value
+        l3_wcsinfo.y_ref = -transform["crpix2"].offset.value
+    except IndexError:
+        log.warning('WCS has no clear reference pixel defined by crpix1/crpix2. Assuming reference pixel is center.')
+        l3_wcsinfo.x_ref = pixel_center[0]
+        l3_wcsinfo.y_ref = pixel_center[1]
+    world_ref = wcs(l3_wcsinfo.x_ref, l3_wcsinfo.y_ref)
+    l3_wcsinfo.ra_ref = world_ref[0]
+    l3_wcsinfo.dec_ref = world_ref[1]
+    l3_wcsinfo.pixel_scale = compute_scale(wcs, world_ref)
+    l3_wcsinfo.orientat = calc_pa(wcs, *world_ref)
+
+    try:
         l3_wcsinfo.rotation_matrix = transform[
             "pc_rotation_matrix"
         ].matrix.value.tolist()
-        l3_wcsinfo.dec_ref = transform.lat_6.value
-        l3_wcsinfo.ra_ref = transform.lon_6.value
-        l3_wcsinfo.x_ref = -transform["crpix1"].offset.value
-        l3_wcsinfo.y_ref = -transform["crpix2"].offset.value
     except Exception as excp:
-        log.warning("Could not get basic WCS information due to %s", excp)
-    else:
-        l3_wcsinfo.pixel_scale = compute_scale(
-            wcs, (l3_wcsinfo.ra_ref, l3_wcsinfo.dec_ref)
-        )
-        l3_wcsinfo.orientat = calc_pa(wcs, l3_wcsinfo.ra_ref, l3_wcsinfo.dec_ref)
+        log.warning("WCS has no clear rotation matrix defined by pc_rotation_matrix. Calculating one.")
+        l3_wcsinfo.rotation_matrix = utils.calc_rotation_matrix(l3_wcsinfo.orentat, 0.)
 
 
 def calc_pa(wcs, ra, dec):
