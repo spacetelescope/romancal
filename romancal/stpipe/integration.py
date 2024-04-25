@@ -39,4 +39,5 @@ def get_steps():
         ("romancal.step.SkyMatchStep", "skymatch", False),
         ("romancal.step.TweakRegStep", "tweakreg", False),
         ("romancal.step.ResampleStep", "resample", False),
+        ("romancal.step.SourceCatalogStep", "source_catalog", False),
     ]

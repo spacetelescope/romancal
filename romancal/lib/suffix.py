@@ -60,6 +60,8 @@ SUFFIXES_TO_ADD = [
     "outlier_detection",
     "skymatch",
     "refpix",
+    "cat",
+    "segm",
 ]
 
 # Suffixes that are discovered but should not be considered.
@@ -95,6 +97,7 @@ _calculated_suffixes = {
     "skymatchstep",
     "refpixstep",
     "resamplestep",
+    "sourcecatalogstep",
 }
 
 
