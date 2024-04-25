@@ -8,16 +8,19 @@ import warnings
 import astropy.units as u
 import numpy as np
 from astropy.convolution import Gaussian2DKernel
+from astropy.coordinates import SkyCoord
 from astropy.nddata.utils import NoOverlapError, extract_array
 from astropy.stats import SigmaClip, gaussian_fwhm_to_sigma
-from astropy.table import QTable
+from astropy.table import QTable, Table
 from astropy.utils import lazyproperty
 from astropy.utils.exceptions import AstropyUserWarning
 from photutils.aperture import CircularAnnulus, CircularAperture, aperture_photometry
 from photutils.segmentation import SourceCatalog
-from roman_datamodels.datamodels import ImageModel
+from roman_datamodels.datamodels import MosaicModel
 from scipy import ndimage
 from scipy.spatial import KDTree
+
+from romancal import __version__ as romancal_version
 
 from ._wcs_helpers import pixel_scale_angle_at_skycoord
 
@@ -31,34 +34,26 @@ class RomanSourceCatalog:
 
     Parameters
     ----------
-    model : `ImageModel`
-        The input `ImageModel`.  The data is assumed to be
-        background subtracted.
+    model : `MosaicModel`
+        The input `MosaicModel`. The data is assumed to be background
+        subtracted.
 
     segment_image : `~photutils.segmentation.SegmentationImage`
         A 2D segmentation image, with the same shape as the input data,
-        where sources are marked by different positive integer values.
-        A value of zero is reserved for the background.
+        where sources are marked by different positive integer values. A
+        value of zero is reserved for the background.
 
     convolved_data : data : 2D `~numpy.ndarray`
-        The 2D array used to calculate the source centroid and
-        morphological properties.
-
-    kernel_fwhm : float
-        The full-width at half-maximum (FWHM) of the 2D Gaussian kernel.
-        This is needed to calculate the DAOFind sharpness and roundness
-        properties (DAOFind uses a special kernel that sums to zero).
+        The 2D array used to calculate the source centroid and shape
+        measurements.
 
     aperture_params : `dict`
-        A dictionary containing the aperture parameters (radii, aperture
-        corrections, and background annulus inner and outer radii).
-
-    abvega_offset : float
-        Offset to convert from AB to Vega magnitudes.  The value
-        represents m_AB - m_Vega.
+        A dictionary containing the parameters (radii, aperture
+        corrections, and background annulus inner and outer radii) used
+        to perform aperture photometry.
 
     ci_star_thresholds : array-like of 2 floats
-        The concentration index thresholds for determining whether
+        The concentration index (CI) thresholds for determining whether
         a source is a star. The first threshold corresponds to the
         concentration index calculated from the smallest and middle
         aperture radii (see ``aperture_params``). The second threshold
@@ -66,6 +61,11 @@ class RomanSourceCatalog:
         middle and largest aperture radii. An object is considered
         extended if both concentration indices are greater than the
         corresponding thresholds, otherwise it is considered a star.
+
+    kernel_fwhm : float
+        The full-width at half-maximum (FWHM) of the 2D Gaussian kernel.
+        This is needed to calculate the DAOFind sharpness and roundness
+        properties (DAOFind uses a special kernel that sums to zero).
 
     Notes
     -----
@@ -80,21 +80,21 @@ class RomanSourceCatalog:
         model,
         segment_img,
         convolved_data,
-        kernel_fwhm,
         aperture_params,
-        abvega_offset,
         ci_star_thresholds,
+        kernel_fwhm,
+        flux_unit="Jy",
     ):
 
-        if not isinstance(model, ImageModel):
-            raise ValueError("The input model must be a ImageModel.")
+        if not isinstance(model, MosaicModel):
+            raise ValueError("The input model must be a MosaicModel.")
         self.model = model  # background was previously subtracted
 
         self.segment_img = segment_img
         self.convolved_data = convolved_data
-        self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
         self.aperture_params = aperture_params
-        self.abvega_offset = abvega_offset
+        self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
+        self.flux_unit = flux_unit
 
         if len(ci_star_thresholds) != 2:
             raise ValueError("ci_star_thresholds must contain only 2 items")
@@ -105,52 +105,52 @@ class RomanSourceCatalog:
         self.n_aper = len(self.aperture_ee)
         self.wcs = self.model.meta.wcs
         self.column_desc = {}
-        self._xpeak = None
-        self._ypeak = None
         self.meta = {}
 
-    def convert_to_jy(self):
+    @lazyproperty
+    def pixel_area(self):
         """
-        Convert the data and errors from MJy/sr to Jy and convert to
-        `~astropy.unit.Quantity` objects.
-        """
-        # TODO (@bmorris3): replace or remove
-        # in_unit = 'MJy/sr'
-        # if (self.model.meta.bunit_data != in_unit or
-        #         self.model.meta.bunit_err != in_unit):
-        #     raise ValueError('data and err are expected to be in units of '
-        #                      'MJy/sr')
-        # unit = u.Jy
-        # self.model.meta['photometry'] = dict(pixelarea_steradians=0.11 * u.arcsec**2)
-        # to_jy = 1.e6 * self.model.meta.photometry.pixelarea_steradians
-        # self.model.data = self.model.data
-        # self.model.err *= to_jy
-        # self.model.data <<= unit
-        # self.model.err <<= unit
-        # self.model.meta.bunit_data = unit.name
-        # self.model.meta.bunit_err = unit.name
-        pass
+        Temporary method to change the placeholder pixel area to
+        something more sensible.
 
-    def convert_from_jy(self):
+        The meta value is -999999 sr (placeholder), so we can't use it.
         """
-        Convert the data and errors from Jy to MJy/sr and change from
-        `~astropy.unit.Quantity` objects to `~numpy.ndarray`.
+        # TODO: update when a realistic pixel area is available in meta
+        # return self.model.meta.photometry.pixelarea_steradians
+        return 2.58548736e-12 * u.sr  # placeholder value (0.11 arcsec/pix)
+
+    def convert_sb_to_flux_density(self):
         """
-        # TODO (@bmorris3): replace or remove
-        # to_mjy_sr = 1.e6 * self.model.meta.photometry.pixelarea_steradians
-        # self.model.data /= to_mjy_sr
-        # self.model.err /= to_mjy_sr
-        #
-        # self.model.data = self.model.data.value  # remove units
-        # self.model.err = self.model.err.value  # remove units
-        #
-        # self.model.meta.bunit_data = 'MJy/sr'
-        # self.model.meta.bunit_err = 'MJy/sr'
+        Convert the data and error Quantity arrays from MJy/sr (surface
+        brightness) to flux density units.
 
-        pass
+        The flux density unit is defined by self.flux_unit.
+        """
+        in_unit = "MJy/sr"
+        if self.model.data.unit != in_unit or self.model.err.unit != in_unit:
+            raise ValueError("data and err are expected to be in units of MJy/sr")
 
-    @staticmethod
-    def convert_flux_to_abmag(flux, flux_err):
+        # use dictionary to set value to avoid on-the-fly validation
+        self.model["data"] *= self.pixel_area
+        self.model["data"] <<= self.flux_unit
+        self.model["err"] *= self.pixel_area
+        self.model["err"] <<= self.flux_unit
+        self.convolved_data *= self.pixel_area
+        self.convolved_data <<= self.flux_unit
+
+    def convert_flux_density_to_sb(self):
+        """
+        Convert the data and error Quantity arrays from flux density units to
+        MJy/sr (surface brightness).
+        """
+        self.model["data"] /= self.pixel_area
+        self.model["data"] <<= self.sb_unit
+        self.model["err"] /= self.pixel_area
+        self.model["err"] <<= self.sb_unit
+        self.convolved_data /= self.pixel_area
+        self.convolved_data <<= self.sb_unit
+
+    def convert_flux_to_abmag(self, flux, flux_err):
         """
         Convert flux (and error) to AB magnitude (and error).
 
@@ -168,7 +168,12 @@ class RomanSourceCatalog:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
 
-            abmag = -2.5 * np.log10(flux.value) + 8.9
+            # exact AB mag zero point
+            flux_zpt = 10 ** (-0.4 * 48.60) * u.erg / u.s / u.cm**2 / u.Hz
+            flux_zpt <<= self.flux_unit
+
+            abmag_zpt = 2.5 * np.log10(flux_zpt.value)
+            abmag = -2.5 * np.log10(flux.value) + abmag_zpt
             abmag_err = 2.5 * np.log10(1.0 + (flux_err.value / flux.value))
 
             # handle negative fluxes
@@ -188,53 +193,41 @@ class RomanSourceCatalog:
         desc["label"] = "Unique source identification label number"
         desc["xcentroid"] = "X pixel value of the source centroid (0 indexed)"
         desc["ycentroid"] = "Y pixel value of the source centroid (0 indexed)"
-        desc["sky_centroid"] = "ICRS Sky coordinate of the source centroid"
+        desc["sky_centroid"] = " Sky coordinate (ICRS) of the source centroid"
         desc["isophotal_flux"] = "Isophotal flux"
         desc["isophotal_flux_err"] = "Isophotal flux error"
-        desc["isophotal_abmag"] = "Isophotal AB magnitude"
-        desc["isophotal_abmag_err"] = "Isophotal AB magnitude error"
-        desc["isophotal_vegamag"] = "Isophotal Vega magnitude"
-        desc["isophotal_vegamag_err"] = "Isophotal Vega magnitude error"
+        # isophotal_flux and isophotal_flux_err must be listed before isophotal_abmag
+        # TEMP: do not include ABmags
+        # desc["isophotal_abmag"] = "Isophotal AB magnitude"
+        # desc["isophotal_abmag_err"] = "Isophotal AB magnitude error"
         desc["isophotal_area"] = "Isophotal area"
         desc["semimajor_sigma"] = (
-            "1-sigma standard deviation along the "
-            "semimajor axis of the 2D Gaussian "
-            "function that has the same second-order "
-            "central moments as the source"
+            "1-sigma standard deviation along the semimajor axis of the 2D Gaussian function that has the same second-order central moments as the source"
         )
         desc["semiminor_sigma"] = (
-            "1-sigma standard deviation along the "
-            "semiminor axis of the 2D Gaussian "
-            "function that has the same second-order "
-            "central moments as the source"
+            "1-sigma standard deviation along the semiminor axis of the 2D Gaussian function that has the same second-order central moments as the source"
         )
         desc["ellipticity"] = (
-            "1 minus the ratio of the 1-sigma lengths of "
-            "the semimajor and semiminor axes"
+            "1 minus the ratio of the 1-sigma lengths of the semimajor and semiminor axes"
         )
         desc["orientation"] = (
-            "The angle (degrees) between the positive X "
-            "axis and the major axis (increases "
-            "counter-clockwise)"
+            "The angle (degrees) between the positive X axis and the major axis (increases counter-clockwise)"
         )
+        # orientation must be listed before sky_orientation
         desc["sky_orientation"] = (
-            "The position angle (degrees) from North " "of the major axis"
+            "The position angle (degrees) from North of the major axis"
         )
         desc["sky_bbox_ll"] = (
-            "Sky coordinate of the lower-left vertex of "
-            "the minimal bounding box of the source"
+            "Sky coordinate (ICRS) of the lower-left vertex of the minimal bounding box of the source"
         )
         desc["sky_bbox_ul"] = (
-            "Sky coordinate of the upper-left vertex of "
-            "the minimal bounding box of the source"
+            "Sky coordinate (ICRS) of the upper-left vertex of the minimal bounding box of the source"
         )
         desc["sky_bbox_lr"] = (
-            "Sky coordinate of the lower-right vertex of "
-            "the minimal bounding box of the source"
+            "Sky coordinate (ICRS) of the lower-right vertex of the minimal bounding box of the source"
         )
         desc["sky_bbox_ur"] = (
-            "Sky coordinate of the upper-right vertex of "
-            "the minimal bounding box of the source"
+            "Sky coordinate (ICRS) of the upper-right vertex of the minimal bounding box of the source"
         )
 
         self.column_desc.update(desc)
@@ -245,21 +238,17 @@ class RomanSourceCatalog:
         """
         Calculate the segment-based source photometry and morphologies.
 
-        The values are set as dynamic attributes.
+        The results are set as dynamic attributes on the class instance.
         """
         segm_cat = SourceCatalog(
             self.model.data,
             self.segment_img,
-            convolved_data=self.convolved_data << u.electron / u.s,
+            convolved_data=self.convolved_data,
             error=self.model.err,
             wcs=self.wcs,
         )
-        self._xpeak = segm_cat.maxval_xindex
-        self._ypeak = segm_cat.maxval_yindex
 
         self.meta.update(segm_cat.meta)
-        for key in ("sklearn", "matplotlib"):
-            self.meta["version"].pop(key)
 
         # rename some columns in the output catalog
         prop_names = {}
@@ -267,17 +256,19 @@ class RomanSourceCatalog:
         prop_names["isophotal_flux_err"] = "segment_fluxerr"
         prop_names["isophotal_area"] = "area"
 
+        # dynamically set the attributes
         for column in self.segment_colnames:
-            # define the property name
+            # use the renamed column name if it exists in prop_names
             prop_name = prop_names.get(column, column)
             try:
                 value = getattr(segm_cat, prop_name)
             except AttributeError:
+                # isophotal_abmag, isophotal_abmag_err, sky_orientation
                 value = getattr(self, prop_name)
             setattr(self, column, value)
 
     @lazyproperty
-    def xypos(self):
+    def _xypos(self):
         """
         The (x, y) source positions, defined from the segmentation
         image.
@@ -285,15 +276,16 @@ class RomanSourceCatalog:
         return np.transpose((self.xcentroid, self.ycentroid))
 
     @lazyproperty
-    def _xypos_finite(self):
+    def _xypos_aper(self):
         """
-        The (x, y) source positions, where non-finite positions are
-        set to a large negative value.
+        The (x, y) source positions for the circular apertures and
+        annuli.
 
-        At this position the aperture will not overlap the data, thus
-        returning NaN fluxes and errors.
+        Non-finite positions are set to a large negative value. At this
+        position the aperture will not overlap the data, thus returning
+        NaN fluxes and errors.
         """
-        xypos = self.xypos.copy()
+        xypos = self._xypos.copy()
         nanmask = ~np.isfinite(xypos)
         xypos[nanmask] = -1000.0
         return xypos
@@ -304,7 +296,7 @@ class RomanSourceCatalog:
         A 1D boolean mask where `True` values denote sources where
         either the xcentroid or the ycentroid is not finite.
         """
-        return ~np.isfinite(self.xypos).all(axis=1)
+        return ~np.isfinite(self._xypos).all(axis=1)
 
     @lazyproperty
     def _isophotal_abmag(self):
@@ -328,28 +320,16 @@ class RomanSourceCatalog:
         return self._isophotal_abmag[1]
 
     @lazyproperty
-    def isophotal_vegamag(self):
-        """
-        The isophotal Vega magnitude.
-        """
-        return self.isophotal_abmag - self.abvega_offset
-
-    @lazyproperty
-    def isophotal_vegamag_err(self):
-        """
-        The isophotal Vega magnitude error.
-        """
-        return self.isophotal_abmag_err
-
-    @lazyproperty
     def sky_orientation(self):
         """
         The orientation of the source major axis as the position angle
         in degrees measured East of North.
         """
-        skycoord = self.wcs.pixel_to_world(0 * u.pix, 0 * u.pix)
+        ysize, xsize = self.model.data.shape
+        ycen = (ysize - 1) / 2.0
+        xcen = (xsize - 1) / 2.0
+        skycoord = self.wcs.pixel_to_world(xcen, ycen)
         _, _, angle = pixel_scale_angle_at_skycoord(skycoord, self.wcs)
-
         return (180.0 * u.deg) - angle + self.orientation
 
     def _make_aperture_colnames(self, name):
@@ -361,7 +341,7 @@ class RomanSourceCatalog:
 
         Parameters
         ----------
-        name : {'flux', 'abmag', 'vegamag'}
+        name : {'flux', 'abmag'}
             The name type of the column.
 
         Returns
@@ -384,7 +364,7 @@ class RomanSourceCatalog:
 
         Parameters
         ----------
-        name : {'flux', 'abmag', 'vegamag'}
+        name : {'flux', 'abmag'}
             The name type of the column.
 
         Returns
@@ -397,28 +377,21 @@ class RomanSourceCatalog:
             ftype2 = "flux"
         elif name == "abmag":
             ftype = ftype2 = "AB magnitude"
-        elif name == "vegamag":
-            ftype = ftype2 = "Vega magnitude"
 
         desc = []
         for aper_ee in self.aperture_ee:
             desc.append(
-                f"{ftype} within the {aper_ee}% encircled energy " "circular aperture"
+                f"{ftype} within the {aper_ee}% encircled energy circular aperture"
             )
             desc.append(
-                f"{ftype} error within the {aper_ee}% encircled "
-                "energy circular aperture"
+                f"{ftype} error within the {aper_ee}% encircled energy circular aperture"
             )
 
         desc.append(
-            f"Total aperture-corrected {ftype2} based on the "
-            f"{self.aperture_ee[-1]}% encircled energy circular "
-            "aperture; should be used only for unresolved sources."
+            f"Total aperture-corrected {ftype2} based on the {self.aperture_ee[-1]}% encircled energy circular aperture; should be used only for unresolved sources."
         )
         desc.append(
-            f"Total aperture-corrected {ftype2} error based on the "
-            f"{self.aperture_ee[-1]}% encircled energy circular "
-            "aperture; should be used only for unresolved sources."
+            f"Total aperture-corrected {ftype2} error based on the {self.aperture_ee[-1]}% encircled energy circular aperture; should be used only for unresolved sources."
         )
 
         return desc
@@ -452,20 +425,6 @@ class RomanSourceCatalog:
         return self._make_aperture_descriptions("abmag")
 
     @lazyproperty
-    def aperture_vegamag_colnames(self):
-        """
-        The aperture Vega magnitude column names.
-        """
-        return self._make_aperture_colnames("vegamag")
-
-    @lazyproperty
-    def aperture_vegamag_descriptions(self):
-        """
-        The aperture Vega magnitude column descriptions.
-        """
-        return self._make_aperture_descriptions("vegamag")
-
-    @lazyproperty
     def aperture_colnames(self):
         """
         A dictionary of the output table column names and descriptions
@@ -473,20 +432,17 @@ class RomanSourceCatalog:
         """
         desc = {}
         desc["aper_bkg_flux"] = (
-            "The local background value calculated as "
-            "the sigma-clipped median value in the "
-            "background annulus aperture"
+            "The local background value calculated as the sigma-clipped median value in the background annulus aperture"
         )
         desc["aper_bkg_flux_err"] = (
-            "The standard error of the " "sigma-clipped median background value"
+            "The standard error of the sigma-clipped median background value"
         )
 
         for idx, colname in enumerate(self.aperture_flux_colnames):
             desc[colname] = self.aperture_flux_descriptions[idx]
-        for idx, colname in enumerate(self.aperture_abmag_colnames):
-            desc[colname] = self.aperture_abmag_descriptions[idx]
-        for idx, colname in enumerate(self.aperture_vegamag_colnames):
-            desc[colname] = self.aperture_vegamag_descriptions[idx]
+        # TEMP: do not include ABmags
+        # for idx, colname in enumerate(self.aperture_abmag_colnames):
+        #     desc[colname] = self.aperture_abmag_descriptions[idx]
 
         self.column_desc.update(desc)
 
@@ -503,7 +459,7 @@ class RomanSourceCatalog:
         median, sqrt(pi / 2N) * std.
         """
         bkg_aper = CircularAnnulus(
-            self._xypos_finite,
+            self._xypos_aper,
             self.aperture_params["bkg_aperture_inner_radius"],
             self.aperture_params["bkg_aperture_outer_radius"],
         )
@@ -552,10 +508,10 @@ class RomanSourceCatalog:
         """
         Calculate the aperture photometry.
 
-        The values are set as dynamic attributes.
+        The results are set as dynamic attributes on the class instance.
         """
         apertures = [
-            CircularAperture(self._xypos_finite, radius)
+            CircularAperture(self._xypos_aper, radius)
             for radius in self.aperture_params["aperture_radii"]
         ]
         aper_phot = aperture_photometry(
@@ -572,8 +528,6 @@ class RomanSourceCatalog:
             flux = aper_phot[flux_col]
             flux_err = aper_phot[flux_err_col]
             abmag, abmag_err = self.convert_flux_to_abmag(flux, flux_err)
-            vegamag = abmag - self.abvega_offset
-            vegamag_err = abmag_err
 
             idx0 = 2 * i
             idx1 = (2 * i) + 1
@@ -581,8 +535,6 @@ class RomanSourceCatalog:
             setattr(self, self.aperture_flux_colnames[idx1], flux_err)
             setattr(self, self.aperture_abmag_colnames[idx0], abmag)
             setattr(self, self.aperture_abmag_colnames[idx1], abmag_err)
-            setattr(self, self.aperture_vegamag_colnames[idx0], vegamag)
-            setattr(self, self.aperture_vegamag_colnames[idx1], vegamag_err)
 
     @lazyproperty
     def extras_colnames(self):
@@ -628,8 +580,8 @@ class RomanSourceCatalog:
         """
         return [
             "Concentration index calculated as "
-            f"({self.aperture_flux_colnames[2*j]} / "
-            f"{self.aperture_flux_colnames[2*i]})"
+            f"({self.aperture_flux_colnames[2 * j]} / "
+            f"{self.aperture_flux_colnames[2 * i]})"
             for (i, j) in self._ci_ee_indices
         ]
 
@@ -639,11 +591,11 @@ class RomanSourceCatalog:
         A list of concentration indices, calculated as the flux
         ratios of:
 
-            * the middle / smallest aperture radii/EE,
+            * the (middle / smallest) aperture flux ratio
               e.g., CI_50_30 = aper50_flux / aper30_flux
-            * the largest / middle aperture radii/EE,
+            * the (largest / middle) aperture flux ratio
               e.g., CI_70_50 = aper70_flux / aper50_flux
-            * the largest / smallest aperture radii/EE,
+            * the (largest / smallest) aperture flux ratio
               e.g., CI_70_30 = aper70_flux / aper30_flux
         """
         fluxes = [
@@ -657,7 +609,8 @@ class RomanSourceCatalog:
 
     def set_ci_properties(self):
         """
-        Set the concentration indices as dynamic attributes.
+        Set the concentration indices as dynamic attributes on the class
+        instance.
         """
         for name, value in zip(self.ci_colnames, self.concentration_indices):
             setattr(self, name, value)
@@ -672,7 +625,7 @@ class RomanSourceCatalog:
         return np.logical_and(mask1, mask2)
 
     @lazyproperty
-    def _kernel_size(self):
+    def _daofind_kernel_size(self):
         """
         The DAOFind kernel size (in both x and y dimensions).
         """
@@ -680,21 +633,23 @@ class RomanSourceCatalog:
         return 2 * int(max(2.0, 1.5 * self.kernel_sigma)) + 1
 
     @lazyproperty
-    def _kernel_center(self):
+    def _daofind_kernel_center(self):
         """
         The DAOFind kernel x/y center.
         """
-        return (self._kernel_size - 1) // 2
+        return (self._daofind_kernel_size - 1) // 2
 
     @lazyproperty
-    def _kernel_mask(self):
+    def _daofind_kernel_mask(self):
         """
         The DAOFind kernel circular mask.
+
         NOTE: 1=good pixels, 0=masked pixels
         """
-        yy, xx = np.mgrid[0 : self._kernel_size, 0 : self._kernel_size]
+        yy, xx = np.mgrid[0 : self._daofind_kernel_size, 0 : self._daofind_kernel_size]
         radius = np.sqrt(
-            (xx - self._kernel_center) ** 2 + (yy - self._kernel_center) ** 2
+            (xx - self._daofind_kernel_center) ** 2
+            + (yy - self._daofind_kernel_center) ** 2
         )
         return (radius <= max(2.0, 1.5 * self.kernel_sigma)).astype(int)
 
@@ -704,15 +659,15 @@ class RomanSourceCatalog:
         The DAOFind kernel, a 2D circular Gaussian normalized to have
         zero sum.
         """
-        size = self._kernel_size
+        size = self._daofind_kernel_size
         kernel = Gaussian2DKernel(self.kernel_sigma, x_size=size, y_size=size).array
+        kernel *= self._daofind_kernel_mask
         kernel /= np.max(kernel)
-        kernel *= self._kernel_mask
 
         # normalize the kernel to zero sum
-        npixels = self._kernel_mask.sum()
+        npixels = self._daofind_kernel_mask.sum()
         denom = np.sum(kernel**2) - (np.sum(kernel) ** 2 / npixels)
-        return ((kernel - (kernel.sum() / npixels)) / denom) * self._kernel_mask
+        return ((kernel - (kernel.sum() / npixels)) / denom) * self._daofind_kernel_mask
 
     @lazyproperty
     def _daofind_convolved_data(self):
@@ -733,7 +688,7 @@ class RomanSourceCatalog:
         which has odd dimensions.
         """
         cutout = []
-        for xcen, ycen in zip(*np.transpose(self._xypos_finite)):
+        for xcen, ycen in zip(*np.transpose(self._xypos_aper)):
             try:
                 cutout_ = extract_array(
                     self.model.data,
@@ -757,7 +712,7 @@ class RomanSourceCatalog:
         which has odd dimensions.
         """
         cutout = []
-        for xcen, ycen in zip(*np.transpose(self._xypos_finite)):
+        for xcen, ycen in zip(*np.transpose(self._xypos_aper)):
             try:
                 cutout_ = extract_array(
                     self._daofind_convolved_data,
@@ -783,11 +738,13 @@ class RomanSourceCatalog:
 
         Stars generally have a ``sharpness`` between 0.2 and 1.0.
         """
-        npixels = self._kernel_mask.sum() - 1  # exclude the peak pixel
-        data_masked = self._daofind_cutout * self._kernel_mask
-        data_peak = self._daofind_cutout[:, self._kernel_center, self._kernel_center]
+        npixels = self._daofind_kernel_mask.sum() - 1  # exclude the peak pixel
+        data_masked = self._daofind_cutout * self._daofind_kernel_mask
+        data_peak = self._daofind_cutout[
+            :, self._daofind_kernel_center, self._daofind_kernel_center
+        ]
         conv_peak = self._daofind_cutout_conv[
-            :, self._kernel_center, self._kernel_center
+            :, self._daofind_kernel_center, self._daofind_kernel_center
         ]
 
         data_mean = (np.sum(data_masked, axis=(1, 2)) - data_peak) / npixels
@@ -811,13 +768,21 @@ class RomanSourceCatalog:
         """
         # set the central (peak) pixel to zero
         cutout = self._daofind_cutout_conv.copy()
-        cutout[:, self._kernel_center, self._kernel_center] = 0.0
+        cutout[:, self._daofind_kernel_center, self._daofind_kernel_center] = 0.0
 
         # calculate the four roundness quadrants
-        quad1 = cutout[:, 0 : self._kernel_center + 1, self._kernel_center + 1 :]
-        quad2 = cutout[:, 0 : self._kernel_center, 0 : self._kernel_center + 1]
-        quad3 = cutout[:, self._kernel_center :, 0 : self._kernel_center]
-        quad4 = cutout[:, self._kernel_center + 1 :, self._kernel_center :]
+        quad1 = cutout[
+            :, 0 : self._daofind_kernel_center + 1, self._daofind_kernel_center + 1 :
+        ]
+        quad2 = cutout[
+            :, 0 : self._daofind_kernel_center, 0 : self._daofind_kernel_center + 1
+        ]
+        quad3 = cutout[
+            :, self._daofind_kernel_center :, 0 : self._daofind_kernel_center
+        ]
+        quad4 = cutout[
+            :, self._daofind_kernel_center + 1 :, self._daofind_kernel_center :
+        ]
 
         axis = (1, 2)
         sum2 = (
@@ -845,8 +810,8 @@ class RomanSourceCatalog:
             return [np.nan], [np.nan]
 
         # non-finite xypos causes memory errors on linux, but not MacOS
-        tree = KDTree(self._xypos_finite)
-        qdist, qidx = tree.query(self._xypos_finite, k=[2])
+        tree = KDTree(self._xypos_aper)
+        qdist, qidx = tree.query(self._xypos_aper, k=[2])
         return np.transpose(qdist)[0], np.transpose(qidx)[0]
 
     @lazyproperty
@@ -889,7 +854,7 @@ class RomanSourceCatalog:
         The aperture-corrected total flux should be used only for
         unresolved sources.
         """
-        idx = self.n_aper - 1  # apcorr for the largest EE (largest radius)
+        idx = self.n_aper - 1  # use apcorr for the largest EE (largest radius)
         flux = self.aperture_params["aperture_corrections"][idx] * getattr(
             self, self.aperture_flux_colnames[idx * 2]
         )
@@ -904,7 +869,7 @@ class RomanSourceCatalog:
         The aperture-corrected total flux error should be used only for
         unresolved sources.
         """
-        idx = self.n_aper - 1  # apcorr for the largest EE (largest radius)
+        idx = self.n_aper - 1  # use apcorr for the largest EE (largest radius)
         flux_err = self.aperture_params["aperture_corrections"][idx] * getattr(
             self, self.aperture_flux_colnames[idx * 2 + 1]
         )
@@ -940,26 +905,6 @@ class RomanSourceCatalog:
         return self._abmag_total[1]
 
     @lazyproperty
-    def aper_total_vegamag(self):
-        """
-        The aperture-corrected total Vega magnitude.
-
-        The aperture-corrected total magnitude should be used only for
-        unresolved sources.
-        """
-        return self.aper_total_abmag - self.abvega_offset
-
-    @lazyproperty
-    def aper_total_vegamag_err(self):
-        """
-        The aperture-corrected total Vega magnitude error.
-
-        The aperture-corrected total magnitude error should be used only
-        for unresolved sources.
-        """
-        return self.aper_total_abmag_err
-
-    @lazyproperty
     def colnames(self):
         """
         The column name order for the final source catalog.
@@ -970,50 +915,72 @@ class RomanSourceCatalog:
         colnames.extend(self.segment_colnames[4:])
         return colnames
 
-    @staticmethod
-    def format_columns(catalog):
+    def _update_metadata(self):
         """
-        Format the values in the output catalog.
+        Update the metadata dictionary with the package version
+        information and aperture parameters.
+        """
+        ver_key = "versions"
+        if "version" in self.meta.keys():
+            # depends on photutils version
+            self.meta[ver_key] = self.meta.pop("version")
+
+        ver_dict = self.meta.get("versions", None)
+        if ver_dict is not None:
+            ver_dict["romancal"] = romancal_version
+            packages = [
+                "Python",
+                "numpy",
+                "scipy",
+                "astropy",
+                "photutils",
+                "gwcs",
+                "romancal",
+            ]
+            ver_dict = {key: ver_dict[key] for key in packages if key in ver_dict}
+            self.meta[ver_key] = ver_dict
+
+        self.meta["aperture_params"] = self.aperture_params
+
+    def _split_skycoord(self, table):
+        """
+        Split SkyCoord columns into separate RA and Dec columns.
 
         Parameters
         ----------
-        catalog : `~astropy.table.Table`
-            The catalog to format.
+        table : `~astropy.table.Table`
+            The input table.
 
         Returns
         -------
-        result : `~astropy.table.Table`
-            The formated catalog.
+        table : `~astropy.table.Table`
+            The output table with separate RA and Dec columns.
         """
-        # output formatting requested by the JPWG (2020.02.05)
-        for colname in catalog.colnames:
-            if colname in ("xcentroid", "ycentroid") or "CI_" in colname:
-                catalog[colname].info.format = ".4f"
-            if "flux" in colname:
-                catalog[colname].info.format = ".6e"
-            if (
-                "abmag" in colname
-                or "vegamag" in colname
-                or colname in ("nn_dist", "sharpness", "roundness")
-            ):
-                catalog[colname].info.format = ".6f"
-            if colname in (
-                "semimajor_sigma",
-                "semiminor_sigma",
-                "ellipticity",
-                "orientation",
-                "sky_orientation",
-            ):
-                catalog[colname].info.format = ".6f"
+        for colname in table.colnames:
+            if isinstance(table[colname], SkyCoord):
+                idx = table.colnames.index(colname)
+                ra = table[colname].ra
+                dec = table[colname].dec
+                ra_colname = colname.replace("sky", "ra")
+                dec_colname = colname.replace("sky", "dec")
+                table.remove_column(colname)
+                table.add_columns(
+                    [ra, dec], names=[ra_colname, dec_colname], indexes=[idx, idx]
+                )
+                desc = self.column_desc[colname]
+                ra_desc = desc.replace("Sky coordinate", "Right ascension")
+                dec_desc = desc.replace("Sky coordinate", "Declination")
+                table[ra_colname].info.description = ra_desc
+                table[dec_colname].info.description = dec_desc
 
-        return catalog
+        return table
 
     @lazyproperty
     def catalog(self):
         """
         The final source catalog.
         """
-        self.convert_to_jy()
+        self.convert_sb_to_flux_density()
         self.set_segment_properties()
         self.set_aperture_properties()
         self.set_ci_properties()
@@ -1022,15 +989,17 @@ class RomanSourceCatalog:
         for column in self.colnames:
             catalog[column] = getattr(self, column)
             catalog[column].info.description = self.column_desc[column]
-
-        catalog = self.format_columns(catalog)
-
-        # update metadata
-        self.meta["aperture_params"] = self.aperture_params
-        self.meta["abvega_offset"] = self.abvega_offset
+        self._update_metadata()
         catalog.meta.update(self.meta)
 
-        # reset units on input model back to MJy/sr
-        self.convert_from_jy()
+        # convert QTable to Table to change Quantity columns to regular
+        # columns with units
+        catalog = Table(catalog)
+
+        # split SkyCoord columns into separate RA and Dec columns
+        catalog = self._split_skycoord(catalog)
+
+        # restore units on input model back to MJy/sr
+        self.convert_flux_density_to_sb()
 
         return catalog
