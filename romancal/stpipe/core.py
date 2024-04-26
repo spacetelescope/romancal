@@ -64,13 +64,13 @@ class RomanStep(Step):
                     setattr(model.meta.ref_file, ref_name, ref_file)
                     # getattr(model.meta.ref_file, ref_name).name = ref_file
 
-        # this will only run if 'parent' is none, which happens when an individual
-        # step is being run or if self is a RomanPipeline and not a RomanStep.
-        if self.parent is None:
-            model.meta.ref_file.crds.sw_version = crds_client.get_svn_version()
-            model.meta.ref_file.crds.context_used = crds_client.get_context_used(
-                model.crds_observatory
-            )
+            # this will only run if 'parent' is none, which happens when an individual
+            # step is being run or if self is a RomanPipeline and not a RomanStep.
+            if self.parent is None:
+                model.meta.ref_file.crds.sw_version = crds_client.get_svn_version()
+                model.meta.ref_file.crds.context_used = crds_client.get_context_used(
+                    model.crds_observatory
+                )
 
     def record_step_status(self, model, step_name, success=True):
         """
