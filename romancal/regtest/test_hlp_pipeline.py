@@ -1,6 +1,7 @@
 """ Roman tests for the High Level Pipeline """
 
 import pytest
+import os
 import roman_datamodels as rdm
 from metrics_logger.decorators import metrics_logger
 
@@ -48,6 +49,18 @@ def test_level3_hlp_pipeline(rtdata, ignore_asdf_paths):
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
+    # Generate thumbnail image
+    input_file = "r0099101001001001001_F158_visit_0.900.0.50_178199.5_-0.5_i2d.asdf"
+    thumbnail_file = "r0099101001001001001_F158_visit_0.900.0.50_178199.5_-0.5_thumb.png"
+    preview_cmd = f"stpreview to {input_file} {thumbnail_file} 256 256 roman"
+    os.system(preview_cmd)
+
+    # Generate preview image
+    input_file = "r0099101001001001001_F158_visit_0.900.0.50_178199.5_-0.5_i2d.asdf"
+    preview_file = "r0099101001001001001_F158_visit_0.900.0.50_178199.5_-0.5_preview.png"
+    preview_cmd = f"stpreview to {input_file} {preview_file} 1080 1080 roman"
+    os.system(preview_cmd)
+
     # Perform DMS tests
     # Initial prep
     model = rdm.open(rtdata.output, lazy_load=False)
@@ -63,6 +76,16 @@ def test_level3_hlp_pipeline(rtdata, ignore_asdf_paths):
     pipeline.log.info(
         "Status of the step:             skymatch    "
         + str(model.meta.cal_step.skymatch)
+    )
+    # DMS356 Test that the thumbnail image exists
+    pipeline.log.info(
+        "Status of the step:             thumbnail image    "
+        + passfail(os.path.isfile(thumbnail_file) == True)
+    )
+    # DMS356 Test that the preview image exists
+    pipeline.log.info(
+        "Status of the step:             preview image    "
+        + passfail(os.path.isfile(preview_file) == True)
     )
     pipeline.log.info(
         "DMS86 MSG: Testing completion of skymatch in the Level 3  output......."
