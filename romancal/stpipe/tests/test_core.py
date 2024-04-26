@@ -6,8 +6,8 @@ from roman_datamodels.maker_utils import mk_level2_image
 from stpipe import crds_client
 
 import romancal
-from romancal.stpipe import RomanPipeline, RomanStep
 from romancal.flatfield import FlatFieldStep
+from romancal.stpipe import RomanPipeline, RomanStep
 
 
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])

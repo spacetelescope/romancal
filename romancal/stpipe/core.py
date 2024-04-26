@@ -75,7 +75,9 @@ class RomanStep(Step):
             # this will only run if 'parent' is none, which happens when an individual
             # step is being run or if self is a RomanPipeline and not a RomanStep.
             if self.parent is None:
-                log.info(f"Results used CRDS context: {model.meta.ref_file.crds.context_used}")
+                log.info(
+                    f"Results used CRDS context: {model.meta.ref_file.crds.context_used}"
+                )
 
     def record_step_status(self, model, step_name, success=True):
         """
