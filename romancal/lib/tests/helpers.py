@@ -69,8 +69,10 @@ def word_precision_check(str1, str2, length=5):
     words1 = str1.split()
     words2 = str2.split()
     if len(words1) != len(words2):
-        raise AssertionError(f'str1 has different number of words {len(words1)} than str2 {len(words2)}')
+        raise AssertionError(
+            f"str1 has different number of words {len(words1)} than str2 {len(words2)}"
+        )
     for w1, w2 in zip(words1, words2):
         if w1[:length] != w2[:length]:
-            raise AssertionError(f'str1 word {w1[:length]} != str2 {w2[:lenght]}')
+            raise AssertionError(f"str1 word {w1[:length]} != str2 {w2[:lenght]}")
     return True

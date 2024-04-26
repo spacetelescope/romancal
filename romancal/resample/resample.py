@@ -770,7 +770,9 @@ def gwcs_into_l3(model, wcs):
         l3_wcsinfo.x_ref = -transform["crpix1"].offset.value
         l3_wcsinfo.y_ref = -transform["crpix2"].offset.value
     except IndexError:
-        log.warning('WCS has no clear reference pixel defined by crpix1/crpix2. Assuming reference pixel is center.')
+        log.warning(
+            "WCS has no clear reference pixel defined by crpix1/crpix2. Assuming reference pixel is center."
+        )
         l3_wcsinfo.x_ref = pixel_center[0]
         l3_wcsinfo.y_ref = pixel_center[1]
     world_ref = wcs(l3_wcsinfo.x_ref, l3_wcsinfo.y_ref)
@@ -783,9 +785,11 @@ def gwcs_into_l3(model, wcs):
         l3_wcsinfo.rotation_matrix = transform[
             "pc_rotation_matrix"
         ].matrix.value.tolist()
-    except Exception as excp:
-        log.warning("WCS has no clear rotation matrix defined by pc_rotation_matrix. Calculating one.")
-        l3_wcsinfo.rotation_matrix = utils.calc_rotation_matrix(l3_wcsinfo.orentat, 0.)
+    except Exception:
+        log.warning(
+            "WCS has no clear rotation matrix defined by pc_rotation_matrix. Calculating one."
+        )
+        l3_wcsinfo.rotation_matrix = utils.calc_rotation_matrix(l3_wcsinfo.orentat, 0.0)
 
 
 def calc_pa(wcs, ra, dec):
