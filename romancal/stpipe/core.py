@@ -19,6 +19,10 @@ _LOG_FORMATTER = logging.Formatter(
 _LOG_FORMATTER.converter = time.gmtime
 
 
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
+
+
 class RomanStep(Step):
     """
     Base class for Roman calibration pipeline steps.
@@ -63,14 +67,13 @@ class RomanStep(Step):
                 if hasattr(model.meta.ref_file, ref_name):
                     setattr(model.meta.ref_file, ref_name, ref_file)
                     # getattr(model.meta.ref_file, ref_name).name = ref_file
+            model.meta.ref_file.crds.sw_version = crds_client.get_svn_version()
+            model.meta.ref_file.crds.context_used = crds_client.get_context_used('roman')
 
             # this will only run if 'parent' is none, which happens when an individual
             # step is being run or if self is a RomanPipeline and not a RomanStep.
             if self.parent is None:
-                model.meta.ref_file.crds.sw_version = crds_client.get_svn_version()
-                model.meta.ref_file.crds.context_used = crds_client.get_context_used(
-                    model.crds_observatory
-                )
+                log.info(f"Results used CRDS context: {model.meta.ref_file.crds.context_used}")
 
     def record_step_status(self, model, step_name, success=True):
         """
