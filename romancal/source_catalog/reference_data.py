@@ -6,7 +6,7 @@ import logging
 
 import numpy as np
 from astropy.utils import lazyproperty
-from roman_datamodels.datamodels import MosaicModel
+from roman_datamodels.datamodels import ImageModel, MosaicModel
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -22,8 +22,8 @@ class ReferenceData:
 
     Parameters
     ----------
-    model : `ImageModel`
-        An `ImageModel` of drizzled image.
+    model : `ImageModel` or `MosaicModel`
+        A level-2 or level-3 image data model.
 
     aperture_ee : tuple of 3 int
         The aperture encircled energies to be used for aperture
@@ -40,15 +40,25 @@ class ReferenceData:
     """
 
     def __init__(self, model, aperture_ee):
-        if not isinstance(model, MosaicModel):
+        if not isinstance(model, (ImageModel, MosaicModel)):
             raise ValueError("The input model must be a MosaicModel.")
         self.model = model
 
         self.aperture_ee = self._validate_aperture_ee(aperture_ee)
 
-        self.instrument = self.model.meta.basic.instrument
-        self.optical_element = self.model.meta.basic.optical_element
+        try:
+            # Level-2 data model
+            self.instrument = self.model.meta.instrument.name
+            self.detector = self.model.meta.instrument.detector
+            self.optical_element = self.model.meta.instrument.optical_element
+        except AttributeError:
+            # Level-3 data model
+            self.instrument = self.model.meta.basic.instrument
+            self.detector = "N/A"
+            self.optical_element = self.model.meta.basic.optical_element
+
         log.info(f"Instrument: {self.instrument}")
+        log.info(f"Detector: {self.detector}")
         log.info(f"Optical Element: {self.optical_element}")
 
     @staticmethod

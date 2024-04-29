@@ -34,7 +34,7 @@ def pixel_scale_angle_at_skycoord(skycoord, wcs, offset=1 * u.arcsec):
         The (x, y) pixel coordinate.
 
     scale : `~astropy.units.Quantity`
-        The pixel scale in arcsec/pixel.
+        The pixel scale in arcsec.
 
     angle : `~astropy.units.Quantity`
         The angle (in degrees) measured counterclockwise from the
@@ -59,7 +59,7 @@ def pixel_scale_angle_at_skycoord(skycoord, wcs, offset=1 * u.arcsec):
 
     dx = x_offset - xpos
     dy = y_offset - ypos
-    scale = offset.to(u.arcsec) / (np.hypot(dx, dy) * u.pixel)
+    scale = offset.to(u.arcsec) / np.hypot(dx, dy)
     angle = (np.arctan2(dy, dx) * u.radian).to(u.deg)
 
     return (xpos, ypos), scale, angle

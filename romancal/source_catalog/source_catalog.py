@@ -16,7 +16,7 @@ from astropy.utils import lazyproperty
 from astropy.utils.exceptions import AstropyUserWarning
 from photutils.aperture import CircularAnnulus, CircularAperture, aperture_photometry
 from photutils.segmentation import SourceCatalog
-from roman_datamodels.datamodels import MosaicModel
+from roman_datamodels.datamodels import ImageModel, MosaicModel
 from scipy import ndimage
 from scipy.spatial import KDTree
 
@@ -34,8 +34,8 @@ class RomanSourceCatalog:
 
     Parameters
     ----------
-    model : `MosaicModel`
-        The input `MosaicModel`. The data is assumed to be background
+    model : `ImageModel` or `MosaicModel`
+        The input data model. The image data is assumed to be background
         subtracted.
 
     segment_image : `~photutils.segmentation.SegmentationImage`
@@ -83,11 +83,11 @@ class RomanSourceCatalog:
         aperture_params,
         ci_star_thresholds,
         kernel_fwhm,
-        flux_unit="Jy",
+        flux_unit="uJy",
     ):
 
-        if not isinstance(model, MosaicModel):
-            raise ValueError("The input model must be a MosaicModel.")
+        if not isinstance(model, (ImageModel, MosaicModel)):
+            raise ValueError("The input model must be an ImageModel or MosaicModel.")
         self.model = model  # background was previously subtracted
 
         self.segment_img = segment_img
@@ -95,6 +95,12 @@ class RomanSourceCatalog:
         self.aperture_params = aperture_params
         self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
         self.flux_unit = flux_unit
+
+        self.sb_unit = "MJy/sr"
+        self.l2_unit = "DN/s"
+        self.l2_conv_factor = (
+            self.model.meta.photometry.conversion_megajanskys / self.l2_unit
+        )
 
         if len(ci_star_thresholds) != 2:
             raise ValueError("ci_star_thresholds must contain only 2 items")
@@ -108,16 +114,78 @@ class RomanSourceCatalog:
         self.meta = {}
 
     @lazyproperty
+    def _pixscale_angle(self):
+        ysize, xsize = self.model.data.shape
+        ycen = (ysize - 1) / 2.0
+        xcen = (xsize - 1) / 2.0
+        skycoord = self.wcs.pixel_to_world(xcen, ycen)
+        _, pixscale, angle = pixel_scale_angle_at_skycoord(skycoord, self.wcs)
+        return pixscale, angle
+
+    @lazyproperty
+    def _pixel_scale(self):
+        """
+        The pixel scale in arcseconds at the center of the image.
+        """
+        return self._pixscale_angle[0]
+
+    @lazyproperty
+    def _wcs_angle(self):
+        """
+        The angle (in degrees) measured counterclockwise from the
+        positive x axis to the "North" axis of the celestial coordinate
+        system.
+
+        Measured at the center of the image.
+        """
+        return self._pixscale_angle[1]
+
+    @lazyproperty
     def pixel_area(self):
         """
-        Temporary method to change the placeholder pixel area to
-        something more sensible.
+        The pixel area in steradians.
 
-        The meta value is -999999 sr (placeholder), so we can't use it.
+        If the value is a negative placeholder (e.g., -999999 sr), the
+        value is calculated from the WCS at the center of the image.
         """
-        # TODO: update when a realistic pixel area is available in meta
-        # return self.model.meta.photometry.pixelarea_steradians
-        return 2.58548736e-12 * u.sr  # placeholder value (0.11 arcsec/pix)
+        pixel_area = self.model.meta.photometry.pixelarea_steradians
+        if pixel_area < 0:
+            pixel_area = (self._pixel_scale**2).to(u.sr)
+        return pixel_area
+
+    def convert_l2_to_sb(self):
+        """
+        Convert a level-2 image from units of DN/s to MJy/sr (surface
+        brightness).
+        """
+        if self.model.data.unit != self.l2_unit or self.model.err.unit != self.l2_unit:
+            raise ValueError(
+                f"data and err are expected to be in units of {self.l2_unit}"
+            )
+
+        # the conversion in done in-place to avoid making copies of the data;
+        # use a dictionary to set the value to avoid on-the-fly validation
+        self.model["data"] *= self.l2_conv_factor
+        self.model["err"] *= self.l2_conv_factor
+        self.convolved_data *= self.l2_conv_factor
+
+    def convert_sb_to_l2(self):
+        """
+        Convert the data and error Quantity arrays from MJy/sr (surface
+        brightness) to DN/s (level-2 units).
+
+        This is the inverse operation of `convert_l2_to_sb`.
+        """
+        if self.model.data.unit != self.sb_unit or self.model.err.unit != self.sb_unit:
+            raise ValueError(
+                f"data and err are expected to be in units of {self.sb_unit}"
+            )
+
+        # the conversion in done in-place to avoid making copies of the data;
+        # use a dictionary to set the value to avoid on-the-fly validation
+        self.model["data"] /= self.l2_conv_factor
+        self.model["err"] /= self.l2_conv_factor
+        self.convolved_data /= self.l2_conv_factor
 
     def convert_sb_to_flux_density(self):
         """
@@ -126,11 +194,13 @@ class RomanSourceCatalog:
 
         The flux density unit is defined by self.flux_unit.
         """
-        in_unit = "MJy/sr"
-        if self.model.data.unit != in_unit or self.model.err.unit != in_unit:
-            raise ValueError("data and err are expected to be in units of MJy/sr")
+        if self.model.data.unit != self.sb_unit or self.model.err.unit != self.sb_unit:
+            raise ValueError(
+                f"data and err are expected to be in units of {self.sb_unit}"
+            )
 
-        # use dictionary to set value to avoid on-the-fly validation
+        # the conversion in done in-place to avoid making copies of the data;
+        # use a dictionary to set the value to avoid on-the-fly validation
         self.model["data"] *= self.pixel_area
         self.model["data"] <<= self.flux_unit
         self.model["err"] *= self.pixel_area
@@ -142,7 +212,17 @@ class RomanSourceCatalog:
         """
         Convert the data and error Quantity arrays from flux density units to
         MJy/sr (surface brightness).
+
+        This is the inverse operation of `convert_sb_to_flux_density`.
         """
+        if (
+            self.model.data.unit != self.flux_unit
+            or self.model.err.unit != self.flux_unit
+        ):
+            raise ValueError(
+                f"data and err are expected to be in units of {self.flux_unit}"
+            )
+
         self.model["data"] /= self.pixel_area
         self.model["data"] <<= self.sb_unit
         self.model["err"] /= self.pixel_area
@@ -157,7 +237,7 @@ class RomanSourceCatalog:
         Parameters
         ----------
         flux, flux_err : `~astropy.unit.Quantity`
-            The input flux and error arrays in units of Jy.
+            The input flux and error arrays.
 
         Returns
         -------
@@ -325,12 +405,7 @@ class RomanSourceCatalog:
         The orientation of the source major axis as the position angle
         in degrees measured East of North.
         """
-        ysize, xsize = self.model.data.shape
-        ycen = (ysize - 1) / 2.0
-        xcen = (xsize - 1) / 2.0
-        skycoord = self.wcs.pixel_to_world(xcen, ycen)
-        _, _, angle = pixel_scale_angle_at_skycoord(skycoord, self.wcs)
-        return (180.0 * u.deg) - angle + self.orientation
+        return (180.0 * u.deg) - self._wcs_angle + self.orientation
 
     def _make_aperture_colnames(self, name):
         """
@@ -980,6 +1055,10 @@ class RomanSourceCatalog:
         """
         The final source catalog.
         """
+        # convert L2 data units back to MJy/sr
+        if isinstance(self.model, ImageModel):
+            self.convert_l2_to_sb()
+
         self.convert_sb_to_flux_density()
         self.set_segment_properties()
         self.set_aperture_properties()
@@ -1001,5 +1080,9 @@ class RomanSourceCatalog:
 
         # restore units on input model back to MJy/sr
         self.convert_flux_density_to_sb()
+
+        # restore L2 data units back to DN/s
+        if isinstance(self.model, ImageModel):
+            self.convert_sb_to_l2()
 
         return catalog

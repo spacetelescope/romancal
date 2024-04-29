@@ -5,6 +5,7 @@ Module for the source catalog step.
 import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels, maker_utils
+from roman_datamodels.datamodels import ImageModel, MosaicModel
 
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
@@ -22,8 +23,8 @@ class SourceCatalogStep(RomanStep):
 
     Parameters
     -----------
-    input : str or `MosaicModel`
-        Path to an ASDF file or an `MosaicModel`.
+    input : str, `ImageModel`, or `MosaicModel`
+        Path to an ASDF file, or an `ImageModel` or `MosaicModel`.
     """
 
     class_alias = "source_catalog"
@@ -45,6 +46,11 @@ class SourceCatalogStep(RomanStep):
 
     def process(self, input_model):
         with datamodels.open(input_model) as model:
+            if not isinstance(model, (ImageModel, MosaicModel)):
+                raise ValueError(
+                    "The input model must be an ImageModel or MosaicModel."
+                )
+
             source_catalog_model = maker_utils.mk_datamodel(
                 datamodels.MosaicSourceCatalogModel
             )
@@ -108,7 +114,4 @@ class SourceCatalogStep(RomanStep):
                 segmentation_model.data = segment_img.data.astype(np.uint32)
                 self.save_model(segmentation_model, suffix="segm")
 
-        # ~/files/dev/repos/dev/romancal/romancal/stpipe/core.py:67
-        # AttributeError: No such attribute (ref_file) found in node
-        # nden: schema needs to be updated
         return source_catalog_model
