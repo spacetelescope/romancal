@@ -69,6 +69,8 @@ resample
 
 - Update Level 3 output ``basic`` attribute. [#1188]
 
+- Populate the Level 3 wcsinfo [#1182]
+
 outlier_detection
 -----------------
 
