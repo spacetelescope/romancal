@@ -14,6 +14,8 @@ tweakreg
 general
 -------
 
+- Add preview files to HLP tests [#1199]
+
 - Allow ``ModelContainer`` to work properly with context manager. [#1147]
 
 - Update the ``dqflags`` to use the ones stored in
@@ -50,6 +52,9 @@ stpipe
 
 - Update ``meta.calibration_software_version`` for results of ``Step`` runs to
   record the version of romancal used to produce the result. [#1194]
+
+- Update ``stpipe.core.finalize_results`` to record the CRDS information
+  only if a step uses reference files. [#1201]
 
 resample
 --------
