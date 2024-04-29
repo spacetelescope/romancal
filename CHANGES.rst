@@ -5,6 +5,8 @@ patch_match
 -----------
 
 - Code to determine which patches overlap a given image. [#1161]
+- Plotting utility to show image spatial relationship to matched patches and 
+  candidate patches. [#1204]
 
 tweakreg
 --------
