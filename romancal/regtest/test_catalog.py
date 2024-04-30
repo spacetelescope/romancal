@@ -69,7 +69,6 @@ def test_catalog_l3(rtdata, ignore_asdf_paths):
     catalogfp = asdf.open(outputfn)
     catalog = catalogfp["roman"]["source_catalog"]
     step = SourceCatalogStep()
-    fields = catalog.dtype.names
     assert check_catalog_fields(catalog, step.log, "L3")
 
     # no compare_asdf on the catalogs
@@ -98,7 +97,6 @@ def test_catalog_l2(rtdata, ignore_asdf_paths):
     catalogfp = asdf.open(outputfn)
     catalog = catalogfp["roman"]["source_catalog"]
     step = SourceCatalogStep()
-    fields = catalog.dtype.names
 
     assert check_catalog_fields(catalog, step.log, "L2")
     # no compare_asdf on the catalogs
