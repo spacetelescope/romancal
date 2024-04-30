@@ -71,6 +71,8 @@ resample
 
 - Populate the Level 3 wcsinfo [#1182]
 
+- Make rotation matrix 2d for schema validation [#1205]
+
 outlier_detection
 -----------------
 
