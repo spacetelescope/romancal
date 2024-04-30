@@ -440,3 +440,22 @@ def update_s_region_keyword(model, footprint):
     else:
         model.meta.wcsinfo.s_region = s_region
         log.info(f"Update S_REGION to {model.meta.wcsinfo.s_region}")
+
+
+def list_1d_to_2d(l, n):
+    """Convert 1-dimensional list to 2-dimensional
+
+    Parameters
+    ----------
+    l : list
+        The list to convert.
+
+    n : int
+       The length of the x dimension, or the length of the inner lists.
+
+    Returns
+    -------
+    l2d : list of lists
+        The 2D form
+    """
+    return [l[i:i+n] for i in range(0, len(l), n)]
