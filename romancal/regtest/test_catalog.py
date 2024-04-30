@@ -39,26 +39,33 @@ def test_catalog_l3(rtdata, ignore_asdf_paths):
     catalogfp = asdf.open(outputfn)
     catalog = catalogfp["roman"]["source_catalog"]
     step = SourceCatalogStep()
-
     fields = catalog.dtype.names
+
     has_pos = ("ra_centroid" in fields) and ("dec_centroid" in fields)
     step.log.info(
         "DMS374 MSG: L3 Catalog contains sky coordinates of sources? :"
         + passfail(has_pos)
     )
     assert has_pos
+
     has_flux = "aper_total_flux" in fields
-    has_flux_err = "aper_total_flux_err" in fields
-    has_type = "is_extended" in fields
     step.log.info("DMS375 MSG: L3 Catalog contains fluxes? :" + passfail(has_flux))
     assert has_flux
+
+    has_type = "is_extended" in fields
     step.log.info(
         "DMS376 MSG: L3 Catalog contains source classification? :" + passfail(has_type)
     )
     assert has_type
+
+    has_flux_err = "aper_total_flux_err" in fields
     step.log.info(
         "DMS386 MSG: L3 Catalog contains flux uncertainties? :" + passfail(has_flux_err)
     )
     assert has_flux_err
+
+    has_flags = "flags" in fields
+    step.log.info("DMS387 MSG: L3 Catalog contains DQ flags? :" + passfail(has_flags))
+    assert has_flags
 
     # no compare_asdf on the catalogs

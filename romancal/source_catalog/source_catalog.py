@@ -17,6 +17,7 @@ from astropy.utils.exceptions import AstropyUserWarning
 from photutils.aperture import CircularAnnulus, CircularAperture, aperture_photometry
 from photutils.segmentation import SourceCatalog
 from roman_datamodels.datamodels import ImageModel, MosaicModel
+from roman_datamodels.dqflags import pixel
 from scipy import ndimage
 from scipy.spatial import KDTree
 
@@ -621,6 +622,7 @@ class RomanSourceCatalog:
         for idx, colname in enumerate(self.ci_colnames):
             desc[colname] = self.ci_colname_descriptions[idx]
 
+        desc["flags"] = "Data quality flags"
         desc["is_extended"] = "Flag indicating whether the source is extended"
         desc["sharpness"] = "The DAOFind source sharpness statistic"
         desc["roundness"] = "The DAOFind source roundness statistic"
@@ -629,6 +631,27 @@ class RomanSourceCatalog:
         self.column_desc.update(desc)
 
         return list(desc.keys())
+
+    @lazyproperty
+    def flags(self):
+        """
+        Data quality flags.
+        """
+        xyidx = np.round(self._xypos).astype(int)
+
+        try:
+            # L2 images have a dq array
+            dqflags = self.model.dq[xyidx[:, 1], xyidx[:, 0]]
+            # if dqflags contains the DO_NOT_USE flag, set to DO_NOT_USE
+            # (dq=1), otherwise 0
+            flags = dqflags & pixel.DO_NOT_USE
+
+        except AttributeError:
+            # L3 images
+            mask = self.model.weight == 0
+            flags = mask[xyidx[:, 1], xyidx[:, 0]].astype(int)
+
+        return flags
 
     @lazyproperty
     def _ci_ee_indices(self):
