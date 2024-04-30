@@ -168,3 +168,7 @@ cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 # L3 catalog
 strun romancal.step.SourceCatalogStep ${l3name}_i2d.asdf
 cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
+# L2 catalog
+strun romancal.step.SourceCatalogStep r0000101001001001001_01101_0001_WFI01_cal.asdf
+cp r0000101001001001001_01101_0001_WFI01_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/

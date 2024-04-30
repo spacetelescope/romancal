@@ -15,6 +15,37 @@ def passfail(bool_expr):
     return "Fail"
 
 
+def check_catalog_fields(model, log, modeltype):
+    fields = model.dtype.names
+    has_pos = ("ra_centroid" in fields) and ("dec_centroid" in fields)
+    log.info(
+        f"DMS374 MSG: {modeltype} Catalog contains sky coordinates of sources? :"
+        + passfail(has_pos)
+    )
+
+    has_flux = "aper_total_flux" in fields
+    log.info(f"DMS375 MSG: {modeltype} Catalog contains fluxes? :" + passfail(has_flux))
+
+    has_type = "is_extended" in fields
+    log.info(
+        f"DMS376 MSG: {modeltype} Catalog contains source classification? :"
+        + passfail(has_type)
+    )
+
+    has_flux_err = "aper_total_flux_err" in fields
+    log.info(
+        f"DMS386 MSG: {modeltype} Catalog contains flux uncertainties? :"
+        + passfail(has_flux_err)
+    )
+
+    has_flags = "flags" in fields
+    log.info(
+        f"DMS387 MSG: {modeltype} Catalog contains DQ flags? :" + passfail(has_flags)
+    )
+
+    return has_pos & has_flux & has_type & has_flux_err & has_flags
+
+
 @pytest.mark.bigdata
 @pytest.mark.soctests
 @metrics_logger("DMS374", "DMS375", "DMS376", "DMS386", "DMS387")
@@ -25,12 +56,40 @@ def test_catalog_l3(rtdata, ignore_asdf_paths):
     # DMS386: flux uncertainties
     # DMS387: DQ flags
     inputfn = "r0099101001001001001_F158_visit_0.900.0.50_178199.5_-0.5_i2d.asdf"
-    outputfn = inputfn.replace("i2d", "cat")
+    outputfn = inputfn.replace("_i2d", "_cat")
     rtdata.get_data(f"WFI/image/{inputfn}")
     rtdata.input = inputfn
     rtdata.get_truth(f"truth/WFI/image/{outputfn}")
 
-    outputfn = inputfn.replace("_i2d", "_cat")
+    args = [
+        "romancal.step.SourceCatalogStep",
+        rtdata.input,
+    ]
+    RomanStep.from_cmdline(args)
+    catalogfp = asdf.open(outputfn)
+    catalog = catalogfp["roman"]["source_catalog"]
+    step = SourceCatalogStep()
+    fields = catalog.dtype.names
+    assert check_catalog_fields(catalog, step.log, "L3")
+
+    # no compare_asdf on the catalogs
+
+
+@pytest.mark.bigdata
+@pytest.mark.soctests
+@metrics_logger("DMS374", "DMS375", "DMS376", "DMS386", "DMS387")
+def test_catalog_l2(rtdata, ignore_asdf_paths):
+    # DMS374: positions on ICRF
+    # DMS375: fluxes
+    # DMS376: type of source
+    # DMS386: flux uncertainties
+    # DMS387: DQ flags
+    inputfn = "r0000101001001001001_01101_0001_WFI01_cal.asdf"
+    outputfn = inputfn.replace("cal", "cat")
+    rtdata.get_data(f"WFI/image/{inputfn}")
+    rtdata.input = inputfn
+    rtdata.get_truth(f"truth/WFI/image/{outputfn}")
+
     args = [
         "romancal.step.SourceCatalogStep",
         rtdata.input,
@@ -41,31 +100,5 @@ def test_catalog_l3(rtdata, ignore_asdf_paths):
     step = SourceCatalogStep()
     fields = catalog.dtype.names
 
-    has_pos = ("ra_centroid" in fields) and ("dec_centroid" in fields)
-    step.log.info(
-        "DMS374 MSG: L3 Catalog contains sky coordinates of sources? :"
-        + passfail(has_pos)
-    )
-    assert has_pos
-
-    has_flux = "aper_total_flux" in fields
-    step.log.info("DMS375 MSG: L3 Catalog contains fluxes? :" + passfail(has_flux))
-    assert has_flux
-
-    has_type = "is_extended" in fields
-    step.log.info(
-        "DMS376 MSG: L3 Catalog contains source classification? :" + passfail(has_type)
-    )
-    assert has_type
-
-    has_flux_err = "aper_total_flux_err" in fields
-    step.log.info(
-        "DMS386 MSG: L3 Catalog contains flux uncertainties? :" + passfail(has_flux_err)
-    )
-    assert has_flux_err
-
-    has_flags = "flags" in fields
-    step.log.info("DMS387 MSG: L3 Catalog contains DQ flags? :" + passfail(has_flags))
-    assert has_flags
-
+    assert check_catalog_fields(catalog, step.log, "L2")
     # no compare_asdf on the catalogs
