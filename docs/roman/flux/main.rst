@@ -23,7 +23,7 @@ The output product are ImageModels, but with the flux scale applied to all the d
 
 Flux Application
 ----------------
-If the input data is in :math:`electrons / second`, the flux scale factor, as
+If the input data is in :math:`DN / second`, the flux scale factor, as
 found in the meta ``meta.photometry.conversion_megajanskys``, is simply
 multiplied to the ``data`` and ``err`` arrays. The square of the scale factor is
 multiplied to all the variance arrays. The resultant units is in :math:`MJy/sr`.

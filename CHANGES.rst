@@ -17,6 +17,8 @@ tweakreg
 general
 -------
 
+- Add preview files to HLP tests [#1199]
+
 - Allow ``ModelContainer`` to work properly with context manager. [#1147]
 
 - Update the ``dqflags`` to use the ones stored in
@@ -48,6 +50,15 @@ flux
 
 - Set flux step status for each input. [#1160]
 
+stpipe
+------
+
+- Update ``meta.calibration_software_version`` for results of ``Step`` runs to
+  record the version of romancal used to produce the result. [#1194]
+
+- Update ``stpipe.core.finalize_results`` to record the CRDS information
+  only if a step uses reference files. [#1201]
+
 resample
 --------
 
@@ -58,6 +69,10 @@ resample
 - Updated Level 3 ``cal_step`` attribute creation. [#1165]
 
 - Fix bug that prevented properly update of the resampled output weight and context arrays. [#1181]
+
+- Update Level 3 output ``basic`` attribute. [#1188]
+
+- Populate the Level 3 wcsinfo [#1182]
 
 outlier_detection
 -----------------

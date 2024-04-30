@@ -199,8 +199,9 @@ def ignore_asdf_paths():
         # and other things that will almost certainly change in every case
         "asdf_library",
         "history",
-        "roman.meta.ref_file.crds.sw_version",
         # roman-specific stuff to ignore
+        "roman.meta.ref_file.crds.sw_version",
+        "roman.meta.calibration_software_version",
         "roman.cal_logs",
         "roman.meta.date",
         # roman.meta.filename is used by the ExposurePipeline so should likely

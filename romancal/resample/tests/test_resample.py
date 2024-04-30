@@ -7,10 +7,41 @@ from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
+from roman_datamodels.maker_utils import mk_common_meta, mk_level2_image
 
 from romancal.datamodels import ModelContainer
+from romancal.lib.tests.helpers import word_precision_check
 from romancal.resample import gwcs_drizzle, resample_utils
-from romancal.resample.resample import ResampleData
+from romancal.resample.resample import ResampleData, populate_mosaic_basic
+
+
+# Helper function to create a mock input model with specified metadata
+def create_mock_model(
+    start_time,
+    end_time,
+    visit,
+    segment,
+    pass_,
+    program,
+    survey,
+    optical_element,
+    instrument_name,
+):
+    meta = mk_common_meta()
+    mock_model = mk_level2_image(**{"meta": meta})
+    mock_model.meta.exposure.start_time = Time(start_time, format="mjd")
+    mock_model.meta.exposure.end_time = Time(end_time, format="mjd")
+    mock_model.meta.exposure.mid_time = Time((start_time + end_time) / 2, format="mjd")
+    mock_model.meta.observation.visit = visit
+    mock_model.meta.observation.segment = segment
+    mock_model.meta.observation["pass"] = pass_
+    mock_model.meta.observation.program = program
+    mock_model.meta.observation.survey = survey
+    mock_model.meta.instrument.optical_element = optical_element
+    mock_model.meta.instrument.name = instrument_name
+    mock_model.meta.wcsinfo.vparity = -1
+    mock_model.meta.wcsinfo.v3yangle = -60
+    return mock_model
 
 
 class WfiSca:
@@ -620,3 +651,385 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
 
     assert np.any(output_models_many_to_one[0].weight > 0)
     assert np.any(output_models_many_to_many[0].weight > 0)
+
+
+def test_populate_mosaic_basic_single_exposure(exposure_1):
+    """
+    Test the populate_mosaic_basic function with a given exposure.
+    """
+    input_models = ModelContainer(exposure_1)
+    output_wcs = resample_utils.make_output_wcs(
+        input_models,
+        pscale_ratio=1,
+        pscale=0.000031,
+        rotation=0,
+        shape=None,
+        crpix=(0, 0),
+        crval=(0, 0),
+    )
+    output_model = maker_utils.mk_datamodel(
+        datamodels.MosaicModel, shape=tuple(output_wcs.array_shape)
+    )
+
+    populate_mosaic_basic(output_model, input_models=input_models)
+
+    input_meta = [datamodel.meta for datamodel in input_models]
+
+    assert output_model.meta.basic.time_first_mjd == np.min(
+        [x.exposure.start_time.mjd for x in input_meta]
+    )
+    assert output_model.meta.basic.time_last_mjd == np.max(
+        [x.exposure.end_time.mjd for x in input_meta]
+    )
+    assert output_model.meta.basic.time_mean_mjd == np.mean(
+        [x.exposure.mid_time.mjd for x in input_meta]
+    )
+    assert output_model.meta.basic.visit == (
+        input_meta[0].observation.visit
+        if len({x.observation.visit for x in input_meta}) == 1
+        else -1
+    )
+    assert output_model.meta.basic.segment == (
+        input_meta[0].observation.segment
+        if len({x.observation.segment for x in input_meta}) == 1
+        else -1
+    )
+    assert output_model.meta.basic["pass"] == (
+        input_meta[0].observation["pass"]
+        if len({x.observation["pass"] for x in input_meta}) == 1
+        else -1
+    )
+    assert output_model.meta.basic.program == (
+        input_meta[0].observation.program
+        if len({x.observation.program for x in input_meta}) == 1
+        else "-1"
+    )
+    assert output_model.meta.basic.survey == (
+        input_meta[0].observation.survey
+        if len({x.observation.survey for x in input_meta}) == 1
+        else "MULTIPLE"
+    )
+    assert (
+        output_model.meta.basic.optical_element
+        == input_meta[0].instrument.optical_element
+    )
+    assert output_model.meta.basic.instrument == input_meta[0].instrument.name
+
+
+@pytest.mark.parametrize(
+    "input_models_data, expected_output",
+    [
+        (
+            [
+                (
+                    59000.0,
+                    59000.5,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+                (
+                    59000.5,
+                    59001.0,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+            ],
+            {
+                "time_first_mjd": 59000.0,
+                "time_last_mjd": 59001.0,
+                "time_mean_mjd": 59000.5,
+                "visit": 1,
+                "segment": 1,
+                "pass": 1,
+                "program": "12345",
+                "survey": "N/A",
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+        # different visits
+        (
+            [
+                (
+                    59000.0,
+                    59000.5,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+                (
+                    59000.5,
+                    59001.0,
+                    2,
+                    1,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+            ],
+            {
+                "time_first_mjd": 59000.0,
+                "time_last_mjd": 59001.0,
+                "time_mean_mjd": 59000.5,
+                "visit": -1,
+                "segment": 1,
+                "pass": 1,
+                "program": "12345",
+                "survey": "N/A",
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+        # different segments
+        (
+            [
+                (
+                    59000.0,
+                    59000.5,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+                (
+                    59000.5,
+                    59001.0,
+                    1,
+                    2,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+            ],
+            {
+                "time_first_mjd": 59000.0,
+                "time_last_mjd": 59001.0,
+                "time_mean_mjd": 59000.5,
+                "visit": 1,
+                "segment": -1,
+                "pass": 1,
+                "program": "12345",
+                "survey": "N/A",
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+        # different passes
+        (
+            [
+                (
+                    59000.0,
+                    59000.5,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "HLS",
+                    "F158",
+                    "WFI",
+                ),
+                (
+                    59000.5,
+                    59001.0,
+                    1,
+                    1,
+                    2,
+                    "12345",
+                    "EMS",
+                    "F158",
+                    "WFI",
+                ),
+            ],
+            {
+                "time_first_mjd": 59000.0,
+                "time_last_mjd": 59001.0,
+                "time_mean_mjd": 59000.5,
+                "visit": 1,
+                "segment": 1,
+                "pass": -1,
+                "program": "12345",
+                "survey": "MULTIPLE",
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+        # different programs
+        (
+            [
+                (
+                    59000.0,
+                    59000.5,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+                (
+                    59000.5,
+                    59001.0,
+                    1,
+                    1,
+                    1,
+                    "54321",
+                    "N/A",
+                    "F158",
+                    "WFI",
+                ),
+            ],
+            {
+                "time_first_mjd": 59000.0,
+                "time_last_mjd": 59001.0,
+                "time_mean_mjd": 59000.5,
+                "visit": 1,
+                "segment": 1,
+                "pass": 1,
+                "program": "-1",
+                "survey": "N/A",
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+        # different surveys
+        (
+            [
+                (
+                    59000.0,
+                    59000.5,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "HLS",
+                    "F158",
+                    "WFI",
+                ),
+                (
+                    59000.5,
+                    59001.0,
+                    1,
+                    1,
+                    1,
+                    "12345",
+                    "EMS",
+                    "F158",
+                    "WFI",
+                ),
+            ],
+            {
+                "time_first_mjd": 59000.0,
+                "time_last_mjd": 59001.0,
+                "time_mean_mjd": 59000.5,
+                "visit": 1,
+                "segment": 1,
+                "pass": 1,
+                "program": "12345",
+                "survey": "MULTIPLE",
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+    ],
+)
+def test_populate_mosaic_basic_different_observations(
+    input_models_data, expected_output
+):
+    """Test that populate_mosaic_basic function works properly under different observational scenarios."""
+    input_models = [create_mock_model(*data) for data in input_models_data]
+    output_wcs = resample_utils.make_output_wcs(
+        input_models,
+        pscale_ratio=1,
+        pscale=0.000031,
+        rotation=0,
+        shape=None,
+        crpix=(0, 0),
+        crval=(0, 0),
+    )
+    output_model = maker_utils.mk_datamodel(
+        datamodels.MosaicModel, shape=tuple(output_wcs.array_shape)
+    )
+
+    # Act
+    populate_mosaic_basic(output_model, input_models)
+
+    # Assert
+    assert output_model.meta.basic.time_first_mjd == expected_output["time_first_mjd"]
+    assert output_model.meta.basic.time_last_mjd == expected_output["time_last_mjd"]
+    assert output_model.meta.basic.time_mean_mjd == expected_output["time_mean_mjd"]
+    assert output_model.meta.basic.visit == expected_output["visit"]
+    assert output_model.meta.basic.segment == expected_output["segment"]
+    assert output_model.meta.basic.program == expected_output["program"]
+    assert output_model.meta.basic.survey == expected_output["survey"]
+    assert output_model.meta.basic.optical_element == expected_output["optical_element"]
+    assert output_model.meta.basic.instrument == expected_output["instrument"]
+
+
+def test_l3_wcsinfo(multiple_exposures):
+    """Test the population of the Level 3 wcsinfo block"""
+    expected = maker_utils.mk_mosaic_wcsinfo(
+        **{
+            "ra_ref": 10.00292450000052,
+            "dec_ref": 0.001534500000533253,
+            "x_ref": 106.4579605214774,
+            "y_ref": 80.66617532540977,
+            "rotation_matrix": [
+                [-0.9335804264969954, 0.3583679495458379],
+                [0.3583679495458379, 0.9335804264969954],
+            ],
+            "pixel_scale": 3.100000000097307e-05,
+            "pixel_scale_local": 3.099999999719185e-05,
+            "pixel_shape": (161, 213),
+            "ra_center": 10.002930353020417,
+            "dec_center": 0.0015101325554100666,
+            "ra_corn1": 10.005109345783163,
+            "dec_corn1": -0.001982743978690467,
+            "ra_corn2": 10.006897960220385,
+            "dec_corn2": 0.002676755917536623,
+            "ra_corn3": 10.000733528663718,
+            "dec_corn3": 0.005043059486913547,
+            "ra_corn4": 9.998944914237953,
+            "dec_corn4": 0.00038355958555111314,
+            "orientat_local": 9.826983262839223,
+            "orientat": 9.826978421513601,
+            "projection": "TAN",
+            "s_region": (
+                "POLYGON ICRS 10.005109345783163 -0.001982743978690467 10.006897960220385 "
+                "0.002676755917536623 10.000733528663718 0.005043059486913547 "
+                "9.998944914237953 0.00038355958555111314 "
+            ),
+        }
+    )
+
+    input_models = ModelContainer(multiple_exposures)
+    resample_data = ResampleData(input_models)
+
+    output_model = resample_data.resample_many_to_one()[0]
+
+    assert output_model.meta.wcsinfo.projection == expected.projection
+    assert word_precision_check(output_model.meta.wcsinfo.s_region, expected.s_region)
+    for key in expected.keys():
+        if key not in ["projection", "s_region"]:
+            assert np.allclose(output_model.meta.wcsinfo[key], expected[key])

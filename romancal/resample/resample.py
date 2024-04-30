@@ -1,10 +1,14 @@
 import logging
+from typing import List
 
 import numpy as np
 from astropy import units as u
+from astropy.coordinates import SkyCoord
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels, maker_utils
+from stcal.alignment.util import compute_scale
 
+from ..assign_wcs import utils
 from ..datamodels import ModelContainer
 from . import gwcs_drizzle, resample_utils
 
@@ -152,6 +156,9 @@ class ResampleData:
         self.blank_output = maker_utils.mk_datamodel(
             datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
         )
+
+        # update meta.basic
+        populate_mosaic_basic(self.blank_output, input_models)
 
         # update meta.cal_step
         self.blank_output.meta.cal_step = maker_utils.mk_l3_cal_step(
@@ -714,7 +721,7 @@ def l2_into_l3_meta(l3_meta, l2_meta):
     l3_meta.program = l2_meta.program
 
 
-def gwcs_into_l3(model, wcsinfo):
+def gwcs_into_l3(model, wcs):
     """Update the Level 3 wcsinfo block from a GWCS object
 
     Parameters
@@ -722,7 +729,7 @@ def gwcs_into_l3(model, wcsinfo):
     model : `DataModel`
         The model whose meta is to be updated.
 
-    wcsinfo : `GWCS`
+    wcs : `GWCS`
         GWCS info to transfer into the `meta.wcsinfo` block
 
     Notes
@@ -732,30 +739,151 @@ def gwcs_into_l3(model, wcsinfo):
     by indexing. This is fragile and will be a source of issues.
     """
     l3_wcsinfo = model.meta.wcsinfo
-    transform = wcsinfo.forward_transform
+    transform = wcs.forward_transform
 
-    # Basic WCS info
     l3_wcsinfo.projection = "TAN"
-    l3_wcsinfo.rotation_matrix = transform["pc_rotation_matrix"].matrix.value.tolist()
-    l3_wcsinfo.dec_ref = transform.lat_6.value
-    l3_wcsinfo.ra_ref = transform.lon_6.value
-    # l3_wcsinfo.x_ref = center of mosaic?
-    # l3_wcsinfo.y_ref = center of mosaic?
-    # l3_wcsinfo.s_region = from gwcs.bounding_box
+    l3_wcsinfo.pixel_shape = model.shape
 
-    # Mosaic info
-    # l3_wcsinfo.dec_center = from center of mosaic
-    # l3_wcsinfo.pixel_scale = ???
-    # l3_wcsinfo.pixel_scale_local = ???
-    # l3_wcsinfo.pixel_shape = image shape
-    # l3_wcsinfo.ra_center = from center of mosaic
-    # l3_wcsinfo.ra_corn1 = from bounding box
-    # l3_wcsinfo.ra_corn2 = from bounding box
-    # l3_wcsinfo.ra_corn3 = from bounding box
-    # l3_wcsinfo.ra_corn4 = from bounding box
-    # l3_wcsinfo.dec_corn1 = from bounding box
-    # l3_wcsinfo.dec_corn2 = from bounding box
-    # l3_wcsinfo.dec_corn3 = from bounding box
-    # l3_wcsinfo.dec_corn4 = from bounding box
-    # l3_wcsinfo.orientat = ???
-    # l3_wcsinfo.orientat_local = ???
+    pixel_center = [(v - 1) / 2.0 for v in model.shape[::-1]]
+    world_center = wcs(*pixel_center)
+    l3_wcsinfo.ra_center = world_center[0]
+    l3_wcsinfo.dec_center = world_center[1]
+    l3_wcsinfo.pixel_scale_local = compute_scale(wcs, world_center)
+    l3_wcsinfo.orientat_local = calc_pa(wcs, *world_center)
+
+    try:
+        footprint = utils.create_footprint(wcs, model.shape)
+    except Exception as excp:
+        log.warning("Could not determine footprint due to %s", excp)
+    else:
+        l3_wcsinfo.ra_corn1 = footprint[0][0]
+        l3_wcsinfo.ra_corn2 = footprint[1][0]
+        l3_wcsinfo.ra_corn3 = footprint[2][0]
+        l3_wcsinfo.ra_corn4 = footprint[3][0]
+        l3_wcsinfo.dec_corn1 = footprint[0][1]
+        l3_wcsinfo.dec_corn2 = footprint[1][1]
+        l3_wcsinfo.dec_corn3 = footprint[2][1]
+        l3_wcsinfo.dec_corn4 = footprint[3][1]
+        l3_wcsinfo.s_region = utils.create_s_region(footprint)
+
+    try:
+        l3_wcsinfo.x_ref = -transform["crpix1"].offset.value
+        l3_wcsinfo.y_ref = -transform["crpix2"].offset.value
+    except IndexError:
+        log.warning(
+            "WCS has no clear reference pixel defined by crpix1/crpix2. Assuming reference pixel is center."
+        )
+        l3_wcsinfo.x_ref = pixel_center[0]
+        l3_wcsinfo.y_ref = pixel_center[1]
+    world_ref = wcs(l3_wcsinfo.x_ref, l3_wcsinfo.y_ref)
+    l3_wcsinfo.ra_ref = world_ref[0]
+    l3_wcsinfo.dec_ref = world_ref[1]
+    l3_wcsinfo.pixel_scale = compute_scale(wcs, world_ref)
+    l3_wcsinfo.orientat = calc_pa(wcs, *world_ref)
+
+    try:
+        l3_wcsinfo.rotation_matrix = transform[
+            "pc_rotation_matrix"
+        ].matrix.value.tolist()
+    except Exception:
+        log.warning(
+            "WCS has no clear rotation matrix defined by pc_rotation_matrix. Calculating one."
+        )
+        l3_wcsinfo.rotation_matrix = utils.calc_rotation_matrix(
+            l3_wcsinfo.orientat, 0.0
+        )
+
+
+def calc_pa(wcs, ra, dec):
+    """Calculate position angle at given ra,dec
+
+    Parameters
+    ----------
+    wcs : GWCS
+        The wcs in consideration.
+
+    ra, dec : float, float
+        The ra/dec in degrees.
+
+    Returns
+    -------
+    position_angle : float
+        The position angle in degrees.
+
+    """
+    delta_pix = [v for v in wcs.world_to_pixel(ra, dec)]
+    delta_pix[1] += 1
+    delta_coord = wcs.pixel_to_world(*delta_pix)
+    coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
+
+    return coord.position_angle(delta_coord).degree
+
+
+def populate_mosaic_basic(
+    output_model: datamodels.MosaicModel, input_models: [List, ModelContainer]
+):
+    """
+    Populate basic metadata fields in the output mosaic model based on input models.
+
+    Parameters
+    ----------
+    output_model : MosaicModel
+        Object to populate with basic metadata.
+    input_models : [List, ModelContainer]
+        List of input data models from which to extract the metadata.
+        ModelContainer is also supported.
+
+    Returns
+    -------
+    None
+    """
+
+    input_meta = [datamodel.meta for datamodel in input_models]
+
+    # time data
+    output_model.meta.basic.time_first_mjd = np.min(
+        [x.exposure.start_time.mjd for x in input_meta]
+    )
+    output_model.meta.basic.time_last_mjd = np.max(
+        [x.exposure.end_time.mjd for x in input_meta]
+    )
+    output_model.meta.basic.time_mean_mjd = np.mean(
+        [x.exposure.mid_time.mjd for x in input_meta]
+    )
+
+    # observation data
+    output_model.meta.basic.visit = (
+        input_meta[0].observation.visit
+        if len({x.observation.visit for x in input_meta}) == 1
+        else -1
+    )
+    output_model.meta.basic.segment = (
+        input_meta[0].observation.segment
+        if len({x.observation.segment for x in input_meta}) == 1
+        else -1
+    )
+    output_model.meta.basic["pass"] = (
+        input_meta[0].observation["pass"]
+        if len({x.observation["pass"] for x in input_meta}) == 1
+        else -1
+    )
+    output_model.meta.basic.program = (
+        input_meta[0].observation.program
+        if len({x.observation.program for x in input_meta}) == 1
+        else "-1"
+    )
+    output_model.meta.basic.survey = (
+        input_meta[0].observation.survey
+        if len({x.observation.survey for x in input_meta}) == 1
+        else "MULTIPLE"
+    )
+
+    # instrument data
+    output_model.meta.basic.optical_element = input_meta[0].instrument.optical_element
+    output_model.meta.basic.instrument = input_meta[0].instrument.name
+
+    # skycell location
+    output_model.meta.basic.location_name = "TBD"
+
+    # association product type
+    output_model.meta.basic.product_type = "TBD"
