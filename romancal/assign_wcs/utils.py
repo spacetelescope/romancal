@@ -458,4 +458,4 @@ def list_1d_to_2d(l, n):
     l2d : list of lists
         The 2D form
     """
-    return [l[i:i+n] for i in range(0, len(l), n)]
+    return [l[i : i + n] for i in range(0, len(l), n)]
