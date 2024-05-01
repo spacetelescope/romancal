@@ -1,6 +1,6 @@
 import logging
-from typing import List
 import os
+from typing import List
 
 import numpy as np
 from astropy import units as u
