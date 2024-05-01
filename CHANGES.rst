@@ -92,6 +92,11 @@ flux
 
 - Create FluxStep to apply the flux correction to Level 2 data. [#1120]
 
+source_catalog
+--------------
+
+- Added Source Catalog Step. [#1102]
+
 
 0.14.0 (2024-02-12)
 ===================
