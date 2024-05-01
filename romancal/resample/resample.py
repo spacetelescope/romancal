@@ -1,5 +1,6 @@
 import logging
 from typing import List
+import os
 
 import numpy as np
 from astropy import units as u
@@ -323,7 +324,11 @@ class ResampleData:
                 ymax=ymax,
             )
             del data, inwht
-            output_model.meta.resample.members.append(str(img.meta.filename))
+            try:
+                filename = os.path.basename(img._asdf._fname)
+            except:
+                filename = img.meta.filename
+            output_model.meta.resample.members.append(str(filename))
 
         # Resample variances array in self.input_models to output_model
         self.resample_variance_array("var_rnoise", output_model)
