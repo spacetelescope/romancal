@@ -178,8 +178,9 @@ class ResampleData:
         self.blank_output.meta.wcs = self.output_wcs
         gwcs_into_l3(self.blank_output, self.output_wcs)
         self.blank_output.cal_logs = stnode.CalLogs()
-        self.blank_output['individual_image_cal_logs'] = (
-            [model.cal_logs for model in input_models])
+        self.blank_output["individual_image_cal_logs"] = [
+            model.cal_logs for model in input_models
+        ]
 
         self.output_models = ModelContainer()
 
