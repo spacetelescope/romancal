@@ -97,7 +97,7 @@ class SkyMatchStep(RomanStep):
                         gim, "COMPLETE" if gim.is_sky_valid else "SKIPPED"
                     )
 
-        return input if self._is_asn else img
+        return ModelContainer([x.meta["image_model"] for x in images])
 
     def _imodel2skyim(self, image_model):
         input_image_model = image_model
