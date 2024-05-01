@@ -1,6 +1,10 @@
 0.14.1 (unreleased)
 ==================
 
+skymatch
+--------
+- Update step to always return a ``ModelContainer``. [#1208]
+
 patch_match
 -----------
 
