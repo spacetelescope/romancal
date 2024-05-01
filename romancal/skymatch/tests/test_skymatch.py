@@ -1,3 +1,4 @@
+import os
 from itertools import product
 
 import astropy.units as u
@@ -13,7 +14,6 @@ from roman_datamodels.maker_utils import mk_level2_image
 
 from romancal.datamodels.container import ModelContainer
 from romancal.skymatch import SkyMatchStep
-import os
 
 
 def mk_gwcs(shape, sky_offset=[0, 0] * u.arcsec, rotate=0 * u.deg):
