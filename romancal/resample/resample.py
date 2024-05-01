@@ -50,7 +50,7 @@ class ResampleData:
         kernel="square",
         fillval="INDEF",
         wht_type="ivm",
-        good_bits=0,
+        good_bits="0",
         pscale_ratio=1.0,
         pscale=None,
         **kwargs,
@@ -120,7 +120,6 @@ class ResampleData:
         if output_wcs:
             # use the provided WCS object
             self.output_wcs = output_wcs
-            #self["output_wcs"] = output_wcs
             if output_shape is not None:
                 self.output_wcs.array_shape = output_shape[::-1]
         else:
@@ -299,7 +298,9 @@ class ResampleData:
         members = []
         for img in self.input_models:
             inwht = resample_utils.build_driz_weight(
-                img, weight_type=self.weight_type, good_bits=self.good_bits
+                img,
+                weight_type=self.weight_type,
+                good_bits=self.good_bits,
             )
             if not hasattr(img.meta, "background"):
                 self._create_background_attribute(img)
