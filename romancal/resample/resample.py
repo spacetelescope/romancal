@@ -789,9 +789,8 @@ def gwcs_into_l3(model, wcs):
         log.warning(
             "WCS has no clear rotation matrix defined by pc_rotation_matrix. Calculating one."
         )
-        l3_wcsinfo.rotation_matrix = utils.calc_rotation_matrix(
-            l3_wcsinfo.orientat, 0.0
-        )
+        rotation_matrix = utils.calc_rotation_matrix(l3_wcsinfo.orientat, 0.0)
+        l3_wcsinfo.rotation_matrix = utils.list_1d_to_2d(rotation_matrix, 2)
 
 
 def calc_pa(wcs, ra, dec):
