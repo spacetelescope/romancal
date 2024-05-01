@@ -106,7 +106,7 @@ def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
     img_1 = base_image()
     img_1.meta.filename = "img_1.asdf"
     img_2 = base_image()
-    img_1.meta.filename = "img_2.asdf"
+    img_2.meta.filename = "img_2.asdf"
 
     mc = ModelContainer([img_1, img_2])
 
@@ -360,3 +360,52 @@ def test_outlier_do_detection_do_not_find_outliers_in_identical_images(
     }
     # assert that DQ array has nothing flagged as outliers
     assert [np.count_nonzero(x.dq) for x in step.input_models] == [0, 0, 0]
+
+
+@pytest.mark.parametrize(
+    "input_type",
+    [
+        "ModelContainer",
+        "ASNFile",
+        "DataModelList",
+        "ASDFFilenameList",
+    ],
+)
+def test_skymatch_always_returns_modelcontainer_with_updated_datamodels(
+    input_type,
+    base_image,
+    tmp_path,
+    create_mock_asn_file,
+):
+    """Test that the OutlierDetectionStep always returns a ModelContainer
+    with updated data models after processing different input types."""
+
+    os.chdir(tmp_path)
+    img_1 = base_image()
+    img_1.meta.filename = "img_1.asdf"
+    img_2 = base_image()
+    img_2.meta.filename = "img_2.asdf"
+
+    mc = ModelContainer([img_1, img_2])
+
+    mc.save(dir_path=tmp_path)
+
+    step_input_map = {
+        "ModelContainer": mc,
+        "ASNFile": create_mock_asn_file(
+            tmp_path,
+            members_mapping=[
+                {"expname": img_1.meta.filename, "exptype": "science"},
+                {"expname": img_2.meta.filename, "exptype": "science"},
+            ],
+        ),
+        "DataModelList": [img_1, img_2],
+        "ASDFFilenameList": [img_1.meta.filename, img_2.meta.filename],
+    }
+
+    step_input = step_input_map.get(input_type)
+
+    res = OutlierDetectionStep.call(step_input)
+
+    assert isinstance(res, ModelContainer)
+    assert all(x.meta.cal_step.outlier_detection == "COMPLETE" for x in res)
