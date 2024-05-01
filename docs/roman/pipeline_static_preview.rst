@@ -12,7 +12,7 @@ following requirements for each ``ImageModel``:
 - overlay indicating orientation
 
 The ``roman_static_preview`` script creates downsampled images from ASDF files containing
-an ``ImageModel``, with an optional compass rose overlayed onto the image indicating orientation.
+an ``ImageModel``, with an optional compass rose overlaid onto the image indicating orientation.
 
 Installation
 ------------

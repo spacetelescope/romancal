@@ -13,7 +13,7 @@ or residual non-linearities or noise can lead to the false detection of jumps in
 due to departure from linearity.
 
 The ``jump`` step will automatically skip execution if the input data contain fewer
-than 3 groups in the integration, because the baseline algorthim requires two first
+than 3 groups in the integration, because the baseline algorithm requires two first
 differences to work.
 
 Algorithm
@@ -65,7 +65,7 @@ cores on the host computer and the value of the max_cores input parameter. By
 default the step runs on a single processor. At the other extreme if max_cores is
 set to 'all', it will use all available cores (real and virtual). Testing has shown
 a reduction in the elapsed time for the step proportional to the number of real
-cores used. Using the virtual cores also reduces the elasped time but at a slightly
+cores used. Using the virtual cores also reduces the elapsed time but at a slightly
 lower rate than the real cores.
 
 If multiprocessing is requested the input cube will be divided into a number of

@@ -15,7 +15,7 @@ values are assumed to be in units of e/DN.
 Type Specific Keyword Attributes for GAIN
 +++++++++++++++++++++++++++++++++++++++++
 In addition to the standard reference file keyword attributes listed above,
-the following keyword attributess are *required* in GAIN reference files,
+the following keyword attributes are *required* in GAIN reference files,
 because they are used as CRDS selectors
 (see :ref:`gain_selectors`):
 

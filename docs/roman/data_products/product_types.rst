@@ -39,7 +39,7 @@ the user is running the pipeline. The input for each optional step is the output
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
 | :ref:`dark_current <dark_current_step>`        |                 | darkcurrent (opt)        | RampModel        | DN                  | 3-D dark current subtracted data      |
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
-| :ref:`ramp_fitting <ramp_fitting_step>`        |                 | rampfit (opt)            | ImageModel       | DN/s        	       | 2-D slope corrected data              |
+| :ref:`ramp_fitting <ramp_fitting_step>`        |                 | rampfit (opt)            | ImageModel       | DN/s                | 2-D slope corrected data              |
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
 | :ref:`assign_wcs <assign_wcs_step>`            |                 | assignwcs (opt)          | ImageModel       | DN/s                | 2-D data with gwcs                    |
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
@@ -59,7 +59,7 @@ the user is running the pipeline. The input for each optional step is the output
 High Level Processing Steps And Data Products
 +++++++++++++++++++++++++++++++++++++++++++++
 
-The following table contain lists of all data product types for the HighLevel Processsing (HLP) Pipeline, as given by their file name suffix.
+The following table contain lists of all data product types for the HighLevel Processing (HLP) Pipeline, as given by their file name suffix.
 The input to the HLP is an association file (in JSON format), the output is a combined image.
 All the other are optional (opt) files that can be produced when
 the user is running the pipeline. The input for each optional step is the output of the preceding step.
