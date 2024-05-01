@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import logging
+import os
 from os.path import basename, isfile
 import numpy as np
 import re
@@ -8,7 +9,6 @@ from astropy.modeling import models
 from astropy import coordinates
 from astropy import units as u
 from gwcs import WCS, coordinate_frames
-#from gwcs.wcstools import wcs_from_fiducial
 from asdf import AsdfFile
 import asdf
 import pdb
@@ -16,15 +16,14 @@ import pdb
 import romancal.datamodels.filetype as filetype
 from romancal.datamodels import ModelContainer
 import roman_datamodels as rdm
-#from roman_datamodels import maker_utils
 
 # step imports
+from romancal.assign_wcs import utils as awcs_utils
 from romancal.flux import FluxStep
 from romancal.outlier_detection import OutlierDetectionStep
+from romancal.patch_match import patch_match
 from romancal.resample import ResampleStep, resample_utils
 from romancal.skymatch import SkyMatchStep
-#from romancal.assign_wcs import AssignWcsStep
-from romancal.assign_wcs import utils as awcs_utils
 
 from ..stpipe import RomanPipeline
 
@@ -80,50 +79,47 @@ class HighLevelPipeline(RomanPipeline):
             self.outlier_detection.suffix = "outlier_detection"
             result = self.outlier_detection(result)
             #
-            # This will be replaced with a call to get a record based on a skycell name
-            skycell_record = np.array((463181, '2742.630.31.81', 269.81166407333336, 66.09965144, 1781.5, 1781.5, 355.9788   , 3564, 3564,   67715.5, -110484.5, 269.66579575,
-                                       65.99686878, 269.64830329, 66.0952398 , 269.89132874, 66.10234972, 269.90791186, 66.00394719, 0.1, 274.28571429, 63., 0.))
-            
-            # check to see if the product name contains a skycell name
+             # check to see if the product name contains a skycell name & if true get the skycell record
             product_name = input.asn_table["products"][0]["name"]
-            #pdb.set_trace()
+            skycell_name =  product_name.split("_")[3]
+            
+            #if this is a valid skycell name load the database and get the skycell record
+            if(re.match(r'r\d{3}\w{2}\d{2}x\d{2}y\d{2}', skycell_name)):
+                skycell_record = patch_match.PATCH_TABLE[np.where(patch_match.PATCH_TABLE['name'][:] == skycell_name)[0][0]]
+                log.info("Skycell record %s:", skycell_record)
 
-            if product_name.split("_")[3] in skycell_record[1]:
-                # the skycell names are in flux, the latest format for the skycell part
-                # these should be moved to a function/functions
-                # seems to be r270dm90x99y99
-                # example of product name "r0099101001001001001_F158_visit_2742_630_30_76_-05"
+            if skycell_name in skycell_record['name']:
+                # skycell name are in the form of r270dm90x99y99
+                # example of product name "r0099101001001001001_F158_visit_r270dm90x99y99"
                 skycell_root = re.findall('^[^%\n\r]*_', product_name)[0]
-                skycell_ra = "r" + str(skycell_record[2])
-                # construct the dec value with m for negative dec values
-                if float(skycell_record[2]) < 0.:
-                    skycell_dec = "dm" + str(np.abs(skycell_record[3]))
-                else:
-                    skycell_dec = "d" + str(skycell_record[3])
-                skycell_file_name = skycell_root + skycell_ra + skycell_dec + "x" + str(skycell_record[4]) + \
-                                                "y" + str(skycell_record[5])
+                skycell_file_name = skycell_root + skycell_name + "_i2d.asdf"
                 
                 # check to see if there exists a skycell on disk if not create it
                 if not isfile(skycell_file_name): 
                 # extract the wcs info from the record for generate_tan_wcs
-                    log.info("Creating skycell image at ra: %f  dec %f", float(skycell_record[2]),  float(skycell_record[3]) )
+                    log.info("Creating skycell image at ra: %f  dec %f", float(skycell_record['ra_center']),  float(skycell_record['dec_center']) )
                     skycell_wcs = generate_tan_wcs( skycell_record )
                     #skycell_wcs.bounding_box = bounding_box
                     
-                # For resample to use an external grid we need to pass it the skycell gwcs object
-                # Currently we cannot do that directly so create an asdf file to read the skycell gwcs object
-                wcs_tree = {"wcs": skycell_wcs}
-                wcs_file = AsdfFile(wcs_tree)
-                wcs_file.write_to("skycell_wcs.asdf")
-                self.resample.output_wcs = "skycell_wcs.asdf"
-                self.resample.output_shape = (int(skycell_record[7]), int(skycell_record[8]))
-                log.info("Resampling using %s  and data shape %s", self.resample.output_wcs, self.resample.output_shape)
-                wcs_file = asdf.open( self.resample.output_wcs)
-                self.suffix = "i2d"
-                result = self.resample(result)
-                self.output_file = input.asn_table["products"][0]["name"]
+                    # For resample to use an external grid we need to pass it the skycell gwcs object
+                    # Currently we cannot do that directly so create an asdf file to read the skycell gwcs object
+                    wcs_tree = {"wcs": skycell_wcs}
+                    wcs_file = AsdfFile(wcs_tree)
+                    wcs_file.write_to("skycell_wcs.asdf")
+                    self.resample.output_wcs = "skycell_wcs.asdf"
+                    self.resample.output_shape = (int(skycell_record['nx']), int(skycell_record['ny']))
+                    log.info("Resampling using %s  and data shape %s", self.resample.output_wcs, self.resample.output_shape)
+                    wcs_file = asdf.open( self.resample.output_wcs)
+                    self.suffix = "i2d"
+                    result = self.resample(result)
+                    self.output_file = input.asn_table["products"][0]["name"]
+                else:
+                    log.info("resampling a mosaic file is not yet supported")
+                    exit(0)
+
             else:
                 self.resample.suffix = "i2d"
+                pdb.set_trace()
                 result = self.resample(result)
                 self.suffix = "i2d"
                 if input_filename:
@@ -135,18 +131,16 @@ class HighLevelPipeline(RomanPipeline):
 def generate_tan_wcs(skycell_record, shiftx=0, shifty=0):
     # extract the wcs info from the record for generate_tan_wcs
     # we need the scale, ra, dec, bounding_box
-    # Once we have an official skycell db the indexes below should
-    # be replaced with the field name to be less fragile. 
 
-    scale = float(skycell_record[19])
-    ra_center = float(skycell_record[2])
-    dec_center = float(skycell_record[3])
+    scale = float(skycell_record['pixel_scale'])
+    ra_center = float(skycell_record['ra_center'])
+    dec_center = float(skycell_record['dec_center'])
     bounding_box = (
-        (-0.5, float(skycell_record[7]) + 0.5),
-        (-0.5, float(skycell_record[8]) + 0.5),
+        (-0.5, float(skycell_record['x_center']) + 0.5),
+        (-0.5, float(skycell_record['y_center']) + 0.5),
             )
-    shiftx = bounding_box[0][1]/2
-    shifty = bounding_box[1][1]/2
+    shiftx = bounding_box[0][1]
+    shifty = bounding_box[1][1]
     
     # components of the model
     shift = models.Shift(shiftx) & models.Shift(shifty)
