@@ -21,7 +21,7 @@ Optimal Least-Square ('ols') and Optimal Least-Square for Uneven ramps
 `used by JWST <https://jwst-pipeline.readthedocs.io/en/stable/jwst/ramp_fitting/description.html>`_
 and is further :ref:`described here <rampfit-algorithm-ols>`.
 
-The 'ols_22' algorithm is based on `Casertano et al, STScI Technical Document,
+The 'ols_cas22' algorithm is based on `Casertano et al, STScI Technical Document,
 2022
 <https://www.stsci.edu/files/live/sites/www/files/home/roman/_documents/Roman-STScI-000394_DeterminingTheBestFittingSlope.pdf>`_.
 The implementation is what is described in this document.

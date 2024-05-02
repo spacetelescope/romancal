@@ -113,7 +113,22 @@ class TestDescriptionPlugin:
 
 @pytest.fixture(scope="function")
 def create_mock_asn_file():
-    def _create_asn_file(tmp_path, members_mapping=None):
+    def _create_asn_file(tmp_path: str, members_mapping: dict = None) -> str:
+        """
+        Create a mock association file with the provided members mapping.
+
+        Parameters
+        ----------
+        tmp_path : str
+            Path to the temporary directory to store the association file.
+        members_mapping : list, optional
+            Mapping of members to include in the association file (default: None).
+
+        Returns
+        -------
+        str
+            Path to the created association file.
+        """
         asn_content = """
             {
                 "asn_type": "None",
@@ -143,7 +158,7 @@ def create_mock_asn_file():
                 ]
             }
         """
-        if members_mapping is not None:
+        if members_mapping:
             asn_dict = json.loads(asn_content)
             asn_dict["products"][0]["members"] = []
             for x in members_mapping:

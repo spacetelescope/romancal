@@ -14,7 +14,7 @@ used in estimating the expected noise in each pixel.
 Type Specific Keyword Attributes for READNOISE
 ++++++++++++++++++++++++++++++++++++++++++++++
 In addition to the standard reference file keyword attributes listed above,
-the following keyword attributess are *required* in READNOISE reference files,
+the following keyword attributes are *required* in READNOISE reference files,
 because they are used as CRDS selectors
 (see :ref:`readnoise_selectors`):
 

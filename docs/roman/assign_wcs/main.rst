@@ -66,7 +66,7 @@ backward direction:
   >>> x1, y1 = image.meta.wcs.invert(ra, dec)
 
 There are methods which allow the result of evaluating the WCS object
-to be an ``astropy.SkyCoord`` objext (as opposed to numbers) which allows
+to be an ``astropy.SkyCoord`` object (as opposed to numbers) which allows
 further transformation of coordinates to different coordinate frames.
 
 
@@ -85,7 +85,7 @@ coordinate system using a package called `PySIAF <https://github.com/spacetelesc
 
   >>> import pysiaf
   >>> siaf = pysiaf.Siaf('Roman')
-  >>> siaf.apertures # prints the names o fall apertures in the SIAF
+  >>> siaf.apertures # prints the names of all apertures in the SIAF
   >>> ap = siaf['WFI01_FULL']
   >>> V2_REF, V3_REF = ap.get_reference_point('tel')
 

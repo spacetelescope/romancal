@@ -22,12 +22,13 @@ Individual steps and pipelines (consisting of a series of steps) can be run
 from the command line using the ``strun`` command:
 ::
 
-    $ strun <pipeline_name or class_name> input_file>
+    $ strun <pipeline_name or class_name> input_file
 
 The first argument to ``strun`` must be one of either a pipeline name, python
 class of the step or pipeline to be run. The second argument to
 ``strun`` is the name of the input data file to be processed.
-For a list of all the options available for ``strun``, please read the `STPIPE Documentation <https://stpipe.readthedocs.io/en/latest/genindex.html>`_.
+For a list of all the options available for ``strun``, please read the
+`STPIPE Documentation <https://roman-pipeline.readthedocs.io/en/latest/roman/stpipe/index.html>`_.
 
 For example, the exposure level  pipeline is implemented by the class
 :ref:`romancal.pipeline.ExposurePipeline <exposure_pipeline>`. The command to
