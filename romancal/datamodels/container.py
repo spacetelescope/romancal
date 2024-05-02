@@ -153,6 +153,7 @@ class ModelContainer(Sequence):
         self.asn_table = {}
         self.asn_table_name = None
         self.asn_pool_name = None
+        self.filepaths = None
 
         try:
             init = Path(init)
@@ -179,6 +180,10 @@ class ModelContainer(Sequence):
                         "Input must be an ASN file or a list of either strings "
                         "(full path to ASDF files) or Roman datamodels."
                     )
+                if is_all_string or is_all_path:
+                    self.filepaths = [op.basename(m) for m in self._models]
+                else:
+                    self.filepaths = getattr(init, 'filepaths', None)
         else:
             if is_association(init):
                 self.from_asn(init)
@@ -336,9 +341,11 @@ class ModelContainer(Sequence):
         asn_dir = op.dirname(asn_file_path) if asn_file_path else ""
         # Only handle the specified number of members.
         sublist = infiles[: self.asn_n_members] if self.asn_n_members else infiles
+        self.filepaths = []
         try:
             for member in sublist:
                 filepath = op.join(asn_dir, member["expname"])
+                self.filepaths.append(op.basename(filepath))
                 update_model = any(attr in member for attr in RECOGNIZED_MEMBER_FIELDS)
                 if update_model or self._save_open:
                     m = rdm.open(filepath, memmap=self._memmap)
