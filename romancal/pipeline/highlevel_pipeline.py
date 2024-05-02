@@ -1,17 +1,13 @@
 #!/usr/bin/env python
 import logging
-import os
 from os.path import basename, isfile
 import numpy as np
 import re
-import functools
 from astropy.modeling import models
 from astropy import coordinates
 from astropy import units as u
 from gwcs import WCS, coordinate_frames
-from asdf import AsdfFile
 import asdf
-import pdb
 
 import romancal.datamodels.filetype as filetype
 from romancal.datamodels import ModelContainer
@@ -104,7 +100,7 @@ class HighLevelPipeline(RomanPipeline):
                     # For resample to use an external grid we need to pass it the skycell gwcs object
                     # Currently we cannot do that directly so create an asdf file to read the skycell gwcs object
                     wcs_tree = {"wcs": skycell_wcs}
-                    wcs_file = AsdfFile(wcs_tree)
+                    wcs_file = asdf.AsdfFile(wcs_tree)
                     wcs_file.write_to("skycell_wcs.asdf")
                     self.resample.output_wcs = "skycell_wcs.asdf"
                     self.resample.output_shape = (int(skycell_record['nx']), int(skycell_record['ny']))
@@ -119,7 +115,6 @@ class HighLevelPipeline(RomanPipeline):
 
             else:
                 self.resample.suffix = "i2d"
-                pdb.set_trace()
                 result = self.resample(result)
                 self.suffix = "i2d"
                 if input_filename:
