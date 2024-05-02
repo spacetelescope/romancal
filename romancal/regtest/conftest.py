@@ -204,6 +204,7 @@ def ignore_asdf_paths():
         "roman.meta.calibration_software_version",
         "roman.cal_logs",
         "roman.meta.date",
+        "roman.individual_image_cal_logs",
         # roman.meta.filename is used by the ExposurePipeline so should likely
         # not be ignored here
         # "roman.meta.filename",
