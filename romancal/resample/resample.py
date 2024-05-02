@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import List
 
 import numpy as np
@@ -327,8 +326,11 @@ class ResampleData:
             del data, inwht
             members.append(str(img.meta.filename))
 
-        members = (members if self.input_models.filepaths is None
-                   else self.input_models.filepaths)
+        members = (
+            members
+            if self.input_models.filepaths is None
+            else self.input_models.filepaths
+        )
         output_model.meta.resample.members = members
 
         # Resample variances array in self.input_models to output_model

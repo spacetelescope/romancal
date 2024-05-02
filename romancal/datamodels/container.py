@@ -183,7 +183,7 @@ class ModelContainer(Sequence):
                 if is_all_string or is_all_path:
                     self.filepaths = [op.basename(m) for m in self._models]
                 else:
-                    self.filepaths = getattr(init, 'filepaths', None)
+                    self.filepaths = getattr(init, "filepaths", None)
         else:
             if is_association(init):
                 self.from_asn(init)
