@@ -18,6 +18,8 @@ tweakreg
 general
 -------
 
+- Initial resample to a skycell in the hlp [#1214]
+
 - Add preview files to HLP tests [#1199]
 
 - Allow ``ModelContainer`` to work properly with context manager. [#1147]
