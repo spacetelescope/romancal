@@ -1,6 +1,10 @@
 0.14.1 (unreleased)
 ==================
 
+skymatch
+--------
+- Update step to always return a ``ModelContainer``. [#1208]
+
 patch_match
 -----------
 
@@ -71,6 +75,10 @@ resample
 
 - Update Level 3 output ``basic`` attribute. [#1188]
 
+- Populate the Level 3 wcsinfo [#1182]
+
+- Make rotation matrix 2d for schema validation [#1205]
+
 outlier_detection
 -----------------
 
@@ -89,6 +97,11 @@ flux
 ----
 
 - Create FluxStep to apply the flux correction to Level 2 data. [#1120]
+
+source_catalog
+--------------
+
+- Added Source Catalog Step. [#1102]
 
 
 0.14.0 (2024-02-12)

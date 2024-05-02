@@ -4,7 +4,7 @@ Jump Detection for Even Ramps
 
 .. warning::
 
-    This step can only be run on evenly-spaced ramps. Using turning this step
+    This step can only be run on evenly-spaced ramps. Using this step
     will turn off the jump detection algorithm integrated into ramp fitting.
 
 .. toctree::
