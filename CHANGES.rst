@@ -60,6 +60,8 @@ stpipe
 - Update ``stpipe.core.finalize_results`` to record the CRDS information
   only if a step uses reference files. [#1201]
 
+- Populate logs for L3 files in addition to L2 files [#1207]
+
 resample
 --------
 
@@ -76,6 +78,8 @@ resample
 - Populate the Level 3 wcsinfo [#1182]
 
 - Make rotation matrix 2d for schema validation [#1205]
+
+- Include logs of individual L2 products [#1207]
 
 outlier_detection
 -----------------

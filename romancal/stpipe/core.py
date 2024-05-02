@@ -7,7 +7,7 @@ import logging
 import time
 
 import roman_datamodels as rdm
-from roman_datamodels.datamodels import ImageModel
+from roman_datamodels.datamodels import ImageModel, MosaicModel
 from stpipe import Pipeline, Step, crds_client
 
 from ..lib.suffix import remove_suffix
@@ -58,7 +58,7 @@ class RomanStep(Step):
 
         model.meta.calibration_software_version = importlib.metadata.version("romancal")
 
-        if isinstance(model, ImageModel):
+        if isinstance(model, (ImageModel, MosaicModel)):
             for log_record in self.log_records:
                 model.cal_logs.append(_LOG_FORMATTER.format(log_record))
 
