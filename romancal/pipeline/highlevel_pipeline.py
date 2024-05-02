@@ -138,7 +138,7 @@ def generate_tan_wcs(skycell_record, shiftx=0, shifty=0):
     shifty = bounding_box[1][1]
     
     # components of the model
-    shift = models.Shift(shiftx) & models.Shift(shifty)
+    #shift = models.Shift(shiftx) & models.Shift(shifty)
 
     # select a scale for the skycell image, this will come from INS and may
     # be optimized for the different survey programs
