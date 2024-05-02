@@ -32,7 +32,7 @@ process.
    This Output is active in parallel with either the 32 Science Outputs or the 1 Guide Window Output.
 
  - resultantdq: An array that flags the location of any missing data discovered in
-   the data formating process.
+   the data formatting process.
 
 
 Ramp data: ``ramp``

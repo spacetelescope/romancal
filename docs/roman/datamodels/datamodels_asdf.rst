@@ -140,7 +140,7 @@ Using the info method
 ---------------------
 
 You can examine a roman data model using the info and search methods provided
-from the asdf package. The info fuction will print a representation of the
+from the asdf package. The info function will print a representation of the
 asdf tree.
 
 .. code:: python

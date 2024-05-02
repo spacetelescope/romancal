@@ -1,3 +1,4 @@
+import os
 from itertools import product
 
 import astropy.units as u
@@ -370,3 +371,58 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
             assert abs(np.mean(im.data[dq_mask]).value - slev) < 0.01
         else:
             assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
+
+
+@pytest.mark.parametrize(
+    "input_type",
+    [
+        "ModelContainer",
+        "ASNFile",
+        "DataModelList",
+        "ASDFFilenameList",
+    ],
+)
+def test_skymatch_always_returns_modelcontainer_with_updated_datamodels(
+    input_type,
+    mk_sky_match_image_models,
+    tmp_path,
+    create_mock_asn_file,
+):
+    """Test that the SkyMatchStep always returns a ModelContainer
+    with updated data models after processing different input types."""
+
+    os.chdir(tmp_path)
+    [im1a, im1b, im2a, im2b, im3], dq_mask = mk_sky_match_image_models
+
+    im1a.meta.filename = "im1a.asdf"
+    im1b.meta.filename = "im1b.asdf"
+    im2a.meta.filename = "im2a.asdf"
+    im2b.meta.filename = "im2b.asdf"
+    im3.meta.filename = "im3.asdf"
+
+    mc = ModelContainer([im1a, im1b, im2a, im2b, im3])
+    mc.save(dir_path=tmp_path)
+
+    step_input_map = {
+        "ModelContainer": mc,
+        "ASNFile": create_mock_asn_file(
+            tmp_path,
+            members_mapping=[
+                {"expname": im1a.meta.filename, "exptype": "science"},
+                {"expname": im1b.meta.filename, "exptype": "science"},
+                {"expname": im2a.meta.filename, "exptype": "science"},
+                {"expname": im2b.meta.filename, "exptype": "science"},
+                {"expname": im3.meta.filename, "exptype": "science"},
+            ],
+        ),
+        "DataModelList": [im1a, im1b],
+        "ASDFFilenameList": [im1a.meta.filename, im1b.meta.filename],
+    }
+
+    step_input = step_input_map.get(input_type)
+
+    res = SkyMatchStep.call(step_input)
+
+    assert isinstance(res, ModelContainer)
+    assert all(x.meta.cal_step.skymatch == "COMPLETE" for x in res)
+    assert all(hasattr(x.meta, "background") for x in res)

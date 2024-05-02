@@ -1,6 +1,10 @@
 0.14.1 (unreleased)
 ==================
 
+skymatch
+--------
+- Update step to always return a ``ModelContainer``. [#1208]
+
 patch_match
 -----------
 
@@ -74,6 +78,8 @@ resample
 
 - Populate the Level 3 wcsinfo [#1182]
 
+- Make rotation matrix 2d for schema validation [#1205]
+
 outlier_detection
 -----------------
 
@@ -97,6 +103,11 @@ source_detection
 ----------------
 
 - Make PSF fitting the default. [#1185]
+
+source_catalog
+--------------
+
+- Added Source Catalog Step. [#1102]
 
 0.14.0 (2024-02-12)
 ===================
