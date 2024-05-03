@@ -81,6 +81,8 @@ resample
 
 - Include logs of individual L2 products [#1207]
 
+- Resample members should use actual file names from association file [#1209]
+
 outlier_detection
 -----------------
 
