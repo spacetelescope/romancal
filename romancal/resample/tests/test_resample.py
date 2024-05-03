@@ -13,7 +13,11 @@ from roman_datamodels.maker_utils import mk_common_meta, mk_level2_image
 from romancal.datamodels import ModelContainer
 from romancal.lib.tests.helpers import word_precision_check
 from romancal.resample import gwcs_drizzle, resample_utils
-from romancal.resample.resample import ResampleData, populate_mosaic_basic, populate_mosaic_individual
+from romancal.resample.resample import (
+    ResampleData,
+    populate_mosaic_basic,
+    populate_mosaic_individual,
+)
 
 
 # Helper function to create a mock input model with specified metadata
@@ -1053,4 +1057,4 @@ def test_l3_individual_image_meta(multiple_exposures):
     # Assert spot check on filename, which is different for each mock input
     basic_table = output_model.meta.individual_image_meta.basic
     for idx, input in enumerate(input_models):
-        assert input.meta.filename == basic_table['filename'][idx]
+        assert input.meta.filename == basic_table["filename"][idx]
