@@ -85,12 +85,12 @@ def test_level3_hlp_pipeline(rtdata, ignore_asdf_paths):
     # DMS356 Test that the thumbnail image exists
     pipeline.log.info(
         "Status of the step:             thumbnail image    "
-        + passfail(os.path.isfile(thumbnail_file is True))
+        + passfail(os.path.isfile(thumbnail_file))
     )
     # DMS356 Test that the preview image exists
     pipeline.log.info(
         "Status of the step:             preview image    "
-        + passfail(os.path.isfile(preview_file is True))
+        + passfail(os.path.isfile(preview_file))
     )
     pipeline.log.info(
         "DMS86 MSG: Testing completion of skymatch in the Level 3  output......."
