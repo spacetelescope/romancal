@@ -78,40 +78,41 @@ class HighLevelPipeline(RomanPipeline):
              # check to see if the product name contains a skycell name & if true get the skycell record
             product_name = input.asn_table["products"][0]["name"]
             skycell_name =  product_name.split("_")[3]
+            skycell_record = []
             
             #if this is a valid skycell name load the database and get the skycell record
             if(re.match(r'r\d{3}\w{2}\d{2}x\d{2}y\d{2}', skycell_name)):
                 skycell_record = patch_match.PATCH_TABLE[np.where(patch_match.PATCH_TABLE['name'][:] == skycell_name)[0][0]]
                 log.info("Skycell record %s:", skycell_record)
 
-            if skycell_name in skycell_record['name']:
-                # skycell name are in the form of r270dm90x99y99
-                # example of product name "r0099101001001001001_F158_visit_r270dm90x99y99"
-                skycell_root = re.findall('^[^%\n\r]*_', product_name)[0]
-                skycell_file_name = skycell_root + skycell_name + "_i2d.asdf"
-                
-                # check to see if there exists a skycell on disk if not create it
-                if not isfile(skycell_file_name): 
-                # extract the wcs info from the record for generate_tan_wcs
-                    log.info("Creating skycell image at ra: %f  dec %f", float(skycell_record['ra_center']),  float(skycell_record['dec_center']) )
-                    skycell_wcs = generate_tan_wcs( skycell_record )
-                    #skycell_wcs.bounding_box = bounding_box
-                    
-                    # For resample to use an external grid we need to pass it the skycell gwcs object
-                    # Currently we cannot do that directly so create an asdf file to read the skycell gwcs object
-                    wcs_tree = {"wcs": skycell_wcs}
-                    wcs_file = asdf.AsdfFile(wcs_tree)
-                    wcs_file.write_to("skycell_wcs.asdf")
-                    self.resample.output_wcs = "skycell_wcs.asdf"
-                    self.resample.output_shape = (int(skycell_record['nx']), int(skycell_record['ny']))
-                    log.info("Resampling using %s  and data shape %s", self.resample.output_wcs, self.resample.output_shape)
-                    wcs_file = asdf.open( self.resample.output_wcs)
-                    self.suffix = "i2d"
-                    result = self.resample(result)
-                    self.output_file = input.asn_table["products"][0]["name"]
-                else:
-                    log.info("resampling a mosaic file is not yet supported")
-                    exit(0)
+                if skycell_name in skycell_record['name']:
+                    # skycell name are in the form of r270dm90x99y99
+                    # example of product name "r0099101001001001001_F158_visit_r270dm90x99y99"
+                    skycell_root = re.findall('^[^%\n\r]*_', product_name)[0]
+                    skycell_file_name = skycell_root + skycell_name + "_i2d.asdf"
+
+                    # check to see if there exists a skycell on disk if not create it
+                    if not isfile(skycell_file_name):
+                    # extract the wcs info from the record for generate_tan_wcs
+                        log.info("Creating skycell image at ra: %f  dec %f", float(skycell_record['ra_center']),  float(skycell_record['dec_center']) )
+                        skycell_wcs = generate_tan_wcs( skycell_record )
+                        #skycell_wcs.bounding_box = bounding_box
+
+                        # For resample to use an external grid we need to pass it the skycell gwcs object
+                        # Currently we cannot do that directly so create an asdf file to read the skycell gwcs object
+                        wcs_tree = {"wcs": skycell_wcs}
+                        wcs_file = asdf.AsdfFile(wcs_tree)
+                        wcs_file.write_to("skycell_wcs.asdf")
+                        self.resample.output_wcs = "skycell_wcs.asdf"
+                        self.resample.output_shape = (int(skycell_record['nx']), int(skycell_record['ny']))
+                        log.info("Resampling using %s  and data shape %s", self.resample.output_wcs, self.resample.output_shape)
+                        wcs_file = asdf.open( self.resample.output_wcs)
+                        self.suffix = "i2d"
+                        result = self.resample(result)
+                        self.output_file = input.asn_table["products"][0]["name"]
+                    else:
+                        log.info("resampling a mosaic file is not yet supported")
+                        exit(0)
 
             else:
                 self.resample.suffix = "i2d"
