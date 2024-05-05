@@ -5,7 +5,7 @@ import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from drizzle import cdrizzle, util
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels, maker_utils, stnode
 from stcal.alignment.util import compute_scale
 
 from ..assign_wcs import utils
@@ -177,6 +177,10 @@ class ResampleData:
         l2_into_l3_meta(self.blank_output.meta, input_model_0.meta)
         self.blank_output.meta.wcs = self.output_wcs
         gwcs_into_l3(self.blank_output, self.output_wcs)
+        self.blank_output.cal_logs = stnode.CalLogs()
+        self.blank_output["individual_image_cal_logs"] = [
+            model.cal_logs for model in input_models
+        ]
 
         self.output_models = ModelContainer()
 
@@ -291,6 +295,7 @@ class ResampleData:
         )
 
         log.info("Resampling science data")
+        members = []
         for img in self.input_models:
             inwht = resample_utils.build_driz_weight(
                 img,
@@ -319,7 +324,14 @@ class ResampleData:
                 ymax=ymax,
             )
             del data, inwht
-            output_model.meta.resample.members.append(str(img.meta.filename))
+            members.append(str(img.meta.filename))
+
+        members = (
+            members
+            if self.input_models.filepaths is None
+            else self.input_models.filepaths
+        )
+        output_model.meta.resample.members = members
 
         # Resample variances array in self.input_models to output_model
         self.resample_variance_array("var_rnoise", output_model)
