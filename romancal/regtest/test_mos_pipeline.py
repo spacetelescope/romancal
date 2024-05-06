@@ -162,6 +162,8 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
+    model = rdm.open(rtdata.output, lazy_load=False)
+
     pipeline.log.info(
         "DMS356 MSG: Testing the creation of a Level 3 mosaic image"
         + passfail(model.meta.cal_step.resample == "COMPLETE")
