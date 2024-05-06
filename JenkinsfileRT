@@ -59,6 +59,7 @@ env_vars = [
     'DD_SERVICE=romancal',
     'WEBBPSF_PATH=/grp/jwst/ote/webbpsf-data',
     'PYSYN_CDBS=/grp/hst/cdbs',
+    'PATCH_TABLE_PATH=/grp/roman/scsb/tesselation/patches.asdf',
 ]
 if (env.ENV_VARS) {
     env_vars.addAll(MultiLineToArray(env.ENV_VARS))
