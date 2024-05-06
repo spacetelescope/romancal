@@ -128,3 +128,43 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
         "DMS86 MSG: Testing completion of resample in the Level 3 image output......."
         + passfail(model.meta.cal_step.resample == "COMPLETE")
     )
+
+
+@pytest.mark.bigdata
+@pytest.mark.soctests
+@metrics_logger("DMS356")
+def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
+    """Tests for level 3 mosaic requirements DMS356"""
+
+    cal_files = [
+        "WFI/image/r0000101001001001001_01101_0001_WFI01_cal.asdf",
+        "WFI/image/r0000101001001001001_01101_0002_WFI01_cal.asdf",
+        "WFI/image/r0000101001001001001_01101_0003_WFI01_cal.asdf",
+    ]
+
+    for cal_file in cal_files:
+        rtdata.get_data(cal_file)
+
+    input_asn = "L3_mosaic_asn.json"
+    rtdata.get_data(f"WFI/image/{input_asn}")
+    rtdata.input = input_asn
+
+    # Test Pipeline
+    output = "r0099101001001001001_F158_visit_r274dp63x31y81_i2d.asdf"
+    rtdata.output = output
+    args = [
+        "--disable-crds-steppars",
+        "roman_hlp",
+        rtdata.input,
+    ]
+    HighLevelPipeline.from_cmdline(args)
+    rtdata.get_truth(f"truth/WFI/image/{output}")
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
+
+    pipeline.log.info(
+        "DMS356 MSG: Testing the creation of a Level 3 mosaic image"
+        + passfail(model.meta.cal_step.resample == "COMPLETE")
+    )
+    
+    
