@@ -165,6 +165,9 @@ class ResampleData:
             **input_models[0].meta.cal_step.to_flat_dict()
         )
 
+        # Update the output with all the component metas
+        populate_mosaic_individual(self.blank_output, input_models)
+
         # update meta data and wcs
         # note we have made this input_model_0 variable so that if
         # meta includes lazily-loaded objects, that we can successfully
@@ -898,3 +901,27 @@ def populate_mosaic_basic(
 
     # association product type
     output_model.meta.basic.product_type = "TBD"
+
+
+def populate_mosaic_individual(
+    output_model: datamodels.MosaicModel, input_models: [List, ModelContainer]
+):
+    """
+    Populate individual meta fields in the output mosaic model based on input models.
+
+    Parameters
+    ----------
+    output_model : MosaicModel
+        Object to populate with basic metadata.
+    input_models : [List, ModelContainer]
+        List of input data models from which to extract the metadata.
+        ModelContainer is also supported.
+
+    Returns
+    -------
+    None
+    """
+
+    input_metas = [datamodel.meta for datamodel in input_models]
+    for input_meta in input_metas:
+        output_model.append_individual_image_meta(input_meta)

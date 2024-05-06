@@ -90,6 +90,8 @@ resample
 
 - Resample members should use actual file names from association file [#1209]
 
+- Populate the l3 product individual_image_meta block [#1216]
+
 outlier_detection
 -----------------
 

@@ -3,6 +3,7 @@ import pytest
 from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
+from astropy.table import QTable
 from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
@@ -12,7 +13,11 @@ from roman_datamodels.maker_utils import mk_common_meta, mk_level2_image
 from romancal.datamodels import ModelContainer
 from romancal.lib.tests.helpers import word_precision_check
 from romancal.resample import gwcs_drizzle, resample_utils
-from romancal.resample.resample import ResampleData, populate_mosaic_basic
+from romancal.resample.resample import (
+    ResampleData,
+    populate_mosaic_basic,
+    populate_mosaic_individual,
+)
 
 
 # Helper function to create a mock input model with specified metadata
@@ -1033,3 +1038,23 @@ def test_l3_wcsinfo(multiple_exposures):
     for key in expected.keys():
         if key not in ["projection", "s_region"]:
             assert np.allclose(output_model.meta.wcsinfo[key], expected[key])
+
+
+def test_l3_individual_image_meta(multiple_exposures):
+    """Test that the individual_image_meta is being populated"""
+    input_models = ModelContainer(multiple_exposures)
+    output_model = maker_utils.mk_datamodel(datamodels.MosaicModel)
+
+    # Act
+    populate_mosaic_individual(output_model, input_models)
+
+    # Assert sizes are expected
+    n_inputs = len(input_models)
+    for value in output_model.meta.individual_image_meta.values():
+        assert isinstance(value, QTable)
+        assert len(value) == n_inputs
+
+    # Assert spot check on filename, which is different for each mock input
+    basic_table = output_model.meta.individual_image_meta.basic
+    for idx, input in enumerate(input_models):
+        assert input.meta.filename == basic_table["filename"][idx]
