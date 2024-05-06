@@ -609,11 +609,20 @@ class TableOperator(NDArrayTypeOperator):
         difference = self._compare_arrays(a, b)
         # also compare meta  for tables
         if level.t1.meta != level.t2.meta:
+            kwargs = {}
+            if diff_instance.exclude_paths:
+                meta_path = level.path() + "['meta']"
+                kwargs["exclude_paths"] = [
+                    f"root{path.removeprefix(meta_path)}"
+                    for path in diff_instance.exclude_paths
+                    if path.startswith(meta_path)
+                ]
             meta_difference = deepdiff.DeepDiff(
                 level.t1.meta,
                 level.t2.meta,
                 ignore_nan_inequality=self.equal_nan,
                 math_epsilon=self.atol,
+                **kwargs,
             )
             if meta_difference:
                 difference["metas_differ"] = meta_difference

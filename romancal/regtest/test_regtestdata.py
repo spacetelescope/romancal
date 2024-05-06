@@ -56,6 +56,7 @@ def test_compare_asdf(tmp_path, modification):
         "large_values",
         "small_meta",
         "large_meta",
+        "ignore_meta",
     ],
 )
 def test_compare_asdf_tables(tmp_path, modification):
@@ -82,10 +83,16 @@ def test_compare_asdf_tables(tmp_path, modification):
         t1.meta["value"] += atol / 2
     if modification == "large_meta":
         t1.meta["value"] += atol * 2
+    if modification == "ignore_meta":
+        t1.meta["value"] += atol * 2
     asdf.AsdfFile({"t": t0}).write_to(fn0)
     asdf.AsdfFile({"t": t1}).write_to(fn1)
-    diff = compare_asdf(fn0, fn1, atol=atol)
-    if modification in (None, "small_values", "small_meta"):
+    if modification == "ignore_meta":
+        kwargs = {"ignore": ["t.meta.value"]}
+    else:
+        kwargs = {}
+    diff = compare_asdf(fn0, fn1, atol=atol, **kwargs)
+    if modification in (None, "small_values", "small_meta", "ignore_meta"):
         assert diff.identical, diff.report()
     else:
         assert not diff.identical, diff.report()
