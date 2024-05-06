@@ -17,6 +17,9 @@ tweakreg
 
 - Allow single open Roman datamodels to be used as input to be consistent with expected behavior in ELP. [#1089]
 
+- Update tweakreg regression tests to test astrometric
+  performance. Use "clip_accum" for better robustness.  [#1185]
+
 general
 -------
 
@@ -106,11 +109,15 @@ flux
 
 - Create FluxStep to apply the flux correction to Level 2 data. [#1120]
 
+source_detection
+----------------
+
+- Make PSF fitting the default. [#1185]
+
 source_catalog
 --------------
 
 - Added Source Catalog Step. [#1102]
-
 
 0.14.0 (2024-02-12)
 ===================
