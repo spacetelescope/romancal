@@ -142,6 +142,13 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
         "WFI/image/r0000101001001001001_01101_0003_WFI01_cal.asdf",
     ]
 
+    asn_cmd = f"asn_from_list --product-name='r0099101001001001001_F158_visit_r274dp63x31y81'\
+    r0000101001001001001_01101_0001_WFI01_cal.asdf \
+    r0000101001001001001_01101_0001_WFI02_cal.asdf \
+    r0000101001001001001_01101_0001_WFI03_cal.asdf \
+    -o L3_m1_asn.json"
+    os.system(asn_cmd)  # nosec
+    
     for cal_file in cal_files:
         rtdata.get_data(cal_file)
 
@@ -157,7 +164,7 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
         "roman_hlp",
         rtdata.input,
     ]
-    HighLevelPipeline.from_cmdline(args)
+    pipeline = HighLevelPipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
