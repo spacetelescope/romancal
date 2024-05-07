@@ -190,4 +190,4 @@ cp r0000101001001001001_01101_0001_WFI01_cat.asdf $outdir/roman-pipeline/dev/tru
 l3name="r0099101001001001001_F158_visit_r274dp63x31y81"
 asn_from_list --product-name=$l3name r0000101001001001001_01101_0001_WFI01_cal.asdf r0000101001001001001_01101_0002_WFI01_cal.asdf r0000101001001001001_01101_0003_WFI01_cal.asdf -o L3_m1_asn.json
 strun --disable-crds-steppars roman_hlp L3_m1_asn.json
-cp ${l3}_i2d.asdf $outdir/roman-pipeline/dev/truth/image/
+cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
