@@ -38,7 +38,7 @@ def test_level3_hlp_pipeline(rtdata, ignore_asdf_paths):
     rtdata.input = input_asn
 
     # Test Pipeline
-    output = "r0099101001001001001_F158_visit_nocell_i2d.asdf"
+    output = "r0099101001001001001_F158_visit_i2d.asdf"
     rtdata.output = output
     args = [
         "--disable-crds-steppars",
@@ -51,17 +51,17 @@ def test_level3_hlp_pipeline(rtdata, ignore_asdf_paths):
     assert diff.identical, diff.report()
 
     # Generate thumbnail image
-    input_file = "r0099101001001001001_F158_visit_nocell_i2d.asdf"
+    input_file = "r0099101001001001001_F158_visit_i2d.asdf"
     thumbnail_file = (
-        "r0099101001001001001_F158_visit_nocell_thumb.png"
+        "r0099101001001001001_F158_visit_thumb.png"
     )
     preview_cmd = f"stpreview to {input_file} {thumbnail_file} 256 256 roman"
     os.system(preview_cmd)  # nosec
 
     # Generate preview image
-    input_file = "r0099101001001001001_F158_visit_nocell_i2d.asdf"
+    input_file = "r0099101001001001001_F158_visit_i2d.asdf"
     preview_file = (
-        "r0099101001001001001_F158_visit_nocell_preview.png"
+        "r0099101001001001001_F158_visit_preview.png"
     )
     preview_cmd = f"stpreview to {input_file} {preview_file} 1080 1080 roman"
     os.system(preview_cmd)  # nosec
