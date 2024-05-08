@@ -55,7 +55,7 @@ def test_catalog_l3(rtdata, ignore_asdf_paths):
     # DMS376: type of source
     # DMS386: flux uncertainties
     # DMS387: DQ flags
-    inputfn = "r0099101001001001001_F158_visit_0.900.0.50_178199.5_-0.5_i2d.asdf"
+    inputfn = "r0099101001001001001_F158_visit_i2d.asdf"
     outputfn = inputfn.replace("_i2d", "_cat")
     rtdata.get_data(f"WFI/image/{inputfn}")
     rtdata.input = inputfn

@@ -76,7 +76,10 @@ class HighLevelPipeline(RomanPipeline):
             #
             # check to see if the product name contains a skycell name & if true get the skycell record
             product_name = input.asn_table["products"][0]["name"]
-            skycell_name = product_name.split("_")[3]
+            try:
+                skycell_name = product_name.split("_")[3]
+            except IndexError:
+                skycell_name = ""
             skycell_record = []
 
             # if this is a valid skycell name load the database and get the skycell record
