@@ -164,7 +164,7 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
         "roman_hlp",
         rtdata.input,
     ]
-    pipeline = HighLevelPipeline.from_cmdline(args)
+    HighLevelPipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
