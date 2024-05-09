@@ -164,6 +164,7 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
         "roman_hlp",
         rtdata.input,
     ]
+    rtdata.get_data(f"WFI/image/patches.asdf")
     HighLevelPipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
     pipeline = HighLevelPipeline()
