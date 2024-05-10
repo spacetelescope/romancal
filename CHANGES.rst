@@ -36,6 +36,8 @@ skymatch
 --------
 - Update step to always return a ``ModelContainer``. [#1208]
 
+- Fix bug that prevented ``meta.background.subtracted`` from being set with the proper datatype. [#1233]
+
 patch_match
 -----------
 
