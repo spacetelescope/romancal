@@ -333,16 +333,16 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     result = step.run([im1, im2, im3])
     result = ModelContainer(result)
 
-    assert result[0].meta["background"]["subtracted"] == subtract
-    assert result[0].meta["background"]["level"] is not None
+    assert result[0].meta.background.subtracted is subtract
+    assert result[0].meta.background.level is not None
 
     # 2nd run.
     step.subtract = False
     result2 = step.run(result)
     result2 = ModelContainer(result2)
 
-    assert result2[0].meta["background"]["subtracted"] == subtract
-    assert result2[0].meta["background"]["level"] is not None
+    assert result2[0].meta.background.subtracted == step.subtract
+    assert result2[0].meta.background.level is not None
 
     # compute expected levels
     if skymethod in ["local", "global+match"]:
@@ -360,7 +360,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     for im, lev, rlev, slev in zip(result2, levels, ref_levels, sub_levels):
         # check that meta was set correctly:
         assert im.meta.background.method == skymethod
-        assert im.meta.background.subtracted == subtract
+        assert im.meta.background.subtracted == step.subtract
 
         # test computed/measured sky values:
         if not np.isclose(im.meta.background.level.value, 0, atol=1e-6):
