@@ -51,14 +51,14 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
 
     # Generate thumbnail image
     input_file = "r0099101001001001001_F158_prompt_visit_r274dp63x31y8_i2d.asdf"
-    thumbnail_file = "r0099101001001001001_F158_prompt_visit_r274dp63x31y8_thumb.png"
+    thumbnail_file = "r0099101001001001001_F158_prompt_visit_r274dp63x31y81_thumb.png"
 
     preview_cmd = f"stpreview to {input_file} {thumbnail_file} 256 256 roman"
     os.system(preview_cmd)  # nosec
 
     # Generate preview image
     input_file = "r0099101001001001001_F158_prompt_visit_r274dp63x31y8_i2d.asdf"
-    preview_file = "r0099101001001001001_F158_prompt_visit_r274dp63x31y8_preview.png"
+    preview_file = "r0099101001001001001_F158_prompt_visit_r274dp63x31y81_preview.png"
     preview_cmd = f"stpreview to {input_file} {preview_file} 1080 1080 roman"
     os.system(preview_cmd)  # nosec
 
