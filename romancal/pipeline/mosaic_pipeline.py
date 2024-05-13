@@ -96,7 +96,7 @@ class MosaicPipeline(RomanPipeline):
 
                 if skycell_name in skycell_record["name"]:
                     # skycell name are in the form of r270dm90x99y99
-                    # example of product name "r0099101001001001001_F158_visit_r270dm90x99y99"
+                    # example of product name "r0099101001001001001_F158_prompt_visit_r270dm90x99y99"
                     skycell_root = re.findall("^[^%\n\r]*_", product_name)[0]
                     skycell_file_name = skycell_root + skycell_name + "_i2d.asdf"
 
