@@ -2,6 +2,7 @@
 import logging
 import re
 from os.path import basename, isfile
+import pdb
 
 import asdf
 import numpy as np
