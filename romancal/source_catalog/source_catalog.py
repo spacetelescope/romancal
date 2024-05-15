@@ -20,8 +20,10 @@ from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
 from scipy import ndimage
 from scipy.spatial import KDTree
+from typing import List
 
 from romancal import __version__ as romancal_version
+from romancal.lib import psf
 
 from ._wcs_helpers import pixel_scale_angle_at_skycoord
 
@@ -84,6 +86,7 @@ class RomanSourceCatalog:
         aperture_params,
         ci_star_thresholds,
         kernel_fwhm,
+        fit_psf,
         flux_unit="uJy",
     ):
 
@@ -96,6 +99,7 @@ class RomanSourceCatalog:
         self.aperture_params = aperture_params
         self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
         self.flux_unit = flux_unit
+        self.fit_psf = fit_psf
 
         self.sb_unit = "MJy/sr"
         self.l2_unit = "DN/s"
@@ -113,6 +117,12 @@ class RomanSourceCatalog:
         self.wcs = self.model.meta.wcs
         self.column_desc = {}
         self.meta = {}
+        if self.fit_psf:
+            # get the necessary columns for the PSF photometry table
+            # and its name mapping to the final catalog
+            self.psf_photometry_catalog_mapping = (
+                self.get_psf_photometry_catalog_colnames_mapping()
+            )
 
     @lazyproperty
     def _pixscale_angle(self):
@@ -1007,10 +1017,12 @@ class RomanSourceCatalog:
         """
         The column name order for the final source catalog.
         """
-        colnames = self.segment_colnames[0:4]
+        colnames = self.segment_colnames[:4]
         colnames.extend(self.aperture_colnames)
         colnames.extend(self.extras_colnames)
         colnames.extend(self.segment_colnames[4:])
+        if self.fit_psf:
+            colnames.extend(self.psf_photometry_colnames)
         return colnames
 
     def _update_metadata(self):
@@ -1073,6 +1085,119 @@ class RomanSourceCatalog:
 
         return table
 
+    @staticmethod
+    def get_psf_photometry_catalog_colnames_mapping() -> List:
+        """
+        Get the mapping between the PSF photometry table column names
+        and the final catalog column names.
+
+        Returns
+        -------
+            List of dictionaries containing old column names, new column names,
+            and descriptions for PSF photometry catalog.
+        """
+
+        return [
+            {
+                "old_name": "x_fit",
+                "new_name": "x_psf",
+                "desc": "X coordinate as determined by PSF photometry",
+            },
+            {
+                "old_name": "flags",
+                "new_name": "flags_psf",
+                "desc": "Data quality flags",
+            },
+            {
+                "old_name": "x_fit",
+                "new_name": "x_psf",
+                "desc": "X coordinate as determined by PSF photometry",
+            },
+            {
+                "old_name": "x_err",
+                "new_name": "x_psf_err",
+                "desc": "Error on X coordinate of PSF photometry",
+            },
+            {
+                "old_name": "y_fit",
+                "new_name": "y_psf",
+                "desc": "Y coordinate as determined by PSF photometry",
+            },
+            {
+                "old_name": "y_err",
+                "new_name": "y_psf_err",
+                "desc": "Error on X coordinate of PSF photometry",
+            },
+            {
+                "old_name": "flux_fit",
+                "new_name": "flux_psf",
+                "desc": "Source flux as determined by PSF photometry",
+            },
+            {
+                "old_name": "flux_err",
+                "new_name": "flux_psf_err",
+                "desc": "Source flux error as determined by PSF photometry",
+            },
+        ]
+
+    @lazyproperty
+    def psf_photometry_colnames(self) -> List:
+        """
+        Update and return column descriptions for PSF photometry results.
+
+        This method updates the column descriptions with PSF photometry-related information
+        and returns a list of column names.
+
+        Returns
+        -------
+            List of column names for PSF photometry results.
+        """
+        desc = {x["new_name"]: x["desc"] for x in self.psf_photometry_catalog_mapping}
+
+        self.column_desc.update(desc)
+
+        return list(desc.keys())
+
+    def do_psf_photometry(self) -> None:
+        """
+        Perform PSF photometry by fitting PSF models to detected sources for refined astrometry.
+
+        This method constructs a gridded PSF model based on instrument and detector information.
+        It then fits the PSF model to the image model's sources to improve astrometric precision.
+
+        """
+        log.info("Constructing a gridded PSF model.")
+        filt = self.model.meta.instrument["optical_element"]
+        detector = self.model.meta.instrument["detector"].replace("WFI", "SCA")
+        gridded_psf_model, _ = psf.create_gridded_psf_model(
+            path_prefix="tmp",
+            filt=filt,
+            detector=detector,
+            overwrite=True,
+            logging_level="ERROR",
+        )
+
+        log.info("Fitting a PSF model to sources for improved astrometric precision.")
+        psf_photometry_table, photometry = psf.fit_psf_to_image_model(
+            image_model=self.model,
+            psf_model=gridded_psf_model,
+            x_init=self.xcentroid,
+            y_init=self.ycentroid,
+            exclude_out_of_bounds=True,
+        )
+
+        # mapping between the columns of the PSF photometry table
+        # and the name that will be used in the final catalog
+        old_name_to_new_name_mapping = {
+            x["old_name"]: x["new_name"] for x in self.psf_photometry_catalog_mapping
+        }
+
+        # append PSF results to the class instance with the proper column name
+        [
+            setattr(self, new_name, psf_photometry_table[old_name])
+            for old_name, new_name in old_name_to_new_name_mapping.items()
+        ]
+
     @lazyproperty
     def catalog(self):
         """
@@ -1086,6 +1211,8 @@ class RomanSourceCatalog:
         self.set_segment_properties()
         self.set_aperture_properties()
         self.set_ci_properties()
+        if self.fit_psf:
+            self.do_psf_photometry()
 
         catalog = QTable()
         for column in self.colnames:

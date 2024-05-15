@@ -2,6 +2,8 @@
 Module for the source catalog step.
 """
 
+import logging
+
 import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels, maker_utils
@@ -42,6 +44,7 @@ class SourceCatalogStep(RomanStep):
         ci1_star_threshold = float(default=2.0)  # CI 1 star threshold
         ci2_star_threshold = float(default=1.8)  # CI 2 star threshold
         suffix = string(default='cat')        # Default suffix for output files
+        fit_psf = boolean(default=True)      # fit source PSFs for accurate astrometry
     """
 
     def process(self, input_model):
@@ -106,6 +109,7 @@ class SourceCatalogStep(RomanStep):
                 aperture_params,
                 ci_star_thresholds,
                 self.kernel_fwhm,
+                self.fit_psf,
             )
 
             # put the resulting catalog in the model
