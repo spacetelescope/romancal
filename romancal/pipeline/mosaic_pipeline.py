@@ -11,7 +11,6 @@ from astropy.modeling import models
 from gwcs import WCS, coordinate_frames
 
 import romancal.datamodels.filetype as filetype
-from romancal.datamodels import ModelContainer
 
 # step imports
 from romancal.flux import FluxStep
@@ -68,8 +67,8 @@ class MosaicPipeline(RomanPipeline):
             exit(0)
             return
 
+        # FIXME: change this to a != "asn" -> log and return or combine with above
         if file_type == "asn":
-            input = ModelContainer(input)
             self.flux.suffix = "flux"
             result = self.flux(input)
             self.skymatch.suffix = "skymatch"
