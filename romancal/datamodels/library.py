@@ -173,7 +173,15 @@ class ModelLibrary(Sequence):
             # make a fake asn from the models
             filenames = set()
             members = []
-            for index, model in enumerate(init):
+            for index, model_or_filename in enumerate(init):
+                if isinstance(model_or_filename, str):
+                    # TODO supporting a list of filenames by opening them as models
+                    # has issues, if this is a widely supported mode (vs providing
+                    # an association) it might make the most sense to make a fake
+                    # association with the filenames at load time.
+                    model = datamodels_open(model_or_filename)
+                else:
+                    model = model_or_filename
                 filename = model.meta.filename
                 if filename in filenames:
                     raise ValueError(
@@ -334,6 +342,17 @@ class ModelLibrary(Sequence):
         return copy.deepcopy(self, memo=memo)
 
     # TODO save, required by stpipe
+    def save(self, dir_path=None):
+        # dir_path: required by SkyMatch tests
+        if dir_path is None:
+            raise NotImplementedError()
+        # save all models
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        with self:
+            for i, model in enumerate(self):
+                model.save(os.path.join(dir_path, model.meta.filename))
+                self.discard(i, model)
 
     # TODO crds_observatory, get_crds_parameters, when stpipe uses these...
 

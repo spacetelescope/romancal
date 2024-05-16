@@ -12,7 +12,7 @@ from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
 from roman_datamodels.maker_utils import mk_level2_image
 
-from romancal.datamodels.container import ModelContainer
+from romancal.datamodels import ModelLibrary
 from romancal.skymatch import SkyMatchStep
 
 
@@ -175,17 +175,19 @@ def test_skymatch(wfi_rate, skymethod, subtract, skystat, match_down):
     im2, _ = _add_bad_pixels(im2, 5e6, 3e9)
     im3, _ = _add_bad_pixels(im3, 7e6, 1e8)
 
-    container = ModelContainer([im1, im2, im3])
+    library = ModelLibrary([im1, im2, im3])
 
     # define some background:
     levels = [9.12, 8.28, 2.56]
 
-    for im, lev in zip(container, levels):
-        im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
+    with library:
+        for i, (im, lev) in enumerate(zip(library, levels)):
+            im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
+            library[i] = im
 
     # exclude central DO_NOT_USE and corner SATURATED pixels
     result = SkyMatchStep.call(
-        container,
+        library,
         skymethod=skymethod,
         match_down=match_down,
         subtract=subtract,
@@ -207,20 +209,24 @@ def test_skymatch(wfi_rate, skymethod, subtract, skystat, match_down):
 
     sub_levels = np.array(levels) - np.array(ref_levels)
 
-    for im, lev, rlev, slev in zip(result, levels, ref_levels, sub_levels):
-        # check that meta was set correctly:
-        assert im.meta.background.method == skymethod
-        assert im.meta.background.subtracted == subtract
+    with result:
+        for i, (im, lev, rlev, slev) in enumerate(
+            zip(result, levels, ref_levels, sub_levels)
+        ):
+            # check that meta was set correctly:
+            assert im.meta.background.method == skymethod
+            assert im.meta.background.subtracted == subtract
 
-        # test computed/measured sky values if level is set:
-        if not np.isclose(im.meta.background.level.value, 0):
-            assert abs(im.meta.background.level.value - rlev) < 0.01
+            # test computed/measured sky values if level is set:
+            if not np.isclose(im.meta.background.level.value, 0):
+                assert abs(im.meta.background.level.value - rlev) < 0.01
 
-        # test
-        if subtract:
-            assert abs(np.mean(im.data[dq_mask]).value - slev) < 0.01
-        else:
-            assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
+            # test
+            if subtract:
+                assert abs(np.mean(im.data[dq_mask]).value - slev) < 0.01
+            else:
+                assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
+            result.discard(i, im)
 
 
 @pytest.mark.parametrize(
@@ -234,19 +240,21 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
     rng = np.random.default_rng(7)
     [im1a, im1b, im2a, im2b, im3], dq_mask = mk_sky_match_image_models
 
-    container = ModelContainer([im1a, im1b, im2a, im2b, im3])
+    library = ModelLibrary([im1a, im1b, im2a, im2b, im3])
 
     # define some background:
     levels = [9.12, 9.12, 8.28, 8.28, 2.56]
 
-    for im, lev in zip(container, levels):
-        im.data = rng.normal(loc=lev, scale=0.01, size=im.data.shape) * im.data.unit
+    with library:
+        for i, (im, lev) in enumerate(zip(library, levels)):
+            im.data = rng.normal(loc=lev, scale=0.01, size=im.data.shape) * im.data.unit
+            library[i] = im
 
     # We do not exclude SATURATED pixels. They should be ignored because
     # images are rotated and SATURATED pixels in the corners are not in the
     # common intersection of all input images. This is the purpose of this test
     result = SkyMatchStep.call(
-        container,
+        library,
         skymethod=skymethod,
         match_down=True,
         subtract=subtract,
@@ -266,32 +274,36 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
 
     sub_levels = np.array(levels) - np.array(ref_levels)
 
-    for im, lev, rlev, slev in zip(result, levels, ref_levels, sub_levels):
-        # check that meta was set correctly:
-        assert im.meta.background.method == skymethod
-        assert im.meta.background.subtracted == subtract
+    with result:
+        for i, (im, lev, rlev, slev) in enumerate(
+            zip(result, levels, ref_levels, sub_levels)
+        ):
+            # check that meta was set correctly:
+            assert im.meta.background.method == skymethod
+            assert im.meta.background.subtracted == subtract
 
-        if skymethod in ["local", "global"]:
-            # These two sky methods must fail because they do not take
-            # into account (do not compute) overlap regions and use
-            # entire images:
-            assert abs(im.meta.background.level.value - rlev) < 0.1
+            if skymethod in ["local", "global"]:
+                # These two sky methods must fail because they do not take
+                # into account (do not compute) overlap regions and use
+                # entire images:
+                assert abs(im.meta.background.level.value - rlev) < 0.1
 
-            # test
-            if subtract:
-                assert abs(np.mean(im.data[dq_mask]).value - slev) < 0.1
+                # test
+                if subtract:
+                    assert abs(np.mean(im.data[dq_mask]).value - slev) < 0.1
+                else:
+                    assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
             else:
-                assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
-        else:
-            # test computed/measured sky values if level is nonzero:
-            if not np.isclose(im.meta.background.level.value, 0):
-                assert abs(im.meta.background.level.value - rlev) < 0.01
+                # test computed/measured sky values if level is nonzero:
+                if not np.isclose(im.meta.background.level.value, 0):
+                    assert abs(im.meta.background.level.value - rlev) < 0.01
 
-            # test
-            if subtract:
-                assert abs(np.mean(im.data[dq_mask].value) - slev) < 0.01
-            else:
-                assert abs(np.mean(im.data[dq_mask].value) - lev) < 0.01
+                # test
+                if subtract:
+                    assert abs(np.mean(im.data[dq_mask].value) - slev) < 0.01
+                else:
+                    assert abs(np.mean(im.data[dq_mask].value) - lev) < 0.01
+            result.discard(i, im)
 
 
 @pytest.mark.parametrize(
@@ -310,13 +322,15 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     im2, _ = _add_bad_pixels(im2, 5e6, 3e9)
     im3, _ = _add_bad_pixels(im3, 7e6, 1e8)
 
-    container = ModelContainer([im1, im2, im3])
+    library = ModelLibrary([im1, im2, im3])
 
     # define some background:
     levels = [9.12, 8.28, 2.56]
 
-    for im, lev in zip(container, levels):
-        im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
+    with library:
+        for i, (im, lev) in enumerate(zip(library, levels)):
+            im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
+            library[i] = im
 
     # We do not exclude SATURATED pixels. They should be ignored because
     # images are rotated and SATURATED pixels in the corners are not in the
@@ -331,18 +345,22 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     )
 
     result = step.run([im1, im2, im3])
-    result = ModelContainer(result)
 
-    assert result[0].meta.background.subtracted == subtract
-    assert result[0].meta.background.level is not None
+    with result:
+        model = result[0]
+        assert model.meta.background.subtracted == step.subtract
+        assert model.meta.background.level is not None
+        result.discard(0, model)
 
     # 2nd run.
     step.subtract = False
     result2 = step.run(result)
-    result2 = ModelContainer(result2)
 
-    assert result2[0].meta.background.subtracted == step.subtract
-    assert result2[0].meta.background.level is not None
+    with result2:
+        model = result2[0]
+        assert model.meta.background.subtracted == step.subtract
+        assert model.meta.background.level is not None
+        result2.discard(0, model)
 
     # compute expected levels
     if skymethod in ["local", "global+match"]:
@@ -357,38 +375,42 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     sub_levels = np.array(levels) - np.array(ref_levels)
 
     # compare results
-    for im, lev, rlev, slev in zip(result2, levels, ref_levels, sub_levels):
-        # check that meta was set correctly:
-        assert im.meta.background.method == skymethod
-        assert im.meta.background.subtracted == step.subtract
+    with result2:
+        for i, (im, lev, rlev, slev) in enumerate(
+            zip(result2, levels, ref_levels, sub_levels)
+        ):
+            # check that meta was set correctly:
+            assert im.meta.background.method == skymethod
+            assert im.meta.background.subtracted == step.subtract
 
-        # test computed/measured sky values:
-        if not np.isclose(im.meta.background.level.value, 0, atol=1e-6):
-            assert abs(im.meta.background.level.value - rlev) < 0.01
+            # test computed/measured sky values:
+            if not np.isclose(im.meta.background.level.value, 0, atol=1e-6):
+                assert abs(im.meta.background.level.value - rlev) < 0.01
 
-        # test
-        if subtract:
-            assert abs(np.mean(im.data[dq_mask]).value - slev) < 0.01
-        else:
-            assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
+            # test
+            if subtract:
+                assert abs(np.mean(im.data[dq_mask]).value - slev) < 0.01
+            else:
+                assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
+            result2.discard(i, im)
 
 
 @pytest.mark.parametrize(
     "input_type",
     [
-        "ModelContainer",
+        "ModelLibrary",
         "ASNFile",
         "DataModelList",
         "ASDFFilenameList",
     ],
 )
-def test_skymatch_always_returns_modelcontainer_with_updated_datamodels(
+def test_skymatch_always_returns_modellibrary_with_updated_datamodels(
     input_type,
     mk_sky_match_image_models,
     tmp_path,
     create_mock_asn_file,
 ):
-    """Test that the SkyMatchStep always returns a ModelContainer
+    """Test that the SkyMatchStep always returns a ModelLibrary
     with updated data models after processing different input types."""
 
     os.chdir(tmp_path)
@@ -400,11 +422,11 @@ def test_skymatch_always_returns_modelcontainer_with_updated_datamodels(
     im2b.meta.filename = "im2b.asdf"
     im3.meta.filename = "im3.asdf"
 
-    mc = ModelContainer([im1a, im1b, im2a, im2b, im3])
-    mc.save(dir_path=tmp_path)
+    library = ModelLibrary([im1a, im1b, im2a, im2b, im3])
+    library.save(dir_path=tmp_path)
 
     step_input_map = {
-        "ModelContainer": mc,
+        "ModelLibrary": library,
         "ASNFile": create_mock_asn_file(
             tmp_path,
             members_mapping=[
@@ -423,6 +445,9 @@ def test_skymatch_always_returns_modelcontainer_with_updated_datamodels(
 
     res = SkyMatchStep.call(step_input)
 
-    assert isinstance(res, ModelContainer)
-    assert all(x.meta.cal_step.skymatch == "COMPLETE" for x in res)
-    assert all(hasattr(x.meta, "background") for x in res)
+    assert isinstance(res, ModelLibrary)
+    with res:
+        for i, model in enumerate(res):
+            assert model.meta.cal_step.skymatch == "COMPLETE"
+            assert hasattr(model.meta, "background")
+            res.discard(i, model)
