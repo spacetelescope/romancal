@@ -1,3 +1,5 @@
+import os
+
 import astropy.units as u
 import numpy as np
 import pytest
@@ -72,7 +74,7 @@ def mosaic_model():
 
 @pytest.fixture
 def image_model():
-    wfi_image = mk_level2_image()
+    wfi_image = mk_level2_image(shape=(101, 101))
     model = ImageModel(wfi_image)
     data, err = make_test_image()
     units = u.DN / u.s
@@ -183,6 +185,7 @@ def test_l3_source_catalog(
         snr_threshold=snr_threshold,
         npixels=npixels,
         save_results=save_results,
+        fit_psf=False,
     )
     result = step.run(mosaic_model)
     cat = result.source_catalog
@@ -247,10 +250,7 @@ def test_background(mosaic_model):
     Test background fallback when Background2D fails.
     """
     step = SourceCatalogStep(
-        bkg_boxsize=1000,
-        kernel_fwhm=2.0,
-        snr_threshold=3,
-        npixels=25,
+        bkg_boxsize=1000, kernel_fwhm=2.0, snr_threshold=3, npixels=25, fit_psf=False
     )
     result = step.run(mosaic_model)
     cat = result.source_catalog
@@ -293,6 +293,7 @@ def test_l3_input_model_unchanged(mosaic_model):
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         save_results=False,
+        fit_psf=False,
     )
     step.run(mosaic_model)
 
@@ -323,7 +324,32 @@ def test_inputs(mosaic_model):
     aper_params = {}
     ci_thresh = 100.0
     with pytest.raises(ValueError):
-        RomanSourceCatalog(np.ones((3, 3)), segm, cdata, aper_params, ci_thresh, 2.0)
+        RomanSourceCatalog(
+            np.ones((3, 3)), segm, cdata, aper_params, ci_thresh, 2.0, fit_psf=True
+        )
 
     with pytest.raises(ValueError):
-        RomanSourceCatalog(mosaic_model, segm, cdata, aper_params, (1.0, 2.0, 3.0), 2.0)
+        RomanSourceCatalog(
+            mosaic_model, segm, cdata, aper_params, (1.0, 2.0, 3.0), 2.0, fit_psf=True
+        )
+
+
+def test_do_photometry(tmp_path, image_model):
+    """
+    Test that do_photometry can recover mock sources.
+    """
+    os.chdir(tmp_path)
+
+    step = SourceCatalogStep(
+        bkg_boxsize=20,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        save_results=False,
+    )
+    result = step.call(image_model)
+    cat = result.source_catalog
+
+    assert len(cat) == 7
+
+    assert isinstance(cat, Table)
