@@ -2,6 +2,8 @@
 Module for the source catalog step.
 """
 
+
+import contextlib
 import logging
 
 import numpy as np
@@ -61,15 +63,13 @@ class SourceCatalogStep(RomanStep):
             source_catalog_model = maker_utils.mk_datamodel(cat_model)
 
             for key in source_catalog_model.meta.keys():
-                try:
-                    if key == "optical_element":
-                        value = model.meta.instrument[key]
-                    else:
-                        value = model.meta[key]
+                with contextlib.suppress(KeyError):
+                    value = (
+                        model.meta.instrument[key]
+                        if key == "optical_element"
+                        else model.meta[key]
+                    )
                     source_catalog_model.meta[key] = value
-                except KeyError:
-                    pass
-
             aperture_ee = (self.aperture_ee1, self.aperture_ee2, self.aperture_ee3)
             refdata = ReferenceData(model, aperture_ee)
             aperture_params = refdata.aperture_params

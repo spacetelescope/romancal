@@ -1088,7 +1088,7 @@ class RomanSourceCatalog:
     @staticmethod
     def get_psf_photometry_catalog_colnames_mapping() -> List:
         """
-        Get the mapping between the PSF photometry table column names
+        Set the mapping between the PSF photometry table column names
         and the final catalog column names.
 
         Returns
