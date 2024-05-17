@@ -334,22 +334,76 @@ def test_inputs(mosaic_model):
         )
 
 
-def test_do_photometry(tmp_path, image_model):
+def test_do_psf_photometry(tmp_path, image_model):
     """
-    Test that do_photometry can recover mock sources.
+    Test that do_psf_photometry can recover mock sources and their position and photometry.
     """
     os.chdir(tmp_path)
 
-    step = SourceCatalogStep(
+    # get column names mapping for PSF photometry
+    psf_colnames_mapping = (
+        RomanSourceCatalog.get_psf_photometry_catalog_colnames_mapping()
+    )
+    psf_colnames = [
+        x.get("new_name")
+        for x in psf_colnames_mapping
+        if x.get("old_name") in ["x_fit", "y_fit", "flux_fit"]
+    ]
+
+    step = SourceCatalogStep()
+    result = step.call(
+        image_model,
         bkg_boxsize=20,
         kernel_fwhm=2.0,
         snr_threshold=3,
         npixels=10,
         save_results=False,
     )
-    result = step.call(image_model)
     cat = result.source_catalog
 
+    assert isinstance(cat, Table)
+
+    # check the number of sources that have been detected
     assert len(cat) == 7
+    # check that all sources have both position and flux determined (ignore errors/flags)
+    assert all(len(cat[x]) and cat[x] is not [None, np.nan] for x in psf_colnames)
+
+
+@pytest.mark.parametrize("fit_psf", [True, False])
+def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
+    """
+    Test that fit_psf will determine whether the PSF
+    photometry columns are added to the final catalog or not.
+    """
+    os.chdir(tmp_path)
+
+    # get column names mapping for PSF photometry
+    psf_colnames_mapping = (
+        RomanSourceCatalog.get_psf_photometry_catalog_colnames_mapping()
+    )
+
+    step = SourceCatalogStep()
+    result = step.call(
+        image_model,
+        bkg_boxsize=20,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        save_results=False,
+        fit_psf=fit_psf,
+    )
+    cat = result.source_catalog
 
     assert isinstance(cat, Table)
+
+    # check if the PSF photometry column names are present or not based on fit_psf value
+    psf_colnames_present = all(
+        x.get("new_name") in cat.colnames for x in psf_colnames_mapping
+    )
+    psf_colnames_not_present = all(
+        x.get("new_name") not in cat.colnames for x in psf_colnames_mapping
+    )
+
+    assert (fit_psf and psf_colnames_present) or (
+        not fit_psf and psf_colnames_not_present
+    )
