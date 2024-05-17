@@ -1,7 +1,9 @@
 0.15.2 (unreleased)
 ===================
 
--
+source_catalog
+--------------
+- Add PSF photometry capability. [#1243]
 
 0.15.1 (2024-05-15)
 ===================
