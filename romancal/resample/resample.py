@@ -9,7 +9,7 @@ from roman_datamodels import datamodels, maker_utils, stnode
 from stcal.alignment.util import compute_scale
 
 from ..assign_wcs import utils
-from ..datamodels import ModelContainer
+from ..datamodels import ModelLibrary
 from . import gwcs_drizzle, resample_utils
 
 log = logging.getLogger(__name__)
@@ -77,14 +77,10 @@ class ResampleData:
                 deleted from memory. Default value is `True` to keep
                 all products in memory.
         """
-        if (
-            (input_models is None)
-            or (len(input_models) == 0)
-            or (not any(input_models))
-        ):
+        if (input_models is None) or (len(input_models) == 0):
             raise ValueError(
                 "No input has been provided. Input should be a list of datamodel(s) or "
-                "a ModelContainer."
+                "a ModelLibrary."
             )
 
         self.input_models = input_models
@@ -123,16 +119,22 @@ class ResampleData:
             if output_shape is not None:
                 self.output_wcs.array_shape = output_shape[::-1]
         else:
-            # determine output WCS based on all inputs, including a reference WCS
-            self.output_wcs = resample_utils.make_output_wcs(
-                self.input_models,
-                pscale_ratio=self.pscale_ratio,
-                pscale=pscale,
-                rotation=rotation,
-                shape=None if output_shape is None else output_shape[::-1],
-                crpix=crpix,
-                crval=crval,
-            )
+            # FIXME: only the wcs and one reference model are needed so this
+            # could be refactored to not keep all models in memory if stcal was updated
+            with self.input_models:
+                models = list(self.input_models)
+                # determine output WCS based on all inputs, including a reference WCS
+                self.output_wcs = resample_utils.make_output_wcs(
+                    models,
+                    pscale_ratio=self.pscale_ratio,
+                    pscale=pscale,
+                    rotation=rotation,
+                    shape=None if output_shape is None else output_shape[::-1],
+                    crpix=crpix,
+                    crval=crval,
+                )
+                for i, m in enumerate(models):
+                    self.input_models.discard(i, m)
 
         log.debug(f"Output mosaic size: {self.output_wcs.array_shape}")
 
@@ -157,35 +159,31 @@ class ResampleData:
             datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
         )
 
-        # update meta.basic
-        populate_mosaic_basic(self.blank_output, input_models)
+        # FIXME: could be refactored to not keep all models in memory
+        with self.input_models:
+            models = list(self.input_models)
 
-        # update meta.cal_step
-        self.blank_output.meta.cal_step = maker_utils.mk_l3_cal_step(
-            **input_models[0].meta.cal_step.to_flat_dict()
-        )
+            # update meta.basic
+            populate_mosaic_basic(self.blank_output, models)
 
-        # Update the output with all the component metas
-        populate_mosaic_individual(self.blank_output, input_models)
+            # update meta.cal_step
+            self.blank_output.meta.cal_step = maker_utils.mk_l3_cal_step(
+                **models[0].meta.cal_step.to_flat_dict()
+            )
 
-        # update meta data and wcs
-        # note we have made this input_model_0 variable so that if
-        # meta includes lazily-loaded objects, that we can successfully
-        # copy them into the metadata.  Directly running input_models[0].meta
-        # below can lead to input_models[0] going out of scope after
-        # meta is loaded but before the dictionary is constructed,
-        # which can lead to seek on closed file errors if
-        # meta contains lazily loaded objects.
-        input_model_0 = input_models[0]
-        l2_into_l3_meta(self.blank_output.meta, input_model_0.meta)
-        self.blank_output.meta.wcs = self.output_wcs
-        gwcs_into_l3(self.blank_output, self.output_wcs)
-        self.blank_output.cal_logs = stnode.CalLogs()
-        self.blank_output["individual_image_cal_logs"] = [
-            model.cal_logs for model in input_models
-        ]
+            # Update the output with all the component metas
+            populate_mosaic_individual(self.blank_output, models)
 
-        self.output_models = ModelContainer()
+            # update meta data and wcs
+            l2_into_l3_meta(self.blank_output.meta, models[0].meta)
+            self.blank_output.meta.wcs = self.output_wcs
+            gwcs_into_l3(self.blank_output, self.output_wcs)
+            self.blank_output.cal_logs = stnode.CalLogs()
+            self.blank_output["individual_image_cal_logs"] = [
+                model.cal_logs for model in models
+            ]
+            for i, m in enumerate(models):
+                self.input_models.discard(i, m)
 
     def do_drizzle(self):
         """Pick the correct drizzling mode based on ``self.single``."""
@@ -204,35 +202,115 @@ class ResampleData:
         Used for outlier detection
         """
         output_list = []
-        for exposure in self.input_models.models_grouped:
+        # for exposure in self.input_models.models_grouped:
+        for group_id, indices in self.input_models.group_indices.items():
             output_model = self.blank_output
             output_model.meta["resample"] = maker_utils.mk_resample()
-            # Determine output file type from input exposure filenames
-            # Use this for defining the output filename
-            indx = exposure[0].meta.filename.rfind(".")
-            output_type = exposure[0].meta.filename[indx:]
-            output_root = "_".join(
-                exposure[0].meta.filename.replace(output_type, "").split("_")[:-1]
-            )
-            output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
 
-            # Initialize the output with the wcs
-            driz = gwcs_drizzle.GWCSDrizzle(
-                output_model,
-                pixfrac=self.pixfrac,
-                kernel=self.kernel,
-                fillval=self.fillval,
-            )
+            with self.input_models:
+                example_image = self.input_models[indices[0]]
+                # Determine output file type from input exposure filenames
+                # Use this for defining the output filename
+                indx = example_image.meta.filename.rfind(".")
+                output_type = example_image.meta.filename[indx:]
+                output_root = "_".join(
+                    example_image.meta.filename.replace(output_type, "").split("_")[:-1]
+                )
+                output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
 
-            log.info(f"{len(exposure)} exposures to drizzle together")
-            for img in exposure:
-                img = datamodels.open(img)
-                # TODO: should weight_type=None here?
-                inwht = resample_utils.build_driz_weight(
-                    img, weight_type=self.weight_type, good_bits=self.good_bits
+                self.input_models.discard(indices[0], example_image)
+
+                # Initialize the output with the wcs
+                driz = gwcs_drizzle.GWCSDrizzle(
+                    output_model,
+                    pixfrac=self.pixfrac,
+                    kernel=self.kernel,
+                    fillval=self.fillval,
                 )
 
-                # apply sky subtraction
+                log.info(f"{len(indices)} exposures to drizzle together")
+                output_list = []
+                for index in indices:
+                    img = self.input_models[index]
+                    # TODO: should weight_type=None here?
+                    inwht = resample_utils.build_driz_weight(
+                        img, weight_type=self.weight_type, good_bits=self.good_bits
+                    )
+
+                    # apply sky subtraction
+                    if (
+                        hasattr(img.meta, "background")
+                        and img.meta.background.subtracted is False
+                        and img.meta.background.level is not None
+                    ):
+                        data = img.data - img.meta.background.level
+                    else:
+                        data = img.data
+
+                    xmin, xmax, ymin, ymax = resample_utils.resample_range(
+                        data.shape, img.meta.wcs.bounding_box
+                    )
+
+                    driz.add_image(
+                        data,
+                        img.meta.wcs,
+                        inwht=inwht,
+                        xmin=xmin,
+                        xmax=xmax,
+                        ymin=ymin,
+                        ymax=ymax,
+                    )
+                    del data
+                    self.input_models.discard(index, img)
+
+                # cast context array to uint32
+                output_model.context = output_model.context.astype("uint32")
+                if not self.in_memory:
+                    # Write out model to disk, then return filename
+                    output_name = output_model.meta.filename
+                    output_model.save(output_name)
+                    log.info(f"Exposure {output_name} saved to file")
+                    output_list.append(output_name)
+                else:
+                    output_list.append(output_model.copy())
+
+                output_model.data *= 0.0
+                output_model.weight *= 0.0
+
+        return ModelLibrary(output_list)
+
+    def resample_many_to_one(self):
+        """Resample and coadd many inputs to a single output.
+        Used for level 3 resampling
+        """
+        output_model = self.blank_output.copy()
+        output_model.meta.filename = self.output_filename
+        output_model.meta["resample"] = maker_utils.mk_resample()
+        output_model.meta.resample["members"] = []
+        output_model.meta.resample.weight_type = self.weight_type
+        output_model.meta.resample.pointings = len(self.input_models.group_names)
+
+        if self.blendheaders:
+            log.info("Skipping blendheaders for now.")
+
+        # Initialize the output with the wcs
+        driz = gwcs_drizzle.GWCSDrizzle(
+            output_model,
+            outwcs=self.output_wcs,
+            pixfrac=self.pixfrac,
+            kernel=self.kernel,
+            fillval=self.fillval,
+        )
+
+        log.info("Resampling science data")
+        members = []
+        with self.input_models:
+            for i, img in enumerate(self.input_models):
+                inwht = resample_utils.build_driz_weight(
+                    img,
+                    weight_type=self.weight_type,
+                    good_bits=self.good_bits,
+                )
                 if (
                     hasattr(img.meta, "background")
                     and img.meta.background.subtracted is False
@@ -255,88 +333,16 @@ class ResampleData:
                     ymin=ymin,
                     ymax=ymax,
                 )
-                del data
-                img.close()
+                del data, inwht
+                members.append(str(img.meta.filename))
+                self.input_models.discard(i, img)
 
-            # cast context array to uint32
-            output_model.context = output_model.context.astype("uint32")
-            if not self.in_memory:
-                # Write out model to disk, then return filename
-                output_name = output_model.meta.filename
-                output_model.save(output_name)
-                log.info(f"Exposure {output_name} saved to file")
-                output_list.append(output_name)
-            else:
-                output_list.append(output_model.copy())
-
-            output_model.data *= 0.0
-            output_model.weight *= 0.0
-
-        self.output_models = ModelContainer(output_list, return_open=self.in_memory)
-
-        return self.output_models
-
-    def resample_many_to_one(self):
-        """Resample and coadd many inputs to a single output.
-        Used for level 3 resampling
-        """
-        output_model = self.blank_output.copy()
-        output_model.meta.filename = self.output_filename
-        output_model.meta["resample"] = maker_utils.mk_resample()
-        output_model.meta.resample["members"] = []
-        output_model.meta.resample.weight_type = self.weight_type
-        output_model.meta.resample.pointings = len(self.input_models.models_grouped)
-
-        if self.blendheaders:
-            log.info("Skipping blendheaders for now.")
-
-        # Initialize the output with the wcs
-        driz = gwcs_drizzle.GWCSDrizzle(
-            output_model,
-            outwcs=self.output_wcs,
-            pixfrac=self.pixfrac,
-            kernel=self.kernel,
-            fillval=self.fillval,
-        )
-
-        log.info("Resampling science data")
-        members = []
-        for img in self.input_models:
-            inwht = resample_utils.build_driz_weight(
-                img,
-                weight_type=self.weight_type,
-                good_bits=self.good_bits,
-            )
-            if (
-                hasattr(img.meta, "background")
-                and img.meta.background.subtracted is False
-                and img.meta.background.level is not None
-            ):
-                data = img.data - img.meta.background.level
-            else:
-                data = img.data
-
-            xmin, xmax, ymin, ymax = resample_utils.resample_range(
-                data.shape, img.meta.wcs.bounding_box
-            )
-
-            driz.add_image(
-                data,
-                img.meta.wcs,
-                inwht=inwht,
-                xmin=xmin,
-                xmax=xmax,
-                ymin=ymin,
-                ymax=ymax,
-            )
-            del data, inwht
-            members.append(str(img.meta.filename))
-
-        members = (
-            members
-            if self.input_models.filepaths is None
-            else self.input_models.filepaths
-        )
+        # FIXME: what are filepaths here?
+        # members = (
+        #     members
+        #     if self.input_models.filepaths is None
+        #     else self.input_models.filepaths
+        # )
         output_model.meta.resample.members = members
 
         # Resample variances array in self.input_models to output_model
@@ -367,9 +373,7 @@ class ResampleData:
         # TODO: fix RAD to expect a context image datatype of int32
         output_model.context = output_model.context.astype(np.uint32)
 
-        self.output_models.append(output_model)
-
-        return self.output_models
+        return ModelLibrary([output_model])
 
     def resample_variance_array(self, name, output_model):
         """Resample variance arrays from ``self.input_models`` to the ``output_model``.
@@ -383,63 +387,65 @@ class ResampleData:
         inverse_variance_sum = np.full_like(output_model.data.value, np.nan)
 
         log.info(f"Resampling {name}")
-        for model in self.input_models:
-            variance = getattr(model, name)
-            if variance is None or variance.size == 0:
-                log.debug(
-                    f"No data for '{name}' for model "
-                    f"{repr(model.meta.filename)}. Skipping ..."
+        with self.input_models:
+            for i, model in enumerate(self.input_models):
+                variance = getattr(model, name)
+                if variance is None or variance.size == 0:
+                    log.debug(
+                        f"No data for '{name}' for model "
+                        f"{repr(model.meta.filename)}. Skipping ..."
+                    )
+                    continue
+                elif variance.shape != model.data.shape:
+                    log.warning(
+                        f"Data shape mismatch for '{name}' for model "
+                        f"{repr(model.meta.filename)}. Skipping..."
+                    )
+                    continue
+
+                # create a unit weight map for all the input pixels with science data
+                inwht = resample_utils.build_driz_weight(
+                    model, weight_type=None, good_bits=self.good_bits
                 )
-                continue
-            elif variance.shape != model.data.shape:
-                log.warning(
-                    f"Data shape mismatch for '{name}' for model "
-                    f"{repr(model.meta.filename)}. Skipping..."
+
+                resampled_variance = np.zeros_like(output_model.data)
+                outwht = np.zeros_like(output_model.data)
+                outcon = np.zeros_like(output_model.context)
+
+                xmin, xmax, ymin, ymax = resample_utils.resample_range(
+                    variance.shape, model.meta.wcs.bounding_box
                 )
-                continue
 
-            # create a unit weight map for all the input pixels with science data
-            inwht = resample_utils.build_driz_weight(
-                model, weight_type=None, good_bits=self.good_bits
-            )
+                # resample the variance array (fill "unpopulated" pixels with NaNs)
+                self.drizzle_arrays(
+                    variance,
+                    inwht,
+                    model.meta.wcs,
+                    output_wcs,
+                    resampled_variance,
+                    outwht,
+                    outcon,
+                    pixfrac=self.pixfrac,
+                    kernel=self.kernel,
+                    fillval=np.nan,
+                    xmin=xmin,
+                    xmax=xmax,
+                    ymin=ymin,
+                    ymax=ymax,
+                )
 
-            resampled_variance = np.zeros_like(output_model.data)
-            outwht = np.zeros_like(output_model.data)
-            outcon = np.zeros_like(output_model.context)
+                # Add the inverse of the resampled variance to a running sum.
+                # Update only pixels (in the running sum) with valid new values:
+                mask = resampled_variance > 0
 
-            xmin, xmax, ymin, ymax = resample_utils.resample_range(
-                variance.shape, model.meta.wcs.bounding_box
-            )
-
-            # resample the variance array (fill "unpopulated" pixels with NaNs)
-            self.drizzle_arrays(
-                variance,
-                inwht,
-                model.meta.wcs,
-                output_wcs,
-                resampled_variance,
-                outwht,
-                outcon,
-                pixfrac=self.pixfrac,
-                kernel=self.kernel,
-                fillval=np.nan,
-                xmin=xmin,
-                xmax=xmax,
-                ymin=ymin,
-                ymax=ymax,
-            )
-
-            # Add the inverse of the resampled variance to a running sum.
-            # Update only pixels (in the running sum) with valid new values:
-            mask = resampled_variance > 0
-
-            inverse_variance_sum[mask] = np.nansum(
-                [
-                    inverse_variance_sum[mask],
-                    np.reciprocal(resampled_variance[mask]),
-                ],
-                axis=0,
-            )
+                inverse_variance_sum[mask] = np.nansum(
+                    [
+                        inverse_variance_sum[mask],
+                        np.reciprocal(resampled_variance[mask]),
+                    ],
+                    axis=0,
+                )
+                self.input_models.discard(i, model)
 
         # We now have a sum of the inverse resampled variances.  We need the
         # inverse of that to get back to units of variance.
@@ -461,44 +467,46 @@ class ResampleData:
         exptime_tot = np.zeros(output_model.data.shape, dtype="f4")
 
         log.info("Resampling exposure time")
-        for model in self.input_models:
-            exptime = np.full(
-                model.data.shape, model.meta.exposure.effective_exposure_time
-            )
+        with self.input_models:
+            for i, model in enumerate(self.input_models):
+                exptime = np.full(
+                    model.data.shape, model.meta.exposure.effective_exposure_time
+                )
 
-            # create a unit weight map for all the input pixels with science data
-            inwht = resample_utils.build_driz_weight(
-                model, weight_type=None, good_bits=self.good_bits
-            )
+                # create a unit weight map for all the input pixels with science data
+                inwht = resample_utils.build_driz_weight(
+                    model, weight_type=None, good_bits=self.good_bits
+                )
 
-            resampled_exptime = np.zeros_like(output_model.data)
-            outwht = np.zeros_like(output_model.data)
-            outcon = np.zeros_like(output_model.context, dtype="i4")
-            # drizzle wants an i4, but datamodels wants a u4.
+                resampled_exptime = np.zeros_like(output_model.data)
+                outwht = np.zeros_like(output_model.data)
+                outcon = np.zeros_like(output_model.context, dtype="i4")
+                # drizzle wants an i4, but datamodels wants a u4.
 
-            xmin, xmax, ymin, ymax = resample_utils.resample_range(
-                exptime.shape, model.meta.wcs.bounding_box
-            )
+                xmin, xmax, ymin, ymax = resample_utils.resample_range(
+                    exptime.shape, model.meta.wcs.bounding_box
+                )
 
-            # resample the exptime array
-            self.drizzle_arrays(
-                exptime * u.s,  # drizzle_arrays expects these to have units
-                inwht,
-                model.meta.wcs,
-                output_wcs,
-                resampled_exptime,
-                outwht,
-                outcon,
-                pixfrac=1,  # for exposure time images, always use pixfrac = 1
-                kernel=self.kernel,
-                fillval=0,
-                xmin=xmin,
-                xmax=xmax,
-                ymin=ymin,
-                ymax=ymax,
-            )
+                # resample the exptime array
+                self.drizzle_arrays(
+                    exptime * u.s,  # drizzle_arrays expects these to have units
+                    inwht,
+                    model.meta.wcs,
+                    output_wcs,
+                    resampled_exptime,
+                    outwht,
+                    outcon,
+                    pixfrac=1,  # for exposure time images, always use pixfrac = 1
+                    kernel=self.kernel,
+                    fillval=0,
+                    xmin=xmin,
+                    xmax=xmax,
+                    ymin=ymin,
+                    ymax=ymax,
+                )
 
-            exptime_tot += resampled_exptime.value
+                exptime_tot += resampled_exptime.value
+                self.input_models.discard(i, model)
 
         return exptime_tot
 
@@ -512,9 +520,13 @@ class ResampleData:
             f"{max_exposure_time:.1f}"
         )
         exposure_times = {"start": [], "end": []}
-        for exposure in self.input_models.models_grouped:
-            exposure_times["start"].append(exposure[0].meta.exposure.start_time)
-            exposure_times["end"].append(exposure[0].meta.exposure.end_time)
+        with self.input_models:
+            for group_id, indices in self.input_models.group_indices.items():
+                index = indices[0]
+                model = self.input_models[index]
+                exposure_times["start"].append(model.meta.exposure.start_time)
+                exposure_times["end"].append(model.meta.exposure.end_time)
+                self.input_models.discard(index, model)
 
         # Update some basic exposure time values based on output_model
         output_model.meta.basic.mean_exposure_time = total_exposure_time
@@ -832,7 +844,7 @@ def calc_pa(wcs, ra, dec):
 
 
 def populate_mosaic_basic(
-    output_model: datamodels.MosaicModel, input_models: [List, ModelContainer]
+    output_model: datamodels.MosaicModel, input_models: [List, ModelLibrary]
 ):
     """
     Populate basic metadata fields in the output mosaic model based on input models.
@@ -841,9 +853,9 @@ def populate_mosaic_basic(
     ----------
     output_model : MosaicModel
         Object to populate with basic metadata.
-    input_models : [List, ModelContainer]
+    input_models : [List, ModelLibrary]
         List of input data models from which to extract the metadata.
-        ModelContainer is also supported.
+        ModelLibrary is also supported.
 
     Returns
     -------
@@ -902,7 +914,7 @@ def populate_mosaic_basic(
 
 
 def populate_mosaic_individual(
-    output_model: datamodels.MosaicModel, input_models: [List, ModelContainer]
+    output_model: datamodels.MosaicModel, input_models: [List, ModelLibrary]
 ):
     """
     Populate individual meta fields in the output mosaic model based on input models.
@@ -911,9 +923,9 @@ def populate_mosaic_individual(
     ----------
     output_model : MosaicModel
         Object to populate with basic metadata.
-    input_models : [List, ModelContainer]
+    input_models : [List, ModelLibrary]
         List of input data models from which to extract the metadata.
-        ModelContainer is also supported.
+        ModelLibrary is also supported.
 
     Returns
     -------

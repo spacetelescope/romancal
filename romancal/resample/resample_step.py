@@ -9,7 +9,7 @@ from astropy.extern.configobj.validate import Validator
 from roman_datamodels import datamodels
 from stcal.alignment import util
 
-from ..datamodels import ModelContainer
+from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
 from . import resample
 
@@ -30,12 +30,12 @@ class ResampleStep(RomanStep):
 
     Parameters
     -----------
-    input : str, `roman_datamodels.datamodels.DataModel`, or `~romancal.datamodels.container.ModelContainer`
+    input : str, `roman_datamodels.datamodels.DataModel`, or `~romancal.datamodels.ModelLibrary`
         If a string is provided, it should correspond to either a single ASDF filename
         or an association filename. Alternatively, a single DataModel instance can be
         provided instead of an ASDF filename. Multiple files can be processed via
         either an association file or wrapped by a
-        `~romancal.datamodels.container.ModelContainer`.
+        `~romancal.datamodels.ModelLibrary`.
 
     Returns
     -------
@@ -68,43 +68,49 @@ class ResampleStep(RomanStep):
 
     def process(self, input):
         if isinstance(input, datamodels.DataModel):
-            input_models = ModelContainer([input])
+            input_models = ModelLibrary([input])
             # set output filename from meta.filename found in the first datamodel
-            output = input_models[0].meta.filename
+            output = input.meta.filename
             self.blendheaders = False
         elif isinstance(input, str):
             # either a single asdf filename or an association filename
             try:
                 # association filename
-                input_models = ModelContainer(input)
+                input_models = ModelLibrary(input)
             except Exception:
                 # single ASDF filename
-                input_models = ModelContainer([input])
-            if hasattr(input_models, "asn_table") and len(input_models.asn_table):
-                # set output filename from ASN table
-                output = input_models.asn_table["products"][0]["name"]
-            elif hasattr(input_models[0], "meta"):
-                # set output filename from meta.filename found in the first datamodel
-                output = input_models[0].meta.filename
-        elif isinstance(input, ModelContainer):
+                input_models = ModelLibrary([input])
+            # FIXME: I think this can be refactored and maybe could be common code
+            # for several steps
+            output = input_models.asn["products"][0]["name"]
+            # if hasattr(input_models, "asn_table") and len(input_models.asn_table):
+            #     # set output filename from ASN table
+            #     output = input_models.asn_table["products"][0]["name"]
+            # elif hasattr(input_models[0], "meta"):
+            #     # set output filename from meta.filename found in the first datamodel
+            #     output = input_models[0].meta.filename
+        elif isinstance(input, ModelLibrary):
             input_models = input
             # set output filename using the common prefix of all datamodels
-            output = (
-                f"{os.path.commonprefix([x.meta.filename for x in input_models])}.asdf"
-            )
-            if len(output) == 0:
+            # TODO can this be set from the members?
+            output = f"{os.path.commonprefix([x['expname'] for x in input_models.asn['products'][0]['members']])}.asdf"
+            if len(output) == 0:  # FIXME won't this always at least be ".asdf"?
                 # set default filename if no common prefix can be determined
                 output = "resample_output.asdf"
         else:
             raise TypeError(
-                "Input must be an ASN filename, a ModelContainer, "
+                "Input must be an ASN filename, a ModelLibrary, "
                 "a single ASDF filename, or a single Roman DataModel."
             )
 
         # Check that input models are 2D images
-        if len(input_models[0].data.shape) != 2:
-            # resample can only handle 2D images, not 3D cubes, etc
-            raise RuntimeError(f"Input {input_models[0]} is not a 2D image.")
+        with input_models:
+            example_model = input_models[0]
+            data_shape = example_model.data.shape
+            input_models.discard(0, example_model)
+            if len(data_shape) != 2:
+                # resample can only handle 2D images, not 3D cubes, etc
+                raise RuntimeError(f"Input {input_models[0]} is not a 2D image.")
 
         self.wht_type = self.weight_type
         self.log.info("Setting drizzle's default parameters...")
@@ -135,24 +141,23 @@ class ResampleStep(RomanStep):
         resamp = resample.ResampleData(input_models, output=output, **kwargs)
         result = resamp.do_drizzle()
 
-        for model in result:
-            self._final_updates(model, input_models, kwargs)
-        if len(result) == 1:
-            result = result[0]
+        with result:
+            for i, model in enumerate(result):
+                self._final_updates(model, input_models, kwargs)
+                result[i] = model
+            if len(result) == 1:
+                model = result[0]
+                result.discard(0, model)
+                return model
 
-        input_models.close()
         return result
 
     def _final_updates(self, model, input_models, kwargs):
         model.meta.cal_step["resample"] = "COMPLETE"
         util.update_s_region_imaging(model)
-        if (
-            input_models.asn_pool_name is not None
-            and input_models.asn_table_name is not None
-        ):
-            # update ASN attributes
-            model.meta.asn.pool_name = input_models.asn_pool_name
-            model.meta.asn.table_name = input_models.asn_table_name
+        if (asn_pool := input_models.asn.get("asn_pool", None)) is not None:
+            model.meta.asn.pool_name = asn_pool
+        # TODO asn table name which appears to be the basename of the asn filename?
 
         # if pixel_scale exists, it will override pixel_scale_ratio.
         # calculate the actual value of pixel_scale_ratio based on pixel_scale

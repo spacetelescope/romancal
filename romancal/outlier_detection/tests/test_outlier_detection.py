@@ -363,3 +363,4 @@ def test_outlier_detection_always_returns_modelcontainer_with_updated_datamodels
     with res:
         for i, model in enumerate(res):
             assert model.meta.cal_step.outlier_detection == "COMPLETE"
+            res.discard(i, model)

@@ -188,11 +188,18 @@ class ModelLibrary(Sequence):
                         f"Models in library cannot use the same filename: {filename}"
                     )
                 self._model_store[index] = model
+                # FIXME: output models created during resample (during outlier detection
+                # an possibly others) do not have meta.observation which breaks the group_id
+                # code
+                try:
+                    group_id = _model_to_group_id(model)
+                except AttributeError:
+                    group_id = str(index)
                 members.append(
                     {
                         "expname": filename,
                         "exptype": getattr(model.meta, "exptype", "SCIENCE"),
-                        "group_id": _model_to_group_id(model),
+                        "group_id": group_id,
                     }
                 )
 
@@ -453,4 +460,6 @@ def _model_to_group_id(model):
     """
     Compute a "group_id" from a model using the DataModel interface
     """
+    if (group_id := getattr(model.meta, "group_id")) is not None:
+        return group_id
     return _mapping_to_group_id(model.meta.observation)

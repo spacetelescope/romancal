@@ -10,7 +10,7 @@ from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
 from roman_datamodels.maker_utils import mk_common_meta, mk_level2_image
 
-from romancal.datamodels import ModelContainer
+from romancal.datamodels import ModelLibrary
 from romancal.lib.tests.helpers import word_precision_check
 from romancal.resample import gwcs_drizzle, resample_utils
 from romancal.resample.resample import (
@@ -296,7 +296,7 @@ def multiple_exposures(exposure_1, exposure_2):
 
 def test_resampledata_init(exposure_1):
     """Test that ResampleData can set initial values."""
-    input_models = exposure_1
+    input_models = ModelLibrary(exposure_1)
     output = "output.asdf"
     single = False
     blendheaders = False
@@ -340,7 +340,7 @@ def test_resampledata_init(exposure_1):
 
 def test_resampledata_init_default(exposure_1):
     """Test instantiating ResampleData with default values."""
-    input_models = exposure_1
+    input_models = ModelLibrary(exposure_1)
     # Default parameter values
 
     resample_data = ResampleData(input_models)
@@ -359,7 +359,9 @@ def test_resampledata_init_default(exposure_1):
     assert resample_data.in_memory
 
 
-@pytest.mark.parametrize("input_models", [None, list(), [""], ModelContainer()])
+# FIXME: are these expected inputs?
+# @pytest.mark.parametrize("input_models", [None, list(), [""], ModelLibrary()])
+@pytest.mark.parametrize("input_models", [list()])
 def test_resampledata_init_invalid_input(input_models):
     """Test that ResampleData will raise an exception on invalid inputs."""
     with pytest.raises(Exception) as exec_info:
@@ -379,15 +381,23 @@ def test_resampledata_do_drizzle_many_to_one_default_no_rotation_single_exposure
     the same orientation (i.e. same PA) as the detector axes.
     """
 
-    input_models = ModelContainer(exposure_1)
+    input_models = ModelLibrary(exposure_1)
     resample_data = ResampleData(input_models)
 
     output_models = resample_data.resample_many_to_one()
 
-    output_min_value = np.min(output_models[0].meta.wcs.footprint())
-    output_max_value = np.max(output_models[0].meta.wcs.footprint())
+    with output_models:
+        model = output_models[0]
+        output_min_value = np.min(model.meta.wcs.footprint())
+        output_max_value = np.max(model.meta.wcs.footprint())
+        output_models.discard(0, model)
 
-    input_wcs_list = [sca.meta.wcs.footprint() for sca in input_models]
+    with input_models:
+        # TODO across model attribute access would be useful here
+        input_wcs_list = []
+        for i, model in enumerate(input_models):
+            input_wcs_list.append(model.meta.wcs.footprint())
+            input_models.discard(i, model)
     expected_min_value = np.min(np.stack(input_wcs_list))
     expected_max_value = np.max(np.stack(input_wcs_list))
 
@@ -407,15 +417,24 @@ def test_resampledata_do_drizzle_many_to_one_default_no_rotation_multiple_exposu
     the same orientation (i.e. same PA) as the detector axes.
     """
 
-    input_models = ModelContainer(multiple_exposures)
+    input_models = ModelLibrary(multiple_exposures)
     resample_data = ResampleData(input_models)
 
     output_models = resample_data.resample_many_to_one()
 
-    output_min_value = np.min(output_models[0].meta.wcs.footprint())
-    output_max_value = np.max(output_models[0].meta.wcs.footprint())
+    with output_models:
+        model = output_models[0]
+        output_min_value = np.min(model.meta.wcs.footprint())
+        output_max_value = np.max(model.meta.wcs.footprint())
+        output_models.discard(0, model)
 
-    input_wcs_list = [sca.meta.wcs.footprint() for sca in multiple_exposures]
+    with input_models:
+        # TODO across model attribute access would be useful here
+        input_wcs_list = []
+        for i, model in enumerate(input_models):
+            input_wcs_list.append(model.meta.wcs.footprint())
+            input_models.discard(i, model)
+
     expected_min_value = np.min(np.stack(input_wcs_list))
     expected_max_value = np.max(np.stack(input_wcs_list))
 
@@ -432,15 +451,24 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0(exposure_1):
     N.B.: in this case, rotation=0 will create a WCS that will be oriented North up.
     """
 
-    input_models = ModelContainer(exposure_1)
+    input_models = ModelLibrary(exposure_1)
     resample_data = ResampleData(input_models, **{"rotation": 0})
 
     output_models = resample_data.resample_many_to_one()
 
-    output_min_value = np.min(output_models[0].meta.wcs.footprint())
-    output_max_value = np.max(output_models[0].meta.wcs.footprint())
+    with output_models:
+        model = output_models[0]
+        output_min_value = np.min(model.meta.wcs.footprint())
+        output_max_value = np.max(model.meta.wcs.footprint())
+        output_models.discard(0, model)
 
-    input_wcs_list = [sca.meta.wcs.footprint() for sca in exposure_1]
+    with input_models:
+        # TODO across model attribute access would be useful here
+        input_wcs_list = []
+        for i, model in enumerate(input_models):
+            input_wcs_list.append(model.meta.wcs.footprint())
+            input_models.discard(i, model)
+
     expected_min_value = np.min(np.stack(input_wcs_list))
     expected_max_value = np.max(np.stack(input_wcs_list))
 
@@ -459,15 +487,26 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0_multiple_exposur
     N.B.: in this case, rotation=0 will create a WCS that will be oriented North up.
     """
 
-    input_models = ModelContainer(multiple_exposures)
+    input_models = ModelLibrary(multiple_exposures)
     resample_data = ResampleData(input_models, **{"rotation": 0})
 
     output_models = resample_data.resample_many_to_one()
 
-    output_min_value = np.min(output_models[0].meta.wcs.footprint())
-    output_max_value = np.max(output_models[0].meta.wcs.footprint())
+    # FIXME: this code is in several tests and could be put into a helper function
+    with output_models:
+        model = output_models[0]
+        output_min_value = np.min(model.meta.wcs.footprint())
+        output_max_value = np.max(model.meta.wcs.footprint())
+        output_models.discard(0, model)
 
-    input_wcs_list = [sca.meta.wcs.footprint() for sca in multiple_exposures]
+    # FIXME: this code is in several tests and could be put into a helper function
+    with input_models:
+        # TODO across model attribute access would be useful here
+        input_wcs_list = []
+        for i, model in enumerate(input_models):
+            input_wcs_list.append(model.meta.wcs.footprint())
+            input_models.discard(i, model)
+
     expected_min_value = np.min(np.stack(input_wcs_list))
     expected_max_value = np.max(np.stack(input_wcs_list))
 
@@ -480,88 +519,98 @@ def test_resampledata_do_drizzle_many_to_one_single_input_model(wfi_sca1):
     """Test that the output of resample from a single input file creates a WCS
     footprint vertices that are close to the input WCS footprint's vertices."""
 
-    input_models = ModelContainer([wfi_sca1])
+    input_models = ModelLibrary([wfi_sca1])
     resample_data = ResampleData(
         input_models, output=wfi_sca1.meta.filename, **{"rotation": 0}
     )
 
     output_models = resample_data.resample_many_to_one()
 
-    flat_1 = np.sort(wfi_sca1.meta.wcs.footprint().flatten())
-    flat_2 = np.sort(output_models[0].meta.wcs.footprint().flatten())
-
-    # Assert
     assert len(output_models) == 1
-    assert output_models[0].meta.filename == resample_data.output_filename
+
+    flat_1 = np.sort(wfi_sca1.meta.wcs.footprint().flatten())
+    with output_models:
+        model = output_models[0]
+        flat_2 = np.sort(model.meta.wcs.footprint().flatten())
+        assert model.meta.filename == resample_data.output_filename
+        output_models.discard(0, model)
+
     np.testing.assert_allclose(flat_1, flat_2)
 
 
 def test_update_exposure_times_different_sca_same_exposure(exposure_1):
     """Test that update_exposure_times is properly updating the exposure parameters
     for a set of different SCAs belonging to the same exposure."""
-    input_models = ModelContainer(exposure_1)
+    input_models = ModelLibrary(exposure_1)
     resample_data = ResampleData(input_models)
 
-    output_model = resample_data.resample_many_to_one()[0]
+    output_models = resample_data.resample_many_to_one()
+    with output_models:
+        output_model = output_models[0]
 
-    exptime_tot = resample_data.resample_exposure_time(output_model)
-    resample_data.update_exposure_times(output_model, exptime_tot)
+        exptime_tot = resample_data.resample_exposure_time(output_model)
+        resample_data.update_exposure_times(output_model, exptime_tot)
 
-    # these three SCAs overlap, so the max exposure time is 3x.
-    # get this time within 0.1 s.
-    time_difference = (
-        output_model.meta.resample.product_exposure_time
-        - 3 * exposure_1[0].meta.exposure.effective_exposure_time
-    )
-    assert np.abs(time_difference) < 0.1
-    assert (
-        output_model.meta.basic.time_first_mjd
-        == exposure_1[0].meta.exposure.start_time.mjd
-    )
-    assert (
-        output_model.meta.basic.time_last_mjd
-        == exposure_1[0].meta.exposure.end_time.mjd
-    )
+        # these three SCAs overlap, so the max exposure time is 3x.
+        # get this time within 0.1 s.
+        time_difference = (
+            output_model.meta.resample.product_exposure_time
+            - 3 * exposure_1[0].meta.exposure.effective_exposure_time
+        )
+        assert np.abs(time_difference) < 0.1
+        assert (
+            output_model.meta.basic.time_first_mjd
+            == exposure_1[0].meta.exposure.start_time.mjd
+        )
+        assert (
+            output_model.meta.basic.time_last_mjd
+            == exposure_1[0].meta.exposure.end_time.mjd
+        )
+        output_models.discard(0, output_model)
 
 
 def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure_2):
     """Test that update_exposure_times is properly updating the exposure parameters
     for a set of the same SCA but belonging to different exposures."""
-    input_models = ModelContainer([exposure_1[0], exposure_2[0]])
+    input_models = ModelLibrary([exposure_1[0], exposure_2[0]])
     resample_data = ResampleData(input_models)
 
-    output_model = resample_data.resample_many_to_one()[0]
+    with input_models:
+        models = list(input_models)
+        first_mjd = min(x.meta.exposure.start_time for x in models).mjd
+        last_mjd = max(x.meta.exposure.end_time for x in models).mjd
+        [input_models.discard(i, model) for i, model in enumerate(models)]
 
-    exptime_tot = resample_data.resample_exposure_time(output_model)
-    resample_data.update_exposure_times(output_model, exptime_tot)
+    output_models = resample_data.resample_many_to_one()
+    with output_models:
+        output_model = output_models[0]
 
-    assert len(resample_data.input_models.models_grouped) == 2
+        exptime_tot = resample_data.resample_exposure_time(output_model)
+        resample_data.update_exposure_times(output_model, exptime_tot)
 
-    # these exposures overlap perfectly so the max exposure time should
-    # be equal to the individual time times two.
-    time_difference = (
-        output_model.meta.resample.product_exposure_time
-        - 2 * exposure_1[0].meta.exposure.effective_exposure_time
-    )
-    assert np.abs(time_difference) < 0.1
+        assert len(resample_data.input_models.group_names) == 2
 
-    assert (
-        output_model.meta.basic.time_first_mjd
-        == min(x.meta.exposure.start_time for x in input_models).mjd
-    )
+        # these exposures overlap perfectly so the max exposure time should
+        # be equal to the individual time times two.
+        time_difference = (
+            output_model.meta.resample.product_exposure_time
+            - 2 * exposure_1[0].meta.exposure.effective_exposure_time
+        )
+        assert np.abs(time_difference) < 0.1
 
-    assert (
-        output_model.meta.basic.time_last_mjd
-        == max(x.meta.exposure.end_time for x in input_models).mjd
-    )
+        assert output_model.meta.basic.time_first_mjd == first_mjd
 
-    # likewise the per-pixel median exposure time is just 2x the individual
-    # sca exposure time.
-    time_difference = (
-        output_model.meta.basic.max_exposure_time
-        - 2 * exposure_1[0].meta.exposure.effective_exposure_time
-    )
-    assert np.abs(time_difference) < 0.1
+        assert output_model.meta.basic.time_last_mjd == last_mjd
+
+        # likewise the per-pixel median exposure time is just 2x the individual
+        # sca exposure time.
+        time_difference = (
+            output_model.meta.basic.max_exposure_time
+            - 2 * exposure_1[0].meta.exposure.effective_exposure_time
+        )
+        assert np.abs(time_difference) < 0.1
+
+        output_models.discard(0, output_model)
 
 
 @pytest.mark.parametrize(
@@ -571,7 +620,7 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
 def test_resample_variance_array(wfi_sca1, wfi_sca4, name):
     """Test that the mean value for the variance array lies within 1% of the
     expectation."""
-    input_models = ModelContainer([wfi_sca1, wfi_sca4])
+    input_models = ModelLibrary([wfi_sca1, wfi_sca4])
     resample_data = ResampleData(input_models, **{"rotation": 0})
 
     output_model = resample_data.blank_output.copy()
@@ -583,14 +632,17 @@ def test_resample_variance_array(wfi_sca1, wfi_sca4, name):
         kernel=resample_data.kernel,
         fillval=resample_data.fillval,
     )
-    [driz.add_image(x.data, x.meta.wcs) for x in resample_data.input_models]
+    with resample_data.input_models:
+        mean_data = []
+        for i, model in enumerate(resample_data.input_models):
+            driz.add_image(model.data, model.meta.wcs)
+            mean_data.append(getattr(model, name)[:])
+            resample_data.input_models.discard(i, model)
 
     resample_data.resample_variance_array(name, output_model)
 
     # combined variance is inversely proportional to the number of "measurements"
-    expected_combined_variance_value = np.nanmean(
-        [getattr(x, name) for x in input_models]
-    ) / len(input_models)
+    expected_combined_variance_value = np.nanmean(mean_data) / len(input_models)
 
     np.isclose(
         np.nanmean(getattr(output_model, name)).value,
@@ -603,7 +655,7 @@ def test_custom_wcs_input_small_overlap_no_rotation(wfi_sca1, wfi_sca3):
     """Test that resample can create a proper output in the edge case where the
     desired output WCS does not encompass the entire input datamodel but, instead, have
     just a small overlap."""
-    input_models = ModelContainer([wfi_sca1])
+    input_models = ModelLibrary([wfi_sca1])
     resample_data = ResampleData(
         input_models,
         **{"output_wcs": wfi_sca3.meta.wcs, "rotation": 0},
@@ -611,18 +663,25 @@ def test_custom_wcs_input_small_overlap_no_rotation(wfi_sca1, wfi_sca3):
 
     output_models = resample_data.resample_many_to_one()
 
-    np.testing.assert_allclose(output_models[0].meta.wcs(0, 0), wfi_sca3.meta.wcs(0, 0))
+    with output_models:
+        model = output_models[0]
+        np.testing.assert_allclose(model.meta.wcs(0, 0), wfi_sca3.meta.wcs(0, 0))
+        output_models.discard(0, model)
 
 
 def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures):
     """Test that resample can create a proper output that encompasses the entire
     combined FOV of the input datamodels."""
-    input_models = ModelContainer(multiple_exposures)
-    # create output WCS encompassing the entire exposure FOV
-    output_wcs = resample_utils.make_output_wcs(
-        input_models,
-        rotation=0,
-    )
+    input_models = ModelLibrary(multiple_exposures)
+
+    with input_models:
+        models = list(input_models)
+        # create output WCS encompassing the entire exposure FOV
+        output_wcs = resample_utils.make_output_wcs(
+            models,
+            rotation=0,
+        )
+        [input_models.discard(i, model) for i, model in enumerate(models)]
     resample_data = ResampleData(
         input_models,
         **{"output_wcs": output_wcs},
@@ -630,10 +689,19 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures):
 
     output_models = resample_data.resample_many_to_one()
 
-    output_min_value = np.min(output_models[0].meta.wcs.footprint())
-    output_max_value = np.max(output_models[0].meta.wcs.footprint())
+    with output_models:
+        model = output_models[0]
+        output_min_value = np.min(model.meta.wcs.footprint())
+        output_max_value = np.max(model.meta.wcs.footprint())
+        output_models.discard(0, model)
 
-    input_wcs_list = [sca.meta.wcs.footprint() for sca in multiple_exposures]
+    with input_models:
+        # TODO across model attribute access would be useful here
+        input_wcs_list = []
+        for i, model in enumerate(input_models):
+            input_wcs_list.append(model.meta.wcs.footprint())
+            input_models.discard(i, model)
+
     expected_min_value = np.min(np.stack(input_wcs_list))
     expected_max_value = np.max(np.stack(input_wcs_list))
 
@@ -648,37 +716,47 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
 ):
     """Test that resample methods return non-empty weight arrays."""
 
-    input_models = ModelContainer(exposure_1)
+    input_models = ModelLibrary(exposure_1)
     resample_data = ResampleData(input_models, wht_type=weight_type)
 
     output_models_many_to_one = resample_data.resample_many_to_one()
     output_models_many_to_many = resample_data.resample_many_to_many()
 
-    assert np.any(output_models_many_to_one[0].weight > 0)
-    assert np.any(output_models_many_to_many[0].weight > 0)
+    with output_models_many_to_one, output_models_many_to_many:
+        many_to_many_model = output_models_many_to_many[0]
+        many_to_one_model = output_models_many_to_one[0]
+        assert np.any(many_to_one_model.weight > 0)
+        assert np.any(many_to_many_model.weight > 0)
+        output_models_many_to_many.discard(0, many_to_many_model)
+        output_models_many_to_one.discard(0, many_to_one_model)
 
 
 def test_populate_mosaic_basic_single_exposure(exposure_1):
     """
     Test the populate_mosaic_basic function with a given exposure.
     """
-    input_models = ModelContainer(exposure_1)
-    output_wcs = resample_utils.make_output_wcs(
-        input_models,
-        pscale_ratio=1,
-        pscale=0.000031,
-        rotation=0,
-        shape=None,
-        crpix=(0, 0),
-        crval=(0, 0),
-    )
-    output_model = maker_utils.mk_datamodel(
-        datamodels.MosaicModel, shape=tuple(output_wcs.array_shape)
-    )
+    input_models = ModelLibrary(exposure_1)
+    with input_models:
+        models = list(input_models)
+        output_wcs = resample_utils.make_output_wcs(
+            models,
+            pscale_ratio=1,
+            pscale=0.000031,
+            rotation=0,
+            shape=None,
+            crpix=(0, 0),
+            crval=(0, 0),
+        )
 
-    populate_mosaic_basic(output_model, input_models=input_models)
+        output_model = maker_utils.mk_datamodel(
+            datamodels.MosaicModel, shape=tuple(output_wcs.array_shape)
+        )
 
-    input_meta = [datamodel.meta for datamodel in input_models]
+        populate_mosaic_basic(output_model, input_models=models)
+
+        input_meta = [datamodel.meta for datamodel in models]
+
+        [input_models.discard(i, model) for i, model in enumerate(models)]
 
     assert output_model.meta.basic.time_first_mjd == np.min(
         [x.exposure.start_time.mjd for x in input_meta]
@@ -1028,21 +1106,26 @@ def test_l3_wcsinfo(multiple_exposures):
         }
     )
 
-    input_models = ModelContainer(multiple_exposures)
+    input_models = ModelLibrary(multiple_exposures)
     resample_data = ResampleData(input_models)
 
-    output_model = resample_data.resample_many_to_one()[0]
+    output_models = resample_data.resample_many_to_one()
 
-    assert output_model.meta.wcsinfo.projection == expected.projection
-    assert word_precision_check(output_model.meta.wcsinfo.s_region, expected.s_region)
-    for key in expected.keys():
-        if key not in ["projection", "s_region"]:
-            assert np.allclose(output_model.meta.wcsinfo[key], expected[key])
+    with output_models:
+        output_model = output_models[0]
+        assert output_model.meta.wcsinfo.projection == expected.projection
+        assert word_precision_check(
+            output_model.meta.wcsinfo.s_region, expected.s_region
+        )
+        for key in expected.keys():
+            if key not in ["projection", "s_region"]:
+                assert np.allclose(output_model.meta.wcsinfo[key], expected[key])
+        output_models.discard(0, output_model)
 
 
 def test_l3_individual_image_meta(multiple_exposures):
     """Test that the individual_image_meta is being populated"""
-    input_models = ModelContainer(multiple_exposures)
+    input_models = multiple_exposures
     output_model = maker_utils.mk_datamodel(datamodels.MosaicModel)
 
     # Act
