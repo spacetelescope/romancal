@@ -57,9 +57,9 @@ env_vars = [
     'CRDS_PATH=/grp/crds/roman/test/',
     'DD_ENV=ci',
     'DD_SERVICE=romancal',
+    'PATCH_TABLE_PATH=/grp/roman/scsb/tesselation/patch_file_reduced.asdf',
     'WEBBPSF_PATH=/grp/jwst/ote/webbpsf-data',
     'PYSYN_CDBS=/grp/hst/cdbs',
-    'PATCH_TABLE_PATH=/grp/roman/scsb/tesselation/patch_file_reduced.asdf',
 ]
 if (env.ENV_VARS) {
     env_vars.addAll(MultiLineToArray(env.ENV_VARS))
