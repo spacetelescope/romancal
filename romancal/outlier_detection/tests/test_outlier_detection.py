@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -7,32 +6,6 @@ from astropy.units import Quantity
 
 from romancal.datamodels import ModelContainer
 from romancal.outlier_detection import OutlierDetectionStep, outlier_detection
-
-
-@pytest.fixture()
-def clean_up_after_test():
-    """
-    Clean up working directory after test.
-    """
-
-    def _clean_up_working_directory(pattern="*.asdf"):
-        """
-        Clean up the working directory by removing files matching the specified pattern.
-        Parameters
-        ----------
-        pattern : str, optional
-            The pattern of the file pattern to match (default is "*.asdf")
-
-        Returns
-        -------
-        None
-
-        """
-        for x in (Path(os.getcwd())).glob(pattern):
-            if x.exists():
-                x.unlink()
-
-    return _clean_up_working_directory
 
 
 @pytest.mark.parametrize(
@@ -167,9 +140,7 @@ def test_outlier_init_default_parameters(pars, base_image):
     assert step.resample_suffix == f"_outlier_{pars['resample_suffix']}.asdf"
 
 
-def test_outlier_do_detection_write_files_to_custom_location(
-    tmp_path, base_image, clean_up_after_test
-):
+def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_image):
     """
     Test that OutlierDetection can create files on disk in a custom location.
     """
@@ -219,10 +190,8 @@ def test_outlier_do_detection_write_files_to_custom_location(
 
     assert all(x.exists() for x in outlier_files_path)
 
-    clean_up_after_test("*.asdf")
 
-
-def test_outlier_do_detection_find_outliers(tmp_path, base_image, clean_up_after_test):
+def test_outlier_do_detection_find_outliers(tmp_path, base_image):
     """
     Test that OutlierDetection can find outliers.
     """
@@ -295,11 +264,9 @@ def test_outlier_do_detection_find_outliers(tmp_path, base_image, clean_up_after
     # assert all(outliers_input_coords == outliers_output_coords) doesn't work with python 3.9
     assert all(o == i for i, o in zip(outliers_input_coords, outliers_output_coords))
 
-    clean_up_after_test("*.asdf")
-
 
 def test_outlier_do_detection_do_not_find_outliers_in_identical_images(
-    tmp_path, base_image, clean_up_after_test, caplog
+    tmp_path, base_image, caplog
 ):
     """
     Test that OutlierDetection does not flag any outliers in the DQ array if images are identical.
