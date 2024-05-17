@@ -213,6 +213,8 @@ class ModelLibrary(Sequence):
         elif isinstance(init, self.__class__):
             # TODO clone/copy?
             raise NotImplementedError()
+        else:
+            raise NotImplementedError()
 
         # make sure first model is loaded in memory (as expected by stpipe)
         if self._asn_n_members == 1:
@@ -398,6 +400,8 @@ class ModelLibrary(Sequence):
         #     # a more useful feedback without any chained ledger exception about
         #     # un-returned models
         #     return
+        # TODO we may want to change this chain to make tracebacks and pytest output
+        # easier to read.
         if self._ledger:
             raise BorrowError(
                 f"ModelLibrary has {len(self._ledger)} un-returned models"
