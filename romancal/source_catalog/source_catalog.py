@@ -4,6 +4,7 @@ Module to calculate the source catalog.
 
 import logging
 import warnings
+from typing import List
 
 import astropy.units as u
 import numpy as np
@@ -20,7 +21,6 @@ from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
 from scipy import ndimage
 from scipy.spatial import KDTree
-from typing import List
 
 from romancal import __version__ as romancal_version
 from romancal.lib import psf

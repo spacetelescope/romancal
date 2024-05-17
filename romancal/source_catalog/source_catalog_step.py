@@ -2,9 +2,7 @@
 Module for the source catalog step.
 """
 
-
 import contextlib
-import logging
 
 import numpy as np
 from astropy.table import Table
