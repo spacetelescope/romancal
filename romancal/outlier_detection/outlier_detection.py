@@ -8,11 +8,10 @@ import numpy as np
 from astropy.stats import sigma_clip
 from astropy.units import Quantity
 from drizzle.cdrizzle import tblot
-from roman_datamodels import datamodels as rdm
 from roman_datamodels.dqflags import pixel
 from scipy import ndimage
 
-from romancal.datamodels import ModelContainer
+from romancal.datamodels import ModelLibrary
 from romancal.resample import resample
 from romancal.resample.resample_utils import build_driz_weight, calc_gwcs_pixmap
 
@@ -51,12 +50,12 @@ class OutlierDetection:
 
     def __init__(self, input_models, **pars):
         """
-        Initialize the class with input ModelContainers.
+        Initialize the class with input ModelLibrary.
 
         Parameters
         ----------
-        input_models : ~romancal.datamodels.container.ModelContainer
-            A `~romancal.datamodels.container.ModelContainer` object containing the data
+        input_models : ~romancal.datamodels.ModelLibrary
+            A `~romancal.datamodels.ModelLibrary` object containing the data
             to be processed.
 
         pars : dict, optional
@@ -83,6 +82,7 @@ class OutlierDetection:
         if pars["resample_data"]:
             # Start by creating resampled/mosaic images for
             # each group of exposures
+            # FIXME: resample will need to be updated...
             resamp = resample.ResampleData(
                 self.input_models, single=True, blendheaders=False, **pars
             )
@@ -91,25 +91,27 @@ class OutlierDetection:
         else:
             # for non-dithered data, the resampled image is just the original image
             drizzled_models = self.input_models
-            for model in drizzled_models:
-                model["weight"] = build_driz_weight(
-                    model,
-                    weight_type="ivm",
-                    good_bits=pars["good_bits"],
-                )
+            with drizzled_models:
+                for i, model in enumerate(drizzled_models):
+                    model["weight"] = build_driz_weight(
+                        model,
+                        weight_type="ivm",
+                        good_bits=pars["good_bits"],
+                    )
+                    drizzled_models[i] = model
 
         # Initialize intermediate products used in the outlier detection
-        median_model = (
-            rdm.open(drizzled_models[0]).copy()
-            if isinstance(drizzled_models[0], str)
-            else drizzled_models[0].copy()
-        )
+        with drizzled_models:
+            example_model = drizzled_models[0]
+            median_model = example_model.copy()
+            drizzled_models.discard(0, example_model)
 
         # Perform median combination on set of drizzled mosaics
         median_model.data = Quantity(
             self.create_median(drizzled_models), unit=median_model.data.unit
         )
 
+        # FIXME: shouldn't this be checking "save_intermediate_results"?
         if not pars.get("in_memory", True):
             median_model.meta.filename = "drizzled_median.asdf"
             median_model_output_path = self.make_output_path(
@@ -121,14 +123,12 @@ class OutlierDetection:
 
         if pars["resample_data"]:
             # Blot the median image back to recreate each input image specified
-            # in the original input list/ASN/ModelContainer
+            # in the original input list/ASN/ModelLibrary
             blot_models = self.blot_median(median_model)
 
         else:
             # Median image will serve as blot image
-            blot_models = ModelContainer(return_open=False)
-            for _ in range(len(self.input_models)):
-                blot_models.append(median_model)
+            blot_models = ModelLibrary([median_model] * len(self.input_models))
 
         # Perform outlier detection using statistical comparisons between
         # each original input image and its blotted version of the median image
@@ -152,36 +152,38 @@ class OutlierDetection:
 
         log.info("Computing median")
 
+        # FIXME: in_memory, get_sections?...
+        data = []
+
         # Compute weight means without keeping DataModel for eacn input open
-        # Start by insuring that the ModelContainer does NOT open and keep each datamodel
-        ropen_orig = resampled_models._return_open
-        resampled_models._return_open = False  # turn off auto-opening of models
         # keep track of resulting computation for each input resampled datamodel
         weight_thresholds = []
         # For each model, compute the bad-pixel threshold from the weight arrays
-        for resampled in resampled_models:
-            m = rdm.open(resampled)
-            weight = m.weight
-            # necessary in order to assure that mask gets applied correctly
-            if hasattr(weight, "_mask"):
-                del weight._mask
-            mask_zero_weight = np.equal(weight, 0.0)
-            mask_nans = np.isnan(weight)
-            # Combine the masks
-            weight_masked = np.ma.array(
-                weight, mask=np.logical_or(mask_zero_weight, mask_nans)
-            )
-            # Sigma-clip the unmasked data
-            weight_masked = sigma_clip(weight_masked, sigma=3, maxiters=5)
-            mean_weight = np.mean(weight_masked)
-            # Mask pixels where weight falls below maskpt percent
-            weight_threshold = mean_weight * maskpt
-            weight_thresholds.append(weight_threshold)
-            # close and delete the model, just to explicitly try to keep the memory as clean as possible
-            m.close()
-            del m
-        # Reset ModelContainer attribute to original value
-        resampled_models._return_open = ropen_orig
+        with resampled_models:
+            for i, model in enumerate(resampled_models):
+                weight = model.weight
+                # necessary in order to assure that mask gets applied correctly
+                if hasattr(weight, "_mask"):
+                    del weight._mask
+                mask_zero_weight = np.equal(weight, 0.0)
+                mask_nans = np.isnan(weight)
+                # Combine the masks
+                weight_masked = np.ma.array(
+                    weight, mask=np.logical_or(mask_zero_weight, mask_nans)
+                )
+                # Sigma-clip the unmasked data
+                weight_masked = sigma_clip(weight_masked, sigma=3, maxiters=5)
+                mean_weight = np.mean(weight_masked)
+                # Mask pixels where weight falls below maskpt percent
+                weight_threshold = mean_weight * maskpt
+                weight_thresholds.append(weight_threshold)
+                data.append(model.data)
+
+                resampled_models.discard(i, model)
+
+        # FIXME: get_sections?...
+        median_image = np.nanmedian(data, axis=0)
+        return median_image
 
         # Now, set up buffered access to all input models
         resampled_models.set_buffer(1.0)  # Set buffer at 1Mb
@@ -227,37 +229,31 @@ class OutlierDetection:
         """Blot resampled median image back to the detector images."""
         interp = self.outlierpars.get("interp", "linear")
         sinscl = self.outlierpars.get("sinscl", 1.0)
-        in_memory = self.outlierpars.get("in_memory", True)
+        # in_memory = self.outlierpars.get("in_memory", True)
 
+        # FIXME: when copy vs deepcopy is sorted this should be checked
+        # here we probably want copy_on_write
         # Initialize container for output blot images
-        blot_models = []
+        blot_models = self.input_models.copy()
+        # TODO set "on_disk" when "in_memory=False"
 
         log.info("Blotting median")
-        for model in self.input_models:
-            blotted_median = model.copy()
+        with blot_models:
+            for i, model in enumerate(blot_models):
+                # clean out extra data not related to blot result
+                # FIXME: this doesn't save space, should this have it's
+                # own model type or perhaps not even be a model?
+                model.err *= 0.0  # None
+                model.dq *= 0  # None
 
-            # clean out extra data not related to blot result
-            blotted_median.err *= 0.0  # None
-            blotted_median.dq *= 0  # None
-
-            # apply blot to re-create model.data from median image
-            blotted_median.data = Quantity(
-                gwcs_blot(median_model, model, interp=interp, sinscl=sinscl),
-                unit=blotted_median.data.unit,
-            )
-            if not in_memory:
-                model_path = self.make_output_path(
-                    basepath=model.meta.filename, suffix="blot"
+                # apply blot to re-create model.data from median image
+                model.data = Quantity(
+                    gwcs_blot(median_model, model, interp=interp, sinscl=sinscl),
+                    unit=model.data.unit,
                 )
-                blotted_median.save(model_path)
-                log.info(f"Saved model in {model_path}")
+                blot_models[i] = model
 
-                # Append model name to the ModelContainer so it is not passed in memory
-                blot_models.append(model_path)
-            else:
-                blot_models.append(blotted_median)
-
-        return ModelContainer(blot_models, return_open=in_memory)
+        return blot_models
 
     def detect_outliers(self, blot_models):
         """Flag DQ array for cosmic rays in input images.
@@ -268,7 +264,7 @@ class OutlierDetection:
 
         Parameters
         ----------
-        blot_models : JWST ModelContainer object
+        blot_models : ModelLibrary object
             data model container holding ImageModels of the median output frame
             blotted back to the wcs and frame of the ImageModels in
             input_models
@@ -280,10 +276,11 @@ class OutlierDetection:
 
         """
         log.info("Flagging outliers")
-        for i, (image, blot) in enumerate(zip(self.input_models, blot_models)):
-            blot = rdm.open(blot)
-            flag_cr(image, blot, **self.outlierpars)
-            self.input_models[i] = image
+        with self.input_models, blot_models:
+            for i, (image, blot) in enumerate(zip(self.input_models, blot_models)):
+                flag_cr(image, blot, **self.outlierpars)
+                self.input_models[i] = image
+                blot_models.discard(i, blot)
 
 
 def flag_cr(

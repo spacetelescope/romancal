@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from astropy.units import Quantity
 
-from romancal.datamodels import ModelContainer
+from romancal.datamodels import ModelLibrary
 from romancal.outlier_detection import OutlierDetectionStep, outlier_detection
 
 
@@ -13,7 +13,7 @@ from romancal.outlier_detection import OutlierDetectionStep, outlier_detection
     [
         list(),
         "",
-        None,
+        # None,  # FIXME: what other steps support this? Is it generally useful?
     ],
 )
 def test_outlier_raises_error_on_invalid_input_models(input_models, caplog):
@@ -29,9 +29,12 @@ def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
     and sets the appropriate metadata for the skipped step."""
     img = base_image()
 
-    res = OutlierDetectionStep.call(ModelContainer([img]))
+    res = OutlierDetectionStep.call(ModelLibrary([img]))
 
-    assert all(x.meta.cal_step.outlier_detection == "SKIPPED" for x in res)
+    with res:
+        for i, m in enumerate(res):
+            assert m.meta.cal_step.outlier_detection == "SKIPPED"
+            res.discard(i, m)
 
 
 def test_outlier_skips_step_on_exposure_type_different_from_wfi_image(base_image):
@@ -43,9 +46,12 @@ def test_outlier_skips_step_on_exposure_type_different_from_wfi_image(base_image
     img_2 = base_image()
     img_2.meta.exposure.type = "WFI_PRISM"
 
-    res = OutlierDetectionStep.call(ModelContainer([img_1, img_2]))
+    res = OutlierDetectionStep.call(ModelLibrary([img_1, img_2]))
 
-    assert all(x.meta.cal_step.outlier_detection == "SKIPPED" for x in res)
+    with res:
+        for i, m in enumerate(res):
+            assert m.meta.cal_step.outlier_detection == "SKIPPED"
+            res.discard(i, m)
 
 
 def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
@@ -69,27 +75,33 @@ def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
     )
 
     # assert step.skip is False
-    assert all(x.meta.cal_step.outlier_detection == "COMPLETE" for x in res)
+    with res:
+        for i, m in enumerate(res):
+            assert m.meta.cal_step.outlier_detection == "COMPLETE"
+            res.discard(i, m)
 
 
 def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
     """
-    Test that OutlierDetection runs with valid ModelContainer as input.
+    Test that OutlierDetection runs with valid ModelLibrary as input.
     """
     img_1 = base_image()
     img_1.meta.filename = "img_1.asdf"
     img_2 = base_image()
     img_2.meta.filename = "img_2.asdf"
 
-    mc = ModelContainer([img_1, img_2])
+    library = ModelLibrary([img_1, img_2])
 
     res = OutlierDetectionStep.call(
-        mc,
+        library,
         in_memory=True,
         resample_data=False,
     )
 
-    assert all(x.meta.cal_step.outlier_detection == "COMPLETE" for x in res)
+    with res:
+        for i, m in enumerate(res):
+            assert m.meta.cal_step.outlier_detection == "COMPLETE"
+            res.discard(i, m)
 
 
 @pytest.mark.parametrize(
@@ -130,7 +142,7 @@ def test_outlier_init_default_parameters(pars, base_image):
     """
     img_1 = base_image()
     img_1.meta.filename = "img_1.asdf"
-    input_models = ModelContainer([img_1])
+    input_models = ModelLibrary([img_1])
 
     step = outlier_detection.OutlierDetection(input_models, **pars)
 
@@ -148,7 +160,7 @@ def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_imag
     img_1.meta.filename = "img_1.asdf"
     img_2 = base_image()
     img_2.meta.filename = "img_2.asdf"
-    input_models = ModelContainer([img_1, img_2])
+    input_models = ModelLibrary([img_1, img_2])
 
     outlier_step = OutlierDetectionStep()
     # set output dir for all files created by the step
@@ -219,7 +231,7 @@ def test_find_outliers(tmp_path, base_image):
     imgs[0].data[img_0_input_coords[0], img_0_input_coords[1]] = cr_value
     imgs[1].data[img_1_input_coords[0], img_1_input_coords[1]] = cr_value
 
-    input_models = ModelContainer(imgs)
+    input_models = ModelLibrary([img_1, img_2])
 
     outlier_step = OutlierDetectionStep()
     # set output dir for all files created by the step
@@ -236,6 +248,30 @@ def test_find_outliers(tmp_path, base_image):
         else:
             flagged_coords = np.where(flagged_img.dq > 0)
             np.testing.assert_equal(cr_coords, flagged_coords)
+
+    detection_step = outlier_detection.OutlierDetection
+    step = detection_step(input_models, **pars)
+
+    step.do_detection()
+
+    # get flagged outliers coordinates from DQ array
+    with step.input_models:
+        model = step.input_models[0]
+        img_1_outlier_output_coords = np.where(model.dq > 0)
+        step.input_models.discard(0, model)
+
+    # reformat output and input coordinates and sort by x coordinate
+    outliers_output_coords = np.array(
+        list(zip(*img_1_outlier_output_coords)), dtype=[("x", int), ("y", int)]
+    )
+    outliers_input_coords = np.concatenate((img_1_input_coords, img_2_input_coords))
+
+    outliers_output_coords.sort(axis=0)
+    outliers_input_coords.sort(axis=0)
+
+    # assert all(outliers_input_coords == outliers_output_coords) doesn't work with python 3.9
+    assert all(o == i for i, o in zip(outliers_input_coords, outliers_output_coords))
+>>>>>>> e277e5a (WIP update to outlier_detection)
 
 
 def test_identical_images(tmp_path, base_image, caplog):
@@ -257,7 +293,7 @@ def test_identical_images(tmp_path, base_image, caplog):
     img_3 = img_1.copy()
     img_3.meta.filename = "img3_suffix.asdf"
 
-    input_models = ModelContainer([img_1, img_2, img_3])
+    input_models = ModelLibrary([img_1, img_2, img_3])
 
     outlier_step = OutlierDetectionStep()
     # set output dir for all files created by the step
@@ -272,25 +308,28 @@ def test_identical_images(tmp_path, base_image, caplog):
         x.message for x in caplog.records
     }
     # assert that DQ array has nothing flagged as outliers
-    assert [np.count_nonzero(x.dq) for x in result] == [0, 0, 0]
+    with step.input_models:
+        for i, model in enumerate(step.input_models):
+            assert np.count_nonzero(model.dq) == 0
+            step.input_models.discard(i, model)
 
 
 @pytest.mark.parametrize(
     "input_type",
     [
-        "ModelContainer",
+        "ModelLibrary",
         "ASNFile",
         "DataModelList",
         "ASDFFilenameList",
     ],
 )
-def test_skymatch_always_returns_modelcontainer_with_updated_datamodels(
+def test_outlier_detection_always_returns_modelcontainer_with_updated_datamodels(
     input_type,
     base_image,
     tmp_path,
     create_mock_asn_file,
 ):
-    """Test that the OutlierDetectionStep always returns a ModelContainer
+    """Test that the OutlierDetectionStep always returns a ModelLibrary
     with updated data models after processing different input types."""
 
     os.chdir(tmp_path)
@@ -299,12 +338,12 @@ def test_skymatch_always_returns_modelcontainer_with_updated_datamodels(
     img_2 = base_image()
     img_2.meta.filename = "img_2.asdf"
 
-    mc = ModelContainer([img_1, img_2])
+    library = ModelLibrary([img_1, img_2])
 
-    mc.save(dir_path=tmp_path)
+    library.save(dir_path=tmp_path)
 
     step_input_map = {
-        "ModelContainer": mc,
+        "ModelLibrary": library,
         "ASNFile": create_mock_asn_file(
             tmp_path,
             members_mapping=[
@@ -320,5 +359,7 @@ def test_skymatch_always_returns_modelcontainer_with_updated_datamodels(
 
     res = OutlierDetectionStep.call(step_input)
 
-    assert isinstance(res, ModelContainer)
-    assert all(x.meta.cal_step.outlier_detection == "COMPLETE" for x in res)
+    assert isinstance(res, ModelLibrary)
+    with res:
+        for i, model in enumerate(res):
+            assert model.meta.cal_step.outlier_detection == "COMPLETE"
