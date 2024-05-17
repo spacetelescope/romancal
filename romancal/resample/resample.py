@@ -276,7 +276,11 @@ class ResampleData:
                 output_model.data *= 0.0
                 output_model.weight *= 0.0
 
-        return ModelLibrary(output_list)
+        output = ModelLibrary(output_list)
+        # FIXME: handle moving asn data
+        if hasattr(self.input_models, "asn_table_name"):
+            output.asn_table_name = self.input_models.asn_table_name
+        return output
 
     def resample_many_to_one(self):
         """Resample and coadd many inputs to a single output.
@@ -371,6 +375,10 @@ class ResampleData:
         # TODO: fix RAD to expect a context image datatype of int32
         output_model.context = output_model.context.astype(np.uint32)
 
+        output = ModelLibrary([output_model])
+        # FIXME: handle moving asn data
+        if hasattr(self.input_models, "asn_table_name"):
+            output.asn_table_name = self.input_models.asn_table_name
         return ModelLibrary([output_model])
 
     def _create_background_attribute(self, img):

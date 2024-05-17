@@ -177,7 +177,9 @@ class OutlierDetection:
                 # Mask pixels where weight falls below maskpt percent
                 weight_threshold = mean_weight * maskpt
                 weight_thresholds.append(weight_threshold)
-                data.append(model.data)
+                this_data = model.data.copy()
+                this_data[model.weight < weight_threshold] = np.nan
+                data.append(this_data)
 
                 resampled_models.discard(i, model)
 
