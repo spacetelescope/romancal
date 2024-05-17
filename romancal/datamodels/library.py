@@ -137,6 +137,10 @@ class ModelLibrary(Sequence):
                 os.path.expanduser(os.path.expandvars(init))
             )
             self._asn_dir = os.path.dirname(self._asn_path)
+
+            # TODO asn_table_name is there another way to handle this
+            self.asn_table_name = os.path.basename(self._asn_path)
+
             # load association
             # TODO why did ModelContainer make this local?
             from ..associations import AssociationNotValidError, load_asn
