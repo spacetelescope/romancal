@@ -1,5 +1,6 @@
 """Primary code for performing outlier detection on Roman observations."""
 
+import copy
 import logging
 import warnings
 from functools import partial
@@ -11,7 +12,6 @@ from drizzle.cdrizzle import tblot
 from roman_datamodels.dqflags import pixel
 from scipy import ndimage
 
-from romancal.datamodels import ModelLibrary
 from romancal.resample import resample
 from romancal.resample.resample_utils import build_driz_weight, calc_gwcs_pixmap
 
@@ -82,7 +82,7 @@ class OutlierDetection:
         if pars["resample_data"]:
             # Start by creating resampled/mosaic images for
             # each group of exposures
-            # FIXME: resample will need to be updated...
+            # FIXME: I think this should be single=True
             resamp = resample.ResampleData(
                 self.input_models, single=True, blendheaders=False, **pars
             )
@@ -103,40 +103,19 @@ class OutlierDetection:
         # Initialize intermediate products used in the outlier detection
         with drizzled_models:
             example_model = drizzled_models[0]
-            median_model = example_model.copy()
+            median_wcs = copy.deepcopy(example_model.meta.wcs)
             drizzled_models.discard(0, example_model)
 
         # Perform median combination on set of drizzled mosaics
-        median_model.data = Quantity(
-            self.create_median(drizzled_models), unit=median_model.data.unit
-        )
-
-        # FIXME: shouldn't this be checking "save_intermediate_results"?
-        if not pars.get("in_memory", True):
-            median_model.meta.filename = "drizzled_median.asdf"
-            median_model_output_path = self.make_output_path(
-                basepath=median_model.meta.filename,
-                suffix="median",
-            )
-            median_model.save(median_model_output_path)
-            log.info(f"Saved model in {median_model_output_path}")
-
-        if pars["resample_data"]:
-            # Blot the median image back to recreate each input image specified
-            # in the original input list/ASN/ModelLibrary
-            blot_models = self.blot_median(median_model)
-
-        else:
-            # Median image will serve as blot image
-            blot_models = ModelLibrary([median_model] * len(self.input_models))
+        median_data = self.create_median(drizzled_models)  # TODO unit?
 
         # Perform outlier detection using statistical comparisons between
         # each original input image and its blotted version of the median image
-        self.detect_outliers(blot_models)
+        self.detect_outliers(median_data, median_wcs, pars["resample_data"])
 
         # clean-up (just to be explicit about being finished with
         # these results)
-        del median_model, blot_models
+        del median_data, median_wcs
 
     def create_median(self, resampled_models):
         """Create a median image from the singly resampled images.
@@ -227,37 +206,7 @@ class OutlierDetection:
 
         return median_image
 
-    def blot_median(self, median_model):
-        """Blot resampled median image back to the detector images."""
-        interp = self.outlierpars.get("interp", "linear")
-        sinscl = self.outlierpars.get("sinscl", 1.0)
-        # in_memory = self.outlierpars.get("in_memory", True)
-
-        # FIXME: when copy vs deepcopy is sorted this should be checked
-        # here we probably want copy_on_write
-        # Initialize container for output blot images
-        blot_models = self.input_models.copy()
-        # TODO set "on_disk" when "in_memory=False"
-
-        log.info("Blotting median")
-        with blot_models:
-            for i, model in enumerate(blot_models):
-                # clean out extra data not related to blot result
-                # FIXME: this doesn't save space, should this have it's
-                # own model type or perhaps not even be a model?
-                model.err *= 0.0  # None
-                model.dq *= 0  # None
-
-                # apply blot to re-create model.data from median image
-                model.data = Quantity(
-                    gwcs_blot(median_model, model, interp=interp, sinscl=sinscl),
-                    unit=model.data.unit,
-                )
-                blot_models[i] = model
-
-        return blot_models
-
-    def detect_outliers(self, blot_models):
+    def detect_outliers(self, median_data, median_wcs, resampled):
         """Flag DQ array for cosmic rays in input images.
 
         The science frame in each ImageModel in self.input_models is compared to
@@ -266,10 +215,7 @@ class OutlierDetection:
 
         Parameters
         ----------
-        blot_models : ModelLibrary object
-            data model container holding ImageModels of the median output frame
-            blotted back to the wcs and frame of the ImageModels in
-            input_models
+        TODO ...
 
         Returns
         -------
@@ -277,17 +223,31 @@ class OutlierDetection:
             The dq array in each input model is modified in place
 
         """
+        interp = self.outlierpars.get("interp", "linear")
+        sinscl = self.outlierpars.get("sinscl", 1.0)
         log.info("Flagging outliers")
-        with self.input_models, blot_models:
-            for i, (image, blot) in enumerate(zip(self.input_models, blot_models)):
-                flag_cr(image, blot, **self.outlierpars)
+        with self.input_models:
+            for i, image in enumerate(self.input_models):
+                # make blot_data Quantity (same unit as image.data)
+                if resampled:
+                    # blot back onto image
+                    blot_data = Quantity(
+                        gwcs_blot(
+                            median_data, median_wcs, image, interp=interp, sinscl=sinscl
+                        ),
+                        unit=image.data.unit,
+                    )
+                else:
+                    # use median
+                    blot_data = Quantity(median_data, unit=image.data.unit, copy=True)
+                flag_cr(image, blot_data, **self.outlierpars)
                 self.input_models[i] = image
-                blot_models.discard(i, blot)
+                # blot_models.discard(i, blot)
 
 
 def flag_cr(
     sci_image,
-    blot_image,
+    blot_data,
     snr="5.0 4.0",
     scale="1.2 0.7",
     backg=0,
@@ -304,7 +264,7 @@ def flag_cr(
     sci_image : ~romancal.DataModel.ImageModel
         the science data
 
-    blot_image : ~romancal.DataModel.ImageModel
+    blot_data : Quantity
         the blotted median image of the dithered science frames
 
     snr : str
@@ -338,7 +298,6 @@ def flag_cr(
         subtracted_background = backg
 
     sci_data = sci_image.data
-    blot_data = blot_image.data
     blot_deriv = abs_deriv(blot_data.value)
     err_data = np.nan_to_num(sci_image.err)
 
@@ -412,14 +371,18 @@ def _absolute_subtract(array, tmp, out):
     return tmp, out
 
 
-def gwcs_blot(median_model, blot_img, interp="poly5", sinscl=1.0):
+def gwcs_blot(median_data, median_wcs, blot_img, interp="poly5", sinscl=1.0):
     """
     Resample the output/resampled image to recreate an input image based on
     the input image's world coordinate system
 
     Parameters
     ----------
-    median_model : `~roman_datamodels.datamodels.MosaicModel`
+    median_data : TODO
+        TODO
+
+    median_wcs : TODO
+        TODO
 
     blot_img : datamodel
         Datamodel containing header and WCS to define the 'blotted' image
@@ -438,12 +401,12 @@ def gwcs_blot(median_model, blot_img, interp="poly5", sinscl=1.0):
     blot_wcs = blot_img.meta.wcs
 
     # Compute the mapping between the input and output pixel coordinates
-    pixmap = calc_gwcs_pixmap(blot_wcs, median_model.meta.wcs, blot_img.data.shape)
+    pixmap = calc_gwcs_pixmap(blot_wcs, median_wcs, blot_img.data.shape)
     log.debug(f"Pixmap shape: {pixmap[:, :, 0].shape}")
     log.debug(f"Sci shape: {blot_img.data.shape}")
 
     pix_ratio = 1
-    log.info(f"Blotting {blot_img.data.shape} <-- {median_model.data.shape}")
+    log.info(f"Blotting {blot_img.data.shape} <-- {median_data.shape}")
 
     outsci = np.zeros(blot_img.shape, dtype=np.float32)
 
@@ -453,7 +416,7 @@ def gwcs_blot(median_model, blot_img, interp="poly5", sinscl=1.0):
     # before a change is made.  Preferably, fix tblot in drizzle.
     pixmap[np.isnan(pixmap)] = -1
     tblot(
-        median_model.data,
+        median_data,
         pixmap,
         outsci,
         scale=pix_ratio,
