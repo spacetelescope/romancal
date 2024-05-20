@@ -40,6 +40,7 @@ class MosaicPipeline(RomanPipeline):
     class_alias = "roman_mos"
     spec = """
         save_results = boolean(default=False)
+        on_disk = boolean(default=False)
     """
 
     # Define aliases to steps
@@ -70,7 +71,7 @@ class MosaicPipeline(RomanPipeline):
 
         # FIXME: change this to a != "asn" -> log and return or combine with above
         if file_type == "asn":
-            input = ModelLibrary(input)
+            input = ModelLibrary(input, on_disk=self.on_disk)
             self.flux.suffix = "flux"
             result = self.flux(input)
             self.skymatch.suffix = "skymatch"
