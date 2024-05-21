@@ -29,7 +29,7 @@ if (env.ARTIFACTORY_ENV) {
 }
 
 rtDownload (
-    serverId: 'Artifactory',
+    serverId: 'https://bytesalad.stsci.edu:443/artifactory/',
     spec: '''{
           "files": [
             {
