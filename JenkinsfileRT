@@ -29,7 +29,7 @@ if (env.ARTIFACTORY_ENV) {
 }
 
 rtDownload (
-//    serverId: 'bytesalad',
+    serverId: 'bytesalad',
     spec: '''{
           "files": [
             {
