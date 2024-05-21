@@ -28,20 +28,6 @@ if (env.ARTIFACTORY_ENV) {
     artifactoryenv = env.ARTIFACTORY_ENV
 }
 
-rtDownload (
-    serverId: 'bytesalad',
-    spec: '''{
-          "files": [
-            {
-              "pattern": "roman-pipeline/dev/WFI/image/patch_file_reduced.asdf",
-              "target": "patches/"
-            }
-          ]
-    }''',
-
- )
-
-
 pytest_args = ""
 if (env.PYTEST_ARGS) {
     pytest_args = env.PYTEST_ARGS
@@ -71,7 +57,7 @@ env_vars = [
     'CRDS_PATH=/grp/crds/roman/test/',
     'DD_ENV=ci',
     'DD_SERVICE=romancal',
-    'PATCH_TABLE_PATH=${WORKSPACE}/patches/patch_file_reduced.asdf',
+    'PATCH_TABLE_PATH=${WORKSPACE}/patches.asdf',
     'WEBBPSF_PATH=/grp/jwst/ote/webbpsf-data',
     'PYSYN_CDBS=/grp/hst/cdbs',
 ]
