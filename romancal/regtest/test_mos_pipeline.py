@@ -150,7 +150,7 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
     os.system(asn_cmd)  # nosec
 
     patch_file = 'WFI/image/patches.asdf'
-    rtdata.get_data(f"WFI/image/{patch_file}")
+    rtdata.get_data(patch_file)
     
     for cal_file in cal_files:
         rtdata.get_data(cal_file)
