@@ -103,7 +103,7 @@ class TweakRegStep(RomanStep):
             if isinstance(input, rdm.DataModel):
                 images = ModelLibrary([input])
             elif str(input).endswith(".asdf"):
-                images = ModelLibrary(rdm.open(input))
+                images = ModelLibrary([rdm.open(input)])
             elif isinstance(input, ModelLibrary):
                 images = input
             else:
