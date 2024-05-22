@@ -8,7 +8,7 @@ from types import MappingProxyType
 import asdf
 from roman_datamodels import open as datamodels_open
 
-from .container import ModelContainer
+# from .container import ModelContainer
 
 
 class LibraryError(Exception):
@@ -199,6 +199,11 @@ class ModelLibrary(Sequence):
                     group_id = _model_to_group_id(model)
                 except AttributeError:
                     group_id = str(index)
+                # FIXME: assign the group id here as it may have been computed above
+                # this is necessary for some tweakreg tests that pass in a list of models that
+                # don't have group_ids. If this is something we want to support there may
+                # be a cleaner way to do this.
+                model.meta["group_id"] = group_id
                 members.append(
                     {
                         "expname": filename,
@@ -334,6 +339,12 @@ class ModelLibrary(Sequence):
                 # FIXME model.meta.group_id throws an error
                 # setattr(model.meta, attr, member[attr])
                 model.meta[attr] = member[attr]
+                if attr == "exptype":
+                    # FIXME why does tweakreg expect meta.asn.exptype instead of meta.exptype?
+                    model.meta["asn"] = {"exptype": member["exptype"]}
+        # FIXME tweakreg also expects table_name and pool_name
+        model.meta.asn["table_name"] = self.asn_table_name
+        model.meta.asn["pool_name"] = self.asn["asn_pool"]
         # this returns an OPEN model, it's up to calling code to close this
         return model
 
@@ -369,29 +380,29 @@ class ModelLibrary(Sequence):
 
     # TODO crds_observatory, get_crds_parameters, when stpipe uses these...
 
-    def _to_container(self):
-        # create a temporary directory
-        tmpdir = tempfile.TemporaryDirectory(dir="")
+    # def _to_container(self):
+    #     # create a temporary directory
+    #     tmpdir = tempfile.TemporaryDirectory(dir="")
 
-        # write out all models (with filenames from member list)
-        fns = []
-        with self:
-            for i, model in enumerate(self):
-                fn = os.path.join(tmpdir.name, model.meta.filename)
-                model.save(fn)
-                fns.append(fn)
-                self[i] = model
+    #     # write out all models (with filenames from member list)
+    #     fns = []
+    #     with self:
+    #         for i, model in enumerate(self):
+    #             fn = os.path.join(tmpdir.name, model.meta.filename)
+    #             model.save(fn)
+    #             fns.append(fn)
+    #             self[i] = model
 
-        # use the new filenames for the container
-        # copy over "in-memory" options
-        # init with no "models"
-        container = ModelContainer(
-            fns, save_open=not self._on_disk, return_open=not self._on_disk
-        )
-        # give the model container a reference to the temporary directory so it's not deleted
-        container._tmpdir = tmpdir
-        # FIXME container with filenames already skip finalize_result
-        return container
+    #     # use the new filenames for the container
+    #     # copy over "in-memory" options
+    #     # init with no "models"
+    #     container = ModelContainer(
+    #         fns, save_open=not self._on_disk, return_open=not self._on_disk
+    #     )
+    #     # give the model container a reference to the temporary directory so it's not deleted
+    #     container._tmpdir = tmpdir
+    #     # FIXME container with filenames already skip finalize_result
+    #     return container
 
     def finalize_result(self, step, reference_files_used):
         with self:
@@ -464,6 +475,6 @@ def _model_to_group_id(model):
     """
     Compute a "group_id" from a model using the DataModel interface
     """
-    if (group_id := getattr(model.meta, "group_id")) is not None:
+    if (group_id := getattr(model.meta, "group_id", None)) is not None:
         return group_id
     return _mapping_to_group_id(model.meta.observation)
