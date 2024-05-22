@@ -6,7 +6,7 @@ import pytest
 import roman_datamodels as rdm
 from metrics_logger.decorators import metrics_logger
 
-from romancal.pipeline.moasic_pipeline import MosaicPipeline
+from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
 from .regtestdata import compare_asdf
 
