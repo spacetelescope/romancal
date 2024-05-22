@@ -8,8 +8,6 @@ from types import MappingProxyType
 import asdf
 from roman_datamodels import open as datamodels_open
 
-# from .container import ModelContainer
-
 
 class LibraryError(Exception):
     """
@@ -379,30 +377,6 @@ class ModelLibrary(Sequence):
                 self.discard(i, model)
 
     # TODO crds_observatory, get_crds_parameters, when stpipe uses these...
-
-    # def _to_container(self):
-    #     # create a temporary directory
-    #     tmpdir = tempfile.TemporaryDirectory(dir="")
-
-    #     # write out all models (with filenames from member list)
-    #     fns = []
-    #     with self:
-    #         for i, model in enumerate(self):
-    #             fn = os.path.join(tmpdir.name, model.meta.filename)
-    #             model.save(fn)
-    #             fns.append(fn)
-    #             self[i] = model
-
-    #     # use the new filenames for the container
-    #     # copy over "in-memory" options
-    #     # init with no "models"
-    #     container = ModelContainer(
-    #         fns, save_open=not self._on_disk, return_open=not self._on_disk
-    #     )
-    #     # give the model container a reference to the temporary directory so it's not deleted
-    #     container._tmpdir = tmpdir
-    #     # FIXME container with filenames already skip finalize_result
-    #     return container
 
     def finalize_result(self, step, reference_files_used):
         with self:
