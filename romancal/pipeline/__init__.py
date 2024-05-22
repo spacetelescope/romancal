@@ -4,6 +4,6 @@ made available by this package.
 """
 
 from .exposure_pipeline import ExposurePipeline
-from .highlevel_pipeline import HighLevelPipeline
+from .mosaic_pipeline import MosaicPipeline
 
-__all__ = ["ExposurePipeline", "HighLevelPipeline"]
+__all__ = ["ExposurePipeline", "MosaicPipeline"]
