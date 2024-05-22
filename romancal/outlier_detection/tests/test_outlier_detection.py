@@ -152,6 +152,12 @@ def test_outlier_init_default_parameters(pars, base_image):
     assert step.resample_suffix == f"_outlier_{pars['resample_suffix']}.asdf"
 
 
+# FIXME: This test checks if the median image exists on disk after outlier detection.
+# Howver "save_intermediate_results=False" so this file should not be saved even if
+# in_memory=False (which only means the file will temporarily be produced if needed).
+@pytest.mark.skip(
+    reason="median should not be saved if save_intermediate_results is False"
+)
 def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_image):
     """
     Test that OutlierDetection can create files on disk in a custom location.
