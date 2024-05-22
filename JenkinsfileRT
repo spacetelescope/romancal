@@ -95,8 +95,8 @@ bc0.build_cmds = bc0.build_cmds + [
     "pip list"
 ]
 bc0.test_cmds = [
-     "stat /grp/roman 1>/dev/null",
-     pytest -r sxf -n auto --bigdata --slow --webbpsf \
+    "stat /grp/roman 1>/dev/null",
+    "pytest -r sxf -n auto --bigdata --slow --webbpsf \
     --cov --cov-report=xml:coverage.xml \
     --ddtrace \
     --color=no \
