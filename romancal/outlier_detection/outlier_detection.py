@@ -84,7 +84,7 @@ class OutlierDetection:
             # each group of exposures
             # FIXME: I think this should be single=True
             resamp = resample.ResampleData(
-                self.input_models, single=True, blendheaders=False, **pars
+                self.input_models, single=False, blendheaders=False, **pars
             )
             drizzled_models = resamp.do_drizzle()
 
