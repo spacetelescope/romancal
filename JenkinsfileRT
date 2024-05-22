@@ -57,7 +57,7 @@ env_vars = [
     'CRDS_PATH=/grp/crds/roman/test/',
     'DD_ENV=ci',
     'DD_SERVICE=romancal',
-    'PATCH_TABLE_PATH=${WORKSPACE}/patches.asdf',
+    'PATCH_TABLE_PATH=/grp/roman/scsb/tesselation/patches.asdf',
     'WEBBPSF_PATH=/grp/jwst/ote/webbpsf-data',
     'PYSYN_CDBS=/grp/hst/cdbs',
 ]
