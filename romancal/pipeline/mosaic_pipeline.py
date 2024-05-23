@@ -22,21 +22,21 @@ from romancal.skymatch import SkyMatchStep
 
 from ..stpipe import RomanPipeline
 
-__all__ = ["HighLevelPipeline"]
+__all__ = ["MosaicPipeline"]
 
 # Define logging
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 
 
-class HighLevelPipeline(RomanPipeline):
+class MosaicPipeline(RomanPipeline):
     """
-    HighLevelPipeline: Apply all calibration steps to the roman data
+    MosaicPipeline: Apply all calibration steps to the roman data
     to produce level 3 products. Included steps are:
     ``skymatch``, ``outlier_detection`` and ``resample``.
     """
 
-    class_alias = "roman_hlp"
+    class_alias = "roman_mos"
     spec = """
         save_results = boolean(default=False)
     """
@@ -53,7 +53,7 @@ class HighLevelPipeline(RomanPipeline):
     def process(self, input):
         """Process the Roman WFI data from Level 2 to Level 3"""
 
-        log.info("Starting Roman high level calibration pipeline ...")
+        log.info("Starting Roman mosaic level calibration pipeline ...")
         if isinstance(input, str):
             input_filename = basename(input)
         else:

@@ -17,7 +17,7 @@ processing:
 
 - The High Level Processing (HLP) uses overlapping exposures to match the sky background,
   detect aberrant data values and resample the image to produce a single undistorted product.
-  Details are at:  :ref:`highlevel_pipeline`
+  Details are at:  :ref:`mosaic_pipeline`
 
   The table below represents the same information as described above, but
   alphabetically ordered by pipeline class.
@@ -27,5 +27,5 @@ processing:
 +============================================+==================+==================+
 | `~romancal.pipeline.ExposurePipeline`      | roman_elp        | Exposure Level   |
 +--------------------------------------------+------------------+------------------+
-| `~romancal.pipeline.HighLevelPipeline`     | roman_hlp        | High Level       |
+| `~romancal.pipeline.MosaicPipeline`        | roman_mos        | High Level       |
 +--------------------------------------------+------------------+------------------+
