@@ -4,7 +4,7 @@
 general
 -------
 
-- Rename highlevelpipeline to mosaicpipeline [#]
+- Rename highlevelpipeline to mosaicpipeline [#1249]
 
 
 
