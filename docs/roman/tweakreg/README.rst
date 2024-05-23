@@ -33,7 +33,7 @@ models to the custom catalog file name, the ``tweakreg_step`` also supports two
 other ways of supplying custom source catalogs to the step:
 
 1. Adding ``tweakreg_catalog`` attribute to the ``members`` of the input ASN
-   table - see `~roman.datamodels.ModelContainer` for more details.
+   table - see `~roman.datamodels.ModelLibrary` for more details.
    Catalog file names are relative to ASN file path.
 
 2. Providing a simple two-column text file, specified via step's parameter

@@ -48,7 +48,7 @@ Specifically, this routine performs the following operations:
      resampling.
    * Resampled images will be written out to disk with suffix `_outlier_i2d` by default.
    * **If resampling is turned off** through the use of the ``resample_data`` parameter,
-     a copy of the unrectified input images (as a ModelContainer)
+     a copy of the unrectified input images (as a ModelLibrary)
      will be used for subsequent processing.
 
 #. Create a median image from all grouped observation mosaics.
@@ -115,7 +115,7 @@ The outlier detection algorithm can end up using massive amounts of memory
 depending on the number of inputs, the size of each input, and the size of the
 final output product.  Specifically,
 
-#. The input :py:class:`~romancal.datamodels.ModelContainer` all input exposures would
+#. The input :py:class:`~romancal.datamodels.ModelLibrary` all input exposures would
    have been kept open in memory to make processing more efficient.
 
 #. The initial resample step creates an output product for EACH input that is the
@@ -137,9 +137,9 @@ with the use of the ``in_memory`` parameter.  The full impact of this parameter
 during processing includes:
 
 #. The ``save_open`` parameter gets set to `False`
-   when opening the input :py:class:`~romancal.datamodels.container.ModelContainer`
+   when opening the input :py:class:`~romancal.datamodels.library.ModelLibrary`
    object. This forces all input models in the input
-   :py:class:`~romancal.datamodels.container.ModelContainer` to get written out to disk.
+   :py:class:`~romancal.datamodels.library.ModelLibrary` to get written out to disk.
    It then uses the filename of the input model during subsequent processing.
 
 #. The ``in_memory`` parameter gets passed to the :py:class:`~romancal.resample.ResampleStep`
