@@ -46,21 +46,21 @@ can be run as
 
  $ strun roman_elp r0008308002010007027_06311_0019_WFI01_uncal.asdf
 
-The high level pipeline can be run in a similar manner and is implemented using the class
-:ref:`romancal.pipeline.HighLevelPipeline <highlevel_pipeline>`.
+The mosaic level pipeline can be run in a similar manner and is implemented using the class
+:ref:`romancal.pipeline.MosaicPipeline <mosaic_pipeline>`.
 The command to run this pipeline is:
 ::
 
-  $ strun romancal.pipeline.HighLevelPipeline r0008308002010007027_asn.json
+  $ strun romancal.pipeline.MosaicPipeline r0008308002010007027_asn.json
 
-An important point is that the high level pipeline needs multiple exposures to run correctly. The
+An important point is that the mosaic level pipeline needs multiple exposures to run correctly. The
 most convenient method to supply the input is to use an association. Instructions on how to create
 an input association an be found at :ref:`asn-from-list`.
 
-The high level pipeline also has an alias, ``roman_hlp``, and can be run as
+The mosaic level pipeline also has an alias, ``roman_mos``, and can be run as
 ::
 
- $ strun roman_hlp r0008308002010007027_asn.json
+ $ strun roman_mos r0008308002010007027_asn.json
 
 
 Exit Status
@@ -94,14 +94,14 @@ For the exposure pipeline and steps,
  from romancal.linearity import LinearityStep
  result = LinearityStep.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
 
-One difference between the high level pipeline and the exposure level pipeline is that the
-high level pipeline is generally designed to run on multiple overlapping exposures. To achieve
+One difference between the mosaic level pipeline and the exposure level pipeline is that the
+mosaic level pipeline is generally designed to run on multiple overlapping exposures. To achieve
 that the input to the pipeline is a list of images, usually an association.
-For the high level pipeline and steps,
+For the mosaic level pipeline and steps,
 
 ::
 
- from romancal.pipeline import HighLevelPipeline
+ from romancal.pipeline import MosaicPipeline
  result = ExposurePipeline.call('r0000101001001001001_asn.json')
 
  from romancal.skymatch import SkyMatchStep

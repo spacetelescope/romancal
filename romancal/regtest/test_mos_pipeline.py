@@ -45,7 +45,7 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
         "roman_mos",
         rtdata.input,
     ]
-    HighLevelPipeline.from_cmdline(args)
+    MosaicPipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
@@ -68,7 +68,7 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     # Perform DMS tests
     # Initial prep
     model = rdm.open(rtdata.output, lazy_load=False)
-    pipeline = HighLevelPipeline()
+    pipeline = MosaicPipeline()
 
     # DMS356 result is an ImageModel
     pipeline.log.info(
