@@ -4,4 +4,4 @@ Pipeline Levels
    :maxdepth: 2
 
    pipeline/exposure_pipeline.rst
-   pipeline/mosaiclevel_pipeline.rst
+   pipeline/mosaic_pipeline.rst

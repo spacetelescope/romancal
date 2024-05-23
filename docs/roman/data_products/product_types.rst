@@ -13,7 +13,7 @@ Exposure Level Data Products
 +==================================================================+========================+==========================+======+=======================+=======================================+
 | :ref:`romancal.pipeline.ExposurePipeline <exposure_pipeline>`    | uncal                  | cal                      | Exp  | DN/s                  | 2-D calibrated data                   |
 +------------------------------------------------------------------+------------------------+--------------------------+------+-----------------------+---------------------------------------+
-| :ref:`romancal.pipeline.HighLevelPipeline <highlevel_pipeline>`  | cal                    | i2d                      | Exp  | DN/s                  | 2-D calibrated data                   |
+| :ref:`romancal.pipeline.MosaicPipeline <mosaic_pipeline>`        | cal                    | i2d                      | Exp  | DN/s                  | 2-D calibrated data                   |
 +------------------------------------------------------------------+------------------------+--------------------------+------+-----------------------+---------------------------------------+
 
 
@@ -59,7 +59,7 @@ the user is running the pipeline. The input for each optional step is the output
 High Level Processing Steps And Data Products
 +++++++++++++++++++++++++++++++++++++++++++++
 
-The following table contain lists of all data product types for the HighLevel Processing (HLP) Pipeline, as given by their file name suffix.
+The following table contain lists of all data product types for the Mosaic Processing Pipeline, as given by their file name suffix.
 The input to the HLP is an association file (in JSON format), the output is a combined image.
 All the other are optional (opt) files that can be produced when
 the user is running the pipeline. The input for each optional step is the output of the preceding step.
@@ -68,6 +68,8 @@ the user is running the pipeline. The input for each optional step is the output
 | Pipeline Step                                     | Input           |  Output suffix               | Data Model       | Units               | Description                           |
 +===================================================+=================+==============================+==================+=====================+=======================================+
 |                                                   |                 | asn                          |                  |                     |                                       |
++---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+
+| :ref:`flux <flux_step>`                           | asn             | flux (opt)                   | ModelContainer   | MJy/sr              | A list of _cal files                  |
 +---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+
 | :ref:`sky_match <skymatch_step>`                  | asn             | skymatch (opt)               | ModelContainer   | MJy/sr              | A list of _cal files                  |
 +---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+
