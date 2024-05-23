@@ -67,12 +67,12 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
     assert diff.identical, diff.report()
 
     wcstweak = tweakreg_out.meta.wcs
-    orig_model_asdf = asdf.open(orig_uncal)
-    wcstrue = orig_model_asdf["romanisim"]["wcs"]  # simulated, true WCS
-    pts = np.linspace(0, 4000, 30)
-    xx, yy = np.meshgrid(pts, pts)
-    coordtweak = wcstweak.pixel_to_world(xx, yy)
-    coordtrue = wcstrue.pixel_to_world(xx, yy)
+    with asdf.open(orig_uncal) as orig_model_asdf:
+        wcstrue = orig_model_asdf["romanisim"]["wcs"]  # simulated, true WCS
+        pts = np.linspace(0, 4000, 30)
+        xx, yy = np.meshgrid(pts, pts)
+        coordtweak = wcstweak.pixel_to_world(xx, yy)
+        coordtrue = wcstrue.pixel_to_world(xx, yy)
     diff = coordtrue.separation(coordtweak).to(u.arcsec).value
     rms = np.sqrt(np.mean(diff**2)) * 1000  # rms difference in mas
     passmsg = "PASS" if rms < 1.3 / np.sqrt(2) else "FAIL"

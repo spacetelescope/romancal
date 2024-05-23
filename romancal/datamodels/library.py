@@ -364,22 +364,67 @@ class ModelLibrary(Sequence):
         return copy.deepcopy(self, memo=memo)
 
     # TODO save, required by stpipe
-    def save(self, dir_path=None, overwrite=True):
-        # overwrite: used by stpipe
-        if not overwrite:
-            raise NotImplementedError()
-        # dir_path: required by SkyMatch tests
-        if dir_path is None:
-            raise NotImplementedError()
-        # save all models
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
+    def save(self, path=None, dir_path=None, save_model_func=None, overwrite=True):
+        # FIXME: the signature for this function can lead to many possible outcomes
+        # stpipe may call this with save_model_func and path defined
+        # skymatch tests call with just dir_path
+        # stpipe sometimes provides overwrite=True
+
+        if path is None:
+
+            def path(file_path, index):
+                return file_path
+
+        elif not callable(path):
+
+            def path(file_path, index):
+                path_head, path_tail = os.path.split(file_path)
+                base, ext = os.path.splitext(path_tail)
+                if index is not None:
+                    base = base + str(index)
+                return os.path.join(path_head, base + ext)
+
+        # FIXME: since path is the first argument this means that calling
+        # ModelLibrary.save("my_directory") will result in saving all models
+        # to the current directory, ignoring "my_directory" this matches
+        # what was done for ModelContainer
+        dir_path = dir_path if dir_path is not None else os.getcwd()
+
+        # output_suffix = kwargs.pop("output_suffix", None)  # FIXME this was unused
+
+        output_paths = []
         with self:
             for i, model in enumerate(self):
-                model.save(os.path.join(dir_path, model.meta.filename))
+                if len(self) == 1:
+                    index = None
+                else:
+                    index = i
+                if save_model_func is None:
+                    filename = model.meta.filename
+                    output_path, output_filename = os.path.split(path(filename, index))
+
+                    # use dir_path when provided
+                    output_path = output_path if dir_path is None else dir_path
+
+                    # create final destination (path + filename)
+                    save_path = os.path.join(output_path, output_filename)
+
+                    model.to_asdf(save_path)  # TODO save args?
+
+                    output_paths.append(save_path)
+                else:
+                    output_paths.append(save_model_func(model, idx=index))
+
                 self.discard(i, model)
 
+        return output_paths
+
     # TODO crds_observatory, get_crds_parameters, when stpipe uses these...
+    def crds_observatory(self):
+        return "roman"
+
+    def get_crds_parameters(self):
+        raise NotImplementedError()
 
     def finalize_result(self, step, reference_files_used):
         with self:
