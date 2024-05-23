@@ -6,7 +6,7 @@ import pytest
 import roman_datamodels as rdm
 from metrics_logger.decorators import metrics_logger
 
-from romancal.pipeline.highlevel_pipeline import HighLevelPipeline
+from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
 from .regtestdata import compare_asdf
 
@@ -21,7 +21,7 @@ def passfail(bool_expr):
 @pytest.mark.bigdata
 @pytest.mark.soctests
 @metrics_logger("DMS356")
-def test_level3_hlp_pipeline(rtdata, ignore_asdf_paths):
+def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     """Tests for level 3 processing requirements DMS356"""
 
     cal_files = [
@@ -42,10 +42,10 @@ def test_level3_hlp_pipeline(rtdata, ignore_asdf_paths):
     rtdata.output = output
     args = [
         "--disable-crds-steppars",
-        "roman_hlp",
+        "roman_mos",
         rtdata.input,
     ]
-    HighLevelPipeline.from_cmdline(args)
+    MosaicPipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
@@ -68,7 +68,7 @@ def test_level3_hlp_pipeline(rtdata, ignore_asdf_paths):
     # Perform DMS tests
     # Initial prep
     model = rdm.open(rtdata.output, lazy_load=False)
-    pipeline = HighLevelPipeline()
+    pipeline = MosaicPipeline()
 
     # DMS356 result is an ImageModel
     pipeline.log.info(

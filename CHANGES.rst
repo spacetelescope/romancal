@@ -1,7 +1,12 @@
 0.15.2 (unreleased)
 ===================
 
--
+general
+-------
+
+- Rename highlevelpipeline to mosaicpipeline [#1249]
+
+
 
 0.15.1 (2024-05-15)
 ===================
