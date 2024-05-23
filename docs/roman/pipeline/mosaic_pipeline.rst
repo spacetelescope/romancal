@@ -30,7 +30,7 @@ table below.
 
 Arguments
 ---------
-The ``mosaiclevel`` pipeline has no optional arguments:
+The ``mosaic`` pipeline has no optional arguments:
 
 
 You can see the options for strun using:
