@@ -364,7 +364,10 @@ class ModelLibrary(Sequence):
         return copy.deepcopy(self, memo=memo)
 
     # TODO save, required by stpipe
-    def save(self, dir_path=None):
+    def save(self, dir_path=None, overwrite=True):
+        # overwrite: used by stpipe
+        if not overwrite:
+            raise NotImplementedError()
         # dir_path: required by SkyMatch tests
         if dir_path is None:
             raise NotImplementedError()
