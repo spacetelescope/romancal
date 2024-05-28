@@ -6,7 +6,6 @@ general
 
 - Rename highlevelpipeline to mosaicpipeline [#1249]
 
-
 source_catalog
 --------------
 - Add PSF photometry capability. [#1243]
