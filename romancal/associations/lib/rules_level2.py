@@ -140,16 +140,7 @@ class Asn_Lv2GBTDSFull(AsnMixin_Lv2GBTDSfull, DMS_ELPP_Base):
         # Now check and continue initialization.
         super().__init__(*args, **kwargs)
 
-    def get_exposure_type(self, item, default="science"):
-        """Modify exposure type depending on dither pointing index
+    def get_exposure_type(self, item, default=None):
+        """overrides super method to return `item["exp_type"]`"""
 
-        Behaves as the superclass method. However, if the constraint
-        `is_current_patt_num` is True, mark the exposure type as
-        `background`.
-        """
-        exp_type = item["exp_type"]
-
-        if exp_type == "wfi_image":
-            exp_type == "science"
-
-        return exp_type
+        return item["exp_type"]
