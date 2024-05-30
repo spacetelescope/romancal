@@ -269,16 +269,17 @@ def test_background(mosaic_model):
     assert isinstance(cat, Table)
 
 
-def test_l2_input_model_unchanged(image_model):
+def test_l2_input_model_unchanged(image_model, tmp_path):
     """
     Test that the input model data and error arrays are unchanged after
     processing by SourceCatalogStep.
     """
+    os.chdir(tmp_path)
     original_data = image_model.data.copy()
     original_err = image_model.err.copy()
 
     step = SourceCatalogStep()
-    result = step.call(
+    step.call(
         image_model,
         snr_threshold=0.5,
         npixels=5,
@@ -291,16 +292,17 @@ def test_l2_input_model_unchanged(image_model):
     assert_allclose(original_err, image_model.err, atol=5.0e-7)
 
 
-def test_l3_input_model_unchanged(mosaic_model):
+def test_l3_input_model_unchanged(mosaic_model, tmp_path):
     """
     Test that the input model data and error arrays are unchanged after
     processing by SourceCatalogStep.
     """
+    os.chdir(tmp_path)
     original_data = mosaic_model.data.copy()
     original_err = mosaic_model.err.copy()
 
     step = SourceCatalogStep()
-    result = step.call(
+    step.call(
         mosaic_model,
         snr_threshold=0.5,
         npixels=5,
