@@ -37,13 +37,13 @@ class Region:
         self._coordinate_system = coordinate_system
         self._rid = rid
 
-    def __contains__(self, x, y):
+    def __contains__(self, xy: tuple[float]):
         """
         Determines if a pixel is within a region.
 
         Parameters
         ----------
-        x, y : float
+        xy : tuple[float]
             x , y values of a pixel
 
         Returns

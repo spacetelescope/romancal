@@ -191,8 +191,6 @@ class ExposurePipeline(RomanPipeline):
                 mc_result = ModelContainer(result)
                 if hasattr(ModelContainer(result), "_models") and mc_result._models:
                     result = mc_result._models.pop()
-                else:
-                    result.meta.cal_step.tweakreg == "SKIPPED"
 
             if file_type == "asn":
                 result = self.tweakreg(tweakreg_input)
