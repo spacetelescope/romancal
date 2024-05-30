@@ -2,8 +2,6 @@
 Module for the source catalog step.
 """
 
-import contextlib
-
 import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels, maker_utils
