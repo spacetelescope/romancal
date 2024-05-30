@@ -327,10 +327,10 @@ def fit_psf_to_image_model(
     # at some point in the future.
 
     if dq is None:
-        if image_model is not None:
+        if image_model is not None and isinstance(image_model, ImageModel):
             mask = dq_to_boolean_mask(image_model, ignore_flags=ignore_flags)
         else:
-            mask = None
+            mask = image_model.err < 0
     else:
         mask = dq_to_boolean_mask(dq)
 
