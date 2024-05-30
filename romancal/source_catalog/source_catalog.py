@@ -1167,8 +1167,14 @@ class RomanSourceCatalog:
 
         """
         log.info("Constructing a gridded PSF model.")
-        filt = self.model.meta.instrument["optical_element"]
-        detector = self.model.meta.instrument["detector"].replace("WFI", "SCA")
+        if hasattr(self.model.meta, "instrument"):
+            # ImageModel (L2 datamodel)
+            filt = self.model.meta.instrument.optical_element
+            detector = self.model.meta.instrument.detector.replace("WFI", "SCA")
+        else:
+            # MosaicModel (L3 datamodel)
+            filt = self.model.meta.basic.optical_element
+            detector = "SCA02"
         gridded_psf_model, _ = psf.create_gridded_psf_model(
             path_prefix="tmp",
             filt=filt,
@@ -1193,10 +1199,8 @@ class RomanSourceCatalog:
         }
 
         # append PSF results to the class instance with the proper column name
-        [
+        for old_name, new_name in old_name_to_new_name_mapping.items():
             setattr(self, new_name, psf_photometry_table[old_name])
-            for old_name, new_name in old_name_to_new_name_mapping.items()
-        ]
 
     @lazyproperty
     def catalog(self):
