@@ -98,15 +98,19 @@ def image_model():
         (50, 10, 0, False),
     ),
 )
-def test_l2_source_catalog(image_model, snr_threshold, npixels, nsources, save_results):
-    step = SourceCatalogStep(
+def test_l2_source_catalog(
+    image_model, snr_threshold, npixels, nsources, save_results, tmp_path
+):
+    os.chdir(tmp_path)
+    step = SourceCatalogStep()
+    result = step.call(
+        image_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         snr_threshold=snr_threshold,
         npixels=npixels,
         save_results=save_results,
     )
-    result = step.run(image_model)
     cat = result.source_catalog
 
     assert isinstance(cat, Table)
@@ -177,17 +181,19 @@ def test_l2_source_catalog(image_model, snr_threshold, npixels, nsources, save_r
     ),
 )
 def test_l3_source_catalog(
-    mosaic_model, snr_threshold, npixels, nsources, save_results
+    mosaic_model, snr_threshold, npixels, nsources, save_results, tmp_path
 ):
-    step = SourceCatalogStep(
+    os.chdir(tmp_path)
+    step = SourceCatalogStep()
+
+    result = step.call(
+        mosaic_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         snr_threshold=snr_threshold,
         npixels=npixels,
         save_results=save_results,
-        fit_psf=False,
     )
-    result = step.run(mosaic_model)
     cat = result.source_catalog
 
     assert isinstance(cat, Table)
@@ -249,10 +255,15 @@ def test_background(mosaic_model):
     """
     Test background fallback when Background2D fails.
     """
-    step = SourceCatalogStep(
-        bkg_boxsize=1000, kernel_fwhm=2.0, snr_threshold=3, npixels=25, fit_psf=False
+    step = SourceCatalogStep()
+    result = step.call(
+        mosaic_model,
+        bkg_boxsize=1000,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=25,
+        fit_psf=False,
     )
-    result = step.run(mosaic_model)
     cat = result.source_catalog
 
     assert isinstance(cat, Table)
@@ -266,14 +277,15 @@ def test_l2_input_model_unchanged(image_model):
     original_data = image_model.data.copy()
     original_err = image_model.err.copy()
 
-    step = SourceCatalogStep(
+    step = SourceCatalogStep()
+    result = step.call(
+        image_model,
         snr_threshold=0.5,
         npixels=5,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         save_results=False,
     )
-    step.run(image_model)
 
     assert_allclose(original_data, image_model.data, atol=5.0e-7)
     assert_allclose(original_err, image_model.err, atol=5.0e-7)
@@ -287,15 +299,15 @@ def test_l3_input_model_unchanged(mosaic_model):
     original_data = mosaic_model.data.copy()
     original_err = mosaic_model.err.copy()
 
-    step = SourceCatalogStep(
+    step = SourceCatalogStep()
+    result = step.call(
+        mosaic_model,
         snr_threshold=0.5,
         npixels=5,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         save_results=False,
-        fit_psf=False,
     )
-    step.run(mosaic_model)
 
     assert_allclose(original_data, mosaic_model.data, atol=5.0e-7)
     assert_allclose(original_err, mosaic_model.err, atol=5.0e-7)
