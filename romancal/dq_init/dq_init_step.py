@@ -1,8 +1,6 @@
 #! /usr/bin/env python
 
-import numpy as np
 import roman_datamodels as rdm
-from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import RampModel
 from roman_datamodels.dqflags import pixel
 
