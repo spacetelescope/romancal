@@ -40,12 +40,10 @@ class _OnDiskModelStore(MutableMapping):
     def __init__(self, memmap=False, directory=None):
         self._memmap = memmap
         if directory is None:
-            # when tem
             self._tempdir = tempfile.TemporaryDirectory(dir="")
-            # TODO should I make this a path?
-            self._dir = self._tempdir.name
+            self._path = Path(self._tempdir.name)
         else:
-            self._dir = directory
+            self._path = Path(directory)
         self._filenames = {}
 
     def __getitem__(self, key):
@@ -60,9 +58,9 @@ class _OnDiskModelStore(MutableMapping):
             model_filename = value.meta.filename
             if model_filename is None:
                 model_filename = "model.asdf"
-            subdir = os.path.join(self._dir, f"{key}")
-            os.makedirs(subdir)
-            fn = os.path.join(subdir, model_filename)
+            subpath = self._path / f"{key}"
+            os.makedirs(subpath)
+            fn = subpath / model_filename
             self._filenames[key] = fn
 
         # save the model to the temporary location
