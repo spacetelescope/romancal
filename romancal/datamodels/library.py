@@ -464,10 +464,24 @@ class ModelLibrary(Sequence):
         else:
             copy_func = lambda value: value  # noqa: E731
         with self:
-            for i, model in range(len(self)):
+            for i, model in enumerate(self):
                 attr = model[attribute]
                 self.discard(i, model)
                 yield copy_func(attr)
+
+    def map_function(self, function, write=False):
+        if write:
+            cleanup = self.discard
+        else:
+            cleanup = self.__setitem__
+        with self:
+            for i, model in enumerate(self):
+                try:
+                    yield function(model)
+                finally:
+                    # this is in a finally to allow cleanup if the generator is
+                    # deleted after it finishes (when it's not fully consumed)
+                    cleanup(i, model)
 
 
 def _mapping_to_group_id(mapping):
