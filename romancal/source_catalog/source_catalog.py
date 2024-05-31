@@ -1099,34 +1099,29 @@ class RomanSourceCatalog:
 
         return [
             {
-                "old_name": "x_fit",
-                "new_name": "x_psf",
-                "desc": "X coordinate as determined by PSF photometry",
-            },
-            {
                 "old_name": "flags",
-                "new_name": "flags_psf",
+                "new_name": "flag_psf",
                 "desc": "Data quality flags",
             },
             {
                 "old_name": "x_fit",
                 "new_name": "x_psf",
-                "desc": "X coordinate as determined by PSF photometry",
+                "desc": "X coordinate as determined by PSF fitting",
             },
             {
                 "old_name": "x_err",
                 "new_name": "x_psf_err",
-                "desc": "Error on X coordinate of PSF photometry",
+                "desc": "Error on X coordinate of PSF fitting",
             },
             {
                 "old_name": "y_fit",
                 "new_name": "y_psf",
-                "desc": "Y coordinate as determined by PSF photometry",
+                "desc": "Y coordinate as determined by PSF fitting",
             },
             {
                 "old_name": "y_err",
                 "new_name": "y_psf_err",
-                "desc": "Error on X coordinate of PSF photometry",
+                "desc": "Error on Y coordinate of PSF fitting",
             },
             {
                 "old_name": "flux_fit",
