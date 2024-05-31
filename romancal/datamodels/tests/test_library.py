@@ -1,4 +1,5 @@
 import json
+import os
 from contextlib import nullcontext
 
 import pytest
@@ -75,6 +76,15 @@ def test_load_asn(example_library):
     from the association (and does not require opening the library)
     """
     assert len(example_library) == _N_MODELS
+
+
+def test_init_from_asn(example_asn_path):
+    with open(example_asn_path) as f:
+        asn = load_asn(f)
+    # as association filenames are local we must be in the same directory
+    os.chdir(example_asn_path.parent)
+    lib = ModelLibrary(asn)
+    assert len(lib) == _N_MODELS
 
 
 @pytest.mark.parametrize("asn_n_members", range(_N_MODELS))
