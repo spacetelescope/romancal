@@ -9,5 +9,8 @@ Source Catalog
 
    main.rst
    arguments.rst
+   psf.rst
 
 .. automodapi:: romancal.source_catalog
+
+.. automodapi:: romancal.lib.psf

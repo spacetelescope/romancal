@@ -60,6 +60,17 @@ Photometric errors are calculated from the resampled total-error
 array contained in the ``ERR`` (``model.err``) array. Note that this
 total-error array includes source Poisson noise.
 
+PSF Fitting
+-----------
+
+Star finding algorithms like `~photutils.detection.DAOStarFinder` provide
+approximate stellar centroids. More precise centroids may be inferred by
+fitting model PSFs to the observations. Setting the SourceDetectionStep's
+option `fit_psf` to True will generate model Roman PSFs with
+`WebbPSF <https://webbpsf.readthedocs.io/en/latest/roman.html>`_, and fit
+those models to each of the sources detected by
+`~photutils.detection.DAOStarFinder`. More details are in :doc:`psf`.
+
 Output Products
 ---------------
 
@@ -169,6 +180,36 @@ columns (assuming the default encircled energies of 30, 50, and 70):
 | sky_bbox_ur            | Sky coordinate of the upper-right vertex of the    |
 |                        | minimal bounding box of the source                 |
 +------------------------+----------------------------------------------------+
+
+
+If ``fit_psf=True``, the following columns will also be available:
+
++------------------------+----------------------------------------------------+
+| Column                 | Description                                        |
++========================+====================================================+
+| x_psf, x_psf_err       | X pixel value of the source and its associated     |
+|                        | error as determined by PSF fitting                 |
++------------------------+----------------------------------------------------+
+| y_psf, y_psf_err       | Y pixel value of the source and its associated     |
+|                        | error as determined by PSF fitting                 |
++------------------------+----------------------------------------------------+
+| flux_psf, flux_psf_err | Flux of the source and its associated error as     |
+|                        | determined by PSF fitting                          |
++------------------------+----------------------------------------------------+
+| flag_psf               | DQ flag of the resulting PSF fitting.              |
+|                        | Possible values are [1]_:                          |
+|                        |                                                    |
+|                        | - 1 : one or more pixels in the fitting region     |
+|                        |   were masked                                      |
+|                        | - 2 : the fit x and/or y position lies outside of  |
+|                        |   the input data                                   |
+|                        | - 4 : the fit flux is less than or equal to zero   |
+|                        | - 8 : the fitter may not have converged            |
+|                        | - 16 : the fitter parameter covariance matrix was  |
+|                        |   not returned                                     |
++------------------------+----------------------------------------------------+
+
+.. [1] See `PSFPhotometry <https://photutils.readthedocs.io/en/stable/api/photutils.psf.PSFPhotometry.html#photutils.psf.PSFPhotometry>`_ for more details.
 
 Note that pixel coordinates are 0 indexed, matching the Python 0-based
 indexing. That means pixel coordinate ``0`` is the center of the first
