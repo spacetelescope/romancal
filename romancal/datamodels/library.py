@@ -128,23 +128,36 @@ class ModelLibrary(Sequence):
         else:
             self._model_store = {}
 
-        # TODO path support
-        # TODO model list support
-        if isinstance(init, (str, Path)):
-            self._asn_path = os.path.abspath(
-                os.path.expanduser(os.path.expandvars(init))
-            )
-            self._asn_dir = os.path.dirname(self._asn_path)
+        if isinstance(init, MutableMapping):
+            asn_data = init
+            self._asn_dir = os.path.abspath(".")
+            self._asn = init
+
+            if self._asn_exptypes is not None:
+                raise NotImplementedError()
+
+            if self._asn_n_members is not None:
+                raise NotImplementedError()
+
+            self._members = self._asn["products"][0]["members"]
+
+            for member in self._members:
+                if "group_id" not in member:
+                    filename = os.path.join(self._asn_dir, member["expname"])
+                    member["group_id"] = _file_to_group_id(filename)
+        elif isinstance(init, (str, Path)):
+            asn_path = os.path.abspath(os.path.expanduser(os.path.expandvars(init)))
+            self._asn_dir = os.path.dirname(asn_path)
 
             # TODO asn_table_name is there another way to handle this
-            self.asn_table_name = os.path.basename(self._asn_path)
+            self.asn_table_name = os.path.basename(asn_path)
 
             # load association
             # TODO why did ModelContainer make this local?
             from ..associations import AssociationNotValidError, load_asn
 
             try:
-                with open(self._asn_path) as asn_file:
+                with open(asn_path) as asn_file:
                     asn_data = load_asn(asn_file)
             except AssociationNotValidError as e:
                 raise OSError("Cannot read ASN file.") from e
@@ -210,6 +223,12 @@ class ModelLibrary(Sequence):
                     }
                 )
 
+            if self._asn_exptypes is not None:
+                raise NotImplementedError()
+
+            if self._asn_n_members is not None:
+                raise NotImplementedError()
+
             # make a fake association
             self._asn = {
                 # TODO other asn data?
@@ -220,9 +239,6 @@ class ModelLibrary(Sequence):
                 ],
             }
             self._members = self._asn["products"][0]["members"]
-
-            # _asn_dir?
-            # _asn_path?
 
         elif isinstance(init, self.__class__):
             # TODO clone/copy?
