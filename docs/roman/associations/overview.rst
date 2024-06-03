@@ -43,7 +43,7 @@ from the observatory telemetry into a ASDF file. At this point, the
 science exposures enter the calibration pipeline.
 
 The pipeline consists of the ELP (Exposure Level Processing) and
-the HLP (High Level Processing) which together comprise three levels of data generation and processing:
+the Mosaic Level Processing which together comprise three levels of data generation and processing:
 Level 1, Level 2, and Level 3. Level 1 data consist of uncalibrated individual
 exposures, containing raw pixel information, formatted into the shape of
 the detectors. Level 2 data have been  processed to correct for instrument artifacts and

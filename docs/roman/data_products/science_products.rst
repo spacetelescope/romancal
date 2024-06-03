@@ -139,3 +139,41 @@ The calibrated products are the result of an average over all integrations (``ca
  - border_ref_pix_right: Copy of original border reference pixels, on right (from viewers perspective).
  - border_ref_pix_top: Copy of original border reference pixels, on the top (from viewers perspective).
  - border_ref_pix_bottom: Copy of original border reference pixels, on the bottom (from viewers perspective).
+
+
+Resampled 2-D data: ``i2d``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Images and spectra that have been resampled by the :ref:`resample <resample_step>` step use a
+different set of data arrays than other science products. Resampled 2-D images are stored in
+``i2d`` products.
+The ASDF structure for ``i2d`` products is as follows:
+
++----------------------+----------+------------+---------------------------+-------------------------------+
+| data array           |          | Data Type  | Units                     | Dimensions                    |
++======================+==========+============+===========================+===============================+
+|  data                | Required | float32    | e\ :sup:`-`/ s            |  nrows x ncols                |
++----------------------+----------+------------+---------------------------+-------------------------------+
+|  context             | Required | uint32     | N/A                       |  2 x nrows x ncols            |
++----------------------+----------+------------+---------------------------+-------------------------------+
+|  err                 | Required | float32    | e\ :sup:`-`/ s            |  nrows x ncols                |
++----------------------+----------+------------+---------------------------+-------------------------------+
+|  weight              | Required | float32    | N/A                       |  nrows x ncols                |
++----------------------+----------+------------+---------------------------+-------------------------------+
+|  var_poisson         | Required | float32    | (e\ :sup:`-`/ s)\ :sup:`2`|  nrows x ncols                |
++----------------------+----------+------------+---------------------------+-------------------------------+
+|  var_rnoise          | Required | float32    | (e\ :sup:`-`/ s)\ :sup:`2`|  nrows x ncols                |
++----------------------+----------+------------+---------------------------+-------------------------------+
+|  var_flat            | Required | float32    | (e\ :sup:`-`/ s)\ :sup:`2`|  nrows x ncols                |
++----------------------+----------+------------+---------------------------+-------------------------------+
+
+
+ - data: 2-D data array containing the pixel values, in units of surface brightness
+ - context: 3-D context image, which encodes information about which input images contribute
+   to a specific output pixel
+ - error: 2-D data array containing resampled uncertainty estimates, given as standard deviation
+ - weight: 2-D weight image giving the relative weight of the output pixels
+ - var_poisson: 2-D resampled Poisson variance estimates for each pixel
+ - var_rnoise: 2-D resampled read noise variance estimates for each pixel
+ - var_flat: 2-D resampled flat-field variance estimates for each pixel
+
+   
