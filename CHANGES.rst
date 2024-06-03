@@ -6,7 +6,6 @@ Documentation
 
 - Update RTD to include mosaic data (i2d) description [#1262]
 
-
 general
 -------
 
@@ -18,7 +17,6 @@ general
 
 - Rename highlevelpipeline to mosaic pipeline [#1249]
 
-
 source_catalog
 --------------
 - Add PSF photometry capability. [#1243]
@@ -26,6 +24,11 @@ source_catalog
 dq_init
 -------
 -  Refactor DQInitStep to use the RampModel method of creating ramps. [#1258]
+
+outlier_detection
+-----------------
+
+- Set ``single=True`` to use ``many_to_many`` when creating median image. [#1260]
 
 
 0.15.1 (2024-05-15)
