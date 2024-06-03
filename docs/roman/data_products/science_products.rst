@@ -151,19 +151,19 @@ The ASDF structure for ``i2d`` products is as follows:
 +----------------------+----------+------------+---------------------------+-------------------------------+
 | data array           |          | Data Type  | Units                     | Dimensions                    |
 +======================+==========+============+===========================+===============================+
-|  data                | Required | float32    | e\ :sup:`-`/ s            |  nrows x ncols                |
+|  data                | Required | float32    | MJy/steradian             |  nrows x ncols                |
 +----------------------+----------+------------+---------------------------+-------------------------------+
-|  context             | Required | uint32     | N/A                       |  2 x nrows x ncols            |
+|  context             | Required | uint32     | N/A                       |  N x nrows x ncols            |
 +----------------------+----------+------------+---------------------------+-------------------------------+
-|  err                 | Required | float32    | e\ :sup:`-`/ s            |  nrows x ncols                |
+|  err                 | Required | float32    | MJy/steradian             |  nrows x ncols                |
 +----------------------+----------+------------+---------------------------+-------------------------------+
 |  weight              | Required | float32    | N/A                       |  nrows x ncols                |
 +----------------------+----------+------------+---------------------------+-------------------------------+
-|  var_poisson         | Required | float32    | (e\ :sup:`-`/ s)\ :sup:`2`|  nrows x ncols                |
+|  var_poisson         | Required | float32    | (MJy/steradian)\ :sup:`2` |  nrows x ncols                |
 +----------------------+----------+------------+---------------------------+-------------------------------+
-|  var_rnoise          | Required | float32    | (e\ :sup:`-`/ s)\ :sup:`2`|  nrows x ncols                |
+|  var_rnoise          | Required | float32    | (MJy/steradian)\ :sup:`2` |  nrows x ncols                |
 +----------------------+----------+------------+---------------------------+-------------------------------+
-|  var_flat            | Required | float32    | (e\ :sup:`-`/ s)\ :sup:`2`|  nrows x ncols                |
+|  var_flat            | Required | float32    | (MJy/steradian)\ :sup:`2` |  nrows x ncols                |
 +----------------------+----------+------------+---------------------------+-------------------------------+
 
 
