@@ -203,6 +203,7 @@ class ResampleData:
 
         Used for outlier detection
         """
+        output_list = []
         for exposure in self.input_models.models_grouped:
             output_model = self.blank_output
             output_model.meta["resample"] = maker_utils.mk_resample()
@@ -224,7 +225,6 @@ class ResampleData:
             )
 
             log.info(f"{len(exposure)} exposures to drizzle together")
-            output_list = []
             for img in exposure:
                 img = datamodels.open(img)
                 # TODO: should weight_type=None here?
@@ -233,11 +233,12 @@ class ResampleData:
                 )
 
                 # apply sky subtraction
-                if not hasattr(img.meta, "background"):
-                    self._create_background_attribute(img)
-                blevel = img.meta.background.level
-                if not img.meta.background.subtracted and blevel is not None:
-                    data = img.data - blevel
+                if (
+                    hasattr(img.meta, "background")
+                    and img.meta.background.subtracted is False
+                    and img.meta.background.level is not None
+                ):
+                    data = img.data - img.meta.background.level
                 else:
                     data = img.data
 
@@ -268,9 +269,10 @@ class ResampleData:
             else:
                 output_list.append(output_model.copy())
 
-            self.output_models = ModelContainer(output_list, return_open=self.in_memory)
             output_model.data *= 0.0
             output_model.weight *= 0.0
+
+        self.output_models = ModelContainer(output_list, return_open=self.in_memory)
 
         return self.output_models
 
@@ -305,11 +307,12 @@ class ResampleData:
                 weight_type=self.weight_type,
                 good_bits=self.good_bits,
             )
-            if not hasattr(img.meta, "background"):
-                self._create_background_attribute(img)
-            blevel = img.meta.background.level
-            if not img.meta.background.subtracted and blevel is not None:
-                data = img.data - blevel
+            if (
+                hasattr(img.meta, "background")
+                and img.meta.background.subtracted is False
+                and img.meta.background.level is not None
+            ):
+                data = img.data - img.meta.background.level
             else:
                 data = img.data
 
@@ -367,11 +370,6 @@ class ResampleData:
         self.output_models.append(output_model)
 
         return self.output_models
-
-    def _create_background_attribute(self, img):
-        img.meta["background"] = {}
-        img.meta.background["level"] = 0
-        img.meta.background["subtracted"] = True
 
     def resample_variance_array(self, name, output_model):
         """Resample variance arrays from ``self.input_models`` to the ``output_model``.
