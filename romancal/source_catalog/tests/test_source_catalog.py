@@ -61,7 +61,7 @@ def make_test_image():
 
 @pytest.fixture
 def mosaic_model():
-    wfi_mosaic = mk_level3_mosaic()
+    wfi_mosaic = mk_level3_mosaic(shape=(101, 101))
     model = MosaicModel(wfi_mosaic)
     data, err = make_test_image()
     units = u.MJy / u.sr
@@ -69,6 +69,7 @@ def mosaic_model():
     err <<= units
     model.data = data
     model.err = err
+    model.weight = 1.0 / err.value
     return model
 
 
