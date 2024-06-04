@@ -1,6 +1,12 @@
 0.15.2 (unreleased)
 ===================
 
+Documentation
+-------------
+
+- Update RTD to include mosaic data (i2d) description [#1262]
+
+
 general
 -------
 
