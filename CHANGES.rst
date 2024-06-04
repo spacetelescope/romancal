@@ -12,7 +12,10 @@ general
 
 - Rename highlevelpipeline to mosaicpipeline [#1249]
 
+dq_init
+-------
 
+-  Refactor DQInitStep to use the RampModel method of creating ramps. [#1258]
 
 0.15.1 (2024-05-15)
 ===================
