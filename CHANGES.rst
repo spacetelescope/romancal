@@ -1,14 +1,26 @@
 0.15.2 (unreleased)
 ===================
 
+Documentation
+-------------
+
+- Update RTD to include mosaic data (i2d) description [#1262]
+
+
 general
 -------
 
 - Rename highlevelpipeline to mosaicpipeline [#1249]
 
+
 source_catalog
 --------------
 - Add PSF photometry capability. [#1243]
+
+dq_init
+-------
+-  Refactor DQInitStep to use the RampModel method of creating ramps. [#1258]
+
 
 0.15.1 (2024-05-15)
 ===================
