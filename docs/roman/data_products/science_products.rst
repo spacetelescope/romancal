@@ -153,7 +153,7 @@ The ASDF structure for ``i2d`` products is as follows:
 +======================+==========+============+===========================+===============================+
 |  data                | Required | float32    | MJy/steradian             |  nrows x ncols                |
 +----------------------+----------+------------+---------------------------+-------------------------------+
-|  context             | Required | uint32     | N/A                       |  N x nrows x ncols            |
+|  context             | Required | uint32     | N/A                       |  nplanes x nrows x ncols      |
 +----------------------+----------+------------+---------------------------+-------------------------------+
 |  err                 | Required | float32    | MJy/steradian             |  nrows x ncols                |
 +----------------------+----------+------------+---------------------------+-------------------------------+
@@ -175,5 +175,3 @@ The ASDF structure for ``i2d`` products is as follows:
  - var_poisson: 2-D resampled Poisson variance estimates for each pixel
  - var_rnoise: 2-D resampled read noise variance estimates for each pixel
  - var_flat: 2-D resampled flat-field variance estimates for each pixel
-
-   
