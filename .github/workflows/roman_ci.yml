@@ -32,6 +32,8 @@ jobs:
   test:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
     needs: [ data, crds_contexts ]
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     with:
       setenv: |
         WEBBPSF_PATH: ${{ needs.data.outputs.webbpsf_path }}
