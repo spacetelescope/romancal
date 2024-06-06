@@ -10,7 +10,9 @@ Documentation
 general
 -------
 
-- Rename highlevelpipeline to mosaicpipeline [#1249]
+- Add catalog source step to the mosaic pipeline [#1266]
+
+- Rename highlevelpipeline to mosaic pipeline [#1249]
 
 dq_init
 -------
