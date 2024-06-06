@@ -80,7 +80,6 @@ class MosaicPipeline(RomanPipeline):
             # check to see if the product name contains a skycell name & if true get the skycell record
             product_name = input.asn_table["products"][0]["name"]
             try:
-                skycell_name = product_name.split("_")[1]
                 skycell_name = input.asn_table["target"]
             except IndexError:
                 skycell_name = ""
