@@ -19,6 +19,7 @@ from romancal.outlier_detection import OutlierDetectionStep
 from romancal.patch_match import patch_match
 from romancal.resample import ResampleStep
 from romancal.skymatch import SkyMatchStep
+from romancal.source_catalog import SourceCatalogStep
 
 from ..stpipe import RomanPipeline
 
@@ -47,6 +48,7 @@ class MosaicPipeline(RomanPipeline):
         "skymatch": SkyMatchStep,
         "outlier_detection": OutlierDetectionStep,
         "resample": ResampleStep,
+        "sourcecatalog": SourceCatalogStep,
     }
 
     # start the actual processing
@@ -63,6 +65,7 @@ class MosaicPipeline(RomanPipeline):
         file_type = filetype.check(input)
         if file_type == "asdf":
             log.info("The level three pipeline input needs to be an association")
+            exit(0)
             return
 
         if file_type == "asn":
@@ -77,7 +80,7 @@ class MosaicPipeline(RomanPipeline):
             # check to see if the product name contains a skycell name & if true get the skycell record
             product_name = input.asn_table["products"][0]["name"]
             try:
-                skycell_name = product_name.split("_")[3]
+                skycell_name = input.asn_table["target"]
             except IndexError:
                 skycell_name = ""
             skycell_record = []
@@ -125,17 +128,22 @@ class MosaicPipeline(RomanPipeline):
                         self.suffix = "i2d"
                         result = self.resample(result)
                         self.output_file = input.asn_table["products"][0]["name"]
+                        # force the SourceCatalogStep to save the results
+                        self.sourcecatalog.save_results = True
+                        result_catalog = self.sourcecatalog(result)
                     else:
                         log.info("resampling a mosaic file is not yet supported")
                         exit(0)
 
             else:
                 self.resample.suffix = "i2d"
+                self.output_file = input.asn_table["products"][0]["name"]
                 result = self.resample(result)
+                self.sourcecatalog.save_results = True
+                result_catalog = self.sourcecatalog(result)  # noqa: F841
                 self.suffix = "i2d"
                 if input_filename:
                     result.meta.filename = self.output_file
-                self.output_file = input.asn_table["products"][0]["name"]
 
         return result
 

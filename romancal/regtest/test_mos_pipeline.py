@@ -20,7 +20,7 @@ def passfail(bool_expr):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS356")
+@metrics_logger("DMS356", "DMS374")
 def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     """Tests for level 3 processing requirements DMS356"""
 
@@ -53,8 +53,6 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     # Generate thumbnail image
     input_file = "r0099101001001001001_F158_visit_i2d.asdf"
     thumbnail_file = "r0099101001001001001_F158_visit_thumb.png"
-    input_file = "r0099101001001001001_F158_visit_i2d.asdf"
-    thumbnail_file = "r0099101001001001001_F158_visit_thumb.png"
 
     preview_cmd = f"stpreview to {input_file} {thumbnail_file} 256 256 roman"
     os.system(preview_cmd)  # nosec
@@ -64,6 +62,10 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     preview_file = "r0099101001001001001_F158_visit_preview.png"
     preview_cmd = f"stpreview to {input_file} {preview_file} 1080 1080 roman"
     os.system(preview_cmd)  # nosec
+
+    # expected catalog and segmentation files
+    catalog_file = "r0099101001001001001_F158_visit_cat.asdf"
+    segm_file = "r0099101001001001001_F158_visit_segm.asdf"
 
     # Perform DMS tests
     # Initial prep
@@ -90,6 +92,15 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     pipeline.log.info(
         "Status of the step:             preview image    "
         + passfail(os.path.isfile(preview_file))
+    )
+    # DMS374 Test that the output catalog exists
+    pipeline.log.info(
+        "Check that the catalog file exists   " + passfail(os.path.isfile(catalog_file))
+    )
+    # DMS374 Test that the segmentation file exists
+    pipeline.log.info(
+        "Check that the degmentation file exists   "
+        + passfail(os.path.isfile(segm_file))
     )
     pipeline.log.info(
         "DMS86 MSG: Testing completion of skymatch in the Level 3  output......."
