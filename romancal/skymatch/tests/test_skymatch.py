@@ -333,7 +333,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     result = step.run([im1, im2, im3])
     result = ModelContainer(result)
 
-    assert result[0].meta.background.subtracted is subtract
+    assert result[0].meta.background.subtracted == subtract
     assert result[0].meta.background.level is not None
 
     # 2nd run.
