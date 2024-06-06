@@ -95,8 +95,7 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     )
     # DMS374 Test that the output catalog exists
     pipeline.log.info(
-        "Check that the catalog file exists   "
-        + passfail(os.path.isfile(catalog_file))
+        "Check that the catalog file exists   " + passfail(os.path.isfile(catalog_file))
     )
     # DMS374 Test that the segmentation file exists
     pipeline.log.info(

@@ -48,7 +48,7 @@ class MosaicPipeline(RomanPipeline):
         "skymatch": SkyMatchStep,
         "outlier_detection": OutlierDetectionStep,
         "resample": ResampleStep,
-        "sourcecatalog":SourceCatalogStep,
+        "sourcecatalog": SourceCatalogStep,
     }
 
     # start the actual processing
@@ -140,7 +140,7 @@ class MosaicPipeline(RomanPipeline):
                 self.output_file = input.asn_table["products"][0]["name"]
                 result = self.resample(result)
                 self.sourcecatalog.save_results = True
-                result_catalog = self.sourcecatalog(result) # noqa: F841 
+                result_catalog = self.sourcecatalog(result)  # noqa: F841
                 self.suffix = "i2d"
                 if input_filename:
                     result.meta.filename = self.output_file
