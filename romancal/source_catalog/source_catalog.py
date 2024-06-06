@@ -4,6 +4,7 @@ Module to calculate the source catalog.
 
 import logging
 import warnings
+from pathlib import Path
 from typing import List
 
 import astropy.units as u
@@ -24,8 +25,6 @@ from scipy.spatial import KDTree
 
 from romancal import __version__ as romancal_version
 from romancal.lib import psf
-
-from pathlib import Path
 
 from ._wcs_helpers import pixel_scale_angle_at_skycoord
 
