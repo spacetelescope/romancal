@@ -140,8 +140,7 @@ class MosaicPipeline(RomanPipeline):
                 self.output_file = input.asn_table["products"][0]["name"]
                 result = self.resample(result)
                 self.sourcecatalog.save_results = True
-                # noqa: F841 
-                result_catalog = self.sourcecatalog(result)
+                result_catalog = self.sourcecatalog(result) # noqa: F841 
                 self.suffix = "i2d"
                 if input_filename:
                     result.meta.filename = self.output_file
