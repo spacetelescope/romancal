@@ -14,10 +14,15 @@ general
 
 - Rename highlevelpipeline to mosaic pipeline [#1249]
 
+
+source_catalog
+--------------
+- Add PSF photometry capability. [#1243]
+
 dq_init
 -------
-
 -  Refactor DQInitStep to use the RampModel method of creating ramps. [#1258]
+
 
 0.15.1 (2024-05-15)
 ===================

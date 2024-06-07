@@ -42,6 +42,7 @@ class SourceCatalogStep(RomanStep):
         ci1_star_threshold = float(default=2.0)  # CI 1 star threshold
         ci2_star_threshold = float(default=1.8)  # CI 2 star threshold
         suffix = string(default='cat')        # Default suffix for output files
+        fit_psf = boolean(default=True)      # fit source PSFs for accurate astrometry
     """
 
     def process(self, input_model):
@@ -58,15 +59,12 @@ class SourceCatalogStep(RomanStep):
             source_catalog_model = maker_utils.mk_datamodel(cat_model)
 
             for key in source_catalog_model.meta.keys():
-                try:
-                    if key == "optical_element":
-                        value = model.meta.instrument[key]
-                    else:
-                        value = model.meta[key]
-                    source_catalog_model.meta[key] = value
-                except KeyError:
-                    pass
-
+                value = (
+                    model.meta.instrument[key]
+                    if key == "optical_element"
+                    else model.meta[key]
+                )
+                source_catalog_model.meta[key] = value
             aperture_ee = (self.aperture_ee1, self.aperture_ee2, self.aperture_ee3)
             refdata = ReferenceData(model, aperture_ee)
             aperture_params = refdata.aperture_params
@@ -106,6 +104,7 @@ class SourceCatalogStep(RomanStep):
                 aperture_params,
                 ci_star_thresholds,
                 self.kernel_fwhm,
+                self.fit_psf,
             )
 
             # put the resulting catalog in the model

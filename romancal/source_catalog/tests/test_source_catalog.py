@@ -1,3 +1,5 @@
+import os
+
 import astropy.units as u
 import numpy as np
 import pytest
@@ -59,7 +61,7 @@ def make_test_image():
 
 @pytest.fixture
 def mosaic_model():
-    wfi_mosaic = mk_level3_mosaic()
+    wfi_mosaic = mk_level3_mosaic(shape=(101, 101))
     model = MosaicModel(wfi_mosaic)
     data, err = make_test_image()
     units = u.MJy / u.sr
@@ -67,12 +69,13 @@ def mosaic_model():
     err <<= units
     model.data = data
     model.err = err
+    model.weight = 1.0 / err.value
     return model
 
 
 @pytest.fixture
 def image_model():
-    wfi_image = mk_level2_image()
+    wfi_image = mk_level2_image(shape=(101, 101))
     model = ImageModel(wfi_image)
     data, err = make_test_image()
     units = u.DN / u.s
@@ -96,15 +99,19 @@ def image_model():
         (50, 10, 0, False),
     ),
 )
-def test_l2_source_catalog(image_model, snr_threshold, npixels, nsources, save_results):
-    step = SourceCatalogStep(
+def test_l2_source_catalog(
+    image_model, snr_threshold, npixels, nsources, save_results, tmp_path
+):
+    os.chdir(tmp_path)
+    step = SourceCatalogStep()
+    result = step.call(
+        image_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         snr_threshold=snr_threshold,
         npixels=npixels,
         save_results=save_results,
     )
-    result = step.run(image_model)
     cat = result.source_catalog
 
     assert isinstance(cat, Table)
@@ -175,16 +182,19 @@ def test_l2_source_catalog(image_model, snr_threshold, npixels, nsources, save_r
     ),
 )
 def test_l3_source_catalog(
-    mosaic_model, snr_threshold, npixels, nsources, save_results
+    mosaic_model, snr_threshold, npixels, nsources, save_results, tmp_path
 ):
-    step = SourceCatalogStep(
+    os.chdir(tmp_path)
+    step = SourceCatalogStep()
+
+    result = step.call(
+        mosaic_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         snr_threshold=snr_threshold,
         npixels=npixels,
         save_results=save_results,
     )
-    result = step.run(mosaic_model)
     cat = result.source_catalog
 
     assert isinstance(cat, Table)
@@ -246,55 +256,61 @@ def test_background(mosaic_model):
     """
     Test background fallback when Background2D fails.
     """
-    step = SourceCatalogStep(
+    step = SourceCatalogStep()
+    result = step.call(
+        mosaic_model,
         bkg_boxsize=1000,
         kernel_fwhm=2.0,
         snr_threshold=3,
         npixels=25,
+        fit_psf=False,
     )
-    result = step.run(mosaic_model)
     cat = result.source_catalog
 
     assert isinstance(cat, Table)
 
 
-def test_l2_input_model_unchanged(image_model):
+def test_l2_input_model_unchanged(image_model, tmp_path):
     """
     Test that the input model data and error arrays are unchanged after
     processing by SourceCatalogStep.
     """
+    os.chdir(tmp_path)
     original_data = image_model.data.copy()
     original_err = image_model.err.copy()
 
-    step = SourceCatalogStep(
+    step = SourceCatalogStep()
+    step.call(
+        image_model,
         snr_threshold=0.5,
         npixels=5,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         save_results=False,
     )
-    step.run(image_model)
 
     assert_allclose(original_data, image_model.data, atol=5.0e-7)
     assert_allclose(original_err, image_model.err, atol=5.0e-7)
 
 
-def test_l3_input_model_unchanged(mosaic_model):
+def test_l3_input_model_unchanged(mosaic_model, tmp_path):
     """
     Test that the input model data and error arrays are unchanged after
     processing by SourceCatalogStep.
     """
+    os.chdir(tmp_path)
     original_data = mosaic_model.data.copy()
     original_err = mosaic_model.err.copy()
 
-    step = SourceCatalogStep(
+    step = SourceCatalogStep()
+    step.call(
+        mosaic_model,
         snr_threshold=0.5,
         npixels=5,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         save_results=False,
     )
-    step.run(mosaic_model)
 
     assert_allclose(original_data, mosaic_model.data, atol=5.0e-7)
     assert_allclose(original_err, mosaic_model.err, atol=5.0e-7)
@@ -323,7 +339,86 @@ def test_inputs(mosaic_model):
     aper_params = {}
     ci_thresh = 100.0
     with pytest.raises(ValueError):
-        RomanSourceCatalog(np.ones((3, 3)), segm, cdata, aper_params, ci_thresh, 2.0)
+        RomanSourceCatalog(
+            np.ones((3, 3)), segm, cdata, aper_params, ci_thresh, 2.0, fit_psf=True
+        )
 
     with pytest.raises(ValueError):
-        RomanSourceCatalog(mosaic_model, segm, cdata, aper_params, (1.0, 2.0, 3.0), 2.0)
+        RomanSourceCatalog(
+            mosaic_model, segm, cdata, aper_params, (1.0, 2.0, 3.0), 2.0, fit_psf=True
+        )
+
+
+def test_do_psf_photometry(tmp_path, image_model):
+    """
+    Test that do_psf_photometry can recover mock sources and their position and photometry.
+    """
+    os.chdir(tmp_path)
+
+    # get column names mapping for PSF photometry
+    psf_colnames_mapping = (
+        RomanSourceCatalog.get_psf_photometry_catalog_colnames_mapping()
+    )
+    psf_colnames = [
+        x.get("new_name")
+        for x in psf_colnames_mapping
+        if x.get("old_name") in ["x_fit", "y_fit", "flux_fit"]
+    ]
+
+    step = SourceCatalogStep()
+    result = step.call(
+        image_model,
+        bkg_boxsize=20,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        save_results=False,
+    )
+    cat = result.source_catalog
+
+    assert isinstance(cat, Table)
+
+    # check the number of sources that have been detected
+    assert len(cat) == 7
+    # check that all sources have both position and flux determined (ignore errors/flags)
+    assert all(len(cat[x]) and cat[x] is not [None, np.nan] for x in psf_colnames)
+
+
+@pytest.mark.parametrize("fit_psf", [True, False])
+def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
+    """
+    Test that fit_psf will determine whether the PSF
+    photometry columns are added to the final catalog or not.
+    """
+    os.chdir(tmp_path)
+
+    # get column names mapping for PSF photometry
+    psf_colnames_mapping = (
+        RomanSourceCatalog.get_psf_photometry_catalog_colnames_mapping()
+    )
+
+    step = SourceCatalogStep()
+    result = step.call(
+        image_model,
+        bkg_boxsize=20,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        save_results=False,
+        fit_psf=fit_psf,
+    )
+    cat = result.source_catalog
+
+    assert isinstance(cat, Table)
+
+    # check if the PSF photometry column names are present or not based on fit_psf value
+    psf_colnames_present = all(
+        x.get("new_name") in cat.colnames for x in psf_colnames_mapping
+    )
+    psf_colnames_not_present = all(
+        x.get("new_name") not in cat.colnames for x in psf_colnames_mapping
+    )
+
+    assert (fit_psf and psf_colnames_present) or (
+        not fit_psf and psf_colnames_not_present
+    )

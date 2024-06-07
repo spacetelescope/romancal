@@ -28,16 +28,19 @@ The ``source_catalog`` step uses the following user-settable arguments:
   energy value
 
 * ``--ci1_star_threshold``: A floating-point value of the threshold
-  compared to the concentration index calculated from aperture_ee1
-  and aperture_ee2 that is used to determine whether a source is a
-  star. Sources must meet the criteria of both ci1_star_threshold and
-  ci2_star_threshold to be considered a star.
+  compared to the concentration index calculated from ``aperture_ee1``
+  and ``aperture_ee2`` that is used to determine whether a source is a
+  star. Sources must meet the criteria of both ``ci1_star_threshold`` and
+  ``ci2_star_threshold`` to be considered a star.
 
 * ``--ci2_star_threshold``: A floating-point value of the threshold
-  compared to the concentration index calculated from aperture_ee2
-  and aperture_ee3 that is used to determine whether a source is a
-  star. Sources must meet the criteria of both ci1_star_threshold and
-  ci2_star_threshold to be considered a star.
+  compared to the concentration index calculated from ``aperture_ee2``
+  and ``aperture_ee3`` that is used to determine whether a source is a
+  star. Sources must meet the criteria of both ``ci1_star_threshold`` and
+  ``ci2_star_threshold`` to be considered a star.
 
 * ``--suffix``: A string value giving the file name suffix to use for
-  the output catalog file [default='cat']
+  the output catalog file (default is ``'cat'``).
+
+* ``--fit_psf``: A boolean value indicating whether to perform
+  PSF photometry (default is ``True``)

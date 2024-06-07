@@ -12,5 +12,3 @@ Source Detection
    psf.rst
 
 .. automodapi:: romancal.source_detection
-
-.. automodapi:: romancal.lib.psf
