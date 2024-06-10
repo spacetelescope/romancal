@@ -46,8 +46,8 @@ def test_attributes(flux_step, attr, factor):
 
             assert np.allclose(original_value * scale, result_value)
 
-            original_library.discard(i, original_model)
-            result_library.discard(i, result_model)
+            original_library.shelve(original_model, i, modify=False)
+            result_library.shelve(result_model, i, modify=False)
 
 
 # ########
