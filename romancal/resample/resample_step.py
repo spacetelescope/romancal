@@ -107,7 +107,7 @@ class ResampleStep(RomanStep):
         with input_models:
             example_model = input_models[0]
             data_shape = example_model.data.shape
-            input_models.discard(0, example_model)
+            input_models.shelve(example_model, 0, modify=False)
             if len(data_shape) != 2:
                 # resample can only handle 2D images, not 3D cubes, etc
                 raise RuntimeError(f"Input {input_models[0]} is not a 2D image.")
@@ -144,10 +144,10 @@ class ResampleStep(RomanStep):
         with result:
             for i, model in enumerate(result):
                 self._final_updates(model, input_models, kwargs)
-                result[i] = model
+                result.shelve(model, i)
             if len(result) == 1:
                 model = result[0]
-                result.discard(0, model)
+                result.shelve(model, 0, modify=False)
                 return model
 
         return result
