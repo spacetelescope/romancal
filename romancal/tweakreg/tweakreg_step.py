@@ -127,7 +127,7 @@ class TweakRegStep(RomanStep):
                         # checks meta.source_catalog.tweakreg_catalog. I think this means
                         # that setting a catalog via an association does not work. Is this
                         # intended? If so, the container can be updated to not support that.
-                        model = images[i]
+                        model = images.borrow(i)
                         model.meta["source_detection"] = {
                             "tweakreg_catalog_name": catdict[filename],
                         }
@@ -386,7 +386,7 @@ class TweakRegStep(RomanStep):
 
             with images:
                 for i, imcat in enumerate(imcats):
-                    model = images[i]
+                    model = images.borrow(i)
                     if model.meta.cal_step.get("tweakreg") == "SKIPPED":
                         continue
                     wcs = model.meta.wcs
@@ -524,7 +524,7 @@ class TweakRegStep(RomanStep):
 
         with images:
             for i, imcat in enumerate(imcats):
-                image_model = images[i]
+                image_model = images.borrow(i)
                 image_model.meta.cal_step["tweakreg"] = "COMPLETE"
 
                 # retrieve fit status and update wcs if fit is successful:

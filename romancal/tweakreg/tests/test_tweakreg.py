@@ -511,7 +511,7 @@ def test_tweakreg_returns_modellibrary_on_roman_datamodel_as_input(
     res = trs.TweakRegStep.call(test_input)
     assert isinstance(res, ModelLibrary)
     with res:
-        model = res[0]
+        model = res.borrow(0)
         assert model.meta.cal_step.tweakreg == "COMPLETE"
         res.shelve(model, 0, modify=False)
 
@@ -527,7 +527,7 @@ def test_tweakreg_returns_modellibrary_on_modellibrary_as_input(tmp_path, base_i
     res = trs.TweakRegStep.call(test_input)
     assert isinstance(res, ModelLibrary)
     with res:
-        model = res[0]
+        model = res.borrow(0)
         assert model.meta.cal_step.tweakreg == "COMPLETE"
         res.shelve(model, 0, modify=False)
 
@@ -609,7 +609,7 @@ def test_tweakreg_updates_cal_step(tmp_path, base_image):
     res = trs.TweakRegStep.call([img])
 
     with res:
-        model = res[0]
+        model = res.borrow(0)
         assert hasattr(model.meta.cal_step, "tweakreg")
         assert model.meta.cal_step.tweakreg == "COMPLETE"
         res.shelve(model, 0, modify=False)
@@ -622,7 +622,7 @@ def test_tweakreg_updates_group_id(tmp_path, base_image):
     res = trs.TweakRegStep.call([img])
 
     with res:
-        model = res[0]
+        model = res.borrow(0)
         assert hasattr(model.meta, "group_id")
         res.shelve(model, 0, modify=False)
 
@@ -1044,7 +1044,7 @@ def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
     assert type(res) == ModelLibrary
     assert len(res) == 1
     with res:
-        model = res[0]
+        model = res.borrow(0)
         assert model.meta.cal_step.tweakreg.lower() == "skipped"
         res.shelve(model, 0, modify=False)
 
@@ -1081,7 +1081,7 @@ def test_tweakreg_returns_skipped_for_one_file(tmp_path, base_image):
 
     with res:
         assert len(res) == 1
-        model = res[0]
+        model = res.borrow(0)
         assert model.meta.cal_step.tweakreg == "SKIPPED"
         res.shelve(model, 0, modify=False)
 

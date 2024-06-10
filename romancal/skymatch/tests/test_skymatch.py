@@ -347,7 +347,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     result = step.run([im1, im2, im3])
 
     with result:
-        model = result[0]
+        model = result.borrow(0)
         assert model.meta.background.subtracted == step.subtract
         assert model.meta.background.level is not None
         result.shelve(model, 0, modify=False)
@@ -357,7 +357,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     result2 = step.run(result)
 
     with result2:
-        model = result2[0]
+        model = result2.borrow(0)
         assert model.meta.background.subtracted == step.subtract
         assert model.meta.background.level is not None
         result2.shelve(model, 0, modify=False)

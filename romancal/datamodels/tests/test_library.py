@@ -135,7 +135,7 @@ def test_group_indices(example_library):
         for group_name in group_indices:
             indices = group_indices[group_name]
             for index in indices:
-                model = example_library[index]
+                model = example_library.borrow(index)
                 assert model.meta.group_id == group_name
                 example_library.shelve(model, index, modify=False)
 
@@ -210,7 +210,7 @@ def test_model_indexing(example_library, modify):
     """
     with example_library:
         for i in range(_N_MODELS):
-            model = example_library[i]
+            model = example_library.borrow(i)
             assert int(model.meta.filename.split(".")[0]) == i
             example_library.shelve(model, i, modify=modify)
 
@@ -220,7 +220,7 @@ def test_closed_library_model_getitem(example_library):
     Test that indexing a library when it is not open triggers an error
     """
     with pytest.raises(ClosedLibraryError, match="ModelLibrary is not open"):
-        example_library[0]
+        example_library.borrow(0)
 
 
 def test_closed_library_model_iter(example_library):
@@ -238,9 +238,9 @@ def test_double_borrow_by_index(example_library):
     """
     with pytest.raises(BorrowError, match="1 un-returned models"):
         with example_library:
-            model0 = example_library[0]  # noqa: F841
+            model0 = example_library.borrow(0)  # noqa: F841
             with pytest.raises(BorrowError, match="Attempt to double-borrow model"):
-                model1 = example_library[0]  # noqa: F841
+                model1 = example_library.borrow(0)  # noqa: F841
 
 
 def test_double_borrow_during_iter(example_library):
@@ -252,7 +252,7 @@ def test_double_borrow_during_iter(example_library):
         with example_library:
             for index, model in enumerate(example_library):
                 with pytest.raises(BorrowError, match="Attempt to double-borrow model"):
-                    model1 = example_library[index]  # noqa: F841
+                    model1 = example_library.borrow(index)  # noqa: F841
                 break
 
 
@@ -277,7 +277,7 @@ def test_no_return_getitem(example_library, n_borrowed):
     ):
         with example_library:
             for i in range(n_borrowed):
-                example_library[i]
+                example_library.borrow(i)
 
 
 def test_exception_while_open(example_library):
@@ -298,7 +298,7 @@ def test_exception_with_borrow(example_library):
     """
     with pytest.raises(Exception, match="test"):
         with example_library:
-            model = example_library[0]  # noqa: F841
+            model = example_library.borrow(0)  # noqa: F841
             raise Exception("test")
 
 
@@ -365,10 +365,10 @@ def test_on_disk_model_modification(example_asn_path, modify):
     """
     library = ModelLibrary(example_asn_path, on_disk=True)
     with library:
-        model = library[0]
+        model = library.borrow(0)
         model.meta["foo"] = "bar"
         library.shelve(model, 0, modify=modify)
-        model = library[0]
+        model = library.borrow(0)
         if modify:
             assert getattr(model.meta, "foo") == "bar"
         else:
@@ -386,13 +386,13 @@ def test_on_disk_no_overwrite(example_asn_path, on_disk):
     """
     library = ModelLibrary(example_asn_path, on_disk=on_disk)
     with library:
-        model = library[0]
+        model = library.borrow(0)
         model.meta["foo"] = "bar"
         library.shelve(model, 0)
 
     library2 = ModelLibrary(example_asn_path, on_disk=on_disk)
     with library2:
-        model = library2[0]
+        model = library2.borrow(0)
         assert getattr(model.meta, "foo", None) is None
         library2.shelve(model, 0)
 

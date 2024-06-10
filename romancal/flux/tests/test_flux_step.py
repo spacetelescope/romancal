@@ -36,8 +36,8 @@ def test_attributes(flux_step, attr, factor):
     assert len(original_library) == len(result_library)
     with original_library, result_library:
         for i in range(len(original_library)):
-            original_model = original_library[i]
-            result_model = result_library[i]
+            original_model = original_library.borrow(i)
+            result_model = result_library.borrow(i)
 
             c_mj = original_model.meta.photometry.conversion_megajanskys
             scale = (c_mj * c_unit) ** factor

@@ -387,7 +387,7 @@ def test_resampledata_do_drizzle_many_to_one_default_no_rotation_single_exposure
     output_models = resample_data.resample_many_to_one()
 
     with output_models:
-        model = output_models[0]
+        model = output_models.borrow(0)
         output_min_value = np.min(model.meta.wcs.footprint())
         output_max_value = np.max(model.meta.wcs.footprint())
         output_models.shelve(model, 0, modify=False)
@@ -423,7 +423,7 @@ def test_resampledata_do_drizzle_many_to_one_default_no_rotation_multiple_exposu
     output_models = resample_data.resample_many_to_one()
 
     with output_models:
-        model = output_models[0]
+        model = output_models.borrow(0)
         output_min_value = np.min(model.meta.wcs.footprint())
         output_max_value = np.max(model.meta.wcs.footprint())
         output_models.shelve(model, 0, modify=False)
@@ -457,7 +457,7 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0(exposure_1):
     output_models = resample_data.resample_many_to_one()
 
     with output_models:
-        model = output_models[0]
+        model = output_models.borrow(0)
         output_min_value = np.min(model.meta.wcs.footprint())
         output_max_value = np.max(model.meta.wcs.footprint())
         output_models.shelve(model, 0, modify=False)
@@ -494,7 +494,7 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0_multiple_exposur
 
     # FIXME: this code is in several tests and could be put into a helper function
     with output_models:
-        model = output_models[0]
+        model = output_models.borrow(0)
         output_min_value = np.min(model.meta.wcs.footprint())
         output_max_value = np.max(model.meta.wcs.footprint())
         output_models.shelve(model, 0, modify=False)
@@ -530,7 +530,7 @@ def test_resampledata_do_drizzle_many_to_one_single_input_model(wfi_sca1):
 
     flat_1 = np.sort(wfi_sca1.meta.wcs.footprint().flatten())
     with output_models:
-        model = output_models[0]
+        model = output_models.borrow(0)
         flat_2 = np.sort(model.meta.wcs.footprint().flatten())
         assert model.meta.filename == resample_data.output_filename
         output_models.shelve(model, 0, modify=False)
@@ -546,7 +546,7 @@ def test_update_exposure_times_different_sca_same_exposure(exposure_1):
 
     output_models = resample_data.resample_many_to_one()
     with output_models:
-        output_model = output_models[0]
+        output_model = output_models.borrow(0)
 
         exptime_tot = resample_data.resample_exposure_time(output_model)
         resample_data.update_exposure_times(output_model, exptime_tot)
@@ -583,7 +583,7 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
 
     output_models = resample_data.resample_many_to_one()
     with output_models:
-        output_model = output_models[0]
+        output_model = output_models.borrow(0)
 
         exptime_tot = resample_data.resample_exposure_time(output_model)
         resample_data.update_exposure_times(output_model, exptime_tot)
@@ -664,7 +664,7 @@ def test_custom_wcs_input_small_overlap_no_rotation(wfi_sca1, wfi_sca3):
     output_models = resample_data.resample_many_to_one()
 
     with output_models:
-        model = output_models[0]
+        model = output_models.borrow(0)
         np.testing.assert_allclose(model.meta.wcs(0, 0), wfi_sca3.meta.wcs(0, 0))
         output_models.shelve(model, 0, modify=False)
 
@@ -690,7 +690,7 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures):
     output_models = resample_data.resample_many_to_one()
 
     with output_models:
-        model = output_models[0]
+        model = output_models.borrow(0)
         output_min_value = np.min(model.meta.wcs.footprint())
         output_max_value = np.max(model.meta.wcs.footprint())
         output_models.shelve(model, 0, modify=False)
@@ -723,8 +723,8 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
     output_models_many_to_many = resample_data.resample_many_to_many()
 
     with output_models_many_to_one, output_models_many_to_many:
-        many_to_many_model = output_models_many_to_many[0]
-        many_to_one_model = output_models_many_to_one[0]
+        many_to_many_model = output_models_many_to_many.borrow(0)
+        many_to_one_model = output_models_many_to_one.borrow(0)
         assert np.any(many_to_one_model.weight > 0)
         assert np.any(many_to_many_model.weight > 0)
         output_models_many_to_many.shelve(many_to_many_model, 0, modify=False)
@@ -1112,7 +1112,7 @@ def test_l3_wcsinfo(multiple_exposures):
     output_models = resample_data.resample_many_to_one()
 
     with output_models:
-        output_model = output_models[0]
+        output_model = output_models.borrow(0)
         assert output_model.meta.wcsinfo.projection == expected.projection
         assert word_precision_check(
             output_model.meta.wcsinfo.s_region, expected.s_region
