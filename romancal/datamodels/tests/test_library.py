@@ -293,17 +293,13 @@ def test_exception_while_open(example_library):
 def test_exception_with_borrow(example_library):
     """
     Test that an exception while the library is open and has a borrowed
-    model results in a chained exception containing both:
-        - the original exception (as the __context__)
-        - an exception about the un-returned model
+    model results in the exception being raised (and not an exception
+    about a borrowed model not being returned).
     """
-    with pytest.raises(BorrowError, match="1 un-returned models") as exc_info:
+    with pytest.raises(Exception, match="test"):
         with example_library:
             model = example_library[0]  # noqa: F841
             raise Exception("test")
-    # check that Exception above is the __context__ (in the chain)
-    assert exc_info.value.__context__.__class__ is Exception
-    assert exc_info.value.__context__.args == ("test",)
 
 
 def test_asn_data(example_library):
