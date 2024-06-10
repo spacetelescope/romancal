@@ -73,12 +73,12 @@ class FluxStep(RomanStep):
             for index, model in enumerate(input_models):
                 apply_flux_correction(model)
                 model.meta.cal_step.flux = "COMPLETE"
-                input_models[index] = model
+                input_models.shelve(model, index)
 
         if single_model:
             with input_models:
                 model = input_models[0]
-                input_models.discard(0, model)
+                input_models.shelve(model, 0, modify=False)
             return model
         return input_models
 
