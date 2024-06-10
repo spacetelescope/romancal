@@ -77,7 +77,7 @@ class FluxStep(RomanStep):
 
         if single_model:
             with input_models:
-                model = input_models[0]
+                model = input_models.borrow(0)
                 input_models.shelve(model, 0, modify=False)
             return model
         return input_models

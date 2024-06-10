@@ -208,7 +208,8 @@ class ResampleData:
             output_model.meta["resample"] = maker_utils.mk_resample()
 
             with self.input_models:
-                example_image = self.input_models[indices[0]]
+                example_image = self.input_models.borrow(indices[0])
+
                 # Determine output file type from input exposure filenames
                 # Use this for defining the output filename
                 indx = example_image.meta.filename.rfind(".")
@@ -231,7 +232,7 @@ class ResampleData:
                 log.info(f"{len(indices)} exposures to drizzle together")
                 output_list = []
                 for index in indices:
-                    img = self.input_models[index]
+                    img = self.input_models.borrow(index)
                     # TODO: should weight_type=None here?
                     inwht = resample_utils.build_driz_weight(
                         img, weight_type=self.weight_type, good_bits=self.good_bits
@@ -531,7 +532,7 @@ class ResampleData:
         with self.input_models:
             for group_id, indices in self.input_models.group_indices.items():
                 index = indices[0]
-                model = self.input_models[index]
+                model = self.input_models.borrow(index)
                 exposure_times["start"].append(model.meta.exposure.start_time)
                 exposure_times["end"].append(model.meta.exposure.end_time)
                 self.input_models.shelve(model, index, modify=False)

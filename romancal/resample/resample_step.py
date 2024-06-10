@@ -105,7 +105,7 @@ class ResampleStep(RomanStep):
 
         # Check that input models are 2D images
         with input_models:
-            example_model = input_models[0]
+            example_model = input_models.borrow(0)
             data_shape = example_model.data.shape
             input_models.shelve(example_model, 0, modify=False)
             if len(data_shape) != 2:
@@ -146,7 +146,7 @@ class ResampleStep(RomanStep):
                 self._final_updates(model, input_models, kwargs)
                 result.shelve(model, i)
             if len(result) == 1:
-                model = result[0]
+                model = result.borrow(0)
                 result.shelve(model, 0, modify=False)
                 return model
 

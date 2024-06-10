@@ -102,7 +102,7 @@ class OutlierDetection:
 
         # Initialize intermediate products used in the outlier detection
         with drizzled_models:
-            example_model = drizzled_models[0]
+            example_model = drizzled_models.borrow(0)
             median_wcs = copy.deepcopy(example_model.meta.wcs)
             drizzled_models.shelve(example_model, 0, modify=False)
 

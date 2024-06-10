@@ -339,7 +339,9 @@ class ModelLibrary(Sequence):
         return model
 
     def __getitem__(self, index):
-        return self.borrow(index)
+        # FIXME: this is here to allow the library to pass the Sequence
+        # check. Removing this will require more extensive stpipe changes
+        raise Exception()
 
     def shelve(self, model, index=None, modify=True):
         if not self._open:

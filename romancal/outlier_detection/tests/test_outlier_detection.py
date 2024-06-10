@@ -262,7 +262,7 @@ def test_find_outliers(tmp_path, base_image):
 
     # get flagged outliers coordinates from DQ array
     with step.input_models:
-        model = step.input_models[0]
+        model = step.input_models.borrow(0)
         img_1_outlier_output_coords = np.where(model.dq > 0)
         step.input_models.shelve(model, 0)
 
