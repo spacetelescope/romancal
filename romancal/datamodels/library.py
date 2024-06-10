@@ -8,6 +8,8 @@ from types import MappingProxyType
 import asdf
 from roman_datamodels import open as datamodels_open
 
+from romancal.associations import AssociationNotValidError, load_asn
+
 __all__ = ["LibraryError", "BorrowError", "ClosedLibraryError", "ModelLibrary"]
 
 
@@ -113,10 +115,7 @@ class ModelLibrary(Sequence):
         memmap=False,
         temp_directory=None,
     ):
-        self._asn_exptypes = asn_exptypes
-        self._asn_n_members = asn_n_members
         self._on_disk = on_disk
-
         self._open = False
         self._ledger = {}
 
@@ -133,10 +132,10 @@ class ModelLibrary(Sequence):
             self._asn_dir = os.path.abspath(".")
             self._asn = init
 
-            if self._asn_exptypes is not None:
+            if asn_exptypes is not None:
                 raise NotImplementedError()
 
-            if self._asn_n_members is not None:
+            if asn_n_members is not None:
                 raise NotImplementedError()
 
             self._members = self._asn["products"][0]["members"]
@@ -153,25 +152,22 @@ class ModelLibrary(Sequence):
             self.asn_table_name = os.path.basename(asn_path)
 
             # load association
-            # TODO why did ModelContainer make this local?
-            from ..associations import AssociationNotValidError, load_asn
-
             try:
                 with open(asn_path) as asn_file:
                     asn_data = load_asn(asn_file)
             except AssociationNotValidError as e:
                 raise OSError("Cannot read ASN file.") from e
 
-            if self._asn_exptypes is not None:
+            if asn_exptypes is not None:
                 asn_data["products"][0]["members"] = [
                     m
                     for m in asn_data["products"][0]["members"]
-                    if m["exptype"] in self._asn_exptypes
+                    if m["exptype"] in asn_exptypes
                 ]
 
-            if self._asn_n_members is not None:
+            if asn_n_members is not None:
                 asn_data["products"][0]["members"] = asn_data["products"][0]["members"][
-                    : self._asn_n_members
+                    :asn_n_members
                 ]
 
             # make members easier to access
@@ -223,10 +219,10 @@ class ModelLibrary(Sequence):
                     }
                 )
 
-            if self._asn_exptypes is not None:
+            if asn_exptypes is not None:
                 raise NotImplementedError()
 
-            if self._asn_n_members is not None:
+            if asn_n_members is not None:
                 raise NotImplementedError()
 
             # make a fake association
@@ -247,7 +243,7 @@ class ModelLibrary(Sequence):
             raise NotImplementedError()
 
         # make sure first model is loaded in memory (as expected by stpipe)
-        if self._asn_n_members == 1:
+        if asn_n_members == 1:
             # FIXME stpipe also reaches into _models (instead of _model_store)
             self._models = [self._load_member(0)]
 
@@ -267,12 +263,6 @@ class ModelLibrary(Sequence):
             return obj
 
         return asdf.treeutil.walk_and_modify(self._asn, _to_read_only)
-
-    # TODO we may want to not expose this as it could go out-of-sync
-    # pretty easily with the actual models.
-    # @property
-    # def members(self):
-    #     return self.asn['products'][0]['members']
 
     @property
     def group_names(self):
@@ -359,7 +349,6 @@ class ModelLibrary(Sequence):
         # FIXME tweakreg also expects table_name and pool_name
         model.meta.asn["table_name"] = self.asn_table_name
         model.meta.asn["pool_name"] = self.asn["asn_pool"]
-        # this returns an OPEN model, it's up to calling code to close this
         return model
 
     def __copy__(self):
@@ -483,8 +472,8 @@ class ModelLibrary(Sequence):
                 self.discard(i, model)
                 yield copy_func(attr)
 
-    def map_function(self, function, write=False):
-        if write:
+    def map_function(self, function, modify=False):
+        if modify:
             cleanup = self.discard
         else:
             cleanup = self.__setitem__
