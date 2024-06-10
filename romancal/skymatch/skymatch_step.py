@@ -97,7 +97,7 @@ class SkyMatchStep(RomanStep):
                             gim, "COMPLETE" if gim.is_sky_valid else "SKIPPED"
                         )
             for index, image in enumerate(images):
-                library[index] = image.meta["image_model"]
+                library.shelve(image.meta["image_model"], index)
 
         return library
 
