@@ -467,7 +467,7 @@ class ModelLibrary(Sequence):
         with self:
             for i, model in enumerate(self):
                 step.finalize_result(model, reference_files_used)
-                self[i] = model
+                self.shelve(model, i)
 
     def __enter__(self):
         self._open = True
