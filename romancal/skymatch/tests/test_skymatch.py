@@ -183,7 +183,7 @@ def test_skymatch(wfi_rate, skymethod, subtract, skystat, match_down):
     with library:
         for i, (im, lev) in enumerate(zip(library, levels)):
             im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
-            library[i] = im
+            library.shelve(im, i)
 
     # exclude central DO_NOT_USE and corner SATURATED pixels
     result = SkyMatchStep.call(
@@ -226,7 +226,7 @@ def test_skymatch(wfi_rate, skymethod, subtract, skystat, match_down):
                 assert abs(np.mean(im.data[dq_mask]).value - slev) < 0.01
             else:
                 assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
-            result.discard(i, im)
+            result.shelve(im, i, modify=False)
 
 
 @pytest.mark.parametrize(
@@ -248,7 +248,7 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
     with library:
         for i, (im, lev) in enumerate(zip(library, levels)):
             im.data = rng.normal(loc=lev, scale=0.01, size=im.data.shape) * im.data.unit
-            library[i] = im
+            library.shelve(im, i)
 
     # We do not exclude SATURATED pixels. They should be ignored because
     # images are rotated and SATURATED pixels in the corners are not in the
@@ -303,7 +303,7 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
                     assert abs(np.mean(im.data[dq_mask].value) - slev) < 0.01
                 else:
                     assert abs(np.mean(im.data[dq_mask].value) - lev) < 0.01
-            result.discard(i, im)
+            result.shelve(im, i, modify=False)
 
 
 @pytest.mark.parametrize(
@@ -330,7 +330,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     with library:
         for i, (im, lev) in enumerate(zip(library, levels)):
             im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
-            library[i] = im
+            library.shelve(im, i)
 
     # We do not exclude SATURATED pixels. They should be ignored because
     # images are rotated and SATURATED pixels in the corners are not in the
@@ -350,7 +350,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
         model = result[0]
         assert model.meta.background.subtracted == step.subtract
         assert model.meta.background.level is not None
-        result.discard(0, model)
+        result.shelve(model, 0, modify=False)
 
     # 2nd run.
     step.subtract = False
@@ -360,7 +360,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
         model = result2[0]
         assert model.meta.background.subtracted == step.subtract
         assert model.meta.background.level is not None
-        result2.discard(0, model)
+        result2.shelve(model, 0, modify=False)
 
     # compute expected levels
     if skymethod in ["local", "global+match"]:
@@ -392,7 +392,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
                 assert abs(np.mean(im.data[dq_mask]).value - slev) < 0.01
             else:
                 assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
-            result2.discard(i, im)
+            result2.shelve(im, i, modify=False)
 
 
 @pytest.mark.parametrize(
@@ -450,4 +450,4 @@ def test_skymatch_always_returns_modellibrary_with_updated_datamodels(
         for i, model in enumerate(res):
             assert model.meta.cal_step.skymatch == "COMPLETE"
             assert hasattr(model.meta, "background")
-            res.discard(i, model)
+            res.shelve(model, i, modify=False)
