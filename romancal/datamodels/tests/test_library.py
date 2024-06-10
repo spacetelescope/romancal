@@ -120,7 +120,7 @@ def test_group_names(example_library):
     with example_library:
         for index, model in enumerate(example_library):
             group_names.add(model.meta.group_id)
-            example_library.discard(index, model)
+            example_library.shelve(model, index, modify=False)
     assert group_names == set(example_library.group_names)
 
 
@@ -137,7 +137,7 @@ def test_group_indices(example_library):
             for index in indices:
                 model = example_library[index]
                 assert model.meta.group_id == group_name
-                example_library.discard(index, model)
+                example_library.shelve(model, index, modify=False)
 
 
 @pytest.mark.parametrize("attr", ["group_names", "group_indices"])
@@ -190,20 +190,20 @@ def test_group_with_no_datamodels_open(example_asn_path, attr, monkeypatch):
 #         library.discard(0, model)
 
 
-@pytest.mark.parametrize("return_method", ("__setitem__", "discard"))
-def test_model_iteration(example_library, return_method):
+@pytest.mark.parametrize("modify", (True, False))
+def test_model_iteration(example_library, modify):
     """
-    Test that iteration through models and returning (or discarding) models
+    Test that iteration through models and shelving models
     returns the appropriate models
     """
     with example_library:
         for i, model in enumerate(example_library):
             assert int(model.meta.filename.split(".")[0]) == i
-            getattr(example_library, return_method)(i, model)
+            example_library.shelve(model, i, modify=modify)
 
 
-@pytest.mark.parametrize("return_method", ("__setitem__", "discard"))
-def test_model_indexing(example_library, return_method):
+@pytest.mark.parametrize("modify", (True, False))
+def test_model_indexing(example_library, modify):
     """
     Test that borrowing models (using __getitem__)  and returning (or discarding)
     models returns the appropriate models
@@ -212,7 +212,7 @@ def test_model_indexing(example_library, return_method):
         for i in range(_N_MODELS):
             model = example_library[i]
             assert int(model.meta.filename.split(".")[0]) == i
-            getattr(example_library, return_method)(i, model)
+            example_library.shelve(model, i, modify=modify)
 
 
 def test_closed_library_model_getitem(example_library):
@@ -256,22 +256,14 @@ def test_double_borrow_during_iter(example_library):
                 break
 
 
-def test_non_borrowed_setitem(example_library):
+@pytest.mark.parametrize("modify", (True, False))
+def test_non_borrowed(example_library, modify):
     """
-    Test that attempting to return a non-borrowed item results in an error
-    """
-    with example_library:
-        with pytest.raises(BorrowError, match="Attempt to return non-borrowed model"):
-            example_library[0] = None
-
-
-def test_non_borrowed_discard(example_library):
-    """
-    Test that attempting to discard a non-borrowed item results in an error
+    Test that attempting to shelve a non-borrowed item results in an error
     """
     with example_library:
-        with pytest.raises(BorrowError, match="Attempt to discard non-borrowed model"):
-            example_library.discard(0, None)
+        with pytest.raises(BorrowError, match="Attempt to shelve non-borrowed model"):
+            example_library.shelve(None, 0, modify=modify)
 
 
 @pytest.mark.parametrize("n_borrowed", (1, 2))
@@ -369,30 +361,25 @@ def test_stpipe_models_access(example_asn_path, n, err):
         assert library._models[0].get_crds_parameters()
 
 
-@pytest.mark.parametrize("discard", [True, False])
-def test_on_disk_model_modification(example_asn_path, discard):
+@pytest.mark.parametrize("modify", [True, False])
+def test_on_disk_model_modification(example_asn_path, modify):
     """
     Test that modifying a model in a library that is on_disk
-    does not persist if the model is discarded (instead of
-    returned via __setitem__)
+    does not persist if the model is shelved with modify=False
     """
     library = ModelLibrary(example_asn_path, on_disk=True)
     with library:
         model = library[0]
         model.meta["foo"] = "bar"
-        if discard:
-            library.discard(0, model)
-        else:
-            library[0] = model
+        library.shelve(model, 0, modify=modify)
         model = library[0]
-        if discard:
-            # since the model was 'discarded' and the library is 'on_disk'
-            # the modification should not persist
-            assert getattr(model.meta, "foo", None) is None
-        else:
-            # if instead, we used __setitem__ the modification should be saved
+        if modify:
             assert getattr(model.meta, "foo") == "bar"
-        library.discard(0, model)
+        else:
+            assert getattr(model.meta, "foo", None) is None
+        # shelve the model so the test doesn't fail because of an un-returned
+        # model
+        library.shelve(0, model, modify=False)
 
 
 @pytest.mark.parametrize("on_disk", [True, False])
@@ -405,13 +392,13 @@ def test_on_disk_no_overwrite(example_asn_path, on_disk):
     with library:
         model = library[0]
         model.meta["foo"] = "bar"
-        library[0] = model
+        library.shelve(model, 0)
 
     library2 = ModelLibrary(example_asn_path, on_disk=on_disk)
     with library2:
         model = library2[0]
         assert getattr(model.meta, "foo", None) is None
-        library2[0] = model
+        library2.shelve(model, 0)
 
 
 # TODO container conversion
