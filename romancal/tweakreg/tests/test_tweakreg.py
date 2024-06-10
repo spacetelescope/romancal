@@ -513,7 +513,7 @@ def test_tweakreg_returns_modellibrary_on_roman_datamodel_as_input(
     with res:
         model = res[0]
         assert model.meta.cal_step.tweakreg == "COMPLETE"
-        res.discard(0, model)
+        res.shelve(model, 0, modify=False)
 
 
 def test_tweakreg_returns_modellibrary_on_modellibrary_as_input(tmp_path, base_image):
@@ -529,7 +529,7 @@ def test_tweakreg_returns_modellibrary_on_modellibrary_as_input(tmp_path, base_i
     with res:
         model = res[0]
         assert model.meta.cal_step.tweakreg == "COMPLETE"
-        res.discard(0, model)
+        res.shelve(model, 0, modify=False)
 
 
 def test_tweakreg_returns_modellibrary_on_association_file_as_input(
@@ -552,7 +552,7 @@ def test_tweakreg_returns_modellibrary_on_association_file_as_input(
     with res:
         for i, model in enumerate(res):
             assert model.meta.cal_step.tweakreg == "COMPLETE"
-            res.discard(i, model)
+            res.shelve(model, i, modify=False)
 
 
 def test_tweakreg_returns_modellibrary_on_list_of_asdf_file_as_input(
@@ -578,7 +578,7 @@ def test_tweakreg_returns_modellibrary_on_list_of_asdf_file_as_input(
     with res:
         for i, model in enumerate(res):
             assert model.meta.cal_step.tweakreg == "COMPLETE"
-            res.discard(i, model)
+            res.shelve(model, i, modify=False)
 
 
 def test_tweakreg_returns_modellibrary_on_list_of_roman_datamodels_as_input(
@@ -599,7 +599,7 @@ def test_tweakreg_returns_modellibrary_on_list_of_roman_datamodels_as_input(
     with res:
         for i, model in enumerate(res):
             assert model.meta.cal_step.tweakreg == "COMPLETE"
-            res.discard(i, model)
+            res.shelve(model, i, modify=False)
 
 
 def test_tweakreg_updates_cal_step(tmp_path, base_image):
@@ -612,7 +612,7 @@ def test_tweakreg_updates_cal_step(tmp_path, base_image):
         model = res[0]
         assert hasattr(model.meta.cal_step, "tweakreg")
         assert model.meta.cal_step.tweakreg == "COMPLETE"
-        res.discard(0, model)
+        res.shelve(model, 0, modify=False)
 
 
 def test_tweakreg_updates_group_id(tmp_path, base_image):
@@ -624,7 +624,7 @@ def test_tweakreg_updates_group_id(tmp_path, base_image):
     with res:
         model = res[0]
         assert hasattr(model.meta, "group_id")
-        res.discard(0, model)
+        res.shelve(model, 0, modify=False)
 
 
 @pytest.mark.parametrize(
@@ -830,7 +830,7 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
 
             assert (model.data == target.data).all()
 
-            res.discard(i, model)
+            res.shelve(model, i, modify=False)
 
 
 @pytest.mark.parametrize(
@@ -1024,7 +1024,7 @@ def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
         assert (models[0].data == img_1.data).all()
         assert (models[1].data == img_2.data).all()
 
-        [res.discard(i, m) for i, m in enumerate(models)]
+        [res.shelve(m, i, modify=False) for i, m in enumerate(models)]
 
 
 def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
@@ -1046,7 +1046,7 @@ def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
     with res:
         model = res[0]
         assert model.meta.cal_step.tweakreg.lower() == "skipped"
-        res.discard(0, model)
+        res.shelve(model, 0, modify=False)
 
 
 def test_fit_results_in_meta(tmp_path, base_image):
@@ -1064,7 +1064,7 @@ def test_fit_results_in_meta(tmp_path, base_image):
         for i, model in enumerate(res):
             assert hasattr(model.meta, "wcs_fit_results")
             assert len(model.meta.wcs_fit_results) > 0
-            res.discard(i, model)
+            res.shelve(model, i, modify=False)
 
 
 def test_tweakreg_returns_skipped_for_one_file(tmp_path, base_image):
@@ -1083,7 +1083,7 @@ def test_tweakreg_returns_skipped_for_one_file(tmp_path, base_image):
         assert len(res) == 1
         model = res[0]
         assert model.meta.cal_step.tweakreg == "SKIPPED"
-        res.discard(0, model)
+        res.shelve(model, 0, modify=False)
 
 
 def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
@@ -1145,7 +1145,7 @@ def test_tweakreg_multiple_groups_valueerror(tmp_path, base_image):
     with res:
         for i, model in enumerate(res):
             assert model.meta.cal_step.tweakreg == "SKIPPED"
-            res.discard(i, model)
+            res.shelve(model, i, modify=False)
 
 
 @pytest.mark.parametrize(
@@ -1186,7 +1186,7 @@ def test_imodel2wcsim_valid_column_names(tmp_path, base_image, column_names):
             assert (
                 imcat.meta["catalog"]["y"] == target.meta.tweakreg_catalog[yname]
             ).all()
-            images.discard(i, m)
+            images.shelve(m, i, modify=False)
 
 
 @pytest.mark.parametrize(
@@ -1220,7 +1220,7 @@ def test_imodel2wcsim_error_invalid_column_names(tmp_path, base_image, column_na
         with images:
             for i, model in enumerate(images):
                 # TODO what raises a ValueError here?
-                images.discard(i, model)
+                images.shelve(model, i, modify=False)
                 step._imodel2wcsim(model)
 
 
@@ -1240,7 +1240,7 @@ def test_imodel2wcsim_error_invalid_catalog(tmp_path, base_image):
         with images:
             for i, model in enumerate(images):
                 # TODO what raises a AttributeError here?
-                images.discard(i, model)
+                images.shelve(model, i, modify=False)
                 step._imodel2wcsim(model)
 
 

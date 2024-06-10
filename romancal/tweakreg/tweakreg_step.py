@@ -131,7 +131,7 @@ class TweakRegStep(RomanStep):
                         model.meta["source_detection"] = {
                             "tweakreg_catalog_name": catdict[filename],
                         }
-                        images[i] = model
+                        images.shelve(model, i)
 
         if len(self.catalog_path) == 0:
             self.catalog_path = os.getcwd()
@@ -180,7 +180,7 @@ class TweakRegStep(RomanStep):
                             format=self.catalog_format,
                         )
                     else:
-                        images.discard(i, image_model)
+                        images.shelve(image_model, i, modify=False)
                         raise AttributeError(
                             "Attribute 'meta.source_detection.tweakreg_catalog' is missing."
                             "Please either run SourceDetectionStep or provide a"
@@ -190,7 +190,7 @@ class TweakRegStep(RomanStep):
                     if is_tweakreg_catalog_present:
                         del image_model.meta.source_detection["tweakreg_catalog"]
                 else:
-                    images.discard(i, image_model)
+                    images.shelve(image_model, i, modify=False)
                     raise AttributeError(
                         "Attribute 'meta.source_detection' is missing."
                         "Please either run SourceDetectionStep or provide a"
@@ -203,7 +203,7 @@ class TweakRegStep(RomanStep):
                         if long_axis in catalog.colnames:
                             catalog.rename_column(long_axis, axis)
                         else:
-                            images.discard(i, image_model)
+                            images.shelve(image_model, i, modify=False)
                             raise ValueError(
                                 "'tweakreg' source catalogs must contain a header with "
                                 "columns named either 'x' and 'y' or "
@@ -251,7 +251,7 @@ class TweakRegStep(RomanStep):
                 else:
                     self.log.info(f"Detected {len(catalog)} sources in {filename}.")
 
-                images[i] = image_model
+                images.shelve(image_model, i)
 
         # group images by their "group id":
         group_indices = images.group_indices
@@ -273,7 +273,7 @@ class TweakRegStep(RomanStep):
             with images:
                 for i, model in enumerate(images):
                     model.meta.cal_step["tweakreg"] = "SKIPPED"
-                    images[i] = model
+                    images.shelve(model, i)
             return images
 
         # make imcats
@@ -281,7 +281,7 @@ class TweakRegStep(RomanStep):
         with images:
             for i, m in enumerate(images):
                 imcats.append(self._imodel2wcsim(m))
-                images.discard(i, m)
+                images.shelve(m, i, modify=False)
 
         # if len(group_images) == 1 and ALIGN_TO_ABS_REFCAT:
         #     # create a list of WCS-Catalog-Images Info and/or their Groups:
@@ -357,7 +357,7 @@ class TweakRegStep(RomanStep):
                     with images:
                         for i, model in enumerate(images):
                             model.meta.cal_step["tweakreg"] = "SKIPPED"
-                            images[i] = model
+                            images.shelve(model, i)
                     if not ALIGN_TO_ABS_REFCAT:
                         self.skip = True
                         return images
@@ -379,7 +379,7 @@ class TweakRegStep(RomanStep):
                     with images:
                         for i, model in enumerate(images):
                             model.meta.cal_step.tweakreg = "SKIPPED"
-                            images[i] = model
+                            images.shelve(model, i)
                     return images
                 else:
                     raise e
@@ -392,7 +392,7 @@ class TweakRegStep(RomanStep):
                     wcs = model.meta.wcs
                     twcs = imcat.wcs
                     small_correction = self._is_wcs_correction_small(wcs, twcs)
-                    images.discard(i, model)
+                    images.shelve(model, i, modify=False)
                     if not small_correction:
                         # Large corrections are typically a result of source
                         # mis-matching or poorly-conditioned fit. Skip such models.
@@ -408,7 +408,7 @@ class TweakRegStep(RomanStep):
                             self.skip = True
                             for i, model in enumerate(images):
                                 model.meta.cal_step["tweakreg"] = "SKIPPED"
-                                images[i] = model
+                                images.shelve(model, i)
                             return images
 
         if ALIGN_TO_ABS_REFCAT:
@@ -453,9 +453,12 @@ class TweakRegStep(RomanStep):
                         self.skip = True
                         for model in models:
                             model.meta.cal_step["tweakreg"] = "SKIPPED"
-                        [images.discard(i, m) for i, m in enumerate(models)]
+                        [
+                            images.shelve(m, i, modify=False)
+                            for i, m in enumerate(models)
+                        ]
                         return images
-                    [images.discard(i, m) for i, m in enumerate(models)]
+                    [images.shelve(m, i, modify=False) for i, m in enumerate(models)]
 
             elif os.path.isfile(self.abs_refcat):
                 ref_cat = Table.read(self.abs_refcat)
@@ -560,7 +563,7 @@ class TweakRegStep(RomanStep):
                         del image_model.meta["wcs_fit_results"][k]
 
                     image_model.meta.wcs = imcat.wcs
-                images[i] = image_model
+                images.shelve(image_model, i)
 
         return images
 
