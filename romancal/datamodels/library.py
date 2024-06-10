@@ -38,6 +38,40 @@ class ClosedLibraryError(LibraryError):
     pass
 
 
+class _Ledger(MutableMapping):
+    def __init__(self):
+        self._id_to_index = {}
+        self._index_to_model = {}
+
+    def __getitem__(self, model_or_index):
+        if not isinstance(model_or_index, int):
+            index = self._id_to_index[id(model_or_index)]
+        else:
+            index = model_or_index
+        return self._index_to_model[index]
+
+    def __setitem__(self, index, model):
+        self._index_to_model[index] = model
+        self._id_to_index[id(model)] = index
+
+    def __delitem__(self, model_or_index):
+        if isinstance(model_or_index, int):
+            index = model_or_index
+            model = self._index_to_model[index]
+        else:
+            model = model_or_index
+            index = self._id_to_index[id(model)]
+        del self._id_to_index[id(model)]
+        del self._index_to_model[index]
+
+    def __iter__(self):
+        # only return indexes
+        return iter(self._index_to_model)
+
+    def __len__(self):
+        return len(self._id_to_index)
+
+
 class _OnDiskModelStore(MutableMapping):
     def __init__(self, memmap=False, directory=None):
         self._memmap = memmap
@@ -117,7 +151,7 @@ class ModelLibrary(Sequence):
     ):
         self._on_disk = on_disk
         self._open = False
-        self._ledger = {}
+        self._ledger = _Ledger()
 
         # FIXME is there a cleaner way to pass these along to datamodels.open?
         self._memmap = memmap
@@ -284,7 +318,7 @@ class ModelLibrary(Sequence):
     def __len__(self):
         return len(self._members)
 
-    def __getitem__(self, index):
+    def borrow(self, index):
         if not self._open:
             raise ClosedLibraryError("ModelLibrary is not open")
 
@@ -304,31 +338,29 @@ class ModelLibrary(Sequence):
         self._ledger[index] = model
         return model
 
-    def __setitem__(self, index, model):
+    def __getitem__(self, index):
+        return self.borrow(index)
+
+    def shelve(self, model, index=None, modify=True):
+        if not self._open:
+            raise ClosedLibraryError("ModelLibrary is not open")
+
+        if index is None:
+            index = self._ledger[model]
+
         if index not in self._ledger:
-            raise BorrowError("Attempt to return non-borrowed model")
+            raise BorrowError("Attempt to shelve non-borrowed model")
 
-        # un-track this model
+        if modify:
+            self._model_store[index] = model
+
         del self._ledger[index]
-
-        # and store it
-        self._model_store[index] = model
 
         # TODO should we allow this to change group_id for the member?
 
-    def discard(self, index, model):
-        # TODO it might be worth allowing `discard(model)` by adding
-        # an index of {id(model): index} to the ledger to look up the index
-        if index not in self._ledger:
-            raise BorrowError("Attempt to discard non-borrowed model")
-
-        # un-track this model
-        del self._ledger[index]
-        # but do not store it
-
     def __iter__(self):
         for i in range(len(self)):
-            yield self[i]
+            yield self.borrow(i)
 
     def _load_member(self, index):
         member = self._members[index]
@@ -359,7 +391,7 @@ class ModelLibrary(Sequence):
             model_copies = []
             for i, model in enumerate(self):
                 model_copies.append(model.copy())
-                self.discard(i, model)
+                self.shelve(model, i, modify=False)
         return self.__class__(model_copies)
 
     def __deepcopy__(self, memo):
@@ -420,7 +452,7 @@ class ModelLibrary(Sequence):
                 else:
                     output_paths.append(save_model_func(model, idx=index))
 
-                self.discard(i, model)
+                self.shelve(model, i, modify=False)
 
         return output_paths
 
@@ -443,18 +475,16 @@ class ModelLibrary(Sequence):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._open = False
-        # if exc_value:
-        #     # if there is already an exception, don't worry about checking the ledger
-        #     # instead allowing the calling code to raise the original error to provide
-        #     # a more useful feedback without any chained ledger exception about
-        #     # un-returned models
-        #     return
-        # TODO we may want to change this chain to make tracebacks and pytest output
-        # easier to read.
+        if exc_value:
+            # if there is already an exception, don't worry about checking the ledger
+            # instead allowing the calling code to raise the original error to provide
+            # a more useful feedback without any chained ledger exception about
+            # un-returned models
+            return
         if self._ledger:
             raise BorrowError(
                 f"ModelLibrary has {len(self._ledger)} un-returned models"
-            ) from exc_value
+            )
 
     def index(self, attribute, copy=False):
         """
@@ -469,14 +499,10 @@ class ModelLibrary(Sequence):
         with self:
             for i, model in enumerate(self):
                 attr = model[attribute]
-                self.discard(i, model)
+                self.shelve(model, i, modify=False)
                 yield copy_func(attr)
 
     def map_function(self, function, modify=False):
-        if modify:
-            cleanup = self.discard
-        else:
-            cleanup = self.__setitem__
         with self:
             for i, model in enumerate(self):
                 try:
@@ -484,7 +510,7 @@ class ModelLibrary(Sequence):
                 finally:
                     # this is in a finally to allow cleanup if the generator is
                     # deleted after it finishes (when it's not fully consumed)
-                    cleanup(i, model)
+                    self.shelve(model, i, modify)
 
 
 def _mapping_to_group_id(mapping):
