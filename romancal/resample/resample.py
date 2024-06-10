@@ -134,7 +134,7 @@ class ResampleData:
                     crval=crval,
                 )
                 for i, m in enumerate(models):
-                    self.input_models.discard(i, m)
+                    self.input_models.shelve(m, i, modify=False)
 
         log.debug(f"Output mosaic size: {self.output_wcs.array_shape}")
 
@@ -183,7 +183,7 @@ class ResampleData:
                 model.cal_logs for model in models
             ]
             for i, m in enumerate(models):
-                self.input_models.discard(i, m)
+                self.input_models.shelve(m, i, modify=False)
 
     def do_drizzle(self):
         """Pick the correct drizzling mode based on ``self.single``."""
@@ -218,7 +218,7 @@ class ResampleData:
                 )
                 output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
 
-                self.input_models.discard(indices[0], example_image)
+                self.input_models.shelve(example_image, indices[0], modify=False)
 
                 # Initialize the output with the wcs
                 driz = gwcs_drizzle.GWCSDrizzle(
@@ -261,7 +261,7 @@ class ResampleData:
                         ymax=ymax,
                     )
                     del data
-                    self.input_models.discard(index, img)
+                    self.input_models.shelve(img, index)
 
                 # cast context array to uint32
                 output_model.context = output_model.context.astype("uint32")
@@ -339,7 +339,7 @@ class ResampleData:
                 )
                 del data, inwht
                 members.append(str(img.meta.filename))
-                self.input_models.discard(i, img)
+                self.input_models.shelve(img, i, modify=False)
 
         # FIXME: what are filepaths here?
         # members = (
@@ -453,7 +453,7 @@ class ResampleData:
                     ],
                     axis=0,
                 )
-                self.input_models.discard(i, model)
+                self.input_models.shelve(model, i, modify=False)
 
         # We now have a sum of the inverse resampled variances.  We need the
         # inverse of that to get back to units of variance.
@@ -514,7 +514,7 @@ class ResampleData:
                 )
 
                 exptime_tot += resampled_exptime.value
-                self.input_models.discard(i, model)
+                self.input_models.shelve(model, i, modify=False)
 
         return exptime_tot
 
@@ -534,7 +534,7 @@ class ResampleData:
                 model = self.input_models[index]
                 exposure_times["start"].append(model.meta.exposure.start_time)
                 exposure_times["end"].append(model.meta.exposure.end_time)
-                self.input_models.discard(index, model)
+                self.input_models.shelve(model, index, modify=False)
 
         # Update some basic exposure time values based on output_model
         output_model.meta.basic.mean_exposure_time = total_exposure_time

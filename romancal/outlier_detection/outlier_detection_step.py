@@ -83,7 +83,7 @@ class OutlierDetectionStep(RomanStep):
                 for i, model in enumerate(library):
                     if model.meta.exposure.type != "WFI_IMAGE":
                         self.skip = True
-                    library.discard(i, model)
+                    library.shelve(model, i, modify=False)
                 if self.skip:
                     self.log.warning(
                         "Skipping outlier_detection - all WFI_IMAGE exposures are required."
@@ -95,7 +95,7 @@ class OutlierDetectionStep(RomanStep):
             with library:
                 for i, model in enumerate(library):
                     model.meta.cal_step["outlier_detection"] = "SKIPPED"
-                    library[i] = model
+                    library.shelve(model, i)
             return library
 
         # Setup output path naming if associations are involved.
@@ -160,5 +160,5 @@ class OutlierDetectionStep(RomanStep):
                             for filename in current_path.glob(suffix):
                                 filename.unlink()
                                 self.log.debug(f"    {filename}")
-                library[i] = model
+                library.shelve(model, i)
         return library

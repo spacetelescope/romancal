@@ -34,7 +34,7 @@ def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
     with res:
         for i, m in enumerate(res):
             assert m.meta.cal_step.outlier_detection == "SKIPPED"
-            res.discard(i, m)
+            res.shelve(m, i, modify=False)
 
 
 def test_outlier_skips_step_on_exposure_type_different_from_wfi_image(base_image):
@@ -51,7 +51,7 @@ def test_outlier_skips_step_on_exposure_type_different_from_wfi_image(base_image
     with res:
         for i, m in enumerate(res):
             assert m.meta.cal_step.outlier_detection == "SKIPPED"
-            res.discard(i, m)
+            res.shelve(m, i, modify=False)
 
 
 def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
@@ -78,7 +78,7 @@ def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
     with res:
         for i, m in enumerate(res):
             assert m.meta.cal_step.outlier_detection == "COMPLETE"
-            res.discard(i, m)
+            res.shelve(m, i, modify=False)
 
 
 def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
@@ -101,7 +101,7 @@ def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
     with res:
         for i, m in enumerate(res):
             assert m.meta.cal_step.outlier_detection == "COMPLETE"
-            res.discard(i, m)
+            res.shelve(m, i, modify=False)
 
 
 @pytest.mark.parametrize(
@@ -264,7 +264,7 @@ def test_find_outliers(tmp_path, base_image):
     with step.input_models:
         model = step.input_models[0]
         img_1_outlier_output_coords = np.where(model.dq > 0)
-        step.input_models.discard(0, model)
+        step.input_models.shelve(model, 0)
 
     # reformat output and input coordinates and sort by x coordinate
     outliers_output_coords = np.array(
@@ -317,7 +317,7 @@ def test_identical_images(tmp_path, base_image, caplog):
     with step.input_models:
         for i, model in enumerate(step.input_models):
             assert np.count_nonzero(model.dq) == 0
-            step.input_models.discard(i, model)
+            step.input_models.shelve(model, i)
 
 
 @pytest.mark.parametrize(
@@ -369,4 +369,4 @@ def test_outlier_detection_always_returns_modelcontainer_with_updated_datamodels
     with res:
         for i, model in enumerate(res):
             assert model.meta.cal_step.outlier_detection == "COMPLETE"
-            res.discard(i, model)
+            res.shelve(model, i, modify=False)

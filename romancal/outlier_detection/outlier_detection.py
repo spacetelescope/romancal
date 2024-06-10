@@ -98,13 +98,13 @@ class OutlierDetection:
                         weight_type="ivm",
                         good_bits=pars["good_bits"],
                     )
-                    drizzled_models[i] = model
+                    drizzled_models.shelve(model, i)
 
         # Initialize intermediate products used in the outlier detection
         with drizzled_models:
             example_model = drizzled_models[0]
             median_wcs = copy.deepcopy(example_model.meta.wcs)
-            drizzled_models.discard(0, example_model)
+            drizzled_models.shelve(example_model, 0, modify=False)
 
         # Perform median combination on set of drizzled mosaics
         median_data = self.create_median(drizzled_models)  # TODO unit?
@@ -160,7 +160,7 @@ class OutlierDetection:
                 this_data[model.weight < weight_threshold] = np.nan
                 data.append(this_data)
 
-                resampled_models.discard(i, model)
+                resampled_models.shelve(model, i, modify=False)
 
         # FIXME: get_sections?...
         median_image = np.nanmedian(data, axis=0)
@@ -241,8 +241,7 @@ class OutlierDetection:
                     # use median
                     blot_data = Quantity(median_data, unit=image.data.unit, copy=True)
                 flag_cr(image, blot_data, **self.outlierpars)
-                self.input_models[i] = image
-                # blot_models.discard(i, blot)
+                self.input_models.shelve(image, i)
 
 
 def flag_cr(
