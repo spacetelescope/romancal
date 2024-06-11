@@ -30,6 +30,12 @@ outlier_detection
 
 - Set ``single=True`` to use ``many_to_many`` when creating median image. [#1260]
 
+stpipe
+------
+
+- Add ``ModelContainer`` support to ``Step._datamodels_open`` to allow
+  loading "pars-*" files from CRDS. [#1270]
+
 
 0.15.1 (2024-05-15)
 ===================
