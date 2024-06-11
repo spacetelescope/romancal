@@ -7,7 +7,6 @@ from copy import deepcopy
 
 import numpy as np
 from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
-from roman_datamodels import datamodels as rdd
 from roman_datamodels.dqflags import pixel
 
 from romancal.datamodels import ModelLibrary
@@ -51,7 +50,6 @@ class SkyMatchStep(RomanStep):
 
     def process(self, input):
         self.log.setLevel(logging.DEBUG)
-        self._is_asn = False  # FIXME: where is this used?
 
         if isinstance(input, ModelLibrary):
             library = input
@@ -111,8 +109,6 @@ class SkyMatchStep(RomanStep):
             image_model.meta["background"] = dict(
                 level=None, subtracted=None, method=None
             )
-        if self._is_asn:
-            image_model = rdd.open(image_model)
 
         if self._dqbits is None:
             dqmask = np.isfinite(image_model.data).astype(dtype=np.uint8)
@@ -126,9 +122,6 @@ class SkyMatchStep(RomanStep):
         level = image_model.meta["background"]["level"]
         if image_model.meta["background"]["subtracted"] is None:
             if level is not None:
-                if self._is_asn:
-                    image_model.close()
-
                 # report inconsistency:
                 raise ValueError(
                     "Background level was set but the "
@@ -144,9 +137,6 @@ class SkyMatchStep(RomanStep):
                 # at this moment I think it is safer to quit and...
                 #
                 # report inconsistency:
-                if self._is_asn:
-                    image_model.close()
-
                 raise ValueError(
                     "Background level was subtracted but the "
                     "'level' property is undefined (None)."
@@ -156,9 +146,6 @@ class SkyMatchStep(RomanStep):
                 # cannot run 'skymatch' step on already "skymatched" images
                 # when 'subtract' spec is inconsistent with
                 # meta.background.subtracted:
-                if self._is_asn:
-                    image_model.close()
-
                 raise ValueError(
                     "'subtract' step's specification is "
                     "inconsistent with background info already "
@@ -177,12 +164,9 @@ class SkyMatchStep(RomanStep):
             id=image_model.meta.filename,  # file name?
             skystat=self._skystat,
             stepsize=self.stepsize,
-            reduce_memory_usage=self._is_asn,
+            reduce_memory_usage=False,
             meta={"image_model": input_image_model},
         )
-
-        if self._is_asn:
-            image_model.close()
 
         if self.subtract:
             sky_im.sky = level
@@ -193,21 +177,12 @@ class SkyMatchStep(RomanStep):
         image = sky_image.meta["image_model"]
         sky = sky_image.sky
 
-        if self._is_asn:
-            dm = rdd.open(image)
-        else:
-            dm = image
-
         if step_status == "COMPLETE":
-            dm.meta.background.method = str(self.skymethod)
-            dm.meta.background.level = sky
-            dm.meta.background.subtracted = self.subtract
+            image.meta.background.method = str(self.skymethod)
+            image.meta.background.level = sky
+            image.meta.background.subtracted = self.subtract
 
             if self.subtract:
-                dm.data[...] = sky_image.image[...]
+                image.data[...] = sky_image.image[...]
 
-        dm.meta.cal_step.skymatch = step_status
-
-        if self._is_asn:
-            dm.save(image)
-            dm.close()
+        image.meta.cal_step.skymatch = step_status
