@@ -381,7 +381,7 @@ def test_do_psf_photometry(tmp_path, image_model):
     # check the number of sources that have been detected
     assert len(cat) == 7
     # check that all sources have both position and flux determined (ignore errors/flags)
-    assert all(len(cat[x]) and cat[x] is not [None, np.nan] for x in psf_colnames)
+    assert all(len(cat[x]) and cat[x] != [None, np.nan] for x in psf_colnames)
 
 
 @pytest.mark.parametrize("fit_psf", [True, False])
