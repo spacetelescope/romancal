@@ -128,8 +128,8 @@ class ExposurePipeline(RomanPipeline):
             if is_fully_saturated(result):
                 log.info("All pixels are saturated. Returning a zeroed-out image.")
                 # Return fully saturated image file (stopping pipeline)
-                self.suffix = 'cal'
-                return result
+                #self.suffix = 'cal'
+                #return result
 
                 #    if is_fully_saturated(result):
                 # Set all subsequent steps to skipped
@@ -147,10 +147,10 @@ class ExposurePipeline(RomanPipeline):
                 ]:
                     result.meta.cal_step[step_str] = "SKIPPED"
 
-                # Set suffix for proper output naming
-                self.suffix = 'cal'
-                results.append(result)
-                return results
+            # Set suffix for proper output naming
+            self.suffix = 'cal'
+            results.append(result)
+            return results
 
             result = self.refpix(result)
             result = self.linearity(result)
