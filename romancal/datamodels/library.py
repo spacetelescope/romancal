@@ -39,6 +39,24 @@ class ClosedLibraryError(LibraryError):
 
 
 class _Ledger(MutableMapping):
+    """
+    A "ledger" used for tracking checked out models.
+
+    Each model has a unique "index" in the library which
+    can be used to track the model. For ease-of-use this
+    ledger maintains 2 mappings:
+
+        - id (the id(model) result) to model index
+        - index to model
+
+    The "index to model" mapping keeps a reference to every
+    model in the ledger (which allows id(model) to be consistent).
+
+    The ledger is a MutableMapping that supports look up of:
+        - index for a model
+        - model for an index
+    """
+
     def __init__(self):
         self._id_to_index = {}
         self._index_to_model = {}
@@ -82,14 +100,14 @@ class ModelLibrary(Sequence):
     opening and closing files.
 
     Models can be "borrowed" from the library (by iterating through the
-    library or indexing a specific model). However the library must be
+    library or "borrowing" a specific model). However the library must be
     "open" (used in a ``with`` context)  to borrow a model and the model
-    must be "returned" before the library "closes" (the ``with`` context exits).
+    must be "shelved" before the library "closes" (the ``with`` context exits).
 
     >>> with library:   # doctest: +SKIP
-            model = library[0]  # borrow the first model
+            model = library.borrow(0)  # borrow the first model
             # do stuff with the model
-            library[0] = model  # return the model
+            library.shelve(model, 0)  # return the model
 
     Failing to "open" the library will result in a ClosedLibraryError.
 
@@ -122,6 +140,7 @@ class ModelLibrary(Sequence):
             self._loaded_models = {}
 
         if isinstance(init, MutableMapping):
+            # init is an association dictionary
             asn_data = init
             self._asn_dir = os.path.abspath(".")
             self._asn = init
@@ -139,6 +158,7 @@ class ModelLibrary(Sequence):
                     filename = os.path.join(self._asn_dir, member["expname"])
                     member["group_id"] = _file_to_group_id(filename)
         elif isinstance(init, (str, Path)):
+            # init is an association filename (or path)
             asn_path = os.path.abspath(os.path.expanduser(os.path.expandvars(init)))
             self._asn_dir = os.path.dirname(asn_path)
 
@@ -171,6 +191,7 @@ class ModelLibrary(Sequence):
                     filename = os.path.join(self._asn_dir, member["expname"])
                     member["group_id"] = _file_to_group_id(filename)
         elif isinstance(init, Iterable):  # assume a list of models
+            # init is a list of models
             # make a fake asn from the models
             filenames = set()
             members = []
