@@ -72,50 +72,6 @@ class _Ledger(MutableMapping):
         return len(self._id_to_index)
 
 
-class _OnDiskModelStore(MutableMapping):
-    def __init__(self, memmap=False, directory=None):
-        self._memmap = memmap
-        if directory is None:
-            self._tempdir = tempfile.TemporaryDirectory(dir="")
-            self._path = Path(self._tempdir.name)
-        else:
-            self._path = Path(directory)
-        self._filenames = {}
-
-    def __getitem__(self, key):
-        if key not in self._filenames:
-            raise KeyError(f"{key} is not in {self}")
-        return datamodels_open(self._filenames[key], memmap=self._memmap)
-
-    def __setitem__(self, key, value):
-        if key in self._filenames:
-            fn = self._filenames[key]
-        else:
-            model_filename = value.meta.filename
-            if model_filename is None:
-                model_filename = "model.asdf"
-            subpath = self._path / f"{key}"
-            os.makedirs(subpath)
-            fn = subpath / model_filename
-            self._filenames[key] = fn
-
-        # save the model to the temporary location
-        value.save(fn)
-
-    def __del__(self):
-        if hasattr(self, "_tempdir"):
-            self._tempdir.cleanup()
-
-    def __delitem__(self, key):
-        del self._filenames[key]
-
-    def __iter__(self):
-        return iter(self._filenames)
-
-    def __len__(self):
-        return len(self._filenames)
-
-
 class ModelLibrary(Sequence):
     """
     A "library" of models (loaded from an association file).
@@ -146,20 +102,24 @@ class ModelLibrary(Sequence):
         asn_exptypes=None,
         asn_n_members=None,
         on_disk=False,
-        memmap=False,
         temp_directory=None,
+        **datamodels_open_kwargs,
     ):
         self._on_disk = on_disk
         self._open = False
         self._ledger = _Ledger()
 
-        # FIXME is there a cleaner way to pass these along to datamodels.open?
-        self._memmap = memmap
+        self._datamodels_open_kwargs = datamodels_open_kwargs
 
-        if self._on_disk:
-            self._model_store = _OnDiskModelStore(memmap, temp_directory)
+        if on_disk:
+            if temp_directory is None:
+                self._temp_dir = tempfile.TemporaryDirectory(dir="")
+                self._temp_path = Path(self._temp_dir.name)
+            else:
+                self._temp_path = Path(temp_directory)
+            self._temp_filenames = {}
         else:
-            self._model_store = {}
+            self._loaded_models = {}
 
         if isinstance(init, MutableMapping):
             asn_data = init
@@ -186,11 +146,7 @@ class ModelLibrary(Sequence):
             self.asn_table_name = os.path.basename(asn_path)
 
             # load association
-            try:
-                with open(asn_path) as asn_file:
-                    asn_data = load_asn(asn_file)
-            except AssociationNotValidError as e:
-                raise OSError("Cannot read ASN file.") from e
+            asn_data = self._load_asn(asn_path)
 
             if asn_exptypes is not None:
                 asn_data["products"][0]["members"] = [
@@ -224,7 +180,7 @@ class ModelLibrary(Sequence):
                     # has issues, if this is a widely supported mode (vs providing
                     # an association) it might make the most sense to make a fake
                     # association with the filenames at load time.
-                    model = datamodels_open(model_or_filename)
+                    model = self._datamodels_open(model_or_filename)
                 else:
                     model = model_or_filename
                 filename = model.meta.filename
@@ -232,7 +188,8 @@ class ModelLibrary(Sequence):
                     raise ValueError(
                         f"Models in library cannot use the same filename: {filename}"
                     )
-                self._model_store[index] = model
+                # FIXME: what if init is on_disk=True?
+                self._loaded_models[index] = model
                 # FIXME: output models created during resample (during outlier detection
                 # an possibly others) do not have meta.observation which breaks the group_id
                 # code
@@ -278,13 +235,29 @@ class ModelLibrary(Sequence):
 
         # make sure first model is loaded in memory (as expected by stpipe)
         if asn_n_members == 1:
-            # FIXME stpipe also reaches into _models (instead of _model_store)
+            # FIXME stpipe also reaches into _models
             self._models = [self._load_member(0)]
 
     def __del__(self):
         # FIXME when stpipe no longer uses '_models'
         if hasattr(self, "_models"):
             self._models[0].close()
+
+        if hasattr(self, "_temp_dir"):
+            self._temp_dir.cleanup()
+
+    def _datamodels_open(self, filename, **kwargs):
+        kwargs = self._datamodels_open_kwargs | kwargs
+        return datamodels_open(filename, **kwargs)
+
+    @classmethod
+    def _load_asn(cls, asn_path):
+        try:
+            with open(asn_path) as asn_file:
+                asn_data = load_asn(asn_file)
+        except AssociationNotValidError as e:
+            raise OSError("Cannot read ASN file.") from e
+        return asn_data
 
     @property
     def asn(self):
@@ -326,15 +299,19 @@ class ModelLibrary(Sequence):
         if index in self._ledger:
             raise BorrowError("Attempt to double-borrow model")
 
-        if index in self._model_store:
-            model = self._model_store[index]
+        # if this model is in memory, return it
+        if self._on_disk:
+            if index in self._temp_filenames:
+                model = self._datamodels_open(self._temp_filenames[index])
+            else:
+                model = self._load_member(index)
         else:
-            model = self._load_member(index)
-            if not self._on_disk:
-                # it's ok to keep this in memory since _on_disk is False
-                self._model_store[index] = model
+            if index in self._loaded_models:
+                model = self._loaded_models[index]
+            else:
+                model = self._load_member(index)
+                self._loaded_models[index] = model
 
-        # track the model is "in use"
         self._ledger[index] = model
         return model
 
@@ -342,6 +319,18 @@ class ModelLibrary(Sequence):
         # FIXME: this is here to allow the library to pass the Sequence
         # check. Removing this will require more extensive stpipe changes
         raise Exception()
+
+    def _model_to_filename(self, model):
+        model_filename = model.meta.filename
+        if model_filename is None:
+            model_filename = "model.asdf"
+        return model_filename
+
+    def _temp_path_for_model(self, model, index):
+        model_filename = self._model_to_filename(model)
+        subpath = self._temp_path / f"{index}"
+        os.makedirs(subpath)
+        return subpath / model_filename
 
     def shelve(self, model, index=None, modify=True):
         if not self._open:
@@ -354,7 +343,15 @@ class ModelLibrary(Sequence):
             raise BorrowError("Attempt to shelve non-borrowed model")
 
         if modify:
-            self._model_store[index] = model
+            if self._on_disk:
+                if index in self._temp_filenames:
+                    temp_filename = self._temp_filenames[index]
+                else:
+                    temp_filename = self._temp_path_for_model(model, index)
+                    self._temp_filenames[index] = temp_filename
+                model.save(temp_filename)
+            else:
+                self._loaded_models[index] = model
 
         del self._ledger[index]
 
@@ -368,7 +365,7 @@ class ModelLibrary(Sequence):
         member = self._members[index]
         filename = os.path.join(self._asn_dir, member["expname"])
 
-        model = datamodels_open(filename, memmap=self._memmap)
+        model = self._datamodels_open(filename)
 
         # patch model metadata with asn member info
         # TODO asn.table_name asn.pool_name here?
