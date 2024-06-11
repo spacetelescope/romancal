@@ -10,6 +10,8 @@ Documentation
 general
 -------
 
+- refactor expsosure level pipeline to use asn's and ModelContainer [#]
+
 - Add catalog source step to the mosaic pipeline [#1266]
 
 - Rename highlevelpipeline to mosaic pipeline [#1249]

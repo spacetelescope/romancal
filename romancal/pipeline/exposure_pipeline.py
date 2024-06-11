@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import logging
 from os.path import basename
+import pdb
 
 import numpy as np
 from roman_datamodels import datamodels as rdm
@@ -11,8 +12,8 @@ import romancal.datamodels.filetype as filetype
 # step imports
 from romancal.assign_wcs import AssignWcsStep
 
-# from romancal.associations.exceptions import AssociationNotValidError
-# from romancal.associations.load_as_asn import LoadAsLevel2Asn
+from romancal.associations import Association
+from romancal.associations.asn_from_list import asn_from_list
 from romancal.dark_current import DarkCurrentStep
 from romancal.datamodels import ModelContainer
 from romancal.dq_init import dq_init_step
@@ -78,29 +79,33 @@ class ExposurePipeline(RomanPipeline):
 
         # open the input file
         file_type = filetype.check(input)
-        asn = None
+        if file_type == "asn":
+            asn = ModelContainer.read_asn(input)
+            
         if file_type == "asdf":
             try:
-                input = rdm.open(input)
+                #input = rdm.open(input)
+                asn = ModelContainer(None)
+                #set the product name based on the input filename
+                asn = asn_from_list([input], product_name = input_filename.split('.')[0])
+                file_type = "asn"
             except TypeError:
                 log.debug("Error opening file:")
                 return
 
-        if file_type == "asn":
-            asn = ModelContainer.read_asn(input)
-
         # Build a list of observations to process
         expos_file = []
         n_members = 0
-        if file_type == "asdf":
-            expos_file = [input]
-        elif file_type == "asn":
-            for product in asn["products"]:
-                n_members = len(product["members"])
-                for member in product["members"]:
-                    expos_file.append(member["expname"])
+#        if file_type == "asdf":
+#            expos_file = [input]
+#        elif file_type == "asn":
+        # extract the members from the asn to run the files through the steps
+        for product in asn["products"]:
+            n_members = len(product["members"])
+            for member in product["members"]:
+                expos_file.append(member["expname"])
 
-        results = []
+        results = ModelContainer()
         tweakreg_input = ModelContainer()
         for in_file in expos_file:
             if isinstance(in_file, str):
@@ -122,6 +127,8 @@ class ExposurePipeline(RomanPipeline):
             # Test for fully saturated data
             if is_fully_saturated(result):
                 log.info("All pixels are saturated. Returning a zeroed-out image.")
+                # Return fully saturated image file (stopping pipeline)
+                return result
 
                 #    if is_fully_saturated(result):
                 # Set all subsequent steps to skipped
@@ -142,7 +149,6 @@ class ExposurePipeline(RomanPipeline):
                 # Set suffix for proper output naming
                 self.suffix = "cal"
                 results.append(result)
-                # Return fully saturated image file (stopping pipeline)
                 return results
 
             result = self.refpix(result)
@@ -155,6 +161,8 @@ class ExposurePipeline(RomanPipeline):
                 result = self.flatfield(result)
                 result = self.photom(result)
                 result = self.source_detection(result)
+                if file_type == "asdf":
+                    result = self.tweakreg(result)
                 if file_type == "asn":
                     result.meta.cal_step.tweakreg = "SKIPPED"
                     self.suffix = "sourcedetection"
@@ -173,10 +181,6 @@ class ExposurePipeline(RomanPipeline):
                 result.meta.cal_step.tweakreg = "SKIPPED"
                 self.suffix = "cal"
 
-            # setup output_file for saving
-            if result.meta.cal_step.tweakreg == "COMPLETE":
-                self.suffix = "cal"
-
             self.setup_output(result)
 
             self.output_use_model = True
@@ -185,45 +189,16 @@ class ExposurePipeline(RomanPipeline):
         # Now that all the exposures are collated, run tweakreg
         # Note: this does not cover the case where the asn mixes imaging and spectral
         #          observations. This should not occur on-prem
-        if result.meta.exposure.type == "WFI_IMAGE":
-            if file_type == "asdf":
-                result.meta.cal_step.tweakreg = "SKIPPED"
-                mc_result = ModelContainer(result)
-                if hasattr(ModelContainer(result), "_models") and mc_result._models:
-                    result = mc_result._models.pop()
+        if file_type == "asn":
+            result = self.tweakreg(results)
 
-            if file_type == "asn":
-                result = self.tweakreg(tweakreg_input)
-                for model in result._models:
-                    model.meta.cal_step.tweakreg = "SKIPPED"
-
-            log.info("Roman exposure calibration pipeline ending...")
+        log.info("Roman exposure calibration pipeline ending...")
 
         return results
 
     def setup_output(self, input):
         """Determine the proper file name suffix to use later"""
-        if input.meta.cal_step.tweakreg == "COMPLETE":
-            self.suffix = "cal"
-        # elif input.meta.cal_step.tweakreg == "SKIPPED" and input.meta.exposure.type == "WFI_IMAGE":
-        #    self.suffix = "sourcedetection"
-        elif (
-            input.meta.cal_step.tweakreg == "INCOMPLETE"
-            and input.meta.exposure.type == "WFI_IMAGE"
-        ):
-            self.suffix = "sourcedetection"
-        elif (
-            input.meta.cal_step.tweakreg == "SKIPPED"
-            and input.meta.exposure.type != "WFI_IMAGE"
-        ):
-            self.suffix = "cal"
-
-        if not self.steps["tweakreg"]["skip"]:
-            self.suffix = "cal"
-
-        input.meta.filename = input.meta.filename.replace("uncal", self.suffix)
-        input["output_file"] = input.meta.filename
-        self.output_file = input.meta.filename
+        self.suffix = "cal"
 
     def create_fully_saturated_zeroed_image(self, input_model):
         """

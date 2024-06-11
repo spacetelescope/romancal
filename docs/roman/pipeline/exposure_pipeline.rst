@@ -61,10 +61,15 @@ Inputs
 :Data model: `~romancal.datamodels.RampModel`
 :File suffix: _uncal
 
-The input to the ``ExposurePipeline`` is a single raw exposure,
+The input to the ``ExposurePipeline`` can be a single raw exposure,
 e.g. "r0008308002010007027_06311_0019_WFI01_uncal.asdf", which contains the
 original raw data from all of the detector readouts in the exposure
-( ngroups x ncols x nrows ).
+( ngroups x ncols x nrows ). The raw data may also be input using an association file.
+
+If the ``ExposurePipeline`` is given a single file the final alignment to Gaia will be done
+with the sources found in the exposure. If multiple exposures exist in the association file
+then the final alignment will use all the sources found in the exposures
+(see :ref:`tweakreg <tweakreg_step>`).
 
 Note that in the operational environment, the
 input will be in the form of a `~romancal.datamodels.RawScienceModel`, which only
