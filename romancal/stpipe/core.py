@@ -42,8 +42,6 @@ class RomanStep(Step):
         so that the stpipe infrastructure knows how to instantiate
         models and containers.
         """
-        if isinstance(init, (rdm.DataModel, ModelContainer)):
-            return init
         if isinstance(init, str):
             init = Path(init)
         if isinstance(init, Path):
@@ -52,6 +50,10 @@ class RomanStep(Step):
                 return rdm.open(init, **kwargs)
             if ext in (".json", ".yaml"):
                 return ModelContainer(init, **kwargs)
+        if isinstance(init, rdm.DataModel):
+            return rdm.open(init, **kwargs)
+        if isinstance(init, ModelContainer):
+            return ModelContainer(init)
         raise TypeError(f"Invalid input: {init}")
 
     def finalize_result(self, model, reference_files_used):
