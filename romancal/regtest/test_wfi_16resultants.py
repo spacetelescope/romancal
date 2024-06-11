@@ -30,7 +30,6 @@ def test_16resultants_image_processing(rtdata, ignore_asdf_paths):
     output = "r0000101001001001001_01101_0004_WFI01_cal.asdf"
     rtdata.output = output
     args = [
-        "--disable-crds-steppars",
         "roman_elp",
         rtdata.input,
     ]
@@ -87,7 +86,6 @@ def test_16resultants_spectral_processing(rtdata, ignore_asdf_paths):
     output = "r0000201001001001001_01101_0004_WFI01_cal.asdf"
     rtdata.output = output
     args = [
-        "--disable-crds-steppars",
         "roman_elp",
         rtdata.input,
     ]

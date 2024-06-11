@@ -1,3 +1,5 @@
+import json
+
 import asdf
 import pytest
 from astropy.time import Time
@@ -6,12 +8,60 @@ from roman_datamodels.maker_utils import mk_level2_image
 from stpipe import crds_client
 
 import romancal
+from romancal.datamodels import ModelContainer
 from romancal.flatfield import FlatFieldStep
 from romancal.stpipe import RomanPipeline, RomanStep
 
 
+@pytest.mark.parametrize("is_container", [True, False])
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
-def test_open_model(step_class, tmp_path):
+def test_open_model(step_class, tmp_path, is_container):
+    """
+    Test that the class is properly hooked up to datamodels.open.
+    More comprehensive tests can be found in romancal.datamodels.tests,
+    this is just a smoke test of the integration.
+    """
+    file_path = tmp_path / "test.asdf"
+
+    with asdf.AsdfFile() as af:
+        imod = mk_level2_image(shape=(20, 20))
+        af.tree = {"roman": imod}
+        af.write_to(file_path)
+
+    if is_container:
+        asn = {
+            "asn_pool": "none",
+            "products": [
+                {
+                    "members": [
+                        {
+                            "exptype": "science",
+                            "expname": "test.asdf",
+                        }
+                    ],
+                },
+            ],
+        }
+        asn_path = tmp_path / "test.json"
+        with open(asn_path, "w") as f:
+            json.dump(asn, f)
+        test_file_path = asn_path
+    else:
+        test_file_path = file_path
+
+    step = step_class()
+    with step.open_model(test_file_path) as model:
+        if is_container:
+            assert isinstance(model, ModelContainer)
+            assert model.crds_observatory == "roman"
+            assert model.get_crds_parameters() is not None
+        else:
+            assert isinstance(model, ImageModel)
+            assert model.meta.telescope == "ROMAN"
+
+
+@pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
+def test_open_container(step_class, tmp_path):
     """
     Test that the class is properly hooked up to datamodels.open.
     More comprehensive tests can be found in romancal.datamodels.tests,

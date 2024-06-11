@@ -174,7 +174,7 @@ cp r0000201001001001001_01101_0004_WFI01_uncal.asdf $outdir/roman-pipeline/dev/W
 
 l3name="r0099101001001001001_F158_visit"
 asn_from_list r0000101001001001001_01101_0001_WFI01_cal.asdf r0000101001001001001_01101_0002_WFI01_cal.asdf r0000101001001001001_01101_0003_WFI01_cal.asdf -o L3_regtest_asn.json --product-name $l3name
-strun --disable-crds-steppars roman_mos L3_regtest_asn.json
+strun roman_mos L3_regtest_asn.json
 cp L3_regtest_asn.json $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
@@ -189,5 +189,5 @@ cp r0000101001001001001_01101_0001_WFI01_cat.asdf $outdir/roman-pipeline/dev/tru
 
 l3name="r0099101001001001001_F158_visit_r274dp63x31y81"
 asn_from_list --product-name=$l3name r0000101001001001001_01101_0001_WFI01_cal.asdf r0000101001001001001_01101_0002_WFI01_cal.asdf r0000101001001001001_01101_0003_WFI01_cal.asdf -o L3_m1_asn.json
-strun --disable-crds-steppars roman_mos L3_m1_asn.json
+strun roman_mos L3_m1_asn.json
 cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
