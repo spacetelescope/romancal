@@ -87,6 +87,7 @@ def image_model():
     return model
 
 
+@pytest.mark.webbpsf
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results",
     (
@@ -169,6 +170,7 @@ def test_l2_source_catalog(
         assert np.max(cat["ycentroid"]) < 100.0
 
 
+@pytest.mark.webbpsf
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results",
     (
@@ -252,6 +254,7 @@ def test_l3_source_catalog(
         assert np.max(cat["ycentroid"]) < 100.0
 
 
+@pytest.mark.webbpsf
 def test_background(mosaic_model):
     """
     Test background fallback when Background2D fails.
@@ -270,6 +273,7 @@ def test_background(mosaic_model):
     assert isinstance(cat, Table)
 
 
+@pytest.mark.webbpsf
 def test_l2_input_model_unchanged(image_model, tmp_path):
     """
     Test that the input model data and error arrays are unchanged after
@@ -293,6 +297,7 @@ def test_l2_input_model_unchanged(image_model, tmp_path):
     assert_allclose(original_err, image_model.err, atol=5.0e-7)
 
 
+@pytest.mark.webbpsf
 def test_l3_input_model_unchanged(mosaic_model, tmp_path):
     """
     Test that the input model data and error arrays are unchanged after
@@ -316,6 +321,7 @@ def test_l3_input_model_unchanged(mosaic_model, tmp_path):
     assert_allclose(original_err, mosaic_model.err, atol=5.0e-7)
 
 
+@pytest.mark.webbpsf
 def test_inputs(mosaic_model):
     with pytest.raises(ValueError):
         ReferenceData(np.ones((3, 3)), (30, 50, 70))
@@ -349,6 +355,7 @@ def test_inputs(mosaic_model):
         )
 
 
+@pytest.mark.webbpsf
 def test_do_psf_photometry(tmp_path, image_model):
     """
     Test that do_psf_photometry can recover mock sources and their position and photometry.
@@ -381,9 +388,12 @@ def test_do_psf_photometry(tmp_path, image_model):
     # check the number of sources that have been detected
     assert len(cat) == 7
     # check that all sources have both position and flux determined (ignore errors/flags)
-    assert all(len(cat[x]) and cat[x] != [None, np.nan] for x in psf_colnames)
+    for col_name in psf_colnames:
+        assert len(cat[col_name])  # make sure the column isn't empty
+        assert not np.any(np.isnan(cat[col_name]))  # and contains no nans
 
 
+@pytest.mark.webbpsf
 @pytest.mark.parametrize("fit_psf", [True, False])
 def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
     """
