@@ -30,7 +30,7 @@ jobs:
   crds_contexts:
     uses: spacetelescope/crds/.github/workflows/contexts.yml@master
   test:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
+    uses: zacharyburnett/github-actions-workflows/.github/workflows/tox.yml@tox/coverage_github_actions
     needs: [ data, crds_contexts ]
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -59,6 +59,6 @@ jobs:
         - macos: py311-ddtrace-webbpsf
           pytest-results-summary: true
         - linux: py311-webbpsf-cov
-          coverage: codecov
+          coverage: github
           pytest-results-summary: true
         - linux: py312-webbpsf
