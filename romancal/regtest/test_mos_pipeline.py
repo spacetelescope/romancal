@@ -41,7 +41,6 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     output = "r0099101001001001001_F158_visit_i2d.asdf"
     rtdata.output = output
     args = [
-        "--disable-crds-steppars",
         "roman_mos",
         rtdata.input,
     ]

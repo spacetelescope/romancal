@@ -1,20 +1,6 @@
 Running the Pipeline
 ====================
 
-.. Note::
-   The Roman calibration code does not yet use CRDS parameters and it is best to
-   disable the search for these parameters to avoid unexpected issues.
-   You can globally disable this with the environment variable STPIPE_DISABLE_CRDS_STEPPARS
-   In the Bash shell you can issue the command,
-
-   export STPIPE_DISABLE_CRDS_STEPPARS=True
-
-   You can also add this parameter the the strun command,
-
-   strun --disable-crds-steppar roman_elp <file_name>
-
-
-
 From the Command Line
 -----------------------------
 
