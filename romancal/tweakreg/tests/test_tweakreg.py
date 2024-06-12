@@ -820,7 +820,7 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
             assert hasattr(model.meta, "asn")
 
             assert (
-                model.meta.asn["exptype"]
+                model.meta["exptype"]
                 == asn_content["products"][0]["members"][i]["exptype"]
             )
 
@@ -1005,11 +1005,11 @@ def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
         models = list(res)
         assert hasattr(models[0].meta, "asn")
         assert (
-            models[0].meta.asn["exptype"]
+            models[0].meta["exptype"]
             == asn_content["products"][0]["members"][0]["exptype"]
         )
         assert (
-            models[1].meta.asn["exptype"]
+            models[1].meta["exptype"]
             == asn_content["products"][0]["members"][1]["exptype"]
         )
         assert models[0].meta.asn["pool_name"] == asn_content["asn_pool"]
