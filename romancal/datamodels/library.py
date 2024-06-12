@@ -186,7 +186,6 @@ class ModelLibrary(Sequence):
             self._members = self._asn["products"][0]["members"]
 
             # check that all members have a group_id
-            # TODO base this off of the model
             for member in self._members:
                 if "group_id" not in member:
                     filename = os.path.join(self._asn_dir, member["expname"])
@@ -210,7 +209,10 @@ class ModelLibrary(Sequence):
                     raise ValueError(
                         f"Models in library cannot use the same filename: {filename}"
                     )
-                # FIXME: what if init is on_disk=True?
+                if on_disk:
+                    raise NotImplementedError(
+                        "on_disk cannot be used for lists of models"
+                    )
                 self._loaded_models[index] = model
                 # FIXME: output models created during resample (during outlier detection
                 # an possibly others) do not have meta.observation which breaks the group_id
@@ -240,7 +242,6 @@ class ModelLibrary(Sequence):
 
             # make a fake association
             self._asn = {
-                # TODO other asn data?
                 "products": [
                     {
                         "members": members,
@@ -377,8 +378,6 @@ class ModelLibrary(Sequence):
 
         del self._ledger[index]
 
-        # TODO should we allow this to change group_id for the member?
-
     def __iter__(self):
         for i in range(len(self)):
             yield self.borrow(i)
@@ -395,11 +394,10 @@ class ModelLibrary(Sequence):
                 # FIXME model.meta.group_id throws an error
                 # setattr(model.meta, attr, member[attr])
                 model.meta[attr] = member[attr]
-                if attr == "exptype":
-                    # FIXME why does tweakreg expect meta.asn.exptype instead of meta.exptype?
-                    model.meta["asn"] = {"exptype": member["exptype"]}
 
         # and with general asn information
+        if not hasattr(model.meta, "asn"):
+            model.meta["asn"] = {}
         model.meta.asn["table_name"] = self.asn.get("table_name", "")
         model.meta.asn["pool_name"] = self.asn["asn_pool"]
         return model
@@ -421,7 +419,6 @@ class ModelLibrary(Sequence):
     def copy(self, memo=None):
         return copy.deepcopy(self, memo=memo)
 
-    # TODO save, required by stpipe
     def save(self, path=None, dir_path=None, save_model_func=None, overwrite=True):
         # FIXME: the signature for this function can lead to many possible outcomes
         # stpipe may call this with save_model_func and path defined
@@ -477,7 +474,6 @@ class ModelLibrary(Sequence):
 
         return output_paths
 
-    # TODO crds_observatory, get_crds_parameters, when stpipe uses these...
     def crds_observatory(self):
         return "roman"
 
@@ -506,22 +502,6 @@ class ModelLibrary(Sequence):
             raise BorrowError(
                 f"ModelLibrary has {len(self._ledger)} un-returned models"
             )
-
-    def index(self, attribute, copy=False):
-        """
-        Access a single attribute from all models
-        """
-        # TODO we could here implement efficient accessors for
-        # certain attributes (like `meta.wcs` or `meta.wcs_info.s_region`)
-        if copy:
-            copy_func = lambda value: value.copy()  # noqa: E731
-        else:
-            copy_func = lambda value: value  # noqa: E731
-        with self:
-            for i, model in enumerate(self):
-                attr = model[attribute]
-                self.shelve(model, i, modify=False)
-                yield copy_func(attr)
 
     def map_function(self, function, modify=False):
         with self:
