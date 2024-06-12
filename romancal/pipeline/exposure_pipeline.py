@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import logging
 from os.path import basename
-import pdb
 
 import numpy as np
 from roman_datamodels import datamodels as rdm
@@ -84,7 +83,6 @@ class ExposurePipeline(RomanPipeline):
             
         if file_type == "asdf":
             try:
-                #input = rdm.open(input)
                 asn = ModelContainer(None)
                 #set the product name based on the input filename
                 asn = asn_from_list([input], product_name = input_filename.split('.')[0])
@@ -96,9 +94,6 @@ class ExposurePipeline(RomanPipeline):
         # Build a list of observations to process
         expos_file = []
         n_members = 0
-#        if file_type == "asdf":
-#            expos_file = [input]
-#        elif file_type == "asn":
         # extract the members from the asn to run the files through the steps
         for product in asn["products"]:
             n_members = len(product["members"])
@@ -125,7 +120,6 @@ class ExposurePipeline(RomanPipeline):
             result = self.saturation(result)
 
             # Test for fully saturated data
-            #pdb.set_trace()
             if is_fully_saturated(result):
                 log.info("All pixels are saturated. Returning a zeroed-out image.")
                 # Return fully saturated image file (stopping pipeline)
@@ -191,8 +185,8 @@ class ExposurePipeline(RomanPipeline):
         # Now that all the exposures are collated, run tweakreg
         # Note: this does not cover the case where the asn mixes imaging and spectral
         #          observations. This should not occur on-prem
-        if file_type == "asn":
-            result = self.tweakreg(results)
+#        if file_type == "asn":
+        result = self.tweakreg(results)
 
         log.info("Roman exposure calibration pipeline ending...")
 
