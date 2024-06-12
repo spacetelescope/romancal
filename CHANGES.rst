@@ -10,7 +10,7 @@ Documentation
 general
 -------
 
-- refactor expsosure level pipeline to use asn's and ModelContainer [#]
+- refactor expsosure level pipeline to use asn's and ModelContainer [#1271]
 
 - Add catalog source step to the mosaic pipeline [#1266]
 

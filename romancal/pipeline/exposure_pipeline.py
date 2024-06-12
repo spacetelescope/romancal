@@ -121,10 +121,8 @@ class ExposurePipeline(RomanPipeline):
 
             # Test for fully saturated data
             if is_fully_saturated(result):
-                log.info("All pixels are saturated. Returning a zeroed-out image.")
                 # Return fully saturated image file (stopping pipeline)
-                #self.suffix = 'cal'
-                #return result
+                log.info("All pixels are saturated. Returning a zeroed-out image.")
 
                 #    if is_fully_saturated(result):
                 # Set all subsequent steps to skipped
@@ -185,7 +183,6 @@ class ExposurePipeline(RomanPipeline):
         # Now that all the exposures are collated, run tweakreg
         # Note: this does not cover the case where the asn mixes imaging and spectral
         #          observations. This should not occur on-prem
-#        if file_type == "asn":
         result = self.tweakreg(results)
 
         log.info("Roman exposure calibration pipeline ending...")
