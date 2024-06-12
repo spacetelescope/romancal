@@ -61,25 +61,6 @@ def test_open_model(step_class, tmp_path, is_container):
 
 
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
-def test_open_container(step_class, tmp_path):
-    """
-    Test that the class is properly hooked up to datamodels.open.
-    More comprehensive tests can be found in romancal.datamodels.tests,
-    this is just a smoke test of the integration.
-    """
-    file_path = tmp_path / "test.asdf"
-
-    with asdf.AsdfFile() as af:
-        imod = mk_level2_image(shape=(20, 20))
-        af.tree = {"roman": imod}
-        af.write_to(file_path)
-
-    step = step_class()
-    with step.open_model(file_path) as model:
-        assert model.meta.telescope == "ROMAN"
-
-
-@pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
 def test_get_reference_file(step_class):
     """
     Test that CRDS is properly integrated.
