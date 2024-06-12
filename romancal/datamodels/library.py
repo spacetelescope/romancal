@@ -156,17 +156,18 @@ class ModelLibrary(Sequence):
             for member in self._members:
                 if "group_id" not in member:
                     filename = os.path.join(self._asn_dir, member["expname"])
-                    member["group_id"] = _file_to_group_id(filename)
+                    member["group_id"] = self._filename_to_group_id(filename)
         elif isinstance(init, (str, Path)):
             # init is an association filename (or path)
             asn_path = os.path.abspath(os.path.expanduser(os.path.expandvars(init)))
             self._asn_dir = os.path.dirname(asn_path)
 
-            # TODO asn_table_name is there another way to handle this
-            self.asn_table_name = os.path.basename(asn_path)
-
             # load association
             asn_data = self._load_asn(asn_path)
+
+            # keep track of the association filename
+            if "table_name" not in asn_data:
+                asn_data["table_name"] = os.path.basename(asn_path)
 
             if asn_exptypes is not None:
                 asn_data["products"][0]["members"] = [
@@ -189,7 +190,7 @@ class ModelLibrary(Sequence):
             for member in self._members:
                 if "group_id" not in member:
                     filename = os.path.join(self._asn_dir, member["expname"])
-                    member["group_id"] = _file_to_group_id(filename)
+                    member["group_id"] = self._filename_to_group_id(filename)
         elif isinstance(init, Iterable):  # assume a list of models
             # init is a list of models
             # make a fake asn from the models
@@ -215,7 +216,7 @@ class ModelLibrary(Sequence):
                 # an possibly others) do not have meta.observation which breaks the group_id
                 # code
                 try:
-                    group_id = _model_to_group_id(model)
+                    group_id = self._model_to_group_id(model)
                 except AttributeError:
                     group_id = str(index)
                 # FIXME: assign the group id here as it may have been computed above
@@ -389,7 +390,6 @@ class ModelLibrary(Sequence):
         model = self._datamodels_open(filename)
 
         # patch model metadata with asn member info
-        # TODO asn.table_name asn.pool_name here?
         for attr in ("group_id", "tweakreg_catalog", "exptype"):
             if attr in member:
                 # FIXME model.meta.group_id throws an error
@@ -398,8 +398,9 @@ class ModelLibrary(Sequence):
                 if attr == "exptype":
                     # FIXME why does tweakreg expect meta.asn.exptype instead of meta.exptype?
                     model.meta["asn"] = {"exptype": member["exptype"]}
-        # FIXME tweakreg also expects table_name and pool_name
-        model.meta.asn["table_name"] = self.asn_table_name
+
+        # and with general asn information
+        model.meta.asn["table_name"] = self.asn.get("table_name", "")
         model.meta.asn["pool_name"] = self.asn["asn_pool"]
         return model
 
@@ -532,6 +533,27 @@ class ModelLibrary(Sequence):
                     # deleted after it finishes (when it's not fully consumed)
                     self.shelve(model, i, modify)
 
+    def _filename_to_group_id(self, filename):
+        """
+        Compute a "group_id" without loading the file as a DataModel
+
+        This function will return the meta.group_id stored in the ASDF
+        extension (if it exists) or a group_id calculated from the
+        FITS headers.
+        """
+        asdf_yaml = asdf.util.load_yaml(filename)
+        if group_id := asdf_yaml["roman"]["meta"].get("group_id"):
+            return group_id
+        return _mapping_to_group_id(asdf_yaml["roman"]["meta"]["observation"])
+
+    def _model_to_group_id(self, model):
+        """
+        Compute a "group_id" from a model using the DataModel interface
+        """
+        if (group_id := getattr(model.meta, "group_id", None)) is not None:
+            return group_id
+        return _mapping_to_group_id(model.meta.observation)
+
 
 def _mapping_to_group_id(mapping):
     """
@@ -542,26 +564,3 @@ def _mapping_to_group_id(mapping):
         "_{visit_file_group}{visit_file_sequence}{visit_file_activity}"
         "_{exposure}"
     ).format_map(mapping)
-
-
-def _file_to_group_id(filename):
-    """
-    Compute a "group_id" without loading the file as a DataModel
-
-    This function will return the meta.group_id stored in the ASDF
-    extension (if it exists) or a group_id calculated from the
-    FITS headers.
-    """
-    asdf_yaml = asdf.util.load_yaml(filename)
-    if group_id := asdf_yaml["roman"]["meta"].get("group_id"):
-        return group_id
-    return _mapping_to_group_id(asdf_yaml["roman"]["meta"]["observation"])
-
-
-def _model_to_group_id(model):
-    """
-    Compute a "group_id" from a model using the DataModel interface
-    """
-    if (group_id := getattr(model.meta, "group_id", None)) is not None:
-        return group_id
-    return _mapping_to_group_id(model.meta.observation)

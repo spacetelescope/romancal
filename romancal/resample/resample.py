@@ -207,6 +207,14 @@ class ResampleData:
             output_model = self.blank_output
             output_model.meta["resample"] = maker_utils.mk_resample()
 
+            # copy over asn information
+            if (asn_pool := self.input_models.asn.get("asn_pool", None)) is not None:
+                output_model.meta.asn.pool_name = asn_pool
+            if (
+                asn_table_name := self.input_models.asn.get("table_name", None)
+            ) is not None:
+                output_model.meta.asn.table_name = asn_table_name
+
             with self.input_models:
                 example_image = self.input_models.borrow(indices[0])
 
@@ -266,6 +274,8 @@ class ResampleData:
 
                 # cast context array to uint32
                 output_model.context = output_model.context.astype("uint32")
+
+                # copy over asn information
                 if not self.in_memory:
                     # Write out model to disk, then return filename
                     output_name = output_model.meta.filename
@@ -278,11 +288,7 @@ class ResampleData:
                 output_model.data *= 0.0
                 output_model.weight *= 0.0
 
-        output = ModelLibrary(output_list)
-        # FIXME: handle moving asn data
-        if hasattr(self.input_models, "asn_table_name"):
-            output.asn_table_name = self.input_models.asn_table_name
-        return output
+        return ModelLibrary(output_list)
 
     def resample_many_to_one(self):
         """Resample and coadd many inputs to a single output.
@@ -294,6 +300,14 @@ class ResampleData:
         output_model.meta.resample["members"] = []
         output_model.meta.resample.weight_type = self.weight_type
         output_model.meta.resample.pointings = len(self.input_models.group_names)
+
+        # copy over asn information
+        if (asn_pool := self.input_models.asn.get("asn_pool", None)) is not None:
+            output_model.meta.asn.pool_name = asn_pool
+        if (
+            asn_table_name := self.input_models.asn.get("table_name", None)
+        ) is not None:
+            output_model.meta.asn.table_name = asn_table_name
 
         if self.blendheaders:
             log.info("Skipping blendheaders for now.")

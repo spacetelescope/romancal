@@ -155,13 +155,6 @@ class ResampleStep(RomanStep):
     def _final_updates(self, model, input_models, kwargs):
         model.meta.cal_step["resample"] = "COMPLETE"
         util.update_s_region_imaging(model)
-        if (asn_pool := input_models.asn.get("asn_pool", None)) is not None:
-            model.meta.asn.pool_name = asn_pool
-        # TODO asn table name which appears to be the basename of the asn filename?
-        if (
-            asn_table_name := getattr(input_models, "asn_table_name", None)
-        ) is not None:
-            model.meta.asn.table_name = asn_table_name
 
         # if pixel_scale exists, it will override pixel_scale_ratio.
         # calculate the actual value of pixel_scale_ratio based on pixel_scale
