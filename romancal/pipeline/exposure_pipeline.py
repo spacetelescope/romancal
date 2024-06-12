@@ -125,6 +125,7 @@ class ExposurePipeline(RomanPipeline):
             result = self.saturation(result)
 
             # Test for fully saturated data
+            #pdb.set_trace()
             if is_fully_saturated(result):
                 log.info("All pixels are saturated. Returning a zeroed-out image.")
                 # Return fully saturated image file (stopping pipeline)
@@ -147,10 +148,10 @@ class ExposurePipeline(RomanPipeline):
                 ]:
                     result.meta.cal_step[step_str] = "SKIPPED"
 
-            # Set suffix for proper output naming
-            self.suffix = 'cal'
-            results.append(result)
-            return results
+                # Set suffix for proper output naming
+                self.suffix = 'cal'
+                results.append(result)
+                return results
 
             result = self.refpix(result)
             result = self.linearity(result)
