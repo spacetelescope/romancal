@@ -269,19 +269,6 @@ class ModelLibrary(Sequence):
         if hasattr(self, "_temp_dir"):
             self._temp_dir.cleanup()
 
-    def _datamodels_open(self, filename, **kwargs):
-        kwargs = self._datamodels_open_kwargs | kwargs
-        return datamodels_open(filename, **kwargs)
-
-    @classmethod
-    def _load_asn(cls, asn_path):
-        try:
-            with open(asn_path) as asn_file:
-                asn_data = load_asn(asn_file)
-        except AssociationNotValidError as e:
-            raise OSError("Cannot read ASN file.") from e
-        return asn_data
-
     @property
     def asn(self):
         # return a "read only" association
@@ -342,12 +329,6 @@ class ModelLibrary(Sequence):
         # FIXME: this is here to allow the library to pass the Sequence
         # check. Removing this will require more extensive stpipe changes
         raise Exception()
-
-    def _model_to_filename(self, model):
-        model_filename = model.meta.filename
-        if model_filename is None:
-            model_filename = "model.asdf"
-        return model_filename
 
     def _temp_path_for_model(self, model, index):
         model_filename = self._model_to_filename(model)
@@ -474,11 +455,29 @@ class ModelLibrary(Sequence):
 
         return output_paths
 
+    @property
     def crds_observatory(self):
         return "roman"
 
     def get_crds_parameters(self):
-        raise NotImplementedError()
+        """
+        Get the "crds_parameters" from either:
+            - the first "science" member (based on model.meta.exptype)
+            - the first model (if no "science" member is found)
+        """
+        with self:
+            science_index = None
+            for i, member in self.members:
+                if member["exptype"].lower() == "science":
+                    science_index = i
+                    break
+            if science_index is None:
+                # TODO warn if we did not find a science member
+                science_index = 0
+            model = self.borrow(science_index)
+            parameters = model.get_crds_parameters()
+            self.shelve(model, science_index, modify=False)
+        return parameters
 
     def finalize_result(self, step, reference_files_used):
         with self:
@@ -512,6 +511,25 @@ class ModelLibrary(Sequence):
                     # this is in a finally to allow cleanup if the generator is
                     # deleted after it finishes (when it's not fully consumed)
                     self.shelve(model, i, modify)
+
+    def _model_to_filename(self, model):
+        model_filename = model.meta.filename
+        if model_filename is None:
+            model_filename = "model.asdf"
+        return model_filename
+
+    def _datamodels_open(self, filename, **kwargs):
+        kwargs = self._datamodels_open_kwargs | kwargs
+        return datamodels_open(filename, **kwargs)
+
+    @classmethod
+    def _load_asn(cls, asn_path):
+        try:
+            with open(asn_path) as asn_file:
+                asn_data = load_asn(asn_file)
+        except AssociationNotValidError as e:
+            raise OSError("Cannot read ASN file.") from e
+        return asn_data
 
     def _filename_to_group_id(self, filename):
         """
