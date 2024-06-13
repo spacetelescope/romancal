@@ -247,9 +247,9 @@ def base_image():
         model.meta.wcsinfo["roll_ref"] = 60.0
         img = rdm.ImageModel(model)
         transform = pointing.v23tosky(img)
-        img.meta.wcs.set_transform('detector', 'icrs', transform)
+        img.meta.wcs.set_transform("detector", "icrs", transform)
         img.meta.wcs.bounding_box = ((-0.5, 2300), (-0.5, 200))
-        
+
         return img
 
     return _base_image
