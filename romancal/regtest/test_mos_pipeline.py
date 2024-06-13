@@ -7,6 +7,8 @@ import roman_datamodels as rdm
 from metrics_logger.decorators import metrics_logger
 
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
+from romancal.associations import Association
+from romancal.associations.asn_from_list import asn_from_list
 
 from .regtestdata import compare_asdf
 
@@ -142,12 +144,19 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
         "WFI/image/r0000101001001001001_01101_0003_WFI01_cal.asdf",
     ]
 
-    asn_cmd = f"asn_from_list --product-name='r0099101001001001001_F158_prompt_visit_r274dp63x31y81'\
-    r0000101001001001001_01101_0001_WFI01_cal.asdf \
-    r0000101001001001001_01101_0002_WFI01_cal.asdf \
-    r0000101001001001001_01101_0003_WFI01_cal.asdf \
-    -o L3_m1_asn.json"
-    os.system(asn_cmd)  # nosec
+    asn = asn_from_list(cal_files, product_name='r0099101001001001001_r274dp63x31y81_F158_prompt_visit')
+    asn['target'] = 'r274dp63x31y81'
+    asn_name = 'L3_mosaic_asn.json'
+    _, serialized = asn.dump()
+    with open(asn_name, "w") as f:
+        f.write(serialized)
+    
+    #asn_cmd = f"asn_from_list --product-name='r0099101001001001001_r274dp63x31y81_F158_prompt_visit'\
+    #r0000101001001001001_01101_0001_WFI01_cal.asdf \
+    #r0000101001001001001_01101_0002_WFI01_cal.asdf \
+    #r0000101001001001001_01101_0003_WFI01_cal.asdf \
+    #-o L3_m1_asn.json"
+    #os.system(asn_cmd)  # nosec
 
     for cal_file in cal_files:
         rtdata.get_data(cal_file)
@@ -160,13 +169,12 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
     output = "r0099101001001001001_F158_prompt_visit_r274dp63x31y81_i2d.asdf"
     rtdata.output = output
     args = [
-        "--disable-crds-steppars",
-        "roman_hlp",
+        "roman_mos",
         rtdata.input,
     ]
-    HighLevelPipeline.from_cmdline(args)
+    MosaicPipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
-    pipeline = HighLevelPipeline()
+    pipeline = MosaicPipeline()
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
