@@ -346,7 +346,7 @@ def test_set_good_bits_in_resample_meta(base_image, good_bits):
     model.meta.wcsinfo["roll_ref"] = 60.0
     img = datamodels.ImageModel(model)
     transform = pointing.v23tosky(img)
-    img.meta.wcs.set_transform('detector', 'icrs', transform)
+    img.meta.wcs.set_transform("detector", "icrs", transform)
     img.meta.wcs.bounding_box = ((-0.5, 2300), (-0.5, 200))
 
     img.data *= img.meta.photometry.conversion_megajanskys / img.data
