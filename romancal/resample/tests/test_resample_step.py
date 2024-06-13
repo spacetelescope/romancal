@@ -8,6 +8,7 @@ from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
 
+from romancal.assign_wcs import pointing
 from romancal.resample import ResampleStep, resample_utils
 
 
@@ -337,8 +338,16 @@ def test_build_driz_weight_multiple_good_bits(
 def test_set_good_bits_in_resample_meta(base_image, good_bits):
     model = maker_utils.mk_level2_image(shape=(100, 100))
     model.meta.wcsinfo["vparity"] = -1
-
+    model.meta.wcsinfo["ra_ref"] = 178.37567
+    model.meta.wcsinfo["dec_ref"] = -2.674389
+    model.meta.wcsinfo["v2_ref"] = 2216.3796908471754
+    model.meta.wcsinfo["v3_ref"] = 130.234233411109
+    model.meta.wcsinfo["v3yangle"] = -60.0
+    model.meta.wcsinfo["roll_ref"] = 60.0
     img = datamodels.ImageModel(model)
+    transform = pointing.v23tosky(img)
+    img.meta.wcs.set_transform('detector', 'icrs', transform)
+    img.meta.wcs.bounding_box = ((-0.5, 2300), (-0.5, 200))
 
     img.data *= img.meta.photometry.conversion_megajanskys / img.data
 
