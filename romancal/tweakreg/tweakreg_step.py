@@ -175,37 +175,36 @@ class TweakRegStep(RomanStep):
                 # image_model.meta.cal_step.tweakreg = "SKIPPED"
                 return image_model
 
-            if hasattr(image_model.meta, "source_detection"):
-                is_tweakreg_catalog_present = hasattr(
-                    image_model.meta.source_detection, "tweakreg_catalog"
-                )
-                is_tweakreg_catalog_name_present = hasattr(
-                    image_model.meta.source_detection, "tweakreg_catalog_name"
-                )
-                if is_tweakreg_catalog_present:
-                    # read catalog from structured array
-                    catalog = Table(
-                        np.asarray(image_model.meta.source_detection.tweakreg_catalog)
-                    )
-                elif is_tweakreg_catalog_name_present:
-                    catalog = Table.read(
-                        image_model.meta.source_detection.tweakreg_catalog_name,
-                        format=self.catalog_format,
-                    )
-                else:
-                    raise AttributeError(
-                        "Attribute 'meta.source_detection.tweakreg_catalog' is missing."
-                        "Please either run SourceDetectionStep or provide a"
-                        "custom source catalog."
-                    )
-                # remove 4D numpy array from meta.source_detection
-                if is_tweakreg_catalog_present:
-                    del image_model.meta.source_detection["tweakreg_catalog"]
-            else:
+            if not hasattr(image_model.meta, "source_detection"):
                 raise AttributeError(
                     "Attribute 'meta.source_detection' is missing."
                     "Please either run SourceDetectionStep or provide a"
                     "custom source catalog."
+                )
+
+            source_detection = image_model.meta.source_detection
+            is_tweakreg_catalog_present = hasattr(source_detection, "tweakreg_catalog")
+            is_tweakreg_catalog_name_present = hasattr(
+                source_detection, "tweakreg_catalog_name"
+            )
+
+            if is_tweakreg_catalog_present:
+                # read catalog from structured array
+                catalog = Table(
+                    np.asarray(image_model.meta.source_detection.tweakreg_catalog)
+                )
+            elif is_tweakreg_catalog_name_present:
+                # read catalog from a file on disk
+                catalog_name = source_detection.tweakreg_catalog_name
+                if catalog_name.endswith("asdf"):
+                    with rdm.open(catalog_name) as source_catalog_model:
+                        catalog = source_catalog_model.source_catalog
+                else:
+                    catalog = Table.read(catalog_name, format=self.catalog_format)
+            else:
+                raise AttributeError(
+                    "Attribute 'meta.source_detection.tweakreg_catalog' is missing. "
+                    "Please either run SourceDetectionStep or provide a custom source catalog."
                 )
 
             for axis in ["x", "y"]:

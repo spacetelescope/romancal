@@ -940,28 +940,6 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     assert np.array([np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2)]).all()
 
 
-@pytest.mark.parametrize(
-    "source_detection_save_catalogs",
-    (True, False),
-)
-def test_remove_tweakreg_catalog_data(
-    tmp_path, source_detection_save_catalogs, request
-):
-    """
-    Test to check that the source catalog data is removed from meta
-    regardless of selected SourceDetectionStep.save_catalogs option.
-    """
-    img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(
-        tmp_path, img, save_catalogs=source_detection_save_catalogs
-    )
-
-    trs.TweakRegStep.call([img])
-
-    assert not hasattr(img.meta.source_detection, "tweakreg_catalog")
-    assert hasattr(img.meta, "tweakreg_catalog")
-
-
 def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
     """Test that TweakReg can parse an ASN file properly."""
 

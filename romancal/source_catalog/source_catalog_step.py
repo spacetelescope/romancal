@@ -12,6 +12,7 @@ from romancal.source_catalog.detection import convolve_data, make_segmentation_i
 from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
+from pathlib import Path
 
 __all__ = ["SourceCatalogStep"]
 
@@ -94,7 +95,6 @@ class SourceCatalogStep(RomanStep):
 
             if segment_img is None:  # no sources found
                 source_catalog_model.source_catalog = Table()
-                return source_catalog_model
 
             ci_star_thresholds = (self.ci1_star_threshold, self.ci2_star_threshold)
             catobj = RomanSourceCatalog(
@@ -125,4 +125,18 @@ class SourceCatalogStep(RomanStep):
                 segmentation_model.data = segment_img.data.astype(np.uint32)
                 self.save_model(segmentation_model, suffix="segm")
 
-        return source_catalog_model
+            # save catalog to a file on disk
+            # N.B.: self.save_model will determine whether to use fully qualified path or not
+            output_catalog_name = self.save_model(
+                source_catalog_model, output_file=model.meta.filename, suffix="cat"
+            ).as_posix()
+
+            # update datamodel
+            model.meta["source_detection"] = maker_utils.mk_source_detection(
+                **{"tweakreg_catalog_name": output_catalog_name}
+            )
+            model.meta.cal_step.source_detection = "COMPLETE"
+
+            output_model = model
+
+        return output_model
