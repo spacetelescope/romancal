@@ -237,10 +237,19 @@ def base_image():
     """
 
     def _base_image(shift_1=0, shift_2=0):
-        l2 = maker_utils.mk_level2_image(shape=(100, 100))
-        l2_im = rdm.ImageModel(l2)
-        _create_wcs(l2_im)
-        l2_im.meta.wcsinfo.vparity = -1
-        return l2_im
+        model = maker_utils.mk_level2_image(shape=(100, 100))
+        model.meta.wcsinfo["vparity"] = -1
+        model.meta.wcsinfo["ra_ref"] = 178.37567
+        model.meta.wcsinfo["dec_ref"] = -2.674389
+        model.meta.wcsinfo["v2_ref"] = 2216.3796908471754
+        model.meta.wcsinfo["v3_ref"] = 130.234233411109
+        model.meta.wcsinfo["v3yangle"] = -60.0
+        model.meta.wcsinfo["roll_ref"] = 60.0
+        img = rdm.ImageModel(model)
+        transform = pointing.v23tosky(img)
+        img.meta.wcs.set_transform('detector', 'icrs', transform)
+        img.meta.wcs.bounding_box = ((-0.5, 2300), (-0.5, 200))
+        
+        return img
 
     return _base_image
