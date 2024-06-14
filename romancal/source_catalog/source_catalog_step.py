@@ -114,29 +114,35 @@ class SourceCatalogStep(RomanStep):
             # (in case of interactive use)
             model.data += bkg.background
 
-            if self.save_results:
-                # NOTE: the source_catalog_model is automatically saved
-                #       if save_results = True
+            # create catalog filename
+            # N.B.: self.save_model will determine whether to use fully qualified path or not
+            output_catalog_name = self.make_output_path(
+                basepath=model.meta.filename, suffix="cat"
+            )
 
+            # update datamodel to point to the source catalog file destination
+            model.meta["source_detection"] = maker_utils.mk_source_detection(
+                **{"tweakreg_catalog_name": output_catalog_name}
+            )
+            if isinstance(model, ImageModel):
+                model.meta.cal_step.source_detection = "COMPLETE"
+
+            output_model = model
+
+            # always save source catalog to disk
+            self.save_model(source_catalog_model, suffix="cat", force=True)
+
+            if self.save_results:
                 # save the segmentation map
                 segmentation_model = maker_utils.mk_datamodel(
                     datamodels.MosaicSegmentationMapModel
                 )
                 segmentation_model.data = segment_img.data.astype(np.uint32)
                 self.save_model(segmentation_model, suffix="segm")
+                # save updated datamodel
+                self.save_model(output_model, suffix="source_catalog")
 
-            # save catalog to a file on disk
-            # N.B.: self.save_model will determine whether to use fully qualified path or not
-            output_catalog_name = self.save_model(
-                source_catalog_model, output_file=model.meta.filename, suffix="cat"
-            ).as_posix()
-
-            # update datamodel
-            model.meta["source_detection"] = maker_utils.mk_source_detection(
-                **{"tweakreg_catalog_name": output_catalog_name}
-            )
-            model.meta.cal_step.source_detection = "COMPLETE"
-
-            output_model = model
+        # prevent saving results again
+        self.save_results = False
 
         return output_model
