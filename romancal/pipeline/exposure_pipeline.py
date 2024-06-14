@@ -10,8 +10,6 @@ import romancal.datamodels.filetype as filetype
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
-
-from romancal.associations import Association
 from romancal.associations.asn_from_list import asn_from_list
 from romancal.dark_current import DarkCurrentStep
 from romancal.datamodels import ModelContainer
@@ -80,11 +78,11 @@ class ExposurePipeline(RomanPipeline):
         file_type = filetype.check(input)
         if file_type == "asn":
             asn = ModelContainer.read_asn(input)
-            
+
         if file_type == "asdf":
             try:
-                #set the product name based on the input filename
-                asn = asn_from_list([input], product_name = input_filename.split('.')[0])
+                # set the product name based on the input filename
+                asn = asn_from_list([input], product_name=input_filename.split(".")[0])
                 file_type = "asn"
             except TypeError:
                 log.debug("Error opening file:")
@@ -140,7 +138,7 @@ class ExposurePipeline(RomanPipeline):
                     result.meta.cal_step[step_str] = "SKIPPED"
 
                 # Set suffix for proper output naming
-                self.suffix = 'cal'
+                self.suffix = "cal"
                 results.append(result)
                 return results
 
