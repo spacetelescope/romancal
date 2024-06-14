@@ -83,7 +83,7 @@ class ExposurePipeline(RomanPipeline):
             
         if file_type == "asdf":
             try:
-                asn = ModelContainer(None)
+                #asn = ModelContainer(None)
                 #set the product name based on the input filename
                 asn = asn_from_list([input], product_name = input_filename.split('.')[0])
                 file_type = "asn"
@@ -155,15 +155,10 @@ class ExposurePipeline(RomanPipeline):
                 result = self.flatfield(result)
                 result = self.photom(result)
                 result = self.source_detection(result)
-                if file_type == "asdf":
-                    result = self.tweakreg(result)
-                if file_type == "asn":
-                    result.meta.cal_step.tweakreg = "SKIPPED"
-                    self.suffix = "sourcedetection"
-                    tweakreg_input.append(result)
-                    log.info(
-                        f"Number of models to tweakreg:   {len(tweakreg_input._models), n_members}"
-                    )
+                tweakreg_input.append(result)
+                log.info(
+                    f"Number of models to tweakreg:   {len(tweakreg_input._models), n_members}"
+                )
             else:
                 log.info("Flat Field step is being SKIPPED")
                 log.info("Photom step is being SKIPPED")
