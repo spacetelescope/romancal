@@ -83,7 +83,6 @@ class ExposurePipeline(RomanPipeline):
             
         if file_type == "asdf":
             try:
-                #asn = ModelContainer(None)
                 #set the product name based on the input filename
                 asn = asn_from_list([input], product_name = input_filename.split('.')[0])
                 file_type = "asn"
