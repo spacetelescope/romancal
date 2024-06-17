@@ -65,13 +65,19 @@ def flux_step(request):
     -------
     original, result : DataModel or ModelLibrary, DataModel or ModelLibrary
     """
-    input = request.getfixturevalue(request.param)
-
-    # Copy input because flux operates in-place
-    original = input.copy()
+    init = request.getfixturevalue(request.param)
+    if isinstance(init, ModelLibrary):
+        models = []
+        with init:
+            for m in init:
+                models.append(m.copy())
+                init.shelve(m, modify=False)
+        original = ModelLibrary(models)
+    else:
+        original = init.copy()
 
     # Perform step
-    result = FluxStep.call(input)
+    result = FluxStep.call(init)
 
     # That's all folks
     return original, result
