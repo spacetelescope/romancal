@@ -66,7 +66,7 @@ class ModelLibrary(AbstractModelLibrary):
             model.meta["asn"] = {}
 
         model.meta.asn["table_name"] = self.asn.get("table_name", "")
-        model.meta.asn["pool_name"] = self.asn.get("table_name", "")
+        model.meta.asn["pool_name"] = self.asn.get("asn_pool", "")
 
 
 def _mapping_to_group_id(mapping):
