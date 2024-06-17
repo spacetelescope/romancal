@@ -69,13 +69,13 @@ the user is running the pipeline. The input for each optional step is the output
 +===================================================+=================+==============================+==================+=====================+=======================================+
 |                                                   |                 | asn                          |                  |                     |                                       |
 +---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+
-| :ref:`flux <flux_step>`                           | asn             | flux (opt)                   | ModelContainer   | MJy/sr              | A list of _cal files                  |
+| :ref:`flux <flux_step>`                           | asn             | flux (opt)                   | ModelLibrary     | MJy/sr              | A list of _cal files                  |
 +---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+
-| :ref:`sky_match <skymatch_step>`                  | asn             | skymatch (opt)               | ModelContainer   | MJy/sr              | A list of _cal files                  |
+| :ref:`sky_match <skymatch_step>`                  | asn             | skymatch (opt)               | ModelLibrary     | MJy/sr              | A list of _cal files                  |
 +---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+
-| :ref:`outlier_detection <outlier_detection_step>` |                 | outlier_detection_step (opt) | ModelContainer   | MJy/sr              | A list of _cal files                  |
+| :ref:`outlier_detection <outlier_detection_step>` |                 | outlier_detection_step (opt) | ModelLibrary     | MJy/sr              | A list of _cal files                  |
 +---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+
-| :ref:`resample <resample_step>`                   |                 | resamplestep (opt)           | ModelContainer   | MJy/sr              | A list of _cal files                  |
+| :ref:`resample <resample_step>`                   |                 | resamplestep (opt)           | ModelLibrary     | MJy/sr              | A list of _cal files                  |
 +---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+
 |                                                   |                 | i2d                          | MosaicModel      | MJy/sr              | A 2D resampled image                  |
 +---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+

@@ -14,7 +14,7 @@ The ``resample`` step can take:
 
   * a single 2D input image (in the format of either a string with the full
     path and filename of an ASDF file or a Roman
-    Datamodel/:py:class:`~romancal.datamodels.container.ModelContainer`);
+    Datamodel/:py:class:`~romancal.datamodels.library.ModelLibrary`);
   * an association table (in JSON format).
 
 The parameters for the drizzle operation itself are set by

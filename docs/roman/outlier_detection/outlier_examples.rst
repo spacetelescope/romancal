@@ -1,7 +1,7 @@
 Examples
 ========
 Whether the data are contained in a list of ASDF files or provided as an ASN file, the
-`ModelContainer` class must be used to properly handle the data that will be used in
+`ModelLibrary` class must be used to properly handle the data that will be used in
 the outlier detection step.
 
 1. To run the outlier detection step (with the default parameters) on a list of 2 ASDF
@@ -10,9 +10,9 @@ the outlier detection step.
         .. code-block:: python
 
                 from romancal.outlier_detection import OutlierDetectionStep
-                from romancal.datamodels import ModelContainer
-                # read the file list into a ModelContainer object
-                mc = ModelContainer(["img_1.asdf", "img_2.asdf"])
+                from romancal.datamodels import ModelLibrary
+                # read the file list into a ModelLibrary object
+                mc = ModelLibrary(["img_1.asdf", "img_2.asdf"])
                 step = OutlierDetectionStep()
                 step.process(mc)
 
@@ -52,9 +52,9 @@ the outlier detection step.
         .. code-block:: python
 
                 from romancal.outlier_detection import OutlierDetectionStep
-                from romancal.datamodels import ModelContainer
-                # read the file list into a ModelContainer object
-                mc = ModelContainer("asn_sample.json")
+                from romancal.datamodels import ModelLibrary
+                # read the file list into a ModelLibrary object
+                mc = ModelLibrary("asn_sample.json")
                 step = OutlierDetectionStep()
                 step.process(mc)
 

@@ -1,3 +1,3 @@
-from .container import ModelContainer
+from .library import ModelLibrary
 
-__all__ = ["ModelContainer"]
+__all__ = ["ModelLibrary"]

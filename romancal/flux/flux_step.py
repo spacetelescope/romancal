@@ -5,7 +5,7 @@ import logging
 import astropy.units as u
 from roman_datamodels import datamodels
 
-from ..datamodels import ModelContainer
+from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
 
 log = logging.getLogger(__name__)
@@ -23,16 +23,16 @@ class FluxStep(RomanStep):
 
     Parameters
     -----------
-    input : str, `roman_datamodels.datamodels.DataModel`, or `~romancal.datamodels.container.ModelContainer`
+    input : str, `roman_datamodels.datamodels.DataModel`, or `~romancal.datamodels.library.ModelLibrary`
         If a string is provided, it should correspond to either a single ASDF filename
         or an association filename. Alternatively, a single DataModel instance can be
         provided instead of an ASDF filename. Multiple files can be processed via
         either an association file or wrapped by a
-        `~romancal.datamodels.container.ModelContainer`.
+        `~romancal.datamodels.library.ModelLibrary`.
 
     Returns
     -------
-    output_models : `roman_datamodels.datamodels.DataModel`, or `~romancal.datamodels.container.ModelContainer`
+    output_models : `roman_datamodels.datamodels.DataModel`, or `~romancal.datamodels.library.ModelLibrary`
         The models with flux applied.
 
 
@@ -48,33 +48,38 @@ class FluxStep(RomanStep):
 
     def process(self, input):
         if isinstance(input, datamodels.DataModel):
-            input_models = ModelContainer([input])
+            input_models = ModelLibrary([input])
             single_model = True
         elif isinstance(input, str):
             # either a single asdf filename or an association filename
             try:
                 # association filename
-                input_models = ModelContainer(input)
+                input_models = ModelLibrary(input)
                 single_model = False
             except Exception:
                 # single ASDF filename
-                input_models = ModelContainer([input])
+                input_models = ModelLibrary([datamodels.open(input)])
                 single_model = True
-        elif isinstance(input, ModelContainer):
+        elif isinstance(input, ModelLibrary):
             input_models = input
             single_model = False
         else:
             raise TypeError(
-                "Input must be an ASN filename, a ModelContainer, "
+                "Input must be an ASN filename, a ModelLibrary, "
                 "a single ASDF filename, or a single Roman DataModel."
             )
 
-        for model in input_models:
-            apply_flux_correction(model)
-            model.meta.cal_step.flux = "COMPLETE"
+        with input_models:
+            for index, model in enumerate(input_models):
+                apply_flux_correction(model)
+                model.meta.cal_step.flux = "COMPLETE"
+                input_models.shelve(model, index)
 
         if single_model:
-            return input_models[0]
+            with input_models:
+                model = input_models.borrow(0)
+                input_models.shelve(model, 0, modify=False)
+            return model
         return input_models
 
 

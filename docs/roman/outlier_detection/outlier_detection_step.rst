@@ -11,7 +11,7 @@ and described in :ref:`outlier-detection-imaging`.
 .. note::
     Whether the data are being provided in an `association file`_ or as a list of ASDF filenames,
     they must always be wrapped with a
-    :py:class:`~romancal.datamodels.container.ModelContainer`, which will handle and
+    :py:class:`~romancal.datamodels.library.ModelLibrary`, which will handle and
     read in the input properly.
 
 .. _association file: https://jwst-pipeline.readthedocs.io/en/latest/jwst/associations/asn_from_list.html
