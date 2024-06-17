@@ -7,9 +7,9 @@ from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from numpy.testing import assert_allclose
 from photutils.segmentation import SegmentationImage
+from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.maker_utils import mk_level2_image, mk_level3_mosaic
-from roman_datamodels import datamodels as rdm
 
 from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
