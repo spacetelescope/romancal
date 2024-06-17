@@ -1,6 +1,6 @@
 import asdf
 from roman_datamodels import open as datamodels_open
-from stpipe.library import AbstractModelLibrary
+from stpipe.library import AbstractModelLibrary, NoGroupID
 
 from romancal.associations import AssociationNotValidError, load_asn
 
@@ -38,10 +38,12 @@ class ModelLibrary(AbstractModelLibrary):
         extension (if it exists) or a group_id calculated from the
         FITS headers.
         """
-        asdf_yaml = asdf.util.load_yaml(filename)
-        if group_id := asdf_yaml["roman"]["meta"].get("group_id"):
+        meta = asdf.util.load_yaml(filename)["roman"]["meta"]
+        if group_id := meta.get("group_id"):
             return group_id
-        return _mapping_to_group_id(asdf_yaml["roman"]["meta"]["observation"])
+        if "observation" in meta:
+            return _mapping_to_group_id(meta["observation"])
+        raise NoGroupID(f"{filename} missing group_id")
 
     def _model_to_group_id(self, model):
         """
@@ -49,7 +51,9 @@ class ModelLibrary(AbstractModelLibrary):
         """
         if (group_id := getattr(model.meta, "group_id", None)) is not None:
             return group_id
-        return _mapping_to_group_id(model.meta.observation)
+        if hasattr(model.meta, "observation"):
+            return _mapping_to_group_id(model.meta.observation)
+        raise NoGroupID(f"{model} missing group_id")
 
     def _assign_member_to_model(self, model, member):
         # roman_datamodels doesn't allow assignment of meta.group_id
