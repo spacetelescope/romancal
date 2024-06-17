@@ -94,11 +94,11 @@ def image_model():
     (
         (3, 10, 7, True),
         (3, 50, 5, False),
-        # (10, 10, 7, False),
-        # (20, 10, 5, False),
-        # (25, 10, 3, False),
-        # (35, 10, 1, False),
-        # (50, 10, 0, False),
+        (10, 10, 7, False),
+        (20, 10, 5, False),
+        (25, 10, 3, False),
+        (35, 10, 1, False),
+        (50, 10, 0, False),
     ),
 )
 def test_l2_source_catalog(
@@ -179,12 +179,12 @@ def test_l2_source_catalog(
     "snr_threshold, npixels, nsources, save_results",
     (
         (3, 10, 7, True),
-        # (3, 50, 5, False),
-        # (10, 10, 7, False),
-        # (20, 10, 5, False),
-        # (25, 10, 3, False),
-        # (35, 10, 1, False),
-        # (50, 10, 0, False),
+        (3, 50, 5, False),
+        (10, 10, 7, False),
+        (20, 10, 5, False),
+        (25, 10, 3, False),
+        (35, 10, 1, False),
+        (50, 10, 0, False),
     ),
 )
 def test_l3_source_catalog(
