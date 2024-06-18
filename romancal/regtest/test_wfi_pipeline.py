@@ -36,7 +36,6 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     output = "r0000101001001001001_01101_0001_WFI01_cal.asdf"
     rtdata.output = output
     args = [
-        "--disable-crds-steppars",
         "roman_elp",
         rtdata.input,
     ]
@@ -284,7 +283,6 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
     output = "r0000201001001001001_01101_0001_WFI01_cal.asdf"
     rtdata.output = output
     args = [
-        "--disable-crds-steppars",
         "roman_elp",
         rtdata.input,
     ]
@@ -494,7 +492,6 @@ def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
     output = "r0000101001001001001_01101_0001_WFI01_ALL_SATURATED_cal.asdf"
     rtdata.output = output
     args = [
-        "--disable-crds-steppars",
         "roman_elp",
         rtdata.input,
     ]
