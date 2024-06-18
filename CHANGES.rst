@@ -9,6 +9,8 @@ Documentation
 general
 -------
 
+- Update okify script to use GA directory structure [#]
+  
 - pin numpy to <2 [#1275]
 
 - refactor exposure level pipeline to use asn's and ModelContainer [#1271]
