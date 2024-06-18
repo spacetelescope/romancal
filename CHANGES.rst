@@ -9,8 +9,6 @@ Documentation
 general
 -------
 
-- pin numpy to <2 [#1275]
-
 - refactor exposure level pipeline to use asn's and ModelContainer [#1271]
 
 - Add catalog source step to the mosaic pipeline [#1266]
