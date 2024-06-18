@@ -5,10 +5,13 @@ Roman Calibration Pipeline base class
 import importlib.metadata
 import logging
 import time
+from pathlib import Path
 
 import roman_datamodels as rdm
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from stpipe import Pipeline, Step, crds_client
+
+from romancal.datamodels.container import ModelContainer
 
 from ..lib.suffix import remove_suffix
 
@@ -37,9 +40,21 @@ class RomanStep(Step):
         """
         Provide access to this package's datamodels.open function
         so that the stpipe infrastructure knows how to instantiate
-        models.
+        models and containers.
         """
-        return rdm.open(init, **kwargs)
+        if isinstance(init, str):
+            init = Path(init)
+        if isinstance(init, Path):
+            ext = init.suffix.lower()
+            if ext == ".asdf":
+                return rdm.open(init, **kwargs)
+            if ext in (".json", ".yaml"):
+                return ModelContainer(init, **kwargs)
+        if isinstance(init, rdm.DataModel):
+            return rdm.open(init, **kwargs)
+        if isinstance(init, ModelContainer):
+            return ModelContainer(init)
+        raise TypeError(f"Invalid input: {init}")
 
     def finalize_result(self, model, reference_files_used):
         """
