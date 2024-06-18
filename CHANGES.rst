@@ -9,7 +9,7 @@ Documentation
 general
 -------
 
-- Update okify script to use GA directory structure [#]
+- Update okify script to use GA directory structure [#1282]
   
 - pin numpy to <2 [#1275]
 
