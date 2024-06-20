@@ -358,6 +358,62 @@ def compute_fiducial(wcslist, bounding_box=None):
     return fiducial
 
 
+def create_footprint(wcs, shape=None, center=True):
+    """Calculate sky footprint
+
+    Parameters
+    ----------
+    wcs : `gwcs.WCS`
+        The WCS information to get the footprint from
+
+    shape : n-tuple or None
+       Shape to use if wcs has no defined shape.
+
+    center : bool
+        If True use the center of the pixel, otherwise use the corner.
+
+    Returns
+    -------
+    footprint : `numpy.ndarray`
+        The footprint.
+    """
+    bbox = wcs.bounding_box
+
+    if bbox is None:
+        bbox = wcs_bbox_from_shape(shape)
+
+    # footprint is an array of shape (2, 4) - i.e. 4 values for RA and 4 values for
+    # Dec - as we are interested only in the footprint on the sky
+    footprint = wcs.footprint(bbox, center=center, axis_type="spatial").T
+    # take only imaging footprint
+    footprint = footprint[:2, :]
+
+    # Make sure RA values are all positive
+    negative_ind = footprint[0] < 0
+    if negative_ind.any():
+        footprint[0][negative_ind] = 360 + footprint[0][negative_ind]
+
+    footprint = footprint.T
+    return footprint
+
+
+def create_s_region(footprint):
+    """Create the properly formatted string to fill the S_REGION FITS keyword
+
+    Parameters
+    ----------
+    footprint : `numpy.ndarray`
+        The footprint to be represented.
+
+    Returns
+    -------
+    s_region : str
+        The formatted string that can be directly assigned to the FITS S_REGION keyword.
+    """
+    s_region = "POLYGON ICRS " + " ".join([str(x) for x in footprint.ravel()]) + " "
+    return s_region
+
+
 def add_s_region(model):
     """
     Calculate the detector's footprint using ``WCS.footprint`` and save it in the
@@ -372,29 +428,11 @@ def add_s_region(model):
     -------
     A formatted string representing the detector's footprint
     """
-
-    bbox = model.meta.wcs.bounding_box
-
-    if bbox is None:
-        bbox = wcs_bbox_from_shape(model.data.shape)
-
-    # footprint is an array of shape (2, 4) - i.e. 4 values for RA and 4 values for
-    # Dec - as we are interested only in the footprint on the sky
-    footprint = model.meta.wcs.footprint(bbox, center=True, axis_type="spatial").T
-    # take only imaging footprint
-    footprint = footprint[:2, :]
-
-    # Make sure RA values are all positive
-    negative_ind = footprint[0] < 0
-    if negative_ind.any():
-        footprint[0][negative_ind] = 360 + footprint[0][negative_ind]
-
-    footprint = footprint.T
-    update_s_region_keyword(model, footprint)
+    update_s_region_keyword(model, create_footprint(model.meta.wcs, shape=model.shape))
 
 
 def update_s_region_keyword(model, footprint):
-    s_region = "POLYGON ICRS " + " ".join([str(x) for x in footprint.ravel()]) + " "
+    s_region = create_s_region(footprint)
     log.info(f"S_REGION VALUES: {s_region}")
     if "nan" in s_region:
         # do not update s_region if there are NaNs.
@@ -402,3 +440,22 @@ def update_s_region_keyword(model, footprint):
     else:
         model.meta.wcsinfo.s_region = s_region
         log.info(f"Update S_REGION to {model.meta.wcsinfo.s_region}")
+
+
+def list_1d_to_2d(l, n):
+    """Convert 1-dimensional list to 2-dimensional
+
+    Parameters
+    ----------
+    l : list
+        The list to convert.
+
+    n : int
+       The length of the x dimension, or the length of the inner lists.
+
+    Returns
+    -------
+    l2d : list of lists
+        The 2D form
+    """
+    return [l[i : i + n] for i in range(0, len(l), n)]

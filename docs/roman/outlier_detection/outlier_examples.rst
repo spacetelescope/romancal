@@ -64,4 +64,4 @@ the outlier detection step.
 
         .. code-block:: shell
 
-                strun --disable-crds-steppar  --suffix='cal'  romancal.step.OutlierDetectionStep asn_sample.json
+                strun --suffix='cal'  romancal.step.OutlierDetectionStep asn_sample.json

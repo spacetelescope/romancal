@@ -1,13 +1,77 @@
-0.14.1 (unreleased)
-==================
+0.15.2 (unreleased)
+===================
+
+Documentation
+-------------
+
+- Update RTD to include mosaic data (i2d) description [#1262]
+
+general
+-------
+
+- pin numpy to <2 [#1275]
+
+- refactor exposure level pipeline to use asn's and ModelContainer [#1271]
+
+- Add catalog source step to the mosaic pipeline [#1266]
+
+- Rename highlevelpipeline to mosaic pipeline [#1249]
+
+source_catalog
+--------------
+- Add PSF photometry capability. [#1243]
+
+dq_init
+-------
+-  Refactor DQInitStep to use the RampModel method of creating ramps. [#1258]
+
+outlier_detection
+-----------------
+
+- Set ``single=True`` to use ``many_to_many`` when creating median image. [#1260]
+
+stpipe
+------
+
+- Add ``ModelContainer`` support to ``Step._datamodels_open`` to allow
+  loading "pars-*" files from CRDS. [#1270]
+
+
+0.15.1 (2024-05-15)
+===================
+
+- updated `rad` and `roman_datamodels` to `0.20.0`
+
+0.15.0 (2024-05-08)
+===================
+
+skymatch
+--------
+- Update step to always return a ``ModelContainer``. [#1208]
+
+- Fix bug that prevented ``meta.background.subtracted`` from being set with the proper datatype. [#1233]
+
+patch_match
+-----------
+
+- Code to determine which patches overlap a given image. [#1161]
+- Plotting utility to show image spatial relationship to matched patches and
+  candidate patches. [#1204]
 
 tweakreg
 --------
 
 - Allow single open Roman datamodels to be used as input to be consistent with expected behavior in ELP. [#1089]
 
+- Update tweakreg regression tests to test astrometric
+  performance. Use "clip_accum" for better robustness.  [#1185]
+
 general
 -------
+
+- Initial resample to a skycell in the hlp [#1214]
+
+- Add preview files to HLP tests [#1199]
 
 - Allow ``ModelContainer`` to work properly with context manager. [#1147]
 
@@ -40,6 +104,17 @@ flux
 
 - Set flux step status for each input. [#1160]
 
+stpipe
+------
+
+- Update ``meta.calibration_software_version`` for results of ``Step`` runs to
+  record the version of romancal used to produce the result. [#1194]
+
+- Update ``stpipe.core.finalize_results`` to record the CRDS information
+  only if a step uses reference files. [#1201]
+
+- Populate logs for L3 files in addition to L2 files [#1207]
+
 resample
 --------
 
@@ -48,6 +123,20 @@ resample
 - Allow user to provide DQ flags to use/exclude when creating resampling mask. [#1166]
 
 - Updated Level 3 ``cal_step`` attribute creation. [#1165]
+
+- Fix bug that prevented properly update of the resampled output weight and context arrays. [#1181]
+
+- Update Level 3 output ``basic`` attribute. [#1188]
+
+- Populate the Level 3 wcsinfo [#1182]
+
+- Make rotation matrix 2d for schema validation [#1205]
+
+- Include logs of individual L2 products [#1207]
+
+- Resample members should use actual file names from association file [#1209]
+
+- Populate the l3 product individual_image_meta block [#1216]
 
 outlier_detection
 -----------------
@@ -68,6 +157,15 @@ flux
 
 - Create FluxStep to apply the flux correction to Level 2 data. [#1120]
 
+source_detection
+----------------
+
+- Make PSF fitting the default. [#1185]
+
+source_catalog
+--------------
+
+- Added Source Catalog Step. [#1102]
 
 0.14.0 (2024-02-12)
 ===================

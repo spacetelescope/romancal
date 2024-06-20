@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -7,32 +6,6 @@ from astropy.units import Quantity
 
 from romancal.datamodels import ModelContainer
 from romancal.outlier_detection import OutlierDetectionStep, outlier_detection
-
-
-@pytest.fixture()
-def clean_up_after_test():
-    """
-    Clean up working directory after test.
-    """
-
-    def _clean_up_working_directory(pattern="*.asdf"):
-        """
-        Clean up the working directory by removing files matching the specified pattern.
-        Parameters
-        ----------
-        pattern : str, optional
-            The pattern of the file pattern to match (default is "*.asdf")
-
-        Returns
-        -------
-        None
-
-        """
-        for x in (Path(os.getcwd())).glob(pattern):
-            if x.exists():
-                x.unlink()
-
-    return _clean_up_working_directory
 
 
 @pytest.mark.parametrize(
@@ -106,7 +79,7 @@ def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
     img_1 = base_image()
     img_1.meta.filename = "img_1.asdf"
     img_2 = base_image()
-    img_1.meta.filename = "img_2.asdf"
+    img_2.meta.filename = "img_2.asdf"
 
     mc = ModelContainer([img_1, img_2])
 
@@ -167,9 +140,7 @@ def test_outlier_init_default_parameters(pars, base_image):
     assert step.resample_suffix == f"_outlier_{pars['resample_suffix']}.asdf"
 
 
-def test_outlier_do_detection_write_files_to_custom_location(
-    tmp_path, base_image, clean_up_after_test
-):
+def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_image):
     """
     Test that OutlierDetection can create files on disk in a custom location.
     """
@@ -219,33 +190,36 @@ def test_outlier_do_detection_write_files_to_custom_location(
 
     assert all(x.exists() for x in outlier_files_path)
 
-    clean_up_after_test("*.asdf")
 
-
-def test_outlier_do_detection_find_outliers(tmp_path, base_image, clean_up_after_test):
+def test_find_outliers(tmp_path, base_image):
     """
     Test that OutlierDetection can find outliers.
     """
-    img_1 = base_image()
-    img_1.meta.filename = "img_1.asdf"
-    img_2 = base_image()
-    img_2.meta.filename = "img_2.asdf"
+    cr_value = Quantity(100, "DN / s")
+    source_value = Quantity(10, "DN / s")
+    err_value = Quantity(10, "DN / s")  # snr=1
+
+    imgs = []
+    for i in range(3):
+        img = base_image()
+        img.data[42, 72] = source_value
+        img.err[:] = err_value
+        img.meta.filename = f"img{i}_suffix.asdf"
+        img.meta.observation.exposure = i
+        imgs.append(img)
 
     # add outliers
+    img_0_input_coords = np.array(
+        [[5, 25, 45, 65, 85], [45, 25, 85, 65, 5]], dtype=np.int64
+    )
     img_1_input_coords = np.array(
-        [(5, 45), (25, 25), (45, 85), (65, 65), (85, 5)], dtype=[("x", int), ("y", int)]
-    )
-    img_2_input_coords = np.array(
-        [(15, 25), (35, 5), (75, 65), (95, 45), (99, 5)], dtype=[("x", int), ("y", int)]
-    )
-    img_1.data[img_1_input_coords["x"], img_1_input_coords["y"]] = Quantity(
-        100000, "DN / s"
-    )
-    img_2.data[img_2_input_coords["x"], img_2_input_coords["y"]] = Quantity(
-        100000, "DN / s"
+        [[15, 35, 75, 95, 99], [25, 5, 65, 45, 5]], dtype=np.int64
     )
 
-    input_models = ModelContainer([img_1, img_2])
+    imgs[0].data[img_0_input_coords[0], img_0_input_coords[1]] = cr_value
+    imgs[1].data[img_1_input_coords[0], img_1_input_coords[1]] = cr_value
+
+    input_models = ModelContainer(imgs)
 
     outlier_step = OutlierDetectionStep()
     # set output dir for all files created by the step
@@ -253,59 +227,23 @@ def test_outlier_do_detection_find_outliers(tmp_path, base_image, clean_up_after
     # make sure files are written out to disk
     outlier_step.in_memory = False
 
-    pars = {
-        "weight_type": "exptime",
-        "pixfrac": 1.0,
-        "kernel": "square",
-        "fillval": "INDEF",
-        "nlow": 0,
-        "nhigh": 0,
-        "maskpt": 0.7,
-        "grow": 1,
-        "snr": "4.0 3.0",
-        "scale": "0.5 0.4",
-        "backg": 0.0,
-        "kernel_size": "7 7",
-        "save_intermediate_results": False,
-        "resample_data": False,
-        "good_bits": 0,
-        "allowed_memory": None,
-        "in_memory": outlier_step.in_memory,
-        "make_output_path": outlier_step.make_output_path,
-        "resample_suffix": "i2d",
-    }
+    result = outlier_step(input_models)
 
-    detection_step = outlier_detection.OutlierDetection
-    step = detection_step(input_models, **pars)
-
-    step.do_detection()
-
-    # get flagged outliers coordinates from DQ array
-    img_1_outlier_output_coords = np.where(step.input_models[0].dq > 0)
-
-    # reformat output and input coordinates and sort by x coordinate
-    outliers_output_coords = np.array(
-        list(zip(*img_1_outlier_output_coords)), dtype=[("x", int), ("y", int)]
-    )
-    outliers_input_coords = np.concatenate((img_1_input_coords, img_2_input_coords))
-
-    outliers_output_coords.sort(axis=0)
-    outliers_input_coords.sort(axis=0)
-
-    # assert all(outliers_input_coords == outliers_output_coords) doesn't work with python 3.9
-    assert all(o == i for i, o in zip(outliers_input_coords, outliers_output_coords))
-
-    clean_up_after_test("*.asdf")
+    expected_crs = [img_0_input_coords, img_1_input_coords, None]
+    for cr_coords, flagged_img in zip(expected_crs, result):
+        if cr_coords is None:
+            assert not np.any(flagged_img.dq > 0)
+        else:
+            flagged_coords = np.where(flagged_img.dq > 0)
+            np.testing.assert_equal(cr_coords, flagged_coords)
 
 
-def test_outlier_do_detection_do_not_find_outliers_in_identical_images(
-    tmp_path, base_image, clean_up_after_test, caplog
-):
+def test_identical_images(tmp_path, base_image, caplog):
     """
     Test that OutlierDetection does not flag any outliers in the DQ array if images are identical.
     """
     img_1 = base_image()
-    img_1.meta.filename = "img_1.asdf"
+    img_1.meta.filename = "img1_suffix.asdf"
     # add outliers
     img_1_input_coords = np.array(
         [(5, 45), (25, 25), (45, 85), (65, 65), (85, 5)], dtype=[("x", int), ("y", int)]
@@ -315,9 +253,9 @@ def test_outlier_do_detection_do_not_find_outliers_in_identical_images(
     )
 
     img_2 = img_1.copy()
-    img_2.meta.filename = "img_2.asdf"
+    img_2.meta.filename = "img2_suffix.asdf"
     img_3 = img_1.copy()
-    img_3.meta.filename = "img_3.asdf"
+    img_3.meta.filename = "img3_suffix.asdf"
 
     input_models = ModelContainer([img_1, img_2, img_3])
 
@@ -327,36 +265,60 @@ def test_outlier_do_detection_do_not_find_outliers_in_identical_images(
     # make sure files are written out to disk
     outlier_step.in_memory = False
 
-    pars = {
-        "weight_type": "exptime",
-        "pixfrac": 1.0,
-        "kernel": "square",
-        "fillval": "INDEF",
-        "nlow": 0,
-        "nhigh": 0,
-        "maskpt": 0.7,
-        "grow": 1,
-        "snr": "4.0 3.0",
-        "scale": "0.5 0.4",
-        "backg": 0.0,
-        "kernel_size": "7 7",
-        "save_intermediate_results": False,
-        "resample_data": False,
-        "good_bits": 0,
-        "allowed_memory": None,
-        "in_memory": outlier_step.in_memory,
-        "make_output_path": outlier_step.make_output_path,
-        "resample_suffix": "i2d",
-    }
-
-    detection_step = outlier_detection.OutlierDetection
-    step = detection_step(input_models, **pars)
-
-    step.do_detection()
+    result = outlier_step(input_models)
 
     # assert that log shows no new outliers detected
     assert "New pixels flagged as outliers: 0 (0.00%)" in {
         x.message for x in caplog.records
     }
     # assert that DQ array has nothing flagged as outliers
-    assert [np.count_nonzero(x.dq) for x in step.input_models] == [0, 0, 0]
+    assert [np.count_nonzero(x.dq) for x in result] == [0, 0, 0]
+
+
+@pytest.mark.parametrize(
+    "input_type",
+    [
+        "ModelContainer",
+        "ASNFile",
+        "DataModelList",
+        "ASDFFilenameList",
+    ],
+)
+def test_skymatch_always_returns_modelcontainer_with_updated_datamodels(
+    input_type,
+    base_image,
+    tmp_path,
+    create_mock_asn_file,
+):
+    """Test that the OutlierDetectionStep always returns a ModelContainer
+    with updated data models after processing different input types."""
+
+    os.chdir(tmp_path)
+    img_1 = base_image()
+    img_1.meta.filename = "img_1.asdf"
+    img_2 = base_image()
+    img_2.meta.filename = "img_2.asdf"
+
+    mc = ModelContainer([img_1, img_2])
+
+    mc.save(dir_path=tmp_path)
+
+    step_input_map = {
+        "ModelContainer": mc,
+        "ASNFile": create_mock_asn_file(
+            tmp_path,
+            members_mapping=[
+                {"expname": img_1.meta.filename, "exptype": "science"},
+                {"expname": img_2.meta.filename, "exptype": "science"},
+            ],
+        ),
+        "DataModelList": [img_1, img_2],
+        "ASDFFilenameList": [img_1.meta.filename, img_2.meta.filename],
+    }
+
+    step_input = step_input_map.get(input_type)
+
+    res = OutlierDetectionStep.call(step_input)
+
+    assert isinstance(res, ModelContainer)
+    assert all(x.meta.cal_step.outlier_detection == "COMPLETE" for x in res)

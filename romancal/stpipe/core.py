@@ -2,12 +2,16 @@
 Roman Calibration Pipeline base class
 """
 
+import importlib.metadata
 import logging
 import time
+from pathlib import Path
 
 import roman_datamodels as rdm
-from roman_datamodels.datamodels import ImageModel
+from roman_datamodels.datamodels import ImageModel, MosaicModel
 from stpipe import Pipeline, Step, crds_client
+
+from romancal.datamodels.container import ModelContainer
 
 from ..lib.suffix import remove_suffix
 
@@ -16,6 +20,10 @@ _LOG_FORMATTER = logging.Formatter(
     datefmt="%Y-%m-%dT%H:%M:%S",
 )
 _LOG_FORMATTER.converter = time.gmtime
+
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
 
 class RomanStep(Step):
@@ -32,9 +40,21 @@ class RomanStep(Step):
         """
         Provide access to this package's datamodels.open function
         so that the stpipe infrastructure knows how to instantiate
-        models.
+        models and containers.
         """
-        return rdm.open(init, **kwargs)
+        if isinstance(init, str):
+            init = Path(init)
+        if isinstance(init, Path):
+            ext = init.suffix.lower()
+            if ext == ".asdf":
+                return rdm.open(init, **kwargs)
+            if ext in (".json", ".yaml"):
+                return ModelContainer(init, **kwargs)
+        if isinstance(init, rdm.DataModel):
+            return rdm.open(init, **kwargs)
+        if isinstance(init, ModelContainer):
+            return ModelContainer(init)
+        raise TypeError(f"Invalid input: {init}")
 
     def finalize_result(self, model, reference_files_used):
         """
@@ -51,7 +71,9 @@ class RomanStep(Step):
             is the reftype code, the second element is the filename.
         """
 
-        if isinstance(model, ImageModel):
+        model.meta.calibration_software_version = importlib.metadata.version("romancal")
+
+        if isinstance(model, (ImageModel, MosaicModel)):
             for log_record in self.log_records:
                 model.cal_logs.append(_LOG_FORMATTER.format(log_record))
 
@@ -60,14 +82,17 @@ class RomanStep(Step):
                 if hasattr(model.meta.ref_file, ref_name):
                     setattr(model.meta.ref_file, ref_name, ref_file)
                     # getattr(model.meta.ref_file, ref_name).name = ref_file
-
-        # this will only run if 'parent' is none, which happens when an individual
-        # step is being run or if self is a RomanPipeline and not a RomanStep.
-        if self.parent is None:
             model.meta.ref_file.crds.sw_version = crds_client.get_svn_version()
             model.meta.ref_file.crds.context_used = crds_client.get_context_used(
                 model.crds_observatory
             )
+
+            # this will only run if 'parent' is none, which happens when an individual
+            # step is being run or if self is a RomanPipeline and not a RomanStep.
+            if self.parent is None:
+                log.info(
+                    f"Results used CRDS context: {model.meta.ref_file.crds.context_used}"
+                )
 
     def record_step_status(self, model, step_name, success=True):
         """

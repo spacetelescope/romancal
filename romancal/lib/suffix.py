@@ -60,11 +60,14 @@ SUFFIXES_TO_ADD = [
     "outlier_detection",
     "skymatch",
     "refpix",
+    "cat",
+    "segm",
+    "i2d",
 ]
 
 # Suffixes that are discovered but should not be considered.
 # Used by `find_suffixes` to remove undesired values it has found.
-SUFFIXES_TO_DISCARD = ["highlevelpipeline", "pipeline", "step"]
+SUFFIXES_TO_DISCARD = ["mosaicpipeline", "pipeline", "step"]
 
 
 # Calculated suffixes.
@@ -95,6 +98,7 @@ _calculated_suffixes = {
     "skymatchstep",
     "refpixstep",
     "resamplestep",
+    "sourcecatalogstep",
 }
 
 

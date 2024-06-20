@@ -81,8 +81,8 @@ Corrected ramp data                            `_rampfit`
 Optional fitting results from ramp_fit step    `_fitopt`
 Assign WCS                                     `_assignwcs`
 Flat field                                     `_flat`
-Photometric calibration			                   `_photomstep`
+Photometric calibration                        `_photomstep`
 Source Detection                               `_sourcedetection`
-Tweakreg (Allign to GAIA)                      `_tweakregstep`
+Tweakreg (Align to GAIA)                       `_tweakregstep`
 Calibrated image                               `_cal`
 =============================================  ============

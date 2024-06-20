@@ -327,10 +327,12 @@ def fit_psf_to_image_model(
     # at some point in the future.
 
     if dq is None:
-        if image_model is not None:
+        if image_model is not None and isinstance(image_model, ImageModel):
+            # L2 images have a dq array
             mask = dq_to_boolean_mask(image_model, ignore_flags=ignore_flags)
         else:
-            mask = None
+            # L3 images
+            mask = image_model.weight == 0
     else:
         mask = dq_to_boolean_mask(dq)
 
@@ -352,9 +354,9 @@ def fit_psf_to_image_model(
         # outside the detector boundaries:
         init_centroid_in_range = (
             (guesses["x_init"] > 0)
-            & (guesses["x_init"] < data.shape[0])
+            & (guesses["x_init"] < data.shape[1])
             & (guesses["y_init"] > 0)
-            & (guesses["y_init"] < data.shape[1])
+            & (guesses["y_init"] < data.shape[0])
         )
         guesses = guesses[init_centroid_in_range]
 

@@ -97,7 +97,7 @@ class SkyMatchStep(RomanStep):
                         gim, "COMPLETE" if gim.is_sky_valid else "SKIPPED"
                     )
 
-        return input if self._is_asn else img
+        return ModelContainer([x.meta["image_model"] for x in images])
 
     def _imodel2skyim(self, image_model):
         input_image_model = image_model
@@ -197,16 +197,9 @@ class SkyMatchStep(RomanStep):
             dm = image
 
         if step_status == "COMPLETE":
-            # TODO: remove this block when ``rad`` has a background schema:
-            # https://github.com/spacetelescope/rad/issues/247
-            # This is a temporary workaround to access a 'background'
-            # entry into metadata as a Python dict, which we'll later define with
-            # a schema in ``rad``:
-            dm.meta["background"]["method"] = str(self.skymethod)
-            dm.meta["background"]["level"] = sky
-            dm.meta["background"]["subtracted"] = (
-                self.subtract or dm.meta["background"]["subtracted"]
-            )
+            dm.meta.background.method = str(self.skymethod)
+            dm.meta.background.level = sky
+            dm.meta.background.subtracted = self.subtract
 
             if self.subtract:
                 dm.data[...] = sky_image.image[...]

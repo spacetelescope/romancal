@@ -84,14 +84,6 @@ cp ${basename}_changetime_assignwcs.asdf $outdir/roman-pipeline/dev/WFI/image
 cp ${basename}_changetime_flat.asdf $outdir/roman-pipeline/dev/truth/WFI/image
 
 
-echo "Creating regtest files for tweakreg tests..."
-# tweakreg regtest; call tweakreg on a cal file.  Make appropriate asn file.
-asn_from_list r0000101001001001001_01101_0001_WFI01_cal.asdf -o tweakreg_asn.json --product-name tweakreg
-strun romancal.step.TweakRegStep tweakreg_asn.json
-cp tweakreg_asn.json $outdir/roman-pipeline/dev/WFI/image/
-cp r0000101001001001001_01101_0001_WFI01_tweakregstep.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-
-
 # need to make a special ALL_SATURATED file for the all saturated test.
 echo "Creating regtest files for all saturated tests..."
 basename="r0000101001001001001_01101_0001_WFI01"
@@ -151,15 +143,51 @@ model = AssignWcsStep.call(model)
 model.to_asdf(f'${basename}_cal_repoint.asdf')"
     [[ ${basename} = r00002* ]] && dirname="grism" || dirname="image"
     cp ${basename}_cal_repoint.asdf $outdir/roman-pipeline/dev/truth/WFI/$dirname/
-    echo $dirname
 done
+
+# Test tweakreg with repointed file, only shifted by 1"
+for basename in r0000101001001001001_01101_0001_WFI01
+do
+    python -c "
+import asdf
+import roman_datamodels as rdm
+from roman_datamodels import stnode
+from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
+model = rdm.open('${basename}_cal.asdf', lazy_load=False)
+model.meta.filename = stnode.Filename(f'${basename}_shift_cal.asdf')
+delta = [1 / 3600., 1 / 3600.]
+wcsinfo = model.meta.wcsinfo
+wcsinfo.ra_ref += delta[0]
+wcsinfo.dec_ref += delta[1]
+model = AssignWcsStep.call(model)
+model.to_asdf(f'${basename}_shift_cal.asdf')"
+    strun romancal.step.TweakRegStep ${basename}_shift_cal.asdf
+    cp ${basename}_shift_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
+    cp ${basename}_shift_tweakregstep.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+done
+
 
 strun roman_elp r0000101001001001001_01101_0004_WFI01_uncal.asdf
 strun roman_elp r0000201001001001001_01101_0004_WFI01_uncal.asdf
 cp r0000101001001001001_01101_0004_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp r0000201001001001001_01101_0004_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/grism/
 
-asn_from_list r0000101001001001001_01101_0001_WFI01_cal.asdf r0000101001001001001_01101_0002_WFI01_cal.asdf r0000101001001001001_01101_0003_WFI01_cal.asdf -o L3_regtest_asn.json --product-name r0099101001001001001_F158_visit_0.900.0.50_178199.5_-0.5.
-strun --disable-crds-steppars roman_hlp L3_regtest_asn.json
+l3name="r0099101001001001001_F158_visit"
+asn_from_list r0000101001001001001_01101_0001_WFI01_cal.asdf r0000101001001001001_01101_0002_WFI01_cal.asdf r0000101001001001001_01101_0003_WFI01_cal.asdf -o L3_regtest_asn.json --product-name $l3name
+strun roman_mos L3_regtest_asn.json
 cp L3_regtest_asn.json $outdir/roman-pipeline/dev/WFI/image/
-cp r0099101001001001001_F158_visit_0.900.0.50_178199.5_-0.5_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/WFI/image/
+cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
+# L3 catalog
+strun romancal.step.SourceCatalogStep ${l3name}_i2d.asdf
+cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
+# L2 catalog
+strun romancal.step.SourceCatalogStep r0000101001001001001_01101_0001_WFI01_cal.asdf
+cp r0000101001001001001_01101_0001_WFI01_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
+l3name="r0099101001001001001_F158_visit_r274dp63x31y81"
+asn_from_list --product-name=$l3name r0000101001001001001_01101_0001_WFI01_cal.asdf r0000101001001001001_01101_0002_WFI01_cal.asdf r0000101001001001001_01101_0003_WFI01_cal.asdf -o L3_m1_asn.json
+strun roman_mos L3_m1_asn.json
+cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/

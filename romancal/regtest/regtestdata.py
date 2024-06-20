@@ -614,6 +614,11 @@ class TableOperator(NDArrayTypeOperator):
                 level.t2.meta,
                 ignore_nan_inequality=self.equal_nan,
                 math_epsilon=self.atol,
+                exclude_paths=[
+                    "root['date']",
+                    "root['version']",
+                ],
+                # creation date sometimes stored here
             )
             if meta_difference:
                 difference["metas_differ"] = meta_difference

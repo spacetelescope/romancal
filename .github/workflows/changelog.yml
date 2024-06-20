@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check change log entry
-      uses: scientific-python/action-check-changelogfile@6087eddce1d684b0132be651a4dad97699513113  # 0.2
+      uses: scientific-python/action-check-changelogfile@1fc669db9618167166d5a16c10282044f51805c0  # 0.3
       env:
         CHANGELOG_FILENAME: CHANGES.rst
         CHECK_MILESTONE: false

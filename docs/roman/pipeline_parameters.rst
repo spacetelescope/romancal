@@ -9,7 +9,7 @@ pipeline or step, use the ``-h`` option on ``strun``. Some examples are:
    $ strun roman_elp -h
    $ strun romancal.dq_init.DQInitStep -h
 
-   $strun roman_hlp -h
+   $strun roman_mos -h
    $strun romancal.skymatch.SkyMatchStep -h
 
 To set a parameter, simply specify it on the command line. For example, to have

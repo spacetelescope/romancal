@@ -50,7 +50,7 @@ pixel in the resampled data array. Context image uses 32 bit integers to encode
 this information and hence it can keep track of 32 input images at most.
 
 For any given pixel, the first bit corresponds to the first input image,
-the second bit corrsponds to the second input image, and so on.
+the second bit corresponds to the second input image, and so on.
 If the number of input images is larger than 32, then it is necessary to
 have multiple context images ("planes") to hold information about all input
 images with the first plane encoding which of the first 32 images

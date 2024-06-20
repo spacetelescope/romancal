@@ -1,3 +1,4 @@
+import os
 from itertools import product
 
 import astropy.units as u
@@ -332,16 +333,16 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     result = step.run([im1, im2, im3])
     result = ModelContainer(result)
 
-    assert result[0].meta["background"]["subtracted"] == subtract
-    assert result[0].meta["background"]["level"] is not None
+    assert result[0].meta.background.subtracted == subtract
+    assert result[0].meta.background.level is not None
 
     # 2nd run.
     step.subtract = False
     result2 = step.run(result)
     result2 = ModelContainer(result2)
 
-    assert result2[0].meta["background"]["subtracted"] == subtract
-    assert result2[0].meta["background"]["level"] is not None
+    assert result2[0].meta.background.subtracted == step.subtract
+    assert result2[0].meta.background.level is not None
 
     # compute expected levels
     if skymethod in ["local", "global+match"]:
@@ -359,7 +360,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     for im, lev, rlev, slev in zip(result2, levels, ref_levels, sub_levels):
         # check that meta was set correctly:
         assert im.meta.background.method == skymethod
-        assert im.meta.background.subtracted == subtract
+        assert im.meta.background.subtracted == step.subtract
 
         # test computed/measured sky values:
         if not np.isclose(im.meta.background.level.value, 0, atol=1e-6):
@@ -370,3 +371,58 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
             assert abs(np.mean(im.data[dq_mask]).value - slev) < 0.01
         else:
             assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
+
+
+@pytest.mark.parametrize(
+    "input_type",
+    [
+        "ModelContainer",
+        "ASNFile",
+        "DataModelList",
+        "ASDFFilenameList",
+    ],
+)
+def test_skymatch_always_returns_modelcontainer_with_updated_datamodels(
+    input_type,
+    mk_sky_match_image_models,
+    tmp_path,
+    create_mock_asn_file,
+):
+    """Test that the SkyMatchStep always returns a ModelContainer
+    with updated data models after processing different input types."""
+
+    os.chdir(tmp_path)
+    [im1a, im1b, im2a, im2b, im3], dq_mask = mk_sky_match_image_models
+
+    im1a.meta.filename = "im1a.asdf"
+    im1b.meta.filename = "im1b.asdf"
+    im2a.meta.filename = "im2a.asdf"
+    im2b.meta.filename = "im2b.asdf"
+    im3.meta.filename = "im3.asdf"
+
+    mc = ModelContainer([im1a, im1b, im2a, im2b, im3])
+    mc.save(dir_path=tmp_path)
+
+    step_input_map = {
+        "ModelContainer": mc,
+        "ASNFile": create_mock_asn_file(
+            tmp_path,
+            members_mapping=[
+                {"expname": im1a.meta.filename, "exptype": "science"},
+                {"expname": im1b.meta.filename, "exptype": "science"},
+                {"expname": im2a.meta.filename, "exptype": "science"},
+                {"expname": im2b.meta.filename, "exptype": "science"},
+                {"expname": im3.meta.filename, "exptype": "science"},
+            ],
+        ),
+        "DataModelList": [im1a, im1b],
+        "ASDFFilenameList": [im1a.meta.filename, im1b.meta.filename],
+    }
+
+    step_input = step_input_map.get(input_type)
+
+    res = SkyMatchStep.call(step_input)
+
+    assert isinstance(res, ModelContainer)
+    assert all(x.meta.cal_step.skymatch == "COMPLETE" for x in res)
+    assert all(hasattr(x.meta, "background") for x in res)

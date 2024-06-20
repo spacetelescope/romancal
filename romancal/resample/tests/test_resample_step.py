@@ -351,3 +351,25 @@ def test_set_good_bits_in_resample_meta(base_image, good_bits):
     res = step.call(img, good_bits=good_bits)
 
     assert res.meta.resample.good_bits == good_bits
+
+
+@pytest.mark.parametrize("weight_type", ["ivm", "exptime", None])
+def test_build_driz_weight_different_weight_type(base_image, weight_type):
+    rng = np.random.default_rng()
+    img1 = base_image()
+    # update attributes that will be used in building the weight array
+    img1.meta.exposure.exposure_time = 10
+    img1.var_rnoise = Quantity(rng.normal(1, 0.1, size=img1.shape), unit="DN2 / s2")
+    # build the drizzle weight array
+    result = resample_utils.build_driz_weight(
+        img1, weight_type=weight_type, good_bits="~DO_NOT_USE+NON_SCIENCE"
+    )
+
+    expected_results = {
+        "ivm": img1.var_rnoise.value**-1,
+        "exptime": np.ones(img1.shape, dtype=img1.data.dtype)
+        * img1.meta.exposure.exposure_time,
+        None: np.ones(img1.shape, dtype=img1.data.dtype),
+    }
+
+    np.testing.assert_array_almost_equal(expected_results.get(weight_type), result)

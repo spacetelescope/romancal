@@ -43,7 +43,7 @@ jobconfig.publish_env_on_success_only = true
 jobconfig.publish_env_filter = "spacetelescope/main"
 
 // Define python version for conda
-python_version = "3.9"
+python_version = "3.11"
 
 // pip related setup
 def pip_index = "https://bytesalad.stsci.edu/artifactory/api/pypi/datb-pypi-virtual/simple"
@@ -52,7 +52,7 @@ def pip_install_args = "--index-url ${pip_index} --progress-bar=off"
 // Define environment variables needed for the regression tests
 env_vars = [
     "TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory",
-    "CRDS_CONTEXT=roman_0056.pmap",
+    "CRDS_CONTEXT=roman_0058.pmap",
     "CRDS_SERVER_URL=https://roman-serverless",
     'CRDS_PATH=/grp/crds/roman/test/',
     'WEBBPSF_PATH=/grp/jwst/ote/webbpsf-data',

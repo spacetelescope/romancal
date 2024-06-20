@@ -21,7 +21,7 @@ because they are used as CRDS selectors
 ===============  =================================  =============
 Attribute         Fully qualified path               Instruments
 ===============  =================================  =============
-detector          model.meta.intstrument.detector    WFI
+detector          model.meta.instrument.detector     WFI
 ===============  =================================  =============
 
 Reference File Format
