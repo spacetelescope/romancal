@@ -43,6 +43,7 @@ class SourceCatalogStep(RomanStep):
         ci2_star_threshold = float(default=1.8)  # CI 2 star threshold
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)      # fit source PSFs for accurate astrometry
+        return_updated_model = boolean(default=False)   # should the updated model be returned?
     """
 
     def process(self, input_model):
@@ -94,20 +95,20 @@ class SourceCatalogStep(RomanStep):
 
             if segment_img is None:  # no sources found
                 source_catalog_model.source_catalog = Table()
+            else:
+                ci_star_thresholds = (self.ci1_star_threshold, self.ci2_star_threshold)
+                catobj = RomanSourceCatalog(
+                    model,
+                    segment_img,
+                    convolved_data,
+                    aperture_params,
+                    ci_star_thresholds,
+                    self.kernel_fwhm,
+                    self.fit_psf,
+                )
 
-            ci_star_thresholds = (self.ci1_star_threshold, self.ci2_star_threshold)
-            catobj = RomanSourceCatalog(
-                model,
-                segment_img,
-                convolved_data,
-                aperture_params,
-                ci_star_thresholds,
-                self.kernel_fwhm,
-                self.fit_psf,
-            )
-
-            # put the resulting catalog in the model
-            source_catalog_model.source_catalog = catobj.catalog
+                # put the resulting catalog in the model
+                source_catalog_model.source_catalog = catobj.catalog
 
             # add back background to data so input model is unchanged
             # (in case of interactive use)
@@ -119,29 +120,46 @@ class SourceCatalogStep(RomanStep):
                 basepath=model.meta.filename, suffix="cat"
             )
 
-            # update datamodel to point to the source catalog file destination
-            model.meta["source_detection"] = maker_utils.mk_source_detection(
-                **{"tweakreg_catalog_name": output_catalog_name}
-            )
             if isinstance(model, ImageModel):
-                model.meta.cal_step.source_detection = "COMPLETE"
+                update_metadata(model, output_catalog_name)
 
             output_model = model
 
-            # always save source catalog to disk
-            self.save_model(source_catalog_model, suffix="cat", force=True)
+            # always save segmentation image + catalog
+            self.save_base_results(segment_img, source_catalog_model)
 
             if self.save_results:
-                # save the segmentation map
-                segmentation_model = maker_utils.mk_datamodel(
-                    datamodels.MosaicSegmentationMapModel
-                )
-                segmentation_model.data = segment_img.data.astype(np.uint32)
-                self.save_model(segmentation_model, suffix="segm")
                 # save updated datamodel
                 self.save_model(output_model, suffix="source_catalog")
 
-        # prevent saving results again
-        self.save_results = False
+            # return the updated model or the source catalog object
+            if self.return_updated_model:
+                # setting save_results = False prevents step from
+                # overwriting source catalog file with a datamodel
+                self.save_results = False
+                # return DataModel
+                result = output_model
+            else:
+                # return SourceCatalogModel
+                result = source_catalog_model
 
-        return output_model
+        return result
+
+    def save_base_results(self, segment_img, source_catalog_model):
+        # save the segmentation map and
+        segmentation_model = maker_utils.mk_datamodel(
+            datamodels.MosaicSegmentationMapModel
+        )
+        if segment_img is not None:
+            segmentation_model.data = segment_img.data.astype(np.uint32)
+            self.save_model(segmentation_model, suffix="segm", force=True)
+        # save the source catalog
+        self.save_model(source_catalog_model, suffix="cat", force=True)
+
+
+def update_metadata(model, output_catalog_name):
+    # update datamodel to point to the source catalog file destination
+    model.meta["source_detection"] = maker_utils.mk_source_detection(
+        **{"tweakreg_catalog_name": output_catalog_name}
+    )
+    model.meta.cal_step.source_detection = "COMPLETE"

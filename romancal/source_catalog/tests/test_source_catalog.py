@@ -7,13 +7,20 @@ from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from numpy.testing import assert_allclose
 from photutils.segmentation import SegmentationImage
-from roman_datamodels import datamodels as rdm
-from roman_datamodels.datamodels import ImageModel, MosaicModel
+from roman_datamodels.datamodels import (
+    ImageModel,
+    MosaicModel,
+    SourceCatalogModel,
+    MosaicSourceCatalogModel,
+    MosaicSegmentationMapModel,
+)
 from roman_datamodels.maker_utils import mk_level2_image, mk_level3_mosaic
+from roman_datamodels import datamodels as rdm
 
 from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
+from pathlib import Path
 
 
 def make_test_image():
@@ -114,10 +121,8 @@ def test_l2_source_catalog(
         npixels=npixels,
         save_results=save_results,
     )
-    cat_dm = rdm.open(
-        f"{tmp_path}/{result.meta.source_detection.tweakreg_catalog_name}"
-    )
-    cat = cat_dm.source_catalog
+
+    cat = result.source_catalog
 
     assert isinstance(cat, Table)
 
@@ -201,10 +206,8 @@ def test_l3_source_catalog(
         npixels=npixels,
         save_results=save_results,
     )
-    cat_dm = rdm.open(
-        f"{tmp_path}/{result.meta.source_detection.tweakreg_catalog_name}"
-    )
-    cat = cat_dm.source_catalog
+
+    cat = result.source_catalog
 
     assert isinstance(cat, Table)
 
@@ -276,10 +279,8 @@ def test_background(mosaic_model, tmp_path):
         npixels=25,
         fit_psf=False,
     )
-    cat_dm = rdm.open(
-        f"{tmp_path}/{result.meta.source_detection.tweakreg_catalog_name}"
-    )
-    cat = cat_dm.source_catalog
+
+    cat = result.source_catalog
 
     assert isinstance(cat, Table)
 
@@ -392,10 +393,8 @@ def test_do_psf_photometry(tmp_path, image_model):
         npixels=10,
         save_results=False,
     )
-    cat_dm = rdm.open(
-        f"{tmp_path}/{result.meta.source_detection.tweakreg_catalog_name}"
-    )
-    cat = cat_dm.source_catalog
+
+    cat = result.source_catalog
 
     assert isinstance(cat, Table)
 
@@ -431,10 +430,8 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
         save_results=False,
         fit_psf=fit_psf,
     )
-    cat_dm = rdm.open(
-        f"{tmp_path}/{result.meta.source_detection.tweakreg_catalog_name}"
-    )
-    cat = cat_dm.source_catalog
+
+    cat = result.source_catalog
 
     assert isinstance(cat, Table)
 
@@ -448,4 +445,208 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
 
     assert (fit_psf and psf_colnames_present) or (
         not fit_psf and psf_colnames_not_present
+    )
+
+
+@pytest.mark.webbpsf
+@pytest.mark.parametrize(
+    "snr_threshold, npixels, nsources, save_results, return_updated_model, expected_result, expected_outputs",
+    (
+        (
+            3,
+            10,
+            7,
+            True,
+            True,
+            ImageModel,
+            {
+                "cat": SourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+                "source_catalog": ImageModel,
+            },
+        ),
+        (
+            3,
+            50,
+            5,
+            True,
+            False,
+            SourceCatalogModel,
+            {
+                "cat": SourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+                "source_catalog": ImageModel,
+            },
+        ),
+        (
+            10,
+            10,
+            7,
+            False,
+            True,
+            ImageModel,
+            {
+                "cat": SourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+            },
+        ),
+        (
+            20,
+            10,
+            5,
+            False,
+            False,
+            SourceCatalogModel,
+            {
+                "cat": SourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+            },
+        ),
+    ),
+)
+def test_l2_source_catalog_keywords(
+    image_model,
+    snr_threshold,
+    npixels,
+    nsources,
+    save_results,
+    return_updated_model,
+    expected_result,
+    expected_outputs,
+    tmp_path,
+):
+    """
+    Test that the proper object is returned in the call to SourceCatalogStep
+    and that the desired output files are saved to the disk with the correct type.
+    """
+    os.chdir(tmp_path)
+    step = SourceCatalogStep()
+    result = step.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=snr_threshold,
+        npixels=npixels,
+        save_results=save_results,
+        return_updated_model=return_updated_model,
+    )
+
+    # assert that we returned the correct object
+    assert isinstance(result, expected_result)
+
+    # assert that the desired output files were saved to disk
+    assert all(
+        Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf").exists()
+        for suffix in expected_outputs.keys()
+    )
+
+    # assert that the desired output files were saved with the correct datamodel type
+    assert all(
+        isinstance(
+            rdm.open(Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf")),
+            expected_outputs.get(suffix),
+        )
+        for suffix in expected_outputs.keys()
+    )
+
+
+@pytest.mark.webbpsf
+@pytest.mark.parametrize(
+    "snr_threshold, npixels, nsources, save_results, return_updated_model, expected_result, expected_outputs",
+    (
+        (
+            3,
+            10,
+            7,
+            True,
+            True,
+            MosaicModel,
+            {
+                "cat": MosaicSourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+                "source_catalog": MosaicModel,
+            },
+        ),
+        (
+            3,
+            50,
+            5,
+            True,
+            False,
+            MosaicSourceCatalogModel,
+            {
+                "cat": MosaicSourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+                "source_catalog": MosaicModel,
+            },
+        ),
+        (
+            10,
+            10,
+            7,
+            False,
+            True,
+            MosaicModel,
+            {
+                "cat": MosaicSourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+            },
+        ),
+        (
+            20,
+            10,
+            5,
+            False,
+            False,
+            MosaicSourceCatalogModel,
+            {
+                "cat": MosaicSourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+            },
+        ),
+    ),
+)
+def test_l3_source_catalog_keywords(
+    mosaic_model,
+    snr_threshold,
+    npixels,
+    nsources,
+    save_results,
+    return_updated_model,
+    expected_result,
+    expected_outputs,
+    tmp_path,
+):
+    """
+    Test that the proper object is returned in the call to SourceCatalogStep
+    and that the desired output files are saved to the disk with the correct type.
+    """
+    os.chdir(tmp_path)
+    step = SourceCatalogStep()
+    result = step.call(
+        mosaic_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=snr_threshold,
+        npixels=npixels,
+        save_results=save_results,
+        return_updated_model=return_updated_model,
+    )
+
+    # assert that we returned the correct object
+    assert isinstance(result, expected_result)
+
+    # assert that the desired output files were saved to disk
+    assert all(
+        Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf").exists()
+        for suffix in expected_outputs.keys()
+    )
+
+    # assert that the desired output files were saved with the correct datamodel type
+    assert all(
+        isinstance(
+            rdm.open(Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf")),
+            expected_outputs.get(suffix),
+        )
+        for suffix in expected_outputs.keys()
     )
