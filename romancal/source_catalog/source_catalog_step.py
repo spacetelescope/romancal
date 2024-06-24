@@ -128,15 +128,12 @@ class SourceCatalogStep(RomanStep):
             # always save segmentation image + catalog
             self.save_base_results(segment_img, source_catalog_model)
 
-            if self.save_results:
-                # save updated datamodel
-                self.save_model(output_model, suffix="source_catalog")
-
             # return the updated model or the source catalog object
             if self.return_updated_model:
-                # setting save_results = False prevents step from
-                # overwriting source catalog file with a datamodel
-                self.save_results = False
+                # setting the suffix to something else to prevent
+                # step from  overwriting source catalog file with
+                # a datamodel
+                self.suffix = "source_catalog"
                 # return DataModel
                 result = output_model
             else:
