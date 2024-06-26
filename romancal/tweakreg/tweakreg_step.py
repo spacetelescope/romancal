@@ -196,11 +196,7 @@ class TweakRegStep(RomanStep):
             elif is_tweakreg_catalog_name_present:
                 # read catalog from a file on disk
                 catalog_name = source_detection.tweakreg_catalog_name
-                if catalog_name.endswith("asdf"):
-                    with rdm.open(catalog_name) as source_catalog_model:
-                        catalog = source_catalog_model.source_catalog
-                else:
-                    catalog = Table.read(catalog_name, format=self.catalog_format)
+                catalog = self.read_catalog(catalog_name)
             else:
                 raise AttributeError(
                     "Attribute 'meta.source_detection.tweakreg_catalog' is missing. "
@@ -552,6 +548,14 @@ class TweakRegStep(RomanStep):
                 image_model.meta.wcs = imcat.wcs
 
         return images
+
+    def read_catalog(self, catalog_name):
+        if catalog_name.endswith("asdf"):
+            with rdm.open(catalog_name) as source_catalog_model:
+                catalog = source_catalog_model.source_catalog
+        else:
+            catalog = Table.read(catalog_name, format=self.catalog_format)
+        return catalog
 
     def _is_wcs_correction_small(self, wcs, twcs):
         """Check that the newly tweaked wcs hasn't gone off the rails"""

@@ -43,7 +43,8 @@ class SourceCatalogStep(RomanStep):
         ci2_star_threshold = float(default=1.8)  # CI 2 star threshold
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)      # fit source PSFs for accurate astrometry
-        return_updated_model = boolean(default=False)   # should the updated model be returned?
+        return_updated_model = boolean(default=False)   # should the image model be updated and returned 
+        # instead of the source catalog?
     """
 
     def process(self, input_model):
@@ -133,7 +134,7 @@ class SourceCatalogStep(RomanStep):
                 # setting the suffix to something else to prevent
                 # step from  overwriting source catalog file with
                 # a datamodel
-                self.suffix = "source_catalog"
+                self.suffix = "sourcecatalog"
                 # return DataModel
                 result = output_model
             else:
@@ -165,6 +166,6 @@ class SourceCatalogStep(RomanStep):
 def update_metadata(model, output_catalog_name):
     # update datamodel to point to the source catalog file destination
     model.meta["source_detection"] = maker_utils.mk_source_detection(
-        **{"tweakreg_catalog_name": output_catalog_name}
+        tweakreg_catalog_name=output_catalog_name
     )
     model.meta.cal_step.source_detection = "COMPLETE"
