@@ -43,7 +43,7 @@ class SourceCatalogStep(RomanStep):
         ci2_star_threshold = float(default=1.8)  # CI 2 star threshold
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)      # fit source PSFs for accurate astrometry
-        return_updated_model = boolean(default=False)   # should the image model be updated and returned 
+        return_updated_model = boolean(default=False)   # should the image model be updated and returned
         # instead of the source catalog?
     """
 
