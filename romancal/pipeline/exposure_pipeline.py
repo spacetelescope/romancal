@@ -21,7 +21,7 @@ from romancal.photom import PhotomStep
 from romancal.ramp_fitting import ramp_fit_step
 from romancal.refpix import RefPixStep
 from romancal.saturation import SaturationStep
-from romancal.source_detection import SourceDetectionStep
+from romancal.source_catalog import SourceCatalogStep
 from romancal.tweakreg import TweakRegStep
 
 from ..stpipe import RomanPipeline
@@ -60,7 +60,7 @@ class ExposurePipeline(RomanPipeline):
         "assign_wcs": AssignWcsStep,
         "flatfield": FlatFieldStep,
         "photom": PhotomStep,
-        "source_detection": SourceDetectionStep,
+        "source_catalog": SourceCatalogStep,
         "tweakreg": TweakRegStep,
     }
 
@@ -127,7 +127,7 @@ class ExposurePipeline(RomanPipeline):
                     "assign_wcs",
                     "flat_field",
                     "photom",
-                    "source_detection",
+                    "source_catalog",
                     "dark",
                     "refpix",
                     "linearity",
@@ -151,7 +151,7 @@ class ExposurePipeline(RomanPipeline):
             if result.meta.exposure.type == "WFI_IMAGE":
                 result = self.flatfield(result)
                 result = self.photom(result)
-                result = self.source_detection(result)
+                result = self.source_catalog(result)
                 tweakreg_input.append(result)
                 log.info(
                     f"Number of models to tweakreg:   {len(tweakreg_input._models), n_members}"
@@ -209,7 +209,7 @@ class ExposurePipeline(RomanPipeline):
             "assign_wcs",
             "flat_field",
             "photom",
-            "source_detection",
+            "source_catalog",
             "tweakreg",
         ]:
             fully_saturated_model.meta.cal_step[step_str] = "SKIPPED"

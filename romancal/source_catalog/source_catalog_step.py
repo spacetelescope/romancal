@@ -144,14 +144,22 @@ class SourceCatalogStep(RomanStep):
 
     def save_base_results(self, segment_img, source_catalog_model):
         # save the segmentation map and
+        output_filename = source_catalog_model.meta.filename
         segmentation_model = maker_utils.mk_datamodel(
             datamodels.MosaicSegmentationMapModel
         )
         if segment_img is not None:
             segmentation_model.data = segment_img.data.astype(np.uint32)
-            self.save_model(segmentation_model, suffix="segm", force=True)
+            self.save_model(
+                segmentation_model,
+                output_file=output_filename,
+                suffix="segm",
+                force=True,
+            )
         # save the source catalog
-        self.save_model(source_catalog_model, suffix="cat", force=True)
+        self.save_model(
+            source_catalog_model, output_file=output_filename, suffix="cat", force=True
+        )
 
 
 def update_metadata(model, output_catalog_name):
