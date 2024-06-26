@@ -26,14 +26,8 @@ def parse_args():
     parser = ArgumentParser(description="Okify regression test results")
     parser.add_argument(
         "build_number",
-        help="Jenkins build number for Roman builds",
+        help="GitHub Actions build number for Roman builds",
         metavar="build-number",
-    )
-    parser.add_argument(
-        "--job-name",
-        help="Jenkins job name under [RT] (default: romancal)",
-        default="romancal",
-        metavar="job-name",
     )
     parser.add_argument(
         "--dry-run", action="store_true", help="pass the --dry-run flag to JFrog CLI"
@@ -52,7 +46,7 @@ def artifactory_copy(specfile, dry_run=False):
     subprocess.run(args, check=True)
 
 
-def artifactory_get_breadcrumbs(build_number, job_name, suffix):
+def artifactory_get_breadcrumbs(build_number, suffix):
     """Download specfiles or other breadcrump from Artifactory associated with
     a build number and return a list of their locations on the local file system
 
@@ -60,21 +54,20 @@ def artifactory_get_breadcrumbs(build_number, job_name, suffix):
 
     jfrog rt search roman-pipeline-results/*/*_okify.json --props='build.number=540;build.name=RT :: romancal'
     """  # noqa: E501
-    build_name = f"{job_name}"
 
     # Retreive all the okify specfiles for failed tests.
     args = list(
         ["jfrog", "rt", "dl"]
-        + [f"{ARTIFACTORY_REPO}/*RT-{build_name}-{build_number}*/*{suffix}"]
+        + [f"{ARTIFACTORY_REPO}/*_GITHUB_CI_*-{build_number}/*{suffix}"]
     )
     subprocess.run(args, check=True, capture_output=True)
 
     return sorted(glob(f"**/**/*{suffix}"))
 
 
-def artifactory_get_build_artifacts(build_number, job_name):
-    specfiles = artifactory_get_breadcrumbs(build_number, job_name, SPECFILE_SUFFIX)
-    asdffiles = artifactory_get_breadcrumbs(build_number, job_name, RTDATA_SUFFIX)
+def artifactory_get_build_artifacts(build_number):
+    specfiles = artifactory_get_breadcrumbs(build_number, SPECFILE_SUFFIX)
+    asdffiles = artifactory_get_breadcrumbs(build_number, RTDATA_SUFFIX)
 
     if len(specfiles) != len(asdffiles):
         raise RuntimeError("Different number of _okify.json and _rtdata.asdf files")
@@ -100,14 +93,13 @@ def main():
     args = parse_args()
 
     build = args.build_number
-    name = args.job_name
 
     # Create and chdir to a temporary directory to store specfiles
     with tempfile.TemporaryDirectory() as tmpdir:
         print(f"Downloading test okify artifacts to local directory {tmpdir}")
         with pushd(tmpdir):
             # Retreive all the okify specfiles for failed tests.
-            specfiles, asdffiles = artifactory_get_build_artifacts(build, name)
+            specfiles, asdffiles = artifactory_get_build_artifacts(build)
 
             number_failed_tests = len(specfiles)
 
