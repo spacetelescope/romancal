@@ -462,7 +462,7 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
             {
                 "cat": SourceCatalogModel,
                 "segm": MosaicSegmentationMapModel,
-                "source_catalog": ImageModel,
+                "sourcecatalog": ImageModel,
             },
         ),
         (
@@ -563,7 +563,7 @@ def test_l2_source_catalog_keywords(
             {
                 "cat": MosaicSourceCatalogModel,
                 "segm": MosaicSegmentationMapModel,
-                "source_catalog": MosaicModel,
+                "sourcecatalog": MosaicModel,
             },
         ),
         (
