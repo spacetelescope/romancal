@@ -20,7 +20,7 @@ dependencies = [
     "gwcs >=0.21.0",
     "jsonschema >=4.8",
     "numpy >=1.22,<2.0",
-    "photutils >=1.10.0",
+    "photutils >=1.10.0,<1.13.0",
     "pyparsing >=2.4.7",
     "requests >=2.26",
     "rad>=0.20.0",
@@ -35,7 +35,7 @@ dependencies = [
     "spherical-geometry >= 1.2.22",
     "stsci.imagestats >= 1.6.3",
     "drizzle >= 1.14.0",
-    "webbpsf == 1.2.1",
+    "webbpsf >= 1.2.1",
 ]
 dynamic = [
     "version",
