@@ -28,12 +28,12 @@ class TestSourceDetection:
         image_model = deepcopy(self.image_model)
 
         n_models = 10
-        amp_true = rng.normal(1e3, 100, n_models)
+        flux_true = rng.normal(1e3, 100, n_models)
         along_diag = np.arange(100, 950, 90) / 1000 * image_model_shape[0]
         x_true = along_diag + rng.normal(scale=0.5, size=n_models)
         y_true = along_diag + rng.normal(scale=0.5, size=n_models)
 
-        add_sources(image_model, self.psf_model, x_true, y_true, amp_true)
+        add_sources(image_model, self.psf_model, x_true, y_true, flux_true)
 
         source_detect = SourceDetectionStep()
         source_detect.scalar_threshold = 100
