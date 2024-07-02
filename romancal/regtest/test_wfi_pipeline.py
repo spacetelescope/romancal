@@ -36,7 +36,6 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
     output = "r0000101001001001001_01101_0001_WFI01_cal.asdf"
     rtdata.output = output
     args = [
-        "--steps.source_catalog.return_updated_model=True",
         "roman_elp",
         rtdata.input,
     ]

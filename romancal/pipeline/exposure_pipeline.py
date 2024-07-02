@@ -68,6 +68,9 @@ class ExposurePipeline(RomanPipeline):
     def process(self, input):
         """Process the Roman WFI data"""
 
+        # make sure source_catalog returns the updated datamodel
+        self.source_catalog.return_updated_model = True
+
         log.info("Starting Roman exposure calibration pipeline ...")
         if isinstance(input, str):
             input_filename = basename(input)
