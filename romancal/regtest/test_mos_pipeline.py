@@ -6,6 +6,7 @@ import pytest
 import roman_datamodels as rdm
 from metrics_logger.decorators import metrics_logger
 
+from romancal.associations.asn_from_list import asn_from_list
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
 from .regtestdata import compare_asdf
@@ -126,5 +127,61 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     )
     pipeline.log.info(
         "DMS86 MSG: Testing completion of resample in the Level 3 image output......."
+        + passfail(model.meta.cal_step.resample == "COMPLETE")
+    )
+
+
+@pytest.mark.bigdata
+@pytest.mark.soctests
+@metrics_logger("DMS356")
+def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
+    """Tests for level 3 mosaic requirements DMS356"""
+
+    cal_files = [
+        "WFI/image/r0000101001001001001_01101_0001_WFI01_cal.asdf",
+        "WFI/image/r0000101001001001001_01101_0002_WFI01_cal.asdf",
+        "WFI/image/r0000101001001001001_01101_0003_WFI01_cal.asdf",
+    ]
+
+    asn = asn_from_list(
+        cal_files, product_name="r0099101001001001001_r274dp63x31y81_F158_prompt_visit"
+    )
+    asn["target"] = "r274dp63x31y81"
+    asn_name = "L3_mosaic_asn.json"
+    _, serialized = asn.dump()
+    with open(asn_name, "w") as f:
+        f.write(serialized)
+
+    # asn_cmd = f"asn_from_list --product-name='r0099101001001001001_r274dp63x31y81_F158_prompt_visit'\
+    # r0000101001001001001_01101_0001_WFI01_cal.asdf \
+    # r0000101001001001001_01101_0002_WFI01_cal.asdf \
+    # r0000101001001001001_01101_0003_WFI01_cal.asdf \
+    # -o L3_m1_asn.json"
+    # os.system(asn_cmd)  # nosec
+
+    for cal_file in cal_files:
+        rtdata.get_data(cal_file)
+
+    input_asn = "L3_mosaic_asn.json"
+    rtdata.get_data(f"WFI/image/{input_asn}")
+    rtdata.input = input_asn
+
+    # Test Pipeline
+    output = "r0099101001001001001_F158_prompt_visit_r274dp63x31y81_i2d.asdf"
+    rtdata.output = output
+    args = [
+        "roman_mos",
+        rtdata.input,
+    ]
+    MosaicPipeline.from_cmdline(args)
+    rtdata.get_truth(f"truth/WFI/image/{output}")
+    pipeline = MosaicPipeline()
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
+
+    model = rdm.open(rtdata.output, lazy_load=False)
+
+    pipeline.log.info(
+        "DMS356 MSG: Testing the creation of a Level 3 mosaic image"
         + passfail(model.meta.cal_step.resample == "COMPLETE")
     )

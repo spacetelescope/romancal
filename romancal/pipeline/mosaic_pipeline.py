@@ -87,14 +87,15 @@ class MosaicPipeline(RomanPipeline):
 
             # if this is a valid skycell name load the database and get the skycell record
             if re.match(r"r\d{3}\w{2}\d{2}x\d{2}y\d{2}", skycell_name):
-                skycell_record = patch_match.PATCH_TABLE[
-                    np.where(patch_match.PATCH_TABLE["name"][:] == skycell_name)[0][0]
-                ]
+                patchtable = patch_match.PATCH_TABLE
+                log.info("Patch table size: %d", patchtable.size)
+                skycell_index = np.where(patchtable["name"][:] == skycell_name)
+                skycell_record = patchtable[skycell_index[0][0]]
                 log.info("Skycell record %s:", skycell_record)
 
                 if skycell_name in skycell_record["name"]:
                     # skycell name are in the form of r270dm90x99y99
-                    # example of product name "r0099101001001001001_F158_visit_r270dm90x99y99"
+                    # example of product name "r0099101001001001001_F158_prompt_visit_r270dm90x99y99"
                     skycell_root = re.findall("^[^%\n\r]*_", product_name)[0]
                     skycell_file_name = skycell_root + skycell_name + "_i2d.asdf"
 
