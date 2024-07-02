@@ -489,7 +489,7 @@ def test_elp_input_dm(rtdata, ignore_asdf_paths):
     dm_input = rdm.open(rtdata.input)
 
     # Test Pipeline with input datamodel 
-    output = "r0000101001001001001_01101_0001_WFI01_ALL_SATURATED_cal.asdf"
+    output = "r0000101001001001001_01101_0001_WFI01_cal.asdf"
     rtdata.output = output
     ExposurePipeline.call(dm_input)
     rtdata.get_truth(f"truth/WFI/image/{output}")
