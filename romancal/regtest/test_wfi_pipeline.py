@@ -486,16 +486,12 @@ def test_elp_input_dm(rtdata, ignore_asdf_paths):
     """Test for input roman Datamodel to exposure level pipeline"""
     input_data = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
-    rtdata.input = rdm.open(input_data)
+    dm_input = rdm.open(rtdata.input)
 
-    # Test Pipeline
+    # Test Pipeline with input datamodel 
     output = "r0000101001001001001_01101_0001_WFI01_ALL_SATURATED_cal.asdf"
     rtdata.output = output
-    args = [
-        "roman_elp",
-        rtdata.input,
-    ]
-    ExposurePipeline.from_cmdline(args)
+    ExposurePipeline.call(dm_input)
     rtdata.get_truth(f"truth/WFI/image/{output}")
 
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
