@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import logging
 from os.path import basename
-import pdb
 
 import numpy as np
 from roman_datamodels import datamodels as rdm
@@ -76,7 +75,6 @@ class ExposurePipeline(RomanPipeline):
             input_filename = None
 
         # determine the input type
-        pdb.set_trace()
         file_type = filetype.check(input)
         if file_type == "asn":
             asn = ModelContainer.read_asn(input)
@@ -178,7 +176,6 @@ class ExposurePipeline(RomanPipeline):
             self.setup_output(result)
 
             self.output_use_model = True
-            pdb.set_trace()
             results.append(result)
 
         # Now that all the exposures are collated, run tweakreg
