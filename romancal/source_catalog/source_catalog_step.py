@@ -129,7 +129,7 @@ class SourceCatalogStep(RomanStep):
             self.save_base_results(segment_img, source_catalog_model)
 
             # return the updated model or the source catalog object
-            if self.return_updated_model:
+            if getattr(self, "return_updated_model", False):
                 # setting the suffix to something else to prevent
                 # step from  overwriting source catalog file with
                 # a datamodel
