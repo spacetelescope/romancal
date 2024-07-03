@@ -621,6 +621,10 @@ def test_l3_source_catalog_keywords(
     """
     os.chdir(tmp_path)
     step = SourceCatalogStep()
+    # to mimic what happens in the elp set the "hidden" parameter
+    # to cause this step to return a model instead of a catalog
+    if return_updated_model:
+        step.return_updated_model = True
     result = step.call(
         mosaic_model,
         bkg_boxsize=50,
