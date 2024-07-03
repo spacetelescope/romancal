@@ -628,7 +628,6 @@ def test_l3_source_catalog_keywords(
         snr_threshold=snr_threshold,
         npixels=npixels,
         save_results=save_results,
-        return_updated_model=return_updated_model,
     )
 
     # assert that we returned the correct object
