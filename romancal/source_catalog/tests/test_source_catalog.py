@@ -519,7 +519,11 @@ def test_l2_source_catalog_keywords(
     and that the desired output files are saved to the disk with the correct type.
     """
     os.chdir(tmp_path)
-    step = SourceCatalogStep()
+    step = SourceCatalogStep
+    # to mimic what happens in the elp set the "hidden" parameter
+    # to cause this step to return a model instead of a catalog
+    step.return_updated_model = return_updated_model
+
     result = step.call(
         image_model,
         bkg_boxsize=50,
@@ -527,7 +531,6 @@ def test_l2_source_catalog_keywords(
         snr_threshold=snr_threshold,
         npixels=npixels,
         save_results=save_results,
-        return_updated_model=return_updated_model,
     )
 
     # assert that we returned the correct object
@@ -620,11 +623,11 @@ def test_l3_source_catalog_keywords(
     and that the desired output files are saved to the disk with the correct type.
     """
     os.chdir(tmp_path)
-    step = SourceCatalogStep()
+    step = SourceCatalogStep
     # to mimic what happens in the elp set the "hidden" parameter
     # to cause this step to return a model instead of a catalog
-    if return_updated_model:
-        step.return_updated_model = True
+    step.return_updated_model = return_updated_model
+
     result = step.call(
         mosaic_model,
         bkg_boxsize=50,
