@@ -489,19 +489,18 @@ def test_elp_input_dm(rtdata, ignore_asdf_paths):
     rtdata.get_data(f"WFI/image/{input_data}")
     dm_input = rdm.open(rtdata.input)
 
-    # Test Pipeline with input datamodel 
+    # Test Pipeline with input datamodel
     output = "r0000101001001001001_01101_0001_WFI01_cal.asdf"
     rtdata.output = output
-    ExposurePipeline.call(dm_input, save_results = True)
+    ExposurePipeline.call(dm_input, save_results=True)
     rtdata.get_truth(f"truth/WFI/image/{output}")
 
     # check that the file exists ( don't duplicate checking contents done above)
     pipeline = ExposurePipeline()
     pipeline.log.info(
-        "Check that the output file exists   "
-        + passfail(os.path.isfile(rtdata.output))
-        )
-        
+        "Check that the output file exists   " + passfail(os.path.isfile(rtdata.output))
+    )
+
     # Ensure step completion is as expected
     model = rdm.open(rtdata.output)
 

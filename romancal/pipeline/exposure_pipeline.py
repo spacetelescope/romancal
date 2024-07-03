@@ -93,14 +93,14 @@ class ExposurePipeline(RomanPipeline):
         # extract the members from the asn to run the files through the steps
         results = ModelContainer()
         tweakreg_input = ModelContainer()
-        if file_type == 'asn':
+        if file_type == "asn":
             for product in asn["products"]:
                 n_members = len(product["members"])
                 for member in product["members"]:
                     expos_file.append(member["expname"])
 
-            #results = ModelContainer()
-            #tweakreg_input = ModelContainer()
+            # results = ModelContainer()
+            # tweakreg_input = ModelContainer()
             for in_file in expos_file:
                 if isinstance(in_file, str):
                     input_filename = basename(in_file)
@@ -112,7 +112,7 @@ class ExposurePipeline(RomanPipeline):
 
             # check to see if in_file is defined, if not assume we have a datamodel
             if in_file is not None:
-                # Open the file 
+                # Open the file
                 input = rdm.open(in_file)
                 log.info(f"Processing a WFI exposure {in_file}")
 

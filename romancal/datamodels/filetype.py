@@ -2,7 +2,9 @@ import io
 import os
 from pathlib import Path
 from typing import Union
+
 import roman_datamodels as rdm
+
 from romancal.datamodels import ModelContainer
 
 
@@ -45,10 +47,10 @@ def check(init: Union[os.PathLike, Path, io.FileIO]) -> str:
         return ext
     elif isinstance(init, rdm.DataModel):
         return "DataModel"
-    
+
     elif isinstance(init, ModelContainer):
         return "ModelContainer"
-        
+
     elif hasattr(init, "read") and hasattr(init, "seek"):
         magic = init.read(5)
         init.seek(0, 0)

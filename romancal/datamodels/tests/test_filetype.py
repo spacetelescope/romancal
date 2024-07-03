@@ -1,11 +1,9 @@
 from pathlib import Path
 
 import pytest
-
 import roman_datamodels as rdm
-from romancal.datamodels import filetype
-from romancal.datamodels import ModelContainer
 
+from romancal.datamodels import ModelContainer, filetype
 
 DATA_DIRECTORY = Path(__file__).parent / "data"
 
@@ -25,7 +23,7 @@ def test_filetype():
     file_9 = filetype.check(str(DATA_DIRECTORY / "pluto.asdf"))
     model_container = ModelContainer()
     file_10 = filetype.check(model_container)
-    image_node = rdm.maker_utils.mk_level2_image(shape=(20,20))
+    image_node = rdm.maker_utils.mk_level2_image(shape=(20, 20))
     im1 = rdm.datamodels.ImageModel(image_node)
     file_11 = filetype.check(im1)
 
@@ -40,7 +38,6 @@ def test_filetype():
     assert file_9 == "asdf"
     assert file_10 == "ModelContainer"
     assert file_11 == "DataModel"
-    
 
     with pytest.raises(ValueError):
         filetype.check(DATA_DIRECTORY / "empty.txt")
