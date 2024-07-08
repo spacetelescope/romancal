@@ -672,10 +672,12 @@ def test_l2_source_catalog_return_updated_model_attribute(
     image_model,
     return_updated_model,
     expected_result,
+    tmp_path,
 ):
     """
     Test that the proper object is returned in the call to SourceCatalogStep.
     """
+    os.chdir(tmp_path)
 
     step = SourceCatalogStep(
         bkg_boxsize=50,
