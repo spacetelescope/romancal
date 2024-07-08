@@ -158,8 +158,8 @@ def generate_tan_wcs(skycell_record):
     shiftx = float(skycell_record["x0_projection"])
     shifty = float(skycell_record["y0_projection"])
     bounding_box = (
-        (-0.5, -0.5 + skycell_record['nx']),
-        (-0.5, -0.5 + skycell_record['ny']),
+        (-0.5, -0.5 + skycell_record["nx"]),
+        (-0.5, -0.5 + skycell_record["ny"]),
     )
 
     # components of the model
