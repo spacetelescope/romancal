@@ -520,8 +520,7 @@ def test_l2_source_catalog_keywords(
     """
     os.chdir(tmp_path)
     step = SourceCatalogStep
-    # to mimic what happens in the elp set the "hidden" parameter
-    # to cause this step to return a model instead of a catalog
+    # this step attribute controls whether to return a datamodel or source catalog
     step.return_updated_model = return_updated_model
 
     result = step.call(
@@ -624,8 +623,7 @@ def test_l3_source_catalog_keywords(
     """
     os.chdir(tmp_path)
     step = SourceCatalogStep
-    # to mimic what happens in the elp set the "hidden" parameter
-    # to cause this step to return a model instead of a catalog
+    # this step attribute controls whether to return a datamodel or source catalog
     step.return_updated_model = return_updated_model
 
     result = step.call(
@@ -654,3 +652,44 @@ def test_l3_source_catalog_keywords(
         )
         for suffix in expected_outputs.keys()
     )
+
+
+@pytest.mark.webbpsf
+@pytest.mark.parametrize(
+    "return_updated_model, expected_result",
+    (
+        (
+            True,
+            ImageModel,
+        ),
+        (
+            False,
+            SourceCatalogModel,
+        ),
+    ),
+)
+def test_l2_source_catalog_return_updated_model_attribute(
+    image_model,
+    return_updated_model,
+    expected_result,
+):
+    """
+    Test that the proper object is returned in the call to SourceCatalogStep.
+    """
+
+    step = SourceCatalogStep(
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+    )
+
+    if return_updated_model:
+        # mimic what happens in the ELP -- i.e. set the "hidden" parameter
+        # to cause this step to return a model instead of a catalog
+        step.return_updated_model = return_updated_model
+
+    result = step.run(image_model)
+
+    # assert that we returned the correct object
+    assert isinstance(result, expected_result)
