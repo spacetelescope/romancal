@@ -148,19 +148,19 @@ class MosaicPipeline(RomanPipeline):
         return result
 
 
-def generate_tan_wcs(skycell_record, shiftx=0, shifty=0):
+def generate_tan_wcs(skycell_record):
     # extract the wcs info from the record for generate_tan_wcs
     # we need the scale, ra, dec, bounding_box
 
     scale = float(skycell_record["pixel_scale"])
-    ra_center = float(skycell_record["ra_center"])
-    dec_center = float(skycell_record["dec_center"])
+    ra_center = float(skycell_record["ra_projection_center"])
+    dec_center = float(skycell_record["dec_projection_center"])
+    shiftx = float(skycell_record["x0_projection"])
+    shifty = float(skycell_record["y0_projection"])
     bounding_box = (
-        (-0.5, float(skycell_record["x_center"]) + 0.5),
-        (-0.5, float(skycell_record["y_center"]) + 0.5),
+        (-0.5, -0.5 + skycell_record['nx']),
+        (-0.5, -0.5 + skycell_record['ny']),
     )
-    shiftx = bounding_box[0][1]
-    shifty = bounding_box[1][1]
 
     # components of the model
     # shift = models.Shift(shiftx) & models.Shift(shifty)
