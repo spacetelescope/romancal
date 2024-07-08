@@ -60,12 +60,6 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
     )
     assert "v2v3corr" in tweakreg_out.meta.wcs.available_frames
 
-    diff = compare_asdf(rtdata.output, rtdata.truth, atol=1e-3, **ignore_asdf_paths)
-    step.log.info(
-        f"DMS280 MSG: Was the proper TweakReg data produced? : {diff.identical}"
-    )
-    assert diff.identical, diff.report()
-
     wcstweak = tweakreg_out.meta.wcs
     orig_model_asdf = asdf.open(orig_uncal)
     wcstrue = orig_model_asdf["romanisim"]["wcs"]  # simulated, true WCS
@@ -86,3 +80,9 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
     )
 
     assert rms < 1.3 / np.sqrt(2) * 100
+
+    diff = compare_asdf(rtdata.output, rtdata.truth, atol=1e-3, **ignore_asdf_paths)
+    step.log.info(
+        f"DMS280 MSG: Was the proper TweakReg data produced? : {diff.identical}"
+    )
+    assert diff.identical, diff.report()
