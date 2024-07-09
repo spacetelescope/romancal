@@ -9,6 +9,8 @@ Documentation
 general
 -------
 
+- Update the exposure pipeline to accept a roman datamodel as input [#1296]
+
 - Update okify script to use GA directory structure [#1282]
 
 - pin numpy to <2 [#1275]
