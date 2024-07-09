@@ -42,9 +42,15 @@ stpipe
 - Add ``ModelContainer`` support to ``Step._datamodels_open`` to allow
   loading "pars-*" files from CRDS. [#1270]
 
+
 tweakreg
 --------
 - Integration with ``SourceCatalogStep``: allow usage of results from ``SourceCatalogStep``. [#1276]
+
+mosaic_pipeline
+---------------
+
+- Fix construction of skycell WCS.  [#1297]
 
 
 0.15.1 (2024-05-15)
