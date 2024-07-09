@@ -74,12 +74,11 @@ class ExposurePipeline(RomanPipeline):
         else:
             input_filename = None
 
-        # open the input file
+        # determine the input type
         file_type = filetype.check(input)
         if file_type == "asn":
             asn = ModelContainer.read_asn(input)
-
-        if file_type == "asdf":
+        elif file_type == "asdf":
             try:
                 # set the product name based on the input filename
                 asn = asn_from_list([input], product_name=input_filename.split(".")[0])
@@ -92,23 +91,30 @@ class ExposurePipeline(RomanPipeline):
         expos_file = []
         n_members = 0
         # extract the members from the asn to run the files through the steps
-        for product in asn["products"]:
-            n_members = len(product["members"])
-            for member in product["members"]:
-                expos_file.append(member["expname"])
-
         results = ModelContainer()
         tweakreg_input = ModelContainer()
-        for in_file in expos_file:
-            if isinstance(in_file, str):
-                input_filename = basename(in_file)
-                log.info(f"Input file name: {input_filename}")
-            else:
-                input_filename = None
+        if file_type == "asn":
+            for product in asn["products"]:
+                n_members = len(product["members"])
+                for member in product["members"]:
+                    expos_file.append(member["expname"])
 
-            # Open the file
-            input = rdm.open(in_file)
-            log.info(f"Processing a WFI exposure {in_file}")
+            # results = ModelContainer()
+            # tweakreg_input = ModelContainer()
+            for in_file in expos_file:
+                if isinstance(in_file, str):
+                    input_filename = basename(in_file)
+                    log.info(f"Input file name: {input_filename}")
+                else:
+                    input_filename = None
+        elif file_type == "DataModel":
+            in_file = input
+
+            # check to see if in_file is defined, if not assume we have a datamodel
+            if in_file is not None:
+                # Open the file
+                input = rdm.open(in_file)
+                log.info(f"Processing a WFI exposure {in_file}")
 
             self.dq_init.suffix = "dq_init"
             result = self.dq_init(input)

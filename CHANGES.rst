@@ -9,6 +9,8 @@ Documentation
 general
 -------
 
+- Update the exposure pipeline to accept a roman datamodel as input [#1296]
+
 - Update okify script to use GA directory structure [#1282]
 
 - pin numpy to <2 [#1275]
@@ -37,6 +39,12 @@ stpipe
 
 - Add ``ModelContainer`` support to ``Step._datamodels_open`` to allow
   loading "pars-*" files from CRDS. [#1270]
+
+mosaic_pipeline
+---------------
+
+- Fix construction of skycell WCS.  [#1297]
+
 
 
 0.15.1 (2024-05-15)
