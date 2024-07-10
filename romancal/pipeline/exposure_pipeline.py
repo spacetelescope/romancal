@@ -21,7 +21,7 @@ from romancal.photom import PhotomStep
 from romancal.ramp_fitting import ramp_fit_step
 from romancal.refpix import RefPixStep
 from romancal.saturation import SaturationStep
-from romancal.source_detection import SourceDetectionStep
+from romancal.source_catalog import SourceCatalogStep
 from romancal.tweakreg import TweakRegStep
 
 from ..stpipe import RomanPipeline
@@ -60,7 +60,7 @@ class ExposurePipeline(RomanPipeline):
         "assign_wcs": AssignWcsStep,
         "flatfield": FlatFieldStep,
         "photom": PhotomStep,
-        "source_detection": SourceDetectionStep,
+        "source_catalog": SourceCatalogStep,
         "tweakreg": TweakRegStep,
     }
 
@@ -172,7 +172,7 @@ class ExposurePipeline(RomanPipeline):
             log.info("Tweakreg step is being SKIPPED")
             result.meta.cal_step.flat_field = "SKIPPED"
             result.meta.cal_step.photom = "SKIPPED"
-            result.meta.cal_step.source_detection = "SKIPPED"
+            result.meta.cal_step.source_catalog = "SKIPPED"
             result.meta.cal_step.tweakreg = "SKIPPED"
             self.suffix = "cal"
 
@@ -218,7 +218,7 @@ class ExposurePipeline(RomanPipeline):
             "assign_wcs",
             "flat_field",
             "photom",
-            "source_detection",
+            "source_catalog",
             "tweakreg",
         ]:
             fully_saturated_model.meta.cal_step[step_str] = "SKIPPED"
