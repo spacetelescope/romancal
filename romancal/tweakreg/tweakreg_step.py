@@ -160,6 +160,7 @@ class TweakRegStep(RomanStep):
                     self.log.info("Skipping TweakReg for spectral exposure.")
                     # Uncomment below once rad & input data have the cal_step tweakreg
                     # image_model.meta.cal_step.tweakreg = "SKIPPED"
+                    images.shelve(image_model)
                     return image_model
 
                 if hasattr(image_model.meta, "source_detection"):
