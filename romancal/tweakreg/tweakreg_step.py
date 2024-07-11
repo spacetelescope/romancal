@@ -132,6 +132,8 @@ class TweakRegStep(RomanStep):
                             "tweakreg_catalog_name": catdict[filename],
                         }
                         images.shelve(model, i)
+                    else:
+                        images.shelve(model, i, modify=False)
 
         if len(self.catalog_path) == 0:
             self.catalog_path = os.getcwd()
