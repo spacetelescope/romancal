@@ -423,7 +423,7 @@ def test_skymatch_always_returns_modellibrary_with_updated_datamodels(
     im3.meta.filename = "im3.asdf"
 
     library = ModelLibrary([im1a, im1b, im2a, im2b, im3])
-    library.save(tmp_path)
+    library._save(tmp_path)
 
     step_input_map = {
         "ModelLibrary": library,

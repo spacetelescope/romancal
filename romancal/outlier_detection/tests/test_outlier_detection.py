@@ -323,7 +323,7 @@ def test_outlier_detection_always_returns_modelcontainer_with_updated_datamodels
     img_2.meta.filename = "img_2.asdf"
 
     library = ModelLibrary([img_1, img_2])
-    library.save(tmp_path)
+    library._save(tmp_path)
 
     # FIXME: this could be replaced with an easier to understand if/else block
     step_input_map = {
