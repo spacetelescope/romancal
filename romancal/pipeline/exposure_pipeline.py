@@ -161,7 +161,7 @@ class ExposurePipeline(RomanPipeline):
             result = self.source_detection(result)
             tweakreg_input.append(result)
             log.info(
-                f"Number of models to tweakreg:   {len(tweakreg_input._models), n_members}"
+                f"Number of models to tweakreg:   {len(tweakreg_input), n_members}"
             )
         else:
             log.info("Flat Field step is being SKIPPED")
