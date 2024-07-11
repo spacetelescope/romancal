@@ -237,7 +237,7 @@ def test_find_outliers(tmp_path, base_image):
     imgs[0].data[img_0_input_coords[0], img_0_input_coords[1]] = cr_value
     imgs[1].data[img_1_input_coords[0], img_1_input_coords[1]] = cr_value
 
-    input_models = ModelLibrary([img_1, img_2])
+    input_models = ModelLibrary(imgs)
 
     outlier_step = OutlierDetectionStep()
     # set output dir for all files created by the step
@@ -248,36 +248,14 @@ def test_find_outliers(tmp_path, base_image):
     result = outlier_step(input_models)
 
     expected_crs = [img_0_input_coords, img_1_input_coords, None]
-    for cr_coords, flagged_img in zip(expected_crs, result):
-        if cr_coords is None:
-            assert not np.any(flagged_img.dq > 0)
-        else:
-            flagged_coords = np.where(flagged_img.dq > 0)
-            np.testing.assert_equal(cr_coords, flagged_coords)
-
-    detection_step = outlier_detection.OutlierDetection
-    step = detection_step(input_models, **pars)
-
-    step.do_detection()
-
-    # get flagged outliers coordinates from DQ array
-    with step.input_models:
-        model = step.input_models.borrow(0)
-        img_1_outlier_output_coords = np.where(model.dq > 0)
-        step.input_models.shelve(model, 0)
-
-    # reformat output and input coordinates and sort by x coordinate
-    outliers_output_coords = np.array(
-        list(zip(*img_1_outlier_output_coords)), dtype=[("x", int), ("y", int)]
-    )
-    outliers_input_coords = np.concatenate((img_1_input_coords, img_2_input_coords))
-
-    outliers_output_coords.sort(axis=0)
-    outliers_input_coords.sort(axis=0)
-
-    # assert all(outliers_input_coords == outliers_output_coords) doesn't work with python 3.9
-    assert all(o == i for i, o in zip(outliers_input_coords, outliers_output_coords))
->>>>>>> e277e5a (WIP update to outlier_detection)
+    with result:
+        for cr_coords, flagged_img in zip(expected_crs, result):
+            if cr_coords is None:
+                assert not np.any(flagged_img.dq > 0)
+            else:
+                flagged_coords = np.where(flagged_img.dq > 0)
+                np.testing.assert_equal(cr_coords, flagged_coords)
+            result.shelve(flagged_img, modify=False)
 
 
 def test_identical_images(tmp_path, base_image, caplog):
@@ -314,10 +292,10 @@ def test_identical_images(tmp_path, base_image, caplog):
         x.message for x in caplog.records
     }
     # assert that DQ array has nothing flagged as outliers
-    with step.input_models:
-        for i, model in enumerate(step.input_models):
+    with result:
+        for i, model in enumerate(result):
             assert np.count_nonzero(model.dq) == 0
-            step.input_models.shelve(model, i)
+            result.shelve(model, i)
 
 
 @pytest.mark.parametrize(
