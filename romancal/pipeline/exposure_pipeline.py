@@ -137,7 +137,7 @@ class ExposurePipeline(RomanPipeline):
                     "assign_wcs",
                     "flat_field",
                     "photom",
-                    "source_catalog",
+                    "source_detection",
                     "dark",
                     "refpix",
                     "linearity",
@@ -173,7 +173,7 @@ class ExposurePipeline(RomanPipeline):
                 log.info("Tweakreg step is being SKIPPED")
                 result.meta.cal_step.flat_field = "SKIPPED"
                 result.meta.cal_step.photom = "SKIPPED"
-                result.meta.cal_step.source_catalog = "SKIPPED"
+                result.meta.cal_step.source_detection = "SKIPPED"
                 result.meta.cal_step.tweakreg = "SKIPPED"
                 self.suffix = "cal"
 
@@ -219,7 +219,7 @@ class ExposurePipeline(RomanPipeline):
             "assign_wcs",
             "flat_field",
             "photom",
-            "source_catalog",
+            "source_detection",
             "tweakreg",
         ]:
             fully_saturated_model.meta.cal_step[step_str] = "SKIPPED"
