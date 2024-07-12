@@ -238,7 +238,6 @@ class ResampleData:
                 )
 
                 log.info(f"{len(indices)} exposures to drizzle together")
-                output_list = []
                 for index in indices:
                     img = self.input_models.borrow(index)
                     # TODO: should weight_type=None here?
