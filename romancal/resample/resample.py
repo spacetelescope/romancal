@@ -119,8 +119,6 @@ class ResampleData:
             if output_shape is not None:
                 self.output_wcs.array_shape = output_shape[::-1]
         else:
-            # FIXME: only the wcs and one reference model are needed so this
-            # could be refactored to not keep all models in memory if stcal was updated
             with self.input_models:
                 models = list(self.input_models)
                 # determine output WCS based on all inputs, including a reference WCS
@@ -159,7 +157,6 @@ class ResampleData:
             datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
         )
 
-        # FIXME: could be refactored to not keep all models in memory
         with self.input_models:
             models = list(self.input_models)
 

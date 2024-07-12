@@ -13,7 +13,6 @@ from romancal.outlier_detection import OutlierDetectionStep, outlier_detection
     [
         list(),
         "",
-        # None,  # FIXME: what other steps support this? Is it generally useful?
     ],
 )
 def test_outlier_raises_error_on_invalid_input_models(input_models, caplog):
@@ -325,7 +324,6 @@ def test_outlier_detection_always_returns_modelcontainer_with_updated_datamodels
     library = ModelLibrary([img_1, img_2])
     library._save(tmp_path)
 
-    # FIXME: this could be replaced with an easier to understand if/else block
     step_input_map = {
         "ModelLibrary": library,
         "ASNFile": create_mock_asn_file(

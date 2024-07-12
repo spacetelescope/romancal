@@ -69,7 +69,6 @@ class MosaicPipeline(RomanPipeline):
             exit(0)
             return
 
-        # FIXME: change this to a != "asn" -> log and return or combine with above
         if file_type == "asn":
             input = ModelLibrary(input, on_disk=self.on_disk)
             self.flux.suffix = "flux"

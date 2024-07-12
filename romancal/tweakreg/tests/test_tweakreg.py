@@ -868,18 +868,15 @@ def test_tweakreg_use_custom_catalogs(tmp_path, catalog_format, base_image):
         catfile=catfile,
     )
 
-    # FIXME: this test was doing: assert all(foo) == all(bar)
-    # for a non-0 string and a non-empty table these will be True
-    # so True == True
-    # assert all(img1.meta.tweakreg_catalog) == all(
-    #     table.Table.read(str(tmp_path / "ref_catalog_1"), format=catalog_format)
-    # )
-    # assert all(img2.meta.tweakreg_catalog) == all(
-    #     table.Table.read(str(tmp_path / "ref_catalog_2"), format=catalog_format)
-    # )
-    # assert all(img3.meta.tweakreg_catalog) == all(
-    #     table.Table.read(str(tmp_path / "ref_catalog_3"), format=catalog_format)
-    # )
+    assert all(img1.meta.tweakreg_catalog) == all(
+        table.Table.read(str(tmp_path / "ref_catalog_1"), format=catalog_format)
+    )
+    assert all(img2.meta.tweakreg_catalog) == all(
+        table.Table.read(str(tmp_path / "ref_catalog_2"), format=catalog_format)
+    )
+    assert all(img3.meta.tweakreg_catalog) == all(
+        table.Table.read(str(tmp_path / "ref_catalog_3"), format=catalog_format)
+    )
 
 
 @pytest.mark.parametrize(
@@ -977,7 +974,6 @@ def test_remove_tweakreg_catalog_data(
 
     trs.TweakRegStep.call([img])
 
-    # FIXME: this assumes the step modifies the input...
     assert not hasattr(img.meta.source_detection, "tweakreg_catalog")
     assert hasattr(img.meta, "tweakreg_catalog")
 
@@ -1067,7 +1063,7 @@ def test_fit_results_in_meta(tmp_path, base_image):
             res.shelve(model, i, modify=False)
 
 
-def test_tweakreg_returns_skipped_for_one_file(tmp_path, base_image):
+def test_tweakreg_returns_skipped_for_one_file(tmp_path, base_image, monkeypatch):
     """
     Test that TweakRegStep assigns meta.cal_step.tweakreg to "SKIPPED"
     when one image is provided but no alignment to a reference catalog is desired.
@@ -1076,7 +1072,7 @@ def test_tweakreg_returns_skipped_for_one_file(tmp_path, base_image):
     add_tweakreg_catalog_attribute(tmp_path, img)
 
     # disable alignment to absolute reference catalog
-    trs.ALIGN_TO_ABS_REFCAT = False
+    monkeypatch.setattr(trs, "ALIGN_TO_ABS_REFCAT", False)
     res = trs.TweakRegStep.call([img])
 
     with res:
@@ -1105,28 +1101,23 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     res = trs.TweakRegStep.call([img1, img2])
 
     assert len(res.group_names) == 2
-    # FIXME: this was not an assert and seems like a test of the container
-    # all(
-    #     (
-    #         r.meta.group_id.split("-")[1],
-    #         i.meta.observation.program.split("-")[1],
-    #     )
-    #     for r, i in zip(res, [img1, img2])
-    # )
+    with res:
+        for r, i in zip(res, [img1, img2]):
+            assert (
+                r.meta.group_id.split("-")[1]
+                == i.meta.observation.program.split("-")[1]
+            )
+            res.shelve(r, modify=False)
 
 
-# FIXME: the test says "throws an error" yet the step checks for "SKIPPED"
-# and doesn't check for an error. The input appears to be 2 images with
-# equal catalogs which belong to 2 groups. I think this should result in
-# local alignment between the 2 images (which should succeed finding a
-# 0 or near-0 wcs correction) and then skipping absolute alignment as
-# the test sets ALIGN_TO_ABS_REFCAT to False. This should succeed with
-# no errors (which it does) and causes this test to fail.
-# FIXME: the overwriting of ALIGN_TO_ABS_REFCAT here can interfere with
-# other tests as it sets and then does not reset an attribute on the step
-# class.
-@pytest.mark.skip(reason="I'm not sure what's going on with this test")
-def test_tweakreg_multiple_groups_valueerror(tmp_path, base_image):
+# FIXME: this test previously passed only because Tweakreg overwrote
+# the model.meta.group_id using the output from _common_name which incorrectly
+# ignored the setting of "program" in this test. This meant that tweakreg
+# found 2 groups for this test data (because ModelContainer.models_grouped)
+# worked as intended but tweakreg then overwrote the grouping and then
+# incorrectly skipped itself.
+@pytest.mark.skip(reason="This test previously incorrectly passed")
+def test_tweakreg_multiple_groups_valueerror(tmp_path, base_image, monkeypatch):
     """
     Test that TweakRegStep throws an error when too few input images or
     groups of images with non-empty catalogs is provided.
@@ -1139,7 +1130,7 @@ def test_tweakreg_multiple_groups_valueerror(tmp_path, base_image):
     img1.meta.observation["program"] = "-program_id1"
     img2.meta.observation["program"] = "-program_id2"
 
-    trs.ALIGN_TO_ABS_REFCAT = False
+    monkeypatch.setattr(trs, "ALIGN_TO_ABS_REFCAT", False)
     res = trs.TweakRegStep.call([img1, img2])
 
     with res:
@@ -1176,10 +1167,6 @@ def test_imodel2wcsim_valid_column_names(tmp_path, base_image, column_names):
     with images:
         for i, (m, target) in enumerate(zip(images, [img_1, img_2])):
             imcat = step._imodel2wcsim(m)
-            # TODO this should fail as the catalog columns should be renamed by
-            # _imodel2wcsim (for example xcentroid->x). I think this test was previously
-            # passing because the rename occurred on the input catalog (so the input
-            # model was modified).
             assert (
                 imcat.meta["catalog"]["x"] == target.meta.tweakreg_catalog[xname]
             ).all()
@@ -1219,7 +1206,6 @@ def test_imodel2wcsim_error_invalid_column_names(tmp_path, base_image, column_na
     with pytest.raises(ValueError):
         with images:
             for i, model in enumerate(images):
-                # TODO what raises a ValueError here?
                 images.shelve(model, i, modify=False)
                 step._imodel2wcsim(model)
 
@@ -1239,7 +1225,6 @@ def test_imodel2wcsim_error_invalid_catalog(tmp_path, base_image):
     with pytest.raises(AttributeError):
         with images:
             for i, model in enumerate(images):
-                # TODO what raises a AttributeError here?
                 images.shelve(model, i, modify=False)
                 step._imodel2wcsim(model)
 

@@ -59,7 +59,7 @@ class OutlierDetectionStep(RomanStep):
         else:
             try:
                 library = ModelLibrary(input_models)
-            except Exception:  # FIXME: this was TypeError... where was this raised?
+            except Exception:
                 self.log.warning(
                     "Skipping outlier_detection - input cannot be parsed into a ModelLibrary."
                 )
@@ -79,7 +79,6 @@ class OutlierDetectionStep(RomanStep):
         # check that all inputs are WFI_IMAGE
         if not self.skip:
             with library:
-                # TODO: a more efficient way to check this without opening all models
                 for i, model in enumerate(library):
                     if model.meta.exposure.type != "WFI_IMAGE":
                         self.skip = True

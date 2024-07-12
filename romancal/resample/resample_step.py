@@ -80,21 +80,12 @@ class ResampleStep(RomanStep):
             except Exception:
                 # single ASDF filename
                 input_models = ModelLibrary([input])
-            # FIXME: I think this can be refactored and maybe could be common code
-            # for several steps
             output = input_models.asn["products"][0]["name"]
-            # if hasattr(input_models, "asn_table") and len(input_models.asn_table):
-            #     # set output filename from ASN table
-            #     output = input_models.asn_table["products"][0]["name"]
-            # elif hasattr(input_models[0], "meta"):
-            #     # set output filename from meta.filename found in the first datamodel
-            #     output = input_models[0].meta.filename
         elif isinstance(input, ModelLibrary):
             input_models = input
             # set output filename using the common prefix of all datamodels
-            # TODO can this be set from the members?
             output = f"{os.path.commonprefix([x['expname'] for x in input_models.asn['products'][0]['members']])}.asdf"
-            if len(output) == 0:  # FIXME won't this always at least be ".asdf"?
+            if len(output) == 0:
                 # set default filename if no common prefix can be determined
                 output = "resample_output.asdf"
         else:

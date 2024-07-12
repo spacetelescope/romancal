@@ -106,7 +106,7 @@ class OutlierDetection:
             drizzled_models.shelve(example_model, 0, modify=False)
 
         # Perform median combination on set of drizzled mosaics
-        median_data = self.create_median(drizzled_models)  # TODO unit?
+        median_data = self.create_median(drizzled_models)
 
         # Perform outlier detection using statistical comparisons between
         # each original input image and its blotted version of the median image
@@ -130,7 +130,6 @@ class OutlierDetection:
 
         log.info("Computing median")
 
-        # FIXME: in_memory, get_sections?...
         data = []
 
         # Compute weight means without keeping DataModel for eacn input open
@@ -161,7 +160,6 @@ class OutlierDetection:
 
                 resampled_models.shelve(model, i, modify=False)
 
-        # FIXME: get_sections?...
         median_image = np.nanmedian(data, axis=0)
         return median_image
 
@@ -209,12 +207,21 @@ class OutlierDetection:
         """Flag DQ array for cosmic rays in input images.
 
         The science frame in each ImageModel in self.input_models is compared to
-        the corresponding blotted median image in blot_models. The result is
-        an updated DQ array in each ImageModel in input_models.
+        the a blotted median image (generated with median_data and median_wcs).
+        The result is an updated DQ array in each ImageModel in input_models.
 
         Parameters
         ----------
-        TODO ...
+        median_data : numpy.ndarray
+            Median array that will be used as the "reference" for detecting
+            outliers.
+
+        median_wcs : gwcs.WCS
+            WCS for the median data
+
+        resampled : bool
+            True if the median data was generated from resampling the input
+            images.
 
         Returns
         -------
@@ -371,16 +378,16 @@ def _absolute_subtract(array, tmp, out):
 
 def gwcs_blot(median_data, median_wcs, blot_img, interp="poly5", sinscl=1.0):
     """
-    Resample the output/resampled image to recreate an input image based on
-    the input image's world coordinate system
+    Resample the median_data to recreate an input image based on
+    the blot_img's WCS.
 
     Parameters
     ----------
-    median_data : TODO
-        TODO
+    median_data : numpy.ndarray
+        Median data used as the source data for blotting.
 
-    median_wcs : TODO
-        TODO
+    median_wcs : gwcs.WCS
+        WCS for median_data.
 
     blot_img : datamodel
         Datamodel containing header and WCS to define the 'blotted' image

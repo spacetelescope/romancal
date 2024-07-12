@@ -359,8 +359,6 @@ def test_resampledata_init_default(exposure_1):
     assert resample_data.in_memory
 
 
-# FIXME: are these expected inputs?
-# @pytest.mark.parametrize("input_models", [None, list(), [""], ModelLibrary()])
 @pytest.mark.parametrize("input_models", [list()])
 def test_resampledata_init_invalid_input(input_models):
     """Test that ResampleData will raise an exception on invalid inputs."""
@@ -392,12 +390,11 @@ def test_resampledata_do_drizzle_many_to_one_default_no_rotation_single_exposure
         output_max_value = np.max(model.meta.wcs.footprint())
         output_models.shelve(model, 0, modify=False)
 
-    with input_models:
-        # TODO across model attribute access would be useful here
-        input_wcs_list = []
-        for i, model in enumerate(input_models):
-            input_wcs_list.append(model.meta.wcs.footprint())
-            input_models.shelve(model, i, modify=False)
+    def get_footprint(model, index):
+        return model.meta.wcs.footprint()
+
+    input_wcs_list = list(input_models.map_function(get_footprint, modify=False))
+
     expected_min_value = np.min(np.stack(input_wcs_list))
     expected_max_value = np.max(np.stack(input_wcs_list))
 
@@ -428,12 +425,10 @@ def test_resampledata_do_drizzle_many_to_one_default_no_rotation_multiple_exposu
         output_max_value = np.max(model.meta.wcs.footprint())
         output_models.shelve(model, 0, modify=False)
 
-    with input_models:
-        # TODO across model attribute access would be useful here
-        input_wcs_list = []
-        for i, model in enumerate(input_models):
-            input_wcs_list.append(model.meta.wcs.footprint())
-            input_models.shelve(model, i, modify=False)
+    def get_footprint(model, index):
+        return model.meta.wcs.footprint()
+
+    input_wcs_list = list(input_models.map_function(get_footprint, modify=False))
 
     expected_min_value = np.min(np.stack(input_wcs_list))
     expected_max_value = np.max(np.stack(input_wcs_list))
@@ -462,12 +457,10 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0(exposure_1):
         output_max_value = np.max(model.meta.wcs.footprint())
         output_models.shelve(model, 0, modify=False)
 
-    with input_models:
-        # TODO across model attribute access would be useful here
-        input_wcs_list = []
-        for i, model in enumerate(input_models):
-            input_wcs_list.append(model.meta.wcs.footprint())
-            input_models.shelve(model, i, modify=False)
+    def get_footprint(model, index):
+        return model.meta.wcs.footprint()
+
+    input_wcs_list = list(input_models.map_function(get_footprint, modify=False))
 
     expected_min_value = np.min(np.stack(input_wcs_list))
     expected_max_value = np.max(np.stack(input_wcs_list))
@@ -492,20 +485,16 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0_multiple_exposur
 
     output_models = resample_data.resample_many_to_one()
 
-    # FIXME: this code is in several tests and could be put into a helper function
     with output_models:
         model = output_models.borrow(0)
         output_min_value = np.min(model.meta.wcs.footprint())
         output_max_value = np.max(model.meta.wcs.footprint())
         output_models.shelve(model, 0, modify=False)
 
-    # FIXME: this code is in several tests and could be put into a helper function
-    with input_models:
-        # TODO across model attribute access would be useful here
-        input_wcs_list = []
-        for i, model in enumerate(input_models):
-            input_wcs_list.append(model.meta.wcs.footprint())
-            input_models.shelve(model, i, modify=False)
+    def get_footprint(model, index):
+        return model.meta.wcs.footprint()
+
+    input_wcs_list = list(input_models.map_function(get_footprint, modify=False))
 
     expected_min_value = np.min(np.stack(input_wcs_list))
     expected_max_value = np.max(np.stack(input_wcs_list))
@@ -695,12 +684,10 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures):
         output_max_value = np.max(model.meta.wcs.footprint())
         output_models.shelve(model, 0, modify=False)
 
-    with input_models:
-        # TODO across model attribute access would be useful here
-        input_wcs_list = []
-        for i, model in enumerate(input_models):
-            input_wcs_list.append(model.meta.wcs.footprint())
-            input_models.shelve(model, i, modify=False)
+    def get_footprint(model, index):
+        return model.meta.wcs.footprint()
+
+    input_wcs_list = list(input_models.map_function(get_footprint, modify=False))
 
     expected_min_value = np.min(np.stack(input_wcs_list))
     expected_max_value = np.max(np.stack(input_wcs_list))
