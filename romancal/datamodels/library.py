@@ -65,9 +65,10 @@ class ModelLibrary(AbstractModelLibrary):
         if not hasattr(model.meta, "asn"):
             model.meta["asn"] = {}
 
-        for key in ("table_name", "pool_name"):
-            if attr in self.asn:
-                model.meta.asn[key] = self.asn[key]
+        if "table_name" in self.asn:
+            model.meta.asn["table_name"] = self.asn["table_name"]
+        if "asn_pool" in self.asn:
+            model.meta.asn["pool_name"] = self.asn["asn_pool"]
 
 
 def _mapping_to_group_id(mapping):
