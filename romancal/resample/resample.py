@@ -199,7 +199,6 @@ class ResampleData:
         Used for outlier detection
         """
         output_list = []
-        # for exposure in self.input_models.models_grouped:
         for group_id, indices in self.input_models.group_indices.items():
             output_model = self.blank_output
             output_model.meta["resample"] = maker_utils.mk_resample()

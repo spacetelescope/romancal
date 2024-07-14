@@ -264,11 +264,6 @@ class TweakRegStep(RomanStep):
         self.log.info("Image groups:")
 
         if len(group_indices) == 1 and not ALIGN_TO_ABS_REFCAT:
-            # self.log.info("* Images in GROUP 1:")
-            # for im in grp_img[0]:
-            #     self.log.info(f"     {im.meta.filename}")
-            # self.log.info("")
-
             # we need at least two exposures to perform image alignment
             self.log.warning("At least two exposures are required for image alignment.")
             self.log.warning("Nothing to do. Skipping 'TweakRegStep'...")
@@ -286,41 +281,7 @@ class TweakRegStep(RomanStep):
                 imcats.append(self._imodel2wcsim(m))
                 images.shelve(m, i, modify=False)
 
-        # if len(group_images) == 1 and ALIGN_TO_ABS_REFCAT:
-        #     # create a list of WCS-Catalog-Images Info and/or their Groups:
-        #     # g = grp_img[0]
-        #     # if len(g) == 0:
-        #     #     raise AssertionError("Logical error in the pipeline code.")
-        #     #group_name = _common_name(g)
-        #     # imcats = list(map(self._imodel2wcsim, g))
-        #     # self.log.info(f"* Images in GROUP '{group_name}':")
-        #     # for im in imcats:
-        #     #     im.meta["group_id"] = group_name
-        #     #     self.log.info(f"     {im.meta['name']}")
-
-        #     # self.log.info("")
-
         if len(group_indices) > 1:
-            # create a list of WCS-Catalog-Images Info and/or their Groups:
-            # imcats = []
-            # for g in grp_img:
-            #     if len(g) == 0:
-            #         raise AssertionError("Logical error in the pipeline code.")
-            #     else:
-            #         group_name = _common_name(g)
-            #         wcsimlist = list(map(self._imodel2wcsim, g))
-            #         # Remove the attached catalogs
-            #         # for model in g:
-            #         #     del model.catalog
-            #         # self.log.info(f"* Images in GROUP '{group_name}':")
-            #         # for im in wcsimlist:
-            #         #     im.meta["group_id"] = group_name
-            #         #     # im.meta["image_model"] = group_name
-            #         #     self.log.info(f"     {im.meta['name']}")
-            #         imcats.extend(wcsimlist)
-
-            # self.log.info("")
-
             # local align images:
             xyxymatch = XYXYMatch(
                 searchrad=self.searchrad,
