@@ -99,14 +99,24 @@ class OutlierDetection:
                     )
                     drizzled_models.shelve(model, i)
 
+        # Perform median combination on set of drizzled mosaics
+        median_data = self.create_median(drizzled_models)
+
         # Initialize intermediate products used in the outlier detection
         with drizzled_models:
             example_model = drizzled_models.borrow(0)
             median_wcs = copy.deepcopy(example_model.meta.wcs)
+            if pars["save_intermediate_results"]:
+                median_model = example_model.copy()
+                median_model.data = Quantity(median_data, unit=median_model.data.unit)
+                median_model.meta.filename = "drizzled_median.asdf"
+                median_model_output_path = self.make_output_path(
+                    basepath=median_model.meta.filename,
+                    suffix="median",
+                )
+                median_model.save(median_model_output_path)
+                log.info(f"Saved model in {median_model_output_path}")
             drizzled_models.shelve(example_model, 0, modify=False)
-
-        # Perform median combination on set of drizzled mosaics
-        median_data = self.create_median(drizzled_models)
 
         # Perform outlier detection using statistical comparisons between
         # each original input image and its blotted version of the median image
