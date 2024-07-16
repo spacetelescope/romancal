@@ -293,6 +293,7 @@ class TweakRegStep(RomanStep):
                     if isinstance(model, rdm.DataModel)
                     else rdm.open(os.path.basename(model))
                 )
+                del model.meta["tweakreg_catalog"]
             self.log.info(f"* Images in GROUP '{group_name}':")
             for im in imcats:
                 im.meta["group_id"] = group_name
