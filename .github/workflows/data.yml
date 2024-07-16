@@ -5,8 +5,8 @@ on:
     - cron: "42 4 * * 3"
   workflow_dispatch:
     inputs:
-      minimal:
-        description: minimal dataset
+      webbpsf_minimal:
+        description: minimal WebbPSF dataset
         type: boolean
         required: false
         default: true
@@ -15,4 +15,4 @@ jobs:
   download_webbpsf_data:
     uses: spacetelescope/webbpsf/.github/workflows/download_data.yml@develop
     with:
-      minimal: ${{ github.event_name == 'schedule' && true || inputs.minimal }}
+      minimal: ${{ github.event_name == 'schedule' && true || inputs.webbsf_minimal }}
