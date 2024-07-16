@@ -25,19 +25,19 @@ jobs:
     with:
       envs: |
         - linux: check-dependencies
-  data:
-    uses: ./.github/workflows/data.yml
+  webbpsf_data:
+    uses: spacetelescope/webbpsf/.github/workflows/retrieve_cache.yml@develop
   crds_contexts:
     uses: spacetelescope/crds/.github/workflows/contexts.yml@master
   test:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
-    needs: [ data, crds_contexts ]
+    needs: [ webbpsf_data, crds_contexts ]
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     with:
       setenv: |
-        WEBBPSF_PATH: ${{ needs.data.outputs.webbpsf_path }}
-        CRDS_PATH: ${{ needs.data.outputs.path }}/crds_cache
+        WEBBPSF_PATH: ${{ runner.temp }}/webbpsf_data
+        CRDS_PATH: ${{ runner.temp }}/crds_cache
         CRDS_SERVER_URL: https://roman-crds.stsci.edu
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
@@ -46,9 +46,11 @@ jobs:
         DD_GIT_REPOSITORY_URL: ${{ github.repositoryUrl }}
         DD_GIT_COMMIT_SHA: ${{ github.sha }}
         DD_GIT_BRANCH: ${{ github.ref_name }}
-      cache-path: ${{ needs.data.outputs.path }}
-      cache-key: data-${{ needs.data.outputs.webbpsf_hash }}-${{ needs.crds_contexts.outputs.roman }}
-      cache-restore-keys: webbpsf-${{ needs.data.outputs.webbpsf_hash }}
+      cache-path: |
+        ${{ runner.temp }}/webbpsf_data
+        ${{ runner.temp }}/crds_cache
+      cache-key: data-${{ needs.webbpsf_data.outputs.cache_key }}-${{ needs.crds_contexts.outputs.roman }}
+      cache-restore-keys: ${{ needs.webbpsf_data.outputs.cache_key }}
       envs: |
         - linux: py310-oldestdeps-webbpsf-cov
           pytest-results-summary: true

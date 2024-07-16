@@ -24,26 +24,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  data:
+  webbpsf_data:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
-    uses: ./.github/workflows/data.yml
+    uses: spacetelescope/webbpsf/.github/workflows/retrieve_cache.yml@develop
   crds_contexts:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
     uses: spacetelescope/crds/.github/workflows/contexts.yml@master
   test:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
-    needs: [ data, crds_contexts ]
+    needs: [ webbpsf_data, crds_contexts ]
     with:
       setenv: |
-        WEBBPSF_PATH: ${{ needs.data.outputs.webbpsf_path }}
-        CRDS_PATH: ${{ needs.data.outputs.path }}/crds_cache
+        WEBBPSF_PATH: ${{ runner.temp }}/webbpsf_data
+        CRDS_PATH: ${{ runner.temp }}/crds_cache
         CRDS_SERVER_URL: https://roman-crds.stsci.edu
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
-      cache-path: ${{ needs.data.outputs.path }}
-      cache-key: data-${{ needs.data.outputs.webbpsf_hash }}-${{ needs.crds_contexts.outputs.roman }}
-      cache-restore-keys: webbpsf-${{ needs.data.outputs.webbpsf_hash }}
+      cache-path: |
+        ${{ runner.temp }}/webbpsf_data
+        ${{ runner.temp }}/crds_cache
+      cache-key: data-${{ needs.webbpsf_data.outputs.cache_key }}-${{ needs.crds_contexts.outputs.roman }}
+      cache-restore-keys: ${{ needs.webbpsf_data.outputs.cache_key }}
       envs: |
         - linux: py310-stdevdeps-webbpsf
         - linux: py310-devdeps-webbpsf
