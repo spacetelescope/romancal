@@ -31,7 +31,7 @@ dependencies = [
     "stcal>=1.7.0",
     # "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
     #"stpipe >=0.5.0",
-    "stpipe @ git+https://github.com/braingram/stpipe.git@container_handling",
+    "stpipe @ git+https://github.com/spacetelescope/stpipe.git@main",
     "tweakwcs >=0.8.6",
     "spherical-geometry >= 1.2.22",
     "stsci.imagestats >= 1.6.3",
