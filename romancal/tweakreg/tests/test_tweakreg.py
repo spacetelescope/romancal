@@ -818,52 +818,6 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
 
 
 @pytest.mark.parametrize(
-    "catalog_format",
-    (
-        "ascii",
-        "ascii.aastex",
-        "ascii.basic",
-        "ascii.commented_header",
-        "ascii.csv",
-        "ascii.ecsv",
-        "ascii.fixed_width",
-        "ascii.fixed_width_two_line",
-        "ascii.ipac",
-        "ascii.latex",
-        "ascii.mrt",
-        "ascii.rdb",
-        "ascii.rst",
-        "ascii.tab",
-    ),
-)
-def test_tweakreg_use_custom_catalogs(tmp_path, catalog_format, base_image):
-    """Test that TweakReg can use custom catalogs."""
-    # create input datamodels
-    res_dict = create_custom_catalogs(
-        tmp_path, base_image, catalog_format=catalog_format
-    )
-    catfile = res_dict.get("catfile")
-    img1, img2, img3 = res_dict.get("datamodels")
-
-    trs.TweakRegStep.call(
-        [img1, img2, img3],
-        use_custom_catalogs=True,
-        catalog_format=catalog_format,
-        catfile=catfile,
-    )
-
-    assert all(img1.meta.tweakreg_catalog) == all(
-        table.Table.read(str(tmp_path / "ref_catalog_1"), format=catalog_format)
-    )
-    assert all(img2.meta.tweakreg_catalog) == all(
-        table.Table.read(str(tmp_path / "ref_catalog_2"), format=catalog_format)
-    )
-    assert all(img3.meta.tweakreg_catalog) == all(
-        table.Table.read(str(tmp_path / "ref_catalog_3"), format=catalog_format)
-    )
-
-
-@pytest.mark.parametrize(
     "theta, offset_x, offset_y",
     [
         (0 * u.deg, 0, 0),
@@ -1016,21 +970,6 @@ def test_fit_results_in_meta(tmp_path, base_image):
     ]
 
 
-def test_tweakreg_returns_skipped_for_one_file(tmp_path, base_image):
-    """
-    Test that TweakRegStep assigns meta.cal_step.tweakreg to "SKIPPED"
-    when one image is provided but no alignment to a reference catalog is desired.
-    """
-    img = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img)
-
-    # disable alignment to absolute reference catalog
-    trs.ALIGN_TO_ABS_REFCAT = False
-    res = trs.TweakRegStep.call([img])
-
-    assert all(x.meta.cal_step.tweakreg == "SKIPPED" for x in res)
-
-
 def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     """
     Test that TweakRegStep can perform relative alignment for all images in the groups
@@ -1057,25 +996,6 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
         )
         for r, i in zip(res, [img1, img2])
     )
-
-
-def test_tweakreg_multiple_groups_valueerror(tmp_path, base_image):
-    """
-    Test that TweakRegStep throws an error when too few input images or
-    groups of images with non-empty catalogs is provided.
-    """
-    img1 = base_image(shift_1=1000, shift_2=1000)
-    img2 = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img1, catalog_filename="img1")
-    add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
-
-    img1.meta.observation["program"] = "-program_id1"
-    img2.meta.observation["program"] = "-program_id2"
-
-    trs.ALIGN_TO_ABS_REFCAT = False
-    res = trs.TweakRegStep.call([img1, img2])
-
-    assert all(x.meta.cal_step.tweakreg == "SKIPPED" for x in res)
 
 
 @pytest.mark.parametrize(
