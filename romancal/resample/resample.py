@@ -292,7 +292,6 @@ class ResampleData:
         output_model = self.blank_output.copy()
         output_model.meta.filename = self.output_filename
         output_model.meta["resample"] = maker_utils.mk_resample()
-        output_model.meta.resample["members"] = []
         output_model.meta.resample.weight_type = self.weight_type
         output_model.meta.resample.pointings = len(self.input_models.group_names)
 
@@ -317,7 +316,6 @@ class ResampleData:
         )
 
         log.info("Resampling science data")
-        members = []
         with self.input_models:
             for i, img in enumerate(self.input_models):
                 inwht = resample_utils.build_driz_weight(
@@ -348,10 +346,13 @@ class ResampleData:
                     ymax=ymax,
                 )
                 del data, inwht
-                members.append(str(img.meta.filename))
                 self.input_models.shelve(img, i, modify=False)
 
-        output_model.meta.resample.members = members
+        # record the actual filenames (the expname from the association)
+        # for each file used to generate the output_model
+        output_model.meta.resample["members"] = [
+            m["expname"] for m in self.input_models.asn["products"][0]["members"]
+        ]
 
         # Resample variances array in self.input_models to output_model
         self.resample_variance_array("var_rnoise", output_model)
