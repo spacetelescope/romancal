@@ -36,7 +36,7 @@ class ModelLibrary(AbstractModelLibrary):
 
         This function will return the meta.group_id stored in the ASDF
         extension (if it exists) or a group_id calculated from the
-        FITS headers.
+        ASDF headers.
         """
         meta = asdf.util.load_yaml(filename)["roman"]["meta"]
         if group_id := meta.get("group_id"):
