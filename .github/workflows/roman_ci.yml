@@ -38,8 +38,8 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     with:
       setenv: |
-        WEBBPSF_PATH: ${{ needs.webbpsf_data_cache.outputs.cache_path }}/webbpsf-data/
-        CRDS_PATH: ${{ needs.webbpsf_data_cache.outputs.cache_path }}/crds_cache/
+        WEBBPSF_PATH: ${{ needs.webbpsf_data_cache.outputs.cache_path }}webbpsf-data/
+        CRDS_PATH: ${{ needs.webbpsf_data_cache.outputs.cache_path }}crds_cache/
         CRDS_SERVER_URL: https://roman-crds.stsci.edu
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
