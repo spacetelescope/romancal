@@ -65,7 +65,7 @@ To access the files via a python session,
     with rdm.open('r0000101001001001001_01101_0001_WFI16_cal.asdf') as model:
         <Manipulate the files>
 
-    with asdf.open('r0000101001001001001_01101_0001_WFI16_cal.asdf', copy_arrays=True) as model:
+    with asdf.open('r0000101001001001001_01101_0001_WFI16_cal.asdf', memmap=False) as model:
         <Manipulate the files>
 
 Once the files are loaded you can access various attributes. Below is a table
@@ -103,7 +103,7 @@ The ASDF equivalent is
 
     If you trigger an error,
     "ValueError: assignment destination is read-only"
-    make sure the asdf file was opened with copy_arrays=True, or
+    make sure the asdf file was opened with memmap=False, or
     with mode='rw'
 
 You can also access and modify the data arrays
