@@ -58,8 +58,9 @@ class ResampleData:
         """
         Parameters
         ----------
-        input_models : list of objects
-            list of data models, one for each input image
+        input_models : ~romancal.datamodels.ModelLibrary
+            A `~romancal.datamodels.ModelLibrary` object containing the data
+            to be processed.
 
         output : str
             filename for output
