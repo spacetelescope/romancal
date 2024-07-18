@@ -1063,25 +1063,6 @@ def test_fit_results_in_meta(tmp_path, base_image):
             res.shelve(model, i, modify=False)
 
 
-def test_tweakreg_returns_skipped_for_one_file(tmp_path, base_image, monkeypatch):
-    """
-    Test that TweakRegStep assigns meta.cal_step.tweakreg to "SKIPPED"
-    when one image is provided but no alignment to a reference catalog is desired.
-    """
-    img = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img)
-
-    # disable alignment to absolute reference catalog
-    monkeypatch.setattr(trs, "ALIGN_TO_ABS_REFCAT", False)
-    res = trs.TweakRegStep.call([img])
-
-    with res:
-        assert len(res) == 1
-        model = res.borrow(0)
-        assert model.meta.cal_step.tweakreg == "SKIPPED"
-        res.shelve(model, 0, modify=False)
-
-
 def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     """
     Test that TweakRegStep can perform relative alignment for all images in the groups
@@ -1108,35 +1089,6 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
                 == i.meta.observation.program.split("-")[1]
             )
             res.shelve(r, modify=False)
-
-
-# FIXME: this test previously passed only because Tweakreg overwrote
-# the model.meta.group_id using the output from _common_name which incorrectly
-# ignored the setting of "program" in this test. This meant that tweakreg
-# found 2 groups for this test data (because ModelContainer.models_grouped)
-# worked as intended but tweakreg then overwrote the grouping and then
-# incorrectly skipped itself.
-@pytest.mark.skip(reason="This test previously incorrectly passed")
-def test_tweakreg_multiple_groups_valueerror(tmp_path, base_image, monkeypatch):
-    """
-    Test that TweakRegStep throws an error when too few input images or
-    groups of images with non-empty catalogs is provided.
-    """
-    img1 = base_image(shift_1=1000, shift_2=1000)
-    img2 = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img1, catalog_filename="img1")
-    add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
-
-    img1.meta.observation["program"] = "-program_id1"
-    img2.meta.observation["program"] = "-program_id2"
-
-    monkeypatch.setattr(trs, "ALIGN_TO_ABS_REFCAT", False)
-    res = trs.TweakRegStep.call([img1, img2])
-
-    with res:
-        for i, model in enumerate(res):
-            assert model.meta.cal_step.tweakreg == "SKIPPED"
-            res.shelve(model, i, modify=False)
 
 
 @pytest.mark.parametrize(

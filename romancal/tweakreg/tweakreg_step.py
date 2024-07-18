@@ -36,7 +36,6 @@ def _oxford_or_str_join(str_list):
 SINGLE_GROUP_REFCAT = ["GAIADR3", "GAIADR2", "GAIADR1"]
 _SINGLE_GROUP_REFCAT_STR = _oxford_or_str_join(SINGLE_GROUP_REFCAT)
 DEFAULT_ABS_REFCAT = SINGLE_GROUP_REFCAT[0]
-ALIGN_TO_ABS_REFCAT = True
 
 __all__ = ["TweakRegStep"]
 
@@ -263,18 +262,6 @@ class TweakRegStep(RomanStep):
         self.log.info(f"Number of image groups to be aligned: {len(group_indices):d}.")
         self.log.info("Image groups:")
 
-        if len(group_indices) == 1 and not ALIGN_TO_ABS_REFCAT:
-            # we need at least two exposures to perform image alignment
-            self.log.warning("At least two exposures are required for image alignment.")
-            self.log.warning("Nothing to do. Skipping 'TweakRegStep'...")
-            self.skip = True
-            with images:
-                for i, model in enumerate(images):
-                    model.meta.cal_step["tweakreg"] = "SKIPPED"
-                    images.shelve(model, i)
-            return images
-
-        # make imcats
         imcats = []
         with images:
             for i, m in enumerate(images):
@@ -315,16 +302,8 @@ class TweakRegStep(RomanStep):
                     # we need at least two exposures to perform image alignment
                     self.log.warning(msg)
                     self.log.warning(
-                        "At least two exposures are required for image alignment."
+                        "At least two exposures are required for relative image alignment."
                     )
-                    self.log.warning("Nothing to do. Skipping 'TweakRegStep'...")
-                    with images:
-                        for i, model in enumerate(images):
-                            model.meta.cal_step["tweakreg"] = "SKIPPED"
-                            images.shelve(model, i)
-                    if not ALIGN_TO_ABS_REFCAT:
-                        self.skip = True
-                        return images
                 else:
                     raise e
 
@@ -365,126 +344,114 @@ class TweakRegStep(RomanStep):
                             f" {10 * self.tolerance} arcsec"
                         )
 
-                        if ALIGN_TO_ABS_REFCAT:
-                            self.log.warning("Skipping relative alignment (stage 1)...")
-                        else:
-                            self.log.warning("Skipping 'TweakRegStep'...")
-                            self.skip = True
-                            for i, model in enumerate(images):
-                                model.meta.cal_step["tweakreg"] = "SKIPPED"
-                                images.shelve(model, i)
-                            return images
+                        self.log.warning("Skipping relative alignment (stage 1)...")
 
-        if ALIGN_TO_ABS_REFCAT:
-            # Get catalog of GAIA sources for the field
-            #
-            # NOTE:  If desired, the pipeline can write out the reference
-            #        catalog as a separate product with a name based on
-            #        whatever convention is determined by the JWST Cal Working
-            #        Group.
-            if self.save_abs_catalog:
-                output_name = os.path.join(
-                    self.catalog_path, f"fit_{self.abs_refcat.lower()}_ref.ecsv"
-                )
-            else:
-                output_name = None
+        # Get catalog of GAIA sources for the field
+        #
+        # NOTE:  If desired, the pipeline can write out the reference
+        #        catalog as a separate product with a name based on
+        #        whatever convention is determined by the JWST Cal Working
+        #        Group.
+        if self.save_abs_catalog:
+            output_name = os.path.join(
+                self.catalog_path, f"fit_{self.abs_refcat.lower()}_ref.ecsv"
+            )
+        else:
+            output_name = None
 
-            # initial shift to be used with absolute astrometry
-            self.abs_xoffset = 0
-            self.abs_yoffset = 0
+        # initial shift to be used with absolute astrometry
+        self.abs_xoffset = 0
+        self.abs_yoffset = 0
 
-            self.abs_refcat = self.abs_refcat.strip()
-            gaia_cat_name = self.abs_refcat.upper()
+        self.abs_refcat = self.abs_refcat.strip()
+        gaia_cat_name = self.abs_refcat.upper()
 
-            if gaia_cat_name in SINGLE_GROUP_REFCAT:
-                with images:
-                    models = list(images)
+        if gaia_cat_name in SINGLE_GROUP_REFCAT:
+            with images:
+                models = list(images)
 
-                    try:
-                        # FIXME: astrometric_utils expects all models in memory
-                        ref_cat = amutils.create_astrometric_catalog(
-                            models,
-                            gaia_cat_name,
-                            output=output_name,
-                        )
-                    except Exception as e:
-                        self.log.warning(
-                            "TweakRegStep cannot proceed because of an error that "
-                            "occurred while fetching data from the VO server. "
-                            f"Returned error message: '{e}'"
-                        )
-                        self.log.warning("Skipping 'TweakRegStep'...")
-                        self.skip = True
-                        for model in models:
-                            model.meta.cal_step["tweakreg"] = "SKIPPED"
-                        [
-                            images.shelve(m, i, modify=False)
-                            for i, m in enumerate(models)
-                        ]
-                        return images
+                try:
+                    # FIXME: astrometric_utils expects all models in memory
+                    ref_cat = amutils.create_astrometric_catalog(
+                        models,
+                        gaia_cat_name,
+                        output=output_name,
+                    )
+                except Exception as e:
+                    self.log.warning(
+                        "TweakRegStep cannot proceed because of an error that "
+                        "occurred while fetching data from the VO server. "
+                        f"Returned error message: '{e}'"
+                    )
+                    self.log.warning("Skipping 'TweakRegStep'...")
+                    self.skip = True
+                    for model in models:
+                        model.meta.cal_step["tweakreg"] = "SKIPPED"
                     [images.shelve(m, i, modify=False) for i, m in enumerate(models)]
+                    return images
+                [images.shelve(m, i, modify=False) for i, m in enumerate(models)]
 
-            elif os.path.isfile(self.abs_refcat):
-                ref_cat = Table.read(self.abs_refcat)
+        elif os.path.isfile(self.abs_refcat):
+            ref_cat = Table.read(self.abs_refcat)
 
-            else:
-                raise ValueError(
-                    "'abs_refcat' must be a path to an "
-                    "existing file name or one of the supported "
-                    f"reference catalogs: {_SINGLE_GROUP_REFCAT_STR}."
-                )
+        else:
+            raise ValueError(
+                "'abs_refcat' must be a path to an "
+                "existing file name or one of the supported "
+                f"reference catalogs: {_SINGLE_GROUP_REFCAT_STR}."
+            )
 
-            # Check that there are enough GAIA sources for a reliable/valid fit
-            num_ref = len(ref_cat)
-            if num_ref < self.abs_minobj:
-                # Raise Exception here to avoid rest of code in this try block
-                self.log.warning(
-                    f"Not enough sources ({num_ref}) in the reference catalog "
-                    "for the single-group alignment step to perform a fit. "
-                    f"Skipping alignment to the {self.abs_refcat} reference "
-                    "catalog!"
-                )
-            else:
-                # align images:
-                # Update to separation needed to prevent confusion of sources
-                # from overlapping images where centering is not consistent or
-                # for the possibility that errors still exist in relative overlap.
-                xyxymatch_gaia = XYXYMatch(
-                    searchrad=self.abs_searchrad,
-                    separation=self.abs_separation,
-                    use2dhist=self.abs_use2dhist,
-                    tolerance=self.abs_tolerance,
-                    xoffset=self.abs_xoffset,
-                    yoffset=self.abs_yoffset,
-                )
+        # Check that there are enough GAIA sources for a reliable/valid fit
+        num_ref = len(ref_cat)
+        if num_ref < self.abs_minobj:
+            # Raise Exception here to avoid rest of code in this try block
+            self.log.warning(
+                f"Not enough sources ({num_ref}) in the reference catalog "
+                "for the single-group alignment step to perform a fit. "
+                f"Skipping alignment to the {self.abs_refcat} reference "
+                "catalog!"
+            )
+        else:
+            # align images:
+            # Update to separation needed to prevent confusion of sources
+            # from overlapping images where centering is not consistent or
+            # for the possibility that errors still exist in relative overlap.
+            xyxymatch_gaia = XYXYMatch(
+                searchrad=self.abs_searchrad,
+                separation=self.abs_separation,
+                use2dhist=self.abs_use2dhist,
+                tolerance=self.abs_tolerance,
+                xoffset=self.abs_xoffset,
+                yoffset=self.abs_yoffset,
+            )
 
-                # Set group_id to same value so all get fit as one observation
-                # The assigned value, 987654, has been hard-coded to make it
-                # easy to recognize when alignment to GAIA was being performed
-                # as opposed to the group_id values used for relative alignment
-                # earlier in this step.
-                for imcat in imcats:
-                    imcat.meta["group_id"] = 987654
-                    if (
-                        "fit_info" in imcat.meta
-                        and "REFERENCE" in imcat.meta["fit_info"]["status"]
-                    ):
-                        del imcat.meta["fit_info"]
+            # Set group_id to same value so all get fit as one observation
+            # The assigned value, 987654, has been hard-coded to make it
+            # easy to recognize when alignment to GAIA was being performed
+            # as opposed to the group_id values used for relative alignment
+            # earlier in this step.
+            for imcat in imcats:
+                imcat.meta["group_id"] = 987654
+                if (
+                    "fit_info" in imcat.meta
+                    and "REFERENCE" in imcat.meta["fit_info"]["status"]
+                ):
+                    del imcat.meta["fit_info"]
 
-                # Perform fit
-                align_wcs(
-                    imcats,
-                    refcat=ref_cat,
-                    enforce_user_order=True,
-                    expand_refcat=False,
-                    minobj=self.abs_minobj,
-                    match=xyxymatch_gaia,
-                    fitgeom=self.abs_fitgeometry,
-                    nclip=self.abs_nclip,
-                    sigma=(self.abs_sigma, "rmse"),
-                    ref_tpwcs=imcats[0],
-                    clip_accum=True,
-                )
+            # Perform fit
+            align_wcs(
+                imcats,
+                refcat=ref_cat,
+                enforce_user_order=True,
+                expand_refcat=False,
+                minobj=self.abs_minobj,
+                match=xyxymatch_gaia,
+                fitgeom=self.abs_fitgeometry,
+                nclip=self.abs_nclip,
+                sigma=(self.abs_sigma, "rmse"),
+                ref_tpwcs=imcats[0],
+                clip_accum=True,
+            )
 
         with images:
             for i, imcat in enumerate(imcats):
@@ -496,15 +463,15 @@ class TweakRegStep(RomanStep):
                     # Update/create the WCS .name attribute with information
                     # on this astrometric fit as the only record that it was
                     # successful:
-                    if ALIGN_TO_ABS_REFCAT:
-                        # NOTE: This .name attrib agreed upon by the JWST Cal
-                        #       Working Group.
-                        #       Current value is merely a place-holder based
-                        #       on HST conventions. This value should also be
-                        #       translated to the FITS WCSNAME keyword
-                        #       IF that is what gets recorded in the archive
-                        #       for end-user searches.
-                        imcat.wcs.name = f"FIT-LVL2-{self.abs_refcat}"
+
+                    # NOTE: This .name attrib agreed upon by the JWST Cal
+                    #       Working Group.
+                    #       Current value is merely a place-holder based
+                    #       on HST conventions. This value should also be
+                    #       translated to the FITS WCSNAME keyword
+                    #       IF that is what gets recorded in the archive
+                    #       for end-user searches.
+                    imcat.wcs.name = f"FIT-LVL2-{self.abs_refcat}"
 
                     # serialize object from tweakwcs
                     # (typecasting numpy objects to python types so that it doesn't cause an
