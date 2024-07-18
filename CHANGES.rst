@@ -21,6 +21,8 @@ general
 
 - Rename highlevelpipeline to mosaic pipeline [#1249]
 
+- replace usages of ``copy_arrays`` with ``memmap`` [#1316]
+
 source_catalog
 --------------
 - Add PSF photometry capability. [#1243]
