@@ -80,8 +80,7 @@ class ResampleData:
         """
         if (input_models is None) or (len(input_models) == 0):
             raise ValueError(
-                "No input has been provided. Input should be a list of datamodel(s) or "
-                "a ModelLibrary."
+                "No input has been provided. Input must be a non-empty ModelLibrary"
             )
 
         self.input_models = input_models
