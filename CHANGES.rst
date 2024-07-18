@@ -45,6 +45,10 @@ mosaic_pipeline
 
 - Fix construction of skycell WCS.  [#1297]
 
+tweakreg
+--------
+- Remove unnecessary global variable ALIGN_TO_ABS_REFCAT. [#1314]
+
 
 
 0.15.1 (2024-05-15)
