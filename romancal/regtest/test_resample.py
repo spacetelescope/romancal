@@ -12,18 +12,11 @@ from .regtestdata import compare_asdf
 @metrics_logger("DMS342", "DMS343", "DMS344", "DMS345")
 @pytest.mark.bigdata
 def test_resample_single_file(rtdata, ignore_asdf_paths):
-    input_data = [
-        "r0000101001001001001_01101_0001_WFI01_cal.asdf",
-        "r0000101001001001001_01101_0002_WFI01_cal.asdf",
-    ]
     output_data = "mosaic_resamplestep.asdf"
 
-    [rtdata.get_data(f"WFI/image/{data}") for data in input_data]
-    asnfn = "mosaic_asn.json"
-    rtdata.get_data(f"WFI/image/{asnfn}")
+    rtdata.get_asn("WFI/image/mosaic_asn.json")
     rtdata.get_truth(f"truth/WFI/image/{output_data}")
 
-    rtdata.input = asnfn
     rtdata.output = output_data
 
     # instantiate ResampleStep (for running and log access)
