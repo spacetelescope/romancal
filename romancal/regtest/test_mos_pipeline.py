@@ -134,9 +134,9 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS356")
+@metrics_logger("DMS373")
 def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
-    """Tests for level 3 mosaic requirements DMS356"""
+    """Tests for level 3 mosaic requirements DMS373"""
 
     cal_files = [
         "WFI/image/r0000101001001001001_01101_0001_WFI01_cal.asdf",
@@ -166,9 +166,7 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
     rtdata.input = input_asn
 
     # Test Pipeline
-    os.system('ls -l -h /grp/roman/scsb/tesselation/patches.asdf')  # nosec
-    os.system('printenv PATCH_TABLE_PATH')  # nosec
-    output = "r0099101001001001001_F158_prompt_visit_r274dp63x31y81_i2d.asdf"
+    output = "r0099101001001001001_r274dp63x31y81_F158_prompt_visit_i2d.asdf"
     rtdata.output = output
     args = [
         "roman_mos",
