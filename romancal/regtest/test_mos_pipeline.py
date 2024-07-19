@@ -166,6 +166,8 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
     rtdata.input = input_asn
 
     # Test Pipeline
+    os.system('ls -l -h /grp/roman/scsb/tesselation/patches.asdf')  # nosec
+    os.system('printenv PATCH_TABLE_PATH')  # nosec
     output = "r0099101001001001001_F158_prompt_visit_r274dp63x31y81_i2d.asdf"
     rtdata.output = output
     args = [
