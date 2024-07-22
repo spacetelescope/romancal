@@ -5,7 +5,7 @@ from typing import Union
 
 import roman_datamodels as rdm
 
-from romancal.datamodels import ModelContainer
+from romancal.datamodels import ModelLibrary
 
 
 def check(init: Union[os.PathLike, Path, io.FileIO]) -> str:
@@ -21,7 +21,7 @@ def check(init: Union[os.PathLike, Path, io.FileIO]) -> str:
     Returns
     -------
     file_type: str
-        a string with the file type ("asdf", "asn", "DataModel", or "ModelContainer")
+        a string with the file type ("asdf", "asn", "DataModel", or "ModelLibrary")
 
     """
 
@@ -48,8 +48,8 @@ def check(init: Union[os.PathLike, Path, io.FileIO]) -> str:
     elif isinstance(init, rdm.DataModel):
         return "DataModel"
 
-    elif isinstance(init, ModelContainer):
-        return "ModelContainer"
+    elif isinstance(init, ModelLibrary):
+        return "ModelLibrary"
 
     elif hasattr(init, "read") and hasattr(init, "seek"):
         magic = init.read(5)

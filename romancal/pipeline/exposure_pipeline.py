@@ -11,8 +11,8 @@ import romancal.datamodels.filetype as filetype
 # step imports
 from romancal.assign_wcs import AssignWcsStep
 from romancal.associations.asn_from_list import asn_from_list
+from romancal.associations.load_asn import load_asn
 from romancal.dark_current import DarkCurrentStep
-from romancal.datamodels import ModelContainer
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
 from romancal.lib.basic_utils import is_fully_saturated
@@ -80,7 +80,8 @@ class ExposurePipeline(RomanPipeline):
         # determine the input type
         file_type = filetype.check(input)
         if file_type == "asn":
-            asn = ModelContainer.read_asn(input)
+            with open(input_filename) as f:
+                asn = load_asn(f)
         elif file_type == "asdf":
             try:
                 # set the product name based on the input filename
