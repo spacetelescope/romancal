@@ -11,7 +11,7 @@ import roman_datamodels as rdm
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from stpipe import Pipeline, Step, crds_client
 
-from romancal.datamodels.container import ModelContainer
+from romancal.datamodels.library import ModelLibrary
 
 from ..lib.suffix import remove_suffix
 
@@ -49,11 +49,11 @@ class RomanStep(Step):
             if ext == ".asdf":
                 return rdm.open(init, **kwargs)
             if ext in (".json", ".yaml"):
-                return ModelContainer(init, **kwargs)
+                return ModelLibrary(init, **kwargs)
         if isinstance(init, rdm.DataModel):
             return rdm.open(init, **kwargs)
-        if isinstance(init, ModelContainer):
-            return ModelContainer(init)
+        if isinstance(init, ModelLibrary):
+            return ModelLibrary(init)
         raise TypeError(f"Invalid input: {init}")
 
     def finalize_result(self, model, reference_files_used):

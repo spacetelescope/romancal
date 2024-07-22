@@ -11,8 +11,8 @@ import romancal.datamodels.filetype as filetype
 # step imports
 from romancal.assign_wcs import AssignWcsStep
 from romancal.associations.asn_from_list import asn_from_list
+from romancal.associations.load_asn import load_asn
 from romancal.dark_current import DarkCurrentStep
-from romancal.datamodels import ModelContainer
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
 from romancal.lib.basic_utils import is_fully_saturated
@@ -77,7 +77,8 @@ class ExposurePipeline(RomanPipeline):
         # determine the input type
         file_type = filetype.check(input)
         if file_type == "asn":
-            asn = ModelContainer.read_asn(input)
+            with open(input_filename) as f:
+                asn = load_asn(f)
         elif file_type == "asdf":
             try:
                 # set the product name based on the input filename
@@ -91,16 +92,16 @@ class ExposurePipeline(RomanPipeline):
         expos_file = []
         n_members = 0
         # extract the members from the asn to run the files through the steps
-        results = ModelContainer()
-        tweakreg_input = ModelContainer()
+        results = []
+        tweakreg_input = []
         if file_type == "asn":
             for product in asn["products"]:
                 n_members = len(product["members"])
                 for member in product["members"]:
                     expos_file.append(member["expname"])
 
-            # results = ModelContainer()
-            # tweakreg_input = ModelContainer()
+            results = []
+            tweakreg_input = []
             for in_file in expos_file:
                 if isinstance(in_file, str):
                     input_filename = basename(in_file)
@@ -160,7 +161,7 @@ class ExposurePipeline(RomanPipeline):
             result = self.source_detection(result)
             tweakreg_input.append(result)
             log.info(
-                f"Number of models to tweakreg:   {len(tweakreg_input._models), n_members}"
+                f"Number of models to tweakreg:   {len(tweakreg_input), n_members}"
             )
         else:
             log.info("Flat Field step is being SKIPPED")

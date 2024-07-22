@@ -3,7 +3,7 @@
 from functools import partial
 from pathlib import Path
 
-from romancal.datamodels import ModelContainer
+from romancal.datamodels import ModelLibrary
 from romancal.outlier_detection import outlier_detection
 
 from ..stpipe import RomanStep
@@ -15,12 +15,12 @@ class OutlierDetectionStep(RomanStep):
     """Flag outlier bad pixels and cosmic rays in DQ array of each input image.
 
     Input images can be listed in an input association file or already wrapped
-    with a ModelContainer. DQ arrays are modified in place.
+    with a ModelLibrary. DQ arrays are modified in place.
 
     Parameters
     -----------
-    input_data : `~romancal.datamodels.container.ModelContainer`
-        A `~romancal.datamodels.container.ModelContainer` object.
+    input_data : `~romancal.datamodels.container.ModelLibrary`
+        A `~romancal.datamodels.container.ModelLibrary` object.
 
     """
 
@@ -54,66 +54,93 @@ class OutlierDetectionStep(RomanStep):
 
         self.skip = False
 
-        try:
-            self.input_models = ModelContainer(input_models)
-        except TypeError:
+        if isinstance(input_models, ModelLibrary):
+            library = input_models
+        else:
+            try:
+                library = ModelLibrary(input_models)
+            except Exception:
+                self.log.warning(
+                    "Skipping outlier_detection - input cannot be parsed into a ModelLibrary."
+                )
+                self.skip = True
+                return input_models
+
+        # check number of input models
+        if len(library) < 2:
+            # if input can be parsed into a ModelLibrary
+            # but is not valid then log a warning message and
+            # skip outlier detection step
             self.log.warning(
-                "Skipping outlier_detection - input cannot be parsed into a ModelContainer."
+                "Skipping outlier_detection - at least two imaging observations are needed."
             )
             self.skip = True
-            return input_models
 
-        # validation
-        if len(self.input_models) >= 2 and all(
-            model.meta.exposure.type == "WFI_IMAGE" for model in self.input_models
-        ):
-            # Setup output path naming if associations are involved.
-            asn_id = self.input_models.asn_table.get("asn_id", None)
-            if asn_id is not None:
-                _make_output_path = self.search_attr(
-                    "_make_output_path", parent_first=True
-                )
-                self._make_output_path = partial(_make_output_path, asn_id=asn_id)
+        # check that all inputs are WFI_IMAGE
+        if not self.skip:
+            with library:
+                for i, model in enumerate(library):
+                    if model.meta.exposure.type != "WFI_IMAGE":
+                        self.skip = True
+                    library.shelve(model, i, modify=False)
+                if self.skip:
+                    self.log.warning(
+                        "Skipping outlier_detection - all WFI_IMAGE exposures are required."
+                    )
 
-            detection_step = outlier_detection.OutlierDetection
-            pars = {
-                "weight_type": self.weight_type,
-                "pixfrac": self.pixfrac,
-                "kernel": self.kernel,
-                "fillval": self.fillval,
-                "nlow": self.nlow,
-                "nhigh": self.nhigh,
-                "maskpt": self.maskpt,
-                "grow": self.grow,
-                "snr": self.snr,
-                "scale": self.scale,
-                "backg": self.backg,
-                "kernel_size": self.kernel_size,
-                "save_intermediate_results": self.save_intermediate_results,
-                "resample_data": self.resample_data,
-                "good_bits": self.good_bits,
-                "allowed_memory": self.allowed_memory,
-                "in_memory": self.in_memory,
-                "make_output_path": self.make_output_path,
-                "resample_suffix": "i2d",
-            }
+        # if skipping for any reason above...
+        if self.skip:
+            # set meta.cal_step.outlier_detection to SKIPPED
+            with library:
+                for i, model in enumerate(library):
+                    model.meta.cal_step["outlier_detection"] = "SKIPPED"
+                    library.shelve(model, i)
+            return library
 
+        # Setup output path naming if associations are involved.
+        asn_id = library.asn.get("asn_id", None)
+        if asn_id is not None:
+            _make_output_path = self.search_attr("_make_output_path", parent_first=True)
+            self._make_output_path = partial(_make_output_path, asn_id=asn_id)
+
+        detection_step = outlier_detection.OutlierDetection
+        pars = {
+            "weight_type": self.weight_type,
+            "pixfrac": self.pixfrac,
+            "kernel": self.kernel,
+            "fillval": self.fillval,
+            "nlow": self.nlow,
+            "nhigh": self.nhigh,
+            "maskpt": self.maskpt,
+            "grow": self.grow,
+            "snr": self.snr,
+            "scale": self.scale,
+            "backg": self.backg,
+            "kernel_size": self.kernel_size,
+            "save_intermediate_results": self.save_intermediate_results,
+            "resample_data": self.resample_data,
+            "good_bits": self.good_bits,
+            "allowed_memory": self.allowed_memory,
+            "in_memory": self.in_memory,
+            "make_output_path": self.make_output_path,
+            "resample_suffix": "i2d",
+        }
+
+        self.log.debug(f"Using {detection_step.__name__} class for outlier_detection")
+
+        # Set up outlier detection, then do detection
+        step = detection_step(library, **pars)
+        step.do_detection()
+
+        state = "COMPLETE"
+
+        if not self.save_intermediate_results:
             self.log.debug(
-                f"Using {detection_step.__name__} class for outlier_detection"
+                "The following files will be deleted since \
+                save_intermediate_results=False:"
             )
-
-            # Set up outlier detection, then do detection
-            step = detection_step(self.input_models, **pars)
-            step.do_detection()
-
-            state = "COMPLETE"
-
-            if not self.save_intermediate_results:
-                self.log.debug(
-                    "The following files will be deleted since \
-                    save_intermediate_results=False:"
-                )
-            for model in self.input_models:
+        with library:
+            for i, model in enumerate(library):
                 model.meta.cal_step["outlier_detection"] = state
                 if not self.save_intermediate_results:
                     #  remove intermediate files found in
@@ -132,17 +159,5 @@ class OutlierDetectionStep(RomanStep):
                             for filename in current_path.glob(suffix):
                                 filename.unlink()
                                 self.log.debug(f"    {filename}")
-
-        else:
-            # if input can be parsed into a ModelContainer
-            # but is not valid then log a warning message and
-            # skip outlier detection step
-            self.log.warning(
-                "Skipping outlier_detection - at least two imaging observations are needed."
-            )
-            # set meta.cal_step.outlier_detection to SKIPPED
-            for model in self.input_models:
-                model.meta.cal_step["outlier_detection"] = "SKIPPED"
-            self.skip = True
-
-        return self.input_models
+                library.shelve(model, i)
+        return library

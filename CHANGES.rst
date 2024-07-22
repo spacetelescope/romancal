@@ -23,6 +23,8 @@ general
 
 - replace usages of ``copy_arrays`` with ``memmap`` [#1316]
 
+- Replace ModelContainer with ModelLibrary [#1241]
+
 source_catalog
 --------------
 - Add PSF photometry capability. [#1243]

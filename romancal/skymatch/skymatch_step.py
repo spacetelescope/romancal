@@ -4,14 +4,12 @@ Roman step for sky matching.
 
 import logging
 from copy import deepcopy
-from itertools import chain
 
 import numpy as np
 from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
-from roman_datamodels import datamodels as rdd
 from roman_datamodels.dqflags import pixel
 
-from romancal.datamodels import ModelContainer
+from romancal.datamodels import ModelLibrary
 from romancal.stpipe import RomanStep
 
 from .skyimage import SkyImage
@@ -52,11 +50,11 @@ class SkyMatchStep(RomanStep):
 
     def process(self, input):
         self.log.setLevel(logging.DEBUG)
-        self._is_asn = False
 
-        img = ModelContainer(
-            input, save_open=not self._is_asn, return_open=not self._is_asn
-        )
+        if isinstance(input, ModelLibrary):
+            library = input
+        else:
+            library = ModelLibrary(input)
 
         self._dqbits = interpret_bit_flags(self.dqbits, flag_name_map=pixel)
 
@@ -71,33 +69,35 @@ class SkyMatchStep(RomanStep):
             binwidth=self.binwidth,
         )
 
-        # group images by their "group id":
-        grp_img = chain.from_iterable(img.models_grouped)
-
         # create a list of "Sky" Images and/or Groups:
-        images = [self._imodel2skyim(g) for grp_id, g in enumerate(grp_img, start=1)]
+        images = []
+        with library:
+            for index, model in enumerate(library):
+                images.append(self._imodel2skyim(model))
 
-        # match/compute sky values:
-        match(
-            images,
-            skymethod=self.skymethod,
-            match_down=self.match_down,
-            subtract=self.subtract,
-        )
+            # match/compute sky values:
+            match(
+                images,
+                skymethod=self.skymethod,
+                match_down=self.match_down,
+                subtract=self.subtract,
+            )
 
-        # set sky background value in each image's meta:
-        for im in images:
-            if isinstance(im, SkyImage):
-                self._set_sky_background(
-                    im, "COMPLETE" if im.is_sky_valid else "SKIPPED"
-                )
-            else:
-                for gim in im:
+            # set sky background value in each image's meta:
+            for im in images:
+                if isinstance(im, SkyImage):
                     self._set_sky_background(
-                        gim, "COMPLETE" if gim.is_sky_valid else "SKIPPED"
+                        im, "COMPLETE" if im.is_sky_valid else "SKIPPED"
                     )
+                else:
+                    for gim in im:
+                        self._set_sky_background(
+                            gim, "COMPLETE" if gim.is_sky_valid else "SKIPPED"
+                        )
+            for index, image in enumerate(images):
+                library.shelve(image.meta["image_model"], index)
 
-        return ModelContainer([x.meta["image_model"] for x in images])
+        return library
 
     def _imodel2skyim(self, image_model):
         input_image_model = image_model
@@ -109,8 +109,6 @@ class SkyMatchStep(RomanStep):
             image_model.meta["background"] = dict(
                 level=None, subtracted=None, method=None
             )
-        if self._is_asn:
-            image_model = rdd.open(image_model)
 
         if self._dqbits is None:
             dqmask = np.isfinite(image_model.data).astype(dtype=np.uint8)
@@ -124,9 +122,6 @@ class SkyMatchStep(RomanStep):
         level = image_model.meta["background"]["level"]
         if image_model.meta["background"]["subtracted"] is None:
             if level is not None:
-                if self._is_asn:
-                    image_model.close()
-
                 # report inconsistency:
                 raise ValueError(
                     "Background level was set but the "
@@ -142,9 +137,6 @@ class SkyMatchStep(RomanStep):
                 # at this moment I think it is safer to quit and...
                 #
                 # report inconsistency:
-                if self._is_asn:
-                    image_model.close()
-
                 raise ValueError(
                     "Background level was subtracted but the "
                     "'level' property is undefined (None)."
@@ -154,9 +146,6 @@ class SkyMatchStep(RomanStep):
                 # cannot run 'skymatch' step on already "skymatched" images
                 # when 'subtract' spec is inconsistent with
                 # meta.background.subtracted:
-                if self._is_asn:
-                    image_model.close()
-
                 raise ValueError(
                     "'subtract' step's specification is "
                     "inconsistent with background info already "
@@ -175,12 +164,9 @@ class SkyMatchStep(RomanStep):
             id=image_model.meta.filename,  # file name?
             skystat=self._skystat,
             stepsize=self.stepsize,
-            reduce_memory_usage=self._is_asn,
+            reduce_memory_usage=False,
             meta={"image_model": input_image_model},
         )
-
-        if self._is_asn:
-            image_model.close()
 
         if self.subtract:
             sky_im.sky = level
@@ -191,21 +177,12 @@ class SkyMatchStep(RomanStep):
         image = sky_image.meta["image_model"]
         sky = sky_image.sky
 
-        if self._is_asn:
-            dm = rdd.open(image)
-        else:
-            dm = image
-
         if step_status == "COMPLETE":
-            dm.meta.background.method = str(self.skymethod)
-            dm.meta.background.level = sky
-            dm.meta.background.subtracted = self.subtract
+            image.meta.background.method = str(self.skymethod)
+            image.meta.background.level = sky
+            image.meta.background.subtracted = self.subtract
 
             if self.subtract:
-                dm.data[...] = sky_image.image[...]
+                image.data[...] = sky_image.image[...]
 
-        dm.meta.cal_step.skymatch = step_status
-
-        if self._is_asn:
-            dm.save(image)
-            dm.close()
+        image.meta.cal_step.skymatch = step_status

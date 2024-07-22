@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from roman_datamodels import datamodels, maker_utils
 
-from romancal.datamodels.container import ModelContainer
+from romancal.datamodels import ModelLibrary
 from romancal.flux import FluxStep
 from romancal.flux.flux_step import LV2_UNITS
 
@@ -27,43 +27,57 @@ def test_attributes(flux_step, attr, factor):
 
     # Handle difference between just a single image and a list.
     if isinstance(original, datamodels.ImageModel):
-        original_list = [original]
-        result_list = [result]
+        original_library = ModelLibrary([original])
+        result_library = ModelLibrary([result])
     else:
-        original_list = original
-        result_list = result
+        original_library = original
+        result_library = result
 
-    for original_model, result_model in zip(original_list, result_list):
-        c_mj = original_model.meta.photometry.conversion_megajanskys
-        scale = (c_mj * c_unit) ** factor
-        original_value = getattr(original_model, attr)
-        result_value = getattr(result_model, attr)
+    assert len(original_library) == len(result_library)
+    with original_library, result_library:
+        for i in range(len(original_library)):
+            original_model = original_library.borrow(i)
+            result_model = result_library.borrow(i)
 
-        assert np.allclose(original_value * scale, result_value)
+            c_mj = original_model.meta.photometry.conversion_megajanskys
+            scale = (c_mj * c_unit) ** factor
+            original_value = getattr(original_model, attr)
+            result_value = getattr(result_model, attr)
+
+            assert np.allclose(original_value * scale, result_value)
+
+            original_library.shelve(original_model, i, modify=False)
+            result_library.shelve(result_model, i, modify=False)
 
 
 # ########
 # Fixtures
 # ########
-@pytest.fixture(scope="module", params=["input_imagemodel", "input_modelcontainer"])
+@pytest.fixture(scope="module", params=["input_imagemodel", "input_modellibrary"])
 def flux_step(request):
     """Execute FluxStep on given input
 
     Parameters
     ----------
-    input : str, `roman_datamodels.datamodels.DataModel`, or `~romancal.datamodels.container.ModelContainer`
+    input : str, `roman_datamodels.datamodels.DataModel`, or `~romancal.datamodels.library.ModelLibrary`
 
     Returns
     -------
-    original, result : DataModel or ModelContainer, DataModel or ModelContainer
+    original, result : DataModel or ModelLibrary, DataModel or ModelLibrary
     """
-    input = request.getfixturevalue(request.param)
-
-    # Copy input because flux operates in-place
-    original = input.copy()
+    init = request.getfixturevalue(request.param)
+    if isinstance(init, ModelLibrary):
+        models = []
+        with init:
+            for m in init:
+                models.append(m.copy())
+                init.shelve(m, modify=False)
+        original = ModelLibrary(models)
+    else:
+        original = init.copy()
 
     # Perform step
-    result = FluxStep.call(input)
+    result = FluxStep.call(init)
 
     # That's all folks
     return original, result
@@ -110,11 +124,11 @@ def input_imagemodel(image_model):
 
 
 @pytest.fixture(scope="module")
-def input_modelcontainer(image_model):
-    """Provide a ModelContainer"""
-    # Create and return a ModelContainer
+def input_modellibrary(image_model):
+    """Provide a ModelLibrary"""
+    # Create and return a ModelLibrary
     image_model1 = image_model.copy()
     image_model2 = image_model.copy()
     image_model2.meta.photometry.conversion_megajanskys = 0.5 * u.MJy / u.sr
-    container = ModelContainer([image_model1, image_model2])
+    container = ModelLibrary([image_model1, image_model2])
     return container
