@@ -151,13 +151,6 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
     with open(asn_name, "w") as f:
         f.write(serialized)
     
-    #asn_cmd = f"asn_from_list --product-name='r0099101001001001001_r274dp63x31y81_F158_prompt_visit'\
-    #r0000101001001001001_01101_0001_WFI01_cal.asdf \
-    #r0000101001001001001_01101_0002_WFI01_cal.asdf \
-    #r0000101001001001001_01101_0003_WFI01_cal.asdf \
-    #-o L3_m1_asn.json"
-    #os.system(asn_cmd)  # nosec
-
     for cal_file in cal_files:
         rtdata.get_data(cal_file)
 
@@ -181,7 +174,7 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
     model = rdm.open(rtdata.output, lazy_load=False)
 
     pipeline.log.info(
-        "DMS356 MSG: Testing the creation of a Level 3 mosaic image"
+        "DMS373 MSG: Testing the creation of a Level 3 mosaic image"
         + passfail(model.meta.cal_step.resample == "COMPLETE")
     )
     
