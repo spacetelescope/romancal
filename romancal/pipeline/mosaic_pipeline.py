@@ -11,7 +11,7 @@ from astropy.modeling import models
 from gwcs import WCS, coordinate_frames
 
 import romancal.datamodels.filetype as filetype
-from romancal.datamodels import ModelContainer
+from romancal.datamodels import ModelLibrary
 
 # step imports
 from romancal.flux import FluxStep
@@ -40,6 +40,7 @@ class MosaicPipeline(RomanPipeline):
     class_alias = "roman_mos"
     spec = """
         save_results = boolean(default=False)
+        on_disk = boolean(default=False)
     """
 
     # Define aliases to steps
@@ -69,7 +70,7 @@ class MosaicPipeline(RomanPipeline):
             return
 
         if file_type == "asn":
-            input = ModelContainer(input)
+            input = ModelLibrary(input, on_disk=self.on_disk)
             self.flux.suffix = "flux"
             result = self.flux(input)
             self.skymatch.suffix = "skymatch"
@@ -78,9 +79,9 @@ class MosaicPipeline(RomanPipeline):
             result = self.outlier_detection(result)
             #
             # check to see if the product name contains a skycell name & if true get the skycell record
-            product_name = input.asn_table["products"][0]["name"]
+            product_name = input.asn["products"][0]["name"]
             try:
-                skycell_name = input.asn_table["target"]
+                skycell_name = input.asn["target"]
             except IndexError:
                 skycell_name = ""
             skycell_record = []
@@ -127,7 +128,7 @@ class MosaicPipeline(RomanPipeline):
                         wcs_file = asdf.open(self.resample.output_wcs)
                         self.suffix = "i2d"
                         result = self.resample(result)
-                        self.output_file = input.asn_table["products"][0]["name"]
+                        self.output_file = input.asn["products"][0]["name"]
                         # force the SourceCatalogStep to save the results
                         self.sourcecatalog.save_results = True
                         result_catalog = self.sourcecatalog(result)
@@ -137,7 +138,7 @@ class MosaicPipeline(RomanPipeline):
 
             else:
                 self.resample.suffix = "i2d"
-                self.output_file = input.asn_table["products"][0]["name"]
+                self.output_file = input.asn["products"][0]["name"]
                 result = self.resample(result)
                 self.sourcecatalog.save_results = True
                 result_catalog = self.sourcecatalog(result)  # noqa: F841
@@ -148,19 +149,19 @@ class MosaicPipeline(RomanPipeline):
         return result
 
 
-def generate_tan_wcs(skycell_record, shiftx=0, shifty=0):
+def generate_tan_wcs(skycell_record):
     # extract the wcs info from the record for generate_tan_wcs
     # we need the scale, ra, dec, bounding_box
 
     scale = float(skycell_record["pixel_scale"])
-    ra_center = float(skycell_record["ra_center"])
-    dec_center = float(skycell_record["dec_center"])
+    ra_center = float(skycell_record["ra_projection_center"])
+    dec_center = float(skycell_record["dec_projection_center"])
+    shiftx = float(skycell_record["x0_projection"])
+    shifty = float(skycell_record["y0_projection"])
     bounding_box = (
-        (-0.5, float(skycell_record["x_center"]) + 0.5),
-        (-0.5, float(skycell_record["y_center"]) + 0.5),
+        (-0.5, -0.5 + skycell_record["nx"]),
+        (-0.5, -0.5 + skycell_record["ny"]),
     )
-    shiftx = bounding_box[0][1]
-    shifty = bounding_box[1][1]
 
     # components of the model
     # shift = models.Shift(shiftx) & models.Shift(shifty)

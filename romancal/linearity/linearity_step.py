@@ -36,7 +36,7 @@ class LinearityStep(RomanStep):
 
                 return input_model
 
-            lin_model = rdd.LinearityRefModel(self.lin_name, copy_arrays=True)
+            lin_model = rdd.LinearityRefModel(self.lin_name, memmap=False)
 
             # copy poly coeffs from linearity model so Nan's can be updated
             lin_coeffs = lin_model.coeffs

@@ -14,7 +14,7 @@ or a Roman datamodel `ImageModel`.
         .. note::
             If the input is a single Roman ``DataModel``,
             either ``step.call([img])`` or ``step.call(img)`` will work. For multiple elements as input,
-            they must be passed in as either a list or a ModelContainer.
+            they must be passed in as either a list or a ModelLibrary.
 
 #. To run TweakReg in a Python session on an association file with the default parameters:
 

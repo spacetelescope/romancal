@@ -1,6 +1,7 @@
 """ Roman tests for flat field correction """
 
 import copy
+import os
 
 import numpy as np
 import pytest
@@ -479,6 +480,39 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
         model.meta.wcs(2048, 2048),
         atol=1.0,
     )
+
+
+@pytest.mark.bigdata
+def test_elp_input_dm(rtdata, ignore_asdf_paths):
+    """Test for input roman Datamodel to exposure level pipeline"""
+    input_data = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
+    rtdata.get_data(f"WFI/image/{input_data}")
+    dm_input = rdm.open(rtdata.input)
+
+    # Test Pipeline with input datamodel
+    output = "r0000101001001001001_01101_0001_WFI01_cal.asdf"
+    rtdata.output = output
+    ExposurePipeline.call(dm_input, save_results=True)
+    rtdata.get_truth(f"truth/WFI/image/{output}")
+
+    # check that the file exists ( don't duplicate checking contents done above)
+    pipeline = ExposurePipeline()
+    pipeline.log.info(
+        "Check that the output file exists   " + passfail(os.path.isfile(rtdata.output))
+    )
+
+    # Ensure step completion is as expected
+    model = rdm.open(rtdata.output)
+
+    assert model.meta.cal_step.dq_init == "COMPLETE"
+    assert model.meta.cal_step.saturation == "COMPLETE"
+    assert model.meta.cal_step.linearity == "COMPLETE"
+    assert model.meta.cal_step.dark == "COMPLETE"
+    assert model.meta.cal_step.jump == "COMPLETE"
+    assert model.meta.cal_step.ramp_fit == "COMPLETE"
+    assert model.meta.cal_step.assign_wcs == "COMPLETE"
+    assert model.meta.cal_step.flat_field == "COMPLETE"
+    assert model.meta.cal_step.photom == "COMPLETE"
 
 
 @pytest.mark.bigdata

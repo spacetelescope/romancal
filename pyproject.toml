@@ -13,14 +13,14 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "asdf >=2.15.0",
+    "asdf >=3.1.0",
     "asdf-astropy >=0.5.0",
     "astropy >=5.3.0",
     "crds >=11.16.16",
     "gwcs >=0.21.0",
     "jsonschema >=4.8",
-    "numpy >=1.22,<2.0",
-    "photutils >=1.10.0",
+    "numpy >=1.23,<2.0",
+    "photutils >=1.13.0",
     "pyparsing >=2.4.7",
     "requests >=2.26",
     "rad>=0.20.0",
@@ -30,12 +30,13 @@ dependencies = [
     "scipy >=1.11",
     "stcal>=1.7.0",
     # "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
-    "stpipe >=0.5.0",
+    #"stpipe >=0.5.0",
+    "stpipe @ git+https://github.com/spacetelescope/stpipe.git@main",
     "tweakwcs >=0.8.6",
     "spherical-geometry >= 1.2.22",
     "stsci.imagestats >= 1.6.3",
     "drizzle >= 1.14.0",
-    "webbpsf == 1.2.1",
+    "webbpsf >= 1.2.1",
 ]
 dynamic = [
     "version",
@@ -132,9 +133,6 @@ norecursedirs = [
 filterwarnings = [
     "error::ResourceWarning",
 ]
-asdf_schema_tests_enabled = true
-asdf_schema_validate_default = false
-asdf_schema_root = "romancal/datamodels/schemas"
 junit_family = "xunit2"
 inputs_root = "roman-pipeline"
 results_root = "roman-pipeline-results"
@@ -143,7 +141,6 @@ doctest_rst = "enabled"
 text_file_format = "rst"
 log_cli_level = "info"
 addopts = [
-    "--show-capture=no",
     "--doctest-ignore-import-errors",
     "--color=yes",
 ]

@@ -11,8 +11,8 @@ import romancal.datamodels.filetype as filetype
 # step imports
 from romancal.assign_wcs import AssignWcsStep
 from romancal.associations.asn_from_list import asn_from_list
+from romancal.associations.load_asn import load_asn
 from romancal.dark_current import DarkCurrentStep
-from romancal.datamodels import ModelContainer
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
 from romancal.lib.basic_utils import is_fully_saturated
@@ -74,12 +74,12 @@ class ExposurePipeline(RomanPipeline):
         else:
             input_filename = None
 
-        # open the input file
+        # determine the input type
         file_type = filetype.check(input)
         if file_type == "asn":
-            asn = ModelContainer.read_asn(input)
-
-        if file_type == "asdf":
+            with open(input_filename) as f:
+                asn = load_asn(f)
+        elif file_type == "asdf":
             try:
                 # set the product name based on the input filename
                 asn = asn_from_list([input], product_name=input_filename.split(".")[0])
@@ -92,85 +92,92 @@ class ExposurePipeline(RomanPipeline):
         expos_file = []
         n_members = 0
         # extract the members from the asn to run the files through the steps
-        for product in asn["products"]:
-            n_members = len(product["members"])
-            for member in product["members"]:
-                expos_file.append(member["expname"])
+        results = []
+        tweakreg_input = []
+        if file_type == "asn":
+            for product in asn["products"]:
+                n_members = len(product["members"])
+                for member in product["members"]:
+                    expos_file.append(member["expname"])
 
-        results = ModelContainer()
-        tweakreg_input = ModelContainer()
-        for in_file in expos_file:
-            if isinstance(in_file, str):
-                input_filename = basename(in_file)
-                log.info(f"Input file name: {input_filename}")
-            else:
-                input_filename = None
+            results = []
+            tweakreg_input = []
+            for in_file in expos_file:
+                if isinstance(in_file, str):
+                    input_filename = basename(in_file)
+                    log.info(f"Input file name: {input_filename}")
+                else:
+                    input_filename = None
+        elif file_type == "DataModel":
+            in_file = input
 
+        # check to see if in_file is defined, if not assume we have a datamodel
+        if in_file is not None:
             # Open the file
             input = rdm.open(in_file)
             log.info(f"Processing a WFI exposure {in_file}")
 
-            self.dq_init.suffix = "dq_init"
-            result = self.dq_init(input)
-            if input_filename:
-                result.meta.filename = input_filename
-            result = self.saturation(result)
+        self.dq_init.suffix = "dq_init"
+        result = self.dq_init(input)
+        if input_filename:
+            result.meta.filename = input_filename
+        result = self.saturation(result)
 
-            # Test for fully saturated data
-            if is_fully_saturated(result):
-                # Return fully saturated image file (stopping pipeline)
-                log.info("All pixels are saturated. Returning a zeroed-out image.")
+        # Test for fully saturated data
+        if is_fully_saturated(result):
+            # Return fully saturated image file (stopping pipeline)
+            log.info("All pixels are saturated. Returning a zeroed-out image.")
 
-                #    if is_fully_saturated(result):
-                # Set all subsequent steps to skipped
-                for step_str in [
-                    "assign_wcs",
-                    "flat_field",
-                    "photom",
-                    "source_detection",
-                    "dark",
-                    "refpix",
-                    "linearity",
-                    "ramp_fit",
-                    "jump",
-                    "tweakreg",
-                ]:
-                    result.meta.cal_step[step_str] = "SKIPPED"
+            #    if is_fully_saturated(result):
+            # Set all subsequent steps to skipped
+            for step_str in [
+                "assign_wcs",
+                "flat_field",
+                "photom",
+                "source_detection",
+                "dark",
+                "refpix",
+                "linearity",
+                "ramp_fit",
+                "jump",
+                "tweakreg",
+            ]:
+                result.meta.cal_step[step_str] = "SKIPPED"
 
-                # Set suffix for proper output naming
-                self.suffix = "cal"
-                results.append(result)
-                return results
-
-            result = self.refpix(result)
-            result = self.linearity(result)
-            result = self.dark_current(result)
-            result = self.rampfit(result)
-            result = self.assign_wcs(result)
-
-            if result.meta.exposure.type == "WFI_IMAGE":
-                result = self.flatfield(result)
-                result = self.photom(result)
-                result = self.source_detection(result)
-                tweakreg_input.append(result)
-                log.info(
-                    f"Number of models to tweakreg:   {len(tweakreg_input._models), n_members}"
-                )
-            else:
-                log.info("Flat Field step is being SKIPPED")
-                log.info("Photom step is being SKIPPED")
-                log.info("Source Detection step is being SKIPPED")
-                log.info("Tweakreg step is being SKIPPED")
-                result.meta.cal_step.flat_field = "SKIPPED"
-                result.meta.cal_step.photom = "SKIPPED"
-                result.meta.cal_step.source_detection = "SKIPPED"
-                result.meta.cal_step.tweakreg = "SKIPPED"
-                self.suffix = "cal"
-
-            self.setup_output(result)
-
-            self.output_use_model = True
+            # Set suffix for proper output naming
+            self.suffix = "cal"
             results.append(result)
+            return results
+
+        result = self.refpix(result)
+        result = self.linearity(result)
+        result = self.dark_current(result)
+        result = self.rampfit(result)
+        result = self.assign_wcs(result)
+
+        if result.meta.exposure.type == "WFI_IMAGE":
+            result = self.flatfield(result)
+            result = self.photom(result)
+            result = self.source_detection(result)
+            tweakreg_input.append(result)
+            log.info(
+                f"Number of models to tweakreg:   {len(tweakreg_input), n_members}"
+            )
+        else:
+            log.info("Flat Field step is being SKIPPED")
+            log.info("Photom step is being SKIPPED")
+            log.info("Source Detection step is being SKIPPED")
+            log.info("Tweakreg step is being SKIPPED")
+            result.meta.cal_step.flat_field = "SKIPPED"
+            result.meta.cal_step.photom = "SKIPPED"
+            result.meta.cal_step.source_detection = "SKIPPED"
+            result.meta.cal_step.tweakreg = "SKIPPED"
+            self.suffix = "cal"
+
+        self.setup_output(result)
+
+        self.output_use_model = True
+        results.append(result)
 
         # Now that all the exposures are collated, run tweakreg
         # Note: this does not cover the case where the asn mixes imaging and spectral
