@@ -2,7 +2,6 @@
 
 import copy
 import logging
-import warnings
 from functools import partial
 
 import numpy as np
@@ -171,46 +170,6 @@ class OutlierDetection:
                 resampled_models.shelve(model, i, modify=False)
 
         median_image = np.nanmedian(data, axis=0)
-        return median_image
-
-        # Now, set up buffered access to all input models
-        resampled_models.set_buffer(1.0)  # Set buffer at 1Mb
-        resampled_sections = resampled_models.get_sections()
-        median_image = np.empty(
-            (resampled_models.imrows, resampled_models.imcols),
-            resampled_models.imtype,
-        )
-        median_image[:] = np.nan  # initialize with NaNs
-
-        for resampled_sci, resampled_weight, (row1, row2) in resampled_sections:
-            # Create a mask for each input image, masking out areas where there is
-            # no data or the data has very low weight
-            badmasks = []
-            for weight, weight_threshold in zip(resampled_weight, weight_thresholds):
-                badmask = np.less(weight, weight_threshold)
-                log.debug(
-                    f"Percentage of pixels with low weight: {np.sum(badmask) / len(weight.flat) * 100}"
-                )
-                badmasks.append(badmask)
-
-            # Fill resampled_sci array with nan's where mask values are True
-            for f1, f2 in zip(resampled_sci, badmasks):
-                for elem1, elem2 in zip(f1, f2):
-                    elem1[elem2] = np.nan
-
-            del badmasks
-
-            # For a stack of images with "bad" data replaced with Nan
-            # use np.nanmedian to compute the median.
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    action="ignore",
-                    message="All-NaN slice encountered",
-                    category=RuntimeWarning,
-                )
-                median_image[row1:row2] = np.nanmedian(resampled_sci, axis=0)
-            del resampled_sci, resampled_weight
-
         return median_image
 
     def detect_outliers(self, median_data, median_wcs, resampled):
