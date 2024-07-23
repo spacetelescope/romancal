@@ -177,9 +177,8 @@ class TweakRegStep(RomanStep):
                             )
                         )
                     elif is_tweakreg_catalog_name_present:
-                        catalog = Table.read(
-                            image_model.meta.source_detection.tweakreg_catalog_name,
-                            format=self.catalog_format,
+                        catalog = self.read_catalog(
+                            image_model.meta.source_detection.tweakreg_catalog_name
                         )
                     else:
                         images.shelve(image_model, i, modify=False)
@@ -457,6 +456,8 @@ class TweakRegStep(RomanStep):
             for i, imcat in enumerate(imcats):
                 image_model = images.borrow(i)
                 image_model.meta.cal_step["tweakreg"] = "COMPLETE"
+                # remove source catalog
+                del image_model.meta["tweakreg_catalog"]
 
                 # retrieve fit status and update wcs if fit is successful:
                 if "SUCCESS" in imcat.meta.get("fit_info")["status"]:

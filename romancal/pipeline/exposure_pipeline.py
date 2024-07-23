@@ -95,12 +95,13 @@ class ExposurePipeline(RomanPipeline):
         expos_file = []
         n_members = 0
         # extract the members from the asn to run the files through the steps
-        results = ModelContainer()
-        tweakreg_input = ModelContainer()
+        results = []
+        tweakreg_input = []
 
         # populate expos_file
         if file_type == "asn":
             for product in asn["products"]:
+                # extract the members from the asn to run the files through the steps
                 n_members = len(product["members"])
                 for member in product["members"]:
                     expos_file.append(member["expname"])
@@ -165,7 +166,7 @@ class ExposurePipeline(RomanPipeline):
                 result = self.source_catalog(result)
                 tweakreg_input.append(result)
                 log.info(
-                    f"Number of models to tweakreg:   {len(tweakreg_input._models), n_members}"
+                    f"Number of models to tweakreg:   {len(tweakreg_input), n_members}"
                 )
             else:
                 log.info("Flat Field step is being SKIPPED")
