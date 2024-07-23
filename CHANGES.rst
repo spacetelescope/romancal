@@ -9,7 +9,7 @@ Documentation
 general
 -------
 
-- Pin the version of stcal<1.8.0 until stcal API changes are in romancal [#]
+- Pin the version of stcal<1.8.0 until stcal API changes are in romancal [#1326]
 
 - Update the exposure pipeline to accept a roman datamodel as input [#1296]
 
