@@ -76,7 +76,7 @@ class RomanStep(Step):
         model.meta.calibration_software_version = importlib.metadata.version("romancal")
 
         if isinstance(model, (ImageModel, MosaicModel)):
-            # convert to whatever type is model.mcal_logs to avoid validation errors
+            # convert to model.cal_logs type to avoid validation errors
             model.cal_logs = type(model.cal_logs)(self.log_records)
 
         if len(reference_files_used) > 0:
