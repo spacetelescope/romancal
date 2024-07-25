@@ -35,6 +35,8 @@ class RomanStep(Step):
     output_ext =  string(default='.asdf')    # Default type of output
     """
 
+    _log_records_formatter = _LOG_FORMATTER
+
     @classmethod
     def _datamodels_open(cls, init, **kwargs):
         """
@@ -74,8 +76,8 @@ class RomanStep(Step):
         model.meta.calibration_software_version = importlib.metadata.version("romancal")
 
         if isinstance(model, (ImageModel, MosaicModel)):
-            for log_record in self.log_records:
-                model.cal_logs.append(_LOG_FORMATTER.format(log_record))
+            # convert to model.cal_logs type to avoid validation errors
+            model.cal_logs = type(model.cal_logs)(self.log_records)
 
         if len(reference_files_used) > 0:
             for ref_name, ref_file in reference_files_used:
