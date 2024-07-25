@@ -8,7 +8,7 @@ from roman_datamodels.maker_utils import mk_level2_image
 from stpipe import crds_client
 
 import romancal
-from romancal.datamodels import ModelContainer
+from romancal.datamodels import ModelLibrary
 from romancal.flatfield import FlatFieldStep
 from romancal.stpipe import RomanPipeline, RomanStep
 
@@ -52,7 +52,7 @@ def test_open_model(step_class, tmp_path, is_container):
     step = step_class()
     with step.open_model(test_file_path) as model:
         if is_container:
-            assert isinstance(model, ModelContainer)
+            assert isinstance(model, ModelLibrary)
             assert model.crds_observatory == "roman"
             assert model.get_crds_parameters() is not None
         else:

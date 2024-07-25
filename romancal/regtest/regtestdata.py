@@ -755,7 +755,7 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
     # lazy loading and memmory mapping
     open_kwargs = {
         "lazy_load": False,
-        "copy_arrays": True,
+        "memmap": False,
     }
     with (
         asdf.open(result, **open_kwargs) as af0,

@@ -9,6 +9,8 @@ Documentation
 general
 -------
 
+- Pin the version of stcal<1.8.0 until stcal API changes are in romancal [#1326]
+
 - Update the exposure pipeline to accept a roman datamodel as input [#1296]
 
 - Update okify script to use GA directory structure [#1282]
@@ -20,6 +22,13 @@ general
 - Add catalog source step to the mosaic pipeline [#1266]
 
 - Rename highlevelpipeline to mosaic pipeline [#1249]
+
+- Replace ``SourceDetectionStep`` with ``SourceCatalogStep`` in ELP. [#1276]
+
+- replace usages of ``copy_arrays`` with ``memmap`` [#1316]
+
+- Replace ModelContainer with ModelLibrary [#1241]
+
 
 source_catalog
 --------------
@@ -40,11 +49,19 @@ stpipe
 - Add ``ModelContainer`` support to ``Step._datamodels_open`` to allow
   loading "pars-*" files from CRDS. [#1270]
 
+
+tweakreg
+--------
+- Integration with ``SourceCatalogStep``: allow usage of results from ``SourceCatalogStep``. [#1276]
+
 mosaic_pipeline
 ---------------
 
 - Fix construction of skycell WCS.  [#1297]
 
+tweakreg
+--------
+- Remove unnecessary global variable ALIGN_TO_ABS_REFCAT. [#1314]
 
 
 0.15.1 (2024-05-15)

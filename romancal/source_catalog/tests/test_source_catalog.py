@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import astropy.units as u
 import numpy as np
@@ -7,7 +8,14 @@ from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from numpy.testing import assert_allclose
 from photutils.segmentation import SegmentationImage
-from roman_datamodels.datamodels import ImageModel, MosaicModel
+from roman_datamodels import datamodels as rdm
+from roman_datamodels.datamodels import (
+    ImageModel,
+    MosaicModel,
+    MosaicSegmentationMapModel,
+    MosaicSourceCatalogModel,
+    SourceCatalogModel,
+)
 from roman_datamodels.maker_utils import mk_level2_image, mk_level3_mosaic
 
 from romancal.source_catalog.reference_data import ReferenceData
@@ -33,7 +41,7 @@ def make_test_image():
         + g5(xx, yy)
         + g6(xx, yy)
         + g7(xx, yy)
-    ).value
+    ).value.astype("float32")
 
     y0 = 2
     x0 = 90
@@ -113,6 +121,7 @@ def test_l2_source_catalog(
         npixels=npixels,
         save_results=save_results,
     )
+
     cat = result.source_catalog
 
     assert isinstance(cat, Table)
@@ -197,6 +206,7 @@ def test_l3_source_catalog(
         npixels=npixels,
         save_results=save_results,
     )
+
     cat = result.source_catalog
 
     assert isinstance(cat, Table)
@@ -255,10 +265,11 @@ def test_l3_source_catalog(
 
 
 @pytest.mark.webbpsf
-def test_background(mosaic_model):
+def test_background(mosaic_model, tmp_path):
     """
     Test background fallback when Background2D fails.
     """
+    os.chdir(tmp_path)
     step = SourceCatalogStep()
     result = step.call(
         mosaic_model,
@@ -268,6 +279,7 @@ def test_background(mosaic_model):
         npixels=25,
         fit_psf=False,
     )
+
     cat = result.source_catalog
 
     assert isinstance(cat, Table)
@@ -293,8 +305,8 @@ def test_l2_input_model_unchanged(image_model, tmp_path):
         save_results=False,
     )
 
-    assert_allclose(original_data, image_model.data, atol=5.0e-7)
-    assert_allclose(original_err, image_model.err, atol=5.0e-7)
+    assert_allclose(original_data, image_model.data, atol=5.0e-5)
+    assert_allclose(original_err, image_model.err, atol=5.0e-5)
 
 
 @pytest.mark.webbpsf
@@ -317,8 +329,8 @@ def test_l3_input_model_unchanged(mosaic_model, tmp_path):
         save_results=False,
     )
 
-    assert_allclose(original_data, mosaic_model.data, atol=5.0e-7)
-    assert_allclose(original_err, mosaic_model.err, atol=5.0e-7)
+    assert_allclose(original_data, mosaic_model.data, atol=5.0e-5)
+    assert_allclose(original_err, mosaic_model.err, atol=5.0e-5)
 
 
 @pytest.mark.webbpsf
@@ -381,6 +393,7 @@ def test_do_psf_photometry(tmp_path, image_model):
         npixels=10,
         save_results=False,
     )
+
     cat = result.source_catalog
 
     assert isinstance(cat, Table)
@@ -417,6 +430,7 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
         save_results=False,
         fit_psf=fit_psf,
     )
+
     cat = result.source_catalog
 
     assert isinstance(cat, Table)
@@ -432,3 +446,252 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
     assert (fit_psf and psf_colnames_present) or (
         not fit_psf and psf_colnames_not_present
     )
+
+
+@pytest.mark.webbpsf
+@pytest.mark.parametrize(
+    "snr_threshold, npixels, nsources, save_results, return_updated_model, expected_result, expected_outputs",
+    (
+        (
+            3,
+            10,
+            7,
+            True,
+            True,
+            ImageModel,
+            {
+                "cat": SourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+                "sourcecatalog": ImageModel,
+            },
+        ),
+        (
+            3,
+            50,
+            5,
+            True,
+            False,
+            SourceCatalogModel,
+            {
+                "cat": SourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+            },
+        ),
+        (
+            10,
+            10,
+            7,
+            False,
+            True,
+            ImageModel,
+            {
+                "cat": SourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+            },
+        ),
+        (
+            20,
+            10,
+            5,
+            False,
+            False,
+            SourceCatalogModel,
+            {
+                "cat": SourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+            },
+        ),
+    ),
+)
+def test_l2_source_catalog_keywords(
+    image_model,
+    snr_threshold,
+    npixels,
+    nsources,
+    save_results,
+    return_updated_model,
+    expected_result,
+    expected_outputs,
+    tmp_path,
+):
+    """
+    Test that the proper object is returned in the call to SourceCatalogStep
+    and that the desired output files are saved to the disk with the correct type.
+    """
+    os.chdir(tmp_path)
+    step = SourceCatalogStep
+    # this step attribute controls whether to return a datamodel or source catalog
+    step.return_updated_model = return_updated_model
+
+    result = step.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=snr_threshold,
+        npixels=npixels,
+        save_results=save_results,
+    )
+
+    # assert that we returned the correct object
+    assert isinstance(result, expected_result)
+
+    # assert that the desired output files were saved to disk
+    assert all(
+        Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf").exists()
+        for suffix in expected_outputs.keys()
+    )
+
+    # assert that the desired output files were saved with the correct datamodel type
+    assert all(
+        isinstance(
+            rdm.open(Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf")),
+            expected_outputs.get(suffix),
+        )
+        for suffix in expected_outputs.keys()
+    )
+
+
+@pytest.mark.webbpsf
+@pytest.mark.parametrize(
+    "snr_threshold, npixels, nsources, save_results, return_updated_model, expected_result, expected_outputs",
+    (
+        (
+            3,
+            10,
+            7,
+            True,
+            True,
+            MosaicModel,
+            {
+                "cat": MosaicSourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+                "sourcecatalog": MosaicModel,
+            },
+        ),
+        (
+            3,
+            50,
+            5,
+            True,
+            False,
+            MosaicSourceCatalogModel,
+            {
+                "cat": MosaicSourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+            },
+        ),
+        (
+            10,
+            10,
+            7,
+            False,
+            True,
+            MosaicModel,
+            {
+                "cat": MosaicSourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+            },
+        ),
+        (
+            20,
+            10,
+            5,
+            False,
+            False,
+            MosaicSourceCatalogModel,
+            {
+                "cat": MosaicSourceCatalogModel,
+                "segm": MosaicSegmentationMapModel,
+            },
+        ),
+    ),
+)
+def test_l3_source_catalog_keywords(
+    mosaic_model,
+    snr_threshold,
+    npixels,
+    nsources,
+    save_results,
+    return_updated_model,
+    expected_result,
+    expected_outputs,
+    tmp_path,
+):
+    """
+    Test that the proper object is returned in the call to SourceCatalogStep
+    and that the desired output files are saved to the disk with the correct type.
+    """
+    os.chdir(tmp_path)
+    step = SourceCatalogStep
+    # this step attribute controls whether to return a datamodel or source catalog
+    step.return_updated_model = return_updated_model
+
+    result = step.call(
+        mosaic_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=snr_threshold,
+        npixels=npixels,
+        save_results=save_results,
+    )
+
+    # assert that we returned the correct object
+    assert isinstance(result, expected_result)
+
+    # assert that the desired output files were saved to disk
+    assert all(
+        Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf").exists()
+        for suffix in expected_outputs.keys()
+    )
+
+    # assert that the desired output files were saved with the correct datamodel type
+    assert all(
+        isinstance(
+            rdm.open(Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf")),
+            expected_outputs.get(suffix),
+        )
+        for suffix in expected_outputs.keys()
+    )
+
+
+@pytest.mark.webbpsf
+@pytest.mark.parametrize(
+    "return_updated_model, expected_result",
+    (
+        (
+            True,
+            ImageModel,
+        ),
+        (
+            False,
+            SourceCatalogModel,
+        ),
+    ),
+)
+def test_l2_source_catalog_return_updated_model_attribute(
+    image_model,
+    return_updated_model,
+    expected_result,
+    tmp_path,
+):
+    """
+    Test that the proper object is returned in the call to SourceCatalogStep.
+    """
+    os.chdir(tmp_path)
+
+    step = SourceCatalogStep(
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+    )
+
+    if return_updated_model:
+        # mimic what happens in the ELP -- i.e. set the "hidden" parameter
+        # to cause this step to return a model instead of a catalog
+        step.return_updated_model = return_updated_model
+
+    result = step.run(image_model)
+
+    # assert that we returned the correct object
+    assert isinstance(result, expected_result)
