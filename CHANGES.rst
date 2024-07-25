@@ -23,9 +23,12 @@ general
 
 - Rename highlevelpipeline to mosaic pipeline [#1249]
 
+- Replace ``SourceDetectionStep`` with ``SourceCatalogStep`` in ELP. [#1276]
+
 - replace usages of ``copy_arrays`` with ``memmap`` [#1316]
 
 - Replace ModelContainer with ModelLibrary [#1241]
+
 
 source_catalog
 --------------
@@ -46,6 +49,11 @@ stpipe
 - Add ``ModelContainer`` support to ``Step._datamodels_open`` to allow
   loading "pars-*" files from CRDS. [#1270]
 
+
+tweakreg
+--------
+- Integration with ``SourceCatalogStep``: allow usage of results from ``SourceCatalogStep``. [#1276]
+
 mosaic_pipeline
 ---------------
 
@@ -54,7 +62,6 @@ mosaic_pipeline
 tweakreg
 --------
 - Remove unnecessary global variable ALIGN_TO_ABS_REFCAT. [#1314]
-
 
 
 0.15.1 (2024-05-15)
