@@ -2,8 +2,6 @@
  Unit tests for the Roman source detection step code
 """
 
-import os
-import tempfile
 from copy import deepcopy
 
 import numpy as np
@@ -64,18 +62,12 @@ def setup_inputs(
         fov_pixels=15,
     )
 
-    dir_path = tempfile.gettempdir()
-    filename_prefix = f"psf_model_{webbpsf_config['filt']}"
-    file_path = os.path.join(dir_path, filename_prefix)
-
     # compute gridded PSF model:
     psf_model, centroids = create_gridded_psf_model(
-        file_path,
         webbpsf_config["filt"],
         webbpsf_config["detector"],
         oversample=webbpsf_config["oversample"],
         fov_pixels=webbpsf_config["fov_pixels"],
-        overwrite=True,
         logging_level="ERROR",
     )
 

@@ -166,10 +166,8 @@ class SourceDetectionStep(RomanStep):
                 log.info("Constructing a gridded PSF model.")
                 detector = input_model.meta.instrument["detector"].replace("WFI", "SCA")
                 gridded_psf_model, _ = psf.create_gridded_psf_model(
-                    path_prefix="tmp",
                     filt=filt,
                     detector=detector,
-                    overwrite=True,
                     logging_level="ERROR",
                 )
 
