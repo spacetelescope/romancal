@@ -3,22 +3,15 @@ Utilities for fitting model PSFs to rate images.
 """
 
 import logging
-import os
 
-import astropy.units as u
 import numpy as np
 import webbpsf
 from astropy.modeling.fitting import LevMarLSQFitter
-from astropy.nddata import CCDData, bitmask
+from astropy.nddata import bitmask
 from astropy.table import Table
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
-from photutils.psf import (
-    GriddedPSFModel,
-    IterativePSFPhotometry,
-    PSFPhotometry,
-    SourceGrouper,
-)
+from photutils.psf import IterativePSFPhotometry, PSFPhotometry, SourceGrouper
 from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
 from webbpsf import conf, gridded_library, restart_logging
@@ -60,13 +53,11 @@ default_finder = DAOStarFinder(
 
 
 def create_gridded_psf_model(
-    path_prefix,
     filt,
     detector,
     oversample=11,
     fov_pixels=9,
     sqrt_n_psfs=2,
-    overwrite=False,
     buffer_pixels=100,
     instrument_options=None,
     logging_level=None,
@@ -77,10 +68,6 @@ def create_gridded_psf_model(
 
     Parameters
     ----------
-    path_prefix : str or Path-like
-        Prefix to the output file path for the gridded PSF model
-        FITS file. A suffix denoting the detector name will
-        be appended.
     filt : str
         Filter name, starting with "F". For example: `"F184"`.
     detector : str
@@ -95,8 +82,6 @@ def create_gridded_psf_model(
     sqrt_n_psfs : int, optional
         Square root of the number of PSFs to calculate, distributed uniformly
         across the detector. Default is 4.
-    overwrite : bool, optional
-        Overwrite output file if one already exists. Default is False.
     buffer_pixels : int, optional
         Calculate a grid of PSFs distributed uniformly across the detector
         at least ``buffer_pixels`` away from the detector edges. Default is 100.
@@ -126,9 +111,6 @@ def create_gridded_psf_model(
         raise ValueError(f"`sqrt_n_psfs` must be an integer, got {sqrt_n_psfs}.")
     n_psfs = int(sqrt_n_psfs) ** 2
 
-    # webbpsf appends "_sca??.fits" to the requested path:
-    expected_output_path = f"{path_prefix}_{detector.lower()}.fits"
-
     # Choose pixel boundaries for the grid of PSFs:
     start_pix = 0
     stop_pix = 4096
@@ -144,54 +126,38 @@ def create_gridded_psf_model(
     # generate PSFs over a grid of detector positions [pix]
     model_psf_centroids = [(int(x), int(y)) for y in pixel_range for x in pixel_range]
 
-    if not os.path.exists(expected_output_path) or overwrite:
-        if logging_level is None:
-            # pass along logging level from __name__'s logger to WebbPSF:
-            logging_level = logging.getLevelName(log.level)
+    if logging_level is None:
+        # pass along logging level from __name__'s logger to WebbPSF:
+        logging_level = logging.getLevelName(log.level)
 
-        # set the WebbPSF logging level (similar to webbpsf.utils.setup_logging):
-        conf.logging_level = logging_level
-        restart_logging(verbose=False)
+    # set the WebbPSF logging level (similar to webbpsf.utils.setup_logging):
+    conf.logging_level = logging_level
+    restart_logging(verbose=False)
 
-        wfi = webbpsf.roman.WFI()
-        wfi.filter = filt
+    wfi = webbpsf.roman.WFI()
+    wfi.filter = filt
 
-        if instrument_options is not None:
-            wfi.options.update(instrument_options)
+    if instrument_options is not None:
+        wfi.options.update(instrument_options)
 
-        # Initialize the PSF library
-        inst = gridded_library.CreatePSFLibrary(
-            instrument=wfi,
-            filter_name=filt,
-            detectors=detector.upper(),
-            num_psfs=n_psfs,
-            oversample=oversample,
-            fov_pixels=fov_pixels,
-            add_distortion=False,
-            crop_psf=False,
-            save=True,
-            filename=path_prefix,
-            overwrite=overwrite,
-            verbose=False,
-        )
+    # Initialize the PSF library
+    inst = gridded_library.CreatePSFLibrary(
+        instrument=wfi,
+        filter_name=filt,
+        detectors=detector.upper(),
+        num_psfs=n_psfs,
+        oversample=oversample,
+        fov_pixels=fov_pixels,
+        add_distortion=False,
+        crop_psf=False,
+        save=False,
+        verbose=False,
+    )
 
-        inst.location_list = model_psf_centroids
+    inst.location_list = model_psf_centroids
 
-        # Create the PSF grid:
-        gridmodel = inst.create_grid()
-
-    elif os.path.exists(expected_output_path):
-        logging.log(
-            logging.INFO,
-            f"Loading existing gridded PSF model from {expected_output_path}",
-        )
-        psf_model = CCDData.read(expected_output_path, unit=u.electron / u.s, ext=0)
-        psf_model.meta = dict(psf_model.meta)
-        psf_model.meta["oversampling"] = oversample
-        psf_model.meta["grid_xypos"] = np.array(
-            [list(tup)[::-1] for tup in model_psf_centroids]
-        )
-        gridmodel = GriddedPSFModel(psf_model)
+    # Create the PSF grid:
+    gridmodel = inst.create_grid()
 
     return gridmodel, model_psf_centroids
 

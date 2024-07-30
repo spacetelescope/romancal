@@ -4,7 +4,6 @@ Module to calculate the source catalog.
 
 import logging
 import warnings
-from pathlib import Path
 from typing import List
 
 import astropy.units as u
@@ -1172,12 +1171,9 @@ class RomanSourceCatalog:
             filt = self.model.meta.basic.optical_element
             detector = "SCA02"
         # prefix of the temporary FITS file that will contain the gridded PSF model
-        path_prefix = "tmp"
         gridded_psf_model, _ = psf.create_gridded_psf_model(
-            path_prefix=path_prefix,
             filt=filt,
             detector=detector,
-            overwrite=True,
             logging_level="ERROR",
         )
 
@@ -1199,11 +1195,6 @@ class RomanSourceCatalog:
         # append PSF results to the class instance with the proper column name
         for old_name, new_name in old_name_to_new_name_mapping.items():
             setattr(self, new_name, psf_photometry_table[old_name])
-
-        # remove temporary file containing gridded_psf_model
-        filepath = Path().cwd().glob(f"{path_prefix}*{detector.lower()}*.fits")
-        for filename in filepath:
-            filename.unlink(missing_ok=True)
 
     @lazyproperty
     def catalog(self):
