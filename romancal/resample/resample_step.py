@@ -145,7 +145,9 @@ class ResampleStep(RomanStep):
 
     def _final_updates(self, model, input_models, kwargs):
         model.meta.cal_step["resample"] = "COMPLETE"
-        util.update_s_region_imaging(model)
+        model.meta.wcsinfo.s_region = util.compute_s_region_imaging(
+            model.meta.wcs, model.data.shape
+        )
 
         # if pixel_scale exists, it will override pixel_scale_ratio.
         # calculate the actual value of pixel_scale_ratio based on pixel_scale
