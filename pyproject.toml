@@ -32,10 +32,10 @@ dependencies = [
     "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
     #"stpipe >=0.5.0",
     "stpipe @ git+https://github.com/spacetelescope/stpipe.git@main",
-    "tweakwcs >=0.8.6",
+    "tweakwcs >=0.8.8",
     "spherical-geometry >= 1.2.22",
     "stsci.imagestats >= 1.6.3",
-    "drizzle >= 1.14.0",
+    "drizzle >= 1.15.0",
     "webbpsf >= 1.2.1",
 ]
 dynamic = [
