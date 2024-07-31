@@ -68,7 +68,7 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
 
     # Perform DMS tests
     # Initial prep
-    model = rdm.open(rtdata.output, lazy_load=False)
+    model = rdm.open(rtdata.output)
     pipeline = MosaicPipeline()
 
     # DMS356 result is an ImageModel

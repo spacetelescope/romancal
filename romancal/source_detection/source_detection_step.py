@@ -72,7 +72,7 @@ class SourceDetectionStep(RomanStep):
     """
 
     def process(self, input):
-        with rdm.open(input, lazy_load=False) as input_model:
+        with rdm.open(input) as input_model:
             if input_model.meta.exposure.type != "WFI_IMAGE":
                 # Check to see if attempt to find sources in non-Image data
                 log.info("Skipping source detection for spectral exposure.")

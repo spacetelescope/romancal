@@ -21,7 +21,7 @@ class DarkCurrentStep(RomanStep):
 
     def process(self, input):
         # Open the input data model
-        with rdm.open(input, lazy_load=False) as input_model:
+        with rdm.open(input) as input_model:
             # Get the name of the dark reference file to use
             self.dark_name = self.get_reference_file(input_model, "dark")
             # Check for a valid reference file

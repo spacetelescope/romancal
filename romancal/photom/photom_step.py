@@ -31,7 +31,7 @@ class PhotomStep(RomanStep):
         """
 
         # Open the input data model
-        with rdm.open(input, lazy_load=False) as input_model:
+        with rdm.open(input) as input_model:
             # Get reference file
             reffile = self.get_reference_file(input_model, "photom")
 
