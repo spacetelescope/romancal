@@ -26,6 +26,7 @@ class RefPixStep(RomanStep):
     # interpolation of the reference pixels
     fft_interpolate = boolean(default=True) # Turn on or off the FFT interpolation
     # of the reference pixel padded values.
+    suffix = string(default="refpix")
     """
 
     reference_file_types = ["refpix"]
@@ -67,9 +68,4 @@ class RefPixStep(RomanStep):
             )
             # Update the step status
             output.meta.cal_step["refpix"] = "COMPLETE"
-            if self.save_results:
-                try:
-                    self.suffix = "refpix"
-                except AttributeError:
-                    self["suffix"] = "refpix"
         return output
