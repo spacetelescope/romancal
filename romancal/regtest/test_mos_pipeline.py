@@ -144,6 +144,10 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
         "WFI/image/r0000101001001001001_01101_0003_WFI01_cal.asdf",
     ]
 
+# set the location of the patch file: Once the location is *offically* decided this should be a standard environment
+# variable like the CRDS server
+    os.environ["PATCH_TABLE_PATH"] = "/grp/roman/scsb/tesselation/patches.asdf"
+
     asn = asn_from_list(cal_files, product_name='r0099101001001001001_r274dp63x31y81_prompt_F158')
     asn['target'] = 'r274dp63x31y81'
     asn_name = 'L3_mosaic_asn.json'
