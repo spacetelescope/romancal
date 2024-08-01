@@ -40,6 +40,7 @@ class JumpStep(RomanStep):
         sat_required_snowball = boolean(default=True) # Require the center of snowballs to be saturated
         expand_large_events = boolean(default=False) # must be True to trigger snowball and shower flagging
         use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
+        suffix = string(default="jump")
     """  # noqa: E501
 
     reference_file_types = ["gain", "readnoise"]
@@ -162,11 +163,5 @@ class JumpStep(RomanStep):
         self.log.info("The execution time in seconds: %f", tstop - tstart)
 
         result.meta.cal_step.jump = "COMPLETE"
-
-        if self.save_results:
-            try:
-                self.suffix = "jump"
-            except AttributeError:
-                self["suffix"] = "jump"
 
         return result
