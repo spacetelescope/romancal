@@ -16,6 +16,10 @@ class SaturationStep(RomanStep):
 
     reference_file_types = ["saturation"]
 
+    spec = """
+        suffix = string(default="saturation")
+    """
+
     def process(self, input):
         if isinstance(input, rdm.DataModel):
             input_model = input
@@ -45,11 +49,5 @@ class SaturationStep(RomanStep):
         # Close the reference file and update the step status
         ref_model.close()
         sat.meta.cal_step.saturation = "COMPLETE"
-
-        if self.save_results:
-            try:
-                self.suffix = "saturation"
-            except AttributeError:
-                self["suffix"] = "saturation"
 
         return sat
