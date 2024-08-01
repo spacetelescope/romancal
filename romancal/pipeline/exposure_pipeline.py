@@ -177,7 +177,6 @@ class ExposurePipeline(RomanPipeline):
                 result.meta.cal_step.source_detection = "SKIPPED"
                 result.meta.cal_step.tweakreg = "SKIPPED"
 
-            self.output_use_model = True
             results.append(result)
 
         # Now that all the exposures are collated, run tweakreg
