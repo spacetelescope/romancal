@@ -19,6 +19,10 @@ class DarkCurrentStep(RomanStep):
 
     reference_file_types = ["dark"]
 
+    spec = """
+        suffix = string(default="darkcurrent")
+    """
+
     def process(self, input):
         if isinstance(input, rdm.DataModel):
             input_model = input
@@ -62,11 +66,5 @@ class DarkCurrentStep(RomanStep):
             if self.dark_output is not None:
                 dark_model.save(self.dark_output)
                 # not clear to me that this makes any sense for Roman
-
-        if self.save_results:
-            try:
-                self.suffix = "darkcurrent"
-            except AttributeError:
-                self["suffix"] = "darkcurrent"
 
         return out_model
