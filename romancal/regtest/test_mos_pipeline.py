@@ -144,7 +144,7 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
         "WFI/image/r0000101001001001001_01101_0003_WFI01_cal.asdf",
     ]
 
-    asn = asn_from_list(cal_files, product_name='r0099101001001001001_r274dp63x31y81_F158_prompt_visit')
+    asn = asn_from_list(cal_files, product_name='r0099101001001001001_r274dp63x31y81_prompt_F158')
     asn['target'] = 'r274dp63x31y81'
     asn_name = 'L3_mosaic_asn.json'
     _, serialized = asn.dump()
@@ -159,7 +159,7 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
     rtdata.input = input_asn
 
     # Test Pipeline
-    output = "r0099101001001001001_r274dp63x31y81_F158_prompt_visit_i2d.asdf"
+    output = "r0099101001001001001_r274dp63x31y81_prompt_F158_i2d.asdf"
     rtdata.output = output
     args = [
         "roman_mos",
