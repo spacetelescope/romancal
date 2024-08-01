@@ -71,11 +71,8 @@ class MosaicPipeline(RomanPipeline):
 
         if file_type == "asn":
             input = ModelLibrary(input, on_disk=self.on_disk)
-            self.flux.suffix = "flux"
             result = self.flux(input)
-            self.skymatch.suffix = "skymatch"
             result = self.skymatch(result)
-            self.outlier_detection.suffix = "outlier_detection"
             result = self.outlier_detection(result)
             #
             # check to see if the product name contains a skycell name & if true get the skycell record
@@ -126,7 +123,6 @@ class MosaicPipeline(RomanPipeline):
                             self.resample.output_shape,
                         )
                         wcs_file = asdf.open(self.resample.output_wcs)
-                        self.suffix = "i2d"
                         result = self.resample(result)
                         self.output_file = input.asn["products"][0]["name"]
                         # force the SourceCatalogStep to save the results
@@ -137,12 +133,10 @@ class MosaicPipeline(RomanPipeline):
                         exit(0)
 
             else:
-                self.resample.suffix = "i2d"
                 self.output_file = input.asn["products"][0]["name"]
                 result = self.resample(result)
                 self.sourcecatalog.save_results = True
                 result_catalog = self.sourcecatalog(result)  # noqa: F841
-                self.suffix = "i2d"
                 if input_filename:
                     result.meta.filename = self.output_file
 

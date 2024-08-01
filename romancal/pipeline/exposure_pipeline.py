@@ -121,7 +121,6 @@ class ExposurePipeline(RomanPipeline):
 
             log.info(f"Processing a WFI exposure {input_filename}")
 
-            self.dq_init.suffix = "dq_init"
             result = self.dq_init(input)
 
             if input_filename:
