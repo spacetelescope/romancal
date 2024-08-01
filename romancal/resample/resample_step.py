@@ -62,6 +62,7 @@ class ResampleStep(RomanStep):
         allowed_memory = float(default=None)  # Fraction of memory to use for the combined image.
         in_memory = boolean(default=True)
         good_bits = string(default='~DO_NOT_USE+NON_SCIENCE')  # The good bits to use for building the resampling mask.
+        suffix = string(default='i2d')
     """  # noqa: E501
 
     reference_file_types = []
