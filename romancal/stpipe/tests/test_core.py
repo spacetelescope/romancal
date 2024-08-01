@@ -15,7 +15,7 @@ from romancal.stpipe import RomanPipeline, RomanStep
 
 @pytest.mark.parametrize("is_container", [True, False])
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
-def test_open_model(step_class, tmp_path, is_container):
+def test_datamodels_open(step_class, tmp_path, is_container):
     """
     Test that the class is properly hooked up to datamodels.open.
     More comprehensive tests can be found in romancal.datamodels.tests,
@@ -50,7 +50,7 @@ def test_open_model(step_class, tmp_path, is_container):
         test_file_path = file_path
 
     step = step_class()
-    with step.open_model(test_file_path) as model:
+    with step._datamodels_open(test_file_path) as model:
         if is_container:
             assert isinstance(model, ModelLibrary)
             assert model.crds_observatory == "roman"
@@ -76,7 +76,7 @@ def test_get_reference_file(step_class):
     step = step_class()
     reference_path = step.get_reference_file(model, "flat")
 
-    with step.open_model(reference_path) as reference_model:
+    with step._datamodels_open(reference_path) as reference_model:
         assert isinstance(reference_model, FlatRefModel)
 
 
@@ -97,7 +97,7 @@ def test_get_reference_file_spectral(step_class):
     step = step_class()
     reference_path = step.get_reference_file(model, "flat")
 
-    with step.open_model(reference_path) as reference_model:
+    with step._datamodels_open(reference_path) as reference_model:
         assert isinstance(reference_model, FlatRefModel)
         assert reference_model.meta.instrument.optical_element == "GRISM"
 
