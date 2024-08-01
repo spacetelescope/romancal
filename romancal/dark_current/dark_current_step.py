@@ -13,14 +13,11 @@ class DarkCurrentStep(RomanStep):
     dark current reference data from the input science data model.
     """
 
-    spec = """
-        dark_output = output_file(default = None) # Dark corrected model
-    """
-
     reference_file_types = ["dark"]
 
     spec = """
         suffix = string(default="darkcurrent")
+        dark_output = output_file(default = None) # Dark corrected model
     """
 
     def process(self, input):
