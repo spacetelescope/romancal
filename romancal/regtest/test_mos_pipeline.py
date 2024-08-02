@@ -148,7 +148,6 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
 # variable like the CRDS server
     os.environ["PATCH_TABLE_PATH"] = "/grp/roman/scsb/tesselation/patches.asdf"
     patch_path = os.getenv("PATCH_TABLE_PATH")
-    pipeline.log.info(f'Patch Table Path {patch_path}')
 
 #    asn = asn_from_list(cal_files, product_name='r0099101001001001001_r274dp63x31y81_prompt_F158')
 #    asn['target'] = 'r274dp63x31y81'
@@ -178,6 +177,8 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
     assert diff.identical, diff.report()
 
     model = rdm.open(rtdata.output, lazy_load=False)
+
+    pipeline.log.info(f'Patch Table Path {patch_path}')
 
     pipeline.log.info(
         "DMS373 MSG: Testing the creation of a Level 3 mosaic image"
