@@ -834,52 +834,6 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
 
 
 @pytest.mark.parametrize(
-    "catalog_format",
-    (
-        "ascii",
-        "ascii.aastex",
-        "ascii.basic",
-        "ascii.commented_header",
-        "ascii.csv",
-        "ascii.ecsv",
-        "ascii.fixed_width",
-        "ascii.fixed_width_two_line",
-        "ascii.ipac",
-        "ascii.latex",
-        "ascii.mrt",
-        "ascii.rdb",
-        "ascii.rst",
-        "ascii.tab",
-    ),
-)
-def test_tweakreg_use_custom_catalogs(tmp_path, catalog_format, base_image):
-    """Test that TweakReg can use custom catalogs."""
-    # create input datamodels
-    res_dict = create_custom_catalogs(
-        tmp_path, base_image, catalog_format=catalog_format
-    )
-    catfile = res_dict.get("catfile")
-    img1, img2, img3 = res_dict.get("datamodels")
-
-    trs.TweakRegStep.call(
-        [img1, img2, img3],
-        use_custom_catalogs=True,
-        catalog_format=catalog_format,
-        catfile=catfile,
-    )
-
-    assert all(img1.meta.tweakreg_catalog) == all(
-        table.Table.read(str(tmp_path / "ref_catalog_1"), format=catalog_format)
-    )
-    assert all(img2.meta.tweakreg_catalog) == all(
-        table.Table.read(str(tmp_path / "ref_catalog_2"), format=catalog_format)
-    )
-    assert all(img3.meta.tweakreg_catalog) == all(
-        table.Table.read(str(tmp_path / "ref_catalog_3"), format=catalog_format)
-    )
-
-
-@pytest.mark.parametrize(
     "theta, offset_x, offset_y",
     [
         (0 * u.deg, 0, 0),
@@ -954,28 +908,6 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     ]
 
     assert np.array([np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2)]).all()
-
-
-@pytest.mark.parametrize(
-    "source_detection_save_catalogs",
-    (True, False),
-)
-def test_remove_tweakreg_catalog_data(
-    tmp_path, source_detection_save_catalogs, request
-):
-    """
-    Test to check that the source catalog data is removed from meta
-    regardless of selected SourceDetectionStep.save_catalogs option.
-    """
-    img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(
-        tmp_path, img, save_catalogs=source_detection_save_catalogs
-    )
-
-    trs.TweakRegStep.call([img])
-
-    assert not hasattr(img.meta.source_detection, "tweakreg_catalog")
-    assert hasattr(img.meta, "tweakreg_catalog")
 
 
 def test_tweakreg_parses_asn_correctly(tmp_path, base_image):

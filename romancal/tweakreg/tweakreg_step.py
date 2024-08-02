@@ -158,7 +158,7 @@ class TweakRegStep(RomanStep):
                     # Check to see if attempt to run tweakreg on non-Image data
                     self.log.info("Skipping TweakReg for spectral exposure.")
                     # Uncomment below once rad & input data have the cal_step tweakreg
-                    # image_model.meta.cal_step.tweakreg = "SKIPPED"
+                    image_model.meta.cal_step.tweakreg = "SKIPPED"
                     images.shelve(image_model)
                     return image_model
 
@@ -177,9 +177,8 @@ class TweakRegStep(RomanStep):
                             )
                         )
                     elif is_tweakreg_catalog_name_present:
-                        catalog = Table.read(
-                            image_model.meta.source_detection.tweakreg_catalog_name,
-                            format=self.catalog_format,
+                        catalog = self.read_catalog(
+                            image_model.meta.source_detection.tweakreg_catalog_name
                         )
                     else:
                         images.shelve(image_model, i, modify=False)
@@ -457,6 +456,8 @@ class TweakRegStep(RomanStep):
             for i, imcat in enumerate(imcats):
                 image_model = images.borrow(i)
                 image_model.meta.cal_step["tweakreg"] = "COMPLETE"
+                # remove source catalog
+                del image_model.meta["tweakreg_catalog"]
 
                 # retrieve fit status and update wcs if fit is successful:
                 if "SUCCESS" in imcat.meta.get("fit_info")["status"]:
@@ -497,6 +498,14 @@ class TweakRegStep(RomanStep):
                 images.shelve(image_model, i)
 
         return images
+
+    def read_catalog(self, catalog_name):
+        if catalog_name.endswith("asdf"):
+            with rdm.open(catalog_name) as source_catalog_model:
+                catalog = source_catalog_model.source_catalog
+        else:
+            catalog = Table.read(catalog_name, format=self.catalog_format)
+        return catalog
 
     def _is_wcs_correction_small(self, wcs, twcs):
         """Check that the newly tweaked wcs hasn't gone off the rails"""

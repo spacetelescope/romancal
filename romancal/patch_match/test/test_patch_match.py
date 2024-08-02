@@ -24,10 +24,9 @@ of its columns so that subsets of the table selected to reduce the filesize stil
 retain the same index obtained.)
 """
 
-import inspect
-import os
-import os.path
+from pathlib import Path
 
+import asdf
 import astropy.coordinates as coord
 import astropy.modeling.models as amm
 import astropy.units as u
@@ -36,24 +35,37 @@ import gwcs.wcs as wcs
 import numpy as np
 import pytest
 import spherical_geometry.vector as sgv
+from spherical_geometry.vector import rotate_around as rotate
 
 import romancal.patch_match.patch_match as pm
 
-mpath = inspect.stack()[0][1]
-pm.load_patch_table(os.path.join(os.path.split(mpath)[0], "patches_subset.asdf"))
-rotate = sgv.rotate_around
-absindex = 925050
-patchtable = pm.PATCH_TABLE
-crecord = patchtable[np.where(patchtable[:]["index"] == absindex)]
+PATCH_SUBSET_PATH = Path(__file__).parent / "patches_subset.asdf"
+# do not use load_patch_table here as it will modify global state
+with asdf.open(PATCH_SUBSET_PATH) as af:
+    PATCH_SUBSET = af["patches"].copy()
+
+crecord = PATCH_SUBSET[np.where(PATCH_SUBSET[:]["index"] == 925050)]
 cra = crecord["ra_corn3"]
 if len(cra) == 1:
     cra = cra[0]
 cdec = crecord["dec_corn3"]
 if len(cdec) == 1:
     cdec = cdec[0]
+
 cpa = 45.0
 csize = 0.001
 e = 0.0011  # epsilon offset in degrees
+
+
+@pytest.fixture(autouse=True)
+def override_patch_table(monkeypatch):
+    """
+    For the tests in this file, monkeypatch the global
+    PATCH_TABLE to a smaller PATCH_SUBSET to allow these tests
+    to run without access to the full patch table.
+    """
+    monkeypatch.setattr(pm, "PATCH_TABLE", PATCH_SUBSET)
+    yield
 
 
 def mk_im_corners(ra, dec, pa, size):
@@ -169,7 +181,7 @@ def test_corners(pars, expected):
     corners = mk_im_corners(*pars)
     matches, close = pm.find_patch_matches(corners)
     # map matches to absolute index
-    mmatches = tuple([patchtable[match]["index"] for match in matches])
+    mmatches = tuple([PATCH_SUBSET[match]["index"] for match in matches])
     assert tuple(mmatches) == expected
 
 
@@ -177,16 +189,16 @@ def test_wcs_corners():
     imshape = (4096, 4096)
     wcsobj = mk_gwcs()
     matches, close = pm.find_patch_matches(wcsobj, image_shape=imshape)
-    mmatches = tuple([patchtable[match]["index"] for match in matches])
+    mmatches = tuple([PATCH_SUBSET[match]["index"] for match in matches])
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.pixel_shape = imshape
     matches, close = pm.find_patch_matches(wcsobj)
-    mmatches = tuple([patchtable[match]["index"] for match in matches])
+    mmatches = tuple([PATCH_SUBSET[match]["index"] for match in matches])
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.pixel_shape = None
     wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
     matches, close = pm.find_patch_matches(wcsobj)
-    mmatches = tuple([patchtable[match]["index"] for match in matches])
+    mmatches = tuple([PATCH_SUBSET[match]["index"] for match in matches])
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.bounding_box = None
     with pytest.raises(ValueError):

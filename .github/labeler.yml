@@ -1,88 +1,124 @@
 documentation:
-  - 'docs/**/*'
-  - any: [ '*.rst', '!CHANGES.rst' ]
-  - '*.md'
-  - '.readthedocs.yaml'
-  - 'LICENSE'
+  - changed-files:
+    - all-globs-to-any-file: [ '*.rst', '!CHANGES.rst' ]
+    - any-glob-to-any-file:
+      - 'docs/**/*'
+      - '*.md'
+      - '.readthedocs.yaml'
+      - 'LICENSE'
 
 dependencies:
-  - 'pyproject.toml'
-  - 'setup.*'
-  - 'requirements-*.txt'
-  - 'MANIFEST.in'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'pyproject.toml'
+      - 'setup.*'
+      - 'requirements-*.txt'
+      - 'MANIFEST.in'
 
 # --------------------------------------- testing ---------------------------------------
 
 automation:
-  - '.github/**'
-  - '.bandit.yaml'
-  - '.codecov.yml'
-  - 'Jenkinsfile*'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/**'
+      - '.bandit.yaml'
+      - '.codecov.yml'
+      - 'Jenkinsfile*'
 
 testing:
-  - '**/tests/**'
-  - '.github/workflows/*ci*.yml'
-  - 'conftest.py'
-  - 'tox.ini'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/tests/**'
+      - '.github/workflows/*ci*.yml'
+      - 'conftest.py'
+      - 'tox.ini'
 
 regression_testing:
-  - '**/regtest/**'
-  - 'Jenkinsfile*'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/regtest/**'
+      - 'Jenkinsfile*'
 
 # --------------------------------------- modules ---------------------------------------
 
 assign_wcs:
-  - '**/*assign_wcs*'
-  - '**/*assign_wcs*/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*assign_wcs*'
+      - '**/*assign_wcs*/**'
 
 associations:
-  - '**/*association*'
-  - '**/*association*/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*association*'
+      - '**/*association*/**'
 
 Dark Current:
-  - '**/*dark_current*'
-  - '**/*dark_current*/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*dark_current*'
+      - '**/*dark_current*/**'
 
 dq_init:
-  - '**/*dq_init*'
-  - '**/*dq_init*/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*dq_init*'
+      - '**/*dq_init*/**'
 
 flatfield:
-  - '**/*flatfield*'
-  - '**/*flatfield*/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*flatfield*'
+      - '**/*flatfield*/**'
 
 jump:
-  - '**/*jump*'
-  - '**/*jump*/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*jump*'
+      - '**/*jump*/**'
 
 linearity:
-  - '**/*linearity*'
-  - '**/*linearity*/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*linearity*'
+      - '**/*linearity*/**'
 
 photom:
-  - '**/*photom*'
-  - '**/*photom*/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*photom*'
+      - '**/*photom*/**'
 
 ramp_fitting:
-  - '**/*ramp_fitting*'
-  - '**/*ramp_fitting*/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*ramp_fitting*'
+      - '**/*ramp_fitting*/**'
 
 saturation:
-  - '**/*saturation*'
-  - '**/*saturation*/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*saturation*'
+      - '**/*saturation*/**'
 
 # --------------------------------------- pipelines ---------------------------------------
 
 stpipe:
-  - '**/*stpipe*'
-  - '**/*stpipe*/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*stpipe*'
+      - '**/*stpipe*/**'
 
 pipeline:
-  - '**/*pipeline*'
-  - '**/*pipeline*/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*pipeline*'
+      - '**/*pipeline*/**'
 
 # --------------------------------------- instruments ---------------------------------------
 
 Wide Field Instrument (WFI):
-  - '**/*wfi*'
-  - '**/*wfi*/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*wfi*'
+      - '**/*wfi*/**'

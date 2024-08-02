@@ -78,7 +78,9 @@ def make_output_wcs(
         raise RuntimeError(f"Output WCS needs 2 axes.{wcslist[0]} has {naxes}.")
 
     output_wcs = wcs_from_footprints(
-        input_models,
+        wcslist,
+        None,
+        dict(input_models[0].meta.wcsinfo),
         pscale_ratio=pscale_ratio,
         pscale=pscale,
         rotation=rotation,

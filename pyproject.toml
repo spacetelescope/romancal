@@ -13,7 +13,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "asdf >=3.1.0",
+    "asdf >=3.3.0",
     "asdf-astropy >=0.5.0",
     "astropy >=5.3.0",
     "crds >=11.16.16",
@@ -28,14 +28,14 @@ dependencies = [
     # "roman_datamodels>=0.20.0",
     "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
     "scipy >=1.11",
-    "stcal>=1.7.3,<1.8.0",
-    # "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
+    #"stcal>=1.7.3,<1.8.0",
+    "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
     #"stpipe >=0.5.0",
     "stpipe @ git+https://github.com/spacetelescope/stpipe.git@main",
-    "tweakwcs >=0.8.6",
+    "tweakwcs >=0.8.8",
     "spherical-geometry >= 1.2.22",
     "stsci.imagestats >= 1.6.3",
-    "drizzle >= 1.14.0",
+    "drizzle >= 1.15.0",
     "webbpsf >= 1.2.1",
 ]
 dynamic = [
