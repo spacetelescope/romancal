@@ -144,19 +144,6 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
         "WFI/image/r0000101001001001001_01101_0003_WFI01_cal.asdf",
     ]
 
-# set the location of the patch file: Once the location is *offically* decided this should be a standard environment
-# variable like the CRDS server
-    os.environ["PATCH_TABLE_PATH"] = "/grp/roman/scsb/tesselation/patches.asdf"
-    patch_path = os.getenv("PATCH_TABLE_PATH")
-    log.info(f'Patch Table Path {patch_path}')
-
-#    asn = asn_from_list(cal_files, product_name='r0099101001001001001_r274dp63x31y81_prompt_F158')
-#    asn['target'] = 'r274dp63x31y81'
-#    asn_name = 'L3_mosaic_asn.json'
-#    _, serialized = asn.dump()
-#    with open(asn_name, "w") as f:
-#        f.write(serialized)
-    
     for cal_file in cal_files:
         rtdata.get_data(cal_file)
 
@@ -178,8 +165,6 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
     assert diff.identical, diff.report()
 
     model = rdm.open(rtdata.output, lazy_load=False)
-
-    pipeline.log.info(f'Patch Table Path {patch_path}')
 
     pipeline.log.info(
         "DMS373 MSG: Testing the creation of a Level 3 mosaic image"
