@@ -7,8 +7,6 @@ import roman_datamodels as rdm
 from metrics_logger.decorators import metrics_logger
 
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
-from romancal.associations import Association
-from romancal.associations.asn_from_list import asn_from_list
 
 from .regtestdata import compare_asdf
 
@@ -170,5 +168,3 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
         "DMS373 MSG: Testing the creation of a Level 3 mosaic image"
         + passfail(model.meta.cal_step.resample == "COMPLETE")
     )
-    
-    

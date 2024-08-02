@@ -48,7 +48,7 @@ class ExposurePipeline(RomanPipeline):
         save_calibrated_ramp = boolean(default=False)
         save_results = boolean(default=False)
         suffix = string(default='cal')    # Default suffix for output files
-    
+
     """
 
     # Define aliases to steps
