@@ -41,6 +41,7 @@ class MosaicPipeline(RomanPipeline):
     spec = """
         save_results = boolean(default=False)
         on_disk = boolean(default=False)
+        suffix = string(default='i2d')
     """
 
     # Define aliases to steps
