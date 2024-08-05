@@ -1,9 +1,9 @@
 import os
 
+import astropy.units as u
 import numpy as np
 import pytest
 from astropy.units import Quantity
-import astropy.units as u
 
 from romancal.datamodels import ModelLibrary
 from romancal.outlier_detection import OutlierDetectionStep, outlier_detection

@@ -7,8 +7,8 @@ from copy import deepcopy
 
 import numpy as np
 from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
-from roman_datamodels.dqflags import pixel
 from roman_datamodels import maker_utils
+from roman_datamodels.dqflags import pixel
 
 from romancal.datamodels import ModelLibrary
 from romancal.stpipe import RomanStep
@@ -104,7 +104,9 @@ class SkyMatchStep(RomanStep):
         input_image_model = image_model
 
         if "background" not in image_model.meta:
-            image_model.meta["background"] = maker_utils.mk_sky_background(level=None, subtracted=None, method="None")
+            image_model.meta["background"] = maker_utils.mk_sky_background(
+                level=None, subtracted=None, method="None"
+            )
 
         if self._dqbits is None:
             dqmask = np.isfinite(image_model.data).astype(dtype=np.uint8)

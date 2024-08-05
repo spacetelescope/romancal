@@ -82,7 +82,9 @@ def mk_image_model(
 
     l2_im.meta["wcs"] = mk_gwcs(image_shape, sky_offset=sky_offset, rotate=rotation)
 
-    l2_im.meta["background"] = mk_sky_background(level=None, subtracted=False, method="None")
+    l2_im.meta["background"] = mk_sky_background(
+        level=None, subtracted=False, method="None"
+    )
 
     l2_im.meta.cal_step["skymatch"] = "INCOMPLETE"
     return l2_im

@@ -250,7 +250,10 @@ class ResampleData:
                         if img.data.unit == img.meta.background.level.unit:
                             data = img.data - img.meta.background.level
                         else:
-                            data = img.data - (img.meta.background.level.value * img.meta.photometry.conversion_megajanskys).to(img.data.unit)
+                            data = img.data - (
+                                img.meta.background.level.value
+                                * img.meta.photometry.conversion_megajanskys
+                            ).to(img.data.unit)
                     else:
                         data = img.data
 
@@ -334,7 +337,10 @@ class ResampleData:
                     if img.data.unit == img.meta.background.level.unit:
                         data = img.data - img.meta.background.level
                     else:
-                        data = img.data - (img.meta.background.level.value * img.meta.photometry.conversion_megajanskys).to(img.data.unit)
+                        data = img.data - (
+                            img.meta.background.level.value
+                            * img.meta.photometry.conversion_megajanskys
+                        ).to(img.data.unit)
                 else:
                     data = img.data
 
