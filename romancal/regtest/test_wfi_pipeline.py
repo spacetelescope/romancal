@@ -47,7 +47,7 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
 
     # Perform DMS tests
     # Initial prep
-    model = rdm.open(rtdata.output, lazy_load=False)
+    model = rdm.open(rtdata.output)
     pipeline = ExposurePipeline()
 
     # DMS280 result is an ImageModel
@@ -294,7 +294,7 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
 
     # Perform DMS tests
     # Initial prep
-    model = rdm.open(rtdata.output, lazy_load=False)
+    model = rdm.open(rtdata.output)
     pipeline = ExposurePipeline()
 
     # DMS90 instrument artifact correction tests
