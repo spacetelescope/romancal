@@ -49,7 +49,7 @@ the user is running the pipeline. The input for each optional step is the output
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
 | :ref:`source_detection <source_detection_step>`|                 | sourcedetectionstep (opt)| ImageModel       | DN/s                | Sources identified in the data        |
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
-| :ref:`tweakreg <tweakreg_step>`                |                 | tweakregstep (opt)       | ImageModel       | DN/s                | WCS aligned with GAIA                 |
+| :ref:`tweakreg <tweakreg_step>`                |                 | tweakreg     (opt)       | ImageModel       | DN/s                | WCS aligned with GAIA                 |
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
 |                                                |                 | cal                      | ImageModel       | DN/s                | 2-D calibrated exposure data          |
 +------------------------------------------------+-----------------+--------------------------+------------------+---------------------+---------------------------------------+
@@ -73,9 +73,9 @@ the user is running the pipeline. The input for each optional step is the output
 +---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+
 | :ref:`sky_match <skymatch_step>`                  | asn             | skymatch (opt)               | ModelLibrary     | MJy/sr              | A list of _cal files                  |
 +---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+
-| :ref:`outlier_detection <outlier_detection_step>` |                 | outlier_detection_step (opt) | ModelLibrary     | MJy/sr              | A list of _cal files                  |
+| :ref:`outlier_detection <outlier_detection_step>` |                 | outlier_detection (opt)      | ModelLibrary     | MJy/sr              | A list of _cal files                  |
 +---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+
-| :ref:`resample <resample_step>`                   |                 | resamplestep (opt)           | ModelLibrary     | MJy/sr              | A list of _cal files                  |
+| :ref:`resample <resample_step>`                   |                 | resample (opt)               | ModelLibrary     | MJy/sr              | A list of _cal files                  |
 +---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+
 |                                                   |                 | i2d                          | MosaicModel      | MJy/sr              | A 2D resampled image                  |
 +---------------------------------------------------+-----------------+------------------------------+------------------+---------------------+---------------------------------------+
