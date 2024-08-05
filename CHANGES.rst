@@ -27,6 +27,8 @@ general
 
 - Replace ModelContainer with ModelLibrary [#1241]
 
+- Updated sky background usage in code and tests to use maker utilities. [#1351]
+
 
 source_catalog
 --------------
