@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pytest
 from astropy.units import Quantity
+import astropy.units as u
 
 from romancal.datamodels import ModelLibrary
 from romancal.outlier_detection import OutlierDetectionStep, outlier_detection
@@ -217,6 +218,7 @@ def test_find_outliers(tmp_path, base_image):
         img.err[:] = err_value
         img.meta.filename = f"img{i}_suffix.asdf"
         img.meta.observation.exposure = i
+        img.meta.background.level = 0 * u.DN / u.s
         imgs.append(img)
 
     # add outliers
@@ -257,6 +259,7 @@ def test_identical_images(tmp_path, base_image, caplog):
     """
     img_1 = base_image()
     img_1.meta.filename = "img1_suffix.asdf"
+    img_1.meta.background.level = 0 * u.DN / u.s
     # add outliers
     img_1_input_coords = np.array(
         [(5, 45), (25, 25), (45, 85), (65, 65), (85, 5)], dtype=[("x", int), ("y", int)]

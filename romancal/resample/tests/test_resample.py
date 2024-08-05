@@ -1128,3 +1128,5 @@ def test_l3_individual_image_meta(multiple_exposures):
     basic_table = output_model.meta.individual_image_meta.basic
     for idx, input in enumerate(input_models):
         assert input.meta.filename == basic_table["filename"][idx]
+
+    assert 'background' in output_model.meta.individual_image_meta

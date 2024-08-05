@@ -247,7 +247,10 @@ class ResampleData:
                         and img.meta.background.subtracted is False
                         and img.meta.background.level is not None
                     ):
-                        data = img.data - img.meta.background.level
+                        if img.data.unit == img.meta.background.level.unit:
+                            data = img.data - img.meta.background.level
+                        else:
+                            data = img.data - (img.meta.background.level.value * img.meta.photometry.conversion_megajanskys).to(img.data.unit)
                     else:
                         data = img.data
 
@@ -328,7 +331,10 @@ class ResampleData:
                     and img.meta.background.subtracted is False
                     and img.meta.background.level is not None
                 ):
-                    data = img.data - img.meta.background.level
+                    if img.data.unit == img.meta.background.level.unit:
+                        data = img.data - img.meta.background.level
+                    else:
+                        data = img.data - (img.meta.background.level.value * img.meta.photometry.conversion_megajanskys).to(img.data.unit)
                 else:
                     data = img.data
 
