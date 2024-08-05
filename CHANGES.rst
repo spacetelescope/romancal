@@ -27,6 +27,9 @@ general
 
 - Replace ModelContainer with ModelLibrary [#1241]
 
+- Refactor general step input handling to avoid early closing of
+  input files to allow using more lazy loading [#1342]
+
 
 source_catalog
 --------------
