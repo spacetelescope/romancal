@@ -168,5 +168,3 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
         "DMS373 MSG: Testing the creation of a Level 3 mosaic image resampled to a skycell"
         + passfail(model.meta.cal_step.resample == "COMPLETE")
     )
-    
-    
