@@ -25,6 +25,8 @@ from ci_watson.artifactory_helpers import (
 from deepdiff.operator import BaseOperator
 from gwcs.wcstools import grid_from_bounding_box
 
+from romancal.associations.load_asn import load_asn
+
 # from romancal.lib.suffix import replace_suffix
 from romancal.stpipe import RomanStep
 
@@ -225,51 +227,51 @@ class RegtestData:
 
         return self.truth
 
-    # def get_asn(self, path=None, docopy=True, get_members=True):
-    #     """Copy association and association members from Artifactory remote
-    #     resource to the CWD/truth.
-    #
-    #     Updates self.input and self.input_remote upon completion
-    #
-    #     Parameters
-    #     ----------
-    #     path: str
-    #         The remote path
-    #
-    #     docopy : bool
-    #         Switch to control whether or not to copy a file
-    #         into the test output directory when running the test.
-    #         If you wish to open the file directly from remote
-    #         location or just to set path to source, set this to `False`.
-    #         Default: `True`
-    #
-    #     get_members: bool
-    #         If an association is the input, retrieve the members.
-    #         Otherwise, do not.
-    #     """
-    #     if path is None:
-    #         path = self.input_remote
-    #     else:
-    #         self.input_remote = path
-    #     if docopy is None:
-    #         docopy = self.docopy
-    #
-    #     # Get the association JSON file
-    #     self.input = get_bigdata(self._inputs_root, self._env, path,
-    #         docopy=docopy)
-    #     with open(self.input) as fp:
-    #         asn = load_asn(fp)
-    #         self.asn = asn
-    #
-    #     # Get each member in the association as well
-    #     if get_members:
-    #         for product in asn['products']:
-    #             for member in product['members']:
-    #                 fullpath = os.path.join(
-    #                     os.path.dirname(self.input_remote),
-    #                     member['expname'])
-    #                 get_bigdata(self._inputs_root, self._env, fullpath,
-    #                             docopy=self.docopy)
+    def get_asn(self, path=None, docopy=True, get_members=True):
+        """Copy association and association members from Artifactory remote
+        resource to the CWD/truth.
+
+        Updates self.input and self.input_remote upon completion
+
+        Parameters
+        ----------
+        path: str
+            The remote path
+
+        docopy : bool
+            Switch to control whether or not to copy a file
+            into the test output directory when running the test.
+            If you wish to open the file directly from remote
+            location or just to set path to source, set this to `False`.
+            Default: `True`
+
+        get_members: bool
+            If an association is the input, retrieve the members.
+            Otherwise, do not.
+        """
+        if path is None:
+            path = self.input_remote
+        else:
+            self.input_remote = path
+        if docopy is None:
+            docopy = self.docopy
+
+        # Get the association JSON file
+        self.input = get_bigdata(self._inputs_root, self._env, path, docopy=docopy)
+        with open(self.input) as fp:
+            asn = load_asn(fp)
+            self.asn = asn
+
+        # Get each member in the association as well
+        if get_members:
+            for product in asn["products"]:
+                for member in product["members"]:
+                    fullpath = os.path.join(
+                        os.path.dirname(self.input_remote), member["expname"]
+                    )
+                    get_bigdata(
+                        self._inputs_root, self._env, fullpath, docopy=self.docopy
+                    )
 
     def to_asdf(self, path):
         tree = eval(str(self))
