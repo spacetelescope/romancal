@@ -9,6 +9,8 @@ Documentation
 general
 -------
 
+- Add regression test for DMS373, mosaic pipeline [#1348]
+
 - Update the exposure pipeline to accept a roman datamodel as input [#1296]
 
 - Update okify script to use GA directory structure [#1282]
