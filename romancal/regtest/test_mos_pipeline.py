@@ -165,7 +165,7 @@ def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
     model = rdm.open(rtdata.output, lazy_load=False)
 
     pipeline.log.info(
-        "DMS373 MSG: Testing the creation of a Level 3 mosaic image"
+        "DMS373 MSG: Testing the creation of a Level 3 mosaic image resampled to a skycell"
         + passfail(model.meta.cal_step.resample == "COMPLETE")
     )
     
