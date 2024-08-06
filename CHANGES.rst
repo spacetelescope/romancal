@@ -9,6 +9,8 @@ Documentation
 general
 -------
 
+- Add regression test for DMS373, mosaic pipeline [#1348]
+
 - Update the exposure pipeline to accept a roman datamodel as input [#1296]
 
 - Update okify script to use GA directory structure [#1282]
@@ -28,6 +30,10 @@ general
 - Replace ModelContainer with ModelLibrary [#1241]
 
 - Updated sky background usage in code and tests to use maker utilities. [#1351]
+
+- Refactor general step input handling to avoid early closing of
+  input files to allow using more lazy loading [#1342]
+
 
 
 source_catalog

@@ -754,7 +754,6 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
     # closed asdf file. To try and avoid that we disable
     # lazy loading and memmory mapping
     open_kwargs = {
-        "lazy_load": False,
         "memmap": False,
     }
     with (

@@ -20,23 +20,26 @@ class DarkCurrentStep(RomanStep):
     reference_file_types = ["dark"]
 
     def process(self, input):
-        # Open the input data model
-        with rdm.open(input, lazy_load=False) as input_model:
-            # Get the name of the dark reference file to use
-            self.dark_name = self.get_reference_file(input_model, "dark")
-            # Check for a valid reference file
-            if self.dark_name == "N/A":
-                self.log.warning("No DARK reference file found")
-                self.log.warning("Dark current step will be skipped")
-                result = input_model
-                result.meta.cal_step.dark = "SKIPPED"
-                return result
+        if isinstance(input, rdm.DataModel):
+            input_model = input
+        else:
+            # Open the input data model
+            input_model = rdm.open(input)
 
-            self.log.info("Using DARK reference file: %s", self.dark_name)
+        # Get the name of the dark reference file to use
+        self.dark_name = self.get_reference_file(input_model, "dark")
+        # Check for a valid reference file
+        if self.dark_name == "N/A":
+            self.log.warning("No DARK reference file found")
+            self.log.warning("Dark current step will be skipped")
+            result = input_model
+            result.meta.cal_step.dark = "SKIPPED"
+            return result
 
-            # Open dark model
-            dark_model = rdm.open(self.dark_name)
+        self.log.info("Using DARK reference file: %s", self.dark_name)
 
+        # Open dark model
+        with rdm.open(self.dark_name) as dark_model:
             # Temporary patch to utilize stcal dark step until MA table support
             # is fully implemented
             if "ngroups" not in dark_model.meta.exposure:
@@ -59,11 +62,11 @@ class DarkCurrentStep(RomanStep):
             if self.dark_output is not None:
                 dark_model.save(self.dark_output)
                 # not clear to me that this makes any sense for Roman
-            dark_model.close()
 
         if self.save_results:
             try:
                 self.suffix = "darkcurrent"
             except AttributeError:
                 self["suffix"] = "darkcurrent"
+
         return out_model
