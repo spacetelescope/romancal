@@ -346,6 +346,8 @@ def test_set_good_bits_in_resample_meta(base_image, good_bits):
 
     img = datamodels.ImageModel(model)
 
+    img.data *= img.meta.photometry.conversion_megajanskys / img.data.unit
+
     step = ResampleStep
 
     res = step.call(img, good_bits=good_bits)
