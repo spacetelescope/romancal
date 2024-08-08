@@ -1,16 +1,19 @@
 .. _outlier_detection_step_args:
 
+For more details about step arguments (including datatypes, possible values
+and defaults) see :py:obj:`romancal.outlier_detection.OutlierDetectionStep.spec`.
+
 Step Arguments
 ==============
 The ``outlier_detection`` step has the following optional arguments that control the
 behavior of the processing:
 
-``--weight_type`` (string, default='ivm')
+``--weight_type``
   The type of data weighting to use during resampling the images for creating the
   median image used for detecting outliers; options are `'ivm'`, `'exptime'`,
   and `None` (see :ref:`weight_type_options_details_section` for details).
 
-``--pixfrac`` (float, default=1.0)
+``--pixfrac``
   Fraction by which input pixels are “shrunk” before being drizzled onto the output
   image grid, given as a real number between 0 and 1. This specifies the size of the
   footprint, or “dropsize”, of a pixel in units of the input pixel size. If `pixfrac`
@@ -20,7 +23,7 @@ behavior of the processing:
   output drizzled image is fully populated with pixels from the input image.
   Valid values range from 0.0 to 1.0.
 
-``--kernel`` (string, default='square')
+``--kernel``
   This parameter specifies the form of the kernel function used to distribute
   flux onto the separate output images, for the initial separate drizzling
   operation only. The value options for this parameter include:
@@ -43,7 +46,7 @@ behavior of the processing:
          should never be used for ``pixfrac != 1.0``, and is not recommended
          for ``scale!=1.0``.
 
-``--fillval`` (string, default='INDEF')
+``--fillval``
     The value for this parameter is to be assigned to the output pixels that
     have zero weight or which do not receive flux from any input pixels during
     drizzling. This parameter corresponds to the ``fillval`` parameter of the
@@ -55,51 +58,52 @@ behavior of the processing:
     Any floating-point value, given as a string, is valid.
     A value of 'INDEF' will use the last zero weight flux.
 
-``--maskpt`` (float, default=0.7)
+``--maskpt``
   Percentage of weight image values below which they are flagged as bad and rejected
   from the median image. Valid values range from 0.0 to 1.0.
 
-``--snr`` (string, default='5.0 4.0')
+``--snr``
   The signal-to-noise values to use for bad pixel identification. Since cosmic rays
   often extend across several pixels the user must specify two cut-off values for
   determining whether a pixel should be masked: the first for detecting the primary
   cosmic ray, and the second (typically lower threshold) for masking lower-level bad
   pixels adjacent to those found in the first pass.  Valid values are a pair of
-  floating-point values in a single string.
+  floating-point values in a single string (for example "5.0 4.0").
 
-``--scale`` (string, default='1.2 0.7')
+``--scale``
   The scaling factor applied to derivative used to identify bad pixels. Since cosmic
   rays often extend across several pixels the user must specify two cut-off values for
   determining whether a pixel should be masked: the first for detecting the primary
   cosmic ray, and the second (typically lower threshold) for masking lower-level bad
   pixels adjacent to those found in the first pass.  Valid values are a pair of
-  floating-point values in a single string.
+  floating-point values in a single string (for example "1.2 0.7").
 
-``--backg`` (float, default=0.0)
+``--backg``
   User-specified background value (scalar) to subtract during final identification
   step of outliers in `driz_cr` computation.
 
-``--kernel_size`` (string, default='7 7')
+``--kernel_size``
   Size of kernel to be used during resampling of the data
-  (i.e. when `resample_data=True`).
+  (i.e. when `resample_data=True`). Valid values are a pair of ints in a single string
+  (for example "7 7").
 
-``--save_intermediate_results`` (boolean, default=False)
+``--save_intermediate_results``
   Specifies whether or not to write out intermediate products such as median image or
   resampled individual input exposures to disk. Typically, only used to track down
   problems with final results when too many or too few pixels are flagged as outliers.
 
-``--resample_data`` (boolean, default=True)
+``--resample_data``
   Specifies whether or not to resample the input images when performing outlier
   detection.
 
-``--good_bits`` (string, default='~DO_NOT_USE+NON_SCIENCE')
+``--good_bits``
   The DQ bit values from the input image DQ arrays that should be considered 'good'
   when creating masks of bad pixels during outlier detection when resampling the data.
   See `Roman's Data Quality Flags
   <https://github.com/spacetelescope/romancal/blob/main/romancal/lib/dqflags.py>`_
   for details.
 
-``--in_memory`` (boolean, default=False)
+``--in_memory``
   Specifies whether or not to keep all intermediate products and datamodels in
   memory at the same time during the processing of this step.  If set to `False`,
   all input and output data will be written to disk at the start of the step
