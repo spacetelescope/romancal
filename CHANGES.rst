@@ -60,6 +60,11 @@ tweakreg
 --------
 - Integration with ``SourceCatalogStep``: allow usage of results from ``SourceCatalogStep``. [#1276]
 
+resample
+--------
+
+- Fix incorrect number of starting planes for context image. [#1355]
+
 mosaic_pipeline
 ---------------
 
