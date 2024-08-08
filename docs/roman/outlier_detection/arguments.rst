@@ -5,7 +5,7 @@ Step Arguments
 The ``outlier_detection`` step has the following optional arguments that control the
 behavior of the processing:
 
-``--weight_type`` (string, default='exptime')
+``--weight_type`` (string, default='ivm')
   The type of data weighting to use during resampling the images for creating the
   median image used for detecting outliers; options are `'ivm'`, `'exptime'`,
   and `None` (see :ref:`weight_type_options_details_section` for details).
@@ -55,23 +55,11 @@ behavior of the processing:
     Any floating-point value, given as a string, is valid.
     A value of 'INDEF' will use the last zero weight flux.
 
-``--nlow`` (integer, default=0)
-  The number of low values in each pixel stack to ignore when computing the median
-  value.
-
-``--nhigh`` (integer, default=0)
-  The number of high values in each pixel stack to ignore when computing the median
-  value.
-
 ``--maskpt`` (float, default=0.7)
   Percentage of weight image values below which they are flagged as bad and rejected
   from the median image. Valid values range from 0.0 to 1.0.
 
-``--grow`` (integer, default=1)
-  The distance, in pixels, beyond the limit set by the rejection algorithm being
-  used, for additional pixels to be rejected in an image.
-
-``--snr`` (string, default='4.0 3.0')
+``--snr`` (string, default='5.0 4.0')
   The signal-to-noise values to use for bad pixel identification. Since cosmic rays
   often extend across several pixels the user must specify two cut-off values for
   determining whether a pixel should be masked: the first for detecting the primary
@@ -79,7 +67,7 @@ behavior of the processing:
   pixels adjacent to those found in the first pass.  Valid values are a pair of
   floating-point values in a single string.
 
-``--scale`` (string, default='0.5 0.4')
+``--scale`` (string, default='1.2 0.7')
   The scaling factor applied to derivative used to identify bad pixels. Since cosmic
   rays often extend across several pixels the user must specify two cut-off values for
   determining whether a pixel should be masked: the first for detecting the primary
@@ -104,20 +92,12 @@ behavior of the processing:
   Specifies whether or not to resample the input images when performing outlier
   detection.
 
-``--good_bits`` (string, default=0)
+``--good_bits`` (string, default='~DO_NOT_USE+NON_SCIENCE')
   The DQ bit values from the input image DQ arrays that should be considered 'good'
   when creating masks of bad pixels during outlier detection when resampling the data.
   See `Roman's Data Quality Flags
   <https://github.com/spacetelescope/romancal/blob/main/romancal/lib/dqflags.py>`_
   for details.
-
-``--allowed_memory`` (float, default=None)
-  Specifies the fractional amount of free memory to allow when creating the resampled
-  image. If ``None``, the environment variable ``DMODEL_ALLOWED_MEMORY`` is used. If
-  not defined, no check is made. If the resampled image would be larger than specified,
-  an ``OutputTooLargeError`` exception will be generated. For example, if set to
-  ``0.5``, only resampled images that use less than half the available memory can be
-  created.
 
 ``--in_memory`` (boolean, default=False)
   Specifies whether or not to keep all intermediate products and datamodels in
