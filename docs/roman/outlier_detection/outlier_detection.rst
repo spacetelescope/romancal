@@ -55,14 +55,9 @@ Specifically, this routine performs the following operations:
 
    * The median image is created by combining all grouped mosaic images or
      non-resampled input data pixel-by-pixel.
-   * The ``nlow`` and ``nhigh`` parameters specify how many low and high values
-     to ignore when computing the median for any given pixel.
    * The ``maskpt`` parameter sets the percentage of the weight image values to
      use, and any pixel with a weight below this value gets flagged as "bad" and
      ignored when resampled.
-   * The ``grow`` parameter sets the width, in pixels, beyond the limit set by
-     the rejection algorithm being used, for additional pixels to be rejected in
-     an image.
    * The median image is written out to disk as `_<asn_id>_median` by default.
 
 #. By default, the median image is blotted back (inverse of resampling) to
