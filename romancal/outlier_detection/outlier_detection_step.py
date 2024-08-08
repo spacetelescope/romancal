@@ -48,19 +48,10 @@ class OutlierDetectionStep(RomanStep):
     def process(self, input_models):
         """Perform outlier detection processing on input data."""
 
-        self.skip = False
-
         if isinstance(input_models, ModelLibrary):
             library = input_models
         else:
-            try:
-                library = ModelLibrary(input_models)
-            except Exception:
-                self.log.warning(
-                    "Skipping outlier_detection - input cannot be parsed into a ModelLibrary."
-                )
-                self.skip = True
-                return input_models
+            library = ModelLibrary(input_models)
 
         # check number of input models
         if len(library) < 2:
@@ -70,28 +61,23 @@ class OutlierDetectionStep(RomanStep):
             self.log.warning(
                 "Skipping outlier_detection - at least two imaging observations are needed."
             )
-            self.skip = True
+
+            def set_skip(model, index):
+                model.meta.cal_step["outlier_detection"] = "SKIPPED"
+
+            list(library.map_function(set_skip))
+
+            return library
 
         # check that all inputs are WFI_IMAGE
-        if not self.skip:
-            with library:
-                for i, model in enumerate(library):
-                    if model.meta.exposure.type != "WFI_IMAGE":
-                        self.skip = True
-                    library.shelve(model, i, modify=False)
-                if self.skip:
-                    self.log.warning(
-                        "Skipping outlier_detection - all WFI_IMAGE exposures are required."
-                    )
+        def get_exptype(model, index):
+            return model.meta.exposure.type
 
-        # if skipping for any reason above...
-        if self.skip:
-            # set meta.cal_step.outlier_detection to SKIPPED
-            with library:
-                for i, model in enumerate(library):
-                    model.meta.cal_step["outlier_detection"] = "SKIPPED"
-                    library.shelve(model, i)
-            return library
+        exptypes = list(library.map_function(get_exptype, modify=False))
+        if any(exptype != "WFI_IMAGE" for exptype in exptypes):
+            raise ValueError(
+                f"outlier_detection only supports WFI_IMAGE exposure types: {set(exptypes)}"
+            )
 
         # Setup output path naming if associations are involved.
         asn_id = library.asn.get("asn_id", None)
