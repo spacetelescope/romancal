@@ -69,6 +69,8 @@ tweakreg
 --------
 - Remove unnecessary global variable ALIGN_TO_ABS_REFCAT. [#1314]
 
+- Update default absolute separation for tweakreg.  [#1352]
+
 
 0.15.1 (2024-05-15)
 ===================
