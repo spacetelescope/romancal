@@ -34,10 +34,7 @@ class OutlierDetectionStep(RomanStep):
         pixfrac = float(default=1.0) # Fraction by which input pixels are shrunk before being drizzled onto the output image grid
         kernel = string(default='square') # Shape of the kernel used for flux distribution onto output images
         fillval = string(default='INDEF') # Value assigned to output pixels that have zero weight or no flux during drizzling
-        nlow = integer(default=0) # The number of low values in each pixel stack to ignore when computing the median value
-        nhigh = integer(default=0) # The number of high values in each pixel stack to ignore when computing the median value
         maskpt = float(default=0.7) # Percentage of weight image values below which they are flagged as bad pixels
-        grow = integer(default=1) # The distance beyond the rejection limit for additional pixels to be rejected in an image
         snr = string(default='5.0 4.0') # The signal-to-noise values to use for bad pixel identification
         scale = string(default='1.2 0.7') # The scaling factor applied to derivative used to identify bad pixels
         backg = float(default=0.0) # User-specified background value to subtract during final identification step
@@ -45,7 +42,6 @@ class OutlierDetectionStep(RomanStep):
         save_intermediate_results = boolean(default=False) # Specifies whether or not to write out intermediate products to disk
         resample_data = boolean(default=True) # Specifies whether or not to resample the input images when performing outlier detection
         good_bits = string(default="~DO_NOT_USE+NON_SCIENCE")  # DQ bit value to be considered 'good'
-        allowed_memory = float(default=None)  # Fraction of memory to use for the combined image
         in_memory = boolean(default=False) # Specifies whether or not to keep all intermediate products and datamodels in memory
     """  # noqa: E501
 
@@ -109,10 +105,7 @@ class OutlierDetectionStep(RomanStep):
             "pixfrac": self.pixfrac,
             "kernel": self.kernel,
             "fillval": self.fillval,
-            "nlow": self.nlow,
-            "nhigh": self.nhigh,
             "maskpt": self.maskpt,
-            "grow": self.grow,
             "snr": self.snr,
             "scale": self.scale,
             "backg": self.backg,
@@ -120,7 +113,6 @@ class OutlierDetectionStep(RomanStep):
             "save_intermediate_results": self.save_intermediate_results,
             "resample_data": self.resample_data,
             "good_bits": self.good_bits,
-            "allowed_memory": self.allowed_memory,
             "in_memory": self.in_memory,
             "make_output_path": self.make_output_path,
             "resample_suffix": "i2d",
