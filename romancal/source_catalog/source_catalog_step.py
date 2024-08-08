@@ -46,98 +46,100 @@ class SourceCatalogStep(RomanStep):
     """
 
     def process(self, input_model):
-        with datamodels.open(input_model) as model:
-            if not isinstance(model, (ImageModel, MosaicModel)):
-                raise ValueError(
-                    "The input model must be an ImageModel or MosaicModel."
-                )
+        if isinstance(input_model, datamodels.DataModel):
+            model = input_model
+        else:
+            model = datamodels.open(input_model)
 
-            if isinstance(model, ImageModel):
-                cat_model = datamodels.SourceCatalogModel
-            else:
-                cat_model = datamodels.MosaicSourceCatalogModel
-            source_catalog_model = maker_utils.mk_datamodel(cat_model)
+        if not isinstance(model, (ImageModel, MosaicModel)):
+            raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
-            for key in source_catalog_model.meta.keys():
-                value = (
-                    model.meta.instrument[key]
-                    if key == "optical_element"
-                    else model.meta[key]
-                )
-                source_catalog_model.meta[key] = value
-            aperture_ee = (self.aperture_ee1, self.aperture_ee2, self.aperture_ee3)
-            refdata = ReferenceData(model, aperture_ee)
-            aperture_params = refdata.aperture_params
+        if isinstance(model, ImageModel):
+            cat_model = datamodels.SourceCatalogModel
+        else:
+            cat_model = datamodels.MosaicSourceCatalogModel
+        source_catalog_model = maker_utils.mk_datamodel(cat_model)
 
-            mask = np.isnan(model.data)
-            coverage_mask = np.isnan(model.err)
-            bkg = RomanBackground(
-                model.data,
-                box_size=self.bkg_boxsize,
-                mask=mask,
-                coverage_mask=coverage_mask,
+        for key in source_catalog_model.meta.keys():
+            value = (
+                model.meta.instrument[key]
+                if key == "optical_element"
+                else model.meta[key]
             )
-            model.data -= bkg.background
+            source_catalog_model.meta[key] = value
+        aperture_ee = (self.aperture_ee1, self.aperture_ee2, self.aperture_ee3)
+        refdata = ReferenceData(model, aperture_ee)
+        aperture_params = refdata.aperture_params
 
-            convolved_data = convolve_data(
-                model.data, kernel_fwhm=self.kernel_fwhm, mask=coverage_mask
-            )
+        mask = np.isnan(model.data)
+        coverage_mask = np.isnan(model.err)
+        bkg = RomanBackground(
+            model.data,
+            box_size=self.bkg_boxsize,
+            mask=mask,
+            coverage_mask=coverage_mask,
+        )
+        model.data -= bkg.background
 
-            segment_img = make_segmentation_image(
+        convolved_data = convolve_data(
+            model.data, kernel_fwhm=self.kernel_fwhm, mask=coverage_mask
+        )
+
+        segment_img = make_segmentation_image(
+            convolved_data,
+            snr_threshold=self.snr_threshold,
+            npixels=self.npixels,
+            bkg_rms=bkg.background_rms,
+            deblend=self.deblend,
+            mask=coverage_mask,
+        )
+
+        if segment_img is None:  # no sources found
+            source_catalog_model.source_catalog = Table()
+        else:
+            ci_star_thresholds = (self.ci1_star_threshold, self.ci2_star_threshold)
+            catobj = RomanSourceCatalog(
+                model,
+                segment_img,
                 convolved_data,
-                snr_threshold=self.snr_threshold,
-                npixels=self.npixels,
-                bkg_rms=bkg.background_rms,
-                deblend=self.deblend,
-                mask=coverage_mask,
+                aperture_params,
+                ci_star_thresholds,
+                self.kernel_fwhm,
+                self.fit_psf,
             )
 
-            if segment_img is None:  # no sources found
-                source_catalog_model.source_catalog = Table()
-            else:
-                ci_star_thresholds = (self.ci1_star_threshold, self.ci2_star_threshold)
-                catobj = RomanSourceCatalog(
-                    model,
-                    segment_img,
-                    convolved_data,
-                    aperture_params,
-                    ci_star_thresholds,
-                    self.kernel_fwhm,
-                    self.fit_psf,
-                )
+            # put the resulting catalog in the model
+            source_catalog_model.source_catalog = catobj.catalog
 
-                # put the resulting catalog in the model
-                source_catalog_model.source_catalog = catobj.catalog
+        # add back background to data so input model is unchanged
+        # (in case of interactive use)
+        model.data += bkg.background
 
-            # add back background to data so input model is unchanged
-            # (in case of interactive use)
-            model.data += bkg.background
+        # create catalog filename
+        # N.B.: self.save_model will determine whether to use fully qualified path or not
+        output_catalog_name = self.make_output_path(
+            basepath=model.meta.filename, suffix="cat"
+        )
 
-            # create catalog filename
-            # N.B.: self.save_model will determine whether to use fully qualified path or not
-            output_catalog_name = self.make_output_path(
-                basepath=model.meta.filename, suffix="cat"
-            )
+        if isinstance(model, ImageModel):
+            update_metadata(model, output_catalog_name)
 
-            if isinstance(model, ImageModel):
-                update_metadata(model, output_catalog_name)
+        output_model = model
 
-            output_model = model
+        # always save segmentation image + catalog
+        self.save_base_results(segment_img, source_catalog_model)
 
-            # always save segmentation image + catalog
-            self.save_base_results(segment_img, source_catalog_model)
-
-            # return the updated model or the source catalog object
-            if getattr(self, "return_updated_model", False):
-                # setting the suffix to something else to prevent
-                # step from  overwriting source catalog file with
-                # a datamodel
-                self.suffix = "sourcecatalog"
-                # return DataModel
-                result = output_model
-            else:
-                # return SourceCatalogModel
-                result = source_catalog_model
+        # return the updated model or the source catalog object
+        if getattr(self, "return_updated_model", False):
+            # setting the suffix to something else to prevent
+            # step from  overwriting source catalog file with
+            # a datamodel
+            self.suffix = "sourcecatalog"
+            # return DataModel
+            result = output_model
+        else:
+            # return SourceCatalogModel
+            result = source_catalog_model
 
         return result
 

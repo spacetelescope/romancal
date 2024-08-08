@@ -39,8 +39,8 @@ def test_16resultants_image_processing(rtdata, ignore_asdf_paths):
     # Initial prep
     pipeline = ExposurePipeline()
     # rtdata.get_data(f"WFI/image/{output}")
-    model = rdm.open(output, lazy_load=False)
-    uncal_data = rdm.open(input_data, lazy_load=False)
+    model = rdm.open(output)
+    uncal_data = rdm.open(input_data)
 
     # DMS280 result is an ImageModel
     pipeline.log.info(
@@ -95,8 +95,8 @@ def test_16resultants_spectral_processing(rtdata, ignore_asdf_paths):
     # Initial prep
     pipeline = ExposurePipeline()
     # rtdata.get_data(f"WFI/image/{output}")
-    model = rdm.open(output, lazy_load=False)
-    uncal_data = rdm.open(input_data, lazy_load=False)
+    model = rdm.open(output)
+    uncal_data = rdm.open(input_data)
 
     # DMS280 result is an ImageModel
     pipeline.log.info(

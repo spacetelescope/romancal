@@ -72,168 +72,170 @@ class SourceDetectionStep(RomanStep):
     """
 
     def process(self, input):
-        with rdm.open(input, lazy_load=False) as input_model:
-            if input_model.meta.exposure.type != "WFI_IMAGE":
-                # Check to see if attempt to find sources in non-Image data
-                log.info("Skipping source detection for spectral exposure.")
-                input_model.meta.cal_step.source_detection = "SKIPPED"
-                return input_model
+        if isinstance(input, rdm.DataModel):
+            input_model = input
+        else:
+            input_model = rdm.open(input)
 
-            # remove units from data in this step.
-            # DAOStarFinder requires unitless input
-            if hasattr(input_model.data, "unit"):
-                self.data = input_model.data.value
-            else:
-                self.data = input_model.data
+        if input_model.meta.exposure.type != "WFI_IMAGE":
+            # Check to see if attempt to find sources in non-Image data
+            log.info("Skipping source detection for spectral exposure.")
+            input_model.meta.cal_step.source_detection = "SKIPPED"
+            return input_model
 
-            # mask DO_NOT_USE pixels
+        # remove units from data in this step.
+        # DAOStarFinder requires unitless input
+        if hasattr(input_model.data, "unit"):
+            self.data = input_model.data.value
+        else:
+            self.data = input_model.data
 
-            self.coverage_mask = ((pixel.DO_NOT_USE) & input_model.dq).astype(bool)
+        # mask DO_NOT_USE pixels
 
-            filt = input_model.meta.instrument["optical_element"]
+        self.coverage_mask = ((pixel.DO_NOT_USE) & input_model.dq).astype(bool)
 
-            # if a pre-determined threshold value for detection for the whole
-            # image is provided, use this
-            if self.scalar_threshold is not None:
-                threshold = float(self.scalar_threshold)
-                log.info(f"Using a detection threshold of {threshold}.")
+        filt = input_model.meta.instrument["optical_element"]
 
-            # otherwise, if specified, calculate a scalar threshold from the
-            # image by calculating a 2D background image, using this to create
-            # a 2d threshold image, and using the median of the 2d threshold
-            # image as the scalar detection threshold for the whole image
-            elif self.calc_threshold:
-                log.info("Determining detection threshold from image.")
-                bkg = self._calc_2D_background()
-                threshold_img = bkg.background + self.snr_threshold * bkg.background_rms
-                threshold = np.median(threshold_img)
-                log.info(f"Calculated a detection threshold of {threshold} from image.")
-            else:
-                threshold = np.median(self.data)
+        # if a pre-determined threshold value for detection for the whole
+        # image is provided, use this
+        if self.scalar_threshold is not None:
+            threshold = float(self.scalar_threshold)
+            log.info(f"Using a detection threshold of {threshold}.")
 
-            if self.kernel_fwhm is None:
-                # estimate the FWHM of the PSF using rough estimate
-                # from the diffraction limit:
-                central_wavelength = psf.filter_central_wavelengths[filt] * u.um
-                diffraction_limit = float(1.22 * central_wavelength / (2.4 * u.m))
-                assume_pixel_scale = 0.11 * u.arcsec / u.pix
-                expect_psf_pix = np.sqrt(
-                    ((diffraction_limit * u.rad).to(u.arcsec) / assume_pixel_scale) ** 2
-                    + 1 * u.pix**2
-                ).to_value(u.pix)
-                self.kernel_fwhm = expect_psf_pix
+        # otherwise, if specified, calculate a scalar threshold from the
+        # image by calculating a 2D background image, using this to create
+        # a 2d threshold image, and using the median of the 2d threshold
+        # image as the scalar detection threshold for the whole image
+        elif self.calc_threshold:
+            log.info("Determining detection threshold from image.")
+            bkg = self._calc_2D_background()
+            threshold_img = bkg.background + self.snr_threshold * bkg.background_rms
+            threshold = np.median(threshold_img)
+            log.info(f"Calculated a detection threshold of {threshold} from image.")
+        else:
+            threshold = np.median(self.data)
 
-            log.info("Detecting sources with DAOStarFinder, using entire image array.")
-            daofind = DAOStarFinder(
-                fwhm=self.kernel_fwhm,
-                threshold=threshold,
-                sharplo=self.sharplo,
-                sharphi=self.sharphi,
-                roundlo=self.roundlo,
-                roundhi=self.roundhi,
-                brightest=self.max_sources,
-                peakmax=self.peakmax,
-                min_separation=self.min_separation,
+        if self.kernel_fwhm is None:
+            # estimate the FWHM of the PSF using rough estimate
+            # from the diffraction limit:
+            central_wavelength = psf.filter_central_wavelengths[filt] * u.um
+            diffraction_limit = float(1.22 * central_wavelength / (2.4 * u.m))
+            assume_pixel_scale = 0.11 * u.arcsec / u.pix
+            expect_psf_pix = np.sqrt(
+                ((diffraction_limit * u.rad).to(u.arcsec) / assume_pixel_scale) ** 2
+                + 1 * u.pix**2
+            ).to_value(u.pix)
+            self.kernel_fwhm = expect_psf_pix
+
+        log.info("Detecting sources with DAOStarFinder, using entire image array.")
+        daofind = DAOStarFinder(
+            fwhm=self.kernel_fwhm,
+            threshold=threshold,
+            sharplo=self.sharplo,
+            sharphi=self.sharphi,
+            roundlo=self.roundlo,
+            roundhi=self.roundhi,
+            brightest=self.max_sources,
+            peakmax=self.peakmax,
+            min_separation=self.min_separation,
+        )
+
+        if self.scalar_threshold is not None:
+            # if absolute threshold is provided
+            sources = daofind(self.data, mask=self.coverage_mask)
+
+        elif self.calc_threshold is not None:
+            # subtract background from data if calculating abs. threshold
+            sources = daofind(self.data - bkg.background, mask=self.coverage_mask)
+        else:
+            sources = daofind(self.data, mask=self.coverage_mask)
+
+        # reduce table to minimal number of columns, just source ID,
+        # positions, and fluxes
+        columns = ["id", "xcentroid", "ycentroid", "flux"]
+
+        if sources:
+            catalog = sources[columns]
+            log.info(f"Found {len(catalog)} sources.")
+        else:
+            # if no sources were detected, return an empty table
+            self.log.warning("No sources detected, returning empty catalog.")
+            catalog = Table(
+                names=columns,
+                dtype=(int, np.float64, np.float64, np.float64),
             )
 
-            if self.scalar_threshold is not None:
-                # if absolute threshold is provided
-                sources = daofind(self.data, mask=self.coverage_mask)
+        if self.fit_psf and len(sources):
+            # refine astrometry by fitting PSF models to the detected sources
+            log.info("Constructing a gridded PSF model.")
+            detector = input_model.meta.instrument["detector"].replace("WFI", "SCA")
+            gridded_psf_model, _ = psf.create_gridded_psf_model(
+                filt=filt,
+                detector=detector,
+                logging_level="ERROR",
+            )
 
-            elif self.calc_threshold is not None:
-                # subtract background from data if calculating abs. threshold
-                sources = daofind(self.data - bkg.background, mask=self.coverage_mask)
+            log.info(
+                "Fitting a PSF model to sources for improved astrometric precision."
+            )
+            psf_photometry_table, photometry = psf.fit_psf_to_image_model(
+                image_model=input_model,
+                psf_model=gridded_psf_model,
+                x_init=catalog["xcentroid"],
+                y_init=catalog["ycentroid"],
+                exclude_out_of_bounds=True,
+            )
+
+        catalog_as_recarray = catalog.as_array()
+
+        # create meta.source detection section in file
+        # if save_catalogs is True, this will be updated with the
+        # attribute 'tweakreg_catalog_name' to point to the location
+        # of the catalog on disk. If save_catalogs is false, this section
+        # will be updated to contain the catalog to pass to TweakReg
+
+        # tweakreg_catalog_name will be saved to the final output file,
+        # while tweakreg_catalog is intended to be deleted by TweakRegStep
+        input_model.meta["source_detection"] = maker_utils.mk_source_detection()
+
+        # if 'save_catalogs'= True, also save the output catalog to a file
+        # (format specified by output_cat_filetype) and add an attribute
+        # to the file that contains the path to this file
+        if self.save_catalogs:
+            cat_filename = input_model.meta.filename.replace(".asdf", "")
+            cat_filename += f"_tweakreg_catalog.{self.output_cat_filetype}"
+            log.info(f"Saving catalog to file: {cat_filename}.")
+
+            if self.output_cat_filetype == "asdf":
+                tree = {"tweakreg_catalog": catalog_as_recarray}
+                ff = AsdfFile(tree)
+                ff.write_to(cat_filename)
             else:
-                sources = daofind(self.data, mask=self.coverage_mask)
+                catalog.write(cat_filename, format="ascii.ecsv", overwrite=True)
 
-            # reduce table to minimal number of columns, just source ID,
-            # positions, and fluxes
-            columns = ["id", "xcentroid", "ycentroid", "flux"]
+            input_model.meta.source_detection["tweakreg_catalog_name"] = cat_filename
+        else:
+            if self.fit_psf:
+                # PSF photometry centroid results are stored in an astropy table
+                # in columns "x_fit" and "y_fit", which we'll rename for
+                # compatibility with tweakreg:
+                catalog = psf_photometry_table.copy()
 
-            if sources:
-                catalog = sources[columns]
-                log.info(f"Found {len(catalog)} sources.")
+                # rename the PSF photometry table's columns to match the
+                # expectated columns in tweakreg:
+                for old_name, new_name in zip(
+                    ["x_fit", "y_fit"], ["xcentroid", "ycentroid"]
+                ):
+                    catalog.rename_column(old_name, new_name)
+
+                input_model.meta.source_detection["tweakreg_catalog"] = catalog
             else:
-                # if no sources were detected, return an empty table
-                self.log.warning("No sources detected, returning empty catalog.")
-                catalog = Table(
-                    names=columns,
-                    dtype=(int, np.float64, np.float64, np.float64),
+                # only attach catalog to file if its being passed to the next step
+                # and save_catalogs is false, since it is not in the schema
+                input_model.meta.source_detection["tweakreg_catalog"] = (
+                    catalog_as_recarray
                 )
-
-            if self.fit_psf and len(sources):
-                # refine astrometry by fitting PSF models to the detected sources
-                log.info("Constructing a gridded PSF model.")
-                detector = input_model.meta.instrument["detector"].replace("WFI", "SCA")
-                gridded_psf_model, _ = psf.create_gridded_psf_model(
-                    filt=filt,
-                    detector=detector,
-                    logging_level="ERROR",
-                )
-
-                log.info(
-                    "Fitting a PSF model to sources for improved astrometric precision."
-                )
-                psf_photometry_table, photometry = psf.fit_psf_to_image_model(
-                    image_model=input_model,
-                    psf_model=gridded_psf_model,
-                    x_init=catalog["xcentroid"],
-                    y_init=catalog["ycentroid"],
-                    exclude_out_of_bounds=True,
-                )
-
-            catalog_as_recarray = catalog.as_array()
-
-            # create meta.source detection section in file
-            # if save_catalogs is True, this will be updated with the
-            # attribute 'tweakreg_catalog_name' to point to the location
-            # of the catalog on disk. If save_catalogs is false, this section
-            # will be updated to contain the catalog to pass to TweakReg
-
-            # tweakreg_catalog_name will be saved to the final output file,
-            # while tweakreg_catalog is intended to be deleted by TweakRegStep
-            input_model.meta["source_detection"] = maker_utils.mk_source_detection()
-
-            # if 'save_catalogs'= True, also save the output catalog to a file
-            # (format specified by output_cat_filetype) and add an attribute
-            # to the file that contains the path to this file
-            if self.save_catalogs:
-                cat_filename = input_model.meta.filename.replace(".asdf", "")
-                cat_filename += f"_tweakreg_catalog.{self.output_cat_filetype}"
-                log.info(f"Saving catalog to file: {cat_filename}.")
-
-                if self.output_cat_filetype == "asdf":
-                    tree = {"tweakreg_catalog": catalog_as_recarray}
-                    ff = AsdfFile(tree)
-                    ff.write_to(cat_filename)
-                else:
-                    catalog.write(cat_filename, format="ascii.ecsv", overwrite=True)
-
-                input_model.meta.source_detection["tweakreg_catalog_name"] = (
-                    cat_filename
-                )
-            else:
-                if self.fit_psf:
-                    # PSF photometry centroid results are stored in an astropy table
-                    # in columns "x_fit" and "y_fit", which we'll rename for
-                    # compatibility with tweakreg:
-                    catalog = psf_photometry_table.copy()
-
-                    # rename the PSF photometry table's columns to match the
-                    # expectated columns in tweakreg:
-                    for old_name, new_name in zip(
-                        ["x_fit", "y_fit"], ["xcentroid", "ycentroid"]
-                    ):
-                        catalog.rename_column(old_name, new_name)
-
-                    input_model.meta.source_detection["tweakreg_catalog"] = catalog
-                else:
-                    # only attach catalog to file if its being passed to the next step
-                    # and save_catalogs is false, since it is not in the schema
-                    input_model.meta.source_detection["tweakreg_catalog"] = (
-                        catalog_as_recarray
-                    )
-            input_model.meta.cal_step["source_detection"] = "COMPLETE"
+        input_model.meta.cal_step["source_detection"] = "COMPLETE"
 
         # just pass input model to next step - catalog is stored in meta
         return input_model

@@ -38,7 +38,7 @@ class DQInitStep(RomanStep):
             result roman datamodel
         """
         # Open datamodel
-        input_model = rdm.open(input, lazy_load=False)
+        input_model = rdm.open(input)
 
         # Convert to RampModel
         output_model = RampModel.from_science_raw(input_model)
