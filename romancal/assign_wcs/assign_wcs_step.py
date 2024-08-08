@@ -96,8 +96,12 @@ def load_wcs(input_model, reference_files=None):
         axes_names=("v2", "v3"),
         unit=(u.arcsec, u.arcsec),
     )
-    v2v3vacorr = cf.Frame2D(name='v2v3vacorr', axes_order=(0, 1),
-                            axes_names=('v2', 'v3'), unit=(u.arcsec, u.arcsec))
+    v2v3vacorr = cf.Frame2D(
+        name="v2v3vacorr",
+        axes_order=(0, 1),
+        axes_names=("v2", "v3"),
+        unit=(u.arcsec, u.arcsec),
+    )
     world = cf.CelestialFrame(reference_frame=coord.ICRS(), name="world")
 
     # Transforms between frames
@@ -108,7 +112,7 @@ def load_wcs(input_model, reference_files=None):
     va_corr = pointing.dva_corr_model(
         va_scale=input_model.meta.velocity_aberration.scale_factor,
         v2_ref=input_model.meta.wcsinfo.v2_ref,
-        v3_ref=input_model.meta.wcsinfo.v3_ref
+        v3_ref=input_model.meta.wcsinfo.v3_ref,
     )
 
     pipeline = [

@@ -80,7 +80,9 @@ def dva_corr_model(va_scale, v2_ref, v3_ref):
     if va_scale <= 0:
         raise ValueError("'Velocity aberration scale must be a positive number.")
 
-    va_corr = Scale(va_scale, name='dva_scale_v2') & Scale(va_scale, name='dva_scale_v3')
+    va_corr = Scale(va_scale, name="dva_scale_v2") & Scale(
+        va_scale, name="dva_scale_v3"
+    )
 
     if v2_ref is None:
         v2_ref = 0
@@ -97,6 +99,8 @@ def dva_corr_model(va_scale, v2_ref, v3_ref):
     v2_shift = (1 - va_scale) * v2_ref
     v3_shift = (1 - va_scale) * v3_ref
 
-    va_corr |= Shift(v2_shift, name='dva_v2_shift') & Shift(v3_shift, name='dva_v3_shift')
-    va_corr.name = 'DVA_Correction'
+    va_corr |= Shift(v2_shift, name="dva_v2_shift") & Shift(
+        v3_shift, name="dva_v3_shift"
+    )
+    va_corr.name = "DVA_Correction"
     return va_corr
