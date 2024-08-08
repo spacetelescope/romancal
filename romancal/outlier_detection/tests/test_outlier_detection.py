@@ -12,16 +12,14 @@ from romancal.outlier_detection import OutlierDetectionStep, outlier_detection
 @pytest.mark.parametrize(
     "input_models",
     [
-        list(),
         "",
     ],
 )
-def test_outlier_raises_error_on_invalid_input_models(input_models, caplog):
+def test_outlier_raises_error_on_invalid_input_models(input_models):
     """Test that OutlierDetection logs out a WARNING if input is invalid."""
 
-    OutlierDetectionStep.call(input_models)
-
-    assert "WARNING" in [x.levelname for x in caplog.records]
+    with pytest.raises(IsADirectoryError):
+        OutlierDetectionStep.call(input_models)
 
 
 def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
@@ -37,7 +35,7 @@ def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
             res.shelve(m, i, modify=False)
 
 
-def test_outlier_skips_step_on_exposure_type_different_from_wfi_image(base_image):
+def test_outlier_raises_exception_on_exposure_type_different_from_wfi_image(base_image):
     """
     Test if the outlier detection step is skipped when the exposure type is different from WFI image.
     """
@@ -46,12 +44,8 @@ def test_outlier_skips_step_on_exposure_type_different_from_wfi_image(base_image
     img_2 = base_image()
     img_2.meta.exposure.type = "WFI_PRISM"
 
-    res = OutlierDetectionStep.call(ModelLibrary([img_1, img_2]))
-
-    with res:
-        for i, m in enumerate(res):
-            assert m.meta.cal_step.outlier_detection == "SKIPPED"
-            res.shelve(m, i, modify=False)
+    with pytest.raises(ValueError, match="only supports WFI_IMAGE"):
+        OutlierDetectionStep.call(ModelLibrary([img_1, img_2]))
 
 
 def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
