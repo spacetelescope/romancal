@@ -58,7 +58,6 @@ class ResampleStep(RomanStep):
         pixel_scale = float(default=None) # Absolute pixel scale in arcsec
         output_wcs = string(default='')  # Custom output WCS.
         single = boolean(default=False)
-        blendheaders = boolean(default=True)
         allowed_memory = float(default=None)  # Fraction of memory to use for the combined image.
         in_memory = boolean(default=True)
         good_bits = string(default='~DO_NOT_USE+NON_SCIENCE')  # The good bits to use for building the resampling mask.
@@ -71,7 +70,6 @@ class ResampleStep(RomanStep):
             input_models = ModelLibrary([input])
             # set output filename from meta.filename found in the first datamodel
             output = input.meta.filename
-            self.blendheaders = False
         elif isinstance(input, str):
             # either a single asdf filename or an association filename
             try:

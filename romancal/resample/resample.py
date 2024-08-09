@@ -45,7 +45,6 @@ class ResampleData:
         input_models,
         output=None,
         single=False,
-        blendheaders=True,
         pixfrac=1.0,
         kernel="square",
         fillval="INDEF",
@@ -78,6 +77,44 @@ class ResampleData:
                 deleted from memory. Default value is `True` to keep
                 all products in memory.
         """
+        # outlier detection calls this with:
+        # - input_models
+        # - single=True
+        # - **pars....
+        #   - weight_type
+        #   - pixfrac
+        #   - kernel
+        #   - fillval
+        #   - nlow
+        #   - nhigh
+        #   - maskpt
+        #   - grow
+        #   - snr
+        #   - scale
+        #   - backg
+        #   - kernel_size
+        #   - save_intermediate_results
+        #   - resample_data
+        #   - good_bits
+        #   - allowed_memory
+        #   - in_memory
+        #   - make_output_path
+        #   - resample_suffix
+        # resample calls this with:
+        # - input_models
+        # - output=output (is output_filename below)
+        # - **kwargs...
+        #   - everything in spec
+        #   - overwrite good_bits, pixfrac, kernel, fillval, wht_type, pscale_ratio (from pixel_scale_ratio)
+        #   - allowed_memory
+        #   - output_shape? (default None)
+        #   - output_wcs? (default '', becomes None)
+        #   - crpix? (default None)
+        #   - crval? (default None)
+        #   - rotation
+        #   - pscale (from pixel_scale, default None)
+        #   - pscale_ratio (from pixel_scale_ratio again?, default 1.0)
+        #   - in_memory
         if (input_models is None) or (len(input_models) == 0):
             raise ValueError(
                 "No input has been provided. Input must be a non-empty ModelLibrary"
@@ -87,7 +124,6 @@ class ResampleData:
         self.output_filename = output
         self.pscale_ratio = pscale_ratio
         self.single = single
-        self.blendheaders = blendheaders
         self.pixfrac = pixfrac
         self.kernel = kernel
         self.fillval = fillval
@@ -198,6 +234,22 @@ class ResampleData:
 
         Used for outlier detection
         """
+        # this requires:
+        # -- computed --
+        # - self.blank_output (FIXME to remove this)
+        #
+        # -- from args or computed --
+        # - self.output_wcs
+        #
+        # -- from args --
+        # - self.input_models
+        # - self.pixfrac
+        # - self.kernel
+        # - self.fillval
+        # - self.weight_type
+        # - self.good_bits
+        # - self.in_memory
+        # so what does this use in the class
         output_list = []
         for group_id, indices in self.input_models.group_indices.items():
             output_model = self.blank_output
@@ -291,6 +343,28 @@ class ResampleData:
         """Resample and coadd many inputs to a single output.
         Used for level 3 resampling
         """
+        # this requires:
+        # -- computed --
+        # - self.blank_output (FIXME to remove this)
+        #
+        # -- from args or computed --
+        # - self.output_wcs
+        #
+        # -- from args --
+        # - self.output_filename
+        # - self.input_models
+        # - self.pixfrac
+        # - self.kernel
+        # - self.fillval
+        # - self.weight_type
+        # - self.good_bits
+        #
+        # - self.resample_variance_array (function call)
+        #   - self.drizzle_arrays (function call)
+        #   - (other stuff from above)
+        # - self.resample_exposure_time (function call)
+        #   - (same as resample_variance_array)
+        # - self.update_exposure_times (function call)
         output_model = self.blank_output.copy()
         output_model.meta.filename = self.output_filename
         output_model.meta["resample"] = maker_utils.mk_resample()
@@ -304,9 +378,6 @@ class ResampleData:
             asn_table_name := self.input_models.asn.get("table_name", None)
         ) is not None:
             output_model.meta.asn.table_name = asn_table_name
-
-        if self.blendheaders:
-            log.info("Skipping blendheaders for now.")
 
         # Initialize the output with the wcs
         # FIXME don't use a model yet...
