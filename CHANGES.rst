@@ -8,6 +8,7 @@ Documentation
 
 general
 -------
+- Add regression test for DMS400 and additional tests for ``SkyMatchStep``. [#1358]
 
 - Add regression test for DMS373, mosaic pipeline [#1348]
 
