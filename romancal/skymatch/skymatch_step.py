@@ -4,6 +4,10 @@ Roman step for sky matching.
 
 import logging
 from copy import deepcopy
+from itertools import chain
+from pathlib import Path
+import json
+from romancal.lib.basic_utils import is_association
 
 import numpy as np
 from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
@@ -117,8 +121,8 @@ class SkyMatchStep(RomanStep):
 
         # see if 'skymatch' was previously run and raise an exception
         # if 'subtract' mode has changed compared to the previous pass:
-        level = image_model.meta["background"]["level"]
-        if image_model.meta["background"]["subtracted"] is None:
+        level = image_model.meta.background.level
+        if image_model.meta.background.subtracted is None:
             if level is not None:
                 # report inconsistency:
                 raise ValueError(
@@ -129,7 +133,7 @@ class SkyMatchStep(RomanStep):
             level = 0.0
 
         else:
-            if image_model.meta["background"]["subtracted"] and level is None:
+            if image_model.meta.background.subtracted and level is None:
                 # NOTE: In principle we could assume that level is 0 and
                 # possibly add a log entry documenting this, however,
                 # at this moment I think it is safer to quit and...
@@ -140,7 +144,7 @@ class SkyMatchStep(RomanStep):
                     "'level' property is undefined (None)."
                 )
 
-            if image_model.meta["background"]["subtracted"] and self.subtract:
+            if image_model.meta.background.subtracted and self.subtract:
                 # cannot run 'skymatch' step on already "skymatched" images
                 # when 'subtract' spec is inconsistent with
                 # meta.background.subtracted:
