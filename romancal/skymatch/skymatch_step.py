@@ -4,10 +4,6 @@ Roman step for sky matching.
 
 import logging
 from copy import deepcopy
-from itertools import chain
-from pathlib import Path
-import json
-from romancal.lib.basic_utils import is_association
 
 import numpy as np
 from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags

@@ -1,13 +1,8 @@
-import os
 import pytest
-from roman_datamodels import datamodels as rdm
 from metrics_logger.decorators import metrics_logger
+
 from romancal.datamodels.library import ModelLibrary
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
-from romancal.skymatch import SkyMatchStep
-from romancal.stpipe import RomanStep
-
-from .regtestdata import compare_asdf
 
 
 @metrics_logger()
