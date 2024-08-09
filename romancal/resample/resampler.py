@@ -74,12 +74,7 @@ class Resampler:
 
         self.pixfrac = pixfrac
 
-        self.sciext = "SCI"
-        self.whtext = "WHT"
-        self.conext = "CON"
-
         self.outwcs = outwcs
-
         self.outsci = outsci
         self.outwht = outwht
         # FIXME this will need to be re-assigned back to the model

@@ -10,9 +10,11 @@ from astropy.units import Quantity
 from drizzle.cdrizzle import tblot
 from roman_datamodels.dqflags import pixel
 from scipy import ndimage
+from stcal.alignment.util import wcs_from_footprints
 
-from romancal.resample import resample
+from romancal.assign_wcs.utils import wcs_bbox_from_shape
 from romancal.resample.resample_utils import build_driz_weight, calc_gwcs_pixmap
+from romancal.resample.resampler import Resampler
 
 from ..stpipe import RomanStep
 
@@ -78,33 +80,170 @@ class OutlierDetection:
         """Flag outlier pixels in DQ of input images."""  # self._convert_inputs()
         pars = self.outlierpars
 
-        if pars["resample_data"]:
-            # Start by creating resampled/mosaic images for
-            # each group of exposures
-            resamp = resample.ResampleData(self.input_models, single=True, **pars)
-            drizzled_models = resamp.do_drizzle()
+        # FIXME make this not a pars
+        maskpt = pars.get("maskpt", 0.7)
 
+        if pars["resample_data"]:
+            # for non-resampled data, use the first wcs
+            def get_wcs(model, index):
+                wcs = copy.deepcopy(model.meta.wcs)
+                if wcs.bounding_box is None:
+                    wcs.bounding_box = wcs_bbox_from_shape(model.data.shape)
+                return wcs
+
+            wcslist = list(self.input_models.map_function(get_wcs, modify=False))
+            # wcsinfo from [0]
+            with self.input_models:
+                model = self.input_models.borrow(0)
+                wcsinfo = dict(model.meta.wcsinfo)
+                self.input_models.shelve(model, modify=False)
+
+            # FIXME this is a good example for why pars is confusing
+            pscale = pars.get("pscale")
+            if pscale is not None:
+                pscale /= 3600.0
+            output_shape = pars.get("output_shape")
+            if output_shape is not None:
+                output_shape[::-1]  # FIXME why?
+            median_wcs = wcs_from_footprints(
+                wcslist,
+                None,
+                wcsinfo,
+                pscale_ratio=pars.get("pscale_ratio"),
+                pscale=pscale,
+                rotation=pars.get("rotation"),
+                shape=output_shape,
+                crpix=pars.get("crpix"),
+                crval=pars.get("crval"),
+            )
+
+            model_data = []
+
+            # each group will produce 1 combined resampled array
+            # if save_intermediate_results is True turn this into a model and save it
+            # otherwise write it out as a normal (weighted) numpy array
+            outsci = np.zeros(median_wcs.array_shape, dtype="f4")
+            outwht = np.zeros(median_wcs.array_shape, dtype="f4")
+            outctx = np.zeros(median_wcs.array_shape, dtype="i4")
+            for group_id, indices in self.input_models.group_indices.items():
+                resampler = Resampler(
+                    outsci,
+                    outwht,
+                    outctx,
+                    median_wcs,
+                    pixfrac=pars.get("pixfrac"),
+                    kernel=pars.get("kernel"),
+                    fillval=pars.get("fillval"),
+                    rollover_context=True,
+                )
+
+                for index in indices:
+                    with self.input_models:
+                        img = self.input_models.borrow(index)
+
+                        # FIXME I think this was always the default ivm...
+                        wht = build_driz_weight(
+                            img, weight_type="ivm", good_bits=pars.get("good_bits")
+                        )
+
+                        # apply sky subtraction
+                        if (
+                            hasattr(img.meta, "background")
+                            and img.meta.background.subtracted is False
+                            and img.meta.background.level is not None
+                        ):
+                            data = img.data - img.meta.background.level
+                        else:
+                            data = img.data
+
+                        resampler.add_image(
+                            data.value,
+                            img.meta.wcs,
+                            wht,
+                        )
+                        self.input_models.shelve(img, index)
+                        del data
+                        del img
+
+                # TODO save as model?
+                if pars["save_intermediate_results"]:
+                    # make mosaic model, combine info, etc...
+                    raise NotImplementedError()
+
+                # apply weight
+                # FIXME many large temporary arrays here
+                weight_mask = np.ma.array(
+                    outwht, mask=np.logical_or(np.equal(outwht, 0.0), np.isnan(outwht))
+                )
+                # Sigma-clip the unmasked data
+                weight_mask = sigma_clip(weight_mask, sigma=3, maxiters=5)
+
+                # Mask pixels where weight falls below maskpt percent
+                weight_threshold = np.mean(weight_mask) * maskpt
+                outsci[outwht < weight_threshold] = np.nan
+
+                # save as numpy array
+                model_data.append(outsci.copy())
+
+                # reset arrays for next group
+                outsci[:] = 0
+                outwht[:] = 0
+
+            del outsci
+            del outwht
+            del outctx
+
+            # FIXME combine with below
+            median_data = np.nanmedian(model_data, axis=0)
+            del model_data
         else:
+            # we're not resampling, so instead, produce numpy arrays with
+            # the weighted data
             # for non-dithered data, the resampled image is just the original image
             drizzled_models = self.input_models
+            model_data = []
             with drizzled_models:
                 for i, model in enumerate(drizzled_models):
-                    model["weight"] = build_driz_weight(
+                    if i == 0:
+                        median_wcs = copy.deepcopy(model.meta.wcs)
+
+                    outwht = build_driz_weight(
                         model,
                         weight_type="ivm",
                         good_bits=pars["good_bits"],
                     )
-                    drizzled_models.shelve(model, i)
+                    outsci = model.data.value.copy()
 
-        # Perform median combination on set of drizzled mosaics
-        median_data = self.create_median(drizzled_models)
+                    # apply weight
+                    # FIXME many large temporary arrays here
+                    weight_mask = np.ma.array(
+                        outwht,
+                        mask=np.logical_or(np.equal(outwht, 0.0), np.isnan(outwht)),
+                    )
+                    # Sigma-clip the unmasked data
+                    weight_mask = sigma_clip(weight_mask, sigma=3, maxiters=5)
+
+                    # Mask pixels where weight falls below maskpt percent
+                    weight_threshold = np.mean(weight_mask) * maskpt
+                    outsci[outwht < weight_threshold] = np.nan
+
+                    # save as numpy array
+                    model_data.append(outsci)
+
+                    drizzled_models.shelve(model, i)
+                    del outwht
+                    del model
+
+            # FIXME combine with above
+            median_data = np.nanmedian(model_data, axis=0)
+            del model_data
 
         # Initialize intermediate products used in the outlier detection
-        with drizzled_models:
-            example_model = drizzled_models.borrow(0)
-            median_wcs = copy.deepcopy(example_model.meta.wcs)
-            if pars["save_intermediate_results"]:
+        if pars["save_intermediate_results"]:
+            with drizzled_models:
+                example_model = drizzled_models.borrow(0)
                 median_model = example_model.copy()
+                median_model.meta.wcs = median_wcs
                 median_model.data = Quantity(median_data, unit=median_model.data.unit)
                 median_model.meta.filename = "drizzled_median.asdf"
                 median_model_output_path = self.make_output_path(
@@ -113,7 +252,8 @@ class OutlierDetection:
                 )
                 median_model.save(median_model_output_path)
                 log.info(f"Saved model in {median_model_output_path}")
-            drizzled_models.shelve(example_model, 0, modify=False)
+                drizzled_models.shelve(example_model, 0, modify=False)
+                del median_model, example_model
 
         # Perform outlier detection using statistical comparisons between
         # each original input image and its blotted version of the median image
