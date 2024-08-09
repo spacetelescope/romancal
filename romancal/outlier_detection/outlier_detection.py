@@ -17,6 +17,7 @@ from romancal.resample.resample_utils import build_driz_weight, calc_gwcs_pixmap
 from romancal.resample.resampler import Resampler
 
 from ..stpipe import RomanStep
+from .array_library import ArrayLibrary
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -83,6 +84,11 @@ class OutlierDetection:
         # FIXME make this not a pars
         maskpt = pars.get("maskpt", 0.7)
 
+        if pars["in_memory"]:
+            model_data = []
+        else:
+            model_data = ArrayLibrary()
+
         if pars["resample_data"]:
             # for non-resampled data, use the first wcs
             def get_wcs(model, index):
@@ -116,8 +122,6 @@ class OutlierDetection:
                 crpix=pars.get("crpix"),
                 crval=pars.get("crval"),
             )
-
-            model_data = []
 
             # each group will produce 1 combined resampled array
             # if save_intermediate_results is True turn this into a model and save it
@@ -183,7 +187,10 @@ class OutlierDetection:
                 outsci[outwht < weight_threshold] = np.nan
 
                 # save as numpy array
-                model_data.append(outsci.copy())
+                if isinstance(model_data, ArrayLibrary):
+                    model_data.append(outsci)
+                else:
+                    model_data.append(outsci.copy())
 
                 # reset arrays for next group
                 outsci[:] = 0
@@ -193,15 +200,11 @@ class OutlierDetection:
             del outwht
             del outctx
 
-            # FIXME combine with below
-            median_data = np.nanmedian(model_data, axis=0)
-            del model_data
         else:
             # we're not resampling, so instead, produce numpy arrays with
             # the weighted data
             # for non-dithered data, the resampled image is just the original image
             drizzled_models = self.input_models
-            model_data = []
             with drizzled_models:
                 for i, model in enumerate(drizzled_models):
                     if i == 0:
@@ -229,14 +232,20 @@ class OutlierDetection:
 
                     # save as numpy array
                     model_data.append(outsci)
+                    if isinstance(model_data, ArrayLibrary):
+                        del outsci
 
                     drizzled_models.shelve(model, i)
                     del outwht
                     del model
 
-            # FIXME combine with above
+        if isinstance(model_data, list):
             median_data = np.nanmedian(model_data, axis=0)
-            del model_data
+        else:
+            # compute median from array library
+            median_data = model_data.median()
+            model_data.close()
+        del model_data
 
         # Initialize intermediate products used in the outlier detection
         if pars["save_intermediate_results"]:
