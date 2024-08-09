@@ -181,7 +181,7 @@ class SkyMatchStep(RomanStep):
         image.meta.background.subtracted = self.subtract
         image.meta.background.level = sky
 
-        if step_status == 'COMPLETE' and self.subtract:
+        if step_status == "COMPLETE" and self.subtract:
             image.data[...] = sky_image.image[...]
 
         image.meta.cal_step.skymatch = step_status
