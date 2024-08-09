@@ -1,16 +1,13 @@
+import copy
 import logging
-from typing import List
 
 import numpy as np
 from astropy import units as u
-from astropy.coordinates import SkyCoord
 from drizzle import cdrizzle, util
-from roman_datamodels import datamodels, maker_utils, stnode
-from stcal.alignment.util import compute_scale
+from roman_datamodels import datamodels, maker_utils
 
-from ..assign_wcs import utils
 from ..datamodels import ModelLibrary
-from . import resample_utils, resampler
+from . import meta_blender, resample_utils, resampler
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -189,34 +186,34 @@ class ResampleData:
         # NOTE: wait for William to fix bug in datamodels' init and then
         # use datamodels.ImageModel(shape=(nx, ny)) instead of mk_datamodel()
 
-        self.blank_output = maker_utils.mk_datamodel(
-            datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
-        )
+        # self.blank_output = maker_utils.mk_datamodel(
+        #     datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
+        # )
 
-        with self.input_models:
-            models = list(self.input_models)
+        # with self.input_models:
+        #     models = list(self.input_models)
 
-            # update meta.basic
-            populate_mosaic_basic(self.blank_output, models)
+        #     # update meta.basic
+        #     populate_mosaic_basic(self.blank_output, models)
 
-            # update meta.cal_step
-            self.blank_output.meta.cal_step = maker_utils.mk_l3_cal_step(
-                **models[0].meta.cal_step.to_flat_dict()
-            )
+        #     # update meta.cal_step
+        #     self.blank_output.meta.cal_step = maker_utils.mk_l3_cal_step(
+        #         **models[0].meta.cal_step.to_flat_dict()
+        #     )
 
-            # Update the output with all the component metas
-            populate_mosaic_individual(self.blank_output, models)
+        #     # Update the output with all the component metas
+        #     populate_mosaic_individual(self.blank_output, models)
 
-            # update meta data and wcs
-            l2_into_l3_meta(self.blank_output.meta, models[0].meta)
-            self.blank_output.meta.wcs = self.output_wcs
-            gwcs_into_l3(self.blank_output, self.output_wcs)
-            self.blank_output.cal_logs = stnode.CalLogs()
-            self.blank_output["individual_image_cal_logs"] = [
-                model.cal_logs for model in models
-            ]
-            for i, m in enumerate(models):
-                self.input_models.shelve(m, i, modify=False)
+        #     # update meta data and wcs
+        #     l2_into_l3_meta(self.blank_output.meta, models[0].meta)
+        #     self.blank_output.meta.wcs = self.output_wcs
+        #     gwcs_into_l3(self.blank_output, self.output_wcs)
+        #     self.blank_output.cal_logs = stnode.CalLogs()
+        #     self.blank_output["individual_image_cal_logs"] = [
+        #         model.cal_logs for model in models
+        #     ]
+        #     for i, m in enumerate(models):
+        #         self.input_models.shelve(m, i, modify=False)
 
     def do_drizzle(self):
         """Pick the correct drizzling mode based on ``self.single``."""
@@ -252,8 +249,12 @@ class ResampleData:
         # so what does this use in the class
         output_list = []
         for group_id, indices in self.input_models.group_indices.items():
-            output_model = self.blank_output
+            output_model = maker_utils.mk_datamodel(
+                datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
+            )
             output_model.meta["resample"] = maker_utils.mk_resample()
+            output_model.meta.wcs = copy.deepcopy(self.output_wcs)
+            blender = meta_blender.MetaBlender(output_model)
 
             # copy over asn information
             if (asn_pool := self.input_models.asn.get("asn_pool", None)) is not None:
@@ -316,6 +317,7 @@ class ResampleData:
                         inwht,
                     )
                     del data
+                    blender.blend(img)
                     self.input_models.shelve(img, index)
 
                 # cast context array to uint32
@@ -323,6 +325,8 @@ class ResampleData:
                 output_model.context = output_model.context.astype(
                     "uint32"
                 )  # FIXME another copy
+
+                blender.finalize()
 
                 # copy over asn information
                 if not self.in_memory:
@@ -332,10 +336,9 @@ class ResampleData:
                     log.info(f"Exposure {output_name} saved to file")
                     output_list.append(output_name)
                 else:
-                    output_list.append(output_model.copy())
-
-                output_model.data *= 0.0
-                output_model.weight *= 0.0
+                    output_list.append(output_model)
+                del blender
+                del output_model
 
         return ModelLibrary(output_list)
 
@@ -365,7 +368,13 @@ class ResampleData:
         # - self.resample_exposure_time (function call)
         #   - (same as resample_variance_array)
         # - self.update_exposure_times (function call)
-        output_model = self.blank_output.copy()
+        output_model = maker_utils.mk_datamodel(
+            datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
+        )
+        output_model.meta.wcs = copy.deepcopy(self.output_wcs)
+        blender = meta_blender.MetaBlender(output_model)
+
+        # TODO should this also be in many_to_many?
         output_model.meta.filename = self.output_filename
         output_model.meta["resample"] = maker_utils.mk_resample()
         output_model.meta.resample.weight_type = self.weight_type
@@ -413,6 +422,7 @@ class ResampleData:
                     img.meta.wcs,
                     inwht,
                 )
+                blender.blend(img)
                 del data, inwht
                 self.input_models.shelve(img, i, modify=False)
 
@@ -453,6 +463,7 @@ class ResampleData:
         output_model.context = output_model.context.astype(
             np.uint32
         )  # FIXME this cast copies
+        blender.finalize()
 
         return ModelLibrary([output_model])
 
@@ -790,229 +801,3 @@ class ResampleData:
             wtscale=wtscale,
             fillstr=fillval,
         )
-
-
-def l2_into_l3_meta(l3_meta, l2_meta):
-    """Update the level 3 meta with info from the level 2 meta
-
-    Parameters
-    ----------
-    l3_meta : dict
-        The meta to update. This is updated in-place
-
-    l2_meta : stnode
-        The Level 2-like meta to pull from
-
-    Notes
-    -----
-    The list of meta that is pulled from the Level 2 meta into the Level 3 meta is as follows:
-    basic.visit: observation.visit
-    basic.segment: observation.segment
-    basic.pass: observation.pass
-    basic.program: observation.program
-    basic.survey: obervation.survey
-    basic.optical_element: optical_element
-    basic.instrument: instrument.name
-    basic.telescope: telescope
-    program: program
-    """
-    l3_meta.basic.visit = l2_meta.observation.visit
-    l3_meta.basic.segment = l2_meta.observation.segment
-    l3_meta.basic["pass"] = l2_meta.observation["pass"]
-    l3_meta.basic.program = l2_meta.observation.program
-    l3_meta.basic.survey = l2_meta.observation.survey
-    l3_meta.basic.optical_element = l2_meta.instrument.optical_element
-    l3_meta.basic.instrument = l2_meta.instrument.name
-    l3_meta.coordinates = l2_meta.coordinates
-    l3_meta.program = l2_meta.program
-
-
-def gwcs_into_l3(model, wcs):
-    """Update the Level 3 wcsinfo block from a GWCS object
-
-    Parameters
-    ----------
-    model : `DataModel`
-        The model whose meta is to be updated.
-
-    wcs : `GWCS`
-        GWCS info to transfer into the `meta.wcsinfo` block
-
-    Notes
-    -----
-    Some models/parameters in the GWCS object have explicit names, such as
-    'crpix1'. However, some do not and hence have to be accessed explicitly
-    by indexing. This is fragile and will be a source of issues.
-    """
-    l3_wcsinfo = model.meta.wcsinfo
-    transform = wcs.forward_transform
-
-    l3_wcsinfo.projection = "TAN"
-    l3_wcsinfo.pixel_shape = model.shape
-
-    pixel_center = [(v - 1) / 2.0 for v in model.shape[::-1]]
-    world_center = wcs(*pixel_center)
-    l3_wcsinfo.ra_center = world_center[0]
-    l3_wcsinfo.dec_center = world_center[1]
-    l3_wcsinfo.pixel_scale_local = compute_scale(wcs, world_center)
-    l3_wcsinfo.orientat_local = calc_pa(wcs, *world_center)
-
-    try:
-        footprint = utils.create_footprint(wcs, model.shape)
-    except Exception as excp:
-        log.warning("Could not determine footprint due to %s", excp)
-    else:
-        l3_wcsinfo.ra_corn1 = footprint[0][0]
-        l3_wcsinfo.ra_corn2 = footprint[1][0]
-        l3_wcsinfo.ra_corn3 = footprint[2][0]
-        l3_wcsinfo.ra_corn4 = footprint[3][0]
-        l3_wcsinfo.dec_corn1 = footprint[0][1]
-        l3_wcsinfo.dec_corn2 = footprint[1][1]
-        l3_wcsinfo.dec_corn3 = footprint[2][1]
-        l3_wcsinfo.dec_corn4 = footprint[3][1]
-        l3_wcsinfo.s_region = utils.create_s_region(footprint)
-
-    try:
-        l3_wcsinfo.x_ref = -transform["crpix1"].offset.value
-        l3_wcsinfo.y_ref = -transform["crpix2"].offset.value
-    except IndexError:
-        log.warning(
-            "WCS has no clear reference pixel defined by crpix1/crpix2. Assuming reference pixel is center."
-        )
-        l3_wcsinfo.x_ref = pixel_center[0]
-        l3_wcsinfo.y_ref = pixel_center[1]
-    world_ref = wcs(l3_wcsinfo.x_ref, l3_wcsinfo.y_ref)
-    l3_wcsinfo.ra_ref = world_ref[0]
-    l3_wcsinfo.dec_ref = world_ref[1]
-    l3_wcsinfo.pixel_scale = compute_scale(wcs, world_ref)
-    l3_wcsinfo.orientat = calc_pa(wcs, *world_ref)
-
-    try:
-        l3_wcsinfo.rotation_matrix = transform[
-            "pc_rotation_matrix"
-        ].matrix.value.tolist()
-    except Exception:
-        log.warning(
-            "WCS has no clear rotation matrix defined by pc_rotation_matrix. Calculating one."
-        )
-        rotation_matrix = utils.calc_rotation_matrix(l3_wcsinfo.orientat, 0.0)
-        l3_wcsinfo.rotation_matrix = utils.list_1d_to_2d(rotation_matrix, 2)
-
-
-def calc_pa(wcs, ra, dec):
-    """Calculate position angle at given ra,dec
-
-    Parameters
-    ----------
-    wcs : GWCS
-        The wcs in consideration.
-
-    ra, dec : float, float
-        The ra/dec in degrees.
-
-    Returns
-    -------
-    position_angle : float
-        The position angle in degrees.
-
-    """
-    delta_pix = [v for v in wcs.world_to_pixel(ra, dec)]
-    delta_pix[1] += 1
-    delta_coord = wcs.pixel_to_world(*delta_pix)
-    coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
-
-    return coord.position_angle(delta_coord).degree
-
-
-def populate_mosaic_basic(
-    output_model: datamodels.MosaicModel, input_models: [List, ModelLibrary]
-):
-    """
-    Populate basic metadata fields in the output mosaic model based on input models.
-
-    Parameters
-    ----------
-    output_model : MosaicModel
-        Object to populate with basic metadata.
-    input_models : [List, ModelLibrary]
-        List of input data models from which to extract the metadata.
-        ModelLibrary is also supported.
-
-    Returns
-    -------
-    None
-    """
-
-    input_meta = [datamodel.meta for datamodel in input_models]
-
-    # time data
-    output_model.meta.basic.time_first_mjd = np.min(
-        [x.exposure.start_time.mjd for x in input_meta]
-    )
-    output_model.meta.basic.time_last_mjd = np.max(
-        [x.exposure.end_time.mjd for x in input_meta]
-    )
-    output_model.meta.basic.time_mean_mjd = np.mean(
-        [x.exposure.mid_time.mjd for x in input_meta]
-    )
-
-    # observation data
-    output_model.meta.basic.visit = (
-        input_meta[0].observation.visit
-        if len({x.observation.visit for x in input_meta}) == 1
-        else -1
-    )
-    output_model.meta.basic.segment = (
-        input_meta[0].observation.segment
-        if len({x.observation.segment for x in input_meta}) == 1
-        else -1
-    )
-    output_model.meta.basic["pass"] = (
-        input_meta[0].observation["pass"]
-        if len({x.observation["pass"] for x in input_meta}) == 1
-        else -1
-    )
-    output_model.meta.basic.program = (
-        input_meta[0].observation.program
-        if len({x.observation.program for x in input_meta}) == 1
-        else "-1"
-    )
-    output_model.meta.basic.survey = (
-        input_meta[0].observation.survey
-        if len({x.observation.survey for x in input_meta}) == 1
-        else "MULTIPLE"
-    )
-
-    # instrument data
-    output_model.meta.basic.optical_element = input_meta[0].instrument.optical_element
-    output_model.meta.basic.instrument = input_meta[0].instrument.name
-
-    # skycell location
-    output_model.meta.basic.location_name = "TBD"
-
-    # association product type
-    output_model.meta.basic.product_type = "TBD"
-
-
-def populate_mosaic_individual(
-    output_model: datamodels.MosaicModel, input_models: [List, ModelLibrary]
-):
-    """
-    Populate individual meta fields in the output mosaic model based on input models.
-
-    Parameters
-    ----------
-    output_model : MosaicModel
-        Object to populate with basic metadata.
-    input_models : [List, ModelLibrary]
-        List of input data models from which to extract the metadata.
-        ModelLibrary is also supported.
-
-    Returns
-    -------
-    None
-    """
-
-    input_metas = [datamodel.meta for datamodel in input_models]
-    for input_meta in input_metas:
-        output_model.append_individual_image_meta(input_meta)
