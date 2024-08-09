@@ -99,6 +99,17 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
         + str(model.meta.cal_step.skymatch)
     )
     pipeline.log.info(
+        "DMS400 MSG: SkyMatchStep added meta.background? :"
+        f'  {hasattr(model.meta.individual_image_meta, "background")}'
+    )
+    assert hasattr(model.meta.individual_image_meta, "background")
+
+    pipeline.log.info(
+        "DMS400 MSG: SkyMatchStep populated meta.background.level? :"
+        f"  {any(model.meta.individual_image_meta.background['level'] != 0)}"
+    )
+    assert any(model.meta.individual_image_meta.background['level'] != 0)
+    pipeline.log.info(
         "DMS86 MSG: Testing completion of outlier detection in the Level 3 image output......."
         + passfail(model.meta.cal_step.outlier_detection == "COMPLETE")
     )
