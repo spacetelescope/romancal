@@ -72,6 +72,11 @@ tweakreg
 
 - Update default absolute separation for tweakreg.  [#1352]
 
+skymatch
+--------
+- Populate valid metadata even when then are no overlapping images to
+  match [#1360]
+
 
 0.15.1 (2024-05-15)
 ===================
