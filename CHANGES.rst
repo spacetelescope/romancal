@@ -1,7 +1,12 @@
-0.16.1 (unreleased)
+0.16.2 (unreleased)
 ===================
 
 -
+
+0.16.1 (2024-08-13)
+===================
+
+- update ``stcal`` and ``stpipe`` versions to use ``ModelLibrary`` [#1364]
 
 0.16.0 (2024-08-13)
 ===================
