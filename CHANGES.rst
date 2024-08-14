@@ -6,7 +6,8 @@
 0.16.1 (2024-08-13)
 ===================
 
-- update ``stcal`` and ``stpipe`` versions to use ``ModelLibrary`` [#1364]
+- update ``stpipe`` to use ``ModelLibrary`` [#1364]
+- update ``stcal`` to use outlier detection [#1364]
 
 0.16.0 (2024-08-13)
 ===================
