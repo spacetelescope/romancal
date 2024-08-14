@@ -113,8 +113,8 @@ sphinxcontrib-htmlhelp==2.1.0
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==2.0.0
 sphinxcontrib-serializinghtml==2.0.0
-stcal==1.7.3
-stpipe==0.6.0
+stcal==1.8.0
+stpipe==0.7.0
 stpreview==0.5.1
 stsci.imagestats==1.8.3
 stsci.stimage==0.2.9
