@@ -88,6 +88,10 @@ class MosaicPipeline(RomanPipeline):
 
             # if this is a valid skycell name load the database and get the skycell record
             if re.match(r"r\d{3}\w{2}\d{2}x\d{2}y\d{2}", skycell_name):
+                if patch_match.PATCH_TABLE is None:
+                    patch_match.load_patch_table()
+                if patch_match.PATCH_TABLE is None:
+                    raise RuntimeError("No patch table has been loaded")
                 skycell_record = patch_match.PATCH_TABLE[
                     np.where(patch_match.PATCH_TABLE["name"][:] == skycell_name)[0][0]
                 ]
