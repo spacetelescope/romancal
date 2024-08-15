@@ -1,3 +1,11 @@
+0.16.3 (unreleased)
+===================
+
+mosaic_pipeline
+---------------
+
+- Only load patch table when needed. [#1367]
+
 0.16.2 (2024-08-23)
 ===================
 
