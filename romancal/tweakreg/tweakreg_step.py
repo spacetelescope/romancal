@@ -462,7 +462,7 @@ class TweakRegStep(RomanStep):
 
                     image_model.meta.wcs = imcat.wcs
 
-                    if self.update_source_catalog_coordinates:
+                    if getattr(self, "update_source_catalog_coordinates", False):
                         self.update_catalog_coordinates(
                             image_model.meta.source_detection.tweakreg_catalog_name,
                             image_model.meta.wcs,
