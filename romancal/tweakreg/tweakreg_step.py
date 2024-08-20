@@ -162,41 +162,7 @@ class TweakRegStep(RomanStep):
                     images.shelve(image_model)
                     return image_model
 
-                if hasattr(image_model.meta, "source_detection"):
-                    is_tweakreg_catalog_present = hasattr(
-                        image_model.meta.source_detection, "tweakreg_catalog"
-                    )
-                    is_tweakreg_catalog_name_present = hasattr(
-                        image_model.meta.source_detection, "tweakreg_catalog_name"
-                    )
-                    if is_tweakreg_catalog_present:
-                        # read catalog from structured array
-                        catalog = Table(
-                            np.asarray(
-                                image_model.meta.source_detection.tweakreg_catalog
-                            )
-                        )
-                    elif is_tweakreg_catalog_name_present:
-                        catalog = self.read_catalog(
-                            image_model.meta.source_detection.tweakreg_catalog_name
-                        )
-                    else:
-                        images.shelve(image_model, i, modify=False)
-                        raise AttributeError(
-                            "Attribute 'meta.source_detection.tweakreg_catalog' is missing."
-                            "Please either run SourceDetectionStep or provide a"
-                            "custom source catalog."
-                        )
-                    # remove 4D numpy array from meta.source_detection
-                    if is_tweakreg_catalog_present:
-                        del image_model.meta.source_detection["tweakreg_catalog"]
-                else:
-                    images.shelve(image_model, i, modify=False)
-                    raise AttributeError(
-                        "Attribute 'meta.source_detection' is missing."
-                        "Please either run SourceDetectionStep or provide a"
-                        "custom source catalog."
-                    )
+                catalog = self.get_tweakreg_catalog(images, i, image_model)
 
                 for axis in ["x", "y"]:
                     if axis not in catalog.colnames:
@@ -495,9 +461,102 @@ class TweakRegStep(RomanStep):
                         del image_model.meta["wcs_fit_results"][k]
 
                     image_model.meta.wcs = imcat.wcs
+
+                    if self.update_source_catalog_coordinates:
+                        self.update_catalog_coordinates(
+                            image_model.meta.source_detection.tweakreg_catalog_name,
+                            image_model.meta.wcs,
+                        )
                 images.shelve(image_model, i)
 
         return images
+
+    def get_tweakreg_catalog(self, images, i, image_model):
+        if hasattr(image_model.meta, "source_detection"):
+            is_tweakreg_catalog_present = hasattr(
+                image_model.meta.source_detection, "tweakreg_catalog"
+            )
+            is_tweakreg_catalog_name_present = hasattr(
+                image_model.meta.source_detection, "tweakreg_catalog_name"
+            )
+            if is_tweakreg_catalog_present:
+                # read catalog from structured array
+                catalog = Table(
+                    np.asarray(image_model.meta.source_detection.tweakreg_catalog)
+                )
+            elif is_tweakreg_catalog_name_present:
+                catalog = self.read_catalog(
+                    image_model.meta.source_detection.tweakreg_catalog_name
+                )
+            else:
+                images.shelve(image_model, i, modify=False)
+                raise AttributeError(
+                    "Attribute 'meta.source_detection.tweakreg_catalog' is missing."
+                    "Please either run SourceDetectionStep or provide a"
+                    "custom source catalog."
+                )
+                # remove 4D numpy array from meta.source_detection
+            if is_tweakreg_catalog_present:
+                del image_model.meta.source_detection["tweakreg_catalog"]
+        else:
+            images.shelve(image_model, i, modify=False)
+            raise AttributeError(
+                "Attribute 'meta.source_detection' is missing."
+                "Please either run SourceDetectionStep or provide a"
+                "custom source catalog."
+            )
+
+        return catalog
+
+    def update_catalog_coordinates(self, tweakreg_catalog_name, tweaked_wcs):
+        """
+        Update the source catalog coordinates using the tweaked WCS.
+
+        Parameters
+        ----------
+        tweakreg_catalog_name : str
+            The name of the TweakReg catalog file produced by `SourceCatalog`.
+        tweaked_wcs : `astropy.wcs.WCS`
+            The tweaked World Coordinate System (WCS) object.
+
+        Returns
+        -------
+        None
+        """
+        # read in cat file
+        with rdm.open(tweakreg_catalog_name) as source_catalog_model:
+            # get catalog
+            catalog = source_catalog_model.source_catalog
+
+            # define mapping between pixel and world coordinates
+            colname_mapping = {
+                ("xcentroid", "ycentroid"): ("ra_centroid", "dec_centroid"),
+                ("x_psf", "y_psf"): ("ra_psf", "dec_psf"),
+            }
+
+            for k, v in colname_mapping.items():
+                # get column names
+                x_colname, y_colname = k
+                ra_colname, dec_colname = v
+
+                # calculate new coordinates using tweaked WCS
+                tweaked_centroid = tweaked_wcs.pixel_to_world(
+                    catalog[x_colname], catalog[y_colname]
+                )
+
+                # update catalog coordinates
+                catalog[ra_colname], catalog[dec_colname] = (
+                    tweaked_centroid.ra.deg,
+                    tweaked_centroid.dec.deg,
+                )
+
+            # save updated catalog (overwrite cat file)
+            self.save_model(
+                source_catalog_model,
+                output_file=source_catalog_model.meta.filename,
+                suffix="cat",
+                force=True,
+            )
 
     def read_catalog(self, catalog_name):
         if catalog_name.endswith("asdf"):
