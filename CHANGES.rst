@@ -1,7 +1,10 @@
 0.16.2 (unreleased)
 ===================
 
--
+exposure_pipeline
+-----------------
+- Update source catalog file with tweaked coordinates. [#1373]
+
 
 0.16.1 (2024-08-13)
 ===================
