@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Tuple
 
 import numpy as np
-from numpy.random import default_rng
 import pytest
 import requests
 from astropy import coordinates as coord
@@ -19,6 +18,7 @@ from astropy.time import Time
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
+from numpy.random import default_rng
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
