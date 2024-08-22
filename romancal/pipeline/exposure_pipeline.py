@@ -150,8 +150,6 @@ class ExposurePipeline(RomanPipeline):
                 ]:
                     result.meta.cal_step[step_str] = "SKIPPED"
 
-                # Set suffix for proper output naming
-                self.suffix = "cal"
                 results.append(result)
                 return results
 
@@ -178,11 +176,10 @@ class ExposurePipeline(RomanPipeline):
                 result.meta.cal_step.photom = "SKIPPED"
                 result.meta.cal_step.source_detection = "SKIPPED"
                 result.meta.cal_step.tweakreg = "SKIPPED"
-                self.suffix = "cal"
 
             self.output_use_model = True
             results.append(result)
-
+            
         # Now that all the exposures are collated, run tweakreg
         # Note: this does not cover the case where the asn mixes imaging and spectral
         #          observations. This should not occur on-prem
@@ -220,9 +217,6 @@ class ExposurePipeline(RomanPipeline):
             "tweakreg",
         ]:
             fully_saturated_model.meta.cal_step[step_str] = "SKIPPED"
-
-        # Set suffix for proper output naming
-        self.suffix = "cal"
 
         # Return zeroed-out image file
         return fully_saturated_model
