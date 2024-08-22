@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Tuple
 
 import numpy as np
+from numpy.random import default_rng
 import pytest
 import requests
 from astropy import coordinates as coord
@@ -1269,13 +1270,14 @@ def setup_source_catalog_model(img):
     source_catalog["y_psf"] = source_catalog["ycentroid"]
 
     # add random fraction of a pixel shifts to the centroid coordinates
-    shift_x = np.random.uniform(-0.5, 0.5, size=len(source_catalog))
-    shift_y = np.random.uniform(-0.5, 0.5, size=len(source_catalog))
+    rng = default_rng()
+    shift_x = rng.uniform(-0.5, 0.5, size=len(source_catalog))
+    shift_y = rng.uniform(-0.5, 0.5, size=len(source_catalog))
     source_catalog["xcentroid"] += shift_x
     source_catalog["ycentroid"] += shift_y
     # add random fraction of a pixel shifts to the PSF coordinates
-    shift_x = np.random.uniform(-0.5, 0.5, size=len(source_catalog))
-    shift_y = np.random.uniform(-0.5, 0.5, size=len(source_catalog))
+    shift_x = rng.uniform(-0.5, 0.5, size=len(source_catalog))
+    shift_y = rng.uniform(-0.5, 0.5, size=len(source_catalog))
     source_catalog["x_psf"] += shift_x
     source_catalog["y_psf"] += shift_y
 
