@@ -179,7 +179,7 @@ class ExposurePipeline(RomanPipeline):
 
             self.output_use_model = True
             results.append(result)
-            
+
         # Now that all the exposures are collated, run tweakreg
         # Note: this does not cover the case where the asn mixes imaging and spectral
         #          observations. This should not occur on-prem
