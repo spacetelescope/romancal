@@ -47,6 +47,7 @@ class ExposurePipeline(RomanPipeline):
     spec = """
         save_calibrated_ramp = boolean(default=False)
         save_results = boolean(default=False)
+        suffix = string(default="cal")
     """
 
     # Define aliases to steps
@@ -179,8 +180,6 @@ class ExposurePipeline(RomanPipeline):
                 result.meta.cal_step.tweakreg = "SKIPPED"
                 self.suffix = "cal"
 
-            self.setup_output(result)
-
             self.output_use_model = True
             results.append(result)
 
@@ -192,10 +191,6 @@ class ExposurePipeline(RomanPipeline):
         log.info("Roman exposure calibration pipeline ending...")
 
         return results
-
-    def setup_output(self, input):
-        """Determine the proper file name suffix to use later"""
-        self.suffix = "cal"
 
     def create_fully_saturated_zeroed_image(self, input_model):
         """
