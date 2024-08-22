@@ -57,6 +57,7 @@ desk at `Roman Help Desk <https://stsci.service-now.com/roman>`_.
    :maxdepth: 3
 
    roman/package_index.rst
+   roman/changes.rst
 
 .. toctree::
    :caption: Datamodels
