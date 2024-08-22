@@ -105,11 +105,10 @@ def apply_flux_correction(model):
     VARIANCES = ("var_rnoise", "var_poisson", "var_flat")
 
     if model.data.unit == model.meta.photometry.conversion_megajanskys.unit:
-        message = (
+        log.info(
             f"Input data is already in flux units of {model.meta.photometry.conversion_megajanskys.unit}."
-            "\nFlux correction already applied."
         )
-        log.info(message)
+        log.info("Flux correction already applied.")
         return
 
     if model.data.unit != LV2_UNITS:
@@ -117,7 +116,7 @@ def apply_flux_correction(model):
             f"Input data units {model.data.unit} are not in the expected units of {LV2_UNITS}"
             "\nAborting flux correction"
         )
-        log.error(message)
+        [log.error(line) for line in message.splitlines()]
         raise ValueError(message)
 
     # Apply the correction.
