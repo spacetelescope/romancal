@@ -3,7 +3,6 @@ import json
 import os
 from io import StringIO
 from pathlib import Path
-import random
 from typing import Tuple
 
 import numpy as np
