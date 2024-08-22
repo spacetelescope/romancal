@@ -3,7 +3,6 @@
 import logging
 import sys
 from collections import defaultdict
-from functools import partialmethod
 from logging.config import dictConfig
 
 __all__ = ["log_config"]
@@ -128,28 +127,6 @@ DMS_config = {
         },
     }
 }
-
-
-class MultilineLogger(logging.getLoggerClass()):
-    """Split multilines so that each line is logged separately"""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def log(self, level, msg, *args, **kwargs):
-        if self.isEnabledFor(level):
-            for line in msg.split("\n"):
-                self._log(level, line, args, **kwargs)
-
-    debug = partialmethod(log, logging.DEBUG)
-    info = partialmethod(log, logging.INFO)
-    warning = partialmethod(log, logging.WARNING)
-    error = partialmethod(log, logging.ERROR)
-    critical = partialmethod(log, logging.CRITICAL)
-    fatal = critical
-
-
-logging.setLoggerClass(MultilineLogger)
 
 
 def log_config(name=None, user_name=None, logger_config=None, config=None, merge=True):

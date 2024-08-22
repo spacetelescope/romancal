@@ -109,7 +109,7 @@ def apply_flux_correction(model):
             f"Input data is already in flux units of MJy/sr."
             "\nFlux correction already applied."
         )
-        log.info(message)
+        log.info("Flux correction already applied.")
         return
 
     # Apply the correction.
