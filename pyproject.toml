@@ -227,3 +227,76 @@ archs = [
     "auto",
     "aarch64",
 ]
+
+[tool.towncrier]
+filename = "CHANGES.rst"
+directory = "changes"
+package = "romancal"
+title_format = "{version} ({project_date})"
+ignore = [".gitkeep"]
+wrap = true
+issue_format = "`#{issue} <https://github.com/spacetelescope/romancal/{issue}>`_"
+
+[tool.towncrier.fragment.associations]
+name = "`associations`"
+
+[tool.towncrier.fragment.dark_current]
+name = "`dark_current`"
+
+[tool.towncrier.fragment.docs]
+name = "Documentation"
+
+[tool.towncrier.fragment.dq_init]
+name = "`dq_init`"
+
+[tool.towncrier.fragment.flux]
+name = "`flux`"
+
+[tool.towncrier.fragment.flatfield]
+name = "`flatfield`"
+
+[tool.towncrier.fragment.general]
+
+[tool.towncrier.fragment.jump_detection]
+name = "`jump_detection`"
+
+[tool.towncrier.fragment.linearity]
+name = "`linearity`"
+
+[tool.towncrier.fragment.mosaic_pipeline]
+name = "`mosaic_pipeline`"
+
+[tool.towncrier.fragment.outlier]
+name = "`outlier_detection`"
+
+[tool.towncrier.fragment.patch_match]
+name = "`patch_match`"
+
+[tool.towncrier.fragment.photom]
+name = "`photom`"
+
+[tool.towncrier.fragment.ramp]
+name = "`ramp_fitting`"
+
+[tool.towncrier.fragment.refpix]
+name = "`refpix`"
+
+[tool.towncrier.fragment.resample]
+name = "`resample`"
+
+[tool.towncrier.fragment.saturation]
+name = "`saturation`"
+
+[tool.towncrier.fragment.scripts]
+
+[tool.towncrier.fragment.skymatch]
+name = "`skymatch`"
+
+[tool.towncrier.fragment.source_catalog]
+name = "`source_catalog`"
+
+[tool.towncrier.fragment.stpipe]
+name = "`stpipe`"
+
+[tool.towncrier.fragment.tweakreg]
+name = "`tweakreg`"

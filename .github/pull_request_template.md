@@ -9,7 +9,34 @@ Closes #
 This PR addresses ...
 
 **Checklist**
-- [ ] added entry in `CHANGES.rst` under the corresponding subsection
+- [ ] for a public change, added a [towncrier news fragment](https://towncrier.readthedocs.io/en/stable/tutorial.html#creating-news-fragments) <details><summary>`changes/<PR#>.<changetype>.rst`</summary>
+
+    - ``changes/<PR#>.docs.rst``: documentation change
+    - ``changes/<PR#>.general.rst``: infrastructure or miscellaneous change
+    - ``changes/<PR#>.scripts.rst``: change to scripts
+    - ``changes/<PR#>.stpipe.rst``: change to `stpipe` interface
+
+    ## steps
+    - ``changes/<PR#>.associations.rst``
+    - ``changes/<PR#>.dark_current.rst``
+    - ``changes/<PR#>.dq_init.rst``
+    - ``changes/<PR#>.flux.rst``
+    - ``changes/<PR#>.flatfield.rst``
+    - ``changes/<PR#>.jump_detection.rst``
+    - ``changes/<PR#>.linearity.rst``
+    - ``changes/<PR#>.mosaic_pipeline.rst``
+    - ``changes/<PR#>.outlier_detection.rst``
+    - ``changes/<PR#>.patch_match.rst``
+    - ``changes/<PR#>.photom.rst``
+    - ``changes/<PR#>.ramp_fitting.rst``
+    - ``changes/<PR#>.refpix.rst``
+    - ``changes/<PR#>.refpix.rst``
+    - ``changes/<PR#>.resample.rst``
+    - ``changes/<PR#>.saturation.rst``
+    - ``changes/<PR#>.skymatch.rst``
+    - ``changes/<PR#>.source_catalog.rst``
+    - ``changes/<PR#>.tweakreg.rst``
+  </details>
 - [ ] updated relevant tests
 - [ ] updated relevant documentation
 - [ ] updated relevant milestone(s)
