@@ -551,7 +551,7 @@ def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
 
 @pytest.mark.bigdata
 def test_pipeline_suffix(rtdata, ignore_asdf_paths):
-    """Tests for fully saturated data skipping steps in the pipeline"""
+    """Tests passing suffix to the pipeline"""
     input_data = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
 
