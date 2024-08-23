@@ -121,7 +121,6 @@ class ExposurePipeline(RomanPipeline):
 
             log.info(f"Processing a WFI exposure {input_filename}")
 
-            self.dq_init.suffix = "dq_init"
             result = self.dq_init(input)
 
             if input_filename:
@@ -177,7 +176,6 @@ class ExposurePipeline(RomanPipeline):
                 result.meta.cal_step.source_detection = "SKIPPED"
                 result.meta.cal_step.tweakreg = "SKIPPED"
 
-            self.output_use_model = True
             results.append(result)
 
         # Now that all the exposures are collated, run tweakreg

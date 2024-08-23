@@ -27,6 +27,10 @@ class AssignWcsStep(RomanStep):
 
     reference_file_types = ["distortion"]
 
+    spec = """
+        suffix = string(default="assignwcs")
+    """
+
     def process(self, input):
         reference_file_names = {}
         if isinstance(input, rdm.DataModel):
@@ -48,12 +52,6 @@ class AssignWcsStep(RomanStep):
             reference_file_names[reftype] = reffile if reffile else ""
         log.info("Using reference files: %s for assign_wcs", reference_file_names)
         result = load_wcs(input_model, reference_file_names)
-
-        if self.save_results:
-            try:
-                self.suffix = "assignwcs"
-            except AttributeError:
-                self["suffix"] = "assignwcs"
 
         return result
 

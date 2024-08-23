@@ -15,6 +15,10 @@ class FlatFieldStep(RomanStep):
 
     reference_file_types = ["flat"]
 
+    spec = """
+        suffix = string(default="flat")
+    """
+
     def process(self, input_model):
         if not isinstance(input_model, rdm.DataModel):
             input_model = rdm.open(input_model)
@@ -43,11 +47,5 @@ class FlatFieldStep(RomanStep):
         # Close reference file
         if reference_file_model is not None:
             reference_file_model.close()
-
-        if self.save_results:
-            try:
-                self.suffix = "flat"
-            except AttributeError:
-                self["suffix"] = "flat"
 
         return output_model

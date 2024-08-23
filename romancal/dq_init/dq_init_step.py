@@ -24,6 +24,10 @@ class DQInitStep(RomanStep):
 
     reference_file_types = ["mask"]
 
+    spec = """
+        suffix = string(default="dqinit")
+    """
+
     def process(self, input):
         """Perform the dq_init calibration step
 
@@ -98,11 +102,5 @@ class DQInitStep(RomanStep):
             reference_file_model.close()
         except AttributeError:
             pass
-
-        if self.save_results:
-            try:
-                self.suffix = "dqinit"
-            except AttributeError:
-                self["suffix"] = "dqinit"
 
         return output_model

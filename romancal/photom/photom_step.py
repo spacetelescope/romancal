@@ -16,6 +16,10 @@ class PhotomStep(RomanStep):
 
     reference_file_types = ["photom"]
 
+    spec = """
+        suffix = string(default="photom")
+    """
+
     def process(self, input):
         """Perform the photometric calibration step
 
@@ -67,11 +71,5 @@ class PhotomStep(RomanStep):
             self.log.warning("Photom step will be skipped")
             input_model.meta.cal_step.photom = "SKIPPED"
             output_model = input_model
-
-        if self.save_results:
-            try:
-                self.suffix = "photom"
-            except AttributeError:
-                self["suffix"] = "photom"
 
         return output_model

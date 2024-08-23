@@ -21,6 +21,10 @@ class LinearityStep(RomanStep):
 
     reference_file_types = ["linearity"]
 
+    spec = """
+        suffix = string(default="linearity")
+    """
+
     def process(self, input):
         # Open the input data model
         if isinstance(input, rdd.DataModel):
@@ -67,9 +71,4 @@ class LinearityStep(RomanStep):
         # Update the step status
         input_model.meta.cal_step["linearity"] = "COMPLETE"
 
-        if self.save_results:
-            try:
-                self.suffix = "linearity"
-            except AttributeError:
-                self["suffix"] = "linearity"
         return input_model

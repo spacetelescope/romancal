@@ -60,7 +60,7 @@ echo "Creating regtest files for resample..."
 asn_from_list r0000101001001001001_01101_0001_WFI01_cal.asdf r0000101001001001001_01101_0002_WFI01_cal.asdf -o mosaic_asn.json --product-name mosaic
 strun romancal.step.ResampleStep mosaic_asn.json --rotation=0 --output_file=mosaic.asdf
 cp mosaic_asn.json $outdir/roman-pipeline/dev/WFI/image/
-cp mosaic_resamplestep.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp mosaic_resample.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 
 
@@ -163,7 +163,7 @@ model = AssignWcsStep.call(model)
 model.to_asdf(f'${basename}_shift_cal.asdf')"
     strun romancal.step.TweakRegStep ${basename}_shift_cal.asdf
     cp ${basename}_shift_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
-    cp ${basename}_shift_tweakregstep.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+    cp ${basename}_shift_tweakreg.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 done
 
 

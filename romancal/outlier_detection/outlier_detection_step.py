@@ -47,6 +47,7 @@ class OutlierDetectionStep(RomanStep):
         good_bits = string(default="~DO_NOT_USE+NON_SCIENCE")  # DQ bit value to be considered 'good'
         allowed_memory = float(default=None)  # Fraction of memory to use for the combined image
         in_memory = boolean(default=False) # Specifies whether or not to keep all intermediate products and datamodels in memory
+        suffix = string(default="outlier_detection")
     """  # noqa: E501
 
     def process(self, input_models):

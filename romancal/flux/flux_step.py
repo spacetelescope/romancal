@@ -42,7 +42,8 @@ class FluxStep(RomanStep):
     """  # noqa: E501
 
     spec = """
-    """  # noqa: E501
+        suffix = string(default="flux")
+    """
 
     reference_file_types = []
 
