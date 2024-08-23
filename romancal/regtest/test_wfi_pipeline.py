@@ -553,9 +553,9 @@ def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
 def test_pipeline_suffix(rtdata, ignore_asdf_paths):
     """
     Tests passing suffix to the pipeline
-    
+
     Note that this test mimics how the pipeline is run in OPS.
-    
+
     Any changes to this test should be coordinated with OPS.
     """
     input_data = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
