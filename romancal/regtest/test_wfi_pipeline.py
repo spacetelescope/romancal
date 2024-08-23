@@ -517,7 +517,11 @@ def test_elp_input_dm(rtdata, ignore_asdf_paths):
 
 @pytest.mark.bigdata
 def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
-    """Tests for fully saturated data skipping steps in the pipeline"""
+    """Tests for fully saturated data skipping steps in the pipeline
+
+       Note that this test mimics how the pipeline is run in OPS.
+       Any changes to this test should be coordinated with OPS.
+    """
     input_data = "r0000101001001001001_01101_0001_WFI01_ALL_SATURATED_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
@@ -589,5 +593,5 @@ def test_pipeline_suffix(rtdata, ignore_asdf_paths):
     assert model.meta.cal_step.flat_field == "COMPLETE"
     assert model.meta.cal_step.photom == "COMPLETE"
     assert model.meta.cal_step.source_detection == "COMPLETE"
-    assert model.meta.cal_step.tweakreg == "SKIPPED"
+    assert model.meta.cal_step.tweakreg == "INCOMPLETE"
     assert model.meta.filename == output
