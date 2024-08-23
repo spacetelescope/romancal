@@ -1,7 +1,12 @@
-0.16.2 (unreleased)
+0.16.2 (2024-08-23)
 ===================
 
--
+pipeline
+--------
+
+- Added ``suffix`` to the spec of ExposurePipeline with a
+  default value of ``cal``. Removed explicit setting of ``suffix``
+  so that it can be passed as an argument to ``strun``. [#1378]
 
 0.16.1 (2024-08-13)
 ===================
