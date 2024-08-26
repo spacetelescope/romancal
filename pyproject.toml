@@ -35,7 +35,7 @@ dependencies = [
     "tweakwcs >=0.8.8",
     "spherical-geometry >= 1.2.22",
     "stsci.imagestats >= 1.6.3",
-    "drizzle >= 1.15.0",
+    "drizzle >= 1.15.3",
     "webbpsf >= 1.2.1",
 ]
 dynamic = [

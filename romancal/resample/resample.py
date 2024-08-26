@@ -233,6 +233,7 @@ class ResampleData:
                     pixfrac=self.pixfrac,
                     kernel=self.kernel,
                     fillval=self.fillval,
+                    use_context=False,
                 )
 
                 log.info(f"{len(indices)} exposures to drizzle together")
@@ -315,6 +316,7 @@ class ResampleData:
             pixfrac=self.pixfrac,
             kernel=self.kernel,
             fillval=self.fillval,
+            use_context=True,
         )
 
         log.info("Resampling science data")
@@ -421,7 +423,7 @@ class ResampleData:
 
                 resampled_variance = np.zeros_like(output_model.data)
                 outwht = np.zeros_like(output_model.data)
-                outcon = np.zeros_like(output_model.context)
+                # outcon = np.zeros_like(output_model.context)
 
                 xmin, xmax, ymin, ymax = resample_utils.resample_range(
                     variance.shape, model.meta.wcs.bounding_box
@@ -435,7 +437,6 @@ class ResampleData:
                     output_wcs,
                     resampled_variance,
                     outwht,
-                    outcon,
                     pixfrac=self.pixfrac,
                     kernel=self.kernel,
                     fillval=np.nan,
@@ -491,8 +492,6 @@ class ResampleData:
 
                 resampled_exptime = np.zeros_like(output_model.data)
                 outwht = np.zeros_like(output_model.data)
-                outcon = np.zeros_like(output_model.context, dtype="i4")
-                # drizzle wants an i4, but datamodels wants a u4.
 
                 xmin, xmax, ymin, ymax = resample_utils.resample_range(
                     exptime.shape, model.meta.wcs.bounding_box
@@ -506,7 +505,6 @@ class ResampleData:
                     output_wcs,
                     resampled_exptime,
                     outwht,
-                    outcon,
                     pixfrac=1,  # for exposure time images, always use pixfrac = 1
                     kernel=self.kernel,
                     fillval=0,
@@ -554,7 +552,6 @@ class ResampleData:
         output_wcs,
         outsci,
         outwht,
-        outcon,
         uniqid=1,
         xmin=None,
         xmax=None,
@@ -599,12 +596,6 @@ class ResampleData:
             A 2d `numpy` array containing the output counts. On the first
             call it should be set to zero. On subsequent calls it will
             hold the intermediate results.  This is modified in-place.
-
-        outcon : 2d or 3d array, optional
-            A 2d or 3d `numpy` array holding a bitmap of which image was an input
-            for each output pixel. Should be integer zero on first call.
-            Subsequent calls hold intermediate results.  This is modified
-            in-place.
 
         uniqid : int, optional
             The id number of the input image. Should be one the first time
@@ -672,25 +663,6 @@ class ResampleData:
         if inwht is None:
             inwht = np.ones_like(insci)
 
-        # Compute what plane of the context image this input would
-        # correspond to:
-        planeid = int((uniqid - 1) / 32)
-
-        # Check if the context image has this many planes
-        if outcon.ndim == 2:
-            nplanes = 1
-        elif outcon.ndim == 3:
-            nplanes = outcon.shape[0]
-        else:
-            nplanes = 0
-
-        if nplanes <= planeid:
-            raise IndexError("Not enough planes in drizzle context image")
-
-        # Alias context image to the requested plane if 3d
-        if outcon.ndim == 3:
-            outcon = outcon[planeid]
-
         # Compute the mapping between the input and output pixel coordinates
         # for use in drizzle.cdrizzle.tdriz
         pixmap = resample_utils.calc_gwcs_pixmap(input_wcs, output_wcs, insci.shape)
@@ -707,7 +679,7 @@ class ResampleData:
             pixmap,
             outsci.value,
             outwht.value,
-            outcon,
+            None,
             uniqid=uniqid,
             xmin=xmin,
             xmax=xmax,

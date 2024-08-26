@@ -22,6 +22,7 @@ class GWCSDrizzle:
         pixfrac=1.0,
         kernel="square",
         fillval="INDEF",
+        use_context=False,
     ):
         """
         Create a new Drizzle output object and set the drizzle parameters.
@@ -61,6 +62,10 @@ class GWCSDrizzle:
         fillval : str, optional
             The value a pixel is set to in the output if the input image does
             not overlap it. The default value of INDEF does not set a value.
+
+        use_context : bool, optional
+            If True (default is False) generate a "context" array. See
+            drizzle for more details.
         """
 
         # Initialize the object fields
@@ -74,6 +79,8 @@ class GWCSDrizzle:
         self.fillval = fillval
         self.pixfrac = pixfrac
 
+        self.use_context = use_context
+
         self.sciext = "SCI"
         self.whtext = "WHT"
         self.conext = "CON"
@@ -85,19 +92,22 @@ class GWCSDrizzle:
         self.outsci = product.data
         self.outwcs = outwcs or product.meta.wcs
         self.outwht = product.weight
-        self.outcon = product.context.astype(np.int32)
+        if self.use_context:
+            self.outcon = product.context.astype(np.int32)
 
-        if self.outcon.ndim == 2:
-            self.outcon = np.reshape(
-                self.outcon, (1, self.outcon.shape[0], self.outcon.shape[1])
-            )
-        elif self.outcon.ndim != 3:
-            raise ValueError(
-                "Drizzle context image has wrong dimensions: \
-                {}".format(
-                    product
+            if self.outcon.ndim == 2:
+                self.outcon = np.reshape(
+                    self.outcon, (1, self.outcon.shape[0], self.outcon.shape[1])
                 )
-            )
+            elif self.outcon.ndim != 3:
+                raise ValueError(
+                    "Drizzle context image has wrong dimensions: \
+                    {}".format(
+                        product
+                    )
+                )
+        else:
+            self.outcon = None
 
         # Check field values
         if not self.outwcs:
@@ -107,18 +117,6 @@ class GWCSDrizzle:
             np.divide(self.outsci, self.outexptime, self.outsci)
         elif out_units != "cps":
             raise ValueError(f"Illegal value for out_units: {out_units}")
-
-    # Since the context array is dynamic, it must be re-assigned
-    # back to the product's `con` attribute.
-    @property
-    def outcon(self):
-        """Return the context array"""
-        return self._product.context
-
-    @outcon.setter
-    def outcon(self, value):
-        """Set new context array"""
-        self._product.context = value
 
     def add_image(
         self,
@@ -204,7 +202,8 @@ class GWCSDrizzle:
             wt_scl = expin * expin
 
         wt_scl = 1.0  # hard-coded for JWST count-rate data
-        self.increment_id()
+        if self.use_context:
+            self.increment_id()
 
         dodrizzle(
             insci,
@@ -403,20 +402,21 @@ def dodrizzle(
     # correspond to:
     planeid = int((uniqid - 1) / 32)
 
-    # Check if the context image has this many planes
-    if outcon.ndim == 3:
-        nplanes = outcon.shape[0]
-    elif outcon.ndim == 2:
-        nplanes = 1
-    else:
-        nplanes = 0
+    if outcon is not None:
+        # Check if the context image has this many planes
+        if outcon.ndim == 3:
+            nplanes = outcon.shape[0]
+        elif outcon.ndim == 2:
+            nplanes = 1
+        else:
+            nplanes = 0
 
-    if nplanes <= planeid:
-        raise IndexError("Not enough planes in drizzle context image")
+        if nplanes <= planeid:
+            raise IndexError("Not enough planes in drizzle context image")
 
-    # Alias context image to the requested plane if 3d
-    if outcon.ndim == 3:
-        outcon = outcon[planeid]
+        # Alias context image to the requested plane if 3d
+        if outcon.ndim == 3:
+            outcon = outcon[planeid]
 
     # Compute the mapping between the input and output pixel coordinates
     # for use in drizzle.cdrizzle.tdriz
