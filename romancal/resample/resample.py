@@ -384,7 +384,7 @@ class ResampleData:
         self.update_exposure_times(output_model, exptime_tot)
 
         # TODO: fix RAD to expect a context image datatype of int32
-        output_model.context = output_model.context.astype(np.uint32)
+        output_model.context = driz.outcon.astype(np.uint32)
 
         return ModelLibrary([output_model])
 
