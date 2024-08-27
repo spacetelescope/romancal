@@ -237,66 +237,124 @@ ignore = [".gitkeep"]
 wrap = true
 issue_format = "`#{issue} <https://github.com/spacetelescope/romancal/{issue}>`_"
 
-[tool.towncrier.fragment.associations]
-name = "`associations`"
+[[tool.towncrier.type]]
+directory = "general"
+name = "General"
+showcontent = true
 
-[tool.towncrier.fragment.dark_current]
-name = "`dark_current`"
-
-[tool.towncrier.fragment.docs]
+[[tool.towncrier.type]]
+directory = "docs"
 name = "Documentation"
+showcontent = true
 
-[tool.towncrier.fragment.dq_init]
-name = "`dq_init`"
+[[tool.towncrier.type]]
+directory = "stpipe"
+name = "``stpipe``"
+showcontent = true
 
-[tool.towncrier.fragment.flux]
-name = "`flux`"
+[[tool.towncrier.type]]
+directory = "associations"
+name = "Associations"
+showcontent = true
 
-[tool.towncrier.fragment.flatfield]
-name = "`flatfield`"
+[[tool.towncrier.type]]
+directory = "scripts"
+name = "Scripts"
+showcontent = true
 
-[tool.towncrier.fragment.general]
+[[tool.towncrier.type]]
+directory = "mosaic_pipeline"
+name = "``mosaic_pipeline``"
+showcontent = true
 
-[tool.towncrier.fragment.jump_detection]
-name = "`jump_detection`"
+[[tool.towncrier.type]]
+directory = "patch_match"
+name = "``patch_match``"
+showcontent = true
 
-[tool.towncrier.fragment.linearity]
-name = "`linearity`"
+# steps
 
-[tool.towncrier.fragment.mosaic_pipeline]
-name = "`mosaic_pipeline`"
+[[tool.towncrier.type]]
+directory = "dq_init"
+name = "``dq_init`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
 
-[tool.towncrier.fragment.outlier]
-name = "`outlier_detection`"
+[[tool.towncrier.type]]
+directory = "saturation"
+name = "``saturation`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
 
-[tool.towncrier.fragment.patch_match]
-name = "`patch_match`"
+[[tool.towncrier.type]]
+directory = "refpix"
+name = "``refpix`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
 
-[tool.towncrier.fragment.photom]
-name = "`photom`"
+[[tool.towncrier.type]]
+directory = "linearity"
+name = "``linearity`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
 
-[tool.towncrier.fragment.ramp]
-name = "`ramp_fitting`"
+[[tool.towncrier.type]]
+directory = "dark_current"
+name = "``dark_current`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
 
-[tool.towncrier.fragment.refpix]
-name = "`refpix`"
+[[tool.towncrier.type]]
+directory = "jump_detection"
+name = "``jump_detection``"
+showcontent = true
 
-[tool.towncrier.fragment.resample]
-name = "`resample`"
+[[tool.towncrier.type]]
+directory = "ramp_fitting"
+name = "``ramp_fitting`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
 
-[tool.towncrier.fragment.saturation]
-name = "`saturation`"
+[[tool.towncrier.type]]
+directory = "assign_wcs"
+name = "``assign_wcs`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
 
-[tool.towncrier.fragment.scripts]
+[[tool.towncrier.type]]
+directory = "flatfield"
+name = "``flatfield`` (WFI-Image)"
+showcontent = true
 
-[tool.towncrier.fragment.skymatch]
-name = "`skymatch`"
+[[tool.towncrier.type]]
+directory = "photom"
+name = "``photom`` (WFI-Image)"
+showcontent = true
 
-[tool.towncrier.fragment.source_catalog]
-name = "`source_catalog`"
+[[tool.towncrier.type]]
+directory = "flux"
+name = "``flux``"
+showcontent = true
 
-[tool.towncrier.fragment.stpipe]
-name = "`stpipe`"
+[[tool.towncrier.type]]
+directory = "source_detection"
+name = "``source_detection`` (WFI-Image)"
+showcontent = true
 
-[tool.towncrier.fragment.tweakreg]
-name = "`tweakreg`"
+[[tool.towncrier.type]]
+directory = "tweakreg"
+name = "``tweakreg`` (WFI-Image)"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "skymatch"
+name = "``skymatch``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "outlier_detection"
+name = "``outlier_detection``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "resample"
+name = "``resample``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "source_catalog"
+name = "``source_catalog``"
+showcontent = true
