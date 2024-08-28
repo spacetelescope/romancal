@@ -6,6 +6,11 @@ mosaic_pipeline
 
 - Only load patch table when needed. [#1367]
 
+source_catalog
+--------------
+
+- Populate segmentation image metadata. [#1391]
+
 0.16.2 (2024-08-23)
 ===================
 
