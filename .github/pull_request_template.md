@@ -9,7 +9,7 @@ Closes #
 This PR addresses ...
 
 **Checklist**
-- [ ] for a public change, added a [towncrier news fragment](https://towncrier.readthedocs.io/en/stable/tutorial.html#creating-news-fragments) <details><summary>`changes/<PR#>.<changetype>.rst`</summary>
+- [ ] for a public change, added a towncrier news fragment in `changes/` <details><summary>`echo "changed something" > changes/<PR#>.<changetype>.rst`</summary>
 
     - ``changes/<PR#>.general.rst``: infrastructure or miscellaneous change
     - ``changes/<PR#>.docs.rst``

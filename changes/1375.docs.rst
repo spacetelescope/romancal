@@ -1,1 +1,1 @@
-handle changelog entries with `towncrier`
+handle changelog entries with ``towncrier``
