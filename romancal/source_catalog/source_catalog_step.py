@@ -145,9 +145,11 @@ class SourceCatalogStep(RomanStep):
 
     def save_base_results(self, segment_img, source_catalog_model):
         # save the segmentation map and
-        output_filename = (self.output_file
-                           if self.output_file is not None
-                           else source_catalog_model.meta.filename)
+        output_filename = (
+            self.output_file
+            if self.output_file is not None
+            else source_catalog_model.meta.filename
+        )
 
         if isinstance(source_catalog_model, datamodels.SourceCatalogModel):
             seg_model = datamodels.SegmentationMapModel
