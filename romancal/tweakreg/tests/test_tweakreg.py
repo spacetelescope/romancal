@@ -628,96 +628,6 @@ def test_tweakreg_updates_group_id(tmp_path, base_image):
 
 
 @pytest.mark.parametrize(
-    "shift_1, shift_2, tolerance, is_small_correction",
-    [
-        (0, 0, 5, True),
-        (0, 3, 5, True),
-        (1, 1, 5, True),
-        (5, 5, (5**2 + 5**2) ** 0.5, True),
-        (5, 5, 5, False),
-        (5, 5, 1, False),
-        (5, 5, 3, False),
-        (5, 10, 5, False),
-    ],
-)
-def test_tweakreg_correction_magnitude(
-    shift_1, shift_2, tolerance, is_small_correction, request
-):
-    """
-    Test that TweakReg corrections are within tolerance.
-    All the parametrized values are in arcsec.
-    """
-    img1 = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
-    img2 = request.getfixturevalue("base_image")(
-        shift_1=1000 + shift_1 / 0.1, shift_2=1000 + shift_2 / 0.1
-    )
-    img1_wcs = copy.deepcopy(img1.meta.wcs)
-    img2_wcs = copy.deepcopy(img2.meta.wcs)
-
-    step = trs.TweakRegStep()
-    step.tolerance = tolerance / 10.0
-
-    assert step._is_wcs_correction_small(img1_wcs, img2_wcs) == is_small_correction
-
-
-@pytest.mark.parametrize(
-    "filename_list, expected_common_name",
-    (
-        (
-            [
-                "l1-sca1_cal.asdf",
-                "l1-sca2_cal.asdf",
-                "l1-sca3_cal.asdf",
-            ],
-            "l1-sca",
-        ),
-        (
-            [
-                "l1-270-66-gaia-2016-sca1_cal.asdf",
-                "l1-270-66-gaia-2016-sca2_cal.asdf",
-                "l1-270-66-gaia-2016-sca3_cal.asdf",
-            ],
-            "l1-270-66-gaia-2016-sca",
-        ),
-    ),
-)
-def test_tweakreg_common_name(filename_list, expected_common_name, request):
-    """Test that TweakReg raises an error when an invalid input is provided."""
-    img_list = []
-    for filename in filename_list:
-        img = request.getfixturevalue("base_image")()
-        img.meta["filename"] = filename
-        img_list.append(img)
-
-    res = trs._common_name(img_list)
-
-    assert res == expected_common_name
-
-
-@pytest.mark.parametrize(
-    "filename_list",
-    (
-        [
-            "l1-sca1_cal.asdf",
-            "l1-sca2_cal.asdf",
-            "l1-sca3_cal.asdf",
-        ],
-        [
-            "l1-270-66-gaia-2016-sca1_cal.asdf",
-            "l1-270-66-gaia-2016-sca2_cal.asdf",
-            "l1-270-66-gaia-2016-sca3_cal.asdf",
-        ],
-    ),
-)
-def test_tweakreg_common_name_raises_error_on_invalid_input(filename_list):
-    """Test that TweakReg raises an error when an invalid input is provided."""
-    with pytest.raises(Exception) as exec_info:
-        trs._common_name(filename_list)
-
-    assert type(exec_info.value) == TypeError
-
-
-@pytest.mark.parametrize(
     "abs_refcat",
     (
         "GAIADR1",
@@ -727,6 +637,8 @@ def test_tweakreg_common_name_raises_error_on_invalid_input(filename_list):
 )
 def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     """Test that TweakReg saves the catalog used for absolute astrometry."""
+    os.chdir(tmp_path)
+
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     catalog_filename = "ref_catalog.ecsv"
     abs_refcat_filename = f"fit_{abs_refcat.lower()}_ref.ecsv"
@@ -737,9 +649,6 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     )
 
     assert os.path.exists(tmp_path / abs_refcat_filename)
-    # clean up
-    os.remove(tmp_path / abs_refcat_filename)
-    os.remove(tmp_path / catalog_filename)
 
 
 @pytest.mark.parametrize(
@@ -748,6 +657,8 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
 )
 def test_tweakreg_defaults_to_valid_abs_refcat(tmp_path, abs_refcat, request):
     """Test that TweakReg defaults to DEFAULT_ABS_REFCAT on invalid values."""
+    os.chdir(tmp_path)
+
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     catalog_filename = "ref_catalog.ecsv"
     abs_refcat_filename = f"fit_{trs.DEFAULT_ABS_REFCAT.lower()}_ref.ecsv"
@@ -758,9 +669,6 @@ def test_tweakreg_defaults_to_valid_abs_refcat(tmp_path, abs_refcat, request):
     )
 
     assert os.path.exists(tmp_path / abs_refcat_filename)
-    # clean up
-    os.remove(tmp_path / abs_refcat_filename)
-    os.remove(tmp_path / catalog_filename)
 
 
 def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
@@ -771,7 +679,7 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
     with pytest.raises(Exception) as exec_info:
         trs.TweakRegStep.call([img], save_abs_catalog=True, abs_refcat="my_ref_cat")
 
-    assert type(exec_info.value) == ValueError
+    assert type(exec_info.value) == TypeError
 
 
 def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
@@ -955,28 +863,6 @@ def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
         [res.shelve(m, i, modify=False) for i, m in enumerate(models)]
 
 
-def test_tweakreg_raises_error_on_connection_error_to_the_vo_service(
-    tmp_path, base_image, monkeypatch
-):
-    """
-    Test that TweakReg raises an error when there is a connection error with
-    the VO API server, which means that an absolute reference catalog cannot be created.
-    """
-
-    img = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img)
-
-    monkeypatch.setattr("requests.get", MockConnectionError)
-    res = trs.TweakRegStep.call([img])
-
-    assert type(res) == ModelLibrary
-    assert len(res) == 1
-    with res:
-        model = res.borrow(0)
-        assert model.meta.cal_step.tweakreg.lower() == "skipped"
-        res.shelve(model, 0, modify=False)
-
-
 def test_fit_results_in_meta(tmp_path, base_image):
     """
     Test that the WCS fit results from tweakwcs are available in the meta tree.
@@ -1021,96 +907,6 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
                 == i.meta.observation.program.split("-")[1]
             )
             res.shelve(r, modify=False)
-
-
-@pytest.mark.parametrize(
-    "column_names",
-    [("x", "y"), ("xcentroid", "ycentroid")],
-)
-def test_imodel2wcsim_valid_column_names(tmp_path, base_image, column_names):
-    """
-    Test that _imodel2wcsim handles different catalog column names.
-    """
-    img_1 = base_image(shift_1=1000, shift_2=1000)
-    img_2 = base_image(shift_1=1030, shift_2=1030)
-    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
-    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
-    # set meta.tweakreg_catalog (this is automatically added by TweakRegStep)
-    catalog_format = "ascii.ecsv"
-    for x in [img_1, img_2]:
-        x.meta["tweakreg_catalog"] = Table.read(
-            x.meta.source_detection.tweakreg_catalog_name,
-            format=catalog_format,
-        )
-        x.meta.tweakreg_catalog.rename_columns(("x", "y"), column_names)
-    xname, yname = column_names
-
-    images = ModelLibrary([img_1, img_2])
-
-    step = trs.TweakRegStep()
-    with images:
-        for i, (m, target) in enumerate(zip(images, [img_1, img_2])):
-            imcat = step._imodel2wcsim(m)
-            assert (
-                imcat.meta["catalog"]["x"] == target.meta.tweakreg_catalog[xname]
-            ).all()
-            assert (
-                imcat.meta["catalog"]["y"] == target.meta.tweakreg_catalog[yname]
-            ).all()
-            images.shelve(m, i, modify=False)
-
-
-@pytest.mark.parametrize(
-    "column_names",
-    [
-        ("x_centroid", "y_centroid"),
-        ("x_cen", "y_cen"),
-    ],
-)
-def test_imodel2wcsim_error_invalid_column_names(tmp_path, base_image, column_names):
-    """
-    Test that _imodel2wcsim raises a ValueError on invalid catalog column names.
-    """
-    img_1 = base_image(shift_1=1000, shift_2=1000)
-    img_2 = base_image(shift_1=1030, shift_2=1030)
-    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
-    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
-    # set meta.tweakreg_catalog (this is automatically added by TweakRegStep)
-    catalog_format = "ascii.ecsv"
-    for x in [img_1, img_2]:
-        x.meta["tweakreg_catalog"] = Table.read(
-            x.meta.source_detection.tweakreg_catalog_name,
-            format=catalog_format,
-        )
-        x.meta.tweakreg_catalog.rename_columns(("x", "y"), column_names)
-
-    images = ModelLibrary([img_1, img_2])
-
-    step = trs.TweakRegStep()
-    with pytest.raises(ValueError):
-        with images:
-            for i, model in enumerate(images):
-                images.shelve(model, i, modify=False)
-                step._imodel2wcsim(model)
-
-
-def test_imodel2wcsim_error_invalid_catalog(tmp_path, base_image):
-    """
-    Test that _imodel2wcsim raises an error on invalid catalog format.
-    """
-    img_1 = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
-    # set meta.tweakreg_catalog (this is automatically added by TweakRegStep)
-    img_1.meta["tweakreg_catalog"] = "nonsense"
-
-    images = ModelLibrary([img_1])
-
-    step = trs.TweakRegStep()
-    with pytest.raises(AttributeError):
-        with images:
-            for i, model in enumerate(images):
-                images.shelve(model, i, modify=False)
-                step._imodel2wcsim(model)
 
 
 def test_parse_catfile_valid_catalog(tmp_path, base_image):
