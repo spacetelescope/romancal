@@ -83,11 +83,14 @@ class ResampleStep(RomanStep):
             output = input_models.asn["products"][0]["name"]
         elif isinstance(input, ModelLibrary):
             input_models = input
-            # set output filename using the common prefix of all datamodels
-            output = f"{os.path.commonprefix([x['expname'] for x in input_models.asn['products'][0]['members']])}.asdf"
-            if len(output) == 0:
-                # set default filename if no common prefix can be determined
-                output = "resample_output.asdf"
+            if "name" in input_models.asn["products"][0]:
+                output = input_models.asn["products"][0]["name"]
+            else:
+                # set output filename using the common prefix of all datamodels
+                output = f"{os.path.commonprefix([x['expname'] for x in input_models.asn['products'][0]['members']])}.asdf"
+                if len(output) == 0:
+                    # set default filename if no common prefix can be determined
+                    output = "resample_output.asdf"
         else:
             raise TypeError(
                 "Input must be an ASN filename, a ModelLibrary, "

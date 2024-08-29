@@ -152,7 +152,7 @@ class OutlierDetectionStep(RomanStep):
                     intermediate_files_suffixes = (
                         "*blot.asdf",
                         "*median.asdf",
-                        f'*{pars.get("resample_suffix")}*.asdf',
+                        f'*outlier_{pars.get("resample_suffix")}.asdf',
                     )
                     for current_path in intermediate_files_paths:
                         for suffix in intermediate_files_suffixes:

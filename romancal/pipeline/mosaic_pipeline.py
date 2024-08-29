@@ -131,10 +131,9 @@ class MosaicPipeline(RomanPipeline):
                         )
                         wcs_file = asdf.open(self.resample.output_wcs)
                         self.suffix = "i2d"
-                        result = self.resample(result)
                         self.output_file = input.asn["products"][0]["name"]
-                        # force the SourceCatalogStep to save the results
-                        self.sourcecatalog.save_results = True
+                        result = self.resample(result)
+                        self.sourcecatalog.output_file = self.output_file
                         result_catalog = self.sourcecatalog(result)
                     else:
                         log.info("resampling a mosaic file is not yet supported")
@@ -144,7 +143,7 @@ class MosaicPipeline(RomanPipeline):
                 self.resample.suffix = "i2d"
                 self.output_file = input.asn["products"][0]["name"]
                 result = self.resample(result)
-                self.sourcecatalog.save_results = True
+                self.sourcecatalog.output_file = self.output_file
                 result_catalog = self.sourcecatalog(result)  # noqa: F841
                 self.suffix = "i2d"
                 if input_filename:
