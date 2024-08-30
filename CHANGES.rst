@@ -1,3 +1,14 @@
+0.16.4dev
+=========
+
+mosaic_pipeline
+---------------
+
+- Allow asn product name to be the output product [#1394]
+
+
+
+
 0.16.3 (2024-08-29)
 ===================
 
