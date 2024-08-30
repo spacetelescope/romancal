@@ -272,7 +272,9 @@ class TweakRegStep(RomanStep):
                     _validate_catalog_columns(catalog, axis, image_model, i)
 
                 filename = image_model.meta.filename
-                catalog = self.filter_catalog_by_wcs(catalog, image_model, filename)
+                catalog = tweakreg.filter_catalog_by_bounding_box(
+                    catalog, image_model.meta.wcs.bounding_box
+                )
 
                 if self.save_abs_catalog:
                     self.save_abs_ref_catalog(catalog)
@@ -482,54 +484,6 @@ class TweakRegStep(RomanStep):
                 "Attribute 'meta.source_detection.tweakreg_catalog' is missing. "
                 "Please either run SourceDetectionStep or provide a custom source catalog."
             )
-
-    def filter_catalog_by_wcs(self, catalog, image_model, filename):
-        """
-        Filter sources in the catalog based on WCS bounding box.
-
-        This method removes sources from the catalog that fall outside the
-        specified WCS bounding box. If no bounding box is defined, it checks
-        the validity of the sources' world coordinates and filters accordingly.
-
-        Parameters
-        ----------
-        catalog : Table
-            The catalog containing source information to be filtered.
-        image_model : DataModel
-            The image model associated with the catalog, used to access WCS information.
-        filename : str
-            The name of the file associated with the catalog, used for logging.
-
-        Returns
-        -------
-        Table
-            The filtered catalog containing only sources within the bounding box.
-
-        Logs
-        -----
-        Information about the number of sources removed from the catalog is logged.
-        """
-        bb = image_model.meta.wcs.bounding_box
-        x, y = catalog["x"], catalog["y"]
-
-        if bb is None:
-            r, d = image_model.meta.wcs(x, y)
-            mask = np.isfinite(r) & np.isfinite(d)
-        else:
-            ((xmin, xmax), (ymin, ymax)) = bb
-            mask = (x > xmin) & (x < xmax) & (y > ymin) & (y < ymax)
-
-        catalog = catalog[mask]
-        n_removed_src = np.sum(np.logical_not(mask))
-        if n_removed_src:
-            self.log.info(
-                f"Removed {n_removed_src} sources from {filename}'s "
-                "catalog that were outside of the bounding box."
-                if bb
-                else f"catalog whose image coordinates could not be converted to world coordinates."
-            )
-
-        return catalog
 
 
 def _parse_catfile(catfile):
