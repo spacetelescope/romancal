@@ -4,7 +4,7 @@
 mosaic_pipeline
 ---------------
 
-- Allow asn product name to be the output product []
+- Allow asn product name to be the output product [#1394]
 
 
 
