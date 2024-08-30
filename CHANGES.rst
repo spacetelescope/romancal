@@ -88,7 +88,7 @@ stpipe
 ------
 
 - Add ``ModelContainer`` support to ``Step._datamodels_open`` to allow
-  loading "pars-*" files from CRDS. [#1270]
+  loading ``pars-*`` files from CRDS. [#1270]
 
 
 tweakreg
@@ -738,7 +738,7 @@ linearity
 
 -  Linearity correction now supports NaN's in the reference file. [#484]
 
-  photom
+photom
 ------
 
 - Photom updated to skip updating photometric converstions for spectral data [#498]
