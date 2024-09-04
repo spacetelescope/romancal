@@ -22,7 +22,7 @@ from roman_datamodels import maker_utils
 
 from romancal.datamodels import ModelLibrary
 from romancal.tweakreg import tweakreg_step as trs
-from romancal.tweakreg.astrometric_utils import get_catalog
+from stcal.tweakreg.astrometric_utils import get_catalog
 
 
 class MockConnectionError:
@@ -339,7 +339,9 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
 
 
 def get_catalog_data(input_dm):
-    gaia_cat = get_catalog(ra=270, dec=66, sr=100 / 3600)
+    gaia_cat = get_catalog(
+        right_ascension=270, declination=66, search_radius=100 / 3600
+    )
     gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
     catalog_data = np.array(
         [input_dm.meta.wcs.world_to_pixel(ra, dec) for ra, dec in gaia_source_coords]
@@ -761,7 +763,9 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     """
     Test that TweakReg returns accurate results.
     """
-    gaia_cat = get_catalog(ra=270, dec=66, sr=100 / 3600)
+    gaia_cat = get_catalog(
+        right_ascension=270, declination=66, search_radius=100 / 3600
+    )
     gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
 
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
