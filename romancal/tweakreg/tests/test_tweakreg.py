@@ -19,10 +19,10 @@ from gwcs import wcs
 from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
+from stcal.tweakreg.astrometric_utils import get_catalog
 
 from romancal.datamodels import ModelLibrary
 from romancal.tweakreg import tweakreg_step as trs
-from stcal.tweakreg.astrometric_utils import get_catalog
 
 
 class MockConnectionError:
