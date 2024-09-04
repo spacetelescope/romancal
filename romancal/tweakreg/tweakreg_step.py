@@ -81,6 +81,8 @@ class TweakRegStep(RomanStep):
 
         # properly handle input
         images = self.parse_input(step_input=input)
+        # set the first image as reference
+        ref_image = _set_reference_image(images)
 
         catdict = _parse_catfile(self.catfile)
 
@@ -90,16 +92,18 @@ class TweakRegStep(RomanStep):
         # set path where the source catalog will be saved to
         self.set_catalog_path()
 
-        self.set_reference_catalog()
+        self.set_reference_catalog_name()
 
         # Build the catalogs for input images
         self.set_tweakreg_catalog_attribute(images)
 
         imcats = _build_image_catalogs(images)
 
-        self.do_relative_alignment(images, imcats)
+        if getattr(images, "group_indices", None) and len(images.group_indices) > 1:
+            self.do_relative_alignment(imcats)
 
-        self.do_absolute_alignment(images, imcats)
+        if self.abs_refcat in SINGLE_GROUP_REFCAT:
+            self.do_absolute_alignment(ref_image, imcats)
 
         self.finalize_step(images, imcats)
 
@@ -146,7 +150,7 @@ class TweakRegStep(RomanStep):
             ) + e.args[1:]
             raise e
 
-        if len(images) == 0:
+        if not images:
             raise ValueError("Input must contain at least one image model.")
 
         self.log.info("")
@@ -208,190 +212,38 @@ class TweakRegStep(RomanStep):
                         images.shelve(model, i, modify=False)
 
     def set_catalog_path(self):
+        """
+        Set the path for saving source catalogs.
+
+        This method checks if the catalog path (where all source catalogs will be saved)
+        is empty and, if so, sets it to the current working directory.
+
+        Returns
+        -------
+        None
+        """
         if len(self.catalog_path) == 0:
             self.catalog_path = os.getcwd()
         self.catalog_path = Path(self.catalog_path).as_posix()
         self.log.info(f"All source catalogs will be saved to: {self.catalog_path}")
 
-    def set_reference_catalog(self):
-        if self.abs_refcat is None or len(self.abs_refcat) == 0:
+    def set_reference_catalog_name(self):
+        """
+        Set the name of the absolute reference catalog.
+
+        This method checks if the absolute reference catalog name is not set or
+        is empty, and if so, assigns it a default value. If the absolute reference
+        catalog name is different from the default, it enables the expansion of
+        the reference catalog to avoid duplicate entries during alignment.
+
+        Returns
+        -------
+        None
+        """
+        if not self.abs_refcat:
             self.abs_refcat = DEFAULT_ABS_REFCAT.strip().upper()
         if self.abs_refcat != DEFAULT_ABS_REFCAT:
-            # Set expand_refcat to True to eliminate possibility of duplicate
-            # entries when aligning to absolute astrometric reference catalog
             self.expand_refcat = True
-
-    def set_tweakreg_catalog_attribute(self, images):
-        """
-        Set the tweakreg catalog attribute for each image model.
-
-        This method iterates through the provided image models, checking the
-        exposure type and ensuring that the necessary source detection metadata
-        is present. It retrieves the tweak registration catalog, validates its
-        columns, filters it based on WCS, and updates the image model's metadata.
-
-        Parameters
-        ----------
-        images : ModelLibrary
-            A collection of image models to be updated with tweak registration catalogs.
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        AttributeError
-            If the required source detection metadata is missing from an image model.
-
-        Logs
-        -----
-        Information about the number of detected sources is logged for each image model.
-        """
-
-        with images:
-            for i, image_model in enumerate(images):
-                exposure_type = image_model.meta.exposure.type
-                if exposure_type != "WFI_IMAGE":
-                    self.log.info("Skipping TweakReg for spectral exposure.")
-                    image_model.meta.cal_step.tweakreg = "SKIPPED"
-                    images.shelve(image_model)
-                    return image_model
-
-                source_detection = getattr(image_model.meta, "source_detection", None)
-                if source_detection is None:
-                    images.shelve(image_model, i, modify=False)
-                    raise AttributeError(
-                        "Attribute 'meta.source_detection' is missing. "
-                        "Please either run SourceDetectionStep or provide a custom source catalog."
-                    )
-
-                catalog = self.get_tweakreg_catalog(source_detection, image_model, i)
-
-                for axis in ["x", "y"]:
-                    _validate_catalog_columns(catalog, axis, image_model, i)
-
-                filename = image_model.meta.filename
-                catalog = tweakreg.filter_catalog_by_bounding_box(
-                    catalog, image_model.meta.wcs.bounding_box
-                )
-
-                if self.save_abs_catalog:
-                    self.save_abs_ref_catalog(catalog)
-
-                image_model.meta["tweakreg_catalog"] = catalog.as_array()
-                nsources = len(catalog)
-                self.log.info(
-                    f"Detected {nsources} sources in {filename}."
-                    if nsources
-                    else f"No sources found in {filename}."
-                )
-                images.shelve(image_model, i)
-
-    def do_relative_alignment(self, images, imcats):
-        if len(images.group_indices) > 1:
-            # local align images:
-            tweakreg.relative_align(
-                imcats,
-                searchrad=self.searchrad,
-                separation=self.separation,
-                use2dhist=self.use2dhist,
-                tolerance=self.tolerance,
-                xoffset=0,
-                yoffset=0,
-                enforce_user_order=self.enforce_user_order,
-                expand_refcat=self.expand_refcat,
-                minobj=self.minobj,
-                fitgeometry=self.fitgeometry,
-                nclip=self.nclip,
-                sigma=self.sigma,
-            )
-
-    def do_absolute_alignment(self, images, imcats):
-        if self.abs_refcat in SINGLE_GROUP_REFCAT:
-            ref_image = _get_reference_image(images)
-
-            tweakreg.absolute_align(
-                imcats,
-                self.abs_refcat,
-                ref_wcs=ref_image.meta.wcs,
-                ref_wcsinfo=ref_image.meta.wcsinfo,
-                epoch=ref_image.meta.exposure.mid_time.decimalyear,
-                abs_minobj=self.abs_minobj,
-                abs_fitgeometry=self.abs_fitgeometry,
-                abs_nclip=self.abs_nclip,
-                abs_sigma=self.abs_sigma,
-                abs_searchrad=self.abs_searchrad,
-                abs_use2dhist=self.abs_use2dhist,
-                abs_separation=self.abs_separation,
-                abs_tolerance=self.abs_tolerance,
-                save_abs_catalog=self.save_abs_catalog,
-                abs_catalog_output_dir=self.output_dir,
-            )
-
-    def finalize_step(self, images, imcats):
-        """
-        Finalize the tweak registration step by updating image metadata and WCS information.
-
-        This method iterates through the provided image catalogs, marking TweakRegStep as complete,
-        removing the source catalog, and updating the WCS if the fit was successful.
-        It also serializes fit results for storage in the image model's metadata.
-
-        Parameters
-        ----------
-        images : ModelLibrary
-            A collection of image models to be updated.
-        imcats : list
-            A collection of image catalogs containing fit information.
-
-        Returns
-        -------
-        None
-        """
-        with images:
-            for i, imcat in enumerate(imcats):
-                image_model = images.borrow(i)
-                image_model.meta.cal_step["tweakreg"] = "COMPLETE"
-                # remove source catalog
-                del image_model.meta["tweakreg_catalog"]
-
-                # retrieve fit status and update wcs if fit is successful:
-                if "SUCCESS" in imcat.meta.get("fit_info")["status"]:
-                    # Update/create the WCS .name attribute with information
-                    # on this astrometric fit as the only record that it was
-                    # successful:
-
-                    # NOTE: This .name attrib agreed upon by the JWST Cal
-                    #       Working Group.
-                    #       Current value is merely a place-holder based
-                    #       on HST conventions. This value should also be
-                    #       translated to the FITS WCSNAME keyword
-                    #       IF that is what gets recorded in the archive
-                    #       for end-user searches.
-                    imcat.wcs.name = f"FIT-LVL2-{self.abs_refcat}"
-
-                    # serialize object from tweakwcs
-                    # (typecasting numpy objects to python types so that it doesn't cause an
-                    # issue when saving datamodel to ASDF)
-                    wcs_fit_results = {
-                        k: v.tolist() if isinstance(v, (np.ndarray, np.bool_)) else v
-                        for k, v in imcat.meta["fit_info"].items()
-                    }
-                    # add fit results and new WCS to datamodel
-                    image_model.meta["wcs_fit_results"] = wcs_fit_results
-                    # remove unwanted keys from WCS fit results
-                    for k in [
-                        "eff_minobj",
-                        "matched_ref_idx",
-                        "matched_input_idx",
-                        "fit_RA",
-                        "fit_DEC",
-                        "fitmask",
-                    ]:
-                        del image_model.meta["wcs_fit_results"][k]
-
-                    image_model.meta.wcs = imcat.wcs
-                images.shelve(image_model, i)
 
     def read_catalog(self, catalog_name):
         """
@@ -472,18 +324,231 @@ class TweakRegStep(RomanStep):
         AttributeError
             If the required catalog information is missing from the source detection.
         """
-        if hasattr(source_detection, "tweakreg_catalog"):
+        if getattr(source_detection, "tweakreg_catalog", None):
             tweakreg_catalog = Table(np.asarray(source_detection.tweakreg_catalog))
             del image_model.meta.source_detection["tweakreg_catalog"]
             return tweakreg_catalog
-        elif hasattr(source_detection, "tweakreg_catalog_name"):
+
+        if getattr(source_detection, "tweakreg_catalog_name", None):
             return self.read_catalog(source_detection.tweakreg_catalog_name)
-        else:
-            images.shelve(image_model, index, modify=False)
-            raise AttributeError(
-                "Attribute 'meta.source_detection.tweakreg_catalog' is missing. "
-                "Please either run SourceDetectionStep or provide a custom source catalog."
-            )
+
+        raise AttributeError(
+            "Attribute 'meta.source_detection.tweakreg_catalog' is missing. "
+            "Please either run SourceDetectionStep or provide a custom source catalog."
+        )
+
+    def set_tweakreg_catalog_attribute(self, images):
+        """
+        Set the tweakreg catalog attribute for each image model.
+
+        This method iterates through the provided image models, checking the
+        exposure type and ensuring that the necessary source detection metadata
+        is present. It retrieves the tweak registration catalog, validates its
+        columns, filters it based on bounding box, and updates the image model's metadata.
+
+        Parameters
+        ----------
+        images : ModelLibrary
+            A collection of image models to be updated with tweak registration catalogs.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        AttributeError
+            If the required source detection metadata is missing from an image model.
+
+        Logs
+        -----
+        Information about the number of detected sources is logged for each image model.
+        """
+
+        with images:
+            for i, image_model in enumerate(images):
+                exposure_type = image_model.meta.exposure.type
+                if exposure_type != "WFI_IMAGE":
+                    self.log.info("Skipping TweakReg for spectral exposure.")
+                    image_model.meta.cal_step.tweakreg = "SKIPPED"
+                    images.shelve(image_model)
+                    return image_model
+
+                source_detection = getattr(image_model.meta, "source_detection", None)
+                if source_detection is None:
+                    images.shelve(image_model, i, modify=False)
+                    raise AttributeError(
+                        "Attribute 'meta.source_detection' is missing. "
+                        "Please either run SourceDetectionStep or provide a custom source catalog."
+                    )
+
+                try:
+                    catalog = self.get_tweakreg_catalog(
+                        source_detection, image_model, i
+                    )
+                except AttributeError as e:
+                    self.log.error(f"Failed to retrieve tweakreg_catalog: {e}")
+                    images.shelve(image_model, i, modify=False)
+                    raise AttributeError() from e
+
+                try:
+                    for axis in ["x", "y"]:
+                        _validate_catalog_columns(catalog, axis, image_model, i)
+                except ValueError as e:
+                    self.log.error(f"Failed to validate catalog columns: {e}")
+                    images.shelve(image_model, i, modify=False)
+                    raise ValueError() from e
+
+                filename = image_model.meta.filename
+                catalog = tweakreg.filter_catalog_by_bounding_box(
+                    catalog, image_model.meta.wcs.bounding_box
+                )
+
+                if self.save_abs_catalog:
+                    self.save_abs_ref_catalog(catalog)
+
+                image_model.meta["tweakreg_catalog"] = catalog.as_array()
+                nsources = len(catalog)
+                self.log.info(
+                    f"Detected {nsources} sources in {filename}."
+                    if nsources
+                    else f"No sources found in {filename}."
+                )
+                images.shelve(image_model, i)
+
+    def do_relative_alignment(self, imcats):
+        """
+        Perform relative alignment of images.
+
+        This method performs relative alignment with the specified parameters,
+        including search radius, separation, and fitting geometry.
+
+        Parameters
+        ----------
+        imcats : list
+            A list of image catalogs containing source information for alignment.
+
+        Returns
+        -------
+        None
+        """
+        tweakreg.relative_align(
+            imcats,
+            searchrad=self.searchrad,
+            separation=self.separation,
+            use2dhist=self.use2dhist,
+            tolerance=self.tolerance,
+            xoffset=0,
+            yoffset=0,
+            enforce_user_order=self.enforce_user_order,
+            expand_refcat=self.expand_refcat,
+            minobj=self.minobj,
+            fitgeometry=self.fitgeometry,
+            nclip=self.nclip,
+            sigma=self.sigma,
+        )
+
+    def do_absolute_alignment(self, ref_image, imcats):
+        """
+        Perform absolute alignment of images.
+
+        This method retrieves a reference image and performs absolute alignment
+        using the specified parameters, including reference WCS information and
+        catalog details. It aligns the provided image catalogs to the absolute
+        reference catalog.
+
+        Parameters
+        ----------
+        ref_image : DataModel
+            The reference image used for alignment, which contains WCS information.
+        imcats : list
+            A list of image catalogs containing source information for alignment.
+
+        Returns
+        -------
+        None
+        """
+        tweakreg.absolute_align(
+            imcats,
+            self.abs_refcat,
+            ref_wcs=ref_image.meta.wcs,
+            ref_wcsinfo=ref_image.meta.wcsinfo,
+            epoch=ref_image.meta.exposure.mid_time.decimalyear,
+            abs_minobj=self.abs_minobj,
+            abs_fitgeometry=self.abs_fitgeometry,
+            abs_nclip=self.abs_nclip,
+            abs_sigma=self.abs_sigma,
+            abs_searchrad=self.abs_searchrad,
+            abs_use2dhist=self.abs_use2dhist,
+            abs_separation=self.abs_separation,
+            abs_tolerance=self.abs_tolerance,
+            save_abs_catalog=self.save_abs_catalog,
+            abs_catalog_output_dir=self.output_dir,
+        )
+
+    def finalize_step(self, images, imcats):
+        """
+        Finalize the tweak registration step by updating image metadata and WCS information.
+
+        This method iterates through the provided image catalogs, marking TweakRegStep as complete,
+        removing the source catalog, and updating the WCS if the fit was successful.
+        It also serializes fit results for storage in the image model's metadata.
+
+        Parameters
+        ----------
+        images : ModelLibrary
+            A collection of image models to be updated.
+        imcats : list
+            A collection of image catalogs containing fit information.
+
+        Returns
+        -------
+        None
+        """
+        with images:
+            for i, imcat in enumerate(imcats):
+                image_model = images.borrow(i)
+                image_model.meta.cal_step["tweakreg"] = "COMPLETE"
+                # remove source catalog
+                del image_model.meta["tweakreg_catalog"]
+
+                # retrieve fit status and update wcs if fit is successful:
+                if "SUCCESS" in imcat.meta.get("fit_info")["status"]:
+                    # Update/create the WCS .name attribute with information
+                    # on this astrometric fit as the only record that it was
+                    # successful:
+
+                    # NOTE: This .name attrib agreed upon by the JWST Cal
+                    #       Working Group.
+                    #       Current value is merely a place-holder based
+                    #       on HST conventions. This value should also be
+                    #       translated to the FITS WCSNAME keyword
+                    #       IF that is what gets recorded in the archive
+                    #       for end-user searches.
+                    imcat.wcs.name = f"FIT-LVL2-{self.abs_refcat}"
+
+                    # serialize object from tweakwcs
+                    # (typecasting numpy objects to python types so that it doesn't cause an
+                    # issue when saving datamodel to ASDF)
+                    wcs_fit_results = {
+                        k: v.tolist() if isinstance(v, (np.ndarray, np.bool_)) else v
+                        for k, v in imcat.meta["fit_info"].items()
+                    }
+                    # add fit results and new WCS to datamodel
+                    image_model.meta["wcs_fit_results"] = wcs_fit_results
+                    # remove unwanted keys from WCS fit results
+                    for k in [
+                        "eff_minobj",
+                        "matched_ref_idx",
+                        "matched_input_idx",
+                        "fit_RA",
+                        "fit_DEC",
+                        "fitmask",
+                    ]:
+                        del image_model.meta["wcs_fit_results"][k]
+
+                    image_model.meta.wcs = imcat.wcs
+                images.shelve(image_model, i)
 
 
 def _parse_catfile(catfile):
@@ -576,7 +641,7 @@ def _build_image_catalogs(images) -> List:
     return imcats
 
 
-def _get_reference_image(images):
+def _set_reference_image(images):
     with images:
         ref_image = images.borrow(0)
         images.shelve(ref_image, 0, modify=False)
@@ -616,7 +681,6 @@ def _validate_catalog_columns(catalog, axis, image_model, index):
         if long_axis in catalog.colnames:
             catalog.rename_column(long_axis, axis)
         else:
-            images.shelve(image_model, index, modify=False)
             raise ValueError(
                 "'tweakreg' source catalogs must contain a header with "
                 "columns named either 'x' and 'y' or 'xcentroid' and 'ycentroid'."
