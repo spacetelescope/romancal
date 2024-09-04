@@ -4,12 +4,12 @@ Roman pipeline step for image alignment.
 
 import os
 from pathlib import Path
+from typing import List
 
 import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
 from stcal.tweakreg import tweakreg
-from typing import List
 
 # LOCAL
 from ..datamodels import ModelLibrary
