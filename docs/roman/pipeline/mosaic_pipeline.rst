@@ -9,9 +9,11 @@ Mosaic Level Image Processing
 
 The ``MosaicPipeline`` applies corrections to an overlapping group of images
 and is setup to process only imaging observations.
-This pipeline is used to determine a common background, :ref:`skymatch <skymatch_step>`, detect pixels the are
-not consistent with the other datasets, :ref:`outlier_detection <outlier_detection_step>`, and resample the image to a
-single undistorted image, :ref:`resample <resample_step>`.
+This pipeline is used to apply the flux scale factor, :ref:`flux <flux_step>`,
+determine a common background, :ref:`skymatch <skymatch_step>`, detect pixels the are
+not consistent with the other datasets, :ref:`outlier_detection <outlier_detection_step>`, resample the image to a
+single undistorted image, :ref:`resample <resample_step>`, and to run :ref:`source_catalog <source_catalog_step>`
+on the resulting corrected image. 
 
 The list of steps applied by the ``MosaicPipeline`` pipeline is shown in the
 table below.
@@ -22,6 +24,7 @@ table below.
 ======================================================= ========= ========= =========
  Step                                                   WFI-Image WFI-Prism WFI-Grism
 ======================================================= ========= ========= =========
+ :ref:`flux <flux_step>`                                |check|    |xmark|  |xmark|
  :ref:`skymatch <skymatch_step>`                        |check|    |xmark|  |xmark|
  :ref:`outlier_detection <outlier_detection_step>`      |check|    |xmark|  |xmark|
  :ref:`resample <resample_step>`                        |check|    |xmark|  |xmark|
@@ -38,7 +41,7 @@ You can see the options for strun using:
 
 strun --help roman_mos
 
-and this will list all the strun options all well as the step options for the roman_mos.
+and this will list all the strun options as well as the step options for the roman_mos.
 
 
 Inputs
