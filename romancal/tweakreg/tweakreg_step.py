@@ -446,6 +446,7 @@ class TweakRegStep(RomanStep):
             fitgeometry=self.fitgeometry,
             nclip=self.nclip,
             sigma=self.sigma,
+            clip_accum=True,
         )
 
     def do_absolute_alignment(self, ref_image, imcats):
@@ -484,6 +485,7 @@ class TweakRegStep(RomanStep):
             abs_tolerance=self.abs_tolerance,
             save_abs_catalog=self.save_abs_catalog,
             abs_catalog_output_dir=self.output_dir,
+            clip_accum=True,
         )
 
     def finalize_step(self, images, imcats):
