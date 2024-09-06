@@ -36,6 +36,8 @@ build:
       - ./git-lfs fetch
       # Make local files to have the real content on them
       - ./git-lfs checkout
+    post_install:
+      - towncrier build --keep
 
 conda:
   environment: docs/rtd_environment.yaml
