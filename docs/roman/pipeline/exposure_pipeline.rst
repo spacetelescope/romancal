@@ -32,7 +32,7 @@ table below.
  :ref:`assign_wcs <assign_wcs_step>`                |check|    |check|  |check|
  :ref:`flatfield <flatfield_step>`                  |check|
  :ref:`photom <photom_step>`                        |check|
- :ref:`source_detection <source_detection_step>`    |check|
+ :ref:`source_catalog <source_catalog_step>`        |check|
  :ref:`tweakreg <tweakreg_step>`                    |check|
 ================================================== ========= ========= =========
 
@@ -87,9 +87,26 @@ Outputs
 :Data model: `~romancal.datamodels.ImageModel`
 :File suffix: _cal
 
+Catalog file (SourceCatalog)
++++++++++++++++++++++++++++++++++++
+
+The catalog data is in
+
+:Data model: `astropy.table.Table`
+:File suffix: _cat
+
+Segmentation Map (SegmentationMapModel)
+++++++++++++++++++++++++++++++++++++++++
+
+The segmentation map is
+
+:Data model: `~romancal.datamodels.MosaicSegmentationMapModel`
+:File suffix: _segm
+
 Result of applying all pipeline steps up through the
 :ref:`tweakreg <tweakreg_step>` step is to produce calibrated data with the image WCS
 aligned to Gaia, and is 2D image data, which will have one less data dimensions as the input
 raw 3D data. In addition to being a 2-dimensional
 image the output from the pipeline has the :ref:`reference pixels <refpix>`
-removed from the edges of the science array and saved as additional 3D arrays.
+removed from the edges of the science array and saved as additional 3D arrays. The
+source catalog and segmentation map from the individual exposues is also saved.

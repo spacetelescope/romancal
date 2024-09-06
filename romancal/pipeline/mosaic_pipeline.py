@@ -34,7 +34,7 @@ class MosaicPipeline(RomanPipeline):
     """
     MosaicPipeline: Apply all calibration steps to the roman data
     to produce level 3 products. Included steps are:
-    ``skymatch``, ``outlier_detection`` and ``resample``.
+    ``flux``, ``skymatch``, ``outlier_detection``, ``resample`` and ``source catalog``.
     """
 
     class_alias = "roman_mos"
