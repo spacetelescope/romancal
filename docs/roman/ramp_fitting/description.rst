@@ -15,11 +15,7 @@ more detail below.
 
 The count rate for each pixel is determined by a linear fit to the
 cosmic-ray-free and saturation-free ramp intervals for each pixel; hereafter
-this interval will be referred to as a "segment." There are two algorithms used:
-Optimal Least-Square ('ols') and Optimal Least-Square for Uneven ramps
-('ols_cas22'). The 'ols' algorithm is the one
-`used by JWST <https://jwst-pipeline.readthedocs.io/en/stable/jwst/ramp_fitting/description.html>`_
-and is further :ref:`described here <rampfit-algorithm-ols>`.
+this interval will be referred to as a "segment."
 
 The 'ols_cas22' algorithm is based on `Casertano et al, STScI Technical Document,
 2022
