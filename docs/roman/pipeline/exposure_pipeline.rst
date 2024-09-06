@@ -102,7 +102,7 @@ The segmentation map is
 
 :Data model: `~romancal.datamodels.MosaicSegmentationMapModel`
 :File suffix: _segm
-	      
+
 Result of applying all pipeline steps up through the
 :ref:`tweakreg <tweakreg_step>` step is to produce calibrated data with the image WCS
 aligned to Gaia, and is 2D image data, which will have one less data dimensions as the input

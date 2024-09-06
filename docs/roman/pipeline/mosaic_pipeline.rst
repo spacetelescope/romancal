@@ -13,7 +13,7 @@ This pipeline is used to apply the flux scale factor, :ref:`flux <flux_step>`,
 determine a common background, :ref:`skymatch <skymatch_step>`, detect pixels the are
 not consistent with the other datasets, :ref:`outlier_detection <outlier_detection_step>`, resample the image to a
 single undistorted image, :ref:`resample <resample_step>`, and to run :ref:`source_catalog <source_catalog_step>`
-on the resulting corrected image. 
+on the resulting corrected image.
 
 The list of steps applied by the ``MosaicPipeline`` pipeline is shown in the
 table below.
