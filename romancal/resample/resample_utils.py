@@ -205,7 +205,7 @@ def build_mask(dqarr, bitvalue):
         "'build_mask' has been deprecated since release 0.16.3. "
         "Use functions from astropy.nddata.bitmask module instead such as "
         "bitfield_to_boolean_mask().",
-        DeprecationWarning
+        DeprecationWarning,
     )
     dqmask = bitfield_to_boolean_mask(
         dqarr,
