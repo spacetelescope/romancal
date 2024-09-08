@@ -1,0 +1,1 @@
+Fixed an incompatibility with ``numpy 2.0`` in ``resample.resample_utils.build_mask()``. Switched code in ``build_driz_weight()`` to use ``astropy`` equivalent of ``build_mask()``. Deprecated ``resample.resample_utils.build_mask()``.
