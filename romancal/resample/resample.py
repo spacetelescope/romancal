@@ -153,8 +153,10 @@ class ResampleData:
         # NOTE: wait for William to fix bug in datamodels' init and then
         # use datamodels.ImageModel(shape=(nx, ny)) instead of mk_datamodel()
 
+        # n_images sets the number of context image planes.
+        # This should be 1 to start (not the default of 2).
         self.blank_output = maker_utils.mk_datamodel(
-            datamodels.MosaicModel, shape=tuple(self.output_wcs.array_shape)
+            datamodels.MosaicModel, n_images=1, shape=tuple(self.output_wcs.array_shape)
         )
 
         with self.input_models:

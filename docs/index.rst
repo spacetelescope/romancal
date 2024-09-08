@@ -69,3 +69,4 @@ desk at `Roman Help Desk <https://stsci.service-now.com/roman>`_.
    :maxdepth: 1
 
    roman/pipeline_static_preview.rst
+   roman/changes.rst

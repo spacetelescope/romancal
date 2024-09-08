@@ -47,7 +47,7 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
 
     # Perform DMS tests
     # Initial prep
-    model = rdm.open(rtdata.output, lazy_load=False)
+    model = rdm.open(rtdata.output)
     pipeline = ExposurePipeline()
 
     # DMS280 result is an ImageModel
@@ -294,7 +294,7 @@ def test_level2_grism_processing_pipeline(rtdata, ignore_asdf_paths):
 
     # Perform DMS tests
     # Initial prep
-    model = rdm.open(rtdata.output, lazy_load=False)
+    model = rdm.open(rtdata.output)
     pipeline = ExposurePipeline()
 
     # DMS90 instrument artifact correction tests
@@ -517,7 +517,11 @@ def test_elp_input_dm(rtdata, ignore_asdf_paths):
 
 @pytest.mark.bigdata
 def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
-    """Tests for fully saturated data skipping steps in the pipeline"""
+    """Tests for fully saturated data skipping steps in the pipeline
+
+    Note that this test mimics how the pipeline is run in OPS.
+    Any changes to this test should be coordinated with OPS.
+    """
     input_data = "r0000101001001001001_01101_0001_WFI01_ALL_SATURATED_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
@@ -547,3 +551,47 @@ def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
     assert model.meta.cal_step.assign_wcs == "SKIPPED"
     assert model.meta.cal_step.flat_field == "SKIPPED"
     assert model.meta.cal_step.photom == "SKIPPED"
+
+
+@pytest.mark.bigdata
+def test_pipeline_suffix(rtdata, ignore_asdf_paths):
+    """
+    Tests passing suffix to the pipeline
+
+    Note that this test mimics how the pipeline is run in OPS.
+
+    Any changes to this test should be coordinated with OPS.
+    """
+    input_data = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
+    rtdata.get_data(f"WFI/image/{input_data}")
+
+    output = "r0000101001001001001_01101_0001_WFI01_star.asdf"
+    rtdata.output = output
+
+    args = [
+        "roman_elp",
+        rtdata.input,
+        "--steps.tweakreg.skip=True",
+        "--suffix=star",
+    ]
+    ExposurePipeline.from_cmdline(args)
+    rtdata.get_truth(f"truth/WFI/image/{output}")
+
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
+
+    # Ensure step completion is as expected
+    model = rdm.open(rtdata.output)
+
+    assert model.meta.cal_step.dq_init == "COMPLETE"
+    assert model.meta.cal_step.saturation == "COMPLETE"
+    assert model.meta.cal_step.linearity == "COMPLETE"
+    assert model.meta.cal_step.dark == "COMPLETE"
+    assert model.meta.cal_step.jump == "COMPLETE"
+    assert model.meta.cal_step.ramp_fit == "COMPLETE"
+    assert model.meta.cal_step.assign_wcs == "COMPLETE"
+    assert model.meta.cal_step.flat_field == "COMPLETE"
+    assert model.meta.cal_step.photom == "COMPLETE"
+    assert model.meta.cal_step.source_detection == "COMPLETE"
+    assert model.meta.cal_step.tweakreg == "INCOMPLETE"
+    assert model.meta.filename == output

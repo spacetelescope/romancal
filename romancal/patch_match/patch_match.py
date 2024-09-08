@@ -84,6 +84,8 @@ def find_patch_matches(image_corners, image_shape=None):
     """
 
     if PATCH_TABLE is None:
+        load_patch_table()
+    if PATCH_TABLE is None:
         raise RuntimeError("No patch table has been loaded")
     if isinstance(image_corners, wcs.WCS):
         iwcs = image_corners
@@ -250,6 +252,3 @@ def veccoords_to_tangent_plane(vertices, tangent_point_vec):
     x_coords = np.dot(x_axis, avertices) * RAD_TO_ARCSEC
     y_coords = np.dot(y_axis, avertices) * RAD_TO_ARCSEC
     return x_coords, y_coords
-
-
-load_patch_table()

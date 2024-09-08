@@ -7,6 +7,7 @@ from copy import deepcopy
 
 import numpy as np
 from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
+from roman_datamodels import maker_utils
 from roman_datamodels.dqflags import pixel
 
 from romancal.datamodels import ModelLibrary
@@ -103,11 +104,8 @@ class SkyMatchStep(RomanStep):
         input_image_model = image_model
 
         if "background" not in image_model.meta:
-            # TODO: remove this block when ``rad`` has a background schema.
-            # This is a temporary workaround to insert a 'background'
-            # entry into the metadata, which we'll later put into ``rad``:
-            image_model.meta["background"] = dict(
-                level=None, subtracted=None, method=None
+            image_model.meta["background"] = maker_utils.mk_sky_background(
+                level=None, subtracted=None, method="None"
             )
 
         if self._dqbits is None:
@@ -119,8 +117,8 @@ class SkyMatchStep(RomanStep):
 
         # see if 'skymatch' was previously run and raise an exception
         # if 'subtract' mode has changed compared to the previous pass:
-        level = image_model.meta["background"]["level"]
-        if image_model.meta["background"]["subtracted"] is None:
+        level = image_model.meta.background.level
+        if image_model.meta.background.subtracted is None:
             if level is not None:
                 # report inconsistency:
                 raise ValueError(
@@ -131,7 +129,7 @@ class SkyMatchStep(RomanStep):
             level = 0.0
 
         else:
-            if image_model.meta["background"]["subtracted"] and level is None:
+            if image_model.meta.background.subtracted and level is None:
                 # NOTE: In principle we could assume that level is 0 and
                 # possibly add a log entry documenting this, however,
                 # at this moment I think it is safer to quit and...
@@ -142,7 +140,7 @@ class SkyMatchStep(RomanStep):
                     "'level' property is undefined (None)."
                 )
 
-            if image_model.meta["background"]["subtracted"] and self.subtract:
+            if image_model.meta.background.subtracted and self.subtract:
                 # cannot run 'skymatch' step on already "skymatched" images
                 # when 'subtract' spec is inconsistent with
                 # meta.background.subtracted:
@@ -176,13 +174,14 @@ class SkyMatchStep(RomanStep):
     def _set_sky_background(self, sky_image, step_status):
         image = sky_image.meta["image_model"]
         sky = sky_image.sky
+        if sky == 0 or sky is None:
+            sky = 0 * image.data.unit
 
-        if step_status == "COMPLETE":
-            image.meta.background.method = str(self.skymethod)
-            image.meta.background.level = sky
-            image.meta.background.subtracted = self.subtract
+        image.meta.background.method = str(self.skymethod)
+        image.meta.background.subtracted = self.subtract
+        image.meta.background.level = sky
 
-            if self.subtract:
-                image.data[...] = sky_image.image[...]
+        if step_status == "COMPLETE" and self.subtract:
+            image.data[...] = sky_image.image[...]
 
         image.meta.cal_step.skymatch = step_status

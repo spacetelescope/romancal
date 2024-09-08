@@ -162,7 +162,7 @@ def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
         CR_group = next(CR_pool)
         model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]] = (
             model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]]
-            + 500.0 * model1.data.unit
+            + 5000.0 * model1.data.unit
         )
 
     out_model = JumpStep.call(
@@ -215,7 +215,7 @@ def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
         CR_group = next(CR_pool)
 
         model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]] = (
-            model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]] + 500 * model1.data.unit
+            model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]] + 5000 * model1.data.unit
         )
         model1.data[CR_group + 8 :, CR_y_locs[i], CR_x_locs[i]] = (
             model1.data[CR_group + 8 :, CR_y_locs[i], CR_x_locs[i]]

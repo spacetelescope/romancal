@@ -20,22 +20,10 @@ def passfail(bool_expr):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS356", "DMS374")
+@metrics_logger("DMS356", "DMS374", "DMS400")
 def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     """Tests for level 3 processing requirements DMS356"""
-
-    cal_files = [
-        "WFI/image/r0000101001001001001_01101_0001_WFI01_cal.asdf",
-        "WFI/image/r0000101001001001001_01101_0002_WFI01_cal.asdf",
-        "WFI/image/r0000101001001001001_01101_0003_WFI01_cal.asdf",
-    ]
-
-    for cal_file in cal_files:
-        rtdata.get_data(cal_file)
-
-    input_asn = "L3_regtest_asn.json"
-    rtdata.get_data(f"WFI/image/{input_asn}")
-    rtdata.input = input_asn
+    rtdata.get_asn("WFI/image/L3_regtest_asn.json")
 
     # Test Pipeline
     output = "r0099101001001001001_F158_visit_i2d.asdf"
@@ -68,7 +56,7 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
 
     # Perform DMS tests
     # Initial prep
-    model = rdm.open(rtdata.output, lazy_load=False)
+    model = rdm.open(rtdata.output)
     pipeline = MosaicPipeline()
 
     # DMS356 result is an ImageModel
@@ -102,7 +90,7 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
         + passfail(os.path.isfile(segm_file))
     )
     pipeline.log.info(
-        "DMS86 MSG: Testing completion of skymatch in the Level 3  output......."
+        "DMS400 MSG: Testing completion of skymatch in the Level 3  output......."
         + passfail(model.meta.cal_step.skymatch == "COMPLETE")
     )
     assert model.meta.cal_step.skymatch == "COMPLETE"
@@ -110,6 +98,17 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
         "Status of the step:             skymatch    "
         + str(model.meta.cal_step.skymatch)
     )
+    pipeline.log.info(
+        "DMS400 MSG: SkyMatchStep added meta.background? :"
+        f'  {hasattr(model.meta.individual_image_meta, "background")}'
+    )
+    assert hasattr(model.meta.individual_image_meta, "background")
+
+    pipeline.log.info(
+        "DMS400 MSG: SkyMatchStep populated meta.background.level? :"
+        f"  {any(model.meta.individual_image_meta.background['level'] != 0)}"
+    )
+    assert any(model.meta.individual_image_meta.background["level"] != 0)
     pipeline.log.info(
         "DMS86 MSG: Testing completion of outlier detection in the Level 3 image output......."
         + passfail(model.meta.cal_step.outlier_detection == "COMPLETE")
@@ -126,5 +125,33 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     )
     pipeline.log.info(
         "DMS86 MSG: Testing completion of resample in the Level 3 image output......."
+        + passfail(model.meta.cal_step.resample == "COMPLETE")
+    )
+
+
+@pytest.mark.bigdata
+@pytest.mark.soctests
+@metrics_logger("DMS373")
+def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
+    """Tests for level 3 mosaic requirements DMS373"""
+    rtdata.get_asn("WFI/image/L3_mosaic_asn.json")
+
+    # Test Pipeline
+    output = "r0099101001001001001_r274dp63x31y81_prompt_F158_i2d.asdf"
+    rtdata.output = output
+    args = [
+        "roman_mos",
+        rtdata.input,
+    ]
+    MosaicPipeline.from_cmdline(args)
+    rtdata.get_truth(f"truth/WFI/image/{output}")
+    pipeline = MosaicPipeline()
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
+
+    model = rdm.open(rtdata.output, lazy_load=False)
+
+    pipeline.log.info(
+        "DMS373 MSG: Testing the creation of a Level 3 mosaic image resampled to a skycell"
         + passfail(model.meta.cal_step.resample == "COMPLETE")
     )

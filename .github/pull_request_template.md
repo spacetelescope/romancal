@@ -9,7 +9,35 @@ Closes #
 This PR addresses ...
 
 **Checklist**
-- [ ] added entry in `CHANGES.rst` under the corresponding subsection
+- [ ] for a public change, added a towncrier news fragment in `changes/` <details><summary>`echo "changed something" > changes/<PR#>.<changetype>.rst`</summary>
+
+    - ``changes/<PR#>.general.rst``: infrastructure or miscellaneous change
+    - ``changes/<PR#>.docs.rst``
+    - ``changes/<PR#>.stpipe.rst``
+    - ``changes/<PR#>.associations.rst``
+    - ``changes/<PR#>.scripts.rst``
+    - ``changes/<PR#>.mosaic_pipeline.rst``
+    - ``changes/<PR#>.patch_match.rst``
+
+    ## steps
+    - ``changes/<PR#>.dq_init.rst``
+    - ``changes/<PR#>.saturation.rst``
+    - ``changes/<PR#>.refpix.rst``
+    - ``changes/<PR#>.linearity.rst``
+    - ``changes/<PR#>.dark_current.rst``
+    - ``changes/<PR#>.jump_detection.rst``
+    - ``changes/<PR#>.ramp_fitting.rst``
+    - ``changes/<PR#>.assign_wcs.rst``
+    - ``changes/<PR#>.flatfield.rst``
+    - ``changes/<PR#>.photom.rst``
+    - ``changes/<PR#>.flux.rst``
+    - ``changes/<PR#>.source_detection.rst``
+    - ``changes/<PR#>.tweakreg.rst``
+    - ``changes/<PR#>.skymatch.rst``
+    - ``changes/<PR#>.outlier_detection.rst``
+    - ``changes/<PR#>.resample.rst``
+    - ``changes/<PR#>.source_catalog.rst``
+  </details>
 - [ ] updated relevant tests
 - [ ] updated relevant documentation
 - [ ] updated relevant milestone(s)

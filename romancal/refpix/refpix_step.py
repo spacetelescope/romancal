@@ -37,7 +37,10 @@ class RefPixStep(RomanStep):
 
         # open the input data model
         log.debug(f"Opening the science data: {input}")
-        datamodel = rdm.open(input)
+        if isinstance(input, rdm.DataModel):
+            datamodel = input
+        else:
+            datamodel = rdm.open(input)
 
         # Get the reference file
         ref_file = self.get_reference_file(datamodel, "refpix")

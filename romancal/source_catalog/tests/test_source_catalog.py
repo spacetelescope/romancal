@@ -14,6 +14,7 @@ from roman_datamodels.datamodels import (
     MosaicModel,
     MosaicSegmentationMapModel,
     MosaicSourceCatalogModel,
+    SegmentationMapModel,
     SourceCatalogModel,
 )
 from roman_datamodels.maker_utils import mk_level2_image, mk_level3_mosaic
@@ -461,7 +462,7 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
             ImageModel,
             {
                 "cat": SourceCatalogModel,
-                "segm": MosaicSegmentationMapModel,
+                "segm": SegmentationMapModel,
                 "sourcecatalog": ImageModel,
             },
         ),
@@ -474,7 +475,7 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
             SourceCatalogModel,
             {
                 "cat": SourceCatalogModel,
-                "segm": MosaicSegmentationMapModel,
+                "segm": SegmentationMapModel,
             },
         ),
         (
@@ -486,7 +487,7 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
             ImageModel,
             {
                 "cat": SourceCatalogModel,
-                "segm": MosaicSegmentationMapModel,
+                "segm": SegmentationMapModel,
             },
         ),
         (
@@ -498,7 +499,7 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
             SourceCatalogModel,
             {
                 "cat": SourceCatalogModel,
-                "segm": MosaicSegmentationMapModel,
+                "segm": SegmentationMapModel,
             },
         ),
     ),

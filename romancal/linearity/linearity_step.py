@@ -23,21 +23,24 @@ class LinearityStep(RomanStep):
 
     def process(self, input):
         # Open the input data model
-        with rdd.open(input, lazy_load=False) as input_model:
-            # Get the name of the linearity reference file to use
-            self.lin_name = self.get_reference_file(input_model, "linearity")
-            self.log.info("Using LINEARITY reference file: %s", self.lin_name)
+        if isinstance(input, rdd.DataModel):
+            input_model = input
+        else:
+            input_model = rdd.open(input)
 
-            # Check for a valid reference file
-            if self.lin_name == "N/A":
-                self.log.warning("No LINEARITY reference file found")
-                self.log.warning("Linearity step will be skipped")
-                input_model.meta.cal_step["linearity"] = "SKIPPED"
+        # Get the name of the linearity reference file to use
+        self.lin_name = self.get_reference_file(input_model, "linearity")
+        self.log.info("Using LINEARITY reference file: %s", self.lin_name)
 
-                return input_model
+        # Check for a valid reference file
+        if self.lin_name == "N/A":
+            self.log.warning("No LINEARITY reference file found")
+            self.log.warning("Linearity step will be skipped")
+            input_model.meta.cal_step["linearity"] = "SKIPPED"
 
-            lin_model = rdd.LinearityRefModel(self.lin_name, memmap=False)
+            return input_model
 
+        with rdd.LinearityRefModel(self.lin_name, memmap=False) as lin_model:
             # copy poly coeffs from linearity model so Nan's can be updated
             lin_coeffs = lin_model.coeffs
             lin_dq = lin_model.dq  # 2D pixeldq from linearity model
@@ -61,9 +64,8 @@ class LinearityStep(RomanStep):
             )
             input_model.pixeldq = new_pdq
 
-            # Close the reference file and update the step status
-            lin_model.close()
-            input_model.meta.cal_step["linearity"] = "COMPLETE"
+        # Update the step status
+        input_model.meta.cal_step["linearity"] = "COMPLETE"
 
         if self.save_results:
             try:
