@@ -2,7 +2,6 @@
 
 import pytest
 import roman_datamodels as rdm
-from metrics_logger.decorators import metrics_logger
 
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
@@ -16,7 +15,6 @@ def passfail(bool_expr):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS413")
 def test_16resultants_image_processing(rtdata, ignore_asdf_paths):
     """Tests for imaging processing requirements for 16 resultants (DMS413)"""
     # The input data is from INS for stress testing at some point this should be generated
@@ -72,7 +70,6 @@ def test_16resultants_image_processing(rtdata, ignore_asdf_paths):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS414")
 def test_16resultants_spectral_processing(rtdata, ignore_asdf_paths):
     """Tests for imaging processing requirements for 16 resultants (DMS413)"""
     # The input data is from INS for stress testing at some point this should be generated
