@@ -1,0 +1,1 @@
+replace ``@metrics_logger()`` test decorators with a ``test_requirements.json`` file in root
