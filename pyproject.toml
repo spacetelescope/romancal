@@ -58,7 +58,7 @@ docs = [
 ]
 test = [
     "ci-watson >=0.5.0",
-    "pytest >=4.6.0, <8.0.0",
+    "pytest >8.0.0",
     "pytest-astropy",
     "deepdiff",
 ]
