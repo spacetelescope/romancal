@@ -17,4 +17,6 @@ def test_requirements(all_test_names):
     }
 
     missing_test_names = required_test_names - all_test_names
-    assert not missing_test_names, f"Missing tests {missing_test_names} required by DMS"
+    assert (
+        not missing_test_names
+    ), f"could not find the following tests correlated with DMS requirements: {missing_test_names}"
