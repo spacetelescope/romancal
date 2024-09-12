@@ -1,9 +1,7 @@
 import json
 from pathlib import Path
 
-TEST_REQUIREMENTS_FILENAME = (
-    Path(__file__).parent.parent.parent / "test_requirements.json"
-)
+TEST_REQUIREMENTS_FILENAME = Path(__file__).parent / "dms_requirement_tests.json"
 
 
 def test_requirements(all_test_names):

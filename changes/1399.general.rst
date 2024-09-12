@@ -1,1 +1,1 @@
-replace ``@metrics_logger()`` test decorators with a ``test_requirements.json`` file in root
+move DMS test correlation info from ``@metrics_logger()`` test decorators to ``romancal/tests/dms_requirement_tests.json``
