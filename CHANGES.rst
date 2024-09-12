@@ -1,4 +1,38 @@
-0.15.2 (unreleased)
+0.16.3 (2024-08-29)
+===================
+
+mosaic_pipeline
+---------------
+
+- Only load patch table when needed. [#1367]
+
+source_catalog
+--------------
+
+- Populate segmentation image metadata. [#1391]
+
+resample
+--------
+
+- Use association product name for output meta.filename by default [#1391]
+
+0.16.2 (2024-08-23)
+===================
+
+pipeline
+--------
+
+- Added ``suffix`` to the spec of ExposurePipeline with a
+  default value of ``cal``. Removed explicit setting of ``suffix``
+  so that it can be passed as an argument to ``strun``. [#1378]
+
+0.16.1 (2024-08-13)
+===================
+
+- update ``stpipe`` to use ``ModelLibrary`` [#1364]
+- update ``stcal`` to use outlier detection [#1364]
+
+0.16.0 (2024-08-13)
 ===================
 
 Documentation
@@ -8,6 +42,7 @@ Documentation
 
 general
 -------
+- Add regression test for DMS400 and additional tests for ``SkyMatchStep``. [#1358]
 
 - Add regression test for DMS373, mosaic pipeline [#1348]
 
@@ -53,12 +88,17 @@ stpipe
 ------
 
 - Add ``ModelContainer`` support to ``Step._datamodels_open`` to allow
-  loading "pars-*" files from CRDS. [#1270]
+  loading ``pars-*`` files from CRDS. [#1270]
 
 
 tweakreg
 --------
 - Integration with ``SourceCatalogStep``: allow usage of results from ``SourceCatalogStep``. [#1276]
+
+resample
+--------
+
+- Fix incorrect number of starting planes for context image. [#1355]
 
 mosaic_pipeline
 ---------------
@@ -70,6 +110,11 @@ tweakreg
 - Remove unnecessary global variable ALIGN_TO_ABS_REFCAT. [#1314]
 
 - Update default absolute separation for tweakreg.  [#1352]
+
+skymatch
+--------
+- Populate valid metadata even when then are no overlapping images to
+  match [#1360]
 
 
 0.15.1 (2024-05-15)
@@ -693,7 +738,7 @@ linearity
 
 -  Linearity correction now supports NaN's in the reference file. [#484]
 
-  photom
+photom
 ------
 
 - Photom updated to skip updating photometric converstions for spectral data [#498]

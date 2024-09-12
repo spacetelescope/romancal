@@ -6,7 +6,7 @@ import gwcs
 import numpy as np
 from astropy import wcs as fitswcs
 from astropy.modeling import Model
-from astropy.nddata.bitmask import interpret_bit_flags
+from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from roman_datamodels.dqflags import pixel
 from stcal.alignment.util import wcs_from_footprints
 
@@ -136,7 +136,13 @@ def build_driz_weight(
         print(weight_map)
     """
 
-    dqmask = build_mask(model.dq, good_bits)
+    dqmask = bitfield_to_boolean_mask(
+        model.dq,
+        good_bits,
+        good_mask_value=1,
+        dtype=np.uint8,
+        flag_name_map=pixel,
+    )
 
     if weight_type == "ivm":
         if (
@@ -195,13 +201,20 @@ def build_mask(dqarr, bitvalue):
       obtain the bit mask.
     - The resulting bit mask is returned as a `numpy.ndarray` of dtype `numpy.uint8`.
     """
-    bitvalue = interpret_bit_flags(
-        bitvalue, flag_name_map={dq.name: dq.value for dq in pixel}
+    warnings.warn(
+        "'build_mask' has been deprecated since release 0.16.3. "
+        "Use functions from astropy.nddata.bitmask module instead such as "
+        "bitfield_to_boolean_mask().",
+        DeprecationWarning,
     )
-
-    if bitvalue is None:
-        return np.ones(dqarr.shape, dtype=np.uint8)
-    return np.logical_not(np.bitwise_and(dqarr, ~bitvalue)).astype(np.uint8)
+    dqmask = bitfield_to_boolean_mask(
+        dqarr,
+        bitvalue,
+        good_mask_value=1,
+        dtype=np.uint8,
+        flag_name_map=pixel,
+    )
+    return dqmask
 
 
 def calc_gwcs_pixmap(in_wcs, out_wcs, shape=None):

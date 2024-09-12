@@ -20,7 +20,7 @@ def passfail(bool_expr):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS356", "DMS374")
+@metrics_logger("DMS356", "DMS374", "DMS400")
 def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     """Tests for level 3 processing requirements DMS356"""
     rtdata.get_asn("WFI/image/L3_regtest_asn.json")
@@ -90,7 +90,7 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
         + passfail(os.path.isfile(segm_file))
     )
     pipeline.log.info(
-        "DMS86 MSG: Testing completion of skymatch in the Level 3  output......."
+        "DMS400 MSG: Testing completion of skymatch in the Level 3  output......."
         + passfail(model.meta.cal_step.skymatch == "COMPLETE")
     )
     assert model.meta.cal_step.skymatch == "COMPLETE"
@@ -98,6 +98,17 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
         "Status of the step:             skymatch    "
         + str(model.meta.cal_step.skymatch)
     )
+    pipeline.log.info(
+        "DMS400 MSG: SkyMatchStep added meta.background? :"
+        f'  {hasattr(model.meta.individual_image_meta, "background")}'
+    )
+    assert hasattr(model.meta.individual_image_meta, "background")
+
+    pipeline.log.info(
+        "DMS400 MSG: SkyMatchStep populated meta.background.level? :"
+        f"  {any(model.meta.individual_image_meta.background['level'] != 0)}"
+    )
+    assert any(model.meta.individual_image_meta.background["level"] != 0)
     pipeline.log.info(
         "DMS86 MSG: Testing completion of outlier detection in the Level 3 image output......."
         + passfail(model.meta.cal_step.outlier_detection == "COMPLETE")

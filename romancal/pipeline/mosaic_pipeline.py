@@ -34,7 +34,7 @@ class MosaicPipeline(RomanPipeline):
     """
     MosaicPipeline: Apply all calibration steps to the roman data
     to produce level 3 products. Included steps are:
-    ``skymatch``, ``outlier_detection`` and ``resample``.
+    ``flux``, ``skymatch``, ``outlier_detection``, ``resample`` and ``source catalog``.
     """
 
     class_alias = "roman_mos"
@@ -88,6 +88,10 @@ class MosaicPipeline(RomanPipeline):
 
             # if this is a valid skycell name load the database and get the skycell record
             if re.match(r"r\d{3}\w{2}\d{2}x\d{2}y\d{2}", skycell_name):
+                if patch_match.PATCH_TABLE is None:
+                    patch_match.load_patch_table()
+                if patch_match.PATCH_TABLE is None:
+                    raise RuntimeError("No patch table has been loaded")
                 skycell_record = patch_match.PATCH_TABLE[
                     np.where(patch_match.PATCH_TABLE["name"][:] == skycell_name)[0][0]
                 ]
@@ -96,8 +100,7 @@ class MosaicPipeline(RomanPipeline):
                 if skycell_name in skycell_record["name"]:
                     # skycell name are in the form of r270dm90x99y99
                     # example of product name "r0099101001001001001_F158_visit_r270dm90x99y99"
-                    skycell_root = re.findall("^[^%\n\r]*_", product_name)[0]
-                    skycell_file_name = skycell_root + skycell_name + "_i2d.asdf"
+                    skycell_file_name = product_name + "_i2d.asdf"
 
                     # check to see if there exists a skycell on disk if not create it
                     if not isfile(skycell_file_name):
@@ -127,10 +130,9 @@ class MosaicPipeline(RomanPipeline):
                         )
                         wcs_file = asdf.open(self.resample.output_wcs)
                         self.suffix = "i2d"
-                        result = self.resample(result)
                         self.output_file = input.asn["products"][0]["name"]
-                        # force the SourceCatalogStep to save the results
-                        self.sourcecatalog.save_results = True
+                        result = self.resample(result)
+                        self.sourcecatalog.output_file = self.output_file
                         result_catalog = self.sourcecatalog(result)
                     else:
                         log.info("resampling a mosaic file is not yet supported")
@@ -140,7 +142,7 @@ class MosaicPipeline(RomanPipeline):
                 self.resample.suffix = "i2d"
                 self.output_file = input.asn["products"][0]["name"]
                 result = self.resample(result)
-                self.sourcecatalog.save_results = True
+                self.sourcecatalog.output_file = self.output_file
                 result_catalog = self.sourcecatalog(result)  # noqa: F841
                 self.suffix = "i2d"
                 if input_filename:
