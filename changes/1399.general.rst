@@ -1,1 +1,1 @@
-move DMS test correlation info from ``@metrics_logger()`` test decorators to ``romancal/tests/dms_requirement_tests.json``
+move DMS requirement <-> test correlations from ``@metrics_logger()`` decorators to ``romancal/tests/dms_requirement_tests.json``
