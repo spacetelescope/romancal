@@ -52,8 +52,20 @@
   "DMS361": [
     "romancal.regtest.test_wfi_pipeline.test_level2_image_processing_pipeline"
   ],
+  "DMS362": [
+    "romancal.regtest.test_ramp_fitting.test_rampfit_step"
+  ],
+  "DMS363": [
+    "romancal.regtest.test_ramp_fitting.test_rampfit_step"
+  ],
   "DMS365": [
     "romancal.regtest.test_wfi_pipeline.test_level2_grism_processing_pipeline"
+  ],
+  "DMS366": [
+    "romancal.regtest.test_ramp_fitting.test_rampfit_step"
+  ],
+  "DMS367": [
+    "romancal.regtest.test_ramp_fitting.test_rampfit_step"
   ],
   "DMS373": [
     "romancal.regtest.test_mos_pipeline.test_hlp_mosaic_pipeline"
