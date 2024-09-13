@@ -2,7 +2,6 @@ import asdf
 import numpy as np
 import pytest
 from astropy import units as u
-from metrics_logger.decorators import metrics_logger
 from roman_datamodels import datamodels as rdm
 
 from romancal.stpipe import RomanStep
@@ -11,7 +10,6 @@ from romancal.tweakreg.tweakreg_step import TweakRegStep
 from .regtestdata import compare_asdf
 
 
-@metrics_logger("DMS280", "DMS405", "DMS488")
 @pytest.mark.bigdata
 def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
     # N.B.: uncal file is from simulator
