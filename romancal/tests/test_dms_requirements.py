@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 
 TEST_DIRECTORY = Path(__file__).parent.parent
-TEST_REQUIREMENTS_FILENAME = Path(__file__).parent / "dms_requirement_tests.json"
+TEST_REQUIREMENTS_FILENAME = TEST_DIRECTORY / "tests" / "dms_requirement_tests.json"
 
 
 def test_requirements():
