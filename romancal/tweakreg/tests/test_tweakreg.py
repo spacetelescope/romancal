@@ -11,7 +11,7 @@ import requests
 from astropy import coordinates as coord
 from astropy import table
 from astropy import units as u
-from astropy.modeling import models, Model
+from astropy.modeling import models
 from astropy.modeling.models import RotationSequence3D, Scale, Shift
 from astropy.time import Time
 from gwcs import coordinate_frames as cf
