@@ -4,7 +4,6 @@ Roman pipeline step for image alignment.
 
 import os
 from pathlib import Path
-from typing import List
 
 import numpy as np
 from astropy.table import Table
