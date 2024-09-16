@@ -1,6 +1,8 @@
 import copy
+import filecmp
 import json
 import os
+import shutil
 from io import StringIO
 from pathlib import Path
 from typing import Tuple
@@ -1232,18 +1234,80 @@ def test_update_source_catalog_coordinates(tmp_path, base_image):
     cat_dec_psf = cat.source_catalog["dec_psf"]
 
     # calculate world coords using tweaked WCS
-    expected_centroid = img.meta.wcs.pixel_to_world(
+    expected_centroid = img.meta.wcs(
         cat.source_catalog["xcentroid"], cat.source_catalog["ycentroid"]
     )
-    expected_psf = img.meta.wcs.pixel_to_world(
+    expected_psf = img.meta.wcs(
         cat.source_catalog["x_psf"], cat.source_catalog["y_psf"]
     )
 
     # compare coordinates (make sure tweaked WCS was applied to cat file coords)
-    np.testing.assert_array_equal(cat_ra_centroid, expected_centroid.ra.value)
-    np.testing.assert_array_equal(cat_dec_centroid, expected_centroid.dec.value)
-    np.testing.assert_array_equal(cat_ra_psf, expected_psf.ra.value)
-    np.testing.assert_array_equal(cat_dec_psf, expected_psf.dec.value)
+    np.testing.assert_array_equal(cat_ra_centroid, expected_centroid[0])
+    np.testing.assert_array_equal(cat_dec_centroid, expected_centroid[1])
+    np.testing.assert_array_equal(cat_ra_psf, expected_psf[0])
+    np.testing.assert_array_equal(cat_dec_psf, expected_psf[1])
+
+
+def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
+    """Test that the original catalog file content is different from the updated file."""
+
+    os.chdir(tmp_path)
+
+    img = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
+
+    tweakreg = trs.TweakRegStep()
+
+    # create SourceCatalogModel
+    source_catalog_model = setup_source_catalog_model(img)
+
+    # save SourceCatalogModel
+    tweakreg.save_model(
+        source_catalog_model,
+        output_file="img_1.asdf",
+        suffix="cat",
+        force=True,
+    )
+    # save original data
+    shutil.copy("img_1_cat.asdf", "img_1_cat_original.asdf")
+
+    # update tweakreg catalog name
+    img.meta.source_detection.tweakreg_catalog_name = "img_1_cat.asdf"
+
+    # run TweakRegStep
+    res = trs.TweakRegStep.call([img])
+
+    # tweak the current WCS using TweakRegStep and save the updated cat file
+    with res:
+        dm = res.borrow(0)
+        assert dm.meta.source_detection.tweakreg_catalog_name == "img_1_cat.asdf"
+        tweakreg.update_catalog_coordinates(
+            dm.meta.source_detection.tweakreg_catalog_name, dm.meta.wcs
+        )
+        res.shelve(dm, 0)
+
+    cat_original = rdm.open("img_1_cat_original.asdf")
+    cat_updated = rdm.open("img_1_cat.asdf")
+
+    # compare contents
+    assert not filecmp.cmp("img_1_cat.asdf", "img_1_cat_original.asdf")
+    # compare coordinates using rtol=1e-07 and atol=0 (default)
+    np.testing.assert_allclose(
+        cat_original.source_catalog["ra_centroid"],
+        cat_updated.source_catalog["ra_centroid"],
+    )
+    np.testing.assert_allclose(
+        cat_original.source_catalog["dec_centroid"],
+        cat_updated.source_catalog["dec_centroid"],
+    )
+    np.testing.assert_allclose(
+        cat_original.source_catalog["ra_psf"],
+        cat_updated.source_catalog["ra_psf"],
+    )
+    np.testing.assert_allclose(
+        cat_original.source_catalog["dec_psf"],
+        cat_updated.source_catalog["dec_psf"],
+    )
 
 
 def setup_source_catalog_model(img):
@@ -1282,24 +1346,18 @@ def setup_source_catalog_model(img):
     source_catalog["y_psf"] += shift_y
 
     # calculate centroid world coordinates
-    centroid = img.meta.wcs.pixel_to_world(
+    centroid = img.meta.wcs(
         source_catalog["xcentroid"],
         source_catalog["ycentroid"],
     )
     # calculate PSF world coordinates
-    psf = img.meta.wcs.pixel_to_world(
+    psf = img.meta.wcs(
         source_catalog["x_psf"],
         source_catalog["y_psf"],
     )
     # add world coordinates to catalog
-    source_catalog["ra_centroid"], source_catalog["dec_centroid"] = (
-        centroid.ra.deg,
-        centroid.dec.deg,
-    )
-    source_catalog["ra_psf"], source_catalog["dec_psf"] = (
-        psf.ra.deg,
-        psf.dec.deg,
-    )
+    source_catalog["ra_centroid"], source_catalog["dec_centroid"] = centroid
+    source_catalog["ra_psf"], source_catalog["dec_psf"] = psf
     # add units
     source_catalog["ra_centroid"].unit = u.deg
     source_catalog["dec_centroid"].unit = u.deg

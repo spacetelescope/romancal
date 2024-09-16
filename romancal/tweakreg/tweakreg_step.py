@@ -516,7 +516,7 @@ class TweakRegStep(RomanStep):
         ----------
         tweakreg_catalog_name : str
             The name of the TweakReg catalog file produced by `SourceCatalog`.
-        tweaked_wcs : `astropy.wcs.WCS`
+        tweaked_wcs : `gwcs.wcs.WCS`
             The tweaked World Coordinate System (WCS) object.
 
         Returns
@@ -539,15 +539,9 @@ class TweakRegStep(RomanStep):
                 x_colname, y_colname = k
                 ra_colname, dec_colname = v
 
-                # calculate new coordinates using tweaked WCS
-                tweaked_centroid = tweaked_wcs.pixel_to_world(
+                # calculate new coordinates using tweaked WCS and update catalog coordinates
+                catalog[ra_colname], catalog[dec_colname] = tweaked_wcs(
                     catalog[x_colname], catalog[y_colname]
-                )
-
-                # update catalog coordinates
-                catalog[ra_colname], catalog[dec_colname] = (
-                    tweaked_centroid.ra.deg,
-                    tweaked_centroid.dec.deg,
                 )
 
             # save updated catalog (overwrite cat file)
