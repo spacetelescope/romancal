@@ -11,7 +11,7 @@ import requests
 from astropy import coordinates as coord
 from astropy import table
 from astropy import units as u
-from astropy.modeling import models
+from astropy.modeling import models, Model
 from astropy.modeling.models import RotationSequence3D, Scale, Shift
 from astropy.time import Time
 from gwcs import coordinate_frames as cf
@@ -984,3 +984,23 @@ def test_parse_catfile_raises_error_on_invalid_content(tmp_path, catfile_line_co
         trs._parse_catfile(catfile)
 
     assert type(exec_info.value) == ValueError
+
+
+@pytest.mark.parametrize(
+    "exposure_type",
+    ["WFI_GRISM", "WFI_PRISM", "WFI_DARK", "WFI_FLAT", "WFI_WFSC"],
+)
+def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_image):
+    """Test that TweakReg updates meta.cal_step with tweakreg = COMPLETE."""
+    img1 = base_image(shift_1=1000, shift_2=1000)
+    img1.meta.exposure.type = exposure_type
+    img2 = base_image(shift_1=1000, shift_2=1000)
+    img2.meta.exposure.type = exposure_type
+    res = trs.TweakRegStep.call([img1, img2])
+
+    assert type(res) == ModelLibrary
+    with res:
+        for i, model in enumerate(res):
+            assert hasattr(model.meta.cal_step, "tweakreg")
+            assert model.meta.cal_step.tweakreg == "SKIPPED"
+            res.shelve(model, i, modify=False)
