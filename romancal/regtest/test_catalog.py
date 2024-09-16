@@ -2,7 +2,6 @@
 
 import asdf
 import pytest
-from metrics_logger.decorators import metrics_logger
 
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 from romancal.stpipe import RomanStep
@@ -48,7 +47,6 @@ def check_catalog_fields(model, log, modeltype):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS374", "DMS375", "DMS376", "DMS386", "DMS387")
 def test_catalog_l3(rtdata, ignore_asdf_paths):
     # DMS374: positions on ICRF
     # DMS375: fluxes
@@ -76,7 +74,6 @@ def test_catalog_l3(rtdata, ignore_asdf_paths):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS374", "DMS375", "DMS376", "DMS386", "DMS387")
 def test_catalog_l2(rtdata, ignore_asdf_paths):
     # DMS374: positions on ICRF
     # DMS375: fluxes

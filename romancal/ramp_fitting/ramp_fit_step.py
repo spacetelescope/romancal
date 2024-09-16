@@ -8,7 +8,7 @@ from roman_datamodels import datamodels as rdd
 from roman_datamodels import maker_utils
 from roman_datamodels import stnode as rds
 from roman_datamodels.dqflags import group, pixel
-from stcal.ramp_fitting import ols_cas22_fit, ramp_fit
+from stcal.ramp_fitting import ols_cas22_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 
 from romancal.stpipe import RomanStep
@@ -26,10 +26,8 @@ class RampFitStep(RomanStep):
     """
 
     spec = """
-        algorithm = option('ols','ols_cas22', default='ols_cas22')  # Algorithm to use to fit.
+        algorithm = option('ols_cas22', default='ols_cas22')  # Algorithm to use to fit.
         save_opt = boolean(default=False) # Save optional output
-        opt_name = string(default='')
-        maximum_cores = option('none','quarter','half','all',default='none') # max number of processes to create
         suffix = string(default='rampfit')  # Default suffix of results
         use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
         threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
@@ -52,10 +50,7 @@ class RampFitStep(RomanStep):
 
             # Do the fitting.
             algorithm = self.algorithm.lower()
-            if algorithm == "ols":
-                out_model = self.ols(input_model, readnoise_model, gain_model)
-                out_model.meta.cal_step.ramp_fit = "COMPLETE"
-            elif algorithm == "ols_cas22":
+            if algorithm == "ols_cas22":
                 dark_filename = self.get_reference_file(input_model, "dark")
                 dark_model = rdd.open(dark_filename, mode="r")
                 out_model = self.ols_cas22(
@@ -68,77 +63,6 @@ class RampFitStep(RomanStep):
                 log.error("Algorithm %s is not supported. Skipping step.")
                 out_model = input
                 out_model.meta.cal_step.ramp_fit = "SKIPPED"
-
-        return out_model
-
-    def ols(self, input_model, readnoise_model, gain_model):
-        """Perform Optimal Linear Fitting on evenly-spaced resultants
-
-        The OLS algorithm used is the same used by JWST for it's ramp fitting.
-
-        Parameters
-        ----------
-        input_model : RampModel
-            Model containing ramps.
-
-        readnoise_model : ReadnoiseRefModel
-            Model with the read noise reference information.
-
-        gain_model : GainRefModel
-            Model with the gain reference information.
-
-        Returns
-        -------
-        out_model : ImageModel
-            Model containing a count-rate image.
-        """
-        max_cores = self.maximum_cores
-        input_model.data = input_model.data[np.newaxis, :]
-        input_model.groupdq = input_model.groupdq[np.newaxis, :]
-        input_model.err = input_model.err[np.newaxis, :]
-
-        log.info(f"Using algorithm = {self.algorithm}")
-        log.info(f"Using weighting = {self.weighting}")
-
-        buffsize = ramp_fit.BUFSIZE
-        image_info, integ_info, opt_info, gls_opt_model = ramp_fit.ramp_fit(
-            input_model,
-            buffsize,
-            self.save_opt,
-            readnoise_model.data.value,
-            gain_model.data.value,
-            self.algorithm,
-            self.weighting,
-            max_cores,
-            pixel,
-        )
-
-        readnoise_model.close()
-
-        # Save the OLS optional fit product, if it exists
-        if opt_info is not None:
-            # opt_info = (slope, sigslope, var_poisson, var_readnoise, yint,
-            # sig_yint,
-            # ped_int, weights, cr_mag_seg
-            opt_model = create_optional_results_model(input_model, opt_info)
-            self.save_model(opt_model, "fitopt", output_file=self.opt_name)
-
-        gain_model.close()
-
-        # All pixels saturated, therefore returning an image file with zero data
-        if image_info is None:
-            log.info("All pixels are saturated. Returning a zeroed-out image.")
-
-            # Image info order is: data, dq, var_poisson, var_rnoise, err
-            image_info = (
-                np.zeros(input_model.data.shape[2:], dtype=input_model.data.dtype),
-                input_model.pixeldq | input_model.groupdq[0][0] | group.SATURATED,
-                np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
-                np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
-                np.zeros(input_model.err.shape[2:], dtype=input_model.err.dtype),
-            )
-
-        out_model = create_image_model(input_model, image_info)
 
         return out_model
 
@@ -304,64 +228,6 @@ def create_image_model(input_model, image_info):
     im.var_rnoise = im.var_rnoise[4:-4, 4:-4]
 
     return im
-
-
-def create_optional_results_model(input_model, opt_info):
-    """
-    Creates the optional output from the computed arrays from ramp_fit.
-
-    Parameters
-    ----------
-    input_model : `~roman_datamodels.datamodels.RampModel`
-        The input data model.
-    opt_info : tuple
-        The ramp fitting arrays needed for the ``RampFitOutputModel``.
-
-    Returns
-    -------
-    opt_model : `~roman_datamodels.datamodels.RampFitOutputModel`
-        The optional ``RampFitOutputModel`` to be returned from the ramp fit step.
-    """
-    (
-        slope,
-        sigslope,
-        var_poisson,
-        var_rnoise,
-        yint,
-        sigyint,
-        pedestal,
-        weights,
-        crmag,
-    ) = opt_info
-    meta = {}
-    meta.update(input_model.meta)
-    crmag.shape = crmag.shape[1:]
-    crmag.dtype = np.float32
-
-    inst = {
-        "meta": meta,
-        "slope": u.Quantity(np.squeeze(slope), u.electron / u.s, dtype=slope.dtype),
-        "sigslope": u.Quantity(
-            np.squeeze(sigslope), u.electron / u.s, dtype=sigslope.dtype
-        ),
-        "var_poisson": u.Quantity(
-            np.squeeze(var_poisson), u.electron**2 / u.s**2, dtype=var_poisson.dtype
-        ),
-        "var_rnoise": u.Quantity(
-            np.squeeze(var_rnoise), u.electron**2 / u.s**2, dtype=var_rnoise.dtype
-        ),
-        "yint": u.Quantity(np.squeeze(yint), u.electron, dtype=yint.dtype),
-        "sigyint": u.Quantity(np.squeeze(sigyint), u.electron, dtype=sigyint.dtype),
-        "pedestal": u.Quantity(np.squeeze(pedestal), u.electron, dtype=pedestal.dtype),
-        "weights": np.squeeze(weights),
-        "crmag": u.Quantity(crmag, u.electron, dtype=pedestal.dtype),
-    }
-
-    out_node = rds.RampFitOutput(inst)
-    opt_model = rdd.RampFitOutputModel(out_node)
-    opt_model.meta.filename = input_model.meta.filename
-
-    return opt_model
 
 
 def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):

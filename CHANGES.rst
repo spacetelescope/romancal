@@ -1,4 +1,22 @@
-0.16.2 (unreleased)
+0.16.3 (2024-08-29)
+===================
+
+mosaic_pipeline
+---------------
+
+- Only load patch table when needed. [#1367]
+
+source_catalog
+--------------
+
+- Populate segmentation image metadata. [#1391]
+
+resample
+--------
+
+- Use association product name for output meta.filename by default [#1391]
+
+0.16.2 (2024-08-23)
 ===================
 
 exposure_pipeline
@@ -73,7 +91,7 @@ stpipe
 ------
 
 - Add ``ModelContainer`` support to ``Step._datamodels_open`` to allow
-  loading "pars-*" files from CRDS. [#1270]
+  loading ``pars-*`` files from CRDS. [#1270]
 
 
 tweakreg
@@ -723,7 +741,7 @@ linearity
 
 -  Linearity correction now supports NaN's in the reference file. [#484]
 
-  photom
+photom
 ------
 
 - Photom updated to skip updating photometric converstions for spectral data [#498]
