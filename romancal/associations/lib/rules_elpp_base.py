@@ -356,8 +356,8 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
             if asn.is_valid:
                 results.append(asn)
                 return results
-            else:
-                return None
+
+            return None
 
     def _init_hook(self, item):
         """Post-check and pre-add initialization"""
@@ -393,6 +393,11 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
 
         # Update meta info
         self.update_asn(item=item, member=member)
+
+    def update_target(self, target):
+        """Update association target field"""
+        if self.data['target'] is None:
+            self.data['target'] = target
 
     def _add_items(self, items, product_name=None, with_exptype=False, **kwargs):
         """Force adding items to the association
@@ -439,7 +444,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
     def __repr__(self):
         # flake8:  noqa: F821
         try:
-            file_name, json_repr = self.ioregistry["json"].dump(self)
+            _ , json_repr = self.ioregistry["json"].dump(self)
         except KeyValueRegistryError:
             return str(self.__class__)
         return json_repr
@@ -1031,8 +1036,8 @@ class AsnMixin_Lv2FOV:
         """
         if self.is_valid:
             return self.make_fov_asn()
-        else:
-            return None
+
+        return None
 
 
 class AsnMixin_Lv2Image:

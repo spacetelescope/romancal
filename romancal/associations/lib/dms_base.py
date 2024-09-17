@@ -189,6 +189,7 @@ class DMSBaseMixin(ACIDMixin):
         version_id = self.version_id
         asn_type = self.data["asn_type"]
         sequence = self.sequence
+        target = self.target
 
         if version_id:
             name = _ASN_NAME_TEMPLATE_STAMP.format(
@@ -197,6 +198,7 @@ class DMSBaseMixin(ACIDMixin):
                 stamp=version_id,
                 type=asn_type,
                 sequence=sequence,
+                target=target,
             )
         else:
             name = _ASN_NAME_TEMPLATE.format(
@@ -204,6 +206,7 @@ class DMSBaseMixin(ACIDMixin):
                 acid=self.acid.id,
                 type=asn_type,
                 sequence=sequence,
+                target=target,
             )
         return name.lower()
 
@@ -402,16 +405,19 @@ class DMSBaseMixin(ACIDMixin):
                             break
 
     def update_validity(self, entry):
+        """ Check/Update the validity of the association"""
         for test in self.validity.values():
             if not test["validated"]:
                 test["validated"] = test["check"](entry)
 
     @classmethod
     def reset_sequence(cls):
+        """Reset the sequence counter to 1 """
         cls._sequence = Counter(start=1)
 
     @classmethod
     def validate(cls, asn):
+        """Validate the association generated"""
         super().validate(asn)
 
         if isinstance(asn, DMSBaseMixin):
