@@ -396,8 +396,8 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
 
     def update_target(self, target):
         """Update association target field"""
-        if self.data['target'] is None:
-            self.data['target'] = target
+        if self.data["target"] is None:
+            self.data["target"] = target
 
     def _add_items(self, items, product_name=None, with_exptype=False, **kwargs):
         """Force adding items to the association
@@ -444,7 +444,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
     def __repr__(self):
         # flake8:  noqa: F821
         try:
-            _ , json_repr = self.ioregistry["json"].dump(self)
+            _, json_repr = self.ioregistry["json"].dump(self)
         except KeyValueRegistryError:
             return str(self.__class__)
         return json_repr

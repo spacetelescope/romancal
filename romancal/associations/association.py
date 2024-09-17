@@ -86,8 +86,8 @@ class Association(MutableMapping):
 
     def __init__(
         self,
-            version_id=None,
-            target=None,
+        version_id=None,
+        target=None,
     ):
         self.data = {}
         self.run_init_hook = True
@@ -537,7 +537,7 @@ def finalize(asns):
 
 
 def make_timestamp():
-    """Generate a timestamp based on runtime """
+    """Generate a timestamp based on runtime"""
     timestamp = datetime.utcnow().strftime(_TIMESTAMP_TEMPLATE)
     return timestamp
 

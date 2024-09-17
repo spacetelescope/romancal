@@ -37,9 +37,9 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
     """
     asn = rule()
     asn._add_items(items, **kwargs)
-    if 'target' in kwargs.keys():
-        target = kwargs['target']
-        asn['target'] = target
+    if "target" in kwargs.keys():
+        target = kwargs["target"]
+        asn["target"] = target
     return asn
 
 
@@ -141,7 +141,7 @@ class Main:
                 rule=rule,
                 product_name=parsed.product_name,
                 acid=parsed.acid,
-                target=parsed.target
+                target=parsed.target,
             )
             _, serialized = asn.dump(format=parsed.format)
             outfile.write(serialized)

@@ -33,11 +33,18 @@ def test_association_target():
     target_name = "r274dp63x32y80"
     product_name = "l3_target"
     rule_name = "Association"
-    asn = asn_from_list(items, rule=Association, product_name=product_name, target=target_name, version_id='c55')
+    asn = asn_from_list(
+        items,
+        rule=Association,
+        product_name=product_name,
+        target=target_name,
+        version_id="c55",
+    )
     assert asn["asn_rule"] == rule_name
     assert asn["asn_type"] == "None"
     assert asn["members"] == items
     assert asn["target"] == target_name
+
 
 def test_default_simple():
     """Default ELPP association"""

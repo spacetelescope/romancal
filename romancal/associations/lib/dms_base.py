@@ -405,14 +405,14 @@ class DMSBaseMixin(ACIDMixin):
                             break
 
     def update_validity(self, entry):
-        """ Check/Update the validity of the association"""
+        """Check/Update the validity of the association"""
         for test in self.validity.values():
             if not test["validated"]:
                 test["validated"] = test["check"](entry)
 
     @classmethod
     def reset_sequence(cls):
-        """Reset the sequence counter to 1 """
+        """Reset the sequence counter to 1"""
         cls._sequence = Counter(start=1)
 
     @classmethod
