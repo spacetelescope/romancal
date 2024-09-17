@@ -14,7 +14,6 @@ from stcal.tweakreg import tweakreg
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
 
-
 SINGLE_GROUP_REFCAT = tweakreg.SINGLE_GROUP_REFCAT
 _SINGLE_GROUP_REFCAT_STR = tweakreg._SINGLE_GROUP_REFCAT_STR
 DEFAULT_ABS_REFCAT = SINGLE_GROUP_REFCAT[0]
