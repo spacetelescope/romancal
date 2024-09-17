@@ -15,21 +15,8 @@ from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
 
 
-def _oxford_or_str_join(str_list):
-    nelem = len(str_list)
-    if not nelem:
-        return "N/A"
-    str_list = list(map(repr, str_list))
-    if nelem == 1:
-        return str_list
-    elif nelem == 2:
-        return f"{str_list[0]} or {str_list[1]}"
-    else:
-        return ", ".join(map(repr, str_list[:-1])) + ", or " + repr(str_list[-1])
-
-
-SINGLE_GROUP_REFCAT = ["GAIADR3", "GAIADR2", "GAIADR1"]
-_SINGLE_GROUP_REFCAT_STR = _oxford_or_str_join(SINGLE_GROUP_REFCAT)
+SINGLE_GROUP_REFCAT = tweakreg.SINGLE_GROUP_REFCAT
+_SINGLE_GROUP_REFCAT_STR = tweakreg._SINGLE_GROUP_REFCAT_STR
 DEFAULT_ABS_REFCAT = SINGLE_GROUP_REFCAT[0]
 
 __all__ = ["TweakRegStep"]
@@ -99,11 +86,12 @@ class TweakRegStep(RomanStep):
         if not images:
             raise ValueError("Input must contain at least one image model.")
 
-        self.log.info("")
         self.log.info(
             f"Number of image groups to be aligned: {len(images.group_indices):d}."
         )
         self.log.info("Image groups:")
+        for name in images.group_names:
+            self.log.info(f"  {name}")
         # set the first image as reference
         with images:
             ref_image = images.borrow(0)
@@ -174,31 +162,21 @@ class TweakRegStep(RomanStep):
 
                     try:
                         catalog = self.get_tweakreg_catalog(
-                            source_detection, image_model, i
+                            source_detection, image_model
                         )
                     except AttributeError as e:
                         self.log.error(f"Failed to retrieve tweakreg_catalog: {e}")
                         images.shelve(image_model, i, modify=False)
-                        raise AttributeError() from e
+                        raise e
 
                     try:
-                        for axis in ["x", "y"]:
-                            # validate catalog columns
-                            if axis not in catalog.colnames:
-                                long_axis = f"{axis}centroid"
-                                if long_axis in catalog.colnames:
-                                    catalog.rename_column(long_axis, axis)
-                                else:
-                                    raise ValueError(
-                                        "'tweakreg' source catalogs must contain a header with "
-                                        "columns named either 'x' and 'y' or 'xcentroid' and 'ycentroid'."
-                                    )
+                        # validate catalog columns
+                        _validate_catalog_columns(catalog)
                     except ValueError as e:
                         self.log.error(f"Failed to validate catalog columns: {e}")
                         images.shelve(image_model, i, modify=False)
-                        raise ValueError() from e
+                        raise e
 
-                    filename = image_model.meta.filename
                     catalog = tweakreg.filter_catalog_by_bounding_box(
                         catalog, image_model.meta.wcs.bounding_box
                     )
@@ -214,9 +192,9 @@ class TweakRegStep(RomanStep):
                     image_model.meta["tweakreg_catalog"] = catalog.as_array()
                     nsources = len(catalog)
                     self.log.info(
-                        f"Detected {nsources} sources in {filename}."
+                        f"Detected {nsources} sources in {image_model.meta.filename}."
                         if nsources
-                        else f"No sources found in {filename}."
+                        else f"No sources found in {image_model.meta.filename}."
                     )
                     # build image catalog
                     # catalog name
@@ -228,27 +206,33 @@ class TweakRegStep(RomanStep):
                     catalog_table.meta["name"] = catalog_name
 
                     imcats.append(
-                        tweakreg.construct_wcs_corrector(
-                            wcs=image_model.meta.wcs,
-                            refang=image_model.meta.wcsinfo,
-                            catalog=catalog_table,
-                            group_id=image_model.meta.group_id,
-                        )
+                        {
+                            "model_index": i,
+                            "imcat": tweakreg.construct_wcs_corrector(
+                                wcs=image_model.meta.wcs,
+                                refang=image_model.meta.wcsinfo,
+                                catalog=catalog_table,
+                                group_id=image_model.meta.group_id,
+                            ),
+                        }
                     )
                 images.shelve(image_model, i)
 
         # run alignment only if it was possible to build image catalogs
         if len(imcats):
-            if getattr(images, "group_indices", None) and len(images.group_indices) > 1:
-                self.do_relative_alignment(imcats)
+            # extract WCS correctors to use for image alignment
+            correctors = [x["imcat"] for x in imcats]
+            if len(images.group_indices) > 1:
+                self.do_relative_alignment(correctors)
 
             if self.abs_refcat in SINGLE_GROUP_REFCAT:
-                self.do_absolute_alignment(ref_image, imcats)
+                self.do_absolute_alignment(ref_image, correctors)
 
             # finalize step
             with images:
-                for i, imcat in enumerate(imcats):
-                    image_model = images.borrow(i)
+                for item in imcats:
+                    imcat = item["imcat"]
+                    image_model = images.borrow(item["model_index"])
                     image_model.meta.cal_step["tweakreg"] = "COMPLETE"
                     # remove source catalog
                     del image_model.meta["tweakreg_catalog"]
@@ -293,7 +277,7 @@ class TweakRegStep(RomanStep):
                             del image_model.meta["wcs_fit_results"][k]
 
                         image_model.meta.wcs = imcat.wcs
-                    images.shelve(image_model, i)
+                    images.shelve(image_model, item["model_index"])
 
         return images
 
@@ -327,7 +311,7 @@ class TweakRegStep(RomanStep):
             catalog = Table.read(catalog_name, format=self.catalog_format)
         return catalog
 
-    def get_tweakreg_catalog(self, source_detection, image_model, index):
+    def get_tweakreg_catalog(self, source_detection, image_model):
         """
         Retrieve the tweakreg catalog from source detection.
 
@@ -341,8 +325,6 @@ class TweakRegStep(RomanStep):
             The source detection metadata containing catalog information.
         image_model : DataModel
             The image model associated with the source detection.
-        index : int
-            The index of the image model in the collection.
 
         Returns
         -------
@@ -489,3 +471,40 @@ def _parse_catfile(catfile):
                 raise ValueError("'catfile' can contain at most two columns.")
 
     return catdict
+
+
+def _validate_catalog_columns(catalog):
+    """
+    Validate the presence of required columns in the catalog.
+
+    This method checks if the specified axis column exists in the catalog.
+    If the axis is not found, it looks for a corresponding centroid column
+    and renames it if present. If neither is found, it raises an error.
+
+    Parameters
+    ----------
+    catalog : Table
+        The catalog to validate, which should contain source information.
+    axis : str
+        The axis to check for in the catalog (e.g., 'x' or 'y').
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    ValueError
+        If the required columns are missing from the catalog.
+    """
+    for axis in ["x", "y"]:
+        if axis not in catalog.colnames:
+            long_axis = f"{axis}centroid"
+            if long_axis in catalog.colnames:
+                catalog.rename_column(long_axis, axis)
+            else:
+                raise ValueError(
+                    "'tweakreg' source catalogs must contain a header with "
+                    "columns named either 'x' and 'y' or 'xcentroid' and 'ycentroid'."
+                )
+    return catalog

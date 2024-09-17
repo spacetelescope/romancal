@@ -20,6 +20,7 @@ from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 from stcal.tweakreg.astrometric_utils import get_catalog
+from romancal.tweakreg.tweakreg_step import _validate_catalog_columns
 
 from romancal.datamodels import ModelLibrary
 from romancal.tweakreg import tweakreg_step as trs
@@ -638,7 +639,6 @@ def test_tweakreg_updates_group_id(tmp_path, base_image):
 )
 def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     """Test that TweakReg saves the catalog used for absolute astrometry."""
-    os.chdir(tmp_path)
 
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     catalog_filename = "ref_catalog.ecsv"
@@ -646,7 +646,11 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
     trs.TweakRegStep.call(
-        [img], save_abs_catalog=True, abs_refcat=abs_refcat, catalog_path=str(tmp_path)
+        [img],
+        save_abs_catalog=True,
+        abs_refcat=abs_refcat,
+        catalog_path=str(tmp_path),
+        output_dir=str(tmp_path),
     )
 
     assert os.path.exists(tmp_path / abs_refcat_filename)
@@ -658,7 +662,6 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
 )
 def test_tweakreg_defaults_to_valid_abs_refcat(tmp_path, abs_refcat, request):
     """Test that TweakReg defaults to DEFAULT_ABS_REFCAT on invalid values."""
-    os.chdir(tmp_path)
 
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     catalog_filename = "ref_catalog.ecsv"
@@ -666,7 +669,11 @@ def test_tweakreg_defaults_to_valid_abs_refcat(tmp_path, abs_refcat, request):
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
     trs.TweakRegStep.call(
-        [img], save_abs_catalog=True, abs_refcat=abs_refcat, catalog_path=str(tmp_path)
+        [img],
+        save_abs_catalog=True,
+        abs_refcat=abs_refcat,
+        catalog_path=str(tmp_path),
+        output_dir=str(tmp_path),
     )
 
     assert os.path.exists(tmp_path / abs_refcat_filename)
@@ -1004,3 +1011,60 @@ def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_ima
             assert hasattr(model.meta.cal_step, "tweakreg")
             assert model.meta.cal_step.tweakreg == "SKIPPED"
             res.shelve(model, i, modify=False)
+
+
+@pytest.mark.parametrize(
+    "catalog_data, expected_colnames, raises_exception",
+    [
+        # both 'x' and 'y' columns present
+        ({"x": [1, 2, 3], "y": [4, 5, 6]}, ["x", "y"], False),
+        # 'xcentroid' and 'ycentroid' columns present, should be renamed
+        ({"xcentroid": [1, 2, 3], "ycentroid": [4, 5, 6]}, ["x", "y"], False),
+        # 'x' present, 'ycentroid' present, should rename 'ycentroid' to 'y'
+        ({"x": [1, 2, 3], "ycentroid": [4, 5, 6]}, ["x", "y"], False),
+        # 'xcentroid' present, 'y' present, should rename 'xcentroid' to 'x'
+        ({"xcentroid": [1, 2, 3], "y": [4, 5, 6]}, ["x", "y"], False),
+        # neither 'x' nor 'xcentroid' present
+        ({"y": [4, 5, 6]}, None, True),
+        # neither 'y' nor 'ycentroid' present
+        ({"x": [1, 2, 3]}, None, True),
+        # no relevant columns present
+        (
+            {"a": [1, 2, 3], "b": [4, 5, 6]},
+            None,
+            True,
+        ),
+    ],
+)
+def test_validate_catalog_columns(catalog_data, expected_colnames, raises_exception):
+    """Test that TweakRegStep._validate_catalog_columns() correctly validates the
+    presence of required columns ('x' and 'y') in the provided catalog."""
+    catalog = table.Table(catalog_data)
+    if raises_exception:
+        with pytest.raises(ValueError):
+            _validate_catalog_columns(catalog)
+    else:
+        _validate_catalog_columns(catalog)
+        assert set(catalog.colnames) == set(expected_colnames)
+
+
+def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
+    """Test that TweakReg can handle mixed exposure types
+    (non-WFI_IMAGE data will be marked as SKIPPED only and won't be processed)."""
+    img1 = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img1, catalog_filename="img1")
+    img1.meta.exposure.type = "WFI_IMAGE"
+
+    img2 = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
+    img2.meta.exposure.type = "WFI_IMAGE"
+
+    img3 = base_image(shift_1=1000, shift_2=1000)
+    img3.meta.exposure.type = "WFI_GRISM"
+
+    res = trs.TweakRegStep.call([img1, img2, img3])
+
+    assert len(res) == 3
+    assert img1.meta.cal_step.tweakreg == "COMPLETE"
+    assert img2.meta.cal_step.tweakreg == "COMPLETE"
+    assert img3.meta.cal_step.tweakreg == "SKIPPED"
