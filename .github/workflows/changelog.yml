@@ -28,7 +28,7 @@ jobs:
       - run: pip install towncrier
       - run: towncrier check
       - run: towncrier build --draft | grep -P '#${{ github.event.number }}'
-  no_changelog_edit:
+  changelog_uses_towncrier:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'allow-manual-changelog-edit') }}
     runs-on: ubuntu-latest
     steps:
