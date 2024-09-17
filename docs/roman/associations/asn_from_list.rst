@@ -9,13 +9,12 @@ Create an association using either the command line tool
 :func:`romancal.associations.asn_from_list.asn_from_list`
 
 
-Level2 Associations
-^^^^^^^^^^^^^^^^^^^
+Associations
+^^^^^^^^^^^^
 
-Refer to TBD for a full description of Level2
-associations.
+Refer to TBD for a full description of associations.
 
-To create a Level2 association, use the following command:
+To create an association, use the following command:
 
 .. code-block:: python
 
@@ -43,6 +42,12 @@ To create a association with all the detectors for a given exposure from the com
 
 .. code-block:: python
 
-		asn_from_list -o detector_asn.json --product-name r0000101001001001001_01101_0001_WFI_cal.asdf data/*_cal.asdf
+		asn_from_list -o detector_asn.json --product-name r0000101001001001001_01101_0001_WFI data/*_cal.asdf
 
 where the individual calibrated detector files are in a data subdirectory.
+
+In addition you can also specify a target for the association file,
+
+.. code-block:: python
+
+		asn_from_list -o level3_mosaic_asn.json --product-name level3_mosaic --target r274dp63x32y80  data/*_cal.asdf
