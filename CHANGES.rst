@@ -19,10 +19,6 @@ resample
 0.16.2 (2024-08-23)
 ===================
 
-exposure_pipeline
------------------
-- Update source catalog file with tweaked coordinates. [#1373]
-
 pipeline
 --------
 - Added ``suffix`` to the spec of ExposurePipeline with a
