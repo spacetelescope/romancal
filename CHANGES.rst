@@ -1,12 +1,6 @@
 0.16.3 (2024-08-29)
 ===================
 
-associations
-------------
-
-- Add target option for asn_from_list command [#1411]
-
-
 mosaic_pipeline
 ---------------
 
