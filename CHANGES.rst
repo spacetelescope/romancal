@@ -4,7 +4,7 @@
 associations
 ------------
 
-- Add target option for asn_from_list command [#]
+- Add target option for asn_from_list command [#1411]
 
 
 mosaic_pipeline
