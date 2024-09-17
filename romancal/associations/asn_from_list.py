@@ -37,6 +37,9 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
     """
     asn = rule()
     asn._add_items(items, **kwargs)
+    if "target" in kwargs.keys():
+        target = kwargs["target"]
+        asn["target"] = target
     return asn
 
 
@@ -110,6 +113,14 @@ class Main:
             help='The association candidate id to use. Default: "%(default)s"',
             dest="acid",
         )
+        parser.add_argument(
+            "-t",
+            "--target",
+            type=str,
+            default="None",
+            help='The target name for the association. Default: "%(default)s"',
+            dest="target",
+        )
 
         parser.add_argument(
             "filelist",
@@ -130,6 +141,7 @@ class Main:
                 rule=rule,
                 product_name=parsed.product_name,
                 acid=parsed.acid,
+                target=parsed.target,
             )
             _, serialized = asn.dump(format=parsed.format)
             outfile.write(serialized)

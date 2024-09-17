@@ -23,7 +23,14 @@
         },
         "target": {
             "description": "Canonical name of the astronomical object being observed.",
-            "type": "string"
+            "anyOf":[
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ]
         },
         "asn_pool": {
             "description": "Name of the Association Pool from which this association was generated.",
