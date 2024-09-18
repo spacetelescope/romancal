@@ -9,13 +9,12 @@ import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
 from stcal.tweakreg import tweakreg
+from stcal.tweakreg.tweakreg import _SINGLE_GROUP_REFCAT_STR, SINGLE_GROUP_REFCAT
 
 # LOCAL
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
 
-SINGLE_GROUP_REFCAT = tweakreg.SINGLE_GROUP_REFCAT
-_SINGLE_GROUP_REFCAT_STR = tweakreg._SINGLE_GROUP_REFCAT_STR
 DEFAULT_ABS_REFCAT = SINGLE_GROUP_REFCAT[0]
 
 __all__ = ["TweakRegStep"]
@@ -204,34 +203,29 @@ class TweakRegStep(RomanStep):
                     catalog_table = Table(image_model.meta.tweakreg_catalog)
                     catalog_table.meta["name"] = catalog_name
 
-                    imcats.append(
-                        {
-                            "model_index": i,
-                            "imcat": tweakreg.construct_wcs_corrector(
-                                wcs=image_model.meta.wcs,
-                                refang=image_model.meta.wcsinfo,
-                                catalog=catalog_table,
-                                group_id=image_model.meta.group_id,
-                            ),
-                        }
+                    imcat = tweakreg.construct_wcs_corrector(
+                        wcs=image_model.meta.wcs,
+                        refang=image_model.meta.wcsinfo,
+                        catalog=catalog_table,
+                        group_id=image_model.meta.group_id,
                     )
+                    imcat.meta["model_index"] = i
+                    imcats.append(imcat)
                 images.shelve(image_model, i)
 
         # run alignment only if it was possible to build image catalogs
         if len(imcats):
             # extract WCS correctors to use for image alignment
-            correctors = [x["imcat"] for x in imcats]
             if len(images.group_indices) > 1:
-                self.do_relative_alignment(correctors)
+                self.do_relative_alignment(imcats)
 
             if self.abs_refcat in SINGLE_GROUP_REFCAT:
-                self.do_absolute_alignment(ref_image, correctors)
+                self.do_absolute_alignment(ref_image, imcats)
 
             # finalize step
             with images:
-                for item in imcats:
-                    imcat = item["imcat"]
-                    image_model = images.borrow(item["model_index"])
+                for imcat in imcats:
+                    image_model = images.borrow(imcat.meta["model_index"])
                     image_model.meta.cal_step["tweakreg"] = "COMPLETE"
                     # remove source catalog
                     del image_model.meta["tweakreg_catalog"]
@@ -276,7 +270,7 @@ class TweakRegStep(RomanStep):
                             del image_model.meta["wcs_fit_results"][k]
 
                         image_model.meta.wcs = imcat.wcs
-                    images.shelve(image_model, item["model_index"])
+                    images.shelve(image_model, imcat.meta["model_index"])
 
         return images
 
