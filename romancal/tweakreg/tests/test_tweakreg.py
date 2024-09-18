@@ -685,7 +685,13 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
     add_tweakreg_catalog_attribute(tmp_path, img)
 
     with pytest.raises(Exception) as exec_info:
-        trs.TweakRegStep.call([img], save_abs_catalog=True, abs_refcat="my_ref_cat")
+        trs.TweakRegStep.call(
+            [img],
+            save_abs_catalog=True,
+            abs_refcat="my_ref_cat",
+            catalog_path=str(tmp_path),
+            output_dir=str(tmp_path),
+        )
 
     assert type(exec_info.value) == TypeError
 
@@ -1052,8 +1058,7 @@ def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
     """Test that TweakReg can handle mixed exposure types
     (non-WFI_IMAGE data will be marked as SKIPPED only and won't be processed)."""
     img1 = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img1, catalog_filename="img1")
-    img1.meta.exposure.type = "WFI_IMAGE"
+    img1.meta.exposure.type = "WFI_GRISM"
 
     img2 = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
@@ -1062,9 +1067,18 @@ def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
     img3 = base_image(shift_1=1000, shift_2=1000)
     img3.meta.exposure.type = "WFI_GRISM"
 
-    res = trs.TweakRegStep.call([img1, img2, img3])
+    img4 = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img4, catalog_filename="img4")
+    img4.meta.exposure.type = "WFI_IMAGE"
 
-    assert len(res) == 3
-    assert img1.meta.cal_step.tweakreg == "COMPLETE"
+    img5 = base_image(shift_1=1000, shift_2=1000)
+    img5.meta.exposure.type = "WFI_GRISM"
+
+    res = trs.TweakRegStep.call([img1, img2, img3, img4, img5])
+
+    assert len(res) == 5
+    assert img1.meta.cal_step.tweakreg == "SKIPPED"
     assert img2.meta.cal_step.tweakreg == "COMPLETE"
     assert img3.meta.cal_step.tweakreg == "SKIPPED"
+    assert img4.meta.cal_step.tweakreg == "COMPLETE"
+    assert img5.meta.cal_step.tweakreg == "SKIPPED"
