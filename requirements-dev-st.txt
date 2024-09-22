@@ -9,7 +9,6 @@ git+https://github.com/spacetelescope/stpipe.git
 # Other important upstream packages
 git+https://github.com/spacetelescope/crds.git
 git+https://github.com/spacetelescope/gwcs.git
-git+https://github.com/spacetelescope/metrics_logger.git
 git+https://github.com/spacetelescope/tweakwcs.git
 git+https://github.com/spacetelescope/webbpsf.git
 # although not directly used install the dev version of poppy for webbpsf

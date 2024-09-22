@@ -4,7 +4,6 @@ import os
 
 import pytest
 import roman_datamodels as rdm
-from metrics_logger.decorators import metrics_logger
 
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
@@ -20,7 +19,6 @@ def passfail(bool_expr):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS356", "DMS374", "DMS400")
 def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     """Tests for level 3 processing requirements DMS356"""
     rtdata.get_asn("WFI/image/L3_regtest_asn.json")
@@ -131,7 +129,6 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-@metrics_logger("DMS373")
 def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
     """Tests for level 3 mosaic requirements DMS373"""
     rtdata.get_asn("WFI/image/L3_mosaic_asn.json")

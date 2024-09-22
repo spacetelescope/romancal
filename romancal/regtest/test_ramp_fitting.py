@@ -10,7 +10,6 @@ from pathlib import Path
 
 import pytest
 import roman_datamodels as rdm
-from metrics_logger.decorators import metrics_logger
 
 from romancal.lib.dms import log_result
 from romancal.lib.suffix import replace_suffix
@@ -188,7 +187,6 @@ def test_rampfit_step(rampfit_result, rtdata_module, ignore_asdf_paths):
     except AssertionError as e:
         error_msgs.append(str(e))
 
-    @metrics_logger(requirement)
     def test_success():
         assert not len(error_msgs), "\n".join(error_msgs)
 

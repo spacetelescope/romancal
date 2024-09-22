@@ -87,19 +87,21 @@ class Association(MutableMapping):
     def __init__(
         self,
         version_id=None,
+        target=None,
     ):
-        self.data = dict()
+        self.data = {}
         self.run_init_hook = True
         self.meta = {}
 
         self.version_id = version_id
-
+        self.target = target
         self.data.update(
             {
                 "asn_type": "None",
                 "asn_rule": self.asn_rule,
                 "version_id": self.version_id,
                 "code_version": __version__,
+                "target": self.target,
             }
         )
 
@@ -135,6 +137,7 @@ class Association(MutableMapping):
                 - [ProcessList[, ...]]: List of items to process again.
         """
         asn = cls(version_id=version_id)
+
         matches, reprocess = asn.add(item)
         if not matches:
             return None, reprocess
@@ -227,8 +230,8 @@ class Association(MutableMapping):
         """
         if self.is_valid:
             return self.ioregistry[format].dump(self, **kwargs)
-        else:
-            raise AssociationNotValidError(f"Association {self} is not valid")
+
+        raise AssociationNotValidError(f"Association {self} is not valid")
 
     @classmethod
     def load(cls, serialized, format=None, validate=True, **kwargs):
@@ -430,8 +433,8 @@ class Association(MutableMapping):
         """
         if self.is_valid:
             return [self]
-        else:
-            return None
+
+        return None
 
     def is_item_member(self, item):
         """Check if item is already a member of this association
@@ -534,6 +537,7 @@ def finalize(asns):
 
 
 def make_timestamp():
+    """Generate a timestamp based on runtime"""
     timestamp = datetime.utcnow().strftime(_TIMESTAMP_TEMPLATE)
     return timestamp
 

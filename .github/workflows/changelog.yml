@@ -28,3 +28,11 @@ jobs:
       - run: pip install towncrier
       - run: towncrier check
       - run: towncrier build --draft | grep -P '#${{ github.event.number }}'
+  changelog_uses_towncrier:
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'allow-manual-changelog-edit') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: git diff HEAD ${{ github.event.pull_request.base.sha }} --no-patch --exit-code CHANGES.rst

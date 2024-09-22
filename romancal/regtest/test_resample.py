@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from metrics_logger.decorators import metrics_logger
 from roman_datamodels import datamodels as rdm
 
 from romancal.resample.resample_step import ResampleStep
@@ -9,7 +8,6 @@ from romancal.stpipe import RomanStep
 from .regtestdata import compare_asdf
 
 
-@metrics_logger("DMS342", "DMS343", "DMS344", "DMS345")
 @pytest.mark.bigdata
 def test_resample_single_file(rtdata, ignore_asdf_paths):
     output_data = "mosaic_resamplestep.asdf"
