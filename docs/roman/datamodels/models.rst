@@ -33,13 +33,23 @@ Reading a data model
 If you have an existing data file it is straightforward to access the file
 using python.
 
+.. testsetup::
+    >>> from roman_datamodels import datamodels as rdm
+    >>> from roman_datamodels.maker_utils import mk_datamodel
+    >>> fn = 'r0019106003005004023_03203_0034_WFI01_cal.asdf'
+    >>> image_model = mk_datamodel(rdm.ImageModel)
+
+    # set some metadata for the below tests
+    >>> image_model.meta.filename = fn
+
+
 .. code-block:: python
 
     >>> from roman_datamodels import datamodels as rdm
     >>> fn = 'r0019106003005004023_03203_0034_WFI01_cal.asdf'
-    >>> data_file = rdm.open(fn)  # doctest: +SKIP
-    >>> type(data_file) # doctest: +SKIP
-    roman_datamodels.datamodels.ImageModel
+    >>> image_model = rdm.open(fn)  # doctest: +SKIP
+    >>> type(image_model)
+    <class 'roman_datamodels.datamodels._datamodels.ImageModel'>
 
 Where the output of the type command tells you that you have imported an
 ImageModel from roman_datamodels,
@@ -54,8 +64,8 @@ To create a new `ImageModel`, you can just
     >>> from roman_datamodels import datamodels as rdm
     >>> from roman_datamodels.maker_utils import mk_datamodel
 
-    >>> image_model = mk_datamodel(rdm.ImageModel)
-    >>> type(image_model)
+    >>> new_model = mk_datamodel(rdm.ImageModel)
+    >>> type(new_model)
     <class 'roman_datamodels.datamodels._datamodels.ImageModel'>
 
 .. warning::
@@ -134,7 +144,7 @@ You can examine the contents of your model from within python using
     >>> print("\n".join("{: >20}\t{}".format(k, v) for k, v in image_model.items()), "\n") # doctest: +ELLIPSIS
     meta.calibration_software_version   9.9.0
     meta.sdf_software_version   7.7.7
-           meta.filename        dummy value
+           meta.filename        r0019106003005004023_03203_0034_WFI01_cal.asdf
           meta.file_date        2020-01-01T00:00:00.000
          meta.model_type        ImageModel
              meta.origin        STSCI
@@ -148,15 +158,10 @@ or you can print specifics
 
 .. code-block:: python
 
-    >>> print("\n".join("{: >20}\t{}".format(k, v) for k, v in image_model.meta.wcsinfo.items()), "\n")
-                  v2_ref        -999999
-                  v3_ref        -999999
-                 vparity        -999999
-                v3yangle        -999999
-                  ra_ref        -999999
-                 dec_ref        -999999
-                roll_ref        -999999
-                s_region        dummy value
+    >>> print("\n".join("{: >20}\t{}".format(k, v) for k, v in image_model.meta.instrument.items()))
+                    name        WFI
+                detector        WFI01
+         optical_element        F158
 
 .. note::
 
