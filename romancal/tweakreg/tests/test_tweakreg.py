@@ -1181,6 +1181,7 @@ def setup_source_catalog_model(img):
 
     return source_catalog_model
 
+
 @pytest.mark.parametrize(
     "exposure_type",
     ["WFI_GRISM", "WFI_PRISM", "WFI_DARK", "WFI_FLAT", "WFI_WFSC"],
@@ -1264,4 +1265,3 @@ def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
     assert img3.meta.cal_step.tweakreg == "SKIPPED"
     assert img4.meta.cal_step.tweakreg == "COMPLETE"
     assert img5.meta.cal_step.tweakreg == "SKIPPED"
-
