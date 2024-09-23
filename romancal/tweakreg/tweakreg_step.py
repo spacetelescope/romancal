@@ -275,43 +275,6 @@ class TweakRegStep(RomanStep):
 
         return images
 
-    def get_tweakreg_catalog(self, images, i, image_model):
-        if hasattr(image_model.meta, "source_detection"):
-            is_tweakreg_catalog_present = hasattr(
-                image_model.meta.source_detection, "tweakreg_catalog"
-            )
-            is_tweakreg_catalog_name_present = hasattr(
-                image_model.meta.source_detection, "tweakreg_catalog_name"
-            )
-            if is_tweakreg_catalog_present:
-                # read catalog from structured array
-                catalog = Table(
-                    np.asarray(image_model.meta.source_detection.tweakreg_catalog)
-                )
-            elif is_tweakreg_catalog_name_present:
-                catalog = self.read_catalog(
-                    image_model.meta.source_detection.tweakreg_catalog_name
-                )
-            else:
-                images.shelve(image_model, i, modify=False)
-                raise AttributeError(
-                    "Attribute 'meta.source_detection.tweakreg_catalog' is missing."
-                    "Please either run SourceDetectionStep or provide a"
-                    "custom source catalog."
-                )
-                # remove 4D numpy array from meta.source_detection
-            if is_tweakreg_catalog_present:
-                del image_model.meta.source_detection["tweakreg_catalog"]
-        else:
-            images.shelve(image_model, i, modify=False)
-            raise AttributeError(
-                "Attribute 'meta.source_detection' is missing."
-                "Please either run SourceDetectionStep or provide a"
-                "custom source catalog."
-            )
-
-        return catalog
-
     def update_catalog_coordinates(self, tweakreg_catalog_name, tweaked_wcs):
         """
         Update the source catalog coordinates using the tweaked WCS.
