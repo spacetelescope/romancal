@@ -1,5 +1,4 @@
 import copy
-import filecmp
 import json
 import os
 import shutil
@@ -11,10 +10,10 @@ import numpy as np
 import pytest
 import requests
 from astropy import coordinates as coord
-from astropy.table import Table
 from astropy import units as u
 from astropy.modeling import models
 from astropy.modeling.models import RotationSequence3D, Scale, Shift
+from astropy.table import Table
 from astropy.time import Time
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
