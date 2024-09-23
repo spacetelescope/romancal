@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 import requests
 from astropy import coordinates as coord
-from astropy import table
+from astropy.table import Table
 from astropy import units as u
 from astropy.modeling import models
 from astropy.modeling.models import RotationSequence3D, Scale, Shift
@@ -81,7 +81,7 @@ def create_custom_catalogs(tmp_path, base_image, catalog_format="ascii.ecsv"):
         # write line to catfile
         catfile_content.write(f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n")
         # write out the catalog data
-        t = table.Table(x.get("cat_data"), names=("x", "y"))
+        t = Table(x.get("cat_data"), names=("x", "y"))
         t.write(tmp_path / x.get("cat_filename"), format=catalog_format)
     with open(catfile, mode="w") as f:
         print(catfile_content.getvalue(), file=f)
@@ -380,7 +380,7 @@ def create_base_image_source_catalog(
     """
     src_detector_coords = catalog_data
     output = os.path.join(tmp_path, output_filename)
-    t = table.Table(src_detector_coords, names=("x", "y"))
+    t = Table(src_detector_coords, names=("x", "y"))
     if save_catalogs:
         t.write((tmp_path / output), format=catalog_format)
     # mimic the same output format from SourceDetectionStep
@@ -1101,25 +1101,62 @@ def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
     cat_original = rdm.open("img_1_cat_original.asdf")
     cat_updated = rdm.open("img_1_cat.asdf")
 
-    # compare contents
-    assert not filecmp.cmp("img_1_cat.asdf", "img_1_cat_original.asdf")
-    # compare coordinates using rtol=1e-07 and atol=0 (default)
-    np.testing.assert_allclose(
+    # set max absolute and relative tolerance to ~ 1/2 a pixel
+    atol = u.Quantity(0.11 / 2, "arcsec").to("deg").value
+    rtol = 5e-8
+
+    # checking that nothing moved more than 1/2 a pixel
+    assert np.allclose(
         cat_original.source_catalog["ra_centroid"],
         cat_updated.source_catalog["ra_centroid"],
+        atol=atol,
+        rtol=rtol,
     )
-    np.testing.assert_allclose(
+    assert np.allclose(
         cat_original.source_catalog["dec_centroid"],
         cat_updated.source_catalog["dec_centroid"],
+        atol=atol,
+        rtol=rtol,
     )
-    np.testing.assert_allclose(
+    assert np.allclose(
         cat_original.source_catalog["ra_psf"],
         cat_updated.source_catalog["ra_psf"],
+        atol=atol,
+        rtol=rtol,
     )
-    np.testing.assert_allclose(
+    assert np.allclose(
         cat_original.source_catalog["dec_psf"],
         cat_updated.source_catalog["dec_psf"],
+        atol=atol,
+        rtol=rtol,
     )
+
+    # checking that things moved more than ~ 1/100 of a pixel
+    assert not np.allclose(
+        cat_original.source_catalog["ra_centroid"],
+        cat_updated.source_catalog["ra_centroid"],
+        atol=atol / 100,
+        rtol=rtol / 100,
+    )
+    assert not np.allclose(
+        cat_original.source_catalog["dec_centroid"],
+        cat_updated.source_catalog["dec_centroid"],
+        atol=atol / 100,
+        rtol=rtol / 100,
+    )
+    assert not np.allclose(
+        cat_original.source_catalog["ra_psf"],
+        cat_updated.source_catalog["ra_psf"],
+        atol=atol / 100,
+        rtol=rtol / 100,
+    )
+    assert not np.allclose(
+        cat_original.source_catalog["dec_psf"],
+        cat_updated.source_catalog["dec_psf"],
+        atol=atol / 100,
+        rtol=rtol / 100,
+    )
+    assert True
 
 
 def setup_source_catalog_model(img):
@@ -1228,7 +1265,7 @@ def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_ima
 def test_validate_catalog_columns(catalog_data, expected_colnames, raises_exception):
     """Test that TweakRegStep._validate_catalog_columns() correctly validates the
     presence of required columns ('x' and 'y') in the provided catalog."""
-    catalog = table.Table(catalog_data)
+    catalog = Table(catalog_data)
     if raises_exception:
         with pytest.raises(ValueError):
             _validate_catalog_columns(catalog)
