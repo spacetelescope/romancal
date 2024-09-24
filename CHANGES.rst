@@ -21,6 +21,7 @@ resample
 
 pipeline
 --------
+
 - Added ``suffix`` to the spec of ExposurePipeline with a
   default value of ``cal``. Removed explicit setting of ``suffix``
   so that it can be passed as an argument to ``strun``. [#1378]
