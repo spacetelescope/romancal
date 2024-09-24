@@ -1059,7 +1059,10 @@ def test_update_source_catalog_coordinates(tmp_path, base_image):
     np.testing.assert_array_equal(cat_dec_psf, expected_psf[1])
 
 
-def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
+@pytest.mark.parametrize(
+    "column_name", ["ra_centroid", "dec_centroid", "ra_psf", "dec_psf"]
+)
+def test_source_catalog_coordinates_have_changed(tmp_path, base_image, column_name):
     """Test that the original catalog file content is different from the updated file."""
 
     os.chdir(tmp_path)
@@ -1106,56 +1109,18 @@ def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
 
     # checking that nothing moved more than 1/2 a pixel
     assert np.allclose(
-        cat_original.source_catalog["ra_centroid"],
-        cat_updated.source_catalog["ra_centroid"],
+        cat_original.source_catalog[column_name],
+        cat_updated.source_catalog[column_name],
         atol=atol,
         rtol=rtol,
     )
-    assert np.allclose(
-        cat_original.source_catalog["dec_centroid"],
-        cat_updated.source_catalog["dec_centroid"],
-        atol=atol,
-        rtol=rtol,
-    )
-    assert np.allclose(
-        cat_original.source_catalog["ra_psf"],
-        cat_updated.source_catalog["ra_psf"],
-        atol=atol,
-        rtol=rtol,
-    )
-    assert np.allclose(
-        cat_original.source_catalog["dec_psf"],
-        cat_updated.source_catalog["dec_psf"],
-        atol=atol,
-        rtol=rtol,
-    )
-
     # checking that things moved more than ~ 1/100 of a pixel
     assert not np.allclose(
-        cat_original.source_catalog["ra_centroid"],
-        cat_updated.source_catalog["ra_centroid"],
+        cat_original.source_catalog[column_name],
+        cat_updated.source_catalog[column_name],
         atol=atol / 100,
         rtol=rtol / 100,
     )
-    assert not np.allclose(
-        cat_original.source_catalog["dec_centroid"],
-        cat_updated.source_catalog["dec_centroid"],
-        atol=atol / 100,
-        rtol=rtol / 100,
-    )
-    assert not np.allclose(
-        cat_original.source_catalog["ra_psf"],
-        cat_updated.source_catalog["ra_psf"],
-        atol=atol / 100,
-        rtol=rtol / 100,
-    )
-    assert not np.allclose(
-        cat_original.source_catalog["dec_psf"],
-        cat_updated.source_catalog["dec_psf"],
-        atol=atol / 100,
-        rtol=rtol / 100,
-    )
-    assert True
 
 
 def setup_source_catalog_model(img):
