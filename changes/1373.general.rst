@@ -1,1 +1,1 @@
-Update source catalog file with tweaked coordinates.
+Update source catalog file with the tweaked coordinates.
