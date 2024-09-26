@@ -1,6 +1,7 @@
 import copy
 import json
 import os
+import shutil
 from io import StringIO
 from pathlib import Path
 from typing import Tuple
@@ -9,14 +10,15 @@ import numpy as np
 import pytest
 import requests
 from astropy import coordinates as coord
-from astropy import table
 from astropy import units as u
 from astropy.modeling import models
 from astropy.modeling.models import RotationSequence3D, Scale, Shift
+from astropy.table import Table
 from astropy.time import Time
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
+from numpy.random import default_rng
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 from stcal.tweakreg.astrometric_utils import get_catalog
@@ -78,7 +80,7 @@ def create_custom_catalogs(tmp_path, base_image, catalog_format="ascii.ecsv"):
         # write line to catfile
         catfile_content.write(f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n")
         # write out the catalog data
-        t = table.Table(x.get("cat_data"), names=("x", "y"))
+        t = Table(x.get("cat_data"), names=("x", "y"))
         t.write(tmp_path / x.get("cat_filename"), format=catalog_format)
     with open(catfile, mode="w") as f:
         print(catfile_content.getvalue(), file=f)
@@ -377,7 +379,7 @@ def create_base_image_source_catalog(
     """
     src_detector_coords = catalog_data
     output = os.path.join(tmp_path, output_filename)
-    t = table.Table(src_detector_coords, names=("x", "y"))
+    t = Table(src_detector_coords, names=("x", "y"))
     if save_catalogs:
         t.write((tmp_path / output), format=catalog_format)
     # mimic the same output format from SourceDetectionStep
@@ -999,6 +1001,227 @@ def test_parse_catfile_raises_error_on_invalid_content(tmp_path, catfile_line_co
     assert type(exec_info.value) == ValueError
 
 
+def test_update_source_catalog_coordinates(tmp_path, base_image):
+    """Test that TweakReg updates the catalog coordinates with the tweaked WCS."""
+
+    os.chdir(tmp_path)
+
+    img = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
+
+    tweakreg = trs.TweakRegStep()
+
+    # create SourceCatalogModel
+    source_catalog_model = setup_source_catalog_model(img)
+
+    # save SourceCatalogModel
+    tweakreg.save_model(
+        source_catalog_model,
+        output_file="img_1.asdf",
+        suffix="cat",
+        force=True,
+    )
+
+    # update tweakreg catalog name
+    img.meta.source_detection.tweakreg_catalog_name = "img_1_cat.asdf"
+
+    # run TweakRegStep
+    res = trs.TweakRegStep.call([img])
+
+    # tweak the current WCS using TweakRegStep and save the updated cat file
+    with res:
+        dm = res.borrow(0)
+        assert dm.meta.source_detection.tweakreg_catalog_name == "img_1_cat.asdf"
+        tweakreg.update_catalog_coordinates(
+            dm.meta.source_detection.tweakreg_catalog_name, dm.meta.wcs
+        )
+        res.shelve(dm, 0)
+
+    # read in saved catalog coords
+    cat = rdm.open("img_1_cat.asdf")
+    cat_ra_centroid = cat.source_catalog["ra_centroid"]
+    cat_dec_centroid = cat.source_catalog["dec_centroid"]
+    cat_ra_psf = cat.source_catalog["ra_psf"]
+    cat_dec_psf = cat.source_catalog["dec_psf"]
+
+    # calculate world coords using tweaked WCS
+    expected_centroid = img.meta.wcs(
+        cat.source_catalog["xcentroid"], cat.source_catalog["ycentroid"]
+    )
+    expected_psf = img.meta.wcs(
+        cat.source_catalog["x_psf"], cat.source_catalog["y_psf"]
+    )
+
+    # compare coordinates (make sure tweaked WCS was applied to cat file coords)
+    np.testing.assert_array_equal(cat_ra_centroid, expected_centroid[0])
+    np.testing.assert_array_equal(cat_dec_centroid, expected_centroid[1])
+    np.testing.assert_array_equal(cat_ra_psf, expected_psf[0])
+    np.testing.assert_array_equal(cat_dec_psf, expected_psf[1])
+
+
+def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
+    """Test that the original catalog file content is different from the updated file."""
+
+    os.chdir(tmp_path)
+
+    img = base_image(shift_1=1000, shift_2=1000)
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
+
+    tweakreg = trs.TweakRegStep()
+
+    # create SourceCatalogModel
+    source_catalog_model = setup_source_catalog_model(img)
+
+    # save SourceCatalogModel
+    tweakreg.save_model(
+        source_catalog_model,
+        output_file="img_1.asdf",
+        suffix="cat",
+        force=True,
+    )
+    # save original data
+    shutil.copy("img_1_cat.asdf", "img_1_cat_original.asdf")
+
+    # update tweakreg catalog name
+    img.meta.source_detection.tweakreg_catalog_name = "img_1_cat.asdf"
+
+    # run TweakRegStep
+    res = trs.TweakRegStep.call([img])
+
+    # tweak the current WCS using TweakRegStep and save the updated cat file
+    with res:
+        dm = res.borrow(0)
+        assert dm.meta.source_detection.tweakreg_catalog_name == "img_1_cat.asdf"
+        tweakreg.update_catalog_coordinates(
+            dm.meta.source_detection.tweakreg_catalog_name, dm.meta.wcs
+        )
+        res.shelve(dm, 0)
+
+    cat_original = rdm.open("img_1_cat_original.asdf")
+    cat_updated = rdm.open("img_1_cat.asdf")
+
+    # set max absolute and relative tolerance to ~ 1/2 a pixel
+    atol = u.Quantity(0.11 / 2, "arcsec").to("deg").value
+    rtol = 5e-8
+
+    # testing that nothing moved by more than 1/2 a pixel
+    assert np.allclose(
+        cat_original.source_catalog["ra_centroid"],
+        cat_updated.source_catalog["ra_centroid"],
+        atol=atol,
+        rtol=rtol,
+    )
+    assert np.allclose(
+        cat_original.source_catalog["dec_centroid"],
+        cat_updated.source_catalog["dec_centroid"],
+        atol=atol,
+        rtol=rtol,
+    )
+    assert np.allclose(
+        cat_original.source_catalog["ra_psf"],
+        cat_updated.source_catalog["ra_psf"],
+        atol=atol,
+        rtol=rtol,
+    )
+    assert np.allclose(
+        cat_original.source_catalog["dec_psf"],
+        cat_updated.source_catalog["dec_psf"],
+        atol=atol,
+        rtol=rtol,
+    )
+    # testing that things did move by more than ~ 1/100 of a pixel
+    assert not np.allclose(
+        cat_original.source_catalog["ra_centroid"],
+        cat_updated.source_catalog["ra_centroid"],
+        atol=atol / 100,
+        rtol=rtol / 100,
+    )
+    assert not np.allclose(
+        cat_original.source_catalog["dec_centroid"],
+        cat_updated.source_catalog["dec_centroid"],
+        atol=atol / 100,
+        rtol=rtol / 100,
+    )
+    assert not np.allclose(
+        cat_original.source_catalog["ra_psf"],
+        cat_updated.source_catalog["ra_psf"],
+        atol=atol / 100,
+        rtol=rtol / 100,
+    )
+    assert not np.allclose(
+        cat_original.source_catalog["dec_psf"],
+        cat_updated.source_catalog["dec_psf"],
+        atol=atol / 100,
+        rtol=rtol / 100,
+    )
+
+
+def setup_source_catalog_model(img):
+    """
+    Set up the source catalog model.
+
+    Notes
+    -----
+    This function reads the source catalog from a file, renames columns to match
+    expected names, adds mock PSF coordinates, applies random shifts to the centroid
+    and PSF coordinates, and calculates the world coordinates for the centroids.
+    """
+    cat_model = rdm.SourceCatalogModel
+    source_catalog_model = maker_utils.mk_datamodel(cat_model)
+    # this will be the output filename
+    source_catalog_model.meta.filename = "img_1.asdf"
+
+    # read in the mock table
+    source_catalog = Table.read("img_1", format="ascii.ecsv")
+    # rename columns to match expected column names
+    source_catalog.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
+    # add mock PSF coordinates
+    source_catalog["x_psf"] = source_catalog["xcentroid"]
+    source_catalog["y_psf"] = source_catalog["ycentroid"]
+
+    # generate a set of random shifts to be added to the original coordinates
+    seed = 13
+    rng = default_rng(seed)
+    shift_x = rng.uniform(-0.5, 0.5, size=len(source_catalog))
+    shift_y = rng.uniform(-0.5, 0.5, size=len(source_catalog))
+    # add random fraction of a pixel shifts to the centroid coordinates
+    source_catalog["xcentroid"] += shift_x
+    source_catalog["ycentroid"] += shift_y
+
+    # generate another set of random shifts to be added to the original coordinates
+    seed = 5
+    rng = default_rng(seed)
+    shift_x = rng.uniform(-0.5, 0.5, size=len(source_catalog))
+    shift_y = rng.uniform(-0.5, 0.5, size=len(source_catalog))
+    # add random fraction of a pixel shifts to the centroid coordinates
+    source_catalog["x_psf"] += shift_x
+    source_catalog["y_psf"] += shift_y
+
+    # calculate centroid world coordinates
+    centroid = img.meta.wcs(
+        source_catalog["xcentroid"],
+        source_catalog["ycentroid"],
+    )
+    # calculate PSF world coordinates
+    psf = img.meta.wcs(
+        source_catalog["x_psf"],
+        source_catalog["y_psf"],
+    )
+    # add world coordinates to catalog
+    source_catalog["ra_centroid"], source_catalog["dec_centroid"] = centroid
+    source_catalog["ra_psf"], source_catalog["dec_psf"] = psf
+    # add units
+    source_catalog["ra_centroid"].unit = u.deg
+    source_catalog["dec_centroid"].unit = u.deg
+    source_catalog["ra_psf"].unit = u.deg
+    source_catalog["dec_psf"].unit = u.deg
+
+    # add source catalog to SourceCatalogModel
+    source_catalog_model.source_catalog = source_catalog
+
+    return source_catalog_model
+
+
 @pytest.mark.parametrize(
     "exposure_type",
     ["WFI_GRISM", "WFI_PRISM", "WFI_DARK", "WFI_FLAT", "WFI_WFSC"],
@@ -1045,7 +1268,7 @@ def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_ima
 def test_validate_catalog_columns(catalog_data, expected_colnames, raises_exception):
     """Test that TweakRegStep._validate_catalog_columns() correctly validates the
     presence of required columns ('x' and 'y') in the provided catalog."""
-    catalog = table.Table(catalog_data)
+    catalog = Table(catalog_data)
     if raises_exception:
         with pytest.raises(ValueError):
             _validate_catalog_columns(catalog)
