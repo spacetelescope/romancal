@@ -71,6 +71,8 @@ class ExposurePipeline(RomanPipeline):
 
         # make sure source_catalog returns the updated datamodel
         self.source_catalog.return_updated_model = True
+        # make sure we update source catalog coordinates afer running TweakRegStep
+        self.tweakreg.update_source_catalog_coordinates = True
 
         log.info("Starting Roman exposure calibration pipeline ...")
         if isinstance(input, str):

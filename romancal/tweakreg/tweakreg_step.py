@@ -57,6 +57,7 @@ class TweakRegStep(RomanStep):
         abs_nclip = integer(min=0, default=3) # Number of clipping iterations in fit when performing absolute astrometry
         abs_sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units when performing absolute astrometry
         output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
+        update_source_catalog_coordinates = boolean(default=False) # Update source catalog file with tweaked coordinates?
     """  # noqa: E501
 
     reference_file_types = []
@@ -273,6 +274,50 @@ class TweakRegStep(RomanStep):
                     images.shelve(image_model, imcat.meta["model_index"])
 
         return images
+
+    def update_catalog_coordinates(self, tweakreg_catalog_name, tweaked_wcs):
+        """
+        Update the source catalog coordinates using the tweaked WCS.
+
+        Parameters
+        ----------
+        tweakreg_catalog_name : str
+            The name of the TweakReg catalog file produced by `SourceCatalog`.
+        tweaked_wcs : `gwcs.wcs.WCS`
+            The tweaked World Coordinate System (WCS) object.
+
+        Returns
+        -------
+        None
+        """
+        # read in cat file
+        with rdm.open(tweakreg_catalog_name) as source_catalog_model:
+            # get catalog
+            catalog = source_catalog_model.source_catalog
+
+            # define mapping between pixel and world coordinates
+            colname_mapping = {
+                ("xcentroid", "ycentroid"): ("ra_centroid", "dec_centroid"),
+                ("x_psf", "y_psf"): ("ra_psf", "dec_psf"),
+            }
+
+            for k, v in colname_mapping.items():
+                # get column names
+                x_colname, y_colname = k
+                ra_colname, dec_colname = v
+
+                # calculate new coordinates using tweaked WCS and update catalog coordinates
+                catalog[ra_colname], catalog[dec_colname] = tweaked_wcs(
+                    catalog[x_colname], catalog[y_colname]
+                )
+
+            # save updated catalog (overwrite cat file)
+            self.save_model(
+                source_catalog_model,
+                output_file=source_catalog_model.meta.filename,
+                suffix="cat",
+                force=True,
+            )
 
     def read_catalog(self, catalog_name):
         """
