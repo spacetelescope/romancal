@@ -10,29 +10,30 @@
     "romancal.regtest.test_wfi_flat_field.test_flat_field_crds_match_image_step"
   ],
   "DMS86": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_image_processing_pipeline"
+    "romancal.regtest.test_wfi_image_pipeline.test_steps_ran"
   ],
   "DMS87": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_image_processing_pipeline"
+    "romancal.regtest.test_wfi_image_pipeline.test_array_exists"
   ],
   "DMS88": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_image_processing_pipeline"
+    "romancal.regtest.test_wfi_image_pipeline.test_has_exposure_time",
+    "romancal.regtest.test_wfi_grism_pipeline.test_has_exposure_time"
   ],
   "DMS90": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_grism_processing_pipeline"
+    "romancal.regtest.test_wfi_grism_pipeline.test_step_status"
   ],
   "DMS91": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_grism_processing_pipeline"
+    "romancal.regtest.test_wfi_grism_pipeline.test_array_exists"
   ],
   "DMS140": [
     "romancal.regtest.test_wfi_photom.test_absolute_photometric_calibration"
   ],
   "DMS278": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_grism_processing_pipeline"
+    "romancal.regtest.test_wfi_grism_pipeline.test_step_status"
   ],
   "DMS280": [
     "romancal.regtest.test_tweakreg.test_tweakreg",
-    "romancal.regtest.test_wfi_pipeline.test_level2_image_processing_pipeline"
+    "romancal.regtest.test_wfi_image_pipeline.test_output_is_image_model"
   ],
   "DMS342": [
     "romancal.regtest.test_resample.test_resample_single_file"
@@ -50,7 +51,7 @@
     "romancal.regtest.test_mos_pipeline.test_level3_mos_pipeline"
   ],
   "DMS361": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_image_processing_pipeline"
+    "romancal.regtest.test_wfi_image_pipeline.test_jump_in_uneven_ramp"
   ],
   "DMS362": [
     "romancal.regtest.test_ramp_fitting.test_rampfit_step"
@@ -59,7 +60,7 @@
     "romancal.regtest.test_ramp_fitting.test_rampfit_step"
   ],
   "DMS365": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_grism_processing_pipeline"
+    "romancal.regtest.test_wfi_grism_pipeline.test_jump_in_uneven_ramp"
   ],
   "DMS366": [
     "romancal.regtest.test_ramp_fitting.test_rampfit_step"

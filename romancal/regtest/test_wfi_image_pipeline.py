@@ -123,17 +123,17 @@ def test_jump_in_uneven_ramp(output_model):
 
 
 def test_has_a_wcs(output_model):
-    # DMS129
+    # DMS129  TODO not listed
     assert output_model.meta.wcs is not None
 
 
 def test_wcs_has_distortion_information(output_model):
-    # DMS129
+    # DMS129  TODO not listed
     assert "v2v3" in output_model.meta.wcs.available_frames
 
 
 def test_wcs_applies_distortion_correction(output_model):
-    # DMS129
+    # DMS129  TODO not listed
     # compare coordinates before and after distortion correction has been applied
     # 1 - get new image array based on the model
     x0, y0 = grid_from_bounding_box(output_model.meta.wcs.bounding_box)
@@ -162,19 +162,19 @@ def test_has_exposure_time(output_model):
 
 @pytest.mark.parametrize("meta_attribute", ("detector", "optical_element"))
 def test_instrument_meta(output_model, meta_attribute):
-    # DMS-136 PSF tests
+    # DMS-136 PSF tests  TODO not listed
     assert meta_attribute in output_model.meta.instrument
 
 
 def test_wcs_has_bounding_box(output_model):
-    # DMS89 WCS tests
+    # DMS89 WCS tests  TODO not listed
     assert len(output_model.meta.wcs.bounding_box) == 2
 
 
 def test_repointed_matches_truth(
     repointed_filename_and_delta, rtdata, ignore_asdf_paths
 ):
-    # DMS89
+    # DMS89  TODO not listed
     repointed_filename, _ = repointed_filename_and_delta
 
     rtdata.get_truth(f"truth/WFI/image/{repointed_filename}")
@@ -183,7 +183,7 @@ def test_repointed_matches_truth(
 
 
 def test_repointed_wcs_differs(repointed_filename_and_delta, output_model):
-    # DMS89
+    # DMS89  TODO not listed
     repointed_filename, delta = repointed_filename_and_delta
     orig_wcs = output_model.meta.wcs
     with rdm.open(repointed_filename) as repointed_model:
