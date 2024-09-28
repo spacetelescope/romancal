@@ -79,7 +79,7 @@ def test_preview_exists(preview_filename):
     assert os.path.isfile(preview_filename)
 
 
-@pytest.mark.parametriz("suffix", ("cat", "segm"))
+@pytest.mark.parametrize("suffix", ("cat", "segm"))
 def test_file_exists(output_filename, suffix):
     # DMS374 for catalog and segm
     # FIXME was not an assert before
