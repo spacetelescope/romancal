@@ -10,7 +10,8 @@
     "romancal.regtest.test_wfi_flat_field.test_flat_field_crds_match_image_step"
   ],
   "DMS86": [
-    "romancal.regtest.test_wfi_image_pipeline.test_steps_ran"
+    "romancal.regtest.test_wfi_image_pipeline.test_steps_ran",
+    "romancal.regtest.test_mos_pipeline.test_steps_ran"
   ],
   "DMS87": [
     "romancal.regtest.test_wfi_image_pipeline.test_array_exists"
@@ -48,7 +49,11 @@
     "romancal.regtest.test_resample.test_resample_single_file"
   ],
   "DMS356": [
-    "romancal.regtest.test_mos_pipeline.test_level3_mos_pipeline"
+    "romancal.regtest.test_mos_pipeline.test_output_matches_truth",
+    "romancal.regtest.test_mos_pipeline.test_thumbnail_exists",
+    "romancal.regtest.test_mos_pipeline.test_preview_exists",
+    "romancal.regtest.test_mos_pipeline.test_output_is_mosaic",
+    "romancal.regtest.test_mos_pipeline.test_steps_ran"
   ],
   "DMS361": [
     "romancal.regtest.test_wfi_image_pipeline.test_jump_in_uneven_ramp"
@@ -69,12 +74,12 @@
     "romancal.regtest.test_ramp_fitting.test_rampfit_step"
   ],
   "DMS373": [
-    "romancal.regtest.test_mos_pipeline.test_hlp_mosaic_pipeline"
+    "romancal.regtest.test_mos_skycell_pipeline.test_resample_ran"
   ],
   "DMS374": [
     "romancal.regtest.test_catalog.test_catalog_l2",
     "romancal.regtest.test_catalog.test_catalog_l3",
-    "romancal.regtest.test_mos_pipeline.test_level3_mos_pipeline"
+    "romancal.regtest.test_mos_pipeline.test_file_exists"
   ],
   "DMS375": [
     "romancal.regtest.test_catalog.test_catalog_l2",
@@ -93,7 +98,9 @@
     "romancal.regtest.test_catalog.test_catalog_l3"
   ],
   "DMS400": [
-    "romancal.regtest.test_mos_pipeline.test_level3_mos_pipeline"
+    "romancal.regtest.test_mos_pipeline.test_steps_ran",
+    "romancal.regtest.test_mos_pipeline.test_added_background",
+    "romancal.regtest.test_mos_pipeline.test_added_background_level"
   ],
   "DMS405": [
     "romancal.regtest.test_tweakreg.test_tweakreg"

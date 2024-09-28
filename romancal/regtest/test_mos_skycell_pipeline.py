@@ -40,7 +40,6 @@ def truth_filename(run_mos):
 
 
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
-    # DMS356
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
