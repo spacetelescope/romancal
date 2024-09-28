@@ -87,6 +87,7 @@ def repointed_filename_and_delta(output_filename):
 
 
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
+    # DMS9 There was no test of the ephemeris so I guess this covered it?
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
