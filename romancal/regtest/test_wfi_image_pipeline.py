@@ -12,8 +12,7 @@ from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
 from .regtestdata import compare_asdf
 
-# mark all tests as bigdata
-# TODO should this include soctests?
+# mark all tests in this module
 pytestmark = pytest.mark.bigdata
 
 
@@ -84,16 +83,19 @@ def repointed_filename_and_delta(output_filename):
     return repointed_filename, delta
 
 
+@pytest.mark.soctests
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
 
+@pytest.mark.soctests
 def test_output_is_image_model(output_model):
     # DMS280 result is an ImageModel
     assert isinstance(output_model, rdm.datamodels.ImageModel)
 
 
+@pytest.mark.soctests
 @pytest.mark.parametrize(
     "step_name",
     (
@@ -113,22 +115,26 @@ def test_steps_ran(output_model, step_name):
     assert getattr(output_model.meta.cal_step, step_name) == "COMPLETE"
 
 
+@pytest.mark.soctests
 def test_jump_in_uneven_ramp(output_model):
     # DMS361 jump detection detected jumps in uneven ramp
     uneven = len({len(x) for x in output_model.meta.exposure.read_pattern}) > 1
     assert uneven & np.any(output_model.dq & pixel.JUMP_DET)
 
 
+@pytest.mark.soctests
 def test_has_a_wcs(output_model):
     # DMS129  TODO not listed
     assert output_model.meta.wcs is not None
 
 
+@pytest.mark.soctests
 def test_wcs_has_distortion_information(output_model):
     # DMS129  TODO not listed
     assert "v2v3" in output_model.meta.wcs.available_frames
 
 
+@pytest.mark.soctests
 def test_wcs_applies_distortion_correction(output_model):
     # DMS129  TODO not listed
     # compare coordinates before and after distortion correction has been applied
@@ -144,6 +150,7 @@ def test_wcs_applies_distortion_correction(output_model):
     assert (corrected_coords[1] != original_coords[1]).all()
 
 
+@pytest.mark.soctests
 @pytest.mark.parametrize(
     "arr_name", ("dq", "err", "var_poisson", "var_rnoise", "var_flat")
 )
@@ -152,22 +159,26 @@ def test_array_exists(output_model, arr_name):
     assert hasattr(output_model, arr_name)
 
 
+@pytest.mark.soctests
 def test_has_exposure_time(output_model):
     # DMS88 total exposure time exists
     assert "exposure_time" in output_model.meta.exposure
 
 
+@pytest.mark.soctests
 @pytest.mark.parametrize("meta_attribute", ("detector", "optical_element"))
 def test_instrument_meta(output_model, meta_attribute):
     # DMS-136 PSF tests  TODO not listed
     assert meta_attribute in output_model.meta.instrument
 
 
+@pytest.mark.soctests
 def test_wcs_has_bounding_box(output_model):
     # DMS89 WCS tests  TODO not listed
     assert len(output_model.meta.wcs.bounding_box) == 2
 
 
+@pytest.mark.soctests
 def test_repointed_matches_truth(
     repointed_filename_and_delta, rtdata, ignore_asdf_paths
 ):
@@ -179,6 +190,7 @@ def test_repointed_matches_truth(
     assert diff.identical, diff.report()
 
 
+@pytest.mark.soctests
 def test_repointed_wcs_differs(repointed_filename_and_delta, output_model):
     # DMS89  TODO not listed
     repointed_filename, delta = repointed_filename_and_delta

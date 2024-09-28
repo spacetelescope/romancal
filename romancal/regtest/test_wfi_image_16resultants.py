@@ -5,7 +5,7 @@ import roman_datamodels as rdm
 
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
-# mark all tests as bigdata, soctests
+# mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 

@@ -5,7 +5,7 @@ from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
 from .regtestdata import compare_asdf
 
-# mark all tests as bigdata, soctests
+# mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 
