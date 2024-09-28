@@ -83,7 +83,7 @@ def test_preview_exists(preview_filename):
 def test_file_exists(output_filename, suffix):
     # DMS374 for catalog and segm
     # FIXME was not an assert before
-    expected_filename = output_filename.rstrip("_", 1)[0] + f"_{suffix}.asdf"
+    expected_filename = output_filename.rsplit("_", 1)[0] + f"_{suffix}.asdf"
     assert os.path.isfile(expected_filename)
 
 

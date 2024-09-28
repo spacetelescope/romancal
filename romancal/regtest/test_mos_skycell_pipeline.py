@@ -22,6 +22,7 @@ def run_mos(rtdata_module):
     ]
     MosaicPipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
+    return rtdata
 
 
 @pytest.fixture(scope="module")
