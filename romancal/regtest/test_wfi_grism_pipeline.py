@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 import roman_datamodels as rdm
@@ -111,7 +113,7 @@ def test_step_status(output_model, step_name, status):
     # DMS90
     # DMS278
     # also DMS129 for assign_wcs
-    assert getattr(output_model.meta.cal_step, step_name) == "COMPLETE"
+    assert getattr(output_model.meta.cal_step, step_name) == status
 
 
 def test_jump_in_uneven_ramp(output_model):
@@ -142,7 +144,7 @@ def test_repointed_matches_truth(
     # DMS90
     repointed_filename, _ = repointed_filename_and_delta
 
-    rtdata.get_truth(f"truth/WFI/image/{repointed_filename}")
+    rtdata.get_truth(f"truth/WFI/image/{Path(repointed_filename).name}")
     diff = compare_asdf(repointed_filename, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 

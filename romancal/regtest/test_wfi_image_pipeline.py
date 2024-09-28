@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 import roman_datamodels as rdm
@@ -177,7 +179,7 @@ def test_repointed_matches_truth(
     # DMS89  TODO not listed
     repointed_filename, _ = repointed_filename_and_delta
 
-    rtdata.get_truth(f"truth/WFI/image/{repointed_filename}")
+    rtdata.get_truth(f"truth/WFI/image/{Path(repointed_filename).name}")
     diff = compare_asdf(repointed_filename, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
