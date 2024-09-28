@@ -144,7 +144,7 @@ def test_repointed_matches_truth(
     # DMS90
     repointed_filename, _ = repointed_filename_and_delta
 
-    rtdata.get_truth(f"truth/WFI/image/{Path(repointed_filename).name}")
+    rtdata.get_truth(f"truth/WFI/grism/{Path(repointed_filename).name}")
     diff = compare_asdf(repointed_filename, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
