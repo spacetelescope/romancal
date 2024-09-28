@@ -6,8 +6,6 @@ import pytest
 from romancal.stpipe import RomanStep
 
 
-@pytest.mark.bigdata
-@pytest.mark.soctests
 @pytest.fixture(
     scope="module",
     params=[
@@ -47,6 +45,8 @@ def fields(catalog):
     return catalog.dtype.names
 
 
+@pytest.mark.bigdata
+@pytest.mark.soctests
 @pytest.mark.parametrize(
     "field",
     (

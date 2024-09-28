@@ -5,9 +5,10 @@ import roman_datamodels as rdm
 
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
+# mark all tests as bigdata, soctests
+pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
-@pytest.mark.bigdata
-@pytest.mark.soctests
+
 @pytest.fixture(scope="module")
 def run_elp(rtdata_module):
     rtdata = rtdata_module

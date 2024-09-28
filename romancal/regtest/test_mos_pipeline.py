@@ -9,9 +9,10 @@ from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
 from .regtestdata import compare_asdf
 
+# mark all tests as bigdata, soctests
+pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
-@pytest.mark.bigdata
-@pytest.mark.soctests
+
 @pytest.fixture(scope="module")
 def run_mos(rtdata_module):
     rtdata = rtdata_module

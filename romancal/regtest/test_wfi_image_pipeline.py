@@ -12,9 +12,11 @@ from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
 from .regtestdata import compare_asdf
 
+# mark all tests as bigdata
+# TODO should this include soctests?
+pytestmark = pytest.mark.bigdata
 
-@pytest.mark.bigdata
-@pytest.mark.soctests
+
 @pytest.fixture(scope="module")
 def run_elp(rtdata_module):
     rtdata = rtdata_module
@@ -189,7 +191,6 @@ def test_repointed_wcs_differs(repointed_filename_and_delta, output_model):
         )
 
 
-@pytest.mark.bigdata
 def test_elp_input_dm(rtdata, ignore_asdf_paths):
     """Test for input roman Datamodel to exposure level pipeline"""
     input_data = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
@@ -215,7 +216,6 @@ def test_elp_input_dm(rtdata, ignore_asdf_paths):
         assert model.meta.cal_step.photom == "COMPLETE"
 
 
-@pytest.mark.bigdata
 def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
     """Tests for fully saturated data skipping steps in the pipeline
 
@@ -252,7 +252,6 @@ def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
         assert model.meta.cal_step.photom == "SKIPPED"
 
 
-@pytest.mark.bigdata
 def test_pipeline_suffix(rtdata, ignore_asdf_paths):
     """
     Tests passing suffix to the pipeline
