@@ -13,13 +13,6 @@ from romancal.pipeline.exposure_pipeline import ExposurePipeline
 from .regtestdata import compare_asdf
 
 
-def passfail(bool_expr):
-    """set pass fail"""
-    if bool_expr:
-        return "Pass"
-    return "Fail"
-
-
 @pytest.mark.bigdata
 @pytest.mark.soctests
 @pytest.fixture(scope="module")
