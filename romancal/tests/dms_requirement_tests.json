@@ -106,10 +106,14 @@
     "romancal.regtest.test_tweakreg.test_tweakreg"
   ],
   "DMS413": [
-    "romancal.regtest.test_wfi_16resultants.test_16resultants_image_processing"
+    "romancal.regtest.test_wfi_image_16resultants.test_output_is_image_model",
+    "romancal.regtest.test_wfi_image_16resultants.test_input_has_16_resultants",
+    "romancal.regtest.test_wfi_image_16resultants.test_output_has_16_resultants"
   ],
   "DMS414": [
-    "romancal.regtest.test_wfi_16resultants.test_16resultants_spectral_processing"
+    "romancal.regtest.test_wfi_grism_16resultants.test_output_is_image_model",
+    "romancal.regtest.test_wfi_grism_16resultants.test_input_has_16_resultants",
+    "romancal.regtest.test_wfi_grism_16resultants.test_output_has_16_resultants"
   ],
   "DMS488": [
     "romancal.regtest.test_tweakreg.test_tweakreg"
