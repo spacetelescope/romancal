@@ -82,11 +82,6 @@ behavior of the processing:
   User-specified background value (scalar) to subtract during final identification
   step of outliers in `driz_cr` computation.
 
-``--kernel_size``
-  Size of kernel to be used during resampling of the data
-  (i.e. when `resample_data=True`). Valid values are a pair of ints in a single string
-  (for example "7 7").
-
 ``--save_intermediate_results``
   Specifies whether or not to write out intermediate products such as median image or
   resampled individual input exposures to disk. Typically, only used to track down
