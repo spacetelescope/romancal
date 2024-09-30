@@ -152,7 +152,6 @@ def _median_without_resampling(
         for i in range(len(input_models)):
 
             model = input_models.borrow(i)
-            # TODO does this need to be assigned to the model?
             wht = build_driz_weight(
                 model,
                 # FIXME this was hard-coded to "ivm"
@@ -252,8 +251,6 @@ def detect_outliers(
     in_memory,
     make_output_path,
 ):
-    # TODO why was make_output_path overwritten for median?
-
     # setup ResampleData
     # call
     if resample_data:
