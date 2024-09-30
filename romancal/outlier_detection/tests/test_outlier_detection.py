@@ -98,46 +98,26 @@ def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
             res.shelve(m, i, modify=False)
 
 
-@pytest.mark.skip(
-    reason="This creates a step then calls an internal class that no longer exists"
-)
 def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_image):
     """
     Test that OutlierDetection can create files on disk in a custom location.
     """
     img_1 = base_image()
-    img_1.meta.filename = "img_1.asdf"
+    img_1.meta.filename = "img1_cal.asdf"
+    img_1.meta.background.level = 0 * u.DN / u.s
     img_2 = base_image()
-    img_2.meta.filename = "img_2.asdf"
+    img_2.meta.filename = "img2_cal.asdf"
+    img_2.meta.background.level = 0 * u.DN / u.s
     input_models = ModelLibrary([img_1, img_2])
 
-    outlier_step = OutlierDetectionStep()
+    outlier_step = OutlierDetectionStep(
+        in_memory=False,
+        save_intermediate_results=True,
+    )
     # set output dir for all files created by the step
     outlier_step.output_dir = tmp_path.as_posix()
-    # make sure files are written out to disk
-    outlier_step.in_memory = False
 
-    pars = {
-        "weight_type": "exptime",
-        "pixfrac": 1.0,
-        "kernel": "square",
-        "fillval": "INDEF",
-        "nlow": 0,
-        "nhigh": 0,
-        "maskpt": 0.7,
-        "grow": 1,
-        "snr": "4.0 3.0",
-        "scale": "0.5 0.4",
-        "backg": 0.0,
-        "kernel_size": "7 7",
-        "save_intermediate_results": True,
-        "resample_data": False,
-        "good_bits": 0,
-        "allowed_memory": None,
-        "in_memory": outlier_step.in_memory,
-        "make_output_path": outlier_step.make_output_path,
-        "resample_suffix": "i2d",
-    }
+    outlier_step(input_models)
 
     # meta.filename for the median image created by OutlierDetection.do_detection()
     median_path = tmp_path / "drizzled_median.asdf"
@@ -145,9 +125,6 @@ def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_imag
     outlier_files_path = [
         median_path,
     ]
-
-    step = outlier_detection.OutlierDetection(input_models, **pars)  # noqa: F821
-    step.do_detection()
 
     assert all(x.exists() for x in outlier_files_path)
 
