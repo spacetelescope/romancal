@@ -191,6 +191,81 @@ class ResampleData:
         else:
             return self.resample_many_to_one()
 
+    def resample_group(self, input_models, indices):
+        """Apply resample_many_to_many for one group
+
+        Parameters
+        ----------
+        input_models : ModelLibrary
+
+        indices : list
+        """
+        output_model = self.blank_output.copy()
+        output_model.meta["resample"] = maker_utils.mk_resample()
+
+        copy_asn_info_from_library(input_models, output_model)
+
+        with input_models:
+            example_image = input_models.borrow(indices[0])
+
+            # Determine output file type from input exposure filenames
+            # Use this for defining the output filename
+            indx = example_image.meta.filename.rfind(".")
+            output_type = example_image.meta.filename[indx:]
+            output_root = "_".join(
+                example_image.meta.filename.replace(output_type, "").split("_")[:-1]
+            )
+            output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
+            input_models.shelve(example_image, indices[0], modify=False)
+            del example_image
+
+            # Initialize the output with the wcs
+            driz = gwcs_drizzle.GWCSDrizzle(
+                output_model,
+                pixfrac=self.pixfrac,
+                kernel=self.kernel,
+                fillval=self.fillval,
+            )
+
+            log.info(f"{len(indices)} exposures to drizzle together")
+            for index in indices:
+                img = input_models.borrow(index)
+                # TODO: should weight_type=None here?
+                inwht = resample_utils.build_driz_weight(
+                    img, weight_type=self.weight_type, good_bits=self.good_bits
+                )
+
+                # apply sky subtraction
+                if (
+                    hasattr(img.meta, "background")
+                    and img.meta.background.subtracted is False
+                    and img.meta.background.level is not None
+                ):
+                    data = img.data - img.meta.background.level
+                else:
+                    data = img.data
+
+                xmin, xmax, ymin, ymax = resample_utils.resample_range(
+                    data.shape, img.meta.wcs.bounding_box
+                )
+
+                driz.add_image(
+                    data,
+                    img.meta.wcs,
+                    inwht=inwht,
+                    xmin=xmin,
+                    xmax=xmax,
+                    ymin=ymin,
+                    ymax=ymax,
+                )
+                del data
+                self.input_models.shelve(img, index, modify=False)
+                del img
+
+        # cast context array to uint32
+        output_model.context = output_model.context.astype("uint32")
+        return output_model
+
     def resample_many_to_many(self):
         """Resample many inputs to many outputs where outputs have a common frame.
 
@@ -200,6 +275,7 @@ class ResampleData:
 
         Used for outlier detection
         """
+        # FIXME update to use resample_group
         output_list = []
         for group_id, indices in self.input_models.group_indices.items():
             output_model = self.blank_output
@@ -941,3 +1017,11 @@ def populate_mosaic_individual(
     input_metas = [datamodel.meta for datamodel in input_models]
     for input_meta in input_metas:
         output_model.append_individual_image_meta(input_meta)
+
+
+def copy_asn_info_from_library(input_models, output_model):
+    # copy over asn information
+    if (asn_pool := input_models.asn.get("asn_pool", None)) is not None:
+        output_model.meta.asn.pool_name = asn_pool
+    if (asn_table_name := input_models.asn.get("table_name", None)) is not None:
+        output_model.meta.asn.table_name = asn_table_name

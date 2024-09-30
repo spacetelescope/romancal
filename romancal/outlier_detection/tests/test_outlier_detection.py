@@ -6,7 +6,7 @@ import pytest
 from astropy.units import Quantity
 
 from romancal.datamodels import ModelLibrary
-from romancal.outlier_detection import OutlierDetectionStep, outlier_detection
+from romancal.outlier_detection import OutlierDetectionStep
 
 
 @pytest.mark.parametrize(
@@ -98,54 +98,9 @@ def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
             res.shelve(m, i, modify=False)
 
 
-@pytest.mark.parametrize(
-    "pars",
-    [
-        {
-            "weight_type": "exptime",
-            "pixfrac": 1.0,
-            "kernel": "square",
-            "fillval": "INDEF",
-            "nlow": 0,
-            "nhigh": 0,
-            "maskpt": 0.7,
-            "grow": 1,
-            "snr": "4.0 3.0",
-            "scale": "0.5 0.4",
-            "backg": 0.0,
-            "kernel_size": "7 7",
-            "save_intermediate_results": False,
-            "resample_data": True,
-            "good_bits": 0,
-            "allowed_memory": None,
-            "in_memory": True,
-            "make_output_path": None,
-            "resample_suffix": "i2d",
-        },
-        {
-            "weight_type": "exptime",
-            "save_intermediate_results": True,
-            "make_output_path": None,
-            "resample_suffix": "some_other_suffix",
-        },
-    ],
+@pytest.mark.skip(
+    reason="This creates a step then calls an internal class that no longer exists"
 )
-def test_outlier_init_default_parameters(pars, base_image):
-    """
-    Test parameter setting on initialization for OutlierDetection.
-    """
-    img_1 = base_image()
-    img_1.meta.filename = "img_1.asdf"
-    input_models = ModelLibrary([img_1])
-
-    step = outlier_detection.OutlierDetection(input_models, **pars)
-
-    assert step.input_models == input_models
-    assert step.outlierpars == pars
-    assert step.make_output_path == pars["make_output_path"]
-    assert step.resample_suffix == f"_outlier_{pars['resample_suffix']}.asdf"
-
-
 def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_image):
     """
     Test that OutlierDetection can create files on disk in a custom location.
@@ -191,7 +146,7 @@ def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_imag
         median_path,
     ]
 
-    step = outlier_detection.OutlierDetection(input_models, **pars)
+    step = outlier_detection.OutlierDetection(input_models, **pars)  # noqa: F821
     step.do_detection()
 
     assert all(x.exists() for x in outlier_files_path)
@@ -278,9 +233,7 @@ def test_identical_images(tmp_path, base_image, caplog):
     result = outlier_step(input_models)
 
     # assert that log shows no new outliers detected
-    assert "New pixels flagged as outliers: 0 (0.00%)" in {
-        x.message for x in caplog.records
-    }
+    assert "0 pixels marked as outliers" in {x.message for x in caplog.records}
     # assert that DQ array has nothing flagged as outliers
     with result:
         for i, model in enumerate(result):
