@@ -1,4 +1,6 @@
+import json
 import logging
+import os
 from typing import List
 
 import numpy as np
@@ -7,6 +9,8 @@ from astropy.coordinates import SkyCoord
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels, maker_utils, stnode
 from stcal.alignment.util import compute_scale
+
+from romancal.associations.asn_from_list import asn_from_list
 
 from ..assign_wcs import utils
 from ..datamodels import ModelLibrary
@@ -272,96 +276,32 @@ class ResampleData:
         Coadd only different detectors of the same exposure (e.g. map SCA 1 and
         10 onto the same output image), as they image different areas of the
         sky.
-
-        Used for outlier detection
         """
-        # FIXME update to use resample_group
-        output_list = []
+        output_models = []
         for group_id, indices in self.input_models.group_indices.items():
-            output_model = self.blank_output
-            output_model.meta["resample"] = maker_utils.mk_resample()
+            output_model = self.resample_group(self.input_models, indices)
 
-            # copy over asn information
-            if (asn_pool := self.input_models.asn.get("asn_pool", None)) is not None:
-                output_model.meta.asn.pool_name = asn_pool
-            if (
-                asn_table_name := self.input_models.asn.get("table_name", None)
-            ) is not None:
-                output_model.meta.asn.table_name = asn_table_name
+            if not self.in_memory:
+                # Write out model to disk, then return filename
+                output_name = output_model.meta.filename
+                if self.output_dir is not None:
+                    output_name = os.path.join(self.output_dir, output_name)
+                output_model.save(output_name)
+                log.info(f"Saved model in {output_name}")
+                output_models.append(output_name)
+            else:
+                output_models.append(output_model)
 
-            with self.input_models:
-                example_image = self.input_models.borrow(indices[0])
-
-                # Determine output file type from input exposure filenames
-                # Use this for defining the output filename
-                indx = example_image.meta.filename.rfind(".")
-                output_type = example_image.meta.filename[indx:]
-                output_root = "_".join(
-                    example_image.meta.filename.replace(output_type, "").split("_")[:-1]
-                )
-                output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
-
-                self.input_models.shelve(example_image, indices[0], modify=False)
-
-                # Initialize the output with the wcs
-                driz = gwcs_drizzle.GWCSDrizzle(
-                    output_model,
-                    pixfrac=self.pixfrac,
-                    kernel=self.kernel,
-                    fillval=self.fillval,
-                )
-
-                log.info(f"{len(indices)} exposures to drizzle together")
-                for index in indices:
-                    img = self.input_models.borrow(index)
-                    # TODO: should weight_type=None here?
-                    inwht = resample_utils.build_driz_weight(
-                        img, weight_type=self.weight_type, good_bits=self.good_bits
-                    )
-
-                    # apply sky subtraction
-                    if (
-                        hasattr(img.meta, "background")
-                        and img.meta.background.subtracted is False
-                        and img.meta.background.level is not None
-                    ):
-                        data = img.data - img.meta.background.level
-                    else:
-                        data = img.data
-
-                    xmin, xmax, ymin, ymax = resample_utils.resample_range(
-                        data.shape, img.meta.wcs.bounding_box
-                    )
-
-                    driz.add_image(
-                        data,
-                        img.meta.wcs,
-                        inwht=inwht,
-                        xmin=xmin,
-                        xmax=xmax,
-                        ymin=ymin,
-                        ymax=ymax,
-                    )
-                    del data
-                    self.input_models.shelve(img, index)
-
-                # cast context array to uint32
-                output_model.context = output_model.context.astype("uint32")
-
-                # copy over asn information
-                if not self.in_memory:
-                    # Write out model to disk, then return filename
-                    output_name = output_model.meta.filename
-                    output_model.save(output_name)
-                    log.info(f"Exposure {output_name} saved to file")
-                    output_list.append(output_name)
-                else:
-                    output_list.append(output_model.copy())
-
-                output_model.data *= 0.0
-                output_model.weight *= 0.0
-
-        return ModelLibrary(output_list)
+        if not self.in_memory:
+            # build ModelLibrary as an association from the output files
+            # this saves memory if there are multiple groups
+            asn = asn_from_list(output_models, product_name="outlier_i2d")
+            asn_dict = json.loads(
+                asn.dump()[1]
+            )  # serializes the asn and converts to dict
+            return ModelLibrary(asn_dict, on_disk=True)
+        # otherwise just build it as a list of in-memory models
+        return ModelLibrary(output_models, on_disk=False)
 
     def resample_many_to_one(self):
         """Resample and coadd many inputs to a single output.
