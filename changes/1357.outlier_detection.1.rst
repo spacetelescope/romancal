@@ -1,0 +1,1 @@
+Update input handling to raise an exception on an invalid input instead of issuing a warning and skipping the step.
