@@ -196,13 +196,18 @@ class ResampleData:
             return self.resample_many_to_one()
 
     def resample_group(self, input_models, indices):
-        """Apply resample_many_to_many for one group
+        """
+        Resample models at the provided indices.
+
+        This is used by outlier detection and will not blend metadata
+        and will not resample variance, error or exposure time.
 
         Parameters
         ----------
         input_models : ModelLibrary
 
         indices : list
+            List of model indices to include in this resampling
         """
         output_model = self.blank_output.copy()
         output_model.meta["resample"] = maker_utils.mk_resample()
