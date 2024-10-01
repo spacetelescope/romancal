@@ -16,7 +16,7 @@ from romancal.outlier_detection import OutlierDetectionStep
     ],
 )
 def test_outlier_raises_error_on_invalid_input_models(input_models):
-    """Test that OutlierDetection logs out a WARNING if input is invalid."""
+    """Test that OutlierDetection raises an Exception if input is invalid."""
 
     with pytest.raises(IsADirectoryError):
         OutlierDetectionStep.call(input_models)
@@ -37,7 +37,7 @@ def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
 
 def test_outlier_raises_exception_on_exposure_type_different_from_wfi_image(base_image):
     """
-    Test if the outlier detection step is skipped when the exposure type is different from WFI image.
+    Test if the outlier detection step raises an Exception for non-image inputs.
     """
     img_1 = base_image()
     img_1.meta.exposure.type = "WFI_PRISM"
