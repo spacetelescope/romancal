@@ -83,12 +83,12 @@ behavior of the processing:
   step of outliers in `driz_cr` computation.
 
 ``--save_intermediate_results``
-  Specifies whether or not to write out intermediate products such as median image or
+  Boolean specifying whether or not to write out intermediate products such as median image or
   resampled individual input exposures to disk. Typically, only used to track down
   problems with final results when too many or too few pixels are flagged as outliers.
 
 ``--resample_data``
-  Specifies whether or not to resample the input images when performing outlier
+  Boolean specifying whether or not to resample the input images when performing outlier
   detection.
 
 ``--good_bits``
@@ -99,7 +99,7 @@ behavior of the processing:
   for details.
 
 ``--in_memory``
-  Specifies whether or not to keep all intermediate products and datamodels in
+  Boolean specifying whether or not to keep all intermediate products and datamodels in
   memory at the same time during the processing of this step.  If set to `False`,
   all input and output data will be written to disk at the start of the step
   (as much as `roman_datamodels` will allow, anyway), then read in to memory only when

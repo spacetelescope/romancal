@@ -136,9 +136,9 @@ during processing includes:
 #. Computing the median image uses temporary files. Each resampled group
    is split into sections (1 per "row") and each section is appended to a different
    temporary file. After resampling all groups, each temporary file is read and a
-   median computed for all sections in that file (yielding a median for that
-   section across all resampled groups). Finally these median sections are
-   combined in a final median image.
+   median is computed for all sections in that file (yielding a median for that
+   section across all resampled groups). Finally, these median sections are
+   combined into a final median image.
 
 These changes result in a minimum amount of memory usage during processing at the obvious
 expense of reading and writing the products from disk.
