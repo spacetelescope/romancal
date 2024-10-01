@@ -17,12 +17,17 @@ TODAYS_DATE = datetime.now().strftime("%Y-%m-%d")
 @pytest.fixture(scope="session")
 def artifactory_repos(pytestconfig):
     """Provides Artifactory inputs_root and results_root"""
-    try:
-        inputs_root = pytestconfig.getini("inputs_root")[0]
-        results_root = pytestconfig.getini("results_root")[0]
-    except IndexError:
+    inputs_root = pytestconfig.getini("inputs_root")
+    if not inputs_root:
         inputs_root = "roman-pipeline"
+    else:
+        inputs_root = inputs_root[0]
+
+    results_root = pytestconfig.getini("results_root")
+    if not results_root:
         results_root = "roman-pipeline-results"
+    else:
+        results_root = results_root[0]
     return inputs_root, results_root
 
 
