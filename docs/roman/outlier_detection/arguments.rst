@@ -101,10 +101,10 @@ behavior of the processing:
 ``--in_memory``
   Boolean specifying whether or not to keep all intermediate products and datamodels in
   memory at the same time during the processing of this step.  If set to `False`,
-  all input and output data will be written to disk at the start of the step
-  (as much as `roman_datamodels` will allow, anyway), then read in to memory only when
-  accessed.  This results in a much lower memory profile at the expense of file I/O,
-  which can allow large mosaics to process in more limited amounts of memory.
+  any `ModelLibrary` opened by this step will use ``on_disk=True` and use temporary
+  files to store model modifications. Additionally any resampled images will
+  be kept in memory (as long as needed). This can result in much lower memory
+  usage (at the expense of file I/O) to process large associations.
 
 .. _weight_type_options_details_section:
 
