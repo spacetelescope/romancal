@@ -101,7 +101,7 @@ behavior of the processing:
 ``--in_memory``
   Boolean specifying whether or not to keep all intermediate products and datamodels in
   memory at the same time during the processing of this step.  If set to `False`,
-  any `ModelLibrary` opened by this step will use ``on_disk=True` and use temporary
+  any `ModelLibrary` opened by this step will use ``on_disk=True`` and use temporary
   files to store model modifications. Additionally any resampled images will
   be kept in memory (as long as needed). This can result in much lower memory
   usage (at the expense of file I/O) to process large associations.
