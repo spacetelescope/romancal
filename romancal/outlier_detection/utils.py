@@ -50,13 +50,13 @@ def _median_with_resampling(
         if True, save the drizzled models and median model to fits.
 
     make_output_path : function
-        The functools.partial instance to pass to save_median. Must be
-        specified if save_intermediate_results is True. Default None.
+        The functools.partial instance to pass to save_median.
 
     buffer_size : int
         The size of chunk in bytes that will be read into memory when computing the median.
         This parameter has no effect if the input library has its on_disk attribute
-        set to False.
+        set to False. If None or 0 the buffer size will be set to the size of one
+        resampled image.
     """
     if not resamp.single:
         raise ValueError(
@@ -136,13 +136,14 @@ def _median_without_resampling(
         if True, save the models and median model to fits.
 
     make_output_path : function
-        The functools.partial instance to pass to save_median. Must be
-        specified if save_intermediate_results is True. Default None.
+        The functools.partial instance to pass to save_median.
 
     buffer_size : int
         The size of chunk in bytes that will be read into memory when computing the median.
         This parameter has no effect if the input library has its on_disk attribute
-        set to False.
+        set to False. If None or 0 the buffer size will be set to the size of one
+        input image.
+
     """
     in_memory = not input_models._on_disk
     ngroups = len(input_models)
