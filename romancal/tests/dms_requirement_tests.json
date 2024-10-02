@@ -27,6 +27,13 @@
     "romancal.regtest.test_wfi_grism_pipeline.test_wcs_has_bounding_box",
     "romancal.regtest.test_wfi_grism_pipeline.test_repointed_wcs_differs"
   ],
+  "DMS129": [
+    "romancal.regtest.test_wfi_image_pipeline.test_steps_ran",
+    "romancal.regtest.test_wfi_grism_pipeline.test_steps_ran",
+    "romancal.regtest.test_wfi_image_pipeline.test_has_a_wcs",
+    "romancal.regtest.test_wfi_image_pipeline.test_wcs_has_distortion_information",
+    "romancal.regtest.test_wfi_image_pipeline.test_wcs_applies_distortion_correction"
+  ],
   "DMS140": [
     "romancal.regtest.test_wfi_photom.test_absolute_photometric_calibration"
   ],

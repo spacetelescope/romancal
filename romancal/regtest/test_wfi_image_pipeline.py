@@ -124,19 +124,19 @@ def test_jump_in_uneven_ramp(output_model):
 
 @pytest.mark.soctests
 def test_has_a_wcs(output_model):
-    # DMS129  TODO not listed
+    # DMS129
     assert output_model.meta.wcs is not None
 
 
 @pytest.mark.soctests
 def test_wcs_has_distortion_information(output_model):
-    # DMS129  TODO not listed
+    # DMS129
     assert "v2v3" in output_model.meta.wcs.available_frames
 
 
 @pytest.mark.soctests
 def test_wcs_applies_distortion_correction(output_model):
-    # DMS129  TODO not listed
+    # DMS129
     # compare coordinates before and after distortion correction has been applied
     # 1 - get new image array based on the model
     x0, y0 = grid_from_bounding_box(output_model.meta.wcs.bounding_box)
