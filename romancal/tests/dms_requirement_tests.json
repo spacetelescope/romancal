@@ -1,7 +1,4 @@
 {
-  "DMS9": [
-    "romancal.regtest.test_wfi_grism_pipeline.test_output_matches_truth"
-  ],
   "DMS25": [
     "romancal.regtest.test_wfi_dq_init.test_dq_init_grism_step",
     "romancal.regtest.test_wfi_dq_init.test_dq_init_image_step"
@@ -25,6 +22,10 @@
   ],
   "DMS91": [
     "romancal.regtest.test_wfi_grism_pipeline.test_array_exists"
+  ],
+  "DMS93": [
+    "romancal.regtest.test_wfi_grism_pipeline.test_wcs_has_bounding_box",
+    "romancal.regtest.test_wfi_grism_pipeline.test_repointed_wcs_differs"
   ],
   "DMS140": [
     "romancal.regtest.test_wfi_photom.test_absolute_photometric_calibration"

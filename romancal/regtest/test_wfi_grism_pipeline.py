@@ -81,7 +81,6 @@ def repointed_filename_and_delta(output_filename):
 
 
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
-    # DMS9 There was no test of the ephemeris so I guess this covered it?
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
@@ -129,7 +128,7 @@ def test_has_exposure_time(output_model):
 
 
 def test_wcs_has_bounding_box(output_model):
-    # DMS93 WCS tests  TODO isn't listed
+    # DMS93 WCS tests
     assert len(output_model.meta.wcs.bounding_box) == 2
 
 
@@ -145,7 +144,7 @@ def test_repointed_matches_truth(
 
 
 def test_repointed_wcs_differs(repointed_filename_and_delta, output_model):
-    # DMS93  TODO isn't listed
+    # DMS93 WCS tests
     repointed_filename, delta = repointed_filename_and_delta
     orig_wcs = output_model.meta.wcs
     with rdm.open(repointed_filename) as repointed_model:
