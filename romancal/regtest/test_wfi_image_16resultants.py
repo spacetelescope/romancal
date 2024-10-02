@@ -54,21 +54,17 @@ def input_model(input_filename):
 
 
 def test_output_is_image_model(output_model):
-    # DMS280  FIXME comment says 280
-    # DMS413  FIXME log message said 413
-    # FIXME was not an assert
+    # DMS413
     assert isinstance(output_model, rdm.datamodels.ImageModel)
 
 
 def test_input_has_16_resultants(input_model):
     # DMS413
-    # FIXME was not an assert
     assert len(input_model.meta.exposure.read_pattern) == 16
 
 
 def test_output_has_16_resultants(output_model):
     # DMS413
-    # FIXME was not an assert
     assert len(output_model.meta.exposure.read_pattern) == 16
 
 
