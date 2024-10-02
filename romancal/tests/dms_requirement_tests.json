@@ -34,7 +34,7 @@
   ],
   "DMS129": [
     "romancal.regtest.test_wfi_image_pipeline.test_steps_ran",
-    "romancal.regtest.test_wfi_grism_pipeline.test_steps_ran",
+    "romancal.regtest.test_wfi_grism_pipeline.test_step_status",
     "romancal.regtest.test_wfi_image_pipeline.test_has_a_wcs",
     "romancal.regtest.test_wfi_image_pipeline.test_wcs_has_distortion_information",
     "romancal.regtest.test_wfi_image_pipeline.test_wcs_applies_distortion_correction"
