@@ -55,20 +55,13 @@ Specifically, this routine performs the following operations:
 
    * The median image is created by combining all grouped mosaic images or
      non-resampled input data pixel-by-pixel.
-   * The ``nlow`` and ``nhigh`` parameters specify how many low and high values
-     to ignore when computing the median for any given pixel.
    * The ``maskpt`` parameter sets the percentage of the weight image values to
      use, and any pixel with a weight below this value gets flagged as "bad" and
      ignored when resampled.
-   * The ``grow`` parameter sets the width, in pixels, beyond the limit set by
-     the rejection algorithm being used, for additional pixels to be rejected in
-     an image.
-   * The median image is written out to disk as `_<asn_id>_median` by default.
 
 #. By default, the median image is blotted back (inverse of resampling) to
    match each original input image.
 
-   * Blotted images are written out to disk as `_<asn_id>_blot` by default.
    * **If resampling is turned off**, the median image is compared directly to
      each input image.
 
@@ -136,26 +129,16 @@ memory usage at the expense of file I/O.  The control over this memory model hap
 with the use of the ``in_memory`` parameter.  The full impact of this parameter
 during processing includes:
 
-#. The ``save_open`` parameter gets set to `False`
+#. The ``on_disk`` parameter gets set to `True`
    when opening the input :py:class:`~romancal.datamodels.library.ModelLibrary`
-   object. This forces all input models in the input
-   :py:class:`~romancal.datamodels.library.ModelLibrary` to get written out to disk.
-   It then uses the filename of the input model during subsequent processing.
+   object. This causes modified models to be written to temporary files.
 
-#. The ``in_memory`` parameter gets passed to the :py:class:`~romancal.resample.ResampleStep`
-   to set whether or not to keep the resampled images in memory or not.  By default,
-   the outlier detection processing sets this parameter to `False` so that each resampled
-   image gets written out to disk.
-
-#. Computing the median image works section-by-section by only keeping 1Mb of each input
-   in memory at a time.  As a result, only the final output product array for the final
-   median image along with a stack of 1Mb image sections are kept in memory.
-
-#. The final resampling step also avoids keeping all inputs in memory by only reading
-   each input into memory 1 at a time as it gets resampled onto the final output product.
+#. Computing the median image uses temporary files. Each resampled group
+   is split into sections (1 per "row") and each section is appended to a different
+   temporary file. After resampling all groups, each temporary file is read and a
+   median is computed for all sections in that file (yielding a median for that
+   section across all resampled groups). Finally, these median sections are
+   combined into a final median image.
 
 These changes result in a minimum amount of memory usage during processing at the obvious
 expense of reading and writing the products from disk.
-
-
-.. automodapi:: romancal.outlier_detection.outlier_detection
