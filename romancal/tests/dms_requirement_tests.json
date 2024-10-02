@@ -34,6 +34,9 @@
     "romancal.regtest.test_wfi_image_pipeline.test_wcs_has_distortion_information",
     "romancal.regtest.test_wfi_image_pipeline.test_wcs_applies_distortion_correction"
   ],
+  "DMS136": [
+    "romancal.regtest.test_wfi_image_pipeline.test_instrument_meta"
+  ],
   "DMS140": [
     "romancal.regtest.test_wfi_photom.test_absolute_photometric_calibration"
   ],

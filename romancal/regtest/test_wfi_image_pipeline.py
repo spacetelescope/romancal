@@ -168,7 +168,7 @@ def test_has_exposure_time(output_model):
 @pytest.mark.soctests
 @pytest.mark.parametrize("meta_attribute", ("detector", "optical_element"))
 def test_instrument_meta(output_model, meta_attribute):
-    # DMS-136 PSF tests  TODO not listed
+    # DMS136 PSF tests
     assert meta_attribute in output_model.meta.instrument
 
 
