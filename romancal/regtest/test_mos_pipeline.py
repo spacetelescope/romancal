@@ -70,27 +70,23 @@ def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths
 
 def test_thumbnail_exists(thumbnail_filename):
     # DMS356
-    # FIXME was not an assert before
     assert os.path.isfile(thumbnail_filename)
 
 
 def test_preview_exists(preview_filename):
     # DMS356
-    # FIXME was not an assert before
     assert os.path.isfile(preview_filename)
 
 
 @pytest.mark.parametrize("suffix", ("cat", "segm"))
 def test_file_exists(output_filename, suffix):
     # DMS374 for catalog and segm
-    # FIXME was not an assert before
     expected_filename = output_filename.rsplit("_", 1)[0] + f"_{suffix}.asdf"
     assert os.path.isfile(expected_filename)
 
 
 def test_output_is_mosaic(output_model):
     # DMS356
-    # FIXME comment says result is an ImageModel... it's not
     assert isinstance(output_model, rdm.datamodels.MosaicModel)
 
 
