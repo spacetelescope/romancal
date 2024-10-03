@@ -21,6 +21,27 @@
             "description": "The observing program identifier",
             "type": "string"
         },
+        "skycell_wcs_info": {
+            "description": "WCS information for the projection cell",
+            "type": "string",
+	    "properties": {
+		"pixel_scale": {
+		    "type": "number"
+		},
+	        "ra_cent": {
+		    "type": "number"
+		},
+		"dec_cent": {
+		    "type": "number"
+		},
+		"shiftx": {
+		    "type": "integer"
+		},
+		"shifty": {
+		    "type": "integer"
+		}
+	    }
+        },
         "target": {
             "description": "Canonical name of the astronomical object being observed.",
             "anyOf":[
