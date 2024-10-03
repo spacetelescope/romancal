@@ -35,6 +35,7 @@ def test_skycell_asn_generation(rtdata, ignore_asdf_paths):
                     'r512_r274dp63x33y81_visit_F158_prompt_i2d_asn.json']
     # Test that the json files exist
     for file in output_files:
+        skycell.logger(f"File : {file}")
         skycell.logger(
             "Check that the json file exists   "
             + passfail(os.path.isfile(file))
