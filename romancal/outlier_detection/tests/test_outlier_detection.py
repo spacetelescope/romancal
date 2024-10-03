@@ -129,7 +129,8 @@ def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_imag
     assert all(x.exists() for x in outlier_files_path)
 
 
-def test_find_outliers(tmp_path, base_image):
+@pytest.mark.parametrize("on_disk", (True, False))
+def test_find_outliers(tmp_path, base_image, on_disk):
     """
     Test that OutlierDetection can find outliers.
     """
@@ -158,13 +159,31 @@ def test_find_outliers(tmp_path, base_image):
     imgs[0].data[img_0_input_coords[0], img_0_input_coords[1]] = cr_value
     imgs[1].data[img_1_input_coords[0], img_1_input_coords[1]] = cr_value
 
-    input_models = ModelLibrary(imgs)
+    if on_disk:
+        # write out models and asn to disk
+        for img in imgs:
+            img.save(img.meta.filename)
+        asn_dict = {
+            "asn_id": "a3001",
+            "asn_pool": "none",
+            "products": [
+                {
+                    "name": "test_asn",
+                    "members": [
+                        {"expname": m.meta.filename, "exptype": "science"} for m in imgs
+                    ],
+                }
+            ],
+        }
+        input_models = ModelLibrary(asn_dict, on_disk=True)
+    else:
+        input_models = ModelLibrary(imgs)
 
     outlier_step = OutlierDetectionStep()
     # set output dir for all files created by the step
     outlier_step.output_dir = tmp_path.as_posix()
     # make sure files are written out to disk
-    outlier_step.in_memory = False
+    outlier_step.in_memory = not on_disk
 
     result = outlier_step(input_models)
 
