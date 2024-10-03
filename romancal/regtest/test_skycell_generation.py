@@ -21,8 +21,8 @@ def test_skycell_asn_generation(rtdata, ignore_asdf_paths):
     args = ['r0000101001001001001_01101_0002_WFI01_cal.asdf', \
     'r0000101001001001001_01101_0002_WFI10_cal.asdf', '-o', 'r512']
     #rtdata.get_asn("WFI/image/L3_regtest_asn.json")
-    rtdata.get_data("WFI/image/r0000101001001001001_01101_0002_WFI01_cal.asdf'")
-    rtdata.get_data("WFI/image/r0000101001001001001_01101_0002_WFI10_cal.asdf'")
+    rtdata.get_data("WFI/image/r0000101001001001001_01101_0002_WFI01_cal.asdf")
+    rtdata.get_data("WFI/image/r0000101001001001001_01101_0002_WFI10_cal.asdf")
 
     skycell_asn.Main(args)
 
