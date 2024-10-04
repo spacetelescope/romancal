@@ -608,7 +608,7 @@ def test_var_flat_presence(exposure_1, include_var_flat):
     if not include_var_flat:
         exposure_1 = [e.copy() for e in exposure_1]
         for e in exposure_1:
-            del e._instance['var_flat']
+            del e._instance["var_flat"]
     input_models = ModelLibrary(exposure_1)
     resample_data = ResampleData(input_models)
 
@@ -617,9 +617,9 @@ def test_var_flat_presence(exposure_1, include_var_flat):
         output_model = output_models.borrow(0)
 
         if not include_var_flat:
-            assert not hasattr(output_model, 'var_flat')
+            assert not hasattr(output_model, "var_flat")
         else:
-            assert hasattr(output_model, 'var_flat')
+            assert hasattr(output_model, "var_flat")
 
         output_models.shelve(output_model, 0, modify=False)
 

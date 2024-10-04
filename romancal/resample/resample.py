@@ -165,8 +165,9 @@ class ResampleData:
 
         with self.input_models:
             models = list(self.input_models)
-            self.all_have_var_flat = np.all([
-                hasattr(model, 'var_flat') for model in models])
+            self.all_have_var_flat = np.all(
+                [hasattr(model, "var_flat") for model in models]
+            )
 
             # update meta.basic
             populate_mosaic_basic(self.blank_output, models)
@@ -191,7 +192,7 @@ class ResampleData:
                 self.input_models.shelve(m, i, modify=False)
 
         if not self.all_have_var_flat:
-            del self.blank_output._instance['var_flat']
+            del self.blank_output._instance["var_flat"]
 
     def do_drizzle(self):
         """Pick the correct drizzling mode based on ``self.single``."""
