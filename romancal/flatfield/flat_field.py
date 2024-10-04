@@ -68,8 +68,7 @@ def do_flat_field(output_model, flat_model, include_var_flat=False):
         log.info("Skipping flat field - no flat reference file.")
         output_model.meta.cal_step.flat_field = "SKIPPED"
     else:
-        apply_flat_field(output_model, flat_model,
-                         include_var_flat=include_var_flat)
+        apply_flat_field(output_model, flat_model, include_var_flat=include_var_flat)
         output_model.meta.cal_step.flat_field = "COMPLETE"
 
 
@@ -130,10 +129,8 @@ def apply_flat_field(science, flat, include_var_flat=False):
         try:
             science.var_flat = science.data**2 / flat_data_squared * flat_err**2
         except AttributeError:
-            science["var_flat"] = np.zeros(
-                shape=science.data.shape, dtype=np.float32)
-            science.var_flat = (science.data**2
-                                    / flat_data_squared * flat_err**2)
+            science["var_flat"] = np.zeros(shape=science.data.shape, dtype=np.float32)
+            science.var_flat = science.data**2 / flat_data_squared * flat_err**2
         total_var += science.var_flat
 
     science.err = np.sqrt(total_var)
