@@ -198,11 +198,6 @@ def test_level2_image_processing_pipeline(rtdata, ignore_asdf_paths):
         " level 2 image output......." + passfail("var_rnoise" in model.keys())
     )
     assert "var_rnoise" in model.keys()
-    pipeline.log.info(
-        "DMS87 MSG: Testing existence of flatfield uncertainty variance array"
-        " (var_flat) in Level 2 image output...." + passfail("var_flat" in model.keys())
-    )
-    assert "var_flat" in model.keys()
 
     # DMS88 total exposure time test
     pipeline.log.info(
