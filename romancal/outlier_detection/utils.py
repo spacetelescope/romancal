@@ -86,7 +86,7 @@ def _median_with_resampling(
 
             weight_threshold = compute_weight_threshold(drizzled_model.weight, maskpt)
             drizzled_model.data[drizzled_model.weight < weight_threshold] = np.nan
-            computer.append(drizzled_model.data, i)
+            computer.append(drizzled_model.data.value, i)
             del drizzled_model
 
     # Perform median combination on set of drizzled mosaics
@@ -173,7 +173,7 @@ def _median_without_resampling(
 
             weight_threshold = compute_weight_threshold(wht, maskpt)
 
-            data_copy = model.data.copy()
+            data_copy = model.data.value.copy()
             data_copy[wht < weight_threshold] = np.nan
             computer.append(data_copy, i)
 
