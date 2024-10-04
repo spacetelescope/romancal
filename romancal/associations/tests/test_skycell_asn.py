@@ -2,8 +2,9 @@
 
 import pytest
 
-#from romancal.associations import Association, AssociationRegistry, load_asn
+# from romancal.associations import Association, AssociationRegistry, load_asn
 from romancal.associations.skycell_asn import Main
+
 
 def test_cmdline_fails():
     """Exercise the command line interface"""
@@ -15,5 +16,3 @@ def test_cmdline_fails():
     # Only the association file argument
     with pytest.raises(SystemExit):
         Main(["-o", "test_asn.json"])
-
-
