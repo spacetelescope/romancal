@@ -160,12 +160,11 @@ class ResampleData(Resample):
         else:
             level = 0
             subtracted = True
-        return {
+        res = {
             "data": model.data,
             "dq": model.dq,
             "var_rnoise": model.var_rnoise,
             "var_poisson": model.var_poisson,
-            "var_flat": model.var_flat,
             "err": model.err,
             "filename": model.meta.filename,
             "wcs": model.meta.wcs,
@@ -179,6 +178,8 @@ class ResampleData(Resample):
             "level": level,
             "subtracted": subtracted,
         }
+        if hasattr(model, 'var_flat'):
+            res['var_flat'] = model.var_flat
 
     def _get_intensity_scale(self, model):
         # FIXME we lie about this to retain the old behavior

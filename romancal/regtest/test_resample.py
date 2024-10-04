@@ -54,21 +54,19 @@ def test_resample_single_file(rtdata, ignore_asdf_paths, resource_tracker, reque
     step.log.info(
         f"""DMS343 MSG: ResampleStep created new attribute data quality information? :\
             {
-            all(
-                hasattr(resample_out, x)
-                for x in [
-                    "data",
-                    "err",
-                    "var_poisson",
-                    "var_rnoise",
-                    "var_flat",
-                ]
-            )
-        }"""
+                all(
+                    hasattr(resample_out, x) for x in [
+                        "data",
+                        "err",
+                        "var_poisson",
+                        "var_rnoise",
+                    ]
+                )
+            }"""
     )
     assert all(
         hasattr(resample_out, x)
-        for x in ["data", "err", "var_poisson", "var_rnoise", "var_flat"]
+        for x in ["data", "err", "var_poisson", "var_rnoise"]
     )
 
     step.log.info(
@@ -99,13 +97,13 @@ def test_resample_single_file(rtdata, ignore_asdf_paths, resource_tracker, reque
                     )
                 )
                 > 0
-                for x in ["var_poisson", "var_rnoise", "var_flat"]
+                for x in ["var_poisson", "var_rnoise"]
             )
         }"""
     )
     assert all(
         np.sum(np.isnan(getattr(resample_out, x)))
-        for x in ["var_poisson", "var_rnoise", "var_flat"]
+        for x in ["var_poisson", "var_rnoise"]
     )
 
     step.log.info(
