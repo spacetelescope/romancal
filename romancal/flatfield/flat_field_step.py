@@ -48,9 +48,7 @@ class FlatFieldStep(RomanStep):
 
         # Do the flat-field correction
         output_model = flat_field.do_correction(
-            input_model,
-            reference_file_model,
-            include_var_flat=self.include_var_flat
+            input_model, reference_file_model, include_var_flat=self.include_var_flat
         )
 
         # Close reference file

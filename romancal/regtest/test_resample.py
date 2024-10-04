@@ -65,8 +65,7 @@ def test_resample_single_file(rtdata, ignore_asdf_paths, resource_tracker, reque
             }"""
     )
     assert all(
-        hasattr(resample_out, x)
-        for x in ["data", "err", "var_poisson", "var_rnoise"]
+        hasattr(resample_out, x) for x in ["data", "err", "var_poisson", "var_rnoise"]
     )
 
     step.log.info(

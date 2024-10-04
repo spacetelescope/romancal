@@ -91,14 +91,14 @@ def test_skip_var_flat():
 
     wfi_image1 = maker_utils.mk_level2_image()
     wfi_image2 = maker_utils.mk_level2_image()
-    del wfi_image1['var_flat']
-    del wfi_image2['var_flat']
+    del wfi_image1["var_flat"]
+    del wfi_image2["var_flat"]
     wfi_image_model1 = ImageModel(wfi_image1)
     wfi_image_model2 = ImageModel(wfi_image2)
     result1 = FlatFieldStep.call(wfi_image_model1, include_var_flat=False)
     result2 = FlatFieldStep.call(wfi_image_model2, include_var_flat=True)
-    assert not hasattr(result1, 'var_flat')
-    assert hasattr(result2, 'var_flat')
+    assert not hasattr(result1, "var_flat")
+    assert hasattr(result2, "var_flat")
 
 
 @pytest.mark.parametrize(
