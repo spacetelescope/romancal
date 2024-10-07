@@ -106,7 +106,7 @@ def apply_flux_correction(model):
 
     if model.meta.cal_step["flux"] == "COMPLETE":
         message = (
-            f"Input data is already in flux units of MJy/sr."
+            "Input data is already in flux units of MJy/sr."
             "\nFlux correction already applied."
         )
         log.info("Flux correction already applied.")

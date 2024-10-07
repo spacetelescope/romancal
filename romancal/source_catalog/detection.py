@@ -7,7 +7,6 @@ import math
 import warnings
 
 from astropy.convolution import convolve
-from astropy.units import Quantity
 from astropy.utils.exceptions import AstropyUserWarning
 from photutils.segmentation import SourceFinder, make_2dgaussian_kernel
 from photutils.utils.exceptions import NoDetectionsWarning

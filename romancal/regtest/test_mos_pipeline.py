@@ -1,20 +1,19 @@
 """ Roman tests for the High Level Pipeline """
 
+import json
 import os
+from pathlib import Path
 
+import asdf
 import pytest
 import roman_datamodels as rdm
+from astropy.units import Quantity
 
 from romancal.associations.asn_from_list import asn_from_list
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
-from .regtestdata import compare_asdf
-from pathlib import Path
-from astropy.units import Quantity
-import asdf
-
 from ..associations.association_io import json as asn_json
-import json
+from .regtestdata import compare_asdf
 
 
 def passfail(bool_expr):
