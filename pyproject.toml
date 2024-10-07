@@ -131,6 +131,11 @@ norecursedirs = [
 ]
 filterwarnings = [
     "error::ResourceWarning",
+    # Files left open by tests can trigger ResourceWarnings during test
+    # teardown which otherwise would be converted back into a warning
+    # by pytest. Turn these PytestUnraisableExceptionWarnings back
+    # into errors
+    "error::pytest.PytestUnraisableExceptionWarning",
 ]
 junit_family = "xunit2"
 inputs_root = "roman-pipeline"

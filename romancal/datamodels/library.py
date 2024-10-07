@@ -70,6 +70,10 @@ class ModelLibrary(AbstractModelLibrary):
         if "asn_pool" in self.asn:
             model.meta.asn["pool_name"] = self.asn["asn_pool"]
 
+    def __del__(self):
+        for m in self._loaded_models.values():
+            m.close()
+
 
 def _mapping_to_group_id(mapping):
     """
