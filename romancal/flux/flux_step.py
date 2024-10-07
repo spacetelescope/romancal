@@ -2,7 +2,6 @@
 
 import logging
 
-import astropy.units as u
 from roman_datamodels import datamodels
 
 from ..datamodels import ModelLibrary
@@ -12,10 +11,6 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 __all__ = ["FluxStep"]
-
-
-# Define expected Level 2 units
-LV2_UNITS = u.DN / u.s
 
 
 class FluxStep(RomanStep):
@@ -104,26 +99,19 @@ def apply_flux_correction(model):
     DATA = ("data", "err")
     VARIANCES = ("var_rnoise", "var_poisson", "var_flat")
 
-    if model.data.unit == model.meta.photometry.conversion_megajanskys.unit:
-        log.info(
-            f"Input data is already in flux units of {model.meta.photometry.conversion_megajanskys.unit}."
-        )
-        log.info("Flux correction already applied.")
-        return
-
-    if model.data.unit != LV2_UNITS:
+    if model.meta.cal_step["flux"] == "COMPLETE":
         message = (
-            f"Input data units {model.data.unit} are not in the expected units of {LV2_UNITS}"
-            "\nAborting flux correction"
+            "Input data is already in flux units of MJy/sr."
+            "\nFlux correction already applied."
         )
-        [log.error(line) for line in message.splitlines()]
-        raise ValueError(message)
+        log.info(message)
+        return
 
     # Apply the correction.
     # The end goal in units is to have MJy/sr. The scale is in MJy/sr also.
     # Hence the extra factor of s/DN must be applied to cancel DN/s.
     log.debug("Flux correction being applied")
-    c_mj = model.meta.photometry.conversion_megajanskys / model.data.unit
+    c_mj = model.meta.photometry.conversion_megajanskys
     for data in DATA:
         model[data] = model[data] * c_mj
     for variance in VARIANCES:
