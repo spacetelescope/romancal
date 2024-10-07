@@ -1,7 +1,4 @@
 {
-  "DMS9": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_grism_processing_pipeline"
-  ],
   "DMS25": [
     "romancal.regtest.test_wfi_dq_init.test_dq_init_grism_step",
     "romancal.regtest.test_wfi_dq_init.test_dq_init_image_step"
@@ -10,29 +7,50 @@
     "romancal.regtest.test_wfi_flat_field.test_flat_field_crds_match_image_step"
   ],
   "DMS86": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_image_processing_pipeline"
+    "romancal.regtest.test_wfi_image_pipeline.test_steps_ran",
+    "romancal.regtest.test_mos_pipeline.test_steps_ran"
   ],
   "DMS87": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_image_processing_pipeline"
+    "romancal.regtest.test_wfi_image_pipeline.test_array_exists"
   ],
   "DMS88": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_image_processing_pipeline"
+    "romancal.regtest.test_wfi_image_pipeline.test_has_exposure_time",
+    "romancal.regtest.test_wfi_grism_pipeline.test_has_exposure_time"
+  ],
+  "DMS89": [
+    "romancal.regtest.test_wfi_image_pipeline.test_wcs_has_bounding_box",
+    "romancal.regtest.test_wfi_image_pipeline.test_repointed_matches_truth",
+    "romancal.regtest.test_wfi_image_pipeline.test_repointed_wcs_differs"
   ],
   "DMS90": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_grism_processing_pipeline"
+    "romancal.regtest.test_wfi_grism_pipeline.test_step_status"
   ],
   "DMS91": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_grism_processing_pipeline"
+    "romancal.regtest.test_wfi_grism_pipeline.test_array_exists"
+  ],
+  "DMS93": [
+    "romancal.regtest.test_wfi_grism_pipeline.test_wcs_has_bounding_box",
+    "romancal.regtest.test_wfi_grism_pipeline.test_repointed_wcs_differs"
+  ],
+  "DMS129": [
+    "romancal.regtest.test_wfi_image_pipeline.test_steps_ran",
+    "romancal.regtest.test_wfi_grism_pipeline.test_step_status",
+    "romancal.regtest.test_wfi_image_pipeline.test_has_a_wcs",
+    "romancal.regtest.test_wfi_image_pipeline.test_wcs_has_distortion_information",
+    "romancal.regtest.test_wfi_image_pipeline.test_wcs_applies_distortion_correction"
+  ],
+  "DMS136": [
+    "romancal.regtest.test_wfi_image_pipeline.test_instrument_meta"
   ],
   "DMS140": [
     "romancal.regtest.test_wfi_photom.test_absolute_photometric_calibration"
   ],
   "DMS278": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_grism_processing_pipeline"
+    "romancal.regtest.test_wfi_grism_pipeline.test_step_status"
   ],
   "DMS280": [
     "romancal.regtest.test_tweakreg.test_tweakreg",
-    "romancal.regtest.test_wfi_pipeline.test_level2_image_processing_pipeline"
+    "romancal.regtest.test_wfi_image_pipeline.test_output_is_image_model"
   ],
   "DMS342": [
     "romancal.regtest.test_resample.test_resample_single_file"
@@ -47,10 +65,14 @@
     "romancal.regtest.test_resample.test_resample_single_file"
   ],
   "DMS356": [
-    "romancal.regtest.test_mos_pipeline.test_level3_mos_pipeline"
+    "romancal.regtest.test_mos_pipeline.test_output_matches_truth",
+    "romancal.regtest.test_mos_pipeline.test_thumbnail_exists",
+    "romancal.regtest.test_mos_pipeline.test_preview_exists",
+    "romancal.regtest.test_mos_pipeline.test_output_is_mosaic",
+    "romancal.regtest.test_mos_pipeline.test_steps_ran"
   ],
   "DMS361": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_image_processing_pipeline"
+    "romancal.regtest.test_wfi_image_pipeline.test_jump_in_uneven_ramp"
   ],
   "DMS362": [
     "romancal.regtest.test_ramp_fitting.test_rampfit_step"
@@ -59,7 +81,7 @@
     "romancal.regtest.test_ramp_fitting.test_rampfit_step"
   ],
   "DMS365": [
-    "romancal.regtest.test_wfi_pipeline.test_level2_grism_processing_pipeline"
+    "romancal.regtest.test_wfi_grism_pipeline.test_jump_in_uneven_ramp"
   ],
   "DMS366": [
     "romancal.regtest.test_ramp_fitting.test_rampfit_step"
@@ -68,40 +90,41 @@
     "romancal.regtest.test_ramp_fitting.test_rampfit_step"
   ],
   "DMS373": [
-    "romancal.regtest.test_mos_pipeline.test_hlp_mosaic_pipeline"
+    "romancal.regtest.test_mos_skycell_pipeline.test_resample_ran"
   ],
   "DMS374": [
-    "romancal.regtest.test_catalog.test_catalog_l2",
-    "romancal.regtest.test_catalog.test_catalog_l3",
-    "romancal.regtest.test_mos_pipeline.test_level3_mos_pipeline"
+    "romancal.regtest.test_catalog.test_has_field",
+    "romancal.regtest.test_mos_pipeline.test_file_exists"
   ],
   "DMS375": [
-    "romancal.regtest.test_catalog.test_catalog_l2",
-    "romancal.regtest.test_catalog.test_catalog_l3"
+    "romancal.regtest.test_catalog.test_has_field"
   ],
   "DMS376": [
-    "romancal.regtest.test_catalog.test_catalog_l2",
-    "romancal.regtest.test_catalog.test_catalog_l3"
+    "romancal.regtest.test_catalog.test_has_field"
   ],
   "DMS386": [
-    "romancal.regtest.test_catalog.test_catalog_l2",
-    "romancal.regtest.test_catalog.test_catalog_l3"
+    "romancal.regtest.test_catalog.test_has_field"
   ],
   "DMS387": [
-    "romancal.regtest.test_catalog.test_catalog_l2",
-    "romancal.regtest.test_catalog.test_catalog_l3"
+    "romancal.regtest.test_catalog.test_has_field"
   ],
   "DMS400": [
-    "romancal.regtest.test_mos_pipeline.test_level3_mos_pipeline"
+    "romancal.regtest.test_mos_pipeline.test_steps_ran",
+    "romancal.regtest.test_mos_pipeline.test_added_background",
+    "romancal.regtest.test_mos_pipeline.test_added_background_level"
   ],
   "DMS405": [
     "romancal.regtest.test_tweakreg.test_tweakreg"
   ],
   "DMS413": [
-    "romancal.regtest.test_wfi_16resultants.test_16resultants_image_processing"
+    "romancal.regtest.test_wfi_image_16resultants.test_output_is_image_model",
+    "romancal.regtest.test_wfi_image_16resultants.test_input_has_16_resultants",
+    "romancal.regtest.test_wfi_image_16resultants.test_output_has_16_resultants"
   ],
   "DMS414": [
-    "romancal.regtest.test_wfi_16resultants.test_16resultants_spectral_processing"
+    "romancal.regtest.test_wfi_grism_16resultants.test_output_is_image_model",
+    "romancal.regtest.test_wfi_grism_16resultants.test_input_has_16_resultants",
+    "romancal.regtest.test_wfi_grism_16resultants.test_output_has_16_resultants"
   ],
   "DMS488": [
     "romancal.regtest.test_tweakreg.test_tweakreg"
