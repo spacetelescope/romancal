@@ -2,7 +2,6 @@
 
 import logging
 
-import astropy.units as u
 from roman_datamodels import datamodels
 
 from ..datamodels import ModelLibrary
@@ -12,10 +11,6 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 __all__ = ["FluxStep"]
-
-
-# Define expected Level 2 units
-LV2_UNITS = u.DN / u.s
 
 
 class FluxStep(RomanStep):
@@ -109,7 +104,7 @@ def apply_flux_correction(model):
             "Input data is already in flux units of MJy/sr."
             "\nFlux correction already applied."
         )
-        log.info("Flux correction already applied.")
+        log.info(message)
         return
 
     # Apply the correction.
