@@ -60,7 +60,7 @@ def test_dark_step_subtraction(instrument, exptype):
 
     # populate data array of science cube
     for i in range(0, 20):
-        ramp_model.data[0, 0, i] = i * ramp_model.data.unit
+        ramp_model.data[0, 0, i] = i
         darkref_model.data[0, 0, i] = i * 0.1 * darkref_model.data.unit
     orig_model = ramp_model.copy()
 
@@ -68,12 +68,12 @@ def test_dark_step_subtraction(instrument, exptype):
     result = DarkCurrentStep.call(ramp_model, override_dark=darkref_model)
 
     # check that the dark file is subtracted frame by frame from the science data
-    diff = orig_model.data.value - darkref_model.data.value
+    diff = orig_model.data - darkref_model.data.value
 
     # test that the output data file is equal to the difference found when subtracting
     # reffile from sci file
     np.testing.assert_array_equal(
-        result.data.value, diff, err_msg="dark file should be subtracted from sci file "
+        result.data, diff, err_msg="dark file should be subtracted from sci file "
     )
 
 
@@ -148,7 +148,7 @@ def create_ramp_and_dark(shape, instrument, exptype):
     ramp.meta.instrument.detector = "WFI01"
     ramp.meta.instrument.optical_element = "F158"
     ramp.meta.exposure.type = exptype
-    ramp.data = u.Quantity(np.ones(shape, dtype=np.float32), u.DN, dtype=np.float32)
+    ramp.data = np.ones(shape, dtype=np.float32)
     ramp_model = RampModel(ramp)
 
     # Create dark model

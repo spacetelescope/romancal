@@ -226,10 +226,10 @@ def model_from_resultants(resultants, read_pattern=None):
     gdq = np.zeros(shape=shape, dtype=np.uint8)
 
     dm_ramp = maker_utils.mk_ramp(shape=shape)
-    dm_ramp.data = u.Quantity(full_wfi, u.DN, dtype=np.float32)
+    dm_ramp.data = full_wfi
     dm_ramp.pixeldq = pixdq
     dm_ramp.groupdq = gdq
-    dm_ramp.err = u.Quantity(err, u.DN, dtype=np.float32)
+    dm_ramp.err = err
 
     dm_ramp.meta.exposure.frame_time = ROMAN_READ_TIME
     dm_ramp.meta.exposure.ngroups = shape[0]

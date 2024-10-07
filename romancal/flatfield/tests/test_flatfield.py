@@ -26,22 +26,12 @@ def test_flatfield_step_interface(instrument, exptype):
     wfi_image.meta.instrument.detector = "WFI01"
     wfi_image.meta.instrument.optical_element = "F158"
     wfi_image.meta.exposure.type = exptype
-    wfi_image.data = u.Quantity(
-        np.ones(shape, dtype=np.float32), u.DN / u.s, dtype=np.float32
-    )
+    wfi_image.data =  np.ones(shape, dtype=np.float32)
     wfi_image.dq = np.zeros(shape, dtype=np.uint32)
-    wfi_image.err = u.Quantity(
-        np.zeros(shape, dtype=np.float32), u.DN / u.s, dtype=np.float32
-    )
-    wfi_image.var_poisson = u.Quantity(
-        np.zeros(shape, dtype=np.float32), u.DN**2 / u.s**2, dtype=np.float32
-    )
-    wfi_image.var_rnoise = u.Quantity(
-        np.zeros(shape, dtype=np.float32), u.DN**2 / u.s**2, dtype=np.float32
-    )
-    wfi_image.var_flat = u.Quantity(
-        np.zeros(shape, dtype=np.float32), u.DN**2 / u.s**2, dtype=np.float32
-    )
+    wfi_image.err = np.zeros(shape, dtype=np.float32)
+    wfi_image.var_poisson = np.zeros(shape, dtype=np.float32)
+    wfi_image.var_rnoise = np.zeros(shape, dtype=np.float32)
+    wfi_image.var_flat = np.zeros(shape, dtype=np.float32)
 
     wfi_image_model = ImageModel(wfi_image)
     flatref = stnode.FlatRef()

@@ -35,9 +35,7 @@ def test_linearity_coeff(instrument, exptype):
     wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
     wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = u.Quantity(
-        np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
-    )
+    wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     result = DQInitStep.call(wfi_sci_raw_model)

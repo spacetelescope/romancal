@@ -57,13 +57,13 @@ class TestStandardView:
         assert standard.data.base is None
 
         # Check the relationship between the standard view and the datamodel
-        assert (standard.detector == datamodel.data.value).all()
-        assert (standard.left == datamodel.border_ref_pix_left.value).all()
-        assert (standard.right == datamodel.border_ref_pix_right.value).all()
+        assert (standard.detector == datamodel.data).all()
+        assert (standard.left == datamodel.border_ref_pix_left).all()
+        assert (standard.right == datamodel.border_ref_pix_right).all()
 
         # The amp33's dtype changes because it needs to be promoted to match that
         # of the rest of the data
-        assert (standard.amp33 == datamodel.amp33.value.astype(np.float32)).all()
+        assert (standard.amp33 == datamodel.amp33.astype(np.float32)).all()
 
     def test_update(self, datamodel):
         standard = StandardView.from_datamodel(datamodel)
@@ -97,20 +97,14 @@ class TestStandardView:
         assert new.border_ref_pix_left.dtype == old_left.dtype
         assert new.border_ref_pix_right.dtype == old_right.dtype
 
-        # Check the unit has been preserved
-        assert new.data.unit == old_detector.unit
-        assert new.amp33.unit == old_amp33.unit
-        assert new.border_ref_pix_left.unit == old_left.unit
-        assert new.border_ref_pix_right.unit == old_right.unit
-
         # Check the data has been updated correctly
-        assert (new.data.value == standard.detector).all()
-        assert (new.border_ref_pix_left.value == standard.left).all()
-        assert (new.border_ref_pix_right.value == standard.right).all()
+        assert (new.data == standard.detector).all()
+        assert (new.border_ref_pix_left == standard.left).all()
+        assert (new.border_ref_pix_right == standard.right).all()
 
         # The amp33's dtype changes because it needs to be shifted to match the
         # original data's dtype
-        assert (new.amp33.value == standard.amp33.astype(old_amp33.dtype)).all()
+        assert (new.amp33 == standard.amp33.astype(old_amp33.dtype)).all()
 
     def test_create_standard_view(self, data):
         """

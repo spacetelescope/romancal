@@ -199,9 +199,7 @@ def test_dqinit_step_interface(instrument, exptype):
     wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
     wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = u.Quantity(
-        np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
-    )
+    wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
     wfi_sci_raw[extra_key] = extra_value
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
@@ -251,9 +249,7 @@ def test_dqinit_refpix(instrument, exptype):
     wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
     wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = u.Quantity(
-        np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
-    )
+    wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Create mask model
@@ -272,7 +268,7 @@ def test_dqinit_refpix(instrument, exptype):
 
     # check if reference pixels are correct
     assert result.data.shape == (2, 20, 20)  # no pixels should be trimmed
-    assert result.amp33.value.shape == (2, 4096, 128)
+    assert result.amp33.shape == (2, 4096, 128)
     assert result.border_ref_pix_right.shape == (2, 20, 4)
     assert result.border_ref_pix_left.shape == (2, 20, 4)
     assert result.border_ref_pix_top.shape == (2, 4, 20)
@@ -304,9 +300,7 @@ def test_dqinit_resultantdq(instrument, exptype):
     wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.resultantdq[1, 12, 12] = pixel["DROPOUT"]
-    wfi_sci_raw.data = u.Quantity(
-        np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
-    )
+    wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Create mask model
@@ -354,9 +348,7 @@ def test_dqinit_getbestref(instrument, exptype):
     wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
     wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = u.Quantity(
-        np.ones(shape, dtype=np.uint16), u.DN, dtype=np.uint16
-    )
+    wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Perform Data Quality application step

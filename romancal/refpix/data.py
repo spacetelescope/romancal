@@ -82,24 +82,15 @@ class StandardView(BaseView):
         - right = detector[-Const.REF:]
     """
 
-    @staticmethod
-    def extract_value(data):
-        if isinstance(data, u.Quantity):
-            if data.unit != u.DN:
-                raise ValueError(f"Input data must be in units of DN, not {data.unit}")
-            data = data.value
-
-        return data
-
     @classmethod
     def from_datamodel(cls, datamodel: RampModel) -> StandardView:
         """
         Read the datamodel into the standard view.
         """
-        detector = cls.extract_value(datamodel.data)
+        detector = datamodel.data
 
         # Extract amp33
-        amp33 = cls.extract_value(datamodel.amp33)
+        amp33 = datamodel.amp33
         # amp33 is normally a uint16, but this computation requires it to match
         # the data type of the detector pixels.
         amp33 = amp33.astype(detector.dtype)
@@ -112,23 +103,11 @@ class StandardView(BaseView):
             - Returns the updated datamodel for a functional approach.
         """
 
-        datamodel.data = u.Quantity(
-            self.detector, unit=datamodel.data.unit, dtype=datamodel.data.dtype
-        )
+        datamodel.data = self.detector
         # ABS to avoid casting negative numbers to uint16
-        datamodel.amp33 = u.Quantity(
-            np.abs(self.amp33), unit=datamodel.amp33.unit, dtype=datamodel.amp33.dtype
-        )
-        datamodel.border_ref_pix_left = u.Quantity(
-            self.left,
-            unit=datamodel.border_ref_pix_left.unit,
-            dtype=datamodel.border_ref_pix_left.dtype,
-        )
-        datamodel.border_ref_pix_right = u.Quantity(
-            self.right,
-            unit=datamodel.border_ref_pix_right.unit,
-            dtype=datamodel.border_ref_pix_right.dtype,
-        )
+        datamodel.amp33 = np.abs(self.amp33).astype(datamodel.amp33.dtype)
+        datamodel.border_ref_pix_left = self.left
+        datamodel.border_ref_pix_right = self.right
 
         return datamodel
 

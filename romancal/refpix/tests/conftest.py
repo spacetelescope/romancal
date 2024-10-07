@@ -48,12 +48,8 @@ def datamodel(data):
     assert detector.shape == (Dims.N_FRAMES, Dims.N_ROWS, Const.N_COLUMNS)
     assert amp33.shape == (Dims.N_FRAMES, Dims.N_ROWS, Const.CHAN_WIDTH)
 
-    datamodel.data = u.Quantity(
-        detector, unit=datamodel.data.unit, dtype=datamodel.data.dtype
-    )
-    datamodel.amp33 = u.Quantity(
-        amp33, unit=datamodel.amp33.unit, dtype=datamodel.amp33.dtype
-    )
+    datamodel.data = detector
+    datamodel.amp33 = amp33.astype(datamodel.amp33.dtype)
 
     datamodel.border_ref_pix_left = datamodel.data[:, :, : Const.REF]
     datamodel.border_ref_pix_right = datamodel.data[:, :, -Const.REF :]

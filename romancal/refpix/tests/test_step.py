@@ -43,21 +43,17 @@ def test_refpix_step(
     assert result is not regression
 
     # Check the data
-    assert (result.data.value == regression.data.value).all()
-    assert result.data.unit == regression.data.unit
+    assert (result.data == regression.data).all()
     # Check the amp33
-    assert (result.amp33.value == regression.amp33.value).all()
-    assert result.amp33.unit == regression.amp33.unit
+    assert (result.amp33 == regression.amp33).all()
     # Check left ref pix
     assert (
-        result.border_ref_pix_left.value == regression.border_ref_pix_left.value
+        result.border_ref_pix_left == regression.border_ref_pix_left
     ).all()
-    assert result.border_ref_pix_left.unit == regression.border_ref_pix_left.unit
     # Check right ref pix
     assert (
-        result.border_ref_pix_right.value == regression.border_ref_pix_right.value
+        result.border_ref_pix_right == regression.border_ref_pix_right
     ).all()
-    assert result.border_ref_pix_right.unit == regression.border_ref_pix_right.unit
     #
     # Run the step with reffile = N/A
     result = RefPixStep.call(
