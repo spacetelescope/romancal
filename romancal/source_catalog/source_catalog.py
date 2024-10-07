@@ -103,9 +103,7 @@ class RomanSourceCatalog:
 
         self.sb_unit = "MJy/sr"
         self.l2_unit = "DN/s"
-        self.l2_conv_factor = (
-            self.model.meta.photometry.conversion_megajanskys / self.l2_unit
-        )
+        self.l2_conv_factor = self.model.meta.photometry.conversion_megajanskys
 
         if len(ci_star_thresholds) != 2:
             raise ValueError("ci_star_thresholds must contain only 2 items")
@@ -162,7 +160,7 @@ class RomanSourceCatalog:
         pixel_area = self.model.meta.photometry.pixelarea_steradians
         if pixel_area < 0:
             pixel_area = (self._pixel_scale**2).to(u.sr)
-        return pixel_area
+        return pixel_area.value
 
     def convert_l2_to_sb(self):
         """
@@ -205,19 +203,14 @@ class RomanSourceCatalog:
 
         The flux density unit is defined by self.flux_unit.
         """
-        if self.model.data.unit != self.sb_unit or self.model.err.unit != self.sb_unit:
-            raise ValueError(
-                f"data and err are expected to be in units of {self.sb_unit}"
-            )
 
         # the conversion in done in-place to avoid making copies of the data;
         # use a dictionary to set the value to avoid on-the-fly validation
         self.model["data"] *= self.pixel_area
-        self.model["data"] <<= self.flux_unit
+
         self.model["err"] *= self.pixel_area
-        self.model["err"] <<= self.flux_unit
+
         self.convolved_data *= self.pixel_area
-        self.convolved_data <<= self.flux_unit
 
     def convert_flux_density_to_sb(self):
         """
@@ -226,20 +219,10 @@ class RomanSourceCatalog:
 
         This is the inverse operation of `convert_sb_to_flux_density`.
         """
-        if (
-            self.model.data.unit != self.flux_unit
-            or self.model.err.unit != self.flux_unit
-        ):
-            raise ValueError(
-                f"data and err are expected to be in units of {self.flux_unit}"
-            )
 
         self.model["data"] /= self.pixel_area
-        self.model["data"] <<= self.sb_unit
         self.model["err"] /= self.pixel_area
-        self.model["err"] <<= self.sb_unit
         self.convolved_data /= self.pixel_area
-        self.convolved_data <<= self.sb_unit
 
     def convert_flux_to_abmag(self, flux, flux_err):
         """
@@ -260,15 +243,14 @@ class RomanSourceCatalog:
             warnings.simplefilter("ignore", category=RuntimeWarning)
 
             # exact AB mag zero point
-            flux_zpt = 10 ** (-0.4 * 48.60) * u.erg / u.s / u.cm**2 / u.Hz
-            flux_zpt <<= self.flux_unit
+            flux_zpt = 10 ** (-0.4 * 48.60)
 
-            abmag_zpt = 2.5 * np.log10(flux_zpt.value)
-            abmag = -2.5 * np.log10(flux.value) + abmag_zpt
-            abmag_err = 2.5 * np.log10(1.0 + (flux_err.value / flux.value))
+            abmag_zpt = 2.5 * np.log10(flux_zpt)
+            abmag = -2.5 * np.log10(flux) + abmag_zpt
+            abmag_err = 2.5 * np.log10(1.0 + (flux_err / flux))
 
             # handle negative fluxes
-            idx = flux.value < 0
+            idx = flux < 0
             abmag[idx] = np.nan
             abmag_err[idx] = np.nan
 
@@ -560,7 +542,7 @@ class RomanSourceCatalog:
             bkg_median = []
             bkg_std = []
             for mask in bkg_aper_masks:
-                bkg_data = mask.get_values(self.model.data.value)
+                bkg_data = mask.get_values(self.model.data)
                 values = sigclip(bkg_data, masked=False)
                 nvalues.append(values.size)
                 bkg_median.append(np.median(values))
@@ -570,9 +552,6 @@ class RomanSourceCatalog:
             bkg_median = np.array(bkg_median)
             # standard error of the median
             bkg_median_err = np.sqrt(np.pi / (2.0 * nvalues)) * np.array(bkg_std)
-
-        bkg_median <<= self.model.data.unit
-        bkg_median_err <<= self.model.data.unit
 
         return bkg_median, bkg_median_err
 
@@ -783,7 +762,7 @@ class RomanSourceCatalog:
         The DAOFind convolved data.
         """
         return ndimage.convolve(
-            self.model.data.value, self._daofind_kernel, mode="constant", cval=0.0
+            self.model.data, self._daofind_kernel, mode="constant", cval=0.0
         )
 
     @lazyproperty

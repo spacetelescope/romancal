@@ -5,9 +5,16 @@ import os
 import pytest
 import roman_datamodels as rdm
 
+from romancal.associations.asn_from_list import asn_from_list
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
 from .regtestdata import compare_asdf
+from pathlib import Path
+from astropy.units import Quantity
+import asdf
+
+from ..associations.association_io import json as asn_json
+import json
 
 
 def passfail(bool_expr):
@@ -15,6 +22,86 @@ def passfail(bool_expr):
     if bool_expr:
         return "Pass"
     return "Fail"
+
+
+class RegtestFileModifier:
+    # TODO: remove this entire class once the units
+    #  have been removed from the regtest files
+
+    def __init__(self, rtdata):
+        self.rtdata = rtdata
+        self.updated_asn_fname = None
+        self.truth_parent = Path(rtdata.truth).parent
+        self.input_parent = Path(rtdata.input).parent
+        self.truth_relative_path = Path(self.truth_parent).relative_to(
+            self.input_parent
+        )
+        self.truth_path = self.truth_relative_path / f"{Path(self.rtdata.truth).name}"
+
+    @staticmethod
+    def create_unitless_file(input_filename: str, output_filename: str) -> None:
+        with asdf.config_context() as cfg:
+            cfg.validate_on_read = False
+            cfg.validate_on_save = False
+            af = asdf.open(input_filename)
+
+            for attr in af.tree["roman"]:
+                item = getattr(af.tree["roman"], attr)
+                if isinstance(item, Quantity):
+                    setattr(af.tree["roman"], attr, item.value)
+
+            for attr in af.tree["roman"].meta.photometry:
+                item = getattr(af.tree["roman"].meta.photometry, attr)
+                if isinstance(item, Quantity):
+                    setattr(af.tree["roman"].meta.photometry, attr, item.value)
+
+            af.write_to(output_filename)
+
+    def create_new_asn_file(self, output_filename_list: list):
+        updated_asn = asn_from_list(
+            output_filename_list,
+            product_name=f"{self.rtdata.asn['products'][0]['name']}_no_units",
+        )
+        updated_asn["target"] = "none"
+
+        current_asn_fname = Path(self.rtdata.input)
+        self.updated_asn_fname = (
+            f"{current_asn_fname.stem}_no_units{current_asn_fname.suffix}"
+        )
+
+        _, serialized_updated_asn = asn_json.dump(updated_asn)
+        with open(self.updated_asn_fname, "w") as f:
+            json.dump(
+                json.loads(serialized_updated_asn), f, indent=4, separators=(",", ": ")
+            )
+
+    def update_rtdata(self):
+        rtdata_root_path = Path(self.rtdata.input).parent
+        self.rtdata.input = f"{rtdata_root_path}/{Path(self.updated_asn_fname)}"
+        # r0099101001001001001_F158_visit_no_units_i2d.asdf
+        self.rtdata.output = f"{rtdata_root_path}/{Path(self.rtdata.output.split('_i2d')[0]).stem}_no_units_i2d{Path(self.rtdata.output).suffix}"
+
+    def prepare_regtest_input_files(self):
+        input_filenames = [
+            x["expname"] for x in self.rtdata.asn["products"][0]["members"]
+        ]
+        input_filenames.append(str(self.truth_path))
+        output_filename_list = []
+        # include truth file
+        for input_filename in input_filenames:
+            fname = Path(input_filename)
+            if str(fname).startswith(str(self.truth_relative_path)):
+                output_filename = Path(
+                    f"{str(fname).split('_i2d.asdf')[0]}_no_units_i2d{fname.suffix}"
+                )
+                self.rtdata.truth = str(self.truth_parent / output_filename.name)
+            else:
+                output_filename = f"{fname.stem}_no_units{fname.suffix}"
+                output_filename_list.append(output_filename)
+            self.create_unitless_file(input_filename, output_filename)
+
+        self.create_new_asn_file(output_filename_list)
+        self.update_rtdata()
 
 
 @pytest.mark.bigdata
@@ -26,12 +113,18 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     # Test Pipeline
     output = "r0099101001001001001_F158_visit_i2d.asdf"
     rtdata.output = output
+
+    rtdata.get_truth(f"truth/WFI/image/{output}")
+
+    fixer = RegtestFileModifier(rtdata)
+    fixer.prepare_regtest_input_files()
+
     args = [
         "roman_mos",
         rtdata.input,
     ]
     MosaicPipeline.from_cmdline(args)
-    rtdata.get_truth(f"truth/WFI/image/{output}")
+
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 

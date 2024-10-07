@@ -107,7 +107,7 @@ class OutlierDetection:
             median_wcs = copy.deepcopy(example_model.meta.wcs)
             if pars["save_intermediate_results"]:
                 median_model = example_model.copy()
-                median_model.data = Quantity(median_data, unit=median_model.data.unit)
+                median_model.data = median_data
                 median_model.meta.filename = "drizzled_median.asdf"
                 median_model_output_path = self.make_output_path(
                     basepath=median_model.meta.filename,
@@ -206,15 +206,12 @@ class OutlierDetection:
                 # make blot_data Quantity (same unit as image.data)
                 if resampled:
                     # blot back onto image
-                    blot_data = Quantity(
-                        gwcs_blot(
-                            median_data, median_wcs, image, interp=interp, sinscl=sinscl
-                        ),
-                        unit=image.data.unit,
+                    blot_data = gwcs_blot(
+                        median_data, median_wcs, image, interp=interp, sinscl=sinscl
                     )
                 else:
                     # use median
-                    blot_data = Quantity(median_data, unit=image.data.unit, copy=True)
+                    blot_data = median_data.copy()
                 flag_cr(image, blot_data, **self.outlierpars)
                 self.input_models.shelve(image, i)
 
@@ -272,7 +269,7 @@ def flag_cr(
         subtracted_background = backg
 
     sci_data = sci_image.data
-    blot_deriv = abs_deriv(blot_data.value)
+    blot_deriv = abs_deriv(blot_data)
     err_data = np.nan_to_num(sci_image.err)
 
     # create the outlier mask
@@ -283,8 +280,8 @@ def flag_cr(
         # Create a boolean mask based on a scaled version of
         # the derivative image (dealing with interpolating issues?)
         # and the standard n*sigma above the noise
-        threshold1 = scale1 * blot_deriv + snr1 * err_data.value
-        mask1 = np.greater(diff_noise.value, threshold1)
+        threshold1 = scale1 * blot_deriv + snr1 * err_data
+        mask1 = np.greater(diff_noise, threshold1)
 
         # Smooth the boolean mask with a 3x3 boxcar kernel
         kernel = np.ones((3, 3), dtype=int)
@@ -292,8 +289,8 @@ def flag_cr(
 
         # Create a 2nd boolean mask based on the 2nd set of
         # scale and threshold values
-        threshold2 = scale2 * blot_deriv + snr2 * err_data.value
-        mask2 = np.greater(diff_noise.value, threshold2)
+        threshold2 = scale2 * blot_deriv + snr2 * err_data
+        mask2 = np.greater(diff_noise, threshold2)
 
         # Final boolean mask
         cr_mask = mask1_smoothed & mask2
@@ -303,7 +300,7 @@ def flag_cr(
 
         # straightforward detection of outliers for non-dithered data since
         # err_data includes all noise sources (photon, read, and flat for baseline)
-        cr_mask = np.greater(diff_noise.value, snr1 * err_data.value)
+        cr_mask = np.greater(diff_noise, snr1 * err_data)
 
     # Count existing DO_NOT_USE pixels
     count_existing = np.count_nonzero(sci_image.dq & pixel.DO_NOT_USE)

@@ -365,18 +365,15 @@ class ResampleData:
         exptime_tot = self.resample_exposure_time(output_model)
 
         # TODO: fix unit here
-        output_model.err = u.Quantity(
-            np.sqrt(
-                np.nansum(
-                    [
-                        output_model.var_rnoise,
-                        output_model.var_poisson,
-                        output_model.var_flat,
-                    ],
-                    axis=0,
-                )
-            ),
-            unit=output_model.err.unit,
+        output_model.err = np.sqrt(
+            np.nansum(
+                [
+                    output_model.var_rnoise,
+                    output_model.var_poisson,
+                    output_model.var_flat,
+                ],
+                axis=0,
+            )
         )
 
         self.update_exposure_times(output_model, exptime_tot)
@@ -395,7 +392,7 @@ class ResampleData:
         This modifies ``output_model`` in-place.
         """
         output_wcs = self.output_wcs
-        inverse_variance_sum = np.full_like(output_model.data.value, np.nan)
+        inverse_variance_sum = np.full_like(output_model.data, np.nan)
 
         log.info(f"Resampling {name}")
         with self.input_models:
@@ -461,9 +458,7 @@ class ResampleData:
         # We now have a sum of the inverse resampled variances.  We need the
         # inverse of that to get back to units of variance.
         # TODO: fix unit here
-        output_variance = u.Quantity(
-            np.reciprocal(inverse_variance_sum), unit=u.MJy**2 / u.sr**2
-        )
+        output_variance = np.reciprocal(inverse_variance_sum)
 
         setattr(output_model, name, output_variance)
 
@@ -516,7 +511,7 @@ class ResampleData:
                     ymax=ymax,
                 )
 
-                exptime_tot += resampled_exptime.value
+                exptime_tot += resampled_exptime
                 self.input_models.shelve(model, i, modify=False)
 
         return exptime_tot
@@ -702,11 +697,11 @@ class ResampleData:
         log.info(f"Drizzling {insci.shape} --> {outsci.shape}")
 
         _vers, _nmiss, _nskip = cdrizzle.tdriz(
-            insci.astype(np.float32).value,
+            insci.astype(np.float32),
             inwht,
             pixmap,
-            outsci.value,
-            outwht.value,
+            outsci,
+            outwht,
             outcon,
             uniqid=uniqid,
             xmin=xmin,

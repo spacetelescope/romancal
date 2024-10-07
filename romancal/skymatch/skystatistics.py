@@ -126,14 +126,14 @@ cgi-bin/gethelp.cgi?gstatistics>`_
             in `skyvalue`.
 
         """
-        imstat = ImageStats(image=data.value, fields=self._fields, **(self._kwargs))
+        imstat = ImageStats(image=data, fields=self._fields, **(self._kwargs))
         stat = self._skystat(imstat)  # dict or scalar
 
         # re-attach units:
         if hasattr(stat, "__len__"):
-            self.skyval = {k: value * data.unit for k, value in stat.items()}
+            self.skyval = {k: value for k, value in stat.items()}
         else:
-            self.skyval = stat * data.unit
+            self.skyval = stat
 
         self.npix = imstat.npix
         return self.skyval, self.npix
