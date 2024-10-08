@@ -2,7 +2,6 @@ from enum import IntEnum
 
 import numpy as np
 import pytest
-from astropy import units as u
 from roman_datamodels.datamodels import RampModel, RefpixRefModel
 from roman_datamodels.maker_utils import mk_ramp, mk_refpix
 

@@ -3,7 +3,6 @@ Apply linearity correction to a science image
 """
 
 import numpy as np
-from astropy import units as u
 from roman_datamodels import datamodels as rdd
 from roman_datamodels.dqflags import pixel
 from stcal.linearity.linearity import linearity_correction

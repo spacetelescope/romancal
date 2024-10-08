@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from astropy import units as u
 from roman_datamodels import maker_utils, stnode
 from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
 from roman_datamodels.dqflags import pixel

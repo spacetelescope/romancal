@@ -1,5 +1,3 @@
-from astropy import units as u
-
 from romancal.refpix.data import StandardView
 from romancal.refpix.refpix import run_steps
 

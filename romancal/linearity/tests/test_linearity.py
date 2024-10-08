@@ -6,7 +6,6 @@ Unit tests for linearity correction
 
 import numpy as np
 import pytest
-from astropy import units as u
 from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import LinearityRefModel, ScienceRawModel
 

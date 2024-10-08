@@ -6,7 +6,6 @@ Unit tests for saturation flagging
 
 import numpy as np
 import pytest
-from astropy import units as u
 from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import ScienceRawModel
 from roman_datamodels.dqflags import group, pixel

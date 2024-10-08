@@ -47,13 +47,9 @@ def test_refpix_step(
     # Check the amp33
     assert (result.amp33 == regression.amp33).all()
     # Check left ref pix
-    assert (
-        result.border_ref_pix_left == regression.border_ref_pix_left
-    ).all()
+    assert (result.border_ref_pix_left == regression.border_ref_pix_left).all()
     # Check right ref pix
-    assert (
-        result.border_ref_pix_right == regression.border_ref_pix_right
-    ).all()
+    assert (result.border_ref_pix_right == regression.border_ref_pix_right).all()
     #
     # Run the step with reffile = N/A
     result = RefPixStep.call(

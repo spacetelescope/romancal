@@ -5,7 +5,6 @@ Unit tests for dark current correction
 import numpy as np
 import pytest
 import roman_datamodels as rdm
-from astropy import units as u
 from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import DarkRefModel, RampModel
 

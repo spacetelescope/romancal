@@ -19,7 +19,6 @@ from .regtestdata import compare_asdf
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 
-
 class RegtestFileModifier:
     # TODO: remove this entire class once the units
     #  have been removed from the regtest files
@@ -98,7 +97,6 @@ class RegtestFileModifier:
 
         self.create_new_asn_file(output_filename_list)
         self.update_rtdata()
-
 
 
 @pytest.fixture(scope="module")

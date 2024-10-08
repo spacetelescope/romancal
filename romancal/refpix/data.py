@@ -11,7 +11,6 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 import numpy as np
-from astropy import units as u
 from scipy import fft
 
 
