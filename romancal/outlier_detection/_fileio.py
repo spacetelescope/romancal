@@ -1,7 +1,5 @@
 import logging
 
-from astropy.units import Quantity
-
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 

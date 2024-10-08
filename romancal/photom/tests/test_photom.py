@@ -118,12 +118,8 @@ def test_no_photom_match():
 
         # Assert that photom elements are not updated
         assert output_model.meta.photometry.pixelarea_steradians == -1.0
-        assert (
-            output_model.meta.photometry.conversion_megajanskys == -1.0
-        )
-        assert (
-            output_model.meta.photometry.conversion_microjanskys_uncertainty == -1.0
-        )
+        assert output_model.meta.photometry.conversion_megajanskys == -1.0
+        assert output_model.meta.photometry.conversion_microjanskys_uncertainty == -1.0
 
 
 def test_apply_photom1():
@@ -281,7 +277,9 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     wfi_image.meta.instrument.optical_element = "PRISM"
 
     # Set photometric values for spectroscopic data
-    wfi_image.meta.photometry.pixelarea_steradians = (2.31307642258977e-14 * u.steradian).value
+    wfi_image.meta.photometry.pixelarea_steradians = (
+        2.31307642258977e-14 * u.steradian
+    ).value
     wfi_image.meta.photometry.pixelarea_arcsecsq = (
         0.000984102303070964 * u.arcsecond * u.arcsecond
     ).value

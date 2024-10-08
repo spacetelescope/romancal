@@ -73,9 +73,9 @@ def mk_image_model(
 ):
     l2 = mk_level2_image(shape=image_shape)
     l2_im = ImageModel(l2)
-    l2_im.data = rng.normal(loc=rate_mean, scale=rate_std, size=l2_im.data.shape).astype(
-            np.float32
-        )
+    l2_im.data = rng.normal(
+        loc=rate_mean, scale=rate_std, size=l2_im.data.shape
+    ).astype(np.float32)
 
     l2_im.meta["wcs"] = mk_gwcs(image_shape, sky_offset=sky_offset, rotate=rotation)
 
