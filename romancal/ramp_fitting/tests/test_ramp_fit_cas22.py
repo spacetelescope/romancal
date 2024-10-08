@@ -105,7 +105,7 @@ def test_fits(fit_ramps, attribute):
     """Check slopes"""
     image_model, expected = fit_ramps
 
-    value = getattr(image_model, attribute).value
+    value = getattr(image_model, attribute)
     np.testing.assert_allclose(value, expected[attribute], 1e-05)
 
 

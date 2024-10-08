@@ -1,9 +1,7 @@
 import os
 
-import astropy.units as u
 import numpy as np
 import pytest
-from astropy.units import Quantity
 
 from romancal.datamodels import ModelLibrary
 from romancal.outlier_detection import OutlierDetectionStep
@@ -104,10 +102,10 @@ def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_imag
     """
     img_1 = base_image()
     img_1.meta.filename = "img1_cal.asdf"
-    img_1.meta.background.level = 0 * u.DN / u.s
+    img_1.meta.background.level = 0
     img_2 = base_image()
     img_2.meta.filename = "img2_cal.asdf"
-    img_2.meta.background.level = 0 * u.DN / u.s
+    img_2.meta.background.level = 0
     input_models = ModelLibrary([img_1, img_2])
 
     outlier_step = OutlierDetectionStep(
@@ -134,9 +132,9 @@ def test_find_outliers(tmp_path, base_image, on_disk):
     """
     Test that OutlierDetection can find outliers.
     """
-    cr_value = Quantity(100, "DN / s")
-    source_value = Quantity(10, "DN / s")
-    err_value = Quantity(10, "DN / s")  # snr=1
+    cr_value = 100
+    source_value = 10
+    err_value = 10  # snr=1
 
     imgs = []
     for i in range(3):
@@ -145,7 +143,7 @@ def test_find_outliers(tmp_path, base_image, on_disk):
         img.err[:] = err_value
         img.meta.filename = f"img{i}_suffix.asdf"
         img.meta.observation.exposure = i
-        img.meta.background.level = 0 * u.DN / u.s
+        img.meta.background.level = 0
         imgs.append(img)
 
     # add outliers
@@ -204,14 +202,12 @@ def test_identical_images(tmp_path, base_image, caplog):
     """
     img_1 = base_image()
     img_1.meta.filename = "img1_suffix.asdf"
-    img_1.meta.background.level = 0 * u.DN / u.s
+    img_1.meta.background.level = 0
     # add outliers
     img_1_input_coords = np.array(
         [(5, 45), (25, 25), (45, 85), (65, 65), (85, 5)], dtype=[("x", int), ("y", int)]
     )
-    img_1.data[img_1_input_coords["x"], img_1_input_coords["y"]] = Quantity(
-        100000, "DN / s"
-    )
+    img_1.data[img_1_input_coords["x"], img_1_input_coords["y"]] = 100000
 
     img_2 = img_1.copy()
     img_2.meta.filename = "img2_suffix.asdf"
@@ -258,10 +254,10 @@ def test_outlier_detection_always_returns_modelcontainer_with_updated_datamodels
     os.chdir(tmp_path)
     img_1 = base_image()
     img_1.meta.filename = "img_1.asdf"
-    img_1.data *= img_1.meta.photometry.conversion_megajanskys / img_1.data.unit
+    img_1.data *= img_1.meta.photometry.conversion_megajanskys / img_1.data
     img_2 = base_image()
     img_2.meta.filename = "img_2.asdf"
-    img_2.data *= img_2.meta.photometry.conversion_megajanskys / img_2.data.unit
+    img_2.data *= img_2.meta.photometry.conversion_megajanskys / img_2.data
 
     library = ModelLibrary([img_1, img_2])
     library._save(tmp_path)

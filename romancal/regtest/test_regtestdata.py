@@ -33,9 +33,9 @@ def test_compare_asdf(tmp_path, modification):
     l2.save(file0)
     atol = 0.0001
     if modification == "small":
-        l2.data += (atol / 2) * l2.data.unit
+        l2.data += (atol / 2)
     elif modification == "large":
-        l2.data += (atol * 2) * l2.data.unit
+        l2.data += (atol * 2)
     l2.save(file1)
     diff = compare_asdf(file0, file1, atol=atol)
     if modification == "large":

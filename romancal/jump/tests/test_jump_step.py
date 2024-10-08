@@ -106,10 +106,10 @@ def setup_inputs():
         dm_ramp.meta.instrument.name = "WFI"
         dm_ramp.meta.instrument.optical_element = "F158"
 
-        dm_ramp.data = u.Quantity(data + 6.0, u.DN, dtype=np.float32)
+        dm_ramp.data = data + 6.0
         dm_ramp.pixeldq = pixdq
         dm_ramp.groupdq = gdq
-        dm_ramp.err = u.Quantity(err, u.DN, dtype=np.float32)
+        dm_ramp.err = err
 
         dm_ramp.meta.exposure.type = "WFI_IMAGE"
         dm_ramp.meta.exposure.group_time = deltatime
@@ -148,7 +148,7 @@ def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
     )
 
     for i in range(ngroups):
-        model1.data[i, :, :] = deltaDN * i * model1.data.unit
+        model1.data[i, :, :] = deltaDN * i
 
     first_CR_group_locs = [x for x in range(1, 7) if x % 5 == 0]
 
@@ -162,7 +162,7 @@ def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
         CR_group = next(CR_pool)
         model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]] = (
             model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]]
-            + 5000.0 * model1.data.unit
+            + 5000.0
         )
 
     out_model = JumpStep.call(
@@ -203,7 +203,7 @@ def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
     )
 
     for i in range(ngroups):
-        model1.data[i, :, :] = deltaDN * i * model1.data.unit
+        model1.data[i, :, :] = deltaDN * i
 
     first_CR_group_locs = [x for x in range(1, 7) if x % 5 == 0]
     CR_locs = [x for x in range(xsize * ysize) if x % CR_fraction == 0]
@@ -215,11 +215,11 @@ def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
         CR_group = next(CR_pool)
 
         model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]] = (
-            model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]] + 5000 * model1.data.unit
+            model1.data[CR_group:, CR_y_locs[i], CR_x_locs[i]] + 5000
         )
         model1.data[CR_group + 8 :, CR_y_locs[i], CR_x_locs[i]] = (
             model1.data[CR_group + 8 :, CR_y_locs[i], CR_x_locs[i]]
-            + 700 * model1.data.unit
+            + 700
         )
 
     out_model = JumpStep.call(

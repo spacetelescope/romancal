@@ -66,7 +66,7 @@ class WfiSca:
         datamodels.ImageModel
             An L2 ImageModel datamodel.
         """
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(seed=13)
         l2 = maker_utils.mk_level2_image(
             shape=self.shape,
             **{
@@ -94,26 +94,10 @@ class WfiSca:
                         "exposure": 1,
                     },
                 },
-                "data": u.Quantity(
-                    rng.poisson(2.5, size=self.shape).astype(np.float32),
-                    u.MJy / u.sr,
-                    dtype=np.float32,
-                ),
-                "var_rnoise": u.Quantity(
-                    rng.normal(1, 0.05, size=self.shape).astype(np.float32),
-                    u.MJy**2 / u.sr**2,
-                    dtype=np.float32,
-                ),
-                "var_poisson": u.Quantity(
-                    rng.poisson(1, size=self.shape).astype(np.float32),
-                    u.MJy**2 / u.sr**2,
-                    dtype=np.float32,
-                ),
-                "var_flat": u.Quantity(
-                    rng.uniform(0, 1, size=self.shape).astype(np.float32),
-                    u.MJy**2 / u.sr**2,
-                    dtype=np.float32,
-                ),
+                "data": rng.poisson(2.5, size=self.shape).astype(np.float32),
+                "var_rnoise": rng.normal(1, 0.05, size=self.shape).astype(np.float32),
+                "var_poisson": rng.poisson(1, size=self.shape).astype(np.float32),
+                "var_flat": rng.uniform(0, 1, size=self.shape).astype(np.float32),
             },
         )
         # data from WFISim simulation of SCA #01
@@ -634,7 +618,7 @@ def test_resample_variance_array(wfi_sca1, wfi_sca4, name):
     expected_combined_variance_value = np.nanmean(mean_data) / len(input_models)
 
     np.isclose(
-        np.nanmean(getattr(output_model, name)).value,
+        np.nanmean(getattr(output_model, name)),
         expected_combined_variance_value,
         atol=0.01,
     )
