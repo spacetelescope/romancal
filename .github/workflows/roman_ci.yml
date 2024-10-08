@@ -84,3 +84,4 @@ jobs:
           coverage: codecov
           pytest-results-summary: true
         - linux: py312-webbpsf
+        - linux: py313-webbpsf
