@@ -15,12 +15,9 @@ from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 from ..associations.association_io import json as asn_json
 from .regtestdata import compare_asdf
 
+# mark all tests in this module
+pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
-def passfail(bool_expr):
-    """set pass fail"""
-    if bool_expr:
-        return "Pass"
-    return "Fail"
 
 
 class RegtestFileModifier:
@@ -103,10 +100,11 @@ class RegtestFileModifier:
         self.update_rtdata()
 
 
-@pytest.mark.bigdata
-@pytest.mark.soctests
-def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
-    """Tests for level 3 processing requirements DMS356"""
+
+@pytest.fixture(scope="module")
+def run_mos(rtdata_module):
+    rtdata = rtdata_module
+
     rtdata.get_asn("WFI/image/L3_regtest_asn.json")
 
     # Test Pipeline
@@ -124,123 +122,90 @@ def test_level3_mos_pipeline(rtdata, ignore_asdf_paths):
     ]
     MosaicPipeline.from_cmdline(args)
 
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    # rtdata.get_truth(f"truth/WFI/image/{output}")
+    return rtdata
+
+
+@pytest.fixture(scope="module")
+def output_filename(run_mos):
+    return run_mos.output
+
+
+@pytest.fixture(scope="module")
+def output_model(output_filename):
+    with rdm.open(output_filename) as model:
+        yield model
+
+
+@pytest.fixture(scope="module")
+def truth_filename(run_mos):
+    return run_mos.truth
+
+
+@pytest.fixture(scope="module")
+def thumbnail_filename(output_filename):
+    thumbnail_filename = output_filename.rsplit("_", 1)[0] + "_thumb.png"
+    preview_cmd = f"stpreview to {output_filename} {thumbnail_filename} 256 256 roman"
+    os.system(preview_cmd)  # nosec
+    return thumbnail_filename
+
+
+@pytest.fixture(scope="module")
+def preview_filename(output_filename):
+    preview_filename = output_filename.rsplit("_", 1)[0] + "_preview.png"
+    preview_cmd = f"stpreview to {output_filename} {preview_filename} 1080 1080 roman"
+    os.system(preview_cmd)  # nosec
+    return preview_filename
+
+
+def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
+    # DMS356
+    diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
-    # Generate thumbnail image
-    input_file = "r0099101001001001001_F158_visit_i2d.asdf"
-    thumbnail_file = "r0099101001001001001_F158_visit_thumb.png"
 
-    preview_cmd = f"stpreview to {input_file} {thumbnail_file} 256 256 roman"
-    os.system(preview_cmd)  # nosec
-
-    # Generate preview image
-    input_file = "r0099101001001001001_F158_visit_i2d.asdf"
-    preview_file = "r0099101001001001001_F158_visit_preview.png"
-    preview_cmd = f"stpreview to {input_file} {preview_file} 1080 1080 roman"
-    os.system(preview_cmd)  # nosec
-
-    # expected catalog and segmentation files
-    catalog_file = "r0099101001001001001_F158_visit_cat.asdf"
-    segm_file = "r0099101001001001001_F158_visit_segm.asdf"
-
-    # Perform DMS tests
-    # Initial prep
-    model = rdm.open(rtdata.output)
-    pipeline = MosaicPipeline()
-
-    # DMS356 result is an ImageModel
-    pipeline.log.info(
-        "DMS356 MSG: Testing that result is a Level 3 mosaic model......."
-        + passfail(isinstance(model, rdm.datamodels.MosaicModel))
-    )
-
-    # DMS356 Test that skymatch step is complete
-    pipeline.log.info(
-        "Status of the step:             skymatch    "
-        + str(model.meta.cal_step.skymatch)
-    )
-    # DMS356 Test that the thumbnail image exists
-    pipeline.log.info(
-        "Status of the step:             thumbnail image    "
-        + passfail(os.path.isfile(thumbnail_file))
-    )
-    # DMS356 Test that the preview image exists
-    pipeline.log.info(
-        "Status of the step:             preview image    "
-        + passfail(os.path.isfile(preview_file))
-    )
-    # DMS374 Test that the output catalog exists
-    pipeline.log.info(
-        "Check that the catalog file exists   " + passfail(os.path.isfile(catalog_file))
-    )
-    # DMS374 Test that the segmentation file exists
-    pipeline.log.info(
-        "Check that the degmentation file exists   "
-        + passfail(os.path.isfile(segm_file))
-    )
-    pipeline.log.info(
-        "DMS400 MSG: Testing completion of skymatch in the Level 3  output......."
-        + passfail(model.meta.cal_step.skymatch == "COMPLETE")
-    )
-    assert model.meta.cal_step.skymatch == "COMPLETE"
-    pipeline.log.info(
-        "Status of the step:             skymatch    "
-        + str(model.meta.cal_step.skymatch)
-    )
-    pipeline.log.info(
-        "DMS400 MSG: SkyMatchStep added meta.background? :"
-        f'  {hasattr(model.meta.individual_image_meta, "background")}'
-    )
-    assert hasattr(model.meta.individual_image_meta, "background")
-
-    pipeline.log.info(
-        "DMS400 MSG: SkyMatchStep populated meta.background.level? :"
-        f"  {any(model.meta.individual_image_meta.background['level'] != 0)}"
-    )
-    assert any(model.meta.individual_image_meta.background["level"] != 0)
-    pipeline.log.info(
-        "DMS86 MSG: Testing completion of outlier detection in the Level 3 image output......."
-        + passfail(model.meta.cal_step.outlier_detection == "COMPLETE")
-    )
-    assert model.meta.cal_step.outlier_detection == "COMPLETE"
-    pipeline.log.info(
-        "Status of the step:             outlier_detection    "
-        + str(model.meta.cal_step.outlier_detection)
-    )
-    assert model.meta.cal_step.resample == "COMPLETE"
-    pipeline.log.info(
-        "Status of the step:             resample          "
-        + str(model.meta.cal_step.resample)
-    )
-    pipeline.log.info(
-        "DMS86 MSG: Testing completion of resample in the Level 3 image output......."
-        + passfail(model.meta.cal_step.resample == "COMPLETE")
-    )
+def test_thumbnail_exists(thumbnail_filename):
+    # DMS356
+    assert os.path.isfile(thumbnail_filename)
 
 
-@pytest.mark.bigdata
-@pytest.mark.soctests
-def test_hlp_mosaic_pipeline(rtdata, ignore_asdf_paths):
-    """Tests for level 3 mosaic requirements DMS373"""
-    rtdata.get_asn("WFI/image/L3_mosaic_asn.json")
+def test_preview_exists(preview_filename):
+    # DMS356
+    assert os.path.isfile(preview_filename)
 
-    # Test Pipeline
-    output = "r0099101001001001001_r274dp63x31y81_prompt_F158_i2d.asdf"
-    rtdata.output = output
-    args = [
-        "roman_mos",
-        rtdata.input,
-    ]
-    MosaicPipeline.from_cmdline(args)
-    rtdata.get_truth(f"truth/WFI/image/{output}")
-    pipeline = MosaicPipeline()
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
-    assert diff.identical, diff.report()
 
-    model = rdm.open(rtdata.output, lazy_load=False)
+@pytest.mark.parametrize("suffix", ("cat", "segm"))
+def test_file_exists(output_filename, suffix):
+    # DMS374 for catalog and segm
+    expected_filename = output_filename.rsplit("_", 1)[0] + f"_{suffix}.asdf"
+    assert os.path.isfile(expected_filename)
 
-    pipeline.log.info(
-        "DMS373 MSG: Testing the creation of a Level 3 mosaic image resampled to a skycell"
-        + passfail(model.meta.cal_step.resample == "COMPLETE")
-    )
+
+def test_output_is_mosaic(output_model):
+    # DMS356
+    assert isinstance(output_model, rdm.datamodels.MosaicModel)
+
+
+@pytest.mark.parametrize(
+    "step_name",
+    (
+        "skymatch",
+        "outlier_detection",
+        "resample",
+    ),
+)
+def test_steps_ran(output_model, step_name):
+    # DMS356
+    # DMS400 for skymatch
+    # DMS86 for outlier_detection and resample
+    assert getattr(output_model.meta.cal_step, step_name) == "COMPLETE"
+
+
+def test_added_background(output_model):
+    # DMS400
+    assert hasattr(output_model.meta.individual_image_meta, "background")
+
+
+def test_added_background_level(output_model):
+    # DMS400
+    assert any(output_model.meta.individual_image_meta.background["level"] != 0)
