@@ -167,10 +167,6 @@ class RomanSourceCatalog:
         Convert a level-2 image from units of DN/s to MJy/sr (surface
         brightness).
         """
-        if self.model.data.unit != self.l2_unit or self.model.err.unit != self.l2_unit:
-            raise ValueError(
-                f"data and err are expected to be in units of {self.l2_unit}"
-            )
 
         # the conversion in done in-place to avoid making copies of the data;
         # use a dictionary to set the value to avoid on-the-fly validation
@@ -185,10 +181,6 @@ class RomanSourceCatalog:
 
         This is the inverse operation of `convert_l2_to_sb`.
         """
-        if self.model.data.unit != self.sb_unit or self.model.err.unit != self.sb_unit:
-            raise ValueError(
-                f"data and err are expected to be in units of {self.sb_unit}"
-            )
 
         # the conversion in done in-place to avoid making copies of the data;
         # use a dictionary to set the value to avoid on-the-fly validation
