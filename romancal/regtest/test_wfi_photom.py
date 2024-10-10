@@ -4,7 +4,6 @@ import math
 
 import pytest
 import roman_datamodels as rdm
-from astropy import units as u
 
 from romancal.step import PhotomStep
 from romancal.stpipe import RomanStep
@@ -60,12 +59,10 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     step.log.info(
         "DMS140 MSG: Photom megajansky conversion calculated? : "
         + str(
-            (
-                math.isclose(
-                    photom_out.meta.photometry.conversion_megajanskys,
-                    0.3324,
-                    abs_tol=0.0001,
-                    )
+            math.isclose(
+                photom_out.meta.photometry.conversion_megajanskys,
+                0.3324,
+                abs_tol=0.0001,
             )
         )
     )
@@ -76,12 +73,10 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     step.log.info(
         "DMS140 MSG: Photom microjanskys conversion calculated? : "
         + str(
-            (
-                math.isclose(
-                    photom_out.meta.photometry.conversion_microjanskys,
-                    7.81320,
-                    abs_tol=0.0001,
-                )
+            math.isclose(
+                photom_out.meta.photometry.conversion_microjanskys,
+                7.81320,
+                abs_tol=0.0001,
             )
         )
     )
@@ -94,12 +89,10 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     step.log.info(
         "DMS140 MSG: Pixel area in steradians calculated? : "
         + str(
-            (
-                math.isclose(
-                    photom_out.meta.photometry.pixelarea_steradians,
-                    2.8083e-13,
-                    abs_tol=1.0e-17,
-                )
+            math.isclose(
+                photom_out.meta.photometry.pixelarea_steradians,
+                2.8083e-13,
+                abs_tol=1.0e-17,
             )
         )
     )
@@ -112,12 +105,10 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     step.log.info(
         "DMS140 MSG: Pixel area in square arcseconds calculated? : "
         + str(
-            (
-                math.isclose(
-                    photom_out.meta.photometry.pixelarea_arcsecsq,
-                    0.011948,
-                    abs_tol=1.0e-6,
-                )
+            math.isclose(
+                photom_out.meta.photometry.pixelarea_arcsecsq,
+                0.011948,
+                abs_tol=1.0e-6,
             )
         )
     )
@@ -128,12 +119,10 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     step.log.info(
         "DMS140 MSG: Photom megajansky conversion uncertainty calculated? : "
         + str(
-            (
-                math.isclose(
-                    photom_out.meta.photometry.conversion_megajanskys_uncertainty,
-                    0.0,
-                    abs_tol=1.0e-6,
-                )
+            math.isclose(
+                photom_out.meta.photometry.conversion_megajanskys_uncertainty,
+                0.0,
+                abs_tol=1.0e-6,
             )
         )
     )
@@ -146,12 +135,10 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     step.log.info(
         "DMS140 MSG: Photom megajansky conversion uncertainty calculated? : "
         + str(
-            (
-                math.isclose(
-                    photom_out.meta.photometry.conversion_microjanskys_uncertainty,
-                    0.0,
-                    abs_tol=1.0e-6,
-                )
+            math.isclose(
+                photom_out.meta.photometry.conversion_microjanskys_uncertainty,
+                0.0,
+                abs_tol=1.0e-6,
             )
         )
     )
