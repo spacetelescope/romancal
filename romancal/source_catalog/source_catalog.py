@@ -159,8 +159,8 @@ class RomanSourceCatalog:
         """
         pixel_area = self.model.meta.photometry.pixelarea_steradians
         if pixel_area < 0:
-            pixel_area = (self._pixel_scale**2).to(u.sr)
-        return pixel_area.value
+            pixel_area = (self._pixel_scale**2).to(u.sr).value
+        return pixel_area
 
     def convert_l2_to_sb(self):
         """
