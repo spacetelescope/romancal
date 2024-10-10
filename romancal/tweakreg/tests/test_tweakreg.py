@@ -908,7 +908,9 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
 
     img1.meta.observation["program"] = "-program_id1"
+    img1.meta.observation["obs_id"] = "1"
     img2.meta.observation["program"] = "-program_id2"
+    img2.meta.observation["obs_id"] = "2"
 
     img1.meta["filename"] = "file1.asdf"
     img2.meta["filename"] = "file2.asdf"
