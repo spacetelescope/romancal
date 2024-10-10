@@ -143,7 +143,7 @@ def test_find_outliers(tmp_path, base_image, on_disk):
         img = base_image()
         img.data[42, 72] = source_value
         img.err[:] = err_value
-        img.meta.filename = f"img{i}_suffix.asdf"
+        img.meta.filename = str(tmp_path / f"img{i}_suffix.asdf")
         img.meta.observation.exposure = i
         img.meta.background.level = 0 * u.DN / u.s
         imgs.append(img)
