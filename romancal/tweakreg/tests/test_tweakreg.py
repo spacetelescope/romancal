@@ -920,10 +920,7 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     assert len(res.group_names) == 2
     with res:
         for r, i in zip(res, [img1, img2]):
-            assert (
-                r.meta.group_id.split("-")[1]
-                == i.meta.observation.program.split("-")[1]
-            )
+            assert r.meta.group_id == i.meta.observation.obs_id
             res.shelve(r, modify=False)
 
 
