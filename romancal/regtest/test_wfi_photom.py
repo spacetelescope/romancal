@@ -60,40 +60,33 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     step.log.info(
         "DMS140 MSG: Photom megajansky conversion calculated? : "
         + str(
-            (photom_out.meta.photometry.conversion_megajanskys.unit == u.MJy / u.sr)
-            and math.isclose(
-                photom_out.meta.photometry.conversion_megajanskys.value,
-                0.3324,
-                abs_tol=0.0001,
+            (
+                math.isclose(
+                    photom_out.meta.photometry.conversion_megajanskys,
+                    0.3324,
+                    abs_tol=0.0001,
+                    )
             )
         )
     )
-    assert photom_out.meta.photometry.conversion_megajanskys.unit == u.MJy / u.sr
     assert math.isclose(
-        photom_out.meta.photometry.conversion_megajanskys.value, 0.3324, abs_tol=0.0001
+        photom_out.meta.photometry.conversion_megajanskys, 0.3324, abs_tol=0.0001
     )
 
     step.log.info(
         "DMS140 MSG: Photom microjanskys conversion calculated? : "
         + str(
             (
-                photom_out.meta.photometry.conversion_microjanskys.unit
-                == u.uJy / u.arcsec**2
-            )
-            and (
                 math.isclose(
-                    photom_out.meta.photometry.conversion_microjanskys.value,
+                    photom_out.meta.photometry.conversion_microjanskys,
                     7.81320,
                     abs_tol=0.0001,
                 )
             )
         )
     )
-    assert (
-        photom_out.meta.photometry.conversion_microjanskys.unit == u.uJy / u.arcsec**2
-    )
     assert math.isclose(
-        photom_out.meta.photometry.conversion_microjanskys.value,
+        photom_out.meta.photometry.conversion_microjanskys,
         7.81320,
         abs_tol=0.0001,
     )
@@ -101,19 +94,17 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     step.log.info(
         "DMS140 MSG: Pixel area in steradians calculated? : "
         + str(
-            (photom_out.meta.photometry.pixelarea_steradians.unit == u.sr)
-            and (
+            (
                 math.isclose(
-                    photom_out.meta.photometry.pixelarea_steradians.value,
+                    photom_out.meta.photometry.pixelarea_steradians,
                     2.8083e-13,
                     abs_tol=1.0e-17,
                 )
             )
         )
     )
-    assert photom_out.meta.photometry.pixelarea_steradians.unit == u.sr
     assert math.isclose(
-        photom_out.meta.photometry.pixelarea_steradians.value,
+        photom_out.meta.photometry.pixelarea_steradians,
         2.8083e-13,
         abs_tol=1.0e-17,
     )
@@ -121,43 +112,33 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     step.log.info(
         "DMS140 MSG: Pixel area in square arcseconds calculated? : "
         + str(
-            (photom_out.meta.photometry.pixelarea_arcsecsq.unit == u.arcsec**2)
-            and (
+            (
                 math.isclose(
-                    photom_out.meta.photometry.pixelarea_arcsecsq.value,
+                    photom_out.meta.photometry.pixelarea_arcsecsq,
                     0.011948,
                     abs_tol=1.0e-6,
                 )
             )
         )
     )
-    assert photom_out.meta.photometry.pixelarea_arcsecsq.unit == u.arcsec**2
     assert math.isclose(
-        photom_out.meta.photometry.pixelarea_arcsecsq.value, 0.011948, abs_tol=1.0e-6
+        photom_out.meta.photometry.pixelarea_arcsecsq, 0.011948, abs_tol=1.0e-6
     )
 
     step.log.info(
         "DMS140 MSG: Photom megajansky conversion uncertainty calculated? : "
         + str(
             (
-                photom_out.meta.photometry.conversion_megajanskys_uncertainty.unit
-                == u.MJy / u.sr
-            )
-            and (
                 math.isclose(
-                    photom_out.meta.photometry.conversion_megajanskys_uncertainty.value,
+                    photom_out.meta.photometry.conversion_megajanskys_uncertainty,
                     0.0,
                     abs_tol=1.0e-6,
                 )
             )
         )
     )
-    assert (
-        photom_out.meta.photometry.conversion_megajanskys_uncertainty.unit
-        == u.MJy / u.sr
-    )
     assert math.isclose(
-        photom_out.meta.photometry.conversion_megajanskys_uncertainty.value,
+        photom_out.meta.photometry.conversion_megajanskys_uncertainty,
         0.0,
         abs_tol=1.0e-6,
     )
@@ -166,24 +147,16 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
         "DMS140 MSG: Photom megajansky conversion uncertainty calculated? : "
         + str(
             (
-                photom_out.meta.photometry.conversion_microjanskys_uncertainty.unit
-                == u.uJy / u.arcsec**2
-            )
-            and (
                 math.isclose(
-                    photom_out.meta.photometry.conversion_microjanskys_uncertainty.value,
+                    photom_out.meta.photometry.conversion_microjanskys_uncertainty,
                     0.0,
                     abs_tol=1.0e-6,
                 )
             )
         )
     )
-    assert (
-        photom_out.meta.photometry.conversion_microjanskys_uncertainty.unit
-        == u.uJy / u.arcsec**2
-    )
     assert math.isclose(
-        photom_out.meta.photometry.conversion_microjanskys_uncertainty.value,
+        photom_out.meta.photometry.conversion_microjanskys_uncertainty,
         0.0,
         abs_tol=1.0e-6,
     )

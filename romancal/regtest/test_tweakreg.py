@@ -17,11 +17,13 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
     # the wcsinfo is perturbed, and AssignWCS is run to update the WCS with the
     # perturbed information
     orig_uncal = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
+    orig_catfile = "r0000101001001001001_01101_0001_WFI01_cat.asdf"
     input_data = "r0000101001001001001_01101_0001_WFI01_shift_cal.asdf"
     output_data = "r0000101001001001001_01101_0001_WFI01_shift_tweakregstep.asdf"
     truth_data = "r0000101001001001001_01101_0001_WFI01_shift_tweakregstep.asdf"
 
     rtdata.get_data(f"WFI/image/{input_data}")
+    rtdata.get_data(f"WFI/image/{orig_catfile}")
     rtdata.get_data(f"WFI/image/{orig_uncal}")
     rtdata.get_truth(f"truth/WFI/image/{truth_data}")
 
