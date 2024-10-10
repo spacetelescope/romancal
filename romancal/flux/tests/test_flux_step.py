@@ -7,7 +7,6 @@ from roman_datamodels import datamodels, maker_utils
 
 from romancal.datamodels import ModelLibrary
 from romancal.flux import FluxStep
-from romancal.flux.flux_step import LV2_UNITS
 
 
 @pytest.mark.parametrize(
@@ -23,7 +22,7 @@ from romancal.flux.flux_step import LV2_UNITS
 def test_attributes(flux_step, attr, factor):
     """Test that the attribute has been scaled by the right factor"""
     original, result = flux_step
-    c_unit = 1.0 / LV2_UNITS
+    c_unit = 1.0
 
     # Handle difference between just a single image and a list.
     if isinstance(original, datamodels.ImageModel):
@@ -86,31 +85,15 @@ def flux_step(request):
 @pytest.fixture(scope="module")
 def image_model():
     """Product a basic ImageModel"""
-    # Create a random image and specify a conversion.
+    # Create a random image and specify a conversion
     rng = np.random.default_rng()
     shape = (10, 10)
     image_model = maker_utils.mk_datamodel(datamodels.ImageModel, shape=shape)
-    image_model.data = u.Quantity(
-        rng.poisson(2.5, size=shape).astype(np.float32),
-        LV2_UNITS,
-        dtype=np.float32,
-    )
-    image_model.var_rnoise = u.Quantity(
-        rng.normal(1, 0.05, size=shape).astype(np.float32),
-        LV2_UNITS**2,
-        dtype=np.float32,
-    )
-    image_model.var_poisson = u.Quantity(
-        rng.poisson(1, size=shape).astype(np.float32),
-        LV2_UNITS**2,
-        dtype=np.float32,
-    )
-    image_model.var_flat = u.Quantity(
-        rng.uniform(0, 1, size=shape).astype(np.float32),
-        LV2_UNITS**2,
-        dtype=np.float32,
-    )
-    image_model.meta.photometry.conversion_megajanskys = 2.0 * u.MJy / u.sr
+    image_model.data = rng.poisson(2.5, size=shape).astype(np.float32)
+    image_model.var_rnoise = rng.normal(1, 0.05, size=shape).astype(np.float32)
+    image_model.var_poisson = rng.poisson(1, size=shape).astype(np.float32)
+    image_model.var_flat = rng.uniform(0, 1, size=shape).astype(np.float32)
+    image_model.meta.photometry.conversion_megajanskys = (2.0 * u.MJy / u.sr).value
 
     return image_model
 
@@ -129,6 +112,6 @@ def input_modellibrary(image_model):
     # Create and return a ModelLibrary
     image_model1 = image_model.copy()
     image_model2 = image_model.copy()
-    image_model2.meta.photometry.conversion_megajanskys = 0.5 * u.MJy / u.sr
+    image_model2.meta.photometry.conversion_megajanskys = (0.5 * u.MJy / u.sr).value
     container = ModelLibrary([image_model1, image_model2])
     return container

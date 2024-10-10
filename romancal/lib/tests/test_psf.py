@@ -29,21 +29,15 @@ def setup_inputs(
     Return ImageModel of level 2 image.
     """
     wfi_image = testutil.mk_level2_image(shape=shape)
-    wfi_image.data = u.Quantity(
-        np.ones(shape, dtype=np.float32), u.DN / u.s, dtype=np.float32
-    )
+    wfi_image.data = np.ones(shape, dtype=np.float32)
     wfi_image.meta.filename = "filename"
     wfi_image.meta.instrument["optical_element"] = "F087"
 
     # add noise to data
     if noise is not None:
         setup_rng = np.random.default_rng(seed or 19)
-        wfi_image.data = u.Quantity(
-            setup_rng.normal(scale=noise, size=shape),
-            u.DN / u.s,
-            dtype=np.float32,
-        )
-        wfi_image.err = noise * np.ones(shape, dtype=np.float32) * u.DN / u.s
+        wfi_image.data = setup_rng.normal(scale=noise, size=shape).astype("float32")
+        wfi_image.err = noise * (np.ones(shape, dtype=np.float32) * u.DN / u.s).value
 
     # add dq array
     wfi_image.dq = np.zeros(shape, dtype=np.uint32)
@@ -106,7 +100,7 @@ class TestPSFFitting:
     def test_psf_fit(self, dx, dy, true_flux):
         # generate an ImageModel
         image_model = deepcopy(self.image_model)
-        init_data_stddev = np.std(image_model.data.value)
+        init_data_stddev = np.std(image_model.data)
 
         # add synthetic sources to the ImageModel:
         true_x = image_model_shape[0] / 2 + dx

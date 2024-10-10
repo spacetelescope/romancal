@@ -34,7 +34,7 @@ def flag_saturation(input_model, ref_model):
         The input model is modified in place and returned as the output model.
     """
 
-    data = input_model.data[np.newaxis, :].value
+    data = input_model.data[np.newaxis, :]
 
     # Modify input_model in place.
     gdq = input_model.groupdq[np.newaxis, :]

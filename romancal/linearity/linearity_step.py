@@ -3,7 +3,6 @@ Apply linearity correction to a science image
 """
 
 import numpy as np
-from astropy import units as u
 from roman_datamodels import datamodels as rdd
 from roman_datamodels.dqflags import pixel
 from stcal.linearity.linearity import linearity_correction
@@ -56,12 +55,10 @@ class LinearityStep(RomanStep):
             # The third return value is the procesed zero frame which
             # Roman does not use.
             new_data, new_pdq, _ = linearity_correction(
-                input_model.data.value, gdq, pdq, lin_coeffs, lin_dq, pixel
+                input_model.data, gdq, pdq, lin_coeffs, lin_dq, pixel
             )
 
-            input_model.data = u.Quantity(
-                new_data[0, :, :, :], u.DN, dtype=new_data.dtype
-            )
+            input_model.data = new_data[0, :, :, :]
             input_model.pixeldq = new_pdq
 
         # Update the step status

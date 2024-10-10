@@ -173,9 +173,7 @@ class SkyMatchStep(RomanStep):
 
     def _set_sky_background(self, sky_image, step_status):
         image = sky_image.meta["image_model"]
-        sky = sky_image.sky
-        if sky == 0 or sky is None:
-            sky = 0 * image.data.unit
+        sky = sky_image.sky if sky_image.sky is not None else 0
 
         image.meta.background.method = str(self.skymethod)
         image.meta.background.subtracted = self.subtract

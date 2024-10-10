@@ -73,12 +73,9 @@ def mosaic_model():
     wfi_mosaic = mk_level3_mosaic(shape=(101, 101))
     model = MosaicModel(wfi_mosaic)
     data, err = make_test_image()
-    units = u.MJy / u.sr
-    data <<= units
-    err <<= units
     model.data = data
     model.err = err
-    model.weight = 1.0 / err.value
+    model.weight = 1.0 / err
     return model
 
 
@@ -87,12 +84,9 @@ def image_model():
     wfi_image = mk_level2_image(shape=(101, 101))
     model = ImageModel(wfi_image)
     data, err = make_test_image()
-    units = u.DN / u.s
-    data <<= units
-    err <<= units
     model.data = data
     model.err = err
-    model.meta.photometry.conversion_megajanskys = 0.3324 * u.MJy / u.sr
+    model.meta.photometry.conversion_megajanskys = (0.3324 * u.MJy / u.sr).value
     return model
 
 
