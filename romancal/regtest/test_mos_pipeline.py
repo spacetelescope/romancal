@@ -1,18 +1,12 @@
 """ Roman tests for the High Level Pipeline """
 
-import json
 import os
-from pathlib import Path
 
-import asdf
 import pytest
 import roman_datamodels as rdm
-from astropy.units import Quantity
 
-from romancal.associations.asn_from_list import asn_from_list
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
-from ..associations.association_io import json as asn_json
 from .regtestdata import compare_asdf
 
 # mark all tests in this module
