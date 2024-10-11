@@ -80,7 +80,7 @@ def repointed_filename_and_delta(output_filename):
     return repointed_filename, delta
 
 
-def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
+def test_grism_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
@@ -132,13 +132,15 @@ def test_wcs_has_bounding_box(output_model):
     assert len(output_model.meta.wcs.bounding_box) == 2
 
 
-def test_repointed_matches_truth(
+def test_grism_repointed_matches_truth(
     repointed_filename_and_delta, rtdata, ignore_asdf_paths
 ):
     # DMS90
     repointed_filename, _ = repointed_filename_and_delta
 
     rtdata.get_truth(f"truth/WFI/grism/{Path(repointed_filename).name}")
+    # set output to provide okify the new truth file
+    # when the output of this test is okified
     rtdata.output = repointed_filename
     diff = compare_asdf(repointed_filename, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()

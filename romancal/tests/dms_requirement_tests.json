@@ -19,7 +19,7 @@
   ],
   "DMS89": [
     "romancal.regtest.test_wfi_image_pipeline.test_wcs_has_bounding_box",
-    "romancal.regtest.test_wfi_image_pipeline.test_repointed_matches_truth",
+    "romancal.regtest.test_wfi_image_pipeline.test_image_repointed_matches_truth",
     "romancal.regtest.test_wfi_image_pipeline.test_repointed_wcs_differs"
   ],
   "DMS90": [
@@ -65,7 +65,7 @@
     "romancal.regtest.test_resample.test_resample_single_file"
   ],
   "DMS356": [
-    "romancal.regtest.test_mos_pipeline.test_output_matches_truth",
+    "romancal.regtest.test_mos_pipeline.test_mos_output_matches_truth",
     "romancal.regtest.test_mos_pipeline.test_thumbnail_exists",
     "romancal.regtest.test_mos_pipeline.test_preview_exists",
     "romancal.regtest.test_mos_pipeline.test_output_is_mosaic",

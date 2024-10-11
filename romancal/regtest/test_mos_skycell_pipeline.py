@@ -42,7 +42,9 @@ def truth_filename(run_mos):
     return run_mos.truth
 
 
-def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
+def test_mos_skycell_output_matches_truth(
+    output_filename, truth_filename, ignore_asdf_paths
+):
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 

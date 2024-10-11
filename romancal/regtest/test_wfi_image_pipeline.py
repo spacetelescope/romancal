@@ -84,7 +84,7 @@ def repointed_filename_and_delta(output_filename):
 
 
 @pytest.mark.soctests
-def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
+def test_image_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
@@ -179,13 +179,15 @@ def test_wcs_has_bounding_box(output_model):
 
 
 @pytest.mark.soctests
-def test_repointed_matches_truth(
+def test_image_repointed_matches_truth(
     repointed_filename_and_delta, rtdata, ignore_asdf_paths
 ):
     # DMS89 WCS tests
     repointed_filename, _ = repointed_filename_and_delta
 
     rtdata.get_truth(f"truth/WFI/image/{Path(repointed_filename).name}")
+    # set output to provide okify the new truth file
+    # when the output of this test is okified
     rtdata.output = repointed_filename
     diff = compare_asdf(repointed_filename, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
