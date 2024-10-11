@@ -78,8 +78,10 @@ def generate_artifactory_json(request, artifactory_repos):
         build_matrix_suffix = os.environ.get("BUILD_MATRIX_SUFFIX", "0")
         subdir = f"{TODAYS_DATE}_{build_tag}_{build_matrix_suffix}"
         testname = request.node.originalname or request.node.name
+        testmodule = request.node.module
+        basename = "_".join((testmodule, testname)).replace(".", "_")
 
-        return os.path.join(results_root, subdir, testname) + os.sep
+        return os.path.join(results_root, subdir, basename) + os.sep
 
     yield
     # Execute the following at test teardown
