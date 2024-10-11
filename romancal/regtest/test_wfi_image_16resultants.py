@@ -53,17 +53,17 @@ def input_model(input_filename):
         yield model
 
 
-def test_output_is_image_model(output_model):
+def test_image_16_output_is_image_model(output_model):
     # DMS413
     assert isinstance(output_model, rdm.datamodels.ImageModel)
 
 
-def test_input_has_16_resultants(input_model):
+def test_image_input_has_16_resultants(input_model):
     # DMS413
     assert len(input_model.meta.exposure.read_pattern) == 16
 
 
-def test_output_has_16_resultants(output_model):
+def test_image_output_has_16_resultants(output_model):
     # DMS413
     assert len(output_model.meta.exposure.read_pattern) == 16
 
@@ -82,5 +82,5 @@ def test_output_has_16_resultants(output_model):
         "photom",
     ),
 )
-def test_steps_ran(output_model, step_name):
+def test_image_16_steps_ran(output_model, step_name):
     assert getattr(output_model.meta.cal_step, step_name) == "COMPLETE"

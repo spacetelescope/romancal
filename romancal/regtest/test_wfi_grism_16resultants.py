@@ -53,17 +53,17 @@ def input_model(input_filename):
         yield model
 
 
-def test_output_is_image_model(output_model):
+def test_output_grism_16_is_image_model(output_model):
     # DMS414
     assert isinstance(output_model, rdm.datamodels.ImageModel)
 
 
-def test_input_has_16_resultants(input_model):
+def test_grism_input_has_16_resultants(input_model):
     # DMS414
     assert len(input_model.meta.exposure.read_pattern) == 16
 
 
-def test_output_has_16_resultants(output_model):
+def test_grism_output_has_16_resultants(output_model):
     # DMS414
     assert len(output_model.meta.exposure.read_pattern) == 16
 
@@ -83,5 +83,5 @@ def test_output_has_16_resultants(output_model):
         ("photom", "SKIPPED"),
     ),
 )
-def test_step_status(output_model, step_name, status):
+def test_grism_16_step_status(output_model, step_name, status):
     assert getattr(output_model.meta.cal_step, step_name) == status

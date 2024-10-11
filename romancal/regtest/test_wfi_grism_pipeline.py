@@ -103,31 +103,31 @@ def test_grism_output_matches_truth(output_filename, truth_filename, ignore_asdf
         ("tweakreg", "SKIPPED"),
     ),
 )
-def test_step_status(output_model, step_name, status):
+def test_grism_step_status(output_model, step_name, status):
     # DMS90
     # DMS278
     # also DMS129 for assign_wcs
     assert getattr(output_model.meta.cal_step, step_name) == status
 
 
-def test_jump_in_uneven_ramp(output_model):
+def test_grism_jump_in_uneven_ramp(output_model):
     # DMS365 jump detection detected jumps in uneven ramp
     uneven = len({len(x) for x in output_model.meta.exposure.read_pattern}) > 1
     assert uneven & np.any(output_model.dq & pixel.JUMP_DET)
 
 
 @pytest.mark.parametrize("arr_name", ("dq", "err", "var_poisson", "var_rnoise"))
-def test_array_exists(output_model, arr_name):
+def test_grism_array_exists(output_model, arr_name):
     # DMS91
     assert hasattr(output_model, arr_name)
 
 
-def test_has_exposure_time(output_model):
+def test_grism_has_exposure_time(output_model):
     # DMS88 total exposure time exists
     assert "exposure_time" in output_model.meta.exposure
 
 
-def test_wcs_has_bounding_box(output_model):
+def test_grism_wcs_has_bounding_box(output_model):
     # DMS93 WCS tests
     assert len(output_model.meta.wcs.bounding_box) == 2
 
@@ -146,7 +146,7 @@ def test_grism_repointed_matches_truth(
     assert diff.identical, diff.report()
 
 
-def test_repointed_wcs_differs(repointed_filename_and_delta, output_model):
+def test_grism_repointed_wcs_differs(repointed_filename_and_delta, output_model):
     # DMS93 WCS tests
     repointed_filename, delta = repointed_filename_and_delta
     orig_wcs = output_model.meta.wcs

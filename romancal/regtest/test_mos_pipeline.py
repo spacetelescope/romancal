@@ -98,7 +98,7 @@ def test_output_is_mosaic(output_model):
         "resample",
     ),
 )
-def test_steps_ran(output_model, step_name):
+def test_mos_steps_ran(output_model, step_name):
     # DMS356
     # DMS400 for skymatch
     # DMS86 for outlier_detection and resample

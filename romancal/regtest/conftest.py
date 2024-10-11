@@ -288,3 +288,27 @@ def diff_astropy_tables():
         return True
 
     return _diff_astropy_tables
+
+
+def pytest_collection_modifyitems(config, items):
+    # For any fixture using rtdata or rtdata_module it needs to have
+    # a unique name to not overwrite the okify results uploaded to artifactory.
+    used_names = set()
+    duplicate_names = set()
+    for item in items:
+        if (
+            "rtdata" not in item.fixturenames
+            and "rtdata_module" not in item.fixturenames
+        ):
+            # this item doesn't use rtdata so skip it
+            continue
+        # FIXME rtdata uses originalname. For a parametrized test
+        # each parametrization will have a unique name but they will
+        # all share the same originalname. Since name is used here
+        # that means it's possible that parametrized tests might
+        # overwrite themselves.
+        name = item.name
+        if name in used_names:
+            duplicate_names.add(name)
+        used_names.add(name)
+    assert not duplicate_names, f"Tests share names: {duplicate_names}"

@@ -90,7 +90,7 @@ def test_image_output_matches_truth(output_filename, truth_filename, ignore_asdf
 
 
 @pytest.mark.soctests
-def test_output_is_image_model(output_model):
+def test_image_output_is_image_model(output_model):
     # DMS280 result is an ImageModel
     assert isinstance(output_model, rdm.datamodels.ImageModel)
 
@@ -109,14 +109,14 @@ def test_output_is_image_model(output_model):
         "saturation",
     ),
 )
-def test_steps_ran(output_model, step_name):
+def test_image_steps_ran(output_model, step_name):
     # DMS86
     # also DMS129 for assign_wcs
     assert getattr(output_model.meta.cal_step, step_name) == "COMPLETE"
 
 
 @pytest.mark.soctests
-def test_jump_in_uneven_ramp(output_model):
+def test_image_jump_in_uneven_ramp(output_model):
     # DMS361 jump detection detected jumps in uneven ramp
     uneven = len({len(x) for x in output_model.meta.exposure.read_pattern}) > 1
     assert uneven & np.any(output_model.dq & pixel.JUMP_DET)
@@ -154,13 +154,13 @@ def test_wcs_applies_distortion_correction(output_model):
 @pytest.mark.parametrize(
     "arr_name", ("dq", "err", "var_poisson", "var_rnoise", "var_flat")
 )
-def test_array_exists(output_model, arr_name):
+def test_image_array_exists(output_model, arr_name):
     # DMS87
     assert hasattr(output_model, arr_name)
 
 
 @pytest.mark.soctests
-def test_has_exposure_time(output_model):
+def test_image_has_exposure_time(output_model):
     # DMS88 total exposure time exists
     assert "exposure_time" in output_model.meta.exposure
 
@@ -173,7 +173,7 @@ def test_instrument_meta(output_model, meta_attribute):
 
 
 @pytest.mark.soctests
-def test_wcs_has_bounding_box(output_model):
+def test_image_wcs_has_bounding_box(output_model):
     # DMS89 WCS tests
     assert len(output_model.meta.wcs.bounding_box) == 2
 
@@ -194,7 +194,7 @@ def test_image_repointed_matches_truth(
 
 
 @pytest.mark.soctests
-def test_repointed_wcs_differs(repointed_filename_and_delta, output_model):
+def test_image_repointed_wcs_differs(repointed_filename_and_delta, output_model):
     # DMS89 WCS tests
     repointed_filename, delta = repointed_filename_and_delta
     orig_wcs = output_model.meta.wcs
