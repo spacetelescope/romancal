@@ -12,9 +12,12 @@
 #
 # r00r1601001001001001_0001_WFI01 - special 16 resultant file, imaging, only need cal file
 # r10r1601001001001001_0001_WFI01 - special 16 resultant file, spectroscopy, only need cal file
-# roman_dark_WFI01_IMAGE_STRESS_TEST_16_MA_TABLE_998_D1 - special dark for 16 resultant file
 
 outdir=$1
+logfile=$outdir/make_regtestdata.log
+
+# Redirect all output to the logfile
+exec > $logfile 2>&1
 
 # set up the directory structure
 mkdir -p $outdir/roman-pipeline/dev/WFI/image
@@ -178,6 +181,11 @@ cp L3_regtest_asn.json $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
+# L3 catalog
+strun romancal.step.SourceCatalogStep ${l3name}_i2d.asdf
+cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
+
 l3name="r0099101001001001001_r274dp63x31y81_prompt_F158"
 asn_from_list r0000101001001001001_0001_WFI01_cal.asdf r0000101001001001001_0002_WFI01_cal.asdf r0000101001001001001_0003_WFI01_cal.asdf -o L3_mosaic_asn.json --product-name $l3name --target r274dp63x31y81
 strun roman_mos L3_mosaic_asn.json
@@ -189,11 +197,13 @@ cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 strun romancal.step.SourceCatalogStep ${l3name}_i2d.asdf
 cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
+
 # L2 catalog
 strun romancal.step.SourceCatalogStep r0000101001001001001_0001_WFI01_cal.asdf
 cp r0000101001001001001_0001_WFI01_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
-l3name="mosaic"
+
+l3name="r0099101001001001001_F158_visit_r274dp63x31y81"
 asn_from_list --product-name=$l3name r0000101001001001001_0001_WFI01_cal.asdf r0000101001001001001_0002_WFI01_cal.asdf r0000101001001001001_0003_WFI01_cal.asdf -o L3_m1_asn.json
 strun roman_mos L3_m1_asn.json
 cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
