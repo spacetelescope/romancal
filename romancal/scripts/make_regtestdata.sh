@@ -60,7 +60,7 @@ cp r0000101001001001001_0002_WFI01_cal.asdf $outdir/roman-pipeline/dev/WFI/image
 # resample regtest; needs r0000101001001001001_000{1,2}_WFI01_cal.asdf
 # builds the appropriate asn file and calls strun with it
 echo "Creating regtest files for resample..."
-asn_from_list r0000101001001001001_0001_WFI01_cal.asdf r0000101001001001001_0002_WFI01_cal.asdf -o L3_mosaic_asn.json --product-name mosaic
+asn_from_list r0000101001001001001_0001_WFI01_cal.asdf r0000101001001001001_0002_WFI01_cal.asdf r0000101001001001001_0003_WFI01_cal.asdf -o L3_mosaic_asn.json --product-name mosaic
 strun romancal.step.ResampleStep L3_mosaic_asn.json --rotation=0 --output_file=mosaic.asdf
 cp L3_mosaic_asn.json $outdir/roman-pipeline/dev/WFI/image/
 cp mosaic_resamplestep.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
@@ -207,3 +207,7 @@ l3name="r0099101001001001001_F158_visit_r274dp63x31y81"
 asn_from_list --product-name=$l3name r0000101001001001001_0001_WFI01_cal.asdf r0000101001001001001_0002_WFI01_cal.asdf r0000101001001001001_0003_WFI01_cal.asdf -o L3_m1_asn.json
 strun roman_mos L3_m1_asn.json
 cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
+# tests passing suffix to the pipeline
+strun roman_elp r0000101001001001001_0001_WFI01_uncal.asdf --steps.tweakreg.skip=True --suffix=star
+cp r0000101001001001001_0001_WFI01_star.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
