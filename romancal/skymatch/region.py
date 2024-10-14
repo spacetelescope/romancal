@@ -400,25 +400,24 @@ class Edge:
         v = edge._stop - edge._start
         w = self._start - edge._start
 
-        # Make problem a proper 3D problem, since these are 2D vectors in the
-        # xy plane we expect the cross product to be in the z direction only.
-        u = np.insert(u, 2, 0)
-        v = np.insert(v, 2, 0)
-        w = np.insert(w, 2, 0)
-
-        # We only care about the z component of the cross product
-        D = np.cross(u, v)[-1]
+        # Find the determinant of the matrix formed by the vectors u and v
+        #    Note: Originally this was computed using a numpy "2D" cross product,
+        #          however, this functionality has been deprecated and slated for
+        #          removal.
+        D = np.linalg.det([u, v])
 
         if np.allclose(D, 0, rtol=0, atol=1e2 * np.finfo(float).eps):
             return np.array(self._start)
 
-        # We only care about the z component of the cross product
-        return np.cross(v, w)[-1] / D * u[:-1] + self._start
+        # See note above
+        return np.linalg.det([v, w]) / D * u + self._start
 
     def is_parallel(self, edge):
         u = self._stop - self._start
         v = edge._stop - edge._start
-        return np.allclose(np.cross(u, v), 0, rtol=0, atol=1e2 * np.finfo(float).eps)
+        return np.allclose(
+            np.linalg.det([u, v]), 0, rtol=0, atol=1e2 * np.finfo(float).eps
+        )
 
 
 def _round_vertex(v):
