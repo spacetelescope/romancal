@@ -61,6 +61,12 @@ def postmortem(request, fixturename):
         return None
 
 
+def pytest_collection_modifyitems(config, items):
+    # add the index of each item in the list of items
+    for i, item in enumerate(items):
+        item.index = i
+
+
 @pytest.fixture(scope="function", autouse=True)
 def generate_artifactory_json(request, artifactory_repos):
     """Pytest fixture that leaves behind JSON upload and okify specfiles
@@ -78,8 +84,9 @@ def generate_artifactory_json(request, artifactory_repos):
         build_matrix_suffix = os.environ.get("BUILD_MATRIX_SUFFIX", "0")
         subdir = f"{TODAYS_DATE}_{build_tag}_{build_matrix_suffix}"
         testname = request.node.originalname or request.node.name
+        basename = f"{request.node.index}_{testname}"
 
-        return os.path.join(results_root, subdir, testname) + os.sep
+        return os.path.join(results_root, subdir, basename) + os.sep
 
     yield
     # Execute the following at test teardown
