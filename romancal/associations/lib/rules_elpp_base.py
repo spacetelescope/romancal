@@ -127,6 +127,8 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
             self.data["target"] = "none"
         if "asn_pool" not in self.data:
             self.data["asn_pool"] = "none"
+        if "skycell_wcs_info" not in self.data:
+            self.data["skycell_wcs_info"] = "none"
 
     @property
     def current_product(self):
