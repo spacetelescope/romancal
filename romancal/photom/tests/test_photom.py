@@ -153,7 +153,6 @@ def test_apply_photom1():
         area_a2.value,
         atol=1.0e-7,
     )
-    # assert output_model.meta.photometry.pixelarea_arcsecsq.unit == area_a2.unit
 
     # Set reference photometry
     phot_ster = 3.5 * u.megajansky / u.steradian
