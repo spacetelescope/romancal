@@ -176,7 +176,7 @@ class RomanSourceCatalog:
 
     def convert_sb_to_l2(self):
         """
-        Convert the data and error Quantity arrays from MJy/sr (surface
+        Convert the data and error arrays from MJy/sr (surface
         brightness) to DN/s (level-2 units).
 
         This is the inverse operation of `convert_l2_to_sb`.
@@ -190,7 +190,7 @@ class RomanSourceCatalog:
 
     def convert_sb_to_flux_density(self):
         """
-        Convert the data and error Quantity arrays from MJy/sr (surface
+        Convert the data and error arrays from MJy/sr (surface
         brightness) to flux density units.
 
         The flux density unit is defined by self.flux_unit.
@@ -206,7 +206,7 @@ class RomanSourceCatalog:
 
     def convert_flux_density_to_sb(self):
         """
-        Convert the data and error Quantity arrays from flux density units to
+        Convert the data and error arrays from flux density units to
         MJy/sr (surface brightness).
 
         This is the inverse operation of `convert_sb_to_flux_density`.
@@ -222,7 +222,7 @@ class RomanSourceCatalog:
 
         Parameters
         ----------
-        flux, flux_err : `~astropy.unit.Quantity`
+        flux, flux_err : `~numpy.ndarray`
             The input flux and error arrays.
 
         Returns
@@ -1190,8 +1190,7 @@ class RomanSourceCatalog:
         self._update_metadata()
         catalog.meta.update(self.meta)
 
-        # convert QTable to Table to change Quantity columns to regular
-        # columns with units
+        # convert QTable to Table
         catalog = Table(catalog)
 
         # split SkyCoord columns into separate RA and Dec columns

@@ -22,8 +22,8 @@ def convolve_data(data, kernel_fwhm, size=None, mask=None):
 
     Parameters
     ----------
-    data : 2D `astropy.units.Quantity`
-        The input 2D Quantity array. The data is assumed to be
+    data : 2D `numpy.ndarray`
+        The input 2D array. The data is assumed to be
         background subtracted.
     kernel_fwhm : float
         The FWHM of the Gaussian kernel.
