@@ -23,16 +23,7 @@
         },
         "skycell_wcs_info": {
             "description": "WCS information for the projection cell",
-            "type": "object",
-	    "additionalproperties": {
-		"type": "object",
-		"required" : [
-		    "pixel_scale",
-		    "ra_cent",
-		    "dec_cent",
-		    "shiftx",
-		    "shifty"
-		],
+            "type": "string",
 		"properties":{
 		"pixel_scale": {
 		    "type": "number"
@@ -49,7 +40,7 @@
 		"shifty": {
 		    "type": "integer"
 		}
-		}}
+		}
         },
         "target": {
             "description": "Canonical name of the astronomical object being observed.",
