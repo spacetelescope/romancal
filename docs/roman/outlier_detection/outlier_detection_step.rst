@@ -4,9 +4,8 @@ OutlierDetectionStep
 --------------------
 
 This module provides the sole interface to all methods of performing outlier detection
-on Roman observations. The outlier detection algorithm used for WFI data is implemented
-in :py:class:`~romancal.outlier_detection.outlier_detection.OutlierDetection`
-and described in :ref:`outlier-detection-imaging`.
+on Roman observations. The outlier detection algorithm used for WFI data is
+described in :ref:`outlier-detection-imaging`.
 
 .. note::
     Whether the data are being provided in an `association file`_ or as a list of ASDF filenames,

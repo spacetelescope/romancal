@@ -20,7 +20,7 @@ def test_requirements():
     }
 
     existing_tests = set()
-    test_regex = re.compile(r"def (test_[^\(]+)\(.*\):")
+    test_regex = re.compile(r"def (test_[^\(]+)\(")
     for test_filename in test_directory.glob("**/test_*.py"):
         with open(test_filename) as test_file:
             test_file_contents = test_file.read()

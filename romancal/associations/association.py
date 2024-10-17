@@ -197,7 +197,8 @@ class Association(MutableMapping):
         try:
             jsonschema.validate(asn_data, asn_schema)
         except (AttributeError, jsonschema.ValidationError) as err:
-            logger.debug("Validation failed:\n%s", err)
+            logger.debug("Validation failed:")
+            logger.debug("%s", err)
             raise AssociationNotValidError("Validation failed") from err
         return True
 

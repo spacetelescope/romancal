@@ -17,12 +17,17 @@ TODAYS_DATE = datetime.now().strftime("%Y-%m-%d")
 @pytest.fixture(scope="session")
 def artifactory_repos(pytestconfig):
     """Provides Artifactory inputs_root and results_root"""
-    try:
-        inputs_root = pytestconfig.getini("inputs_root")[0]
-        results_root = pytestconfig.getini("results_root")[0]
-    except IndexError:
+    inputs_root = pytestconfig.getini("inputs_root")
+    if not inputs_root:
         inputs_root = "roman-pipeline"
+    else:
+        inputs_root = inputs_root[0]
+
+    results_root = pytestconfig.getini("results_root")
+    if not results_root:
         results_root = "roman-pipeline-results"
+    else:
+        results_root = results_root[0]
     return inputs_root, results_root
 
 
@@ -56,6 +61,16 @@ def postmortem(request, fixturename):
         return None
 
 
+def pytest_collection_modifyitems(config, items):
+    # add the index of each item in the list of items
+    # this is used below for artifactory_result_path
+    # to produce a unique result subdirectory for
+    # each test (even if that test shares a name with
+    # another test which is the case for parametrized tests).
+    for i, item in enumerate(items):
+        item.index = i
+
+
 @pytest.fixture(scope="function", autouse=True)
 def generate_artifactory_json(request, artifactory_repos):
     """Pytest fixture that leaves behind JSON upload and okify specfiles
@@ -73,8 +88,9 @@ def generate_artifactory_json(request, artifactory_repos):
         build_matrix_suffix = os.environ.get("BUILD_MATRIX_SUFFIX", "0")
         subdir = f"{TODAYS_DATE}_{build_tag}_{build_matrix_suffix}"
         testname = request.node.originalname or request.node.name
+        basename = f"{request.node.index}_{testname}"
 
-        return os.path.join(results_root, subdir, testname) + os.sep
+        return os.path.join(results_root, subdir, basename) + os.sep
 
     yield
     # Execute the following at test teardown

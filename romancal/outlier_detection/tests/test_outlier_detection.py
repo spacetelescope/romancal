@@ -6,22 +6,20 @@ import pytest
 from astropy.units import Quantity
 
 from romancal.datamodels import ModelLibrary
-from romancal.outlier_detection import OutlierDetectionStep, outlier_detection
+from romancal.outlier_detection import OutlierDetectionStep
 
 
 @pytest.mark.parametrize(
     "input_models",
     [
-        list(),
         "",
     ],
 )
-def test_outlier_raises_error_on_invalid_input_models(input_models, caplog):
-    """Test that OutlierDetection logs out a WARNING if input is invalid."""
+def test_outlier_raises_error_on_invalid_input_models(input_models):
+    """Test that OutlierDetection raises an Exception if input is invalid."""
 
-    OutlierDetectionStep.call(input_models)
-
-    assert "WARNING" in [x.levelname for x in caplog.records]
+    with pytest.raises(IsADirectoryError):
+        OutlierDetectionStep.call(input_models)
 
 
 def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
@@ -37,21 +35,17 @@ def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
             res.shelve(m, i, modify=False)
 
 
-def test_outlier_skips_step_on_exposure_type_different_from_wfi_image(base_image):
+def test_outlier_raises_exception_on_exposure_type_different_from_wfi_image(base_image):
     """
-    Test if the outlier detection step is skipped when the exposure type is different from WFI image.
+    Test if the outlier detection step raises an Exception for non-image inputs.
     """
     img_1 = base_image()
     img_1.meta.exposure.type = "WFI_PRISM"
     img_2 = base_image()
     img_2.meta.exposure.type = "WFI_PRISM"
 
-    res = OutlierDetectionStep.call(ModelLibrary([img_1, img_2]))
-
-    with res:
-        for i, m in enumerate(res):
-            assert m.meta.cal_step.outlier_detection == "SKIPPED"
-            res.shelve(m, i, modify=False)
+    with pytest.raises(ValueError, match="only supports WFI_IMAGE"):
+        OutlierDetectionStep.call(ModelLibrary([img_1, img_2]))
 
 
 def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
@@ -104,91 +98,26 @@ def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
             res.shelve(m, i, modify=False)
 
 
-@pytest.mark.parametrize(
-    "pars",
-    [
-        {
-            "weight_type": "exptime",
-            "pixfrac": 1.0,
-            "kernel": "square",
-            "fillval": "INDEF",
-            "nlow": 0,
-            "nhigh": 0,
-            "maskpt": 0.7,
-            "grow": 1,
-            "snr": "4.0 3.0",
-            "scale": "0.5 0.4",
-            "backg": 0.0,
-            "kernel_size": "7 7",
-            "save_intermediate_results": False,
-            "resample_data": True,
-            "good_bits": 0,
-            "allowed_memory": None,
-            "in_memory": True,
-            "make_output_path": None,
-            "resample_suffix": "i2d",
-        },
-        {
-            "weight_type": "exptime",
-            "save_intermediate_results": True,
-            "make_output_path": None,
-            "resample_suffix": "some_other_suffix",
-        },
-    ],
-)
-def test_outlier_init_default_parameters(pars, base_image):
-    """
-    Test parameter setting on initialization for OutlierDetection.
-    """
-    img_1 = base_image()
-    img_1.meta.filename = "img_1.asdf"
-    input_models = ModelLibrary([img_1])
-
-    step = outlier_detection.OutlierDetection(input_models, **pars)
-
-    assert step.input_models == input_models
-    assert step.outlierpars == pars
-    assert step.make_output_path == pars["make_output_path"]
-    assert step.resample_suffix == f"_outlier_{pars['resample_suffix']}.asdf"
-
-
 def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_image):
     """
     Test that OutlierDetection can create files on disk in a custom location.
     """
     img_1 = base_image()
-    img_1.meta.filename = "img_1.asdf"
+    img_1.meta.filename = "img1_cal.asdf"
+    img_1.meta.background.level = 0 * u.DN / u.s
     img_2 = base_image()
-    img_2.meta.filename = "img_2.asdf"
+    img_2.meta.filename = "img2_cal.asdf"
+    img_2.meta.background.level = 0 * u.DN / u.s
     input_models = ModelLibrary([img_1, img_2])
 
-    outlier_step = OutlierDetectionStep()
+    outlier_step = OutlierDetectionStep(
+        in_memory=False,
+        save_intermediate_results=True,
+    )
     # set output dir for all files created by the step
     outlier_step.output_dir = tmp_path.as_posix()
-    # make sure files are written out to disk
-    outlier_step.in_memory = False
 
-    pars = {
-        "weight_type": "exptime",
-        "pixfrac": 1.0,
-        "kernel": "square",
-        "fillval": "INDEF",
-        "nlow": 0,
-        "nhigh": 0,
-        "maskpt": 0.7,
-        "grow": 1,
-        "snr": "4.0 3.0",
-        "scale": "0.5 0.4",
-        "backg": 0.0,
-        "kernel_size": "7 7",
-        "save_intermediate_results": True,
-        "resample_data": False,
-        "good_bits": 0,
-        "allowed_memory": None,
-        "in_memory": outlier_step.in_memory,
-        "make_output_path": outlier_step.make_output_path,
-        "resample_suffix": "i2d",
-    }
+    outlier_step(input_models)
 
     # meta.filename for the median image created by OutlierDetection.do_detection()
     median_path = tmp_path / "drizzled_median.asdf"
@@ -197,13 +126,11 @@ def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_imag
         median_path,
     ]
 
-    step = outlier_detection.OutlierDetection(input_models, **pars)
-    step.do_detection()
-
     assert all(x.exists() for x in outlier_files_path)
 
 
-def test_find_outliers(tmp_path, base_image):
+@pytest.mark.parametrize("on_disk", (True, False))
+def test_find_outliers(tmp_path, base_image, on_disk):
     """
     Test that OutlierDetection can find outliers.
     """
@@ -216,7 +143,7 @@ def test_find_outliers(tmp_path, base_image):
         img = base_image()
         img.data[42, 72] = source_value
         img.err[:] = err_value
-        img.meta.filename = f"img{i}_suffix.asdf"
+        img.meta.filename = str(tmp_path / f"img{i}_suffix.asdf")
         img.meta.observation.exposure = i
         img.meta.background.level = 0 * u.DN / u.s
         imgs.append(img)
@@ -232,13 +159,31 @@ def test_find_outliers(tmp_path, base_image):
     imgs[0].data[img_0_input_coords[0], img_0_input_coords[1]] = cr_value
     imgs[1].data[img_1_input_coords[0], img_1_input_coords[1]] = cr_value
 
-    input_models = ModelLibrary(imgs)
+    if on_disk:
+        # write out models and asn to disk
+        for img in imgs:
+            img.save(img.meta.filename)
+        asn_dict = {
+            "asn_id": "a3001",
+            "asn_pool": "none",
+            "products": [
+                {
+                    "name": "test_asn",
+                    "members": [
+                        {"expname": m.meta.filename, "exptype": "science"} for m in imgs
+                    ],
+                }
+            ],
+        }
+        input_models = ModelLibrary(asn_dict, on_disk=True)
+    else:
+        input_models = ModelLibrary(imgs)
 
     outlier_step = OutlierDetectionStep()
     # set output dir for all files created by the step
     outlier_step.output_dir = tmp_path.as_posix()
     # make sure files are written out to disk
-    outlier_step.in_memory = False
+    outlier_step.in_memory = not on_disk
 
     result = outlier_step(input_models)
 
@@ -284,9 +229,7 @@ def test_identical_images(tmp_path, base_image, caplog):
     result = outlier_step(input_models)
 
     # assert that log shows no new outliers detected
-    assert "New pixels flagged as outliers: 0 (0.00%)" in {
-        x.message for x in caplog.records
-    }
+    assert "0 pixels marked as outliers" in {x.message for x in caplog.records}
     # assert that DQ array has nothing flagged as outliers
     with result:
         for i, model in enumerate(result):

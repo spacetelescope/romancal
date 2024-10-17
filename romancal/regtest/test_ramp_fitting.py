@@ -158,13 +158,6 @@ def rampfit_result(request, rtdata_module):
         result_model.close()
 
 
-def passfail(bool_expr):
-    """set pass fail"""
-    if bool_expr:
-        return "Pass"
-    return "Fail"
-
-
 # #####
 # Tests
 # #####
