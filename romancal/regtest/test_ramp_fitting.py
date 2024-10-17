@@ -100,22 +100,22 @@ CONDITIONS_TRUNC = CONDITIONS_FULL + [cond_is_truncated]
     params=[
         (
             "DMS362",
-            Path("WFI/image/r0000101001001001001_01101_0001_WFI01_darkcurrent.asdf"),
+            Path("WFI/image/r0000101001001001001_0001_WFI01_darkcurrent.asdf"),
             CONDITIONS_FULL,
         ),
         (
             "DMS366",
-            Path("WFI/grism/r0000201001001001001_01101_0001_WFI01_darkcurrent.asdf"),
+            Path("WFI/grism/r0000201001001001001_0001_WFI01_darkcurrent.asdf"),
             CONDITIONS_FULL,
         ),
         (
             "DMS363",
-            Path("WFI/image/r0000101001001001001_01101_0003_WFI01_darkcurrent.asdf"),
+            Path("WFI/image/r0000101001001001001_0003_WFI01_darkcurrent.asdf"),
             CONDITIONS_TRUNC,
         ),
         (
             "DMS367",
-            Path("WFI/grism/r0000201001001001001_01101_0003_WFI01_darkcurrent.asdf"),
+            Path("WFI/grism/r0000201001001001001_0003_WFI01_darkcurrent.asdf"),
             CONDITIONS_TRUNC,
         ),
     ],

@@ -73,12 +73,9 @@ def mk_image_model(
 ):
     l2 = mk_level2_image(shape=image_shape)
     l2_im = ImageModel(l2)
-    l2_im.data = u.Quantity(
-        rng.normal(loc=rate_mean, scale=rate_std, size=l2_im.data.shape).astype(
-            np.float32
-        ),
-        l2_im.data.unit,
-    )
+    l2_im.data = rng.normal(
+        loc=rate_mean, scale=rate_std, size=l2_im.data.shape
+    ).astype(np.float32)
 
     l2_im.meta["wcs"] = mk_gwcs(image_shape, sky_offset=sky_offset, rotate=rotation)
 
@@ -125,11 +122,10 @@ def _add_bad_pixels(im, sat_val, dont_use_val):
     mask = np.ones(im.data.shape, dtype=bool)
     # Add some "bad" pixels:
     # corners
-    im_unit = im.data.unit
-    im.data[:5, :5] = sat_val * im_unit
-    im.data[-5:, :5] = sat_val * im_unit
-    im.data[-5:, -5:] = sat_val * im_unit
-    im.data[:5, -5:] = sat_val * im_unit
+    im.data[:5, :5] = sat_val
+    im.data[-5:, :5] = sat_val
+    im.data[-5:, -5:] = sat_val
+    im.data[:5, -5:] = sat_val
 
     im.dq[:5, :5] = pixel.SATURATED
     im.dq[-5:, :5] = pixel.SATURATED
@@ -146,7 +142,7 @@ def _add_bad_pixels(im, sat_val, dont_use_val):
     cy -= 5
 
     # center
-    im.data[cx : cx + 10, cy : cy + 10] = dont_use_val * im_unit
+    im.data[cx : cx + 10, cy : cy + 10] = dont_use_val
     im.dq[cx : cx + 10, cy : cy + 10] = pixel.DO_NOT_USE
     mask[cx : cx + 10, cy : cy + 10] = False
 
@@ -183,7 +179,7 @@ def test_skymatch(wfi_rate, skymethod, subtract, skystat, match_down):
 
     with library:
         for i, (im, lev) in enumerate(zip(library, levels)):
-            im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
+            im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape)
             library.shelve(im, i)
 
     # exclude central DO_NOT_USE and corner SATURATED pixels
@@ -219,14 +215,14 @@ def test_skymatch(wfi_rate, skymethod, subtract, skystat, match_down):
             assert im.meta.background.subtracted == subtract
 
             # test computed/measured sky values if level is set:
-            if not np.isclose(im.meta.background.level.value, 0):
-                assert abs(im.meta.background.level.value - rlev) < 0.01
+            if not np.isclose(im.meta.background.level, 0):
+                assert abs(im.meta.background.level - rlev) < 0.01
 
             # test
             if subtract:
-                assert abs(np.mean(im.data[dq_mask]).value - slev) < 0.01
+                assert abs(np.mean(im.data[dq_mask]) - slev) < 0.01
             else:
-                assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
+                assert abs(np.mean(im.data[dq_mask]) - lev) < 0.01
             result.shelve(im, i, modify=False)
 
 
@@ -248,7 +244,7 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
 
     with library:
         for i, (im, lev) in enumerate(zip(library, levels)):
-            im.data = rng.normal(loc=lev, scale=0.01, size=im.data.shape) * im.data.unit
+            im.data = rng.normal(loc=lev, scale=0.01, size=im.data.shape)
             library.shelve(im, i)
 
     # We do not exclude SATURATED pixels. They should be ignored because
@@ -287,23 +283,23 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
                 # These two sky methods must fail because they do not take
                 # into account (do not compute) overlap regions and use
                 # entire images:
-                assert abs(im.meta.background.level.value - rlev) < 0.1
+                assert abs(im.meta.background.level - rlev) < 0.1
 
                 # test
                 if subtract:
-                    assert abs(np.mean(im.data[dq_mask]).value - slev) < 0.1
+                    assert abs(np.mean(im.data[dq_mask]) - slev) < 0.1
                 else:
-                    assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
+                    assert abs(np.mean(im.data[dq_mask]) - lev) < 0.01
             else:
                 # test computed/measured sky values if level is nonzero:
-                if not np.isclose(im.meta.background.level.value, 0):
-                    assert abs(im.meta.background.level.value - rlev) < 0.01
+                if not np.isclose(im.meta.background.level, 0):
+                    assert abs(im.meta.background.level - rlev) < 0.01
 
                 # test
                 if subtract:
-                    assert abs(np.mean(im.data[dq_mask].value) - slev) < 0.01
+                    assert abs(np.mean(im.data[dq_mask]) - slev) < 0.01
                 else:
-                    assert abs(np.mean(im.data[dq_mask].value) - lev) < 0.01
+                    assert abs(np.mean(im.data[dq_mask]) - lev) < 0.01
             result.shelve(im, i, modify=False)
 
 
@@ -330,7 +326,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
 
     with library:
         for i, (im, lev) in enumerate(zip(library, levels)):
-            im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape) * im.data.unit
+            im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape)
             library.shelve(im, i)
 
     # We do not exclude SATURATED pixels. They should be ignored because
@@ -385,14 +381,14 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
             assert im.meta.background.subtracted == step.subtract
 
             # test computed/measured sky values:
-            if not np.isclose(im.meta.background.level.value, 0, atol=1e-6):
-                assert abs(im.meta.background.level.value - rlev) < 0.01
+            if not np.isclose(im.meta.background.level, 0, atol=1e-6):
+                assert abs(im.meta.background.level - rlev) < 0.01
 
             # test
             if subtract:
-                assert abs(np.mean(im.data[dq_mask]).value - slev) < 0.01
+                assert abs(np.mean(im.data[dq_mask]) - slev) < 0.01
             else:
-                assert abs(np.mean(im.data[dq_mask]).value - lev) < 0.01
+                assert abs(np.mean(im.data[dq_mask]) - lev) < 0.01
             result2.shelve(im, i, modify=False)
 
 

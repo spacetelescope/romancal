@@ -4,7 +4,6 @@ from asdf import AsdfFile
 from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
-from astropy.units import Quantity
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
@@ -318,7 +317,7 @@ def test_build_driz_weight_multiple_good_bits(
     data_shape = dq_array.shape
     img1 = base_image()
     img1.dq = dq_array
-    img1.data = Quantity(np.ones(data_shape), unit="DN / s")
+    img1.data = np.ones(data_shape)
 
     result = resample_utils.build_driz_weight(
         img1, weight_type=None, good_bits=good_bits
@@ -346,7 +345,7 @@ def test_set_good_bits_in_resample_meta(base_image, good_bits):
 
     img = datamodels.ImageModel(model)
 
-    img.data *= img.meta.photometry.conversion_megajanskys / img.data.unit
+    img.data *= img.meta.photometry.conversion_megajanskys / img.data
 
     step = ResampleStep
 
@@ -361,14 +360,14 @@ def test_build_driz_weight_different_weight_type(base_image, weight_type):
     img1 = base_image()
     # update attributes that will be used in building the weight array
     img1.meta.exposure.exposure_time = 10
-    img1.var_rnoise = Quantity(rng.normal(1, 0.1, size=img1.shape), unit="DN2 / s2")
+    img1.var_rnoise = rng.normal(1, 0.1, size=img1.shape)
     # build the drizzle weight array
     result = resample_utils.build_driz_weight(
         img1, weight_type=weight_type, good_bits="~DO_NOT_USE+NON_SCIENCE"
     )
 
     expected_results = {
-        "ivm": img1.var_rnoise.value**-1,
+        "ivm": img1.var_rnoise**-1,
         "exptime": np.ones(img1.shape, dtype=img1.data.dtype)
         * img1.meta.exposure.exposure_time,
         None: np.ones(img1.shape, dtype=img1.data.dtype),

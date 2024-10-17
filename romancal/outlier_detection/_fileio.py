@@ -1,7 +1,5 @@
 import logging
 
-from astropy.units import Quantity
-
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -20,7 +18,7 @@ def save_drizzled(drizzled_model, make_output_path):
 
 def _make_median_model(example_model, data, wcs):
     model = example_model.copy()
-    model.data = Quantity(data, unit=model.data.unit)
+    model.data = data
     model.meta.filename = "drizzled_median.asdf"
     model.meta.wcs = wcs
     return model

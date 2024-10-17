@@ -53,10 +53,10 @@ class JumpStep(RomanStep):
 
         # Extract the needed info from the Roman Data Model
         meta = input_model.meta
-        r_data = input_model.data.value
+        r_data = input_model.data
         r_gdq = input_model.groupdq
         r_pdq = input_model.pixeldq
-        r_err = input_model.err.value
+        r_err = input_model.err
         result = input_model
 
         # If the ramp fitting jump detection is enabled, then skip this step
@@ -106,6 +106,7 @@ class JumpStep(RomanStep):
             self.log.info("Maximum cores to use = %s", max_cores)
 
         # Get the gain and readnoise reference files
+        # TODO: remove units from gain and RN reference files
         gain_filename = self.get_reference_file(input_model, "gain")
         self.log.info("Using GAIN reference file: %s", gain_filename)
         gain_model = rdd.GainRefModel(gain_filename)

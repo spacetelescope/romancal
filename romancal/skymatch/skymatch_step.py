@@ -173,15 +173,13 @@ class SkyMatchStep(RomanStep):
 
     def _set_sky_background(self, sky_image, step_status):
         image = sky_image.meta["image_model"]
-        sky = sky_image.sky
-        if sky == 0 or sky is None:
-            sky = 0 * image.data.unit
+        sky = sky_image.sky if sky_image.sky is not None else 0
 
         image.meta.background.method = str(self.skymethod)
         image.meta.background.subtracted = self.subtract
         # In numpy 2, the dtypes are more carefully controlled, so to match the
         # schema the data type needs to be re-cast to float64.
-        image.meta.background.level = sky.astype(np.float64)
+        image.meta.background.level = sky
 
         if step_status == "COMPLETE" and self.subtract:
             image.data[...] = sky_image.image[...]

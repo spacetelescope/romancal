@@ -86,7 +86,7 @@ def _median_with_resampling(
 
             weight_threshold = compute_weight_threshold(drizzled_model.weight, maskpt)
             drizzled_model.data[drizzled_model.weight < weight_threshold] = np.nan
-            computer.append(drizzled_model.data.value, i)
+            computer.append(drizzled_model.data, i)
             del drizzled_model
 
     # Perform median combination on set of drizzled mosaics
@@ -173,7 +173,7 @@ def _median_without_resampling(
 
             weight_threshold = compute_weight_threshold(wht, maskpt)
 
-            data_copy = model.data.value.copy()
+            data_copy = model.data.copy()
             data_copy[wht < weight_threshold] = np.nan
             computer.append(data_copy, i)
 
@@ -211,13 +211,13 @@ def _flag_resampled_model_crs(
         and image.meta.background.subtracted is False
         and image.meta.background.level is not None
     ):
-        backg = image.meta.background.level.value
+        backg = image.meta.background.level
         log.debug(
             f"Adding background level {image.meta.background.level} to blotted image"
         )
 
     cr_mask = flag_resampled_crs(
-        image.data.value, image.err.value, blot, snr1, snr2, scale1, scale2, backg
+        image.data, image.err, blot, snr1, snr2, scale1, scale2, backg
     )
 
     # update the dq flags in-place
@@ -226,7 +226,7 @@ def _flag_resampled_model_crs(
 
 
 def _flag_model_crs(image, median_data, snr):
-    cr_mask = flag_crs(image.data.value, image.err.value, median_data, snr)
+    cr_mask = flag_crs(image.data, image.err, median_data, snr)
 
     # Update dq array in-place
     image.dq |= cr_mask * np.uint32(pixel.DO_NOT_USE | pixel.OUTLIER)

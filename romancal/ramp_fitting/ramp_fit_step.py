@@ -101,7 +101,7 @@ class RampFitStep(RomanStep):
         if self.threshold_constant is not None:
             kwargs["threshold_constant"] = self.threshold_constant
 
-        resultants = input_model.data.value
+        resultants = input_model.data
         dq = input_model.groupdq
         read_noise = readnoise_model.data.value
         gain = gain_model.data.value
@@ -183,10 +183,6 @@ def create_image_model(input_model, image_info):
     """
     data, dq, var_poisson, var_rnoise, err = image_info
 
-    data = u.Quantity(data, u.DN / u.s, dtype=data.dtype)
-    var_poisson = u.Quantity(var_poisson, u.DN**2 / u.s**2, dtype=var_poisson.dtype)
-    var_rnoise = u.Quantity(var_rnoise, u.DN**2 / u.s**2, dtype=var_rnoise.dtype)
-    err = u.Quantity(err, u.DN / u.s, dtype=err.dtype)
     if dq is None:
         dq = np.zeros(data.shape, dtype="u4")
 
@@ -198,13 +194,11 @@ def create_image_model(input_model, image_info):
     meta["photometry"] = maker_utils.mk_photometry()
     inst = {
         "meta": meta,
-        "data": u.Quantity(data, u.DN / u.s, dtype=data.dtype),
+        "data": data,
         "dq": dq,
-        "var_poisson": u.Quantity(
-            var_poisson, u.DN**2 / u.s**2, dtype=var_poisson.dtype
-        ),
-        "var_rnoise": u.Quantity(var_rnoise, u.DN**2 / u.s**2, dtype=var_rnoise.dtype),
-        "err": u.Quantity(err, u.DN / u.s, dtype=err.dtype),
+        "var_poisson": var_poisson,
+        "var_rnoise": var_rnoise,
+        "err": err,
         "amp33": input_model.amp33.copy(),
         "border_ref_pix_left": input_model.border_ref_pix_left.copy(),
         "border_ref_pix_right": input_model.border_ref_pix_right.copy(),
