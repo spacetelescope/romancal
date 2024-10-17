@@ -13,7 +13,7 @@ on:
 
 jobs:
   download_webbpsf_data:
-    uses: spacetelescope/webbpsf/.github/workflows/download_data.yml@develop
+    uses: spacetelescope/webbpsf/.github/workflows/download_data.yml@beda656c80a0254e6f80649d9c9c49235634522f  # v1.4.0
     with:
       minimal: ${{ github.event_name != 'workflow_dispatch' && true || inputs.webbpsf_minimal }}
   move_data_cache_path:
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: retrieve cached WebbPSF data
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
         with:
           path: ${{ needs.download_webbpsf_data.outputs.cache_path }}
           key: ${{ needs.download_webbpsf_data.outputs.cache_key }}
@@ -30,7 +30,7 @@ jobs:
       - run: echo WEBBPSF_PATH=/tmp/data/webbpsf-data/ >> $GITHUB_ENV
       # save a new cache to the generalized data directory
       - name: save a single combined data cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
         with:
           path: /tmp/data/
           key: ${{ needs.download_webbpsf_data.outputs.cache_key }}
