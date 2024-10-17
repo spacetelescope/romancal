@@ -686,7 +686,7 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    with pytest.raises(Exception) as exec_info:
+    with pytest.raises(TypeError):
         trs.TweakRegStep.call(
             [img],
             save_abs_catalog=True,
@@ -694,8 +694,6 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
             catalog_path=str(tmp_path),
             output_dir=str(tmp_path),
         )
-
-    assert type(exec_info.value) == TypeError
 
 
 def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
@@ -737,7 +735,7 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
         catfile=catfile,
     )
 
-    assert type(res) == ModelLibrary
+    assert isinstance(res, ModelLibrary)
 
     with res:
         for i, (model, target) in enumerate(zip(res, [img1, img2, img3])):
@@ -750,7 +748,7 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
 
             assert model.meta.filename == target.meta.filename
 
-            assert type(model) == type(target)
+            assert type(model) is type(target)
 
             assert (model.data == target.data).all()
 
@@ -853,7 +851,7 @@ def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
 
     res = trs.TweakRegStep.call(asn_filepath)
 
-    assert type(res) == ModelLibrary
+    assert isinstance(res, ModelLibrary)
 
     with res:
         models = list(res)
@@ -872,8 +870,8 @@ def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
         assert models[0].meta.filename == img_1.meta.filename
         assert models[1].meta.filename == img_2.meta.filename
 
-        assert type(models[0]) == type(img_1)
-        assert type(models[1]) == type(img_2)
+        assert type(models[0]) is type(img_1)
+        assert type(models[1]) is type(img_2)
 
         assert (models[0].data == img_1.data).all()
         assert (models[1].data == img_2.data).all()
@@ -891,7 +889,7 @@ def test_fit_results_in_meta(tmp_path, base_image):
 
     res = trs.TweakRegStep.call([img])
 
-    assert type(res) == ModelLibrary
+    assert isinstance(res, ModelLibrary)
     with res:
         for i, model in enumerate(res):
             assert hasattr(model.meta, "wcs_fit_results")
@@ -995,10 +993,8 @@ def test_parse_catfile_raises_error_on_invalid_content(tmp_path, catfile_line_co
     with open(catfile, mode="w") as f:
         print(catfile_content.getvalue(), file=f)
 
-    with pytest.raises(Exception) as exec_info:
+    with pytest.raises(ValueError):
         trs._parse_catfile(catfile)
-
-    assert type(exec_info.value) == ValueError
 
 
 def test_update_source_catalog_coordinates(tmp_path, base_image):
@@ -1234,7 +1230,7 @@ def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_ima
     img2.meta.exposure.type = exposure_type
     res = trs.TweakRegStep.call([img1, img2])
 
-    assert type(res) == ModelLibrary
+    assert isinstance(res, ModelLibrary)
     with res:
         for i, model in enumerate(res):
             assert hasattr(model.meta.cal_step, "tweakreg")
