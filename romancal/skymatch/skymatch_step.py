@@ -12,6 +12,9 @@ import numpy as np
 from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
 from roman_datamodels import maker_utils
 from roman_datamodels.dqflags import pixel
+from stcal.skymatch.skyimage import SkyImage
+from stcal.skymatch.skymatch import match
+from stcal.skymatch.skystatistics import SkyStats
 
 from romancal.datamodels import ModelLibrary
 from romancal.stpipe import RomanStep
