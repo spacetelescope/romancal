@@ -47,7 +47,7 @@ class SourceCatalogStep(RomanStep):
 
     def process(self, input_model):
         if isinstance(input_model, datamodels.DataModel):
-            model = input_model
+            model = input_model.copy()
         else:
             model = datamodels.open(input_model)
 
@@ -110,10 +110,6 @@ class SourceCatalogStep(RomanStep):
 
             # put the resulting catalog in the model
             source_catalog_model.source_catalog = catobj.catalog
-
-        # add back background to data so input model is unchanged
-        # (in case of interactive use)
-        model.data += bkg.background
 
         # create catalog filename
         # N.B.: self.save_model will determine whether to use fully qualified path or not
