@@ -24,7 +24,7 @@ dependencies = [
     "pyparsing >=2.4.7",
     "requests >=2.26",
     # "rad>=0.21.0,<0.22.0",
-    "rad @ git+https://github.com/mairanteodoro/rad.git@RCAL-932-remove-units-in-exposure-level-pipeline",
+    "rad @ git+https://github.com/spacetelescope/rad.git",
     # "roman_datamodels>=0.21.0,<0.22.0",
     "roman_datamodels @ git+https://github.com/mairanteodoro/roman_datamodels.git@RCAL-932-remove-units-in-exposure-level-pipeline",
     "scipy >=1.11",
