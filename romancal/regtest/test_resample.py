@@ -12,7 +12,7 @@ from .regtestdata import compare_asdf
 def test_resample_single_file(rtdata, ignore_asdf_paths):
     output_data = "mosaic_resamplestep.asdf"
 
-    rtdata.get_asn("WFI/image/mosaic_asn.json")
+    rtdata.get_asn("WFI/image/L3_mosaic_asn.json")
     rtdata.get_truth(f"truth/WFI/image/{output_data}")
 
     rtdata.output = output_data

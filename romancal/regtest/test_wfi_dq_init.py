@@ -16,7 +16,7 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
     """DMS25 Test: Testing retrieval of best ref file for image data,
     and creation of a ramp file with CRDS selected mask file applied."""
 
-    input_file = "r0000101001001001001_01101_0001_WFI01_uncal.asdf"
+    input_file = "r0000101001001001001_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_file}")
     rtdata.input = input_file
 
@@ -40,7 +40,7 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
     assert "roman_wfi_mask" in ref_file_name
 
     # Test DQInitStep
-    output = "r0000101001001001001_01101_0001_WFI01_dqinit.asdf"
+    output = "r0000101001001001001_0001_WFI01_dqinit.asdf"
     rtdata.output = output
     args = ["romancal.step.DQInitStep", rtdata.input]
     step.log.info(
@@ -71,7 +71,7 @@ def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
     """DMS25 Test: Testing retrieval of best ref file for grism data,
     and creation of a ramp file with CRDS selected mask file applied."""
 
-    input_file = "r0000201001001001001_01101_0001_WFI01_uncal.asdf"
+    input_file = "r0000201001001001001_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/grism/{input_file}")
     rtdata.input = input_file
 
@@ -95,7 +95,7 @@ def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
     assert "roman_wfi_mask" in ref_file_name
 
     # Test DQInitStep
-    output = "r0000201001001001001_01101_0001_WFI01_dqinit.asdf"
+    output = "r0000201001001001001_0001_WFI01_dqinit.asdf"
     rtdata.output = output
     args = ["romancal.step.DQInitStep", rtdata.input]
     step.log.info(

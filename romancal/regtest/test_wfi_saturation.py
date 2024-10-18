@@ -16,7 +16,7 @@ def test_saturation_image_step(rtdata, ignore_asdf_paths):
     """Testing retrieval of best ref file for image data,
     and creation of a ramp file with CRDS selected saturation file applied."""
 
-    input_file = "r0000101001001001001_01101_0001_WFI01_dqinit.asdf"
+    input_file = "r0000101001001001001_0001_WFI01_dqinit.asdf"
     rtdata.get_data(f"WFI/image/{input_file}")
     rtdata.input = input_file
 
@@ -30,7 +30,7 @@ def test_saturation_image_step(rtdata, ignore_asdf_paths):
     assert "roman_wfi_saturation" in ref_file_name
 
     # Test SaturationStep
-    output = "r0000101001001001001_01101_0001_WFI01_saturation.asdf"
+    output = "r0000101001001001001_0001_WFI01_saturation.asdf"
     rtdata.output = output
 
     args = ["romancal.step.SaturationStep", rtdata.input]
@@ -49,7 +49,7 @@ def test_saturation_grism_step(rtdata, ignore_asdf_paths):
     """Testing retrieval of best ref file for grism data,
     and creation of a ramp file with CRDS selected saturation file applied."""
 
-    input_file = "r0000201001001001001_01101_0001_WFI01_dqinit.asdf"
+    input_file = "r0000201001001001001_0001_WFI01_dqinit.asdf"
     rtdata.get_data(f"WFI/grism/{input_file}")
     rtdata.input = input_file
 
@@ -63,7 +63,7 @@ def test_saturation_grism_step(rtdata, ignore_asdf_paths):
     assert "roman_wfi_saturation" in ref_file_name
 
     # Test SaturationStep
-    output = "r0000201001001001001_01101_0001_WFI01_saturation.asdf"
+    output = "r0000201001001001001_0001_WFI01_saturation.asdf"
     rtdata.output = output
 
     args = ["romancal.step.SaturationStep", rtdata.input]

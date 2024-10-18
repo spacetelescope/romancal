@@ -5,7 +5,6 @@ Module for applying flat fielding
 import logging
 
 import numpy as np
-from astropy import units as u
 from roman_datamodels.dqflags import pixel
 
 log = logging.getLogger(__name__)
@@ -105,9 +104,7 @@ def apply_flat_field(science, flat):
     flat_data[np.where(flat_bad)] = 1.0
     # Now let's apply the correction to science data and error arrays.  Rely
     # on array broadcasting to handle the cubes
-    science.data = u.Quantity(
-        (science.data.value / flat_data), u.DN / u.s, dtype=science.data.dtype
-    )
+    science.data = (science.data / flat_data).astype(science.data.dtype)
 
     # Update the variances using BASELINE algorithm.  For guider data, it has
     # not gone through ramp fitting so there is no Poisson noise or readnoise
@@ -121,8 +118,6 @@ def apply_flat_field(science, flat):
         science.var_flat = science.data**2 / flat_data_squared * flat_err**2
 
     science.err = np.sqrt(science.var_poisson + science.var_rnoise + science.var_flat)
-    science.err = science.err.to(science.data.unit)
-    # Workaround for https://github.com/astropy/astropy/issues/16055
 
     # Combine the science and flat DQ arrays
     science.dq = np.bitwise_or(science.dq, flat_dq)

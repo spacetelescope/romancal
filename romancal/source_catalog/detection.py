@@ -7,7 +7,6 @@ import math
 import warnings
 
 from astropy.convolution import convolve
-from astropy.units import Quantity
 from astropy.utils.exceptions import AstropyUserWarning
 from photutils.segmentation import SourceFinder, make_2dgaussian_kernel
 from photutils.utils.exceptions import NoDetectionsWarning
@@ -23,8 +22,8 @@ def convolve_data(data, kernel_fwhm, size=None, mask=None):
 
     Parameters
     ----------
-    data : 2D `astropy.units.Quantity`
-        The input 2D Quantity array. The data is assumed to be
+    data : 2D `numpy.ndarray`
+        The input 2D array. The data is assumed to be
         background subtracted.
     kernel_fwhm : float
         The FWHM of the Gaussian kernel.
@@ -40,9 +39,6 @@ def convolve_data(data, kernel_fwhm, size=None, mask=None):
     convolved_data : `numpy.ndarray`
         The convolved data array.
     """
-    if not isinstance(data, Quantity):
-        raise ValueError("Input model must be a Quantity array.")
-
     size = math.ceil(kernel_fwhm * 3)
     size = size + 1 if size % 2 == 0 else size  # make size be odd
     kernel = make_2dgaussian_kernel(kernel_fwhm, size=size)  # normalized to 1
