@@ -31,7 +31,7 @@ def test_dark_step_interface(instrument, exptype):
 
     # Test dark results
     assert (result.data == ramp_model.data).all()
-    assert type(result) == RampModel
+    assert isinstance(result, RampModel)
     assert result.validate() is None
     assert result.data.shape == shape
     assert result.groupdq.shape == shape
@@ -99,7 +99,7 @@ def test_dark_step_output_dark_file(tmp_path, instrument, exptype):
     dark_out_file_model = rdm.open(path)
 
     # Test dark file results
-    assert type(dark_out_file_model) == DarkRefModel
+    assert isinstance(dark_out_file_model, DarkRefModel)
     assert dark_out_file_model.validate() is None
     assert dark_out_file_model.data.shape == shape
     assert dark_out_file_model.dq.shape == shape[1:]
@@ -132,7 +132,7 @@ def test_dark_step_getbestrefs(tmp_path, instrument, exptype):
     dark_out_file_model = rdm.open(path)
 
     # Test dark file results
-    assert type(dark_out_file_model) == DarkRefModel
+    assert isinstance(dark_out_file_model, DarkRefModel)
     assert dark_out_file_model.validate() is None
     assert dark_out_file_model.data.shape == shape
     assert dark_out_file_model.dq.shape == shape[1:]

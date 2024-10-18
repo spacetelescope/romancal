@@ -6,11 +6,10 @@ Unit tests for linearity correction
 
 import numpy as np
 import pytest
-from roman_datamodels import maker_utils
+from roman_datamodels import dqflags, maker_utils
 from roman_datamodels.datamodels import LinearityRefModel, ScienceRawModel
 
 from romancal.dq_init import DQInitStep
-from romancal.lib import dqflags
 from romancal.linearity import LinearityStep
 
 
