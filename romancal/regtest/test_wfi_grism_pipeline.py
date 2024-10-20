@@ -19,12 +19,12 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 def run_elp(rtdata_module):
     rtdata = rtdata_module
 
-    input_data = "r0000201001001001001_01101_0001_WFI01_uncal.asdf"
+    input_data = "r0000201001001001001_0001_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/grism/{input_data}")
     rtdata.input = input_data
 
     # Test Pipeline
-    output = "r0000201001001001001_01101_0001_WFI01_cal.asdf"
+    output = "r0000201001001001001_0001_WFI01_cal.asdf"
     rtdata.output = output
     args = [
         "roman_elp",
@@ -139,6 +139,7 @@ def test_repointed_matches_truth(
     repointed_filename, _ = repointed_filename_and_delta
 
     rtdata.get_truth(f"truth/WFI/grism/{Path(repointed_filename).name}")
+    rtdata.output = repointed_filename
     diff = compare_asdf(repointed_filename, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 

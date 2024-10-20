@@ -13,7 +13,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
     scope="module",
     params=[
         "r0099101001001001001_F158_visit_i2d.asdf",
-        "r0000101001001001001_01101_0001_WFI01_cal.asdf",
+        "r0000101001001001001_0001_WFI01_cal.asdf",
     ],
     ids=["L3", "L2"],
 )

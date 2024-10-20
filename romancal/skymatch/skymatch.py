@@ -460,8 +460,7 @@ def _overlap_matrix(images, apply_sky=True):
     # TODO: to improve performance, the nested loops could be parallelized
     # since _calc_sky() here can be called independently from previous steps.
     ns = len(images)
-    data_unit = images[0].image.unit
-    A = np.zeros((ns, ns), dtype=float) * data_unit
+    A = np.zeros((ns, ns), dtype=float)
     W = np.zeros((ns, ns), dtype=float)
     for i in range(ns):
         for j in range(i + 1, ns):
@@ -482,7 +481,6 @@ def _overlap_matrix(images, apply_sky=True):
 def _find_optimum_sky_deltas(images, apply_sky=True):
     ns = len(images)
     A, W = _overlap_matrix(images, apply_sky=apply_sky)
-    data_unit = images[0].image.unit
 
     def is_valid(i, j):
         return W[i, j] > 0 and W[j, i] > 0
@@ -514,7 +512,7 @@ def _find_optimum_sky_deltas(images, apply_sky=True):
             if is_valid(i, j):
                 K[ieq, i] = Wm[i, j]
                 K[ieq, j] = -Wm[i, j]
-                F[ieq] = Wm[i, j] * (A[j, i] - A[i, j]).value
+                F[ieq] = Wm[i, j] * (A[j, i] - A[i, j])
                 invalid[i] = False
                 invalid[j] = False
                 ieq += 1
@@ -538,4 +536,4 @@ def _find_optimum_sky_deltas(images, apply_sky=True):
 
     deltas = np.dot(invK, F)
     deltas[np.asarray(invalid, dtype=bool)] = np.nan
-    return deltas * data_unit
+    return deltas

@@ -151,7 +151,7 @@ def build_driz_weight(
             and model.var_rnoise.shape == model.data.shape
         ):
             with np.errstate(divide="ignore", invalid="ignore"):
-                inv_variance = model.var_rnoise.value**-1
+                inv_variance = model.var_rnoise**-1
             inv_variance[~np.isfinite(inv_variance)] = 1
         else:
             warnings.warn(

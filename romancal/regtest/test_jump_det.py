@@ -13,7 +13,7 @@ def test_jump_detection_step(rtdata, ignore_asdf_paths):
     """Function to run and compare Jump Detection files. Note: This should
     include tests for overrides etc."""
 
-    input_file = "r0000101001001001001_01101_0001_WFI01_darkcurrent.asdf"
+    input_file = "r0000101001001001001_0001_WFI01_darkcurrent.asdf"
     rtdata.get_data(f"WFI/image/{input_file}")
     rtdata.input = input_file
 
@@ -29,7 +29,7 @@ def test_jump_detection_step(rtdata, ignore_asdf_paths):
         "--run_ramp_jump_detection=False",
     ]
     RomanStep.from_cmdline(args)
-    output = "r0000101001001001001_01101_0001_WFI01_jump.asdf"
+    output = "r0000101001001001001_0001_WFI01_jump.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)

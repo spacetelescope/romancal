@@ -16,16 +16,19 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 @pytest.fixture(scope="module")
 def run_mos(rtdata_module):
     rtdata = rtdata_module
+
     rtdata.get_asn("WFI/image/L3_regtest_asn.json")
 
     # Test Pipeline
     output = "r0099101001001001001_F158_visit_i2d.asdf"
     rtdata.output = output
+
     args = [
         "roman_mos",
         rtdata.input,
     ]
     MosaicPipeline.from_cmdline(args)
+
     rtdata.get_truth(f"truth/WFI/image/{output}")
     return rtdata
 
