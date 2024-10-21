@@ -42,7 +42,7 @@ jobs:
       minimal: true
   latest_crds_contexts:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
-    uses: spacetelescope/crds/.github/workflows/contexts.yml@master
+    uses: ./.github/workflows/contexts.yml
   crds_context:
     needs: [ latest_crds_contexts ]
     runs-on: ubuntu-latest
