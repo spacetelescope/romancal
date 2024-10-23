@@ -56,7 +56,7 @@ rPPPPPCCAAASSSOOOVVV_eeee_detector_suffix.asdf
 
 To give a more concrete example we'll use the APT example program for the
 High Latitude Wide Angle Survey (hlwas). The program is 00991, the execution plan number is 01,
-there are 12 passes, 5 segments, 4 observations and a various number of visits.
+there are 12 passes, 169 segments, 5 observations and a various number of visits.
 For this example we want to select a single filter, say F158, and that is segment 003.
 So to generate the visit level associations for observation 001 we would select the files using the bash
 command line,
@@ -88,4 +88,4 @@ the F158 filter.
 
 .. code-block:: text
 
-		skycell_asn r0099101???003*_*_cal.asdf  -o  r0099101001003001001 --product-type pass
+		skycell_asn r0099101???003*_*_cal.asdf  -o  r0099101 --product-type pass
