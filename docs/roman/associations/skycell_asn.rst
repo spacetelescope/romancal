@@ -26,11 +26,11 @@ for the output associations. To get a complete list of options you can run the c
 
 .. code-block:: python
 
-		skycell_asn -h 
+		skycell_asn -h
 
 
 By knowing the structure of the conventional file name you can generate custom associations based
-on the information included in the file names. 
+on the information included in the file names.
 The current naming convention for the input files consists of a Visit_ID + Exposure_ID + detector + suffix
 Where the Visit_ID is a 19 digit string
 PPPPPCCAAASSSOOOVVV, with
@@ -38,7 +38,7 @@ PPPPPCCAAASSSOOOVVV, with
 PPPPP = Program number
 CC = Execution plan number
 AAA = Pass number (within execution plan)
-SSS = Segment Number (within pass)  
+SSS = Segment Number (within pass)
 OOO = Observation number (within the leg, not to be confused with the Observation ID)
 VVV = Visit Number (within the observation)
 
@@ -81,10 +81,10 @@ or for the selections above
 
 where the skycell name can vary based on the location on the celestial sphere and the i2d indicates
 that this is resampled 2-d imaging data. The release product name can be changed from the default
-by adding the optional argument --release-product <new name> to the command line. 
-	
+by adding the optional argument --release-product <new name> to the command line.
+
 An analogous command to generate the pass level products, again setting observation to 003 to only select
-the F158 filter. 
+the F158 filter.
 
 .. code-block:: text
 
