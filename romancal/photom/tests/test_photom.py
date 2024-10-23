@@ -252,9 +252,7 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     wfi_image.meta.instrument.optical_element = "PRISM"
 
     # Set photometric values for spectroscopic data
-    wfi_image.meta.photometry.pixel_area = (
-        2.31307642258977e-14 * u.steradian
-    ).value
+    wfi_image.meta.photometry.pixel_area = (2.31307642258977e-14 * u.steradian).value
     wfi_image.meta.photometry.conversion_megajanskys = (
         -99999 * u.megajansky / u.steradian
     ).value
@@ -279,4 +277,3 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     assert result.meta.photometry.conversion_megajanskys is None
     assert result.meta.photometry.conversion_megajanskys_uncertainty is None
     assert result.meta.photometry.pixel_area is None
-

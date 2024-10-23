@@ -156,7 +156,7 @@ class ResampleStep(RomanStep):
         # calculate the actual value of pixel_scale_ratio based on pixel_scale
         # because source_catalog uses this value from the header.
         model.meta.resample.pixel_scale_ratio = (
-            self.pixel_scale / np.sqrt((model.meta.photometry.pixel_area * 4.254517e10))
+            self.pixel_scale / np.sqrt(model.meta.photometry.pixel_area * 4.254517e10)
             if self.pixel_scale
             else self.pixel_scale_ratio
         )
@@ -241,9 +241,7 @@ class ResampleStep(RomanStep):
     def update_phot_keywords(self, model):
         """Update pixel scale keywords"""
         if model.meta.photometry.pixel_area is not None:
-            model.meta.photometry.pixel_area *= (
-                model.meta.resample.pixel_scale_ratio**2
-            )
+            model.meta.photometry.pixel_area *= model.meta.resample.pixel_scale_ratio**2
 
     def set_drizzle_defaults(self):
         """Set the default parameters for drizzle."""

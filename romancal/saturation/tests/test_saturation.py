@@ -7,7 +7,7 @@ Unit tests for saturation flagging
 import numpy as np
 import pytest
 from roman_datamodels import maker_utils
-from roman_datamodels.datamodels import ScienceRawModel, RampModel
+from roman_datamodels.datamodels import RampModel, ScienceRawModel
 from roman_datamodels.dqflags import group, pixel
 
 from romancal.saturation import SaturationStep

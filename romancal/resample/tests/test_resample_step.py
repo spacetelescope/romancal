@@ -13,9 +13,7 @@ from romancal.resample import ResampleStep, resample_utils
 
 class MockModel:
     def __init__(self, pixel_area, pixel_scale_ratio):
-        self.meta = MockMeta(
-            pixel_area, pixel_scale_ratio
-        )
+        self.meta = MockMeta(pixel_area, pixel_scale_ratio)
 
 
 class MockMeta:
