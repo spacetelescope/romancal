@@ -91,6 +91,7 @@ schema_editor = "romancal.scripts.schema_editor:main"
 schemadoc = "romancal.scripts.schemadoc:main"
 verify_install_requires = "romancal.scripts.verify_install_requires:main"
 asn_from_list = "romancal.associations.asn_from_list:Main"
+skycell_asn = "romancal.associations.skycell_asn:Main" 
 
 [build-system]
 requires = [
