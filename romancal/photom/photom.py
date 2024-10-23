@@ -1,8 +1,6 @@
 import logging
 import warnings
 
-from astropy import units as u
-
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -59,7 +57,6 @@ def save_area_info(input_model, photom_parameters):
 
     # Load the average pixel area values from the photom reference file header
     area_ster = photom_parameters["pixelareasr"].value
-    area_a2 = photom_parameters["pixelareasr"].to(u.arcsecond**2).value
 
     # Copy the pixel area values to the input model
     input_model.meta.photometry.pixel_area = area_ster

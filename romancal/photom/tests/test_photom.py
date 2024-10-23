@@ -137,7 +137,6 @@ def test_apply_photom1():
 
     # Set reference photometry
     area_ster = 2.31307642258977e-14 * u.steradian
-    area_a2 = 0.000984102303070964 * u.arcsecond * u.arcsecond
 
     # Tests for pixel areas
     assert np.isclose(
@@ -148,7 +147,6 @@ def test_apply_photom1():
 
     # Set reference photometry
     phot_ster = 3.5 * u.megajansky / u.steradian
-    phot_a2 = phot_ster.to(u.microjansky / u.arcsecond**2)
 
     # Tests for photometry
     assert np.isclose(
@@ -159,7 +157,6 @@ def test_apply_photom1():
 
     # Set reference photometric uncertainty
     muphot_ster = 0.175 * u.megajansky / u.steradian
-    muphot_a2 = muphot_ster.to(u.microjansky / u.arcsecond**2)
 
     # Tests for photometric uncertainty
     assert np.isclose(
@@ -167,10 +164,6 @@ def test_apply_photom1():
         muphot_ster.value,
         atol=1.0e-7,
     )
-    # assert (
-    #     output_model.meta.photometry.conversion_megajanskys_uncertainty.unit
-    #     == muphot_ster.unit
-    # )
 
 
 def test_apply_photom2():

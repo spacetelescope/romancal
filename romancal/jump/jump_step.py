@@ -52,7 +52,6 @@ class JumpStep(RomanStep):
             input_model = rdd.open(input)
 
         # Extract the needed info from the Roman Data Model
-        meta = input_model.meta
         r_data = input_model.data
         r_gdq = input_model.groupdq
         r_pdq = input_model.pixeldq
