@@ -57,13 +57,13 @@ rPPPPPCCAAASSSOOOVVV_eeee_detector_suffix.asdf
 To give a more concrete example we'll use the APT example program for the
 High Latitude Wide Angle Survey (hlwas). The program is 00991, the execution plan number is 01,
 there are 12 passes, 169 segments, 5 observations and a various number of visits.
-For this example we want to select a single filter, say F158, and that is segment 003.
+For this example we want to select a single filter, say F158, and that is observation 003.
 So to generate the visit level associations for observation 001 we would select the files using the bash
 command line,
 
 .. code-block:: text
 
-		skycell_asn r0099101001003001001_*_cal.asdf  -o  r0099101001003001001 --product-type visit
+		skycell_asn r0099101001001003001_*_cal.asdf  -o  r0099101001001003001 --product-type visit
 
 Where the wildcard selects all the exposures for visit 001 and generates associations based on the skycells
 the exposures will populate. This will generate associations based the skycells that the exposures can
@@ -71,13 +71,13 @@ contribute data to. The association files will be json files with names based
 
 .. code-block:: text
 
-	r0099101001003001001_<skycell name>_<product_type>_<filter>_<release product name>_i2d_asn.json
+	r0099101001001003001_<skycell name>_<product_type>_<filter>_<release product name>_i2d_asn.json
 
 or for the selections above
 
 .. code-block:: text
 
-	r0099101001003001001_r257dp63x98y83_visit_F158_prompt_i2d_asn.json
+	r0099101001001003001_r257dp63x98y83_visit_F158_prompt_i2d_asn.json
 
 where the skycell name can vary based on the location on the celestial sphere and the i2d indicates
 that this is resampled 2-d imaging data. The release product name can be changed from the default
