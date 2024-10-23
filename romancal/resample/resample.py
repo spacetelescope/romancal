@@ -181,10 +181,10 @@ class ResampleData:
             l2_into_l3_meta(self.blank_output.meta, models[0].meta)
             self.blank_output.meta.wcs = self.output_wcs
             gwcs_into_l3(self.blank_output, self.output_wcs)
-            self.blank_output.cal_logs = stnode.CalLogs()
-            self.blank_output["individual_image_cal_logs"] = [
-                model.cal_logs for model in models
-            ]
+            # self.blank_output.cal_logs = stnode.CalLogs()
+            # self.blank_output["individual_image_cal_logs"] = [
+            #     model.cal_logs for model in models
+            # ]
             for i, m in enumerate(models):
                 self.input_models.shelve(m, i, modify=False)
 
@@ -756,7 +756,6 @@ def l2_into_l3_meta(l3_meta, l2_meta):
     basic.segment: observation.segment
     basic.pass: observation.pass
     basic.program: observation.program
-    basic.survey: obervation.survey
     basic.optical_element: optical_element
     basic.instrument: instrument.name
     basic.telescope: telescope
@@ -766,7 +765,6 @@ def l2_into_l3_meta(l3_meta, l2_meta):
     l3_meta.basic.segment = l2_meta.observation.segment
     l3_meta.basic["pass"] = l2_meta.observation["pass"]
     l3_meta.basic.program = l2_meta.observation.program
-    l3_meta.basic.survey = l2_meta.observation.survey
     l3_meta.basic.optical_element = l2_meta.instrument.optical_element
     l3_meta.basic.instrument = l2_meta.instrument.name
     l3_meta.coordinates = l2_meta.coordinates
@@ -921,12 +919,7 @@ def populate_mosaic_basic(
     output_model.meta.basic.program = (
         input_meta[0].observation.program
         if len({x.observation.program for x in input_meta}) == 1
-        else "-1"
-    )
-    output_model.meta.basic.survey = (
-        input_meta[0].observation.survey
-        if len({x.observation.survey for x in input_meta}) == 1
-        else "MULTIPLE"
+        else -1
     )
 
     # instrument data

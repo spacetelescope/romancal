@@ -57,8 +57,6 @@ class RampFitStep(RomanStep):
                     input_model, readnoise_model, gain_model, dark_model
                 )
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
-                if self.use_ramp_jump_detection:
-                    out_model.meta.cal_step.jump = "COMPLETE"
             else:
                 log.error("Algorithm %s is not supported. Skipping step.")
                 out_model = input
@@ -88,7 +86,7 @@ class RampFitStep(RomanStep):
         out_model : ImageModel
             Model containing a count-rate image.
         """
-        use_jump = self.use_ramp_jump_detection
+        use_jump = False
 
         if use_jump:
             log.info("Jump detection as part of ramp fitting is enabled.")
@@ -191,6 +189,7 @@ def create_image_model(input_model, image_info):
     meta = dict(wcs=None)  # default empty WCS
     meta.update(input_model.meta)
     meta["cal_step"]["ramp_fit"] = "INCOMPLETE"
+    meta["cal_logs"] = maker_utils.mk_cal_logs()
     meta["photometry"] = maker_utils.mk_photometry()
     inst = {
         "meta": meta,
@@ -208,7 +207,6 @@ def create_image_model(input_model, image_info):
         "dq_border_ref_pix_right": input_model.dq_border_ref_pix_right.copy(),
         "dq_border_ref_pix_top": input_model.dq_border_ref_pix_top.copy(),
         "dq_border_ref_pix_bottom": input_model.dq_border_ref_pix_bottom.copy(),
-        "cal_logs": rds.CalLogs(),
     }
     out_node = rds.WfiImage(inst)
     im = rdd.ImageModel(out_node)

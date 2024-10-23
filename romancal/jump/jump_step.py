@@ -64,7 +64,9 @@ class JumpStep(RomanStep):
             result.meta.cal_step.jump = "SKIPPED"
             return result
 
-        frames_per_group = meta.exposure.nframes
+        # FIXME: since frames_per_group => meta.exposure.nframes has been removed,
+        # we need to fix stcal.jump.jump to remove it from there too
+        frames_per_group = 1
 
         # Modify the arrays for input into the 'common' jump (4D)
         data = np.copy(r_data[np.newaxis, :])
@@ -74,11 +76,11 @@ class JumpStep(RomanStep):
 
         tstart = time.time()
 
-        # Check for an input model with NGROUPS<=2
-        ngroups = data.shape[1]
+        # Check for an input model with nresultants<=2
+        nresultants = data.shape[1]
 
-        if ngroups <= 2:
-            self.log.warning("Cannot apply jump detection as NGROUPS<=2;")
+        if nresultants <= 2:
+            self.log.warning("Cannot apply jump detection as nresultants<=2;")
             self.log.warning("Jump step will be skipped")
 
             result = input_model

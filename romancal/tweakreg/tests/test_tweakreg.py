@@ -907,8 +907,8 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     add_tweakreg_catalog_attribute(tmp_path, img1, catalog_filename="img1")
     add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
 
-    img1.meta.observation["program"] = "-program_id1"
-    img2.meta.observation["program"] = "-program_id2"
+    img1.meta.observation.program = 1
+    img2.meta.observation.program = 2
 
     img1.meta["filename"] = "file1.asdf"
     img2.meta["filename"] = "file2.asdf"
@@ -918,10 +918,12 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     assert len(res.group_names) == 2
     with res:
         for r, i in zip(res, [img1, img2]):
-            assert (
-                r.meta.group_id.split("-")[1]
-                == i.meta.observation.program.split("-")[1]
-            )
+            found = False
+            for log_entry in i.meta.cal_logs:
+                if f"'GROUP ID: {r.meta.group_id}'" in log_entry:
+                    found = True
+                    break
+            assert found, "The specified log entry was not found in meta.cal_logs."
             res.shelve(r, modify=False)
 
 

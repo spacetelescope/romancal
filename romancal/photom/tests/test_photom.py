@@ -102,9 +102,8 @@ def test_no_photom_match():
     input_model.meta.instrument.optical_element = "F146"
 
     # Set bad values which would be overwritten by apply_photom
-    input_model.meta.photometry.pixelarea_steradians = -1.0
+    input_model.meta.photometry.pixel_area = -1.0
     input_model.meta.photometry.conversion_megajanskys = -1.0
-    input_model.meta.photometry.conversion_microjanskys_uncertainty = -1.0
 
     with warnings.catch_warnings(record=True) as caught:
         # Look for now non existent F146 optical element
@@ -117,9 +116,8 @@ def test_no_photom_match():
         )
 
         # Assert that photom elements are not updated
-        assert output_model.meta.photometry.pixelarea_steradians == -1.0
+        assert output_model.meta.photometry.pixel_area == -1.0
         assert output_model.meta.photometry.conversion_megajanskys == -1.0
-        assert output_model.meta.photometry.conversion_microjanskys_uncertainty == -1.0
 
 
 def test_apply_photom1():
@@ -143,14 +141,8 @@ def test_apply_photom1():
 
     # Tests for pixel areas
     assert np.isclose(
-        output_model.meta.photometry.pixelarea_steradians,
+        output_model.meta.photometry.pixel_area,
         area_ster.value,
-        atol=1.0e-7,
-    )
-    # assert output_model.meta.photometry.pixelarea_steradians.unit == area_ster.unit
-    assert np.isclose(
-        output_model.meta.photometry.pixelarea_arcsecsq,
-        area_a2.value,
         atol=1.0e-7,
     )
 
@@ -164,13 +156,6 @@ def test_apply_photom1():
         phot_ster.value,
         atol=1.0e-7,
     )
-    # assert output_model.meta.photometry.conversion_megajanskys.unit == phot_ster.unit
-    assert np.isclose(
-        output_model.meta.photometry.conversion_microjanskys,
-        phot_a2.value,
-        atol=1.0e-7,
-    )
-    # assert output_model.meta.photometry.conversion_microjanskys.unit == phot_a2.unit
 
     # Set reference photometric uncertainty
     muphot_ster = 0.175 * u.megajansky / u.steradian
@@ -185,15 +170,6 @@ def test_apply_photom1():
     # assert (
     #     output_model.meta.photometry.conversion_megajanskys_uncertainty.unit
     #     == muphot_ster.unit
-    # )
-    assert np.isclose(
-        output_model.meta.photometry.conversion_microjanskys_uncertainty,
-        muphot_a2.value,
-        atol=1.0e-7,
-    )
-    # assert (
-    #     output_model.meta.photometry.conversion_microjanskys_uncertainty.unit
-    #     == muphot_a2.unit
     # )
 
 
@@ -276,23 +252,14 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     wfi_image.meta.instrument.optical_element = "PRISM"
 
     # Set photometric values for spectroscopic data
-    wfi_image.meta.photometry.pixelarea_steradians = (
+    wfi_image.meta.photometry.pixel_area = (
         2.31307642258977e-14 * u.steradian
-    ).value
-    wfi_image.meta.photometry.pixelarea_arcsecsq = (
-        0.000984102303070964 * u.arcsecond * u.arcsecond
     ).value
     wfi_image.meta.photometry.conversion_megajanskys = (
         -99999 * u.megajansky / u.steradian
     ).value
     wfi_image.meta.photometry.conversion_megajanskys_uncertainty = (
         -99999 * u.megajansky / u.steradian
-    ).value
-    wfi_image.meta.photometry.conversion_microjanskys = (
-        -99999 * u.microjansky / u.arcsecond**2
-    ).value
-    wfi_image.meta.photometry.conversion_microjanskys_uncertainty = (
-        -99999 * u.microjansky / u.arcsecond**2
     ).value
 
     # Create input model
@@ -310,8 +277,6 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
 
     # Test that keywords are properly overwritten
     assert result.meta.photometry.conversion_megajanskys is None
-    assert result.meta.photometry.conversion_microjanskys is None
     assert result.meta.photometry.conversion_megajanskys_uncertainty is None
-    assert result.meta.photometry.conversion_microjanskys_uncertainty is None
-    assert result.meta.photometry.pixelarea_steradians is None
-    assert result.meta.photometry.pixelarea_arcsecsq is None
+    assert result.meta.photometry.pixel_area is None
+

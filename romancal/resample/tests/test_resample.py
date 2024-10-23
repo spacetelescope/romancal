@@ -41,7 +41,6 @@ def create_mock_model(
     mock_model.meta.observation.segment = segment
     mock_model.meta.observation["pass"] = pass_
     mock_model.meta.observation.program = program
-    mock_model.meta.observation.survey = survey
     mock_model.meta.instrument.optical_element = optical_element
     mock_model.meta.instrument.name = instrument_name
     mock_model.meta.wcsinfo.vparity = -1
@@ -82,7 +81,7 @@ class WfiSca:
                         "effective_exposure_time": 3.04 * 6 * 8,
                     },
                     "observation": {
-                        "program": "00005",
+                        "program": 5,
                         "execution_plan": 1,
                         "pass": 1,
                         "observation": 1,
@@ -754,12 +753,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
     assert output_model.meta.basic.program == (
         input_meta[0].observation.program
         if len({x.observation.program for x in input_meta}) == 1
-        else "-1"
-    )
-    assert output_model.meta.basic.survey == (
-        input_meta[0].observation.survey
-        if len({x.observation.survey for x in input_meta}) == 1
-        else "MULTIPLE"
+        else -1
     )
     assert (
         output_model.meta.basic.optical_element
@@ -779,7 +773,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -790,7 +784,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -803,7 +797,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                 "visit": 1,
                 "segment": 1,
                 "pass": 1,
-                "program": "12345",
+                "program": 12345,
                 "survey": "N/A",
                 "optical_element": "F158",
                 "instrument": "WFI",
@@ -818,7 +812,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -829,7 +823,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     2,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -842,7 +836,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                 "visit": -1,
                 "segment": 1,
                 "pass": 1,
-                "program": "12345",
+                "program": 12345,
                 "survey": "N/A",
                 "optical_element": "F158",
                 "instrument": "WFI",
@@ -857,7 +851,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -868,7 +862,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     2,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -881,7 +875,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                 "visit": 1,
                 "segment": -1,
                 "pass": 1,
-                "program": "12345",
+                "program": 12345,
                 "survey": "N/A",
                 "optical_element": "F158",
                 "instrument": "WFI",
@@ -896,7 +890,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "HLS",
                     "F158",
                     "WFI",
@@ -907,7 +901,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     2,
-                    "12345",
+                    12345,
                     "EMS",
                     "F158",
                     "WFI",
@@ -920,7 +914,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                 "visit": 1,
                 "segment": 1,
                 "pass": -1,
-                "program": "12345",
+                "program": 12345,
                 "survey": "MULTIPLE",
                 "optical_element": "F158",
                 "instrument": "WFI",
@@ -935,7 +929,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -946,7 +940,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "54321",
+                    54321,
                     "N/A",
                     "F158",
                     "WFI",
@@ -959,7 +953,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                 "visit": 1,
                 "segment": 1,
                 "pass": 1,
-                "program": "-1",
+                "program": -1,
                 "survey": "N/A",
                 "optical_element": "F158",
                 "instrument": "WFI",
@@ -974,7 +968,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "HLS",
                     "F158",
                     "WFI",
@@ -985,7 +979,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "EMS",
                     "F158",
                     "WFI",
@@ -998,7 +992,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                 "visit": 1,
                 "segment": 1,
                 "pass": 1,
-                "program": "12345",
+                "program": 12345,
                 "survey": "MULTIPLE",
                 "optical_element": "F158",
                 "instrument": "WFI",
@@ -1034,7 +1028,6 @@ def test_populate_mosaic_basic_different_observations(
     assert output_model.meta.basic.visit == expected_output["visit"]
     assert output_model.meta.basic.segment == expected_output["segment"]
     assert output_model.meta.basic.program == expected_output["program"]
-    assert output_model.meta.basic.survey == expected_output["survey"]
     assert output_model.meta.basic.optical_element == expected_output["optical_element"]
     assert output_model.meta.basic.instrument == expected_output["instrument"]
 

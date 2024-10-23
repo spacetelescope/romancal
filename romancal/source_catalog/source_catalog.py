@@ -157,7 +157,7 @@ class RomanSourceCatalog:
         If the value is a negative placeholder (e.g., -999999 sr), the
         value is calculated from the WCS at the center of the image.
         """
-        pixel_area = self.model.meta.photometry.pixelarea_steradians
+        pixel_area = self.model.meta.photometry.pixel_area
         if pixel_area < 0:
             pixel_area = (self._pixel_scale**2).to(u.sr).value
         return pixel_area
