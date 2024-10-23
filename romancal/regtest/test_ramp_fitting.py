@@ -10,12 +10,32 @@ from pathlib import Path
 
 import pytest
 import roman_datamodels as rdm
+from stpipe import log as stpipe_log
 
-from romancal.lib.dms import log_result
 from romancal.lib.suffix import replace_suffix
 from romancal.ramp_fitting import RampFitStep
 
 from .regtestdata import compare_asdf
+
+
+def log_result(requirement, message, result):
+    """Log individual test results that relate to a requirement
+
+    Parameters
+    ----------
+    requirement : str
+        The requirement being logged. I.e "DMS363"
+
+    message : str
+        Message describing what is being tested
+
+    result : bool
+        The result of the test
+    """
+    logger = stpipe_log.delegator.log
+    result_text = "PASS" if result else "FAIL"
+    log_msg = f"{requirement} MSG: {message}.......{result_text}"
+    logger.info(log_msg)
 
 
 # ##########

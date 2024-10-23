@@ -346,10 +346,8 @@ def test_resampledata_init_default(exposure_1):
 @pytest.mark.parametrize("input_models", [list()])
 def test_resampledata_init_invalid_input(input_models):
     """Test that ResampleData will raise an exception on invalid inputs."""
-    with pytest.raises(Exception) as exec_info:
+    with pytest.raises(ValueError):
         ResampleData(input_models)
-
-    assert type(exec_info.value) == ValueError
 
 
 def test_resampledata_do_drizzle_many_to_one_default_no_rotation_single_exposure(

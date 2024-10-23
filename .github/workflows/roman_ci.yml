@@ -41,7 +41,7 @@ jobs:
     with:
       minimal: true
   latest_crds_contexts:
-    uses: spacetelescope/crds/.github/workflows/contexts.yml@master
+    uses: ./.github/workflows/contexts.yml
   crds_context:
     needs: [ latest_crds_contexts ]
     runs-on: ubuntu-latest

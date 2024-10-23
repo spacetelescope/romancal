@@ -7,3 +7,4 @@ Association Commands
    :maxdepth: 2
 
    asn_from_list.rst
+   skycell_asn.rst
