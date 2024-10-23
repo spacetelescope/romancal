@@ -83,7 +83,7 @@ where the skycell name can vary based on the location on the celestial sphere an
 that this is resampled 2-d imaging data. The release product name can be changed from the default
 by adding the optional argument --release-product <new name> to the command line. 
 	
-An analogous command to generate the pass level products, again setting segment to 003 to only select
+An analogous command to generate the pass level products, again setting observation to 003 to only select
 the F158 filter. 
 
 .. code-block:: text
