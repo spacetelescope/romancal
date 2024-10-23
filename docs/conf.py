@@ -274,7 +274,7 @@ html_favicon = "_static/favicon.ico"
 # further.  For a list of options available for each theme, see the
 # documentation.
 
-html_theme_options = {"collapse_navigation": True, "version_selector": True}
+html_theme_options = {"collapse_navigation": True}
 
 #        "nosidebar": "false",
 #        "sidebarbgcolor": "#4db8ff",
