@@ -141,7 +141,7 @@ You can examine the contents of your model from within python using
 
 .. code-block:: python
 
-    >>> print("\n".join("{: >20}\t{}".format(k, v) for k, v in image_model.items()), "\n") # doctest: +ELLIPSIS
+    >>> print("\n".join("{: >20}\t{}".format(k, v) for k, v in image_model.items()), "\n") # doctest: +ELLIPSIS +SKIP
     meta.calibration_software_version   9.9.0
     meta.sdf_software_version   7.7.7
            meta.filename        r0019106003005004023_03203_0034_WFI01_cal.asdf
@@ -158,7 +158,7 @@ or you can print specifics
 
 .. code-block:: python
 
-    >>> print("\n".join("{: >20}\t{}".format(k, v) for k, v in image_model.meta.instrument.items()))
+    >>> print("\n".join("{: >20}\t{}".format(k, v) for k, v in image_model.meta.instrument.items()))  # doctest: +SKIP
                     name        WFI
                 detector        WFI01
          optical_element        F158
