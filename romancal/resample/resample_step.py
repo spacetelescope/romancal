@@ -18,6 +18,9 @@ log.setLevel(logging.DEBUG)
 
 __all__ = ["ResampleStep"]
 
+# conversion factor from steradian to squared arcsec
+SR_TO_ARCSEC2 = 4.254517e10
+
 
 class ResampleStep(RomanStep):
     """
@@ -156,7 +159,7 @@ class ResampleStep(RomanStep):
         # calculate the actual value of pixel_scale_ratio based on pixel_scale
         # because source_catalog uses this value from the header.
         model.meta.resample.pixel_scale_ratio = (
-            self.pixel_scale / np.sqrt(model.meta.photometry.pixel_area * 4.254517e10)
+            self.pixel_scale / np.sqrt(model.meta.photometry.pixel_area * SR_TO_ARCSEC2)
             if self.pixel_scale
             else self.pixel_scale_ratio
         )
