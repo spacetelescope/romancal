@@ -7,7 +7,6 @@ from itertools import cycle
 import numpy as np
 import pytest
 import roman_datamodels.stnode as rds
-from astropy import units as u
 from astropy.time import Time
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
