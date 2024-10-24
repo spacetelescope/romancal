@@ -7,7 +7,6 @@ from itertools import cycle
 import numpy as np
 import pytest
 import roman_datamodels.stnode as rds
-from astropy import units as u
 from astropy.time import Time
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
@@ -42,15 +41,10 @@ def generate_wfi_reffiles(tmp_path_factory):
     meta["useafter"] = Time("2022-01-01T11:11:11.111")
 
     gain_ref["meta"] = meta
-    gain_ref["data"] = u.Quantity(
-        np.ones(shape, dtype=np.float32) * ingain, u.electron / u.DN, dtype=np.float32
-    )
+    gain_ref["data"] = np.ones(shape, dtype=np.float32) * ingain
+
     gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
-    gain_ref["err"] = u.Quantity(
-        (RNG.uniform(size=shape) * 0.05).astype(np.float64),
-        u.electron / u.DN,
-        dtype=np.float64,
-    )
+    gain_ref["err"] = (RNG.uniform(size=shape) * 0.05).astype(np.float64)
 
     gain_ref_model = GainRefModel(gain_ref)
     gain_ref_model.save(gainfile)
@@ -69,13 +63,10 @@ def generate_wfi_reffiles(tmp_path_factory):
     meta["exposure"]["p_exptype"] = "WFI_IMAGE|WFI_GRISM|WFI_PRISM|"
 
     rn_ref["meta"] = meta
-    rn_ref["data"] = u.Quantity(
-        np.ones(shape, dtype=np.float32), u.DN, dtype=np.float32
-    )
+    rn_ref["data"] = np.ones(shape, dtype=np.float32)
+
     rn_ref["dq"] = np.zeros(shape, dtype=np.uint16)
-    rn_ref["err"] = u.Quantity(
-        (RNG.uniform(size=shape) * 0.05).astype(np.float64), u.DN, dtype=np.float64
-    )
+    rn_ref["err"] = (RNG.uniform(size=shape) * 0.05).astype(np.float64)
 
     rn_ref_model = ReadnoiseRefModel(rn_ref)
     rn_ref_model.save(readnoisefile)
