@@ -3,7 +3,6 @@
 import logging
 
 import numpy as np
-from astropy import units as u
 from roman_datamodels import datamodels as rdd
 from roman_datamodels import maker_utils
 from roman_datamodels import stnode as rds
@@ -115,9 +114,7 @@ class RampFitStep(RomanStep):
         # add dark current back into resultants so that Poisson noise is
         # properly accounted for
         tbar = np.array([np.mean(reads) * read_time for reads in read_pattern])
-        resultants += (
-            dark_model.dark_slope[None, ...] * tbar[:, None, None]
-        )
+        resultants += dark_model.dark_slope[None, ...] * tbar[:, None, None]
 
         # account for the gain
         resultants *= gain

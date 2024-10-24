@@ -46,11 +46,9 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
     nrows = len(optical_element)
 
     # Create sample photometry keyword values
-    photmjsr = (
-        np.linspace(min_r, min_r + (nrows - 1.0) * delta, nrows)
-    )
-    uncertainty = (
-        np.linspace(min_r / 20.0, min_r / 20.0 + (nrows - 1.0) * delta / 20.0, nrows)
+    photmjsr = np.linspace(min_r, min_r + (nrows - 1.0) * delta, nrows)
+    uncertainty = np.linspace(
+        min_r / 20.0, min_r / 20.0 + (nrows - 1.0) * delta / 20.0, nrows
     )
 
     # Create sample area keyword values
@@ -156,7 +154,7 @@ def test_apply_photom1():
     # assert output_model.meta.photometry.conversion_microjanskys.unit == phot_a2.unit
 
     # Set reference photometric uncertainty
-    muphot_ster = 0.175 
+    muphot_ster = 0.175
 
     # Tests for photometric uncertainty
     assert np.isclose(
@@ -164,7 +162,6 @@ def test_apply_photom1():
         muphot_ster,
         atol=1.0e-7,
     )
-
 
 
 def test_apply_photom2():

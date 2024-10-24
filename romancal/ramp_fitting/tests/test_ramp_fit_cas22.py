@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+
 # from astropy import units as u
 from astropy.time import Time
 from roman_datamodels import maker_utils
@@ -293,7 +294,7 @@ def generate_wfi_reffiles(
     rn_ref["meta"]["exposure"]["frame_time"] = 666
 
     if randomize:
-        rn_ref["data"] = (rng.random(shape) * rnoise).astype(np.float32),
+        rn_ref["data"] = ((rng.random(shape) * rnoise).astype(np.float32),)
     else:
         rn_ref["data"] = np.ones(shape).astype(np.float32) * rnoise
 
