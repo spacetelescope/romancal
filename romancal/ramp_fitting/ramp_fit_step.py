@@ -103,8 +103,8 @@ class RampFitStep(RomanStep):
 
         resultants = input_model.data
         dq = input_model.groupdq
-        read_noise = readnoise_model.data.value
-        gain = gain_model.data.value
+        read_noise = readnoise_model.data
+        gain = gain_model.data
         read_time = input_model.meta.exposure.frame_time
 
         # Force read pattern to be pure lists not LNodes
@@ -116,7 +116,7 @@ class RampFitStep(RomanStep):
         # properly accounted for
         tbar = np.array([np.mean(reads) * read_time for reads in read_pattern])
         resultants += (
-            dark_model.dark_slope.to(u.DN / u.s).value[None, ...] * tbar[:, None, None]
+            dark_model.dark_slope[None, ...] * tbar[:, None, None]
         )
 
         # account for the gain
@@ -142,7 +142,7 @@ class RampFitStep(RomanStep):
         dq = output.dq.astype(np.uint32)
 
         # remove dark current contribution to slopes
-        slopes -= dark_model.dark_slope.to(u.DN / u.s).value * gain
+        slopes -= dark_model.dark_slope * gain
 
         # Propagate DQ flags forward.
         ramp_dq = get_pixeldq_flags(dq, input_model.pixeldq, slopes, err, gain)

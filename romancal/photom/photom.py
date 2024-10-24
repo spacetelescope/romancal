@@ -28,10 +28,7 @@ def photom_io(input_model, photom_metadata):
 
     # Store the conversion factor in the meta data
     log.info(f"photmjsr value: {conversion:.6g}")
-    input_model.meta.photometry.conversion_megajanskys = conversion.value
-    input_model.meta.photometry.conversion_microjanskys = conversion.to(
-        u.microjansky / u.arcsecond**2
-    ).value
+    input_model.meta.photometry.conversion_megajanskys = conversion
 
     # Get the scalar conversion uncertainty factor
     uncertainty_conv = photom_metadata["uncertainty"]
@@ -39,11 +36,8 @@ def photom_io(input_model, photom_metadata):
     # Store the uncertainty conversion factor in the meta data
     log.info(f"uncertainty value: {uncertainty_conv:.6g}")
     input_model.meta.photometry.conversion_megajanskys_uncertainty = (
-        uncertainty_conv.value
+        uncertainty_conv
     )
-    input_model.meta.photometry.conversion_microjanskys_uncertainty = (
-        uncertainty_conv.to(u.microjansky / u.arcsecond**2)
-    ).value
 
     # Return updated input model
     return input_model
@@ -64,12 +58,10 @@ def save_area_info(input_model, photom_parameters):
     """
 
     # Load the average pixel area values from the photom reference file header
-    area_ster = photom_parameters["pixelareasr"].value
-    area_a2 = photom_parameters["pixelareasr"].to(u.arcsecond**2).value
+    area_ster = photom_parameters["pixelareasr"]
 
     # Copy the pixel area values to the input model
-    log.debug(f"pixelarea_steradians = {area_ster}, pixelarea_arcsecsq = {area_a2}")
-    input_model.meta.photometry.pixelarea_arcsecsq = area_a2
+    log.debug(f"pixelarea_steradians = {area_ster}")
     input_model.meta.photometry.pixelarea_steradians = area_ster
 
     # Return updated input model
