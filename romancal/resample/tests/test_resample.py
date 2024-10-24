@@ -252,6 +252,7 @@ def exposure_1(wfi_sca1, wfi_sca2, wfi_sca3):
             "2020-02-01T00:02:30", format="isot", scale="utc"
         )
         sca.meta.observation["exposure"] = 1
+        sca.meta.observation["obs_id"] = "1"
     return [wfi_sca1, wfi_sca2, wfi_sca3]
 
 
@@ -267,6 +268,7 @@ def exposure_2(wfi_sca4, wfi_sca5, wfi_sca6):
             "2020-05-01T00:02:30", format="isot", scale="utc"
         )
         sca.meta.observation["exposure"] = 2
+        sca.meta.observation["obs_id"] = "2"
     return [wfi_sca4, wfi_sca5, wfi_sca6]
 
 
