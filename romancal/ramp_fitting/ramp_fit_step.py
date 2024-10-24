@@ -86,7 +86,7 @@ class RampFitStep(RomanStep):
         out_model : ImageModel
             Model containing a count-rate image.
         """
-        use_jump = False
+        use_jump = self.use_ramp_jump_detection
 
         if use_jump:
             log.info("Jump detection as part of ramp fitting is enabled.")

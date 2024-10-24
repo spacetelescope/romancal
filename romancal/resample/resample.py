@@ -7,7 +7,7 @@ import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from drizzle import cdrizzle, util
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels, maker_utils, stnode
 from stcal.alignment.util import compute_scale
 
 from romancal.associations.asn_from_list import asn_from_list
@@ -181,10 +181,10 @@ class ResampleData:
             l2_into_l3_meta(self.blank_output.meta, models[0].meta)
             self.blank_output.meta.wcs = self.output_wcs
             gwcs_into_l3(self.blank_output, self.output_wcs)
-            # self.blank_output.cal_logs = stnode.CalLogs()
-            # self.blank_output["individual_image_cal_logs"] = [
-            #     model.cal_logs for model in models
-            # ]
+            self.blank_output.cal_logs = stnode.CalLogs()
+            self.blank_output["individual_image_cal_logs"] = [
+                model.meta.cal_logs for model in models
+            ]
             for i, m in enumerate(models):
                 self.input_models.shelve(m, i, modify=False)
 
