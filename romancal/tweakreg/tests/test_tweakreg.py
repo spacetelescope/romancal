@@ -498,6 +498,8 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     Test that TweakReg raises an AttributeError if meta.tweakreg_catalog is missing.
     """
     img = base_image()
+    # remove attribute
+    del img.meta.source_detection["tweakreg_catalog_name"]
     with pytest.raises(AttributeError):
         trs.TweakRegStep.call([img])
 
