@@ -232,9 +232,7 @@ def model_from_resultants(resultants, read_pattern=None):
     dm_ramp.err = err
 
     dm_ramp.meta.exposure.frame_time = ROMAN_READ_TIME
-    dm_ramp.meta.exposure.ngroups = shape[0]
-    dm_ramp.meta.exposure.nframes = 1
-    dm_ramp.meta.exposure.groupgap = 0
+    dm_ramp.meta.exposure.nresultants = shape[0]
 
     dm_ramp.meta.exposure.read_pattern = read_pattern
 

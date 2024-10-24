@@ -86,21 +86,19 @@ def generate_wfi_reffiles(tmp_path_factory):
 @pytest.fixture
 def setup_inputs():
     def _setup(
-        ngroups=10,
+        nresultants=10,
         readnoise=10,
         nrows=20,
         ncols=20,
-        nframes=1,
-        grouptime=1.0,
         gain=1,
         deltatime=1,
     ):
-        err = np.ones(shape=(ngroups, nrows, ncols), dtype=np.float32)
-        data = np.zeros(shape=(ngroups, nrows, ncols), dtype=np.float32)
-        gdq = np.zeros(shape=(ngroups, nrows, ncols), dtype=np.uint8)
+        err = np.ones(shape=(nresultants, nrows, ncols), dtype=np.float32)
+        data = np.zeros(shape=(nresultants, nrows, ncols), dtype=np.float32)
+        gdq = np.zeros(shape=(nresultants, nrows, ncols), dtype=np.uint8)
         pixdq = np.zeros(shape=(nrows, ncols), dtype=np.uint32)
 
-        csize = (ngroups, nrows, ncols)
+        csize = (nresultants, nrows, ncols)
         dm_ramp = rdm.RampModel(maker_utils.mk_ramp(shape=csize))
 
         dm_ramp.meta.instrument.name = "WFI"
@@ -112,11 +110,9 @@ def setup_inputs():
         dm_ramp.err = err
 
         dm_ramp.meta.exposure.type = "WFI_IMAGE"
-        dm_ramp.meta.exposure.group_time = deltatime
+        dm_ramp.meta.exposure.exposure_time = deltatime
         dm_ramp.meta.exposure.frame_time = deltatime
-        dm_ramp.meta.exposure.ngroups = ngroups
-        dm_ramp.meta.exposure.nframes = 1
-        dm_ramp.meta.exposure.groupgap = 0
+        dm_ramp.meta.exposure.nresultants = nresultants
         dm_ramp.meta.cal_step["dq_init"] = "INCOMPLETE"
         dm_ramp.meta.cal_step["jump"] = "INCOMPLETE"
 
@@ -133,13 +129,13 @@ def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
     deltaDN = 5
     ingain = 200
     inreadnoise = 7.0
-    ngroups = 100
+    nresultants = 100
     CR_fraction = 3
     xsize = 20
     ysize = 20
 
     model1 = setup_inputs(
-        ngroups=ngroups,
+        nresultants=nresultants,
         nrows=ysize,
         ncols=xsize,
         gain=ingain,
@@ -147,7 +143,7 @@ def test_one_CR(generate_wfi_reffiles, max_cores, setup_inputs):
         deltatime=grouptime,
     )
 
-    for i in range(ngroups):
+    for i in range(nresultants):
         model1.data[i, :, :] = deltaDN * i
 
     first_CR_group_locs = [x for x in range(1, 7) if x % 5 == 0]
@@ -187,13 +183,13 @@ def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
     deltaDN = 5
     ingain = 6
     inreadnoise = 7.0
-    ngroups = 100
+    nresultants = 100
     CR_fraction = 5
     xsize = 20
     ysize = 20
 
     model1 = setup_inputs(
-        ngroups=ngroups,
+        nresultants=nresultants,
         nrows=ysize,
         ncols=xsize,
         gain=ingain,
@@ -201,7 +197,7 @@ def test_two_CRs(generate_wfi_reffiles, max_cores, setup_inputs):
         deltatime=grouptime,
     )
 
-    for i in range(ngroups):
+    for i in range(nresultants):
         model1.data[i, :, :] = deltaDN * i
 
     first_CR_group_locs = [x for x in range(1, 7) if x % 5 == 0]
@@ -242,11 +238,11 @@ def test_two_group_integration(generate_wfi_reffiles, max_cores, setup_inputs):
     grouptime = 3.0
     ingain = 6
     inreadnoise = 7
-    ngroups = 2
+    nresultants = 2
     xsize = 20
     ysize = 20
     model1 = setup_inputs(
-        ngroups=ngroups,
+        nresultants=nresultants,
         nrows=ysize,
         ncols=xsize,
         gain=ingain,
@@ -267,19 +263,17 @@ def test_two_group_integration(generate_wfi_reffiles, max_cores, setup_inputs):
 @pytest.mark.parametrize("use_jump", [False, True])
 def test_four_group_integration(generate_wfi_reffiles, setup_inputs, use_jump):
     override_gain, override_readnoise = generate_wfi_reffiles
-    grouptime = 3.0
     ingain = 6
     inreadnoise = 7
-    ngroups = 4
+    nresultants = 4
     xsize = 20
     ysize = 20
     model1 = setup_inputs(
-        ngroups=ngroups,
+        nresultants=nresultants,
         nrows=ysize,
         ncols=xsize,
         gain=ingain,
         readnoise=inreadnoise,
-        deltatime=grouptime,
     )
 
     out_model = JumpStep.call(
@@ -302,11 +296,11 @@ def test_three_group_integration(generate_wfi_reffiles, setup_inputs, use_jump):
     grouptime = 3.0
     ingain = 6
     inreadnoise = 7
-    ngroups = 3
+    nresultants = 3
     xsize = 20
     ysize = 20
     model1 = setup_inputs(
-        ngroups=ngroups,
+        nresultants=nresultants,
         nrows=ysize,
         ncols=xsize,
         gain=ingain,

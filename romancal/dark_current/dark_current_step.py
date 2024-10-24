@@ -42,14 +42,8 @@ class DarkCurrentStep(RomanStep):
         with rdm.open(self.dark_name) as dark_model:
             # Temporary patch to utilize stcal dark step until MA table support
             # is fully implemented
-            if "ngroups" not in dark_model.meta.exposure:
-                dark_model.meta.exposure["ngroups"] = dark_model.data.shape[0]
-            if "nframes" not in dark_model.meta.exposure:
-                dark_model.meta.exposure["nframes"] = input_model.meta.exposure.nframes
-            if "groupgap" not in dark_model.meta.exposure:
-                dark_model.meta.exposure["groupgap"] = (
-                    input_model.meta.exposure.groupgap
-                )
+            if "nresultants" not in dark_model.meta.exposure:
+                dark_model.meta.exposure["nresultants"] = dark_model.data.shape[0]
 
             # Do the dark correction
             out_model = input_model

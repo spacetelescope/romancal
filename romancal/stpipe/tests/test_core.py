@@ -109,7 +109,7 @@ def test_log_messages(tmp_path):
             return ImageModel(mk_level2_image(shape=(20, 20)))
 
     result = LoggingStep().run()
-    assert any("Splines failed to reticulate" in l for l in result.cal_logs)
+    assert any("Splines failed to reticulate" in l for l in result.meta.cal_logs)
 
 
 def test_crds_meta():

@@ -71,49 +71,19 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     )
 
     step.log.info(
-        "DMS140 MSG: Photom microjanskys conversion calculated? : "
-        + str(
-            math.isclose(
-                photom_out.meta.photometry.conversion_microjanskys,
-                7.81320,
-                abs_tol=0.0001,
-            )
-        )
-    )
-    assert math.isclose(
-        photom_out.meta.photometry.conversion_microjanskys,
-        7.81320,
-        abs_tol=0.0001,
-    )
-
-    step.log.info(
         "DMS140 MSG: Pixel area in steradians calculated? : "
         + str(
             math.isclose(
-                photom_out.meta.photometry.pixelarea_steradians,
+                photom_out.meta.photometry.pixel_area,
                 2.8083e-13,
                 abs_tol=1.0e-17,
             )
         )
     )
     assert math.isclose(
-        photom_out.meta.photometry.pixelarea_steradians,
+        photom_out.meta.photometry.pixel_area,
         2.8083e-13,
         abs_tol=1.0e-17,
-    )
-
-    step.log.info(
-        "DMS140 MSG: Pixel area in square arcseconds calculated? : "
-        + str(
-            math.isclose(
-                photom_out.meta.photometry.pixelarea_arcsecsq,
-                0.011948,
-                abs_tol=1.0e-6,
-            )
-        )
-    )
-    assert math.isclose(
-        photom_out.meta.photometry.pixelarea_arcsecsq, 0.011948, abs_tol=1.0e-6
     )
 
     step.log.info(
@@ -128,22 +98,6 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     )
     assert math.isclose(
         photom_out.meta.photometry.conversion_megajanskys_uncertainty,
-        0.0,
-        abs_tol=1.0e-6,
-    )
-
-    step.log.info(
-        "DMS140 MSG: Photom megajansky conversion uncertainty calculated? : "
-        + str(
-            math.isclose(
-                photom_out.meta.photometry.conversion_microjanskys_uncertainty,
-                0.0,
-                abs_tol=1.0e-6,
-            )
-        )
-    )
-    assert math.isclose(
-        photom_out.meta.photometry.conversion_microjanskys_uncertainty,
         0.0,
         abs_tol=1.0e-6,
     )

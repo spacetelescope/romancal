@@ -498,6 +498,8 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     Test that TweakReg raises an AttributeError if meta.tweakreg_catalog is missing.
     """
     img = base_image()
+    # remove attribute
+    del img.meta.source_detection["tweakreg_catalog_name"]
     with pytest.raises(AttributeError):
         trs.TweakRegStep.call([img])
 
@@ -907,10 +909,10 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     add_tweakreg_catalog_attribute(tmp_path, img1, catalog_filename="img1")
     add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
 
-    img1.meta.observation["program"] = "-program_id1"
-    img1.meta.observation["obs_id"] = "1"
-    img2.meta.observation["program"] = "-program_id2"
-    img2.meta.observation["obs_id"] = "2"
+    img1.meta.observation.program = 1
+    img1.meta.observation["observation_id"] = "1"
+    img2.meta.observation.program = 2
+    img2.meta.observation["observation_id"] = "2"
 
     img1.meta["filename"] = "file1.asdf"
     img2.meta["filename"] = "file2.asdf"
@@ -920,7 +922,7 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     assert len(res.group_names) == 2
     with res:
         for r, i in zip(res, [img1, img2]):
-            assert r.meta.group_id == i.meta.observation.obs_id
+            assert r.meta.group_id == i.meta.observation.observation_id
             res.shelve(r, modify=False)
 
 

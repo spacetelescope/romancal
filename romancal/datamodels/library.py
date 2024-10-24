@@ -75,4 +75,4 @@ def _mapping_to_group_id(mapping):
     """
     Combine a number of file metadata values into a ``group_id`` string
     """
-    return "{obs_id}".format_map(mapping)
+    return "{observation_id}".format_map(mapping)
