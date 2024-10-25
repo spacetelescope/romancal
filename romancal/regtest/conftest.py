@@ -25,7 +25,7 @@ def artifactory_repos(pytestconfig):
 
     results_root = pytestconfig.getini("results_root")
     if not results_root:
-        results_root = "roman-pipeline-results"
+        results_root = "roman-pipeline-results/regression-tests/runs/"
     else:
         results_root = results_root[0]
     return inputs_root, results_root
