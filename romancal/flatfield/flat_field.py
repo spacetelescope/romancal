@@ -6,8 +6,6 @@ import logging
 
 import numpy as np
 from roman_datamodels.dqflags import pixel
-from roman_datamodels import stnode
-
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

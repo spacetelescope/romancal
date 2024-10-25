@@ -2,7 +2,6 @@ import os
 
 import pytest
 import roman_datamodels as rdm
-from crds.core.exceptions import CrdsLookupError
 
 from romancal.step import FlatFieldStep
 from romancal.stpipe import RomanStep
