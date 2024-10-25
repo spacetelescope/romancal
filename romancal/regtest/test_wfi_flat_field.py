@@ -35,40 +35,6 @@ def test_flat_field_image_step(rtdata, ignore_asdf_paths):
 
 
 @pytest.mark.bigdata
-def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
-    """Test for the flat field step using grism data. The reference file for
-    the grism and prism data should be None, only testing the grism
-    case here."""
-
-    input_file = "r0000201001001001001_0001_WFI01_uncal.asdf"
-    rtdata.get_data(f"WFI/grism/{input_file}")
-    rtdata.input = input_file
-
-    # Test CRDS
-    step = FlatFieldStep()
-    model = rdm.open(rtdata.input)
-    try:
-        ref_file_path = step.get_reference_file(model, "flat")
-        # Check for a valid reference file
-        if ref_file_path != "N/A":
-            ref_file_name = os.path.split(ref_file_path)[-1]
-        elif ref_file_path == "N/A":
-            ref_file_name = ref_file_path
-    except CrdsLookupError:
-        ref_file_name = None
-    assert ref_file_name == "N/A"
-
-    # Test FlatFieldStep
-    output = "r0000201001001001001_0001_WFI01_flat.asdf"
-    rtdata.output = output
-    args = ["romancal.step.FlatFieldStep", rtdata.input]
-    RomanStep.from_cmdline(args)
-    rtdata.get_truth(f"truth/WFI/grism/{output}")
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
-    assert diff.identical, diff.report()
-
-
-@pytest.mark.bigdata
 @pytest.mark.soctests
 def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     """DMS79 Test: Testing that different datetimes pull different

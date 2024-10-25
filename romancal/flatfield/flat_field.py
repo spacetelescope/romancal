@@ -6,6 +6,8 @@ import logging
 
 import numpy as np
 from roman_datamodels.dqflags import pixel
+from roman_datamodels import stnode
+
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -51,18 +53,18 @@ def do_flat_field(output_model, flat_model):
         # Check to see if flat data array is smaller than science data
         log.warning("Flat data array is not the same shape as the science data")
         log.warning("Step will be skipped")
-        output_model.meta.cal_step.flat_field = "SKIPPED"
+        output_model.meta.cal_step["flat_field"] = "SKIPPED"
     elif output_model.meta.exposure.type != "WFI_IMAGE":
         # Check to see if attempt to flatten non-Image data
         log.info("Skipping flat field for spectral exposure.")
-        output_model.meta.cal_step.flat_field = "SKIPPED"
+        output_model.meta.cal_step["flat_field"] = "SKIPPED"
     elif flat_model is None:
         # Check to see if attempt to flatten non-Image data
         log.info("Skipping flat field - no flat reference file.")
-        output_model.meta.cal_step.flat_field = "SKIPPED"
+        output_model.meta.cal_step["flat_field"] = "SKIPPED"
     else:
         apply_flat_field(output_model, flat_model)
-        output_model.meta.cal_step.flat_field = "COMPLETE"
+        output_model.meta.cal_step["flat_field"] = "COMPLETE"
 
 
 def apply_flat_field(science, flat):

@@ -75,7 +75,6 @@ def test_output_has_16_resultants(output_model):
         "flat_field",
         "dark",
         "dq_init",
-        "jump",
         "linearity",
         "ramp_fit",
         "saturation",

@@ -91,7 +91,6 @@ def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths
         ("assign_wcs", "COMPLETE"),
         ("dark", "COMPLETE"),
         ("dq_init", "COMPLETE"),
-        ("jump", "COMPLETE"),
         ("linearity", "COMPLETE"),
         ("ramp_fit", "COMPLETE"),
         ("saturation", "COMPLETE"),

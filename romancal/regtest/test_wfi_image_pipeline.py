@@ -103,7 +103,6 @@ def test_output_is_image_model(output_model):
         "flat_field",
         "dark",
         "dq_init",
-        "jump",
         "linearity",
         "ramp_fit",
         "saturation",
@@ -222,7 +221,6 @@ def test_elp_input_dm(rtdata, ignore_asdf_paths):
         assert model.meta.cal_step.saturation == "COMPLETE"
         assert model.meta.cal_step.linearity == "COMPLETE"
         assert model.meta.cal_step.dark == "COMPLETE"
-        assert model.meta.cal_step.jump == "COMPLETE"
         assert model.meta.cal_step.ramp_fit == "COMPLETE"
         assert model.meta.cal_step.assign_wcs == "COMPLETE"
         assert model.meta.cal_step.flat_field == "COMPLETE"

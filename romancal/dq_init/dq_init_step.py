@@ -44,8 +44,8 @@ class DQInitStep(RomanStep):
         output_model = RampModel.from_science_raw(input_model)
 
         # guide window range information
-        x_start = input_model.meta.guide_star.gw_window_xstart
-        x_end = input_model.meta.guide_star.gw_window_xsize + x_start
+        x_start = input_model.meta.guide_star.window_xstart
+        x_end = input_model.meta.guide_star.window_xsize + x_start
         # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
         output_model.pixeldq[int(x_start) : int(x_end), :] = pixel.GW_AFFECTED_DATA
         self.log.info(

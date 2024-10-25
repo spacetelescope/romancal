@@ -195,8 +195,8 @@ def test_dqinit_step_interface(instrument, exptype):
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guide_star"]["gw_window_xstart"] = 1012
-    wfi_sci_raw.meta["guide_star"]["gw_window_xsize"] = 16
+    wfi_sci_raw.meta["guide_star"]["window_xstart"] = 1012
+    wfi_sci_raw.meta["guide_star"]["window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
     wfi_sci_raw[extra_key] = extra_value
@@ -245,8 +245,8 @@ def test_dqinit_refpix(instrument, exptype):
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guide_star"]["gw_window_xstart"] = 1012
-    wfi_sci_raw.meta["guide_star"]["gw_window_xsize"] = 16
+    wfi_sci_raw.meta["guide_star"]["window_xstart"] = 1012
+    wfi_sci_raw.meta["guide_star"]["window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
@@ -295,8 +295,8 @@ def test_dqinit_resultantdq(instrument, exptype):
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guide_star"]["gw_window_xstart"] = 1012
-    wfi_sci_raw.meta["guide_star"]["gw_window_xsize"] = 16
+    wfi_sci_raw.meta["guide_star"]["window_xstart"] = 1012
+    wfi_sci_raw.meta["guide_star"]["window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.resultantdq[1, 12, 12] = pixel["DROPOUT"]
     wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
@@ -344,8 +344,8 @@ def test_dqinit_getbestref(instrument, exptype):
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guide_star"]["gw_window_xstart"] = 1012
-    wfi_sci_raw.meta["guide_star"]["gw_window_xsize"] = 16
+    wfi_sci_raw.meta["guide_star"]["window_xstart"] = 1012
+    wfi_sci_raw.meta["guide_star"]["window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)

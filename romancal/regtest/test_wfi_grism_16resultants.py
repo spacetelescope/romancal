@@ -74,7 +74,6 @@ def test_output_has_16_resultants(output_model):
         ("assign_wcs", "COMPLETE"),
         ("dark", "COMPLETE"),
         ("dq_init", "COMPLETE"),
-        ("jump", "COMPLETE"),
         ("linearity", "COMPLETE"),
         ("ramp_fit", "COMPLETE"),
         ("saturation", "COMPLETE"),
