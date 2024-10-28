@@ -48,6 +48,13 @@ The mosaic level pipeline also has an alias, ``roman_mos``, and can be run as
 
  $ strun roman_mos r0008308002010007027_asn.json
 
+.. note::
+
+   When using an **alias** with strun (for example ``strun resample``) you may
+   need to provide the ``romancal`` package name if you have other packages installed
+   that also use the same **alias**. The package name is provided prior to the
+   **alias** separated by ``::`` (for example ``strun romancal::resample``).
+
 
 Exit Status
 ```````````
