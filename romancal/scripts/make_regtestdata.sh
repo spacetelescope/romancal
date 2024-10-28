@@ -121,6 +121,7 @@ cp Test_linearity.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 # we have a test that runs the flat field step directly on an _L1_ spectroscopic
 # file and verifies that it gets skipped.
 # I don't really understand that but we can duplicate it for now.
+# FIXME: is the uncal input for test_flat_field_grism_step() correct?
 basename="r0000201001001001001_0001_wfi01"
 strun romancal.step.FlatFieldStep ${basename}_uncal.asdf
 cp ${basename}_flat.asdf $outdir/roman-pipeline/dev/truth/WFI/grism/
