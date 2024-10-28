@@ -174,7 +174,7 @@ def wfi_sca1():
         fiducial_world=(10, 0),
         pscale=(0.000031, 0.000031),
         shape=(100, 100),
-        filename="r0000501001001001001_01101_0001_WFI01_cal.asdf",
+        filename="r0000501001001001001_01101_0001_wfi01_cal.asdf",
     )
 
     return sca.create_image()
@@ -186,7 +186,7 @@ def wfi_sca2():
         fiducial_world=(10.00139, 0),
         pscale=(0.000031, 0.000031),
         shape=(100, 100),
-        filename="r0000501001001001001_01101_0001_WFI02_cal.asdf",
+        filename="r0000501001001001001_01101_0001_wfi02_cal.asdf",
     )
 
     return sca.create_image()
@@ -198,7 +198,7 @@ def wfi_sca3():
         fiducial_world=(10.00278, 0),
         pscale=(0.000031, 0.000031),
         shape=(100, 100),
-        filename="r0000501001001001001_01101_0001_WFI03_cal.asdf",
+        filename="r0000501001001001001_01101_0001_wfi03_cal.asdf",
     )
 
     return sca.create_image()
@@ -210,7 +210,7 @@ def wfi_sca4():
         fiducial_world=(10, 0),
         pscale=(0.000031, 0.000031),
         shape=(100, 100),
-        filename="r0000501001001001001_01101_0002_WFI01_cal.asdf",
+        filename="r0000501001001001001_01101_0002_wfi01_cal.asdf",
     )
 
     return sca.create_image()
@@ -222,7 +222,7 @@ def wfi_sca5():
         fiducial_world=(10.00139, 0),
         pscale=(0.000031, 0.000031),
         shape=(100, 100),
-        filename="r0000501001001001001_01101_0002_WFI02_cal.asdf",
+        filename="r0000501001001001001_01101_0002_wfi02_cal.asdf",
     )
 
     return sca.create_image()
@@ -234,7 +234,7 @@ def wfi_sca6():
         fiducial_world=(10.00278, 0),
         pscale=(0.000031, 0.000031),
         shape=(100, 100),
-        filename="r0000501001001001001_01101_0002_WFI03_cal.asdf",
+        filename="r0000501001001001001_01101_0002_wfi03_cal.asdf",
     )
 
     return sca.create_image()
