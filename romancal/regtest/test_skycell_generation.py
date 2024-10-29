@@ -14,7 +14,7 @@ def test_skycell_asn_generation(rtdata):
     # This test should generate seven json files
     args = [
         "r0000101001001001001_0002_wfi01_cal.asdf",
-        "r0000101001001001001_0002_WFI10_cal.asdf",
+        "r0000101001001001001_0002_wfi10_cal.asdf",
         "-o",
         "r512",
     ]
