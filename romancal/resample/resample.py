@@ -7,7 +7,7 @@ import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from drizzle import cdrizzle, util
-from roman_datamodels import datamodels, maker_utils, stnode
+from roman_datamodels import datamodels, maker_utils
 from stcal.alignment.util import compute_scale
 
 from romancal.associations.asn_from_list import asn_from_list
@@ -173,7 +173,7 @@ class ResampleData:
             self.blank_output.meta.cal_step = maker_utils.mk_l3_cal_step(
                 **models[0].meta.cal_step.to_flat_dict()
             )
-            
+
             # FIXME: do we have to populate meta.individual_image_meta.call_logs?
             # concatenate all call_logs corresponding to each ImageModel
             concatenate_call_logs(models)
