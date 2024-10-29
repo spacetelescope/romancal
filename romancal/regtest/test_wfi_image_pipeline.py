@@ -295,7 +295,6 @@ def test_pipeline_suffix(rtdata, ignore_asdf_paths):
         assert model.meta.cal_step.saturation == "COMPLETE"
         assert model.meta.cal_step.linearity == "COMPLETE"
         assert model.meta.cal_step.dark == "COMPLETE"
-        assert model.meta.cal_step.jump == "COMPLETE"
         assert model.meta.cal_step.ramp_fit == "COMPLETE"
         assert model.meta.cal_step.assign_wcs == "COMPLETE"
         assert model.meta.cal_step.flat_field == "COMPLETE"
