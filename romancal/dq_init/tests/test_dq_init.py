@@ -10,17 +10,17 @@ from romancal.dq_init.dq_initialization import do_dqinit
 RNG = np.random.default_rng(83)
 
 # Set parameters for multiple runs of data
-args = "xstart, ystart, xsize, ysize, ngroups, instrument, exp_type"
+args = "xstart, ystart, xsize, ysize, nresultants, instrument, exp_type"
 test_data = [(1, 1, 2048, 2048, 2, "WFI", "WFI_IMAGE")]
 ids = ["RampModel"]
 
 
 @pytest.mark.parametrize(args, test_data, ids=ids)
-def test_dq_im(xstart, ystart, xsize, ysize, ngroups, instrument, exp_type):
+def test_dq_im(xstart, ystart, xsize, ysize, nresultants, instrument, exp_type):
     """Check that PIXELDQ is initialized with the information from the reference file.
     test that a flagged value in the reference file flags the PIXELDQ array"""
 
-    csize = (ngroups, ysize, xsize)
+    csize = (nresultants, ysize, xsize)
 
     # create raw input data for step
     dm_ramp = maker_utils.mk_ramp(shape=csize)
@@ -75,10 +75,10 @@ def test_groupdq():
 
     # size of integration
     instrument = "WFI"
-    ngroups = 5
+    nresultants = 5
     xsize = 1032
     ysize = 1024
-    csize = (ngroups, ysize, xsize)
+    csize = (nresultants, ysize, xsize)
 
     # create raw input data for step
     dm_ramp = maker_utils.mk_ramp(shape=csize)
@@ -95,7 +95,7 @@ def test_groupdq():
     groupdq = outfile.groupdq
 
     np.testing.assert_array_equal(
-        np.full((ngroups, ysize, xsize), 0, dtype=int),
+        np.full((nresultants, ysize, xsize), 0, dtype=int),
         groupdq,
         err_msg="groupdq not initialized to zero",
     )
@@ -106,13 +106,13 @@ def test_err():
 
     # size of integration
     instrument = "WFI"
-    ngroups = 5
+    nresultants = 5
     xsize = 1032
     ysize = 1024
-    csize = (ngroups, ysize, xsize)
+    csize = (nresultants, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=(ngroups, ysize, xsize))
+    dm_ramp = maker_utils.mk_ramp(shape=(nresultants, ysize, xsize))
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
@@ -138,13 +138,13 @@ def test_dq_add1_groupdq():
 
     # size of integration
     instrument = "WFI"
-    ngroups = 5
+    nresultants = 5
     xsize = 1032
     ysize = 1024
-    csize = (ngroups, ysize, xsize)
+    csize = (nresultants, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=(ngroups, ysize, xsize))
+    dm_ramp = maker_utils.mk_ramp(shape=(nresultants, ysize, xsize))
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
@@ -195,8 +195,8 @@ def test_dqinit_step_interface(instrument, exptype):
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
-    wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
+    wfi_sci_raw.meta["guide_star"]["window_xstart"] = 1012
+    wfi_sci_raw.meta["guide_star"]["window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
     wfi_sci_raw[extra_key] = extra_value
@@ -245,8 +245,8 @@ def test_dqinit_refpix(instrument, exptype):
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
-    wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
+    wfi_sci_raw.meta["guide_star"]["window_xstart"] = 1012
+    wfi_sci_raw.meta["guide_star"]["window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
@@ -295,8 +295,8 @@ def test_dqinit_resultantdq(instrument, exptype):
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
-    wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
+    wfi_sci_raw.meta["guide_star"]["window_xstart"] = 1012
+    wfi_sci_raw.meta["guide_star"]["window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.resultantdq[1, 12, 12] = pixel["DROPOUT"]
     wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
@@ -344,8 +344,8 @@ def test_dqinit_getbestref(instrument, exptype):
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guidestar"]["gw_window_xstart"] = 1012
-    wfi_sci_raw.meta["guidestar"]["gw_window_xsize"] = 16
+    wfi_sci_raw.meta["guide_star"]["window_xstart"] = 1012
+    wfi_sci_raw.meta["guide_star"]["window_xsize"] = 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)

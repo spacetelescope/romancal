@@ -16,12 +16,12 @@ def run_elp(rtdata_module):
     # The input data is from INS for stress testing at some point this should be generated
     # every time new data is needed.
 
-    input_data = "r0000101001001001001_0004_WFI01_uncal.asdf"
+    input_data = "r0000101001001001001_0004_wfi01_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
     # Test Pipeline
-    output = "r0000101001001001001_0004_WFI01_cal.asdf"
+    output = "r0000101001001001001_0004_wfi01_cal.asdf"
     rtdata.output = output
     args = [
         "roman_elp",
@@ -75,7 +75,6 @@ def test_output_has_16_resultants(output_model):
         "flat_field",
         "dark",
         "dq_init",
-        "jump",
         "linearity",
         "ramp_fit",
         "saturation",

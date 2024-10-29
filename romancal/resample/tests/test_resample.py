@@ -41,7 +41,6 @@ def create_mock_model(
     mock_model.meta.observation.segment = segment
     mock_model.meta.observation["pass"] = pass_
     mock_model.meta.observation.program = program
-    mock_model.meta.observation.survey = survey
     mock_model.meta.instrument.optical_element = optical_element
     mock_model.meta.instrument.name = instrument_name
     mock_model.meta.wcsinfo.vparity = -1
@@ -82,7 +81,7 @@ class WfiSca:
                         "effective_exposure_time": 3.04 * 6 * 8,
                     },
                     "observation": {
-                        "program": "00005",
+                        "program": 5,
                         "execution_plan": 1,
                         "pass": 1,
                         "observation": 1,
@@ -175,7 +174,7 @@ def wfi_sca1():
         fiducial_world=(10, 0),
         pscale=(0.000031, 0.000031),
         shape=(100, 100),
-        filename="r0000501001001001001_01101_0001_WFI01_cal.asdf",
+        filename="r0000501001001001001_01101_0001_wfi01_cal.asdf",
     )
 
     return sca.create_image()
@@ -187,7 +186,7 @@ def wfi_sca2():
         fiducial_world=(10.00139, 0),
         pscale=(0.000031, 0.000031),
         shape=(100, 100),
-        filename="r0000501001001001001_01101_0001_WFI02_cal.asdf",
+        filename="r0000501001001001001_01101_0001_wfi02_cal.asdf",
     )
 
     return sca.create_image()
@@ -199,7 +198,7 @@ def wfi_sca3():
         fiducial_world=(10.00278, 0),
         pscale=(0.000031, 0.000031),
         shape=(100, 100),
-        filename="r0000501001001001001_01101_0001_WFI03_cal.asdf",
+        filename="r0000501001001001001_01101_0001_wfi03_cal.asdf",
     )
 
     return sca.create_image()
@@ -211,7 +210,7 @@ def wfi_sca4():
         fiducial_world=(10, 0),
         pscale=(0.000031, 0.000031),
         shape=(100, 100),
-        filename="r0000501001001001001_01101_0002_WFI01_cal.asdf",
+        filename="r0000501001001001001_01101_0002_wfi01_cal.asdf",
     )
 
     return sca.create_image()
@@ -223,7 +222,7 @@ def wfi_sca5():
         fiducial_world=(10.00139, 0),
         pscale=(0.000031, 0.000031),
         shape=(100, 100),
-        filename="r0000501001001001001_01101_0002_WFI02_cal.asdf",
+        filename="r0000501001001001001_01101_0002_wfi02_cal.asdf",
     )
 
     return sca.create_image()
@@ -235,7 +234,7 @@ def wfi_sca6():
         fiducial_world=(10.00278, 0),
         pscale=(0.000031, 0.000031),
         shape=(100, 100),
-        filename="r0000501001001001001_01101_0002_WFI03_cal.asdf",
+        filename="r0000501001001001001_01101_0002_wfi03_cal.asdf",
     )
 
     return sca.create_image()
@@ -252,8 +251,8 @@ def exposure_1(wfi_sca1, wfi_sca2, wfi_sca3):
         sca.meta.exposure["end_time"] = Time(
             "2020-02-01T00:02:30", format="isot", scale="utc"
         )
-        sca.meta.observation["exposure"] = 1
-        sca.meta.observation["obs_id"] = "1"
+        sca.meta.observation.exposure = 1
+        sca.meta.observation.observation_id = "1"
     return [wfi_sca1, wfi_sca2, wfi_sca3]
 
 
@@ -268,8 +267,8 @@ def exposure_2(wfi_sca4, wfi_sca5, wfi_sca6):
         sca.meta.exposure["end_time"] = Time(
             "2020-05-01T00:02:30", format="isot", scale="utc"
         )
-        sca.meta.observation["exposure"] = 2
-        sca.meta.observation["obs_id"] = "2"
+        sca.meta.observation.exposure = 2
+        sca.meta.observation.observation_id = "2"
     return [wfi_sca4, wfi_sca5, wfi_sca6]
 
 
@@ -756,12 +755,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
     assert output_model.meta.basic.program == (
         input_meta[0].observation.program
         if len({x.observation.program for x in input_meta}) == 1
-        else "-1"
-    )
-    assert output_model.meta.basic.survey == (
-        input_meta[0].observation.survey
-        if len({x.observation.survey for x in input_meta}) == 1
-        else "MULTIPLE"
+        else -1
     )
     assert (
         output_model.meta.basic.optical_element
@@ -781,7 +775,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -792,7 +786,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -805,7 +799,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                 "visit": 1,
                 "segment": 1,
                 "pass": 1,
-                "program": "12345",
+                "program": 12345,
                 "survey": "N/A",
                 "optical_element": "F158",
                 "instrument": "WFI",
@@ -820,7 +814,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -831,7 +825,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     2,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -844,7 +838,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                 "visit": -1,
                 "segment": 1,
                 "pass": 1,
-                "program": "12345",
+                "program": 12345,
                 "survey": "N/A",
                 "optical_element": "F158",
                 "instrument": "WFI",
@@ -859,7 +853,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -870,7 +864,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     2,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -883,7 +877,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                 "visit": 1,
                 "segment": -1,
                 "pass": 1,
-                "program": "12345",
+                "program": 12345,
                 "survey": "N/A",
                 "optical_element": "F158",
                 "instrument": "WFI",
@@ -898,7 +892,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "HLS",
                     "F158",
                     "WFI",
@@ -909,7 +903,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     2,
-                    "12345",
+                    12345,
                     "EMS",
                     "F158",
                     "WFI",
@@ -922,7 +916,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                 "visit": 1,
                 "segment": 1,
                 "pass": -1,
-                "program": "12345",
+                "program": 12345,
                 "survey": "MULTIPLE",
                 "optical_element": "F158",
                 "instrument": "WFI",
@@ -937,7 +931,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "N/A",
                     "F158",
                     "WFI",
@@ -948,7 +942,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "54321",
+                    54321,
                     "N/A",
                     "F158",
                     "WFI",
@@ -961,7 +955,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                 "visit": 1,
                 "segment": 1,
                 "pass": 1,
-                "program": "-1",
+                "program": -1,
                 "survey": "N/A",
                 "optical_element": "F158",
                 "instrument": "WFI",
@@ -976,7 +970,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "HLS",
                     "F158",
                     "WFI",
@@ -987,7 +981,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                     1,
                     1,
                     1,
-                    "12345",
+                    12345,
                     "EMS",
                     "F158",
                     "WFI",
@@ -1000,7 +994,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
                 "visit": 1,
                 "segment": 1,
                 "pass": 1,
-                "program": "12345",
+                "program": 12345,
                 "survey": "MULTIPLE",
                 "optical_element": "F158",
                 "instrument": "WFI",
@@ -1036,7 +1030,6 @@ def test_populate_mosaic_basic_different_observations(
     assert output_model.meta.basic.visit == expected_output["visit"]
     assert output_model.meta.basic.segment == expected_output["segment"]
     assert output_model.meta.basic.program == expected_output["program"]
-    assert output_model.meta.basic.survey == expected_output["survey"]
     assert output_model.meta.basic.optical_element == expected_output["optical_element"]
     assert output_model.meta.basic.instrument == expected_output["instrument"]
 

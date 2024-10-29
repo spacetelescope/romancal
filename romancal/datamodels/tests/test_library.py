@@ -26,7 +26,7 @@ def example_asn_path(tmp_path):
     fns = []
     for i in range(_N_MODELS):
         m = dm.ImageModel(mk_level2_image(shape=(2, 2)))
-        m.meta.observation.program = "0001"
+        m.meta.observation.program = 1
         m.meta.observation.observation = _OBSERVATION_NUMBERS[i]
         m.meta.observation.visit = 1
         m.meta.observation.visit_file_group = 1

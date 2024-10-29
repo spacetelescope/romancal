@@ -219,6 +219,7 @@ def ignore_asdf_paths():
         "roman.meta.ref_file.crds.sw_version",
         "roman.meta.calibration_software_version",
         "roman.cal_logs",
+        "roman.meta.cal_logs",
         "roman.meta.date",
         "roman.individual_image_cal_logs",
         "roman.meta.individual_image_meta",
