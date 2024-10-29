@@ -972,4 +972,3 @@ def copy_asn_info_from_library(input_models, output_model):
         output_model.meta.asn.pool_name = asn_pool
     if (asn_table_name := input_models.asn.get("table_name", None)) is not None:
         output_model.meta.asn.table_name = asn_table_name
-
