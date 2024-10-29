@@ -958,10 +958,7 @@ def populate_mosaic_individual(
 
     input_metas = [datamodel.meta for datamodel in input_models]
     for input_meta in input_metas:
-        try:
-            output_model.append_individual_image_meta(input_meta)
-        except:
-            continue
+        output_model.append_individual_image_meta(input_meta)
 
 
 def copy_asn_info_from_library(input_models, output_model):
