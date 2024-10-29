@@ -7,7 +7,7 @@ import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from drizzle import cdrizzle, util
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels, maker_utils, stnode
 from stcal.alignment.util import compute_scale
 
 from romancal.associations.asn_from_list import asn_from_list
@@ -174,21 +174,26 @@ class ResampleData:
                 **models[0].meta.cal_step.to_flat_dict()
             )
 
-            # FIXME: do we have to populate meta.individual_image_meta.call_logs?
-            # concatenate all call_logs corresponding to each ImageModel
-            concatenate_call_logs(models)
-
-            # Update the output with all the component metas
-            populate_mosaic_individual(self.blank_output, models)
+            # FIXME: temporary hack to prevent changes from L2 into L3 schema
+            for i, model in enumerate(models):
+                # saving ImageModels cal_logs
+                cal_logs = model.meta.cal_logs
+                # removing meta.cal_logs
+                del model.meta["cal_logs"]
+                # Update the output with all the component metas
+                populate_mosaic_individual(self.blank_output, [model])
+                # re-attaching cal_logs to meta
+                model.meta.cal_logs = cal_logs
 
             # update meta data and wcs
             l2_into_l3_meta(self.blank_output.meta, models[0].meta)
             self.blank_output.meta.wcs = self.output_wcs
             gwcs_into_l3(self.blank_output, self.output_wcs)
-            # self.blank_output.cal_logs = stnode.CalLogs()
-            # self.blank_output["individual_image_cal_logs"] = [
-            #     model.meta.cal_logs for model in models
-            # ]
+
+            self.blank_output.cal_logs = stnode.CalLogs()
+            self.blank_output["individual_image_cal_logs"] = [
+                model.meta.cal_logs for model in models
+            ]
             for i, m in enumerate(models):
                 self.input_models.shelve(m, i, modify=False)
 
@@ -968,20 +973,3 @@ def copy_asn_info_from_library(input_models, output_model):
     if (asn_table_name := input_models.asn.get("table_name", None)) is not None:
         output_model.meta.asn.table_name = asn_table_name
 
-
-def concatenate_call_logs(model_list):
-    """
-    Concatenate the `cal_logs` attribute of each model in the list.
-
-    Parameters
-    ----------
-    model_list : list
-        A list of models, each containing a `meta.cal_logs` attribute.
-
-    Returns
-    -------
-    None
-        The function modifies the `cal_logs` attribute of each model in place.
-    """
-    for model in model_list:
-        model.meta["cal_logs"] = " /// ".join(model.meta.cal_logs)
