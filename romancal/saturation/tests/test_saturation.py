@@ -272,7 +272,7 @@ def test_no_sat_check(setup_wfi_datamodels):
     assert np.all(output.groupdq[:, 5, 5] != group.SATURATED)
     # Test that saturation bit is NOT set
     assert np.all(
-        output.groupdq[:, 5, 5] & (1 << group.SATURATED.bit_length() - 1) == 0
+        output.groupdq[:, 5, 5] & (1 << int(group.SATURATED).bit_length() - 1) == 0
     )
     assert output.pixeldq[5, 5] == (pixel.NO_SAT_CHECK + pixel.DO_NOT_USE)
 
