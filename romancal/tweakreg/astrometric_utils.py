@@ -150,7 +150,7 @@ def create_astrometric_catalog(
 
     # Write out table to a file, if specified
     if output is not None:
-        ref_table.write(output, format=table_format, overwrite=True)
+        ref_table.write(output, format=table_format)
 
     return ref_table
 
