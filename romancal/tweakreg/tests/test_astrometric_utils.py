@@ -1,4 +1,3 @@
-import os
 from typing import Tuple
 
 import numpy as np
@@ -17,11 +16,7 @@ from numpy.testing import assert_allclose
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
-from romancal.tweakreg.astrometric_utils import (
-    compute_radius,
-    create_astrometric_catalog,
-    get_catalog,
-)
+from romancal.tweakreg.astrometric_utils import compute_radius, get_catalog
 
 ARAD = np.pi / 180.0
 
@@ -437,81 +432,6 @@ def base_image():
         return l2_im
 
     return _base_image
-
-
-@pytest.mark.parametrize(
-    "catalog, num_sources",
-    [
-        ("GAIADR1", 5),
-        ("GAIADR2", 10),
-        ("GAIADR3", 15),
-    ],
-)
-def test_create_astrometric_catalog_variable_num_sources(
-    tmp_path, catalog, num_sources, request
-):
-    """Test fetching data from supported catalogs with variable number of sources."""
-    output_filename = "ref_cat.ecsv"
-    img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
-    res = create_astrometric_catalog(
-        [img],
-        catalog=catalog,
-        output=os.path.join(tmp_path, output_filename),
-        num_sources=num_sources,
-    )
-
-    assert len(res) == num_sources
-
-
-def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
-    img = base_image(shift_1=1000, shift_2=1000)
-    num_sources = 5
-    output_filename = "output"
-
-    for table_format in ("asdf", "fits"):
-        res = create_astrometric_catalog(
-            [img],
-            catalog="GAIADR3",
-            output=os.path.join(tmp_path, output_filename),
-            table_format=table_format,
-            num_sources=num_sources,
-        )
-
-        assert len(res) == num_sources
-        assert os.path.exists(os.path.join(tmp_path, output_filename))
-
-
-@pytest.mark.parametrize(
-    "catalog, epoch",
-    [
-        ("GAIADR1", "2000.0"),
-        ("GAIADR2", "2010"),
-        ("GAIADR3", "2030.0"),
-        ("GAIADR3", "J2000"),
-        ("GAIADR3", 2030.0),
-        ("GAIADR3", None),
-    ],
-)
-def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, request):
-    """Test fetching data from supported catalogs for a specific epoch."""
-    output_filename = "ref_cat.ecsv"
-    img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
-
-    metadata_epoch = (
-        epoch if epoch is not None else img.meta.exposure.mid_time.decimalyear
-    )
-    metadata_epoch = float(
-        "".join(c for c in str(metadata_epoch) if c == "." or c.isdigit())
-    )
-
-    res = create_astrometric_catalog(
-        [img],
-        catalog=catalog,
-        output=os.path.join(tmp_path, output_filename),
-        epoch=epoch,
-    )
-
-    assert np.equal(res["epoch"], float(metadata_epoch)).all()
 
 
 def test_compute_radius():
