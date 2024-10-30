@@ -1,12 +1,10 @@
 import os
-from io import StringIO
 from typing import Tuple
 
 import numpy as np
 import pytest
 import requests
 from astropy import coordinates as coord
-from astropy import table
 from astropy import units as u
 from astropy.modeling import models
 from astropy.modeling.models import RotationSequence3D, Scale, Shift
@@ -470,30 +468,7 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
     num_sources = 5
     output_filename = "output"
 
-    # get list of supported write formats
-    fh = StringIO()
-    table.Table.write.list_formats(out=fh)
-    fh.seek(0)
-    list_of_supported_formats = [
-        x.strip().split()[0]
-        for x in fh.readlines()[2:]
-        if x.strip().split()[1].lower() == "yes"
-    ]
-    # exclude data formats
-    [
-        list_of_supported_formats.remove(x)
-        for x in [
-            "asdf",
-            "fits",
-            "hdf5",
-            "parquet",
-            "pandas.html",
-            "pandas.json",
-            "pandas.csv",
-        ]
-    ]
-
-    for table_format in list_of_supported_formats:
+    for table_format in ("asdf", "fits"):
         res = create_astrometric_catalog(
             [img],
             catalog="GAIADR3",
