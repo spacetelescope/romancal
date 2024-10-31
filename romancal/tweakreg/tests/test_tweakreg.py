@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Tuple
 
 import numpy as np
-import pysiaf
 import pytest
 import requests
 from astropy import coordinates as coord
@@ -27,7 +26,6 @@ from stcal.tweakreg.astrometric_utils import get_catalog
 from romancal.datamodels import ModelLibrary
 from romancal.tweakreg import tweakreg_step as trs
 from romancal.tweakreg.tweakreg_step import _validate_catalog_columns
-from romancal.assign_wcs import AssignWcsStep
 
 
 class MockConnectionError:
@@ -346,17 +344,15 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
 def get_catalog_data(input_dm, **kwargs):
     ra = kwargs.get("ra", 270)
     dec = kwargs.get("dec", 66)
-    sr = kwargs.get("sr", 100/3600)
-    add_shifts= kwargs.get("add_shifts", False)
-    gaia_cat = get_catalog(
-        right_ascension=ra, declination=dec, search_radius=sr
-    )    
+    sr = kwargs.get("sr", 100 / 3600)
+    add_shifts = kwargs.get("add_shifts", False)
+    gaia_cat = get_catalog(right_ascension=ra, declination=dec, search_radius=sr)
     gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
     catalog_data = np.array(
         [input_dm.meta.wcs.world_to_pixel(ra, dec) for ra, dec in gaia_source_coords]
     )
     if add_shifts:
-        rng = np.random.default_rng(seed=int(ra+dec))
+        rng = np.random.default_rng(seed=int(ra + dec))
         shifts = rng.uniform(-1, 1, size=catalog_data.shape)
         catalog_data += shifts
     return catalog_data
@@ -1317,13 +1313,12 @@ def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
 
 
 def test_tweakreg_updates_s_region(tmp_path, base_image):
-    """Test that the TweakRegStep updates the s_region attribute.
-    """
+    """Test that the TweakRegStep updates the s_region attribute."""
     img = base_image(shift_1=1000, shift_2=1000)
-    old_fake_s_region = 'POLYGON ICRS 1.0000000000000 2.0000000000000 3.0000000000000 4.0000000000000 5.0000000000000 6.0000000000000 7.0000000000000 8.0000000000000 '
+    old_fake_s_region = "POLYGON ICRS 1.0000000000000 2.0000000000000 3.0000000000000 4.0000000000000 5.0000000000000 6.0000000000000 7.0000000000000 8.0000000000000 "
     img.meta.wcsinfo["s_region"] = old_fake_s_region
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img")
-    
+
     # call TweakRegStep to update WCS & S_REGION
     res = trs.TweakRegStep.call([img])
 
