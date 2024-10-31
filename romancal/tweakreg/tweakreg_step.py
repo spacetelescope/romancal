@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
+from romancal.assign_wcs.utils import add_s_region
 from stcal.tweakreg import tweakreg
 from stcal.tweakreg.tweakreg import _SINGLE_GROUP_REFCAT_STR, SINGLE_GROUP_REFCAT
 
@@ -270,7 +271,11 @@ class TweakRegStep(RomanStep):
                         ]:
                             del image_model.meta["wcs_fit_results"][k]
 
+                        # update WCS
                         image_model.meta.wcs = imcat.wcs
+                        # update S_REGION
+                        add_s_region(image_model)
+
                     images.shelve(image_model, imcat.meta["model_index"])
 
         return images

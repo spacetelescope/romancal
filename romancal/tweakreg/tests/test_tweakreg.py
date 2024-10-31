@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Tuple
 
 import numpy as np
+import pysiaf
 import pytest
 import requests
 from astropy import coordinates as coord
@@ -26,6 +27,7 @@ from stcal.tweakreg.astrometric_utils import get_catalog
 from romancal.datamodels import ModelLibrary
 from romancal.tweakreg import tweakreg_step as trs
 from romancal.tweakreg.tweakreg_step import _validate_catalog_columns
+from romancal.assign_wcs import AssignWcsStep
 
 
 class MockConnectionError:
@@ -341,14 +343,22 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     input_dm.meta["wcs"] = wcs_obj
 
 
-def get_catalog_data(input_dm):
+def get_catalog_data(input_dm, **kwargs):
+    ra = kwargs.get("ra", 270)
+    dec = kwargs.get("dec", 66)
+    sr = kwargs.get("sr", 100/3600)
+    add_shifts= kwargs.get("add_shifts", False)
     gaia_cat = get_catalog(
-        right_ascension=270, declination=66, search_radius=100 / 3600
-    )
+        right_ascension=ra, declination=dec, search_radius=sr
+    )    
     gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
     catalog_data = np.array(
         [input_dm.meta.wcs.world_to_pixel(ra, dec) for ra, dec in gaia_source_coords]
     )
+    if add_shifts:
+        rng = np.random.default_rng(seed=int(ra+dec))
+        shifts = rng.uniform(-1, 1, size=catalog_data.shape)
+        catalog_data += shifts
     return catalog_data
 
 
@@ -396,6 +406,7 @@ def add_tweakreg_catalog_attribute(
     catalog_data=None,
     catalog_format: str = "ascii.ecsv",
     save_catalogs=True,
+    **kwargs,
 ):
     """
     Add tweakreg_catalog attribute to the meta, which is a mandatory
@@ -420,15 +431,16 @@ def add_tweakreg_catalog_attribute(
     save_catalogs : boolean, optional
         A boolean indicating whether the source catalog should be saved to disk.
 
-    Note
+    Notes
     ----
-    If no catalog_data is provided, a default catalog will be created
+    - kwargs will be passed on to get_catalog_data();
+    - if no catalog_data is provided, a default catalog will be created
     by fetching data from Gaia within a search radius of 100 arcsec
     centered at RA=270, Dec=66.
     """
     tweakreg_catalog_filename = catalog_filename
     if catalog_data is None:
-        catalog_data = get_catalog_data(input_dm)
+        catalog_data = get_catalog_data(input_dm, **kwargs)
 
     source_catalog = create_base_image_source_catalog(
         tmp_path,
@@ -1302,3 +1314,20 @@ def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
     assert img3.meta.cal_step.tweakreg == "SKIPPED"
     assert img4.meta.cal_step.tweakreg == "COMPLETE"
     assert img5.meta.cal_step.tweakreg == "SKIPPED"
+
+
+def test_tweakreg_updates_s_region(tmp_path, base_image):
+    """Test that the TweakRegStep updates the s_region attribute.
+    """
+    img = base_image(shift_1=1000, shift_2=1000)
+    old_fake_s_region = 'POLYGON ICRS 1.0000000000000 2.0000000000000 3.0000000000000 4.0000000000000 5.0000000000000 6.0000000000000 7.0000000000000 8.0000000000000 '
+    img.meta.wcsinfo["s_region"] = old_fake_s_region
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img")
+    
+    # call TweakRegStep to update WCS & S_REGION
+    res = trs.TweakRegStep.call([img])
+
+    with res:
+        for i, model in enumerate(res):
+            assert model.meta.wcsinfo.s_region != old_fake_s_region
+            res.shelve(model, i, modify=False)
