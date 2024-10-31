@@ -24,7 +24,7 @@ dependencies = [
     "pyparsing >=2.4.7",
     "requests >=2.26",
     # "roman_datamodels>=0.21.0,<0.22.0",
-    "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git@99446a397a7be15f2f6dd78ea044b73966afb5f6",
+    "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git@5a92b3138d85e7ff2d8a1f9d9ea878c6d9b081b2",
     "scipy >=1.11",
 #    "stcal>=1.8.0,<1.9.0",
     "stcal @ git+https://github.com/spacetelescope/stcal.git@5299646bd96ccce9322cda441d9046ba3d65623f",
