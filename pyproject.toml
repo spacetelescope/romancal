@@ -357,3 +357,8 @@ showcontent = true
 directory = "source_catalog"
 name = "``source_catalog``"
 showcontent = true
+
+[[tool.towncrier.type]]
+directory = "multiband_catalog"
+name = "``multiband_catalog``"
+showcontent = true
