@@ -8,7 +8,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels, maker_utils, stnode
-from stcal.alignment.util import compute_scale, compute_s_region_keyword
+from stcal.alignment.util import compute_s_region_keyword, compute_scale
 
 from romancal.associations.asn_from_list import asn_from_list
 
