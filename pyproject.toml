@@ -61,6 +61,7 @@ test = [
     "pytest >8.0.0",
     "pytest-astropy >= 0.11.0",
     "deepdiff",
+    "stpreview>=0.5.1",
 ]
 dev = [
     "romancal[docs,test]",
@@ -69,8 +70,6 @@ dev = [
 ]
 sdp = [
     "stpreview>=0.5.1",
-    "typer",
-    "typing_extensions",
 ]
 
 [project.urls]
