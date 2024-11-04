@@ -8,7 +8,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels, maker_utils, stnode
-from stcal.alignment.util import compute_scale
+from stcal.alignment.util import compute_scale, compute_s_region_keyword
 
 from romancal.associations.asn_from_list import asn_from_list
 
@@ -830,7 +830,7 @@ def gwcs_into_l3(model, wcs):
         l3_wcsinfo.dec_corn2 = footprint[1][1]
         l3_wcsinfo.dec_corn3 = footprint[2][1]
         l3_wcsinfo.dec_corn4 = footprint[3][1]
-        l3_wcsinfo.s_region = utils.create_s_region(footprint)
+        l3_wcsinfo.s_region = compute_s_region_keyword(footprint)
 
     try:
         l3_wcsinfo.x_ref = -transform["crpix1"].offset.value
