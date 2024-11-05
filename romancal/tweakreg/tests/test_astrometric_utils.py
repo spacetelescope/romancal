@@ -475,22 +475,7 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
     table.Table.write.list_formats(out=fh)
     fh.seek(0)
     list_of_supported_formats = [
-        x.strip().split()[0]
-        for x in fh.readlines()[2:]
-        if x.strip().split()[1].lower() == "yes"
-    ]
-    # exclude data formats
-    [
-        list_of_supported_formats.remove(x)
-        for x in [
-            "asdf",
-            "fits",
-            "hdf5",
-            "parquet",
-            "pandas.html",
-            "pandas.json",
-            "pandas.csv",
-        ]
+        "ascii.ecsv", "fits"
     ]
 
     for table_format in list_of_supported_formats:
