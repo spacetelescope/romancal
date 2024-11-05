@@ -474,9 +474,7 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
     fh = StringIO()
     table.Table.write.list_formats(out=fh)
     fh.seek(0)
-    list_of_supported_formats = [
-        "ascii.ecsv", "fits"
-    ]
+    list_of_supported_formats = ["ascii.ecsv", "fits"]
 
     for table_format in list_of_supported_formats:
         res = create_astrometric_catalog(
