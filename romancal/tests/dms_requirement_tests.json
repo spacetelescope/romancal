@@ -108,6 +108,12 @@
   "DMS387": [
     "romancal.regtest.test_catalog.test_has_field"
   ],
+  "DMS391": [
+    "romancal.regtest.test_kernel_detection"
+  ],
+  "DMS393": [
+    "romancal.regtest.test_deblend_source_catalog"
+  ],
   "DMS399": [
     "romancal.regtest.test_catalog.test_has_field"
   ],
