@@ -108,6 +108,9 @@
   "DMS387": [
     "romancal.regtest.test_catalog.test_has_field"
   ],
+  "DMS399": [
+    "romancal.regtest.test_catalog.test_has_field"
+  ],
   "DMS400": [
     "romancal.regtest.test_mos_pipeline.test_steps_ran",
     "romancal.regtest.test_mos_pipeline.test_added_background",
