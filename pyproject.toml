@@ -134,7 +134,7 @@ filterwarnings = [
 ]
 junit_family = "xunit2"
 inputs_root = "roman-pipeline"
-results_root = "roman-pipeline-results"
+results_root = "roman-pipeline-results/regression-tests/runs/"
 doctest_plus = "enabled"
 doctest_rst = "enabled"
 text_file_format = "rst"
