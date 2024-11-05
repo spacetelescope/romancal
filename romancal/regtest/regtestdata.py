@@ -44,7 +44,7 @@ class RegtestData:
         self,
         env="dev",
         inputs_root="roman-pipeline",
-        results_root="roman-pipeline-results",
+        results_root="roman-pipeline-results/regression-tests/runs/",
         docopy=True,
         input=None,
         input_remote=None,
