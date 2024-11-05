@@ -186,11 +186,6 @@ cp L3_regtest_asn.json $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
-# L3 catalog
-strun romancal.step.SourceCatalogStep ${l3name}_i2d.asdf
-cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-
-
 l3name="r0099101001001001001_r274dp63x31y81_prompt_F158"
 asn_from_list r0000101001001001001_0001_wfi01_cal.asdf r0000101001001001001_0002_wfi01_cal.asdf r0000101001001001001_0003_wfi01_cal.asdf -o L3_mosaic_asn.json --product-name $l3name --target r274dp63x31y81
 strun roman_mos L3_mosaic_asn.json
@@ -202,11 +197,17 @@ cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 strun romancal.step.SourceCatalogStep ${l3name}_i2d.asdf
 cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
-
 # L2 catalog
 strun romancal.step.SourceCatalogStep r0000101001001001001_0001_wfi01_cal.asdf
 cp r0000101001001001001_0001_wfi01_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
+# L2 catalog with larger kernel
+strun romancal.step.SourceCatalogStep r0000101001001001001_0001_wfi01_cal.asdf --kernel_fwhm 10 --output_file r0000101001001001001_0001_wfi01_kernel10_cat.asdf
+cp r0000101001001001001_0001_wfi01_kernel10_cat.asdf $outdir/roman-pipeline-dev/truth/WFI/image
+
+# L2 catalog using deblending
+strun romancal.step.SourceCatalogStep r0000101001001001001_0001_wfi01_cal.asdf --deblend True --output_file r0000101001001001001_0001_wfi01_deblend_cat.asdf
+cp r0000101001001001001_0001_wfi01_deblend_cat.asdf $outdir/roman-pipeline-dev/truth/WFI/image
 
 l3name="r0099101001001001001_F158_visit_r274dp63x31y81"
 asn_from_list --product-name=$l3name r0000101001001001001_0001_wfi01_cal.asdf r0000101001001001001_0002_wfi01_cal.asdf r0000101001001001001_0003_wfi01_cal.asdf -o L3_m1_asn.json
