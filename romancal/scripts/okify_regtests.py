@@ -16,7 +16,7 @@ from glob import glob
 
 import asdf
 
-ARTIFACTORY_REPO = "roman-pipeline-results"
+ARTIFACTORY_REPO = "roman-pipeline-results/regression-tests/runs/"
 SPECFILE_SUFFIX = "_okify.json"
 RTDATA_SUFFIX = "_rtdata.asdf"
 TERMINAL_WIDTH = shutil.get_terminal_size((80, 20)).columns
@@ -52,7 +52,7 @@ def artifactory_get_breadcrumbs(build_number, suffix):
 
     An example search would be:
 
-    jfrog rt search roman-pipeline-results/*/*_okify.json --props='build.number=540;build.name=RT :: romancal'
+    jfrog rt search roman-pipeline-results/regression-tests/runs/*/*_okify.json --props='build.number=540;build.name=RT :: romancal'
     """  # noqa: E501
 
     # Retreive all the okify specfiles for failed tests.
