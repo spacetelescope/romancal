@@ -115,7 +115,7 @@ def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_imag
     # set output dir for all files created by the step
     outlier_step.output_dir = tmp_path.as_posix()
 
-    outlier_step(input_models)
+    outlier_step.run(input_models)
 
     # meta.filename for the median image created by OutlierDetection.do_detection()
     median_path = tmp_path / "drizzled_median.asdf"
@@ -183,7 +183,7 @@ def test_find_outliers(tmp_path, base_image, on_disk):
     # make sure files are written out to disk
     outlier_step.in_memory = not on_disk
 
-    result = outlier_step(input_models)
+    result = outlier_step.run(input_models)
 
     expected_crs = [img_0_input_coords, img_1_input_coords, None]
     with result:
@@ -222,7 +222,7 @@ def test_identical_images(tmp_path, base_image, caplog):
     # make sure files are written out to disk
     outlier_step.in_memory = False
 
-    result = outlier_step(input_models)
+    result = outlier_step.run(input_models)
 
     # assert that log shows no new outliers detected
     assert "0 pixels marked as outliers" in {x.message for x in caplog.records}
