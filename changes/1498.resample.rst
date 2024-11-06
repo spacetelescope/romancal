@@ -1,0 +1,1 @@
+Update resmple to populate location_name attribute and tests to check for it
