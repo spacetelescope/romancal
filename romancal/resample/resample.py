@@ -98,7 +98,10 @@ class ResampleData:
         self.weight_type = wht_type
         self.good_bits = good_bits
         self.in_memory = kwargs.get("in_memory", True)
-        self.location_name = input_models.asn['target']
+        if hasattr(input_models, 'target'):
+            self.location_name = input_models.asn['target']
+        else:
+            self.location_name = 'None'
 
 
         log.info(f"Driz parameter kernel: {self.kernel}")
