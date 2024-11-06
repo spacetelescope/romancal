@@ -98,6 +98,10 @@ class ResampleData:
         self.weight_type = wht_type
         self.good_bits = good_bits
         self.in_memory = kwargs.get("in_memory", True)
+        if hasattr(input_models, "target"):
+            self.location_name = input_models.asn["target"]
+        else:
+            self.location_name = "None"
 
         log.info(f"Driz parameter kernel: {self.kernel}")
         log.info(f"Driz parameter pixfrac: {self.pixfrac}")
@@ -220,6 +224,7 @@ class ResampleData:
         """
         output_model = self.blank_output.copy()
         output_model.meta["resample"] = maker_utils.mk_resample()
+        output_model.meta.basic.location_name = self.location_name
 
         copy_asn_info_from_library(input_models, output_model)
 
@@ -235,6 +240,7 @@ class ResampleData:
             )
             output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
             input_models.shelve(example_image, indices[0], modify=False)
+            output_model.meta.basic.location_name = self.location_name
             del example_image
 
             # Initialize the output with the wcs
@@ -326,6 +332,7 @@ class ResampleData:
         output_model.meta["resample"] = maker_utils.mk_resample()
         output_model.meta.resample.weight_type = self.weight_type
         output_model.meta.resample.pointings = len(self.input_models.group_names)
+        output_model.meta.basic.location_name = self.location_name
 
         # copy over asn information
         if (asn_pool := self.input_models.asn.get("asn_pool", None)) is not None:
@@ -934,9 +941,6 @@ def populate_mosaic_basic(
     # instrument data
     output_model.meta.basic.optical_element = input_meta[0].instrument.optical_element
     output_model.meta.basic.instrument = input_meta[0].instrument.name
-
-    # skycell location
-    output_model.meta.basic.location_name = "TBD"
 
     # association product type
     output_model.meta.basic.product_type = "TBD"
