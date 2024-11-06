@@ -49,5 +49,11 @@ def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths
 
 def test_resample_ran(output_model):
     # DMS373 test output is resampled to a skycell
-    # FIXME this doesn't test if the output is a skyceell
+    # FIXME this doesn't test if the output is a skycell
     assert output_model.meta.cal_step.resample == "COMPLETE"
+
+def test_location_name(output_model):
+    # test that the location_name matches the skycell selected
+    assert output_model.meta.basic.location_name == 'r274dp63x31y81'
+    
+    
