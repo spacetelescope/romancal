@@ -98,11 +98,10 @@ class ResampleData:
         self.weight_type = wht_type
         self.good_bits = good_bits
         self.in_memory = kwargs.get("in_memory", True)
-        if hasattr(input_models, 'target'):
-            self.location_name = input_models.asn['target']
+        if hasattr(input_models, "target"):
+            self.location_name = input_models.asn["target"]
         else:
-            self.location_name = 'None'
-
+            self.location_name = "None"
 
         log.info(f"Driz parameter kernel: {self.kernel}")
         log.info(f"Driz parameter pixfrac: {self.pixfrac}")
@@ -226,7 +225,6 @@ class ResampleData:
         output_model = self.blank_output.copy()
         output_model.meta["resample"] = maker_utils.mk_resample()
         output_model.meta.basic.location_name = self.location_name
-
 
         copy_asn_info_from_library(input_models, output_model)
 
