@@ -14,7 +14,7 @@ from photutils.detection import DAOStarFinder
 from photutils.psf import IterativePSFPhotometry, PSFPhotometry, SourceGrouper
 from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
-from webbpsf import conf, gridded_library, restart_logging
+from webbpsf import gridded_library
 
 __all__ = [
     "create_gridded_psf_model",
@@ -60,7 +60,6 @@ def create_gridded_psf_model(
     sqrt_n_psfs=2,
     buffer_pixels=100,
     instrument_options=None,
-    logging_level=None,
 ):
     """
     Compute a gridded PSF model for one SCA via
@@ -90,9 +89,6 @@ def create_gridded_psf_model(
         For example, WebbPSF assumes Roman pointing jitter consistent with
         mission specs by default, but this can be turned off with:
         ``{'jitter': None, 'jitter_sigma': 0}``.
-    logging_level : str, optional
-        Set logging level by name if not `None`, otherwise inherit from
-        the romancal logger.
 
     Returns
     -------
@@ -125,14 +121,6 @@ def create_gridded_psf_model(
 
     # generate PSFs over a grid of detector positions [pix]
     model_psf_centroids = [(int(x), int(y)) for y in pixel_range for x in pixel_range]
-
-    if logging_level is None:
-        # pass along logging level from __name__'s logger to WebbPSF:
-        logging_level = logging.getLevelName(log.level)
-
-    # set the WebbPSF logging level (similar to webbpsf.utils.setup_logging):
-    conf.logging_level = logging_level
-    restart_logging(verbose=False)
 
     wfi = webbpsf.roman.WFI()
     wfi.filter = filt
