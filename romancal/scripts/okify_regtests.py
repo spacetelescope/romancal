@@ -16,7 +16,7 @@ from glob import glob
 
 import asdf
 
-ARTIFACTORY_REPO = "roman-pipeline-results/regression-tests/runs/"
+ARTIFACTORY_REPO = "roman-pipeline-results/regression-tests/runs"
 SPECFILE_SUFFIX = "_okify.json"
 RTDATA_SUFFIX = "_rtdata.asdf"
 TERMINAL_WIDTH = shutil.get_terminal_size((80, 20)).columns
@@ -62,7 +62,7 @@ def artifactory_get_breadcrumbs(build_number, suffix):
     )
     subprocess.run(args, check=True, capture_output=True)
 
-    return sorted(glob(f"**/**/*{suffix}"))
+    return sorted(glob(f"**/**/**/**/*{suffix}"))
 
 
 def artifactory_get_build_artifacts(build_number):
