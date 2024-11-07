@@ -98,7 +98,7 @@ class ResampleData:
         self.weight_type = wht_type
         self.good_bits = good_bits
         self.in_memory = kwargs.get("in_memory", True)
-        if hasattr(input_models, "target"):
+        if "target" in input_models.asn:
             self.location_name = input_models.asn["target"]
         else:
             self.location_name = "None"
