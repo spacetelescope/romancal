@@ -9,6 +9,7 @@ from astropy.table import Table, join
 from roman_datamodels import datamodels, maker_utils
 
 from romancal.datamodels import ModelLibrary
+from romancal.multiband_catalog.background import subtract_background_library
 from romancal.multiband_catalog.detection_image import make_detection_image
 from romancal.multiband_catalog.utils import update_colnames
 from romancal.source_catalog.background import RomanBackground
@@ -29,8 +30,10 @@ class MultibandCatalogStep(RomanStep):
 
     Parameters
     -----------
-    input : str or `ModelLibrary`
-        Path to an ASDF file or a `ModelLibrary`.
+    input : str or `~romancal.datamodels.ModelLibrary`
+        Path to an ASDF file or a `~romancal.datamodels.ModelLibrary`
+        that contains `~roman_datamodels.datamodels.MosaicImageModel`
+        models.
     """
 
     class_alias = "multiband_catalog"
@@ -52,6 +55,8 @@ class MultibandCatalogStep(RomanStep):
     """
 
     def process(self, library):
+        # All input MosaicImages in the ModelLibrary are assumed to have
+        # the same shape and be pixel aligned.
         if isinstance(library, str):
             library = ModelLibrary(library)
         if not isinstance(library, ModelLibrary):
@@ -61,11 +66,8 @@ class MultibandCatalogStep(RomanStep):
         if self.kernel_fwhms is None:
             self.kernel_fwhms = [2.0, 20.0]
 
-        # NOTE: I'm assuming here that all of the input images have been
-        # background subtracted, have the same shape, and are pixel
-        # aligned.
-        # TODO: Do we need a separate background subtraction step
-        # prior to this one?
+        # NOTE: I'm assuming here that all of the input images have
+        # have the same shape and are pixel aligned.
 
         cat_model = datamodels.MosaicSourceCatalogModel
         source_catalog_model = maker_utils.mk_datamodel(cat_model)
@@ -86,6 +88,8 @@ class MultibandCatalogStep(RomanStep):
             "bkg_aperture_inner_radius": 5.0,
             "bkg_aperture_outer_radius": 10.0,
         }
+
+        library = subtract_background_library(library, self.bkg_boxsize)
 
         # TODO: do we want to save the det_img and det_err?
         det_img, det_err = make_detection_image(library, self.kernel_fwhms)
@@ -149,7 +153,7 @@ class MultibandCatalogStep(RomanStep):
 
             # loop over each image
             with library:
-                for i, model in enumerate(library):
+                for model in library:
                     catobj = RomanSourceCatalog(
                         model,
                         segment_img,
