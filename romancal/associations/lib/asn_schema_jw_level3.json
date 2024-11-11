@@ -39,6 +39,18 @@
 		},
 		"shifty": {
 		    "type": "integer"
+		},
+		"nx": {
+		    "type": "integer"
+		},
+		"ny": {
+		    "type": "integer"
+		},
+		"orient": {
+		    "type": "number"
+		},
+		"orientat_projection_center": {
+		    "type": "number"
 		}
 		}
         },
