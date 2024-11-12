@@ -11,7 +11,7 @@ from roman_datamodels import datamodels, maker_utils
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog.background import subtract_background_library
 from romancal.multiband_catalog.detection_image import make_detection_image
-from romancal.multiband_catalog.utils import update_colnames
+from romancal.multiband_catalog.utils import prefix_colnames, remove_columns
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
@@ -149,7 +149,7 @@ class MultibandCatalogStep(RomanStep):
                 self.fit_psf,
                 detection_cat=None,
             )
-            det_cat = update_colnames(det_catobj.catalog, prefix="det_")
+            det_cat = remove_columns(det_catobj.catalog)
 
             # loop over each image
             with library:
@@ -167,7 +167,7 @@ class MultibandCatalogStep(RomanStep):
 
                     filter_name = model.meta.basic.optical_element
                     prefix = f"{filter_name}_"
-                    cat = update_colnames(catobj.catalog, prefix=prefix)
+                    cat = prefix_colnames(catobj.catalog, prefix=prefix)
                     cat.meta = None  # temporary
                     # outer join prevents empty table if any columns have
                     # the same name but different values (e.g., repeated
