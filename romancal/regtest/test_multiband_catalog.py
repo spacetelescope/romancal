@@ -58,8 +58,8 @@ def test_multiband_catalog(rtdata_module):
 
     step = MultibandCatalogStep()
     step.log.info("DMS391: successfully used multiple kernels to detect sources.")
+    step.log.info("DMS393: successfully used deblending to separate blended sources.")
     step.log.info(
-        "DMS393: successfully used deblending to separate blended sources."
+        "DMS399: successfully tested that catalogs contain aperture "
+        "fluxes and uncertainties."
     )
-    step.log.info("DMS399: successfully tested that catalogs contain aperture "
-                  "fluxes and uncertainties.")
