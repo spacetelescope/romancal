@@ -14,6 +14,8 @@ class PhotomStep(RomanStep):
         reference files and attaching to the input science data model
     """
 
+    class_alias = "photom"
+
     reference_file_types = ["photom"]
 
     def process(self, input):

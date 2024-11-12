@@ -25,6 +25,8 @@ class RampFitStep(RomanStep):
     determine the mean count rate for each pixel.
     """
 
+    class_alias = "ramp_fit"
+
     spec = """
         algorithm = option('ols_cas22', default='ols_cas22')  # Algorithm to use to fit.
         save_opt = boolean(default=False) # Save optional output

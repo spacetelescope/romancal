@@ -13,6 +13,8 @@ class DarkCurrentStep(RomanStep):
     dark current reference data from the input science data model.
     """
 
+    class_alias = "dark"
+
     spec = """
         dark_output = output_file(default = None) # Dark corrected model
     """

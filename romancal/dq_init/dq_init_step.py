@@ -22,6 +22,8 @@ class DQInitStep(RomanStep):
     input model.
     """
 
+    class_alias = "dq_init"
+
     reference_file_types = ["mask"]
 
     def process(self, input):
