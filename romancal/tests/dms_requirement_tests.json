@@ -109,13 +109,13 @@
     "romancal.regtest.test_catalog.test_has_field"
   ],
   "DMS391": [
-    "romancal.regtest.test_multiband_catalog.test_multiband_catalog",
+    "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
   ],
   "DMS393": [
-    "romancal.regtest.test_multiband_catalog.test_multiband_catalog",
+    "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
   ],
   "DMS399": [
-    "romancal.regtest.test_catalog.test_has_field"
+    "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
   ],
   "DMS400": [
     "romancal.regtest.test_mos_pipeline.test_steps_ran",
