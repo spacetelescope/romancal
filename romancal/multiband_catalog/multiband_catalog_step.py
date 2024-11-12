@@ -69,6 +69,7 @@ class MultibandCatalogStep(RomanStep):
 
         cat_model = datamodels.MosaicSourceCatalogModel
         source_catalog_model = maker_utils.mk_datamodel(cat_model)
+        source_catalog_model.meta.filename = library.asn['products'][0]['name']
 
         # define the aperture parameters for the source catalog
         # based on the input encircled energy fractions
@@ -102,7 +103,7 @@ class MultibandCatalogStep(RomanStep):
         bkg_rms = bkg.background_rms
 
         segment_img = make_segmentation_image(
-            det_img,
+            det_img - np.nanmedian(det_img),
             snr_threshold=self.snr_threshold,
             npixels=self.npixels,
             bkg_rms=bkg_rms,
@@ -148,7 +149,7 @@ class MultibandCatalogStep(RomanStep):
 
             # loop over each image
             with library:
-                for model in enumerate(library):
+                for i, model in enumerate(library):
                     catobj = RomanSourceCatalog(
                         model,
                         segment_img,
