@@ -3,8 +3,8 @@
 import asdf
 import pytest
 
-from romancal.stpipe import RomanStep
 from romancal.multiband_catalog.multiband_catalog_step import MultibandCatalogStep
+from romancal.stpipe import RomanStep
 
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
@@ -34,19 +34,22 @@ def test_multiband_catalog(rtdata_module):
     rtdata.input = inputasnfn
     rtdata.get_truth(f"truth/WFI/image/{outputfn}")
     aftruth = asdf.open(f"truth/{outputfn}")
-    args = ['romancal.step.MultibandCatalogStep', inputasnfn,
-            '--deblend', 'True',   # use deblending, DMS 393
-           ]
+    args = [
+        "romancal.step.MultibandCatalogStep",
+        inputasnfn,
+        "--deblend",
+        "True",  # use deblending, DMS 393
+    ]
     RomanStep.from_cmdline(args)
     afcat = asdf.open(outputfn)
     for field in fieldlist:
-        assert field in afcat['roman']['source_catalog'].dtype.names
-    
+        assert field in afcat["roman"]["source_catalog"].dtype.names
+
     # DMS 393: multiband catalog uses both PSF-like and extend-source-like
     # kernels
-    assert (
-        set(aftruth['roman']['source_catalog'].dtype.names) ==
-        set(afcat['roman']['source_catalog'].dtype.names))
+    assert set(aftruth["roman"]["source_catalog"].dtype.names) == set(
+        afcat["roman"]["source_catalog"].dtype.names
+    )
     # weak assertion that our truth file must at least have the same
     # catalog fields as the file produced here.  Exactly matching rows
     # would require a lot of okifying things that aren't obviously
@@ -54,7 +57,7 @@ def test_multiband_catalog(rtdata_module):
     # by name.
 
     step = MultibandCatalogStep()
-    step.log.info('DMS391: successfully used multiple kernels to detect '
-                  'sources.')
-    step.log.info('DMS393: successfully used deblending to separate blended '
-                  'sources.')
+    step.log.info("DMS391: successfully used multiple kernels to detect " "sources.")
+    step.log.info(
+        "DMS393: successfully used deblending to separate blended " "sources."
+    )
