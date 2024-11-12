@@ -10,6 +10,7 @@ from .flatfield.flat_field_step import FlatFieldStep
 from .flux import FluxStep
 from .jump.jump_step import JumpStep
 from .linearity.linearity_step import LinearityStep
+from .multiband_catalog.multiband_catalog_step import MultibandCatalogStep
 from .outlier_detection.outlier_detection_step import OutlierDetectionStep
 from .photom.photom_step import PhotomStep
 from .ramp_fitting.ramp_fit_step import RampFitStep
@@ -19,7 +20,6 @@ from .saturation.saturation_step import SaturationStep
 from .skymatch.skymatch_step import SkyMatchStep
 from .source_catalog.source_catalog_step import SourceCatalogStep
 from .source_detection.source_detection_step import SourceDetectionStep
-from .multiband_catalog.multiband_catalog_step import MultibandCatalogStep
 from .tweakreg.tweakreg_step import TweakRegStep
 
 __all__ = [

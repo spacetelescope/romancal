@@ -71,7 +71,7 @@ class MultibandCatalogStep(RomanStep):
 
         cat_model = datamodels.MosaicSourceCatalogModel
         source_catalog_model = maker_utils.mk_datamodel(cat_model)
-        source_catalog_model.meta.filename = library.asn['products'][0]['name']
+        source_catalog_model.meta.filename = library.asn["products"][0]["name"]
 
         # define the aperture parameters for the source catalog
         # based on the input encircled energy fractions
