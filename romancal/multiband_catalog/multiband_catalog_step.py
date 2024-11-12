@@ -62,24 +62,18 @@ class MultibandCatalogStep(RomanStep):
         if not isinstance(library, ModelLibrary):
             raise TypeError("library input must be a ModelLibrary object")
 
-        # TODO: sensible defaults
-        if self.kernel_fwhms is None:
-            self.kernel_fwhms = [2.0, 20.0]
-
-        # NOTE: I'm assuming here that all of the input images have
-        # have the same shape and are pixel aligned.
-
         cat_model = datamodels.MosaicSourceCatalogModel
         source_catalog_model = maker_utils.mk_datamodel(cat_model)
         source_catalog_model.meta.filename = library.asn["products"][0]["name"]
 
+        # TODO: sensible defaults
+        # TODO: redefine in terms of intrinsic FWHM
+        if self.kernel_fwhms is None:
+            self.kernel_fwhms = [2.0, 20.0]
+
         # define the aperture parameters for the source catalog
         # based on the input encircled energy fractions
-        # TODO: where will these values be defined?
-        # source_catalog will ultimately get these filter-dependent
-        # values from a reference file based on EE values;
-        # do we want filter-dependent aperture parameters for the
-        # multiband catalog?
+        # TODO: define these values in RomanSourceCatalog
         aperture_ee = (self.aperture_ee1, self.aperture_ee2, self.aperture_ee3)
         aperture_params = {
             "aperture_radii": np.array((1.0, 2.0, 3.0)),
@@ -91,7 +85,7 @@ class MultibandCatalogStep(RomanStep):
 
         library = subtract_background_library(library, self.bkg_boxsize)
 
-        # TODO: do we want to save the det_img and det_err?
+        # TODO: where to save the det_img and det_err?
         det_img, det_err = make_detection_image(library, self.kernel_fwhms)
 
         # estimate background rms from detection image to calculate a
@@ -107,7 +101,7 @@ class MultibandCatalogStep(RomanStep):
         bkg_rms = bkg.background_rms
 
         segment_img = make_segmentation_image(
-            det_img - np.nanmedian(det_img),
+            det_img,
             snr_threshold=self.snr_threshold,
             npixels=self.npixels,
             bkg_rms=bkg_rms,
@@ -123,8 +117,10 @@ class MultibandCatalogStep(RomanStep):
                 self.ci2_star_threshold,
             )
 
-            # this is needed for the DAOFind sharpness and roundness
-            # properties; are these needed for the Roman source catalog?
+            # this is needed for the DAOStarFinder sharpness and roundness
+            # properties
+            # TODO: measure on a secondary detection image with minimal
+            # smoothing; same for basic shape parameters
             star_kernel_fwhm = np.min(self.kernel_fwhms)  # ??
 
             det_model = maker_utils.mk_datamodel(datamodels.MosaicModel)
@@ -168,6 +164,8 @@ class MultibandCatalogStep(RomanStep):
                     filter_name = model.meta.basic.optical_element
                     prefix = f"{filter_name}_"
                     cat = prefix_colnames(catobj.catalog, prefix=prefix)
+                    # TODO: what metadata do we want to keep, if any,
+                    # from the filter catalogs?
                     cat.meta = None  # temporary
                     # outer join prevents empty table if any columns have
                     # the same name but different values (e.g., repeated
@@ -178,15 +176,16 @@ class MultibandCatalogStep(RomanStep):
             # put the resulting catalog in the model
             source_catalog_model.source_catalog = det_cat
 
-        # save the segmentation image and multiband catalog
-        # TODO: I noticed that the catalog is saved twice;
-        # once here and once when the step returns
-        self.save_base_results(segment_img, source_catalog_model)
+        # explicitly save the segmentation image;
+        # the multiband catalog is automatically saved by stpipe
+        self.save_segm(segment_img, source_catalog_model)
 
         return source_catalog_model
 
-    def save_base_results(self, segment_img, source_catalog_model):
-        # save the segmentation map and source catalog
+    def save_segm(self, segment_img, source_catalog_model):
+        """
+        Save the segmentation image.
+        """
         output_filename = (
             self.output_file
             if self.output_file is not None
@@ -206,10 +205,3 @@ class MultibandCatalogStep(RomanStep):
                 suffix="segm",
                 force=True,
             )
-        # save the source catalog
-        self.save_model(
-            source_catalog_model,
-            output_file=output_filename,
-            suffix="cat",
-            force=True,
-        )
