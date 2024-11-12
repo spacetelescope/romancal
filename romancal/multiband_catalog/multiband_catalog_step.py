@@ -64,7 +64,10 @@ class MultibandCatalogStep(RomanStep):
 
         cat_model = datamodels.MosaicSourceCatalogModel
         source_catalog_model = maker_utils.mk_datamodel(cat_model)
-        source_catalog_model.meta.filename = library.asn["products"][0]["name"]
+        try:
+            source_catalog_model.meta.filename = library.asn["products"][0]["name"]
+        except (AttributeError, KeyError):
+            source_catalog_model.meta.filename = "multiband_catalog"
 
         # TODO: sensible defaults
         # TODO: redefine in terms of intrinsic FWHM
