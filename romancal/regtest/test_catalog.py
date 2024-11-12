@@ -16,7 +16,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
         "r0099101001001001001_F158_visit_i2d.asdf",
         "r0000101001001001001_0001_wfi01_cal.asdf",
     ],
-    ids=["L3", "L2"],
+    ids=["L3", "L2", "L3skycell"],
 )
 def run_source_catalog(rtdata_module, request):
     rtdata = rtdata_module
