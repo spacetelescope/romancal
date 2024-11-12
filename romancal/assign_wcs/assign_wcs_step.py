@@ -25,6 +25,8 @@ __all__ = ["AssignWcsStep", "load_wcs"]
 class AssignWcsStep(RomanStep):
     """Assign a gWCS object to a science image."""
 
+    class_alias = "assign_wcs"
+
     reference_file_types = ["distortion"]
 
     def process(self, input):

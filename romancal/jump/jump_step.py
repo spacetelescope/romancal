@@ -25,6 +25,8 @@ class JumpStep(RomanStep):
     applied.
     """
 
+    class_alias = "jump"
+
     spec = """
         rejection_threshold = float(default=180.0,min=0) # CR sigma rej thresh
         three_group_rejection_threshold = float(default=185.0,min=0) # CR sigma rej thresh

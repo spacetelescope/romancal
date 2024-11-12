@@ -13,6 +13,8 @@ __all__ = ["FlatFieldStep"]
 class FlatFieldStep(RomanStep):
     """Flat-field a science image using a flatfield reference image."""
 
+    class_alias = "flat_field"
+
     reference_file_types = ["flat"]
 
     def process(self, input_model):
