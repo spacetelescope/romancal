@@ -104,7 +104,11 @@ def make_det_image(library, kernel_fwhm):
                     wht * model.data, kernel, mask=coverage_mask
                 )
                 detection_var += convolve_fft(
-                    wht**2 * model.var_rnoise, kernel, mask=coverage_mask
+                    wht**2 * model.var_rnoise,
+                    kernel**2,
+                    mask=coverage_mask,
+                    normalize_kernel=False,
+                    nan_treatment="fill",
                 )
 
             library.shelve(model, modify=False)
