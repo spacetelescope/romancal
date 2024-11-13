@@ -1,0 +1,2 @@
+The input datamodel to the source_catalog step is now copied so that it
+is left completely unchanged by the step.

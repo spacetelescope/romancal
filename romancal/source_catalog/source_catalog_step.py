@@ -6,6 +6,7 @@ import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels, maker_utils
 from roman_datamodels.datamodels import ImageModel, MosaicModel
+from roman_datamodels.maker_utils import mk_datamodel
 
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
@@ -45,14 +46,38 @@ class SourceCatalogStep(RomanStep):
         fit_psf = boolean(default=True)      # fit source PSFs for accurate astrometry?
     """
 
-    def process(self, input_model):
-        if isinstance(input_model, datamodels.DataModel):
-            model = input_model
+    def process(self, step_input):
+        if isinstance(step_input, datamodels.DataModel):
+            input_model = step_input
         else:
-            model = datamodels.open(input_model)
+            input_model = datamodels.open(step_input)
 
-        if not isinstance(model, (ImageModel, MosaicModel)):
+        if not isinstance(input_model, (ImageModel, MosaicModel)):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
+
+        # Copy the data and error arrays to avoid modifying the input
+        # model. We use mk_datamodel to copy *only* the data and err
+        # arrays. The metadata and dq and weight arrays are not copied
+        # because they are not modified in this step. The other model
+        # arrays (e.g., var_rnoise) are not currently used by this step.
+        if isinstance(input_model, ImageModel):
+            model = mk_datamodel(
+                ImageModel,
+                meta=input_model.meta,
+                shape=(0, 0),
+                data=input_model.data.copy(),
+                err=input_model.err.copy(),
+                dq=input_model.dq,
+            )
+        elif isinstance(input_model, MosaicModel):
+            model = mk_datamodel(
+                MosaicModel,
+                meta=input_model.meta,
+                shape=(0, 0),
+                data=input_model.data.copy(),
+                err=input_model.err.copy(),
+                weight=input_model.weight,
+            )
 
         if isinstance(model, ImageModel):
             cat_model = datamodels.SourceCatalogModel
@@ -110,10 +135,6 @@ class SourceCatalogStep(RomanStep):
 
             # put the resulting catalog in the model
             source_catalog_model.source_catalog = catobj.catalog
-
-        # add back background to data so input model is unchanged
-        # (in case of interactive use)
-        model.data += bkg.background
 
         # create catalog filename
         # N.B.: self.save_model will determine whether to use fully qualified path or not
