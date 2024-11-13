@@ -17,6 +17,8 @@ class RefPixStep(RomanStep):
         pixels
     """
 
+    class_alias = "refpix"
+
     spec = """
     remove_offset = boolean(default=True) # Turn on or off removing the data offset
     # prior to the reference pixel correction, then returning the offset afterwords.
