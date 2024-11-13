@@ -216,7 +216,7 @@ def ignore_asdf_paths():
         "asdf_library",
         "history",
         # roman-specific stuff to ignore
-        "roman.meta.ref_file.crds.sw_version",
+        "roman.meta.ref_file.crds.version",
         "roman.meta.calibration_software_version",
         "roman.cal_logs",
         "roman.meta.cal_logs",
