@@ -175,19 +175,6 @@ class RomanSourceCatalog:
         self.model["err"] *= self.l2_conv_factor
         self.convolved_data *= self.l2_conv_factor
 
-    def convert_sb_to_l2(self):
-        """
-        Convert the data and error arrays from MJy/sr (surface
-        brightness) to DN/s (level-2 units).
-
-        This is the inverse operation of `convert_l2_to_sb`.
-        """
-        # the conversion in done in-place to avoid making copies of the data;
-        # use a dictionary to set the value to avoid on-the-fly validation
-        self.model["data"] /= self.l2_conv_factor
-        self.model["err"] /= self.l2_conv_factor
-        self.convolved_data /= self.l2_conv_factor
-
     def convert_sb_to_flux_density(self):
         """
         Convert the data and error arrays from MJy/sr (surface
@@ -205,22 +192,6 @@ class RomanSourceCatalog:
         self.model["data"] <<= self.sb_to_flux.unit
         self.model["err"] <<= self.sb_to_flux.unit
         self.convolved_data <<= self.sb_to_flux.unit
-
-    def convert_flux_density_to_sb(self):
-        """
-        Convert the data and error arrays from flux density units to
-        MJy/sr (surface brightness).
-
-        The units are also removed from the arrays.
-
-        This is the inverse operation of `convert_sb_to_flux_density`.
-        """
-        self.model["data"] /= self.sb_to_flux
-        self.model["err"] /= self.sb_to_flux
-        self.convolved_data /= self.sb_to_flux
-        self.model["data"] = self.model["data"].value
-        self.model["err"] = self.model["err"].value
-        self.convolved_data = self.convolved_data.value
 
     def convert_flux_to_abmag(self, flux, flux_err):
         """
@@ -1198,12 +1169,5 @@ class RomanSourceCatalog:
 
         # split SkyCoord columns into separate RA and Dec columns
         catalog = self._split_skycoord(catalog)
-
-        # restore units on input model back to MJy/sr
-        self.convert_flux_density_to_sb()
-
-        # restore L2 data units back to DN/s
-        if isinstance(self.model, ImageModel):
-            self.convert_sb_to_l2()
 
         return catalog
