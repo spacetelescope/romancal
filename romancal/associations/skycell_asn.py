@@ -28,7 +28,7 @@ def skycell_asn(self):
         cal_file = rdm.open(file_name)
         filter_id = cal_file.meta.instrument.optical_element
         file_patch_list = pm.find_patch_matches(cal_file.meta.wcs)
-        logger.info(f"Patch List:   {file_name}  {file_patch_list[0]}")
+        logger.info(f"Patch List:{file_name}, {file_patch_list[0]}")
         file_list.append([file_name, file_patch_list[0]])
         all_patches.append(file_patch_list[0])
 
@@ -61,21 +61,20 @@ def skycell_asn(self):
         product_release = self.parsed.release_product
         suffix = "coadd"
         sep = "_"
-        instrument = 'wfi'
         if product_type == 'visit':
             pr_name  = ('v' +
-                               parsed_visit_id['Execution'] + 
-                               parsed_visit_id['Pass'] + 
-                               parsed_visit_id['Segment'] + 
+                               parsed_visit_id['Execution'] +
+                               parsed_visit_id['Pass'] +
+                               parsed_visit_id['Segment'] +
                                parsed_visit_id['Observation'])
         elif product_type == 'daily':
             pr_name  = ('d' +
-                               parsed_visit_id['Execution'] + 
-                               parsed_visit_id['Pass'] + 
+                               parsed_visit_id['Execution'] +
+                               parsed_visit_id['Pass'] +
                                parsed_visit_id['Segment'])
         elif product_type == 'pass':
             pr_name  = ('p' +
-                               parsed_visit_id['Execution'] + 
+                               parsed_visit_id['Execution'] +
                                parsed_visit_id['Pass'])
         elif product_type == 'full':
             pr_name  = 'full'
@@ -92,8 +91,6 @@ def skycell_asn(self):
             + pr_name
             + sep
             + patch_name
-            + sep
-            + instrument
             + sep
             + filter_id
             + sep
