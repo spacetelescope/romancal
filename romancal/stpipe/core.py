@@ -87,8 +87,8 @@ class RomanStep(Step):
                 if hasattr(model.meta.ref_file, ref_name):
                     setattr(model.meta.ref_file, ref_name, ref_file)
                     # getattr(model.meta.ref_file, ref_name).name = ref_file
-            model.meta.ref_file.crds.sw_version = crds_client.get_svn_version()
-            model.meta.ref_file.crds.context_used = crds_client.get_context_used(
+            model.meta.ref_file.crds.version = crds_client.get_svn_version()
+            model.meta.ref_file.crds.context = crds_client.get_context_used(
                 model.crds_observatory
             )
 
@@ -96,7 +96,7 @@ class RomanStep(Step):
             # step is being run or if self is a RomanPipeline and not a RomanStep.
             if self.parent is None:
                 log.info(
-                    f"Results used CRDS context: {model.meta.ref_file.crds.context_used}"
+                    f"Results used CRDS context: {model.meta.ref_file.crds.context}"
                 )
 
     def record_step_status(self, model, step_name, success=True):
