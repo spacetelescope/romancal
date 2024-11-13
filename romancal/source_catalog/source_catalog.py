@@ -98,12 +98,7 @@ class RomanSourceCatalog:
         self.convolved_data = convolved_data
         self.aperture_params = aperture_params
         self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
-        self.flux_unit = flux_unit
         self.fit_psf = fit_psf
-
-        self.sb_unit = "MJy/sr"
-        self.l2_unit = "DN/s"
-        self.l2_conv_factor = self.model.meta.photometry.conversion_megajanskys
 
         if len(ci_star_thresholds) != 2:
             raise ValueError("ci_star_thresholds must contain only 2 items")
@@ -121,6 +116,12 @@ class RomanSourceCatalog:
             self.psf_photometry_catalog_mapping = (
                 self.get_psf_photometry_catalog_colnames_mapping()
             )
+
+        self.flux_unit = flux_unit
+        self.l2_conv_factor = self.model.meta.photometry.conversion_megajanskys
+        self.sb_to_flux = (1.0 * (u.MJy / u.sr) * self.pixel_area).to(
+            u.Unit(self.flux_unit)
+        )
 
     @lazyproperty
     def _pixscale_angle(self):
@@ -154,12 +155,13 @@ class RomanSourceCatalog:
         """
         The pixel area in steradians.
 
-        If the value is a negative placeholder (e.g., -999999 sr), the
-        value is calculated from the WCS at the center of the image.
+        If the meta.photometry.pixel_area value is a negative
+        placeholder (e.g., -999999 sr), the value is calculated from the
+        WCS at the center of the image.
         """
-        pixel_area = self.model.meta.photometry.pixel_area
+        pixel_area = self.model.meta.photometry.pixel_area * u.sr
         if pixel_area < 0:
-            pixel_area = (self._pixel_scale**2).to(u.sr).value
+            pixel_area = (self._pixel_scale**2).to(u.sr)
         return pixel_area
 
     def convert_l2_to_sb(self):
@@ -167,7 +169,6 @@ class RomanSourceCatalog:
         Convert a level-2 image from units of DN/s to MJy/sr (surface
         brightness).
         """
-
         # the conversion in done in-place to avoid making copies of the data;
         # use a dictionary to set the value to avoid on-the-fly validation
         self.model["data"] *= self.l2_conv_factor
@@ -181,7 +182,6 @@ class RomanSourceCatalog:
 
         This is the inverse operation of `convert_l2_to_sb`.
         """
-
         # the conversion in done in-place to avoid making copies of the data;
         # use a dictionary to set the value to avoid on-the-fly validation
         self.model["data"] /= self.l2_conv_factor
@@ -193,28 +193,34 @@ class RomanSourceCatalog:
         Convert the data and error arrays from MJy/sr (surface
         brightness) to flux density units.
 
+        The arrays are converted in-place to Quantity arrays.
+
         The flux density unit is defined by self.flux_unit.
         """
-
         # the conversion in done in-place to avoid making copies of the data;
         # use a dictionary to set the value to avoid on-the-fly validation
-        self.model["data"] *= self.pixel_area
-
-        self.model["err"] *= self.pixel_area
-
-        self.convolved_data *= self.pixel_area
+        self.model["data"] *= self.sb_to_flux.value
+        self.model["err"] *= self.sb_to_flux.value
+        self.convolved_data *= self.sb_to_flux.value
+        self.model["data"] <<= self.sb_to_flux.unit
+        self.model["err"] <<= self.sb_to_flux.unit
+        self.convolved_data <<= self.sb_to_flux.unit
 
     def convert_flux_density_to_sb(self):
         """
         Convert the data and error arrays from flux density units to
         MJy/sr (surface brightness).
 
+        The units are also removed from the arrays.
+
         This is the inverse operation of `convert_sb_to_flux_density`.
         """
-
-        self.model["data"] /= self.pixel_area
-        self.model["err"] /= self.pixel_area
-        self.convolved_data /= self.pixel_area
+        self.model["data"] /= self.sb_to_flux
+        self.model["err"] /= self.sb_to_flux
+        self.convolved_data /= self.sb_to_flux
+        self.model["data"] = self.model["data"].value
+        self.model["err"] = self.model["err"].value
+        self.convolved_data = self.convolved_data.value
 
     def convert_flux_to_abmag(self, flux, flux_err):
         """
@@ -234,15 +240,11 @@ class RomanSourceCatalog:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
 
-            # exact AB mag zero point
-            flux_zpt = 10 ** (-0.4 * 48.60)
-
-            abmag_zpt = 2.5 * np.log10(flux_zpt)
-            abmag = -2.5 * np.log10(flux) + abmag_zpt
+            abmag = flux.to(u.ABmag).value
             abmag_err = 2.5 * np.log10(1.0 + (flux_err / flux))
 
             # handle negative fluxes
-            idx = flux < 0
+            idx = flux.value < 0
             abmag[idx] = np.nan
             abmag_err[idx] = np.nan
 
@@ -534,7 +536,7 @@ class RomanSourceCatalog:
             bkg_median = []
             bkg_std = []
             for mask in bkg_aper_masks:
-                bkg_data = mask.get_values(self.model.data)
+                bkg_data = mask.get_values(self.model.data.value)
                 values = sigclip(bkg_data, masked=False)
                 nvalues.append(values.size)
                 bkg_median.append(np.median(values))
@@ -544,6 +546,9 @@ class RomanSourceCatalog:
             bkg_median = np.array(bkg_median)
             # standard error of the median
             bkg_median_err = np.sqrt(np.pi / (2.0 * nvalues)) * np.array(bkg_std)
+
+        bkg_median <<= self.model.data.unit
+        bkg_median_err <<= self.model.data.unit
 
         return bkg_median, bkg_median_err
 
@@ -754,7 +759,7 @@ class RomanSourceCatalog:
         The DAOFind convolved data.
         """
         return ndimage.convolve(
-            self.model.data, self._daofind_kernel, mode="constant", cval=0.0
+            self.model.data.value, self._daofind_kernel, mode="constant", cval=0.0
         )
 
     @lazyproperty
