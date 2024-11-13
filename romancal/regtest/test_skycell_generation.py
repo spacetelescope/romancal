@@ -25,12 +25,12 @@ def test_skycell_asn_generation(rtdata):
 
     # skycell associations that should be generated
     output_files = [
-        "r512_p_v01001001001_r274dp63x31y80_wfi_F158_coadd_asn.json",
-        "r512_p_v01001001001_r274dp63x31y81_wfi_F158_coadd_asn.json",
-        "r512_p_v01001001001_r274dp63x32y82_wfi_F158_coadd_asn.json",
-        "r512_p_v01001001001_r274dp63x32y80_wfi_F158_coadd_asn.json",
-        "r512_p_v01001001001_r274dp63x32y81_wfi_F158_coadd_asn.json",
-        "r512_p_v01001001001_r274dp63x32y82_wfi_F158_coadd_asn.json",
+        "r512_p_v01001001001_r274dp63x31y80_F158_coadd_asn.json",
+        "r512_p_v01001001001_r274dp63x31y81_F158_coadd_asn.json",
+        "r512_p_v01001001001_r274dp63x32y82_F158_coadd_asn.json",
+        "r512_p_v01001001001_r274dp63x32y80_F158_coadd_asn.json",
+        "r512_p_v01001001001_r274dp63x32y81_F158_coadd_asn.json",
+        "r512_p_v01001001001_r274dp63x32y82_F158_coadd_asn.json",
     ]
     # Test that the json files exist
     for file in output_files:
