@@ -536,19 +536,18 @@ class RomanSourceCatalog:
             bkg_median = []
             bkg_std = []
             for mask in bkg_aper_masks:
-                bkg_data = mask.get_values(self.model.data.value)
+                bkg_data = mask.get_values(self.model.data)
                 values = sigclip(bkg_data, masked=False)
                 nvalues.append(values.size)
                 bkg_median.append(np.median(values))
                 bkg_std.append(np.std(values))
 
             nvalues = np.array(nvalues)
-            bkg_median = np.array(bkg_median)
-            # standard error of the median
-            bkg_median_err = np.sqrt(np.pi / (2.0 * nvalues)) * np.array(bkg_std)
+            bkg_median = u.Quantity(bkg_median)
+            bkg_std = u.Quantity(bkg_std)
 
-        bkg_median <<= self.model.data.unit
-        bkg_median_err <<= self.model.data.unit
+            # standard error of the median
+            bkg_median_err = np.sqrt(np.pi / (2.0 * nvalues)) * bkg_std
 
         return bkg_median, bkg_median_err
 
@@ -1194,7 +1193,7 @@ class RomanSourceCatalog:
         self._update_metadata()
         catalog.meta.update(self.meta)
 
-        # convert QTable to Table
+        # convert QTable to Table to avoid having Quantity columns
         catalog = Table(catalog)
 
         # split SkyCoord columns into separate RA and Dec columns
