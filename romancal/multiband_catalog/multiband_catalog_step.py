@@ -68,6 +68,8 @@ class MultibandCatalogStep(RomanStep):
             source_catalog_model.meta.filename = library.asn["products"][0]["name"]
         except (AttributeError, KeyError):
             source_catalog_model.meta.filename = "multiband_catalog"
+        if self.output_file is None:
+            self.output_file = source_catalog_model.meta.filename
 
         # TODO: sensible defaults
         # TODO: redefine in terms of intrinsic FWHM
