@@ -61,27 +61,16 @@ def skycell_asn(self):
         product_release = self.parsed.release_product
         suffix = "coadd"
         sep = "_"
-        if product_type == 'visit':
-            pr_name  = ('v' +
-                               parsed_visit_id['Execution'] +
-                               parsed_visit_id['Pass'] +
-                               parsed_visit_id['Segment'] +
-                               parsed_visit_id['Observation'])
-        elif product_type == 'daily':
-            pr_name  = ('d' +
-                               parsed_visit_id['Execution'] +
-                               parsed_visit_id['Pass'] +
-                               parsed_visit_id['Segment'])
-        elif product_type == 'pass':
-            pr_name  = ('p' +
-                               parsed_visit_id['Execution'] +
-                               parsed_visit_id['Pass'])
-        elif product_type == 'full':
-            pr_name  = 'full'
-        elif product_type == 'user':
-            pr_name  = 'user'
-        else:
-            pr_name = 'unknown'
+
+        product_name_mapping = {
+            "visit": "v" + parsed_visit_id['Execution'] + parsed_visit_id['Pass'] + parsed_visit_id['Segment'] + parsed_visit_id['Observation'],
+            "daily": "d" + parsed_visit_id['Execution'] + parsed_visit_id['Pass'] + parsed_visit_id['Segment'],
+            "pass": "p" + parsed_visit_id['Execution'] + parsed_visit_id['Pass'],
+            "full": "full",
+            "user": "user"
+        }
+
+        pr_name = product_name_mapping.get(product_type, "unknown")
 
         asn_file_name = (
             root_asn_name
