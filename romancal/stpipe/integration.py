@@ -40,4 +40,5 @@ def get_steps():
         ("romancal.step.TweakRegStep", "tweakreg", False),
         ("romancal.step.ResampleStep", "resample", False),
         ("romancal.step.SourceCatalogStep", "source_catalog", False),
+        ("romancal.step.MultibandCatalogStep", "multiband_catalog", False),
     ]

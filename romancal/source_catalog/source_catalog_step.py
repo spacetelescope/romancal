@@ -122,7 +122,10 @@ class SourceCatalogStep(RomanStep):
         if segment_img is None:  # no sources found
             source_catalog_model.source_catalog = Table()
         else:
-            ci_star_thresholds = (self.ci1_star_threshold, self.ci2_star_threshold)
+            ci_star_thresholds = (
+                self.ci1_star_threshold,
+                self.ci2_star_threshold,
+            )
             catobj = RomanSourceCatalog(
                 model,
                 segment_img,
@@ -190,7 +193,10 @@ class SourceCatalogStep(RomanStep):
 
         # save the source catalog
         self.save_model(
-            source_catalog_model, output_file=output_filename, suffix="cat", force=True
+            source_catalog_model,
+            output_file=output_filename,
+            suffix="cat",
+            force=True,
         )
 
 

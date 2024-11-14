@@ -202,16 +202,23 @@ cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 strun romancal.step.SourceCatalogStep ${l3name}_i2d.asdf
 cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
-
 # L2 catalog
 strun romancal.step.SourceCatalogStep r0000101001001001001_0001_wfi01_cal.asdf
 cp r0000101001001001001_0001_wfi01_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
-
-l3name="r0099101001001001001_F158_visit_r274dp63x31y81"
+# L3 on skycell
+l3name="r0099101001001001001_r274dp63x31y81_prompt_F158"
 asn_from_list --product-name=$l3name r0000101001001001001_0001_wfi01_cal.asdf r0000101001001001001_0002_wfi01_cal.asdf r0000101001001001001_0003_wfi01_cal.asdf -o L3_m1_asn.json
 strun roman_mos L3_m1_asn.json
 cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
+# L3 skycell catalog
+strun romancal.step.SourceCatalogStep ${l3name}_i2d.asdf
+cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
+# multiband catalog
+asn_from_list --product-name=${l3name}_mbcat ${l3name}_i2d.asdf -o L3_skycell_mbcat_asn.json
+strun romancal.step.MultibandCatalogStep L3_skycell_mbcat_asn.json --deblend True
 
 # tests passing suffix to the pipeline
 strun roman_elp r0000101001001001001_0001_wfi01_uncal.asdf --steps.tweakreg.skip=True --suffix=star
