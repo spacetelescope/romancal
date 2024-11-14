@@ -51,11 +51,14 @@ def skycell_asn(self):
                 ("nx", int(pm.PATCH_TABLE[item]["nx"])),
                 ("ny", int(pm.PATCH_TABLE[item]["ny"])),
                 ("orient", float(pm.PATCH_TABLE[item]["orientat"])),
-                ("orientat_projection_center", float(pm.PATCH_TABLE[item]["orientat_projection_center"])),
+                (
+                    "orientat_projection_center",
+                    float(pm.PATCH_TABLE[item]["orientat_projection_center"]),
+                ),
             ]
         )
         parsed_visit_id = parse_visitID(member_list[0][1:20])
-        program_id = parsed_visit_id['Program']
+        program_id = parsed_visit_id["Program"]
         root_asn_name = self.parsed.output_file_root
         product_type = self.parsed.product_type
         product_release = self.parsed.release_product
@@ -63,11 +66,18 @@ def skycell_asn(self):
         sep = "_"
 
         product_name_mapping = {
-            "visit": "v" + parsed_visit_id['Execution'] + parsed_visit_id['Pass'] + parsed_visit_id['Segment'] + parsed_visit_id['Observation'],
-            "daily": "d" + parsed_visit_id['Execution'] + parsed_visit_id['Pass'] + parsed_visit_id['Segment'],
-            "pass": "p" + parsed_visit_id['Execution'] + parsed_visit_id['Pass'],
+            "visit": "v"
+            + parsed_visit_id["Execution"]
+            + parsed_visit_id["Pass"]
+            + parsed_visit_id["Segment"]
+            + parsed_visit_id["Observation"],
+            "daily": "d"
+            + parsed_visit_id["Execution"]
+            + parsed_visit_id["Pass"]
+            + parsed_visit_id["Segment"],
+            "pass": "p" + parsed_visit_id["Execution"] + parsed_visit_id["Pass"],
             "full": "full",
-            "user": "user"
+            "user": "user",
         }
 
         pr_name = product_name_mapping.get(product_type, "unknown")

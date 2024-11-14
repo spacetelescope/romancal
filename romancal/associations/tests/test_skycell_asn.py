@@ -18,13 +18,16 @@ def test_cmdline_fails():
     with pytest.raises(SystemExit):
         Main(["-o", "test_asn.json"])
 
+
 def test_parse_visitID():
 
-    filelist1 = ['r0000101002003004005_0001_wfi10_cal.asdf',]
+    filelist1 = [
+        "r0000101002003004005_0001_wfi10_cal.asdf",
+    ]
     visitid_parts = skycell_asn.parse_visitID(filelist1[0][1:20])
-    assert visitid_parts['Program'] == '00001'
-    assert visitid_parts['Execution'] == '01'
-    assert visitid_parts['Pass'] == '002'
-    assert visitid_parts['Segment'] == '003'
-    assert visitid_parts['Observation'] == '004'
-    assert visitid_parts['Visit'] == '005'
+    assert visitid_parts["Program"] == "00001"
+    assert visitid_parts["Execution"] == "01"
+    assert visitid_parts["Pass"] == "002"
+    assert visitid_parts["Segment"] == "003"
+    assert visitid_parts["Observation"] == "004"
+    assert visitid_parts["Visit"] == "005"
