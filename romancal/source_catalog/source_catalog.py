@@ -209,11 +209,11 @@ class RomanSourceCatalog:
         # the conversion in done in-place to avoid making copies of the data;
         # use a dictionary to set the value to avoid on-the-fly validation
         self.model["data"] *= self.sb_to_flux.value
-        self.model["err"] *= self.sb_to_flux.value
-        self.convolved_data *= self.sb_to_flux.value
         self.model["data"] <<= self.sb_to_flux.unit
+        self.model["err"] *= self.sb_to_flux.value
         self.model["err"] <<= self.sb_to_flux.unit
         if self.convolved_data is not None:
+            self.convolved_data *= self.sb_to_flux.value
             self.convolved_data <<= self.sb_to_flux.unit
 
     def convert_flux_to_abmag(self, flux, flux_err):
