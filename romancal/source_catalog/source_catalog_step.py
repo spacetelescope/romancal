@@ -136,36 +136,34 @@ class SourceCatalogStep(RomanStep):
             # put the resulting catalog in the model
             source_catalog_model.source_catalog = catobj.catalog
 
-        # create catalog filename
-        # N.B.: self.save_model will determine whether to use fully qualified path or not
-        output_catalog_name = self.make_output_path(
-            basepath=model.meta.filename, suffix="cat"
-        )
-
-        if isinstance(model, ImageModel):
-            update_metadata(model, output_catalog_name)
-
-        output_model = model
-
-        # always save segmentation image + catalog
+        # always save the segmentation image and source catalog
         self.save_base_results(segment_img, source_catalog_model)
 
-        # return the updated model or the source catalog object
+        # Return the source catalog object or the input model. If the
+        # input model is an ImageModel, the metadata is updated with the
+        # source catalog filename.
         if getattr(self, "return_updated_model", False):
-            # setting the suffix to something else to prevent
-            # step from  overwriting source catalog file with
-            # a datamodel
+            # define the catalog filename; self.save_model will
+            # determine whether to use a fully qualified path
+            output_catalog_name = self.make_output_path(
+                basepath=model.meta.filename, suffix="cat"
+            )
+
+            # set the suffix to something else to prevent the step from
+            # overwriting the source catalog file with a datamodel
             self.suffix = "sourcecatalog"
-            # return DataModel
-            result = output_model
+
+            if isinstance(input_model, ImageModel):
+                update_metadata(input_model, output_catalog_name)
+
+            result = input_model
         else:
-            # return SourceCatalogModel
             result = source_catalog_model
 
         return result
 
     def save_base_results(self, segment_img, source_catalog_model):
-        # save the segmentation map and
+        # save the segmentation map and source catalog
         output_filename = (
             self.output_file
             if self.output_file is not None
@@ -189,6 +187,7 @@ class SourceCatalogStep(RomanStep):
                 suffix="segm",
                 force=True,
             )
+
         # save the source catalog
         self.save_model(
             source_catalog_model, output_file=output_filename, suffix="cat", force=True
