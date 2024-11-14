@@ -26,7 +26,7 @@ def skycell_asn(self):
     file_list = []
     for file_name in self.parsed.filelist:
         cal_file = rdm.open(file_name)
-        filter_id = cal_file.meta.instrument.optical_element
+        filter_id = cal_file.meta.instrument.optical_element.lower()
         file_patch_list = pm.find_patch_matches(cal_file.meta.wcs)
         logger.info(f"Patch List:{file_name}, {file_patch_list[0]}")
         file_list.append([file_name, file_patch_list[0]])
