@@ -10,6 +10,7 @@ import roman_datamodels as rdm
 
 import romancal.patch_match.patch_match as pm
 from romancal.associations import asn_from_list
+from romancal.lib.basic_utils import parse_visitID as parse_visitID
 
 __all__ = ["skycell_asn"]
 
@@ -25,9 +26,9 @@ def skycell_asn(self):
     file_list = []
     for file_name in self.parsed.filelist:
         cal_file = rdm.open(file_name)
-        filter_id = cal_file.meta.instrument.optical_element
+        filter_id = cal_file.meta.instrument.optical_element.lower()
         file_patch_list = pm.find_patch_matches(cal_file.meta.wcs)
-        logger.info(f"Patch List:   {file_name}  {file_patch_list[0]}")
+        logger.info(f"Patch List:{file_name}, {file_patch_list[0]}")
         file_list.append([file_name, file_patch_list[0]])
         all_patches.append(file_patch_list[0])
 
@@ -49,27 +50,52 @@ def skycell_asn(self):
                 ("shifty", float(pm.PATCH_TABLE[item]["y0_projection"])),
                 ("nx", int(pm.PATCH_TABLE[item]["nx"])),
                 ("ny", int(pm.PATCH_TABLE[item]["ny"])),
+                ("orient", float(pm.PATCH_TABLE[item]["orientat"])),
+                (
+                    "orientat_projection_center",
+                    float(pm.PATCH_TABLE[item]["orientat_projection_center"]),
+                ),
             ]
         )
-        program_id = member_list[0][1:6]
+        parsed_visit_id = parse_visitID(member_list[0][1:20])
+        program_id = parsed_visit_id["Program"]
         root_asn_name = self.parsed.output_file_root
         product_type = self.parsed.product_type
         product_release = self.parsed.release_product
-        suffix = "i2d"
+        suffix = "coadd"
         sep = "_"
+
+        product_name_mapping = {
+            "visit": "v"
+            + parsed_visit_id["Execution"]
+            + parsed_visit_id["Pass"]
+            + parsed_visit_id["Segment"]
+            + parsed_visit_id["Observation"],
+            "daily": "d"
+            + parsed_visit_id["Execution"]
+            + parsed_visit_id["Pass"]
+            + parsed_visit_id["Segment"],
+            "pass": "p" + parsed_visit_id["Execution"] + parsed_visit_id["Pass"],
+            "full": "full",
+            "user": "user",
+        }
+
+        pr_name = product_name_mapping.get(product_type, "unknown")
+
         asn_file_name = (
             root_asn_name
             + sep
-            + patch_name
+            + product_release
             + sep
-            + product_type
+            + pr_name
+            + sep
+            + patch_name
             + sep
             + filter_id
             + sep
-            + product_release
-            + sep
             + suffix
         )
+
         with open(asn_file_name + "_asn.json", "w") as outfile:
             prompt_product_asn = asn_from_list.asn_from_list(
                 member_list, product_name=asn_file_name
@@ -77,7 +103,6 @@ def skycell_asn(self):
             prompt_product_asn["asn_type"] = "image"
             prompt_product_asn["program"] = program_id
             prompt_product_asn["target"] = patch_name
-            # prompt_product_asn["skycell_wcs_info"] = projcell_info
             prompt_product_asn["skycell_wcs_info"] = json.dumps(projcell_info)
             _, serialized = prompt_product_asn.dump(format="json")
             outfile.write(serialized)
@@ -132,7 +157,7 @@ class Main:
         parser.add_argument(
             "--release-product",
             type=str,
-            default="prompt",
+            default="p",
             help="The release product when creating the association",
         )
 
