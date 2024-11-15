@@ -1,1 +1,0 @@
-Allow asn product name to be the output product

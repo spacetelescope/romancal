@@ -1,1 +1,0 @@
-Fix bug where on_disk=True could fail due to Quantities not implementing tofile.

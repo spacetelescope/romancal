@@ -1,1 +1,0 @@
-Don't restart loggers during create_gridded_psf_model.

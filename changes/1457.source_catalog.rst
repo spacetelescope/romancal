@@ -1,2 +1,0 @@
-The data and err array of the input datamodel to the source_catalog step
-are now copied so that they are left completely unchanged by the step.
