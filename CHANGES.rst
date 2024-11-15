@@ -1,3 +1,141 @@
+0.16.4 (2024-11-15)
+===================
+
+General
+-------
+
+- Update source catalog file with the tweaked coordinates. (`#1373
+  <https://github.com/spacetelescope/romancal/issues/1373>`_)
+- move DMS requirement <-> test correlations from ``@metrics_logger()``
+  decorators to ``romancal/tests/dms_requirement_tests.json`` (`#1399
+  <https://github.com/spacetelescope/romancal/issues/1399>`_)
+- Break up long regression tests to avoid needing to okify results twice.
+  (`#1426 <https://github.com/spacetelescope/romancal/issues/1426>`_)
+- Removed now unused lib.dms. (`#1433
+  <https://github.com/spacetelescope/romancal/issues/1433>`_)
+- Remove units from romancal. (`#1445
+  <https://github.com/spacetelescope/romancal/issues/1445>`_)
+- Have pytest clean up some files when it finishes running tests. (`#1446
+  <https://github.com/spacetelescope/romancal/issues/1446>`_)
+- Fix remaining numpy 2 issues and unpin numpy to allow numpy 2 usage. (`#1447
+  <https://github.com/spacetelescope/romancal/issues/1447>`_)
+- Give regtest okify results unique subdirectories. (`#1456
+  <https://github.com/spacetelescope/romancal/issues/1456>`_)
+- Updates to support L1/L2 schema changes. (`#1473
+  <https://github.com/spacetelescope/romancal/issues/1473>`_)
+- Use stcal to compute s_region keyword. (`#1493
+  <https://github.com/spacetelescope/romancal/issues/1493>`_)
+
+
+Documentation
+-------------
+
+- handle changelog entries with ``towncrier`` (`#1375
+  <https://github.com/spacetelescope/romancal/issues/1375>`_)
+- Update docs to not include default fake values. (`#1419
+  <https://github.com/spacetelescope/romancal/issues/1419>`_)
+
+
+``stpipe``
+----------
+
+- Add class_alias for all steps. (`#1509
+  <https://github.com/spacetelescope/romancal/issues/1509>`_)
+
+
+Associations
+------------
+
+- add target to asn_from_list command (`#1411
+  <https://github.com/spacetelescope/romancal/issues/1411>`_)
+- Added code to take an input list of calibrated WFI exposures and creates
+  associations based on the
+  skycells that they overlap (`#1437
+  <https://github.com/spacetelescope/romancal/issues/1437>`_)
+- Update skycell_asn docs and add skycell_asn as a script at install time
+  (`#1471 <https://github.com/spacetelescope/romancal/issues/1471>`_)
+- Updates to the file naming for the products and inputs and adds the
+  orientation to the wcs keywords in the asn header (`#1505
+  <https://github.com/spacetelescope/romancal/issues/1505>`_)
+
+
+``mosaic_pipeline``
+-------------------
+
+- Allow asn product name to be the output product (`#1394
+  <https://github.com/spacetelescope/romancal/issues/1394>`_)
+
+
+``ramp_fitting`` (WFI-Image, WFI-Prism, WFI-Grism)
+--------------------------------------------------
+
+- Drop support for ``ols`` ramp fitting. (`#1398
+  <https://github.com/spacetelescope/romancal/issues/1398>`_)
+
+
+``source_detection`` (WFI-Image)
+--------------------------------
+
+- Don't restart loggers during create_gridded_psf_model. (`#1503
+  <https://github.com/spacetelescope/romancal/issues/1503>`_)
+
+
+``tweakreg`` (WFI-Image)
+------------------------
+
+- Group by obs_id (`#1448
+  <https://github.com/spacetelescope/romancal/issues/1448>`_)
+- Updates s_region after running TweakRegStep successfully. (`#1484
+  <https://github.com/spacetelescope/romancal/issues/1484>`_)
+
+
+``outlier_detection``
+---------------------
+
+- Update input handling to raise an exception on an invalid input instead of
+  issuing a warning and skipping the step. (`#1357
+  <https://github.com/spacetelescope/romancal/issues/1357>`_)
+- Remove unused arguments to outlier detection. (`#1357
+  <https://github.com/spacetelescope/romancal/issues/1357>`_)
+- Use stcal common code in outlier detection. (`#1357
+  <https://github.com/spacetelescope/romancal/issues/1357>`_)
+- Fix bug where on_disk=True could fail due to Quantities not implementing
+  tofile. (`#1436 <https://github.com/spacetelescope/romancal/issues/1436>`_)
+- Group by obs_id (`#1448
+  <https://github.com/spacetelescope/romancal/issues/1448>`_)
+
+
+``resample``
+------------
+
+- Fixed an incompatibility with ``numpy 2.0`` in
+  ``resample.resample_utils.build_mask()``. Switched code in
+  ``build_driz_weight()`` to use ``astropy`` equivalent of ``build_mask()``.
+  Deprecated ``resample.resample_utils.build_mask()``. (`#1383
+  <https://github.com/spacetelescope/romancal/issues/1383>`_)
+- Group by obs_id (`#1448
+  <https://github.com/spacetelescope/romancal/issues/1448>`_)
+- Update resample to populate location_name attribute and tests to check for it
+  (`#1498 <https://github.com/spacetelescope/romancal/issues/1498>`_)
+
+
+``source_catalog``
+------------------
+
+- The data and err array of the input datamodel to the source_catalog step
+  are now copied so that they are left completely unchanged by the step.
+  (`#1457 <https://github.com/spacetelescope/romancal/issues/1457>`_)
+- Restored flux units in source catalog table. (`#1512
+  <https://github.com/spacetelescope/romancal/issues/1512>`_)
+
+
+``multiband_catalog``
+---------------------
+
+- Added a pipeline step to create a multiband catalog from L3 images. (`#1485
+  <https://github.com/spacetelescope/romancal/issues/1485>`_)
+
+
 0.16.3 (2024-08-29)
 ===================
 
