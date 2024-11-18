@@ -265,6 +265,11 @@ name = "Scripts"
 showcontent = true
 
 [[tool.towncrier.type]]
+directory = "exposure_pipeline"
+name = "``exposure_pipeline``"
+showcontent = true
+
+[[tool.towncrier.type]]
 directory = "mosaic_pipeline"
 name = "``mosaic_pipeline``"
 showcontent = true
