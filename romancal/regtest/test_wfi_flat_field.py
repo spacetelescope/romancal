@@ -34,14 +34,14 @@ def test_flat_field_image_step(rtdata, ignore_asdf_paths):
     assert diff.identical, diff.report()
 
 
-@pytest.mark.xfail(reason="Wrong input for the purpose of this test")
+#@pytest.mark.xfail(reason="Wrong input for the purpose of this test")
 @pytest.mark.bigdata
 def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     """Test for the flat field step using grism data. The reference file for
     the grism and prism data should be None, only testing the grism
     case here."""
 
-    input_file = "r0000201001001001001_0001_wfi01_uncal.asdf"
+    input_file = "r0000201001001001001_0001_wfi01_assignwcs.asdf"
     rtdata.get_data(f"WFI/grism/{input_file}")
     rtdata.input = input_file
 
