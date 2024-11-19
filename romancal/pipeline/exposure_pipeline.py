@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import logging
 
+import numpy as np
+from roman_datamodels.dqflags import group
+
 import romancal.datamodels.filetype as filetype
 
 # step imports
@@ -145,3 +148,35 @@ class ExposurePipeline(RomanPipeline):
         log.info("Roman exposure calibration pipeline ending...")
 
         return lib
+
+    def create_fully_saturated_zeroed_image(self, input_model):
+        """
+        Create zeroed-out image file
+        """
+        # The set order is: data, dq, var_poisson, var_rnoise, err
+        fully_saturated_model = ramp_fit_step.create_image_model(
+            input_model,
+            (
+                np.zeros(input_model.data.shape[1:], dtype=input_model.data.dtype),
+                input_model.pixeldq | input_model.groupdq[0] | group.SATURATED,
+                np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype),
+                np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype),
+                np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype),
+            ),
+        )
+
+        # Set all subsequent steps to skipped
+        for step_str in [
+            "linearity",
+            "dark",
+            "ramp_fit",
+            "assign_wcs",
+            "flat_field",
+            "photom",
+            "source_detection",
+            "tweakreg",
+        ]:
+            fully_saturated_model.meta.cal_step[step_str] = "SKIPPED"
+
+        # Return zeroed-out image file
+        return fully_saturated_model
