@@ -112,7 +112,8 @@ class ExposurePipeline(RomanPipeline):
                         log.info("Tweakreg step is being SKIPPED")
                         result.meta.cal_step.flat_field = "SKIPPED"
                         result.meta.cal_step.photom = "SKIPPED"
-                        result.meta.cal_step.source_catalog = "SKIPPED"
+                        # FIXME source_catalog ain't in the schema
+                        # result.meta.cal_step.source_catalog = "SKIPPED"
 
                 lib.shelve(result, model_index)
 
@@ -149,7 +150,8 @@ class ExposurePipeline(RomanPipeline):
             "assign_wcs",
             "flat_field",
             "photom",
-            "source_catalog",
+            # FIXME source_catalog ain't in the schema
+            # "source_catalog",
         ]:
             fully_saturated_model.meta.cal_step[step_str] = "SKIPPED"
 
