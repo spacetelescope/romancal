@@ -349,7 +349,10 @@ def get_catalog_data(input_dm, **kwargs):
     gaia_cat = get_catalog(right_ascension=ra, declination=dec, search_radius=sr)
     gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
     catalog_data = np.array(
-        [input_dm.meta.wcs.world_to_pixel(ra, dec) for ra, dec in gaia_source_coords]
+        [
+            input_dm.meta.wcs.world_to_pixel_values(ra, dec)
+            for ra, dec in gaia_source_coords
+        ]
     )
     if add_shifts:
         rng = np.random.default_rng(seed=int(ra + dec))
@@ -796,7 +799,7 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
 
     # calculate original (x,y) for Gaia sources
     original_xy_gaia_sources = np.array(
-        [original_wcs.world_to_pixel(ra, dec) for ra, dec in gaia_source_coords]
+        [original_wcs.world_to_pixel_values(ra, dec) for ra, dec in gaia_source_coords]
     )
     # move Gaia sources around by applying linear transformations
     # to their coords in the projected plane (same as a "wrong WCS")
