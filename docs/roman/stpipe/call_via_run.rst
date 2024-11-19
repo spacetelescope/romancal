@@ -22,9 +22,6 @@ parameter file will be ignored.
  pipe.output_dir = '/my/data/pipeline_outputs'
 
  # Run the pipeline
- result = pipe('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
-
- # Or, execute the pipeline using the run method
  result = pipe.run('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
 
 To run a single step:
@@ -41,8 +38,5 @@ To run a single step:
  step.save_results = True
  step.output_dir = '/my/data/jump_data'
 
- # Execute by calling the instance directly
- result = step('r0000101001001001001_01101_0001_WFI01_linearity.asdf')
-
- # Or, execute using the run method
+ # Execute using the run method
  result = step.run('r0000101001001001001_01101_0001_WFI01_linearity.asdf')

@@ -183,10 +183,10 @@ step in the example above, one can do::
 From Python
 -----------
 
-Once the pipeline has been configured (as above), just call the
-instance to run it.
+Once the pipeline has been configured (as above) it can be executed
+using run.
 
-    pipe(input_data)
+    pipe.run(input_data)
 
 Caching details
 ---------------

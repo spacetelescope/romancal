@@ -243,8 +243,3 @@ the step. The previous example could be re-written as::
 
     mystep = FlatFieldStep(override_sflat='sflat.asdf')
     output = mystep.run(input)
-
-Using the ``.run()`` method is the same as calling the instance directly.
-They are equivalent::
-
-    output = mystep(input)

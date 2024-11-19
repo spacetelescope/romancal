@@ -124,12 +124,12 @@ class ExposurePipeline(RomanPipeline):
             log.info(f"Processing a WFI exposure {input_filename}")
 
             self.dq_init.suffix = "dq_init"
-            result = self.dq_init(input)
+            result = self.dq_init.run(input)
 
             if input_filename:
                 result.meta.filename = input_filename
 
-            result = self.saturation(result)
+            result = self.saturation.run(result)
 
             # Test for fully saturated data
             if is_fully_saturated(result):
@@ -155,16 +155,16 @@ class ExposurePipeline(RomanPipeline):
                 results.append(result)
                 return results
 
-            result = self.refpix(result)
-            result = self.linearity(result)
-            result = self.dark_current(result)
-            result = self.rampfit(result)
-            result = self.assign_wcs(result)
+            result = self.refpix.run(result)
+            result = self.linearity.run(result)
+            result = self.dark_current.run(result)
+            result = self.rampfit.run(result)
+            result = self.assign_wcs.run(result)
 
             if result.meta.exposure.type == "WFI_IMAGE":
-                result = self.flatfield(result)
-                result = self.photom(result)
-                result = self.source_catalog(result)
+                result = self.flatfield.run(result)
+                result = self.photom.run(result)
+                result = self.source_catalog.run(result)
                 tweakreg_input.append(result)
                 log.info(
                     f"Number of models to tweakreg:   {len(tweakreg_input), n_members}"
@@ -185,7 +185,7 @@ class ExposurePipeline(RomanPipeline):
         # Now that all the exposures are collated, run tweakreg
         # Note: this does not cover the case where the asn mixes imaging and spectral
         #          observations. This should not occur on-prem
-        result = self.tweakreg(results)
+        result = self.tweakreg.run(results)
 
         log.info("Roman exposure calibration pipeline ending...")
 
