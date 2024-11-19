@@ -91,29 +91,9 @@ class ExposurePipeline(RomanPipeline):
 
                 result = self.saturation.run(result)
 
-                # Test for fully saturated data
                 if is_fully_saturated(result):
-                    # Return fully saturated image file (stopping pipeline)
                     log.info("All pixels are saturated. Returning a zeroed-out image.")
-
-                    # Set all subsequent steps to skipped
-                    for step_str in [
-                        "assign_wcs",
-                        "flat_field",
-                        "photom",
-                        "source_catalog",
-                        "dark",
-                        "refpix",
-                        "linearity",
-                        "ramp_fit",
-                        "tweakreg",
-                    ]:
-                        result.meta.cal_step[step_str] = "SKIPPED"
-
-                    # Stop at this point and returned only the first model
-                    # as a list to match prior behavior
-                    lib.shelve(result, 0)
-                    return [result]
+                    result = self.create_fully_saturated_zeroed_image(result)
                 else:
                     result = self.refpix.run(result)
                     result = self.linearity.run(result)
@@ -163,13 +143,13 @@ class ExposurePipeline(RomanPipeline):
 
         # Set all subsequent steps to skipped
         for step_str in [
-            "linearity",
+            "refpix" "linearity",
             "dark",
             "ramp_fit",
             "assign_wcs",
             "flat_field",
             "photom",
-            "tweakreg",
+            "source_catalog",
         ]:
             fully_saturated_model.meta.cal_step[step_str] = "SKIPPED"
 
