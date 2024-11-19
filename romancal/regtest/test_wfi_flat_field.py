@@ -64,6 +64,8 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     RomanStep.from_cmdline(args)
+    output_model = rdm.open(rtdata.output)
+    assert output_model.meta.cal_step.flat_field == 'SKIPPED'
     rtdata.get_truth(f"truth/WFI/grism/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
