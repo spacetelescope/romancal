@@ -876,7 +876,7 @@ def calc_pa(wcs, ra, dec):
         The position angle in degrees.
 
     """
-    delta_pix = [v for v in wcs.world_to_pixel(ra, dec)]
+    delta_pix = [v for v in wcs.world_to_pixel_values(ra, dec)]
     delta_pix[1] += 1
     delta_coord = wcs.pixel_to_world(*delta_pix)
     coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
@@ -885,7 +885,7 @@ def calc_pa(wcs, ra, dec):
 
 
 def populate_mosaic_basic(
-    output_model: datamodels.MosaicModel, input_models: [List, ModelLibrary]
+    output_model: datamodels.MosaicModel, input_models: list | ModelLibrary
 ):
     """
     Populate basic metadata fields in the output mosaic model based on input models.
