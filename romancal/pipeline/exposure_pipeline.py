@@ -75,12 +75,16 @@ class ExposurePipeline(RomanPipeline):
 
         # determine the input type
         file_type = filetype.check(input)
+        return_lib = True
         if file_type == "ModelLibrary":
             lib = input
         elif file_type == "asn":
             lib = ModelLibrary(input)
         else:
+            # for a non-asn non-library input process it as a library
             lib = ModelLibrary([input])
+            # but return it as a datamodel
+            return_lib = False
 
         # Flag to track if any of the input models are fully saturated
         any_saturated = False
@@ -138,7 +142,15 @@ class ExposurePipeline(RomanPipeline):
 
         log.info("Roman exposure calibration pipeline ending...")
 
-        return lib
+        # return a ModelLibrary
+        if return_lib:
+            return lib
+
+        # or a DataModel (for non-asn non-lib inputs)
+        with lib:
+            model = lib.borrow(0)
+            lib.shelve(model)
+        return model
 
     def create_fully_saturated_zeroed_image(self, input_model):
         """
