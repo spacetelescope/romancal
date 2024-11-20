@@ -299,6 +299,6 @@ def test_pipeline_suffix(rtdata, ignore_asdf_paths):
         assert model.meta.cal_step.assign_wcs == "COMPLETE"
         assert model.meta.cal_step.flat_field == "COMPLETE"
         assert model.meta.cal_step.photom == "COMPLETE"
-        assert model.meta.cal_step.source_detection == "COMPLETE"
+        assert model.meta.cal_step.source_catalog == "COMPLETE"
         assert model.meta.cal_step.tweakreg == "INCOMPLETE"
         assert model.meta.filename == output

@@ -446,16 +446,16 @@ def add_tweakreg_catalog_attribute(
         save_catalogs=save_catalogs,
     )
 
-    input_dm.meta["source_detection"] = maker_utils.mk_source_detection()
+    input_dm.meta["source_catalog"] = maker_utils.mk_source_catalog()
 
     if save_catalogs:
         # SourceCatalogStep adds the catalog path+filename
-        input_dm.meta.source_detection["tweakreg_catalog_name"] = os.path.join(
+        input_dm.meta.source_catalog["tweakreg_catalog_name"] = os.path.join(
             tmp_path, tweakreg_catalog_filename
         )
     else:
         # SourceCatalogStep attaches the catalog data as a structured array
-        input_dm.meta.source_detection["tweakreg_catalog"] = source_catalog
+        input_dm.meta.source_catalog["tweakreg_catalog"] = source_catalog
 
 
 @pytest.fixture
@@ -507,7 +507,7 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     """
     img = base_image()
     # remove attribute
-    del img.meta.source_detection["tweakreg_catalog_name"]
+    del img.meta.source_catalog["tweakreg_catalog_name"]
     with pytest.raises(AttributeError):
         trs.TweakRegStep.call([img])
 
@@ -1028,7 +1028,7 @@ def test_update_source_catalog_coordinates(tmp_path, base_image):
     )
 
     # update tweakreg catalog name
-    img.meta.source_detection.tweakreg_catalog_name = "img_1_cat.asdf"
+    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.asdf"
 
     # run TweakRegStep
     res = trs.TweakRegStep.call([img])
@@ -1036,9 +1036,9 @@ def test_update_source_catalog_coordinates(tmp_path, base_image):
     # tweak the current WCS using TweakRegStep and save the updated cat file
     with res:
         dm = res.borrow(0)
-        assert dm.meta.source_detection.tweakreg_catalog_name == "img_1_cat.asdf"
+        assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.asdf"
         tweakreg.update_catalog_coordinates(
-            dm.meta.source_detection.tweakreg_catalog_name, dm.meta.wcs
+            dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
         )
         res.shelve(dm, 0)
 
@@ -1088,7 +1088,7 @@ def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
     shutil.copy("img_1_cat.asdf", "img_1_cat_original.asdf")
 
     # update tweakreg catalog name
-    img.meta.source_detection.tweakreg_catalog_name = "img_1_cat.asdf"
+    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.asdf"
 
     # run TweakRegStep
     res = trs.TweakRegStep.call([img])
@@ -1096,9 +1096,9 @@ def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
     # tweak the current WCS using TweakRegStep and save the updated cat file
     with res:
         dm = res.borrow(0)
-        assert dm.meta.source_detection.tweakreg_catalog_name == "img_1_cat.asdf"
+        assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.asdf"
         tweakreg.update_catalog_coordinates(
-            dm.meta.source_detection.tweakreg_catalog_name, dm.meta.wcs
+            dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
         )
         res.shelve(dm, 0)
 

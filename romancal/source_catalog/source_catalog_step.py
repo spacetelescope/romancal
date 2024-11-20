@@ -202,7 +202,7 @@ class SourceCatalogStep(RomanStep):
 
 def update_metadata(model, output_catalog_name):
     # update datamodel to point to the source catalog file destination
-    model.meta["source_detection"] = maker_utils.mk_source_detection(
+    model.meta["source_catalog"] = maker_utils.mk_source_catalog(
         tweakreg_catalog_name=output_catalog_name
     )
-    model.meta.cal_step.source_detection = "COMPLETE"
+    model.meta.cal_step.source_catalog = "COMPLETE"

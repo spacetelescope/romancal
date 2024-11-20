@@ -39,7 +39,7 @@ class ExposurePipeline(RomanPipeline):
     ramps to produce a 2-D slope product. Included steps are:
     dq_init, saturation, linearity, dark current, jump detection, ramp_fit,
     assign_wcs, flatfield (only applied to WFI imaging data), photom,
-    and source_detection.
+    and source_catalog.
     """
 
     class_alias = "roman_elp"
@@ -142,7 +142,7 @@ class ExposurePipeline(RomanPipeline):
                     "assign_wcs",
                     "flat_field",
                     "photom",
-                    "source_detection",
+                    "source_catalog",
                     "dark",
                     "refpix",
                     "linearity",
@@ -176,7 +176,7 @@ class ExposurePipeline(RomanPipeline):
                 log.info("Tweakreg step is being SKIPPED")
                 result.meta.cal_step.flat_field = "SKIPPED"
                 result.meta.cal_step.photom = "SKIPPED"
-                result.meta.cal_step.source_detection = "SKIPPED"
+                result.meta.cal_step.source_catalog = "SKIPPED"
                 result.meta.cal_step.tweakreg = "SKIPPED"
 
             self.output_use_model = True
@@ -215,7 +215,7 @@ class ExposurePipeline(RomanPipeline):
             "assign_wcs",
             "flat_field",
             "photom",
-            "source_detection",
+            "source_catalog",
             "tweakreg",
         ]:
             fully_saturated_model.meta.cal_step[step_str] = "SKIPPED"

@@ -123,7 +123,7 @@ class TweakRegStep(RomanStep):
                         # that setting a catalog via an association does not work. Is this
                         # intended? If so, the container can be updated to not support that.
                         model = images.borrow(i)
-                        model.meta["source_detection"] = {
+                        model.meta["source_catalog"] = {
                             "tweakreg_catalog_name": catdict[filename],
                         }
                         images.shelve(model, i)
@@ -151,19 +151,19 @@ class TweakRegStep(RomanStep):
                     self.log.info("Skipping TweakReg for spectral exposure.")
                     image_model.meta.cal_step.tweakreg = "SKIPPED"
                 else:
-                    source_detection = getattr(
-                        image_model.meta, "source_detection", None
+                    source_catalog = getattr(
+                        image_model.meta, "source_catalog", None
                     )
-                    if source_detection is None:
+                    if source_catalog is None:
                         images.shelve(image_model, i, modify=False)
                         raise AttributeError(
-                            "Attribute 'meta.source_detection' is missing. "
+                            "Attribute 'meta.source_catalog' is missing. "
                             "Please either run SourceCatalogStep or provide a custom source catalog."
                         )
 
                     try:
                         catalog = self.get_tweakreg_catalog(
-                            source_detection, image_model
+                            source_catalog, image_model
                         )
                     except AttributeError as e:
                         self.log.error(f"Failed to retrieve tweakreg_catalog: {e}")
@@ -355,7 +355,7 @@ class TweakRegStep(RomanStep):
             catalog = Table.read(catalog_name, format=self.catalog_format)
         return catalog
 
-    def get_tweakreg_catalog(self, source_detection, image_model):
+    def get_tweakreg_catalog(self, source_catalog, image_model):
         """
         Retrieve the tweakreg catalog from source detection.
 
@@ -365,8 +365,8 @@ class TweakRegStep(RomanStep):
 
         Parameters
         ----------
-        source_detection : object
-            The source detection metadata containing catalog information.
+        source_catalog : object
+            The source catalog metadata containing catalog information.
         image_model : DataModel
             The image model associated with the source detection.
 
@@ -380,16 +380,16 @@ class TweakRegStep(RomanStep):
         AttributeError
             If the required catalog information is missing from the source detection.
         """
-        if getattr(source_detection, "tweakreg_catalog", None):
-            tweakreg_catalog = Table(np.asarray(source_detection.tweakreg_catalog))
-            del image_model.meta.source_detection["tweakreg_catalog"]
+        if getattr(source_catalog, "tweakreg_catalog", None):
+            tweakreg_catalog = Table(np.asarray(source_catalog.tweakreg_catalog))
+            del image_model.meta.source_catalog["tweakreg_catalog"]
             return tweakreg_catalog
 
-        if getattr(source_detection, "tweakreg_catalog_name", None):
-            return self.read_catalog(source_detection.tweakreg_catalog_name)
+        if getattr(source_catalog, "tweakreg_catalog_name", None):
+            return self.read_catalog(source_catalog.tweakreg_catalog_name)
 
         raise AttributeError(
-            "Attribute 'meta.source_detection.tweakreg_catalog' is missing. "
+            "Attribute 'meta.source_catalog.tweakreg_catalog' is missing. "
             "Please either run SourceCatalogStep or provide a custom source catalog."
         )
 
