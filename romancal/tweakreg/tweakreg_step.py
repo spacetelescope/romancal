@@ -151,9 +151,7 @@ class TweakRegStep(RomanStep):
                     self.log.info("Skipping TweakReg for spectral exposure.")
                     image_model.meta.cal_step.tweakreg = "SKIPPED"
                 else:
-                    source_catalog = getattr(
-                        image_model.meta, "source_catalog", None
-                    )
+                    source_catalog = getattr(image_model.meta, "source_catalog", None)
                     if source_catalog is None:
                         images.shelve(image_model, i, modify=False)
                         raise AttributeError(
@@ -162,9 +160,7 @@ class TweakRegStep(RomanStep):
                         )
 
                     try:
-                        catalog = self.get_tweakreg_catalog(
-                            source_catalog, image_model
-                        )
+                        catalog = self.get_tweakreg_catalog(source_catalog, image_model)
                     except AttributeError as e:
                         self.log.error(f"Failed to retrieve tweakreg_catalog: {e}")
                         images.shelve(image_model, i, modify=False)
