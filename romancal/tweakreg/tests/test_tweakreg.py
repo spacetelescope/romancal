@@ -388,7 +388,7 @@ def create_base_image_source_catalog(
     t = Table(src_detector_coords, names=("x", "y"))
     if save_catalogs:
         t.write((tmp_path / output), format=catalog_format)
-    # mimic the same output format from SourceDetectionStep
+    # mimic the same output format from SourceCatalogStep
     t.add_column([i for i in range(len(t))], name="id", index=0)
     t.add_column([np.float64(i) for i in range(len(t))], name="flux")
     t.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
@@ -449,12 +449,12 @@ def add_tweakreg_catalog_attribute(
     input_dm.meta["source_detection"] = maker_utils.mk_source_detection()
 
     if save_catalogs:
-        # SourceDetectionStep adds the catalog path+filename
+        # SourceCatalogStep adds the catalog path+filename
         input_dm.meta.source_detection["tweakreg_catalog_name"] = os.path.join(
             tmp_path, tweakreg_catalog_filename
         )
     else:
-        # SourceDetectionStep attaches the catalog data as a structured array
+        # SourceCatalogStep attaches the catalog data as a structured array
         input_dm.meta.source_detection["tweakreg_catalog"] = source_catalog
 
 

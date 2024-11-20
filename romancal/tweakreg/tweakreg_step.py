@@ -158,7 +158,7 @@ class TweakRegStep(RomanStep):
                         images.shelve(image_model, i, modify=False)
                         raise AttributeError(
                             "Attribute 'meta.source_detection' is missing. "
-                            "Please either run SourceDetectionStep or provide a custom source catalog."
+                            "Please either run SourceCatalogStep or provide a custom source catalog."
                         )
 
                     try:
@@ -390,7 +390,7 @@ class TweakRegStep(RomanStep):
 
         raise AttributeError(
             "Attribute 'meta.source_detection.tweakreg_catalog' is missing. "
-            "Please either run SourceDetectionStep or provide a custom source catalog."
+            "Please either run SourceCatalogStep or provide a custom source catalog."
         )
 
     def do_relative_alignment(self, imcats):

@@ -35,7 +35,6 @@ def get_steps():
         ("romancal.step.SaturationStep", "saturation", False),
         ("romancal.step.AssignWcsStep", "assign_wcs", False),
         ("romancal.step.OutlierDetectionStep", "outlier_detection", False),
-        ("romancal.step.SourceDetectionStep", "source_detection", False),
         ("romancal.step.SkyMatchStep", "skymatch", False),
         ("romancal.step.TweakRegStep", "tweakreg", False),
         ("romancal.step.ResampleStep", "resample", False),
