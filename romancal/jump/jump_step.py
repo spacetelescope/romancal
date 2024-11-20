@@ -25,6 +25,8 @@ class JumpStep(RomanStep):
     applied.
     """
 
+    class_alias = "jump"
+
     spec = """
         rejection_threshold = float(default=180.0,min=0) # CR sigma rej thresh
         three_group_rejection_threshold = float(default=185.0,min=0) # CR sigma rej thresh
@@ -52,7 +54,6 @@ class JumpStep(RomanStep):
             input_model = rdd.open(input)
 
         # Extract the needed info from the Roman Data Model
-        meta = input_model.meta
         r_data = input_model.data
         r_gdq = input_model.groupdq
         r_pdq = input_model.pixeldq
@@ -64,7 +65,9 @@ class JumpStep(RomanStep):
             result.meta.cal_step.jump = "SKIPPED"
             return result
 
-        frames_per_group = meta.exposure.nframes
+        # FIXME: since frames_per_group => meta.exposure.nframes has been removed,
+        # we need to fix stcal.jump.jump to remove it from there too
+        frames_per_group = 1
 
         # Modify the arrays for input into the 'common' jump (4D)
         data = np.copy(r_data[np.newaxis, :])
@@ -74,11 +77,11 @@ class JumpStep(RomanStep):
 
         tstart = time.time()
 
-        # Check for an input model with NGROUPS<=2
-        ngroups = data.shape[1]
+        # Check for an input model with nresultants<=2
+        nresultants = data.shape[1]
 
-        if ngroups <= 2:
-            self.log.warning("Cannot apply jump detection as NGROUPS<=2;")
+        if nresultants <= 2:
+            self.log.warning("Cannot apply jump detection as nresultants<=2;")
             self.log.warning("Jump step will be skipped")
 
             result = input_model

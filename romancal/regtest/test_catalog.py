@@ -12,10 +12,11 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 @pytest.fixture(
     scope="module",
     params=[
+        "r0099101001001001001_r274dp63x31y81_prompt_F158_i2d.asdf",
         "r0099101001001001001_F158_visit_i2d.asdf",
-        "r0000101001001001001_0001_WFI01_cal.asdf",
+        "r0000101001001001001_0001_wfi01_cal.asdf",
     ],
-    ids=["L3", "L2"],
+    ids=["L3", "L2", "L3skycell"],
 )
 def run_source_catalog(rtdata_module, request):
     rtdata = rtdata_module
@@ -53,6 +54,9 @@ def fields(catalog):
     (
         "ra_centroid",  # DMS374 positions on ICRF
         "dec_centroid",  # DMS374 positions on ICRF
+        "aper30_flux",  # DMS399 aperture fluxes
+        "aper50_flux",  # DMS399 aperture fluxes
+        "aper70_flux",  # DMS399 aperture fluxes
         "aper_total_flux",  # DMS375 fluxes
         "is_extended",  # DMS376 type of source
         "aper_total_flux_err",  # DMS386 flux uncertainties

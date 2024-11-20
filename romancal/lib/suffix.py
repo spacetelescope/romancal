@@ -99,6 +99,7 @@ _calculated_suffixes = {
     "refpixstep",
     "resamplestep",
     "sourcecatalogstep",
+    "multibandcatalogstep",
 }
 
 

@@ -14,6 +14,8 @@ class PhotomStep(RomanStep):
         reference files and attaching to the input science data model
     """
 
+    class_alias = "photom"
+
     reference_file_types = ["photom"]
 
     def process(self, input):
@@ -52,12 +54,9 @@ class PhotomStep(RomanStep):
                 self.log.warning("No photometric corrections for spectral data")
                 self.log.warning("Photom step will be skipped")
                 input_model.meta.cal_step.photom = "SKIPPED"
-                input_model.meta.photometry.pixelarea_arcsecsq = None
-                input_model.meta.photometry.pixelarea_steradians = None
+                input_model.meta.photometry.pixel_area = None
                 input_model.meta.photometry.conversion_megajanskys = None
-                input_model.meta.photometry.conversion_microjanskys = None
                 input_model.meta.photometry.conversion_megajanskys_uncertainty = None
-                input_model.meta.photometry.conversion_microjanskys_uncertainty = None
                 output_model = input_model
             photom_model.close()
 

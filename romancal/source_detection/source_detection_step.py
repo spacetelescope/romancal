@@ -35,6 +35,8 @@ class SourceDetectionStep(RomanStep):
     for alignment in tweakreg.
     """
 
+    class_alias = "source_detection"
+
     spec = """
         kernel_fwhm = float(default=None)  # DAOStarFinder:Size of Gaussian kernel,
         # in pixels.
@@ -172,7 +174,6 @@ class SourceDetectionStep(RomanStep):
             gridded_psf_model, _ = psf.create_gridded_psf_model(
                 filt=filt,
                 detector=detector,
-                logging_level="ERROR",
             )
 
             log.info(

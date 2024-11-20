@@ -62,7 +62,6 @@ def setup_inputs(
         webbpsf_config["detector"],
         oversample=webbpsf_config["oversample"],
         fov_pixels=webbpsf_config["fov_pixels"],
-        logging_level="ERROR",
     )
 
     return mod, webbpsf_config, psf_model

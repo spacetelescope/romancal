@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
-from numpy.testing import assert_allclose
+from numpy.testing import assert_equal
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import (
@@ -300,8 +300,8 @@ def test_l2_input_model_unchanged(image_model, tmp_path):
         save_results=False,
     )
 
-    assert_allclose(original_data, image_model.data, atol=5.0e-5)
-    assert_allclose(original_err, image_model.err, atol=5.0e-5)
+    assert_equal(original_data, image_model.data)
+    assert_equal(original_err, image_model.err)
 
 
 @pytest.mark.webbpsf
@@ -324,8 +324,8 @@ def test_l3_input_model_unchanged(mosaic_model, tmp_path):
         save_results=False,
     )
 
-    assert_allclose(original_data, mosaic_model.data, atol=5.0e-5)
-    assert_allclose(original_err, mosaic_model.err, atol=5.0e-5)
+    assert_equal(original_data, mosaic_model.data)
+    assert_equal(original_err, mosaic_model.err)
 
 
 @pytest.mark.webbpsf

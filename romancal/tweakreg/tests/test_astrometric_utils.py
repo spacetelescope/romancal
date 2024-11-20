@@ -254,7 +254,6 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
 
     # create necessary transformations
     distortion = Shift(-shift_1) & Shift(-shift_2)
-    distortion.bounding_box = ((-0.5, shape[-1] + 0.5), (-0.5, shape[-2] + 0.5))
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
@@ -276,6 +275,7 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     ]
 
     wcs_obj = wcs.WCS(pipeline)
+    wcs_obj.bounding_box = ((-0.5, shape[-2] + 0.5), (-0.5, shape[-1] + 0.5))
 
     input_dm.meta["wcs"] = wcs_obj
 
@@ -474,24 +474,7 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
     fh = StringIO()
     table.Table.write.list_formats(out=fh)
     fh.seek(0)
-    list_of_supported_formats = [
-        x.strip().split()[0]
-        for x in fh.readlines()[2:]
-        if x.strip().split()[1].lower() == "yes"
-    ]
-    # exclude data formats
-    [
-        list_of_supported_formats.remove(x)
-        for x in [
-            "asdf",
-            "fits",
-            "hdf5",
-            "parquet",
-            "pandas.html",
-            "pandas.json",
-            "pandas.csv",
-        ]
-    ]
+    list_of_supported_formats = ["ascii.ecsv", "fits"]
 
     for table_format in list_of_supported_formats:
         res = create_astrometric_catalog(

@@ -23,13 +23,11 @@ dependencies = [
     "photutils >=1.13.0",
     "pyparsing >=2.4.7",
     "requests >=2.26",
-    # "rad>=0.21.0,<0.22.0",
-    "rad @ git+https://github.com/spacetelescope/rad.git",
-    # "roman_datamodels>=0.21.0,<0.22.0",
-    "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
+    "roman_datamodels>=0.22.0,<0.23.0",
+    # "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
     "scipy >=1.11",
-#    "stcal>=1.8.0,<1.9.0",
-    "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
+   "stcal>=1.10.0,<1.11.0",
+    # "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
     "stpipe >=0.7.0,<0.8.0",
     # "stpipe @ git+https://github.com/spacetelescope/stpipe.git@main",
     "tweakwcs >=0.8.8",
@@ -61,6 +59,7 @@ test = [
     "pytest >8.0.0",
     "pytest-astropy >= 0.11.0",
     "deepdiff",
+    "stpreview>=0.5.1",
 ]
 dev = [
     "romancal[docs,test]",
@@ -69,8 +68,6 @@ dev = [
 ]
 sdp = [
     "stpreview>=0.5.1",
-    "typer",
-    "typing_extensions",
 ]
 
 [project.urls]
@@ -135,7 +132,7 @@ filterwarnings = [
 ]
 junit_family = "xunit2"
 inputs_root = "roman-pipeline"
-results_root = "roman-pipeline-results"
+results_root = "roman-pipeline-results/regression-tests/runs/"
 doctest_plus = "enabled"
 doctest_rst = "enabled"
 text_file_format = "rst"
@@ -357,4 +354,9 @@ showcontent = true
 [[tool.towncrier.type]]
 directory = "source_catalog"
 name = "``source_catalog``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "multiband_catalog"
+name = "``multiband_catalog``"
 showcontent = true

@@ -198,7 +198,6 @@ def _create_wcs(input_dm, shift_1=0, shift_2=0):
 
     # create necessary transformations
     distortion = Shift(-shift_1) & Shift(-shift_2)
-    distortion.bounding_box = ((-0.5, shape[-1] + 0.5), (-0.5, shape[-2] + 0.5))
     tel2sky = pointing.v23tosky(input_dm)
 
     # create required frames
@@ -219,6 +218,7 @@ def _create_wcs(input_dm, shift_1=0, shift_2=0):
     ]
 
     wcs_obj = wcs.WCS(pipeline)
+    wcs_obj.bounding_box = ((-0.5, shape[-2] + 0.5), (-0.5, shape[-1] + 0.5))
 
     input_dm.meta["wcs"] = wcs_obj
 

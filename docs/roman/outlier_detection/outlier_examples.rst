@@ -14,7 +14,7 @@ the outlier detection step.
                 # read the file list into a ModelLibrary object
                 mc = ModelLibrary(["img_1.asdf", "img_2.asdf"])
                 step = OutlierDetectionStep()
-                step.process(mc)
+                step.run(mc)
 
 2. To run the outlier detection step (with the default parameters) on an ASN file
    called "asn_sample.json" with the following content:
@@ -56,7 +56,7 @@ the outlier detection step.
                 # read the file list into a ModelLibrary object
                 mc = ModelLibrary("asn_sample.json")
                 step = OutlierDetectionStep()
-                step.process(mc)
+                step.run(mc)
 
 #. To run the outlier detection step (with the default parameters) on an ASN file
    called "asn_sample.json" (the files listed in the association file must have been

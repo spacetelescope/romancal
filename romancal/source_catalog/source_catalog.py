@@ -46,7 +46,7 @@ class RomanSourceCatalog:
         where sources are marked by different positive integer values. A
         value of zero is reserved for the background.
 
-    convolved_data : data : 2D `~numpy.ndarray`
+    convolved_data : 2D `~numpy.ndarray` or `None`
         The 2D array used to calculate the source centroid and shape
         measurements.
 
@@ -70,6 +70,22 @@ class RomanSourceCatalog:
         This is needed to calculate the DAOFind sharpness and roundness
         properties (DAOFind uses a special kernel that sums to zero).
 
+    fit_psf : bool
+        Whether to fit a PSF model to the sources.
+
+    detection_cat : `None` or `~photutils.segmentation.SourceCatalog`, optional
+        A `~photutils.segmentation.SourceCatalog` object for the
+        detection image. The segmentation image used to create
+        the detection catalog must be the same one input to
+        ``segment_image``. If input, then the detection catalog source
+        centroids and morphological/shape properties will be returned
+        instead of calculating them from the input ``data``. The
+        detection catalog centroids and shape properties will also be
+        used to perform aperture photometry (i.e., circular and Kron).
+
+    flux_unit : str, optional
+        The unit of the flux density. Default is 'uJy'.
+
     Notes
     -----
     ``model.err`` is assumed to be the total error array corresponding
@@ -87,6 +103,7 @@ class RomanSourceCatalog:
         ci_star_thresholds,
         kernel_fwhm,
         fit_psf,
+        detection_cat=None,
         flux_unit="uJy",
     ):
 
@@ -98,12 +115,8 @@ class RomanSourceCatalog:
         self.convolved_data = convolved_data
         self.aperture_params = aperture_params
         self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
-        self.flux_unit = flux_unit
         self.fit_psf = fit_psf
-
-        self.sb_unit = "MJy/sr"
-        self.l2_unit = "DN/s"
-        self.l2_conv_factor = self.model.meta.photometry.conversion_megajanskys
+        self.detection_cat = detection_cat
 
         if len(ci_star_thresholds) != 2:
             raise ValueError("ci_star_thresholds must contain only 2 items")
@@ -121,6 +134,15 @@ class RomanSourceCatalog:
             self.psf_photometry_catalog_mapping = (
                 self.get_psf_photometry_catalog_colnames_mapping()
             )
+
+        self.flux_unit = flux_unit
+        self.l2_conv_factor = self.model.meta.photometry.conversion_megajanskys
+        self.sb_to_flux = (1.0 * (u.MJy / u.sr) * self.pixel_area).to(
+            u.Unit(self.flux_unit)
+        )
+
+        # needed for Kron photometry
+        self.segm_sourcecat = None
 
     @lazyproperty
     def _pixscale_angle(self):
@@ -154,12 +176,13 @@ class RomanSourceCatalog:
         """
         The pixel area in steradians.
 
-        If the value is a negative placeholder (e.g., -999999 sr), the
-        value is calculated from the WCS at the center of the image.
+        If the meta.photometry.pixel_area value is a negative
+        placeholder (e.g., -999999 sr), the value is calculated from the
+        WCS at the center of the image.
         """
-        pixel_area = self.model.meta.photometry.pixelarea_steradians
+        pixel_area = self.model.meta.photometry.pixel_area * u.sr
         if pixel_area < 0:
-            pixel_area = (self._pixel_scale**2).to(u.sr).value
+            pixel_area = (self._pixel_scale**2).to(u.sr)
         return pixel_area
 
     def convert_l2_to_sb(self):
@@ -167,54 +190,31 @@ class RomanSourceCatalog:
         Convert a level-2 image from units of DN/s to MJy/sr (surface
         brightness).
         """
-
         # the conversion in done in-place to avoid making copies of the data;
         # use a dictionary to set the value to avoid on-the-fly validation
         self.model["data"] *= self.l2_conv_factor
         self.model["err"] *= self.l2_conv_factor
-        self.convolved_data *= self.l2_conv_factor
-
-    def convert_sb_to_l2(self):
-        """
-        Convert the data and error arrays from MJy/sr (surface
-        brightness) to DN/s (level-2 units).
-
-        This is the inverse operation of `convert_l2_to_sb`.
-        """
-
-        # the conversion in done in-place to avoid making copies of the data;
-        # use a dictionary to set the value to avoid on-the-fly validation
-        self.model["data"] /= self.l2_conv_factor
-        self.model["err"] /= self.l2_conv_factor
-        self.convolved_data /= self.l2_conv_factor
+        if self.convolved_data is not None:
+            self.convolved_data *= self.l2_conv_factor
 
     def convert_sb_to_flux_density(self):
         """
         Convert the data and error arrays from MJy/sr (surface
         brightness) to flux density units.
 
+        The arrays are converted in-place to Quantity arrays.
+
         The flux density unit is defined by self.flux_unit.
         """
-
         # the conversion in done in-place to avoid making copies of the data;
         # use a dictionary to set the value to avoid on-the-fly validation
-        self.model["data"] *= self.pixel_area
-
-        self.model["err"] *= self.pixel_area
-
-        self.convolved_data *= self.pixel_area
-
-    def convert_flux_density_to_sb(self):
-        """
-        Convert the data and error arrays from flux density units to
-        MJy/sr (surface brightness).
-
-        This is the inverse operation of `convert_sb_to_flux_density`.
-        """
-
-        self.model["data"] /= self.pixel_area
-        self.model["err"] /= self.pixel_area
-        self.convolved_data /= self.pixel_area
+        self.model["data"] *= self.sb_to_flux.value
+        self.model["data"] <<= self.sb_to_flux.unit
+        self.model["err"] *= self.sb_to_flux.value
+        self.model["err"] <<= self.sb_to_flux.unit
+        if self.convolved_data is not None:
+            self.convolved_data *= self.sb_to_flux.value
+            self.convolved_data <<= self.sb_to_flux.unit
 
     def convert_flux_to_abmag(self, flux, flux_err):
         """
@@ -234,15 +234,11 @@ class RomanSourceCatalog:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
 
-            # exact AB mag zero point
-            flux_zpt = 10 ** (-0.4 * 48.60)
-
-            abmag_zpt = 2.5 * np.log10(flux_zpt)
-            abmag = -2.5 * np.log10(flux) + abmag_zpt
+            abmag = flux.to(u.ABmag).value
             abmag_err = 2.5 * np.log10(1.0 + (flux_err / flux))
 
             # handle negative fluxes
-            idx = flux < 0
+            idx = flux.value < 0
             abmag[idx] = np.nan
             abmag_err[idx] = np.nan
 
@@ -266,6 +262,8 @@ class RomanSourceCatalog:
         # desc["isophotal_abmag"] = "Isophotal AB magnitude"
         # desc["isophotal_abmag_err"] = "Isophotal AB magnitude error"
         desc["isophotal_area"] = "Isophotal area"
+        desc["kron_flux"] = "Kron flux"
+        desc["kron_flux_err"] = "Kron flux error"
         desc["semimajor_sigma"] = (
             "1-sigma standard deviation along the semimajor axis of the 2D Gaussian function that has the same second-order central moments as the source"
         )
@@ -305,13 +303,19 @@ class RomanSourceCatalog:
 
         The results are set as dynamic attributes on the class instance.
         """
+        if self.detection_cat is not None:
+            detection_cat = self.detection_cat.segm_sourcecat
+        else:
+            detection_cat = None
         segm_cat = SourceCatalog(
             self.model.data,
             self.segment_img,
             convolved_data=self.convolved_data,
             error=self.model.err,
             wcs=self.wcs,
+            detection_cat=detection_cat,
         )
+        self.segm_sourcecat = segm_cat
 
         self.meta.update(segm_cat.meta)
 
@@ -320,6 +324,7 @@ class RomanSourceCatalog:
         prop_names["isophotal_flux"] = "segment_flux"
         prop_names["isophotal_flux_err"] = "segment_fluxerr"
         prop_names["isophotal_area"] = "area"
+        prop_names["kron_flux_err"] = "kron_fluxerr"
 
         # dynamically set the attributes
         for column in self.segment_colnames:
@@ -335,10 +340,17 @@ class RomanSourceCatalog:
     @lazyproperty
     def _xypos(self):
         """
-        The (x, y) source positions, defined from the segmentation
-        image.
+        The (x, y) source positions.
+
+        If a detection catalog is input, then the detection catalog
+        centroids are used. Otherwise, the segment catalog centroids are
+        used.
         """
-        return np.transpose((self.xcentroid, self.ycentroid))
+        if self.detection_cat is not None:
+            xycen = (self.detection_cat.xcentroid, self.detection_cat.ycentroid)
+        else:
+            xycen = (self.xcentroid, self.ycentroid)
+        return np.transpose(xycen)
 
     @lazyproperty
     def _xypos_aper(self):
@@ -541,9 +553,11 @@ class RomanSourceCatalog:
                 bkg_std.append(np.std(values))
 
             nvalues = np.array(nvalues)
-            bkg_median = np.array(bkg_median)
+            bkg_median = u.Quantity(bkg_median)
+            bkg_std = u.Quantity(bkg_std)
+
             # standard error of the median
-            bkg_median_err = np.sqrt(np.pi / (2.0 * nvalues)) * np.array(bkg_std)
+            bkg_median_err = np.sqrt(np.pi / (2.0 * nvalues)) * bkg_std
 
         return bkg_median, bkg_median_err
 
@@ -754,7 +768,7 @@ class RomanSourceCatalog:
         The DAOFind convolved data.
         """
         return ndimage.convolve(
-            self.model.data, self._daofind_kernel, mode="constant", cval=0.0
+            self.model.data.value, self._daofind_kernel, mode="constant", cval=0.0
         )
 
     @lazyproperty
@@ -988,12 +1002,27 @@ class RomanSourceCatalog:
         """
         The column name order for the final source catalog.
         """
-        colnames = self.segment_colnames[:4]
-        colnames.extend(self.aperture_colnames)
-        colnames.extend(self.extras_colnames)
-        colnames.extend(self.segment_colnames[4:])
-        if self.fit_psf:
-            colnames.extend(self.psf_photometry_colnames)
+        if self.detection_cat is None:
+            colnames = self.segment_colnames[:4]
+            colnames.extend(self.aperture_colnames)
+            colnames.extend(self.extras_colnames)
+            colnames.extend(self.segment_colnames[4:])
+            if self.fit_psf:
+                colnames.extend(self.psf_photometry_colnames)
+
+        else:
+            # NOTE: label is need to join the tables
+            colnames = [
+                "label",
+                "isophotal_flux",
+                "isophotal_flux_err",
+                "kron_flux",
+                "kron_flux_err",
+            ]
+            colnames.extend(self.aperture_colnames)
+            if self.fit_psf:
+                colnames.extend(self.psf_photometry_colnames)
+
         return colnames
 
     def _update_metadata(self):
@@ -1145,15 +1174,15 @@ class RomanSourceCatalog:
         gridded_psf_model, _ = psf.create_gridded_psf_model(
             filt=filt,
             detector=detector,
-            logging_level="ERROR",
         )
 
         log.info("Fitting a PSF model to sources for improved astrometric precision.")
+        xinit, yinit = np.transpose(self._xypos)
         psf_photometry_table, photometry = psf.fit_psf_to_image_model(
             image_model=self.model,
             psf_model=gridded_psf_model,
-            x_init=self.xcentroid,
-            y_init=self.ycentroid,
+            x_init=xinit,
+            y_init=yinit,
             exclude_out_of_bounds=True,
         )
 
@@ -1190,17 +1219,10 @@ class RomanSourceCatalog:
         self._update_metadata()
         catalog.meta.update(self.meta)
 
-        # convert QTable to Table
+        # convert QTable to Table to avoid having Quantity columns
         catalog = Table(catalog)
 
         # split SkyCoord columns into separate RA and Dec columns
         catalog = self._split_skycoord(catalog)
-
-        # restore units on input model back to MJy/sr
-        self.convert_flux_density_to_sb()
-
-        # restore L2 data units back to DN/s
-        if isinstance(self.model, ImageModel):
-            self.convert_sb_to_l2()
 
         return catalog

@@ -36,6 +36,8 @@ class FluxStep(RomanStep):
     Currently, the correction is done in-place; the inputs are directly modified if in-memory DataModels are input.
     """  # noqa: E501
 
+    class_alias = "flux"
+
     spec = """
     """  # noqa: E501
 

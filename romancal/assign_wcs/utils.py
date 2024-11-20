@@ -9,6 +9,7 @@ from astropy.utils.misc import isiterable
 from gwcs import WCS
 from gwcs.wcstools import wcs_from_fiducial
 from roman_datamodels.datamodels import DataModel
+from stcal.alignment.util import compute_s_region_keyword
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -397,23 +398,6 @@ def create_footprint(wcs, shape=None, center=True):
     return footprint
 
 
-def create_s_region(footprint):
-    """Create the properly formatted string to fill the S_REGION FITS keyword
-
-    Parameters
-    ----------
-    footprint : `numpy.ndarray`
-        The footprint to be represented.
-
-    Returns
-    -------
-    s_region : str
-        The formatted string that can be directly assigned to the FITS S_REGION keyword.
-    """
-    s_region = "POLYGON ICRS " + " ".join([str(x) for x in footprint.ravel()]) + " "
-    return s_region
-
-
 def add_s_region(model):
     """
     Calculate the detector's footprint using ``WCS.footprint`` and save it in the
@@ -432,7 +416,7 @@ def add_s_region(model):
 
 
 def update_s_region_keyword(model, footprint):
-    s_region = create_s_region(footprint)
+    s_region = compute_s_region_keyword(footprint)
     log.info(f"S_REGION VALUES: {s_region}")
     if "nan" in s_region:
         # do not update s_region if there are NaNs.

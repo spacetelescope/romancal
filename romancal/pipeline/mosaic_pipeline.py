@@ -72,11 +72,11 @@ class MosaicPipeline(RomanPipeline):
         if file_type == "asn":
             input = ModelLibrary(input, on_disk=self.on_disk)
             self.flux.suffix = "flux"
-            result = self.flux(input)
+            result = self.flux.run(input)
             self.skymatch.suffix = "skymatch"
-            result = self.skymatch(result)
+            result = self.skymatch.run(result)
             self.outlier_detection.suffix = "outlier_detection"
-            result = self.outlier_detection(result)
+            result = self.outlier_detection.run(result)
             #
             # check to see if the product name contains a skycell name & if true get the skycell record
             product_name = input.asn["products"][0]["name"]
@@ -131,9 +131,9 @@ class MosaicPipeline(RomanPipeline):
                         wcs_file = asdf.open(self.resample.output_wcs)
                         self.suffix = "i2d"
                         self.output_file = input.asn["products"][0]["name"]
-                        result = self.resample(result)
+                        result = self.resample.run(result)
                         self.sourcecatalog.output_file = self.output_file
-                        result_catalog = self.sourcecatalog(result)
+                        result_catalog = self.sourcecatalog.run(result)
                     else:
                         log.info("resampling a mosaic file is not yet supported")
                         exit(0)
@@ -141,9 +141,9 @@ class MosaicPipeline(RomanPipeline):
             else:
                 self.resample.suffix = "i2d"
                 self.output_file = input.asn["products"][0]["name"]
-                result = self.resample(result)
+                result = self.resample.run(result)
                 self.sourcecatalog.output_file = self.output_file
-                result_catalog = self.sourcecatalog(result)  # noqa: F841
+                result_catalog = self.sourcecatalog.run(result)  # noqa: F841
                 self.suffix = "i2d"
                 if input_filename:
                     result.meta.filename = self.output_file

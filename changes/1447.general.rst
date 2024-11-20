@@ -1,1 +1,0 @@
-Fix remaining numpy 2 issues and unpin numpy to allow numpy 2 usage.

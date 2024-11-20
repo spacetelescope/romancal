@@ -12,22 +12,19 @@ from romancal.resample import ResampleStep, resample_utils
 
 
 class MockModel:
-    def __init__(self, pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio):
-        self.meta = MockMeta(
-            pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio
-        )
+    def __init__(self, pixel_area, pixel_scale_ratio):
+        self.meta = MockMeta(pixel_area, pixel_scale_ratio)
 
 
 class MockMeta:
-    def __init__(self, pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio):
-        self.photometry = MockPhotometry(pixelarea_steradians, pixelarea_arcsecsq)
+    def __init__(self, pixel_area, pixel_scale_ratio):
+        self.photometry = MockPhotometry(pixel_area)
         self.resample = MockResample(pixel_scale_ratio)
 
 
 class MockPhotometry:
-    def __init__(self, pixelarea_steradians, pixelarea_arcsecsq):
-        self.pixelarea_steradians = pixelarea_steradians
-        self.pixelarea_arcsecsq = pixelarea_arcsecsq
+    def __init__(self, pixel_area):
+        self.pixel_area = pixel_area
 
 
 class MockResample:
@@ -238,32 +235,30 @@ def test_check_list_pars_exception(vals, name, min_vals):
 
 
 @pytest.mark.parametrize(
-    """pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio,
+    """pixel_area, pixel_scale_ratio,
     expected_steradians, expected_arcsecsq""",
     [
         # Happy path tests
-        (1.0, 1.0, 2.0, 4.0, 4.0),
-        (2.0, 2.0, 0.5, 0.5, 0.5),
-        (0.0, 0.0, 2.0, 0.0, 0.0),
-        (1.0, 1.0, 0.0, 0.0, 0.0),
-        (None, 1.0, 2.0, None, 4.0),
-        (1.0, None, 2.0, 4.0, None),
+        (1.0, 2.0, 4.0, 4.0),
+        (2.0, 0.5, 0.5, 0.5),
+        (0.0, 2.0, 0.0, 0.0),
+        (1.0, 0.0, 0.0, 0.0),
+        (None, 2.0, None, 4.0),
+        (1.0, 2.0, 4.0, None),
     ],
 )
 def test_update_phot_keywords(
-    pixelarea_steradians,
-    pixelarea_arcsecsq,
+    pixel_area,
     pixel_scale_ratio,
     expected_steradians,
     expected_arcsecsq,
 ):
     step = ResampleStep()
-    model = MockModel(pixelarea_steradians, pixelarea_arcsecsq, pixel_scale_ratio)
+    model = MockModel(pixel_area, pixel_scale_ratio)
 
     step.update_phot_keywords(model)
 
-    assert model.meta.photometry.pixelarea_steradians == expected_steradians
-    assert model.meta.photometry.pixelarea_arcsecsq == expected_arcsecsq
+    assert model.meta.photometry.pixel_area == expected_steradians
 
 
 @pytest.mark.parametrize(
