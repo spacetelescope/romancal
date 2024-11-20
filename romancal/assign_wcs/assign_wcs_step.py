@@ -8,6 +8,7 @@ import logging
 import gwcs.coordinate_frames as cf
 from astropy import coordinates as coord
 from astropy import units as u
+from astropy.modeling import bind_bounding_box
 from gwcs.wcs import WCS, Step
 from roman_datamodels import datamodels as rdm
 
@@ -141,7 +142,7 @@ def wfi_distortion(model, reference_files):
     transform = dist.coordinate_distortion_transform
 
     try:
-        bbox = transform.bounding_box
+        bbox = transform.bounding_box.bounding_box(order="F")
     except NotImplementedError:
         # Check if the transform in the reference file has a ``bounding_box``.
         # If not set a ``bounding_box`` equal to the size of the image after
@@ -149,9 +150,10 @@ def wfi_distortion(model, reference_files):
         bbox = None
     dist.close()
 
-    if bbox is None:
-        transform.bounding_box = wcs_bbox_from_shape(model.data.shape)
-    else:
-        transform.bounding_box = bbox
+    bind_bounding_box(
+        transform,
+        wcs_bbox_from_shape(model.data.shape) if bbox is None else bbox,
+        order="F",
+    )
 
     return transform
