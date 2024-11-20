@@ -80,7 +80,7 @@ class SourceCatalogStep(RomanStep):
             )
 
         if isinstance(model, ImageModel):
-            cat_model = datamodels.SourceCatalogModel
+            cat_model = datamodels.ImageSourceCatalogModel
         else:
             cat_model = datamodels.MosaicSourceCatalogModel
         source_catalog_model = maker_utils.mk_datamodel(cat_model)
@@ -173,7 +173,7 @@ class SourceCatalogStep(RomanStep):
             else source_catalog_model.meta.filename
         )
 
-        if isinstance(source_catalog_model, datamodels.SourceCatalogModel):
+        if isinstance(source_catalog_model, datamodels.ImageSourceCatalogModel):
             seg_model = datamodels.SegmentationMapModel
         else:
             seg_model = datamodels.MosaicSegmentationMapModel

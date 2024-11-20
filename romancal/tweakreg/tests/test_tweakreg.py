@@ -1016,10 +1016,10 @@ def test_update_source_catalog_coordinates(tmp_path, base_image):
 
     tweakreg = trs.TweakRegStep()
 
-    # create SourceCatalogModel
+    # create ImageSourceCatalogModel
     source_catalog_model = setup_source_catalog_model(img)
 
-    # save SourceCatalogModel
+    # save ImageSourceCatalogModel
     tweakreg.save_model(
         source_catalog_model,
         output_file="img_1.asdf",
@@ -1074,10 +1074,10 @@ def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
 
     tweakreg = trs.TweakRegStep()
 
-    # create SourceCatalogModel
+    # create ImageSourceCatalogModel
     source_catalog_model = setup_source_catalog_model(img)
 
-    # save SourceCatalogModel
+    # save ImageSourceCatalogModel
     tweakreg.save_model(
         source_catalog_model,
         output_file="img_1.asdf",
@@ -1171,7 +1171,7 @@ def setup_source_catalog_model(img):
     expected names, adds mock PSF coordinates, applies random shifts to the centroid
     and PSF coordinates, and calculates the world coordinates for the centroids.
     """
-    cat_model = rdm.SourceCatalogModel
+    cat_model = rdm.ImageSourceCatalogModel
     source_catalog_model = maker_utils.mk_datamodel(cat_model)
     # this will be the output filename
     source_catalog_model.meta.filename = "img_1.asdf"
@@ -1221,7 +1221,7 @@ def setup_source_catalog_model(img):
     source_catalog["ra_psf"].unit = u.deg
     source_catalog["dec_psf"].unit = u.deg
 
-    # add source catalog to SourceCatalogModel
+    # add source catalog to ImageSourceCatalogModel
     source_catalog_model.source_catalog = source_catalog
 
     return source_catalog_model
