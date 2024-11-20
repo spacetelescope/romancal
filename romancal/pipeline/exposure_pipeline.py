@@ -82,6 +82,9 @@ class ExposurePipeline(RomanPipeline):
         else:
             lib = ModelLibrary([input])
 
+        # Flag to track if any of the input models are fully saturated
+        any_saturated = False
+
         with lib:
             for model_index, model in enumerate(lib):
                 self.dq_init.suffix = "dq_init"
@@ -94,6 +97,12 @@ class ExposurePipeline(RomanPipeline):
                 if is_fully_saturated(result):
                     log.info("All pixels are saturated. Returning a zeroed-out image.")
                     result = self.create_fully_saturated_zeroed_image(result)
+
+                    # Track that we've seen a fully saturated input
+                    any_saturated = True
+                    log.warning(
+                        "tweakreg will not be run due to a fully saturated input"
+                    )
                 else:
                     result = self.refpix.run(result)
                     result = self.linearity.run(result)
@@ -112,15 +121,20 @@ class ExposurePipeline(RomanPipeline):
                         log.info("Tweakreg step is being SKIPPED")
                         result.meta.cal_step.flat_field = "SKIPPED"
                         result.meta.cal_step.photom = "SKIPPED"
-                        # FIXME source_catalog ain't in the schema
-                        # result.meta.cal_step.source_catalog = "SKIPPED"
+                        result.meta.cal_step.source_detection = "SKIPPED"
 
+                if any_saturated:
+                    # the input association contains a fully saturated model
+                    # where source_catalog can't be run which means we
+                    # also can't run tweakreg.
+                    result.meta.cal_step.tweakreg = "SKIPPED"
                 lib.shelve(result, model_index)
 
         # Now that all the exposures are collated, run tweakreg
         # Note: this does not cover the case where the asn mixes imaging and spectral
         #          observations. This should not occur on-prem
-        self.tweakreg.run(lib)
+        if not any_saturated:
+            self.tweakreg.run(lib)
 
         log.info("Roman exposure calibration pipeline ending...")
 
@@ -144,14 +158,14 @@ class ExposurePipeline(RomanPipeline):
 
         # Set all subsequent steps to skipped
         for step_str in [
-            "refpix" "linearity",
+            "refpix",
+            "linearity",
             "dark",
             "ramp_fit",
             "assign_wcs",
             "flat_field",
             "photom",
-            # FIXME source_catalog ain't in the schema
-            # "source_catalog",
+            "source_detection",
         ]:
             fully_saturated_model.meta.cal_step[step_str] = "SKIPPED"
 
