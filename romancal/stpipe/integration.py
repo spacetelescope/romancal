@@ -27,7 +27,6 @@ def get_steps():
         ("romancal.step.DQInitStep", "dq_init", False),
         ("romancal.step.FlatFieldStep", "flat_field", False),
         ("romancal.step.FluxStep", "flux", False),
-        ("romancal.step.JumpStep", "jump", False),
         ("romancal.step.LinearityStep", "linearity", False),
         ("romancal.step.PhotomStep", "photom", False),
         ("romancal.step.RampFitStep", "ramp_fit", False),
