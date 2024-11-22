@@ -256,7 +256,6 @@ def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
         assert model.meta.cal_step.saturation == "COMPLETE"
         assert model.meta.cal_step.linearity == "SKIPPED"
         assert model.meta.cal_step.dark == "SKIPPED"
-        assert model.meta.cal_step.jump == "SKIPPED"
         assert model.meta.cal_step.ramp_fit == "SKIPPED"
         assert model.meta.cal_step.assign_wcs == "SKIPPED"
         assert model.meta.cal_step.flat_field == "SKIPPED"
