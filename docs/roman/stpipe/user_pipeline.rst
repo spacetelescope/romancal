@@ -125,9 +125,9 @@ is equivalent to:
    - class: romancal.source_catalog.source_catalog_step.SourceCatalogStep
      name: SourceCatalogStep
      parameters:
-        config_file = myjump.asdf
+        config_file = myconfig.asdf
 
-with the file ``myjump.asdf.`` in the same directory:
+with the file ``myconfig.asdf.`` in the same directory:
 
 .. code-block:: yaml
 
