@@ -63,11 +63,8 @@ Exit Status
 From the Python Prompt
 ------------------------------
 
-You can execute a pipeline or a step from within python by using the
-``run`` method.
-
-The ``run`` method creates a new instance of the class and runs the pipeline or
-step. Optional parameter settings can be specified by via keyword arguments or
+You can execute a pipeline or a step from within python.
+Optional parameter settings can be specified by via keyword arguments or
 supplying a parameter file. Some examples are shown below.
 
 For the exposure pipeline and steps,
@@ -76,11 +73,11 @@ For the exposure pipeline and steps,
 
  from romancal.pipeline import ExposurePipeline
  elp = ExposurePipeline()
- result = elp.run('r0000101001001001001_0001_wfi01_uncal.asdf')
+ result = elp('r0000101001001001001_0001_wfi01_uncal.asdf')
 
  from romancal.linearity import LinearityStep
  linearity =  LinearityStep()
- result = linearity.run('r0000101001001001001_0001_wfi01_uncal.asdf')
+ result = linearity('r0000101001001001001_0001_wfi01_uncal.asdf')
 
 One difference between the mosaic level pipeline and the exposure level pipeline is that the
 mosaic level pipeline is generally designed to run on multiple overlapping exposures. To achieve
@@ -91,11 +88,11 @@ For the mosaic level pipeline and steps,
 
  from romancal.pipeline import MosaicPipeline
  mosp = MosaicPipeline()
- result = mosp.run('r0000101001001001001_asn.json')
+ result = mosp('r0000101001001001001_asn.json')
 
  from romancal.skymatch import SkyMatchStep
  skymatch = SkyMatchStep()
- result = skymatch.run('r0000101001001001001_asn.json')
+ result = skymatch('r0000101001001001001_asn.json')
 
 
 For details on the different ways to run a pipeline step, see
