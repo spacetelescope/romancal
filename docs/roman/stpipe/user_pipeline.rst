@@ -186,7 +186,7 @@ From Python
 Once the pipeline has been configured (as above) it can be executed
 using run.
 
-    pipe.run(input_data)
+    pipe(input_data)
 
 Caching details
 ---------------
