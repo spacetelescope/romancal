@@ -10,9 +10,8 @@ observation was made::
 
     print(model.meta.observation.start_time)
 
-Metadata values are automatically type-checked against the schema when
-they are set. Therefore, setting a attribute which expects a number to a
-string will raise an exception.
+Metadata values will be validated against the schema when ``validate``
+is called, when the data model is saved or when a file is read.
 
 .. code-block:: python
 
@@ -20,7 +19,8 @@ string will raise an exception.
         >>> from roman_datamodels.maker_utils import mk_datamodel
 
         >>> model = mk_datamodel(rdm.ImageModel)
-        >>> model.meta.pointing.target_ra = "foo"  # doctest: +IGNORE_EXCEPTION_DETAIL
+        >>> model.meta.pointing.target_ra = "foo"
+        >>> model.validate()  # doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
           File "<stdin>", line 1, in <module>
           File "/path/to/python/lib/python3.12/site-packages/roman_datamodels/stnode/_node.py", line 251, in __setattr__
