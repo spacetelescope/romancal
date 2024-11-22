@@ -70,11 +70,8 @@ Exit Status
 From the Python Prompt
 ------------------------------
 
-You can execute a pipeline or a step from within python by using the
-``run`` method.
-
-The ``run`` method creates a new instance of the class and runs the pipeline or
-step. Optional parameter settings can be specified by via keyword arguments or
+You can execute a pipeline or a step from within python.
+Optional parameter settings can be specified by via keyword arguments or
 supplying a parameter file. Some examples are shown below.
 
 For the exposure pipeline and steps,
