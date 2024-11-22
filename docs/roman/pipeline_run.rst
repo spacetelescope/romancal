@@ -82,10 +82,12 @@ For the exposure pipeline and steps,
 ::
 
  from romancal.pipeline import ExposurePipeline
- result = ExposurePipeline.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
+ elp = ExposurePipeline()
+ result = elp('r0000101001001001001_0001_wfi01_uncal.asdf')
 
  from romancal.linearity import LinearityStep
- result = LinearityStep.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
+ linearity =  LinearityStep()
+ result = linearity('r0000101001001001001_0001_wfi01_uncal.asdf')
 
 One difference between the mosaic level pipeline and the exposure level pipeline is that the
 mosaic level pipeline is generally designed to run on multiple overlapping exposures. To achieve
@@ -95,10 +97,12 @@ For the mosaic level pipeline and steps,
 ::
 
  from romancal.pipeline import MosaicPipeline
- result = ExposurePipeline.call('r0000101001001001001_asn.json')
+ mosp = MosaicPipeline()
+ result = mosp('r0000101001001001001_asn.json')
 
  from romancal.skymatch import SkyMatchStep
- result = SkyMatchStep.call('r0000101001001001001_asn.json')
+ skymatch = SkyMatchStep()
+ result = skymatch('r0000101001001001001_asn.json')
 
 
 For more information, see :ref:`Execute via call()<call_examples>`
