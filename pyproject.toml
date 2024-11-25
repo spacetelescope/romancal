@@ -26,8 +26,8 @@ dependencies = [
     # "roman_datamodels>=0.22.0,<0.23.0",
     "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
     "scipy >=1.11",
-    "stcal>=1.10.0,<1.11.0",
-    # "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
+    # "stcal>=1.10.0,<1.11.0",
+    "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
     "stpipe >=0.7.0,<0.8.0",
     # "stpipe @ git+https://github.com/spacetelescope/stpipe.git@main",
     "tweakwcs >=0.8.8",
@@ -35,6 +35,11 @@ dependencies = [
     "stsci.imagestats >= 1.6.3",
     "drizzle >= 1.15.0",
     "webbpsf >= 1.2.1",
+    # pysiaf required by webbpsf uses pkg_resources which doesn't
+    # exist in python 3.12 without setuptools.
+    # TODO: drop this dependency when webbpsf is dropped
+    # (or when pysiaf no longer requires pkg_resources).
+    "setuptools >= 60 ; python_version >= '3.12'",
 ]
 dynamic = [
     "version",
