@@ -147,5 +147,5 @@ class Main:
             outfile.write(serialized)
 
 
-def main():
+def _cli():
     Main()
