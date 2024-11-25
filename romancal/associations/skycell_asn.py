@@ -190,6 +190,9 @@ class Main:
         skycell_asn(self)
 
 
-if __name__ == "__main__":
-
+def main():
     Main()
+
+
+if __name__ == "__main__":
+    main()
