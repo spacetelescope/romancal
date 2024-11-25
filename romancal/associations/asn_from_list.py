@@ -145,3 +145,7 @@ class Main:
             )
             _, serialized = asn.dump(format=parsed.format)
             outfile.write(serialized)
+
+
+def main():
+    Main()
