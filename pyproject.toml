@@ -35,6 +35,11 @@ dependencies = [
     "stsci.imagestats >= 1.6.3",
     "drizzle >= 1.15.0",
     "webbpsf >= 1.2.1",
+    # pysiaf required by webbpsf uses pkg_resources which doesn't
+    # exist in python 3.12 without setuptools. This dependency
+    # can be dropped when webbpsf is dropped (or pysiaf is updated
+    # to not require pkg_resources).
+    "setuptools >= 60 ; python_version >= '3.12'",
 ]
 dynamic = [
     "version",
