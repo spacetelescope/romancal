@@ -20,11 +20,11 @@ logger.addHandler(logging.NullHandler())
 logger.setLevel("INFO")
 
 
-def skycell_asn(self):
-    """Create the associaton from the list"""
+def skycell_asn(filelist, output_file_root, product_type, release_product):
+    """Create the skycell associaton from the list"""
     all_patches = []
     file_list = []
-    for file_name in self.parsed.filelist:
+    for file_name in filelist:
         cal_file = rdm.open(file_name)
         filter_id = cal_file.meta.instrument.optical_element.lower()
         file_patch_list = pm.find_patch_matches(cal_file.meta.wcs)
@@ -59,9 +59,8 @@ def skycell_asn(self):
         )
         parsed_visit_id = parse_visitID(member_list[0][1:20])
         program_id = parsed_visit_id["Program"]
-        root_asn_name = self.parsed.output_file_root
-        product_type = self.parsed.product_type
-        product_release = self.parsed.release_product
+        root_asn_name = output_file_root
+        product_release = release_product
         sep = "_"
 
         product_name_mapping = {
@@ -105,7 +104,7 @@ def skycell_asn(self):
             outfile.write(serialized)
 
 
-class Main:
+def _cli(args=None):
     """Command-line interface for list_to_asn
 
     Parameters
@@ -116,83 +115,77 @@ class Main:
             - `[str, ...]`: A list of strings which create the command line
               with the similar structure as `sys.argv`
     """
+    if args is None:
+        args = sys.argv[1:]
+    if isinstance(args, str):
+        args = args.split(" ")
 
-    def __init__(self, args=None):
-        if args is None:
-            args = sys.argv[1:]
-        if isinstance(args, str):
-            args = args.split(" ")
+    parser = argparse.ArgumentParser(
+        description="Create an association from a list of files",
+        usage="skycell_asn --product-type visit --release-product prompt *_cal.asdf -o r512",
+    )
 
-        parser = argparse.ArgumentParser(
-            description="Create an association from a list of files",
-            usage="skycell_asn --product-type visit --release-product prompt *_cal.asdf -o r512",
-        )
+    parser.add_argument(
+        "-o",
+        "--output-file-root",
+        type=str,
+        required=True,
+        help="Root string for file to write association to",
+    )
 
-        parser.add_argument(
-            "-o",
-            "--output-file-root",
-            type=str,
-            required=True,
-            help="Root string for file to write association to",
-        )
+    parser.add_argument(
+        "-f",
+        "--format",
+        type=str,
+        default="json",
+        help='Format of the association files. Default: "%(default)s"',
+    )
 
-        parser.add_argument(
-            "-f",
-            "--format",
-            type=str,
-            default="json",
-            help='Format of the association files. Default: "%(default)s"',
-        )
+    parser.add_argument(
+        "--product-type",
+        type=str,
+        default="visit",
+        help="The product type when creating the association",
+    )
 
-        parser.add_argument(
-            "--product-type",
-            type=str,
-            default="visit",
-            help="The product type when creating the association",
-        )
+    parser.add_argument(
+        "--release-product",
+        type=str,
+        default="p",
+        help="The release product when creating the association",
+    )
 
-        parser.add_argument(
-            "--release-product",
-            type=str,
-            default="p",
-            help="The release product when creating the association",
-        )
+    parser.add_argument(
+        "-r",
+        "--rule",
+        type=str,
+        default="DMS_ELPP_Base",
+        help=(
+            "The rule to base the association structure on." ' Default: "%(default)s"'
+        ),
+    )
+    parser.add_argument(
+        "-i",
+        "--id",
+        type=str,
+        default="o999",
+        help='The association candidate id to use. Default: "%(default)s"',
+        dest="acid",
+    )
 
-        parser.add_argument(
-            "-r",
-            "--rule",
-            type=str,
-            default="DMS_ELPP_Base",
-            help=(
-                "The rule to base the association structure on."
-                ' Default: "%(default)s"'
-            ),
-        )
-        parser.add_argument(
-            "-i",
-            "--id",
-            type=str,
-            default="o999",
-            help='The association candidate id to use. Default: "%(default)s"',
-            dest="acid",
-        )
+    parser.add_argument(
+        "filelist",
+        type=str,
+        nargs="+",
+        help="File list to include in the association",
+    )
 
-        parser.add_argument(
-            "filelist",
-            type=str,
-            nargs="+",
-            help="File list to include in the association",
-        )
+    parsed = parser.parse_args(args=args)
+    logger.info("Command-line arguments: %s", parsed)
 
-        self.parsed = parser.parse_args(args=args)
-        logger.info("Command-line arguments: %s", self.parsed)
-
-        skycell_asn(self)
-
-
-def _cli():
-    Main()
-
-
-if __name__ == "__main__":
-    _cli()
+    skycell_asn(
+        parsed.filelist,
+        parsed.output_file_root,
+        parsed.product_type,
+        parsed.release_product,
+    )
