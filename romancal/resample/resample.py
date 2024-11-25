@@ -238,7 +238,7 @@ class ResampleData:
             output_root = "_".join(
                 example_image.meta.filename.replace(output_type, "").split("_")[:-1]
             )
-            output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
+            output_model.meta.filename = f"{output_root}_outlier_coadd{output_type}"
             input_models.shelve(example_image, indices[0], modify=False)
             output_model.meta.basic.location_name = self.location_name
             del example_image
@@ -315,7 +315,7 @@ class ResampleData:
         if not self.in_memory:
             # build ModelLibrary as an association from the output files
             # this saves memory if there are multiple groups
-            asn = asn_from_list(output_models, product_name="outlier_i2d")
+            asn = asn_from_list(output_models, product_name="outlier_coadd")
             asn_dict = json.loads(
                 asn.dump()[1]
             )  # serializes the asn and converts to dict

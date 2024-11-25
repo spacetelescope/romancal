@@ -100,7 +100,7 @@ class MosaicPipeline(RomanPipeline):
                 if skycell_name in skycell_record["name"]:
                     # skycell name are in the form of r270dm90x99y99
                     # example of product name "r0099101001001001001_F158_visit_r270dm90x99y99"
-                    skycell_file_name = product_name + "_i2d.asdf"
+                    skycell_file_name = product_name + "_coadd.asdf"
 
                     # check to see if there exists a skycell on disk if not create it
                     if not isfile(skycell_file_name):
@@ -129,7 +129,7 @@ class MosaicPipeline(RomanPipeline):
                             self.resample.output_shape,
                         )
                         wcs_file = asdf.open(self.resample.output_wcs)
-                        self.suffix = "i2d"
+                        self.suffix = "coadd"
                         self.output_file = input.asn["products"][0]["name"]
                         result = self.resample.run(result)
                         self.sourcecatalog.output_file = self.output_file
@@ -139,12 +139,12 @@ class MosaicPipeline(RomanPipeline):
                         exit(0)
 
             else:
-                self.resample.suffix = "i2d"
+                self.resample.suffix = "coadd"
                 self.output_file = input.asn["products"][0]["name"]
                 result = self.resample.run(result)
                 self.sourcecatalog.output_file = self.output_file
                 result_catalog = self.sourcecatalog.run(result)  # noqa: F841
-                self.suffix = "i2d"
+                self.suffix = "coadd"
                 if input_filename:
                     result.meta.filename = self.output_file
 

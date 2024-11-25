@@ -20,7 +20,7 @@ def run_mos(rtdata_module):
     rtdata.get_asn("WFI/image/L3_regtest_asn.json")
 
     # Test Pipeline
-    output = "r0099101001001001001_F158_visit_i2d.asdf"
+    output = "r0099101001001001001_F158_visit_coadd.asdf"
     rtdata.output = output
 
     args = [

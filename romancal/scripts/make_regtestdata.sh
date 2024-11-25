@@ -183,11 +183,11 @@ l3name="r0099101001001001001_F158_visit"
 asn_from_list r0000101001001001001_0001_wfi01_cal.asdf r0000101001001001001_0002_wfi01_cal.asdf r0000101001001001001_0003_wfi01_cal.asdf -o L3_regtest_asn.json --product-name $l3name
 strun roman_mos L3_regtest_asn.json
 cp L3_regtest_asn.json $outdir/roman-pipeline/dev/WFI/image/
-cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/WFI/image/
-cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
+cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # L3 catalog
-strun romancal.step.SourceCatalogStep ${l3name}_i2d.asdf
+strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf
 cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 
@@ -195,11 +195,11 @@ l3name="r0099101001001001001_r274dp63x31y81_prompt_F158"
 asn_from_list r0000101001001001001_0001_wfi01_cal.asdf r0000101001001001001_0002_wfi01_cal.asdf r0000101001001001001_0003_wfi01_cal.asdf -o L3_mosaic_asn.json --product-name $l3name --target r274dp63x31y81
 strun roman_mos L3_mosaic_asn.json
 cp L3_mosaic_asn.json $outdir/roman-pipeline/dev/WFI/image/
-cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/WFI/image/
-cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
+cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # L3 catalog
-strun romancal.step.SourceCatalogStep ${l3name}_i2d.asdf
+strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf
 cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # L2 catalog
@@ -210,14 +210,14 @@ cp r0000101001001001001_0001_wfi01_cat.asdf $outdir/roman-pipeline/dev/truth/WFI
 l3name="r0099101001001001001_r274dp63x31y81_prompt_F158"
 asn_from_list --product-name=$l3name r0000101001001001001_0001_wfi01_cal.asdf r0000101001001001001_0002_wfi01_cal.asdf r0000101001001001001_0003_wfi01_cal.asdf -o L3_m1_asn.json
 strun roman_mos L3_m1_asn.json
-cp ${l3name}_i2d.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # L3 skycell catalog
-strun romancal.step.SourceCatalogStep ${l3name}_i2d.asdf
+strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf
 cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # multiband catalog
-asn_from_list --product-name=${l3name}_mbcat ${l3name}_i2d.asdf -o L3_skycell_mbcat_asn.json
+asn_from_list --product-name=${l3name}_mbcat ${l3name}_coadd.asdf -o L3_skycell_mbcat_asn.json
 strun romancal.step.MultibandCatalogStep L3_skycell_mbcat_asn.json --deblend True
 
 # tests passing suffix to the pipeline
