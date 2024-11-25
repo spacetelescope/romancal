@@ -4,7 +4,7 @@ import pytest
 
 # from romancal.associations import Association, AssociationRegistry, load_asn
 import romancal.associations.skycell_asn as skycell_asn
-from romancal.associations.skycell_asn import Main
+from romancal.associations.skycell_asn import _cli
 
 
 def test_cmdline_fails():
@@ -12,11 +12,11 @@ def test_cmdline_fails():
 
     # No arguments
     with pytest.raises(SystemExit):
-        Main([])
+        _cli([])
 
     # Only the association file argument
     with pytest.raises(SystemExit):
-        Main(["-o", "test_asn.json"])
+        _cli(["-o", "test_asn.json"])
 
 
 def test_parse_visitID():

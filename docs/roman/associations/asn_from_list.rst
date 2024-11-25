@@ -4,8 +4,7 @@ asn_from_list
 =============
 
 Create an association using either the command line tool
-``asn_from_list`` or through the Python API using either
-:class:`romancal.associations.asn_from_list.Main` or
+``asn_from_list`` or through the Python API using
 :func:`romancal.associations.asn_from_list.asn_from_list`
 
 
