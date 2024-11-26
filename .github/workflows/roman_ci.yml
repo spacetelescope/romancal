@@ -83,4 +83,4 @@ jobs:
         - linux: py312-webbpsf-cov
           coverage: codecov
           pytest-results-summary: true
-        - linux: py313-webbpsf
+        # - linux: py313-webbpsf  # Distabled until we support Python 3.13
