@@ -83,9 +83,11 @@ def dva_corr_model(va_scale, v2_ref, v3_ref):
         return Identity(2)
 
     if va_scale <= 0:
-        log.warning('Given velocity aberration scale %s', va_scale)
-        log.warning('Velocity aberration scale must be a positive number. Setting to 1.0')
-        va_scale = 1.
+        log.warning("Given velocity aberration scale %s", va_scale)
+        log.warning(
+            "Velocity aberration scale must be a positive number. Setting to 1.0"
+        )
+        va_scale = 1.0
 
     va_corr = Scale(va_scale, name="dva_scale_v2") & Scale(
         va_scale, name="dva_scale_v3"
