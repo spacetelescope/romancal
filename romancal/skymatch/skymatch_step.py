@@ -79,7 +79,7 @@ class SkyMatchStep(RomanStep):
         # create a list of "Sky" Images and/or Groups:
         images = []
         with library:
-            for index, model in enumerate(library):
+            for model in library:
                 images.append(self._imodel2skyim(model))
 
             # match/compute sky values:

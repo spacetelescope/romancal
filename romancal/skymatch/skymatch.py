@@ -363,7 +363,7 @@ def match(images, skymethod="global+match", match_down=True, subtract=False):
 
 
 def _apply_sky(images, sky_deltas, do_global, do_skysub, show_old):
-    for img, sky in zip(images, sky_deltas):
+    for img, sky in zip(images, sky_deltas, strict=False):
         is_group = not isinstance(img, SkyImage)
 
         if do_global:
@@ -395,7 +395,9 @@ def _apply_sky(images, sky_deltas, do_global, do_skysub, show_old):
             # log sky values:
             log.info(f"   *  Group ID={img.id}. Sky background of " "component images:")
 
-            for im, old_sky, new_sky in zip(img, old_img_sky, new_img_sky):
+            for im, old_sky, new_sky in zip(
+                img, old_img_sky, new_img_sky, strict=False
+            ):
                 c = 1.0 / im.convf
                 if show_old:
                     log.info(

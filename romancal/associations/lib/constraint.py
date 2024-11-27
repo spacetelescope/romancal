@@ -663,10 +663,10 @@ class Constraint:
             and all the constraints that define that name.
         """
         attrs = self.get_all_attr("name")
-        constraints, names = zip(*attrs)
+        constraints, names = zip(*attrs, strict=False)
         dups = [name for name, count in collections.Counter(names).items() if count > 1]
         result = collections.defaultdict(list)
-        for name, constraint in zip(names, constraints):
+        for name, constraint in zip(names, constraints, strict=False):
             if name in dups:
                 result[name].append(constraint)
 

@@ -213,7 +213,10 @@ class ResampleStep(RomanStep):
         if n == 2:
             return None
         elif n == 0:
-            if min_vals and sum(x >= y for x, y in zip(vals, min_vals)) != 2:
+            if (
+                min_vals
+                and sum(x >= y for x, y in zip(vals, min_vals, strict=False)) != 2
+            ):
                 raise ValueError(
                     f"'{name}' values must be larger or equal to {list(min_vals)}"
                 )

@@ -94,6 +94,7 @@ class TestPSFFitting:
             rng.uniform(-1, 1, n_trials),
             rng.uniform(-1, 1, n_trials),
             np.geomspace(1_000, 100_000, n_trials),
+            strict=False,
         ),
     )
     def test_psf_fit(self, dx, dy, true_flux):

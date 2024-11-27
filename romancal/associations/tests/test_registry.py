@@ -33,7 +33,7 @@ def test_dict_like():
     assert kvr.get("a") == 1
     assert kvr.get("c", 3) == 3
 
-    keys, values = zip(*kvr.items())
+    keys, values = zip(*kvr.items(), strict=False)
     assert set(data.keys()) == set(keys)
     assert set(data.values()) == set(values)
 

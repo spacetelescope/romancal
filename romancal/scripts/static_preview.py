@@ -15,10 +15,10 @@ def command():
             percentile_normalization,
             write_image,
         )
-    except (ImportError, ModuleNotFoundError):
+    except (ImportError, ModuleNotFoundError) as err:
         raise ImportError(
             'SDP requirements not installed; do `pip install "romancal[sdp]"`'
-        )
+        ) from err
 
     app = typer.Typer()
 

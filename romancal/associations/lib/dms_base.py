@@ -424,8 +424,8 @@ class DMSBaseMixin(ACIDMixin):
             result = False
             try:
                 result = all(test["validated"] for test in asn.validity.values())
-            except (AttributeError, KeyError):
-                raise AssociationNotValidError("Validation failed")
+            except (AttributeError, KeyError) as err:
+                raise AssociationNotValidError("Validation failed") from err
             if not result:
                 raise AssociationNotValidError("Validation failed validity tests.")
         return True
@@ -667,8 +667,8 @@ def get_exposure_type(item, default="science", association=None):
     # Base type off of exposure type.
     try:
         exp_type = _item_attr(item, ["exp_type"])
-    except KeyError:
-        raise LookupError("Exposure type cannot be determined")
+    except KeyError as err:
+        raise LookupError("Exposure type cannot be determined") from err
 
     result = EXPTYPE_MAP.get(exp_type, default)
 

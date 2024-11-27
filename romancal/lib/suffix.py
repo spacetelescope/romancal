@@ -86,7 +86,6 @@ _calculated_suffixes = {
     "pipeline",
     "dq_init",
     "linearitystep",
-    "dark_current",
     "tweakregstep",
     "outlierdetectionstep",
     "skymatchstep",

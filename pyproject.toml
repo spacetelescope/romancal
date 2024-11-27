@@ -181,7 +181,7 @@ line-length = 88
 extend-select = [
     "UP",   # PyUpgrade
     "I",    # isort
-    # "B",    # BugBear
+    "B",    # BugBear
     "S",    # Bandit
     "RUF",  # ruff specific
     "NPY",  # Numpy lint
