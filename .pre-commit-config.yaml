@@ -33,19 +33,7 @@ repos:
     - id: ruff
       args: ["--fix"]
 
-- repo: https://github.com/pycqa/isort
-  rev: 5.13.2
-  hooks:
-    - id: isort
-
 - repo: https://github.com/psf/black
   rev: 24.10.0
   hooks:
     - id: black
-
-- repo: https://github.com/PyCQA/bandit
-  rev: 1.7.10
-  hooks:
-    - id: bandit
-      args: ["-c", "pyproject.toml"]
-      additional_dependencies: ["bandit[toml]"]

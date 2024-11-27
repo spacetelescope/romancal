@@ -173,16 +173,6 @@ exclude_lines = [
     "if __name__ == \"__main__\":",
 ]
 
-[tool.bandit]
-skips = [
-    "B101",
-    "B307",
-    "B404",
-    "B603",
-]
-exclude_dirs = [
-    "romancal/regtest/scripts",
-]
 
 [tool.isort]
 profile = "black"
@@ -200,11 +190,11 @@ line-length = 88
 [tool.ruff.lint]
 extend-select = [
     "UP",   # PyUpgrade
-    # "I",    # isort
+    "I",    # isort
     # "B",    # BugBear
-    # "S",    # Bandit
+    "S",    # Bandit
     # "RUF",  # ruff specific
-    # "NPY",  # Numpy lint
+    "NPY",  # Numpy lint
 ]
 exclude = [
     "jdocs",
@@ -219,6 +209,15 @@ ignore = [
 [tool.ruff.lint.extend-per-file-ignores]
 "romancal/associations/__init__.py" = [
     "E402",
+]
+"romancal/**/tests/**.py" = [
+    "S101" # Bandit: Use of assert detected (fine in test files)
+]
+"romancal/**/test/**.py" = [
+    "S101" # Bandit: Use of assert detected (fine in test files)
+]
+"romancal/regtest/**.py" = [
+    "S101" # Bandit: Use of assert detected (fine in test files)
 ]
 
 [tool.cibuildwheel.macos]
