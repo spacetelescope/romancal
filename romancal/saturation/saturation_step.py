@@ -1,10 +1,16 @@
 #! /usr/bin/env python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
 from roman_datamodels.datamodels import SaturationRefModel
 
 from romancal.saturation import saturation
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["SaturationStep"]
 
@@ -16,7 +22,7 @@ class SaturationStep(RomanStep):
 
     class_alias = "saturation"
 
-    reference_file_types = ["saturation"]
+    reference_file_types: ClassVar = ["saturation"]
 
     def process(self, input):
         if isinstance(input, rdm.DataModel):

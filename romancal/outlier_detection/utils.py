@@ -79,7 +79,7 @@ def _median_with_resampling(
                 _fileio.save_drizzled(drizzled_model, make_output_path)
 
             if i == 0:
-                input_shape = (nresultants,) + drizzled_model.data.shape
+                input_shape = (nresultants, *drizzled_model.data.shape)
                 dtype = drizzled_model.data.dtype
                 computer = MedianComputer(input_shape, in_memory, buffer_size, dtype)
                 example_model = drizzled_model
@@ -165,7 +165,7 @@ def _median_without_resampling(
                 _fileio.save_drizzled(model, make_output_path)
 
             if i == 0:
-                input_shape = (nresultants,) + model.data.shape
+                input_shape = (nresultants, *model.data.shape)
                 dtype = model.data.dtype
                 computer = MedianComputer(input_shape, in_memory, buffer_size, dtype)
                 example_model = model

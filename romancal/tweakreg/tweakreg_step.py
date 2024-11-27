@@ -2,8 +2,11 @@
 Roman pipeline step for image alignment.
 """
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy.table import Table
@@ -16,6 +19,9 @@ from romancal.assign_wcs.utils import add_s_region
 # LOCAL
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 DEFAULT_ABS_REFCAT = SINGLE_GROUP_REFCAT[0]
 
@@ -60,9 +66,9 @@ class TweakRegStep(RomanStep):
         abs_sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units when performing absolute astrometry
         output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
         update_source_catalog_coordinates = boolean(default=False) # Update source catalog file with tweaked coordinates?
-    """  # noqa: E501
+    """
 
-    reference_file_types = []
+    reference_file_types: ClassVar = []
 
     def process(self, input):
 

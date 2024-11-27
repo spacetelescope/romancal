@@ -526,7 +526,7 @@ class DMSBaseMixin(ACIDMixin):
             of the target or source ID.
         """
         target_id = format_list(self.constraints["target"].found_values)
-        target = f"t{str(target_id):0>3s}"
+        target = f"t{target_id!s:0>3s}"
         return target
 
     def _get_grating(self):
@@ -539,7 +539,7 @@ class DMSBaseMixin(ACIDMixin):
             of the grating in use.
         """
         grating_id = format_list(self.constraints["grating"].found_values)
-        grating = f"{str(grating_id):0>3s}"
+        grating = f"{grating_id!s:0>3s}"
         return grating
 
 

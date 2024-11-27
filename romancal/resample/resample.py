@@ -437,13 +437,13 @@ class ResampleData:
                 if variance is None or variance.size == 0:
                     log.debug(
                         f"No data for '{name}' for model "
-                        f"{repr(model.meta.filename)}. Skipping ..."
+                        f"{model.meta.filename!r}. Skipping ..."
                     )
                     continue
                 elif variance.shape != model.data.shape:
                     log.warning(
                         f"Data shape mismatch for '{name}' for model "
-                        f"{repr(model.meta.filename)}. Skipping..."
+                        f"{model.meta.filename!r}. Skipping..."
                     )
                     continue
 

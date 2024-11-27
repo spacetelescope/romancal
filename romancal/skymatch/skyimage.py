@@ -16,11 +16,11 @@ from . import region
 from .skystatistics import SkyStats
 
 __all__ = [
-    "SkyImage",
-    "SkyGroup",
     "DataAccessor",
     "NDArrayInMemoryAccessor",
     "NDArrayMappedAccessor",
+    "SkyGroup",
+    "SkyImage",
 ]
 
 
@@ -411,8 +411,8 @@ class SkyImage:
         else:
             other = skyimage
 
-        pts1 = np.sort(list(self._polygon.points)[0], axis=0)
-        pts2 = np.sort(list(other.points)[0], axis=0)
+        pts1 = np.sort(next(iter(self._polygon.points)), axis=0)
+        pts2 = np.sort(next(iter(other.points)), axis=0)
         if np.allclose(pts1, pts2, rtol=0, atol=5e-9):
             intersect_poly = self._polygon.copy()
         else:
@@ -879,8 +879,8 @@ class SkyGroup:
         else:
             other = skyimage
 
-        pts1 = np.sort(list(self._polygon.points)[0], axis=0)
-        pts2 = np.sort(list(other.points)[0], axis=0)
+        pts1 = np.sort(next(iter(self._polygon.points)), axis=0)
+        pts2 = np.sort(next(iter(other.points)), axis=0)
         if np.allclose(pts1, pts2, rtol=0, atol=1e-8):
             intersect_poly = self._polygon.copy()
         else:

@@ -3,7 +3,10 @@ Assign a gWCS object to a science image.
 
 """
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import gwcs.coordinate_frames as cf
 from astropy import coordinates as coord
@@ -15,6 +18,9 @@ from roman_datamodels import datamodels as rdm
 from ..stpipe import RomanStep
 from . import pointing
 from .utils import add_s_region, wcs_bbox_from_shape
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -28,7 +34,7 @@ class AssignWcsStep(RomanStep):
 
     class_alias = "assign_wcs"
 
-    reference_file_types = ["distortion"]
+    reference_file_types: ClassVar = ["distortion"]
 
     def process(self, input):
         reference_file_names = {}

@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import logging
 import os
 from copy import deepcopy
+from typing import TYPE_CHECKING
 
 import asdf
 import numpy as np
@@ -12,6 +15,9 @@ from stcal.alignment import util
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
 from . import resample
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -44,7 +50,7 @@ class ResampleStep(RomanStep):
     -------
     : `roman_datamodels.datamodels.MosaicModel`
         A mosaic datamodel with the final output frame.
-    """  # noqa: E501
+    """
 
     class_alias = "resample"
 
@@ -65,9 +71,9 @@ class ResampleStep(RomanStep):
         allowed_memory = float(default=None)  # Fraction of memory to use for the combined image.
         in_memory = boolean(default=True)
         good_bits = string(default='~DO_NOT_USE+NON_SCIENCE')  # The good bits to use for building the resampling mask.
-    """  # noqa: E501
+    """
 
-    reference_file_types = []
+    reference_file_types: ClassVar = []
 
     def process(self, input):
         if isinstance(input, datamodels.DataModel):

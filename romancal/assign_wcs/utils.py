@@ -43,8 +43,8 @@ def wcs_from_footprints(
     pscale=None,
     rotation=None,
     shape=None,
-    ref_pixel: tuple[float, float] = None,
-    ref_coord: tuple[float, float] = None,
+    ref_pixel: tuple[float, float] | None = None,
+    ref_coord: tuple[float, float] | None = None,
 ):
     """
     Create a WCS from a list of input data models.
@@ -217,8 +217,8 @@ def wcs_from_footprints(
 def compute_scale(
     wcs: WCS,
     fiducial: tuple | np.ndarray,
-    disp_axis: int = None,
-    pscale_ratio: float = None,
+    disp_axis: int | None = None,
+    pscale_ratio: float | None = None,
 ) -> float:
     """Compute scaling transform.
 

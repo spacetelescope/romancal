@@ -2,7 +2,10 @@
 Module for the multiband source catalog step.
 """
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy.table import Table, join
@@ -16,6 +19,9 @@ from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["MultibandCatalogStep"]
 
@@ -37,7 +43,7 @@ class MultibandCatalogStep(RomanStep):
     """
 
     class_alias = "multiband_catalog"
-    reference_file_types = []
+    reference_file_types: ClassVar = []
 
     spec = """
         bkg_boxsize = integer(default=100)   # background mesh box size in pixels

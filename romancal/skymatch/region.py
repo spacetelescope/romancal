@@ -10,7 +10,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-__all__ = ["Region", "Edge", "Polygon"]
+__all__ = ["Edge", "Polygon", "Region"]
 
 
 class ValidationError(Exception):

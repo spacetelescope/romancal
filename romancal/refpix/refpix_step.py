@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
 
 from romancal.refpix import refpix
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["RefPixStep"]
 
@@ -30,7 +36,7 @@ class RefPixStep(RomanStep):
     # of the reference pixel padded values.
     """
 
-    reference_file_types = ["refpix"]
+    reference_file_types: ClassVar = ["refpix"]
 
     def process(self, input):
         """

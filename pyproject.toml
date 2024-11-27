@@ -193,7 +193,7 @@ extend-select = [
     "I",    # isort
     # "B",    # BugBear
     "S",    # Bandit
-    # "RUF",  # ruff specific
+    "RUF",  # ruff specific
     "NPY",  # Numpy lint
 ]
 exclude = [
