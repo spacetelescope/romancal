@@ -639,8 +639,8 @@ class Constraint:
             self.constraints = [init]
         else:
             raise TypeError(
-                "Invalid initialization value type {}.\nValid types are"
-                " `SimpleConstraint`, `Constraint`,\nor subclass.".format(type(init))
+                f"Invalid initialization value type {type(init)}.\nValid types are"
+                " `SimpleConstraint`, `Constraint`,\nor subclass."
             )
 
         # Give some defaults real meaning.

@@ -406,7 +406,7 @@ class SkyImage:
             the intersection of this `SkyImage` and `skyimage`.
 
         """
-        if isinstance(skyimage, (SkyImage, SkyGroup)):
+        if isinstance(skyimage, SkyImage | SkyGroup):
             other = skyimage.polygon
         else:
             other = skyimage
@@ -700,7 +700,7 @@ None, optional
         else:
             fill_mask = np.zeros(self.image_shape, dtype=bool)
 
-            if isinstance(overlap, (SkyImage, SkyGroup, SphericalPolygon)):
+            if isinstance(overlap, SkyImage | SkyGroup | SphericalPolygon):
                 intersection = self.intersection(overlap)
                 polyarea = np.fabs(intersection.area())
                 radec = intersection.to_radec()
@@ -874,7 +874,7 @@ class SkyGroup:
             the intersection of this `SkyImage` and `skyimage`.
 
         """
-        if isinstance(skyimage, (SkyImage, SkyGroup)):
+        if isinstance(skyimage, SkyImage | SkyGroup):
             other = skyimage.polygon
         else:
             other = skyimage

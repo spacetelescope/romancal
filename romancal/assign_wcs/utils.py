@@ -1,6 +1,5 @@
 import functools
 import logging
-from typing import List, Tuple, Union
 
 import numpy as np
 from astropy.coordinates import SkyCoord
@@ -44,8 +43,8 @@ def wcs_from_footprints(
     pscale=None,
     rotation=None,
     shape=None,
-    ref_pixel: Tuple[float, float] = None,
-    ref_coord: Tuple[float, float] = None,
+    ref_pixel: tuple[float, float] = None,
+    ref_coord: tuple[float, float] = None,
 ):
     """
     Create a WCS from a list of input data models.
@@ -217,7 +216,7 @@ def wcs_from_footprints(
 
 def compute_scale(
     wcs: WCS,
-    fiducial: Union[tuple, np.ndarray],
+    fiducial: tuple | np.ndarray,
     disp_axis: int = None,
     pscale_ratio: float = None,
 ) -> float:
@@ -282,7 +281,7 @@ def compute_scale(
 
 def calc_rotation_matrix(
     roll_ref: float, v3i_yang: float, vparity: int = 1
-) -> List[float]:
+) -> list[float]:
     """Calculate the rotation matrix.
 
     Parameters

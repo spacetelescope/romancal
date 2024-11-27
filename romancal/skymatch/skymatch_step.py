@@ -147,7 +147,7 @@ class SkyMatchStep(RomanStep):
                 raise ValueError(
                     "'subtract' step's specification is "
                     "inconsistent with background info already "
-                    "present in image '{:s}' meta.".format(image_model.meta.filename)
+                    f"present in image '{image_model.meta.filename:s}' meta."
                 )
 
         wcs = deepcopy(image_model.meta.wcs)

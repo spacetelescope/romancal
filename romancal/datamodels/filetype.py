@@ -1,14 +1,13 @@
 import io
 import os
 from pathlib import Path
-from typing import Union
 
 import roman_datamodels as rdm
 
 from romancal.datamodels import ModelLibrary
 
 
-def check(init: Union[os.PathLike, Path, io.FileIO]) -> str:
+def check(init: os.PathLike | Path | io.FileIO) -> str:
     """
     Determine the type of a file and return it as a string
 
@@ -27,7 +26,7 @@ def check(init: Union[os.PathLike, Path, io.FileIO]) -> str:
 
     supported = ("asdf", "json", "DataModel")
 
-    if isinstance(init, (str, os.PathLike, Path)):
+    if isinstance(init, str | os.PathLike | Path):
         path, ext = os.path.splitext(init)
         ext = ext.strip(".")
 

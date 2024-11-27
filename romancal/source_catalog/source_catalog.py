@@ -4,7 +4,6 @@ Module to calculate the source catalog.
 
 import logging
 import warnings
-from typing import List
 
 import astropy.units as u
 import numpy as np
@@ -107,7 +106,7 @@ class RomanSourceCatalog:
         flux_unit="uJy",
     ):
 
-        if not isinstance(model, (ImageModel, MosaicModel)):
+        if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
         self.model = model  # background was previously subtracted
 
@@ -1086,7 +1085,7 @@ class RomanSourceCatalog:
         return table
 
     @staticmethod
-    def get_psf_photometry_catalog_colnames_mapping() -> List:
+    def get_psf_photometry_catalog_colnames_mapping() -> list:
         """
         Set the mapping between the PSF photometry table column names
         and the final catalog column names.
@@ -1136,7 +1135,7 @@ class RomanSourceCatalog:
         ]
 
     @lazyproperty
-    def psf_photometry_colnames(self) -> List:
+    def psf_photometry_colnames(self) -> list:
         """
         Update and return column descriptions for PSF photometry results.
 

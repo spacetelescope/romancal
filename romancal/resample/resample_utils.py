@@ -1,6 +1,5 @@
 import logging
 import warnings
-from typing import Tuple
 
 import gwcs
 import numpy as np
@@ -22,8 +21,8 @@ def make_output_wcs(
     pscale=None,
     rotation=None,
     shape=None,
-    crpix: Tuple[float, float] = None,
-    crval: Tuple[float, float] = None,
+    crpix: tuple[float, float] = None,
+    crval: tuple[float, float] = None,
 ):
     """
     Generate output WCS here based on footprints of all input WCS objects
