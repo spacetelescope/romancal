@@ -1,5 +1,4 @@
-"""Association Definitions: DMS Level2b product associations
-"""
+"""Association Definitions: DMS Level2b product associations"""
 
 import logging
 

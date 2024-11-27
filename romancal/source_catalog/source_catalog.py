@@ -105,7 +105,6 @@ class RomanSourceCatalog:
         detection_cat=None,
         flux_unit="uJy",
     ):
-
         if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
         self.model = model  # background was previously subtracted

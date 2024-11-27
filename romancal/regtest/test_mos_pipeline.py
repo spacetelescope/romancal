@@ -1,4 +1,4 @@
-""" Roman tests for the High Level Pipeline """
+"""Roman tests for the High Level Pipeline"""
 
 import os
 

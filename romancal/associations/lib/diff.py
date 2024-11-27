@@ -1,4 +1,4 @@
-""""Diff and compare associations"""
+""" "Diff and compare associations"""
 
 import logging
 import re

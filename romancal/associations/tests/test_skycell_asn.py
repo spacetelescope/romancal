@@ -20,7 +20,6 @@ def test_cmdline_fails():
 
 
 def test_parse_visitID():
-
     filelist1 = [
         "r0000101002003004005_0001_wfi10_cal.asdf",
     ]

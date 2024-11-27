@@ -1,5 +1,4 @@
-""" A signal/slot implementation
-"""
+"""A signal/slot implementation"""
 
 import inspect
 import logging

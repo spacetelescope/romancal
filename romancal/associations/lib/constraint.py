@@ -1,5 +1,4 @@
-"""Constraints
-"""
+"""Constraints"""
 
 import abc
 import collections
