@@ -2,10 +2,17 @@
 Flat-field a science image
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import roman_datamodels as rdm
 
 from ..stpipe import RomanStep
 from . import flat_field
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["FlatFieldStep"]
 
@@ -15,7 +22,7 @@ class FlatFieldStep(RomanStep):
 
     class_alias = "flat_field"
 
-    reference_file_types = ["flat"]
+    reference_file_types: ClassVar = ["flat"]
 
     def process(self, input_model):
         if not isinstance(input_model, rdm.DataModel):

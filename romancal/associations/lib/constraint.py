@@ -139,7 +139,7 @@ class SimpleConstraintABC(abc.ABC):
         yield self
 
     def __repr__(self):
-        result = f"{self.__class__.__name__}({str(self.__dict__)})"
+        result = f"{self.__class__.__name__}({self.__dict__!s})"
         return result
 
     def __str__(self):
@@ -600,7 +600,7 @@ class Constraint:
                       'value': 'a_value',
                       'name': 'simple',
                       'matched': False})
-    """  # noqa: E501
+    """
 
     def __init__(
         self,

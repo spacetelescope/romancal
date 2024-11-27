@@ -9,6 +9,7 @@ repos:
     - id: check-ast
     - id: check-case-conflict
     - id: check-yaml
+    - id: check-json
       args: ["--unsafe"]
     - id: check-toml
     - id: check-merge-conflict
@@ -21,8 +22,6 @@ repos:
 - repo: https://github.com/pre-commit/pygrep-hooks
   rev: v1.10.0
   hooks:
-    - id: python-check-blanket-noqa
-    - id: python-check-mock-methods
     - id: rst-directive-colons
     - id: rst-inline-touching-normal
     - id: text-unicode-replacement-char

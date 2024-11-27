@@ -58,7 +58,7 @@ def get_parallax_correction_barycenter(epoch, gaia_ref_epoch_coords):
         correction = get_parallax_correction_earth_barycenter(epoch, gaia_coords)
         print(correction)
         (0.001, -0.002)
-    """  # noqa: E501
+    """
 
     obs_date = Time(epoch, format="decimalyear")
     earths_center_barycentric_coords = coord.get_body_barycentric(
@@ -124,7 +124,7 @@ def get_proper_motion_correction(epoch, gaia_ref_epoch_coords, gaia_ref_epoch):
     }
     gaia_ref_epoch = 2020.0
     get_proper_motion_correction(epoch, gaia_coords, gaia_ref_epoch)
-    """  # noqa: E501
+    """
 
     expected_new_dec = (
         np.array(
@@ -194,7 +194,7 @@ def get_parallax_correction(epoch, gaia_ref_epoch_coords):
             "parallax": 2.5
         }
         get_parallax_correction(epoch, gaia_coords)
-    """  # noqa: E501
+    """
 
     # get parallax correction using textbook calculations (i.e. Earth's barycenter)
     parallax_corr = get_parallax_correction_barycenter(

@@ -41,7 +41,7 @@ class OutlierDetectionStep(RomanStep):
         resample_data = boolean(default=True) # Specifies whether or not to resample the input images when performing outlier detection
         good_bits = string(default="~DO_NOT_USE+NON_SCIENCE")  # DQ bit value to be considered 'good'
         in_memory = boolean(default=False) # Specifies whether or not to keep all intermediate products and datamodels in memory
-    """  # noqa: E501
+    """
 
     def process(self, input_models):
         """Perform outlier detection processing on input data."""

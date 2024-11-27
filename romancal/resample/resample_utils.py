@@ -21,8 +21,8 @@ def make_output_wcs(
     pscale=None,
     rotation=None,
     shape=None,
-    crpix: tuple[float, float] = None,
-    crval: tuple[float, float] = None,
+    crpix: tuple[float, float] | None = None,
+    crval: tuple[float, float] | None = None,
 ):
     """
     Generate output WCS here based on footprints of all input WCS objects
@@ -101,7 +101,7 @@ def make_output_wcs(
 def build_driz_weight(
     model,
     weight_type=None,
-    good_bits: str = None,
+    good_bits: str | None = None,
 ):
     """
     Builds the drizzle weight map for resampling.

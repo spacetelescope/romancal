@@ -55,11 +55,11 @@ def check(init: os.PathLike | Path | io.FileIO) -> str:
         init.seek(0, 0)
 
         if not magic or len(magic) < 5:
-            raise ValueError(f"Cannot get file type of {str(init)}")
+            raise ValueError(f"Cannot get file type of {init!s}")
 
         if magic == b"#ASDF":
             return "asdf"
 
         return "asn"
     else:
-        raise ValueError(f"Cannot get file type of {str(init)}")
+        raise ValueError(f"Cannot get file type of {init!s}")

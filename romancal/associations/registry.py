@@ -57,7 +57,7 @@ class AssociationRegistry(dict):
     In practice, this is one step in a larger loop over all items to
     be associated. This does not account for adding items to already
     existing associations. See :py:func:`~romancal.associations.generate` for more information.
-    """  # noqa: E501
+    """
 
     def __init__(
         self,
