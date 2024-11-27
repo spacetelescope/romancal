@@ -61,7 +61,8 @@ class Mosaic:
             pscale=self.pscale,
             shape=self.shape,
         )
-        l3.meta.wcs.forward_transform
+        # Call the forward transform so its value is pulled from disk
+        _ = l3.meta.wcs.forward_transform
         return datamodels.MosaicModel(l3)
 
 

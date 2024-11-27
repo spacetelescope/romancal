@@ -703,7 +703,9 @@ class RomanSourceCatalog:
         Set the concentration indices as dynamic attributes on the class
         instance.
         """
-        for name, value in zip(self.ci_colnames, self.concentration_indices):
+        for name, value in zip(
+            self.ci_colnames, self.concentration_indices, strict=False
+        ):
             setattr(self, name, value)
 
     @lazyproperty
@@ -779,7 +781,7 @@ class RomanSourceCatalog:
         which has odd dimensions.
         """
         cutout = []
-        for xcen, ycen in zip(*np.transpose(self._xypos_aper)):
+        for xcen, ycen in zip(*np.transpose(self._xypos_aper), strict=False):
             try:
                 cutout_ = extract_array(
                     self.model.data,
@@ -803,7 +805,7 @@ class RomanSourceCatalog:
         which has odd dimensions.
         """
         cutout = []
-        for xcen, ycen in zip(*np.transpose(self._xypos_aper)):
+        for xcen, ycen in zip(*np.transpose(self._xypos_aper), strict=False):
             try:
                 cutout_ = extract_array(
                     self._daofind_convolved_data,

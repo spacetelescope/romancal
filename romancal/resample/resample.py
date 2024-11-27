@@ -178,7 +178,7 @@ class ResampleData:
             )
 
             # FIXME: temporary hack to prevent changes from L2 into L3 schema
-            for i, model in enumerate(models):
+            for model in models:
                 # saving ImageModels cal_logs
                 cal_logs = model.meta.cal_logs
                 # removing meta.cal_logs
@@ -297,7 +297,7 @@ class ResampleData:
         sky.
         """
         output_models = []
-        for group_id, indices in self.input_models.group_indices.items():
+        for indices in self.input_models.group_indices.values():
             output_model = self.resample_group(self.input_models, indices)
 
             if not self.in_memory:
@@ -563,7 +563,7 @@ class ResampleData:
         )
         exposure_times = {"start": [], "end": []}
         with self.input_models:
-            for group_id, indices in self.input_models.group_indices.items():
+            for indices in self.input_models.group_indices.values():
                 index = indices[0]
                 model = self.input_models.borrow(index)
                 exposure_times["start"].append(model.meta.exposure.start_time)

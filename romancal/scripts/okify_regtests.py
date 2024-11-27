@@ -76,7 +76,7 @@ def artifactory_get_build_artifacts(build_number):
     if len(specfiles) != len(asdffiles):
         raise RuntimeError("Different number of _okify.json and _rtdata.asdf files")
 
-    for a, b in zip(specfiles, asdffiles):
+    for a, b in zip(specfiles, asdffiles, strict=False):
         if a.replace(SPECFILE_SUFFIX, "") != b.replace(RTDATA_SUFFIX, ""):
             raise RuntimeError("The _okify.json and _rtdata.asdf files are not matched")
 
@@ -109,7 +109,9 @@ def main():
 
             print(f"{number_failed_tests} failed tests to okify")
 
-            for i, (specfile, asdffile) in enumerate(zip(specfiles, asdffiles)):
+            for i, (specfile, asdffile) in enumerate(
+                zip(specfiles, asdffiles, strict=False)
+            ):
                 # Print traceback and OKify info for this test failure
                 with asdf.open(asdffile) as af:
                     traceback = af.tree["traceback"]

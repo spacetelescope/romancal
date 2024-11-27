@@ -59,7 +59,7 @@ def plot(image_corners, patches_touched_ids, patches_candidate_ids):
     vec_image_corners = pm.image_coords_to_vec(image_corners)
     tp_image_corners = pm.veccoords_to_tangent_plane(vec_image_corners, tangent_point)
     plot_field(tp_image_corners, fill="lightgrey", color="black")
-    for patch, id in zip(patches_candidate, patches_candidate_ids):
+    for patch, id in zip(patches_candidate, patches_candidate_ids, strict=False):
         plot_patch(
             pm.veccoords_to_tangent_plane(
                 pm.get_cartesian_corners(patch), tangent_point
@@ -67,7 +67,7 @@ def plot(image_corners, patches_touched_ids, patches_candidate_ids):
             id=id,
             color="lightgray",
         )
-    for patch, id in zip(patches_touched, patches_touched_ids):
+    for patch, id in zip(patches_touched, patches_touched_ids, strict=False):
         plot_patch(
             pm.veccoords_to_tangent_plane(
                 pm.get_cartesian_corners(patch), tangent_point

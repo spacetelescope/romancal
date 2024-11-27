@@ -624,7 +624,7 @@ None, optional
 
                 # set pixels in 'fill_mask' that are inside a polygon to True:
                 x, y = self.wcs_inv(ra, dec)
-                poly_vert = list(zip(*[x, y]))
+                poly_vert = list(zip(*[x, y], strict=False))
 
                 polygon = region.Polygon(True, poly_vert)
                 fill_mask = polygon.scan(fill_mask)
@@ -725,7 +725,7 @@ None, optional
 
                 # set pixels in 'fill_mask' that are inside a polygon to True:
                 x, y = self.wcs_inv(ra, dec)
-                poly_vert = list(zip(*[x, y]))
+                poly_vert = list(zip(*[x, y], strict=False))
 
                 polygon = region.Polygon(True, poly_vert)
                 fill_mask = polygon.scan(fill_mask)

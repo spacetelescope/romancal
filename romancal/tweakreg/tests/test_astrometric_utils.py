@@ -136,7 +136,9 @@ def get_proper_motion_correction(epoch, gaia_ref_epoch_coords, gaia_ref_epoch):
     average_dec = np.array(
         [
             np.mean([new, old])
-            for new, old in zip(expected_new_dec, gaia_ref_epoch_coords["dec"])
+            for new, old in zip(
+                expected_new_dec, gaia_ref_epoch_coords["dec"], strict=False
+            )
         ]
     )
     pmra = gaia_ref_epoch_coords["pmra"] / np.cos(np.deg2rad(average_dec))
@@ -332,7 +334,7 @@ def create_basic_wcs(
         u.Quantity("0.1 arcsec"),
         u.Quantity("0.1 arcsec"),
     ),
-    theta: u.Quantity = u.Quantity("0 deg"),
+    theta: u.Quantity | None = None,
 ):
     """
     Creates a basic WCS (no distortion) to map pixel coordinates
@@ -368,6 +370,7 @@ def create_basic_wcs(
     does not contain the required steps to validate against the
     TweakReg pipeline.
     """
+    theta = u.Quantity("0 deg") if theta is None else theta
 
     # linear transformations
     shift_pixel_coords = models.Shift(-ref_pix[0]) & models.Shift(-ref_pix[1])

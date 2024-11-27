@@ -213,16 +213,18 @@ def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3", timeout=TIMEOU
     service_url = f"{SERVICELOCATION}/{service_type}?{spec}"
     try:
         rawcat = requests.get(service_url, headers=headers, timeout=timeout)
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.ConnectionError as err:
         raise requests.exceptions.ConnectionError(
             "Could not connect to the VO API server. Try again later."
-        )
-    except requests.exceptions.Timeout:
-        raise requests.exceptions.Timeout("The request to the VO API server timed out.")
-    except requests.exceptions.RequestException:
+        ) from err
+    except requests.exceptions.Timeout as err:
+        raise requests.exceptions.Timeout(
+            "The request to the VO API server timed out."
+        ) from err
+    except requests.exceptions.RequestException as err:
         raise requests.exceptions.RequestException(
             "There was an unexpected error with the request."
-        )
+        ) from err
     # convert from bytes to a String
     r_contents = rawcat.content.decode()
     rstr = r_contents.split("\r\n")

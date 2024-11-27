@@ -68,7 +68,7 @@ def make_output_wcs(
     """
 
     wcslist = [i.meta.wcs for i in input_models]
-    for w, i in zip(wcslist, input_models):
+    for w, i in zip(wcslist, input_models, strict=False):
         if w.bounding_box is None:
             w.bounding_box = wcs_bbox_from_shape(i.data.shape)
     naxes = wcslist[0].output_frame.naxes
@@ -156,6 +156,7 @@ def build_driz_weight(
             warnings.warn(
                 "var_rnoise array not available. Setting drizzle weight map to 1",
                 RuntimeWarning,
+                stacklevel=2,
             )
             inv_variance = 1.0
         result = inv_variance * dqmask
@@ -205,6 +206,7 @@ def build_mask(dqarr, bitvalue):
         "Use functions from astropy.nddata.bitmask module instead such as "
         "bitfield_to_boolean_mask().",
         DeprecationWarning,
+        stacklevel=2,
     )
     dqmask = bitfield_to_boolean_mask(
         dqarr,
@@ -382,7 +384,7 @@ def decode_context(context, x, y):
 
     return [
         np.flatnonzero([v & (1 << k) for v in context[:, yi, xi] for k in range(nbits)])
-        for xi, yi in zip(x, y)
+        for xi, yi in zip(x, y, strict=False)
     ]
 
 

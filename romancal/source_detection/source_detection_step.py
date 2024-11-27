@@ -225,7 +225,7 @@ class SourceDetectionStep(RomanStep):
                 # rename the PSF photometry table's columns to match the
                 # expectated columns in tweakreg:
                 for old_name, new_name in zip(
-                    ["x_fit", "y_fit"], ["xcentroid", "ycentroid"]
+                    ["x_fit", "y_fit"], ["xcentroid", "ycentroid"], strict=False
                 ):
                     catalog.rename_column(old_name, new_name)
 
