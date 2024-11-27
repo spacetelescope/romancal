@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from typing import List
 
 import numpy as np
 from astropy import units as u
@@ -947,7 +946,7 @@ def populate_mosaic_basic(
 
 
 def populate_mosaic_individual(
-    output_model: datamodels.MosaicModel, input_models: [List, ModelLibrary]
+    output_model: datamodels.MosaicModel, input_models: [list, ModelLibrary]
 ):
     """
     Populate individual meta fields in the output mosaic model based on input models.

@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 import asdf
 import numpy
@@ -7,6 +6,8 @@ import numpy
 
 def command():
     try:
+        from typing import Annotated
+
         import typer
         from stpreview.downsample import downsample_asdf_to
         from stpreview.image import (
@@ -14,7 +15,6 @@ def command():
             percentile_normalization,
             write_image,
         )
-        from typing_extensions import Annotated
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
             'SDP requirements not installed; do `pip install "romancal[sdp]"`'
@@ -28,14 +28,14 @@ def command():
             Path, typer.Argument(help="path to ASDF file with 2D image data")
         ],
         output: Annotated[
-            Optional[Path], typer.Argument(help="path to output image file")
+            Path | None, typer.Argument(help="path to output image file")
         ] = None,
         shape: Annotated[
-            Optional[tuple[int, int]],
+            tuple[int, int] | None,
             typer.Argument(help="desired pixel resolution of output image"),
         ] = (1080, 1080),
         compass: Annotated[
-            Optional[bool],
+            bool | None,
             typer.Option(help="whether to draw a north arrow on the image"),
         ] = True,
     ):
@@ -71,14 +71,14 @@ def command():
             Path, typer.Argument(help="path to ASDF file with 2D image data")
         ],
         output: Annotated[
-            Optional[Path], typer.Argument(help="path to output image file")
+            Path | None, typer.Argument(help="path to output image file")
         ] = None,
         shape: Annotated[
-            Optional[tuple[int, int]],
+            tuple[int, int] | None,
             typer.Argument(help="desired pixel resolution of output image"),
         ] = (300, 300),
         compass: Annotated[
-            Optional[bool],
+            bool | None,
             typer.Option(help="whether to draw a north arrow on the image"),
         ] = False,
     ):

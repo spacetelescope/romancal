@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 from itertools import islice
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from roman_datamodels.datamodels import RampModel, RefpixRefModel
@@ -33,7 +33,7 @@ class Const(IntEnum):
     N_COLUMNS = CHAN_WIDTH * N_DETECT_CHAN
 
 
-_offset = Optional[np.ndarray]
+_offset = np.ndarray | None
 
 
 @dataclass

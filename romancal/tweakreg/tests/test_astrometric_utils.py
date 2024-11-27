@@ -1,6 +1,5 @@
 import os
 from io import StringIO
-from typing import Tuple
 
 import numpy as np
 import pytest
@@ -325,11 +324,11 @@ def _create_tel2sky_model(input_dm):
 def create_basic_wcs(
     img_shape: tuple = (100, 100),
     ref_pix: tuple = (0, 0),
-    ref_val: Tuple[u.Quantity, u.Quantity] = (
+    ref_val: tuple[u.Quantity, u.Quantity] = (
         u.Quantity("10 deg"),
         u.Quantity("0 deg"),
     ),
-    pix_scale: Tuple[u.Quantity, u.Quantity] = (
+    pix_scale: tuple[u.Quantity, u.Quantity] = (
         u.Quantity("0.1 arcsec"),
         u.Quantity("0.1 arcsec"),
     ),

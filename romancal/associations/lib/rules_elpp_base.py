@@ -510,10 +510,8 @@ class Utility:
         match = re.match(_LEVEL1B_REGEX, level1b_name)
         if match is None or match.group("type") != "_uncal":
             logger.warning(
-                (
-                    'Item FILENAME="{}" is not a Level 1b name. Cannot transform to'
-                    " Level 2b."
-                ).format(level1b_name)
+                f'Item FILENAME="{level1b_name}" is not a Level 1b name. Cannot transform to'
+                " Level 2b."
             )
             return level1b_name
 

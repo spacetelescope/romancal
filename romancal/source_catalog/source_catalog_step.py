@@ -52,7 +52,7 @@ class SourceCatalogStep(RomanStep):
         else:
             input_model = datamodels.open(step_input)
 
-        if not isinstance(input_model, (ImageModel, MosaicModel)):
+        if not isinstance(input_model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
         # Copy the data and error arrays to avoid modifying the input

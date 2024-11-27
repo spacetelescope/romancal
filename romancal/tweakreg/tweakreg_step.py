@@ -250,7 +250,7 @@ class TweakRegStep(RomanStep):
                         wcs_fit_results = {
                             k: (
                                 v.tolist()
-                                if isinstance(v, (np.ndarray, np.bool_))
+                                if isinstance(v, np.ndarray | np.bool_)
                                 else v
                             )
                             for k, v in imcat.meta["fit_info"].items()

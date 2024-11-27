@@ -27,12 +27,6 @@ repos:
     - id: rst-inline-touching-normal
     - id: text-unicode-replacement-char
 
-- repo: https://github.com/asottile/pyupgrade
-  rev: 'v3.19.0'
-  hooks:
-    - id: pyupgrade
-      args: ["--py38-plus"]
-
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: 'v0.8.0'
   hooks:

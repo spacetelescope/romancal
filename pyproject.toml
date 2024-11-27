@@ -196,7 +196,16 @@ force-exclude = "^/(\n  (\n      \\.eggs\n    | \\.git\n    | \\.pytest_cache\n 
 [tool.ruff]
 line-length = 88
 
+
 [tool.ruff.lint]
+extend-select = [
+    "UP",   # PyUpgrade
+    # "I",    # isort
+    # "B",    # BugBear
+    # "S",    # Bandit
+    # "RUF",  # ruff specific
+    # "NPY",  # Numpy lint
+]
 exclude = [
     "jdocs",
     ".tox",
@@ -205,9 +214,6 @@ exclude = [
 ]
 ignore = [
     "E741", # ambiguous variable name
-]
-extend-select = [
-    "NPY",
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]

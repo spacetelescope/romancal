@@ -201,9 +201,7 @@ class Main:
         )
         if parsed.discover:
             logger.debug(
-                "# asns found before discover filtering={}".format(
-                    len(self.associations)
-                )
+                f"# asns found before discover filtering={len(self.associations)}"
             )
             self.associations = filter_discovered_only(
                 self.associations,
@@ -404,10 +402,8 @@ class Main:
     def __str__(self):
         result = []
         result.append(
-            (
-                "There where {:d} associations and {:d} orphaned items"
-                " found.\nAssociations found are:"
-            ).format(len(self.associations), len(self.orphaned))
+            f"There where {len(self.associations):d} associations and {len(self.orphaned):d} orphaned items"
+            " found.\nAssociations found are:"
         )
         for assocs in self.associations:
             result.append(assocs.__str__())

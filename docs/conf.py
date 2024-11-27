@@ -106,14 +106,6 @@ intersphinx_mapping = {
 
 intersphinx_disabled_reftypes = ["*"]
 
-if sys.version_info[0] == 2:
-    intersphinx_mapping["python"] = ("http://docs.python.org/2/", None)
-    intersphinx_mapping["pythonloc"] = (
-        "http://docs.python.org/",
-        os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "local/python2_local_links.inv")
-        ),
-    )
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
