@@ -6,7 +6,7 @@ from typing import List
 import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-from drizzle import cdrizzle, util
+from drizzle import cdrizzle
 from roman_datamodels import datamodels, maker_utils, stnode
 from stcal.alignment.util import compute_s_region_keyword, compute_scale
 
@@ -696,7 +696,7 @@ class ResampleData:
         """
 
         # Insure that the fillval parameter gets properly interpreted for use with tdriz
-        fillval = "INDEF" if util.is_blank(str(fillval)) else str(fillval)
+        fillval = "INDEF" if str(fillval).strip() == "" else str(fillval)
         if insci.dtype > np.float32:
             insci = insci.astype(np.float32)
 
