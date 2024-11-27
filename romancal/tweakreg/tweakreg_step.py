@@ -71,7 +71,6 @@ class TweakRegStep(RomanStep):
     reference_file_types: ClassVar = []
 
     def process(self, input):
-
         # properly handle input
         try:
             if isinstance(input, rdm.DataModel):

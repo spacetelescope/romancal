@@ -1,4 +1,4 @@
-""" Utilities for product manipulation."""
+"""Utilities for product manipulation."""
 
 import copy
 import logging

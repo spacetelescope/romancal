@@ -1,4 +1,4 @@
-""" Roman tests for generating associatinos based on skycells"""
+"""Roman tests for generating associatinos based on skycells"""
 
 import os
 

@@ -1,4 +1,4 @@
-""" Module to test rampfit with optional output
+"""Module to test rampfit with optional output
 
 Notes
 -----

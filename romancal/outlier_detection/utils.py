@@ -71,7 +71,6 @@ def _median_with_resampling(
 
     with input_models:
         for i, indices in enumerate(indices_by_group):
-
             drizzled_model = resamp.resample_group(input_models, indices)
 
             if save_intermediate_results:
@@ -151,7 +150,6 @@ def _median_without_resampling(
 
     with input_models:
         for i in range(len(input_models)):
-
             model = input_models.borrow(i)
             wht = build_driz_weight(
                 model,

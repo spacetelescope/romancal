@@ -1,5 +1,5 @@
 """
- Unit tests for the Roman jump step code
+Unit tests for the Roman jump step code
 """
 
 from itertools import cycle
