@@ -90,7 +90,7 @@ class NDArrayMappedAccessor(DataAccessor):
 
     def get_data(self):
         self._tmp.seek(0)
-        return pickle.load(self._tmp)  # nosec B301
+        return pickle.load(self._tmp)  # noqa: S301
 
     def set_data(self, data):
         data = np.asanyarray(data)

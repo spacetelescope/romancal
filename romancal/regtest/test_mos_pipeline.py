@@ -53,7 +53,7 @@ def truth_filename(run_mos):
 def thumbnail_filename(output_filename):
     thumbnail_filename = output_filename.rsplit("_", 1)[0] + "_thumb.png"
     preview_cmd = f"stpreview to {output_filename} {thumbnail_filename} 256 256 roman"
-    os.system(preview_cmd)  # nosec
+    os.system(preview_cmd)  # noqa: S605
     return thumbnail_filename
 
 
@@ -61,7 +61,7 @@ def thumbnail_filename(output_filename):
 def preview_filename(output_filename):
     preview_filename = output_filename.rsplit("_", 1)[0] + "_preview.png"
     preview_cmd = f"stpreview to {output_filename} {preview_filename} 1080 1080 roman"
-    os.system(preview_cmd)  # nosec
+    os.system(preview_cmd)  # noqa: S605
     return preview_filename
 
 

@@ -27,7 +27,7 @@ def test_parse_visitID():
     visitid_parts = skycell_asn.parse_visitID(filelist1[0][1:20])
     assert visitid_parts["Program"] == "00001"
     assert visitid_parts["Execution"] == "01"
-    assert visitid_parts["Pass"] == "002"
+    assert visitid_parts["Pass"] == "002"  # noqa: S105
     assert visitid_parts["Segment"] == "003"
     assert visitid_parts["Observation"] == "004"
     assert visitid_parts["Visit"] == "005"

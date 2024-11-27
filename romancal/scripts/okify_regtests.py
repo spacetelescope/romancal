@@ -43,7 +43,7 @@ def artifactory_copy(specfile, dry_run=False):
         jfrog_args.append("--dry-run")
 
     args = list(["jfrog", "rt", "cp"] + jfrog_args + [f"--spec={specfile}"])
-    subprocess.run(args, check=True)
+    subprocess.run(args, check=True)  # noqa: S603
 
 
 def artifactory_get_breadcrumbs(build_number, suffix):
@@ -60,7 +60,7 @@ def artifactory_get_breadcrumbs(build_number, suffix):
         ["jfrog", "rt", "dl"]
         + [f"{ARTIFACTORY_REPO}/*_GITHUB_CI_*-{build_number}/*{suffix}"]
     )
-    subprocess.run(args, check=True, capture_output=True)
+    subprocess.run(args, check=True, capture_output=True)  # noqa: S603
 
     return sorted(glob(f"**/**/**/**/*{suffix}"))
 

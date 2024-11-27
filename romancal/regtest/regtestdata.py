@@ -274,7 +274,7 @@ class RegtestData:
                     )
 
     def to_asdf(self, path):
-        tree = eval(str(self))
+        tree = eval(str(self))  # noqa: S307
         af = asdf.AsdfFile(tree=tree)
         af.write_to(path)
 
