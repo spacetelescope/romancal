@@ -15,7 +15,7 @@ def run_mos(rtdata_module):
 
     # Test Pipeline
     rtdata.get_asn("WFI/image/L3_mosaic_asn.json")
-    output = "r0099101001001001001_r274dp63x31y81_prompt_F158_i2d.asdf"
+    output = "r0099101001001001001_r274dp63x31y81_prompt_F158_coadd.asdf"
     rtdata.output = output
     args = [
         "roman_mos",

@@ -62,7 +62,6 @@ def skycell_asn(self):
         root_asn_name = self.parsed.output_file_root
         product_type = self.parsed.product_type
         product_release = self.parsed.release_product
-        suffix = "coadd"
         sep = "_"
 
         product_name_mapping = {
@@ -92,8 +91,6 @@ def skycell_asn(self):
             + patch_name
             + sep
             + filter_id
-            + sep
-            + suffix
         )
 
         with open(asn_file_name + "_asn.json", "w") as outfile:
