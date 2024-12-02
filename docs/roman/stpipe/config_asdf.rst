@@ -31,10 +31,10 @@ File Contents
 
 To describe the contents of an ASDF file, the configuration for the step
 ``roman_elp`` will be used as the example which only shows some of the
-entries for clarity: 
+entries for clarity:
 
 .. code-block::
-   
+
     #ASDF 1.0.0
     #ASDF_STANDARD 1.5.0
     %YAML 1.1
