@@ -78,15 +78,6 @@ strun roman_elp r0000101001001001001_0002_wfi10_uncal.asdf
 cp r0000101001001001001_0002_wfi10_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
 
 
-# resample regtest; needs r0000101001001001001_000{1,2}_wfi01_cal.asdf
-# builds the appropriate asn file and calls strun with it
-#echo "Creating regtest files for resample..."
-#asn_from_list r0000101001001001001_0001_wfi01_cal.asdf r0000101001001001001_0002_wfi01_cal.asdf r0000101001001001001_0003_wfi01_cal.asdf -o L3_mosaic_asn.json --product-name mosaic
-#strun romancal.step.ResampleStep L3_mosaic_asn.json --rotation=0 --output_file=mosaic.asdf
-#cp L3_mosaic_asn.json $outdir/roman-pipeline/dev/WFI/image/
-#cp mosaic_resamplestep.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-
-
 # CRDS test needs the "usual" r00001..._0001_wfi01 files.
 # It also needs a hacked r00001..._0001_wfi01 file, with the time changed.
 # this makes the hacked version.
