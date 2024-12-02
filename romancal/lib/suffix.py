@@ -62,7 +62,7 @@ SUFFIXES_TO_ADD = [
     "refpix",
     "cat",
     "segm",
-    "i2d",
+    "coadd",
 ]
 
 # Suffixes that are discovered but should not be considered.
