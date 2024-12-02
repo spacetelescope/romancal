@@ -72,15 +72,15 @@ jobs:
       cache-key: data-${{ needs.webbpsf_data_cache.outputs.cache_key }}-${{ needs.crds_context.outputs.context }}
       cache-restore-keys: ${{ needs.webbpsf_data_cache.outputs.cache_key }}
       envs: |
-        - linux: py310-oldestdeps-webbpsf-cov
+        - linux: py311-oldestdeps-webbpsf-cov
           pytest-results-summary: true
-        - linux: py310-webbpsf-nolegacypath
+        - linux: py311-webbpsf-nolegacypath
           pytest-results-summary: true
-        - linux: py311-ddtrace-webbpsf
+        - linux: py312-ddtrace-webbpsf
           pytest-results-summary: true
-        - macos: py311-ddtrace-webbpsf
+        - macos: py312-ddtrace-webbpsf
           pytest-results-summary: true
-        - linux: py311-webbpsf-cov
+        - linux: py312-webbpsf-cov
           coverage: codecov
           pytest-results-summary: true
-        - linux: py312-webbpsf
+        # - linux: py313-webbpsf  # Distabled until we support Python 3.13
