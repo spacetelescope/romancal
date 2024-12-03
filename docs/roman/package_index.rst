@@ -17,6 +17,5 @@
    resample/index.rst
    skymatch/index.rst
    source_catalog/index.rst
-   source_detection/index.rst
    stpipe/index.rst
    tweakreg/index.rst

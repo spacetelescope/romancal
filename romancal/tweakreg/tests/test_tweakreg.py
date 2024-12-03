@@ -388,7 +388,7 @@ def create_base_image_source_catalog(
     t = Table(src_detector_coords, names=("x", "y"))
     if save_catalogs:
         t.write((tmp_path / output), format=catalog_format)
-    # mimic the same output format from SourceDetectionStep
+    # mimic the same output format from SourceCatalogStep
     t.add_column([i for i in range(len(t))], name="id", index=0)
     t.add_column([np.float64(i) for i in range(len(t))], name="flux")
     t.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
@@ -446,16 +446,16 @@ def add_tweakreg_catalog_attribute(
         save_catalogs=save_catalogs,
     )
 
-    input_dm.meta["source_detection"] = maker_utils.mk_source_detection()
+    input_dm.meta["source_catalog"] = maker_utils.mk_source_catalog()
 
     if save_catalogs:
-        # SourceDetectionStep adds the catalog path+filename
-        input_dm.meta.source_detection["tweakreg_catalog_name"] = os.path.join(
+        # SourceCatalogStep adds the catalog path+filename
+        input_dm.meta.source_catalog["tweakreg_catalog_name"] = os.path.join(
             tmp_path, tweakreg_catalog_filename
         )
     else:
-        # SourceDetectionStep attaches the catalog data as a structured array
-        input_dm.meta.source_detection["tweakreg_catalog"] = source_catalog
+        # SourceCatalogStep attaches the catalog data as a structured array
+        input_dm.meta.source_catalog["tweakreg_catalog"] = source_catalog
 
 
 @pytest.fixture
@@ -507,7 +507,7 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     """
     img = base_image()
     # remove attribute
-    del img.meta.source_detection["tweakreg_catalog_name"]
+    del img.meta.source_catalog["tweakreg_catalog_name"]
     with pytest.raises(AttributeError):
         trs.TweakRegStep.call([img])
 
@@ -1016,10 +1016,10 @@ def test_update_source_catalog_coordinates(tmp_path, base_image):
 
     tweakreg = trs.TweakRegStep()
 
-    # create SourceCatalogModel
+    # create ImageSourceCatalogModel
     source_catalog_model = setup_source_catalog_model(img)
 
-    # save SourceCatalogModel
+    # save ImageSourceCatalogModel
     tweakreg.save_model(
         source_catalog_model,
         output_file="img_1.asdf",
@@ -1028,7 +1028,7 @@ def test_update_source_catalog_coordinates(tmp_path, base_image):
     )
 
     # update tweakreg catalog name
-    img.meta.source_detection.tweakreg_catalog_name = "img_1_cat.asdf"
+    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.asdf"
 
     # run TweakRegStep
     res = trs.TweakRegStep.call([img])
@@ -1036,9 +1036,9 @@ def test_update_source_catalog_coordinates(tmp_path, base_image):
     # tweak the current WCS using TweakRegStep and save the updated cat file
     with res:
         dm = res.borrow(0)
-        assert dm.meta.source_detection.tweakreg_catalog_name == "img_1_cat.asdf"
+        assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.asdf"
         tweakreg.update_catalog_coordinates(
-            dm.meta.source_detection.tweakreg_catalog_name, dm.meta.wcs
+            dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
         )
         res.shelve(dm, 0)
 
@@ -1074,10 +1074,10 @@ def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
 
     tweakreg = trs.TweakRegStep()
 
-    # create SourceCatalogModel
+    # create ImageSourceCatalogModel
     source_catalog_model = setup_source_catalog_model(img)
 
-    # save SourceCatalogModel
+    # save ImageSourceCatalogModel
     tweakreg.save_model(
         source_catalog_model,
         output_file="img_1.asdf",
@@ -1088,7 +1088,7 @@ def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
     shutil.copy("img_1_cat.asdf", "img_1_cat_original.asdf")
 
     # update tweakreg catalog name
-    img.meta.source_detection.tweakreg_catalog_name = "img_1_cat.asdf"
+    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.asdf"
 
     # run TweakRegStep
     res = trs.TweakRegStep.call([img])
@@ -1096,9 +1096,9 @@ def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
     # tweak the current WCS using TweakRegStep and save the updated cat file
     with res:
         dm = res.borrow(0)
-        assert dm.meta.source_detection.tweakreg_catalog_name == "img_1_cat.asdf"
+        assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.asdf"
         tweakreg.update_catalog_coordinates(
-            dm.meta.source_detection.tweakreg_catalog_name, dm.meta.wcs
+            dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
         )
         res.shelve(dm, 0)
 
@@ -1171,7 +1171,7 @@ def setup_source_catalog_model(img):
     expected names, adds mock PSF coordinates, applies random shifts to the centroid
     and PSF coordinates, and calculates the world coordinates for the centroids.
     """
-    cat_model = rdm.SourceCatalogModel
+    cat_model = rdm.ImageSourceCatalogModel
     source_catalog_model = maker_utils.mk_datamodel(cat_model)
     # this will be the output filename
     source_catalog_model.meta.filename = "img_1.asdf"
@@ -1221,7 +1221,7 @@ def setup_source_catalog_model(img):
     source_catalog["ra_psf"].unit = u.deg
     source_catalog["dec_psf"].unit = u.deg
 
-    # add source catalog to SourceCatalogModel
+    # add source catalog to ImageSourceCatalogModel
     source_catalog_model.source_catalog = source_catalog
 
     return source_catalog_model

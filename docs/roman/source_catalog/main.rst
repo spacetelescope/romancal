@@ -65,7 +65,7 @@ PSF Fitting
 
 Star finding algorithms like `~photutils.detection.DAOStarFinder` provide
 approximate stellar centroids. More precise centroids may be inferred by
-fitting model PSFs to the observations. Setting the SourceDetectionStep's
+fitting model PSFs to the observations. Setting the SourceCatalogStep's
 option `fit_psf` to True will generate model Roman PSFs with
 `WebbPSF <https://webbpsf.readthedocs.io/en/latest/roman.html>`_, and fit
 those models to each of the sources detected by

@@ -80,7 +80,7 @@ class SourceCatalogStep(RomanStep):
             )
 
         if isinstance(model, ImageModel):
-            cat_model = datamodels.SourceCatalogModel
+            cat_model = datamodels.ImageSourceCatalogModel
         else:
             cat_model = datamodels.MosaicSourceCatalogModel
         source_catalog_model = maker_utils.mk_datamodel(cat_model)
@@ -173,7 +173,7 @@ class SourceCatalogStep(RomanStep):
             else source_catalog_model.meta.filename
         )
 
-        if isinstance(source_catalog_model, datamodels.SourceCatalogModel):
+        if isinstance(source_catalog_model, datamodels.ImageSourceCatalogModel):
             seg_model = datamodels.SegmentationMapModel
         else:
             seg_model = datamodels.MosaicSegmentationMapModel
@@ -202,7 +202,7 @@ class SourceCatalogStep(RomanStep):
 
 def update_metadata(model, output_catalog_name):
     # update datamodel to point to the source catalog file destination
-    model.meta["source_detection"] = maker_utils.mk_source_detection(
+    model.meta["source_catalog"] = maker_utils.mk_source_catalog(
         tweakreg_catalog_name=output_catalog_name
     )
-    model.meta.cal_step.source_detection = "COMPLETE"
+    model.meta.cal_step.source_catalog = "COMPLETE"

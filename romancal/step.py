@@ -19,7 +19,6 @@ from .resample.resample_step import ResampleStep
 from .saturation.saturation_step import SaturationStep
 from .skymatch.skymatch_step import SkyMatchStep
 from .source_catalog.source_catalog_step import SourceCatalogStep
-from .source_detection.source_detection_step import SourceDetectionStep
 from .tweakreg.tweakreg_step import TweakRegStep
 
 __all__ = [
@@ -37,7 +36,6 @@ __all__ = [
     "ResampleStep",
     "SaturationStep",
     "SkyMatchStep",
-    "SourceDetectionStep",
     "SourceCatalogStep",
     "MultibandCatalogStep",
     "TweakRegStep",
