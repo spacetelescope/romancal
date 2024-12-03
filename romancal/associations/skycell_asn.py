@@ -21,7 +21,27 @@ logger.setLevel("INFO")
 
 
 def skycell_asn(filelist, output_file_root, product_type, release_product):
-    """Create the skycell associaton from the list"""
+    """
+    Create the skycell association from the list of files.
+
+    This function processes a list of files, identifies matching patches, generates
+    TAN WCS parameters, and creates an association file for the identified sky patches.
+
+    Parameters
+    ----------
+    filelist : list of str
+        List of file names to be processed.
+    output_file_root : str
+        Root string for the output association file.
+    product_type : str
+        Type of product when creating the association (e.g., 'visit', 'daily').
+    release_product : str
+        Release product identifier for the association.
+
+    Returns
+    -------
+    None
+    """
     all_patches = []
     file_list = []
     for file_name in filelist:
