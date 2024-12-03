@@ -204,8 +204,8 @@ asn_from_list r0000101001001001001_0001_wfi01_cal.asdf r0000101001001001001_0002
 # file already exists.
 # see: https://github.com/spacetelescope/romancal/issues/1544
 # To work around this remove the expected output file
-if [ -f "${l3name}_i2d.asdf" ]; then
-    rm "${l3name}_i2d.asdf"
+if [ -f "${l3name}_coadd.asdf" ]; then
+    rm "${l3name}_coadd.asdf"
 fi
 strun roman_mos L3_mosaic_asn.json
 cp L3_mosaic_asn.json $outdir/roman-pipeline/dev/WFI/image/
