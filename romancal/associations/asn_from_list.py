@@ -62,7 +62,7 @@ def _cli(args=None):
 
     parser = argparse.ArgumentParser(
         description="Create an association from a list of files",
-        usage="asn_from_list -o mosaic_asn.json\n--product-name my_mosaic *.fits",
+        usage="asn_from_list -o mosaic_asn.json\n--product-name my_mosaic *.asdf",
     )
 
     parser.add_argument(
