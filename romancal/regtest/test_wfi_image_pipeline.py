@@ -277,7 +277,7 @@ def test_all_saturated_against_truth(run_all_saturated, ignore_asdf_paths):
         ("assign_wcs", "SKIPPED"),
         ("flat_field", "SKIPPED"),
         ("photom", "SKIPPED"),
-        ("source_detection", "SKIPPED"),
+        ("source_catalog", "SKIPPED"),
         ("tweakreg", "SKIPPED"),
     ],
 )

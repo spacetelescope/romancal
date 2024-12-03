@@ -125,7 +125,7 @@ class ExposurePipeline(RomanPipeline):
                         log.info("Tweakreg step is being SKIPPED")
                         result.meta.cal_step.flat_field = "SKIPPED"
                         result.meta.cal_step.photom = "SKIPPED"
-                        result.meta.cal_step.source_detection = "SKIPPED"
+                        result.meta.cal_step.source_catalog = "SKIPPED"
 
                 if any_saturated:
                     # the input association contains a fully saturated model
@@ -177,7 +177,7 @@ class ExposurePipeline(RomanPipeline):
             "assign_wcs",
             "flat_field",
             "photom",
-            "source_detection",
+            "source_catalog",
         ]:
             fully_saturated_model.meta.cal_step[step_str] = "SKIPPED"
 
