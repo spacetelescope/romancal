@@ -42,8 +42,8 @@ def artifactory_copy(specfile, dry_run=False):
     if dry_run:
         jfrog_args.append("--dry-run")
 
-    args = list(["jfrog", "rt", "cp"] + jfrog_args + [f"--spec={specfile}"])
-    subprocess.run(args, check=True)
+    args = list(["jfrog", "rt", "cp", *jfrog_args, f"--spec={specfile}"])
+    subprocess.run(args, check=True)  # noqa: S603
 
 
 def artifactory_get_breadcrumbs(build_number, suffix):
@@ -53,14 +53,18 @@ def artifactory_get_breadcrumbs(build_number, suffix):
     An example search would be:
 
     jfrog rt search roman-pipeline-results/regression-tests/runs/*/*_okify.json --props='build.number=540;build.name=RT :: romancal'
-    """  # noqa: E501
+    """
 
     # Retreive all the okify specfiles for failed tests.
     args = list(
-        ["jfrog", "rt", "dl"]
-        + [f"{ARTIFACTORY_REPO}/*_GITHUB_CI_*-{build_number}/*{suffix}"]
+        [
+            "jfrog",
+            "rt",
+            "dl",
+            f"{ARTIFACTORY_REPO}/*_GITHUB_CI_*-{build_number}/*{suffix}",
+        ]
     )
-    subprocess.run(args, check=True, capture_output=True)
+    subprocess.run(args, check=True, capture_output=True)  # noqa: S603
 
     return sorted(glob(f"**/**/**/**/*{suffix}"))
 
@@ -72,7 +76,7 @@ def artifactory_get_build_artifacts(build_number):
     if len(specfiles) != len(asdffiles):
         raise RuntimeError("Different number of _okify.json and _rtdata.asdf files")
 
-    for a, b in zip(specfiles, asdffiles):
+    for a, b in zip(specfiles, asdffiles, strict=False):
         if a.replace(SPECFILE_SUFFIX, "") != b.replace(RTDATA_SUFFIX, ""):
             raise RuntimeError("The _okify.json and _rtdata.asdf files are not matched")
 
@@ -105,7 +109,9 @@ def main():
 
             print(f"{number_failed_tests} failed tests to okify")
 
-            for i, (specfile, asdffile) in enumerate(zip(specfiles, asdffiles)):
+            for i, (specfile, asdffile) in enumerate(
+                zip(specfiles, asdffiles, strict=False)
+            ):
                 # Print traceback and OKify info for this test failure
                 with asdf.open(asdffile) as af:
                     traceback = af.tree["traceback"]

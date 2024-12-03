@@ -1,6 +1,9 @@
 #! /usr/bin/env python
 #
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy import units as u
@@ -12,6 +15,9 @@ from stcal.ramp_fitting import ols_cas22_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -34,11 +40,11 @@ class RampFitStep(RomanStep):
         use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
         threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
         threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
-    """  # noqa: E501
+    """
 
     weighting = "optimal"  # Only weighting allowed for OLS
 
-    reference_file_types = ["readnoise", "gain", "dark"]
+    reference_file_types: ClassVar = ["readnoise", "gain", "dark"]
 
     def process(self, input):
         with rdd.open(input, mode="rw") as input_model:

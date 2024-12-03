@@ -2,6 +2,10 @@
 Module for the source catalog step.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels, maker_utils
@@ -13,6 +17,9 @@ from romancal.source_catalog.detection import convolve_data, make_segmentation_i
 from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["SourceCatalogStep"]
 
@@ -29,7 +36,7 @@ class SourceCatalogStep(RomanStep):
     """
 
     class_alias = "source_catalog"
-    reference_file_types = []
+    reference_file_types: ClassVar = []
 
     spec = """
         bkg_boxsize = integer(default=1000)   # background mesh box size in pixels
@@ -52,7 +59,7 @@ class SourceCatalogStep(RomanStep):
         else:
             input_model = datamodels.open(step_input)
 
-        if not isinstance(input_model, (ImageModel, MosaicModel)):
+        if not isinstance(input_model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
         # Copy the data and error arrays to avoid modifying the input

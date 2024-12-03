@@ -1,11 +1,17 @@
 """Apply the flux scaling"""
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 from roman_datamodels import datamodels
 
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -34,14 +40,14 @@ class FluxStep(RomanStep):
     Notes
     -----
     Currently, the correction is done in-place; the inputs are directly modified if in-memory DataModels are input.
-    """  # noqa: E501
+    """
 
     class_alias = "flux"
 
     spec = """
-    """  # noqa: E501
+    """
 
-    reference_file_types = []
+    reference_file_types: ClassVar = []
 
     def process(self, input):
         if isinstance(input, datamodels.DataModel):

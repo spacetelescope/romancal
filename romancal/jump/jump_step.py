@@ -2,8 +2,11 @@
 Detect jumps in a science image
 """
 
+from __future__ import annotations
+
 import logging
 import time
+from typing import TYPE_CHECKING
 
 import numpy as np
 from roman_datamodels import datamodels as rdd
@@ -11,6 +14,9 @@ from roman_datamodels.dqflags import group, pixel
 from stcal.jump.jump import detect_jumps
 
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -42,9 +48,9 @@ class JumpStep(RomanStep):
         sat_required_snowball = boolean(default=True) # Require the center of snowballs to be saturated
         expand_large_events = boolean(default=False) # must be True to trigger snowball and shower flagging
         use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
-    """  # noqa: E501
+    """
 
-    reference_file_types = ["gain", "readnoise"]
+    reference_file_types: ClassVar = ["gain", "readnoise"]
 
     def process(self, input):
         # Open input as a Roman DataModel (single integration; 3D arrays)

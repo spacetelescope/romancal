@@ -10,7 +10,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-__all__ = ["Region", "Edge", "Polygon"]
+__all__ = ["Edge", "Polygon", "Region"]
 
 
 class ValidationError(Exception):
@@ -91,9 +91,8 @@ class Polygon(Region):
     """
 
     def __init__(self, rid, vertices, coord_system="Cartesian"):
-        assert len(vertices) >= 4, (
-            "Expected vertices to be " "a list of minimum 4 tuples (x,y)"
-        )
+        if len(vertices) < 4:
+            raise ValueError("Expected vertices to be a list of minimum 4 tuples (x,y)")
         super().__init__(rid, coord_system)
 
         # self._shiftx & self._shifty are introduced to shift the bottom-left
@@ -239,7 +238,7 @@ class Polygon(Region):
                 y += 1
                 continue
 
-            for i, j in zip(xnew[::2], xnew[1::2]):
+            for i, j in zip(xnew[::2], xnew[1::2], strict=False):
                 xstart = max(0, i + self._shiftx)
                 xend = min(j + self._shiftx, nx - 1)
                 data[ysh][xstart : xend + 1] = self._rid

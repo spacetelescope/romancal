@@ -65,10 +65,9 @@ class BasePoolRule:
         for ppars in self.pools:
             pool = combine_pools(ppars.path, **ppars.kwargs)
             asns = generate(pool, rules)
-            assert (
-                len(asns) == ppars.n_asns
-            ), ppars.path + ": n_asns not expected {} {}".format(
-                len(asns), ppars.n_asns
+            assert len(asns) == ppars.n_asns, (
+                ppars.path
+                + ": n_asns not expected {} {}".format(len(asns), ppars.n_asns)
             )
             for asn, candidates in zip(asns, ppars.candidates):
                 assert set(asn.candidates) == set(candidates)
@@ -78,10 +77,9 @@ class BasePoolRule:
                     for member in product["members"]:
                         if member["exptype"] == "science":
                             match = file_regex.match(member["expname"])
-                            assert (
-                                match is not None
-                            ), ppars.path + ": No suffix match for {}".format(
-                                member["expname"]
+                            assert match is not None, (
+                                ppars.path
+                                + ": No suffix match for {}".format(member["expname"])
                             )
                             assert (
                                 match.groupdict()["suffix"] in ppars.valid_suffixes

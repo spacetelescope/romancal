@@ -78,7 +78,7 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
                         "var_rnoise",
                     ]
                 )
-            }"""  # noqa: E501
+            }"""
     )
     assert all(
         np.sum(~np.isnan(getattr(resample_out, x)))
@@ -126,7 +126,7 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
                         "members",
                     ]
                 )
-            }"""  # noqa: E501
+            }"""
     )
     assert all(
         hasattr(resample_out.meta.resample, x)

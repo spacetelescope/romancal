@@ -1,5 +1,4 @@
-"""Association Definitions: DMS Level2b product associations
-"""
+"""Association Definitions: DMS Level2b product associations"""
 
 import logging
 
@@ -8,12 +7,12 @@ from romancal.associations.lib.rules_elpp_base import *
 from romancal.associations.registry import RegistryMarker
 
 __all__ = [
-    "Asn_Lv2FOV",
-    "Asn_Lv2Image",
-    "Asn_Lv2GBTDSPass",
-    "Asn_Lv2GBTDSFull",
-    "AsnMixin_Lv2Image",
     "AsnMinxin_Lv2FOV",
+    "AsnMixin_Lv2Image",
+    "Asn_Lv2FOV",
+    "Asn_Lv2GBTDSFull",
+    "Asn_Lv2GBTDSPass",
+    "Asn_Lv2Image",
 ]
 
 # Configure logging

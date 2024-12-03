@@ -57,7 +57,7 @@ class AssociationRegistry(dict):
     In practice, this is one step in a larger loop over all items to
     be associated. This does not account for adding items to already
     existing associations. See :py:func:`~romancal.associations.generate` for more information.
-    """  # noqa: E501
+    """
 
     def __init__(
         self,
@@ -136,7 +136,7 @@ class AssociationRegistry(dict):
             ignore = []
         associations = []
         process_list = []
-        for name, rule in self.items():
+        for rule in self.values():
             if rule not in ignore and rule in allow:
                 asn, reprocess = rule.create(item, version_id)
                 process_list.extend(reprocess)
@@ -214,7 +214,7 @@ class AssociationRegistry(dict):
             Cannot create or validate the association.
         """
         results = []
-        for rule_name, rule in self.items():
+        for rule in self.values():
             try:
                 results.append(
                     rule.load(serialized, format=format, validate=validate, **kwargs)

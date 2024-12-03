@@ -1,5 +1,5 @@
 """
- Unit tests for the Roman source detection step code
+Unit tests for the Roman source detection step code
 """
 
 from copy import deepcopy

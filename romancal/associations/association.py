@@ -1,4 +1,4 @@
-""" Main module for associations """
+"""Main module for associations"""
 
 import json
 import logging

@@ -2,8 +2,11 @@
 Roman step for sky matching.
 """
 
+from __future__ import annotations
+
 import logging
 from copy import deepcopy
+from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
@@ -16,6 +19,9 @@ from romancal.stpipe import RomanStep
 from .skyimage import SkyImage
 from .skymatch import match
 from .skystatistics import SkyStats
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["SkyMatchStep"]
 
@@ -45,9 +51,9 @@ class SkyMatchStep(RomanStep):
         lsigma = float(min=0.0, default=4.0) # Lower clipping limit, in sigma
         usigma = float(min=0.0, default=4.0) # Upper clipping limit, in sigma
         binwidth = float(min=0.0, default=0.1) # Bin width for 'mode' and 'midpt' `skystat`, in sigma
-    """  # noqa: E501
+    """
 
-    reference_file_types = []
+    reference_file_types: ClassVar = []
 
     def process(self, input):
         self.log.setLevel(logging.DEBUG)
@@ -73,7 +79,7 @@ class SkyMatchStep(RomanStep):
         # create a list of "Sky" Images and/or Groups:
         images = []
         with library:
-            for index, model in enumerate(library):
+            for model in library:
                 images.append(self._imodel2skyim(model))
 
             # match/compute sky values:
@@ -147,7 +153,7 @@ class SkyMatchStep(RomanStep):
                 raise ValueError(
                     "'subtract' step's specification is "
                     "inconsistent with background info already "
-                    "present in image '{:s}' meta.".format(image_model.meta.filename)
+                    f"present in image '{image_model.meta.filename:s}' meta."
                 )
 
         wcs = deepcopy(image_model.meta.wcs)
