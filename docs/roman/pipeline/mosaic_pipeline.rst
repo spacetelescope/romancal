@@ -69,7 +69,7 @@ Outputs
 The resampled data can be found in
 
 :Data model: `~romancal.datamodels.WfiMosaic`
-:File suffix: _i2d
+:File suffix: _coadd
 
 Catalog file (MosaicSourceCatalog)
 +++++++++++++++++++++++++++++++++++
@@ -92,6 +92,6 @@ Result of applying all the mosaic level pipeline steps up through the
 :ref:`source_catalog <source_catalog_step>` step is to produce data background corrected
 and cleaned of outliers and resampled to a distortion free grid along with
 the source catalog and segmentation map.
-The i2d file is 2D image data, with additional attributes for the mosaicing information. The cat
+The coadd file is 2D image data, with additional attributes for the mosaicing information. The cat
 file is an asdf file with the detected sources and the segmenation map is an asdf file
 linking the input images to the detected sources.

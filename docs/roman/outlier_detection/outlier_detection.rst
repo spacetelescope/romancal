@@ -46,7 +46,7 @@ Specifically, this routine performs the following operations:
      should be used when resampling to create the output mosaic.  Any pixel with a
      DQ value not included in this value (or list of values) will be ignored when
      resampling.
-   * Resampled images will be written out to disk with suffix `_outlier_i2d` by default.
+   * Resampled images will be written out to disk with suffix `_outlier_coadd` by default.
    * **If resampling is turned off** through the use of the ``resample_data`` parameter,
      a copy of the unrectified input images (as a ModelLibrary)
      will be used for subsequent processing.

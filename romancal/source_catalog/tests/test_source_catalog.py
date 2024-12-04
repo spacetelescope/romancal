@@ -11,11 +11,11 @@ from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import (
     ImageModel,
+    ImageSourceCatalogModel,
     MosaicModel,
     MosaicSegmentationMapModel,
     MosaicSourceCatalogModel,
     SegmentationMapModel,
-    SourceCatalogModel,
 )
 from roman_datamodels.maker_utils import mk_level2_image, mk_level3_mosaic
 
@@ -455,7 +455,7 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
             True,
             ImageModel,
             {
-                "cat": SourceCatalogModel,
+                "cat": ImageSourceCatalogModel,
                 "segm": SegmentationMapModel,
                 "sourcecatalog": ImageModel,
             },
@@ -466,9 +466,9 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
             5,
             True,
             False,
-            SourceCatalogModel,
+            ImageSourceCatalogModel,
             {
-                "cat": SourceCatalogModel,
+                "cat": ImageSourceCatalogModel,
                 "segm": SegmentationMapModel,
             },
         ),
@@ -480,7 +480,7 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
             True,
             ImageModel,
             {
-                "cat": SourceCatalogModel,
+                "cat": ImageSourceCatalogModel,
                 "segm": SegmentationMapModel,
             },
         ),
@@ -490,9 +490,9 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
             5,
             False,
             False,
-            SourceCatalogModel,
+            ImageSourceCatalogModel,
             {
-                "cat": SourceCatalogModel,
+                "cat": ImageSourceCatalogModel,
                 "segm": SegmentationMapModel,
             },
         ),
@@ -659,7 +659,7 @@ def test_l3_source_catalog_keywords(
         ),
         (
             False,
-            SourceCatalogModel,
+            ImageSourceCatalogModel,
         ),
     ),
 )

@@ -28,7 +28,7 @@ def test_multiband_catalog(rtdata_module):
     # filter in it, so this is more of an existence proof for the multiband
     # catalogs than a detailed test.  Using only a single catalog lets us
     # rely on the existing regtest files.
-    outputfn = "r0099101001001001001_r274dp63x31y81_prompt_cat.asdf"
+    outputfn = "r0099101001001001001_r274dp63x31y81_prompt_F158_mbcat_cat.asdf"
     rtdata.get_asn(f"WFI/image/{inputasnfn}")
     rtdata.output = outputfn
     rtdata.input = inputasnfn
