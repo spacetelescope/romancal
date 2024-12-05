@@ -1,0 +1,1 @@
+Fix exposure pipeline handling of all saturated inputs.
