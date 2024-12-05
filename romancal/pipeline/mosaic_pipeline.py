@@ -65,9 +65,7 @@ class MosaicPipeline(RomanPipeline):
         # open the input file
         file_type = filetype.check(input)
         if file_type == "asdf":
-            log.info("The level three pipeline input needs to be an association")
-            exit(0)
-            return
+            raise TypeError("The level three pipeline input needs to be an association")
 
         if file_type == "asn":
             input = ModelLibrary(input, on_disk=self.on_disk)
@@ -135,8 +133,9 @@ class MosaicPipeline(RomanPipeline):
                         self.sourcecatalog.output_file = self.output_file
                         result_catalog = self.sourcecatalog.run(result)
                     else:
-                        log.info("resampling a mosaic file is not yet supported")
-                        exit(0)
+                        raise NotImplementedError(
+                            "resampling a mosaic file is not yet supported"
+                        )
 
             else:
                 self.resample.suffix = "coadd"
