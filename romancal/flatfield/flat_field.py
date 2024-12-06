@@ -117,18 +117,17 @@ def apply_flat_field(science, flat, include_var_flat=False):
 
     # Update the variances using BASELINE algorithm.  For guider data, it has
     # not gone through ramp fitting so there is no Poisson noise or readnoise
-    flat_data_squared = flat_data ** 2
+    flat_data_squared = flat_data**2
     science.var_poisson /= flat_data_squared
     science.var_rnoise /= flat_data_squared
 
     total_var = science.var_poisson + science.var_rnoise
     if include_var_flat:
-        var_flat = science.data ** 2 / flat_data_squared * flat_err ** 2
+        var_flat = science.data**2 / flat_data_squared * flat_err**2
         try:
             science.var_flat = var_flat
         except AttributeError:
-            science["var_flat"] = np.zeros(
-                shape=science.data.shape, dtype=np.float32)
+            science["var_flat"] = np.zeros(shape=science.data.shape, dtype=np.float32)
             science.var_flat = var_flat
         total_var += science.var_flat
 
