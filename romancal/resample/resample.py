@@ -52,7 +52,7 @@ class ResampleData:
         pixfrac=1.0,
         kernel="square",
         fillval="INDEF",
-        wht_type="ivm",
+        weight_type="ivm",
         good_bits="0",
         pscale_ratio=1.0,
         pscale=None,
@@ -94,7 +94,7 @@ class ResampleData:
         self.pixfrac = pixfrac
         self.kernel = kernel
         self.fillval = fillval
-        self.weight_type = wht_type
+        self.weight_type = weight_type
         self.good_bits = good_bits
         self.in_memory = kwargs.get("in_memory", True)
         if "target" in input_models.asn:
