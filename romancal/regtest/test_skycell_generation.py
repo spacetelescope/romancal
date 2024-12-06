@@ -21,7 +21,7 @@ def test_skycell_asn_generation(rtdata):
     rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi01_cal.asdf")
     rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi10_cal.asdf")
 
-    skycell_asn.Main(args)
+    skycell_asn._cli(args)
 
     # skycell associations that should be generated
     output_files = [
