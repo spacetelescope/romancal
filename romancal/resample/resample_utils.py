@@ -10,6 +10,7 @@ from roman_datamodels.dqflags import pixel
 from stcal.alignment.util import wcs_from_footprints
 
 from romancal.assign_wcs.utils import wcs_bbox_from_shape
+from romancal.datamodels.library import ModelLibrary
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -163,6 +164,20 @@ def build_driz_weight(
     elif weight_type == "exptime":
         exptime = model.meta.exposure.exposure_time
         result = exptime * dqmask
+    elif weight_type == "ivsky":
+        if (
+            hasattr(model, "var_sky")
+            and model.var_sky is not None
+            and model.var_sky.shape == model.data.shape
+        ):
+            with np.errstate(divide="ignore", invalid="ignore"):
+                inv_sky_variance = model.var_sky**-1
+            inv_sky_variance[~np.isfinite(inv_sky_variance)] = 1
+        else:
+            warnings.warn(
+                "var_rnoise and var_poisson arrays are not available. Setting drizzle weight map to 1"
+            )
+        result = inv_sky_variance * dqmask
     elif weight_type is None:
         result = np.ones(model.data.shape, dtype=model.data.dtype) * dqmask
     else:
@@ -402,3 +417,19 @@ def resample_range(data_shape, bbox=None):
         ymax = min(data_shape[0] - 1, int(y2 + 0.5))
 
     return xmin, xmax, ymin, ymax
+
+
+def add_var_sky_array(input_models: ModelLibrary):
+    input_models = (
+        input_models
+        if isinstance(input_models, ModelLibrary)
+        else ModelLibrary([input_models])
+    )
+    with input_models:
+        ref_img = input_models.borrow(index=0)
+        var_sky = np.zeros_like(ref_img.data)
+        input_models.shelve(model=ref_img, index=0)
+        for i, img in enumerate(input_models):
+            var_sky += img.var_rnoise + img.var_poisson / img.data * np.median(img.data)
+            img["var_sky"] = var_sky
+            input_models.shelve(img, i, modify=True)
