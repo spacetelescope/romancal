@@ -302,7 +302,7 @@ def test_resampledata_init(exposure_1):
         pixfrac=pixfrac,
         kernel=kernel,
         fillval=fillval,
-        wht_type=wht_type,
+        weight_type=wht_type,
         good_bits=good_bits,
         pscale_ratio=pscale_ratio,
         pscale=pscale,
@@ -679,7 +679,7 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures):
     np.testing.assert_allclose(output_max_value, expected_max_value)
 
 
-@pytest.mark.parametrize("weight_type", ["ivm", "exptime"])
+@pytest.mark.parametrize("weight_type", ["ivm", "exptime", "ivsky"])
 def test_resampledata_do_drizzle_default_single_exposure_weight_array(
     exposure_1,
     weight_type,
@@ -687,7 +687,7 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
     """Test that resample methods return non-empty weight arrays."""
 
     input_models = ModelLibrary(exposure_1)
-    resample_data = ResampleData(input_models, wht_type=weight_type)
+    resample_data = ResampleData(input_models, weight_type=weight_type)
 
     output_models_many_to_one = resample_data.resample_many_to_one()
     output_models_many_to_many = resample_data.resample_many_to_many()
