@@ -88,11 +88,9 @@ webbpsf = "pytest_plugin.webbpsf_plugin"
 
 [project.scripts]
 roman_static_preview = "romancal.scripts.static_preview:command"
-schema_editor = "romancal.scripts.schema_editor:main"
-schemadoc = "romancal.scripts.schemadoc:main"
 verify_install_requires = "romancal.scripts.verify_install_requires:main"
-asn_from_list = "romancal.associations.asn_from_list:Main"
-skycell_asn = "romancal.associations.skycell_asn:Main"
+asn_from_list = "romancal.associations.asn_from_list:_cli"
+skycell_asn = "romancal.associations.skycell_asn:_cli"
 
 [build-system]
 requires = [

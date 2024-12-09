@@ -4,8 +4,7 @@ skycell_asn
 ===========
 
 Create an association using either the command line tool
-``skycell_asn`` or through the Python API using either
-:class:`romancal.associations.skycell_asn.Main` or
+``skycell_asn`` or through the Python API using
 :func:`romancal.associations.skycellasn.skycell_asn`
 
 
