@@ -43,11 +43,11 @@ The ``exposure`` pipeline has an optional argument::
 
   --use_ramp_jump_detection  boolean  default=True
 
-When set to ``True``, the pipeline will perform :ref:`jump <jump_step>`  detection as a part of the ramp
+When set to ``True``, the pipeline will perform jump detection as a part of the ramp
 fitting  step. The data at this stage of the pipeline are still in the form of the original
 3D ramps ( ngroups x ncols x nrows ) and have had all of the detector-level
 correction steps applied to it, up to but not including the detection and flagging of
-Cosmic-Ray (CR) hits within each ramp (integration). For this case the  :ref:`jump <jump_step>`
+Cosmic-Ray (CR) hits within each ramp (integration). For this case the  jump detection
 module in :ref:`ramp_fitting <ramp_fitting_step>` will update the dq array with the CR hits (jumps) that
 are identified in the step.
 
@@ -62,7 +62,7 @@ Inputs
 :File suffix: _uncal
 
 The input to the ``ExposurePipeline`` can be a single raw exposure,
-e.g. "r0008308002010007027_06311_0019_WFI01_uncal.asdf", which contains the
+e.g. "r0008308002010007027_0019_wfi01_uncal.asdf", which contains the
 original raw data from all of the detector readouts in the exposure
 ( ngroups x ncols x nrows ). The raw data may also be input using an association file.
 

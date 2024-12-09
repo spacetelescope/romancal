@@ -172,50 +172,15 @@ for ``strun``. The call signature is::
 
 For example, given the following command-line::
 
-    $ strun romancal.pipeline.ExposurePipeline r0000101001001001001_01101_0001_WFI01_uncal.asdf \
-            --steps.jump.override_gain=roman_wfi_gain_0033.asdf
+    $ strun romancal.pipeline.ExposurePipeline r0000101001001001001_0001_wfi01_uncal.asdf \
+            --steps.ramp_fit.override_gain=roman_wfi_gain_0033.asdf
 
 the equivalent `from_cmdline` call would be::
 
     from romancal.pipeline import ExposurePipeline
-    ExposurePipeline.from_cmdline([' r0000101001001001001_01101_0001_WFI01_uncal.asdf',
-                                   'steps.jump.override_gain', 'roman_wfi_gain_0033.asdf'])
+    ExposurePipeline.from_cmdline([' r0000101001001001001_0001_wfi01_uncal.asdf',
+                                   'steps.ramp_fit.override_gain', 'roman_wfi_gain_0033.asdf'])
 
-
-call()
-``````
-
-Class method `Step.call` is the slightly more programmatic, and preferred,
-method of executing a step or pipeline. When using ``call``, one gets the full
-configuration initialization that
-one gets with the ``strun`` command or ``Step.from_cmdline`` method. The call
-signature is::
-
-    Step.call(input, logcfg=None, **parameters)
-
-The positional argument ``input`` is the data to be operated on, usually a
-string representing a file path or a :ref:`DataModel<datamodels>`. The optional
-keyword argument ``config_file`` is used to specify a local parameter file. The
-optional keyword argument ``logcfg`` is used to specify a logging configuration file.
-Finally, the remaining optional keyword arguments are the parameters that the
-particular step accepts. The method returns the result of the step. A basic
-example is::
-
-    from romancal.jump import JumpStep
-    output = JumpStep.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
-
-makes a new instance of `JumpStep` and executes using the specified exposure
-file. `JumpStep` has a parameter ``rejection_threshold``. To use a different
-value than the default, the statement would be::
-
-    output = JumpStep.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf',
-                           rejection_threshold=42.0)
-
-If one wishes to use a :ref:`parameter file<parameter_files>`, specify the path
-to it using the ``config_file`` argument::
-
-    output = JumpStep.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf',
-                           config_file='my_jumpstep_config.asdf')
 
 run()
 `````
@@ -233,11 +198,11 @@ example is::
 `input` in this case can be a asdf file containing the appropriate data, or the output
 of a previously run step/pipeline, which is an instance of a particular :ref:`datamodel<datamodels>`.
 
-Unlike the ``call`` class method, there is no parameter initialization that
-occurs, either by a local parameter file or from a CRDS-retrieved parameter
-reference file. Parameters can be set individually on the instance, as is shown
-above. Parameters can also be specified as keyword arguments when instantiating
-the step. The previous example could be re-written as::
+There is no parameter initialization that occurs, either by a local
+parameter file or from a CRDS-retrieved parameter reference
+file. Parameters can be set individually on the instance, as is shown
+above. Parameters can also be specified as keyword arguments when
+instantiating the step. The previous example could be re-written as::
 
     from romancal.flatfield import FlatFieldStep
 
