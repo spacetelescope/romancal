@@ -57,7 +57,9 @@ distribute-*.tar.gz
 .tox
 .*.sw[op]
 *~
-#*
+
+# emacs save files
+\#*
 .#*
 .project
 .pydevproject
