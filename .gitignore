@@ -52,15 +52,15 @@ develop-eggs
 .installed.cfg
 distribute-*.tar.gz
 
+# emacs save files
+\#*
+.#*
+
 # Other
 .cache
 .tox
 .*.sw[op]
 *~
-
-# emacs save files
-\#*
-.#*
 .project
 .pydevproject
 .settings
