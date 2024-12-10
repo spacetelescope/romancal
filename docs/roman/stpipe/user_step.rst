@@ -214,7 +214,7 @@ If one wishes to use a :ref:`parameter file<parameter_files>`, specify the path
 to it using the ``config_file`` argument::
 
     output = JumpStep.call('r0000101001001001001_0001_wfi01_uncal.asdf',
-                           config_file='my_jumpstep_config.asdf')				   
+                           config_file='my_jumpstep_config.asdf')
 
 run()
 `````
