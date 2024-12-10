@@ -36,7 +36,7 @@ using python.
 .. testsetup::
     >>> from roman_datamodels import datamodels as rdm
     >>> from roman_datamodels.maker_utils import mk_datamodel
-    >>> fn = 'r0019106003005004023_03203_0034_WFI01_cal.asdf'
+    >>> fn = 'r0019106003005004023_0034_wfi01_cal.asdf'
     >>> image_model = mk_datamodel(rdm.ImageModel)
 
     # set some metadata for the below tests
@@ -46,7 +46,7 @@ using python.
 .. code-block:: python
 
     >>> from roman_datamodels import datamodels as rdm
-    >>> fn = 'r0019106003005004023_03203_0034_WFI01_cal.asdf'
+    >>> fn = 'r0019106003005004023_0034_wfi01_cal.asdf'
     >>> image_model = rdm.open(fn)  # doctest: +SKIP
     >>> type(image_model)
     <class 'roman_datamodels.datamodels._datamodels.ImageModel'>
@@ -145,7 +145,7 @@ You can examine the contents of your model from within python using
     meta.calibration_software_name	RomanCAL
     meta.calibration_software_version	9.9.0
        meta.product_type	l2
-           meta.filename	r0019106003005004023_03203_0034_WFI01_cal.asdf
+           meta.filename	r0019106003005004023_0034_wfi01_cal.asdf
           meta.file_date	2020-01-01T00:00:00.000
          meta.model_type	ImageModel
              meta.origin	STSCI/SOC

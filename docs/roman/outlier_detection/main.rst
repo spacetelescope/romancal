@@ -4,11 +4,13 @@ Description
 :Classes: `romancal.outlier_detection.OutlierDetectionStep`
 :Aliases: outlier_detection, outlier_detection_scaled, outlier_detection_stack
 
-Processing multiple datasets together allows for the identification of bad pixels
-or cosmic-rays that remain in each of the input images, many times at levels which
-were not detectable by the :ref:`jump <jump_step>` step. The ``outlier_detection`` step
-implements the following algorithm to identify and flag any remaining cosmic-rays or
-other artifacts left over from previous calibrations:
+Processing multiple datasets together allows for the identification of
+bad pixels or cosmic-rays that remain in each of the input images,
+many times at levels which were not detectable by jump detection in
+:ref:`ramp_fitting <ramp_fitting_step>` step.  The
+``outlier_detection`` step implements the following algorithm to
+identify and flag any remaining cosmic-rays or other artifacts left
+over from previous calibrations:
 
   - build a stack of input data
 

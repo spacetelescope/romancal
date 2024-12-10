@@ -8,7 +8,6 @@ from .dark_current.dark_current_step import DarkCurrentStep
 from .dq_init.dq_init_step import DQInitStep
 from .flatfield.flat_field_step import FlatFieldStep
 from .flux import FluxStep
-from .jump.jump_step import JumpStep
 from .linearity.linearity_step import LinearityStep
 from .multiband_catalog.multiband_catalog_step import MultibandCatalogStep
 from .outlier_detection.outlier_detection_step import OutlierDetectionStep
@@ -27,7 +26,6 @@ __all__ = [
     "DQInitStep",
     "FlatFieldStep",
     "FluxStep",
-    "JumpStep",
     "LinearityStep",
     "OutlierDetectionStep",
     "PhotomStep",

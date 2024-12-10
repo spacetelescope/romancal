@@ -146,7 +146,7 @@ asdf tree.
 .. code:: python
 
     >>> from roman_datamodels import datamodels as rdm  # doctest: +SKIP
-    >>> d_uncal = rdm.open('r0000101001001001001_0001_wfi01_uncal.asdf')  # doctest: +SKIP
+    >>> d_uncal = rdm.open('r0000101001001001001 _0001_wfi01_uncal.asdf')  # doctest: +SKIP
     >>> d_uncal.info()  # doctest: +SKIP
     root (AsdfObject)
     ├─asdf_library (Software)

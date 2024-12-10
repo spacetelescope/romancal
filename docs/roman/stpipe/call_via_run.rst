@@ -15,27 +15,26 @@ file, the parameter file will be ignored.
 
  # Manually set any desired non-default parameter values
  pipe.assign_wcs.skip = True
- pipe.jump.rejection_threshold = 5
  pipe.ramp_fit.override_gain = 'my_gain_file.asdf'
  pipe.save_result = True
  pipe.output_dir = '/my/data/pipeline_outputs'
 
  # Run the pipeline
- result = pipe.run('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
+ result = pipe.run('r0000101001001001001_0001_wfi01_uncal.asdf')
 
 To run a single step:
 
 ::
 
- from romancal.jump import JumpStep
+ from romancal.ramp_fitting import RampFitStep
 
  # Instantiate the step
- step = JumpStep()
+ step = RampFitStep()
 
  # Set parameter values
- step.rejection_threshold = 5
+ step.override_gain = 'my_gain_file.asdf'
  step.save_results = True
  step.output_dir = '/my/data/jump_data'
 
  # Execute using the run method
- result = step.run('r0000101001001001001_01101_0001_WFI01_linearity.asdf')
+ result = step.run('r0000101001001001001_0001_wfi01_linearity.asdf')
