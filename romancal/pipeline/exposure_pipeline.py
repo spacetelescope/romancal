@@ -127,12 +127,55 @@ class ExposurePipeline(RomanPipeline):
                         result.meta.cal_step.photom = "SKIPPED"
                         result.meta.cal_step.source_catalog = "SKIPPED"
 
-                if any_saturated:
-                    # the input association contains a fully saturated model
-                    # where source_catalog can't be run which means we
-                    # also can't run tweakreg.
-                    result.meta.cal_step.tweakreg = "SKIPPED"
-                lib.shelve(result, model_index)
+            # Test for fully saturated data
+            if is_fully_saturated(result):
+                # Return fully saturated image file (stopping pipeline)
+                log.info("All pixels are saturated. Returning a zeroed-out image.")
+
+                #    if is_fully_saturated(result):
+                # Set all subsequent steps to skipped
+                for step_str in [
+                    "assign_wcs",
+                    "flat_field",
+                    "photom",
+                    "source_detection",
+                    "dark",
+                    "refpix",
+                    "linearity",
+                    "ramp_fit",
+                    "tweakreg",
+                ]:
+                    result.meta.cal_step[step_str] = "SKIPPED"
+
+                results.append(result)
+                return results
+
+            result = self.refpix.run(result)
+            result = self.linearity.run(result)
+            result = self.dark_current.run(result)
+            result = self.rampfit.run(result)
+            result = self.assign_wcs.run(result)
+
+            if result.meta.exposure.type == "WFI_IMAGE":
+                result = self.flatfield.run(result)
+                result = self.photom.run(result)
+                result = self.source_catalog.run(result)
+                tweakreg_input.append(result)
+                log.info(
+                    f"Number of models to tweakreg:   {len(tweakreg_input), n_members}"
+                )
+            else:
+                log.info("Flat Field step is being SKIPPED")
+                log.info("Photom step is being SKIPPED")
+                log.info("Source Detection step is being SKIPPED")
+                log.info("Tweakreg step is being SKIPPED")
+                result.meta.cal_step.flat_field = "SKIPPED"
+                result.meta.cal_step.photom = "SKIPPED"
+                result.meta.cal_step.source_detection = "SKIPPED"
+                result.meta.cal_step.tweakreg = "SKIPPED"
+
+            self.output_use_model = True
+            results.append(result)
 
         # Now that all the exposures are collated, run tweakreg
         # Note: this does not cover the case where the asn mixes imaging and spectral

@@ -21,7 +21,7 @@ For example, the exposure level  pipeline is implemented by the class
 run this pipeline is:
 ::
 
-  $ strun romancal.pipeline.ExposurePipeline r0008308002010007027_06311_0019_WFI01_uncal.asdf
+  $ strun romancal.pipeline.ExposurePipeline r0008308002010007027_0019_wfi01_uncal.asdf
 
 
 Pipeline classes also have a **pipeline name**, or **alias**, that can be used
@@ -30,7 +30,7 @@ instead of the full class specification. For example,
 can be run as
 ::
 
- $ strun roman_elp r0008308002010007027_06311_0019_WFI01_uncal.asdf
+ $ strun roman_elp r0008308002010007027_0019_wfi01_uncal.asdf
 
 The mosaic level pipeline can be run in a similar manner and is implemented using the class
 :ref:`romancal.pipeline.MosaicPipeline <mosaic_pipeline>`.
@@ -71,9 +71,9 @@ From the Python Prompt
 ------------------------------
 
 You can execute a pipeline or a step from within python by using the
-``call`` method of the class.
+``run`` method.
 
-The ``call`` method creates a new instance of the class and runs the pipeline or
+The ``run`` method creates a new instance of the class and runs the pipeline or
 step. Optional parameter settings can be specified by via keyword arguments or
 supplying a parameter file. Some examples are shown below.
 
@@ -104,8 +104,6 @@ For the mosaic level pipeline and steps,
  skymatch = SkyMatchStep()
  result = skymatch('r0000101001001001001_asn.json')
 
-
-For more information, see :ref:`Execute via call()<call_examples>`
 
 For details on the different ways to run a pipeline step, see
 the :ref:`Configuring a Step<configuring-a-step>` page.
