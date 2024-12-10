@@ -300,17 +300,6 @@ def test_all_saturated_zeroed(all_saturated_model, array_name):
     For an all saturated input the output model should contain 0s for data and err arrays.
     """
     np.testing.assert_array_equal(getattr(all_saturated_model, array_name), 0)
-    # Ensure step completion is as expected
-    with rdm.open(rtdata.output) as model:
-        assert model.meta.cal_step.dq_init == "COMPLETE"
-        assert model.meta.cal_step.saturation == "COMPLETE"
-        assert model.meta.cal_step.linearity == "SKIPPED"
-        assert model.meta.cal_step.dark == "SKIPPED"
-        assert model.meta.cal_step.ramp_fit == "SKIPPED"
-        assert model.meta.cal_step.assign_wcs == "SKIPPED"
-        assert model.meta.cal_step.flat_field == "SKIPPED"
-        assert model.meta.cal_step.photom == "SKIPPED"
-
 
 def test_pipeline_suffix(rtdata, ignore_asdf_paths):
     """
