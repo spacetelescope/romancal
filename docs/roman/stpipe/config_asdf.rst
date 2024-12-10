@@ -178,13 +178,13 @@ Remember that parameter values can come from numerous sources. Refer to
 :ref:`Parameter Precedence` for a full listing of how parameters can be set.
 
 From the ``SourceCatalogStep`` example, if all that needed to change is the
-``aperture_ee1`` parameter with a setting of ``30.0``,
+``aperture_ee1`` parameter with a setting of ``30``,
 the ``parameters`` block need only contain the following:
 
 .. code-block::
 
     parameters:
-      aperture_ee1: 30.0
+      aperture_ee1: 30
 
 
 Pipeline Configuration
