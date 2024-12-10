@@ -52,6 +52,10 @@ develop-eggs
 .installed.cfg
 distribute-*.tar.gz
 
+# emacs save files
+\#*
+.#*
+
 # Other
 .cache
 .tox

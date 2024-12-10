@@ -14,7 +14,7 @@ If you have installed the roman calibration pipeline you should also have access
 to the standalone tool asdfinfo which allows access to `ASDF <https://asdf-standard.readthedocs.io/>`_ (and roman) files
 from the terminal prompt,::
 
-    asdftool info r0000101001001001001_01101_0001_WFI16_cal.asdf
+    asdftool info r0000101001001001001_0001_wfi16_cal.asdf
     root (AsdfObject)
     ├─asdf_library (Software)
     │ ├─author (str): The ASDF Developers
@@ -62,10 +62,10 @@ To access the files via a python session,
 
     import roman_datamodels as rdm
     import asdf
-    with rdm.open('r0000101001001001001_01101_0001_WFI16_cal.asdf') as model:
+    with rdm.open('r0000101001001001001_0001_wfi16_cal.asdf') as model:
         <Manipulate the files>
 
-    with asdf.open('r0000101001001001001_01101_0001_WFI16_cal.asdf', memmap=False) as model:
+    with asdf.open('r0000101001001001001_0001_wfi16_cal.asdf', memmap=False) as model:
         <Manipulate the files>
 
 Once the files are loaded you can access various attributes. Below is a table
@@ -146,7 +146,7 @@ asdf tree.
 .. code:: python
 
     >>> from roman_datamodels import datamodels as rdm  # doctest: +SKIP
-    >>> d_uncal = rdm.open('r0000101001001001001_01101_0001_WFI01_uncal.asdf')  # doctest: +SKIP
+    >>> d_uncal = rdm.open('r0000101001001001001_0001_wfi01_uncal.asdf')  # doctest: +SKIP
     >>> d_uncal.info()  # doctest: +SKIP
     root (AsdfObject)
     ├─asdf_library (Software)
