@@ -112,7 +112,7 @@ def build_driz_weight(
     model : object
         The input model.
     weight_type : str, optional
-        The type of weight to use. Allowed values are 'ivm' or 'exptime'.
+        The type of weight to use. Allowed values are 'ivm', 'exptime', or 'ivsky'.
         Defaults to None.
     good_bits : str, optional
         The good bits to use for building the mask. Defaults to None.
