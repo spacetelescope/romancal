@@ -1,0 +1,1 @@
+Allow resample to use inverse sky variance when building the drizzle weight map.
