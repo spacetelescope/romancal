@@ -420,6 +420,18 @@ def resample_range(data_shape, bbox=None):
 
 
 def add_var_sky_array(input_models: ModelLibrary):
+    """
+    Add sky variance array to each input model.
+
+    Parameters
+    ----------
+    input_models : ModelLibrary
+        A library of models or a single model to which the sky variance array will be added.
+
+    Returns
+    -------
+    None
+    """
     input_models = (
         input_models
         if isinstance(input_models, ModelLibrary)
@@ -427,9 +439,9 @@ def add_var_sky_array(input_models: ModelLibrary):
     )
     with input_models:
         ref_img = input_models.borrow(index=0)
-        var_sky = np.zeros_like(ref_img.data)
         input_models.shelve(model=ref_img, index=0)
         for i, img in enumerate(input_models):
-            var_sky += img.var_rnoise + img.var_poisson / img.data * np.median(img.data)
-            img["var_sky"] = var_sky
+            img["var_sky"] = img.var_rnoise + img.var_poisson / img.data * np.median(
+                img.data
+            )
             input_models.shelve(img, i, modify=True)
