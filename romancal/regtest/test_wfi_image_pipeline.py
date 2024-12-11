@@ -265,6 +265,7 @@ def test_all_saturated_against_truth(run_all_saturated, ignore_asdf_paths):
     )
     assert diff.identical, diff.report()
 
+
 @pytest.mark.parametrize(
     "step_name, status",
     [
@@ -300,6 +301,7 @@ def test_all_saturated_zeroed(all_saturated_model, array_name):
     For an all saturated input the output model should contain 0s for data and err arrays.
     """
     np.testing.assert_array_equal(getattr(all_saturated_model, array_name), 0)
+
 
 def test_pipeline_suffix(rtdata, ignore_asdf_paths):
     """
