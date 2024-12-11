@@ -51,7 +51,6 @@ SUFFIXES_TO_ADD = [
     "dqinit",
     "assign_wcs",
     "linearity",
-    "jump",
     "rampfit",
     "saturation",
     "dark_current",
@@ -73,7 +72,6 @@ SUFFIXES_TO_DISCARD = ["mosaicpipeline", "pipeline", "step"]
 _calculated_suffixes = {
     "saturationstep",
     "darkcurrentstep",
-    "jumpstep",
     "rampfit",
     "dark_current",
     "assignwcsstep",
@@ -89,7 +87,6 @@ _calculated_suffixes = {
     "dq_init",
     "linearitystep",
     "dark_current",
-    "jump",
     "tweakregstep",
     "outlierdetectionstep",
     "skymatchstep",

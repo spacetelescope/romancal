@@ -8,7 +8,6 @@ Pipeline Steps
    refpix/index.rst
    linearity/index.rst
    dark_current/index.rst
-   jump/index.rst
    ramp_fitting/index.rst
    assign_wcs/index.rst
    flatfield/index.rst

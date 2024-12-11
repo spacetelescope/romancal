@@ -11,7 +11,7 @@ The names of the exposure level data are constructed with information from the
 science header of the exposure, allowing users to map it to the observation in their corresponding
 APT files. The ASDF file naming scheme for the Exposure products is::
 
- r<ppppp><cc><aaa><sss><ooo><vvv>_<gg><s><aa>_<eeee>_<detector>_<prodType>.asdf
+ r<ppppp><cc><aaa><sss><ooo><vvv>_<eeee>_<detector>_<prodType>.asdf
 
 where
 
@@ -25,7 +25,7 @@ where
  - s: sequence ID (1=prime, >1 parallel)
  - aa: activity number (base 36)
  - eeee: exposure number
- - detector: detector name (e.g. WFI01, WFI02, ...)
+ - detector: detector name (e.g. wfi01, wfi02, ...)
  - prodType: product type identifier (e.g. 'uncal', 'cal')
 
 The standard <prodType> for the pipeline are uncal and cal, for the input products and resulting
@@ -35,8 +35,8 @@ linearity, jump, darkcurrent, rampfit, assignwcs, flat, and photom.
 
 An example Exposure Level 1 upcalibrated ASDF file name is::
 
- r0000101001001001001_01101_0001_WFI01_uncal.asdf
+ r0000101001001001001_0001_wfi01_uncal.asdf
 
 An example Exposure Level 2 product ASDF file name is::
 
- r0000101001001001001_01101_0001_WFI01_cal.asdf
+ r0000101001001001001_0001_wfi01_cal.asdf
