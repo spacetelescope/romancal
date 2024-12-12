@@ -78,13 +78,13 @@ image.
     If `weight_type=ivm` (the default), the scaling value
     will be determined per-pixel using the inverse of the read noise
     (VAR_RNOISE) array stored in each input image. If the VAR_RNOISE array does
-    not exist, the variance is set to 1 for all pixels (equal weighting).
+    not exist, the weight is set to 1 for all pixels (equal weighting).
     If `weight_type=exptime`, the scaling value will be set equal to the
     exposure time found in the image header.
     If `weight_type=ivsky`, the scaling value will be determined per-pixel
     using the inverse of the sky variance (VAR_SKY) array calculated in the
     resample step for each input image. If the VAR_SKY array does
-    not exist, the variance is set to 1 for all pixels (equal weighting).
+    not exist, the weight is set to 1 for all pixels (equal weighting).
 
 ``--single`` (bool, default=False)
     If set to `True`, resample each input image into a separate output.  If
