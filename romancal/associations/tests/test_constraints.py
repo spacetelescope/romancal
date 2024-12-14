@@ -2,11 +2,8 @@
 
 import pytest
 
-from romancal.associations.lib.constraint import (
-    Constraint,
-    SimpleConstraint,
-    SimpleConstraintABC,
-)
+from romancal.associations.lib.constraint import (Constraint, SimpleConstraint,
+                                                  SimpleConstraintABC)
 
 
 def test_sc_dup_names():

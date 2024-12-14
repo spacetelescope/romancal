@@ -13,11 +13,8 @@ from roman_datamodels.maker_utils import mk_common_meta, mk_level2_image
 from romancal.datamodels import ModelLibrary
 from romancal.lib.tests.helpers import word_precision_check
 from romancal.resample import gwcs_drizzle, resample_utils
-from romancal.resample.resample import (
-    ResampleData,
-    populate_mosaic_basic,
-    populate_mosaic_individual,
-)
+from romancal.resample.resample import (ResampleData, populate_mosaic_basic,
+                                        populate_mosaic_individual)
 
 
 # Helper function to create a mock input model with specified metadata

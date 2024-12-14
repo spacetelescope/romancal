@@ -9,11 +9,8 @@ def command():
     try:
         import typer
         from stpreview.downsample import downsample_asdf_to
-        from stpreview.image import (
-            north_pole_angle,
-            percentile_normalization,
-            write_image,
-        )
+        from stpreview.image import (north_pole_angle,
+                                     percentile_normalization, write_image)
         from typing_extensions import Annotated
     except (ImportError, ModuleNotFoundError):
         raise ImportError(

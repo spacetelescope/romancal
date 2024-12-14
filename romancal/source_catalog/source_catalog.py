@@ -15,7 +15,8 @@ from astropy.stats import SigmaClip, gaussian_fwhm_to_sigma
 from astropy.table import QTable, Table
 from astropy.utils import lazyproperty
 from astropy.utils.exceptions import AstropyUserWarning
-from photutils.aperture import CircularAnnulus, CircularAperture, aperture_photometry
+from photutils.aperture import (CircularAnnulus, CircularAperture,
+                                aperture_photometry)
 from photutils.segmentation import SourceCatalog
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel

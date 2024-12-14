@@ -12,7 +12,6 @@ from gwcs import WCS, coordinate_frames
 
 import romancal.datamodels.filetype as filetype
 from romancal.datamodels import ModelLibrary
-
 # step imports
 from romancal.flux import FluxStep
 from romancal.outlier_detection import OutlierDetectionStep

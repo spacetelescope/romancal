@@ -19,11 +19,9 @@ from numpy.testing import assert_allclose
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
-from romancal.tweakreg.astrometric_utils import (
-    compute_radius,
-    create_astrometric_catalog,
-    get_catalog,
-)
+from romancal.tweakreg.astrometric_utils import (compute_radius,
+                                                 create_astrometric_catalog,
+                                                 get_catalog)
 
 ARAD = np.pi / 180.0
 

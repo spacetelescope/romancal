@@ -1,11 +1,7 @@
 """Test basic generate operations"""
 
-from romancal.associations import (
-    AssociationPool,
-    AssociationRegistry,
-    generate,
-    load_asn,
-)
+from romancal.associations import (AssociationPool, AssociationRegistry,
+                                   generate, load_asn)
 from romancal.associations.tests.helpers import t_path
 
 

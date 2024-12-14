@@ -3,7 +3,8 @@
 import asdf
 import pytest
 
-from romancal.multiband_catalog.multiband_catalog_step import MultibandCatalogStep
+from romancal.multiband_catalog.multiband_catalog_step import \
+    MultibandCatalogStep
 from romancal.stpipe import RomanStep
 
 # mark all tests in this module

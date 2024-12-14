@@ -6,7 +6,8 @@ import logging
 from copy import deepcopy
 
 import numpy as np
-from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
+from astropy.nddata.bitmask import (bitfield_to_boolean_mask,
+                                    interpret_bit_flags)
 from roman_datamodels import maker_utils
 from roman_datamodels.dqflags import pixel
 

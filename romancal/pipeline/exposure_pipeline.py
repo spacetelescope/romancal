@@ -5,7 +5,6 @@ import numpy as np
 from roman_datamodels.dqflags import group
 
 import romancal.datamodels.filetype as filetype
-
 # step imports
 from romancal.assign_wcs import AssignWcsStep
 from romancal.dark_current import DarkCurrentStep
