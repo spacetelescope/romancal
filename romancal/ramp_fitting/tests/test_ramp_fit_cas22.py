@@ -5,12 +5,8 @@ import pytest
 from astropy import units as u
 from astropy.time import Time
 from roman_datamodels import maker_utils
-from roman_datamodels.datamodels import (
-    DarkRefModel,
-    GainRefModel,
-    RampModel,
-    ReadnoiseRefModel,
-)
+from roman_datamodels.datamodels import (DarkRefModel, GainRefModel, RampModel,
+                                         ReadnoiseRefModel)
 
 from romancal.ramp_fitting import RampFitStep
 

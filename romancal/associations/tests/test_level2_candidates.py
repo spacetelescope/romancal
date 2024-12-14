@@ -3,11 +3,8 @@
 import pytest
 
 from romancal.associations.main import Main
-from romancal.associations.tests.helpers import (
-    level2_rule_path,
-    mkstemp_pool_file,
-    t_path,
-)
+from romancal.associations.tests.helpers import (level2_rule_path,
+                                                 mkstemp_pool_file, t_path)
 
 
 @pytest.mark.parametrize(

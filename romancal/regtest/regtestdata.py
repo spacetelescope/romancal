@@ -16,17 +16,12 @@ import gwcs
 import numpy as np
 import requests
 from astropy.units import Quantity
-from ci_watson.artifactory_helpers import (
-    BigdataError,
-    check_url,
-    get_bigdata,
-    get_bigdata_root,
-)
+from ci_watson.artifactory_helpers import (BigdataError, check_url,
+                                           get_bigdata, get_bigdata_root)
 from deepdiff.operator import BaseOperator
 from gwcs.wcstools import grid_from_bounding_box
 
 from romancal.associations.load_asn import load_asn
-
 # from romancal.lib.suffix import replace_suffix
 from romancal.stpipe import RomanStep
 

@@ -2,11 +2,8 @@
 
 from romancal.associations import generate, load_asn
 from romancal.associations.main import Main
-from romancal.associations.tests.helpers import (
-    combine_pools,
-    registry_level2_only,
-    t_path,
-)
+from romancal.associations.tests.helpers import (combine_pools,
+                                                 registry_level2_only, t_path)
 
 # REGEX_LEVEL2 = r'(?P<path>.+)(?P<type>_rate(ints)?)(?P<extension>\..+)'
 # REGEX_LEVEL2 = r'(?P<path>.+)(.*\_.*\_.*\_.*\_.*)'

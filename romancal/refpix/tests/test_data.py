@@ -1,13 +1,8 @@
 import numpy as np
 from numpy.testing import assert_allclose
 
-from romancal.refpix.data import (
-    ChannelView,
-    Coefficients,
-    Const,
-    ReferenceFFT,
-    StandardView,
-)
+from romancal.refpix.data import (ChannelView, Coefficients, Const,
+                                  ReferenceFFT, StandardView)
 
 from . import reference_utils
 from .conftest import RNG, Dims

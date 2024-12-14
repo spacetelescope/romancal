@@ -9,14 +9,11 @@ from astropy.table import Table
 from numpy.testing import assert_equal
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels as rdm
-from roman_datamodels.datamodels import (
-    ImageModel,
-    ImageSourceCatalogModel,
-    MosaicModel,
-    MosaicSegmentationMapModel,
-    MosaicSourceCatalogModel,
-    SegmentationMapModel,
-)
+from roman_datamodels.datamodels import (ImageModel, ImageSourceCatalogModel,
+                                         MosaicModel,
+                                         MosaicSegmentationMapModel,
+                                         MosaicSourceCatalogModel,
+                                         SegmentationMapModel)
 from roman_datamodels.maker_utils import mk_level2_image, mk_level3_mosaic
 
 from romancal.source_catalog.reference_data import ReferenceData

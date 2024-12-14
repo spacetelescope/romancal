@@ -11,7 +11,8 @@ from tempfile import TemporaryDirectory
 import pytest
 from astropy.table import Table, vstack
 
-from romancal.associations import AssociationPool, AssociationRegistry, generate
+from romancal.associations import (AssociationPool, AssociationRegistry,
+                                   generate)
 from romancal.associations.lib.counter import Counter
 from romancal.associations.lib.utilities import is_iterable
 

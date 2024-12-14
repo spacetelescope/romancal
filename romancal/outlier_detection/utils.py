@@ -5,12 +5,8 @@ from functools import partial
 import numpy as np
 from roman_datamodels.dqflags import pixel
 from stcal.outlier_detection.median import MedianComputer
-from stcal.outlier_detection.utils import (
-    compute_weight_threshold,
-    flag_crs,
-    flag_resampled_crs,
-    gwcs_blot,
-)
+from stcal.outlier_detection.utils import (compute_weight_threshold, flag_crs,
+                                           flag_resampled_crs, gwcs_blot)
 
 from romancal.resample.resample import ResampleData
 from romancal.resample.resample_utils import build_driz_weight
