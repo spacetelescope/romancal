@@ -18,7 +18,7 @@ dependencies = [
     "astropy >=5.3.0",
     "crds >=11.16.16",
     #"gwcs >=0.21.0",
-    "gwcs @ git+https://github.com/nden/gwcs.git@inverse-bbox",
+    "gwcs @ git+https://github.com/spacetelescope/gwcs.git@master",
     "jsonschema >=4.8",
     "numpy >=1.24",
     "photutils >=1.13.0",
@@ -29,7 +29,8 @@ dependencies = [
     "scipy >=1.11",
     # "stcal>=1.10.0,<1.11.0",
     #"stcal @ git+https://github.com/spacetelescope/stcal.git@main",
-    "stcal @ git+https://github.com/nden/stcal.git@inverse-wcs-bbox",
+    "stcal @ git+https://github.com/spacetelescope/stcal.git@4953380
+",
     # "stpipe >=0.7.0,<0.8.0",
     "stpipe @ git+https://github.com/spacetelescope/stpipe.git@main",
     "tweakwcs >=0.8.8",
