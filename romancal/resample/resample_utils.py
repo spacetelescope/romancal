@@ -177,6 +177,7 @@ def build_driz_weight(
             warnings.warn(
                 "var_rnoise and var_poisson arrays are not available. Setting drizzle weight map to 1"
             )
+            inv_sky_variance = 1.0
         result = inv_sky_variance * dqmask
     elif weight_type is None:
         result = np.ones(model.data.shape, dtype=model.data.dtype) * dqmask
