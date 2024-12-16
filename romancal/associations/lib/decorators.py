@@ -10,7 +10,7 @@ Lifted from the `glue-viz`_ project.
 
 from functools import wraps
 
-__all__ = ["memoize", "singleton", "memoize_attr_check"]
+__all__ = ["memoize", "memoize_attr_check", "singleton"]
 
 
 def _make_key(args, kwargs):

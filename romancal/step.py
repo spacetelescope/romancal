@@ -22,11 +22,12 @@ from .tweakreg.tweakreg_step import TweakRegStep
 
 __all__ = [
     "AssignWcsStep",
-    "DarkCurrentStep",
     "DQInitStep",
+    "DarkCurrentStep",
     "FlatFieldStep",
     "FluxStep",
     "LinearityStep",
+    "MultibandCatalogStep",
     "OutlierDetectionStep",
     "PhotomStep",
     "RampFitStep",
@@ -35,6 +36,5 @@ __all__ = [
     "SaturationStep",
     "SkyMatchStep",
     "SourceCatalogStep",
-    "MultibandCatalogStep",
     "TweakRegStep",
 ]

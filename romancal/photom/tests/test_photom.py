@@ -60,7 +60,7 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
     pixelareasr = np.ones(nrows, dtype=np.float64) * area_ster
 
     # Bundle values into a list
-    values = list(zip(photmjsr, uncertainty, pixelareasr))
+    values = list(zip(photmjsr, uncertainty, pixelareasr, strict=False))
 
     # Create dictionary containing all values
     reftab = {}

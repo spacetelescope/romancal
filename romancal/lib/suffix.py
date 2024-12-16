@@ -86,7 +86,6 @@ _calculated_suffixes = {
     "pipeline",
     "dq_init",
     "linearitystep",
-    "dark_current",
     "tweakregstep",
     "outlierdetectionstep",
     "skymatchstep",
@@ -210,9 +209,7 @@ if __name__ == "__main__":
         to_add=(calculated_suffixes, SUFFIXES_TO_ADD), to_remove=(SUFFIXES_TO_DISCARD,)
     )
     print(
-        "Known list has {known_len} suffixes. Found {new_len} suffixes.".format(
-            known_len=len(KNOW_SUFFIXES), new_len=len(found_suffixes)
-        )
+        f"Known list has {len(KNOW_SUFFIXES)} suffixes. Found {len(found_suffixes)} suffixes."
     )
     print(
         "Suffixes that have changed are"

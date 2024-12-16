@@ -113,7 +113,7 @@ class TestDescriptionPlugin:
 
 @pytest.fixture(scope="function")
 def create_mock_asn_file():
-    def _create_asn_file(tmp_path: str, members_mapping: dict = None) -> str:
+    def _create_asn_file(tmp_path: str, members_mapping: dict | None = None) -> str:
         """
         Create a mock association file with the provided members mapping.
 

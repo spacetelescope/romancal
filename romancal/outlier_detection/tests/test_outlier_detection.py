@@ -187,7 +187,7 @@ def test_find_outliers(tmp_path, base_image, on_disk):
 
     expected_crs = [img_0_input_coords, img_1_input_coords, None]
     with result:
-        for cr_coords, flagged_img in zip(expected_crs, result):
+        for cr_coords, flagged_img in zip(expected_crs, result, strict=False):
             if cr_coords is None:
                 assert not np.any(flagged_img.dq > 0)
             else:

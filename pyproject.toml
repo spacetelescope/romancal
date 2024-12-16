@@ -15,9 +15,10 @@ classifiers = [
 dependencies = [
     "asdf >=3.3.0",
     "asdf-astropy >=0.5.0",
-    "astropy >=5.3.0",
+    "astropy >=6.0.0",
     "crds >=11.16.16",
-    "gwcs >=0.21.0",
+    # "gwcs >=0.21.0",
+    "gwcs @ git+https://github.com/spacetelescope/gwcs.git@master",
     "jsonschema >=4.8",
     "numpy >=1.24",
     "photutils >=1.13.0",
@@ -25,7 +26,7 @@ dependencies = [
     "requests >=2.26",
     # "roman_datamodels>=0.22.0,<0.23.0",
     "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
-    "scipy >=1.11",
+    "scipy >=1.14.1",
     # "stcal>=1.10.0,<1.11.0",
     "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
     # "stpipe >=0.7.0,<0.8.0",
@@ -57,7 +58,6 @@ docs = [
     "sphinx-rtd-theme",
     "stsci-rtd-theme",
     "sphinx-autobuild",
-    "tomli; python_version <=\"3.11\"",
 ]
 test = [
     "ci-watson >=0.5.0",
@@ -121,7 +121,7 @@ zip-safe = false
 ]
 
 [tool.pytest.ini_options]
-minversion = 4.6
+minversion = 6.0
 norecursedirs = [
     "docs/_build",
     "romancal/scripts",
@@ -139,9 +139,14 @@ doctest_plus = "enabled"
 doctest_rst = "enabled"
 text_file_format = "rst"
 log_cli_level = "info"
+xfail_strict = true
 addopts = [
+    "--color=yes",      # color test output
+    "--doctest-rst",    # enable doctests
     "--doctest-ignore-import-errors",
-    "--color=yes",
+    "--strict-config",  # fail on unknown config options
+    "--strict-markers", # fail on unknown markers
+    "-ra",              # Show summary of all failures/errorsproduct_names
 ]
 markers = [
     "soctests: run only the SOC tests in the suite.",
@@ -173,30 +178,19 @@ exclude_lines = [
     "if __name__ == \"__main__\":",
 ]
 
-[tool.bandit]
-skips = [
-    "B101",
-    "B307",
-    "B404",
-    "B603",
-]
-exclude_dirs = [
-    "romancal/regtest/scripts",
-]
-
-[tool.isort]
-profile = "black"
-filter_files = true
-line_length = 88
-
-[tool.black]
-line-length = 88
-force-exclude = "^/(\n  (\n      \\.eggs\n    | \\.git\n    | \\.pytest_cache\n    | \\.tox\n  )/\n)\n"
-
 [tool.ruff]
 line-length = 88
 
+
 [tool.ruff.lint]
+extend-select = [
+    "UP",   # PyUpgrade
+    "I",    # isort
+    "B",    # BugBear
+    "S",    # Bandit
+    "RUF",  # ruff specific
+    "NPY",  # Numpy lint
+]
 exclude = [
     "jdocs",
     ".tox",
@@ -206,13 +200,19 @@ exclude = [
 ignore = [
     "E741", # ambiguous variable name
 ]
-extend-select = [
-    "NPY",
-]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "romancal/associations/__init__.py" = [
     "E402",
+]
+"romancal/**/tests/**.py" = [
+    "S101" # Bandit: Use of assert detected (fine in test files)
+]
+"romancal/**/test/**.py" = [
+    "S101" # Bandit: Use of assert detected (fine in test files)
+]
+"romancal/regtest/**.py" = [
+    "S101" # Bandit: Use of assert detected (fine in test files)
 ]
 
 [tool.cibuildwheel.macos]

@@ -1,4 +1,4 @@
-""" Roman tests for source catalog creation """
+"""Roman tests for source catalog creation"""
 
 import asdf
 import pytest

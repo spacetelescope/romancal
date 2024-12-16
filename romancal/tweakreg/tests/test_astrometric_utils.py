@@ -1,6 +1,5 @@
 import os
 from io import StringIO
-from typing import Tuple
 
 import numpy as np
 import pytest
@@ -59,7 +58,7 @@ def get_parallax_correction_barycenter(epoch, gaia_ref_epoch_coords):
         correction = get_parallax_correction_earth_barycenter(epoch, gaia_coords)
         print(correction)
         (0.001, -0.002)
-    """  # noqa: E501
+    """
 
     obs_date = Time(epoch, format="decimalyear")
     earths_center_barycentric_coords = coord.get_body_barycentric(
@@ -125,7 +124,7 @@ def get_proper_motion_correction(epoch, gaia_ref_epoch_coords, gaia_ref_epoch):
     }
     gaia_ref_epoch = 2020.0
     get_proper_motion_correction(epoch, gaia_coords, gaia_ref_epoch)
-    """  # noqa: E501
+    """
 
     expected_new_dec = (
         np.array(
@@ -137,7 +136,9 @@ def get_proper_motion_correction(epoch, gaia_ref_epoch_coords, gaia_ref_epoch):
     average_dec = np.array(
         [
             np.mean([new, old])
-            for new, old in zip(expected_new_dec, gaia_ref_epoch_coords["dec"])
+            for new, old in zip(
+                expected_new_dec, gaia_ref_epoch_coords["dec"], strict=False
+            )
         ]
     )
     pmra = gaia_ref_epoch_coords["pmra"] / np.cos(np.deg2rad(average_dec))
@@ -195,7 +196,7 @@ def get_parallax_correction(epoch, gaia_ref_epoch_coords):
             "parallax": 2.5
         }
         get_parallax_correction(epoch, gaia_coords)
-    """  # noqa: E501
+    """
 
     # get parallax correction using textbook calculations (i.e. Earth's barycenter)
     parallax_corr = get_parallax_correction_barycenter(
@@ -325,15 +326,15 @@ def _create_tel2sky_model(input_dm):
 def create_basic_wcs(
     img_shape: tuple = (100, 100),
     ref_pix: tuple = (0, 0),
-    ref_val: Tuple[u.Quantity, u.Quantity] = (
+    ref_val: tuple[u.Quantity, u.Quantity] = (
         u.Quantity("10 deg"),
         u.Quantity("0 deg"),
     ),
-    pix_scale: Tuple[u.Quantity, u.Quantity] = (
+    pix_scale: tuple[u.Quantity, u.Quantity] = (
         u.Quantity("0.1 arcsec"),
         u.Quantity("0.1 arcsec"),
     ),
-    theta: u.Quantity = u.Quantity("0 deg"),
+    theta: u.Quantity | None = None,
 ):
     """
     Creates a basic WCS (no distortion) to map pixel coordinates
@@ -369,6 +370,7 @@ def create_basic_wcs(
     does not contain the required steps to validate against the
     TweakReg pipeline.
     """
+    theta = u.Quantity("0 deg") if theta is None else theta
 
     # linear transformations
     shift_pixel_coords = models.Shift(-ref_pix[0]) & models.Shift(-ref_pix[1])

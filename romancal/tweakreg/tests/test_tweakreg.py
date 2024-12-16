@@ -4,7 +4,6 @@ import os
 import shutil
 from io import StringIO
 from pathlib import Path
-from typing import Tuple
 
 import numpy as np
 import pytest
@@ -204,15 +203,15 @@ def _create_tel2sky_model(input_dm):
 def create_basic_wcs(
     img_shape: tuple = (100, 100),
     ref_pix: tuple = (0, 0),
-    ref_val: Tuple[u.Quantity, u.Quantity] = (
+    ref_val: tuple[u.Quantity, u.Quantity] = (
         u.Quantity("10 deg"),
         u.Quantity("0 deg"),
     ),
-    pix_scale: Tuple[u.Quantity, u.Quantity] = (
+    pix_scale: tuple[u.Quantity, u.Quantity] = (
         u.Quantity("0.1 arcsec"),
         u.Quantity("0.1 arcsec"),
     ),
-    theta: u.Quantity = u.Quantity("0 deg"),
+    theta: u.Quantity | None = None,
 ):
     """
     Creates a basic WCS (no distortion) to map pixel coordinates
@@ -248,6 +247,7 @@ def create_basic_wcs(
     does not contain the required steps to validate against the
     TweakReg pipeline.
     """
+    theta = u.Quantity("0 deg") if theta is None else theta
 
     # linear transformations
     shift_pixel_coords = models.Shift(-ref_pix[0]) & models.Shift(-ref_pix[1])
@@ -347,7 +347,9 @@ def get_catalog_data(input_dm, **kwargs):
     sr = kwargs.get("sr", 100 / 3600)
     add_shifts = kwargs.get("add_shifts", False)
     gaia_cat = get_catalog(right_ascension=ra, declination=dec, search_radius=sr)
-    gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
+    gaia_source_coords = [
+        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)
+    ]
     catalog_data = np.array(
         [
             input_dm.meta.wcs.world_to_pixel_values(ra, dec)
@@ -751,7 +753,7 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
     assert isinstance(res, ModelLibrary)
 
     with res:
-        for i, (model, target) in enumerate(zip(res, [img1, img2, img3])):
+        for i, (model, target) in enumerate(zip(res, [img1, img2, img3], strict=False)):
             assert hasattr(model.meta, "asn")
 
             assert (
@@ -792,7 +794,9 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     gaia_cat = get_catalog(
         right_ascension=270, declination=66, search_radius=100 / 3600
     )
-    gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
+    gaia_source_coords = [
+        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)
+    ]
 
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     original_wcs = copy.deepcopy(img.meta.wcs)
@@ -835,16 +839,18 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     # (rounded to the 10th decimal place to avoid floating point issues)
     dist1 = [
         np.round(gref.separation(oref), 10)
-        for gref, oref in zip(gaia_ref_source, original_ref_source)
+        for gref, oref in zip(gaia_ref_source, original_ref_source, strict=False)
     ]
     # calculate distance between tweaked WCS result and Gaia
     # (rounded to the 10th decimal place to avoid floating point issues)
     dist2 = [
         np.round(gref.separation(nref), 10)
-        for gref, nref in zip(gaia_ref_source, new_ref_source)
+        for gref, nref in zip(gaia_ref_source, new_ref_source, strict=False)
     ]
 
-    assert np.array([np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2)]).all()
+    assert np.array(
+        [np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2, strict=False)]
+    ).all()
 
 
 def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
@@ -932,7 +938,7 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
 
     assert len(res.group_names) == 2
     with res:
-        for r, i in zip(res, [img1, img2]):
+        for r, i in zip(res, [img1, img2], strict=False):
             assert r.meta.group_id == i.meta.observation.observation_id
             res.shelve(r, modify=False)
 
@@ -950,7 +956,8 @@ def test_parse_catfile_valid_catalog(tmp_path, base_image):
     catdict = trs._parse_catfile(catfile)
 
     assert all(
-        x.meta.filename == y for x, y in zip(res_dict.get("datamodels"), catdict.keys())
+        x.meta.filename == y
+        for x, y in zip(res_dict.get("datamodels"), catdict.keys(), strict=False)
     )
 
 

@@ -16,11 +16,11 @@ from . import region
 from .skystatistics import SkyStats
 
 __all__ = [
-    "SkyImage",
-    "SkyGroup",
     "DataAccessor",
     "NDArrayInMemoryAccessor",
     "NDArrayMappedAccessor",
+    "SkyGroup",
+    "SkyImage",
 ]
 
 
@@ -90,7 +90,7 @@ class NDArrayMappedAccessor(DataAccessor):
 
     def get_data(self):
         self._tmp.seek(0)
-        return pickle.load(self._tmp)  # nosec B301
+        return pickle.load(self._tmp)  # noqa: S301
 
     def set_data(self, data):
         data = np.asanyarray(data)
@@ -406,13 +406,13 @@ class SkyImage:
             the intersection of this `SkyImage` and `skyimage`.
 
         """
-        if isinstance(skyimage, (SkyImage, SkyGroup)):
+        if isinstance(skyimage, SkyImage | SkyGroup):
             other = skyimage.polygon
         else:
             other = skyimage
 
-        pts1 = np.sort(list(self._polygon.points)[0], axis=0)
-        pts2 = np.sort(list(other.points)[0], axis=0)
+        pts1 = np.sort(next(iter(self._polygon.points)), axis=0)
+        pts2 = np.sort(next(iter(other.points)), axis=0)
         if np.allclose(pts1, pts2, rtol=0, atol=5e-9):
             intersect_poly = self._polygon.copy()
         else:
@@ -624,7 +624,7 @@ None, optional
 
                 # set pixels in 'fill_mask' that are inside a polygon to True:
                 x, y = self.wcs_inv(ra, dec)
-                poly_vert = list(zip(*[x, y]))
+                poly_vert = list(zip(*[x, y], strict=False))
 
                 polygon = region.Polygon(True, poly_vert)
                 fill_mask = polygon.scan(fill_mask)
@@ -700,7 +700,7 @@ None, optional
         else:
             fill_mask = np.zeros(self.image_shape, dtype=bool)
 
-            if isinstance(overlap, (SkyImage, SkyGroup, SphericalPolygon)):
+            if isinstance(overlap, SkyImage | SkyGroup | SphericalPolygon):
                 intersection = self.intersection(overlap)
                 polyarea = np.fabs(intersection.area())
                 radec = intersection.to_radec()
@@ -725,7 +725,7 @@ None, optional
 
                 # set pixels in 'fill_mask' that are inside a polygon to True:
                 x, y = self.wcs_inv(ra, dec)
-                poly_vert = list(zip(*[x, y]))
+                poly_vert = list(zip(*[x, y], strict=False))
 
                 polygon = region.Polygon(True, poly_vert)
                 fill_mask = polygon.scan(fill_mask)
@@ -874,13 +874,13 @@ class SkyGroup:
             the intersection of this `SkyImage` and `skyimage`.
 
         """
-        if isinstance(skyimage, (SkyImage, SkyGroup)):
+        if isinstance(skyimage, SkyImage | SkyGroup):
             other = skyimage.polygon
         else:
             other = skyimage
 
-        pts1 = np.sort(list(self._polygon.points)[0], axis=0)
-        pts2 = np.sort(list(other.points)[0], axis=0)
+        pts1 = np.sort(next(iter(self._polygon.points)), axis=0)
+        pts2 = np.sort(next(iter(other.points)), axis=0)
         if np.allclose(pts1, pts2, rtol=0, atol=1e-8):
             intersect_poly = self._polygon.copy()
         else:

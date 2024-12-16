@@ -1,7 +1,10 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 import logging
 import re
 from os.path import basename, isfile
+from typing import TYPE_CHECKING
 
 import asdf
 import numpy as np
@@ -22,6 +25,9 @@ from romancal.skymatch import SkyMatchStep
 from romancal.source_catalog import SourceCatalogStep
 
 from ..stpipe import RomanPipeline
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["MosaicPipeline"]
 
@@ -44,7 +50,7 @@ class MosaicPipeline(RomanPipeline):
     """
 
     # Define aliases to steps
-    step_defs = {
+    step_defs: ClassVar = {
         "flux": FluxStep,
         "skymatch": SkyMatchStep,
         "outlier_detection": OutlierDetectionStep,

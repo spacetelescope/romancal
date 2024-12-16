@@ -1,5 +1,8 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 from roman_datamodels.dqflags import group
@@ -22,6 +25,9 @@ from romancal.source_catalog import SourceCatalogStep
 from romancal.tweakreg import TweakRegStep
 
 from ..stpipe import RomanPipeline
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["ExposurePipeline"]
 
@@ -46,7 +52,7 @@ class ExposurePipeline(RomanPipeline):
     """
 
     # Define aliases to steps
-    step_defs = {
+    step_defs: ClassVar = {
         "dq_init": dq_init_step.DQInitStep,
         "saturation": SaturationStep,
         "refpix": RefPixStep,
