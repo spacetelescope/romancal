@@ -14,17 +14,12 @@ import datetime
 import importlib
 import os
 import sys
+import tomllib
 from distutils.version import LooseVersion
 from pathlib import Path
 
 import sphinx
 import stsci_rtd_theme
-
-if sys.version_info < (3, 11):
-    import tomli as tomllib
-else:
-    import tomllib
-
 from sphinx.ext.autodoc import AttributeDocumenter
 
 from romancal.stpipe import RomanStep

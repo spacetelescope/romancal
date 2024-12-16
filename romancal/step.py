@@ -36,6 +36,5 @@ __all__ = [
     "SaturationStep",
     "SkyMatchStep",
     "SourceCatalogStep",
-    "SourceDetectionStep",
     "TweakRegStep",
 ]

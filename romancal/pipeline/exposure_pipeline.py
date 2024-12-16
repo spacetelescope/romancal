@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from os.path import basename
 from typing import TYPE_CHECKING
 
 import numpy as np
