@@ -422,22 +422,17 @@ def resample_range(data_shape, bbox=None):
 
 def add_var_sky_array(input_models: ModelLibrary):
     """
-    Add sky variance array to each input model.
+    Add sky variance array to each model of a ModelLibrary.
 
     Parameters
     ----------
     input_models : ModelLibrary
-        A library of models or a single model to which the sky variance array will be added.
+        A library of models to which the sky variance array will be added.
 
     Returns
     -------
     None
     """
-    input_models = (
-        input_models
-        if isinstance(input_models, ModelLibrary)
-        else ModelLibrary([input_models])
-    )
     with input_models:
         ref_img = input_models.borrow(index=0)
         input_models.shelve(model=ref_img, index=0)
