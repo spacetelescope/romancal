@@ -585,6 +585,28 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
         output_models.shelve(output_model, 0, modify=False)
 
 
+@pytest.mark.parametrize("include_var_flat", [False, True])
+def test_var_flat_presence(exposure_1, include_var_flat):
+    """Test that var_flat is included or excluded depending on its presence in the underlying exposures."""
+    if not include_var_flat:
+        exposure_1 = [e.copy() for e in exposure_1]
+        for e in exposure_1:
+            del e._instance["var_flat"]
+    input_models = ModelLibrary(exposure_1)
+    resample_data = ResampleData(input_models)
+
+    output_models = resample_data.resample_many_to_one()
+    with output_models:
+        output_model = output_models.borrow(0)
+
+        if not include_var_flat:
+            assert not hasattr(output_model, "var_flat")
+        else:
+            assert hasattr(output_model, "var_flat")
+
+        output_models.shelve(output_model, 0, modify=False)
+
+
 @pytest.mark.parametrize(
     "name",
     ["var_rnoise", "var_poisson", "var_flat"],

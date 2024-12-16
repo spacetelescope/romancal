@@ -168,6 +168,9 @@ class ResampleData:
 
         with self.input_models:
             models = list(self.input_models)
+            self.all_have_var_flat = np.all(
+                [hasattr(model, "var_flat") for model in models]
+            )
 
             # update meta.basic
             populate_mosaic_basic(self.blank_output, models)
@@ -199,6 +202,9 @@ class ResampleData:
             ]
             for i, m in enumerate(models):
                 self.input_models.shelve(m, i, modify=False)
+
+        if not self.all_have_var_flat:
+            del self.blank_output._instance["var_flat"]
 
     def do_drizzle(self):
         """Pick the correct drizzling mode based on ``self.single``."""
@@ -354,6 +360,9 @@ class ResampleData:
         )
 
         log.info("Resampling science data")
+
+        all_have_var_flat = True
+
         with self.input_models:
             for i, img in enumerate(self.input_models):
                 inwht = resample_utils.build_driz_weight(
@@ -395,22 +404,17 @@ class ResampleData:
         # Resample variances array in self.input_models to output_model
         self.resample_variance_array("var_rnoise", output_model)
         self.resample_variance_array("var_poisson", output_model)
-        self.resample_variance_array("var_flat", output_model)
+        if self.all_have_var_flat:
+            self.resample_variance_array("var_flat", output_model)
 
         # Make exposure time image
         exptime_tot = self.resample_exposure_time(output_model)
 
-        # TODO: fix unit here
-        output_model.err = np.sqrt(
-            np.nansum(
-                [
-                    output_model.var_rnoise,
-                    output_model.var_poisson,
-                    output_model.var_flat,
-                ],
-                axis=0,
-            )
-        )
+        all_vars = [output_model.var_rnoise, output_model.var_poisson]
+        if self.all_have_var_flat:
+            all_vars = all_vars + [output_model.var_flat]
+
+        output_model.err = np.sqrt(np.nansum(all_vars, axis=0))
 
         self.update_exposure_times(output_model, exptime_tot)
 
