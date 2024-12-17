@@ -437,7 +437,10 @@ def add_var_sky_array(input_models: ModelLibrary):
         ref_img = input_models.borrow(index=0)
         input_models.shelve(model=ref_img, index=0)
         for i, img in enumerate(input_models):
-            img["var_sky"] = img.var_rnoise + img.var_poisson / img.data * np.median(
-                img.data
-            )
+            if np.all(img.data != 0):
+                img["var_sky"] = (
+                    img.var_rnoise + img.var_poisson / img.data * np.median(img.data)
+                )
+            else:
+                raise ValueError("Input model contains invalid data array.")
             input_models.shelve(img, i, modify=True)
