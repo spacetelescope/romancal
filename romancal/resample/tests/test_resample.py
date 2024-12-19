@@ -715,7 +715,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
             rotation=0,
             shape=None,
             crpix=(0, 0),
-            crval=(0, 0),
+            crval=(10, 0),
         )
 
         output_model = maker_utils.mk_datamodel(
@@ -1014,7 +1014,7 @@ def test_populate_mosaic_basic_different_observations(
         rotation=0,
         shape=None,
         crpix=(0, 0),
-        crval=(0, 0),
+        crval=(10, 0),
     )
     output_model = maker_utils.mk_datamodel(
         datamodels.MosaicModel, shape=tuple(output_wcs.array_shape)
