@@ -83,7 +83,10 @@ def test_read_pattern_saturation_flagging(setup_wfi_datamodels):
     output = flag_saturation(ramp, satmap)
 
     # Make sure that groups after the third get flagged
-    assert np.all(output.groupdq[2:, 5, 5] == group.SATURATED)
+    # To accommodate https://github.com/spacetelescope/stcal/pull/321
+    # this test was loosed to be SATURATED | DO_NOT_USE
+    assert np.all(
+        (output.groupdq[2:, 5, 5] & (group.SATURATED | group.DO_NOT_USE)) != 0)
 
 
 def test_ad_floor_flagging(setup_wfi_datamodels):
