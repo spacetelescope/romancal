@@ -20,7 +20,7 @@ dependencies = [
     # "gwcs >=0.21.0",
     "gwcs @ git+https://github.com/spacetelescope/gwcs.git@master",
     "jsonschema >=4.8",
-    "numpy >=1.24",
+    "numpy >=1.25",
     "photutils >=1.13.0",
     "pyparsing >=2.4.7",
     "requests >=2.26",
