@@ -53,5 +53,5 @@ def test_input_to_output(input_value, expected_output_type):
     pipeline.prefetch_references = False
     # skip all steps
     [setattr(getattr(pipeline, k), "skip", True) for k in pipeline.step_defs]
-    output_value = pipeline(input_value)
+    output_value = pipeline.run(input_value)
     assert isinstance(output_value, expected_output_type)
