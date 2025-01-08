@@ -11,12 +11,14 @@ from astropy.table import Table
 from roman_datamodels import datamodels, maker_utils
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.maker_utils import mk_datamodel
+from roman_datamodels.dqflags import pixel
 
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
 from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
+from romancal.lib import psf
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -76,6 +78,10 @@ class SourceCatalogStep(RomanStep):
                 err=input_model.err.copy(),
                 dq=input_model.dq,
             )
+            mask = (model.err <= 0) | np.isnan(model.data) | np.isnan(model.err)
+            ignore_flags = pixel.NO_LIN_CORR | pixel.DEAD
+            mask |= psf.dq_to_boolean_mask(model.dq, ignore_flags=ignore_flags)
+            coverage_mask = mask.copy()
         elif isinstance(input_model, MosaicModel):
             model = mk_datamodel(
                 MosaicModel,
@@ -85,6 +91,8 @@ class SourceCatalogStep(RomanStep):
                 err=input_model.err.copy(),
                 weight=input_model.weight,
             )
+            mask = np.isnan(model.data) | np.isnan(model.err)
+            coverage_mask = mask.copy()
 
         if isinstance(model, ImageModel):
             cat_model = datamodels.ImageSourceCatalogModel
@@ -103,8 +111,6 @@ class SourceCatalogStep(RomanStep):
         refdata = ReferenceData(model, aperture_ee)
         aperture_params = refdata.aperture_params
 
-        mask = np.isnan(model.data)
-        coverage_mask = np.isnan(model.err)
         bkg = RomanBackground(
             model.data,
             box_size=self.bkg_boxsize,

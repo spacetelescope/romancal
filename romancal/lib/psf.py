@@ -275,7 +275,7 @@ def fit_psf_to_image_model(
                 "or arrays for the data and error."
             )
 
-    ignore_flags = pixel.NO_LIN_CORR
+    ignore_flags = pixel.NO_LIN_CORR | pixel.DEAD
     # presently the linearity correction is somewhat problematic in
     # CRDS reference files; we should replace this with ignore_flags = 0
     # at some point in the future.
