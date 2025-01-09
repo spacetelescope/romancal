@@ -10,15 +10,15 @@ import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels, maker_utils
 from roman_datamodels.datamodels import ImageModel, MosaicModel
-from roman_datamodels.maker_utils import mk_datamodel
 from roman_datamodels.dqflags import pixel
+from roman_datamodels.maker_utils import mk_datamodel
 
+from romancal.lib import psf
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
 from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
-from romancal.lib import psf
 
 if TYPE_CHECKING:
     from typing import ClassVar
