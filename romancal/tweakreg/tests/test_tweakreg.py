@@ -1262,15 +1262,15 @@ def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_ima
     [
         # both 'x' and 'y' columns present
         ({"x": [1, 2, 3], "y": [4, 5, 6]}, ["x", "y"], False),
-        # 'xcentroid' and 'ycentroid' columns present, should be renamed
-        ({"xcentroid": [1, 2, 3], "ycentroid": [4, 5, 6]}, ["x", "y"], False),
-        # 'x' present, 'ycentroid' present, should rename 'ycentroid' to 'y'
-        ({"x": [1, 2, 3], "ycentroid": [4, 5, 6]}, ["x", "y"], False),
-        # 'xcentroid' present, 'y' present, should rename 'xcentroid' to 'x'
-        ({"xcentroid": [1, 2, 3], "y": [4, 5, 6]}, ["x", "y"], False),
-        # neither 'x' nor 'xcentroid' present
+        # 'x_psf' and 'y_psf' columns present, should be renamed
+        ({"x_psf": [1, 2, 3], "y_psf": [4, 5, 6]}, ["x", "y"], False),
+        # 'x' present, 'y_psf' present, should rename 'y_psf' to 'y'
+        ({"x": [1, 2, 3], "y_psf": [4, 5, 6]}, ["x", "y"], False),
+        # 'x_psf' present, 'y' present, should rename 'x_psf' to 'x'
+        ({"x_psf": [1, 2, 3], "y": [4, 5, 6]}, ["x", "y"], False),
+        # neither 'x' nor 'x_psf' present
         ({"y": [4, 5, 6]}, None, True),
-        # neither 'y' nor 'ycentroid' present
+        # neither 'y' nor 'y_psf' present
         ({"x": [1, 2, 3]}, None, True),
         # no relevant columns present
         (
