@@ -103,9 +103,11 @@ def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_imag
     img_1 = base_image()
     img_1.meta.filename = "img1_cal.asdf"
     img_1.meta.background.level = 0
+    img_1.data[:] = 0.01
     img_2 = base_image()
     img_2.meta.filename = "img2_cal.asdf"
     img_2.meta.background.level = 0
+    img_2.data[:] = 0.01
     input_models = ModelLibrary([img_1, img_2])
 
     outlier_step = OutlierDetectionStep(
@@ -135,11 +137,13 @@ def test_find_outliers(tmp_path, base_image, on_disk):
     cr_value = 100
     source_value = 10
     err_value = 10  # snr=1
+    sky_value = 0.5
 
     imgs = []
     for i in range(3):
         img = base_image()
-        img.data[42, 72] = source_value
+        img.data[:] = sky_value
+        img.data[42, 72] += source_value
         img.err[:] = err_value
         img.meta.filename = str(tmp_path / f"img{i}_suffix.asdf")
         img.meta.observation.observation_id = str(i)
@@ -207,7 +211,8 @@ def test_identical_images(tmp_path, base_image, caplog):
     img_1_input_coords = np.array(
         [(5, 45), (25, 25), (45, 85), (65, 65), (85, 5)], dtype=[("x", int), ("y", int)]
     )
-    img_1.data[img_1_input_coords["x"], img_1_input_coords["y"]] = 100000
+    img_1.data[:] = 0.01
+    img_1.data[img_1_input_coords["x"], img_1_input_coords["y"]] += 100
 
     img_2 = img_1.copy()
     img_2.meta.filename = "img2_suffix.asdf"
