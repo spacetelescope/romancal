@@ -100,6 +100,7 @@ class WfiSca:
             },
         )
         # data from WFISim simulation of SCA #01
+        l2.data[:] = 0.01
         l2.meta.filename = self.filename
         l2.meta["wcs"] = create_wcs_object_without_distortion(
             fiducial_world=self.fiducial_world,
