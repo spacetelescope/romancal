@@ -523,7 +523,7 @@ def _validate_catalog_columns(catalog):
     Validate the presence of required columns in the catalog.
 
     This method checks if the specified axis column exists in the catalog.
-    If the axis is not found, it looks for a corresponding centroid column
+    If the axis is not found, it looks for a corresponding psf column
     and renames it if present. If neither is found, it raises an error.
 
     Parameters
@@ -544,12 +544,12 @@ def _validate_catalog_columns(catalog):
     """
     for axis in ["x", "y"]:
         if axis not in catalog.colnames:
-            long_axis = f"{axis}centroid"
+            long_axis = f"{axis}_psf"
             if long_axis in catalog.colnames:
                 catalog.rename_column(long_axis, axis)
             else:
                 raise ValueError(
                     "'tweakreg' source catalogs must contain a header with "
-                    "columns named either 'x' and 'y' or 'xcentroid' and 'ycentroid'."
+                    "columns named either 'x' and 'y' or 'x_psf' and 'y_psf'."
                 )
     return catalog
