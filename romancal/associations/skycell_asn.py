@@ -63,10 +63,16 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
         # grab all the wcs parameters needed for generate_tan_wcs
         projcell_info = dict(
             [
-                ("name",  pm.PATCH_TABLE[item]["name"]),
+                ("name", pm.PATCH_TABLE[item]["name"]),
                 ("pixel_scale", float(pm.PATCH_TABLE[item]["pixel_scale"])),
-                ("ra_projection_center", float(pm.PATCH_TABLE[item]["ra_projection_center"])),
-                ("dec_projection_center", float(pm.PATCH_TABLE[item]["dec_projection_center"])),
+                (
+                    "ra_projection_center",
+                    float(pm.PATCH_TABLE[item]["ra_projection_center"]),
+                ),
+                (
+                    "dec_projection_center",
+                    float(pm.PATCH_TABLE[item]["dec_projection_center"]),
+                ),
                 ("x0_projection", float(pm.PATCH_TABLE[item]["x0_projection"])),
                 ("y0_projection", float(pm.PATCH_TABLE[item]["y0_projection"])),
                 ("ra_center", float(pm.PATCH_TABLE[item]["ra_center"])),

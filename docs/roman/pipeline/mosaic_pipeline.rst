@@ -87,7 +87,7 @@ The projection of the single WFI exposure resampled to a skycell is shown in :nu
 The image has the portion of the four SCAs that overlap
 the given skycell resampled to a regular grid on the WCS of the skycell. The gaps
 between the images show the placement of the SCAs in the detector. In general
-these gaps will be filled in by additional exposures in the visit. 
+these gaps will be filled in by additional exposures in the visit.
 
 If the target field does not contain a valid skycell name then the
 image or images will be resampled to a regular grid. To resample a
@@ -102,16 +102,16 @@ member.
           :align: left
 
 	  An  SCA resampled to a regular grid.
-	  
+
      - .. figure::  graphics/mosaic4_regular_grid.png
           :name: figure-mosaic4-regular-grid
           :scale: 25 %
 
 	  Four SCAs resampled to a regular grid.
 
-.. labels in list-tables do no appear to be used outside the list-table structure, hard codeing for now. 
+.. labels in list-tables do no appear to be used outside the list-table structure, hard codeing for now.
 .. :numref:`figure-mosaic-regular-grid` and :numref:`figure-mosaic4-regular-grid` show
-   
+
 Figures 2 & 3 show the results of the mosaic pipeline on a single SCA and on four SCA's in the WFI array.
 Using the code to mosaic large areas of the sky may result on the code needing large amounts of memory,
 so care is needed not to exceed your local memory limits when constructing mosaics in this manner.

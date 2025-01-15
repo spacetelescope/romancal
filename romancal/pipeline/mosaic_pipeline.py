@@ -101,8 +101,10 @@ class MosaicPipeline(RomanPipeline):
                     if patch_match.PATCH_TABLE is None:
                         patch_match.load_patch_table()
                     skycell_record = patch_match.PATCH_TABLE[
-                        np.where(patch_match.PATCH_TABLE["name"][:] == skycell_name)[0][0]
+                        np.where(patch_match.PATCH_TABLE["name"][:] == skycell_name)[0][
+                            0
                         ]
+                    ]
                 log.info("Skycell record %s:", skycell_record)
 
                 if skycell_name in skycell_record["name"]:
@@ -161,8 +163,8 @@ class MosaicPipeline(RomanPipeline):
 
 
 def generate_tan_wcs(skycell_record):
-    ''' extract the wcs info from the record for generate_tan_wcs
-     we need the scale, ra, dec, bounding_box'''
+    """extract the wcs info from the record for generate_tan_wcs
+    we need the scale, ra, dec, bounding_box"""
 
     scale = float(skycell_record["pixel_scale"])
     ra_center = float(skycell_record["ra_projection_center"])
