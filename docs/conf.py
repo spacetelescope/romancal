@@ -221,6 +221,8 @@ graphviz_dot_args = [
     "-Gfontname=Helvetica Neue, Helvetica, Arial, sans-serif",
 ]
 
+# activate figure numbering
+numfig = True
 # If true, '()' will be appended to :func: etc. cross-reference text.
 # add_function_parentheses = True
 
