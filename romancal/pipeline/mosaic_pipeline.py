@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
+import json
 import logging
 import re
 from os.path import basename, isfile
 from typing import TYPE_CHECKING
-import json
 
 import asdf
 import numpy as np
@@ -100,8 +100,6 @@ class MosaicPipeline(RomanPipeline):
                 except (KeyError, json.JSONDecodeError):
                     if patch_match.PATCH_TABLE is None:
                         patch_match.load_patch_table()
-                    if patch_match.PATCH_TABLE is None:
-                        raise RuntimeError("No patch table has been loaded")
                     skycell_record = patch_match.PATCH_TABLE[
                         np.where(patch_match.PATCH_TABLE["name"][:] == skycell_name)[0][0]
                         ]
@@ -163,8 +161,8 @@ class MosaicPipeline(RomanPipeline):
 
 
 def generate_tan_wcs(skycell_record):
-    # extract the wcs info from the record for generate_tan_wcs
-    # we need the scale, ra, dec, bounding_box
+    ''' extract the wcs info from the record for generate_tan_wcs
+     we need the scale, ra, dec, bounding_box'''
 
     scale = float(skycell_record["pixel_scale"])
     ra_center = float(skycell_record["ra_projection_center"])
