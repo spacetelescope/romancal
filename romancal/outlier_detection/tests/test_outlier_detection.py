@@ -204,14 +204,15 @@ def test_identical_images(tmp_path, base_image, caplog):
     """
     Test that OutlierDetection does not flag any outliers in the DQ array if images are identical.
     """
+    background_level = 0.01
     img_1 = base_image()
     img_1.meta.filename = "img1_suffix.asdf"
-    img_1.meta.background.level = 0
+    img_1.meta.background.level = background_level
     # add outliers
     img_1_input_coords = np.array(
         [(5, 45), (25, 25), (45, 85), (65, 65), (85, 5)], dtype=[("x", int), ("y", int)]
     )
-    img_1.data[:] = 0.01
+    img_1.data[:] = background_level
     img_1.data[img_1_input_coords["x"], img_1_input_coords["y"]] += 100
 
     img_2 = img_1.copy()
