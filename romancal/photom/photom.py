@@ -57,8 +57,8 @@ def save_area_info(input_model, photom_parameters):
     area_ster = photom_parameters["pixelareasr"]
 
     # Copy the pixel area values to the input model
-    log.debug(f"pixelarea_steradians = {area_ster}")
-    input_model.meta.photometry.pixelarea_steradians = area_ster
+    log.debug(f"pixel_area = {area_ster}")
+    input_model.meta.photometry.pixel_area = area_ster
 
     # Return updated input model
     return input_model

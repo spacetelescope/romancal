@@ -129,7 +129,7 @@ def test_apply_photom1():
 
     # Tests for pixel areas
     assert np.isclose(
-        output_model.meta.photometry.pixelarea_steradians,
+        output_model.meta.photometry.pixel_area,
         area_ster,
         atol=1.0e-7,
     )
