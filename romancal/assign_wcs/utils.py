@@ -1,6 +1,5 @@
 import functools
 import logging
-from typing import List, Tuple, Union
 
 import numpy as np
 from astropy.coordinates import SkyCoord
@@ -9,6 +8,7 @@ from astropy.utils.misc import isiterable
 from gwcs import WCS
 from gwcs.wcstools import wcs_from_fiducial
 from roman_datamodels.datamodels import DataModel
+from stcal.alignment.util import compute_s_region_keyword
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -43,8 +43,8 @@ def wcs_from_footprints(
     pscale=None,
     rotation=None,
     shape=None,
-    ref_pixel: Tuple[float, float] = None,
-    ref_coord: Tuple[float, float] = None,
+    ref_pixel: tuple[float, float] | None = None,
+    ref_coord: tuple[float, float] | None = None,
 ):
     """
     Create a WCS from a list of input data models.
@@ -216,9 +216,9 @@ def wcs_from_footprints(
 
 def compute_scale(
     wcs: WCS,
-    fiducial: Union[tuple, np.ndarray],
-    disp_axis: int = None,
-    pscale_ratio: float = None,
+    fiducial: tuple | np.ndarray,
+    disp_axis: int | None = None,
+    pscale_ratio: float | None = None,
 ) -> float:
     """Compute scaling transform.
 
@@ -281,7 +281,7 @@ def compute_scale(
 
 def calc_rotation_matrix(
     roll_ref: float, v3i_yang: float, vparity: int = 1
-) -> List[float]:
+) -> list[float]:
     """Calculate the rotation matrix.
 
     Parameters
@@ -397,23 +397,6 @@ def create_footprint(wcs, shape=None, center=True):
     return footprint
 
 
-def create_s_region(footprint):
-    """Create the properly formatted string to fill the S_REGION FITS keyword
-
-    Parameters
-    ----------
-    footprint : `numpy.ndarray`
-        The footprint to be represented.
-
-    Returns
-    -------
-    s_region : str
-        The formatted string that can be directly assigned to the FITS S_REGION keyword.
-    """
-    s_region = "POLYGON ICRS " + " ".join([str(x) for x in footprint.ravel()]) + " "
-    return s_region
-
-
 def add_s_region(model):
     """
     Calculate the detector's footprint using ``WCS.footprint`` and save it in the
@@ -432,7 +415,7 @@ def add_s_region(model):
 
 
 def update_s_region_keyword(model, footprint):
-    s_region = create_s_region(footprint)
+    s_region = compute_s_region_keyword(footprint)
     log.info(f"S_REGION VALUES: {s_region}")
     if "nan" in s_region:
         # do not update s_region if there are NaNs.

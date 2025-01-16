@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import logging
 import os
 from copy import deepcopy
+from typing import TYPE_CHECKING
 
 import asdf
 import numpy as np
@@ -13,10 +16,16 @@ from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
 from . import resample
 
+if TYPE_CHECKING:
+    from typing import ClassVar
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 __all__ = ["ResampleStep"]
+
+# conversion factor from steradian to squared arcsec
+SR_TO_ARCSEC2 = 4.254517e10
 
 
 class ResampleStep(RomanStep):
@@ -41,7 +50,7 @@ class ResampleStep(RomanStep):
     -------
     : `roman_datamodels.datamodels.MosaicModel`
         A mosaic datamodel with the final output frame.
-    """  # noqa: E501
+    """
 
     class_alias = "resample"
 
@@ -62,9 +71,9 @@ class ResampleStep(RomanStep):
         allowed_memory = float(default=None)  # Fraction of memory to use for the combined image.
         in_memory = boolean(default=True)
         good_bits = string(default='~DO_NOT_USE+NON_SCIENCE')  # The good bits to use for building the resampling mask.
-    """  # noqa: E501
+    """
 
-    reference_file_types = []
+    reference_file_types: ClassVar = []
 
     def process(self, input):
         if isinstance(input, datamodels.DataModel):
@@ -156,7 +165,7 @@ class ResampleStep(RomanStep):
         # calculate the actual value of pixel_scale_ratio based on pixel_scale
         # because source_catalog uses this value from the header.
         model.meta.resample.pixel_scale_ratio = (
-            self.pixel_scale / np.sqrt(model.meta.photometry.pixelarea_arcsecsq)
+            self.pixel_scale / np.sqrt(model.meta.photometry.pixel_area * SR_TO_ARCSEC2)
             if self.pixel_scale
             else self.pixel_scale_ratio
         )
@@ -204,7 +213,10 @@ class ResampleStep(RomanStep):
         if n == 2:
             return None
         elif n == 0:
-            if min_vals and sum(x >= y for x, y in zip(vals, min_vals)) != 2:
+            if (
+                min_vals
+                and sum(x >= y for x, y in zip(vals, min_vals, strict=False)) != 2
+            ):
                 raise ValueError(
                     f"'{name}' values must be larger or equal to {list(min_vals)}"
                 )
@@ -240,14 +252,8 @@ class ResampleStep(RomanStep):
 
     def update_phot_keywords(self, model):
         """Update pixel scale keywords"""
-        if model.meta.photometry.pixelarea_steradians is not None:
-            model.meta.photometry.pixelarea_steradians *= (
-                model.meta.resample.pixel_scale_ratio**2
-            )
-        if model.meta.photometry.pixelarea_arcsecsq is not None:
-            model.meta.photometry.pixelarea_arcsecsq *= (
-                model.meta.resample.pixel_scale_ratio**2
-            )
+        if model.meta.photometry.pixel_area is not None:
+            model.meta.photometry.pixel_area *= model.meta.resample.pixel_scale_ratio**2
 
     def set_drizzle_defaults(self):
         """Set the default parameters for drizzle."""

@@ -1,2 +1,0 @@
-Added code to take an input list of calibrated WFI exposures and creates associations based on the
-skycells that they overlap

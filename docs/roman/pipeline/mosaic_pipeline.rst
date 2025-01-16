@@ -54,7 +54,7 @@ An association of 2D calibrated image data
 :File suffix: _cal
 
 The input to the ``MosaicPipeline`` is a group of calibrated exposures,
-e.g. "r0008308002010007027_06311_0019_WFI01_cal.asdf", which contains the
+e.g. "r0008308002010007027_0019_wfi01_cal.asdf", which contains the
 calibrated data for the the exposures. The most convenient way to pass the list of
 exposures to be processed with the mosaic level pipeline is to use an association.
 Instructions on how to create an input association an be found at :ref:`asn-from-list`.
@@ -69,7 +69,7 @@ Outputs
 The resampled data can be found in
 
 :Data model: `~romancal.datamodels.WfiMosaic`
-:File suffix: _i2d
+:File suffix: _coadd
 
 Catalog file (MosaicSourceCatalog)
 +++++++++++++++++++++++++++++++++++
@@ -92,6 +92,6 @@ Result of applying all the mosaic level pipeline steps up through the
 :ref:`source_catalog <source_catalog_step>` step is to produce data background corrected
 and cleaned of outliers and resampled to a distortion free grid along with
 the source catalog and segmentation map.
-The i2d file is 2D image data, with additional attributes for the mosaicing information. The cat
+The coadd file is 2D image data, with additional attributes for the mosaicing information. The cat
 file is an asdf file with the detected sources and the segmenation map is an asdf file
 linking the input images to the detected sources.

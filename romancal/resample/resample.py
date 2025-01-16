@@ -1,14 +1,13 @@
 import json
 import logging
 import os
-from typing import List
 
 import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from drizzle import cdrizzle, util
 from roman_datamodels import datamodels, maker_utils, stnode
-from stcal.alignment.util import compute_scale
+from stcal.alignment.util import compute_s_region_keyword, compute_scale
 
 from romancal.associations.asn_from_list import asn_from_list
 
@@ -98,6 +97,10 @@ class ResampleData:
         self.weight_type = wht_type
         self.good_bits = good_bits
         self.in_memory = kwargs.get("in_memory", True)
+        if "target" in input_models.asn:
+            self.location_name = input_models.asn["target"]
+        else:
+            self.location_name = "None"
 
         log.info(f"Driz parameter kernel: {self.kernel}")
         log.info(f"Driz parameter pixfrac: {self.pixfrac}")
@@ -174,16 +177,25 @@ class ResampleData:
                 **models[0].meta.cal_step.to_flat_dict()
             )
 
-            # Update the output with all the component metas
-            populate_mosaic_individual(self.blank_output, models)
+            # FIXME: temporary hack to prevent changes from L2 into L3 schema
+            for model in models:
+                # saving ImageModels cal_logs
+                cal_logs = model.meta.cal_logs
+                # removing meta.cal_logs
+                del model.meta["cal_logs"]
+                # Update the output with all the component metas
+                populate_mosaic_individual(self.blank_output, [model])
+                # re-attaching cal_logs to meta
+                model.meta.cal_logs = cal_logs
 
             # update meta data and wcs
             l2_into_l3_meta(self.blank_output.meta, models[0].meta)
             self.blank_output.meta.wcs = self.output_wcs
             gwcs_into_l3(self.blank_output, self.output_wcs)
+
             self.blank_output.cal_logs = stnode.CalLogs()
             self.blank_output["individual_image_cal_logs"] = [
-                model.cal_logs for model in models
+                model.meta.cal_logs for model in models
             ]
             for i, m in enumerate(models):
                 self.input_models.shelve(m, i, modify=False)
@@ -211,6 +223,7 @@ class ResampleData:
         """
         output_model = self.blank_output.copy()
         output_model.meta["resample"] = maker_utils.mk_resample()
+        output_model.meta.basic.location_name = self.location_name
 
         copy_asn_info_from_library(input_models, output_model)
 
@@ -224,8 +237,9 @@ class ResampleData:
             output_root = "_".join(
                 example_image.meta.filename.replace(output_type, "").split("_")[:-1]
             )
-            output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
+            output_model.meta.filename = f"{output_root}_outlier_coadd{output_type}"
             input_models.shelve(example_image, indices[0], modify=False)
+            output_model.meta.basic.location_name = self.location_name
             del example_image
 
             # Initialize the output with the wcs
@@ -283,7 +297,7 @@ class ResampleData:
         sky.
         """
         output_models = []
-        for group_id, indices in self.input_models.group_indices.items():
+        for indices in self.input_models.group_indices.values():
             output_model = self.resample_group(self.input_models, indices)
 
             if not self.in_memory:
@@ -300,7 +314,7 @@ class ResampleData:
         if not self.in_memory:
             # build ModelLibrary as an association from the output files
             # this saves memory if there are multiple groups
-            asn = asn_from_list(output_models, product_name="outlier_i2d")
+            asn = asn_from_list(output_models, product_name="outlier_coadd")
             asn_dict = json.loads(
                 asn.dump()[1]
             )  # serializes the asn and converts to dict
@@ -317,6 +331,7 @@ class ResampleData:
         output_model.meta["resample"] = maker_utils.mk_resample()
         output_model.meta.resample.weight_type = self.weight_type
         output_model.meta.resample.pointings = len(self.input_models.group_names)
+        output_model.meta.basic.location_name = self.location_name
 
         # copy over asn information
         if (asn_pool := self.input_models.asn.get("asn_pool", None)) is not None:
@@ -422,13 +437,13 @@ class ResampleData:
                 if variance is None or variance.size == 0:
                     log.debug(
                         f"No data for '{name}' for model "
-                        f"{repr(model.meta.filename)}. Skipping ..."
+                        f"{model.meta.filename!r}. Skipping ..."
                     )
                     continue
                 elif variance.shape != model.data.shape:
                     log.warning(
                         f"Data shape mismatch for '{name}' for model "
-                        f"{repr(model.meta.filename)}. Skipping..."
+                        f"{model.meta.filename!r}. Skipping..."
                     )
                     continue
 
@@ -548,7 +563,7 @@ class ResampleData:
         )
         exposure_times = {"start": [], "end": []}
         with self.input_models:
-            for group_id, indices in self.input_models.group_indices.items():
+            for indices in self.input_models.group_indices.values():
                 index = indices[0]
                 model = self.input_models.borrow(index)
                 exposure_times["start"].append(model.meta.exposure.start_time)
@@ -756,7 +771,6 @@ def l2_into_l3_meta(l3_meta, l2_meta):
     basic.segment: observation.segment
     basic.pass: observation.pass
     basic.program: observation.program
-    basic.survey: obervation.survey
     basic.optical_element: optical_element
     basic.instrument: instrument.name
     basic.telescope: telescope
@@ -766,7 +780,6 @@ def l2_into_l3_meta(l3_meta, l2_meta):
     l3_meta.basic.segment = l2_meta.observation.segment
     l3_meta.basic["pass"] = l2_meta.observation["pass"]
     l3_meta.basic.program = l2_meta.observation.program
-    l3_meta.basic.survey = l2_meta.observation.survey
     l3_meta.basic.optical_element = l2_meta.instrument.optical_element
     l3_meta.basic.instrument = l2_meta.instrument.name
     l3_meta.coordinates = l2_meta.coordinates
@@ -816,7 +829,7 @@ def gwcs_into_l3(model, wcs):
         l3_wcsinfo.dec_corn2 = footprint[1][1]
         l3_wcsinfo.dec_corn3 = footprint[2][1]
         l3_wcsinfo.dec_corn4 = footprint[3][1]
-        l3_wcsinfo.s_region = utils.create_s_region(footprint)
+        l3_wcsinfo.s_region = compute_s_region_keyword(footprint)
 
     try:
         l3_wcsinfo.x_ref = -transform["crpix1"].offset.value
@@ -862,7 +875,7 @@ def calc_pa(wcs, ra, dec):
         The position angle in degrees.
 
     """
-    delta_pix = [v for v in wcs.world_to_pixel(ra, dec)]
+    delta_pix = [v for v in wcs.world_to_pixel_values(ra, dec)]
     delta_pix[1] += 1
     delta_coord = wcs.pixel_to_world(*delta_pix)
     coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
@@ -871,7 +884,7 @@ def calc_pa(wcs, ra, dec):
 
 
 def populate_mosaic_basic(
-    output_model: datamodels.MosaicModel, input_models: [List, ModelLibrary]
+    output_model: datamodels.MosaicModel, input_models: list | ModelLibrary
 ):
     """
     Populate basic metadata fields in the output mosaic model based on input models.
@@ -921,27 +934,19 @@ def populate_mosaic_basic(
     output_model.meta.basic.program = (
         input_meta[0].observation.program
         if len({x.observation.program for x in input_meta}) == 1
-        else "-1"
-    )
-    output_model.meta.basic.survey = (
-        input_meta[0].observation.survey
-        if len({x.observation.survey for x in input_meta}) == 1
-        else "MULTIPLE"
+        else -1
     )
 
     # instrument data
     output_model.meta.basic.optical_element = input_meta[0].instrument.optical_element
     output_model.meta.basic.instrument = input_meta[0].instrument.name
 
-    # skycell location
-    output_model.meta.basic.location_name = "TBD"
-
     # association product type
     output_model.meta.basic.product_type = "TBD"
 
 
 def populate_mosaic_individual(
-    output_model: datamodels.MosaicModel, input_models: [List, ModelLibrary]
+    output_model: datamodels.MosaicModel, input_models: [list, ModelLibrary]
 ):
     """
     Populate individual meta fields in the output mosaic model based on input models.

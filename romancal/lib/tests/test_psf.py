@@ -1,5 +1,5 @@
 """
- Unit tests for the Roman source detection step code
+Unit tests for the Roman source detection step code
 """
 
 from copy import deepcopy
@@ -62,7 +62,6 @@ def setup_inputs(
         webbpsf_config["detector"],
         oversample=webbpsf_config["oversample"],
         fov_pixels=webbpsf_config["fov_pixels"],
-        logging_level="ERROR",
     )
 
     return mod, webbpsf_config, psf_model
@@ -95,6 +94,7 @@ class TestPSFFitting:
             rng.uniform(-1, 1, n_trials),
             rng.uniform(-1, 1, n_trials),
             np.geomspace(1_000, 100_000, n_trials),
+            strict=False,
         ),
     )
     def test_psf_fit(self, dx, dy, true_flux):

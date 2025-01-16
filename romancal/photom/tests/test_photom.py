@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 import pytest
 from astropy import units as u
@@ -56,7 +54,7 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
     pixelareasr = np.ones(nrows, dtype=np.float64) * area_ster
 
     # Bundle values into a list
-    values = list(zip(photmjsr, uncertainty, pixelareasr))
+    values = list(zip(photmjsr, uncertainty, pixelareasr, strict=False))
 
     # Create dictionary containing all values
     reftab = {}
@@ -96,24 +94,19 @@ def test_no_photom_match():
     input_model.meta.instrument.optical_element = "F146"
 
     # Set bad values which would be overwritten by apply_photom
-    input_model.meta.photometry.pixelarea_steradians = -1.0
+    input_model.meta.photometry.pixel_area = -1.0
     input_model.meta.photometry.conversion_megajanskys = -1.0
-    input_model.meta.photometry.conversion_microjanskys_uncertainty = -1.0
 
-    with warnings.catch_warnings(record=True) as caught:
+    with pytest.warns(
+        UserWarning,
+        match=f"No matching photom parameters for {input_model.meta.instrument.optical_element}",
+    ):
         # Look for now non existent F146 optical element
         output_model = photom.apply_photom(input_model, photom_model)
 
-        # Assert warning key matches that of the input file
-        assert (
-            str(caught[0].message).split()[-1]
-            == input_model.meta.instrument.optical_element
-        )
-
-        # Assert that photom elements are not updated
-        assert output_model.meta.photometry.pixelarea_steradians == -1.0
-        assert output_model.meta.photometry.conversion_megajanskys == -1.0
-        assert output_model.meta.photometry.conversion_microjanskys_uncertainty == -1.0
+    # Assert that photom elements are not updated
+    assert output_model.meta.photometry.pixel_area == -1.0
+    assert output_model.meta.photometry.conversion_megajanskys == -1.0
 
 
 def test_apply_photom1():
@@ -243,23 +236,12 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     wfi_image.meta.instrument.optical_element = "PRISM"
 
     # Set photometric values for spectroscopic data
-    wfi_image.meta.photometry.pixelarea_steradians = (
-        2.31307642258977e-14 * u.steradian
-    ).value
-    wfi_image.meta.photometry.pixelarea_arcsecsq = (
-        0.000984102303070964 * u.arcsecond * u.arcsecond
-    ).value
+    wfi_image.meta.photometry.pixel_area = (2.31307642258977e-14 * u.steradian).value
     wfi_image.meta.photometry.conversion_megajanskys = (
         -99999 * u.megajansky / u.steradian
     ).value
     wfi_image.meta.photometry.conversion_megajanskys_uncertainty = (
         -99999 * u.megajansky / u.steradian
-    ).value
-    wfi_image.meta.photometry.conversion_microjanskys = (
-        -99999 * u.microjansky / u.arcsecond**2
-    ).value
-    wfi_image.meta.photometry.conversion_microjanskys_uncertainty = (
-        -99999 * u.microjansky / u.arcsecond**2
     ).value
 
     # Create input model
@@ -277,8 +259,5 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
 
     # Test that keywords are properly overwritten
     assert result.meta.photometry.conversion_megajanskys is None
-    assert result.meta.photometry.conversion_microjanskys is None
     assert result.meta.photometry.conversion_megajanskys_uncertainty is None
-    assert result.meta.photometry.conversion_microjanskys_uncertainty is None
-    assert result.meta.photometry.pixelarea_steradians is None
-    assert result.meta.photometry.pixelarea_arcsecsq is None
+    assert result.meta.photometry.pixel_area is None

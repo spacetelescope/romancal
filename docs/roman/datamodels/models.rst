@@ -36,7 +36,7 @@ using python.
 .. testsetup::
     >>> from roman_datamodels import datamodels as rdm
     >>> from roman_datamodels.maker_utils import mk_datamodel
-    >>> fn = 'r0019106003005004023_03203_0034_WFI01_cal.asdf'
+    >>> fn = 'r0019106003005004023_0034_wfi01_cal.asdf'
     >>> image_model = mk_datamodel(rdm.ImageModel)
 
     # set some metadata for the below tests
@@ -46,7 +46,7 @@ using python.
 .. code-block:: python
 
     >>> from roman_datamodels import datamodels as rdm
-    >>> fn = 'r0019106003005004023_03203_0034_WFI01_cal.asdf'
+    >>> fn = 'r0019106003005004023_0034_wfi01_cal.asdf'
     >>> image_model = rdm.open(fn)  # doctest: +SKIP
     >>> type(image_model)
     <class 'roman_datamodels.datamodels._datamodels.ImageModel'>
@@ -142,16 +142,17 @@ You can examine the contents of your model from within python using
 .. code-block:: python
 
     >>> print("\n".join("{: >20}\t{}".format(k, v) for k, v in image_model.items()), "\n") # doctest: +ELLIPSIS
-    meta.calibration_software_version   9.9.0
-    meta.sdf_software_version   7.7.7
-           meta.filename        r0019106003005004023_03203_0034_WFI01_cal.asdf
-          meta.file_date        2020-01-01T00:00:00.000
-         meta.model_type        ImageModel
-             meta.origin        STSCI
-    meta.prd_software_version   8.8.8
-          meta.telescope        ROMAN
-      meta.aperture.name        WFI_06_FULL
-    meta.aperture.position_angle        30.0
+    meta.calibration_software_name	RomanCAL
+    meta.calibration_software_version	9.9.0
+       meta.product_type	l2
+           meta.filename	r0019106003005004023_0034_wfi01_cal.asdf
+          meta.file_date	2020-01-01T00:00:00.000
+         meta.model_type	ImageModel
+             meta.origin	STSCI/SOC
+        meta.prd_version	8.8.8
+    meta.sdf_software_version	7.7.7
+          meta.telescope	ROMAN
+    meta.coordinates.reference_frame	ICRS
     ...
 
 or you can print specifics

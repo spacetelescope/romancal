@@ -3,7 +3,7 @@
 import pytest
 
 from romancal.associations import Association, AssociationRegistry, load_asn
-from romancal.associations.asn_from_list import Main, asn_from_list
+from romancal.associations.asn_from_list import _cli, asn_from_list
 from romancal.associations.exceptions import AssociationNotValidError
 
 
@@ -111,11 +111,11 @@ def test_cmdline_fails():
 
     # No arguments
     with pytest.raises(SystemExit):
-        Main([])
+        _cli([])
 
     # Only the association file argument
     with pytest.raises(SystemExit):
-        Main(["-o", "test_asn.json"])
+        _cli(["-o", "test_asn.json"])
 
 
 @pytest.mark.parametrize("format", ["json", "yaml"])
@@ -126,7 +126,7 @@ def test_cmdline_success(format, tmp_path):
     inlist = ["a", "b", "c"]
     args = ["-o", str(path), "--product-name", product_name, "--format", format]
     args = args + inlist
-    Main(args)
+    return_code = _cli(args)
     with path.open() as fp:
         asn = load_asn(fp, format=format)
     assert len(asn["products"]) == 1
@@ -134,6 +134,7 @@ def test_cmdline_success(format, tmp_path):
     members = asn["products"][0]["members"]
     expnames = [member["expname"] for member in members]
     assert inlist == expnames
+    assert not return_code
 
 
 def test_cmdline_change_rules(tmp_path):
@@ -150,7 +151,7 @@ def test_cmdline_change_rules(tmp_path):
         "test",
     ]
     args = args + inlist
-    Main(args)
+    _cli(args)
     with path.open() as fp:
         asn = load_asn(fp, registry=AssociationRegistry(include_bases=True))
     # assert inlist == asn['members']

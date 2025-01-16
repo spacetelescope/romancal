@@ -25,7 +25,7 @@ def artifactory_repos(pytestconfig):
 
     results_root = pytestconfig.getini("results_root")
     if not results_root:
-        results_root = "roman-pipeline-results"
+        results_root = "roman-pipeline-results/regression-tests/runs/"
     else:
         results_root = results_root[0]
     return inputs_root, results_root
@@ -216,9 +216,10 @@ def ignore_asdf_paths():
         "asdf_library",
         "history",
         # roman-specific stuff to ignore
-        "roman.meta.ref_file.crds.sw_version",
+        "roman.meta.ref_file.crds.version",
         "roman.meta.calibration_software_version",
         "roman.cal_logs",
+        "roman.meta.cal_logs",
         "roman.meta.date",
         "roman.individual_image_cal_logs",
         "roman.meta.individual_image_meta",

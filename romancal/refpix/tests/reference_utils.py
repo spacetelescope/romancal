@@ -191,7 +191,7 @@ def exec_channel_func_threads(chanIndexRange, targetFunc, funcArgs, multiThread=
     if multiThread:
         threadList = []
         for c in chanIndexRange:
-            funcArgsWithChan = (c,) + funcArgs
+            funcArgsWithChan = (c, *funcArgs)
             threadList.append(
                 threading.Thread(target=targetFunc, args=funcArgsWithChan)
             )
@@ -203,7 +203,7 @@ def exec_channel_func_threads(chanIndexRange, targetFunc, funcArgs, multiThread=
             t.join()
     else:
         for c in chanIndexRange:
-            funcArgsWithChan = (c,) + funcArgs
+            funcArgsWithChan = (c, *funcArgs)
             targetFunc(*funcArgsWithChan)
 
 

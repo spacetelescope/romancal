@@ -1,7 +1,10 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 import logging
 import re
 from os.path import basename, isfile
+from typing import TYPE_CHECKING
 
 import asdf
 import numpy as np
@@ -22,6 +25,9 @@ from romancal.skymatch import SkyMatchStep
 from romancal.source_catalog import SourceCatalogStep
 
 from ..stpipe import RomanPipeline
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["MosaicPipeline"]
 
@@ -44,7 +50,7 @@ class MosaicPipeline(RomanPipeline):
     """
 
     # Define aliases to steps
-    step_defs = {
+    step_defs: ClassVar = {
         "flux": FluxStep,
         "skymatch": SkyMatchStep,
         "outlier_detection": OutlierDetectionStep,
@@ -65,18 +71,16 @@ class MosaicPipeline(RomanPipeline):
         # open the input file
         file_type = filetype.check(input)
         if file_type == "asdf":
-            log.info("The level three pipeline input needs to be an association")
-            exit(0)
-            return
+            raise TypeError("The level three pipeline input needs to be an association")
 
         if file_type == "asn":
             input = ModelLibrary(input, on_disk=self.on_disk)
             self.flux.suffix = "flux"
-            result = self.flux(input)
+            result = self.flux.run(input)
             self.skymatch.suffix = "skymatch"
-            result = self.skymatch(result)
+            result = self.skymatch.run(result)
             self.outlier_detection.suffix = "outlier_detection"
-            result = self.outlier_detection(result)
+            result = self.outlier_detection.run(result)
             #
             # check to see if the product name contains a skycell name & if true get the skycell record
             product_name = input.asn["products"][0]["name"]
@@ -100,7 +104,7 @@ class MosaicPipeline(RomanPipeline):
                 if skycell_name in skycell_record["name"]:
                     # skycell name are in the form of r270dm90x99y99
                     # example of product name "r0099101001001001001_F158_visit_r270dm90x99y99"
-                    skycell_file_name = product_name + "_i2d.asdf"
+                    skycell_file_name = product_name + "_coadd.asdf"
 
                     # check to see if there exists a skycell on disk if not create it
                     if not isfile(skycell_file_name):
@@ -129,22 +133,23 @@ class MosaicPipeline(RomanPipeline):
                             self.resample.output_shape,
                         )
                         wcs_file = asdf.open(self.resample.output_wcs)
-                        self.suffix = "i2d"
+                        self.suffix = "coadd"
                         self.output_file = input.asn["products"][0]["name"]
-                        result = self.resample(result)
+                        result = self.resample.run(result)
                         self.sourcecatalog.output_file = self.output_file
-                        result_catalog = self.sourcecatalog(result)
+                        result_catalog = self.sourcecatalog.run(result)
                     else:
-                        log.info("resampling a mosaic file is not yet supported")
-                        exit(0)
+                        raise NotImplementedError(
+                            "resampling a mosaic file is not yet supported"
+                        )
 
             else:
-                self.resample.suffix = "i2d"
+                self.resample.suffix = "coadd"
                 self.output_file = input.asn["products"][0]["name"]
-                result = self.resample(result)
+                result = self.resample.run(result)
                 self.sourcecatalog.output_file = self.output_file
-                result_catalog = self.sourcecatalog(result)  # noqa: F841
-                self.suffix = "i2d"
+                result_catalog = self.sourcecatalog.run(result)  # noqa: F841
+                self.suffix = "coadd"
                 if input_filename:
                     result.meta.filename = self.output_file
 

@@ -101,8 +101,8 @@ def make_dict(item):
         except (TypeError, ValueError):
             try:
                 key = item.__name__
-            except (AttributeError, SyntaxError):
-                raise KeyValueRegistryNoKeyFound
+            except (AttributeError, SyntaxError) as err:
+                raise KeyValueRegistryNoKeyFound from err
             else:
                 value = item
 

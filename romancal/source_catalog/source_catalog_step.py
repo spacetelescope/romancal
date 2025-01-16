@@ -2,16 +2,24 @@
 Module for the source catalog step.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels, maker_utils
 from roman_datamodels.datamodels import ImageModel, MosaicModel
+from roman_datamodels.maker_utils import mk_datamodel
 
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
 from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["SourceCatalogStep"]
 
@@ -28,7 +36,7 @@ class SourceCatalogStep(RomanStep):
     """
 
     class_alias = "source_catalog"
-    reference_file_types = []
+    reference_file_types: ClassVar = []
 
     spec = """
         bkg_boxsize = integer(default=1000)   # background mesh box size in pixels
@@ -45,17 +53,41 @@ class SourceCatalogStep(RomanStep):
         fit_psf = boolean(default=True)      # fit source PSFs for accurate astrometry?
     """
 
-    def process(self, input_model):
-        if isinstance(input_model, datamodels.DataModel):
-            model = input_model
+    def process(self, step_input):
+        if isinstance(step_input, datamodels.DataModel):
+            input_model = step_input
         else:
-            model = datamodels.open(input_model)
+            input_model = datamodels.open(step_input)
 
-        if not isinstance(model, (ImageModel, MosaicModel)):
+        if not isinstance(input_model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
+        # Copy the data and error arrays to avoid modifying the input
+        # model. We use mk_datamodel to copy *only* the data and err
+        # arrays. The metadata and dq and weight arrays are not copied
+        # because they are not modified in this step. The other model
+        # arrays (e.g., var_rnoise) are not currently used by this step.
+        if isinstance(input_model, ImageModel):
+            model = mk_datamodel(
+                ImageModel,
+                meta=input_model.meta,
+                shape=(0, 0),
+                data=input_model.data.copy(),
+                err=input_model.err.copy(),
+                dq=input_model.dq,
+            )
+        elif isinstance(input_model, MosaicModel):
+            model = mk_datamodel(
+                MosaicModel,
+                meta=input_model.meta,
+                shape=(0, 0),
+                data=input_model.data.copy(),
+                err=input_model.err.copy(),
+                weight=input_model.weight,
+            )
+
         if isinstance(model, ImageModel):
-            cat_model = datamodels.SourceCatalogModel
+            cat_model = datamodels.ImageSourceCatalogModel
         else:
             cat_model = datamodels.MosaicSourceCatalogModel
         source_catalog_model = maker_utils.mk_datamodel(cat_model)
@@ -97,7 +129,10 @@ class SourceCatalogStep(RomanStep):
         if segment_img is None:  # no sources found
             source_catalog_model.source_catalog = Table()
         else:
-            ci_star_thresholds = (self.ci1_star_threshold, self.ci2_star_threshold)
+            ci_star_thresholds = (
+                self.ci1_star_threshold,
+                self.ci2_star_threshold,
+            )
             catobj = RomanSourceCatalog(
                 model,
                 segment_img,
@@ -111,47 +146,41 @@ class SourceCatalogStep(RomanStep):
             # put the resulting catalog in the model
             source_catalog_model.source_catalog = catobj.catalog
 
-        # add back background to data so input model is unchanged
-        # (in case of interactive use)
-        model.data += bkg.background
-
-        # create catalog filename
-        # N.B.: self.save_model will determine whether to use fully qualified path or not
-        output_catalog_name = self.make_output_path(
-            basepath=model.meta.filename, suffix="cat"
-        )
-
-        if isinstance(model, ImageModel):
-            update_metadata(model, output_catalog_name)
-
-        output_model = model
-
-        # always save segmentation image + catalog
+        # always save the segmentation image and source catalog
         self.save_base_results(segment_img, source_catalog_model)
 
-        # return the updated model or the source catalog object
+        # Return the source catalog object or the input model. If the
+        # input model is an ImageModel, the metadata is updated with the
+        # source catalog filename.
         if getattr(self, "return_updated_model", False):
-            # setting the suffix to something else to prevent
-            # step from  overwriting source catalog file with
-            # a datamodel
+            # define the catalog filename; self.save_model will
+            # determine whether to use a fully qualified path
+            output_catalog_name = self.make_output_path(
+                basepath=model.meta.filename, suffix="cat"
+            )
+
+            # set the suffix to something else to prevent the step from
+            # overwriting the source catalog file with a datamodel
             self.suffix = "sourcecatalog"
-            # return DataModel
-            result = output_model
+
+            if isinstance(input_model, ImageModel):
+                update_metadata(input_model, output_catalog_name)
+
+            result = input_model
         else:
-            # return SourceCatalogModel
             result = source_catalog_model
 
         return result
 
     def save_base_results(self, segment_img, source_catalog_model):
-        # save the segmentation map and
+        # save the segmentation map and source catalog
         output_filename = (
             self.output_file
             if self.output_file is not None
             else source_catalog_model.meta.filename
         )
 
-        if isinstance(source_catalog_model, datamodels.SourceCatalogModel):
+        if isinstance(source_catalog_model, datamodels.ImageSourceCatalogModel):
             seg_model = datamodels.SegmentationMapModel
         else:
             seg_model = datamodels.MosaicSegmentationMapModel
@@ -168,15 +197,19 @@ class SourceCatalogStep(RomanStep):
                 suffix="segm",
                 force=True,
             )
+
         # save the source catalog
         self.save_model(
-            source_catalog_model, output_file=output_filename, suffix="cat", force=True
+            source_catalog_model,
+            output_file=output_filename,
+            suffix="cat",
+            force=True,
         )
 
 
 def update_metadata(model, output_catalog_name):
     # update datamodel to point to the source catalog file destination
-    model.meta["source_detection"] = maker_utils.mk_source_detection(
+    model.meta["source_catalog"] = maker_utils.mk_source_catalog(
         tweakreg_catalog_name=output_catalog_name
     )
-    model.meta.cal_step.source_detection = "COMPLETE"
+    model.meta.cal_step.source_catalog = "COMPLETE"

@@ -44,7 +44,7 @@ class RegtestData:
         self,
         env="dev",
         inputs_root="roman-pipeline",
-        results_root="roman-pipeline-results",
+        results_root="roman-pipeline-results/regression-tests/runs/",
         docopy=True,
         input=None,
         input_remote=None,
@@ -274,7 +274,7 @@ class RegtestData:
                     )
 
     def to_asdf(self, path):
-        tree = eval(str(self))
+        tree = eval(str(self))  # noqa: S307
         af = asdf.AsdfFile(tree=tree)
         af.write_to(path)
 

@@ -141,12 +141,12 @@ The calibrated products are the result of an average over all integrations (``ca
  - border_ref_pix_bottom: Copy of original border reference pixels, on the bottom (from viewers perspective).
 
 
-Resampled 2-D data: ``i2d``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Resampled 2-D data: ``coadd``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Images and spectra that have been resampled by the :ref:`resample <resample_step>` step use a
 different set of data arrays than other science products. Resampled 2-D images are stored in
-``i2d`` products.
-The ASDF structure for ``i2d`` products is as follows:
+``coadd`` products.
+The ASDF structure for ``coadd`` products is as follows:
 
 +----------------------+----------+------------+---------------------------+-------------------------------+
 | data array           |          | Data Type  | Units                     | Dimensions                    |

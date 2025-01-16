@@ -65,13 +65,12 @@ def _median_with_resampling(
 
     in_memory = not input_models._on_disk
     indices_by_group = list(input_models.group_indices.values())
-    ngroups = len(indices_by_group)
+    nresultants = len(indices_by_group)
     example_model = None
     median_wcs = resamp.output_wcs
 
     with input_models:
         for i, indices in enumerate(indices_by_group):
-
             drizzled_model = resamp.resample_group(input_models, indices)
 
             if save_intermediate_results:
@@ -79,7 +78,7 @@ def _median_with_resampling(
                 _fileio.save_drizzled(drizzled_model, make_output_path)
 
             if i == 0:
-                input_shape = (ngroups,) + drizzled_model.data.shape
+                input_shape = (nresultants, *drizzled_model.data.shape)
                 dtype = drizzled_model.data.dtype
                 computer = MedianComputer(input_shape, in_memory, buffer_size, dtype)
                 example_model = drizzled_model
@@ -146,12 +145,11 @@ def _median_without_resampling(
 
     """
     in_memory = not input_models._on_disk
-    ngroups = len(input_models)
+    nresultants = len(input_models)
     example_model = None
 
     with input_models:
         for i in range(len(input_models)):
-
             model = input_models.borrow(i)
             wht = build_driz_weight(
                 model,
@@ -165,7 +163,7 @@ def _median_without_resampling(
                 _fileio.save_drizzled(model, make_output_path)
 
             if i == 0:
-                input_shape = (ngroups,) + model.data.shape
+                input_shape = (nresultants, *model.data.shape)
                 dtype = model.data.dtype
                 computer = MedianComputer(input_shape, in_memory, buffer_size, dtype)
                 example_model = model

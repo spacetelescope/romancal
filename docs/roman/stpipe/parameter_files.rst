@@ -20,14 +20,14 @@ For example, to save the parameters used for a run of the ``ExposurePipeline``
 pipeline, use:
 ::
 
-$ strun roman_elp r0000101001001001001_01101_0001_WFI01_uncal.asdf --save-parameters my_exppars.asdf
+$ strun roman_elp r0000101001001001001_0001_wfi01_uncal.asdf --save-parameters my_exppars.asdf
 
 Once saved, the file can be edited, removing parameters that should be left
 at their default values, and setting the remaining parameters to the
 desired values. Once modified, the new parameter file can be used:
 ::
 
-$ strun my_exppars2.asdf r0000101001001001001_01101_0001_WFI01_uncal.asdf
+$ strun my_exppars2.asdf r0000101001001001001_0001_wfi01_uncal.asdf
 
 Note that the parameter values will reflect whatever was set on the
 command-line, or through a specified local parameter file. In short, the

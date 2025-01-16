@@ -1,8 +1,14 @@
 #! /usr/bin/env python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from roman_datamodels import datamodels as rdm
 
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["DarkCurrentStep"]
 
@@ -13,11 +19,13 @@ class DarkCurrentStep(RomanStep):
     dark current reference data from the input science data model.
     """
 
+    class_alias = "dark"
+
     spec = """
         dark_output = output_file(default = None) # Dark corrected model
     """
 
-    reference_file_types = ["dark"]
+    reference_file_types: ClassVar = ["dark"]
 
     def process(self, input):
         if isinstance(input, rdm.DataModel):
@@ -42,14 +50,8 @@ class DarkCurrentStep(RomanStep):
         with rdm.open(self.dark_name) as dark_model:
             # Temporary patch to utilize stcal dark step until MA table support
             # is fully implemented
-            if "ngroups" not in dark_model.meta.exposure:
-                dark_model.meta.exposure["ngroups"] = dark_model.data.shape[0]
-            if "nframes" not in dark_model.meta.exposure:
-                dark_model.meta.exposure["nframes"] = input_model.meta.exposure.nframes
-            if "groupgap" not in dark_model.meta.exposure:
-                dark_model.meta.exposure["groupgap"] = (
-                    input_model.meta.exposure.groupgap
-                )
+            if "nresultants" not in dark_model.meta.exposure:
+                dark_model.meta.exposure["nresultants"] = dark_model.data.shape[0]
 
             # Do the dark correction
             out_model = input_model

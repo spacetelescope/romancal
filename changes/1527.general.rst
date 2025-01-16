@@ -1,0 +1,1 @@
+Perform bounding box assignment inline with the ordering that GWCS prefers.

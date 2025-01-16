@@ -233,9 +233,7 @@ def model_from_resultants(resultants, read_pattern=None):
     dm_ramp.err = err
 
     dm_ramp.meta.exposure.frame_time = ROMAN_READ_TIME
-    dm_ramp.meta.exposure.ngroups = shape[0]
-    dm_ramp.meta.exposure.nframes = 1
-    dm_ramp.meta.exposure.groupgap = 0
+    dm_ramp.meta.exposure.nresultants = shape[0]
 
     dm_ramp.meta.exposure.read_pattern = read_pattern
 
@@ -303,7 +301,7 @@ def generate_wfi_reffiles(
     # Create temporary dark reference file
     # shape needs to be 3D but does not matter because the ramp fitting
     # step only uses the 2-D dark slope component
-    dark_ref = maker_utils.mk_dark(shape=(1,) + shape)
+    dark_ref = maker_utils.mk_dark(shape=(1, *shape))
     dark_ref["meta"]["instrument"]["detector"] = "WFI01"
     dark_ref["meta"]["instrument"]["name"] = "WFI"
     dark_ref["meta"]["reftype"] = "DARK"

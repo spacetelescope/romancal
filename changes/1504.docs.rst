@@ -1,0 +1,1 @@
+Remove assignment validation example from docs.

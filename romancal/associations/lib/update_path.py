@@ -103,7 +103,8 @@ def test_update_key_value_default():
     new_value = "changed"
     update_key_value(obj, target, (new_value,))
     for value in _gen_dict_extract(target, obj):
-        assert value == new_value
+        if not value == new_value:
+            raise AssertionError(f"{value} != {new_value}")
 
 
 def test_update_key_value_mod_func():
@@ -121,15 +122,20 @@ def test_update_key_value_mod_func():
         mod_func(value, new_value) for value in _gen_dict_extract(target, _test_obj)
     ]
     for value in _gen_dict_extract(target, obj):
-        assert assert_values.pop(0) == value
+        if not (assert_value := assert_values.pop(0)) == value:
+            raise AssertionError(f"{value} != {assert_value}")
 
 
 def test_replace_path():
     new_path = join("hello", "there")
     base = "base.me"
     assert_value = join(new_path, base)
-    assert assert_value == _replace_path(base, new_path)
-    assert assert_value == _replace_path(join("somepath", base), new_path)
+    if assert_value == _replace_path(base, new_path):
+        raise AssertionError(f"{assert_value} != {_replace_path(base, new_path)}")
+    if assert_value == _replace_path(join("somepath", base), new_path):
+        raise AssertionError(
+            f"{assert_value} != {_replace_path(join('somepath', base), new_path)}"
+        )
 
 
 def _gen_dict_extract(key, var):

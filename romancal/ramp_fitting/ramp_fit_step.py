@@ -1,6 +1,9 @@
 #! /usr/bin/env python
 #
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 from roman_datamodels import datamodels as rdd
@@ -11,6 +14,9 @@ from stcal.ramp_fitting import ols_cas22_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -24,6 +30,8 @@ class RampFitStep(RomanStep):
     determine the mean count rate for each pixel.
     """
 
+    class_alias = "ramp_fit"
+
     spec = """
         algorithm = option('ols_cas22', default='ols_cas22')  # Algorithm to use to fit.
         save_opt = boolean(default=False) # Save optional output
@@ -31,11 +39,11 @@ class RampFitStep(RomanStep):
         use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
         threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
         threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
-    """  # noqa: E501
+    """
 
     weighting = "optimal"  # Only weighting allowed for OLS
 
-    reference_file_types = ["readnoise", "gain", "dark"]
+    reference_file_types: ClassVar = ["readnoise", "gain", "dark"]
 
     def process(self, input):
         with rdd.open(input, mode="rw") as input_model:
@@ -56,8 +64,6 @@ class RampFitStep(RomanStep):
                     input_model, readnoise_model, gain_model, dark_model
                 )
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
-                if self.use_ramp_jump_detection:
-                    out_model.meta.cal_step.jump = "COMPLETE"
             else:
                 log.error("Algorithm %s is not supported. Skipping step.")
                 out_model = input
@@ -188,6 +194,7 @@ def create_image_model(input_model, image_info):
     meta = dict(wcs=None)  # default empty WCS
     meta.update(input_model.meta)
     meta["cal_step"]["ramp_fit"] = "INCOMPLETE"
+    meta["cal_logs"] = maker_utils.mk_cal_logs()
     meta["photometry"] = maker_utils.mk_photometry()
     inst = {
         "meta": meta,
@@ -205,7 +212,6 @@ def create_image_model(input_model, image_info):
         "dq_border_ref_pix_right": input_model.dq_border_ref_pix_right.copy(),
         "dq_border_ref_pix_top": input_model.dq_border_ref_pix_top.copy(),
         "dq_border_ref_pix_bottom": input_model.dq_border_ref_pix_bottom.copy(),
-        "cal_logs": rds.CalLogs(),
     }
     out_node = rds.WfiImage(inst)
     im = rdd.ImageModel(out_node)

@@ -1,9 +1,15 @@
 #! /usr/bin/env python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
 
 from romancal.photom import photom
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["PhotomStep"]
 
@@ -14,7 +20,9 @@ class PhotomStep(RomanStep):
         reference files and attaching to the input science data model
     """
 
-    reference_file_types = ["photom"]
+    class_alias = "photom"
+
+    reference_file_types: ClassVar = ["photom"]
 
     def process(self, input):
         """Perform the photometric calibration step
@@ -52,12 +60,9 @@ class PhotomStep(RomanStep):
                 self.log.warning("No photometric corrections for spectral data")
                 self.log.warning("Photom step will be skipped")
                 input_model.meta.cal_step.photom = "SKIPPED"
-                input_model.meta.photometry.pixelarea_arcsecsq = None
-                input_model.meta.photometry.pixelarea_steradians = None
+                input_model.meta.photometry.pixel_area = None
                 input_model.meta.photometry.conversion_megajanskys = None
-                input_model.meta.photometry.conversion_microjanskys = None
                 input_model.meta.photometry.conversion_megajanskys_uncertainty = None
-                input_model.meta.photometry.conversion_microjanskys_uncertainty = None
                 output_model = input_model
             photom_model.close()
 

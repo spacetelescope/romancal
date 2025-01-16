@@ -1,4 +1,7 @@
 #! /usr/bin/env python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
 from roman_datamodels.datamodels import RampModel
@@ -6,6 +9,9 @@ from roman_datamodels.dqflags import pixel
 
 from romancal.dq_init import dq_initialization
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["DQInitStep"]
 
@@ -22,7 +28,9 @@ class DQInitStep(RomanStep):
     input model.
     """
 
-    reference_file_types = ["mask"]
+    class_alias = "dq_init"
+
+    reference_file_types: ClassVar = ["mask"]
 
     def process(self, input):
         """Perform the dq_init calibration step
@@ -44,8 +52,8 @@ class DQInitStep(RomanStep):
         output_model = RampModel.from_science_raw(input_model)
 
         # guide window range information
-        x_start = input_model.meta.guidestar.gw_window_xstart
-        x_end = input_model.meta.guidestar.gw_window_xsize + x_start
+        x_start = input_model.meta.guide_star.window_xstart
+        x_end = input_model.meta.guide_star.window_xsize + x_start
         # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
         output_model.pixeldq[int(x_start) : int(x_end), :] = pixel.GW_AFFECTED_DATA
         self.log.info(

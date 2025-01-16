@@ -109,7 +109,7 @@ def test_log_messages(tmp_path):
             return ImageModel(mk_level2_image(shape=(20, 20)))
 
     result = LoggingStep().run()
-    assert any("Splines failed to reticulate" in l for l in result.cal_logs)
+    assert any("Splines failed to reticulate" in l for l in result.meta.cal_logs)
 
 
 def test_crds_meta():
@@ -118,8 +118,8 @@ def test_crds_meta():
     im = ImageModel(mk_level2_image(shape=(20, 20)))
     result = FlatFieldStep.call(im)
 
-    assert result.meta.ref_file.crds.sw_version == crds_client.get_svn_version()
-    assert result.meta.ref_file.crds.context_used == crds_client.get_context_used(
+    assert result.meta.ref_file.crds.version == crds_client.get_svn_version()
+    assert result.meta.ref_file.crds.context == crds_client.get_context_used(
         result.crds_observatory
     )
 

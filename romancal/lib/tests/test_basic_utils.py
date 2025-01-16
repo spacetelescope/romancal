@@ -25,7 +25,7 @@ def test_structured_array_utils():
     arrays = [np.arange(0, 10), np.arange(10, 20), np.arange(30, 40)]
     names = "a, b, c"
 
-    recarr0 = np.core.records.fromarrays(
+    recarr0 = np.rec.fromarrays(
         arrays, names=names, formats=[arr.dtype for arr in arrays]
     )
     round_tripped = recarray_to_ndarray(recarr0)

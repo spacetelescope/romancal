@@ -10,9 +10,8 @@ observation was made::
 
     print(model.meta.observation.start_time)
 
-Metadata values are automatically type-checked against the schema when
-they are set. Therefore, setting a attribute which expects a number to a
-string will raise an exception.
+Metadata values will be validated against the schema when ``validate``
+is called, when the data model is saved or when a file is read.
 
 .. code-block:: python
 
@@ -20,26 +19,32 @@ string will raise an exception.
         >>> from roman_datamodels.maker_utils import mk_datamodel
 
         >>> model = mk_datamodel(rdm.ImageModel)
-        >>> model.meta.target.ra = "foo"  # doctest: +IGNORE_EXCEPTION_DETAIL
+        >>> model.meta.pointing.target_ra = "foo"
+        >>> model.validate()  # doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
           File "<stdin>", line 1, in <module>
-          File "/Users/ddavis/miniconda3/envs/rcal_dev/lib/python3.9/site-packages/roman_datamodels/stnode.py", line 183, in __setattr__
-            if schema is None or _validate(key, value, schema, self.ctx):
-          File "/Users/ddavis/miniconda3/envs/rcal_dev/lib/python3.9/site-packages/roman_datamodels/stnode.py", line 97, in _validate
-            return _value_change(attr, tagged_tree, schema, False, strict_validation, ctx)
-          File "/Users/ddavis/miniconda3/envs/rcal_dev/lib/python3.9/site-packages/roman_datamodels/stnode.py", line 68, in _value_change
-            raise jsonschema.ValidationError(errmsg)
-        jsonschema.exceptions.ValidationError: While validating ra the following error occurred:
+          File "/path/to/python/lib/python3.12/site-packages/roman_datamodels/stnode/_node.py", line 251, in __setattr__
+            _validate(key, value, schema, self.ctx)
+          File "/path/to/python/lib/python3.12/site-packages/roman_datamodels/stnode/_node.py", line 78, in _validate
+            return _value_change(attr, tagged_tree, schema, False, will_strict_validate(), ctx)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          File "/path/to/python/lib/python3.12/site-packages/roman_datamodels/stnode/_node.py", line 47, in _value_change
+            raise ValidationError(errmsg)
+        asdf._jsonschema.exceptions.ValidationError: While validating target_ra the following error occurred:
         'foo' is not of type 'number'
 
         Failed validating 'type' in schema:
             {'$schema': 'http://stsci.edu/schemas/asdf-schema/0.1.0/asdf-schema',
-             'archive_catalog': {'datatype': 'float',
-                                 'destination': ['ScienceCommon.ra']},
-             'sdf': {'source': {'origin': 'PSS:fixed_target.ra_computed'},
-                     'special_processing': 'VALUE_REQUIRED'},
-             'title': 'Target RA at mid time of exposure',
-             'type': 'number'}
+            'archive_catalog': {'datatype': 'float',
+                                'destination': ['WFIExposure.target_ra',
+                                                'GuideWindow.target_ra']},
+            'description': 'Right ascension in units of degrees at the location '
+                            'of\n'
+                            'the target aperture.\n',
+            'sdf': {'source': {'origin': 'TBD'},
+                    'special_processing': 'VALUE_REQUIRED'},
+            'title': 'Right Ascension of the Target Aperture (deg)',
+            'type': 'number'}
 
         On instance:
             'foo'
