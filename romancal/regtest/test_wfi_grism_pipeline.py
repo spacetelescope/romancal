@@ -98,7 +98,7 @@ def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths
         # skipped
         ("flat_field", "SKIPPED"),
         ("photom", "SKIPPED"),
-        ("source_detection", "SKIPPED"),
+        ("source_catalog", "SKIPPED"),
         ("tweakreg", "SKIPPED"),
     ),
 )

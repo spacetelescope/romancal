@@ -1,4 +1,4 @@
-""" Roman tests for source catalog creation """
+"""Roman tests for source catalog creation"""
 
 import asdf
 import pytest
@@ -12,8 +12,8 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 @pytest.fixture(
     scope="module",
     params=[
-        "r0099101001001001001_r274dp63x31y81_prompt_F158_i2d.asdf",
-        "r0099101001001001001_F158_visit_i2d.asdf",
+        "r0099101001001001001_r274dp63x31y81_prompt_F158_coadd.asdf",
+        "r0099101001001001001_F158_visit_coadd.asdf",
         "r0000101001001001001_0001_wfi01_cal.asdf",
     ],
     ids=["L3", "L2", "L3skycell"],

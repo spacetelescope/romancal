@@ -18,8 +18,8 @@ from webbpsf import gridded_library
 
 __all__ = [
     "create_gridded_psf_model",
-    "fit_psf_to_image_model",
     "dq_to_boolean_mask",
+    "fit_psf_to_image_model",
 ]
 
 # set loggers to debug level by default:

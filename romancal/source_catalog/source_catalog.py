@@ -4,7 +4,6 @@ Module to calculate the source catalog.
 
 import logging
 import warnings
-from typing import List
 
 import astropy.units as u
 import numpy as np
@@ -106,8 +105,7 @@ class RomanSourceCatalog:
         detection_cat=None,
         flux_unit="uJy",
     ):
-
-        if not isinstance(model, (ImageModel, MosaicModel)):
+        if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
         self.model = model  # background was previously subtracted
 
@@ -705,7 +703,9 @@ class RomanSourceCatalog:
         Set the concentration indices as dynamic attributes on the class
         instance.
         """
-        for name, value in zip(self.ci_colnames, self.concentration_indices):
+        for name, value in zip(
+            self.ci_colnames, self.concentration_indices, strict=False
+        ):
             setattr(self, name, value)
 
     @lazyproperty
@@ -781,7 +781,7 @@ class RomanSourceCatalog:
         which has odd dimensions.
         """
         cutout = []
-        for xcen, ycen in zip(*np.transpose(self._xypos_aper)):
+        for xcen, ycen in zip(*np.transpose(self._xypos_aper), strict=False):
             try:
                 cutout_ = extract_array(
                     self.model.data,
@@ -805,7 +805,7 @@ class RomanSourceCatalog:
         which has odd dimensions.
         """
         cutout = []
-        for xcen, ycen in zip(*np.transpose(self._xypos_aper)):
+        for xcen, ycen in zip(*np.transpose(self._xypos_aper), strict=False):
             try:
                 cutout_ = extract_array(
                     self._daofind_convolved_data,
@@ -1086,7 +1086,7 @@ class RomanSourceCatalog:
         return table
 
     @staticmethod
-    def get_psf_photometry_catalog_colnames_mapping() -> List:
+    def get_psf_photometry_catalog_colnames_mapping() -> list:
         """
         Set the mapping between the PSF photometry table column names
         and the final catalog column names.
@@ -1136,7 +1136,7 @@ class RomanSourceCatalog:
         ]
 
     @lazyproperty
-    def psf_photometry_colnames(self) -> List:
+    def psf_photometry_colnames(self) -> list:
         """
         Update and return column descriptions for PSF photometry results.
 

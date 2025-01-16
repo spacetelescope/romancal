@@ -13,7 +13,7 @@ def save_median(example_model, median_data, median_wcs, make_output_path):
 
 
 def save_drizzled(drizzled_model, make_output_path):
-    _save_intermediate_output(drizzled_model, "outlier_i2d", make_output_path)
+    _save_intermediate_output(drizzled_model, "outlier_coadd", make_output_path)
 
 
 def _make_median_model(example_model, data, wcs):

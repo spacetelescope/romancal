@@ -56,7 +56,8 @@ def doctree_resolved(app, doctree, docname):
         if app.builder.name != "latex" and app.config.number_figures:
             for cap in figure_info.traverse(caption):
                 cap[0] = Text(
-                    "%s %d: %s" % (app.config.figure_caption_prefix, i, cap[0])
+                    "%s %d: %s"  # noqa: UP031
+                    % (app.config.figure_caption_prefix, i, cap[0])
                 )
 
         for id in figure_info["ids"]:

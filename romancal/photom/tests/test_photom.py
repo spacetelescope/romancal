@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 import pytest
 from astropy import units as u
@@ -62,7 +60,7 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
     pixelareasr = np.ones(nrows, dtype=np.float64) * area_ster
 
     # Bundle values into a list
-    values = list(zip(photmjsr, uncertainty, pixelareasr))
+    values = list(zip(photmjsr, uncertainty, pixelareasr, strict=False))
 
     # Create dictionary containing all values
     reftab = {}
@@ -105,19 +103,16 @@ def test_no_photom_match():
     input_model.meta.photometry.pixel_area = -1.0
     input_model.meta.photometry.conversion_megajanskys = -1.0
 
-    with warnings.catch_warnings(record=True) as caught:
+    with pytest.warns(
+        UserWarning,
+        match=f"No matching photom parameters for {input_model.meta.instrument.optical_element}",
+    ):
         # Look for now non existent F146 optical element
         output_model = photom.apply_photom(input_model, photom_model)
 
-        # Assert warning key matches that of the input file
-        assert (
-            str(caught[0].message).split()[-1]
-            == input_model.meta.instrument.optical_element
-        )
-
-        # Assert that photom elements are not updated
-        assert output_model.meta.photometry.pixel_area == -1.0
-        assert output_model.meta.photometry.conversion_megajanskys == -1.0
+    # Assert that photom elements are not updated
+    assert output_model.meta.photometry.pixel_area == -1.0
+    assert output_model.meta.photometry.conversion_megajanskys == -1.0
 
 
 def test_apply_photom1():

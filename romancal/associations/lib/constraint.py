@@ -1,5 +1,4 @@
-"""Constraints
-"""
+"""Constraints"""
 
 import abc
 import collections
@@ -139,7 +138,7 @@ class SimpleConstraintABC(abc.ABC):
         yield self
 
     def __repr__(self):
-        result = f"{self.__class__.__name__}({str(self.__dict__)})"
+        result = f"{self.__class__.__name__}({self.__dict__!s})"
         return result
 
     def __str__(self):
@@ -600,7 +599,7 @@ class Constraint:
                       'value': 'a_value',
                       'name': 'simple',
                       'matched': False})
-    """  # noqa: E501
+    """
 
     def __init__(
         self,
@@ -639,8 +638,8 @@ class Constraint:
             self.constraints = [init]
         else:
             raise TypeError(
-                "Invalid initialization value type {}.\nValid types are"
-                " `SimpleConstraint`, `Constraint`,\nor subclass.".format(type(init))
+                f"Invalid initialization value type {type(init)}.\nValid types are"
+                " `SimpleConstraint`, `Constraint`,\nor subclass."
             )
 
         # Give some defaults real meaning.
@@ -664,10 +663,10 @@ class Constraint:
             and all the constraints that define that name.
         """
         attrs = self.get_all_attr("name")
-        constraints, names = zip(*attrs)
+        constraints, names = zip(*attrs, strict=False)
         dups = [name for name, count in collections.Counter(names).items() if count > 1]
         result = collections.defaultdict(list)
-        for name, constraint in zip(names, constraints):
+        for name, constraint in zip(names, constraints, strict=False):
             if name in dups:
                 result[name].append(constraint)
 

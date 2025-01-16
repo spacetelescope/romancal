@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from typing import List
 
 import numpy as np
 from astropy import units as u
@@ -179,7 +178,7 @@ class ResampleData:
             )
 
             # FIXME: temporary hack to prevent changes from L2 into L3 schema
-            for i, model in enumerate(models):
+            for model in models:
                 # saving ImageModels cal_logs
                 cal_logs = model.meta.cal_logs
                 # removing meta.cal_logs
@@ -238,7 +237,7 @@ class ResampleData:
             output_root = "_".join(
                 example_image.meta.filename.replace(output_type, "").split("_")[:-1]
             )
-            output_model.meta.filename = f"{output_root}_outlier_i2d{output_type}"
+            output_model.meta.filename = f"{output_root}_outlier_coadd{output_type}"
             input_models.shelve(example_image, indices[0], modify=False)
             output_model.meta.basic.location_name = self.location_name
             del example_image
@@ -298,7 +297,7 @@ class ResampleData:
         sky.
         """
         output_models = []
-        for group_id, indices in self.input_models.group_indices.items():
+        for indices in self.input_models.group_indices.values():
             output_model = self.resample_group(self.input_models, indices)
 
             if not self.in_memory:
@@ -315,7 +314,7 @@ class ResampleData:
         if not self.in_memory:
             # build ModelLibrary as an association from the output files
             # this saves memory if there are multiple groups
-            asn = asn_from_list(output_models, product_name="outlier_i2d")
+            asn = asn_from_list(output_models, product_name="outlier_coadd")
             asn_dict = json.loads(
                 asn.dump()[1]
             )  # serializes the asn and converts to dict
@@ -438,13 +437,13 @@ class ResampleData:
                 if variance is None or variance.size == 0:
                     log.debug(
                         f"No data for '{name}' for model "
-                        f"{repr(model.meta.filename)}. Skipping ..."
+                        f"{model.meta.filename!r}. Skipping ..."
                     )
                     continue
                 elif variance.shape != model.data.shape:
                     log.warning(
                         f"Data shape mismatch for '{name}' for model "
-                        f"{repr(model.meta.filename)}. Skipping..."
+                        f"{model.meta.filename!r}. Skipping..."
                     )
                     continue
 
@@ -564,7 +563,7 @@ class ResampleData:
         )
         exposure_times = {"start": [], "end": []}
         with self.input_models:
-            for group_id, indices in self.input_models.group_indices.items():
+            for indices in self.input_models.group_indices.values():
                 index = indices[0]
                 model = self.input_models.borrow(index)
                 exposure_times["start"].append(model.meta.exposure.start_time)
@@ -876,7 +875,7 @@ def calc_pa(wcs, ra, dec):
         The position angle in degrees.
 
     """
-    delta_pix = [v for v in wcs.world_to_pixel(ra, dec)]
+    delta_pix = [v for v in wcs.world_to_pixel_values(ra, dec)]
     delta_pix[1] += 1
     delta_coord = wcs.pixel_to_world(*delta_pix)
     coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
@@ -885,7 +884,7 @@ def calc_pa(wcs, ra, dec):
 
 
 def populate_mosaic_basic(
-    output_model: datamodels.MosaicModel, input_models: [List, ModelLibrary]
+    output_model: datamodels.MosaicModel, input_models: list | ModelLibrary
 ):
     """
     Populate basic metadata fields in the output mosaic model based on input models.
@@ -947,7 +946,7 @@ def populate_mosaic_basic(
 
 
 def populate_mosaic_individual(
-    output_model: datamodels.MosaicModel, input_models: [List, ModelLibrary]
+    output_model: datamodels.MosaicModel, input_models: [list, ModelLibrary]
 ):
     """
     Populate individual meta fields in the output mosaic model based on input models.

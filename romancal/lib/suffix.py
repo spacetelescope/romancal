@@ -51,10 +51,8 @@ SUFFIXES_TO_ADD = [
     "dqinit",
     "assign_wcs",
     "linearity",
-    "jump",
     "rampfit",
     "saturation",
-    "sourcedetection",
     "dark_current",
     "darkcurrent",
     "outlier_detection",
@@ -62,7 +60,7 @@ SUFFIXES_TO_ADD = [
     "refpix",
     "cat",
     "segm",
-    "i2d",
+    "coadd",
 ]
 
 # Suffixes that are discovered but should not be considered.
@@ -74,7 +72,6 @@ SUFFIXES_TO_DISCARD = ["mosaicpipeline", "pipeline", "step"]
 _calculated_suffixes = {
     "saturationstep",
     "darkcurrentstep",
-    "jumpstep",
     "rampfit",
     "dark_current",
     "assignwcsstep",
@@ -89,10 +86,6 @@ _calculated_suffixes = {
     "pipeline",
     "dq_init",
     "linearitystep",
-    "dark_current",
-    "jump",
-    "sourcedetection",
-    "sourcedetectionstep",
     "tweakregstep",
     "outlierdetectionstep",
     "skymatchstep",
@@ -216,9 +209,7 @@ if __name__ == "__main__":
         to_add=(calculated_suffixes, SUFFIXES_TO_ADD), to_remove=(SUFFIXES_TO_DISCARD,)
     )
     print(
-        "Known list has {known_len} suffixes. Found {new_len} suffixes.".format(
-            known_len=len(KNOW_SUFFIXES), new_len=len(found_suffixes)
-        )
+        f"Known list has {len(KNOW_SUFFIXES)} suffixes. Found {len(found_suffixes)} suffixes."
     )
     print(
         "Suffixes that have changed are"

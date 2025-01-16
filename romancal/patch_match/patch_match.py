@@ -40,8 +40,8 @@ def load_patch_table(tablepath=None):
     try:
         with asdf.open(tablepath) as af:
             PATCH_TABLE = af.tree["patches"].copy()
-    except FileNotFoundError:
-        raise FileNotFoundError("Specified patch table file path not found")
+    except FileNotFoundError as err:
+        raise FileNotFoundError("Specified patch table file path not found") from err
 
 
 def image_coords_to_vec(image_corners):
@@ -219,7 +219,7 @@ def find_closest_tangent_point(patches, image_corners):
         ((im_center - np.array(sgv.lonlat_to_vector(*tangent_point))) ** 2).sum()
         for tangent_point in unique_tangent_points
     ]
-    sorted_dist_indices = sorted(zip(dist, range(len(dist))))
+    sorted_dist_indices = sorted(zip(dist, range(len(dist)), strict=False))
     sorted_tangent_points = [
         unique_tangent_points[sorted_dist[1]] for sorted_dist in sorted_dist_indices
     ]

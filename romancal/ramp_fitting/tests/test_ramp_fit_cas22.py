@@ -318,7 +318,7 @@ def generate_wfi_reffiles(
     # Create temporary dark reference file
     # shape needs to be 3D but does not matter because the ramp fitting
     # step only uses the 2-D dark slope component
-    dark_ref = maker_utils.mk_dark(shape=(1,) + shape)
+    dark_ref = maker_utils.mk_dark(shape=(1, *shape))
     dark_ref["meta"]["instrument"]["detector"] = "WFI01"
     dark_ref["meta"]["instrument"]["name"] = "WFI"
     dark_ref["meta"]["reftype"] = "DARK"

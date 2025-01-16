@@ -14,17 +14,12 @@ import datetime
 import importlib
 import os
 import sys
+import tomllib
 from distutils.version import LooseVersion
 from pathlib import Path
 
 import sphinx
 import stsci_rtd_theme
-
-if sys.version_info < (3, 11):
-    import tomli as tomllib
-else:
-    import tomllib
-
 from sphinx.ext.autodoc import AttributeDocumenter
 
 from romancal.stpipe import RomanStep
@@ -106,14 +101,6 @@ intersphinx_mapping = {
 
 intersphinx_disabled_reftypes = ["*"]
 
-if sys.version_info[0] == 2:
-    intersphinx_mapping["python"] = ("http://docs.python.org/2/", None)
-    intersphinx_mapping["pythonloc"] = (
-        "http://docs.python.org/",
-        os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "local/python2_local_links.inv")
-        ),
-    )
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom

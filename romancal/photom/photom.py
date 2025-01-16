@@ -94,7 +94,8 @@ def apply_photom(input_model, photom):
     except KeyError:
         warnings.warn(
             "No matching photom parameters for"
-            f" {input_model.meta.instrument.optical_element}"
+            f" {input_model.meta.instrument.optical_element}",
+            stacklevel=2,
         )
         return input_model
 

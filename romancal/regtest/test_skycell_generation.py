@@ -1,4 +1,4 @@
-""" Roman tests for generating associatinos based on skycells"""
+"""Roman tests for generating associatinos based on skycells"""
 
 import os
 
@@ -21,16 +21,16 @@ def test_skycell_asn_generation(rtdata):
     rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi01_cal.asdf")
     rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi10_cal.asdf")
 
-    skycell_asn.Main(args)
+    skycell_asn._cli(args)
 
     # skycell associations that should be generated
     output_files = [
-        "r512_p_v01001001001_r274dp63x31y80_f158_coadd_asn.json",
-        "r512_p_v01001001001_r274dp63x31y81_f158_coadd_asn.json",
-        "r512_p_v01001001001_r274dp63x32y82_f158_coadd_asn.json",
-        "r512_p_v01001001001_r274dp63x32y80_f158_coadd_asn.json",
-        "r512_p_v01001001001_r274dp63x32y81_f158_coadd_asn.json",
-        "r512_p_v01001001001_r274dp63x32y82_f158_coadd_asn.json",
+        "r512_p_v01001001001_r274dp63x31y80_f158_asn.json",
+        "r512_p_v01001001001_r274dp63x31y81_f158_asn.json",
+        "r512_p_v01001001001_r274dp63x32y82_f158_asn.json",
+        "r512_p_v01001001001_r274dp63x32y80_f158_asn.json",
+        "r512_p_v01001001001_r274dp63x32y81_f158_asn.json",
+        "r512_p_v01001001001_r274dp63x32y82_f158_asn.json",
     ]
     # Test that the json files exist
     for file in output_files:

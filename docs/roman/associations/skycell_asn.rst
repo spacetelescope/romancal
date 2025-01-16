@@ -4,8 +4,7 @@ skycell_asn
 ===========
 
 Create an association using either the command line tool
-``skycell_asn`` or through the Python API using either
-:class:`romancal.associations.skycell_asn.Main` or
+``skycell_asn`` or through the Python API using
 :func:`romancal.associations.skycellasn.skycell_asn`
 
 
@@ -71,15 +70,15 @@ contribute data to. The association files will be json files with names based
 
 .. code-block:: text
 
-	r0099101001001003001_<skycell name>_<product_type>_<filter>_<release product name>_i2d_asn.json
+	r0099101001001003001_<skycell name>_<product_type>_<filter>_<release product name>_coadd_asn.json
 
 or for the selections above
 
 .. code-block:: text
 
-	r0099101001001003001_r257dp63x98y83_visit_F158_prompt_i2d_asn.json
+	r0099101001001003001_r257dp63x98y83_visit_F158_prompt_coadd_asn.json
 
-where the skycell name can vary based on the location on the celestial sphere and the i2d indicates
+where the skycell name can vary based on the location on the celestial sphere and the coadd indicates
 that this is resampled 2-d imaging data. The release product name can be changed from the default
 by adding the optional argument --release-product <new name> to the command line.
 

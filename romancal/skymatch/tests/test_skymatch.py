@@ -69,8 +69,9 @@ def mk_image_model(
     sky_offset=[0, 0] * u.arcsec,
     rotation=0 * u.deg,
     image_shape=(100, 100),
-    rng=np.random.default_rng(619),
+    rng=None,
 ):
+    rng = np.random.default_rng(619) if rng is None else rng
     l2 = mk_level2_image(shape=image_shape)
     l2_im = ImageModel(l2)
     l2_im.data = rng.normal(
@@ -178,7 +179,7 @@ def test_skymatch(wfi_rate, skymethod, subtract, skystat, match_down):
     levels = [9.12, 8.28, 2.56]
 
     with library:
-        for i, (im, lev) in enumerate(zip(library, levels)):
+        for i, (im, lev) in enumerate(zip(library, levels, strict=False)):
             im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape)
             library.shelve(im, i)
 
@@ -208,7 +209,7 @@ def test_skymatch(wfi_rate, skymethod, subtract, skystat, match_down):
 
     with result:
         for i, (im, lev, rlev, slev) in enumerate(
-            zip(result, levels, ref_levels, sub_levels)
+            zip(result, levels, ref_levels, sub_levels, strict=False)
         ):
             # check that meta was set correctly:
             assert im.meta.background.method == skymethod
@@ -243,7 +244,7 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
     levels = [9.12, 9.12, 8.28, 8.28, 2.56]
 
     with library:
-        for i, (im, lev) in enumerate(zip(library, levels)):
+        for i, (im, lev) in enumerate(zip(library, levels, strict=False)):
             im.data = rng.normal(loc=lev, scale=0.01, size=im.data.shape)
             library.shelve(im, i)
 
@@ -273,7 +274,7 @@ def test_skymatch_overlap(mk_sky_match_image_models, skymethod, subtract, skysta
 
     with result:
         for i, (im, lev, rlev, slev) in enumerate(
-            zip(result, levels, ref_levels, sub_levels)
+            zip(result, levels, ref_levels, sub_levels, strict=False)
         ):
             # check that meta was set correctly:
             assert im.meta.background.method == skymethod
@@ -325,7 +326,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     levels = [9.12, 8.28, 2.56]
 
     with library:
-        for i, (im, lev) in enumerate(zip(library, levels)):
+        for i, (im, lev) in enumerate(zip(library, levels, strict=False)):
             im.data = rng.normal(loc=lev, scale=0.05, size=im.data.shape)
             library.shelve(im, i)
 
@@ -374,7 +375,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     # compare results
     with result2:
         for i, (im, lev, rlev, slev) in enumerate(
-            zip(result2, levels, ref_levels, sub_levels)
+            zip(result2, levels, ref_levels, sub_levels, strict=False)
         ):
             # check that meta was set correctly:
             assert im.meta.background.method == skymethod

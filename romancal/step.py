@@ -8,7 +8,6 @@ from .dark_current.dark_current_step import DarkCurrentStep
 from .dq_init.dq_init_step import DQInitStep
 from .flatfield.flat_field_step import FlatFieldStep
 from .flux import FluxStep
-from .jump.jump_step import JumpStep
 from .linearity.linearity_step import LinearityStep
 from .multiband_catalog.multiband_catalog_step import MultibandCatalogStep
 from .outlier_detection.outlier_detection_step import OutlierDetectionStep
@@ -19,17 +18,16 @@ from .resample.resample_step import ResampleStep
 from .saturation.saturation_step import SaturationStep
 from .skymatch.skymatch_step import SkyMatchStep
 from .source_catalog.source_catalog_step import SourceCatalogStep
-from .source_detection.source_detection_step import SourceDetectionStep
 from .tweakreg.tweakreg_step import TweakRegStep
 
 __all__ = [
     "AssignWcsStep",
-    "DarkCurrentStep",
     "DQInitStep",
+    "DarkCurrentStep",
     "FlatFieldStep",
     "FluxStep",
-    "JumpStep",
     "LinearityStep",
+    "MultibandCatalogStep",
     "OutlierDetectionStep",
     "PhotomStep",
     "RampFitStep",
@@ -37,8 +35,6 @@ __all__ = [
     "ResampleStep",
     "SaturationStep",
     "SkyMatchStep",
-    "SourceDetectionStep",
     "SourceCatalogStep",
-    "MultibandCatalogStep",
     "TweakRegStep",
 ]

@@ -1,4 +1,7 @@
 #! /usr/bin/env python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
 from roman_datamodels.datamodels import RampModel
@@ -6,6 +9,9 @@ from roman_datamodels.dqflags import pixel
 
 from romancal.dq_init import dq_initialization
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["DQInitStep"]
 
@@ -24,7 +30,7 @@ class DQInitStep(RomanStep):
 
     class_alias = "dq_init"
 
-    reference_file_types = ["mask"]
+    reference_file_types: ClassVar = ["mask"]
 
     def process(self, input):
         """Perform the dq_init calibration step
