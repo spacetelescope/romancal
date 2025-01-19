@@ -882,7 +882,9 @@ def calc_pa(wcs, ra, dec):
     """
     delta_pix = [v for v in wcs.invert(ra, dec, with_bounding_box=False)]
     delta_pix[1] += 1
-    delta_coord = SkyCoord(*wcs(*delta_pix, with_bounding_box=False), frame='icrs', unit='deg')
+    delta_coord = SkyCoord(
+        *wcs(*delta_pix, with_bounding_box=False), frame="icrs", unit="deg"
+    )
     coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
 
     return coord.position_angle(delta_coord).degree
