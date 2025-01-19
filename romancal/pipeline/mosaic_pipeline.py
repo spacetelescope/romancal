@@ -13,7 +13,6 @@ from astropy import coordinates
 from astropy import units as u
 from astropy.modeling import models
 from gwcs import WCS, coordinate_frames
-
 from stcal.alignment import util as wcs_util
 
 import romancal.datamodels.filetype as filetype
@@ -181,15 +180,15 @@ def skycell_to_wcs(skycell_record):
     wcsinfo = dict()
 
     # The scale is given in arcseconds per pixel. Convert to degrees.
-    wcsinfo['pixel_scale'] = float(skycell_record["pixel_scale"]) / 3600.0
+    wcsinfo["pixel_scale"] = float(skycell_record["pixel_scale"]) / 3600.0
 
     # Remaining components of the wcsinfo block
-    wcsinfo['ra_ref'] = float(skycell_record["ra_projection_center"])
-    wcsinfo['dec_ref'] = float(skycell_record["dec_projection_center"])
-    wcsinfo['x_ref'] = float(skycell_record["x0_projection"])
-    wcsinfo['y_ref'] = float(skycell_record["y0_projection"])
-    wcsinfo['orientat'] = float(skycell_record['orientat_projection_center'])
-    wcsinfo['rotation_matrix'] = None
+    wcsinfo["ra_ref"] = float(skycell_record["ra_projection_center"])
+    wcsinfo["dec_ref"] = float(skycell_record["dec_projection_center"])
+    wcsinfo["x_ref"] = float(skycell_record["x0_projection"])
+    wcsinfo["y_ref"] = float(skycell_record["y0_projection"])
+    wcsinfo["orientat"] = float(skycell_record["orientat_projection_center"])
+    wcsinfo["rotation_matrix"] = None
 
     # Bounding box of the skycell. Note that the center of the pixels are at (0.5, 0.5)
     bounding_box = (
@@ -201,7 +200,7 @@ def skycell_to_wcs(skycell_record):
     return wcsobj
 
 
-def wcsinfo_to_wcs(wcsinfo, bounding_box=None, name='wcsinfo'):
+def wcsinfo_to_wcs(wcsinfo, bounding_box=None, name="wcsinfo"):
     """Create a GWCS from the L3 wcsinfo meta
 
     Parameters
@@ -221,23 +220,37 @@ def wcsinfo_to_wcs(wcsinfo, bounding_box=None, name='wcsinfo'):
     wcs : wcs.GWCS
         The GWCS object created.
     """
-    pixelshift = models.Shift(-wcsinfo['x_ref'], name='crpix1') & models.Shift(-wcsinfo['y_ref'], name='crpix2')
-    pixelscale = models.Scale(wcsinfo['pixel_scale'], name='cdelt1') & models.Scale(wcsinfo['pixel_scale'], name='cdelt2')
+    pixelshift = models.Shift(-wcsinfo["x_ref"], name="crpix1") & models.Shift(
+        -wcsinfo["y_ref"], name="crpix2"
+    )
+    pixelscale = models.Scale(wcsinfo["pixel_scale"], name="cdelt1") & models.Scale(
+        wcsinfo["pixel_scale"], name="cdelt2"
+    )
     tangent_projection = models.Pix2Sky_TAN()
-    celestial_rotation = models.RotateNative2Celestial(wcsinfo['ra_ref'], wcsinfo['dec_ref'], 180.)
+    celestial_rotation = models.RotateNative2Celestial(
+        wcsinfo["ra_ref"], wcsinfo["dec_ref"], 180.0
+    )
 
-    matrix = wcsinfo.get('rotation_matrix', None)
+    matrix = wcsinfo.get("rotation_matrix", None)
     if matrix:
         matrix = np.array(matrix)
     else:
-        orientat = wcsinfo.get('orientat', 0.)
-        matrix = wcs_util.calc_rotation_matrix(np.deg2rad(orientat), v3i_yangle=0., vparity=1)
+        orientat = wcsinfo.get("orientat", 0.0)
+        matrix = wcs_util.calc_rotation_matrix(
+            np.deg2rad(orientat), v3i_yangle=0.0, vparity=1
+        )
         matrix = np.reshape(matrix, (2, 2))
-    rotation = models.AffineTransformation2D(matrix, name='pc_rotation_matrix')
-    det2sky = pixelshift | rotation | pixelscale | tangent_projection | celestial_rotation
+    rotation = models.AffineTransformation2D(matrix, name="pc_rotation_matrix")
+    det2sky = (
+        pixelshift | rotation | pixelscale | tangent_projection | celestial_rotation
+    )
 
-    detector_frame = coordinate_frames.Frame2D(name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix))
-    sky_frame = coordinate_frames.CelestialFrame(reference_frame=coordinates.ICRS(), name='icrs', unit=(u.deg, u.deg))
+    detector_frame = coordinate_frames.Frame2D(
+        name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)
+    )
+    sky_frame = coordinate_frames.CelestialFrame(
+        reference_frame=coordinates.ICRS(), name="icrs", unit=(u.deg, u.deg)
+    )
     wcsobj = WCS([(detector_frame, det2sky), (sky_frame, None)], name=name)
 
     if bounding_box:
