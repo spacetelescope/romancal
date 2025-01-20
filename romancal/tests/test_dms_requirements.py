@@ -31,4 +31,6 @@ def test_requirements():
                 existing_tests.add(test)
 
     missing_tests = required_tests - existing_tests
-    assert not missing_tests, f"could not find the following tests correlated with DMS requirements: {missing_tests}"
+    assert not missing_tests, (
+        f"could not find the following tests correlated with DMS requirements: {missing_tests}"
+    )

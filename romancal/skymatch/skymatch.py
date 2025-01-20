@@ -291,7 +291,7 @@ def match(images, skymethod="global+match", match_down=True, subtract=False):
     #    (intersecting) images.
     if do_match:
         log.info(" ")
-        log.info("----  Computing differences in sky values in " "overlapping regions.")
+        log.info("----  Computing differences in sky values in overlapping regions.")
 
         # find "optimum" sky changes:
         sky_deltas = _find_optimum_sky_deltas(images, apply_sky=not subtract)
@@ -330,7 +330,7 @@ def match(images, skymethod="global+match", match_down=True, subtract=False):
                 "across *all* input images."
             )
         else:
-            log.info("----  Sky values computed per image and/or image " "groups.")
+            log.info("----  Sky values computed per image and/or image groups.")
 
         sky_deltas = []
         for img in images:
@@ -344,7 +344,7 @@ def match(images, skymethod="global+match", match_down=True, subtract=False):
             if minsky is None:
                 log.warning('   Unable to compute "global" sky value')
             sky_deltas = len(sky_deltas) * [minsky]
-            log.info(f'   "Global" sky value correction: {minsky} ' "[not converted]")
+            log.info(f'   "Global" sky value correction: {minsky} [not converted]')
 
         if do_match:
             log.info(" ")
@@ -393,7 +393,7 @@ def _apply_sky(images, sky_deltas, do_global, do_skysub, show_old):
             new_img_sky = [im.sky for im in img]
 
             # log sky values:
-            log.info(f"   *  Group ID={img.id}. Sky background of " "component images:")
+            log.info(f"   *  Group ID={img.id}. Sky background of component images:")
 
             for im, old_sky, new_sky in zip(
                 img, old_img_sky, new_img_sky, strict=False
@@ -499,14 +499,14 @@ def _find_optimum_sky_deltas(images, apply_sky=True):
     try:
         rank = np.linalg.matrix_rank(K, 1.0e-12)
     except np.linalg.LinAlgError:
-        log.warning("Unable to compute sky: No valid data in common " "image areas")
+        log.warning("Unable to compute sky: No valid data in common image areas")
         deltas = np.full(ns, np.nan, dtype=float)
         return deltas
 
     if rank < ns - 1:
         log.warning(f"There are more unknown sky values ({ns}) to be solved for")
         log.warning(
-            "than there are independent equations available " f"(matrix rank={rank})."
+            f"than there are independent equations available (matrix rank={rank})."
         )
         log.warning("Sky matching (delta) values will be computed only for")
         log.warning("a subset (or more independent subsets) of input images.")
