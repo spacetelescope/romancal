@@ -4,6 +4,8 @@
 
 :ref:`genindex`  |  :ref:`modindex`
 
+.. _roman-pipeline-doc-index:
+
 ==============================================
 The Roman Space Telescope Calibration Pipeline
 ==============================================
