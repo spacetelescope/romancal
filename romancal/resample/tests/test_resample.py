@@ -1039,11 +1039,7 @@ def test_populate_mosaic_basic_different_observations(
         rotation=0,
         shape=None,
         crpix=(0, 0),
-<<<<<<< HEAD
         crval=(30, 45),
-=======
-        crval=(10, 0),
->>>>>>> 001c238 (Adjust crval in resample tests to get overlap with input)
     )
     output_model = maker_utils.mk_datamodel(
         datamodels.MosaicModel, shape=tuple(output_wcs.array_shape)
