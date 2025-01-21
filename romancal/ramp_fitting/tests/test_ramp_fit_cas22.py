@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-
 from astropy.time import Time
 from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import (
