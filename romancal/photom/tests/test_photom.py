@@ -144,8 +144,6 @@ def test_apply_photom1():
         atol=1.0e-7,
     )
 
-    # assert output_model.meta.photometry.conversion_microjanskys.unit == phot_a2.unit
-
     # Set reference photometric uncertainty
     muphot_ster = 0.175
 
