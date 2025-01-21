@@ -457,8 +457,12 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0(exposure_1):
     expected_max_value = np.max(np.stack(input_wcs_list))
 
     # Assert
-    assert (expected_min_value - 0.5001 * pscale) <= output_min_value <= expected_min_value
-    assert (expected_max_value + 0.5001 * pscale) >= output_max_value >= expected_max_value
+    assert (
+        (expected_min_value - 0.5001 * pscale) <= output_min_value <= expected_min_value
+    )
+    assert (
+        (expected_max_value + 0.5001 * pscale) >= output_max_value >= expected_max_value
+    )
 
 
 def test_resampledata_do_drizzle_many_to_one_default_rotation_0_multiple_exposures(
@@ -492,8 +496,12 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0_multiple_exposur
     expected_max_value = np.max(np.stack(input_wcs_list))
 
     # Assert
-    assert (expected_min_value - 0.5001 * pscale) <= output_min_value <= expected_min_value
-    assert (expected_max_value + 0.5001 * pscale) >= output_max_value >= expected_max_value
+    assert (
+        (expected_min_value - 0.5001 * pscale) <= output_min_value <= expected_min_value
+    )
+    assert (
+        (expected_max_value + 0.5001 * pscale) >= output_max_value >= expected_max_value
+    )
 
 
 def test_resampledata_do_drizzle_many_to_one_single_input_model(wfi_sca1):
@@ -686,8 +694,13 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures):
     expected_min_value = np.min(np.stack(input_wcs_list))
     expected_max_value = np.max(np.stack(input_wcs_list))
 
-    assert (expected_min_value - 0.5001 * pscale) <= output_min_value <= expected_min_value
-    assert (expected_max_value + 0.5001 * pscale) >= output_max_value >= expected_max_value
+    assert (
+        (expected_min_value - 0.5001 * pscale) <= output_min_value <= expected_min_value
+    )
+    assert (
+        (expected_max_value + 0.5001 * pscale) >= output_max_value >= expected_max_value
+    )
+
 
 @pytest.mark.parametrize("weight_type", ["ivm", "exptime"])
 def test_resampledata_do_drizzle_default_single_exposure_weight_array(
