@@ -2,7 +2,6 @@ import json
 
 import pytest
 import roman_datamodels.datamodels as dm
-from roman_datamodels.maker_utils import mk_level2_image
 
 from romancal.associations import load_asn
 from romancal.associations.asn_from_list import asn_from_list
@@ -25,14 +24,8 @@ def example_asn_path(tmp_path):
     """
     fns = []
     for i in range(_N_MODELS):
-        m = dm.ImageModel(mk_level2_image(shape=(2, 2)))
-        m.meta.observation.program = 1
+        m = dm.ImageModel(_array_shape=(2, 2, 2))
         m.meta.observation.observation = _OBSERVATION_NUMBERS[i]
-        m.meta.observation.visit = 1
-        m.meta.observation.visit_file_group = 1
-        m.meta.observation.visit_file_sequence = 1
-        m.meta.observation.visit_file_activity = "01"
-        m.meta.observation.exposure = 1
         base_fn = f"{i}.asdf"
         m.meta.filename = base_fn
         m.save(str(tmp_path / base_fn))

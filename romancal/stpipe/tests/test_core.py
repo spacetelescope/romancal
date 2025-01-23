@@ -4,7 +4,7 @@ import asdf
 import pytest
 from astropy.time import Time
 from roman_datamodels.datamodels import FlatRefModel, ImageModel
-from roman_datamodels.maker_utils import mk_level2_image
+from roman_datamodels.nodes import WfiImage
 from stpipe import crds_client
 
 import romancal
@@ -24,7 +24,7 @@ def test_open_model(step_class, tmp_path, is_container):
     file_path = tmp_path / "test.asdf"
 
     with asdf.AsdfFile() as af:
-        imod = mk_level2_image(shape=(20, 20))
+        imod = WfiImage(_array_shape=(2, 20, 20))
         af.tree = {"roman": imod}
         af.write_to(file_path)
 
@@ -65,13 +65,12 @@ def test_get_reference_file(step_class):
     """
     Test that CRDS is properly integrated.
     """
-    im = mk_level2_image(shape=(20, 20))
+    model = ImageModel(_array_shape=(2, 20, 20))
     # This will be brittle while we're using the dev server.
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
-    im.meta.instrument.optical_element = "F158"
-    im.meta.exposure.start_time = Time("2021-01-01T12:00:00")
-    model = ImageModel(im)
+    model.meta.instrument.optical_element = "F158"
+    model.meta.exposure.start_time = Time("2021-01-01T12:00:00")
 
     step = step_class()
     reference_path = step.get_reference_file(model, "flat")
@@ -86,13 +85,12 @@ def test_get_reference_file_spectral(step_class):
     """
     Test that CRDS is properly integrated.
     """
-    im = mk_level2_image(shape=(20, 20))
+    model = ImageModel(_array_shape=(2, 20, 20))
     # This will be brittle while we're using the dev server.
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
-    im.meta.instrument.optical_element = "GRISM"
-    im.meta.exposure.start_time = Time("2021-01-01T12:00:00")
-    model = ImageModel(im)
+    model.meta.instrument.optical_element = "GRISM"
+    model.meta.exposure.start_time = Time("2021-01-01T12:00:00")
 
     step = step_class()
     reference_path = step.get_reference_file(model, "flat")
@@ -106,7 +104,7 @@ def test_log_messages(tmp_path):
     class LoggingStep(RomanStep):
         def process(self):
             self.log.warning("Splines failed to reticulate")
-            return ImageModel(mk_level2_image(shape=(20, 20)))
+            return ImageModel(_array_shape=(2, 20, 20))
 
     result = LoggingStep().run()
     assert any("Splines failed to reticulate" in l for l in result.meta.cal_logs)
@@ -115,7 +113,7 @@ def test_log_messages(tmp_path):
 def test_crds_meta():
     """Test that context and software versions are set"""
 
-    im = ImageModel(mk_level2_image(shape=(20, 20)))
+    im = ImageModel(_array_shape=(2, 20, 20))
     result = FlatFieldStep.call(im)
 
     assert result.meta.ref_file.crds.version == crds_client.get_svn_version()
@@ -131,7 +129,7 @@ def test_calibration_software_version():
         def process(self, input):
             return input
 
-    im = ImageModel(mk_level2_image(shape=(20, 20)))
+    im = ImageModel(_array_shape=(2, 20, 20))
     im.meta.calibration_software_version = "junkversion"
 
     result = NullStep.call(im)

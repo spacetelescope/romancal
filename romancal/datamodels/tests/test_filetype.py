@@ -21,8 +21,7 @@ def test_filetype():
     with open(DATA_DIRECTORY / "fake.json") as file_h:
         file_8 = filetype.check(file_h)
     file_9 = filetype.check(str(DATA_DIRECTORY / "pluto.asdf"))
-    image_node = rdm.maker_utils.mk_level2_image(shape=(20, 20))
-    im1 = rdm.datamodels.ImageModel(image_node)
+    im1 = rdm.datamodels.ImageModel(_array_shape=(2, 20, 20))
     file_11 = filetype.check(im1)
     model_library = ModelLibrary([im1])
     file_10 = filetype.check(model_library)

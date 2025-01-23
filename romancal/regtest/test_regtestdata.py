@@ -28,7 +28,7 @@ def test_compare_asdf(tmp_path, modification):
     file0 = file0 / "test.asdf"
     file1 = file1 / "test.asdf"
 
-    l2 = rdm.ImageModel(maker_utils.mk_level2_image(shape=(100, 100)))
+    l2 = rdm.ImageModel(_shape=(2, 100, 100))
     _add_wcs(tmp_path, l2)
     l2.save(file0)
     atol = 0.0001
@@ -95,14 +95,14 @@ def test_compare_asdf_tables(tmp_path, modification):
 def test_model_difference(tmp_path):
     fn0 = tmp_path / "a.asdf"
     fn1 = tmp_path / "b.asdf"
-    ma = rdm.DistortionRefModel(maker_utils.mk_distortion())
-    mb = rdm.LinearityRefModel(maker_utils.mk_linearity())
+    ma = rdm.DistortionRefModel()
+    mb = rdm.LinearityRefModel(_array_shape=(2, 20, 20))
     ma.save(fn0)
     mb.save(fn1)
     diff = compare_asdf(fn0, fn1)
     assert not diff.identical
     assert (
-        """'type_changes': {"root['roman']": {'new_type': <class 'roman_datamodels.stnode.DistortionRef'>"""
+        """'type_changes': {"root['roman']": {'new_type': <class 'roman_datamodels.nodes.reference_files.distortion.DistortionRef'>"""
         in diff.report()
     )
 

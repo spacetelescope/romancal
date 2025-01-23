@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 from roman_datamodels import datamodels as rdd
 from roman_datamodels import maker_utils
-from roman_datamodels import stnode as rds
 from roman_datamodels.dqflags import group, pixel
 from stcal.ramp_fitting import ols_cas22_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
@@ -213,8 +212,7 @@ def create_image_model(input_model, image_info):
         "dq_border_ref_pix_top": input_model.dq_border_ref_pix_top.copy(),
         "dq_border_ref_pix_bottom": input_model.dq_border_ref_pix_bottom.copy(),
     }
-    out_node = rds.WfiImage(inst)
-    im = rdd.ImageModel(out_node)
+    im = rdd.ImageModel(inst)
 
     # trim off border reference pixels from science data, dq, err
     # and var_poisson/var_rnoise

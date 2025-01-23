@@ -13,7 +13,6 @@ from astropy.modeling.models import Shift
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils
 
 from romancal.assign_wcs import pointing
 
@@ -237,8 +236,7 @@ def base_image():
     """
 
     def _base_image(shift_1=0, shift_2=0):
-        l2 = maker_utils.mk_level2_image(shape=(100, 100))
-        l2_im = rdm.ImageModel(l2)
+        l2_im = rdm.ImageModel(_array_shape=(2, 100, 100))
         _create_wcs(l2_im)
         l2_im.meta.wcsinfo.vparity = -1
         return l2_im

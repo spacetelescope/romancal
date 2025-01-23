@@ -6,7 +6,7 @@ import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from drizzle import cdrizzle, util
-from roman_datamodels import datamodels, maker_utils, stnode
+from roman_datamodels import datamodels, maker_utils, nodes
 from stcal.alignment.util import compute_s_region_keyword, compute_scale
 
 from romancal.associations.asn_from_list import asn_from_list
@@ -174,7 +174,7 @@ class ResampleData:
             self.blank_output.meta.wcs = self.output_wcs
             gwcs_into_l3(self.blank_output, self.output_wcs)
 
-            self.blank_output.cal_logs = stnode.CalLogs()
+            self.blank_output.cal_logs = nodes.CalLogs()
             self.blank_output["individual_image_cal_logs"] = [
                 model.meta.cal_logs for model in models
             ]
@@ -935,7 +935,8 @@ def populate_mosaic_basic(
 
 
 def populate_mosaic_individual(
-    output_model: datamodels.MosaicModel, input_models: [list, ModelLibrary]
+    output_model: datamodels.MosaicModel,
+    input_models: list[datamodels.ImageModel] | ModelLibrary,
 ):
     """
     Populate individual meta fields in the output mosaic model based on input models.

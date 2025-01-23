@@ -336,10 +336,8 @@ def test_build_driz_weight_multiple_good_bits(
     ],
 )
 def test_set_good_bits_in_resample_meta(base_image, good_bits):
-    model = maker_utils.mk_level2_image(shape=(100, 100))
-    model.meta.wcsinfo["vparity"] = -1
-
-    img = datamodels.ImageModel(model)
+    img = datamodels.ImageModel(_array_shape=(2, 100, 100))
+    img.meta.wcsinfo["vparity"] = -1
 
     img.data *= img.meta.photometry.conversion_megajanskys / img.data
 

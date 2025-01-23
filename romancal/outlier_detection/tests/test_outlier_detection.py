@@ -54,7 +54,7 @@ def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
     img_1.meta.filename = "img_1.asdf"
     img_1.save(tmp_path / "img_1.asdf")
     img_2 = base_image()
-    img_1.meta.filename = "img_2.asdf"
+    img_2.meta.filename = "img_2.asdf"
     img_2.save(tmp_path / "img_2.asdf")
 
     asn_filepath = create_mock_asn_file(tmp_path)
