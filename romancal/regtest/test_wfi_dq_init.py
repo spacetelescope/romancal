@@ -30,10 +30,10 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
         "mask file applied."
     )
 
-    step.log.info(f'DMS25 MSG: First data file: {rtdata.input.rsplit("/", 1)[1]}')
+    step.log.info(f"DMS25 MSG: First data file: {rtdata.input.rsplit('/', 1)[1]}")
     ref_file_path = step.get_reference_file(model, "mask")
     step.log.info(
-        f'DMS25 MSG: CRDS matched mask file: {ref_file_path.rsplit("/", 1)[1]}'
+        f"DMS25 MSG: CRDS matched mask file: {ref_file_path.rsplit('/', 1)[1]}"
     )
     ref_file_name = os.path.split(ref_file_path)[-1]
 
@@ -52,7 +52,7 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
     ramp_out = rdm.open(rtdata.output)
     step.log.info(
         "DMS25 MSG: Does ramp data contain pixeldq from mask file? :"
-        f' {("roman.pixeldq" in ramp_out.to_flat_dict())}'
+        f" {('roman.pixeldq' in ramp_out.to_flat_dict())}"
     )
     assert "roman.pixeldq" in ramp_out.to_flat_dict()
 
@@ -85,10 +85,10 @@ def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
         "mask file applied."
     )
 
-    step.log.info(f'DMS25 MSG: First data file: {rtdata.input.rsplit("/", 1)[1]}')
+    step.log.info(f"DMS25 MSG: First data file: {rtdata.input.rsplit('/', 1)[1]}")
     ref_file_path = step.get_reference_file(model, "mask")
     step.log.info(
-        f'DMS25 MSG: CRDS matched mask file: {ref_file_path.rsplit("/", 1)[1]}'
+        f"DMS25 MSG: CRDS matched mask file: {ref_file_path.rsplit('/', 1)[1]}"
     )
     ref_file_name = os.path.split(ref_file_path)[-1]
 
@@ -107,7 +107,7 @@ def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
     ramp_out = rdm.open(rtdata.output)
     step.log.info(
         "DMS25 MSG: Does ramp data contain pixeldq from mask file? :"
-        f' {("roman.pixeldq" in ramp_out.to_flat_dict())}'
+        f" {('roman.pixeldq' in ramp_out.to_flat_dict())}"
     )
     assert "roman.pixeldq" in ramp_out.to_flat_dict()
 
