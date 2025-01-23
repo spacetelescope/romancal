@@ -44,19 +44,13 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
     nrows = len(optical_element)
 
     # Create sample photometry keyword values
-    photmjsr = (
-        np.linspace(min_r, min_r + (nrows - 1.0) * delta, nrows)
-        * u.megajansky
-        / u.steradian
-    )
-    uncertainty = (
-        np.linspace(min_r / 20.0, min_r / 20.0 + (nrows - 1.0) * delta / 20.0, nrows)
-        * u.megajansky
-        / u.steradian
+    photmjsr = np.linspace(min_r, min_r + (nrows - 1.0) * delta, nrows)
+    uncertainty = np.linspace(
+        min_r / 20.0, min_r / 20.0 + (nrows - 1.0) * delta / 20.0, nrows
     )
 
     # Create sample area keyword values
-    area_ster = 2.31307642258977e-14 * u.steradian
+    area_ster = 2.31307642258977e-14
     pixelareasr = np.ones(nrows, dtype=np.float64) * area_ster
 
     # Bundle values into a list
@@ -131,32 +125,32 @@ def test_apply_photom1():
     output_model = photom.apply_photom(input_model, photom_model)
 
     # Set reference photometry
-    area_ster = 2.31307642258977e-14 * u.steradian
+    area_ster = 2.31307642258977e-14
 
     # Tests for pixel areas
     assert np.isclose(
         output_model.meta.photometry.pixel_area,
-        area_ster.value,
+        area_ster,
         atol=1.0e-7,
     )
 
     # Set reference photometry
-    phot_ster = 3.5 * u.megajansky / u.steradian
+    phot_ster = 3.5
 
     # Tests for photometry
     assert np.isclose(
         output_model.meta.photometry.conversion_megajanskys,
-        phot_ster.value,
+        phot_ster,
         atol=1.0e-7,
     )
 
     # Set reference photometric uncertainty
-    muphot_ster = 0.175 * u.megajansky / u.steradian
+    muphot_ster = 0.175
 
     # Tests for photometric uncertainty
     assert np.isclose(
         output_model.meta.photometry.conversion_megajanskys_uncertainty,
-        muphot_ster.value,
+        muphot_ster,
         atol=1.0e-7,
     )
 

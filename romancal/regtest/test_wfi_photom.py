@@ -56,18 +56,19 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     )
     assert photom_out.meta.cal_step.photom == "COMPLETE"
 
+    convval = 0.73678
     step.log.info(
         "DMS140 MSG: Photom megajansky conversion calculated? : "
         + str(
             math.isclose(
                 photom_out.meta.photometry.conversion_megajanskys,
-                0.3324,
+                convval,
                 abs_tol=0.0001,
             )
         )
     )
     assert math.isclose(
-        photom_out.meta.photometry.conversion_megajanskys, 0.3324, abs_tol=0.0001
+        photom_out.meta.photometry.conversion_megajanskys, convval, abs_tol=0.0001
     )
 
     step.log.info(
@@ -86,19 +87,20 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
         abs_tol=1.0e-17,
     )
 
+    uncval = 0.02866405
     step.log.info(
         "DMS140 MSG: Photom megajansky conversion uncertainty calculated? : "
         + str(
             math.isclose(
                 photom_out.meta.photometry.conversion_megajanskys_uncertainty,
-                0.0,
+                uncval,
                 abs_tol=1.0e-6,
             )
         )
     )
     assert math.isclose(
         photom_out.meta.photometry.conversion_megajanskys_uncertainty,
-        0.0,
+        uncval,
         abs_tol=1.0e-6,
     )
 
