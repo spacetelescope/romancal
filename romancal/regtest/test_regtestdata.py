@@ -3,7 +3,6 @@ import astropy.table
 import numpy as np
 import pytest
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils
 
 from romancal.assign_wcs.assign_wcs_step import load_wcs
 from romancal.regtest.regtestdata import compare_asdf
@@ -11,7 +10,7 @@ from romancal.regtest.regtestdata import compare_asdf
 
 def _add_wcs(tmp_path, model):
     dfn = tmp_path / "wcs_distortion.asdf"
-    distortion_model = rdm.DistortionRefModel(maker_utils.mk_distortion())
+    distortion_model = rdm.DistortionRefModel()
     distortion_model.save(dfn)
     load_wcs(model, {"distortion": dfn})
 

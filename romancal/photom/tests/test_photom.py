@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from astropy import units as u
-from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import ImageModel, WfiImgPhotomRefModel
 
 from romancal.photom import PhotomStep, photom
@@ -114,7 +113,7 @@ def test_apply_photom1():
     """Test apply_photom applies correct metadata"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = maker_utils.mk_level2_image()
+    input_model = ImageModel(_array_shape=(2, 20, 20))
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -160,7 +159,7 @@ def test_apply_photom2():
     """Test apply_photom does not change data values"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = maker_utils.mk_level2_image()
+    input_model = ImageModel(_array_shape=(2, 20, 20))
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -193,8 +192,7 @@ def test_photom_step_interface(instrument, exptype):
     wfi_image_model = ImageModel(_array_shape=(2, *shape))
 
     # Create photom model
-    photom = maker_utils.mk_wfi_img_photom()
-    photom_model = WfiImgPhotomRefModel(photom)
+    photom_model = WfiImgPhotomRefModel()
 
     # Run photom correction step
     result = PhotomStep.call(wfi_image_model, override_photom=photom_model)
@@ -245,8 +243,7 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     ).value
 
     # Create photom model
-    photom = maker_utils.mk_wfi_img_photom()
-    photom_model = WfiImgPhotomRefModel(photom)
+    photom_model = WfiImgPhotomRefModel()
 
     # Run photom correction step
     result = PhotomStep.call(wfi_image_model, override_photom=photom_model)

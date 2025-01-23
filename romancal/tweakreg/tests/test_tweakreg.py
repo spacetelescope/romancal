@@ -19,7 +19,6 @@ from gwcs import wcs
 from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from numpy.random import default_rng
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils
 from stcal.tweakreg.astrometric_utils import get_catalog
 
 from romancal.datamodels import ModelLibrary
@@ -450,8 +449,6 @@ def add_tweakreg_catalog_attribute(
         catalog_format=catalog_format,
         save_catalogs=save_catalogs,
     )
-
-    input_dm.meta["source_catalog"] = maker_utils.mk_source_catalog()
 
     if save_catalogs:
         # SourceCatalogStep adds the catalog path+filename
@@ -1181,8 +1178,7 @@ def setup_source_catalog_model(img):
     expected names, adds mock PSF coordinates, applies random shifts to the centroid
     and PSF coordinates, and calculates the world coordinates for the centroids.
     """
-    cat_model = rdm.ImageSourceCatalogModel
-    source_catalog_model = maker_utils.mk_datamodel(cat_model)
+    source_catalog_model = rdm.ImageSourceCatalogModel()
     # this will be the output filename
     source_catalog_model.meta.filename = "img_1.asdf"
 

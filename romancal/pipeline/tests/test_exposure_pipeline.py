@@ -1,6 +1,5 @@
 import pytest
 import roman_datamodels.datamodels as rdm
-import roman_datamodels.maker_utils as mk
 
 from romancal.associations.asn_from_list import asn_from_list
 from romancal.datamodels.library import ModelLibrary
@@ -11,14 +10,14 @@ from romancal.pipeline import ExposurePipeline
 def input_value(request, tmp_path):
     match request.param:
         case "datamodel_fn":
-            model = mk.mk_datamodel(rdm.RampModel)
+            model = rdm.RampModel(_array_shape=(2, 10, 10))
             fn = tmp_path / "model.asdf"
             model.save(fn)
             return fn
         case "datamodel":
-            return mk.mk_datamodel(rdm.RampModel)
+            return rdm.RampModel(_array_shape=(2, 10, 10))
         case "asn_fn":
-            model = mk.mk_datamodel(rdm.RampModel)
+            model = rdm.RampModel(_array_shape=(2, 10, 10))
             model.meta.filename = "foo.asdf"
             model.save(tmp_path / model.meta.filename)
             asn = asn_from_list([model.meta.filename], product_name="foo_out")
@@ -28,7 +27,7 @@ def input_value(request, tmp_path):
                 f.write(contents)
             return asn_filename
         case "library":
-            return ModelLibrary([mk.mk_datamodel(rdm.RampModel)])
+            return ModelLibrary([rdm.RampModel(_array_shape=(2, 10, 10))])
         case value:
             raise Exception(f"Invalid parametrization: {value}")
 

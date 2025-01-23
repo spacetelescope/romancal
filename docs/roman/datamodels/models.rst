@@ -35,9 +35,8 @@ using python.
 
 .. testsetup::
     >>> from roman_datamodels import datamodels as rdm
-    >>> from roman_datamodels.maker_utils import mk_datamodel
     >>> fn = 'r0019106003005004023_0034_wfi01_cal.asdf'
-    >>> image_model = mk_datamodel(rdm.ImageModel)
+    >>> image_model = rdm.ImageModel()
 
     # set some metadata for the below tests
     >>> image_model.meta.filename = fn
@@ -62,9 +61,8 @@ To create a new `ImageModel`, you can just
 .. code-block:: python
 
     >>> from roman_datamodels import datamodels as rdm
-    >>> from roman_datamodels.maker_utils import mk_datamodel
 
-    >>> new_model = mk_datamodel(rdm.ImageModel)
+    >>> new_model = rdm.ImageModel()
     >>> type(new_model)
     <class 'roman_datamodels.datamodels._datamodels.ImageModel'>
 

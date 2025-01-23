@@ -10,13 +10,12 @@ from astropy import units as u
 from astropy.table import QTable
 from photutils.datasets import make_model_image
 from photutils.psf import PSFPhotometry
-from roman_datamodels import maker_utils as testutil
 from roman_datamodels.datamodels import ImageModel
 
 from romancal.lib.psf import create_gridded_psf_model, fit_psf_to_image_model
 
 n_trials = 15
-image_model_shape = (50, 50)
+image_model_shape = (2, 50, 50)
 rng = np.random.default_rng(0)
 
 
@@ -28,25 +27,23 @@ def setup_inputs(
     """
     Return ImageModel of level 2 image.
     """
-    wfi_image = testutil.mk_level2_image(shape=shape)
-    wfi_image.data = np.ones(shape, dtype=np.float32)
-    wfi_image.meta.filename = "filename"
-    wfi_image.meta.instrument["optical_element"] = "F087"
+    # construct ImageModel
+    mod = ImageModel(_array_shape=shape)
+    mod.data = np.ones(shape, dtype=np.float32)
+    mod.meta.filename = "filename"
+    mod.meta.instrument["optical_element"] = "F087"
 
     # add noise to data
     if noise is not None:
         setup_rng = np.random.default_rng(seed or 19)
-        wfi_image.data = setup_rng.normal(scale=noise, size=shape).astype("float32")
-        wfi_image.err = noise * (np.ones(shape, dtype=np.float32) * u.DN / u.s).value
+        mod.data = setup_rng.normal(scale=noise, size=shape[1:]).astype("float32")
+        mod.err = noise * (np.ones(shape[1:], dtype=np.float32) * u.DN / u.s).value
 
     # add dq array
-    wfi_image.dq = np.zeros(shape, dtype=np.uint32)
+    mod.dq = np.zeros(shape[1:], dtype=np.uint32)
 
-    # construct ImageModel
-    mod = ImageModel(wfi_image)
-
-    filt = mod.meta.instrument["optical_element"]
-    detector = mod.meta["instrument"]["detector"].replace("WFI", "SCA")
+    filt = mod.meta.instrument.optical_element
+    detector = mod.meta.instrument.detector.replace("WFI", "SCA")
 
     # input parameters for PSF model:
     webbpsf_config = dict(
@@ -57,7 +54,7 @@ def setup_inputs(
     )
 
     # compute gridded PSF model:
-    psf_model, centroids = create_gridded_psf_model(
+    psf_model, _ = create_gridded_psf_model(
         webbpsf_config["filt"],
         webbpsf_config["detector"],
         oversample=webbpsf_config["oversample"],

@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from roman_datamodels import datamodels as rdd
-from roman_datamodels import maker_utils
 from roman_datamodels.dqflags import group, pixel
 from stcal.ramp_fitting import ols_cas22_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
@@ -188,31 +187,28 @@ def create_image_model(input_model, image_info):
     if dq is None:
         dq = np.zeros(data.shape, dtype="u4")
 
-    # Create output datamodel
-    # ... and add all keys from input
-    meta = dict(wcs=None)  # default empty WCS
-    meta.update(input_model.meta)
-    meta["cal_step"]["ramp_fit"] = "INCOMPLETE"
-    meta["cal_logs"] = maker_utils.mk_cal_logs()
-    meta["photometry"] = maker_utils.mk_photometry()
-    inst = {
-        "meta": meta,
-        "data": data,
-        "dq": dq,
-        "var_poisson": var_poisson,
-        "var_rnoise": var_rnoise,
-        "err": err,
-        "amp33": input_model.amp33.copy(),
-        "border_ref_pix_left": input_model.border_ref_pix_left.copy(),
-        "border_ref_pix_right": input_model.border_ref_pix_right.copy(),
-        "border_ref_pix_top": input_model.border_ref_pix_top.copy(),
-        "border_ref_pix_bottom": input_model.border_ref_pix_bottom.copy(),
-        "dq_border_ref_pix_left": input_model.dq_border_ref_pix_left.copy(),
-        "dq_border_ref_pix_right": input_model.dq_border_ref_pix_right.copy(),
-        "dq_border_ref_pix_top": input_model.dq_border_ref_pix_top.copy(),
-        "dq_border_ref_pix_bottom": input_model.dq_border_ref_pix_bottom.copy(),
-    }
-    im = rdd.ImageModel(inst)
+    # TODO Make this a bit easier by adding constructor in rdm.ImageModel
+    im = rdd.ImageModel(
+        {
+            "meta": input_model.meta,
+            "data": data,
+            "dq": dq,
+            "var_poisson": var_poisson,
+            "var_rnoise": var_rnoise,
+            "err": err,
+            "amp33": input_model.amp33.copy(),
+            "border_ref_pix_left": input_model.border_ref_pix_left.copy(),
+            "border_ref_pix_right": input_model.border_ref_pix_right.copy(),
+            "border_ref_pix_top": input_model.border_ref_pix_top.copy(),
+            "border_ref_pix_bottom": input_model.border_ref_pix_bottom.copy(),
+            "dq_border_ref_pix_left": input_model.dq_border_ref_pix_left.copy(),
+            "dq_border_ref_pix_right": input_model.dq_border_ref_pix_right.copy(),
+            "dq_border_ref_pix_top": input_model.dq_border_ref_pix_top.copy(),
+            "dq_border_ref_pix_bottom": input_model.dq_border_ref_pix_bottom.copy(),
+        }
+    )
+    im.meta.cal_step.ramp_fit = "INCOMPLETE"
+    im.meta.wcs = None
 
     # trim off border reference pixels from science data, dq, err
     # and var_poisson/var_rnoise

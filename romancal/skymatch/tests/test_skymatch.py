@@ -10,7 +10,6 @@ from gwcs import coordinate_frames as cf
 from gwcs import wcs as gwcs_wcs
 from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
-from roman_datamodels.maker_utils import mk_sky_background
 
 from romancal.datamodels import ModelLibrary
 from romancal.skymatch import SkyMatchStep
@@ -77,11 +76,7 @@ def mk_image_model(
         loc=rate_mean, scale=rate_std, size=l2_im.data.shape
     ).astype(np.float32)
 
-    l2_im.meta["wcs"] = mk_gwcs(image_shape, sky_offset=sky_offset, rotate=rotation)
-
-    l2_im.meta["background"] = mk_sky_background(
-        level=None, subtracted=False, method="None"
-    )
+    l2_im.meta.wcs = mk_gwcs(image_shape, sky_offset=sky_offset, rotate=rotation)
 
     l2_im.meta.cal_step["skymatch"] = "INCOMPLETE"
     return l2_im

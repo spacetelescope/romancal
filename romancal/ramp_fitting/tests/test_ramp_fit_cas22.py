@@ -3,7 +3,6 @@
 import numpy as np
 import pytest
 from astropy.time import Time
-from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import (
     DarkRefModel,
     GainRefModel,
@@ -224,18 +223,16 @@ def model_from_resultants(resultants, read_pattern=None):
     err = np.zeros(shape=shape, dtype=np.float32)
     gdq = np.zeros(shape=shape, dtype=np.uint8)
 
-    dm_ramp = maker_utils.mk_ramp(shape=shape)
-    dm_ramp.data = full_wfi
-    dm_ramp.pixeldq = pixdq
-    dm_ramp.groupdq = gdq
-    dm_ramp.err = err
+    ramp_model = RampModel(_array_shape=shape)
+    ramp_model.data = full_wfi
+    ramp_model.pixeldq = pixdq
+    ramp_model.groupdq = gdq
+    ramp_model.err = err
 
-    dm_ramp.meta.exposure.frame_time = ROMAN_READ_TIME
-    dm_ramp.meta.exposure.nresultants = shape[0]
+    ramp_model.meta.exposure.frame_time = ROMAN_READ_TIME
+    ramp_model.meta.exposure.nresultants = shape[0]
 
-    dm_ramp.meta.exposure.read_pattern = read_pattern
-
-    ramp_model = RampModel(dm_ramp)
+    ramp_model.meta.exposure.read_pattern = read_pattern
 
     return ramp_model
 
@@ -263,54 +260,41 @@ def generate_wfi_reffiles(
         Randomize the gain and read noise data.
     """
     # Create temporary gain reference file
-    gain_ref = maker_utils.mk_gain(shape=shape)
+    gain_ref_model = GainRefModel(_array_shape=shape)
 
-    gain_ref["meta"]["instrument"]["detector"] = "WFI01"
-    gain_ref["meta"]["instrument"]["name"] = "WFI"
-    gain_ref["meta"]["reftype"] = "GAIN"
-    gain_ref["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
+    gain_ref_model.meta.useafter = Time("2022-01-01T11:11:11.111")
 
     if randomize:
-        gain_ref["data"] = (rng.random(shape) * 0.5).astype(np.float32) * ingain
+        gain_ref_model.data = (rng.random(shape) * 0.5).astype(np.float32) * ingain
     else:
-        gain_ref["data"] = np.ones(shape).astype(np.float32) * ingain
-    gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
-    gain_ref["err"] = (rng.random(shape) * 0.05).astype(np.float32)
+        gain_ref_model.data = np.ones(shape).astype(np.float32) * ingain
 
-    gain_ref_model = GainRefModel(gain_ref)
+    # TODO dq and error are not part of the schema for gain
+    gain_ref_model["dq"] = np.zeros(shape, dtype=np.uint16)
+    gain_ref_model["err"] = (rng.random(shape) * 0.05).astype(np.float32)
 
     # Create temporary readnoise reference file
-    rn_ref = maker_utils.mk_readnoise(shape=shape)
-    rn_ref["meta"]["instrument"]["detector"] = "WFI01"
-    rn_ref["meta"]["instrument"]["name"] = "WFI"
-    rn_ref["meta"]["reftype"] = "READNOISE"
-    rn_ref["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
+    rn_ref_model = ReadnoiseRefModel(_array_shape=shape)
+    rn_ref_model.meta.useafter = Time("2022-01-01T11:11:11.111")
 
-    rn_ref["meta"]["exposure"]["type"] = "WFI_IMAGE"
-    rn_ref["meta"]["exposure"]["frame_time"] = 666
+    # TODO frame_time is not part of the schema for ref_exposure_type
+    rn_ref_model.meta.exposure["frame_time"] = 666
 
     if randomize:
-        rn_ref["data"] = ((rng.random(shape) * rnoise).astype(np.float32),)
+        rn_ref_model.data = ((rng.random(shape) * rnoise).astype(np.float32),)
     else:
-        rn_ref["data"] = np.ones(shape).astype(np.float32) * rnoise
-
-    rn_ref_model = ReadnoiseRefModel(rn_ref)
+        rn_ref_model.data = np.ones(shape).astype(np.float32) * rnoise
 
     # Create temporary dark reference file
     # shape needs to be 3D but does not matter because the ramp fitting
     # step only uses the 2-D dark slope component
-    dark_ref = maker_utils.mk_dark(shape=(1, *shape))
-    dark_ref["meta"]["instrument"]["detector"] = "WFI01"
-    dark_ref["meta"]["instrument"]["name"] = "WFI"
-    dark_ref["meta"]["reftype"] = "DARK"
-    dark_ref["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
+    dark_ref_model = DarkRefModel(_array_shape=(1, *shape))
+    dark_ref_model.meta.useafter = Time("2022-01-01T11:11:11.111")
 
-    dark_ref["meta"]["exposure"]["type"] = "WFI_IMAGE"
-    dark_ref["meta"]["exposure"]["frame_time"] = 666
+    # TODO frame_time is not part of the schema for ref_exposure_type
+    dark_ref_model.meta.exposure["frame_time"] = 666
 
-    dark_ref["dark_slope"] = np.zeros(shape).astype(np.float32) * 0.01
-
-    dark_ref_model = DarkRefModel(dark_ref)
+    dark_ref_model.dark_slope = np.zeros(shape).astype(np.float32) * 0.01
 
     # return gainfile, readnoisefile
     return gain_ref_model, rn_ref_model, dark_ref_model

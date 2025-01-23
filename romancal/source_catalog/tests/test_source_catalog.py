@@ -17,7 +17,6 @@ from roman_datamodels.datamodels import (
     MosaicSourceCatalogModel,
     SegmentationMapModel,
 )
-from roman_datamodels.maker_utils import mk_level2_image, mk_level3_mosaic
 
 from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
@@ -70,8 +69,7 @@ def make_test_image():
 
 @pytest.fixture
 def mosaic_model():
-    wfi_mosaic = mk_level3_mosaic(shape=(101, 101))
-    model = MosaicModel(wfi_mosaic)
+    model = MosaicModel(_array_shape=(2, 101, 101))
     data, err = make_test_image()
     model.data = data
     model.err = err
@@ -81,8 +79,7 @@ def mosaic_model():
 
 @pytest.fixture
 def image_model():
-    wfi_image = mk_level2_image(shape=(101, 101))
-    model = ImageModel(wfi_image)
+    model = ImageModel(_array_shape=(8, 101, 101))
     data, err = make_test_image()
     model.data = data
     model.err = err

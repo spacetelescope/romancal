@@ -3,31 +3,29 @@ import pytest
 from gwcs.wcstools import grid_from_bounding_box
 from numpy.testing import assert_allclose
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils
 
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep, load_wcs
 from romancal.assign_wcs.utils import wcs_bbox_from_shape
 
 
 def create_image():
-    l2 = maker_utils.mk_level2_image()
+    l2im = rdm.ImageModel(_array_shape=(2, 100, 100))
 
-    l2.meta.wcsinfo.v2_ref = -503
-    l2.meta.wcsinfo.v3_ref = -318
-    l2.meta.wcsinfo.ra_ref = 156
-    l2.meta.wcsinfo.dec_ref = 54.2
-    l2.meta.wcsinfo.vparity = -1
-    l2.meta.wcsinfo.roll_ref = 0.15
+    l2im.meta.wcsinfo.v2_ref = -503
+    l2im.meta.wcsinfo.v3_ref = -318
+    l2im.meta.wcsinfo.ra_ref = 156
+    l2im.meta.wcsinfo.dec_ref = 54.2
+    l2im.meta.wcsinfo.vparity = -1
+    l2im.meta.wcsinfo.roll_ref = 0.15
 
-    l2im = rdm.ImageModel(l2)
     return l2im
 
 
 def create_distortion():
-    distortions = [maker_utils.mk_distortion()]
+    distortions = [rdm.DistortionRefModel()]
 
     model = create_image()
-    dist = maker_utils.mk_distortion()
+    dist = rdm.DistortionRefModel()
     dist.coordinate_distortion_transform.bounding_box = wcs_bbox_from_shape(
         model.data.shape
     )

@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
-from roman_datamodels import maker_utils
-from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
+from roman_datamodels.datamodels import MaskRefModel, RampModel, ScienceRawModel
 from roman_datamodels.dqflags import pixel
 
 from romancal.dq_init import DQInitStep
@@ -23,7 +22,7 @@ def test_dq_im(xstart, ystart, xsize, ysize, nresultants, instrument, exp_type):
     csize = (nresultants, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=csize)
+    dm_ramp = RampModel(_array_shape=csize)
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
@@ -42,12 +41,11 @@ def test_dq_im(xstart, ystart, xsize, ysize, nresultants, instrument, exp_type):
     dq[400, 200] = 33  # Persistence + do not use
 
     # write mask model
-    ref_data = maker_utils.mk_mask(shape=csize[1:])
+    ref_data = MaskRefModel(_array_shape=csize[1:])
 
     # Copy in maskmodel elemnts
-    ref_data["dq"] = dq
-
-    ref_data["meta"]["instrument"]["name"] = instrument
+    ref_data.dq = dq
+    ref_data.meta.instrument.name = instrument
 
     # run do_dqinit
     outfile = do_dqinit(dm_ramp, ref_data)
@@ -81,12 +79,12 @@ def test_groupdq():
     csize = (nresultants, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=csize)
+    dm_ramp = RampModel(_array_shape=csize)
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
-    ref_data = maker_utils.mk_mask(shape=csize[1:])
-    ref_data["meta"]["instrument"]["name"] = instrument
+    ref_data = MaskRefModel(_array_shape=csize[1:])
+    ref_data.meta.instrument.name = instrument
 
     # run the correction step
     outfile = do_dqinit(dm_ramp, ref_data)
@@ -112,12 +110,12 @@ def test_err():
     csize = (nresultants, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=(nresultants, ysize, xsize))
+    dm_ramp = RampModel(_array_shape=csize)
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
-    ref_data = maker_utils.mk_mask(shape=csize[1:])
-    ref_data["meta"]["instrument"]["name"] = instrument
+    ref_data = MaskRefModel(_array_shape=csize[1:])
+    ref_data.meta.instrument.name = instrument
 
     # run correction step
     outfile = do_dqinit(dm_ramp, ref_data)
@@ -144,7 +142,7 @@ def test_dq_add1_groupdq():
     csize = (nresultants, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=(nresultants, ysize, xsize))
+    dm_ramp = RampModel(_array_shape=csize)
     dm_ramp.meta.instrument.name = instrument
 
     # create a MaskModel elements for the dq input mask
@@ -155,11 +153,11 @@ def test_dq_add1_groupdq():
     dq[400, 500] = 3  # do_not_use and saturated pixel
 
     # write mask model
-    ref_data = maker_utils.mk_mask(shape=csize[1:])
-    ref_data["meta"]["instrument"]["name"] = instrument
+    ref_data = MaskRefModel(_array_shape=csize[1:])
+    ref_data.meta.instrument.name = instrument
 
     # Copy in maskmodel elemnts
-    ref_data["dq"] = dq
+    ref_data.dq = dq
 
     # set a flag in the pixel dq
     dm_ramp.pixeldq[505, 505] = 4  # Jump detected pixel
@@ -315,15 +313,12 @@ def test_dqinit_getbestref(instrument, exptype):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape)
-    wfi_sci_raw.meta.instrument.name = instrument
-    wfi_sci_raw.meta.instrument.detector = "WFI01"
-    wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guide_star"]["window_xstart"] = 1012
-    wfi_sci_raw.meta["guide_star"]["window_xsize"] = 16
-    wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
-    wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
+    wfi_sci_raw_model = ScienceRawModel(_array_shape=shape)
+    wfi_sci_raw_model.meta.instrument.name = instrument
+    wfi_sci_raw_model.meta.guide_star.window_xstart = 1012
+    wfi_sci_raw_model.meta.guide_star.window_xsize = 16
+    wfi_sci_raw_model.meta.exposure.type = exptype
+    wfi_sci_raw_model.data = np.ones(shape, dtype=np.uint16)
 
     # Perform Data Quality application step
     result = DQInitStep.call(wfi_sci_raw_model, override_mask="N/A")
