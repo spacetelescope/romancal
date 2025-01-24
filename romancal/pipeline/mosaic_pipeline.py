@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
+import json
 import logging
 import re
 from os.path import basename, isfile
@@ -86,19 +87,24 @@ class MosaicPipeline(RomanPipeline):
             product_name = input.asn["products"][0]["name"]
             try:
                 skycell_name = input.asn["target"]
-            except IndexError:
+            except KeyError:
                 skycell_name = ""
             skycell_record = []
 
-            # if this is a valid skycell name load the database and get the skycell record
+            # if this is a valid skycell name get the skycell record
             if re.match(r"r\d{3}\w{2}\d{2}x\d{2}y\d{2}", skycell_name):
-                if patch_match.PATCH_TABLE is None:
-                    patch_match.load_patch_table()
-                if patch_match.PATCH_TABLE is None:
-                    raise RuntimeError("No patch table has been loaded")
-                skycell_record = patch_match.PATCH_TABLE[
-                    np.where(patch_match.PATCH_TABLE["name"][:] == skycell_name)[0][0]
-                ]
+                # check to see if the skycell coords are in the asn header if
+                # so read the string and convert to a dictionary to match the patch table
+                try:
+                    skycell_record = json.loads(input.asn["skycell_wcs_info"])
+                except (KeyError, json.JSONDecodeError):
+                    if patch_match.PATCH_TABLE is None:
+                        patch_match.load_patch_table()
+                    skycell_record = patch_match.PATCH_TABLE[
+                        np.where(patch_match.PATCH_TABLE["name"][:] == skycell_name)[0][
+                            0
+                        ]
+                    ]
                 log.info("Skycell record %s:", skycell_record)
 
                 if skycell_name in skycell_record["name"]:
@@ -140,7 +146,7 @@ class MosaicPipeline(RomanPipeline):
                         result_catalog = self.sourcecatalog.run(result)
                     else:
                         raise NotImplementedError(
-                            "resampling a mosaic file is not yet supported"
+                            "Overwriting an exisiting file or resampling a mosaic file is not yet supported"
                         )
 
             else:
@@ -157,8 +163,8 @@ class MosaicPipeline(RomanPipeline):
 
 
 def generate_tan_wcs(skycell_record):
-    # extract the wcs info from the record for generate_tan_wcs
-    # we need the scale, ra, dec, bounding_box
+    """extract the wcs info from the record for generate_tan_wcs
+    we need the scale, ra, dec, bounding_box"""
 
     scale = float(skycell_record["pixel_scale"])
     ra_center = float(skycell_record["ra_projection_center"])
