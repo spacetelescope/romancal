@@ -20,7 +20,7 @@ providing a file name to a custom source catalog in the
 ``meta.tweakreg_catalog`` attribute of input data models.
 The catalog must be in a format automatically recognized by
 :py:meth:`~astropy.table.Table.read`. The catalog must contain
-either ``'x'`` and ``'y'`` or ``'xcentroid'`` and ``'ycentroid'`` columns which
+either ``'x'`` and ``'y'`` or ``'x_psf'`` and ``'y_psf'`` columns which
 indicate source *image* coordinates (in pixels). Pixel coordinates are
 0-indexed.
 
