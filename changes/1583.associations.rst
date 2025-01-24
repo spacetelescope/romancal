@@ -1,0 +1,2 @@
+This adds additional info to the asn header keyword skycell_wcs_info and updates the mosaic pipeline to use
+that information to construct the skycell data from the input exposures.
