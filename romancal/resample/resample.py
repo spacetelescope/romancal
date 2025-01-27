@@ -847,9 +847,9 @@ def gwcs_into_l3(model, wcs):
     l3_wcsinfo.dec_ref = world_ref[1]
 
     try:
-        cdelt1 = transform['cdelt1'].factor.value
-        cdelt2 = transform['cdelt2'].factor.value
-        l3_wcsinfo.pixel_scale = (cdelt1 + cdelt2) / 2.
+        cdelt1 = transform["cdelt1"].factor.value
+        cdelt2 = transform["cdelt2"].factor.value
+        l3_wcsinfo.pixel_scale = (cdelt1 + cdelt2) / 2.0
     except IndexError:
         l3_wcsinfo.pixel_scale = compute_scale(wcs, world_ref)
 
