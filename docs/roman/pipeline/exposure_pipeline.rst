@@ -67,6 +67,16 @@ extensions. When such a file is loaded into the pipeline, it is immediately
 converted into a `~romancal.datamodels.RampModel`, and has all additional data arrays
 for errors and Data Quality flags created and initialized.
 
+When the ``ExposurePipeline`` processes a fully saturated input (all pixels flagged as saturated).
+The corresponding output image will:
+
+- contain all 0 data arrays
+- contain all 0 variance arrays
+- not be processed by steps beyond saturation
+
+A single fully saturated input will also cause :ref:`tweakreg <tweakreg_step>` to be skipped
+for all input images.
+
 Outputs
 -------
 
