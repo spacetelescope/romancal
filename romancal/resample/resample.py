@@ -842,13 +842,17 @@ def gwcs_into_l3(model, wcs):
         l3_wcsinfo.x_ref = pixel_center[0]
         l3_wcsinfo.y_ref = pixel_center[1]
 
-    # The world reference is calculated ignoring the bounding box. Normally,
-    # this should not be done. However, when the wcs is determined by a skycell,
-    # the reference point is almost always outside the SCA.
     world_ref = wcs(l3_wcsinfo.x_ref, l3_wcsinfo.y_ref, with_bounding_box=False)
     l3_wcsinfo.ra_ref = world_ref[0]
     l3_wcsinfo.dec_ref = world_ref[1]
-    l3_wcsinfo.pixel_scale = compute_scale(wcs, world_ref)
+
+    try:
+        cdelt1 = transform['cdelt1'].factor.value
+        cdelt2 = transform['cdelt2'].factor.value
+        l3_wcsinfo.pixel_scale = (cdelt1 + cdelt2) / 2.
+    except IndexError:
+        l3_wcsinfo.pixel_scale = compute_scale(wcs, world_ref)
+
     l3_wcsinfo.orientat = calc_pa(wcs, *world_ref)
 
     try:
