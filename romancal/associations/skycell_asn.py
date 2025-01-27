@@ -1,7 +1,6 @@
 """Create an association based on skycells"""
 
 import argparse
-import json
 import logging
 import sys
 
@@ -128,7 +127,7 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
             prompt_product_asn["asn_type"] = "image"
             prompt_product_asn["program"] = program_id
             prompt_product_asn["target"] = patch_name
-            prompt_product_asn["skycell_wcs_info"] = json.dumps(projcell_info)
+            prompt_product_asn["skycell_wcs_info"] = projcell_info
             _, serialized = prompt_product_asn.dump(format="json")
             outfile.write(serialized)
 
