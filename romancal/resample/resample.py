@@ -48,7 +48,6 @@ class ResampleData:
         input_models,
         output=None,
         single=False,
-        blendheaders=True,
         pixfrac=1.0,
         kernel="square",
         fillval="INDEF",
@@ -90,7 +89,6 @@ class ResampleData:
         self.output_filename = output
         self.pscale_ratio = pscale_ratio
         self.single = single
-        self.blendheaders = blendheaders
         self.pixfrac = pixfrac
         self.kernel = kernel
         self.fillval = fillval
@@ -142,23 +140,6 @@ class ResampleData:
                     self.input_models.shelve(m, i, modify=False)
 
         log.debug(f"Output mosaic size: {self.output_wcs.array_shape}")
-
-        # NOTE: should we enable memory allocation?
-
-        # can_allocate, required_memory = datamodels.util.check_memory_allocation(
-        #     self.output_wcs.array_shape,
-        #     kwargs['allowed_memory'],
-        #     datamodels.ImageModel
-        # )
-        # if not can_allocate:
-        #     raise OutputTooLargeError(
-        #         f'Combined ImageModel size {self.output_wcs.array_shape} '
-        #         f'requires {bytes2human(required_memory)}. '
-        #         f'Model cannot be instantiated.'
-        #     )
-
-        # NOTE: wait for William to fix bug in datamodels' init and then
-        # use datamodels.ImageModel(shape=(nx, ny)) instead of mk_datamodel()
 
         # n_images sets the number of context image planes.
         # This should be 1 to start (not the default of 2).
@@ -340,9 +321,6 @@ class ResampleData:
             asn_table_name := self.input_models.asn.get("table_name", None)
         ) is not None:
             output_model.meta.asn.table_name = asn_table_name
-
-        if self.blendheaders:
-            log.info("Skipping blendheaders for now.")
 
         # Initialize the output with the wcs
         driz = gwcs_drizzle.GWCSDrizzle(

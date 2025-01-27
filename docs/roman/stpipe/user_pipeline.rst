@@ -63,7 +63,6 @@ class:
     output_use_model: false
     post_hooks: []
     pre_hooks: []
-    save_calibrated_ramp: false
     save_results: true
     search_output_file: true
     skip: false
