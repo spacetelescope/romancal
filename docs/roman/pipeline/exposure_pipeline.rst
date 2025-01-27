@@ -39,18 +39,7 @@ table below.
 
 Arguments
 ---------
-The ``exposure`` pipeline has an optional argument::
-
-  --use_ramp_jump_detection  boolean  default=True
-
-When set to ``True``, the pipeline will perform jump detection as a part of the ramp
-fitting  step. The data at this stage of the pipeline are still in the form of the original
-3D ramps ( ngroups x ncols x nrows ) and have had all of the detector-level
-correction steps applied to it, up to but not including the detection and flagging of
-Cosmic-Ray (CR) hits within each ramp (integration). For this case the  jump detection
-module in :ref:`ramp_fitting <ramp_fitting_step>` will update the dq array with the CR hits (jumps) that
-are identified in the step.
-
+The ``exposure`` pipeline has no arguments
 
 Inputs
 ------
