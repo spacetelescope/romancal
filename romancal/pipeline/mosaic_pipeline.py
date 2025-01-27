@@ -95,7 +95,10 @@ class MosaicPipeline(RomanPipeline):
             if re.match(r"r\d{3}\w{2}\d{2}x\d{2}y\d{2}", skycell_name):
                 # check to see if the skycell coords are in the asn header if
                 # so read the string and convert to a dictionary to match the patch table
-                if "skycell_wcs_info" in input.asn:
+                if (
+                    "skycell_wcs_info" in input.asn
+                    and input.asn["skycell_wcs_info"] != "none"
+                ):
                     skycell_record = input.asn["skycell_wcs_info"]
                 else:
                     if patch_match.PATCH_TABLE is None:
