@@ -290,8 +290,6 @@ def test_resampledata_init(exposure_1):
     """Test that ResampleData can set initial values."""
     input_models = ModelLibrary(exposure_1)
     output = "output.asdf"
-    single = False
-    blendheaders = False
     pixfrac = 0.8
     kernel = "turbo"
     fillval = 0.0
@@ -304,8 +302,6 @@ def test_resampledata_init(exposure_1):
     resample_data = ResampleData(
         input_models,
         output=output,
-        single=single,
-        blendheaders=blendheaders,
         pixfrac=pixfrac,
         kernel=kernel,
         fillval=fillval,
@@ -320,8 +316,6 @@ def test_resampledata_init(exposure_1):
     assert resample_data.input_models == input_models
     assert resample_data.output_filename == output
     assert resample_data.pscale_ratio == pscale_ratio
-    assert resample_data.single == single
-    assert resample_data.blendheaders == blendheaders
     assert resample_data.pixfrac == pixfrac
     assert resample_data.kernel == kernel
     assert resample_data.fillval == fillval
@@ -341,8 +335,6 @@ def test_resampledata_init_default(exposure_1):
     assert resample_data.input_models == input_models
     assert resample_data.output_filename is None
     assert resample_data.pscale_ratio == 1.0
-    assert not resample_data.single
-    assert resample_data.blendheaders
     assert resample_data.pixfrac == 1.0
     assert resample_data.kernel == "square"
     assert resample_data.fillval == "INDEF"
