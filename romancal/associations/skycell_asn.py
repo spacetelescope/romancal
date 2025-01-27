@@ -120,15 +120,17 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
             + filter_id
         )
 
+        prompt_product_asn = asn_from_list.asn_from_list(
+            member_list, product_name=asn_file_name
+        )
+        prompt_product_asn["asn_type"] = "image"
+        prompt_product_asn["program"] = program_id
+        prompt_product_asn["target"] = patch_name
+        prompt_product_asn["skycell_wcs_info"] = projcell_info
+
+        _, serialized = prompt_product_asn.dump(format="json")
+
         with open(asn_file_name + "_asn.json", "w") as outfile:
-            prompt_product_asn = asn_from_list.asn_from_list(
-                member_list, product_name=asn_file_name
-            )
-            prompt_product_asn["asn_type"] = "image"
-            prompt_product_asn["program"] = program_id
-            prompt_product_asn["target"] = patch_name
-            prompt_product_asn["skycell_wcs_info"] = projcell_info
-            _, serialized = prompt_product_asn.dump(format="json")
             outfile.write(serialized)
 
 
