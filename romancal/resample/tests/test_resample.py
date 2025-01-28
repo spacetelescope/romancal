@@ -1076,8 +1076,8 @@ def test_l3_wcsinfo(multiple_exposures):
             "dec_corn3": 0.005043059486913547,
             "ra_corn4": 9.998944914237953,
             "dec_corn4": 0.00038355958555111314,
-            "orientat_local": 9.826983262839223,
-            "orientat": 9.826978421513601,
+            "orientat_local": 20.999999978134802,
+            "orientat": 20.999999978134802,
             "projection": "TAN",
             "s_region": (
                 "POLYGON ICRS 10.005109345783163 -0.001982743978690467 10.006897960220385 "

@@ -787,13 +787,13 @@ def gwcs_into_l3(model, wcs):
     l3_wcsinfo.projection = "TAN"
     l3_wcsinfo.pixel_shape = model.shape
 
+    # Fill out image-local information
     pixel_center = [(v - 1) / 2.0 for v in model.shape[::-1]]
     world_center = wcs(*pixel_center)
     l3_wcsinfo.ra_center = world_center[0]
     l3_wcsinfo.dec_center = world_center[1]
     l3_wcsinfo.pixel_scale_local = compute_scale(wcs, world_center)
     l3_wcsinfo.orientat_local = calc_pa(wcs, *world_center)
-
     try:
         footprint = utils.create_footprint(wcs, model.shape)
     except Exception as excp:
@@ -809,6 +809,7 @@ def gwcs_into_l3(model, wcs):
         l3_wcsinfo.dec_corn4 = footprint[3][1]
         l3_wcsinfo.s_region = compute_s_region_keyword(footprint)
 
+    # Fill out wcs-general information
     try:
         l3_wcsinfo.x_ref = -transform["crpix1"].offset.value
         l3_wcsinfo.y_ref = -transform["crpix2"].offset.value
@@ -818,10 +819,18 @@ def gwcs_into_l3(model, wcs):
         )
         l3_wcsinfo.x_ref = pixel_center[0]
         l3_wcsinfo.y_ref = pixel_center[1]
-    world_ref = wcs(l3_wcsinfo.x_ref, l3_wcsinfo.y_ref)
+
+    world_ref = wcs(l3_wcsinfo.x_ref, l3_wcsinfo.y_ref, with_bounding_box=False)
     l3_wcsinfo.ra_ref = world_ref[0]
     l3_wcsinfo.dec_ref = world_ref[1]
-    l3_wcsinfo.pixel_scale = compute_scale(wcs, world_ref)
+
+    try:
+        cdelt1 = transform["cdelt1"].factor.value
+        cdelt2 = transform["cdelt2"].factor.value
+        l3_wcsinfo.pixel_scale = (cdelt1 + cdelt2) / 2.0
+    except IndexError:
+        l3_wcsinfo.pixel_scale = compute_scale(wcs, world_ref)
+
     l3_wcsinfo.orientat = calc_pa(wcs, *world_ref)
 
     try:
@@ -853,9 +862,11 @@ def calc_pa(wcs, ra, dec):
         The position angle in degrees.
 
     """
-    delta_pix = [v for v in wcs.world_to_pixel_values(ra, dec)]
+    delta_pix = [v for v in wcs.invert(ra, dec, with_bounding_box=False)]
     delta_pix[1] += 1
-    delta_coord = wcs.pixel_to_world(*delta_pix)
+    delta_coord = SkyCoord(
+        *wcs(*delta_pix, with_bounding_box=False), frame="icrs", unit="deg"
+    )
     coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
 
     return coord.position_angle(delta_coord).degree
