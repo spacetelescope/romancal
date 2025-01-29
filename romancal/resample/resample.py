@@ -389,7 +389,6 @@ class ResampleData:
                     output_model.var_rnoise,
                     output_model.var_poisson,
                     output_model.var_flat,
-                    output_model.var_sky,
                 ],
                 axis=0,
             )

@@ -172,7 +172,7 @@ def build_driz_weight(
         ):
             with np.errstate(divide="ignore", invalid="ignore"):
                 inv_sky_variance = model.var_sky**-1
-            inv_sky_variance[~np.isfinite(inv_sky_variance)] = 1
+            inv_sky_variance[~np.isfinite(inv_sky_variance)] = 0
         else:
             warnings.warn(
                 "var_rnoise and var_poisson arrays are not available. Setting drizzle weight map to 1",
@@ -438,10 +438,13 @@ def add_var_sky_array(input_models: ModelLibrary):
         ref_img = input_models.borrow(index=0)
         input_models.shelve(model=ref_img, index=0)
         for i, img in enumerate(input_models):
-            if np.all(img.data != 0):
-                img["var_sky"] = (
-                    img.var_rnoise + img.var_poisson / img.data * np.median(img.data)
-                )
-            else:
+            try:
+                ok_data = img.data != 0
+                img["var_sky"] = np.empty_like(img.data)
+                img["var_sky"][ok_data] = img.var_rnoise[ok_data] + img.var_poisson[
+                    ok_data
+                ] / img.data[ok_data] * np.median(img.data)
+                img["var_sky"][~ok_data] = img.var_rnoise[~ok_data]
+            except:
                 raise ValueError("Input model contains invalid data array.")
             input_models.shelve(img, i, modify=True)

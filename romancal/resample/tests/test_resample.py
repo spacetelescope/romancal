@@ -702,6 +702,10 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
 ):
     """Test that resample methods return non-empty weight arrays."""
 
+    # adding a few zero flux pixels
+    for i, model in enumerate(exposure_1):
+        model.data[10 + i, 40 - i] = 0
+
     input_models = ModelLibrary(exposure_1)
     resample_data = ResampleData(input_models, weight_type=weight_type)
 
@@ -713,6 +717,8 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
         many_to_one_model = output_models_many_to_one.borrow(0)
         assert np.any(many_to_one_model.weight > 0)
         assert np.any(many_to_many_model.weight > 0)
+        assert many_to_one_model.data[10, 40] == 0
+        assert many_to_many_model.data[10, 40] == 0
         output_models_many_to_many.shelve(many_to_many_model, 0, modify=False)
         output_models_many_to_one.shelve(many_to_one_model, 0, modify=False)
 
