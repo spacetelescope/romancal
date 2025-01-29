@@ -90,7 +90,8 @@ image.
         \text{VAR\_SKY} = \text{VAR\_RNOISE} + \text{VAR\_POISSON} \, \frac{ med(\text{DATA}) }{ \text{DATA} },
 
     where :math:`\text{DATA}` and :math:`med(\text{DATA})` correspond to the data array and its median, respectively.
-    If the ``VAR_SKY`` array does not exist, the weight is set to 1 for all pixels (equal weighting).
+    If the ``VAR_SKY`` array does not exist (which implies missing ``VAR_RNOISE`` and/or ``VAR_POISSON``), 
+    the weight is set to 1 for all pixels (equal weighting).
 
 ``--in_memory`` (bool, default=True)
     If set to `False`, write output datamodel to disk.

@@ -175,7 +175,7 @@ def build_driz_weight(
             inv_sky_variance[~np.isfinite(inv_sky_variance)] = 0
         else:
             warnings.warn(
-                "var_rnoise and var_poisson arrays are not available. Setting drizzle weight map to 1",
+                "var_sky array is not available. Setting drizzle weight map to 1",
                 stacklevel=2,
             )
             inv_sky_variance = 1.0
