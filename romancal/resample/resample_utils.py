@@ -445,6 +445,6 @@ def add_var_sky_array(input_models: ModelLibrary):
                     ok_data
                 ] / img.data[ok_data] * np.median(img.data)
                 img["var_sky"][~ok_data] = img.var_rnoise[~ok_data]
-            except:
-                raise ValueError("Input model contains invalid data array.")
+            except (AttributeError, KeyError, TypeError, ValueError) as e:
+                raise ValueError("Input model contains invalid data array.") from e
             input_models.shelve(img, i, modify=True)
