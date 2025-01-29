@@ -1,8 +1,10 @@
 import pytest
 import roman_datamodels as rdm
 
+from romancal.pipeline import mosaic_pipeline
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
+from . import util
 from .regtestdata import compare_asdf
 
 # mark all tests in this module
@@ -56,3 +58,11 @@ def test_resample_ran(output_model):
 def test_location_name(output_model):
     # test that the location_name matches the skycell selected
     assert output_model.meta.basic.location_name == "r274dp63x31y81"
+
+
+def test_wcsinfo_wcs_roundtrip(output_model):
+    """Test that the contents of wcsinfo reproduces the wcs"""
+    wcs_from_wcsinfo = mosaic_pipeline.wcsinfo_to_wcs(output_model.meta.wcsinfo)
+
+    ra_mad, dec_mad = util.comp_wcs_grids_arcs(output_model.meta.wcs, wcs_from_wcsinfo)
+    assert (ra_mad + dec_mad) / 2.0 < 1.0e-5
