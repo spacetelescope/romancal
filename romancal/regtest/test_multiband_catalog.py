@@ -54,8 +54,10 @@ def test_multiband_catalog(rtdata_module):
         assert field in afcat["roman"]["source_catalog"].dtype.names
 
     step = MultibandCatalogStep()
-    step.log.info('DMS374, 399, 375, 386, 387, 392, 394, 395: source catalog includes fields: '
-                  + ', '.join(fieldlist))
+    step.log.info(
+        "DMS374, 399, 375, 386, 387, 392, 394, 395: source catalog includes fields: "
+        + ", ".join(fieldlist)
+    )
 
     # DMS 393: multiband catalog uses both PSF-like and extend-source-like
     # kernels
