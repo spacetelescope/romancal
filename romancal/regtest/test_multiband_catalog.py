@@ -22,6 +22,7 @@ fieldlist = [
     "semimajor_sigma",  # DMS394 galaxy morphology
     "semiminor_sigma",  # DMS394 galaxy morphology
     "orientation",  # DMS394 galaxy morphology
+    "F158_isophotal_flux_err",  # DMS395 basic statistical uncertainties
     "F158_kron_flux_err",  # DMS395 basic statistical uncertainties
     "F158_aper30_flux_err",  # DMS395 basic statistical uncertainties
     "F158_x_psf_err",  # DMS395 basic statistical uncertainties
