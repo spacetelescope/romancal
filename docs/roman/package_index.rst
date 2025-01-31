@@ -14,6 +14,7 @@
    references_general/index.rst
    refpix/index.rst
    resample/index.rst
+   saturation/index.rst
    skymatch/index.rst
    source_catalog/index.rst
    stpipe/index.rst

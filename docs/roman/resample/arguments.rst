@@ -82,24 +82,6 @@ image.
     If `weight_type=exptime`, the scaling value will be set equal to the
     exposure time found in the image header.
 
-``--single`` (bool, default=False)
-    If set to `True`, resample each input image into a separate output.  If
-    `False` (the default), each input is resampled additively (with weights) to
-    a common output
-
-``--blendheaders`` (bool, default=True)
-    Blend metadata from all input images into the resampled output image.
-
-``--allowed_memory`` (float, default=None)
-    Specifies the fractional amount of free memory to allow when creating the
-    resampled image. If ``None``, the environment variable
-    ``DMODEL_ALLOWED_MEMORY`` is used. If not defined, no check is made. If the
-    resampled image would be larger than specified, an ``OutputTooLargeError``
-    exception will be generated.
-
-    For example, if set to ``0.5``, only resampled images that use less than
-    half the available memory can be created.
-
 ``--in_memory`` (bool, default=True)
     If set to `False`, write output datamodel to disk.
 

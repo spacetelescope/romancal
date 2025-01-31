@@ -46,7 +46,6 @@ class ExposurePipeline(RomanPipeline):
     class_alias = "roman_elp"
 
     spec = """
-        save_calibrated_ramp = boolean(default=False)
         save_results = boolean(default=False)
         suffix = string(default="cal")
     """

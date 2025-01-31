@@ -1,1 +1,0 @@
-Change the default suffix for mosaic products from _i2d to _coadd
