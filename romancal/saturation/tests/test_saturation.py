@@ -33,7 +33,7 @@ def test_basic_saturation_flagging(setup_wfi_datamodels):
     ramp.data[4, 5, 5] = 62000
 
     # Set saturation value in the saturation model
-    satmap.data[5, 5] = satvalue * satmap.data.unit
+    satmap.data[5, 5] = satvalue
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)
@@ -77,7 +77,7 @@ def test_read_pattern_saturation_flagging(setup_wfi_datamodels):
     ]
 
     # Set saturation value in the saturation model
-    satmap.data[5, 5] = satvalue * satmap.data.unit
+    satmap.data[5, 5] = satvalue
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)
@@ -113,7 +113,7 @@ def test_ad_floor_flagging(setup_wfi_datamodels):
     satindxs = [0, 1]
 
     # Set saturation value in the saturation model
-    satmap.data[5, 5] = satvalue * satmap.data.unit
+    satmap.data[5, 5] = satvalue
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)
@@ -149,7 +149,7 @@ def test_ad_floor_and_saturation_flagging(setup_wfi_datamodels):
     satindxs = [4]
 
     # Set saturation value in the saturation model
-    satmap.data[5, 5] = satvalue * satmap.data.unit
+    satmap.data[5, 5] = satvalue
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)
@@ -181,7 +181,7 @@ def test_signal_fluctuation_flagging(setup_wfi_datamodels):
     ramp.data[4, 5, 5] = 40000  # Signal drops below saturation limit
 
     # Set saturation value in the saturation model
-    satmap.data[5, 5] = satvalue * satmap.data.unit
+    satmap.data[5, 5] = satvalue
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)
@@ -210,7 +210,7 @@ def test_all_groups_saturated(setup_wfi_datamodels):
     ramp.data[4, 5, 5] = 62000
 
     # Set saturation value in the saturation model
-    satmap.data[5, 5] = satvalue * satmap.data.unit
+    satmap.data[5, 5] = satvalue
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)
@@ -262,7 +262,7 @@ def test_no_sat_check(setup_wfi_datamodels):
     ramp.data[4, 5, 5] = 62000  # Signal reaches saturation limit
 
     # Set saturation value in the saturation model & DQ value for NO_SAT_CHECK
-    satmap.data[5, 5] = satvalue * satmap.data.unit
+    satmap.data[5, 5] = satvalue
     satmap.dq[5, 5] = pixel.NO_SAT_CHECK
 
     # Also set an existing DQ flag in input science data
@@ -301,7 +301,7 @@ def test_nans_in_mask(setup_wfi_datamodels):
     ramp.data[4, 5, 5] = 62000
 
     # Set saturation value for pixel to NaN
-    satmap.data[5, 5] = np.nan * satmap.data.unit
+    satmap.data[5, 5] = np.nan
 
     # Run the pipeline
     output = flag_saturation(ramp, satmap)

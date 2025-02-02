@@ -1,7 +1,6 @@
 """Create an association based on skycells"""
 
 import argparse
-import json
 import logging
 import sys
 
@@ -63,14 +62,23 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
         # grab all the wcs parameters needed for generate_tan_wcs
         projcell_info = dict(
             [
+                ("name", pm.PATCH_TABLE[item]["name"]),
                 ("pixel_scale", float(pm.PATCH_TABLE[item]["pixel_scale"])),
-                ("ra_cent", float(pm.PATCH_TABLE[item]["ra_projection_center"])),
-                ("dec_cent", float(pm.PATCH_TABLE[item]["dec_projection_center"])),
-                ("shiftx", float(pm.PATCH_TABLE[item]["x0_projection"])),
-                ("shifty", float(pm.PATCH_TABLE[item]["y0_projection"])),
+                (
+                    "ra_projection_center",
+                    float(pm.PATCH_TABLE[item]["ra_projection_center"]),
+                ),
+                (
+                    "dec_projection_center",
+                    float(pm.PATCH_TABLE[item]["dec_projection_center"]),
+                ),
+                ("x0_projection", float(pm.PATCH_TABLE[item]["x0_projection"])),
+                ("y0_projection", float(pm.PATCH_TABLE[item]["y0_projection"])),
+                ("ra_center", float(pm.PATCH_TABLE[item]["ra_center"])),
+                ("dec_center", float(pm.PATCH_TABLE[item]["dec_center"])),
                 ("nx", int(pm.PATCH_TABLE[item]["nx"])),
                 ("ny", int(pm.PATCH_TABLE[item]["ny"])),
-                ("orient", float(pm.PATCH_TABLE[item]["orientat"])),
+                ("orientat", float(pm.PATCH_TABLE[item]["orientat"])),
                 (
                     "orientat_projection_center",
                     float(pm.PATCH_TABLE[item]["orientat_projection_center"]),
@@ -112,15 +120,17 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
             + filter_id
         )
 
+        prompt_product_asn = asn_from_list.asn_from_list(
+            member_list, product_name=asn_file_name
+        )
+        prompt_product_asn["asn_type"] = "image"
+        prompt_product_asn["program"] = program_id
+        prompt_product_asn["target"] = patch_name
+        prompt_product_asn["skycell_wcs_info"] = projcell_info
+
+        _, serialized = prompt_product_asn.dump(format="json")
+
         with open(asn_file_name + "_asn.json", "w") as outfile:
-            prompt_product_asn = asn_from_list.asn_from_list(
-                member_list, product_name=asn_file_name
-            )
-            prompt_product_asn["asn_type"] = "image"
-            prompt_product_asn["program"] = program_id
-            prompt_product_asn["target"] = patch_name
-            prompt_product_asn["skycell_wcs_info"] = json.dumps(projcell_info)
-            _, serialized = prompt_product_asn.dump(format="json")
             outfile.write(serialized)
 
 

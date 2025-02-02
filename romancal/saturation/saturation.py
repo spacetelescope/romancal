@@ -41,7 +41,7 @@ def flag_saturation(input_model, ref_model):
     pdq = input_model.pixeldq[np.newaxis, :]
 
     # Copy information from saturation reference file
-    sat_thresh = ref_model.data.value.copy()
+    sat_thresh = ref_model.data.copy()
     sat_dq = ref_model.dq.copy()
 
     # Obtain dq arrays updated for saturation

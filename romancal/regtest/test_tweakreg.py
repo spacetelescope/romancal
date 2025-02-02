@@ -79,7 +79,7 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
         f"5 / sqrt(2)?  {passmsg}"
     )
 
-    assert rms < 1.3 / np.sqrt(2) * 100
+    assert rms < 1.3 / np.sqrt(2)
 
     diff = compare_asdf(rtdata.output, rtdata.truth, atol=1e-3, **ignore_asdf_paths)
     step.log.info(

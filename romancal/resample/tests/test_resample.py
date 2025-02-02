@@ -279,12 +279,17 @@ def multiple_exposures(exposure_1, exposure_2):
     return exposure_1
 
 
+def get_resampled_wcs_pixel_scale(wcs):
+    t = wcs.forward_transform
+    for p in t.param_names:
+        if p.startswith("factor"):
+            return getattr(t, p).value
+
+
 def test_resampledata_init(exposure_1):
     """Test that ResampleData can set initial values."""
     input_models = ModelLibrary(exposure_1)
     output = "output.asdf"
-    single = False
-    blendheaders = False
     pixfrac = 0.8
     kernel = "turbo"
     fillval = 0.0
@@ -297,8 +302,6 @@ def test_resampledata_init(exposure_1):
     resample_data = ResampleData(
         input_models,
         output=output,
-        single=single,
-        blendheaders=blendheaders,
         pixfrac=pixfrac,
         kernel=kernel,
         fillval=fillval,
@@ -313,8 +316,6 @@ def test_resampledata_init(exposure_1):
     assert resample_data.input_models == input_models
     assert resample_data.output_filename == output
     assert resample_data.pscale_ratio == pscale_ratio
-    assert resample_data.single == single
-    assert resample_data.blendheaders == blendheaders
     assert resample_data.pixfrac == pixfrac
     assert resample_data.kernel == kernel
     assert resample_data.fillval == fillval
@@ -334,8 +335,6 @@ def test_resampledata_init_default(exposure_1):
     assert resample_data.input_models == input_models
     assert resample_data.output_filename is None
     assert resample_data.pscale_ratio == 1.0
-    assert not resample_data.single
-    assert resample_data.blendheaders
     assert resample_data.pixfrac == 1.0
     assert resample_data.kernel == "square"
     assert resample_data.fillval == "INDEF"
@@ -436,6 +435,7 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0(exposure_1):
 
     with output_models:
         model = output_models.borrow(0)
+        pscale = get_resampled_wcs_pixel_scale(model.meta.wcs)
         output_min_value = np.min(model.meta.wcs.footprint())
         output_max_value = np.max(model.meta.wcs.footprint())
         output_models.shelve(model, 0, modify=False)
@@ -449,8 +449,12 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0(exposure_1):
     expected_max_value = np.max(np.stack(input_wcs_list))
 
     # Assert
-    np.testing.assert_allclose(output_min_value, expected_min_value)
-    np.testing.assert_allclose(output_max_value, expected_max_value)
+    assert (
+        (expected_min_value - 0.5001 * pscale) <= output_min_value <= expected_min_value
+    )
+    assert (
+        (expected_max_value + 0.5001 * pscale) >= output_max_value >= expected_max_value
+    )
 
 
 def test_resampledata_do_drizzle_many_to_one_default_rotation_0_multiple_exposures(
@@ -472,6 +476,7 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0_multiple_exposur
         model = output_models.borrow(0)
         output_min_value = np.min(model.meta.wcs.footprint())
         output_max_value = np.max(model.meta.wcs.footprint())
+        pscale = get_resampled_wcs_pixel_scale(model.meta.wcs)
         output_models.shelve(model, 0, modify=False)
 
     def get_footprint(model, index):
@@ -483,8 +488,12 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0_multiple_exposur
     expected_max_value = np.max(np.stack(input_wcs_list))
 
     # Assert
-    np.testing.assert_allclose(output_min_value, expected_min_value)
-    np.testing.assert_allclose(output_max_value, expected_max_value)
+    assert (
+        (expected_min_value - 0.5001 * pscale) <= output_min_value <= expected_min_value
+    )
+    assert (
+        (expected_max_value + 0.5001 * pscale) >= output_max_value >= expected_max_value
+    )
 
 
 def test_resampledata_do_drizzle_many_to_one_single_input_model(wfi_sca1):
@@ -505,9 +514,10 @@ def test_resampledata_do_drizzle_many_to_one_single_input_model(wfi_sca1):
         model = output_models.borrow(0)
         flat_2 = np.sort(model.meta.wcs.footprint().flatten())
         assert model.meta.filename == resample_data.output_filename
+        pscale = get_resampled_wcs_pixel_scale(model.meta.wcs)
         output_models.shelve(model, 0, modify=False)
 
-    np.testing.assert_allclose(flat_1, flat_2)
+    np.testing.assert_allclose(flat_1, flat_2, atol=0.5 * pscale)
 
 
 def test_update_exposure_times_different_sca_same_exposure(exposure_1):
@@ -665,6 +675,7 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures):
         model = output_models.borrow(0)
         output_min_value = np.min(model.meta.wcs.footprint())
         output_max_value = np.max(model.meta.wcs.footprint())
+        pscale = get_resampled_wcs_pixel_scale(model.meta.wcs)
         output_models.shelve(model, 0, modify=False)
 
     def get_footprint(model, index):
@@ -675,8 +686,12 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures):
     expected_min_value = np.min(np.stack(input_wcs_list))
     expected_max_value = np.max(np.stack(input_wcs_list))
 
-    np.testing.assert_allclose(output_min_value, expected_min_value)
-    np.testing.assert_allclose(output_max_value, expected_max_value)
+    assert (
+        (expected_min_value - 0.5001 * pscale) <= output_min_value <= expected_min_value
+    )
+    assert (
+        (expected_max_value + 0.5001 * pscale) >= output_max_value >= expected_max_value
+    )
 
 
 @pytest.mark.parametrize("weight_type", ["ivm", "exptime"])
@@ -708,6 +723,8 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
     input_models = ModelLibrary(exposure_1)
     with input_models:
         models = list(input_models)
+        crpix = tuple(s // 2 for s in models[0].data.shape[::-1])
+        crval = models[0].meta.wcs(*crpix)
         output_wcs = resample_utils.make_output_wcs(
             models,
             pscale_ratio=1,
@@ -715,7 +732,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
             rotation=0,
             shape=None,
             crpix=(0, 0),
-            crval=(0, 0),
+            crval=crval,
         )
 
         output_model = maker_utils.mk_datamodel(
@@ -1014,7 +1031,7 @@ def test_populate_mosaic_basic_different_observations(
         rotation=0,
         shape=None,
         crpix=(0, 0),
-        crval=(0, 0),
+        crval=(30, 45),
     )
     output_model = maker_utils.mk_datamodel(
         datamodels.MosaicModel, shape=tuple(output_wcs.array_shape)
@@ -1059,8 +1076,8 @@ def test_l3_wcsinfo(multiple_exposures):
             "dec_corn3": 0.005043059486913547,
             "ra_corn4": 9.998944914237953,
             "dec_corn4": 0.00038355958555111314,
-            "orientat_local": 9.826983262839223,
-            "orientat": 9.826978421513601,
+            "orientat_local": 20.999999978134802,
+            "orientat": 20.999999978134802,
             "projection": "TAN",
             "s_region": (
                 "POLYGON ICRS 10.005109345783163 -0.001982743978690467 10.006897960220385 "

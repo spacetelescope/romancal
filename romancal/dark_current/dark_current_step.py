@@ -56,7 +56,7 @@ class DarkCurrentStep(RomanStep):
             # Do the dark correction
             out_model = input_model
             nresultants = len(input_model.meta.exposure["read_pattern"])
-            out_model.data -= dark_model.data[:nresultants].value
+            out_model.data -= dark_model.data[:nresultants]
             out_model.pixeldq |= dark_model.dq
             out_model.meta.cal_step.dark = "COMPLETE"
 
