@@ -18,6 +18,14 @@ fieldlist = [
     "F158_aper_total_flux",  # DMS375 fluxes
     "F158_aper_total_flux_err",  # DMS386 flux uncertainties
     "flags",  # DMS387 dq_flags
+    "is_extended",  # DMS392 source classification
+    "semimajor_sigma",  # DMS394 galaxy morphology
+    "semiminor_sigma",  # DMS394 galaxy morphology
+    "orientation",  # DMS394 galaxy morphology
+    "F158_isophotal_flux_err",  # DMS395 basic statistical uncertainties
+    "F158_kron_flux_err",  # DMS395 basic statistical uncertainties
+    "F158_aper30_flux_err",  # DMS395 basic statistical uncertainties
+    "F158_x_psf_err",  # DMS395 basic statistical uncertainties
 ]
 
 
@@ -45,6 +53,12 @@ def test_multiband_catalog(rtdata_module):
     for field in fieldlist:
         assert field in afcat["roman"]["source_catalog"].dtype.names
 
+    step = MultibandCatalogStep()
+    step.log.info(
+        "DMS374, 399, 375, 386, 387, 392, 394, 395: source catalog includes fields: "
+        + ", ".join(fieldlist)
+    )
+
     # DMS 393: multiband catalog uses both PSF-like and extend-source-like
     # kernels
     assert set(aftruth["roman"]["source_catalog"].dtype.names) == set(
@@ -56,7 +70,6 @@ def test_multiband_catalog(rtdata_module):
     # the same, but we can easily check that the columns match up
     # by name.
 
-    step = MultibandCatalogStep()
     step.log.info("DMS391: successfully used multiple kernels to detect sources.")
     step.log.info("DMS393: successfully used deblending to separate blended sources.")
     step.log.info(
