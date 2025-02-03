@@ -16,7 +16,6 @@ from romancal.resample import gwcs_drizzle, resample_utils
 from romancal.resample.resample import (
     ResampleData,
     populate_mosaic_basic,
-    populate_mosaic_individual,
 )
 
 
@@ -1102,25 +1101,3 @@ def test_l3_wcsinfo(multiple_exposures):
             if key not in ["projection", "s_region"]:
                 assert np.allclose(output_model.meta.wcsinfo[key], expected[key])
         output_models.shelve(output_model, 0, modify=False)
-
-
-def test_l3_individual_image_meta(multiple_exposures):
-    """Test that the individual_image_meta is being populated"""
-    input_models = multiple_exposures
-    output_model = maker_utils.mk_datamodel(datamodels.MosaicModel)
-
-    # Act
-    populate_mosaic_individual(output_model, input_models)
-
-    # Assert sizes are expected
-    n_inputs = len(input_models)
-    for value in output_model.meta.individual_image_meta.values():
-        assert isinstance(value, QTable)
-        assert len(value) == n_inputs
-
-    # Assert spot check on filename, which is different for each mock input
-    basic_table = output_model.meta.individual_image_meta.basic
-    for idx, input in enumerate(input_models):
-        assert input.meta.filename == basic_table["filename"][idx]
-
-    assert "background" in output_model.meta.individual_image_meta
