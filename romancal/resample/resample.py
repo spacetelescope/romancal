@@ -147,7 +147,7 @@ class ResampleData:
             models = list(self.input_models)
 
             # update meta.basic
-            populate_mosaic_basic(self.blank_output, models)
+            self.blank_output.meta.basic.product_type = "TBD"
 
             # update meta.cal_step
             self.blank_output.meta.cal_step = maker_utils.mk_l3_cal_step(
@@ -872,65 +872,3 @@ def calc_pa(wcs, ra, dec):
     coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
 
     return coord.position_angle(delta_coord).degree
-
-
-def populate_mosaic_basic(
-    output_model: datamodels.MosaicModel, input_models: list | ModelLibrary
-):
-    """
-    Populate basic metadata fields in the output mosaic model based on input models.
-
-    Parameters
-    ----------
-    output_model : MosaicModel
-        Object to populate with basic metadata.
-    input_models : [List, ModelLibrary]
-        List of input data models from which to extract the metadata.
-        ModelLibrary is also supported.
-
-    Returns
-    -------
-    None
-    """
-
-    input_meta = [datamodel.meta for datamodel in input_models]
-
-    # time data
-    output_model.meta.basic.time_first_mjd = np.min(
-        [x.exposure.start_time.mjd for x in input_meta]
-    )
-    output_model.meta.basic.time_last_mjd = np.max(
-        [x.exposure.end_time.mjd for x in input_meta]
-    )
-    output_model.meta.basic.time_mean_mjd = np.mean(
-        [x.exposure.mid_time.mjd for x in input_meta]
-    )
-
-    # observation data
-    output_model.meta.basic.visit = (
-        input_meta[0].observation.visit
-        if len({x.observation.visit for x in input_meta}) == 1
-        else -1
-    )
-    output_model.meta.basic.segment = (
-        input_meta[0].observation.segment
-        if len({x.observation.segment for x in input_meta}) == 1
-        else -1
-    )
-    output_model.meta.basic["pass"] = (
-        input_meta[0].observation["pass"]
-        if len({x.observation["pass"] for x in input_meta}) == 1
-        else -1
-    )
-    output_model.meta.basic.program = (
-        input_meta[0].observation.program
-        if len({x.observation.program for x in input_meta}) == 1
-        else -1
-    )
-
-    # instrument data
-    output_model.meta.basic.optical_element = input_meta[0].instrument.optical_element
-    output_model.meta.basic.instrument = input_meta[0].instrument.name
-
-    # association product type
-    output_model.meta.basic.product_type = "TBD"

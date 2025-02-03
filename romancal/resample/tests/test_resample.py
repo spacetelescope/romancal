@@ -15,7 +15,6 @@ from romancal.lib.tests.helpers import word_precision_check
 from romancal.resample import gwcs_drizzle, resample_utils
 from romancal.resample.resample import (
     ResampleData,
-    populate_mosaic_basic,
 )
 
 
@@ -715,6 +714,7 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
         output_models_many_to_one.shelve(many_to_one_model, 0, modify=False)
 
 
+@pytest.mark.skip(reason="populate_mosaic_basic was always overwritten")
 def test_populate_mosaic_basic_single_exposure(exposure_1):
     """
     Test the populate_mosaic_basic function with a given exposure.
@@ -780,6 +780,7 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
     assert output_model.meta.basic.instrument == input_meta[0].instrument.name
 
 
+@pytest.mark.skip(reason="populate_mosaic_basic was always overwritten")
 @pytest.mark.parametrize(
     "input_models_data, expected_output",
     [
