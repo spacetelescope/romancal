@@ -4,10 +4,12 @@ from asdf import AsdfFile
 from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
+from astropy.table import QTable
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
 
+from romancal.datamodels import ModelLibrary
 from romancal.resample import ResampleStep, resample_utils
 
 
@@ -370,3 +372,24 @@ def test_build_driz_weight_different_weight_type(base_image, weight_type):
     }
 
     np.testing.assert_array_almost_equal(expected_results.get(weight_type), result)
+
+
+def test_individual_image_meta(base_image):
+    """Test that the individual_image_meta is being populated"""
+    input_models = ModelLibrary([base_image() for _ in range(2)])
+    output_model = ResampleStep().run(input_models)
+
+    # Assert sizes are expected
+    n_inputs = len(input_models)
+    for value in output_model.meta.individual_image_meta.values():
+        assert isinstance(value, QTable)
+        assert len(value) == n_inputs
+
+    # Assert spot check on filename, which is different for each mock input
+    basic_table = output_model.meta.individual_image_meta.basic
+    with input_models:
+        for idx, input in enumerate(input_models):
+            assert input.meta.filename == basic_table["filename"][idx]
+            input_models.shelve(input, index=idx)
+
+    assert "background" in output_model.meta.individual_image_meta

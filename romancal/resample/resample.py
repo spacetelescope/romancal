@@ -160,8 +160,10 @@ class ResampleData:
                 cal_logs = model.meta.cal_logs
                 # removing meta.cal_logs
                 del model.meta["cal_logs"]
+
                 # Update the output with all the component metas
-                populate_mosaic_individual(self.blank_output, [model])
+                self.blank_output.append_individual_image_meta(model.meta)
+
                 # re-attaching cal_logs to meta
                 model.meta.cal_logs = cal_logs
 
@@ -202,7 +204,11 @@ class ResampleData:
         output_model.meta["resample"] = maker_utils.mk_resample()
         output_model.meta.basic.location_name = self.location_name
 
-        copy_asn_info_from_library(input_models, output_model)
+        # copy over asn information
+        if (asn_pool := input_models.asn.get("asn_pool", None)) is not None:
+            output_model.meta.asn.pool_name = asn_pool
+        if (asn_table_name := input_models.asn.get("table_name", None)) is not None:
+            output_model.meta.asn.table_name = asn_table_name
 
         with input_models:
             example_image = input_models.borrow(indices[0])
@@ -928,35 +934,3 @@ def populate_mosaic_basic(
 
     # association product type
     output_model.meta.basic.product_type = "TBD"
-
-
-def populate_mosaic_individual(
-    output_model: datamodels.MosaicModel, input_models: [list, ModelLibrary]
-):
-    """
-    Populate individual meta fields in the output mosaic model based on input models.
-
-    Parameters
-    ----------
-    output_model : MosaicModel
-        Object to populate with basic metadata.
-    input_models : [List, ModelLibrary]
-        List of input data models from which to extract the metadata.
-        ModelLibrary is also supported.
-
-    Returns
-    -------
-    None
-    """
-
-    input_metas = [datamodel.meta for datamodel in input_models]
-    for input_meta in input_metas:
-        output_model.append_individual_image_meta(input_meta)
-
-
-def copy_asn_info_from_library(input_models, output_model):
-    # copy over asn information
-    if (asn_pool := input_models.asn.get("asn_pool", None)) is not None:
-        output_model.meta.asn.pool_name = asn_pool
-    if (asn_table_name := input_models.asn.get("table_name", None)) is not None:
-        output_model.meta.asn.table_name = asn_table_name
