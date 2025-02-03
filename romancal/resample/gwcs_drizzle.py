@@ -1,7 +1,7 @@
 import logging
 
 import numpy as np
-from drizzle import cdrizzle, util
+from drizzle import cdrizzle
 
 from . import resample_utils
 
@@ -375,7 +375,7 @@ def dodrizzle(
     """
 
     # Insure that the fillval parameter gets properly interpreted for use with tdriz
-    if util.is_blank(str(fillval)):
+    if fillval.strip() == "":
         fillval = "INDEF"
     else:
         fillval = str(fillval)
