@@ -14,7 +14,7 @@ from stcal.alignment import util
 
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
-from . import resample
+from .resample import ResampleData
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -136,7 +136,7 @@ class ResampleStep(RomanStep):
         kwargs["in_memory"] = self.in_memory
 
         # Call the resampling routine
-        resamp = resample.ResampleData(input_models, output=output, **kwargs)
+        resamp = ResampleData(input_models, output=output, **kwargs)
         result = resamp.do_drizzle()
 
         with result:
