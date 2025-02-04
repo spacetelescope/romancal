@@ -6,7 +6,6 @@ from asdf import AsdfFile
 from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
-from astropy.table import QTable
 from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
