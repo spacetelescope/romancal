@@ -1,3 +1,5 @@
+from functools import reduce
+
 import numpy as np
 import pytest
 from asdf import AsdfFile
@@ -5,6 +7,7 @@ from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
 from astropy.table import QTable
+from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
@@ -340,3 +343,99 @@ def test_individual_image_meta(base_image):
             input_models.shelve(input, index=idx)
 
     assert "background" in output_model.meta.individual_image_meta
+
+
+@pytest.mark.parametrize(
+    "meta_overrides, expected_basic",
+    [
+        (  # 2 exposures, share visit, etc
+            (
+                {
+                    "meta.observation.visit": 1,
+                    "meta.observation.pass": 1,
+                    "meta.observation.segment": 1,
+                    "meta.observation.program": 1,
+                    "meta.instrument.optical_element": "F158",
+                    "meta.instrument.name": "WFI",
+                },
+                {
+                    "meta.observation.visit": 1,
+                    "meta.observation.pass": 1,
+                    "meta.observation.segment": 1,
+                    "meta.observation.program": 1,
+                    "meta.instrument.optical_element": "F158",
+                    "meta.instrument.name": "WFI",
+                },
+            ),
+            {
+                "visit": 1,
+                "pass": 1,
+                "segment": 1,
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+        (  # 2 exposures, different metadata
+            (
+                {
+                    "meta.observation.visit": 1,
+                    "meta.observation.pass": 1,
+                    "meta.observation.segment": 1,
+                    "meta.observation.program": 1,
+                    "meta.instrument.optical_element": "F158",
+                    "meta.instrument.name": "WFI",
+                },
+                {
+                    "meta.observation.visit": 2,
+                    "meta.observation.pass": 2,
+                    "meta.observation.segment": 2,
+                    "meta.observation.program": 2,
+                    "meta.instrument.optical_element": "F062",
+                    "meta.instrument.name": "WFI",
+                },
+            ),
+            {
+                "visit": 1,
+                "pass": 1,
+                "segment": 1,
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+    ],
+)
+def test_populate_mosaic_basic(base_image, meta_overrides, expected_basic):
+    """Test that the basic mosaic metadata is being populated"""
+    models = []
+    for i, meta_override in enumerate(meta_overrides):
+        model = base_image()
+
+        model.meta.observation.observation_id = i
+
+        model.meta.exposure.start_time = Time(59000 + i, format="mjd")
+        model.meta.exposure.end_time = Time(59001 + i, format="mjd")
+        model.meta.exposure.mid_time = Time(
+            (model.meta.exposure.start_time.mjd + model.meta.exposure.end_time.mjd) / 2,
+            format="mjd",
+        )
+
+        for key, value in meta_override.items():
+            *parent_keys, child_key = key.split(".")
+            setattr(reduce(getattr, parent_keys, model), child_key, value)
+        models.append(model)
+
+    input_models = ModelLibrary(models)
+    output_model = ResampleStep().run(input_models)
+
+    assert (
+        output_model.meta.basic.time_first_mjd == models[0].meta.exposure.start_time.mjd
+    )
+    assert (
+        output_model.meta.basic.time_last_mjd == models[-1].meta.exposure.end_time.mjd
+    )
+    assert output_model.meta.basic.time_mean_mjd == np.mean(
+        [m.meta.exposure.mid_time.mjd for m in models]
+    )
+
+    for key, value in expected_basic.items():
+        assert getattr(output_model.meta.basic, key) == value

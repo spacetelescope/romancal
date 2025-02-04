@@ -173,7 +173,9 @@ class ResampleData:
             self.blank_output.meta.basic.segment = l2_meta.observation.segment
             self.blank_output.meta.basic["pass"] = l2_meta.observation["pass"]
             self.blank_output.meta.basic.program = l2_meta.observation.program
-            self.blank_output.meta.basic.optical_element = l2_meta.instrument.optical_element
+            self.blank_output.meta.basic.optical_element = (
+                l2_meta.instrument.optical_element
+            )
             self.blank_output.meta.basic.instrument = l2_meta.instrument.name
             self.blank_output.meta.coordinates = l2_meta.coordinates
             self.blank_output.meta.program = l2_meta.program
