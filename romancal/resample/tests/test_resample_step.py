@@ -34,40 +34,6 @@ class MockResample:
         self.pixel_scale_ratio = pixel_scale_ratio
 
 
-class Mosaic:
-    def __init__(self, fiducial_world, pscale, shape, filename, n_images):
-        self.fiducial_world = fiducial_world
-        self.pscale = pscale
-        self.shape = shape
-        self.filename = filename
-        self.n_images = n_images
-
-    def create_mosaic(self):
-        """
-        Create a dummy L3 datamodel given the coordinates of the fiducial point,
-        a pixel scale, and the image shape and filename.
-
-        Returns
-        -------
-        datamodels.MosaicModel
-            An L3 MosaicModel datamodel.
-        """
-        l3 = maker_utils.mk_level3_mosaic(
-            shape=self.shape,
-            n_images=self.n_images,
-        )
-        # data from WFISim simulation of SCA #01
-        l3.meta.filename = self.filename
-        l3.meta["wcs"] = create_wcs_object_without_distortion(
-            fiducial_world=self.fiducial_world,
-            pscale=self.pscale,
-            shape=self.shape,
-        )
-        # Call the forward transform so its value is pulled from disk
-        _ = l3.meta.wcs.forward_transform
-        return datamodels.MosaicModel(l3)
-
-
 def create_wcs_object_without_distortion(fiducial_world, pscale, shape, **kwargs):
     """
     Create a simple WCS object without either distortion or rotation.
