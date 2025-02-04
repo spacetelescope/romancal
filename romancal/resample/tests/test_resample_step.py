@@ -13,27 +13,6 @@ from romancal.datamodels import ModelLibrary
 from romancal.resample import ResampleStep, resample_utils
 
 
-class MockModel:
-    def __init__(self, pixel_area, pixel_scale_ratio):
-        self.meta = MockMeta(pixel_area, pixel_scale_ratio)
-
-
-class MockMeta:
-    def __init__(self, pixel_area, pixel_scale_ratio):
-        self.photometry = MockPhotometry(pixel_area)
-        self.resample = MockResample(pixel_scale_ratio)
-
-
-class MockPhotometry:
-    def __init__(self, pixel_area):
-        self.pixel_area = pixel_area
-
-
-class MockResample:
-    def __init__(self, pixel_scale_ratio):
-        self.pixel_scale_ratio = pixel_scale_ratio
-
-
 def create_wcs_object_without_distortion(fiducial_world, pscale, shape, **kwargs):
     """
     Create a simple WCS object without either distortion or rotation.
@@ -223,7 +202,9 @@ def test_update_phot_keywords(
     expected_arcsecsq,
 ):
     step = ResampleStep()
-    model = MockModel(pixel_area, pixel_scale_ratio)
+    model = maker_utils.mk_datamodel(datamodels.MosaicModel, shape=(5, 5))
+    model.meta.photometry.pixel_area = pixel_area
+    model.meta.resample.pixel_scale_ratio = pixel_scale_ratio
 
     step.update_phot_keywords(model)
 
