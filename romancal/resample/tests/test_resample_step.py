@@ -101,21 +101,6 @@ def asdf_wcs_file():
     return _create_asdf_wcs_file
 
 
-@pytest.mark.parametrize(
-    "vals, name, min_vals, expected",
-    [
-        ([1, 2], "list1", None, [1, 2]),
-        ([None, None], "list2", None, None),
-        ([1, 2], "list4", [0, 0], [1, 2]),
-    ],
-)
-def test_check_list_pars_valid(vals, name, min_vals, expected):
-    step = ResampleStep()
-
-    result = step._check_list_pars(vals, name, min_vals)
-    assert result == expected
-
-
 def test_load_custom_wcs_no_file():
     step = ResampleStep()
     result = step._load_custom_wcs(None, (512, 512))
@@ -147,42 +132,6 @@ def test_load_custom_wcs_asdf_without_wcs_attribute(tmp_path):
 
     with pytest.raises(KeyError):
         step._load_custom_wcs(str(file_path), (100, 100))
-
-
-@pytest.mark.parametrize(
-    "vals, name, min_vals, expected",
-    [
-        ([1, 2], "test", [0, 0], [1, 2]),
-        ([None, None], "test", [0, 0], None),
-        ([0, 0], "test", [0, 0], [0, 0]),
-        ([1, 1], "test", [0, 0], [1, 1]),
-        ([0, 1], "test", [0, 0], [0, 1]),
-        ([1, 0], "test", [0, 0], [1, 0]),
-    ],
-)
-def test_check_list_pars(vals, name, min_vals, expected):
-    step = ResampleStep()
-
-    result = step._check_list_pars(vals, name, min_vals)
-    assert result == expected
-
-
-@pytest.mark.parametrize(
-    "vals, name, min_vals",
-    [
-        ([None, 2], "test", [0, 0]),
-        ([1, None], "test", [0, 0]),
-        ([1], "test", [0, 0]),
-        ([1, 2, 3], "test", [0, 0]),
-        ([None, None, None], "test", [0, 0]),
-        ([1, 2], "test", [2, 2]),
-    ],
-)
-def test_check_list_pars_exception(vals, name, min_vals):
-    step = ResampleStep()
-
-    with pytest.raises(ValueError):
-        step._check_list_pars(vals, name, min_vals)
 
 
 @pytest.mark.parametrize(
