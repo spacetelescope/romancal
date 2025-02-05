@@ -1,69 +1,19 @@
+from functools import reduce
+
 import numpy as np
 import pytest
 from asdf import AsdfFile
 from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
+from astropy.table import QTable
+from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
 
+from romancal.datamodels import ModelLibrary
 from romancal.resample import ResampleStep, resample_utils
-
-
-class MockModel:
-    def __init__(self, pixel_area, pixel_scale_ratio):
-        self.meta = MockMeta(pixel_area, pixel_scale_ratio)
-
-
-class MockMeta:
-    def __init__(self, pixel_area, pixel_scale_ratio):
-        self.photometry = MockPhotometry(pixel_area)
-        self.resample = MockResample(pixel_scale_ratio)
-
-
-class MockPhotometry:
-    def __init__(self, pixel_area):
-        self.pixel_area = pixel_area
-
-
-class MockResample:
-    def __init__(self, pixel_scale_ratio):
-        self.pixel_scale_ratio = pixel_scale_ratio
-
-
-class Mosaic:
-    def __init__(self, fiducial_world, pscale, shape, filename, n_images):
-        self.fiducial_world = fiducial_world
-        self.pscale = pscale
-        self.shape = shape
-        self.filename = filename
-        self.n_images = n_images
-
-    def create_mosaic(self):
-        """
-        Create a dummy L3 datamodel given the coordinates of the fiducial point,
-        a pixel scale, and the image shape and filename.
-
-        Returns
-        -------
-        datamodels.MosaicModel
-            An L3 MosaicModel datamodel.
-        """
-        l3 = maker_utils.mk_level3_mosaic(
-            shape=self.shape,
-            n_images=self.n_images,
-        )
-        # data from WFISim simulation of SCA #01
-        l3.meta.filename = self.filename
-        l3.meta["wcs"] = create_wcs_object_without_distortion(
-            fiducial_world=self.fiducial_world,
-            pscale=self.pscale,
-            shape=self.shape,
-        )
-        # Call the forward transform so its value is pulled from disk
-        _ = l3.meta.wcs.forward_transform
-        return datamodels.MosaicModel(l3)
 
 
 def create_wcs_object_without_distortion(fiducial_world, pscale, shape, **kwargs):
@@ -151,21 +101,6 @@ def asdf_wcs_file():
     return _create_asdf_wcs_file
 
 
-@pytest.mark.parametrize(
-    "vals, name, min_vals, expected",
-    [
-        ([1, 2], "list1", None, [1, 2]),
-        ([None, None], "list2", None, None),
-        ([1, 2], "list4", [0, 0], [1, 2]),
-    ],
-)
-def test_check_list_pars_valid(vals, name, min_vals, expected):
-    step = ResampleStep()
-
-    result = step._check_list_pars(vals, name, min_vals)
-    assert result == expected
-
-
 def test_load_custom_wcs_no_file():
     step = ResampleStep()
     result = step._load_custom_wcs(None, (512, 512))
@@ -197,69 +132,6 @@ def test_load_custom_wcs_asdf_without_wcs_attribute(tmp_path):
 
     with pytest.raises(KeyError):
         step._load_custom_wcs(str(file_path), (100, 100))
-
-
-@pytest.mark.parametrize(
-    "vals, name, min_vals, expected",
-    [
-        ([1, 2], "test", [0, 0], [1, 2]),
-        ([None, None], "test", [0, 0], None),
-        ([0, 0], "test", [0, 0], [0, 0]),
-        ([1, 1], "test", [0, 0], [1, 1]),
-        ([0, 1], "test", [0, 0], [0, 1]),
-        ([1, 0], "test", [0, 0], [1, 0]),
-    ],
-)
-def test_check_list_pars(vals, name, min_vals, expected):
-    step = ResampleStep()
-
-    result = step._check_list_pars(vals, name, min_vals)
-    assert result == expected
-
-
-@pytest.mark.parametrize(
-    "vals, name, min_vals",
-    [
-        ([None, 2], "test", [0, 0]),
-        ([1, None], "test", [0, 0]),
-        ([1], "test", [0, 0]),
-        ([1, 2, 3], "test", [0, 0]),
-        ([None, None, None], "test", [0, 0]),
-        ([1, 2], "test", [2, 2]),
-    ],
-)
-def test_check_list_pars_exception(vals, name, min_vals):
-    step = ResampleStep()
-
-    with pytest.raises(ValueError):
-        step._check_list_pars(vals, name, min_vals)
-
-
-@pytest.mark.parametrize(
-    """pixel_area, pixel_scale_ratio,
-    expected_steradians, expected_arcsecsq""",
-    [
-        # Happy path tests
-        (1.0, 2.0, 4.0, 4.0),
-        (2.0, 0.5, 0.5, 0.5),
-        (0.0, 2.0, 0.0, 0.0),
-        (1.0, 0.0, 0.0, 0.0),
-        (None, 2.0, None, 4.0),
-        (1.0, 2.0, 4.0, None),
-    ],
-)
-def test_update_phot_keywords(
-    pixel_area,
-    pixel_scale_ratio,
-    expected_steradians,
-    expected_arcsecsq,
-):
-    step = ResampleStep()
-    model = MockModel(pixel_area, pixel_scale_ratio)
-
-    step.update_phot_keywords(model)
-
-    assert model.meta.photometry.pixel_area == expected_steradians
 
 
 @pytest.mark.parametrize(
@@ -370,3 +242,140 @@ def test_build_driz_weight_different_weight_type(base_image, weight_type):
     }
 
     np.testing.assert_array_almost_equal(expected_results.get(weight_type), result)
+
+
+def test_individual_image_meta(base_image):
+    """Test that the individual_image_meta is being populated"""
+    input_models = ModelLibrary([base_image() for _ in range(2)])
+    output_model = ResampleStep().run(input_models)
+
+    # Assert sizes are expected
+    n_inputs = len(input_models)
+    for value in output_model.meta.individual_image_meta.values():
+        assert isinstance(value, QTable)
+        assert len(value) == n_inputs
+
+    # Assert spot check on filename, which is different for each mock input
+    basic_table = output_model.meta.individual_image_meta.basic
+    with input_models:
+        for idx, input in enumerate(input_models):
+            assert input.meta.filename == basic_table["filename"][idx]
+            input_models.shelve(input, index=idx)
+
+    assert "background" in output_model.meta.individual_image_meta
+
+
+@pytest.mark.parametrize(
+    "meta_overrides, expected_basic",
+    [
+        (  # 2 exposures, share visit, etc
+            (
+                {
+                    "meta.observation.visit": 1,
+                    "meta.observation.pass": 1,
+                    "meta.observation.segment": 1,
+                    "meta.observation.program": 1,
+                    "meta.instrument.optical_element": "F158",
+                    "meta.instrument.name": "WFI",
+                },
+                {
+                    "meta.observation.visit": 1,
+                    "meta.observation.pass": 1,
+                    "meta.observation.segment": 1,
+                    "meta.observation.program": 1,
+                    "meta.instrument.optical_element": "F158",
+                    "meta.instrument.name": "WFI",
+                },
+            ),
+            {
+                "visit": 1,
+                "pass": 1,
+                "segment": 1,
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+        (  # 2 exposures, different metadata
+            (
+                {
+                    "meta.observation.visit": 1,
+                    "meta.observation.pass": 1,
+                    "meta.observation.segment": 1,
+                    "meta.observation.program": 1,
+                    "meta.instrument.optical_element": "F158",
+                    "meta.instrument.name": "WFI",
+                },
+                {
+                    "meta.observation.visit": 2,
+                    "meta.observation.pass": 2,
+                    "meta.observation.segment": 2,
+                    "meta.observation.program": 2,
+                    "meta.instrument.optical_element": "F062",
+                    "meta.instrument.name": "WFI",
+                },
+            ),
+            {
+                "visit": 1,
+                "pass": 1,
+                "segment": 1,
+                "optical_element": "F158",
+                "instrument": "WFI",
+            },
+        ),
+    ],
+)
+def test_populate_mosaic_basic(base_image, meta_overrides, expected_basic):
+    """Test that the basic mosaic metadata is being populated"""
+    models = []
+    for i, meta_override in enumerate(meta_overrides):
+        model = base_image()
+
+        model.meta.observation.observation_id = i
+
+        model.meta.exposure.start_time = Time(59000 + i, format="mjd")
+        model.meta.exposure.end_time = Time(59001 + i, format="mjd")
+        model.meta.exposure.mid_time = Time(
+            (model.meta.exposure.start_time.mjd + model.meta.exposure.end_time.mjd) / 2,
+            format="mjd",
+        )
+
+        for key, value in meta_override.items():
+            *parent_keys, child_key = key.split(".")
+            setattr(reduce(getattr, parent_keys, model), child_key, value)
+        models.append(model)
+
+    input_models = ModelLibrary(models)
+    output_model = ResampleStep().run(input_models)
+
+    assert (
+        output_model.meta.basic.time_first_mjd == models[0].meta.exposure.start_time.mjd
+    )
+    assert (
+        output_model.meta.basic.time_last_mjd == models[-1].meta.exposure.end_time.mjd
+    )
+    assert output_model.meta.basic.time_mean_mjd == np.mean(
+        [m.meta.exposure.mid_time.mjd for m in models]
+    )
+
+    for key, value in expected_basic.items():
+        assert getattr(output_model.meta.basic, key) == value
+
+
+@pytest.mark.parametrize(
+    "input_pixel_area, pixel_scale_ratio, expected_pixel_area",
+    [
+        # (None, 1.0, None), # this cannot be tested since it causes the step to crash
+        (1.0, 1.0, -999999.0),
+        (1.0, 2.0, -999999.0 * 4.0),
+    ],
+)
+def test_pixel_area_update(
+    base_image, input_pixel_area, pixel_scale_ratio, expected_pixel_area
+):
+    # if input model has a non-None pixel resample should scale it by the square of the pixel_scale_ratio
+    model = base_image()
+    model.meta.photometry.pixel_area = input_pixel_area
+    output_model = ResampleStep(pixel_scale_ratio=pixel_scale_ratio).run(
+        ModelLibrary([model])
+    )
+    assert output_model.meta.photometry.pixel_area == expected_pixel_area

@@ -7,14 +7,12 @@ from typing import TYPE_CHECKING
 
 import asdf
 import numpy as np
-from astropy.extern.configobj.configobj import ConfigObj
-from astropy.extern.configobj.validate import Validator
 from roman_datamodels import datamodels
 from stcal.alignment import util
 
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
-from . import resample
+from .resample import ResampleData
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -73,6 +71,13 @@ class ResampleStep(RomanStep):
     reference_file_types: ClassVar = []
 
     def process(self, input):
+        if self.output_shape is not None:
+            for v in self.output_shape:
+                if v < 1:
+                    raise ValueError(
+                        f"output shape values must be >= 1: {self.output_shape}"
+                    )
+
         if isinstance(input, datamodels.DataModel):
             input_models = ModelLibrary([input])
             # set output filename from meta.filename found in the first datamodel
@@ -111,37 +116,38 @@ class ResampleStep(RomanStep):
                 # resample can only handle 2D images, not 3D cubes, etc
                 raise RuntimeError(f"Input {input_models[0]} is not a 2D image.")
 
-        self.wht_type = self.weight_type
-        self.log.info("Setting drizzle's default parameters...")
-        kwargs = self.set_drizzle_defaults()
-
         # Issue a warning about the use of exptime weighting
-        if self.wht_type == "exptime":
+        if self.weight_type == "exptime":
             self.log.warning("Use of EXPTIME weighting will result in incorrect")
             self.log.warning("propagated errors in the resampled product")
 
         # Custom output WCS parameters.
+        self.log.info("Setting drizzle's default parameters...")
         # Modify get_drizpars if any of these get into reference files:
-        kwargs["output_shape"] = self._check_list_pars(
-            self.output_shape, "output_shape", min_vals=[1, 1]
-        )
-        kwargs["output_wcs"] = self._load_custom_wcs(
-            self.output_wcs, kwargs["output_shape"]
-        )
-        kwargs["crpix"] = self._check_list_pars(self.crpix, "crpix")
-        kwargs["crval"] = self._check_list_pars(self.crval, "crval")
-        kwargs["rotation"] = self.rotation
-        kwargs["pscale"] = self.pixel_scale
-        kwargs["pscale_ratio"] = self.pixel_scale_ratio
-        kwargs["in_memory"] = self.in_memory
 
         # Call the resampling routine
-        resamp = resample.ResampleData(input_models, output=output, **kwargs)
+        resamp = ResampleData(
+            input_models,
+            output=output,
+            output_shape=self.output_shape,
+            output_wcs=self._load_custom_wcs(self.output_wcs, self.output_shape),
+            crpix=self.crpix,
+            crval=self.crval,
+            rotation=self.rotation,
+            pscale=self.pixel_scale,
+            pscale_ratio=self.pixel_scale_ratio,
+            in_memory=self.in_memory,
+            good_bits=self.good_bits,
+            wht_type=str(self.weight_type),
+            fillval=str(self.fillval),
+            kernel=str(self.kernel),
+            pixfrac=self.pixfrac,
+        )
         result = resamp.do_drizzle()
 
         with result:
             for i, model in enumerate(result):
-                self._final_updates(model, input_models, kwargs)
+                self._final_updates(model, input_models)
                 result.shelve(model, i)
             if len(result) == 1:
                 model = result.borrow(0)
@@ -150,7 +156,7 @@ class ResampleStep(RomanStep):
 
         return result
 
-    def _final_updates(self, model, input_models, kwargs):
+    def _final_updates(self, model, input_models):
         model.meta.cal_step["resample"] = "COMPLETE"
         model.meta.wcsinfo.s_region = util.compute_s_region_imaging(
             model.meta.wcs, model.data.shape
@@ -164,60 +170,10 @@ class ResampleStep(RomanStep):
             if self.pixel_scale
             else self.pixel_scale_ratio
         )
-        model.meta.resample.pixfrac = kwargs["pixfrac"]
-        self.update_phot_keywords(model)
-        model.meta.resample["good_bits"] = kwargs["good_bits"]
-
-    @staticmethod
-    def _check_list_pars(vals, name, min_vals=None):
-        """
-        Check if a specific keyword parameter is properly formatted.
-
-        Parameters
-        ----------
-        vals : list or tuple
-            A list or tuple containing a pair of values currently assigned to the
-            keyword parameter `name`. Both values must be either `None` or not `None`.
-        name : str
-            The name of the keyword parameter.
-        min_vals : list or tuple, optional
-            A list or tuple containing a pair of minimum values to be assigned
-            to `name`, by default None.
-
-        Returns
-        -------
-        None or list
-            If either `vals` is set to `None` (or both of its elements), the
-            returned result will be `None`. Otherwise, the returned result will be
-            a list containing the current values assigned to `name`.
-
-        Raises
-        ------
-        ValueError
-            This error will be raised if any of the following conditions are met:
-            - the number of elements of `vals` is not 2;
-            - the currently assigned values of `vals` are smaller than the
-            minimum value provided;
-            - one element is `None` and the other is not `None`.
-        """
-        if vals is None:
-            return None
-        if len(vals) != 2:
-            raise ValueError(f"List '{name}' must have exactly two elements.")
-        n = sum(x is None for x in vals)
-        if n == 2:
-            return None
-        elif n == 0:
-            if (
-                min_vals
-                and sum(x >= y for x, y in zip(vals, min_vals, strict=False)) != 2
-            ):
-                raise ValueError(
-                    f"'{name}' values must be larger or equal to {list(min_vals)}"
-                )
-            return list(vals)
-        else:
-            raise ValueError(f"Both '{name}' values must be either None or not None.")
+        model.meta.resample.pixfrac = self.pixfrac
+        if model.meta.photometry.pixel_area is not None:
+            model.meta.photometry.pixel_area *= model.meta.resample.pixel_scale_ratio**2
+        model.meta.resample["good_bits"] = self.good_bits
 
     @staticmethod
     def _load_custom_wcs(asdf_wcs_file, output_shape):
@@ -244,47 +200,3 @@ class ResampleStep(RomanStep):
             )
 
         return wcs
-
-    def update_phot_keywords(self, model):
-        """Update pixel scale keywords"""
-        if model.meta.photometry.pixel_area is not None:
-            model.meta.photometry.pixel_area *= model.meta.resample.pixel_scale_ratio**2
-
-    def set_drizzle_defaults(self):
-        """Set the default parameters for drizzle."""
-        configspec = self.load_spec_file()
-        config = ConfigObj(configspec=configspec)
-        if config.validate(Validator()):
-            kwargs = config.dict()
-
-        if self.pixfrac is None:
-            self.pixfrac = 1.0
-        if self.kernel is None:
-            self.kernel = "square"
-        if self.fillval is None:
-            self.fillval = "INDEF"
-        # Force definition of good bits
-        kwargs["good_bits"] = self.good_bits
-        kwargs["pixfrac"] = self.pixfrac
-        kwargs["kernel"] = str(self.kernel)
-        kwargs["fillval"] = str(self.fillval)
-        #  self.weight_type has a default value of None
-        # The other instruments read this parameter from a reference file
-        if self.wht_type is None:
-            self.wht_type = "ivm"
-
-        kwargs["wht_type"] = str(self.wht_type)
-        kwargs["pscale_ratio"] = self.pixel_scale_ratio
-        kwargs.pop("pixel_scale_ratio")
-
-        for k, v in kwargs.items():
-            if k in [
-                "pixfrac",
-                "kernel",
-                "fillval",
-                "wht_type",
-                "pscale_ratio",
-            ]:
-                log.info("  using: %s=%s", k, repr(v))
-
-        return kwargs

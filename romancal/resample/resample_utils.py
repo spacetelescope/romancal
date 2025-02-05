@@ -174,50 +174,6 @@ def build_driz_weight(
     return result.astype(np.float32)
 
 
-def build_mask(dqarr, bitvalue):
-    """
-    Build a bit mask from an input DQ array and a bitvalue flag.
-
-    Parameters
-    ----------
-    dqarr : numpy.ndarray
-        Input DQ array.
-    bitvalue : str
-        Bitvalue flag.
-
-    Returns
-    -------
-    ndarray
-        Bit mask where 1 represents good and 0 represents bad.
-
-    Notes
-    -----
-    - The function interprets the bitvalue flag using the
-      `astropy.nddata.bitmask.interpret_bit_flags` function.
-    - If the bitvalue is None, the function returns a bit mask with all elements
-      set to 1.
-    - Otherwise, the function performs a bitwise AND operation between the dqarr and
-      the complement of the bitvalue, and then applies a logical NOT operation to
-      obtain the bit mask.
-    - The resulting bit mask is returned as a `numpy.ndarray` of dtype `numpy.uint8`.
-    """
-    warnings.warn(
-        "'build_mask' has been deprecated since release 0.16.3. "
-        "Use functions from astropy.nddata.bitmask module instead such as "
-        "bitfield_to_boolean_mask().",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    dqmask = bitfield_to_boolean_mask(
-        dqarr,
-        bitvalue,
-        good_mask_value=1,
-        dtype=np.uint8,
-        flag_name_map=pixel,
-    )
-    return dqmask
-
-
 def calc_gwcs_pixmap(in_wcs, out_wcs, shape=None):
     """
     Generate a pixel map grid using the input and output WCS.

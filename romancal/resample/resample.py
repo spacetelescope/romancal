@@ -5,7 +5,7 @@ import os
 import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-from drizzle import cdrizzle, util
+from drizzle import cdrizzle
 from roman_datamodels import datamodels, maker_utils, stnode
 from stcal.alignment.util import compute_s_region_keyword, compute_scale
 
@@ -18,11 +18,7 @@ from . import gwcs_drizzle, resample_utils
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-__all__ = ["OutputTooLargeError", "ResampleData"]
-
-
-class OutputTooLargeError(MemoryError):
-    """Raised when the output is too large for in-memory instantiation"""
+__all__ = ["ResampleData"]
 
 
 class ResampleData:
@@ -55,7 +51,12 @@ class ResampleData:
         good_bits="0",
         pscale_ratio=1.0,
         pscale=None,
-        **kwargs,
+        in_memory=True,
+        output_wcs=None,
+        output_shape=None,
+        crpix=None,
+        crval=None,
+        rotation=None,
     ):
         """
         Parameters
@@ -66,19 +67,6 @@ class ResampleData:
 
         output : str
             filename for output
-
-        kwargs : dict
-            Other parameters.
-
-            .. note::
-                ``output_shape`` is in the ``x, y`` order.
-
-            .. note::
-                ``in_memory`` controls whether or not the resampled
-                array from ``resample_many_to_many()``
-                should be kept in memory or written out to disk and
-                deleted from memory. Default value is `True` to keep
-                all products in memory.
         """
         if (input_models is None) or (len(input_models) == 0):
             raise ValueError(
@@ -94,7 +82,7 @@ class ResampleData:
         self.fillval = fillval
         self.weight_type = wht_type
         self.good_bits = good_bits
-        self.in_memory = kwargs.get("in_memory", True)
+        self.in_memory = in_memory
         if "target" in input_models.asn:
             self.location_name = input_models.asn["target"]
         else:
@@ -104,12 +92,6 @@ class ResampleData:
         log.info(f"Driz parameter pixfrac: {self.pixfrac}")
         log.info(f"Driz parameter fillval: {self.fillval}")
         log.info(f"Driz parameter weight_type: {self.weight_type}")
-
-        output_wcs = kwargs.get("output_wcs", None)
-        output_shape = kwargs.get("output_shape", None)
-        crpix = kwargs.get("crpix", None)
-        crval = kwargs.get("crval", None)
-        rotation = kwargs.get("rotation", None)
 
         if pscale is not None:
             log.info(f"Output pixel scale: {pscale} arcsec.")
@@ -151,7 +133,7 @@ class ResampleData:
             models = list(self.input_models)
 
             # update meta.basic
-            populate_mosaic_basic(self.blank_output, models)
+            self.blank_output.meta.basic.product_type = "TBD"
 
             # update meta.cal_step
             self.blank_output.meta.cal_step = maker_utils.mk_l3_cal_step(
@@ -164,13 +146,26 @@ class ResampleData:
                 cal_logs = model.meta.cal_logs
                 # removing meta.cal_logs
                 del model.meta["cal_logs"]
+
                 # Update the output with all the component metas
-                populate_mosaic_individual(self.blank_output, [model])
+                self.blank_output.append_individual_image_meta(model.meta)
+
                 # re-attaching cal_logs to meta
                 model.meta.cal_logs = cal_logs
 
             # update meta data and wcs
-            l2_into_l3_meta(self.blank_output.meta, models[0].meta)
+            l2_meta = models[0].meta
+            self.blank_output.meta.basic.visit = l2_meta.observation.visit
+            self.blank_output.meta.basic.segment = l2_meta.observation.segment
+            self.blank_output.meta.basic["pass"] = l2_meta.observation["pass"]
+            self.blank_output.meta.basic.program = l2_meta.observation.program
+            self.blank_output.meta.basic.optical_element = (
+                l2_meta.instrument.optical_element
+            )
+            self.blank_output.meta.basic.instrument = l2_meta.instrument.name
+            self.blank_output.meta.coordinates = l2_meta.coordinates
+            self.blank_output.meta.program = l2_meta.program
+
             self.blank_output.meta.wcs = self.output_wcs
             gwcs_into_l3(self.blank_output, self.output_wcs)
 
@@ -206,7 +201,11 @@ class ResampleData:
         output_model.meta["resample"] = maker_utils.mk_resample()
         output_model.meta.basic.location_name = self.location_name
 
-        copy_asn_info_from_library(input_models, output_model)
+        # copy over asn information
+        if (asn_pool := input_models.asn.get("asn_pool", None)) is not None:
+            output_model.meta.asn.pool_name = asn_pool
+        if (asn_table_name := input_models.asn.get("table_name", None)) is not None:
+            output_model.meta.asn.table_name = asn_table_name
 
         with input_models:
             example_image = input_models.borrow(indices[0])
@@ -539,18 +538,20 @@ class ResampleData:
             f"Mean, max exposure times: {total_exposure_time:.1f}, "
             f"{max_exposure_time:.1f}"
         )
-        exposure_times = {"start": [], "end": []}
+        exposure_times = {"start": [], "end": [], "mid": []}
         with self.input_models:
             for indices in self.input_models.group_indices.values():
                 index = indices[0]
                 model = self.input_models.borrow(index)
                 exposure_times["start"].append(model.meta.exposure.start_time)
                 exposure_times["end"].append(model.meta.exposure.end_time)
+                exposure_times["mid"].append(model.meta.exposure.mid_time.mjd)
                 self.input_models.shelve(model, index, modify=False)
 
         # Update some basic exposure time values based on output_model
         output_model.meta.basic.mean_exposure_time = total_exposure_time
         output_model.meta.basic.time_first_mjd = min(exposure_times["start"]).mjd
+        output_model.meta.basic.time_mean_mjd = np.mean(exposure_times["mid"])
         output_model.meta.basic.time_last_mjd = max(exposure_times["end"]).mjd
         output_model.meta.basic.max_exposure_time = max_exposure_time
         output_model.meta.resample.product_exposure_time = max_exposure_time
@@ -673,7 +674,7 @@ class ResampleData:
         """
 
         # Insure that the fillval parameter gets properly interpreted for use with tdriz
-        fillval = "INDEF" if util.is_blank(str(fillval)) else str(fillval)
+        fillval = "INDEF" if str(fillval).strip() == "" else str(fillval)
         if insci.dtype > np.float32:
             insci = insci.astype(np.float32)
 
@@ -729,39 +730,6 @@ class ResampleData:
             wtscale=wtscale,
             fillstr=fillval,
         )
-
-
-def l2_into_l3_meta(l3_meta, l2_meta):
-    """Update the level 3 meta with info from the level 2 meta
-
-    Parameters
-    ----------
-    l3_meta : dict
-        The meta to update. This is updated in-place
-
-    l2_meta : stnode
-        The Level 2-like meta to pull from
-
-    Notes
-    -----
-    The list of meta that is pulled from the Level 2 meta into the Level 3 meta is as follows:
-    basic.visit: observation.visit
-    basic.segment: observation.segment
-    basic.pass: observation.pass
-    basic.program: observation.program
-    basic.optical_element: optical_element
-    basic.instrument: instrument.name
-    basic.telescope: telescope
-    program: program
-    """
-    l3_meta.basic.visit = l2_meta.observation.visit
-    l3_meta.basic.segment = l2_meta.observation.segment
-    l3_meta.basic["pass"] = l2_meta.observation["pass"]
-    l3_meta.basic.program = l2_meta.observation.program
-    l3_meta.basic.optical_element = l2_meta.instrument.optical_element
-    l3_meta.basic.instrument = l2_meta.instrument.name
-    l3_meta.coordinates = l2_meta.coordinates
-    l3_meta.program = l2_meta.program
 
 
 def gwcs_into_l3(model, wcs):
@@ -870,97 +838,3 @@ def calc_pa(wcs, ra, dec):
     coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
 
     return coord.position_angle(delta_coord).degree
-
-
-def populate_mosaic_basic(
-    output_model: datamodels.MosaicModel, input_models: list | ModelLibrary
-):
-    """
-    Populate basic metadata fields in the output mosaic model based on input models.
-
-    Parameters
-    ----------
-    output_model : MosaicModel
-        Object to populate with basic metadata.
-    input_models : [List, ModelLibrary]
-        List of input data models from which to extract the metadata.
-        ModelLibrary is also supported.
-
-    Returns
-    -------
-    None
-    """
-
-    input_meta = [datamodel.meta for datamodel in input_models]
-
-    # time data
-    output_model.meta.basic.time_first_mjd = np.min(
-        [x.exposure.start_time.mjd for x in input_meta]
-    )
-    output_model.meta.basic.time_last_mjd = np.max(
-        [x.exposure.end_time.mjd for x in input_meta]
-    )
-    output_model.meta.basic.time_mean_mjd = np.mean(
-        [x.exposure.mid_time.mjd for x in input_meta]
-    )
-
-    # observation data
-    output_model.meta.basic.visit = (
-        input_meta[0].observation.visit
-        if len({x.observation.visit for x in input_meta}) == 1
-        else -1
-    )
-    output_model.meta.basic.segment = (
-        input_meta[0].observation.segment
-        if len({x.observation.segment for x in input_meta}) == 1
-        else -1
-    )
-    output_model.meta.basic["pass"] = (
-        input_meta[0].observation["pass"]
-        if len({x.observation["pass"] for x in input_meta}) == 1
-        else -1
-    )
-    output_model.meta.basic.program = (
-        input_meta[0].observation.program
-        if len({x.observation.program for x in input_meta}) == 1
-        else -1
-    )
-
-    # instrument data
-    output_model.meta.basic.optical_element = input_meta[0].instrument.optical_element
-    output_model.meta.basic.instrument = input_meta[0].instrument.name
-
-    # association product type
-    output_model.meta.basic.product_type = "TBD"
-
-
-def populate_mosaic_individual(
-    output_model: datamodels.MosaicModel, input_models: [list, ModelLibrary]
-):
-    """
-    Populate individual meta fields in the output mosaic model based on input models.
-
-    Parameters
-    ----------
-    output_model : MosaicModel
-        Object to populate with basic metadata.
-    input_models : [List, ModelLibrary]
-        List of input data models from which to extract the metadata.
-        ModelLibrary is also supported.
-
-    Returns
-    -------
-    None
-    """
-
-    input_metas = [datamodel.meta for datamodel in input_models]
-    for input_meta in input_metas:
-        output_model.append_individual_image_meta(input_meta)
-
-
-def copy_asn_info_from_library(input_models, output_model):
-    # copy over asn information
-    if (asn_pool := input_models.asn.get("asn_pool", None)) is not None:
-        output_model.meta.asn.pool_name = asn_pool
-    if (asn_table_name := input_models.asn.get("table_name", None)) is not None:
-        output_model.meta.asn.table_name = asn_table_name
