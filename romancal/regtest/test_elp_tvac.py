@@ -1,15 +1,11 @@
 """Test that TVAC/FPS run in the pipeline"""
-from pathlib import Path
 
 import numpy as np
 import pytest
 import roman_datamodels as rdm
 from gwcs.wcstools import grid_from_bounding_box
-from numpy.testing import assert_allclose
-from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
 
-from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
 from .regtestdata import compare_asdf
@@ -54,6 +50,7 @@ def output_model(output_filename):
 @pytest.fixture(scope="module")
 def truth_filename(run_elp):
     return run_elp.truth
+
 
 @pytest.mark.soctests
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
