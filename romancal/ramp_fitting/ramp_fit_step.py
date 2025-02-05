@@ -196,6 +196,7 @@ def create_image_model(input_model, image_info):
     meta["cal_step"]["ramp_fit"] = "INCOMPLETE"
     meta["cal_logs"] = maker_utils.mk_cal_logs()
     meta["photometry"] = maker_utils.mk_photometry()
+    meta['statistics'] = maker_utils.mk_statistics()
     inst = {
         "meta": meta,
         "data": data,
