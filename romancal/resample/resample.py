@@ -51,7 +51,12 @@ class ResampleData:
         good_bits="0",
         pscale_ratio=1.0,
         pscale=None,
-        **kwargs,
+        in_memory=True,
+        output_wcs=None,
+        output_shape=None,
+        crpix=None,
+        crval=None,
+        rotation=None,
     ):
         """
         Parameters
@@ -62,19 +67,6 @@ class ResampleData:
 
         output : str
             filename for output
-
-        kwargs : dict
-            Other parameters.
-
-            .. note::
-                ``output_shape`` is in the ``x, y`` order.
-
-            .. note::
-                ``in_memory`` controls whether or not the resampled
-                array from ``resample_many_to_many()``
-                should be kept in memory or written out to disk and
-                deleted from memory. Default value is `True` to keep
-                all products in memory.
         """
         if (input_models is None) or (len(input_models) == 0):
             raise ValueError(
@@ -90,7 +82,7 @@ class ResampleData:
         self.fillval = fillval
         self.weight_type = wht_type
         self.good_bits = good_bits
-        self.in_memory = kwargs.get("in_memory", True)
+        self.in_memory = in_memory
         if "target" in input_models.asn:
             self.location_name = input_models.asn["target"]
         else:
@@ -100,12 +92,6 @@ class ResampleData:
         log.info(f"Driz parameter pixfrac: {self.pixfrac}")
         log.info(f"Driz parameter fillval: {self.fillval}")
         log.info(f"Driz parameter weight_type: {self.weight_type}")
-
-        output_wcs = kwargs.get("output_wcs", None)
-        output_shape = kwargs.get("output_shape", None)
-        crpix = kwargs.get("crpix", None)
-        crval = kwargs.get("crval", None)
-        rotation = kwargs.get("rotation", None)
 
         if pscale is not None:
             log.info(f"Output pixel scale: {pscale} arcsec.")

@@ -256,7 +256,6 @@ def detect_outliers(
         resamp = ResampleData(
             library,
             single=True,
-            blendheaders=False,
             # FIXME prior code provided weight_type when only wht_type is understood
             # both default to 'ivm' but tests that set this to something else did
             # not change the resampling weight type. For now, disabling it to match
