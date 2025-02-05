@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING
 
 import asdf
 import numpy as np
-from astropy.extern.configobj.configobj import ConfigObj
-from astropy.extern.configobj.validate import Validator
 from roman_datamodels import datamodels
 from stcal.alignment import util
 
@@ -111,16 +109,14 @@ class ResampleStep(RomanStep):
                 # resample can only handle 2D images, not 3D cubes, etc
                 raise RuntimeError(f"Input {input_models[0]} is not a 2D image.")
 
-        self.wht_type = self.weight_type
-        self.log.info("Setting drizzle's default parameters...")
-        kwargs = self.set_drizzle_defaults()
-
         # Issue a warning about the use of exptime weighting
-        if self.wht_type == "exptime":
+        if self.weight_type == "exptime":
             self.log.warning("Use of EXPTIME weighting will result in incorrect")
             self.log.warning("propagated errors in the resampled product")
 
         # Custom output WCS parameters.
+        self.log.info("Setting drizzle's default parameters...")
+        kwargs = {}
         # Modify get_drizpars if any of these get into reference files:
         kwargs["output_shape"] = self._check_list_pars(
             self.output_shape, "output_shape", min_vals=[1, 1]
@@ -134,6 +130,21 @@ class ResampleStep(RomanStep):
         kwargs["pscale"] = self.pixel_scale
         kwargs["pscale_ratio"] = self.pixel_scale_ratio
         kwargs["in_memory"] = self.in_memory
+        kwargs["good_bits"] = self.good_bits
+        kwargs["wht_type"] = str(self.weight_type)
+        kwargs["fillval"] = str(self.fillval)
+        kwargs["kernel"] = str(self.kernel)
+        kwargs["pixfrac"] = self.pixfrac
+
+        for k, v in kwargs.items():
+            if k in [
+                "pixfrac",
+                "kernel",
+                "fillval",
+                "wht_type",
+                "pscale_ratio",
+            ]:
+                log.info("  using: %s=%s", k, repr(v))
 
         # Call the resampling routine
         resamp = ResampleData(input_models, output=output, **kwargs)
@@ -249,42 +260,3 @@ class ResampleStep(RomanStep):
         """Update pixel scale keywords"""
         if model.meta.photometry.pixel_area is not None:
             model.meta.photometry.pixel_area *= model.meta.resample.pixel_scale_ratio**2
-
-    def set_drizzle_defaults(self):
-        """Set the default parameters for drizzle."""
-        configspec = self.load_spec_file()
-        config = ConfigObj(configspec=configspec)
-        if config.validate(Validator()):
-            kwargs = config.dict()
-
-        if self.pixfrac is None:
-            self.pixfrac = 1.0
-        if self.kernel is None:
-            self.kernel = "square"
-        if self.fillval is None:
-            self.fillval = "INDEF"
-        # Force definition of good bits
-        kwargs["good_bits"] = self.good_bits
-        kwargs["pixfrac"] = self.pixfrac
-        kwargs["kernel"] = str(self.kernel)
-        kwargs["fillval"] = str(self.fillval)
-        #  self.weight_type has a default value of None
-        # The other instruments read this parameter from a reference file
-        if self.wht_type is None:
-            self.wht_type = "ivm"
-
-        kwargs["wht_type"] = str(self.wht_type)
-        kwargs["pscale_ratio"] = self.pixel_scale_ratio
-        kwargs.pop("pixel_scale_ratio")
-
-        for k, v in kwargs.items():
-            if k in [
-                "pixfrac",
-                "kernel",
-                "fillval",
-                "wht_type",
-                "pscale_ratio",
-            ]:
-                log.info("  using: %s=%s", k, repr(v))
-
-        return kwargs
