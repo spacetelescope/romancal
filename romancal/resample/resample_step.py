@@ -176,7 +176,8 @@ class ResampleStep(RomanStep):
             else self.pixel_scale_ratio
         )
         model.meta.resample.pixfrac = kwargs["pixfrac"]
-        self.update_phot_keywords(model)
+        if model.meta.photometry.pixel_area is not None:
+            model.meta.photometry.pixel_area *= model.meta.resample.pixel_scale_ratio**2
         model.meta.resample["good_bits"] = kwargs["good_bits"]
 
     @staticmethod
@@ -255,8 +256,3 @@ class ResampleStep(RomanStep):
             )
 
         return wcs
-
-    def update_phot_keywords(self, model):
-        """Update pixel scale keywords"""
-        if model.meta.photometry.pixel_area is not None:
-            model.meta.photometry.pixel_area *= model.meta.resample.pixel_scale_ratio**2

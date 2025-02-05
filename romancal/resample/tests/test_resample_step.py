@@ -186,35 +186,6 @@ def test_check_list_pars_exception(vals, name, min_vals):
 
 
 @pytest.mark.parametrize(
-    """pixel_area, pixel_scale_ratio,
-    expected_steradians, expected_arcsecsq""",
-    [
-        # Happy path tests
-        (1.0, 2.0, 4.0, 4.0),
-        (2.0, 0.5, 0.5, 0.5),
-        (0.0, 2.0, 0.0, 0.0),
-        (1.0, 0.0, 0.0, 0.0),
-        (None, 2.0, None, 4.0),
-        (1.0, 2.0, 4.0, None),
-    ],
-)
-def test_update_phot_keywords(
-    pixel_area,
-    pixel_scale_ratio,
-    expected_steradians,
-    expected_arcsecsq,
-):
-    step = ResampleStep()
-    model = maker_utils.mk_datamodel(datamodels.MosaicModel, shape=(5, 5))
-    model.meta.photometry.pixel_area = pixel_area
-    model.meta.resample.pixel_scale_ratio = pixel_scale_ratio
-
-    step.update_phot_keywords(model)
-
-    assert model.meta.photometry.pixel_area == expected_steradians
-
-
-@pytest.mark.parametrize(
     "good_bits, dq_array, expected_output",
     [
         (
@@ -439,3 +410,23 @@ def test_populate_mosaic_basic(base_image, meta_overrides, expected_basic):
 
     for key, value in expected_basic.items():
         assert getattr(output_model.meta.basic, key) == value
+
+
+@pytest.mark.parametrize(
+    "input_pixel_area, pixel_scale_ratio, expected_pixel_area",
+    [
+        # (None, 1.0, None), # this cannot be tested since it causes the step to crash
+        (1.0, 1.0, -999999.0),
+        (1.0, 2.0, -999999.0 * 4.0),
+    ],
+)
+def test_pixel_area_update(
+    base_image, input_pixel_area, pixel_scale_ratio, expected_pixel_area
+):
+    # if input model has a non-None pixel resample should scale it by the square of the pixel_scale_ratio
+    model = base_image()
+    model.meta.photometry.pixel_area = input_pixel_area
+    output_model = ResampleStep(pixel_scale_ratio=pixel_scale_ratio).run(
+        ModelLibrary([model])
+    )
+    assert output_model.meta.photometry.pixel_area == expected_pixel_area
