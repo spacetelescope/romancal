@@ -18,6 +18,8 @@ from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
 
+from photutils.segmentation import SegmentationImage
+
 if TYPE_CHECKING:
     from typing import ClassVar
 
@@ -50,7 +52,9 @@ class SourceCatalogStep(RomanStep):
         ci1_star_threshold = float(default=2.0)  # CI 1 star threshold
         ci2_star_threshold = float(default=1.8)  # CI 2 star threshold
         suffix = string(default='cat')        # Default suffix for output files
-        fit_psf = boolean(default=True)      # fit source PSFs for accurate astrometry?
+        fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
+        forced_segmentation = string(default='')  # force the use of this segmentation map
+        forced_catalog = string(default='')   # force the use of this catalog
     """
 
     def process(self, step_input):
@@ -99,6 +103,19 @@ class SourceCatalogStep(RomanStep):
                 else model.meta[key]
             )
             source_catalog_model.meta[key] = value
+
+        if self.forced_segmentation != '' or self.forced_catalog != '':
+            if not self.forced_segmentation != '' and self.forced_catalog != '':
+                raise ValueError(
+                    'When forcing photometry, both the forced_segmentation and '
+                    'forced_catalog arguments must be specified.')
+            source_catalog_model.meta['forced_segmentation'] = (
+                self.forced_segmentation)
+            source_catalog_model.meta['forced_catalog'] = self.forced_catalog
+            forced = True
+        else:
+            forced = False
+
         aperture_ee = (self.aperture_ee1, self.aperture_ee2, self.aperture_ee3)
         refdata = ReferenceData(model, aperture_ee)
         aperture_params = refdata.aperture_params
@@ -113,18 +130,30 @@ class SourceCatalogStep(RomanStep):
         )
         model.data -= bkg.background
 
-        convolved_data = convolve_data(
-            model.data, kernel_fwhm=self.kernel_fwhm, mask=coverage_mask
-        )
+        if not forced:
+            convolved_data = convolve_data(
+                model.data, kernel_fwhm=self.kernel_fwhm, mask=coverage_mask
+            )
 
-        segment_img = make_segmentation_image(
-            convolved_data,
-            snr_threshold=self.snr_threshold,
-            npixels=self.npixels,
-            bkg_rms=bkg.background_rms,
-            deblend=self.deblend,
-            mask=coverage_mask,
-        )
+            segment_img = make_segmentation_image(
+                convolved_data,
+                snr_threshold=self.snr_threshold,
+                npixels=self.npixels,
+                bkg_rms=bkg.background_rms,
+                deblend=self.deblend,
+                mask=coverage_mask,
+            )
+            detection_cat = None
+        else:  # forced photometry
+            segmodel = datamodels.open(self.forced_segmentation)
+            import pdb
+            pdb.set_trace()
+            segment_img = SegmentationImage(segmodel.data[...])
+            convolved_data = None
+            detmodel = datamodels.open(self.forced_catalog)
+            from types import SimpleNamespace
+            detection_cat = SimpleNamespace()
+            detection_cat.segm_sourcecat = detmodel.source_catalog
 
         if segment_img is None:  # no sources found
             source_catalog_model.source_catalog = Table()
@@ -141,6 +170,7 @@ class SourceCatalogStep(RomanStep):
                 ci_star_thresholds,
                 self.kernel_fwhm,
                 self.fit_psf,
+                detection_cat=detection_cat,
             )
 
             # put the resulting catalog in the model
