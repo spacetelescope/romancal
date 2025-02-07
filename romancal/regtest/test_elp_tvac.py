@@ -1,10 +1,8 @@
 """Test that TVAC/FPS run in the pipeline"""
 
-import numpy as np
 import pytest
 import roman_datamodels as rdm
 from gwcs.wcstools import grid_from_bounding_box
-from roman_datamodels.dqflags import pixel
 
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
@@ -19,7 +17,7 @@ def run_elp(rtdata_module):
     rtdata = rtdata_module
 
     # Get reference
-    rtdata.get_data('references/dark_ma510.asdf')
+    rtdata.get_data("references/dark_ma510.asdf")
 
     input_data = "TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
@@ -32,7 +30,7 @@ def run_elp(rtdata_module):
         "roman_elp",
         rtdata.input,
         "--steps.dark_current.override_dark=dark_ma510.asdf",
-        "--steps.rampfit.override_dark=dark_ma510.asdf"
+        "--steps.rampfit.override_dark=dark_ma510.asdf",
     ]
     ExposurePipeline.from_cmdline(args)
 
