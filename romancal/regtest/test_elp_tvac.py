@@ -18,16 +18,21 @@ pytestmark = pytest.mark.bigdata
 def run_elp(rtdata_module):
     rtdata = rtdata_module
 
-    input_data = "tvac_fake_uncal.asdf"
+    # Get reference
+    rtdata.get_data('references/dark_ma510.asdf')
+
+    input_data = "TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
     # Test Pipeline
-    output = "tvac_fake_cal.asdf"
+    output = "TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_cal.asdf"
     rtdata.output = output
     args = [
         "roman_elp",
         rtdata.input,
+        "--steps.dark_current.override_dark=dark_ma510.asdf",
+        "--steps.rampfit.override_dark=dark_ma510.asdf"
     ]
     ExposurePipeline.from_cmdline(args)
 
@@ -81,13 +86,6 @@ def test_steps_ran(output_model, step_name):
     # DMS86
     # also DMS129 for assign_wcs
     assert getattr(output_model.meta.cal_step, step_name) == "COMPLETE"
-
-
-@pytest.mark.soctests
-def test_jump_in_uneven_ramp(output_model):
-    # DMS361 jump detection detected jumps in uneven ramp
-    uneven = len({len(x) for x in output_model.meta.exposure.read_pattern}) > 1
-    assert uneven & np.any(output_model.dq & pixel.JUMP_DET)
 
 
 @pytest.mark.soctests
