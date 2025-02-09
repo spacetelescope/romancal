@@ -55,19 +55,15 @@ def truth_filename(run_elp):
     return run_elp.truth
 
 
-@pytest.mark.soctests
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
 
-@pytest.mark.soctests
 def test_output_is_image_model(output_model):
-    # DMS280 result is an ImageModel
     assert isinstance(output_model, rdm.datamodels.ImageModel)
 
 
-@pytest.mark.soctests
 @pytest.mark.parametrize(
     "step_name",
     (
@@ -81,26 +77,19 @@ def test_output_is_image_model(output_model):
     ),
 )
 def test_steps_ran(output_model, step_name):
-    # DMS86
-    # also DMS129 for assign_wcs
     assert getattr(output_model.meta.cal_step, step_name) == "COMPLETE"
 
 
-@pytest.mark.soctests
 def test_has_a_wcs(output_model):
-    # DMS129
     assert output_model.meta.wcs is not None
 
 
 @pytest.mark.soctests
 def test_wcs_has_distortion_information(output_model):
-    # DMS129
     assert "v2v3" in output_model.meta.wcs.available_frames
 
 
-@pytest.mark.soctests
 def test_wcs_applies_distortion_correction(output_model):
-    # DMS129
     # compare coordinates before and after distortion correction has been applied
     # 1 - get new image array based on the model
     x0, y0 = grid_from_bounding_box(output_model.meta.wcs.bounding_box)
@@ -114,31 +103,23 @@ def test_wcs_applies_distortion_correction(output_model):
     assert (corrected_coords[1] != original_coords[1]).all()
 
 
-@pytest.mark.soctests
 @pytest.mark.parametrize(
     "arr_name", ("dq", "err", "var_poisson", "var_rnoise", "var_flat")
 )
 def test_array_exists(output_model, arr_name):
-    # DMS87
     assert hasattr(output_model, arr_name)
 
 
-@pytest.mark.soctests
 def test_has_exposure_time(output_model):
-    # DMS88 total exposure time exists
     assert "exposure_time" in output_model.meta.exposure
 
 
-@pytest.mark.soctests
 @pytest.mark.parametrize("meta_attribute", ("detector", "optical_element"))
 def test_instrument_meta(output_model, meta_attribute):
-    # DMS136 PSF tests
     assert meta_attribute in output_model.meta.instrument
 
 
-@pytest.mark.soctests
 def test_wcs_has_bounding_box(output_model):
-    # DMS89 WCS tests
     assert len(output_model.meta.wcs.bounding_box) == 2
 
 
