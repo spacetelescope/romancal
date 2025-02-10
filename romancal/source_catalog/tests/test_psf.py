@@ -13,7 +13,7 @@ from photutils.psf import PSFPhotometry
 from roman_datamodels import maker_utils as testutil
 from roman_datamodels.datamodels import ImageModel
 
-from romancal.lib.psf import create_gridded_psf_model, fit_psf_to_image_model
+from romancal.source_catalog.psf import create_gridded_psf_model, fit_psf_to_image_model
 
 n_trials = 15
 image_model_shape = (50, 50)
