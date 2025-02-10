@@ -219,9 +219,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         if subarray:
             subarray = "-" + subarray
 
-        product_name = (
-            "r{program}-{acid}" "_{target}" "_{instrument}" "_{opt_elem}{subarray}"
-        )
+        product_name = "r{program}-{acid}_{target}_{instrument}_{opt_elem}{subarray}"
         if "Full" in association.data["asn_rule"]:
             subarray = "Full"
 
@@ -396,7 +394,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         members.append(member)
         if member["exposerr"] not in _EMPTY:
             logger.warning(
-                f"Member {item['filename']} has exposure error \"{member['exposerr']}\""
+                f'Member {item["filename"]} has exposure error "{member["exposerr"]}"'
             )
 
         # Update meta info
