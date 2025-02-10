@@ -121,27 +121,3 @@ def test_instrument_meta(output_model, meta_attribute):
 
 def test_wcs_has_bounding_box(output_model):
     assert len(output_model.meta.wcs.bounding_box) == 2
-
-
-def test_elp_input_dm(rtdata, ignore_asdf_paths):
-    """Test for input roman Datamodel to exposure level pipeline"""
-    input_data = "r0000101001001001001_0001_wfi01_uncal.asdf"
-    rtdata.get_data(f"WFI/image/{input_data}")
-    dm_input = rdm.open(rtdata.input)
-
-    # Test Pipeline with input datamodel
-    output = "r0000101001001001001_0001_wfi01_cal.asdf"
-    rtdata.output = output
-    ExposurePipeline.call(dm_input, save_results=True)
-    rtdata.get_truth(f"truth/WFI/image/{output}")
-
-    # Ensure step completion is as expected
-    with rdm.open(rtdata.output) as model:
-        assert model.meta.cal_step.dq_init == "COMPLETE"
-        assert model.meta.cal_step.saturation == "COMPLETE"
-        assert model.meta.cal_step.linearity == "COMPLETE"
-        assert model.meta.cal_step.dark == "COMPLETE"
-        assert model.meta.cal_step.ramp_fit == "COMPLETE"
-        assert model.meta.cal_step.assign_wcs == "COMPLETE"
-        assert model.meta.cal_step.flat_field == "COMPLETE"
-        assert model.meta.cal_step.photom == "COMPLETE"
