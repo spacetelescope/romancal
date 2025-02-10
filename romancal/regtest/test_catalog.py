@@ -4,6 +4,7 @@ import asdf
 import pytest
 
 from romancal.stpipe import RomanStep
+from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
@@ -71,16 +72,21 @@ def test_forced_catalog(rtdata_module):
     rtdata = rtdata_module
     input_deep_segm = 'r0099101001001001001_r274dp63x31y81_prompt_F158_segm.asdf'
     input_shallow_coadd = 'r0099101001001001001_0001_r274dp63x31y81_prompt_F158_coadd.asdf'
-    truth_cat = 'r0099101001001001001_0001_r274dp63x31y81_prompt_F158_cat.asdf'
-    rtdata.get_data(f'WFI/image/{input_deep_coadd}')
+    truth_cat = 'r0099101001001001001_0001_r274dp63x31y81_prompt_F158_force_cat.asdf'
+    rtdata.get_data(f'WFI/image/{input_deep_segm}')
     rtdata.get_data(f'WFI/image/{input_shallow_coadd}')
     truth_cat = rtdata.get_truth(f'WFI/image/{truth_cat}')
     rtdata.input = input_shallow_coadd
+    outputfn = input_shallow_coadd.rsplit("_", 1)[0] + "_force_cat.asdf"
+    rtdata.output = outputfn
+
     args = [
         "romancal.step.SourceCatalogStep",
         rtdata.input,
         "--forced_segmentation",
-        input_deep_segm
+        input_deep_segm,
+        "--output_file",
+        outputfn,
     ]
     RomanStep.from_cmdline(args)
 

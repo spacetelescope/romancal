@@ -634,15 +634,15 @@ class RomanSourceCatalog:
         """
         Data quality flags.
         """
-        xyidx = np.round(self._xypos).astype(int)
         badpos = (~np.isfinite(self._xypos[:, 0]) |
                   ~np.isfinite(self._xypos[:, 1]))
         m = ~badpos
-        flags = np.full(xyidx.shape[0], pixel.DO_NOT_USE, dtype=int)
+        xyidx = np.round(self._xypos[m, :]).astype(int)
+        flags = np.full(self._xypos.shape[0], pixel.DO_NOT_USE, dtype=int)
 
         try:
             # L2 images have a dq array
-            dqflags = self.model.dq[xyidx[m, 1], xyidx[m, 0]]
+            dqflags = self.model.dq[xyidx[:, 1], xyidx[:, 0]]
             # if dqflags contains the DO_NOT_USE flag, set to DO_NOT_USE
             # (dq=1), otherwise 0
             flags[m] = dqflags & pixel.DO_NOT_USE
@@ -650,7 +650,7 @@ class RomanSourceCatalog:
         except AttributeError:
             # L3 images
             mask = self.model.weight == 0
-            flags[m] = mask[xyidx[m, 1], xyidx[m, 0]].astype(int)
+            flags[m] = mask[xyidx[:, 1], xyidx[:, 0]].astype(int)
 
         return flags
 
@@ -926,7 +926,7 @@ class RomanSourceCatalog:
         if self.n_sources == 1:
             return -1
 
-        nn_label = self.label[self._kdtree_query[1]]
+        nn_label = self.label[self._kdtree_query[1]].astype('i4')
         # assign a label of -1 for non-finite xypos
         nn_label[self._xypos_nonfinite_mask] = -1
 
@@ -1020,8 +1020,11 @@ class RomanSourceCatalog:
 
         else:
             # NOTE: label is need to join the tables
+            _ = self.extras_colnames  # trigger updating the descriptions
             colnames = [
                 "label",
+                "flags",
+                "is_extended",
                 "isophotal_flux",
                 "isophotal_flux_err",
                 "kron_flux",
