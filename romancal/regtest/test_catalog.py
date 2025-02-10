@@ -65,3 +65,44 @@ def fields(catalog):
 )
 def test_has_field(fields, field):
     assert field in fields
+
+
+def test_forced_catalog(rtdata_module):
+    rtdata = rtdata_module
+    input_deep_segm = 'r0099101001001001001_r274dp63x31y81_prompt_F158_segm.asdf'
+    input_shallow_coadd = 'r0099101001001001001_0001_r274dp63x31y81_prompt_F158_coadd.asdf'
+    truth_cat = 'r0099101001001001001_0001_r274dp63x31y81_prompt_F158_cat.asdf'
+    rtdata.get_data(f'WFI/image/{input_deep_coadd}')
+    rtdata.get_data(f'WFI/image/{input_shallow_coadd}')
+    truth_cat = rtdata.get_truth(f'WFI/image/{truth_cat}')
+    rtdata.input = input_shallow_coadd
+    args = [
+        "romancal.step.SourceCatalogStep",
+        rtdata.input,
+        "--forced_segmentation",
+        input_deep_segm
+    ]
+    RomanStep.from_cmdline(args)
+
+    afcat = asdf.open(outputfn)
+    fieldlist = ['forced_kron_flux', 'forced_isophotal_flux', 'forced_aper30_flux',
+                 'forced_semimajor_sigma', 'forced_semiminor_sigma', 'forced_ellipticity']
+    for field in fieldlist:
+        assert field in afcat["roman"]["source_catalog"].dtype.names
+
+    step = SourceCatalogStep()
+    step.log.info(
+        "DMS397: source catalog includes fields: "
+        + ", ".join(fieldlist) + ", indicating measurements of morphology and photometry "
+        "at multiple epochs."
+    )
+
+    aftruth = asdf.open(truth_cat)
+    assert set(aftruth["roman"]["source_catalog"].dtype.names) == set(
+        afcat["roman"]["source_catalog"].dtype.names
+    )
+    # weak assertion that our truth file must at least have the same
+    # catalog fields as the file produced here.  Exactly matching rows
+    # would require a lot of okifying things that aren't obviously
+    # the same, but we can easily check that the columns match up
+    # by name.

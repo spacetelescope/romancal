@@ -547,8 +547,15 @@ class RomanSourceCatalog:
                 bkg_data = mask.get_values(self.model.data)
                 values = sigclip(bkg_data, masked=False)
                 nvalues.append(values.size)
-                bkg_median.append(np.median(values))
-                bkg_std.append(np.std(values))
+                med = np.median(values)
+                std = np.std(values)
+                if values.size == 0:
+                    # handle case where source is completely masked due to
+                    # forced photometry
+                    med *= self.model.data.unit
+                    std *= self.model.data.unit
+                bkg_median.append(med)
+                bkg_std.append(std)
 
             nvalues = np.array(nvalues)
             bkg_median = u.Quantity(bkg_median)
@@ -628,18 +635,22 @@ class RomanSourceCatalog:
         Data quality flags.
         """
         xyidx = np.round(self._xypos).astype(int)
+        badpos = (~np.isfinite(self._xypos[:, 0]) |
+                  ~np.isfinite(self._xypos[:, 1]))
+        m = ~badpos
+        flags = np.full(xyidx.shape[0], pixel.DO_NOT_USE, dtype=int)
 
         try:
             # L2 images have a dq array
-            dqflags = self.model.dq[xyidx[:, 1], xyidx[:, 0]]
+            dqflags = self.model.dq[xyidx[m, 1], xyidx[m, 0]]
             # if dqflags contains the DO_NOT_USE flag, set to DO_NOT_USE
             # (dq=1), otherwise 0
-            flags = dqflags & pixel.DO_NOT_USE
+            flags[m] = dqflags & pixel.DO_NOT_USE
 
         except AttributeError:
             # L3 images
             mask = self.model.weight == 0
-            flags = mask[xyidx[:, 1], xyidx[:, 0]].astype(int)
+            flags[m] = mask[xyidx[m, 1], xyidx[m, 0]].astype(int)
 
         return flags
 

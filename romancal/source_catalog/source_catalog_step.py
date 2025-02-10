@@ -117,8 +117,8 @@ class SourceCatalogStep(RomanStep):
         refdata = ReferenceData(model, aperture_ee)
         aperture_params = refdata.aperture_params
 
-        mask = np.isnan(model.data)
-        coverage_mask = np.isnan(model.err)
+        mask = np.isnan(model.data) | (model.err <= 0)
+        coverage_mask = np.isnan(model.err) | (model.err <= 0)
         bkg = RomanBackground(
             model.data,
             box_size=self.bkg_boxsize,
@@ -144,7 +144,6 @@ class SourceCatalogStep(RomanStep):
         else:
             forced_segmodel = datamodels.open(self.forced_segmentation)
             segment_img = SegmentationImage(forced_segmodel.data[...])
-            
 
         if segment_img is None:  # no sources found
             cat = Table()
@@ -160,7 +159,8 @@ class SourceCatalogStep(RomanStep):
                 aperture_params,
                 ci_star_thresholds,
                 self.kernel_fwhm,
-                self.fit_psf,
+                self.fit_psf & (not forced),
+                # don't need to do PSF photometry here when forcing; happens later
             )
             cat = catobj.catalog
 
