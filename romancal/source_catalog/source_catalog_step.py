@@ -16,9 +16,12 @@ from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
 from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
+from romancal.multiband_catalog import utils
 from romancal.stpipe import RomanStep
 
 from photutils.segmentation import SegmentationImage
+
+from astropy.table import join
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -54,7 +57,6 @@ class SourceCatalogStep(RomanStep):
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
         forced_segmentation = string(default='')  # force the use of this segmentation map
-        forced_catalog = string(default='')   # force the use of this catalog
     """
 
     def process(self, step_input):
@@ -104,14 +106,9 @@ class SourceCatalogStep(RomanStep):
             )
             source_catalog_model.meta[key] = value
 
-        if self.forced_segmentation != '' or self.forced_catalog != '':
-            if not self.forced_segmentation != '' and self.forced_catalog != '':
-                raise ValueError(
-                    'When forcing photometry, both the forced_segmentation and '
-                    'forced_catalog arguments must be specified.')
+        if self.forced_segmentation != '':
             source_catalog_model.meta['forced_segmentation'] = (
                 self.forced_segmentation)
-            source_catalog_model.meta['forced_catalog'] = self.forced_catalog
             forced = True
         else:
             forced = False
@@ -130,33 +127,27 @@ class SourceCatalogStep(RomanStep):
         )
         model.data -= bkg.background
 
-        if not forced:
-            convolved_data = convolve_data(
-                model.data, kernel_fwhm=self.kernel_fwhm, mask=coverage_mask
-            )
+        detection_image = convolve_data(
+            model.data, kernel_fwhm=self.kernel_fwhm, mask=coverage_mask
+        )
 
+        if not forced:
             segment_img = make_segmentation_image(
-                convolved_data,
+                detection_image,
                 snr_threshold=self.snr_threshold,
                 npixels=self.npixels,
                 bkg_rms=bkg.background_rms,
                 deblend=self.deblend,
                 mask=coverage_mask,
             )
-            detection_cat = None
-        else:  # forced photometry
-            segmodel = datamodels.open(self.forced_segmentation)
-            import pdb
-            pdb.set_trace()
-            segment_img = SegmentationImage(segmodel.data[...])
-            convolved_data = None
-            detmodel = datamodels.open(self.forced_catalog)
-            from types import SimpleNamespace
-            detection_cat = SimpleNamespace()
-            detection_cat.segm_sourcecat = detmodel.source_catalog
+            segment_img.detection_image = detection_image
+        else:
+            forced_segmodel = datamodels.open(self.forced_segmentation)
+            segment_img = SegmentationImage(forced_segmodel.data[...])
+            
 
         if segment_img is None:  # no sources found
-            source_catalog_model.source_catalog = Table()
+            cat = Table()
         else:
             ci_star_thresholds = (
                 self.ci1_star_threshold,
@@ -165,16 +156,66 @@ class SourceCatalogStep(RomanStep):
             catobj = RomanSourceCatalog(
                 model,
                 segment_img,
-                convolved_data,
+                detection_image,
                 aperture_params,
                 ci_star_thresholds,
                 self.kernel_fwhm,
                 self.fit_psf,
-                detection_cat=detection_cat,
             )
+            cat = catobj.catalog
 
-            # put the resulting catalog in the model
-            source_catalog_model.source_catalog = catobj.catalog
+        if forced:
+            forced_detection_image = forced_segmodel.detection_image[...]
+            segment_img.detection_image = forced_detection_image
+            forcedcatobj = RomanSourceCatalog(
+                model,
+                segment_img,
+                forced_detection_image,
+                aperture_params,
+                ci_star_thresholds,
+                self.kernel_fwhm,
+                self.fit_psf,
+            )
+            # we have two catalogs, both using a specified set of
+            # pre-specified segments.  We want:
+            # - keep the original shape parameters computed from
+            #   the forced detection image.  These are needed to
+            #   describe where we have computed the forced photometry.
+            #   These keep their original names to match up with the deep
+            #   catalog used for forcing.
+            # - keep the newly measured fluxes and flags and sharpness
+            #   / roundness from the direct image; these give the new fluxes
+            #   at these locations
+            #   These gain a forced_ prefix.
+            # - keep the shapes measured from the new detection image.  These
+            #   seem to me to have less value but are explicitly called out in
+            #   a requirement, and it's not crazy to compute new centroids and
+            #   moments.
+            #   These gain a forced_prefix.
+            # - discard fluxes we measure with the new shapes from the new
+            #   detection image.
+            # At the end of the day you get a whole new catalog with the forced_
+            # prefix, plus some shape parameters that duplicate values in the
+            # original catalog used for forcing.
+            forcedcat = forcedcatobj.catalog
+            utils.prefix_colnames(
+                forcedcat, 'forced_',
+                colnames=utils.get_direct_image_columns(forcedcat))
+            utils.prefix_colnames(
+                cat, 'forced_',
+                colnames=utils.get_detection_image_columns(cat))
+            forcedcat.remove_columns(
+                [x for x in forcedcat.colnames if '_bbox_' in x])
+            cat.remove_columns(utils.get_direct_image_columns(cat))
+            forcedcat.meta = None  # redundant with cat.meta
+            cat = join(forcedcat, cat, keys="label", join_type="outer")
+            colnames = (
+                [x for x in cat.colnames if not x.startswith('forced_')] +
+                [x for x in cat.colnames if x.startswith('forced_')])
+            cat = cat[colnames]
+
+        # put the resulting catalog in the model
+        source_catalog_model.source_catalog = cat
 
         # always save the segmentation image and source catalog
         self.save_base_results(segment_img, source_catalog_model)
@@ -221,6 +262,7 @@ class SourceCatalogStep(RomanStep):
 
         if segment_img is not None:
             segmentation_model.data = segment_img.data.astype(np.uint32)
+            segmentation_model['detection_image'] = segment_img.detection_image
             self.save_model(
                 segmentation_model,
                 output_file=output_filename,

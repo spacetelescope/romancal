@@ -612,9 +612,6 @@ class RomanSourceCatalog:
         for the additional catalog values.
         """
         desc = {}
-        for idx, colname in enumerate(self.ci_colnames):
-            desc[colname] = self.ci_colname_descriptions[idx]
-
         desc["flags"] = "Data quality flags"
         desc["is_extended"] = "Flag indicating whether the source is extended"
         desc["sharpness"] = "The DAOFind source sharpness statistic"

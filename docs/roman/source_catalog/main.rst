@@ -76,8 +76,7 @@ Output Products
 
 Source Catalog Table
 ^^^^^^^^^^^^^^^^^^^^
-The output source catalog table is saved in `ECSV format
-<https://docs.astropy.org/en/stable/io/ascii/ecsv.html>`_.
+The output source catalog table is saved in `asdf` format.
 
 The table contains a row for each source, with the following default
 columns (assuming the default encircled energies of 30, 50, and 70):
@@ -91,7 +90,7 @@ columns (assuming the default encircled energies of 30, 50, and 70):
 +------------------------+----------------------------------------------------+
 | ycentroid              | Y pixel value of the source centroid (0 indexed)   |
 +------------------------+----------------------------------------------------+
-| sky_centroid           | Sky coordinate of the source centroid              |
+| ra/dec_centroid        | ra/dec coordinate of the source centroid           |
 +------------------------+----------------------------------------------------+
 | aper_bkg_flux          | The local background value calculated as the       |
 |                        | sigma-clipped median value in the background       |
@@ -126,14 +125,7 @@ columns (assuming the default encircled energies of 30, 50, and 70):
 |                        | 70% encircled energy circular aperture; should be  |
 |                        | used only for unresolved sources                   |
 +------------------------+----------------------------------------------------+
-| CI_50_30               | Concentration index calculated as (aper50_flux /   |
-|                        | aper30_flux)                                       |
-+------------------------+----------------------------------------------------+
-| CI_70_50               | Concentration index calculated as (aper70_flux /   |
-|                        | aper50_flux)                                       |
-+------------------------+----------------------------------------------------+
-| CI_70_30               | Concentration index calculated as (aper70_flux /   |
-|                        | aper30_flux)                                       |
+| flags                  | Flag recording DQ value of source central pixel    |
 +------------------------+----------------------------------------------------+
 | is_extended            | Flag indicating whether the source is extended     |
 +------------------------+----------------------------------------------------+
@@ -150,6 +142,10 @@ columns (assuming the default encircled energies of 30, 50, and 70):
 | isophotal_flux_err     | Isophotal flux error                               |
 +------------------------+----------------------------------------------------+
 | isophotal_area         | Isophotal area                                     |
++------------------------+----------------------------------------------------+
+| kron_flux              | Kron flux                                          |
++------------------------+----------------------------------------------------+
+| kron_flux_err          | Kron flux error                                    |
 +------------------------+----------------------------------------------------+
 | semimajor_sigma        | 1-sigma standard deviation along the semimajor     |
 |                        | axis of the 2D Gaussian function that has the same |
@@ -168,16 +164,16 @@ columns (assuming the default encircled energies of 30, 50, and 70):
 | sky_orientation        | The position angle (degrees) from North of the     |
 |                        | major axis                                         |
 +------------------------+----------------------------------------------------+
-| sky_bbox_ll            | Sky coordinate of the lower-left vertex of the     |
+| ra_bbox_ll, dec_bbox_ll| Sky coordinate of the lower-left vertex of the     |
 |                        | minimal bounding box of the source                 |
 +------------------------+----------------------------------------------------+
-| sky_bbox_ul            | Sky coordinate of the upper-left vertex of the     |
+| ra_bbox_ul, dec_bbox_ul| Sky coordinate of the upper-left vertex of the     |
 |                        | minimal bounding box of the source                 |
 +------------------------+----------------------------------------------------+
-| sky_bbox_lr            | Sky coordinate of the lower-right vertex of the    |
+| ra_bbox_lr, dec_bbox_lr| Sky coordinate of the lower-right vertex of the    |
 |                        | minimal bounding box of the source                 |
 +------------------------+----------------------------------------------------+
-| sky_bbox_ur            | Sky coordinate of the upper-right vertex of the    |
+| ra_bbox_ur, dec_bbox_ur| Sky coordinate of the upper-right vertex of the    |
 |                        | minimal bounding box of the source                 |
 +------------------------+----------------------------------------------------+
 
@@ -223,3 +219,46 @@ The segmentation map computed during the source finding process is saved
 to a single 2D image extension in a FITS file. Each image pixel contains an
 integer value corresponding to a source label number in the source catalog
 product. Pixels that don't belong to any source have a value of zero.
+
+
+Multiband Catalogs
+------------------
+Multiband catalogs use a combination of images to construct a deep
+detection image which is used to detect sources and find segments.
+The measured positions and shapes of the sources in these deep images
+are then used for aperture and Kron photometry in each filter.
+Catalog fields are broadly similar to those in the source catalog
+schema above.  However, they have the following differences:
+* Fields derived from the individual filter images are prefixed with
+  the name of the filter from which they were derived.  For example,
+  there will be a series of fields like ``<filter>_flux_psf`` giving
+  the PSF flux in each filter.
+* Fields derived from the detection image and segmentation map have no
+  filter prefix.
+
+Multiband catalogs are produced by the ``MultibandCatalogStep`` and
+take an association file as an argument, listing the different images
+which need to be photometered simultaneously.
+
+
+Forced Source Catalogs
+----------------------
+
+Source catalogs may optionally be produced by taking the segmentation
+image from one image (the "forcing" image) and asking to compute shapes and fluxes on those
+same segments in another image (the "forced" image).  The two images must be perfectly
+aligned for this to make sense.  In this mode, the source catalog
+contains a number of fields with the ``forced`` prefix in addition to
+those described above.  Fields without the "forced" prefix indicate
+shape and location information derived from forcing image and give the
+locations where information was measured on the forced image.  Fields
+with the ``forced`` prefix indicate values computed on the forced image,
+using the information from the forcing image.  For example, the field
+``forced_kron_flux`` is the Kron flux measured on the "forced" image
+using the centroid and shape information given in the ``xcentroid``,
+``ycentroid``, ``semimajor_sigma``, ``semiminor_sigma``, and ``orientation``
+fields.
+
+Forced source catalogs may be produced by specifying a segmentation
+image with the --forced_segmentation argument when running the source
+catalog step.

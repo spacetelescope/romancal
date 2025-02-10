@@ -235,3 +235,18 @@ cp ${l3name}_mbcat_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 # tests passing suffix to the pipeline
 strun roman_elp r0000101001001001001_0001_wfi01_uncal.asdf --steps.tweakreg.skip=True --suffix=star
 cp r0000101001001001001_0001_wfi01_star.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
+# 2nd L3 on skycell
+l3name="r0099101001001001001_0001_r274dp63x31y81_prompt_F158"
+asn_from_list r0000101001001001001_0001_wfi01_cal.asdf -o L3_mosaic_0001_asn.json --product-name $l3name --target r274dp63x31y81
+# The pipeline will silently do nothing and not return an error exit code if the output
+# file already exists.
+# see: https://github.com/spacetelescope/romancal/issues/1544
+# To work around this remove the expected output file
+if [ -f "${l3name}_coadd.asdf" ]; then
+    rm "${l3name}_coadd.asdf"
+fi
+strun roman_mos L3_mosaic_0001_asn.json
+cp L3_mosaic_0001_asn.json $outdir/roman-pipeline/dev/WFI/image/
+cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
+cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
