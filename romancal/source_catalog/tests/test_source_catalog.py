@@ -64,7 +64,7 @@ def make_test_image():
     noise_scale = 2.5
     noise = rng.normal(0, noise_scale, size=data.shape)
     data += noise
-    err = data * 0 + noise_scale
+    err = np.zeros_like(data) + noise_scale
 
     return data, err
 
