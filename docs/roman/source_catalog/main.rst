@@ -229,6 +229,7 @@ The measured positions and shapes of the sources in these deep images
 are then used for aperture and Kron photometry in each filter.
 Catalog fields are broadly similar to those in the source catalog
 schema above.  However, they have the following differences:
+
 * Fields derived from the individual filter images are prefixed with
   the name of the filter from which they were derived.  For example,
   there will be a series of fields like ``<filter>_flux_psf`` giving
