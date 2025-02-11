@@ -211,7 +211,7 @@ class MultibandCatalogStep(RomanStep):
 
         if segment_img is not None:
             segmentation_model.data = segment_img.data.astype(np.uint32)
-            segmentation_model['detection_image'] = segment_img.detection_image
+            segmentation_model["detection_image"] = segment_img.detection_image
             self.save_model(
                 segmentation_model,
                 output_file=output_filename,

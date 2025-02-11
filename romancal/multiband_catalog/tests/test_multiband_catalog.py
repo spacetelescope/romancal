@@ -120,11 +120,17 @@ def test_multiband_catalog(
         assert np.max(cat["xcentroid"]) < 100.0
         assert np.max(cat["ycentroid"]) < 100.0
 
-        for phottype in ("isophotal_flux", "kron_flux", "aper30_flux",
-                         "aper_total_flux", "is_extended", "sharpness",
-                         "roundness"):
+        for phottype in (
+            "isophotal_flux",
+            "kron_flux",
+            "aper30_flux",
+            "aper_total_flux",
+            "is_extended",
+            "sharpness",
+            "roundness",
+        ):
             for filt in ("F158", "F184"):
                 colname = f"{filt}_{phottype}"
                 assert colname in cat.colnames
-                if colname.endswith('flux'):
+                if colname.endswith("flux"):
                     assert colname + "_err" in cat.colnames

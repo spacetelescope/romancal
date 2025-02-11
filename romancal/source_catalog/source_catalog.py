@@ -634,8 +634,7 @@ class RomanSourceCatalog:
         """
         Data quality flags.
         """
-        badpos = (~np.isfinite(self._xypos[:, 0]) |
-                  ~np.isfinite(self._xypos[:, 1]))
+        badpos = ~np.isfinite(self._xypos[:, 0]) | ~np.isfinite(self._xypos[:, 1])
         m = ~badpos
         xyidx = np.round(self._xypos[m, :]).astype(int)
         flags = np.full(self._xypos.shape[0], pixel.DO_NOT_USE, dtype=int)
@@ -926,7 +925,7 @@ class RomanSourceCatalog:
         if self.n_sources == 1:
             return -1
 
-        nn_label = self.label[self._kdtree_query[1]].astype('i4')
+        nn_label = self.label[self._kdtree_query[1]].astype("i4")
         # assign a label of -1 for non-finite xypos
         nn_label[self._xypos_nonfinite_mask] = -1
 

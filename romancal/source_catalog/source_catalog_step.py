@@ -7,21 +7,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from astropy.table import Table
+from astropy.table import Table, join
+from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels, maker_utils
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.maker_utils import mk_datamodel
 
+from romancal.multiband_catalog import utils
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
 from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
-from romancal.multiband_catalog import utils
 from romancal.stpipe import RomanStep
-
-from photutils.segmentation import SegmentationImage
-
-from astropy.table import join
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -106,9 +103,8 @@ class SourceCatalogStep(RomanStep):
             )
             source_catalog_model.meta[key] = value
 
-        if self.forced_segmentation != '':
-            source_catalog_model.meta['forced_segmentation'] = (
-                self.forced_segmentation)
+        if self.forced_segmentation != "":
+            source_catalog_model.meta["forced_segmentation"] = self.forced_segmentation
             forced = True
         else:
             forced = False
@@ -200,19 +196,18 @@ class SourceCatalogStep(RomanStep):
             # original catalog used for forcing.
             forcedcat = forcedcatobj.catalog
             utils.prefix_colnames(
-                forcedcat, 'forced_',
-                colnames=utils.get_direct_image_columns(forcedcat))
+                forcedcat, "forced_", colnames=utils.get_direct_image_columns(forcedcat)
+            )
             utils.prefix_colnames(
-                cat, 'forced_',
-                colnames=utils.get_detection_image_columns(cat))
-            forcedcat.remove_columns(
-                [x for x in forcedcat.colnames if '_bbox_' in x])
+                cat, "forced_", colnames=utils.get_detection_image_columns(cat)
+            )
+            forcedcat.remove_columns([x for x in forcedcat.colnames if "_bbox_" in x])
             cat.remove_columns(utils.get_direct_image_columns(cat))
             forcedcat.meta = None  # redundant with cat.meta
             cat = join(forcedcat, cat, keys="label", join_type="outer")
-            colnames = (
-                [x for x in cat.colnames if not x.startswith('forced_')] +
-                [x for x in cat.colnames if x.startswith('forced_')])
+            colnames = [x for x in cat.colnames if not x.startswith("forced_")] + [
+                x for x in cat.colnames if x.startswith("forced_")
+            ]
             cat = cat[colnames]
 
         # put the resulting catalog in the model
@@ -263,7 +258,7 @@ class SourceCatalogStep(RomanStep):
 
         if segment_img is not None:
             segmentation_model.data = segment_img.data.astype(np.uint32)
-            segmentation_model['detection_image'] = segment_img.detection_image
+            segmentation_model["detection_image"] = segment_img.detection_image
             self.save_model(
                 segmentation_model,
                 output_file=output_filename,
