@@ -102,8 +102,7 @@ class MultibandCatalogStep(RomanStep):
         # estimate background rms from detection image to calculate a
         # threshold for source detection
 
-        mask = (~np.isfinite(det_img) | ~np.isfinite(det_err) |
-                (det_err <= 0))
+        mask = ~np.isfinite(det_img) | ~np.isfinite(det_err) | (det_err <= 0)
         bkg = RomanBackground(
             det_img,
             box_size=self.bkg_boxsize,
