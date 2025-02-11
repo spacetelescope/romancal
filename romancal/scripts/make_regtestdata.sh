@@ -188,11 +188,16 @@ strun roman_elp r0000201001001001001_0004_wfi01_uncal.asdf
 cp r0000101001001001001_0004_wfi01_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp r0000201001001001001_0004_wfi01_uncal.asdf $outdir/roman-pipeline/dev/WFI/grism/
 
+# tests passing suffix to the pipeline
+strun roman_elp r0000101001001001001_0001_wfi01_uncal.asdf --steps.tweakreg.skip=True --suffix=star
+cp r0000101001001001001_0001_wfi01_star.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
 l3name="r0099101001001001001_F158_visit"
 asn_from_list r0000101001001001001_0001_wfi01_cal.asdf r0000101001001001001_0002_wfi01_cal.asdf r0000101001001001001_0003_wfi01_cal.asdf -o L3_regtest_asn.json --product-name $l3name
 strun roman_mos L3_regtest_asn.json
 cp L3_regtest_asn.json $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
@@ -223,10 +228,6 @@ strun romancal.step.MultibandCatalogStep L3_skycell_mbcat_asn.json --deblend Tru
 cp L3_skycell_mbcat_asn.json $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_mbcat_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_mbcat_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-
-# tests passing suffix to the pipeline
-strun roman_elp r0000101001001001001_0001_wfi01_uncal.asdf --steps.tweakreg.skip=True --suffix=star
-cp r0000101001001001001_0001_wfi01_star.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # 2nd L3 on skycell
 l3name="r0099101001001001001_0001_r274dp63x31y81_prompt_F158"
