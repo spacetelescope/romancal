@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-import asdf
 import astropy.units as u
 import numpy as np
 import pytest
@@ -97,20 +96,32 @@ def test_forced_catalog(image_model, tmp_path):
     os.chdir(tmp_path)
     step = SourceCatalogStep()
     result = step.call(
-        image_model, bkg_boxsize=50, kernel_fwhm=2.0, snr_threshold=5,
-        npixels=10, save_results=True, output_file='source_cat.asdf')
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=True,
+        output_file="source_cat.asdf",
+    )
     result_force = step.call(
-        image_model, bkg_boxsize=50, kernel_fwhm=2.0, snr_threshold=5,
-        npixels=10, save_results=True, output_file='force_cat.asdf',
-        forced_segmentation='source_segm.asdf')
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=True,
+        output_file="force_cat.asdf",
+        forced_segmentation="source_segm.asdf",
+    )
     catalog = result_force.source_catalog
     assert isinstance(catalog, Table)
     has_forced_fields = False
     for field in catalog.dtype.names:
-        if 'forced_' in field:
+        if "forced_" in field:
             has_forced_fields = True
     assert has_forced_fields
-    
+
 
 @pytest.mark.webbpsf
 @pytest.mark.parametrize(
