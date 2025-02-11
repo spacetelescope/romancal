@@ -79,7 +79,7 @@ def make_output_wcs(
     output_wcs = wcs_from_footprints(
         wcslist,
         None,
-        dict(input_models[0].meta.wcsinfo),
+        input_models[0].meta.wcsinfo,
         pscale_ratio=pscale_ratio,
         pscale=pscale,
         rotation=rotation,

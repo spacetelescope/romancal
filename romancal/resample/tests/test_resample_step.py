@@ -6,7 +6,7 @@ from astropy import units as u
 from astropy.modeling import models
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels
 
 from romancal.resample import ResampleStep, resample_utils
 
@@ -50,20 +50,17 @@ class Mosaic:
         datamodels.MosaicModel
             An L3 MosaicModel datamodel.
         """
-        l3 = maker_utils.mk_level3_mosaic(
-            shape=self.shape,
-            n_images=self.n_images,
-        )
+        l3 = datamodels.MosaicModel(_array_shape=(self.n_images, *self.shape))
         # data from WFISim simulation of SCA #01
         l3.meta.filename = self.filename
-        l3.meta["wcs"] = create_wcs_object_without_distortion(
+        l3.meta.wcs = create_wcs_object_without_distortion(
             fiducial_world=self.fiducial_world,
             pscale=self.pscale,
             shape=self.shape,
         )
         # Call the forward transform so its value is pulled from disk
         _ = l3.meta.wcs.forward_transform
-        return datamodels.MosaicModel(l3)
+        return l3
 
 
 def create_wcs_object_without_distortion(fiducial_world, pscale, shape, **kwargs):
@@ -336,10 +333,8 @@ def test_build_driz_weight_multiple_good_bits(
     ],
 )
 def test_set_good_bits_in_resample_meta(base_image, good_bits):
-    model = maker_utils.mk_level2_image(shape=(100, 100))
-    model.meta.wcsinfo["vparity"] = -1
-
-    img = datamodels.ImageModel(model)
+    img = datamodels.ImageModel(_array_shape=(2, 100, 100))
+    img.meta.wcsinfo["vparity"] = -1
 
     img.data *= img.meta.photometry.conversion_megajanskys / img.data
 

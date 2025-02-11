@@ -6,7 +6,7 @@ import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from drizzle import cdrizzle, util
-from roman_datamodels import datamodels, maker_utils, stnode
+from roman_datamodels import datamodels, nodes
 from stcal.alignment.util import compute_s_region_keyword, compute_scale
 
 from romancal.associations.asn_from_list import asn_from_list
@@ -143,8 +143,8 @@ class ResampleData:
 
         # n_images sets the number of context image planes.
         # This should be 1 to start (not the default of 2).
-        self.blank_output = maker_utils.mk_datamodel(
-            datamodels.MosaicModel, n_images=1, shape=tuple(self.output_wcs.array_shape)
+        self.blank_output = datamodels.MosaicModel(
+            _array_shape=(1, *self.output_wcs.array_shape)
         )
 
         with self.input_models:
@@ -154,8 +154,8 @@ class ResampleData:
             populate_mosaic_basic(self.blank_output, models)
 
             # update meta.cal_step
-            self.blank_output.meta.cal_step = maker_utils.mk_l3_cal_step(
-                **models[0].meta.cal_step.to_flat_dict()
+            self.blank_output.meta.cal_step = nodes.L3CalStep.from_l2(
+                models[0].meta.cal_step
             )
 
             # FIXME: temporary hack to prevent changes from L2 into L3 schema
@@ -174,7 +174,7 @@ class ResampleData:
             self.blank_output.meta.wcs = self.output_wcs
             gwcs_into_l3(self.blank_output, self.output_wcs)
 
-            self.blank_output.cal_logs = stnode.CalLogs()
+            self.blank_output.cal_logs = nodes.CalLogs()
             self.blank_output["individual_image_cal_logs"] = [
                 model.meta.cal_logs for model in models
             ]
@@ -203,7 +203,6 @@ class ResampleData:
             List of model indices to include in this resampling
         """
         output_model = self.blank_output.copy()
-        output_model.meta["resample"] = maker_utils.mk_resample()
         output_model.meta.basic.location_name = self.location_name
 
         copy_asn_info_from_library(input_models, output_model)
@@ -309,7 +308,6 @@ class ResampleData:
         """
         output_model = self.blank_output.copy()
         output_model.meta.filename = self.output_filename
-        output_model.meta["resample"] = maker_utils.mk_resample()
         output_model.meta.resample.weight_type = self.weight_type
         output_model.meta.resample.pointings = len(self.input_models.group_names)
         output_model.meta.basic.location_name = self.location_name
@@ -935,7 +933,8 @@ def populate_mosaic_basic(
 
 
 def populate_mosaic_individual(
-    output_model: datamodels.MosaicModel, input_models: [list, ModelLibrary]
+    output_model: datamodels.MosaicModel,
+    input_models: list[datamodels.ImageModel] | ModelLibrary,
 ):
     """
     Populate individual meta fields in the output mosaic model based on input models.

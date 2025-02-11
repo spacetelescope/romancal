@@ -7,8 +7,7 @@ from astropy.table import QTable
 from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
-from roman_datamodels import datamodels, maker_utils
-from roman_datamodels.maker_utils import mk_common_meta, mk_level2_image
+from roman_datamodels import datamodels, nodes
 
 from romancal.datamodels import ModelLibrary
 from romancal.lib.tests.helpers import word_precision_check
@@ -32,14 +31,13 @@ def create_mock_model(
     optical_element,
     instrument_name,
 ):
-    meta = mk_common_meta()
-    mock_model = mk_level2_image(**{"meta": meta})
+    mock_model = datamodels.ImageModel()
     mock_model.meta.exposure.start_time = Time(start_time, format="mjd")
     mock_model.meta.exposure.end_time = Time(end_time, format="mjd")
     mock_model.meta.exposure.mid_time = Time((start_time + end_time) / 2, format="mjd")
     mock_model.meta.observation.visit = visit
     mock_model.meta.observation.segment = segment
-    mock_model.meta.observation["pass"] = pass_
+    mock_model.meta.observation.pass_ = pass_
     mock_model.meta.observation.program = program
     mock_model.meta.instrument.optical_element = optical_element
     mock_model.meta.instrument.name = instrument_name
@@ -66,9 +64,8 @@ class WfiSca:
             An L2 ImageModel datamodel.
         """
         rng = np.random.default_rng(seed=13)
-        l2 = maker_utils.mk_level2_image(
-            shape=self.shape,
-            **{
+        l2 = datamodels.ImageModel(
+            {
                 "meta": {
                     "wcsinfo": {
                         "ra_ref": 10,
@@ -98,6 +95,7 @@ class WfiSca:
                 "var_poisson": rng.poisson(1, size=self.shape).astype(np.float32),
                 "var_flat": rng.uniform(0, 1, size=self.shape).astype(np.float32),
             },
+            _array_shape=(2, *self.shape),
         )
         # data from WFISim simulation of SCA #01
         l2.meta.filename = self.filename
@@ -106,7 +104,7 @@ class WfiSca:
             pscale=self.pscale,
             shape=self.shape,
         )
-        return datamodels.ImageModel(l2)
+        return l2
 
 
 def create_wcs_object_without_distortion(fiducial_world, pscale, shape):
@@ -735,8 +733,8 @@ def test_populate_mosaic_basic_single_exposure(exposure_1):
             crval=crval,
         )
 
-        output_model = maker_utils.mk_datamodel(
-            datamodels.MosaicModel, shape=tuple(output_wcs.array_shape)
+        output_model = datamodels.MosaicModel(
+            _array_shape=(2, *output_wcs.array_shape),
         )
 
         populate_mosaic_basic(output_model, input_models=models)
@@ -1033,9 +1031,7 @@ def test_populate_mosaic_basic_different_observations(
         crpix=(0, 0),
         crval=(30, 45),
     )
-    output_model = maker_utils.mk_datamodel(
-        datamodels.MosaicModel, shape=tuple(output_wcs.array_shape)
-    )
+    output_model = datamodels.MosaicModel(_array_shape=(2, *output_wcs.array_shape))
 
     # Act
     populate_mosaic_basic(output_model, input_models)
@@ -1053,8 +1049,8 @@ def test_populate_mosaic_basic_different_observations(
 
 def test_l3_wcsinfo(multiple_exposures):
     """Test the population of the Level 3 wcsinfo block"""
-    expected = maker_utils.mk_mosaic_wcsinfo(
-        **{
+    expected = nodes.MosaicWcsinfo(
+        {
             "ra_ref": 10.00292450000052,
             "dec_ref": 0.001534500000533253,
             "x_ref": 106.4579605214774,
@@ -1107,7 +1103,19 @@ def test_l3_wcsinfo(multiple_exposures):
 def test_l3_individual_image_meta(multiple_exposures):
     """Test that the individual_image_meta is being populated"""
     input_models = multiple_exposures
-    output_model = maker_utils.mk_datamodel(datamodels.MosaicModel)
+
+    # Note this loop touches all the background nodes in the input models,
+    # meaning the model will lazy create that node when this happens.
+    #
+    # Note that this is needed to pass the "background" check below because
+    # "background" is not a required attribute of the ImageModel.meta, so when
+    # the ImageModels are combined, this attribute will not be one of the ones
+    # that are automatically created and then combined. This only worked before
+    # because the maker_util happened to always create the background node
+    for input_model in input_models:
+        assert isinstance(input_model.meta.background, nodes.SkyBackground)
+
+    output_model = datamodels.MosaicModel(_array_shape=(2, 100, 100))
 
     # Act
     populate_mosaic_individual(output_model, input_models)

@@ -19,7 +19,6 @@ from gwcs import wcs
 from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from numpy.random import default_rng
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils
 from stcal.tweakreg.astrometric_utils import get_catalog
 
 from romancal.datamodels import ModelLibrary
@@ -451,8 +450,6 @@ def add_tweakreg_catalog_attribute(
         save_catalogs=save_catalogs,
     )
 
-    input_dm.meta["source_catalog"] = maker_utils.mk_source_catalog()
-
     if save_catalogs:
         # SourceCatalogStep adds the catalog path+filename
         input_dm.meta.source_catalog["tweakreg_catalog_name"] = os.path.join(
@@ -477,13 +474,12 @@ def base_image():
     """
 
     def _base_image(shift_1=0, shift_2=0):
-        l2 = maker_utils.mk_level2_image(shape=(2000, 2000))
-        l2.meta.exposure.mid_time = Time("2016-01-01T00:00:00")
+        l2_im = rdm.ImageModel(_array_shape=(2, 2000, 2000))
+        l2_im.meta.exposure.mid_time = Time("2016-01-01T00:00:00")
         # update wcsinfo
-        update_wcsinfo(l2)
+        update_wcsinfo(l2_im)
         # add a dummy WCS object
-        create_wcs_for_tweakreg_pipeline(l2, shift_1=shift_1, shift_2=shift_2)
-        l2_im = rdm.ImageModel(l2)
+        create_wcs_for_tweakreg_pipeline(l2_im, shift_1=shift_1, shift_2=shift_2)
         return l2_im
 
     return _base_image
@@ -508,11 +504,12 @@ def test_tweakreg_raises_error_on_invalid_input(input, error_type):
 
 def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     """
-    Test that TweakReg raises an AttributeError if meta.tweakreg_catalog is missing.
+    Test that TweakReg raises an AttributeError if meta.tweakreg_catalog is not
+    a real file.
     """
     img = base_image()
-    # remove attribute
-    del img.meta.source_catalog["tweakreg_catalog_name"]
+    # show attribute is present but not a real file
+    assert not Path(img.meta.source_catalog.tweakreg_catalog_name).exists()
     with pytest.raises(AttributeError):
         trs.TweakRegStep.call([img])
 
@@ -1181,8 +1178,7 @@ def setup_source_catalog_model(img):
     expected names, adds mock PSF coordinates, applies random shifts to the centroid
     and PSF coordinates, and calculates the world coordinates for the centroids.
     """
-    cat_model = rdm.ImageSourceCatalogModel
-    source_catalog_model = maker_utils.mk_datamodel(cat_model)
+    source_catalog_model = rdm.ImageSourceCatalogModel()
     # this will be the output filename
     source_catalog_model.meta.filename = "img_1.asdf"
 

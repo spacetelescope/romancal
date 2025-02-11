@@ -387,10 +387,14 @@ class TweakRegStep(RomanStep):
             return tweakreg_catalog
 
         if getattr(source_catalog, "tweakreg_catalog_name", None):
-            return self.read_catalog(source_catalog.tweakreg_catalog_name)
+            # Lazy field access means that the catalog will always exist,
+            # but will be the default value if not set, which probably doesn't
+            # exist. So we need to check if the file exists.
+            if Path(source_catalog.tweakreg_catalog_name).exists():
+                return self.read_catalog(source_catalog.tweakreg_catalog_name)
 
         raise AttributeError(
-            "Attribute 'meta.source_catalog.tweakreg_catalog' is missing. "
+            "Attribute 'meta.source_catalog.tweakreg_catalog' is not a real file. "
             "Please either run SourceCatalogStep or provide a custom source catalog."
         )
 

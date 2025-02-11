@@ -8,9 +8,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy.table import Table
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels
 from roman_datamodels.datamodels import ImageModel, MosaicModel
-from roman_datamodels.maker_utils import mk_datamodel
 
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
@@ -68,29 +67,31 @@ class SourceCatalogStep(RomanStep):
         # because they are not modified in this step. The other model
         # arrays (e.g., var_rnoise) are not currently used by this step.
         if isinstance(input_model, ImageModel):
-            model = mk_datamodel(
-                ImageModel,
-                meta=input_model.meta,
-                shape=(0, 0),
-                data=input_model.data.copy(),
-                err=input_model.err.copy(),
-                dq=input_model.dq,
+            model = ImageModel(
+                {
+                    "meta": input_model.meta,
+                    "data": input_model.data.copy(),
+                    "err": input_model.err.copy(),
+                    "dq": input_model.dq,
+                },
+                _array_shape=(0, 0, 0),
             )
         elif isinstance(input_model, MosaicModel):
-            model = mk_datamodel(
-                MosaicModel,
-                meta=input_model.meta,
-                shape=(0, 0),
-                data=input_model.data.copy(),
-                err=input_model.err.copy(),
-                weight=input_model.weight,
+            model = MosaicModel(
+                {
+                    "meta": input_model.meta,
+                    "data": input_model.data.copy(),
+                    "err": input_model.err.copy(),
+                    "weight": input_model.weight,
+                },
+                shape=(0, 0, 0),
             )
 
-        if isinstance(model, ImageModel):
-            cat_model = datamodels.ImageSourceCatalogModel
-        else:
-            cat_model = datamodels.MosaicSourceCatalogModel
-        source_catalog_model = maker_utils.mk_datamodel(cat_model)
+        source_catalog_model = (
+            datamodels.ImageSourceCatalogModel()
+            if isinstance(model, ImageModel)
+            else datamodels.MosaicSourceCatalogModel()
+        )
 
         for key in source_catalog_model.meta.keys():
             value = (
@@ -180,12 +181,11 @@ class SourceCatalogStep(RomanStep):
             else source_catalog_model.meta.filename
         )
 
-        if isinstance(source_catalog_model, datamodels.ImageSourceCatalogModel):
-            seg_model = datamodels.SegmentationMapModel
-        else:
-            seg_model = datamodels.MosaicSegmentationMapModel
-
-        segmentation_model = maker_utils.mk_datamodel(seg_model)
+        segmentation_model = (
+            datamodels.SegmentationMapModel()
+            if isinstance(source_catalog_model, datamodels.ImageSourceCatalogModel)
+            else datamodels.MosaicSegmentationMapModel()
+        )
         for key in segmentation_model.meta.keys():
             segmentation_model.meta[key] = source_catalog_model.meta[key]
 
@@ -209,7 +209,5 @@ class SourceCatalogStep(RomanStep):
 
 def update_metadata(model, output_catalog_name):
     # update datamodel to point to the source catalog file destination
-    model.meta["source_catalog"] = maker_utils.mk_source_catalog(
-        tweakreg_catalog_name=output_catalog_name
-    )
+    model.meta.source_catalog.tweakreg_catalog_name = output_catalog_name
     model.meta.cal_step.source_catalog = "COMPLETE"
