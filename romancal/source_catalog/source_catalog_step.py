@@ -140,7 +140,8 @@ class SourceCatalogStep(RomanStep):
                 deblend=self.deblend,
                 mask=coverage_mask,
             )
-            segment_img.detection_image = detection_image
+            if segment_img is not None:
+                segment_img.detection_image = detection_image
         else:
             forced_segmodel = datamodels.open(self.forced_segmentation)
             segment_img = SegmentationImage(forced_segmodel.data[...])

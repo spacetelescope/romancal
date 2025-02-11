@@ -1025,6 +1025,8 @@ class RomanSourceCatalog:
                 "label",
                 "flags",
                 "is_extended",
+                "sharpness",
+                "roundness",
                 "isophotal_flux",
                 "isophotal_flux_err",
                 "kron_flux",

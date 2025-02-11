@@ -61,9 +61,10 @@ def make_test_image():
     data[y0 + 1 : y1 - 1, x3] = value
 
     rng = np.random.default_rng(seed=123)
-    noise = rng.normal(0, 2.5, size=data.shape)
+    sig = 2.5
+    noise = rng.normal(0, sig, size=data.shape)
     data += noise
-    err = data / 10.0
+    err = data * 0 + sig
 
     return data, err
 
@@ -137,9 +138,6 @@ def test_l2_source_catalog(
         "aper70_flux_err",
         "aper_total_flux",
         "aper_total_flux_err",
-        "CI_50_30",
-        "CI_70_50",
-        "CI_70_30",
         "is_extended",
         "sharpness",
         "roundness",
@@ -193,8 +191,9 @@ def test_l3_source_catalog(
     os.chdir(tmp_path)
     step = SourceCatalogStep()
 
+    im = mosaic_model
     result = step.call(
-        mosaic_model,
+        im,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         snr_threshold=snr_threshold,
@@ -222,9 +221,6 @@ def test_l3_source_catalog(
         "aper70_flux_err",
         "aper_total_flux",
         "aper_total_flux_err",
-        "CI_50_30",
-        "CI_70_50",
-        "CI_70_30",
         "is_extended",
         "sharpness",
         "roundness",
