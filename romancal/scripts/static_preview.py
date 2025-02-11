@@ -50,7 +50,7 @@ def command():
 
         with asdf.open(input) as file:
             model = file["roman"]["meta"]["model_type"]
-            if "image" not in model.lower():
+            if "image" not in model.lower() and "mosaic" not in model.lower():
                 raise NotImplementedError(f'"{model}" model not supported')
             wcs = file["roman"]["meta"]["wcs"]
 
@@ -89,7 +89,7 @@ def command():
 
         with asdf.open(input) as file:
             model = file["roman"]["meta"]["model_type"]
-            if "image" not in model.lower():
+            if "image" not in model.lower() and "mosaic" not in model.lower():
                 raise NotImplementedError(f'"{model}" model not supported')
 
         data = downsample_asdf_to(input=input, shape=shape, func=numpy.nanmean)
