@@ -96,7 +96,7 @@ def image_model():
 def test_forced_catalog(image_model, tmp_path):
     os.chdir(tmp_path)
     step = SourceCatalogStep()
-    result = step.call(
+    step.call(
         image_model, bkg_boxsize=50, kernel_fwhm=2.0, snr_threshold=5,
         npixels=10, save_results=True, output_file='source_cat.asdf')
     result_force = step.call(
