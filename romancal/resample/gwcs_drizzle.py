@@ -421,7 +421,7 @@ def dodrizzle(
     pixmap = resample_utils.calc_gwcs_pixmap(input_wcs, output_wcs, insci.shape)
     # inwht[np.isnan(pixmap[:,:,0])] = 0.
 
-    log.debug(f"Pixmap shape: {pixmap[:,:,0].shape}")
+    log.debug(f"Pixmap shape: {pixmap[:, :, 0].shape}")
     log.debug(f"Input Sci shape: {insci.shape}")
     log.debug(f"Output Sci shape: {outsci.shape}")
 

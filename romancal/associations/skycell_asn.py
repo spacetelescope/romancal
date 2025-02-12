@@ -190,9 +190,7 @@ def _cli(args=None):
         "--rule",
         type=str,
         default="DMS_ELPP_Base",
-        help=(
-            "The rule to base the association structure on." ' Default: "%(default)s"'
-        ),
+        help=('The rule to base the association structure on. Default: "%(default)s"'),
     )
     parser.add_argument(
         "-i",

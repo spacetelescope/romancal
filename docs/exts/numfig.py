@@ -81,9 +81,7 @@ def doctree_resolved(app, doctree, docname):
             if app.builder.name == "html":
                 target_doc = app.builder.env.figid_docname_map[target]
                 link = f"{app.builder.get_relative_uri(docname, target_doc)}#{target}"
-                html = (
-                    f'<a class="pageref" href="{link}">{labelfmt %(figids[target])}</a>'
-                )
+                html = f'<a class="pageref" href="{link}">{labelfmt % (figids[target])}</a>'
                 ref_info.replace_self(raw(html, html, format="html"))
             else:
                 ref_info.replace_self(Text(labelfmt % (figids[target])))
