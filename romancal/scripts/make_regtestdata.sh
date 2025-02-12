@@ -217,6 +217,8 @@ cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+# also copy outside of truth for input to forced photometry tests
+cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/WFI/image/
 
 strun romancal.step.ResampleStep L3_mosaic_asn.json --rotation=0 --output_file=mosaic.asdf
@@ -244,5 +246,5 @@ cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
 
 # forced photometry on shallow skycell from deep skycell
 strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf --forced_segmentation r0099101001001001001_r274dp63x31y81_prompt_F158_segm.asdf --output_file ${l3name}_force_cat.asdf
-cp ${l3name}_force_segm.asdf $outdir/roman-pipeline/dev/WFI/image/
-cp ${l3name}_force_cat.asdf $outdir/roman-pipeline/dev/WFI/image/
+cp ${l3name}_force_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_force_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/

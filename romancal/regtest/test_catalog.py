@@ -77,7 +77,7 @@ def test_forced_catalog(rtdata_module):
     truth_cat = "r0099101001001001001_0001_r274dp63x31y81_prompt_F158_force_cat.asdf"
     rtdata.get_data(f"WFI/image/{input_deep_segm}")
     rtdata.get_data(f"WFI/image/{input_shallow_coadd}")
-    truth_cat = rtdata.get_truth(f"WFI/image/{truth_cat}")
+    truth_cat = rtdata.get_truth(f"truth/WFI/image/{truth_cat}")
     rtdata.input = input_shallow_coadd
     outputfn = input_shallow_coadd.rsplit("_", 1)[0] + "_force_cat.asdf"
     rtdata.output = outputfn
