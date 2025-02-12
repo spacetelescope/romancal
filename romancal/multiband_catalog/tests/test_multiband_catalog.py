@@ -33,9 +33,10 @@ def make_test_image():
     ).value.astype("float32")
 
     rng = np.random.default_rng(seed=123)
-    noise = rng.normal(0, 2.5, size=data.shape)
+    noise_scale = 2.5
+    noise = rng.normal(0, noise_scale, size=data.shape)
     data += noise
-    err = data / 10.0
+    err = np.zeros_like(data) + noise_scale
 
     return data, err
 
@@ -64,7 +65,7 @@ def library_model(mosaic_model):
     "snr_threshold, npixels, save_results",
     (
         (3, 10, True),
-        (10, 10, False),
+        (7, 10, False),
     ),
 )
 def test_multiband_catalog(

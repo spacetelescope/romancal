@@ -10,6 +10,7 @@ import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels, maker_utils
 from roman_datamodels.datamodels import ImageModel, MosaicModel
+from roman_datamodels.dqflags import pixel
 from roman_datamodels.maker_utils import mk_datamodel
 
 from romancal.source_catalog.background import RomanBackground
@@ -62,6 +63,13 @@ class SourceCatalogStep(RomanStep):
         if not isinstance(input_model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
+        # Define a boolean mask for pixels to be excluded
+        mask = (
+            ~np.isfinite(input_model.data)
+            | ~np.isfinite(input_model.err)
+            | (input_model.err <= 0)
+        )
+
         # Copy the data and error arrays to avoid modifying the input
         # model. We use mk_datamodel to copy *only* the data and err
         # arrays. The metadata and dq and weight arrays are not copied
@@ -76,6 +84,17 @@ class SourceCatalogStep(RomanStep):
                 err=input_model.err.copy(),
                 dq=input_model.dq,
             )
+
+            # Create a DQ mask for pixels to be excluded; currently all
+            # pixels with any DQ flag are excluded from the source catalog
+            # except for those in ignored_dq_flags.
+            # TODO: revisit these flags when CRDS reference files are updated
+            ignored_dq_flags = pixel.NO_LIN_CORR
+            dq_mask = np.any(model.dq[..., None] & ~ignored_dq_flags, axis=-1)
+
+            # TODO: to set the mask to True for *only* dq_flags use:
+            # dq_mask = np.any(model.dq[..., None] & dq_flags, axis=-1)
+            mask |= dq_mask
         elif isinstance(input_model, MosaicModel):
             model = mk_datamodel(
                 MosaicModel,
@@ -103,18 +122,15 @@ class SourceCatalogStep(RomanStep):
         refdata = ReferenceData(model, aperture_ee)
         aperture_params = refdata.aperture_params
 
-        mask = np.isnan(model.data)
-        coverage_mask = np.isnan(model.err)
         bkg = RomanBackground(
             model.data,
             box_size=self.bkg_boxsize,
-            mask=mask,
-            coverage_mask=coverage_mask,
+            coverage_mask=mask,
         )
         model.data -= bkg.background
 
         convolved_data = convolve_data(
-            model.data, kernel_fwhm=self.kernel_fwhm, mask=coverage_mask
+            model.data, kernel_fwhm=self.kernel_fwhm, mask=mask
         )
 
         segment_img = make_segmentation_image(
@@ -123,7 +139,7 @@ class SourceCatalogStep(RomanStep):
             npixels=self.npixels,
             bkg_rms=bkg.background_rms,
             deblend=self.deblend,
-            mask=coverage_mask,
+            mask=mask,
         )
 
         if segment_img is None:  # no sources found
@@ -141,6 +157,7 @@ class SourceCatalogStep(RomanStep):
                 ci_star_thresholds,
                 self.kernel_fwhm,
                 self.fit_psf,
+                mask=mask,
             )
 
             # put the resulting catalog in the model
