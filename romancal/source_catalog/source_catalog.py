@@ -22,7 +22,7 @@ from scipy import ndimage
 from scipy.spatial import KDTree
 
 from romancal import __version__ as romancal_version
-from romancal.lib import psf
+from romancal.source_catalog import psf
 
 from ._wcs_helpers import pixel_scale_angle_at_skycoord
 
@@ -72,6 +72,11 @@ class RomanSourceCatalog:
     fit_psf : bool
         Whether to fit a PSF model to the sources.
 
+    mask : 2D `~numpy.ndarray` or `None`, optional
+        A 2D boolean mask image with the same shape as the input data.
+        This mask is used for PSF photometry. The mask should be the
+        same one used to create the segmentation image.
+
     detection_cat : `None` or `~photutils.segmentation.SourceCatalog`, optional
         A `~photutils.segmentation.SourceCatalog` object for the
         detection image. The segmentation image used to create
@@ -102,6 +107,7 @@ class RomanSourceCatalog:
         ci_star_thresholds,
         kernel_fwhm,
         fit_psf,
+        mask=None,
         detection_cat=None,
         flux_unit="uJy",
     ):
@@ -114,6 +120,7 @@ class RomanSourceCatalog:
         self.aperture_params = aperture_params
         self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
         self.fit_psf = fit_psf
+        self.mask = mask
         self.detection_cat = detection_cat
 
         if len(ci_star_thresholds) != 2:
@@ -1192,6 +1199,7 @@ class RomanSourceCatalog:
         xinit, yinit = np.transpose(self._xypos)
         psf_photometry_table, photometry = psf.fit_psf_to_image_model(
             image_model=self.model,
+            mask=self.mask,
             psf_model=gridded_psf_model,
             x_init=xinit,
             y_init=yinit,

@@ -61,10 +61,10 @@ def make_test_image():
     data[y0 + 1 : y1 - 1, x3] = value
 
     rng = np.random.default_rng(seed=123)
-    sig = 2.5
-    noise = rng.normal(0, sig, size=data.shape)
+    noise_scale = 2.5
+    noise = rng.normal(0, noise_scale, size=data.shape)
     data += noise
-    err = data * 0 + sig
+    err = np.zeros_like(data) + noise_scale
 
     return data, err
 
