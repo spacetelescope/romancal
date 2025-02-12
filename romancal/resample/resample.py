@@ -51,7 +51,7 @@ class ResampleData:
         pixfrac=1.0,
         kernel="square",
         fillval="INDEF",
-        wht_type="ivm",
+        weight_type="ivm",
         good_bits="0",
         pscale_ratio=1.0,
         pscale=None,
@@ -86,13 +86,15 @@ class ResampleData:
             )
 
         self.input_models = input_models
+        # add sky variance array
+        resample_utils.add_var_sky_array(self.input_models)
         self.output_filename = output
         self.pscale_ratio = pscale_ratio
         self.single = single
         self.pixfrac = pixfrac
         self.kernel = kernel
         self.fillval = fillval
-        self.weight_type = wht_type
+        self.weight_type = weight_type
         self.good_bits = good_bits
         self.in_memory = kwargs.get("in_memory", True)
         if "target" in input_models.asn:
@@ -178,6 +180,8 @@ class ResampleData:
             self.blank_output["individual_image_cal_logs"] = [
                 model.meta.cal_logs for model in models
             ]
+            # add sky variance array
+            self.blank_output["var_sky"] = np.zeros_like(self.blank_output.var_flat)
             for i, m in enumerate(models):
                 self.input_models.shelve(m, i, modify=False)
 
@@ -374,11 +378,11 @@ class ResampleData:
         self.resample_variance_array("var_rnoise", output_model)
         self.resample_variance_array("var_poisson", output_model)
         self.resample_variance_array("var_flat", output_model)
+        self.resample_variance_array("var_sky", output_model)
 
         # Make exposure time image
         exptime_tot = self.resample_exposure_time(output_model)
 
-        # TODO: fix unit here
         output_model.err = np.sqrt(
             np.nansum(
                 [
@@ -392,7 +396,6 @@ class ResampleData:
 
         self.update_exposure_times(output_model, exptime_tot)
 
-        # TODO: fix RAD to expect a context image datatype of int32
         output_model.context = output_model.context.astype(np.uint32)
 
         return ModelLibrary([output_model])
@@ -471,7 +474,6 @@ class ResampleData:
 
         # We now have a sum of the inverse resampled variances.  We need the
         # inverse of that to get back to units of variance.
-        # TODO: fix unit here
         output_variance = np.reciprocal(inverse_variance_sum)
 
         setattr(output_model, name, output_variance)
