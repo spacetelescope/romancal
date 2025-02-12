@@ -174,6 +174,7 @@ class SourceCatalogStep(RomanStep):
                 self.kernel_fwhm,
                 self.fit_psf & (not forced),
                 # don't need to do PSF photometry here when forcing; happens later
+                mask=mask,
             )
             cat = catobj.catalog
 
