@@ -56,6 +56,9 @@ do
     rm $outdir/roman-pipeline/dev/truth/WFI/${dirname}/${fn}_uncal.asdf
 done
 
+# L2 catalog
+cp r0000101001001001001_0001_wfi01_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp r0000101001001001001_0001_wfi01_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # truncated files for ramp fit regtests
 for fn in r0000101001001001001_0003_wfi01 r0000201001001001001_0003_wfi01
@@ -185,17 +188,18 @@ strun roman_elp r0000201001001001001_0004_wfi01_uncal.asdf
 cp r0000101001001001001_0004_wfi01_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp r0000201001001001001_0004_wfi01_uncal.asdf $outdir/roman-pipeline/dev/WFI/grism/
 
+# tests passing suffix to the pipeline
+strun roman_elp r0000101001001001001_0001_wfi01_uncal.asdf --steps.tweakreg.skip=True --suffix=star
+cp r0000101001001001001_0001_wfi01_star.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
 l3name="r0099101001001001001_F158_visit"
 asn_from_list r0000101001001001001_0001_wfi01_cal.asdf r0000101001001001001_0002_wfi01_cal.asdf r0000101001001001001_0003_wfi01_cal.asdf -o L3_regtest_asn.json --product-name $l3name
 strun roman_mos L3_regtest_asn.json
 cp L3_regtest_asn.json $outdir/roman-pipeline/dev/WFI/image/
-cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-
-# L3 catalog
-strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf
+cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-
+cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # L3 on skycell
 l3name="r0099101001001001001_r274dp63x31y81_prompt_F158"
@@ -211,27 +215,36 @@ strun roman_mos L3_mosaic_asn.json
 cp L3_mosaic_asn.json $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+# also copy outside of truth for input to forced photometry tests
+cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/WFI/image/
+cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/WFI/image/
+
 strun romancal.step.ResampleStep L3_mosaic_asn.json --rotation=0 --output_file=mosaic.asdf
 cp mosaic_resamplestep.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-
-# L3 catalog
-strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf
-cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-
-# L2 catalog
-strun romancal.step.SourceCatalogStep r0000101001001001001_0001_wfi01_cal.asdf
-cp r0000101001001001001_0001_wfi01_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-
-# L3 skycell catalog
-strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf
-cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # multiband catalog
 asn_from_list --product-name=${l3name}_mbcat ${l3name}_coadd.asdf -o L3_skycell_mbcat_asn.json
 strun romancal.step.MultibandCatalogStep L3_skycell_mbcat_asn.json --deblend True
 cp L3_skycell_mbcat_asn.json $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_mbcat_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_mbcat_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
-# tests passing suffix to the pipeline
-strun roman_elp r0000101001001001001_0001_wfi01_uncal.asdf --steps.tweakreg.skip=True --suffix=star
-cp r0000101001001001001_0001_wfi01_star.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+# 2nd L3 on skycell
+l3name="r0099101001001001001_0001_r274dp63x31y81_prompt_F158"
+asn_from_list r0000101001001001001_0001_wfi01_cal.asdf -o L3_mosaic_0001_asn.json --product-name $l3name --target r274dp63x31y81
+# The pipeline will silently do nothing and not return an error exit code if the output
+# file already exists.
+# see: https://github.com/spacetelescope/romancal/issues/1544
+# To work around this remove the expected output file
+if [ -f "${l3name}_coadd.asdf" ]; then
+    rm "${l3name}_coadd.asdf"
+fi
+strun roman_mos L3_mosaic_0001_asn.json
+cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
+
+# forced photometry on shallow skycell from deep skycell
+strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf --forced_segmentation r0099101001001001001_r274dp63x31y81_prompt_F158_segm.asdf --output_file ${l3name}_force_cat.asdf
+cp ${l3name}_force_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_force_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
