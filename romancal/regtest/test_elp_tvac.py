@@ -1,6 +1,7 @@
 """Test that TVAC/FPS run in the pipeline"""
 
 from pathlib import Path
+
 import pytest
 import roman_datamodels as rdm
 from gwcs.wcstools import grid_from_bounding_box
@@ -67,11 +68,11 @@ def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths
 
 def test_dqinit_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
     dqinit_path = Path(output_filename)
-    dqinit_filename = replace_suffix(dqinit_path.stem, 'dqinit')
+    dqinit_filename = replace_suffix(dqinit_path.stem, "dqinit")
     dqinit_filename = dqinit_path.parent / (dqinit_filename + dqinit_path.suffix)
 
     truth_path = Path(truth_filename)
-    truth_filename = replace_suffix(truth_path.stem, 'dqinit')
+    truth_filename = replace_suffix(truth_path.stem, "dqinit")
     truth_filename = truth_path.parent / (truth_filename + truth_path.suffix)
 
     diff = compare_asdf(dqinit_filename, truth_filename, **ignore_asdf_paths)
