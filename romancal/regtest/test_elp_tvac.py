@@ -1,9 +1,11 @@
 """Test that TVAC/FPS run in the pipeline"""
 
+from pathlib import Path
 import pytest
 import roman_datamodels as rdm
 from gwcs.wcstools import grid_from_bounding_box
 
+from romancal.lib.suffix import replace_suffix
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
 from .regtestdata import compare_asdf
@@ -25,16 +27,19 @@ def run_elp(rtdata_module):
 
     # Test Pipeline
     output = "TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_cal.asdf"
+    output_dqinit = "TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_dqinit.asdf"
     rtdata.output = output
     args = [
         "roman_elp",
         rtdata.input,
+        "--steps.dq_init.save=true",
         "--steps.dark_current.override_dark=dark_ma510.asdf",
         "--steps.rampfit.override_dark=dark_ma510.asdf",
     ]
     ExposurePipeline.from_cmdline(args)
 
     # get truth file
+    rtdata.get_truth(f"truth/WFI/image/{output_dqinit}")
     rtdata.get_truth(f"truth/WFI/image/{output}")
     return rtdata
 
@@ -57,6 +62,19 @@ def truth_filename(run_elp):
 
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
+
+
+def test_dqinit_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
+    dqinit_path = Path(output_filename)
+    dqinit_filename = replace_suffix(dqinit_path.stem, 'dqinit')
+    dqinit_filename = dqinit_path.parent / (dqinit_filename + dqinit_path.suffix)
+
+    truth_path = Path(truth_filename)
+    truth_filename = replace_suffix(truth_path.stem, 'dqinit')
+    truth_filename = truth_path.parent / (truth_filename + truth_path.suffix)
+
+    diff = compare_asdf(dqinit_filename, truth_filename, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
 
