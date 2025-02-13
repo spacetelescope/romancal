@@ -36,9 +36,14 @@ concurrency:
 jobs:
   webbpsf_data_cache:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run scheduled tests')))
-    uses: spacetelescope/webbpsf/.github/workflows/retrieve_cache.yml@develop
-    with:
-      minimal: true
+    name: download WebbPSF data
+    runs-on: ubuntu-latest
+    steps:
+      - run: wget https://stsci.box.com/shared/static/0dt9z6b927iqgtify2a4cvls9hvapi6k.gz -O ${{ runner.temp }}/webbpsf-data.tar.gz
+      - run: mkdir ${{ runner.temp }}/data/
+      - run: tar -xzvf ${{ runner.temp }}/webbpsf-data.tar.gz -C ${{ runner.temp }}/data/
+    outputs:
+      path: ${{ runner.temp }}/data/
   latest_crds_contexts:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run scheduled tests')))
     uses: ./.github/workflows/contexts.yml
@@ -57,15 +62,14 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     with:
       setenv: |
-        WEBBPSF_PATH: /tmp/data/webbpsf-data/
+        WEBBPSF_PATH: ${{ needs.webbpsf_data_cache.path }}
         CRDS_PATH: /tmp/data/crds_cache/
         CRDS_SERVER_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.crds_server || 'https://roman-crds.stsci.edu' }}
         CRDS_CONTEXT: ${{ needs.crds_context.outputs.context }}
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
       cache-path: /tmp/data/
-      cache-key: data-${{ needs.webbpsf_data_cache.outputs.cache_key }}-${{ needs.crds_context.outputs.context }}
-      cache-restore-keys: ${{ needs.webbpsf_data_cache.outputs.cache_key }}
+      cache-key: data-${{ needs.crds_context.outputs.context }}
       envs: |
         - macos: py311-webbpsf
           pytest-results-summary: true
