@@ -7,18 +7,14 @@ import logging
 import numpy as np
 import webbpsf
 from astropy.modeling.fitting import LevMarLSQFitter
-from astropy.nddata import bitmask
 from astropy.table import Table
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
 from photutils.psf import IterativePSFPhotometry, PSFPhotometry, SourceGrouper
-from roman_datamodels.datamodels import ImageModel
-from roman_datamodels.dqflags import pixel
 from webbpsf import gridded_library
 
 __all__ = [
     "create_gridded_psf_model",
-    "dq_to_boolean_mask",
     "fit_psf_to_image_model",
 ]
 
@@ -154,7 +150,7 @@ def fit_psf_to_image_model(
     image_model=None,
     data=None,
     error=None,
-    dq=None,
+    mask=None,
     photometry_cls=PSFPhotometry,
     psf_model=None,
     grouper=None,
@@ -175,16 +171,15 @@ def fit_psf_to_image_model(
     ----------
     image_model : `roman_datamodels.datamodels.ImageModel`
         Image datamodel. If ``image_model`` is supplied,
-        ``data,error,dq`` should be `None`.
+        ``data,error`` should be `None`.
     data : `astropy.units.Quantity`
         Fit a PSF model to the rate image ``data``.
-        If ``data,error,dq`` are supplied, ``image_model`` should be `None`.
+        If ``data,error`` are supplied, ``image_model`` should be `None`.
     error : `astropy.units.Quantity`
         Uncertainties on fluxes in ``data``. Should be `None` if
         ``image_model`` is supplied.
-    dq : `numpy.ndarray`
-        Data quality bitmask for ``data``. Should be `None` if
-        ``image_model`` is supplied.
+    mask : 2D bool `numpy.ndarray`, optional
+        Mask to apply to the data. Default is `None`.
     photometry_cls : {`photutils.psf.PSFPhotometry`,
             `photutils.psf.IterativePSFPhotometry`}
         Choose a photutils PSF photometry technique (default or iterative).
@@ -275,21 +270,6 @@ def fit_psf_to_image_model(
                 "or arrays for the data and error."
             )
 
-    ignore_flags = pixel.NO_LIN_CORR
-    # presently the linearity correction is somewhat problematic in
-    # CRDS reference files; we should replace this with ignore_flags = 0
-    # at some point in the future.
-
-    if dq is None:
-        if image_model is not None and isinstance(image_model, ImageModel):
-            # L2 images have a dq array
-            mask = dq_to_boolean_mask(image_model, ignore_flags=ignore_flags)
-        else:
-            # L3 images
-            mask = image_model.weight == 0
-    else:
-        mask = dq_to_boolean_mask(dq)
-
     if data is None and image_model is not None:
         data = image_model.data
 
@@ -299,9 +279,6 @@ def fit_psf_to_image_model(
     if error_lower_limit is not None:
         # option to enforce a lower limit on the flux uncertainties
         error = np.clip(error, error_lower_limit, None)
-
-    # we also mask non-finite values in the data and error arrays:
-    non_finite = ~np.isfinite(data) | ~np.isfinite(error)
 
     if exclude_out_of_bounds and guesses is not None:
         # don't attempt to fit PSFs for objects with initial centroids
@@ -315,43 +292,7 @@ def fit_psf_to_image_model(
         guesses = guesses[init_centroid_in_range]
 
     # fit the model PSF to the data:
-    results_table = photometry(
-        data=data, error=error, init_params=guesses, mask=mask | non_finite
-    )
+    results_table = photometry(data=data, error=error, init_params=guesses, mask=mask)
 
     # results are stored on the PSFPhotometry instance:
     return results_table, photometry
-
-
-def dq_to_boolean_mask(image_model_or_dq, ignore_flags=0, flag_map_name="ROMAN_DQ"):
-    """
-    Convert a DQ bitmask to a boolean mask. Useful for photutils methods.
-
-    Parameters
-    ----------
-    image_model_or_dq : `roman_datamodels.datamodels.ImageModel` or `numpy.ndarray`
-        ImageModel containing the DQ bitmask to convert to a boolean mask,
-        or the DQ bitmask itself.
-    ignore_flags : int, str, list, None (default = 0)
-        See docs for `astropy.nddata.bitmask.extend_bit_flag_map`
-    flag_map_name : str
-        Name for the bitmask flag map in the astropy bitmask registry
-
-    Returns
-    -------
-    mask : `numpy.ndarray`
-        Boolean mask
-    """
-
-    if isinstance(image_model_or_dq, ImageModel):
-        dq = image_model_or_dq.dq
-    else:
-        dq = image_model_or_dq
-
-    # add the Roman DQ flags to the astropy bitmask registry:
-    dq_flag_map = {dq.name: dq.value for dq in pixel if dq.name != "GOOD"}
-    bitmask.extend_bit_flag_map(flag_map_name, **dq_flag_map)
-
-    # convert the bitmask to a boolean mask:
-    mask = bitmask.bitfield_to_boolean_mask(dq, ignore_flags=ignore_flags)
-    return mask.astype(bool)

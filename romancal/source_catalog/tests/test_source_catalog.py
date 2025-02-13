@@ -61,9 +61,10 @@ def make_test_image():
     data[y0 + 1 : y1 - 1, x3] = value
 
     rng = np.random.default_rng(seed=123)
-    noise = rng.normal(0, 2.5, size=data.shape)
+    noise_scale = 2.5
+    noise = rng.normal(0, noise_scale, size=data.shape)
     data += noise
-    err = data / 10.0
+    err = np.zeros_like(data) + noise_scale
 
     return data, err
 
@@ -88,6 +89,38 @@ def image_model():
     model.err = err
     model.meta.photometry.conversion_megajanskys = (0.3324 * u.MJy / u.sr).value
     return model
+
+
+@pytest.mark.webbpsf
+def test_forced_catalog(image_model, tmp_path):
+    os.chdir(tmp_path)
+    step = SourceCatalogStep()
+    _ = step.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=True,
+        output_file="source_cat.asdf",
+    )
+    result_force = step.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=True,
+        output_file="force_cat.asdf",
+        forced_segmentation="source_segm.asdf",
+    )
+    catalog = result_force.source_catalog
+    assert isinstance(catalog, Table)
+    has_forced_fields = False
+    for field in catalog.dtype.names:
+        if "forced_" in field:
+            has_forced_fields = True
+    assert has_forced_fields
 
 
 @pytest.mark.webbpsf
@@ -137,9 +170,6 @@ def test_l2_source_catalog(
         "aper70_flux_err",
         "aper_total_flux",
         "aper_total_flux_err",
-        "CI_50_30",
-        "CI_70_50",
-        "CI_70_30",
         "is_extended",
         "sharpness",
         "roundness",
@@ -193,8 +223,9 @@ def test_l3_source_catalog(
     os.chdir(tmp_path)
     step = SourceCatalogStep()
 
+    im = mosaic_model
     result = step.call(
-        mosaic_model,
+        im,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         snr_threshold=snr_threshold,
@@ -222,9 +253,6 @@ def test_l3_source_catalog(
         "aper70_flux_err",
         "aper_total_flux",
         "aper_total_flux_err",
-        "CI_50_30",
-        "CI_70_50",
-        "CI_70_30",
         "is_extended",
         "sharpness",
         "roundness",
