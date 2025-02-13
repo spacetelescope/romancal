@@ -40,11 +40,11 @@ data used throughout most of the exposure pipeline steps. For the most part, the
 meta information between the input raw, or "uncal", model and the ramp model is
 complete.
 
-However, romancal supports processing a selection of files which use an
-outdated schema. It supports these with a bespoke method that converts the files
-to the new format when they are read in dq_init. This conversion does not do a
-detailed mapping between all of the new and old metadata, but instead
-opportunistically looks for fields with common names and assigns them. Other
-metadata with non-matching names is simply copied in place. This allows
-processing to proceed and preserves the original metadata, but the resulting
-files have duplicates of many entries.
+However, romancal supports processing a selection of files which use an outdated
+schema. It supports these with a bespoke method that converts the files to the
+new format when they are read in dq_init. This conversion does not do a detailed
+mapping between all of the new and old metadata, but instead opportunistically
+looks for fields with common names and assigns them. Other metadata with
+non-matching names is simply into a new 'extras' component of the metadata. This
+allows processing to proceed and preserves the original metadata, but the
+resulting files have duplicates of many entries.
