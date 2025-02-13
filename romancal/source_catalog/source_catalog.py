@@ -554,8 +554,15 @@ class RomanSourceCatalog:
                 bkg_data = mask.get_values(self.model.data)
                 values = sigclip(bkg_data, masked=False)
                 nvalues.append(values.size)
-                bkg_median.append(np.median(values))
-                bkg_std.append(np.std(values))
+                med = np.median(values)
+                std = np.std(values)
+                if values.size == 0:
+                    # handle case where source is completely masked due to
+                    # forced photometry
+                    med *= self.model.data.unit
+                    std *= self.model.data.unit
+                bkg_median.append(med)
+                bkg_std.append(std)
 
             nvalues = np.array(nvalues)
             bkg_median = u.Quantity(bkg_median)
@@ -619,9 +626,6 @@ class RomanSourceCatalog:
         for the additional catalog values.
         """
         desc = {}
-        for idx, colname in enumerate(self.ci_colnames):
-            desc[colname] = self.ci_colname_descriptions[idx]
-
         desc["flags"] = "Data quality flags"
         desc["is_extended"] = "Flag indicating whether the source is extended"
         desc["sharpness"] = "The DAOFind source sharpness statistic"
@@ -637,19 +641,22 @@ class RomanSourceCatalog:
         """
         Data quality flags.
         """
-        xyidx = np.round(self._xypos).astype(int)
+        badpos = ~np.isfinite(self._xypos[:, 0]) | ~np.isfinite(self._xypos[:, 1])
+        m = ~badpos
+        xyidx = np.round(self._xypos[m, :]).astype(int)
+        flags = np.full(self._xypos.shape[0], pixel.DO_NOT_USE, dtype=int)
 
         try:
             # L2 images have a dq array
             dqflags = self.model.dq[xyidx[:, 1], xyidx[:, 0]]
             # if dqflags contains the DO_NOT_USE flag, set to DO_NOT_USE
             # (dq=1), otherwise 0
-            flags = dqflags & pixel.DO_NOT_USE
+            flags[m] = dqflags & pixel.DO_NOT_USE
 
         except AttributeError:
             # L3 images
             mask = self.model.weight == 0
-            flags = mask[xyidx[:, 1], xyidx[:, 0]].astype(int)
+            flags[m] = mask[xyidx[:, 1], xyidx[:, 0]].astype(int)
 
         return flags
 
@@ -925,7 +932,7 @@ class RomanSourceCatalog:
         if self.n_sources == 1:
             return -1
 
-        nn_label = self.label[self._kdtree_query[1]]
+        nn_label = self.label[self._kdtree_query[1]].astype("i4")
         # assign a label of -1 for non-finite xypos
         nn_label[self._xypos_nonfinite_mask] = -1
 
@@ -1019,8 +1026,13 @@ class RomanSourceCatalog:
 
         else:
             # NOTE: label is need to join the tables
+            _ = self.extras_colnames  # trigger updating the descriptions
             colnames = [
                 "label",
+                "flags",
+                "is_extended",
+                "sharpness",
+                "roundness",
                 "isophotal_flux",
                 "isophotal_flux_err",
                 "kron_flux",
