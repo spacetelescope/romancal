@@ -33,7 +33,7 @@ dependencies = [
     "tweakwcs >=0.8.8",
     "spherical-geometry >= 1.2.22",
     "stsci.imagestats >= 1.6.3",
-    "drizzle >= 1.15.0",
+    "drizzle >= 2.0.1",
     "webbpsf >= 1.2.1",
     # pysiaf required by webbpsf uses pkg_resources which doesn't
     # exist in python 3.12 without setuptools.
