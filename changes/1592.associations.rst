@@ -1,1 +1,0 @@
-Fix bug where skycell_wcs_info was double json encoded

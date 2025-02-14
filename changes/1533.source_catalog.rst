@@ -1,1 +1,0 @@
-Use meta.source_catalog and meta.cal_step.source_catalog in source_catalog step.
