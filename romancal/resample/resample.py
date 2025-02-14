@@ -152,9 +152,11 @@ class ResampleData(Resample):
         # every resampling will generate these
         output_model.data = self.output_model["data"]
 
+        output_model.weight = self.output_model["wht"]
+
         # some things are conditional
-        if ctx := self.output_model.get("ctx"):
-            output_model.context = ctx.astype(np.uint32)
+        if self._enable_ctx:
+            output_model.context = self.output_model["con"].astype(np.uint32)
         for arr_name in ("err", "var_rnoise", "var_poisson", "var_flat"):
             if arr_name in self.output_model:
                 new_array = self.output_model[arr_name]
