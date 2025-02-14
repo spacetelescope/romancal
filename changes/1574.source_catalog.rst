@@ -1,1 +1,0 @@
-Create a common mask array for both segmentation and PSF photometry.

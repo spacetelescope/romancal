@@ -1,1 +1,0 @@
-Remove the jump code for the deprecated jump detection for even ramps and update the documentation

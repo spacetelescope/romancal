@@ -1,1 +1,0 @@
-Fix description of arguments in docs and add description of fully saturated input processing.
