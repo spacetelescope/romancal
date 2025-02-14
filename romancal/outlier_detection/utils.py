@@ -58,11 +58,6 @@ def _median_with_resampling(
         set to False. If None or 0 the buffer size will be set to the size of one
         resampled image.
     """
-    if not resamp.single:
-        raise ValueError(
-            "median_with_resampling should only be used for resample_many_to_many"
-        )
-
     in_memory = not input_models._on_disk
     indices_by_group = list(input_models.group_indices.values())
     nresultants = len(indices_by_group)
@@ -71,7 +66,7 @@ def _median_with_resampling(
 
     with input_models:
         for i, indices in enumerate(indices_by_group):
-            drizzled_model = resamp.resample_group(input_models, indices)
+            drizzled_model = resamp.resample_group(indices)
 
             if save_intermediate_results:
                 # write the drizzled model to file
@@ -255,17 +250,20 @@ def detect_outliers(
     if resample_data:
         resamp = ResampleData(
             library,
-            single=True,
+            None,
+            pixfrac,
+            kernel,
+            fillval,
             # FIXME prior code provided weight_type when only wht_type is understood
             # both default to 'ivm' but tests that set this to something else did
             # not change the resampling weight type. For now, disabling it to match
             # the previous behavior.
-            # wht_type=weight_type
-            pixfrac=pixfrac,
-            kernel=kernel,
-            fillval=fillval,
-            good_bits=good_bits,
-            in_memory=in_memory,
+            "ivm",
+            good_bits,
+            False,
+            False,
+            False,
+            "",
         )
         median_data, median_wcs = _median_with_resampling(
             library,

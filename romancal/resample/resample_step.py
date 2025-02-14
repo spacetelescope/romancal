@@ -112,56 +112,25 @@ class ResampleStep(RomanStep):
         if not len(input_models):
             raise ValueError("At least 1 file must be provided")
 
-        # load an output wcs if one was provided
-        output_wcs = self._load_custom_wcs(self.output_wcs, self.output_shape)
-
-        if output_wcs is None:
-            sregions = []
-            ref_wcs = None
-            ref_wcsinfo = None
-
-        # Check that input models are 2D images
-        with input_models:
-            model = input_models.borrow(0)
-            data_shape = model.data.shape
-            input_models.shelve(model, 0, modify=False)
-            if len(data_shape) != 2:
-                # resample can only handle 2D images, not 3D cubes, etc
-                raise RuntimeError(f"Input {input_models[0]} is not a 2D image.")
-            # if we don't have a wcs, compute one
-            if output_wcs is None:
-                if ref_wcs is None:
-                    ref_wcs = deepcopy(model.meta.wcs)
-                    ref_wcsinfo = deepcopy(model.meta.wcsinfo)
-                sregions.append(model.meta.wcsinfo.s_region)
-
-        if output_wcs is None:
-            if len(input_models) == 1:
-                output_wcs = ref_wcs
-            else:
-                # TODO compute pixel_scale pixel_scale_ratio (if not defined)
-                wcs = util.wcs_from_sregions(
-                    sregions,
-                    ref_wcs=ref_wcs,
-                    ref_wcsinfo=ref_wcsinfo,
-                    pscale_ratio=self.pixel_scale_ratio,
-                    pscale=self.pixel_scale,
-                    rotation=self.rotation,
-                    shape=self.output_shape,
-                    crpix=self.crpix,
-                    crval=self.crval,
-                )
-                output_wcs = {
-                    "wcs": wcs,
-                    "pixel_scale": self.pixel_scale,
-                    "pixel_scale_ratio": self.pixel_scale_ratio,
-                }
-
         # Issue a warning about the use of exptime weighting
         if self.weight_type == "exptime":
             self.log.warning("Use of EXPTIME weighting will result in incorrect")
             self.log.warning("propagated errors in the resampled product")
 
+        output_wcs = self._load_custom_wcs(self.output_wcs, self.output_shape)
+
+        if output_wcs is None:
+            # TODO this is poorly defined
+            wcs_kwargs = {
+                "pscale_ratio": self.pixel_scale_ratio,
+                "pscale": self.pixel_scale,
+                "rotation": self.rotation,
+                "shape": self.output_shape,
+                "crpix": self.crpix,
+                "crval": self.crval,
+            }
+        else:
+            wcs_kwargs = None
         # Call the resampling routine
         resamp = ResampleData(
             input_models,
@@ -175,33 +144,11 @@ class ResampleStep(RomanStep):
             True,
             True,
             output,
-            #     input_models,
-            #     output_wcs,
-            #     output=output,
-            #     output_shape=self.output_shape,
-            #     crpix=self.crpix,
-            #     crval=self.crval,
-            #     rotation=self.rotation,
-            #     pscale=self.pixel_scale,
-            #     pscale_ratio=self.pixel_scale_ratio,
-            #     in_memory=self.in_memory,
-            #     good_bits=self.good_bits,
-            #     wht_type=str(self.weight_type),
-            #     fillval=str(self.fillval),
-            #     kernel=str(self.kernel),
-            #     pixfrac=self.pixfrac,
+            wcs_kwargs,
         )
         result = resamp.do_drizzle()
 
         self._final_updates(result, input_models)
-        # with result:
-        #     for i, model in enumerate(result):
-        #         self._final_updates(model, input_models)
-        #         result.shelve(model, i)
-        #     if len(result) == 1:
-        #         model = result.borrow(0)
-        #         result.shelve(model, 0, modify=False)
-        #         return model
 
         return result
 

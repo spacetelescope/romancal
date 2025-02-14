@@ -3,7 +3,11 @@ import logging
 import numpy as np
 from astropy.coordinates import SkyCoord
 from roman_datamodels import datamodels, dqflags, maker_utils
-from stcal.alignment.util import compute_s_region_keyword, compute_scale
+from stcal.alignment.util import (
+    compute_s_region_keyword,
+    compute_scale,
+    wcs_from_sregions,
+)
 from stcal.resample import Resample
 
 from ..assign_wcs import utils
@@ -30,10 +34,38 @@ class ResampleData(Resample):
         enable_var,
         compute_err,
         output_filename,  # to allow meta.filename setting
+        wcs_kwargs=None,
     ):
         self.output_filename = output_filename
 
         self.input_models = input_models
+
+        if output_wcs is None:
+            sregions = []
+            ref_wcs = None
+            ref_wcsinfo = None
+            with input_models:
+                for model in input_models:
+                    if ref_wcs is None:
+                        ref_wcs = model.meta.wcs
+                        ref_wcsinfo = model.meta.wcsinfo
+                    sregions.append(model.meta.wcsinfo.s_region)
+                    input_models.shelve(model, modify=False)
+                output_wcs = ref_wcs
+            if wcs_kwargs is None:
+                wcs_kwargs = {}
+            # TODO compute pixel_scale pixel_scale_ratio (if not defined)
+            wcs = wcs_from_sregions(
+                sregions,
+                ref_wcs=ref_wcs,
+                ref_wcsinfo=ref_wcsinfo,
+                **wcs_kwargs,
+            )
+            output_wcs = {
+                "wcs": wcs,
+                # "pixel_scale": self.pixel_scale,
+                # "pixel_scale_ratio": self.pixel_scale_ratio,
+            }
 
         super().__init__(
             output_wcs,
@@ -52,30 +84,28 @@ class ResampleData(Resample):
         pixel_area = model.meta.photometry.pixel_area
         if pixel_area == -999999:
             pixel_area = None
-        model_dict = {
+        exposure_time = model.meta.exposure.exposure_time
+        if exposure_time == -999999:
+            exposure_time = 1
+        return {
             "data": model.data,
             "dq": model.dq,
+            "var_rnoise": model.var_rnoise,
+            "var_poisson": model.var_poisson,
+            "var_flat": model.var_flat,
+            "err": model.err,
             "filename": model.meta.filename,
             "wcs": model.meta.wcs,
             "pixelarea_steradians": pixel_area,
             "group_id": model.meta.group_id,
             "measurement_time": None,  # falls back to exposure_time
-            "exposure_time": model.meta.exposure.exposure_time,
+            "exposure_time": exposure_time,
             "start_time": model.meta.exposure.start_time,
             "end_time": model.meta.exposure.end_time,
             "duration": None,  # unused
             "level": model.meta.background.level,
             "subtracted": model.meta.background.subtracted,
         }
-
-        if self.enable_var:
-            model_dict["var_rnoise"] = model.var_rnoise
-            model_dict["var_poisson"] = model.var_poisson
-            model_dict["var_flat"] = model.var_flat
-
-        # TODO this is only needed when compute_err=driz_err?
-        model_dict["err"] = model.err
-        return model_dict
 
     def add_model(self, model):
         super().add_model(self._input_model_to_dict(model))
@@ -104,9 +134,10 @@ class ResampleData(Resample):
             m["expname"] for m in self.input_models.asn["products"][0]["members"]
         ]
 
-        output_model.meta.resample.pixel_scale_ratio = self.output_model[
-            "pixel_scale_ratio"
-        ]
+        pixel_scale_ratio = self.output_model["pixel_scale_ratio"]
+        if pixel_scale_ratio is not None:
+            output_model.meta.resample.pixel_scale_ratio = pixel_scale_ratio
+
         output_model.meta.resample.pointings = len(self.input_models.group_names)
         # output_model.meta.resample.pointings = self.output_model["pointings"]
 
@@ -130,7 +161,9 @@ class ResampleData(Resample):
             output_model.context = ctx.astype(np.uint32)
         for arr_name in ("err", "var_rnoise", "var_poisson", "var_flat"):
             if arr_name in self.output_model:
-                setattr(output_model, arr_name, self.output_model[arr_name])
+                new_array = self.output_model[arr_name]
+                if new_array is not None:
+                    setattr(output_model, arr_name, new_array)
         return output_model
 
     def reset_arrays(self, n_input_models=None):
@@ -147,8 +180,8 @@ class ResampleData(Resample):
         #
         # if we already resampled a group this instance will be "finalized" and
         # require resetting before we can add new models
-        if self.finalized:
-            self.reset_arrays(reset_output=True, n_output_models=len(indices))
+        if self.is_finalized():
+            self.reset_arrays(len(indices))
 
         with self.input_models:
             for index in indices:
