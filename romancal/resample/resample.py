@@ -33,11 +33,8 @@ class ResampleData(Resample):
         enable_ctx,
         enable_var,
         compute_err,
-        output_filename,  # to allow meta.filename setting
         wcs_kwargs=None,
     ):
-        self.output_filename = output_filename
-
         self.input_models = input_models
 
         if output_wcs is None:
@@ -121,7 +118,6 @@ class ResampleData(Resample):
         output_model = maker_utils.mk_datamodel(
             datamodels.MosaicModel, n_images=0, shape=(0, 0)
         )
-        output_model.meta.filename = self.output_filename
 
         output_model.meta.resample.good_bits = self.good_bits
         output_model.meta.resample.weight_type = self.weight_type
@@ -172,14 +168,6 @@ class ResampleData(Resample):
         # make model blender, could be done in __init__?
 
     def resample_group(self, indices):
-        # required by outlier detection ONLY
-        # call reset_arrays (this is ALSO called by __init__ so not sure if needed)
-        #   maybe only call it if finalized is True need to call with reset_output=True
-        # ... add_model
-        # finalize
-        #
-        # if we already resampled a group this instance will be "finalized" and
-        # require resetting before we can add new models
         if self.is_finalized():
             self.reset_arrays(len(indices))
 
@@ -190,20 +178,6 @@ class ResampleData(Resample):
                 # TODO modify False?
                 self.input_models.shelve(model, index)
 
-        return self.finalize()
-
-    def do_drizzle(self):
-        # old API used by step, jwst PR removes this and replaces it with
-        # either a many_to_many or many_to_one call
-        #
-        # no need to call reset_arrays since it's called by __init__
-        # just call add_model... then finalize
-        # TODO resample_group with range(len(self.input_models))?
-        with self.input_models:
-            for index, model in enumerate(self.input_models):
-                self.add_model(model)
-                # TODO modify False?
-                self.input_models.shelve(model, index)
         return self.finalize()
 
 

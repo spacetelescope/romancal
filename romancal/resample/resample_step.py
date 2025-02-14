@@ -83,7 +83,7 @@ class ResampleStep(RomanStep):
         if isinstance(input, datamodels.DataModel):
             input_models = ModelLibrary([input])
             # set output filename from meta.filename found in the first datamodel
-            output = input.meta.filename
+            output_filename = input.meta.filename
         elif isinstance(input, str):
             # either a single asdf filename or an association filename
             try:
@@ -92,17 +92,17 @@ class ResampleStep(RomanStep):
             except Exception:
                 # single ASDF filename
                 input_models = ModelLibrary([input])
-            output = input_models.asn["products"][0]["name"]
+            output_filename = input_models.asn["products"][0]["name"]
         elif isinstance(input, ModelLibrary):
             input_models = input
             if "name" in input_models.asn["products"][0]:
-                output = input_models.asn["products"][0]["name"]
+                output_filename = input_models.asn["products"][0]["name"]
             else:
                 # set output filename using the common prefix of all datamodels
-                output = f"{os.path.commonprefix([x['expname'] for x in input_models.asn['products'][0]['members']])}.asdf"
-                if len(output) == 0:
+                output_filename = f"{os.path.commonprefix([x['expname'] for x in input_models.asn['products'][0]['members']])}.asdf"
+                if len(output_filename) == 0:
                     # set default filename if no common prefix can be determined
-                    output = "resample_output.asdf"
+                    output_filename = "resample_output.asdf"
         else:
             raise TypeError(
                 "Input must be an ASN filename, a ModelLibrary, "
@@ -143,10 +143,10 @@ class ResampleStep(RomanStep):
             True,
             True,
             "from_var",
-            output,
             wcs_kwargs,
         )
-        result = resamp.do_drizzle()
+        result = resamp.resample_group(range(len(input_models)))
+        result.meta.filename = output_filename
 
         self._final_updates(result, input_models)
 
