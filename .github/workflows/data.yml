@@ -13,7 +13,7 @@ on:
 
 jobs:
   download_webbpsf_data:
-    uses: spacetelescope/webbpsf/.github/workflows/download_data.yml@develop
+    uses: ./.github/workflows/download_data.yml
     with:
       minimal: ${{ github.event_name != 'workflow_dispatch' && true || inputs.webbpsf_minimal }}
   move_data_cache_path:

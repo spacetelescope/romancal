@@ -37,7 +37,7 @@ jobs:
       envs: |
         - linux: check-dependencies
   webbpsf_data_cache:
-    uses: spacetelescope/webbpsf/.github/workflows/retrieve_cache.yml@develop
+    uses: ./.github/workflows/retrieve_cache.yml
     with:
       minimal: true
   latest_crds_contexts:
