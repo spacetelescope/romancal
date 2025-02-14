@@ -1,10 +1,7 @@
 import logging
 import warnings
 
-import gwcs
 import numpy as np
-from astropy import wcs as fitswcs
-from astropy.modeling import Model
 from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from roman_datamodels.dqflags import pixel
 from stcal.alignment.util import wcs_from_footprints
@@ -174,98 +171,6 @@ def build_driz_weight(
     return result.astype(np.float32)
 
 
-def calc_gwcs_pixmap(in_wcs, out_wcs, shape=None):
-    """
-    Generate a pixel map grid using the input and output WCS.
-
-    Parameters
-    ----------
-    in_wcs : `~astropy.wcs.WCS`
-        Input WCS.
-    out_wcs : `~astropy.wcs.WCS`
-        Output WCS.
-    shape : tuple, optional
-        Shape of the data. If provided, the bounding box will be calculated
-        from the shape. If not provided, the bounding box will be calculated
-        from the input WCS.
-
-    Returns
-    -------
-    pixmap : `~numpy.ndarray`
-        The calculated pixel map grid.
-
-    """
-    if shape:
-        bb = wcs_bbox_from_shape(shape)
-        log.debug(f"Bounding box from data shape: {bb}")
-    else:
-        bb = in_wcs.bounding_box
-        log.debug(f"Bounding box from WCS: {in_wcs.bounding_box}")
-
-    grid = gwcs.wcstools.grid_from_bounding_box(bb)
-    return np.dstack(reproject(in_wcs, out_wcs)(grid[0], grid[1]))
-
-
-def reproject(wcs1, wcs2):
-    """
-    Given two WCSs or transforms return a function which takes pixel
-    coordinates in the first WCS or transform and computes them in the second
-    one. It performs the forward transformation of ``wcs1`` followed by the
-    inverse of ``wcs2``.
-
-    Parameters
-    ----------
-    wcs1, wcs2 : `astropy.wcs.WCS` or `gwcs.wcs.WCS` or `astropy.modeling.Model`
-        WCS objects.
-
-    Returns
-    -------
-    : func
-        Function to compute the transformations.  It takes `(x, y)`
-        positions in ``wcs1`` and returns `(x, y)` positions in ``wcs2``.
-    """
-
-    if isinstance(wcs1, fitswcs.WCS):
-        forward_transform = wcs1.all_pix2world
-    elif isinstance(wcs1, gwcs.WCS):
-        forward_transform = wcs1.forward_transform
-    elif issubclass(wcs1, Model):
-        forward_transform = wcs1
-    else:
-        raise TypeError(
-            "Expected input to be astropy.wcs.WCS or gwcs.wcs.WCS "
-            "object or astropy.modeling.Model subclass"
-        )
-
-    if isinstance(wcs2, fitswcs.WCS):
-        backward_transform = wcs2.all_world2pix
-    elif isinstance(wcs2, gwcs.WCS):
-        backward_transform = wcs2.backward_transform
-    elif issubclass(wcs2, Model):
-        backward_transform = wcs2.inverse
-    else:
-        raise TypeError(
-            "Expected input to be astropy.wcs.WCS or gwcs.wcs.WCS "
-            "object or astropy.modeling.Model subclass"
-        )
-
-    def _reproject(x, y):
-        sky = forward_transform(x, y)
-        flat_sky = []
-        for axis in sky:
-            flat_sky.append(axis.flatten())
-        # Filter out RuntimeWarnings due to computed NaNs in the WCS
-        warnings.simplefilter("ignore")
-        det = backward_transform(*tuple(flat_sky))
-        warnings.resetwarnings()
-        det_reshaped = []
-        for axis in det:
-            det_reshaped.append(axis.reshape(x.shape))
-        return tuple(det_reshaped)
-
-    return _reproject
-
-
 def decode_context(context, x, y):
     """
     Get 0-based indices of input images that contributed to (resampled)
@@ -342,19 +247,3 @@ def decode_context(context, x, y):
         np.flatnonzero([v & (1 << k) for v in context[:, yi, xi] for k in range(nbits)])
         for xi, yi in zip(x, y, strict=False)
     ]
-
-
-def resample_range(data_shape, bbox=None):
-    # Find range of input pixels to resample:
-    if bbox is None:
-        xmin = ymin = 0
-        xmax = data_shape[1] - 1
-        ymax = data_shape[0] - 1
-    else:
-        ((x1, x2), (y1, y2)) = bbox
-        xmin = max(0, int(x1 + 0.5))
-        ymin = max(0, int(y1 + 0.5))
-        xmax = min(data_shape[1] - 1, int(x2 + 0.5))
-        ymax = min(data_shape[0] - 1, int(y2 + 0.5))
-
-    return xmin, xmax, ymin, ymax
