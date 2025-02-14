@@ -40,11 +40,11 @@ jobs:
     name: download WebbPSF data
     runs-on: ubuntu-latest
     steps:
-      - run: wget https://stsci.box.com/shared/static/0dt9z6b927iqgtify2a4cvls9hvapi6k.gz -O ${{ runner.temp }}/webbpsf-data.tar.gz
+      - run: wget https://stsci.box.com/shared/static/3hzmbarac5yxjt6x7gn17vz02k7c8z1d.gz -O ${{ runner.temp }}/webbpsf-data.tar.gz
       - run: mkdir ${{ runner.temp }}/data/
       - run: tar -xzvf ${{ runner.temp }}/webbpsf-data.tar.gz -C ${{ runner.temp }}/data/
     outputs:
-      path: ${{ runner.temp }}/data/
+      path: ${{ runner.temp }}/data/webbpsf-data/
   latest_crds_contexts:
     uses: ./.github/workflows/contexts.yml
   crds_context:
