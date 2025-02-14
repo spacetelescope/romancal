@@ -53,10 +53,10 @@ class ResampleStep(RomanStep):
     class_alias = "resample"
 
     spec = """
-        pixfrac = float(default=1.0) # change back to None when drizpar reference files are updated
-        kernel = string(default='square') # change back to None when drizpar reference files are updated
-        fillval = string(default='INDEF' ) # change back to None when drizpar reference files are updated
-        weight_type = option('ivm', 'exptime', None, default='ivm')  # change back to None when drizpar ref update
+        pixfrac = float(default=1.0)
+        kernel = string(default='square')
+        fillval = string(default='INDEF' )
+        weight_type = option('ivm', 'exptime', None, default='ivm')
         output_shape = int_list(min=2, max=2, default=None)  # [x, y] order
         crpix = float_list(min=2, max=2, default=None)
         crval = float_list(min=2, max=2, default=None)
@@ -71,6 +71,8 @@ class ResampleStep(RomanStep):
     reference_file_types: ClassVar = []
 
     def process(self, input):
+        # There is no way to check for minimum values in output_shape
+        # within the step spec so check them here.
         if self.output_shape is not None:
             for v in self.output_shape:
                 if v < 1:
@@ -107,52 +109,99 @@ class ResampleStep(RomanStep):
                 "a single ASDF filename, or a single Roman DataModel."
             )
 
+        if not len(input_models):
+            raise ValueError("At least 1 file must be provided")
+
+        # load an output wcs if one was provided
+        output_wcs = self._load_custom_wcs(self.output_wcs, self.output_shape)
+
+        if output_wcs is None:
+            sregions = []
+            ref_wcs = None
+            ref_wcsinfo = None
+
         # Check that input models are 2D images
         with input_models:
-            example_model = input_models.borrow(0)
-            data_shape = example_model.data.shape
-            input_models.shelve(example_model, 0, modify=False)
+            model = input_models.borrow(0)
+            data_shape = model.data.shape
+            input_models.shelve(model, 0, modify=False)
             if len(data_shape) != 2:
                 # resample can only handle 2D images, not 3D cubes, etc
                 raise RuntimeError(f"Input {input_models[0]} is not a 2D image.")
+            # if we don't have a wcs, compute one
+            if output_wcs is None:
+                if ref_wcs is None:
+                    ref_wcs = deepcopy(model.meta.wcs)
+                    ref_wcsinfo = deepcopy(model.meta.wcsinfo)
+                sregions.append(model.meta.wcsinfo.s_region)
+
+        if output_wcs is None:
+            if len(input_models) == 1:
+                output_wcs = ref_wcs
+            else:
+                # TODO compute pixel_scale pixel_scale_ratio (if not defined)
+                wcs = util.wcs_from_sregions(
+                    sregions,
+                    ref_wcs=ref_wcs,
+                    ref_wcsinfo=ref_wcsinfo,
+                    pscale_ratio=self.pixel_scale_ratio,
+                    pscale=self.pixel_scale,
+                    rotation=self.rotation,
+                    shape=self.output_shape,
+                    crpix=self.crpix,
+                    crval=self.crval,
+                )
+                output_wcs = {
+                    "wcs": wcs,
+                    "pixel_scale": self.pixel_scale,
+                    "pixel_scale_ratio": self.pixel_scale_ratio,
+                }
 
         # Issue a warning about the use of exptime weighting
         if self.weight_type == "exptime":
             self.log.warning("Use of EXPTIME weighting will result in incorrect")
             self.log.warning("propagated errors in the resampled product")
 
-        # Custom output WCS parameters.
-        self.log.info("Setting drizzle's default parameters...")
-        # Modify get_drizpars if any of these get into reference files:
-
         # Call the resampling routine
         resamp = ResampleData(
             input_models,
-            output=output,
-            output_shape=self.output_shape,
-            output_wcs=self._load_custom_wcs(self.output_wcs, self.output_shape),
-            crpix=self.crpix,
-            crval=self.crval,
-            rotation=self.rotation,
-            pscale=self.pixel_scale,
-            pscale_ratio=self.pixel_scale_ratio,
-            in_memory=self.in_memory,
-            good_bits=self.good_bits,
-            wht_type=str(self.weight_type),
-            fillval=str(self.fillval),
-            kernel=str(self.kernel),
-            pixfrac=self.pixfrac,
+            output_wcs,
+            self.pixfrac,
+            self.kernel,
+            self.fillval,
+            self.weight_type,
+            self.good_bits,
+            True,
+            True,
+            True,
+            output,
+            #     input_models,
+            #     output_wcs,
+            #     output=output,
+            #     output_shape=self.output_shape,
+            #     crpix=self.crpix,
+            #     crval=self.crval,
+            #     rotation=self.rotation,
+            #     pscale=self.pixel_scale,
+            #     pscale_ratio=self.pixel_scale_ratio,
+            #     in_memory=self.in_memory,
+            #     good_bits=self.good_bits,
+            #     wht_type=str(self.weight_type),
+            #     fillval=str(self.fillval),
+            #     kernel=str(self.kernel),
+            #     pixfrac=self.pixfrac,
         )
         result = resamp.do_drizzle()
 
-        with result:
-            for i, model in enumerate(result):
-                self._final_updates(model, input_models)
-                result.shelve(model, i)
-            if len(result) == 1:
-                model = result.borrow(0)
-                result.shelve(model, 0, modify=False)
-                return model
+        self._final_updates(result, input_models)
+        # with result:
+        #     for i, model in enumerate(result):
+        #         self._final_updates(model, input_models)
+        #         result.shelve(model, i)
+        #     if len(result) == 1:
+        #         model = result.borrow(0)
+        #         result.shelve(model, 0, modify=False)
+        #         return model
 
         return result
 
@@ -199,4 +248,4 @@ class ResampleStep(RomanStep):
                 "'bounding_box' attributes set."
             )
 
-        return wcs
+        return {"wcs": wcs}
