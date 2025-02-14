@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
-from roman_datamodels.datamodels import RampModel
+from roman_datamodels.datamodels import RampModel, ScienceRawModel
 from roman_datamodels.dqflags import pixel
 
 from romancal.dq_init import dq_initialization
@@ -47,6 +47,10 @@ class DQInitStep(RomanStep):
         """
         # Open datamodel
         input_model = rdm.open(input)
+        try:
+            input_model = ScienceRawModel.from_tvac_raw(input_model)
+        except ValueError:
+            pass
 
         # Convert to RampModel
         output_model = RampModel.from_science_raw(input_model)
