@@ -142,7 +142,7 @@ class ResampleStep(RomanStep):
             self.good_bits,
             True,
             True,
-            True,
+            "from_var",
             output,
             wcs_kwargs,
         )
