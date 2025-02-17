@@ -104,8 +104,15 @@ class ResampleData(Resample):
             "subtracted": model.meta.background.subtracted,
         }
 
+    def _get_indentsity_scale(model):
+        # FIXME we lie about this to retain the old behavior
+        return 1
+
     def add_model(self, model):
-        super().add_model(self._input_model_to_dict(model))
+        model_dict = self._input_model_to_dict(model)
+        # FIXME we lie about a few things to retain the old behavior
+        model_dict["exposure_time"] = 1
+        super().add_model(model_dict)
         # TODO blend metadata
 
     def finalize(self):
