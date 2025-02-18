@@ -118,6 +118,7 @@ class MultibandCatalogStep(RomanStep):
             deblend=self.deblend,
             mask=mask,
         )
+        segment_img.detection_image = det_img
 
         if segment_img is None:  # no sources found
             source_catalog_model.source_catalog = Table()
@@ -217,6 +218,7 @@ class MultibandCatalogStep(RomanStep):
 
         if segment_img is not None:
             segmentation_model.data = segment_img.data.astype(np.uint32)
+            segmentation_model["detection_image"] = segment_img.detection_image
             self.save_model(
                 segmentation_model,
                 output_file=output_filename,

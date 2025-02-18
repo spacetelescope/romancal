@@ -76,8 +76,7 @@ Output Products
 
 Source Catalog Table
 ^^^^^^^^^^^^^^^^^^^^
-The output source catalog table is saved in `ECSV format
-<https://docs.astropy.org/en/stable/io/ascii/ecsv.html>`_.
+The output source catalog table is saved in `asdf` format.
 
 The table contains a row for each source, with the following default
 columns (assuming the default encircled energies of 30, 50, and 70):
@@ -91,7 +90,7 @@ columns (assuming the default encircled energies of 30, 50, and 70):
 +------------------------+----------------------------------------------------+
 | ycentroid              | Y pixel value of the source centroid (0 indexed)   |
 +------------------------+----------------------------------------------------+
-| sky_centroid           | Sky coordinate of the source centroid              |
+| ra/dec_centroid        | ra/dec coordinate of the source centroid           |
 +------------------------+----------------------------------------------------+
 | aper_bkg_flux          | The local background value calculated as the       |
 |                        | sigma-clipped median value in the background       |
@@ -126,14 +125,7 @@ columns (assuming the default encircled energies of 30, 50, and 70):
 |                        | 70% encircled energy circular aperture; should be  |
 |                        | used only for unresolved sources                   |
 +------------------------+----------------------------------------------------+
-| CI_50_30               | Concentration index calculated as (aper50_flux /   |
-|                        | aper30_flux)                                       |
-+------------------------+----------------------------------------------------+
-| CI_70_50               | Concentration index calculated as (aper70_flux /   |
-|                        | aper50_flux)                                       |
-+------------------------+----------------------------------------------------+
-| CI_70_30               | Concentration index calculated as (aper70_flux /   |
-|                        | aper30_flux)                                       |
+| flags                  | Flag recording DQ value of source central pixel    |
 +------------------------+----------------------------------------------------+
 | is_extended            | Flag indicating whether the source is extended     |
 +------------------------+----------------------------------------------------+
@@ -150,6 +142,10 @@ columns (assuming the default encircled energies of 30, 50, and 70):
 | isophotal_flux_err     | Isophotal flux error                               |
 +------------------------+----------------------------------------------------+
 | isophotal_area         | Isophotal area                                     |
++------------------------+----------------------------------------------------+
+| kron_flux              | Kron flux                                          |
++------------------------+----------------------------------------------------+
+| kron_flux_err          | Kron flux error                                    |
 +------------------------+----------------------------------------------------+
 | semimajor_sigma        | 1-sigma standard deviation along the semimajor     |
 |                        | axis of the 2D Gaussian function that has the same |
@@ -168,16 +164,16 @@ columns (assuming the default encircled energies of 30, 50, and 70):
 | sky_orientation        | The position angle (degrees) from North of the     |
 |                        | major axis                                         |
 +------------------------+----------------------------------------------------+
-| sky_bbox_ll            | Sky coordinate of the lower-left vertex of the     |
+| ra_bbox_ll, dec_bbox_ll| Sky coordinate of the lower-left vertex of the     |
 |                        | minimal bounding box of the source                 |
 +------------------------+----------------------------------------------------+
-| sky_bbox_ul            | Sky coordinate of the upper-left vertex of the     |
+| ra_bbox_ul, dec_bbox_ul| Sky coordinate of the upper-left vertex of the     |
 |                        | minimal bounding box of the source                 |
 +------------------------+----------------------------------------------------+
-| sky_bbox_lr            | Sky coordinate of the lower-right vertex of the    |
+| ra_bbox_lr, dec_bbox_lr| Sky coordinate of the lower-right vertex of the    |
 |                        | minimal bounding box of the source                 |
 +------------------------+----------------------------------------------------+
-| sky_bbox_ur            | Sky coordinate of the upper-right vertex of the    |
+| ra_bbox_ur, dec_bbox_ur| Sky coordinate of the upper-right vertex of the    |
 |                        | minimal bounding box of the source                 |
 +------------------------+----------------------------------------------------+
 

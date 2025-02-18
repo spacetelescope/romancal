@@ -1,1 +1,0 @@
-Apply velocity aberration correction to the WFI WCS

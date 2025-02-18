@@ -17,8 +17,8 @@ fieldlist = [
     "F158_aper70_flux",  # DMS399 aperture fluxes
     "F158_aper_total_flux",  # DMS375 fluxes
     "F158_aper_total_flux_err",  # DMS386 flux uncertainties
-    "flags",  # DMS387 dq_flags
-    "is_extended",  # DMS392 source classification
+    "F158_flags",  # DMS387 dq_flags
+    "F158_is_extended",  # DMS392 source classification
     "semimajor_sigma",  # DMS394 galaxy morphology
     "semiminor_sigma",  # DMS394 galaxy morphology
     "orientation",  # DMS394 galaxy morphology

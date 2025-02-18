@@ -1,1 +1,0 @@
-Convert calls to ``exit(0)`` within the pipeline into exceptions.

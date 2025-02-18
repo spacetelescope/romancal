@@ -1,1 +1,0 @@
-Remove install of missing scripts "schema_editor" and "schemadoc".

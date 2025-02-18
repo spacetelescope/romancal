@@ -172,6 +172,7 @@ an [issue](https://github.com/spacetelescope/romancal/issues).
 | 0.16.2    | 24Q4_B15  | 063          | Aug 2024  | Release for Build 24Q3_B15 (Build 15) |
 | 0.16.3    | 24Q4_B15  | 063          | Aug 2024  | Release for Build 24Q3_B15 (Build 15) |
 | 0.17.0    | 25Q1_B16  | 065          | Nov 2024  | Release for Build 25Q1_B16 (Build 16) |
+| 0.18.0    | 25Q2_B17  | 072          | Feb 2025  | Release for Build 25Q2_B17 (Build 17) |
 
 
 Note: CRDS_CONTEXT values flagged with an asterisk in the above table are estimates
@@ -213,17 +214,14 @@ Need to parallelize your test runs over 8 cores?
 
 Latest regression test results can be found here (STScI staff only):
 
-https://plwishmaster.stsci.edu:8081/job/RT/job/romancal/
+https://github.com/spacetelescope/RegressionTests/actions/workflows/romancal.yml
 
 To run the regression tests on your local machine, get the test dependencies and set the environment variable
-TEST_BIGDATA to our Artifactory server
+`TEST_BIGDATA` to our Artifactory server
 (STSci staff members only):
 
     pip install -e ".[test]"
     export TEST_BIGDATA=https://bytesalad.stsci.edu/artifactory
-
-To run all the regression tests (except the very slow ones):
-
     pytest --bigdata romancal/regtest
 
 You can control where the test results are written with the
