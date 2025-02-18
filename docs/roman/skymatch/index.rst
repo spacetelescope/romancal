@@ -12,9 +12,5 @@ SkyMatch
    reference_files.rst
 
    skymatch_step
-   skymatch
-   skyimage
-   skystatistics
-   region
 
 .. automodapi:: romancal.skymatch
