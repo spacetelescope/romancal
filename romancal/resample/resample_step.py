@@ -125,7 +125,7 @@ class ResampleStep(RomanStep):
                 "pscale_ratio": self.pixel_scale_ratio,
                 "pscale": self.pixel_scale,
                 "rotation": self.rotation,
-                "shape": self.output_shape,
+                "shape": None if self.output_shape is None else self.output_shape[::-1],
                 "crpix": self.crpix,
                 "crval": self.crval,
             }

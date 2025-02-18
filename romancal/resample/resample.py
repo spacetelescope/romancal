@@ -6,11 +6,11 @@ from roman_datamodels import datamodels, dqflags, maker_utils
 from stcal.alignment.util import (
     compute_s_region_keyword,
     compute_scale,
-    wcs_from_sregions,
 )
 from stcal.resample import Resample
 
 from ..assign_wcs import utils
+from .resample_utils import make_output_wcs
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -38,26 +38,35 @@ class ResampleData(Resample):
         self.input_models = input_models
 
         if output_wcs is None:
-            sregions = []
-            ref_wcs = None
-            ref_wcsinfo = None
-            with input_models:
-                for model in input_models:
-                    if ref_wcs is None:
-                        ref_wcs = model.meta.wcs
-                        ref_wcsinfo = model.meta.wcsinfo
-                    sregions.append(model.meta.wcsinfo.s_region)
-                    input_models.shelve(model, modify=False)
-                output_wcs = ref_wcs
             if wcs_kwargs is None:
                 wcs_kwargs = {}
+            with input_models:
+                models = list(input_models)
+                wcs = make_output_wcs(
+                    models,
+                    **wcs_kwargs,
+                )
+                for i, m in enumerate(models):
+                    input_models.shelve(m, i, modify=False)
+            # FIXME use sregions here, but this causes data differences
+            # sregions = []
+            # ref_wcs = None
+            # ref_wcsinfo = None
+            # with input_models:
+            #     for model in input_models:
+            #         if ref_wcs is None:
+            #             ref_wcs = model.meta.wcs
+            #             ref_wcsinfo = model.meta.wcsinfo
+            #         sregions.append(model.meta.wcsinfo.s_region)
+            #         input_models.shelve(model, modify=False)
+            #     output_wcs = ref_wcs
             # TODO compute pixel_scale pixel_scale_ratio (if not defined)
-            wcs = wcs_from_sregions(
-                sregions,
-                ref_wcs=ref_wcs,
-                ref_wcsinfo=ref_wcsinfo,
-                **wcs_kwargs,
-            )
+            # wcs = wcs_from_sregions(
+            #     sregions,
+            #     ref_wcs=ref_wcs,
+            #     ref_wcsinfo=ref_wcsinfo,
+            #     **wcs_kwargs,
+            # )
             output_wcs = {
                 "wcs": wcs,
                 # "pixel_scale": self.pixel_scale,
@@ -84,6 +93,12 @@ class ResampleData(Resample):
         exposure_time = model.meta.exposure.exposure_time
         if exposure_time == -999999:
             exposure_time = 1
+        if "background" in model.meta:
+            level = model.meta.background.level
+            subtracted = model.meta.background.subtracted
+        else:
+            level = 0
+            subtracted = True
         return {
             "data": model.data,
             "dq": model.dq,
@@ -100,11 +115,11 @@ class ResampleData(Resample):
             "start_time": model.meta.exposure.start_time,
             "end_time": model.meta.exposure.end_time,
             "duration": None,  # unused
-            "level": model.meta.background.level,
-            "subtracted": model.meta.background.subtracted,
+            "level": level,
+            "subtracted": subtracted,
         }
 
-    def _get_indentsity_scale(model):
+    def _get_intensity_scale(self, model):
         # FIXME we lie about this to retain the old behavior
         return 1
 
@@ -174,6 +189,11 @@ class ResampleData(Resample):
     def reset_arrays(self, n_input_models=None):
         # TODO why is this overridden?
         super().reset_arrays(n_input_models)
+        # FIXME even though we tell drizzle INDEF it sets
+        # this to NaN if we don't provide an output array
+        # so we hard code it here. This is bad since fillval
+        # could be something else...
+        self._driz._fillval = "INDEF"
         # make model blender, could be done in __init__?
 
     def resample_group(self, indices):
