@@ -189,6 +189,25 @@ class ResampleData(Resample):
         # assign wcs to output model
         output_model.meta.wcs = self.output_wcs
         gwcs_into_l3(output_model, output_model.meta.wcs)
+
+        # copy some metadata from the first input model
+        # FIXME this is incorrect and these values should be
+        # "blended" from all models
+        with self.input_models:
+            model = self.input_models.borrow(0)
+            output_model.meta.basic.visit = model.meta.observation.visit
+            output_model.meta.basic.segment = model.meta.observation.segment
+            output_model.meta.basic["pass"] = model.meta.observation["pass"]
+            output_model.meta.basic.program = model.meta.observation.program
+            output_model.meta.basic.optical_element = (
+                model.meta.instrument.optical_element
+            )
+            output_model.meta.basic.instrument = model.meta.instrument.name
+            output_model.meta.coordinates = model.meta.coordinates
+            output_model.meta.program = model.meta.program
+            self.input_models.shelve(model, 0, modify=False)
+
+        output_model.meta.basic.product_type = "TBD"
         return output_model
 
     def reset_arrays(self, n_input_models=None):
