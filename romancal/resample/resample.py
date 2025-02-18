@@ -145,6 +145,7 @@ class ResampleData(Resample):
         output_model.meta.resample.weight_type = self.weight_type
         output_model.meta.resample.pixfrac = self.output_model["pixfrac"]
         # output_model.meta.resample.product_exposure_time = ?
+
         # record the actual filenames (the expname from the association)
         # for each file used to generate the output_model
         # TODO this is incorrect for resample_group
@@ -184,17 +185,22 @@ class ResampleData(Resample):
                 new_array = self.output_model[arr_name]
                 if new_array is not None:
                     setattr(output_model, arr_name, new_array)
+
+        # assign wcs to output model
+        output_model.meta.wcs = self.output_wcs
+        gwcs_into_l3(output_model, output_model.meta.wcs)
         return output_model
 
     def reset_arrays(self, n_input_models=None):
-        # TODO why is this overridden?
         super().reset_arrays(n_input_models)
+
         # FIXME even though we tell drizzle INDEF it sets
         # this to NaN if we don't provide an output array
         # so we hard code it here. This is bad since fillval
         # could be something else...
         self._driz._fillval = "INDEF"
-        # make model blender, could be done in __init__?
+
+        # TODO make model blender, could be done in __init__?
 
     def resample_group(self, indices):
         if self.is_finalized():
