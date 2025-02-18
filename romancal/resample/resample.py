@@ -207,6 +207,20 @@ class ResampleData(Resample):
             output_model.meta.program = model.meta.program
             self.input_models.shelve(model, 0, modify=False)
 
+        # FIXME move this in the loop
+        with self.input_models:
+            time_first_mjd = np.inf
+            time_last_mjd = -np.inf
+            mid_mjd = []
+            for i, model in enumerate(self.input_models):
+                time_first_mjd = min(time_first_mjd, model.meta.exposure.start_time.mjd)
+                time_last_mjd = max(time_last_mjd, model.meta.exposure.end_time.mjd)
+                mid_mjd.append(model.meta.exposure.mid_time.mjd)
+                self.input_models.shelve(model, i, modify=False)
+        output_model.meta.basic.time_first_mjd = time_first_mjd
+        output_model.meta.basic.time_last_mjd = time_last_mjd
+        output_model.meta.basic.time_mean_mjd = np.mean(mid_mjd)
+
         output_model.meta.basic.product_type = "TBD"
         return output_model
 
