@@ -205,6 +205,13 @@ class ResampleData(Resample):
             output_model.meta.basic.instrument = model.meta.instrument.name
             output_model.meta.coordinates = model.meta.coordinates
             output_model.meta.program = model.meta.program
+            for step_name in output_model.meta.cal_step:
+                if hasattr(model.meta.cal_step, step_name):
+                    setattr(
+                        output_model.meta.cal_step,
+                        step_name,
+                        getattr(model.meta.cal_step, step_name),
+                    )
             self.input_models.shelve(model, 0, modify=False)
 
         # FIXME move this in the loop
