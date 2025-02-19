@@ -127,12 +127,7 @@ class MosaicPipeline(RomanPipeline):
                         # skycell_wcs.bounding_box = bounding_box
 
                         # For resample to use an external grid we need to pass it the skycell gwcs object
-                        # Currently we cannot do that directly so create an asdf file to read the skycell gwcs object
-                        wcs_tree = {"wcs": skycell_wcs}
-                        wcs_file = asdf.AsdfFile(wcs_tree)
-                        wcs_file.write_to("skycell_wcs.asdf")
-
-                        self.resample.output_wcs = "skycell_wcs.asdf"
+                        self.resample.output_wcs = skycell_wcs
                         self.resample.output_shape = (
                             int(skycell_record["nx"]),
                             int(skycell_record["ny"]),
@@ -142,7 +137,7 @@ class MosaicPipeline(RomanPipeline):
                             self.resample.output_wcs,
                             self.resample.output_shape,
                         )
-                        wcs_file = asdf.open(self.resample.output_wcs)
+
                         self.suffix = "coadd"
                         self.output_file = input.asn["products"][0]["name"]
                         result = self.resample.run(result)
