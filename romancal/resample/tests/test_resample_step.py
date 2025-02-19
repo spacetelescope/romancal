@@ -1,6 +1,9 @@
+from io import BytesIO
+
 import numpy as np
 import pytest
 from asdf import AsdfFile
+from asdf_astropy.testing.helpers import assert_model_equal
 from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
@@ -8,6 +11,7 @@ from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
 
+from romancal.datamodels import ModelLibrary
 from romancal.resample import ResampleStep, resample_utils
 
 
@@ -197,6 +201,73 @@ def test_load_custom_wcs_asdf_without_wcs_attribute(tmp_path):
 
     with pytest.raises(KeyError):
         step._load_custom_wcs(str(file_path), (100, 100))
+
+
+def _assert_frame_equal(a, b):
+    """ Copied from `gwcs`'s test_wcs.py """
+    __tracebackhide__ = True
+
+    assert type(a) is type(b)
+
+    if a is None:
+        return
+
+    if not isinstance(a, cf.CoordinateFrame):
+        return a == b
+
+    assert a.name == b.name  # nosec
+    assert a.axes_order == b.axes_order  # nosec
+    assert a.axes_names == b.axes_names  # nosec
+    assert a.unit == b.unit  # nosec
+    assert a.reference_frame == b.reference_frame  # nosec
+
+
+def _assert_wcs_equal(a, b):
+    """ Based on corresponding function from `gwcs`'s test_wcs.py """
+    assert a.name == b.name  # nosec
+
+    assert a.pixel_shape == b.pixel_shape
+    assert a.array_shape == b.array_shape
+    if a.array_shape is not None:
+        assert a.array_shape == b.pixel_shape[::-1]
+
+    assert len(a.available_frames) == len(b.available_frames)  # nosec
+    for a_step, b_step in zip(a.pipeline, b.pipeline, strict=False):
+        _assert_frame_equal(a_step.frame, b_step.frame)
+        assert_model_equal(a_step.transform, b_step.transform)
+
+
+@pytest.mark.parametrize(
+    "wcs_type", ["obj", "bytes"],
+)
+def test_load_custom_wcs_obj(exposure_1, wcs_type):
+    shape = (123, 456)
+    wcs_obj = create_wcs_object_without_distortion(
+        (10, 0),
+        (0.000031, 0.000031),
+        shape,
+    )
+    step = ResampleStep()
+
+    if wcs_type == "obj":
+        step.output_wcs = wcs_obj
+
+    elif wcs_type == "bytes":
+        # write to a byte stream:
+        bstream = BytesIO()
+        AsdfFile({"wcs": wcs_obj}).write_to(bstream)
+        bstream.seek(0)
+        step.output_wcs = bstream
+
+    result = step.process(ModelLibrary(exposure_1))
+    if wcs_type == "bytes":
+        bstream.close()
+
+    assert result["data"].shape == shape
+
+    outwcs = result["meta"]["wcs"]
+    assert outwcs is not wcs_obj
+    _assert_wcs_equal(outwcs, wcs_obj)
 
 
 @pytest.mark.parametrize(

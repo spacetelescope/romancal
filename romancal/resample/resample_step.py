@@ -6,6 +6,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING
 
 import asdf
+import gwcs
 import numpy as np
 from astropy.extern.configobj.configobj import ConfigObj
 from astropy.extern.configobj.validate import Validator
@@ -224,8 +225,11 @@ class ResampleStep(RomanStep):
         if not asdf_wcs_file:
             return None
 
-        with asdf.open(asdf_wcs_file) as af:
-            wcs = deepcopy(af.tree["wcs"])
+        if isinstance(asdf_wcs_file, gwcs.wcs.WCS):
+            wcs = asdf_wcs_file
+        else:
+            with asdf.open(asdf_wcs_file) as af:
+                wcs = deepcopy(af.tree["wcs"])
 
         if output_shape is not None:
             wcs.array_shape = output_shape[::-1]
