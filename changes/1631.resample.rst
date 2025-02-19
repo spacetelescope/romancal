@@ -1,0 +1,2 @@
+Added support for setting ``output_wcs`` of the ``ResampleStep``
+to a ``gwcs.WCS`` object.
