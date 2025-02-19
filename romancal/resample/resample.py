@@ -215,6 +215,7 @@ class ResampleData(Resample):
             self.input_models.shelve(model, 0, modify=False)
 
         # FIXME move this in the loop
+        output_model["individual_image_cal_logs"] = []
         with self.input_models:
             time_first_mjd = np.inf
             time_last_mjd = -np.inf
@@ -223,6 +224,17 @@ class ResampleData(Resample):
                 time_first_mjd = min(time_first_mjd, model.meta.exposure.start_time.mjd)
                 time_last_mjd = max(time_last_mjd, model.meta.exposure.end_time.mjd)
                 mid_mjd.append(model.meta.exposure.mid_time.mjd)
+
+                # FIXME do this with other meta "blending"
+                output_model["individual_image_cal_logs"].append(model.meta.cal_logs)
+
+                # FIXME this is an existing hack that we have to reproduce here
+                # since roman_datamodels was never updated
+                cal_logs = model.meta.cal_logs
+                del model.meta["cal_logs"]
+                output_model.append_individual_image_meta(model.meta)
+                model.meta.cal_logs = cal_logs
+
                 self.input_models.shelve(model, i, modify=False)
         output_model.meta.basic.time_first_mjd = time_first_mjd
         output_model.meta.basic.time_last_mjd = time_last_mjd
