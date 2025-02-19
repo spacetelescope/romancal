@@ -131,6 +131,7 @@ class ResampleStep(RomanStep):
             }
         else:
             wcs_kwargs = None
+
         # Call the resampling routine
         resamp = ResampleData(
             input_models,

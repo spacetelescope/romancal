@@ -37,6 +37,11 @@ class ResampleData(Resample):
         compute_exptime,
         wcs_kwargs=None,
     ):
+        # fillval indef doesn't define a starting value
+        # since we're not resampling onto an existing array
+        # we overwrite this to 0 (to match the old behavior)
+        if fillval.lower() == "indef":
+            fillval = 0
         self.input_models = input_models
 
         self._compute_exptime = compute_exptime
@@ -275,12 +280,6 @@ class ResampleData(Resample):
 
     def reset_arrays(self, n_input_models=None):
         super().reset_arrays(n_input_models)
-
-        # FIXME even though we tell drizzle INDEF it sets
-        # this to NaN if we don't provide an output array
-        # so we hard code it here. This is bad since fillval
-        # could be something else...
-        self._driz._fillval = "INDEF"
 
         # TODO make model blender, could be done in __init__?
 
