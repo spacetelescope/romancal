@@ -156,9 +156,6 @@ class ResampleData(Resample):
         # TODO finish blending
         super().finalize()
 
-        # TODO update output model and return it
-        # self.output_model is some "dict" with some unknown set of attributes
-
         output_model = maker_utils.mk_datamodel(
             datamodels.MosaicModel, n_images=0, shape=(0, 0)
         )
@@ -291,8 +288,7 @@ class ResampleData(Resample):
             for index in indices:
                 model = self.input_models.borrow(index)
                 self.add_model(model)
-                # TODO modify False?
-                self.input_models.shelve(model, index)
+                self.input_models.shelve(model, index, modify=False)
 
         return self.finalize()
 

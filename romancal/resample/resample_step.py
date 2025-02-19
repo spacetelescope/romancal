@@ -120,7 +120,6 @@ class ResampleStep(RomanStep):
         output_wcs = self._load_custom_wcs(self.output_wcs, self.output_shape)
 
         if output_wcs is None:
-            # TODO this is poorly defined
             wcs_kwargs = {
                 "pscale_ratio": self.pixel_scale_ratio,
                 "pscale": self.pixel_scale,
