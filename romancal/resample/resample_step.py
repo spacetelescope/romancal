@@ -143,6 +143,7 @@ class ResampleStep(RomanStep):
             True,
             True,
             "from_var",
+            True,
             wcs_kwargs,
         )
         result = resamp.resample_group(range(len(input_models)))

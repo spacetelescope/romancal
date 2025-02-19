@@ -10,6 +10,7 @@ from stcal.alignment.util import (
 from stcal.resample import Resample
 
 from ..assign_wcs import utils
+from .exptime_resampler import ExptimeResampler
 from .resample_utils import make_output_wcs
 
 log = logging.getLogger(__name__)
@@ -33,9 +34,12 @@ class ResampleData(Resample):
         enable_ctx,
         enable_var,
         compute_err,
+        compute_exptime,
         wcs_kwargs=None,
     ):
         self.input_models = input_models
+
+        self._compute_exptime = compute_exptime
 
         if output_wcs is None:
             if wcs_kwargs is None:
@@ -86,6 +90,10 @@ class ResampleData(Resample):
             compute_err=compute_err,
         )
 
+    @property
+    def compute_exptime(self):
+        return self._compute_exptime
+
     def _input_model_to_dict(self, model):
         pixel_area = model.meta.photometry.pixel_area
         if pixel_area == -999999:
@@ -129,6 +137,15 @@ class ResampleData(Resample):
         model_dict["exposure_time"] = 1
         super().add_model(model_dict)
         # TODO blend metadata
+        if self.compute_exptime:
+            self._resample_exptime(model)
+
+    def _resample_exptime(self, model):
+        if not hasattr(self, "_exptime_resampler"):
+            self._exptime_resampler = ExptimeResampler(
+                self.output_wcs, self.output_array_shape, self.good_bits, self.kernel
+            )
+        self._exptime_resampler.add_image(model)
 
     def finalize(self):
         # TODO finish blending
@@ -178,6 +195,18 @@ class ResampleData(Resample):
         output_model.weight = self.output_model["wht"]
 
         # some things are conditional
+        if self.compute_exptime and hasattr(self, "_exptime_resampler"):
+            exptime_total = self._exptime_resampler.finalize()
+            m = exptime_total > 0
+            total_exposure_time = np.mean(exptime_total[m]) if np.any(m) else 0
+            max_exposure_time = np.max(exptime_total)
+            log.info(
+                f"Mean, max exposure times: {total_exposure_time:.1f}, "
+                f"{max_exposure_time:.1f}"
+            )
+            output_model.meta.basic.mean_exposure_time = total_exposure_time
+            output_model.meta.basic.max_exposure_time = max_exposure_time
+            output_model.meta.resample.product_exposure_time = max_exposure_time
         if self._enable_ctx:
             output_model.context = self.output_model["con"].astype(np.uint32)
         for arr_name in ("err", "var_rnoise", "var_poisson", "var_flat"):
@@ -232,6 +261,7 @@ class ResampleData(Resample):
                 # since roman_datamodels was never updated
                 cal_logs = model.meta.cal_logs
                 del model.meta["cal_logs"]
+                # FIXME move this to romancal and fix it
                 output_model.append_individual_image_meta(model.meta)
                 model.meta.cal_logs = cal_logs
 
