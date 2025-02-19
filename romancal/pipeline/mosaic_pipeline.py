@@ -6,7 +6,6 @@ import re
 from os.path import basename, isfile
 from typing import TYPE_CHECKING
 
-import asdf
 import numpy as np
 from astropy import coordinates
 from astropy import units as u

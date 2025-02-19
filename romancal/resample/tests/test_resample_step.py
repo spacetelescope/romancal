@@ -204,7 +204,7 @@ def test_load_custom_wcs_asdf_without_wcs_attribute(tmp_path):
 
 
 def _assert_frame_equal(a, b):
-    """ Copied from `gwcs`'s test_wcs.py """
+    """Copied from `gwcs`'s test_wcs.py"""
     __tracebackhide__ = True
 
     assert type(a) is type(b)
@@ -223,7 +223,7 @@ def _assert_frame_equal(a, b):
 
 
 def _assert_wcs_equal(a, b):
-    """ Based on corresponding function from `gwcs`'s test_wcs.py """
+    """Based on corresponding function from `gwcs`'s test_wcs.py"""
     assert a.name == b.name  # nosec
 
     assert a.pixel_shape == b.pixel_shape
@@ -238,7 +238,8 @@ def _assert_wcs_equal(a, b):
 
 
 @pytest.mark.parametrize(
-    "wcs_type", ["obj", "bytes"],
+    "wcs_type",
+    ["obj", "bytes"],
 )
 def test_load_custom_wcs_obj(exposure_1, wcs_type):
     shape = (123, 456)
