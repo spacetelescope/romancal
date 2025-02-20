@@ -87,7 +87,7 @@ class TestPSFFitting:
             shape=image_model_shape,
         )
 
-    @pytest.mark.webbpsf
+    @pytest.mark.stpsf
     @pytest.mark.parametrize(
         "dx, dy, true_flux",
         zip(
