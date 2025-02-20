@@ -197,7 +197,6 @@ class ResampleData(Resample):
         output_model.meta.resample.good_bits = self.good_bits
         output_model.meta.resample.weight_type = self.weight_type
         output_model.meta.resample.pixfrac = self.output_model["pixfrac"]
-        # output_model.meta.resample.product_exposure_time = ?
         output_model.meta.basic.product_type = "TBD"
 
         pixel_scale_ratio = self.output_model["pixel_scale_ratio"]
@@ -206,7 +205,7 @@ class ResampleData(Resample):
 
         # record the actual filenames (the expname from the association)
         # for each file used to generate the output_model
-        # TODO this is incorrect for resample_group
+        # FIXME this is incorrect when resample_group is called with a subset of models
         output_model.meta.resample["members"] = [
             m["expname"] for m in self.input_models.asn["products"][0]["members"]
         ]
