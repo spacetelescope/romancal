@@ -478,45 +478,6 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
     assert np.abs(time_difference) < 0.1
 
 
-# @pytest.mark.skip(reason="ResampleData api has changed")
-# @pytest.mark.parametrize(
-#     "name",
-#     ["var_rnoise", "var_poisson", "var_flat"],
-# )
-# def test_resample_variance_array(wfi_sca1, wfi_sca4, name):
-#     """Test that the mean value for the variance array lies within 1% of the
-#     expectation."""
-#     input_models = ModelLibrary([wfi_sca1, wfi_sca4])
-#     resample_data = ResampleData(input_models, **{"rotation": 0})
-#
-#     output_model = resample_data.blank_output.copy()
-#     output_model.meta["resample"] = {}
-#     driz = gwcs_drizzle.GWCSDrizzle(
-#         output_model,
-#         outwcs=resample_data.output_wcs,
-#         pixfrac=resample_data.pixfrac,
-#         kernel=resample_data.kernel,
-#         fillval=resample_data.fillval,
-#     )
-#     with resample_data.input_models:
-#         mean_data = []
-#         for i, model in enumerate(resample_data.input_models):
-#             driz.add_image(model.data, model.meta.wcs)
-#             mean_data.append(getattr(model, name)[:])
-#             resample_data.input_models.shelve(model, i, modify=False)
-#
-#     resample_data.resample_variance_array(name, output_model)
-#
-#     # combined variance is inversely proportional to the number of "measurements"
-#     expected_combined_variance_value = np.nanmean(mean_data) / len(input_models)
-#
-#     np.isclose(
-#         np.nanmean(getattr(output_model, name)),
-#         expected_combined_variance_value,
-#         atol=0.01,
-#     )
-
-
 def test_custom_wcs_input_small_overlap_no_rotation(wfi_sca1, wfi_sca3, tmp_path):
     """Test that resample can create a proper output in the edge case where the
     desired output WCS does not encompass the entire input datamodel but, instead, have
