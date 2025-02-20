@@ -17,12 +17,7 @@ The ``resample`` step can take:
     Datamodel/:py:class:`~romancal.datamodels.library.ModelLibrary`);
   * an association table (in JSON format).
 
-The parameters for the drizzle operation itself are set by
-:py:func:`~romancal.resample.resample_step.ResampleStep.set_drizzle_defaults`.
-The exact values used depends on the number of input images being combined
-and the filter being used. Other information may be added as selection criteria
-later, but during the :py:class:`~romancal.resample.resample_step.ResampleStep`
-instantiation, only basic information is set.
+The parameters for the drizzle operation itself are set by the step spec.
 
 The output product is determined by using the WCS information of all inputs,
 even if it is just a single image. The output WCS defines a
@@ -30,20 +25,16 @@ field-of-view that encompasses the undistorted footprints on the sky
 of all the input images with the same orientation and plate scale
 as the first listed input image.
 
-This step uses the interface to the C-based `cdriz` routine to do the
-resampling via the
-drizzle method (`Fruchter and Hook, PASP 2002`_).
+This step uses resampling via the drizzle method (`Fruchter and Hook, PASP 2002`_).
 The input-to-output pixel mapping is determined via a mapping function
 derived from the WCS of each input image and the WCS of the defined
-output product. The mapping function is created by
-:py:func:`~romancal.resample.resample_utils.reproject` and passed on to
-`cdriz` to drive the actual drizzling to create the output product.
+output product.
 
 Context Image
 -------------
 
 In addition to the resampled image data, resample step also creates a
-"context image" stored in the ``con`` attribute in the output data model.
+"context image" stored in the ``context`` attribute in the output data model.
 Each pixel in the context image is a bit field that encodes
 information about which input image has contributed to the corresponding
 pixel in the resampled data array. Context image uses 32 bit integers to encode
@@ -65,7 +56,7 @@ with coordinates ``(p, y, x)`` is 0 then input image number ``32 * p + k``
 ``(y, x)``, and if that bit is 1 then input image number ``32 * p + k`` did
 contribute to the pixel ``(y, x)`` in the resampled image.
 
-As an example, let's assume we have 8 input images. Then, when ``con`` pixel
+As an example, let's assume we have 8 input images. Then, when ``context`` pixel
 values are displayed using binary representation (and decimal in parenthesis),
 one could see values like this::
 
@@ -80,7 +71,7 @@ one could see values like this::
 In order to test if a specific input image contributed to an output pixel,
 one needs to use bitwise operations. Using the example above, to test whether
 input images number 4 and 5 have contributed to the output pixel whose
-corresponding ``con`` value is 205 (11001101 in binary form) we can do
+corresponding ``context`` value is 205 (11001101 in binary form) we can do
 the following:
 
 >>> bool(205 & (1 << (5 - 1)))  # (205 & 16) = 0 (== 0 => False): did NOT contribute
