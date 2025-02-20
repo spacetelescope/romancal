@@ -49,7 +49,7 @@ def setup_inputs(
     detector = mod.meta["instrument"]["detector"].replace("WFI", "SCA")
 
     # input parameters for PSF model:
-    webbpsf_config = dict(
+    stpsf_config = dict(
         filt=filt,
         detector=detector,
         oversample=12,
@@ -58,13 +58,13 @@ def setup_inputs(
 
     # compute gridded PSF model:
     psf_model, centroids = create_gridded_psf_model(
-        webbpsf_config["filt"],
-        webbpsf_config["detector"],
-        oversample=webbpsf_config["oversample"],
-        fov_pixels=webbpsf_config["fov_pixels"],
+        stpsf_config["filt"],
+        stpsf_config["detector"],
+        oversample=stpsf_config["oversample"],
+        fov_pixels=stpsf_config["fov_pixels"],
     )
 
-    return mod, webbpsf_config, psf_model
+    return mod, stpsf_config, psf_model
 
 
 def add_sources(image_model, psf_model, x_true, y_true, flux_true, background=10):
@@ -83,7 +83,7 @@ def add_sources(image_model, psf_model, x_true, y_true, flux_true, background=10
 
 class TestPSFFitting:
     def setup_method(self):
-        self.image_model, self.webbpsf_config, self.psf_model = setup_inputs(
+        self.image_model, self.stpsf_config, self.psf_model = setup_inputs(
             shape=image_model_shape,
         )
 
@@ -107,15 +107,15 @@ class TestPSFFitting:
         true_y = image_model_shape[1] / 2 + dy
         add_sources(image_model, self.psf_model, true_x, true_y, true_flux)
 
-        if self.webbpsf_config["fov_pixels"] % 2 == 0:
+        if self.stpsf_config["fov_pixels"] % 2 == 0:
             fit_shape = (
-                self.webbpsf_config["fov_pixels"] + 1,
-                self.webbpsf_config["fov_pixels"] + 1,
+                self.stpsf_config["fov_pixels"] + 1,
+                self.stpsf_config["fov_pixels"] + 1,
             )
         else:
             fit_shape = (
-                self.webbpsf_config["fov_pixels"],
-                self.webbpsf_config["fov_pixels"],
+                self.stpsf_config["fov_pixels"],
+                self.stpsf_config["fov_pixels"],
             )
 
         # fit the PSF to the ImageModel:
