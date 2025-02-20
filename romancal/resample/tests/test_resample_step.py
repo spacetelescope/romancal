@@ -194,7 +194,6 @@ def test_build_driz_weight_multiple_good_bits(
     np.testing.assert_array_equal(result, expected_output)
 
 
-@pytest.mark.skip(reason="input is incomplete, step won't run")
 @pytest.mark.parametrize(
     "good_bits",
     [
@@ -244,7 +243,6 @@ def test_build_driz_weight_different_weight_type(base_image, weight_type):
     np.testing.assert_array_almost_equal(expected_results.get(weight_type), result)
 
 
-@pytest.mark.skip(reason="Input is incomplete, step won't run")
 def test_individual_image_meta(base_image):
     """Test that the individual_image_meta is being populated"""
     input_models = ModelLibrary([base_image() for _ in range(2)])
@@ -363,7 +361,6 @@ def test_populate_mosaic_basic(base_image, meta_overrides, expected_basic):
         assert getattr(output_model.meta.basic, key) == value
 
 
-@pytest.mark.skip(reason="Input is incomplete, step won't run")
 @pytest.mark.parametrize(
     "input_pixel_area, pixel_scale_ratio, expected_pixel_area",
     [
