@@ -164,8 +164,6 @@ class ResampleData(Resample):
 
     def add_model(self, model):
         model_dict = self._input_model_to_dict(model)
-        # FIXME we lie about a few things to retain the old behavior
-        model_dict["exposure_time"] = 1
         super().add_model(model_dict)
         # TODO blend metadata
         if self.compute_exptime:
