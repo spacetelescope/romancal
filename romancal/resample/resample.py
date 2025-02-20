@@ -6,6 +6,7 @@ from stcal.resample import Resample
 
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
+from .meta_blender import MetaBlender
 from .resample_utils import make_output_wcs
 
 log = logging.getLogger(__name__)
@@ -30,6 +31,7 @@ class ResampleData(Resample):
         enable_var,
         compute_err,
         compute_exptime,
+        blend_meta,
         wcs_kwargs=None,
     ):
         # fillval indef doesn't define a starting value
@@ -40,6 +42,7 @@ class ResampleData(Resample):
         self.input_models = input_models
 
         self._compute_exptime = compute_exptime
+        self._blend_meta = blend_meta
 
         if output_wcs is None:
             if wcs_kwargs is None:
@@ -125,6 +128,10 @@ class ResampleData(Resample):
     def compute_exptime(self):
         return self._compute_exptime
 
+    @property
+    def blend_meta(self):
+        return self._blend_meta
+
     def _input_model_to_dict(self, model):
         pixel_area = model.meta.photometry.pixel_area
         if pixel_area == -999999:
@@ -165,7 +172,8 @@ class ResampleData(Resample):
     def add_model(self, model):
         model_dict = self._input_model_to_dict(model)
         super().add_model(model_dict)
-        # TODO blend metadata
+        if self.blend_meta:
+            self._meta_blender.blend(model)
         if self.compute_exptime:
             self._resample_exptime(model)
 
@@ -177,17 +185,24 @@ class ResampleData(Resample):
         self._exptime_resampler.add_image(model)
 
     def finalize(self):
-        # TODO finish blending
         super().finalize()
 
-        output_model = maker_utils.mk_datamodel(
-            datamodels.MosaicModel, n_images=0, shape=(0, 0)
-        )
+        if self.blend_meta:
+            output_model = self._meta_blender.finalize()
+        else:
+            output_model = maker_utils.mk_datamodel(
+                datamodels.MosaicModel, n_images=0, shape=(0, 0)
+            )
 
         output_model.meta.resample.good_bits = self.good_bits
         output_model.meta.resample.weight_type = self.weight_type
         output_model.meta.resample.pixfrac = self.output_model["pixfrac"]
         # output_model.meta.resample.product_exposure_time = ?
+        output_model.meta.basic.product_type = "TBD"
+
+        pixel_scale_ratio = self.output_model["pixel_scale_ratio"]
+        if pixel_scale_ratio is not None:
+            output_model.meta.resample.pixel_scale_ratio = pixel_scale_ratio
 
         # record the actual filenames (the expname from the association)
         # for each file used to generate the output_model
@@ -196,13 +211,8 @@ class ResampleData(Resample):
             m["expname"] for m in self.input_models.asn["products"][0]["members"]
         ]
 
-        pixel_scale_ratio = self.output_model["pixel_scale_ratio"]
-        if pixel_scale_ratio is not None:
-            output_model.meta.resample.pixel_scale_ratio = pixel_scale_ratio
-
         output_model.meta.resample.pointings = len(self.input_models.group_names)
         # output_model.meta.resample.pointings = self.output_model["pointings"]
-
         output_model.meta.basic.location_name = self.input_models.asn.get(
             "target", "None"
         )
@@ -217,7 +227,6 @@ class ResampleData(Resample):
 
         # every resampling will generate these
         output_model.data = self.output_model["data"]
-
         output_model.weight = self.output_model["wht"]
 
         # some things are conditional
@@ -233,8 +242,10 @@ class ResampleData(Resample):
             output_model.meta.basic.mean_exposure_time = total_exposure_time
             output_model.meta.basic.max_exposure_time = max_exposure_time
             output_model.meta.resample.product_exposure_time = max_exposure_time
+
         if self._enable_ctx:
             output_model.context = self.output_model["con"].astype(np.uint32)
+
         for arr_name in ("err", "var_rnoise", "var_poisson", "var_flat"):
             if arr_name in self.output_model:
                 new_array = self.output_model[arr_name]
@@ -244,64 +255,12 @@ class ResampleData(Resample):
         # assign wcs to output model
         assign_l3_wcs(output_model, self.output_wcs)
 
-        # copy some metadata from the first input model
-        # FIXME this is incorrect and these values should be
-        # "blended" from all models
-        with self.input_models:
-            model = self.input_models.borrow(0)
-            output_model.meta.basic.visit = model.meta.observation.visit
-            output_model.meta.basic.segment = model.meta.observation.segment
-            output_model.meta.basic["pass"] = model.meta.observation["pass"]
-            output_model.meta.basic.program = model.meta.observation.program
-            output_model.meta.basic.optical_element = (
-                model.meta.instrument.optical_element
-            )
-            output_model.meta.basic.instrument = model.meta.instrument.name
-            output_model.meta.coordinates = model.meta.coordinates
-            output_model.meta.program = model.meta.program
-            for step_name in output_model.meta.cal_step:
-                if hasattr(model.meta.cal_step, step_name):
-                    setattr(
-                        output_model.meta.cal_step,
-                        step_name,
-                        getattr(model.meta.cal_step, step_name),
-                    )
-            self.input_models.shelve(model, 0, modify=False)
-
-        # FIXME move this in the loop
-        output_model["individual_image_cal_logs"] = []
-        with self.input_models:
-            time_first_mjd = np.inf
-            time_last_mjd = -np.inf
-            mid_mjd = []
-            for i, model in enumerate(self.input_models):
-                time_first_mjd = min(time_first_mjd, model.meta.exposure.start_time.mjd)
-                time_last_mjd = max(time_last_mjd, model.meta.exposure.end_time.mjd)
-                mid_mjd.append(model.meta.exposure.mid_time.mjd)
-
-                # FIXME do this with other meta "blending"
-                output_model["individual_image_cal_logs"].append(model.meta.cal_logs)
-
-                # FIXME this is an existing hack that we have to reproduce here
-                # since roman_datamodels was never updated
-                cal_logs = model.meta.cal_logs
-                del model.meta["cal_logs"]
-                # FIXME move this to romancal and fix it
-                output_model.append_individual_image_meta(model.meta)
-                model.meta.cal_logs = cal_logs
-
-                self.input_models.shelve(model, i, modify=False)
-        output_model.meta.basic.time_first_mjd = time_first_mjd
-        output_model.meta.basic.time_last_mjd = time_last_mjd
-        output_model.meta.basic.time_mean_mjd = np.mean(mid_mjd)
-
-        output_model.meta.basic.product_type = "TBD"
         return output_model
 
     def reset_arrays(self, n_input_models=None):
         super().reset_arrays(n_input_models)
-
-        # TODO make model blender, could be done in __init__?
+        if self.blend_meta:
+            self._meta_blender = MetaBlender()
 
     def resample_group(self, indices):
         if self.is_finalized():

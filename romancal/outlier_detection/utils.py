@@ -264,6 +264,7 @@ def detect_outliers(
             False,
             False,
             False,
+            False,
         )
         median_data, median_wcs = _median_with_resampling(
             library,
