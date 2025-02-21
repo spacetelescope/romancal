@@ -69,11 +69,11 @@ def create_gridded_psf_model(
         Computed gridded PSF model for this SCA.
         Examples include: `"SCA01"` or `"SCA18"`.
     oversample : int, optional
-        Oversample factor, default is 11. See Stpsf docs for details [1]_.
+        Oversample factor, default is 11. See STPSF docs for details [1]_.
         Choosing an odd number makes the pixel convolution more accurate.
     fov_pixels : int, optional
         Field of view width [pixels]. Default is 12.
-        See Stpsf docs for details [1]_.
+        See STPSF docs for details [1]_.
     sqrt_n_psfs : int, optional
         Square root of the number of PSFs to calculate, distributed uniformly
         across the detector. Default is 4.
@@ -81,8 +81,8 @@ def create_gridded_psf_model(
         Calculate a grid of PSFs distributed uniformly across the detector
         at least ``buffer_pixels`` away from the detector edges. Default is 100.
     instrument_options : dict, optional
-        Instrument configuration options passed to Stpsf.
-        For example, Stpsf assumes Roman pointing jitter consistent with
+        Instrument configuration options passed to STPSF.
+        For example, STPSF assumes Roman pointing jitter consistent with
         mission specs by default, but this can be turned off with:
         ``{'jitter': None, 'jitter_sigma': 0}``.
 
@@ -95,7 +95,7 @@ def create_gridded_psf_model(
 
     References
     ----------
-    .. [1] `Stpsf documentation for `stpsf.JWInstrument.calc_psf`
+    .. [1] `STPSF documentation for `stpsf.JWInstrument.calc_psf`
        <https://stpsf.readthedocs.io/en/latest/api/stpsf.JWInstrument.html#stpsf.JWInstrument.calc_psf>`_
 
     """
