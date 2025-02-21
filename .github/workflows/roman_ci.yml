@@ -83,4 +83,4 @@ jobs:
         - linux: py312-stpsf-cov
           coverage: codecov
           pytest-results-summary: true
-        # - linux: py313-stpsf  # Distabled until we support Python 3.13
+        - linux: py313-stpsf
