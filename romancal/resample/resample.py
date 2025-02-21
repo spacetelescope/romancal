@@ -203,20 +203,12 @@ class ResampleData(Resample):
         if pixel_scale_ratio is not None:
             output_model.meta.resample.pixel_scale_ratio = pixel_scale_ratio
 
-        # record the actual filenames (the expname from the association)
-        # for each file used to generate the output_model
-        # FIXME this is incorrect when resample_group is called with a subset of models
-        output_model.meta.resample["members"] = [
-            m["expname"] for m in self.input_models.asn["products"][0]["members"]
-        ]
+        output_model.meta.resample.pointings = self.output_model["pointings"]
 
-        output_model.meta.resample.pointings = len(self.input_models.group_names)
-        # output_model.meta.resample.pointings = self.output_model["pointings"]
+        # copy over asn information
         output_model.meta.basic.location_name = self.input_models.asn.get(
             "target", "None"
         )
-
-        # copy over asn information
         if (asn_pool := self.input_models.asn.get("asn_pool", None)) is not None:
             output_model.meta.asn.pool_name = asn_pool
         if (

@@ -49,6 +49,7 @@ class MetaBlender:
             )
 
         self._model["individual_image_cal_logs"].append(model.meta.cal_logs)
+        self._meta.resample.members.append(model.meta.filename)
 
         self._mid_mjds.append(model.meta.exposure.mid_time.mjd)
 
