@@ -115,7 +115,7 @@ class RampFitStep(RomanStep):
         # Force read pattern to be pure lists not LNodes
         read_pattern = [list(reads) for reads in input_model.meta.exposure.read_pattern]
         if len(read_pattern) != resultants.shape[0]:
-            raise RuntimeError("mismatch between resultants shape and " "read_pattern.")
+            raise RuntimeError("mismatch between resultants shape and read_pattern.")
 
         # add dark current back into resultants so that Poisson noise is
         # properly accounted for
