@@ -89,7 +89,7 @@ context array ``con``, one can do something like this:
     >>> np.flatnonzero([v & (1 << k) for v in con[:, y, x] for k in range(32)])
 
 For convenience, this functionality was implemented in the
-:py:func:`~romancal.resample.resample_utils.decode_context` function.
+:py:func:`~drizzle.utils.decode_context` function.
 
 
 References
