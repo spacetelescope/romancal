@@ -11,9 +11,9 @@ from stcal.outlier_detection.utils import (
     flag_resampled_crs,
     gwcs_blot,
 )
+from stcal.resample.utils import build_driz_weight
 
 from romancal.resample.resample import ResampleData
-from romancal.resample.resample_utils import build_driz_weight
 
 from . import _fileio
 
@@ -151,6 +151,7 @@ def _median_without_resampling(
                 # FIXME this was hard-coded to "ivm"
                 weight_type="ivm",
                 good_bits=good_bits,
+                flag_name_map=pixel,
             )
 
             if save_intermediate_results:
