@@ -82,7 +82,7 @@ jobs:
       - id: version
         run: echo "version=$(cat ${{ steps.cache_path.outputs.cache_path }}/stpsf-data/version.txt)" >> $GITHUB_OUTPUT
       - id: cache_key
-        run: echo "cache_key=webbpsf-data-${{ (github.event_name == 'schedule' || github.event_name == 'release') && 'mini' || inputs.minimal && 'mini' || 'full' }}-${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
+        run: echo "cache_key=stpsf-data-${{ (github.event_name == 'schedule' || github.event_name == 'release') && 'mini' || inputs.minimal && 'mini' || 'full' }}-${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
       - uses: actions/cache/save@v4
         with:
           path: ${{ runner.temp }}/data/
