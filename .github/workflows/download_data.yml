@@ -76,7 +76,6 @@ jobs:
     steps:
       - run: wget ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && inputs.url || env.STPSF_MINIMAL_DATA_URL }} -O ${{ runner.temp }}/stpsf-data.tar.gz
       - run: mkdir ${{ runner.temp }}/data/
-      - run: tar -xzvf ${{ runner.temp }}/webbpsf-data.tar.gz -C ${{ runner.temp }}/data/
       - run: tar -xzvf ${{ runner.temp }}/stpsf-data.tar.gz -C ${{ runner.temp }}/data/
       - id: cache_path
         run: echo cache_path=${{ runner.temp }}/data/ >> $GITHUB_OUTPUT
