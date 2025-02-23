@@ -97,6 +97,8 @@ intersphinx_mapping = {
     "stpsf": ("https://stpsf.readthedocs.io/en/latest/", None),
     "roman_datamodels": ("https://roman-datamodels.readthedocs.io/en/latest/", None),
     "rad": ("https://rad.readthedocs.io/en/latest/", None),
+    "drizzle": ("https://spacetelescope-drizzle.readthedocs.io/en/latest/", None),
+    "stcal": ("https://stcal.readthedocs.io/en/latest/", None),
 }
 
 intersphinx_disabled_reftypes = ["*"]
