@@ -74,7 +74,6 @@ jobs:
     name: download and cache WebbPSF data
     runs-on: ubuntu-latest
     steps:
-      - run: wget ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && inputs.url || env.MINIMAL_DATA_URL }} -O ${{ runner.temp }}/webbpsf-data.tar.gz
       - run: wget ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && inputs.url || env.STPSF_MINIMAL_DATA_URL }} -O ${{ runner.temp }}/stpsf-data.tar.gz
       - run: mkdir ${{ runner.temp }}/data/
       - run: tar -xzvf ${{ runner.temp }}/webbpsf-data.tar.gz -C ${{ runner.temp }}/data/
