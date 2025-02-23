@@ -34,6 +34,62 @@ class ResampleData(Resample):
         blend_meta,
         wcs_kwargs=None,
     ):
+        """
+        See the base class `stcal.resample.resample.Resample` for more details.
+
+        This is primarily used by `romancal.resample.ResampleStep`. See the step
+        spec for parameter defaults and more information.
+
+        Parameters
+        ----------
+        input_models : ModelLibrary
+            The library of models to resample.
+
+        output_wcs : dict, None
+            Output wcs to resample to. If None one will be computed from
+            input_models.
+
+        pixfrac : float
+            The fraction of a pixel that the pixel flux is confined to.
+
+        kernel : str
+            The name of the resampling kernel.
+
+        fillval : float, None, str
+            The value of output pixels that did not have contributions from
+            input images' pixels.
+
+        weight_type : str
+            The weighting type for adding data.
+
+        good_bits : int, str, None
+            The bit mask of pixels to use for resampling.
+
+        enable_ctx : bool
+            If `True` include a context array in the resampled output.
+
+        enable_var : bool
+            If `True` resample variance arrays.
+
+        compute_err : {"from_var", "driz_err"}, None
+            If `None` do not compute an output model error array. For
+            other options see `stcal.resample.resample.Resample`.
+
+        compute_exptime : bool
+            If `True` resample input exposure times to compute output
+            exposure time information.
+
+        blend_meta : bool
+            If `True` include blended input model metadata in the output
+            model.
+
+        wcs_kwargs : dict, None
+            A dictionary of custom WCS parameters used to define an
+            output WCS from input models' outlines. This argument is ignored
+            when ``output_wcs`` is specified. See
+            `romancal.resample.resample_utils.make_output_wcs` for supported
+            options.
+        """
         # fillval indef doesn't define a starting value
         # since we're not resampling onto an existing array
         # we overwrite this to 0 (to match the old behavior)
@@ -126,13 +182,16 @@ class ResampleData(Resample):
 
     @property
     def compute_exptime(self):
+        """Indicates if exposure time resampling is enabled."""
         return self._compute_exptime
 
     @property
     def blend_meta(self):
+        """Indicates if metadata blending is enabled."""
         return self._blend_meta
 
     def _input_model_to_dict(self, model):
+        """Convert an input datamodel to a dictionary suitable for the base class"""
         pixel_area = model.meta.photometry.pixel_area
         if pixel_area == -999999:
             pixel_area = None
@@ -254,6 +313,19 @@ class ResampleData(Resample):
             self._meta_blender = MetaBlender()
 
     def resample_group(self, indices):
+        """
+        Resample the models at indices.
+
+        Parameters
+        ----------
+        indices : iterable
+            An iterable that returns the indices of models to resample.
+
+        Returns
+        -------
+        MosaicModel
+            The resampled datamodel
+        """
         if self.is_finalized():
             self.reset_arrays(len(indices))
 
