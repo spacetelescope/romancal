@@ -12,7 +12,7 @@
 # create a workflow like the following:
 #
 # # .github/workflows/download_stpsf.yml
-# name: download and cache StPSF data
+# name: download and cache STPSF data
 # on:
 #   schedule:
 #     - cron: "0 0 * * 0"
