@@ -47,7 +47,7 @@ on:
 
 jobs:
   retrieve_latest_cache_key:
-    name: retrieve latest StPSF data cache key
+    name: retrieve latest STPSF data cache key
     runs-on: ubuntu-latest
     steps:
       - name: retrieve latest data cache key
