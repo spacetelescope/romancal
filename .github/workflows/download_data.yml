@@ -64,7 +64,6 @@ on:
       - develop
 
 env:
-env:
   STPSF_MINIMAL_DATA_URL: https://stsci.box.com/shared/static/3hzmbarac5yxjt6x7gn17vz02k7c8z1d.gz
 
 jobs:
