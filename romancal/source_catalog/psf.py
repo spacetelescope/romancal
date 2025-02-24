@@ -5,13 +5,13 @@ Utilities for fitting model PSFs to rate images.
 import logging
 
 import numpy as np
-import webbpsf
+import stpsf
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.table import Table
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
 from photutils.psf import IterativePSFPhotometry, PSFPhotometry, SourceGrouper
-from webbpsf import gridded_library
+from stpsf import gridded_library
 
 __all__ = [
     "create_gridded_psf_model",
@@ -59,7 +59,7 @@ def create_gridded_psf_model(
 ):
     """
     Compute a gridded PSF model for one SCA via
-    `~webbpsf.gridded_library.CreatePSFLibrary`.
+    `~stpsf.gridded_library.CreatePSFLibrary`.
 
     Parameters
     ----------
@@ -69,11 +69,11 @@ def create_gridded_psf_model(
         Computed gridded PSF model for this SCA.
         Examples include: `"SCA01"` or `"SCA18"`.
     oversample : int, optional
-        Oversample factor, default is 11. See WebbPSF docs for details [1]_.
+        Oversample factor, default is 11. See STPSF docs for details [1]_.
         Choosing an odd number makes the pixel convolution more accurate.
     fov_pixels : int, optional
         Field of view width [pixels]. Default is 12.
-        See WebbPSF docs for details [1]_.
+        See STPSF docs for details [1]_.
     sqrt_n_psfs : int, optional
         Square root of the number of PSFs to calculate, distributed uniformly
         across the detector. Default is 4.
@@ -81,8 +81,8 @@ def create_gridded_psf_model(
         Calculate a grid of PSFs distributed uniformly across the detector
         at least ``buffer_pixels`` away from the detector edges. Default is 100.
     instrument_options : dict, optional
-        Instrument configuration options passed to WebbPSF.
-        For example, WebbPSF assumes Roman pointing jitter consistent with
+        Instrument configuration options passed to STPSF.
+        For example, STPSF assumes Roman pointing jitter consistent with
         mission specs by default, but this can be turned off with:
         ``{'jitter': None, 'jitter_sigma': 0}``.
 
@@ -95,8 +95,8 @@ def create_gridded_psf_model(
 
     References
     ----------
-    .. [1] `WebbPSF documentation for `webbpsf.JWInstrument.calc_psf`
-       <https://webbpsf.readthedocs.io/en/latest/api/webbpsf.JWInstrument.html#webbpsf.JWInstrument.calc_psf>`_
+    .. [1] `STPSF documentation for `stpsf.JWInstrument.calc_psf`
+       <https://stpsf.readthedocs.io/en/latest/api/stpsf.JWInstrument.html#stpsf.JWInstrument.calc_psf>`_
 
     """
     if int(sqrt_n_psfs) != sqrt_n_psfs:
@@ -118,7 +118,7 @@ def create_gridded_psf_model(
     # generate PSFs over a grid of detector positions [pix]
     model_psf_centroids = [(int(x), int(y)) for y in pixel_range for x in pixel_range]
 
-    wfi = webbpsf.roman.WFI()
+    wfi = stpsf.roman.WFI()
     wfi.filter = filt
 
     if instrument_options is not None:

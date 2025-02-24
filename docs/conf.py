@@ -94,7 +94,7 @@ intersphinx_mapping = {
     "gwcs": ("https://gwcs.readthedocs.io/en/latest/", None),
     "astropy": ("https://docs.astropy.org/en/stable/", None),
     "photutils": ("https://photutils.readthedocs.io/en/stable/", None),
-    "webbpsf": ("https://webbpsf.readthedocs.io/en/latest/", None),
+    "stpsf": ("https://stpsf.readthedocs.io/en/latest/", None),
     "roman_datamodels": ("https://roman-datamodels.readthedocs.io/en/latest/", None),
     "rad": ("https://rad.readthedocs.io/en/latest/", None),
 }
@@ -158,7 +158,7 @@ suppress_warnings = [
 
 # General information about the project
 project = setup_cfg["name"]
-author = f'{setup_cfg["authors"][0]["name"]} <{setup_cfg["authors"][0]["email"]}>'
+author = f"{setup_cfg['authors'][0]['name']} <{setup_cfg['authors'][0]['email']}>"
 copyright = f"{datetime.datetime.now().year}, {author}"
 
 # The version info for the project you're documenting, acts as replacement for
