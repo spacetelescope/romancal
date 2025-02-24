@@ -31,7 +31,7 @@ on:
         description: URL to gzip file
         type: string
         required: false
-        default: https://stsci.box.com/shared/static/0dt9z6b927iqgtify2a4cvls9hvapi6k.gz
+        default: https://stsci.box.com/shared/static/3hzmbarac5yxjt6x7gn17vz02k7c8z1d.gz
       minimal:
         description: dataset is minimal (as opposed to full)
         type: boolean
@@ -50,7 +50,7 @@ on:
         description: URL to gzip file
         type: string
         required: false
-        default: https://stsci.box.com/shared/static/0dt9z6b927iqgtify2a4cvls9hvapi6k.gz
+        default: https://stsci.box.com/shared/static/3hzmbarac5yxjt6x7gn17vz02k7c8z1d.gz
       minimal:
         description: dataset is minimal (as opposed to full)
         type: boolean
