@@ -8,7 +8,7 @@
 # and then use `retrieve_cache.yml` to retrieve that cache so you
 # don't have to download the entire dataset every time.
 #
-# to set up a cache of StPSF data in your own repository,
+# to set up a cache of STPSF data in your own repository,
 # create a workflow like the following:
 #
 # # .github/workflows/download_stpsf.yml
