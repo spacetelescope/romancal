@@ -44,7 +44,7 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
 
     step.log.info(
         "DMS280 MSG: TweakReg step recorded as complete? :"
-        f' {tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"}'
+        f" {tweakreg_out.meta.cal_step.tweakreg == 'COMPLETE'}"
     )
     assert tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"
 
