@@ -10,11 +10,11 @@ Create PSF models
 
 `~romancal.source_catalog.psf.create_gridded_psf_model`
 computes a gridded PSF model for a given detector using
-``webbpsf.gridded_library.CreatePSFLibrary`` from `WebbPSF
-<https://webbpsf.readthedocs.io/>`_. The defaults are chosen to balance
+`~stpsf.gridded_library.CreatePSFLibrary` from `STPSF
+<https://stpsf.readthedocs.io/>`_. The defaults are chosen to balance
 more accurate PSF models with the cost of increased runtime. For further
-reading on the WebbPSF approach to ePSFs, see the WebbPSF docs on `Using
-PSF Grids <https://webbpsf.readthedocs.io/en/latest/psf_grids.html>`_.
+reading on the STPSF approach to ePSFs, see the STPSF docs on `Using
+PSF Grids <https://stpsf.readthedocs.io/en/latest/psf_grids.html>`_.
 
 Fit model PSFs to an ImageModel
 -------------------------------
