@@ -68,7 +68,7 @@ env:
 
 jobs:
   download:
-    name: download and cache StPSF data
+    name: download and cache STPSF data
     runs-on: ubuntu-latest
     steps:
       - run: wget ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') && inputs.url || env.MINIMAL_DATA_URL }} -O ${{ runner.temp }}/stpsf-data.tar.gz
