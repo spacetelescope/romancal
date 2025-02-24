@@ -2,7 +2,7 @@
 # the cache key is in the form `stpsf-data-mini-1.3.0`,
 # `stpsf-data-full-1.2.6`, etc.
 #
-# to retrieve the StPSF data cache in your test workflow,
+# to retrieve the STPSF data cache in your test workflow,
 # first create a cache of the dataset in your repository
 # (see `download_data.yml` for instructions), then
 # call this workflow as a needed job and use `actions/cache/restore`
