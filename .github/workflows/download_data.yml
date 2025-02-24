@@ -1,4 +1,4 @@
-# downloads StPSF dataset and caches it to GitHub cache,
+# downloads STPSF dataset and caches it to GitHub cache,
 # making a new cache for a new data version
 # the cache key is in the form `stpsf-data-mini-1.3.0`,
 # `stpsf-data-full-1.2.6`, etc.
