@@ -196,7 +196,7 @@ The CRDS_READONLY_CACHE variable should not be set, since references will need t
 they are requested.
 
 > **Note**\
-> If it is desired to run tests against StPSF data, use the `pytest --stpsf` flag or the `-stpsf` tox factor and follow [these instructions to download the data files / point to existing files on the shared internal network](https://stpsf.readthedocs.io/en/latest/installation.html#data-install).
+> If it is desired to run tests against STPSF data, use the `pytest --stpsf` flag or the `-stpsf` tox factor and follow [these instructions to download the data files / point to existing files on the shared internal network](https://stpsf.readthedocs.io/en/latest/installation.html#data-install).
 
 ### Running tests
 
