@@ -28,7 +28,6 @@ def run_elp(rtdata_module):
 
     # Test Pipeline
     output = "TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_cal.asdf"
-    output_dqinit = "TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_dqinit.asdf"
     rtdata.output = output
     args = [
         "roman_elp",
@@ -42,7 +41,6 @@ def run_elp(rtdata_module):
     ExposurePipeline.from_cmdline(args)
 
     # get truth file
-    rtdata.get_truth(f"truth/WFI/image/{output_dqinit}")
     rtdata.get_truth(f"truth/WFI/image/{output}")
     return rtdata
 
@@ -68,16 +66,17 @@ def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths
     assert diff.identical, diff.report()
 
 
-def test_dqinit_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
-    dqinit_path = Path(output_filename)
-    dqinit_filename = replace_suffix(dqinit_path.stem, "dqinit")
-    dqinit_filename = dqinit_path.parent / (dqinit_filename + dqinit_path.suffix)
+def test_dqinit_matches_truth(run_elp, ignore_asdf_paths):
+    output_path = Path(run_elp.output)
+    dqinit_filename = replace_suffix(output_path.stem, "dqinit") + output_path.suffix
+    dqinit_path = output_path.parent / dqinit_filename
 
-    truth_path = Path(truth_filename)
-    truth_filename = replace_suffix(truth_path.stem, "dqinit")
-    truth_filename = truth_path.parent / (truth_filename + truth_path.suffix)
+    run_elp.output = dqinit_filename
+    run_elp.get_truth(f"truth/WFI/image/{dqinit_filename}")
 
-    diff = compare_asdf(dqinit_filename, truth_filename, **ignore_asdf_paths)
+    truth_path = Path(run_elp.truth)
+
+    diff = compare_asdf(dqinit_path, truth_path, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
 
