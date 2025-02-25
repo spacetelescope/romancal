@@ -49,29 +49,32 @@ class MosaicPipeline(RomanPipeline):
     }
 
     # start the actual processing
-    def process(self, input):
+    def process(self, input_data):
         """Process the Roman WFI data from Level 2 to Level 3"""
 
         log.info("Starting Roman mosaic level calibration pipeline ...")
 
         # open the input file
-        file_type = filetype.check(input)
-        if file_type == "asdf":
-            raise TypeError("The level three pipeline input needs to be an association")
-
+        file_type = filetype.check(input_data)
         if file_type == "asn":
-            input = ModelLibrary(input, on_disk=self.on_disk)
-            self.flux.suffix = "flux"
-            result = self.flux.run(input)
-            self.skymatch.suffix = "skymatch"
-            result = self.skymatch.run(result)
-            self.outlier_detection.suffix = "outlier_detection"
-            result = self.outlier_detection.run(result)
-            self.resample.suffix = "coadd"
-            self.output_file = input.asn["products"][0]["name"]
-            result = self.resample.run(result)
-            self.sourcecatalog.output_file = self.output_file
-            self.sourcecatalog.run(result)
-            self.suffix = "coadd"
-        # FIXME fails for other file_type results
+            library = ModelLibrary(input_data, on_disk=self.on_disk)
+        elif file_type == "ModelLibrary":
+            library = input_data
+        else:
+            raise TypeError(
+                "The level three pipeline input needs to be an association or ModelLibrary"
+            )
+
+        self.flux.suffix = "flux"
+        result = self.flux.run(library)
+        self.skymatch.suffix = "skymatch"
+        result = self.skymatch.run(result)
+        self.outlier_detection.suffix = "outlier_detection"
+        result = self.outlier_detection.run(result)
+        self.resample.suffix = "coadd"
+        self.output_file = library.asn["products"][0]["name"]
+        result = self.resample.run(result)
+        self.sourcecatalog.output_file = self.output_file
+        self.sourcecatalog.run(result)
+        self.suffix = "coadd"
         return result
