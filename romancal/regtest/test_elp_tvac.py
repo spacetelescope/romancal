@@ -71,6 +71,7 @@ def test_dqinit_matches_truth(run_elp, ignore_asdf_paths):
     dqinit_filename = replace_suffix(output_path.stem, "dqinit") + output_path.suffix
     dqinit_path = output_path.parent / dqinit_filename
 
+    run_elp.output = dqinit_filename
     run_elp.get_truth(f"truth/WFI/image/{dqinit_filename}")
 
     truth_path = Path(run_elp.truth)
