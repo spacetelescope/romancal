@@ -7,7 +7,7 @@ from astropy import wcs as fitswcs
 from astropy.modeling import Model
 from astropy.nddata.bitmask import bitfield_to_boolean_mask
 from roman_datamodels.dqflags import pixel
-from stcal.alignment.util import wcs_from_footprints
+from stcal.alignment.util import wcs_from_sregions
 
 from romancal.assign_wcs.utils import wcs_bbox_from_shape
 
@@ -72,13 +72,14 @@ def make_output_wcs(
         if w.bounding_box is None:
             w.bounding_box = wcs_bbox_from_shape(i.data.shape)
     naxes = wcslist[0].output_frame.naxes
+    ref_wcs = wcslist[0]
 
     if naxes != 2:
         raise RuntimeError(f"Output WCS needs 2 axes.{wcslist[0]} has {naxes}.")
 
-    output_wcs = wcs_from_footprints(
-        wcslist,
-        None,
+    output_wcs = wcs_from_sregions(
+        [wcs.footprint() for wcs in wcslist],
+        ref_wcs,
         dict(input_models[0].meta.wcsinfo),
         pscale_ratio=pscale_ratio,
         pscale=pscale,
