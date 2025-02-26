@@ -5,32 +5,32 @@ on:
     - cron: "42 4 * * 3"
   workflow_dispatch:
     inputs:
-      webbpsf_minimal:
-        description: minimal WebbPSF dataset
+      stpsf_minimal:
+        description: minimal STPSF dataset
         type: boolean
         required: false
         default: true
 
 jobs:
-  download_webbpsf_data:
-    uses: spacetelescope/webbpsf/.github/workflows/download_data.yml@develop
+  download_stpsf_data:
+    uses: ./.github/workflows/download_data.yml
     with:
-      minimal: ${{ github.event_name != 'workflow_dispatch' && true || inputs.webbpsf_minimal }}
+      minimal: ${{ github.event_name != 'workflow_dispatch' && true || inputs.stpsf_minimal }}
   move_data_cache_path:
-    needs: [ download_webbpsf_data ]
+    needs: [ download_stpsf_data ]
     runs-on: ubuntu-latest
     steps:
-      - name: retrieve cached WebbPSF data
+      - name: retrieve cached STPSF data
         uses: actions/cache/restore@v4
         with:
-          path: ${{ needs.download_webbpsf_data.outputs.cache_path }}
-          key: ${{ needs.download_webbpsf_data.outputs.cache_key }}
+          path: ${{ needs.download_stpsf_data.outputs.cache_path }}
+          key: ${{ needs.download_stpsf_data.outputs.cache_key }}
       - run: mkdir -p /tmp/data/
-      - run: mv ${{ needs.download_webbpsf_data.outputs.cache_path }}/webbpsf-data/ /tmp/data/
-      - run: echo WEBBPSF_PATH=/tmp/data/webbpsf-data/ >> $GITHUB_ENV
+      - run: mv ${{ needs.download_stpsf_data.outputs.cache_path }}/stpsf-data/ /tmp/data/
+      - run: echo STPSF_PATH=/tmp/data/stpsf-data/ >> $GITHUB_ENV
       # save a new cache to the generalized data directory
       - name: save a single combined data cache
         uses: actions/cache/save@v4
         with:
           path: /tmp/data/
-          key: ${{ needs.download_webbpsf_data.outputs.cache_key }}
+          key: ${{ needs.download_stpsf_data.outputs.cache_key }}

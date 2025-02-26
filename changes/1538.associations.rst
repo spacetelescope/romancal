@@ -1,1 +1,0 @@
-Switch association scripts from using ``Main`` class to ``_cli`` function to fix return code.

@@ -91,7 +91,7 @@ def image_model():
     return model
 
 
-@pytest.mark.webbpsf
+@pytest.mark.stpsf
 def test_forced_catalog(image_model, tmp_path):
     os.chdir(tmp_path)
     step = SourceCatalogStep()
@@ -123,7 +123,7 @@ def test_forced_catalog(image_model, tmp_path):
     assert has_forced_fields
 
 
-@pytest.mark.webbpsf
+@pytest.mark.stpsf
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results",
     (
@@ -204,7 +204,7 @@ def test_l2_source_catalog(
         assert np.max(cat["ycentroid"]) < 100.0
 
 
-@pytest.mark.webbpsf
+@pytest.mark.stpsf
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results",
     (
@@ -287,7 +287,7 @@ def test_l3_source_catalog(
         assert np.max(cat["ycentroid"]) < 100.0
 
 
-@pytest.mark.webbpsf
+@pytest.mark.stpsf
 def test_background(mosaic_model, tmp_path):
     """
     Test background fallback when Background2D fails.
@@ -308,7 +308,7 @@ def test_background(mosaic_model, tmp_path):
     assert isinstance(cat, Table)
 
 
-@pytest.mark.webbpsf
+@pytest.mark.stpsf
 def test_l2_input_model_unchanged(image_model, tmp_path):
     """
     Test that the input model data and error arrays are unchanged after
@@ -332,7 +332,7 @@ def test_l2_input_model_unchanged(image_model, tmp_path):
     assert_equal(original_err, image_model.err)
 
 
-@pytest.mark.webbpsf
+@pytest.mark.stpsf
 def test_l3_input_model_unchanged(mosaic_model, tmp_path):
     """
     Test that the input model data and error arrays are unchanged after
@@ -356,7 +356,7 @@ def test_l3_input_model_unchanged(mosaic_model, tmp_path):
     assert_equal(original_err, mosaic_model.err)
 
 
-@pytest.mark.webbpsf
+@pytest.mark.stpsf
 def test_inputs(mosaic_model):
     with pytest.raises(ValueError):
         ReferenceData(np.ones((3, 3)), (30, 50, 70))
@@ -390,7 +390,7 @@ def test_inputs(mosaic_model):
         )
 
 
-@pytest.mark.webbpsf
+@pytest.mark.stpsf
 def test_do_psf_photometry(tmp_path, image_model):
     """
     Test that do_psf_photometry can recover mock sources and their position and photometry.
@@ -429,7 +429,7 @@ def test_do_psf_photometry(tmp_path, image_model):
         assert not np.any(np.isnan(cat[col_name]))  # and contains no nans
 
 
-@pytest.mark.webbpsf
+@pytest.mark.stpsf
 @pytest.mark.parametrize("fit_psf", [True, False])
 def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
     """
@@ -471,7 +471,7 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
     )
 
 
-@pytest.mark.webbpsf
+@pytest.mark.stpsf
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results, return_updated_model, expected_result, expected_outputs",
     (
@@ -574,7 +574,7 @@ def test_l2_source_catalog_keywords(
     )
 
 
-@pytest.mark.webbpsf
+@pytest.mark.stpsf
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results, return_updated_model, expected_result, expected_outputs",
     (
@@ -677,7 +677,7 @@ def test_l3_source_catalog_keywords(
     )
 
 
-@pytest.mark.webbpsf
+@pytest.mark.stpsf
 @pytest.mark.parametrize(
     "return_updated_model, expected_result",
     (

@@ -23,21 +23,21 @@ dependencies = [
     "photutils >=1.13.0",
     "pyparsing >=2.4.7",
     "requests >=2.26",
-    "roman_datamodels>=0.23.0,<0.24.0",
-    #"roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
+    # "roman_datamodels>=0.23.1,<0.24.0",
+    "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
     "scipy >=1.14.1",
-    # "stcal>=1.10.0,<1.11.0",
+    # "stcal>=1.11.0,<1.12.0",
     "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
-    # "stpipe >=0.7.0,<0.8.0",
+    # "stpipe >=0.8.0,<0.9.0",
     "stpipe @ git+https://github.com/spacetelescope/stpipe.git@main",
     "tweakwcs >=0.8.8",
     "spherical-geometry >= 1.2.22",
     "stsci.imagestats >= 1.6.3",
     "drizzle >= 2.0.1",
-    "webbpsf >= 1.2.1",
-    # pysiaf required by webbpsf uses pkg_resources which doesn't
+    "stpsf >= 2.0.0",
+    # pysiaf required by stpsf uses pkg_resources which doesn't
     # exist in python 3.12 without setuptools.
-    # TODO: drop this dependency when webbpsf is dropped
+    # TODO: drop this dependency when stpsf is dropped
     # (or when pysiaf no longer requires pkg_resources).
     "setuptools >= 60 ; python_version >= '3.12'",
 ]
@@ -83,7 +83,7 @@ repository = "https://github.com/spacetelescope/romancal"
 romancal = "romancal.stpipe.integration:get_steps"
 
 [project.entry-points.pytest11]
-webbpsf = "pytest_romancal.webbpsf_plugin"
+stpsf = "pytest_romancal.stpsf_plugin"
 
 [project.scripts]
 roman_static_preview = "romancal.scripts.static_preview:command"
