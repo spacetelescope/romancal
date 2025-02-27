@@ -111,7 +111,7 @@ class ResampleData(Resample):
             # first try to use any skycell from the asn
             if skycell_wcs := to_skycell_wcs(self.input_models):
                 log.info("Resampling to skycell wcs")
-                output_wcs = skycell_wcs
+                output_wcs = {"wcs": skycell_wcs}
 
         if output_wcs is None:
             if wcs_kwargs is None:
