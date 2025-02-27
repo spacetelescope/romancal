@@ -1,7 +1,7 @@
 import pytest
 import roman_datamodels as rdm
 
-from romancal.pipeline import mosaic_pipeline
+from romancal.patch_match.patch_match import wcsinfo_to_wcs
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
 from . import util
@@ -62,7 +62,7 @@ def test_location_name(output_model):
 
 def test_wcsinfo_wcs_roundtrip(output_model):
     """Test that the contents of wcsinfo reproduces the wcs"""
-    wcs_from_wcsinfo = mosaic_pipeline.wcsinfo_to_wcs(output_model.meta.wcsinfo)
+    wcs_from_wcsinfo = wcsinfo_to_wcs(output_model.meta.wcsinfo)
 
     ra_mad, dec_mad = util.comp_wcs_grids_arcs(output_model.meta.wcs, wcs_from_wcsinfo)
     assert (ra_mad + dec_mad) / 2.0 < 1.0e-5
