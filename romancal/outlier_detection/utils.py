@@ -192,10 +192,17 @@ def _flag_resampled_model_crs(
     scale1,
     scale2,
     backg,
+    fillval,
     save_intermediate_results,
     make_output_path,
 ):
-    blot = gwcs_blot(median_data, median_wcs, image.data.shape, image.meta.wcs, 1.0)
+    if fillval is None or fillval.strip().upper() == "INDEF":
+        fillval = 0
+    else:
+        fillval = float(fillval)
+    blot = gwcs_blot(
+        median_data, median_wcs, image.data.shape, image.meta.wcs, 1.0, fillval
+    )
 
     # Get background level of science data if it has not been subtracted, so it
     # can be added into the level of the blotted data, which has been
@@ -298,6 +305,7 @@ def detect_outliers(
                     scale1,
                     scale2,
                     backg,
+                    fillval,
                     save_intermediate_results,
                     make_output_path,
                 )

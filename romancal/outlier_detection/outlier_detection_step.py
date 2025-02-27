@@ -32,7 +32,7 @@ class OutlierDetectionStep(RomanStep):
         weight_type = option('ivm','exptime',default='ivm') # Weighting type to use to create the median image
         pixfrac = float(default=1.0) # Fraction by which input pixels are shrunk before being drizzled onto the output image grid
         kernel = string(default='square') # Shape of the kernel used for flux distribution onto output images
-        fillval = string(default='INDEF') # Value assigned to output pixels that have zero weight or no flux during drizzling
+        fillval = string(default='NaN') # Value assigned to output pixels that have zero weight or no flux during drizzling
         maskpt = float(default=0.7) # Percentage of weight image values below which they are flagged as bad pixels
         snr = string(default='5.0 4.0') # The signal-to-noise values to use for bad pixel identification
         scale = string(default='1.2 0.7') # The scaling factor applied to derivative used to identify bad pixels
