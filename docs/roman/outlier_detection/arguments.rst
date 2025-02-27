@@ -50,13 +50,7 @@ behavior of the processing:
     The value for this parameter is to be assigned to the output pixels that
     have zero weight or which do not receive flux from any input pixels during
     drizzling. This parameter corresponds to the ``fillval`` parameter of the
-    `drizzle` task. If the default of `None` is used, and if the weight in
-    both the input and output images for a given pixel are zero, then
-    the output pixel will be set to the value it would have had if the input
-    had a non-zero weight. Otherwise, if a numerical value is provided
-    (e.g. 0), then these pixels will be set to that numerical value.
-    Any floating-point value, given as a string, is valid.
-    A value of 'INDEF' will use the last zero weight flux.
+    `drizzle` task and will be converted to a float.
 
 ``--maskpt``
   Percentage of weight image values below which they are flagged as bad and rejected
