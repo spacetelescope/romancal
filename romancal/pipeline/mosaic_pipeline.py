@@ -37,6 +37,7 @@ class MosaicPipeline(RomanPipeline):
     spec = """
         save_results = boolean(default=False)
         on_disk = boolean(default=False)
+        resample_on_skycell = boolean(default=True)
     """
 
     # Define aliases to steps
@@ -64,6 +65,10 @@ class MosaicPipeline(RomanPipeline):
             raise TypeError(
                 "The level three pipeline input needs to be an association or ModelLibrary"
             )
+
+        # propagate resample_on_skycell setting
+        self.outlier_detection.resample_on_skycell = self.resample_on_skycell
+        self.resample.resample_on_skycell = self.resample_on_skycell
 
         self.flux.suffix = "flux"
         result = self.flux.run(library)

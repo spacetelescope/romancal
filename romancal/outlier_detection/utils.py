@@ -244,6 +244,7 @@ def detect_outliers(
     resample_data,
     good_bits,
     in_memory,
+    resample_on_skycell,
     make_output_path,
 ):
     # setup ResampleData
@@ -266,6 +267,7 @@ def detect_outliers(
             False,
             False,
             False,
+            resample_on_skycell,
         )
         median_data, median_wcs = _median_with_resampling(
             library,
