@@ -39,6 +39,7 @@ class OutlierDetectionStep(RomanStep):
         backg = float(default=0.0) # User-specified background value to subtract during final identification step
         save_intermediate_results = boolean(default=False) # Specifies whether or not to write out intermediate products to disk
         resample_data = boolean(default=True) # Specifies whether or not to resample the input images when performing outlier detection
+        resample_on_skycell = boolean(default=True) # if association contains skycell information use the skycell wcs for resampling
         good_bits = string(default="~DO_NOT_USE+NON_SCIENCE")  # DQ bit value to be considered 'good'
         in_memory = boolean(default=False) # Specifies whether or not to keep all intermediate products and datamodels in memory
     """
@@ -103,6 +104,7 @@ class OutlierDetectionStep(RomanStep):
             self.resample_data,
             self.good_bits,
             self.in_memory,
+            self.resample_on_skycell,
             self.make_output_path,
         )
         return library

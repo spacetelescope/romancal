@@ -65,6 +65,7 @@ class ResampleStep(RomanStep):
         output_wcs = string(default='')  # Custom output WCS.
         in_memory = boolean(default=True)
         good_bits = string(default='~DO_NOT_USE+NON_SCIENCE')  # The good bits to use for building the resampling mask.
+        resample_on_skycell = boolean(default=True)  # if association contains skycell information use it for the wcs
     """
 
     reference_file_types: ClassVar = []
@@ -144,6 +145,7 @@ class ResampleStep(RomanStep):
             "from_var",
             True,
             True,
+            self.resample_on_skycell,
             wcs_kwargs,
         )
         result = resamp.resample_group(range(len(input_models)))
