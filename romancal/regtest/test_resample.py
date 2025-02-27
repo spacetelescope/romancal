@@ -24,7 +24,7 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
         "romancal.step.ResampleStep",
         rtdata.input,
         "--rotation=0",
-        "--resample_to_skycell=False",
+        "--resample_on_skycell=False",
         f"--output_file='{rtdata.output}'",
     ]
     RomanStep.from_cmdline(args)
