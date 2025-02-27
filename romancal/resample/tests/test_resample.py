@@ -1,9 +1,9 @@
+import asdf
 import numpy as np
 import pytest
 from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
-from astropy.table import QTable
 from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
@@ -12,12 +12,7 @@ from roman_datamodels.maker_utils import mk_common_meta, mk_level2_image
 
 from romancal.datamodels import ModelLibrary
 from romancal.lib.tests.helpers import word_precision_check
-from romancal.resample import gwcs_drizzle, resample_utils
-from romancal.resample.resample import (
-    ResampleData,
-    populate_mosaic_basic,
-    populate_mosaic_individual,
-)
+from romancal.resample import ResampleStep, resample_utils
 
 
 # Helper function to create a mock input model with specified metadata
@@ -286,70 +281,6 @@ def get_resampled_wcs_pixel_scale(wcs):
             return getattr(t, p).value
 
 
-def test_resampledata_init(exposure_1):
-    """Test that ResampleData can set initial values."""
-    input_models = ModelLibrary(exposure_1)
-    output = "output.asdf"
-    pixfrac = 0.8
-    kernel = "turbo"
-    fillval = 0.0
-    wht_type = "exp"
-    good_bits = "1"
-    pscale_ratio = 0.5
-    pscale = 0.1
-    kwargs = {"in_memory": False}
-
-    resample_data = ResampleData(
-        input_models,
-        output=output,
-        pixfrac=pixfrac,
-        kernel=kernel,
-        fillval=fillval,
-        wht_type=wht_type,
-        good_bits=good_bits,
-        pscale_ratio=pscale_ratio,
-        pscale=pscale,
-        **kwargs,
-    )
-
-    # Assert
-    assert resample_data.input_models == input_models
-    assert resample_data.output_filename == output
-    assert resample_data.pscale_ratio == pscale_ratio
-    assert resample_data.pixfrac == pixfrac
-    assert resample_data.kernel == kernel
-    assert resample_data.fillval == fillval
-    assert resample_data.weight_type == wht_type
-    assert resample_data.good_bits == good_bits
-    assert resample_data.in_memory == kwargs["in_memory"]
-
-
-def test_resampledata_init_default(exposure_1):
-    """Test instantiating ResampleData with default values."""
-    input_models = ModelLibrary(exposure_1)
-    # Default parameter values
-
-    resample_data = ResampleData(input_models)
-
-    # Assert
-    assert resample_data.input_models == input_models
-    assert resample_data.output_filename is None
-    assert resample_data.pscale_ratio == 1.0
-    assert resample_data.pixfrac == 1.0
-    assert resample_data.kernel == "square"
-    assert resample_data.fillval == "INDEF"
-    assert resample_data.weight_type == "ivm"
-    assert resample_data.good_bits == "0"
-    assert resample_data.in_memory
-
-
-@pytest.mark.parametrize("input_models", [list()])
-def test_resampledata_init_invalid_input(input_models):
-    """Test that ResampleData will raise an exception on invalid inputs."""
-    with pytest.raises(ValueError):
-        ResampleData(input_models)
-
-
 def test_resampledata_do_drizzle_many_to_one_default_no_rotation_single_exposure(
     exposure_1,
 ):
@@ -362,15 +293,10 @@ def test_resampledata_do_drizzle_many_to_one_default_no_rotation_single_exposure
     """
 
     input_models = ModelLibrary(exposure_1)
-    resample_data = ResampleData(input_models)
+    output_model = ResampleStep().run(input_models)
 
-    output_models = resample_data.resample_many_to_one()
-
-    with output_models:
-        model = output_models.borrow(0)
-        output_min_value = np.min(model.meta.wcs.footprint())
-        output_max_value = np.max(model.meta.wcs.footprint())
-        output_models.shelve(model, 0, modify=False)
+    output_min_value = np.min(output_model.meta.wcs.footprint())
+    output_max_value = np.max(output_model.meta.wcs.footprint())
 
     def get_footprint(model, index):
         return model.meta.wcs.footprint()
@@ -397,15 +323,10 @@ def test_resampledata_do_drizzle_many_to_one_default_no_rotation_multiple_exposu
     """
 
     input_models = ModelLibrary(multiple_exposures)
-    resample_data = ResampleData(input_models)
+    output_model = ResampleStep().run(input_models)
 
-    output_models = resample_data.resample_many_to_one()
-
-    with output_models:
-        model = output_models.borrow(0)
-        output_min_value = np.min(model.meta.wcs.footprint())
-        output_max_value = np.max(model.meta.wcs.footprint())
-        output_models.shelve(model, 0, modify=False)
+    output_min_value = np.min(output_model.meta.wcs.footprint())
+    output_max_value = np.max(output_model.meta.wcs.footprint())
 
     def get_footprint(model, index):
         return model.meta.wcs.footprint()
@@ -429,16 +350,12 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0(exposure_1):
     """
 
     input_models = ModelLibrary(exposure_1)
-    resample_data = ResampleData(input_models, **{"rotation": 0})
 
-    output_models = resample_data.resample_many_to_one()
+    output_model = ResampleStep(rotation=0).run(input_models)
 
-    with output_models:
-        model = output_models.borrow(0)
-        pscale = get_resampled_wcs_pixel_scale(model.meta.wcs)
-        output_min_value = np.min(model.meta.wcs.footprint())
-        output_max_value = np.max(model.meta.wcs.footprint())
-        output_models.shelve(model, 0, modify=False)
+    pscale = get_resampled_wcs_pixel_scale(output_model.meta.wcs)
+    output_min_value = np.min(output_model.meta.wcs.footprint())
+    output_max_value = np.max(output_model.meta.wcs.footprint())
 
     def get_footprint(model, index):
         return model.meta.wcs.footprint()
@@ -468,16 +385,11 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0_multiple_exposur
     """
 
     input_models = ModelLibrary(multiple_exposures)
-    resample_data = ResampleData(input_models, **{"rotation": 0})
+    output_model = ResampleStep(rotation=0).run(input_models)
 
-    output_models = resample_data.resample_many_to_one()
-
-    with output_models:
-        model = output_models.borrow(0)
-        output_min_value = np.min(model.meta.wcs.footprint())
-        output_max_value = np.max(model.meta.wcs.footprint())
-        pscale = get_resampled_wcs_pixel_scale(model.meta.wcs)
-        output_models.shelve(model, 0, modify=False)
+    output_min_value = np.min(output_model.meta.wcs.footprint())
+    output_max_value = np.max(output_model.meta.wcs.footprint())
+    pscale = get_resampled_wcs_pixel_scale(output_model.meta.wcs)
 
     def get_footprint(model, index):
         return model.meta.wcs.footprint()
@@ -501,21 +413,11 @@ def test_resampledata_do_drizzle_many_to_one_single_input_model(wfi_sca1):
     footprint vertices that are close to the input WCS footprint's vertices."""
 
     input_models = ModelLibrary([wfi_sca1])
-    resample_data = ResampleData(
-        input_models, output=wfi_sca1.meta.filename, **{"rotation": 0}
-    )
-
-    output_models = resample_data.resample_many_to_one()
-
-    assert len(output_models) == 1
+    output_model = ResampleStep(rotation=0).run(input_models)
 
     flat_1 = np.sort(wfi_sca1.meta.wcs.footprint().flatten())
-    with output_models:
-        model = output_models.borrow(0)
-        flat_2 = np.sort(model.meta.wcs.footprint().flatten())
-        assert model.meta.filename == resample_data.output_filename
-        pscale = get_resampled_wcs_pixel_scale(model.meta.wcs)
-        output_models.shelve(model, 0, modify=False)
+    flat_2 = np.sort(output_model.meta.wcs.footprint().flatten())
+    pscale = get_resampled_wcs_pixel_scale(output_model.meta.wcs)
 
     np.testing.assert_allclose(flat_1, flat_2, atol=0.5 * pscale)
 
@@ -524,38 +426,30 @@ def test_update_exposure_times_different_sca_same_exposure(exposure_1):
     """Test that update_exposure_times is properly updating the exposure parameters
     for a set of different SCAs belonging to the same exposure."""
     input_models = ModelLibrary(exposure_1)
-    resample_data = ResampleData(input_models)
+    output_model = ResampleStep().run(input_models)
 
-    output_models = resample_data.resample_many_to_one()
-    with output_models:
-        output_model = output_models.borrow(0)
-
-        exptime_tot = resample_data.resample_exposure_time(output_model)
-        resample_data.update_exposure_times(output_model, exptime_tot)
-
-        # these three SCAs overlap, so the max exposure time is 3x.
-        # get this time within 0.1 s.
-        time_difference = (
-            output_model.meta.resample.product_exposure_time
-            - 3 * exposure_1[0].meta.exposure.effective_exposure_time
-        )
-        assert np.abs(time_difference) < 0.1
-        assert (
-            output_model.meta.basic.time_first_mjd
-            == exposure_1[0].meta.exposure.start_time.mjd
-        )
-        assert (
-            output_model.meta.basic.time_last_mjd
-            == exposure_1[0].meta.exposure.end_time.mjd
-        )
-        output_models.shelve(output_model, 0, modify=False)
+    # these three SCAs overlap, so the max exposure time is 3x.
+    # get this time within 0.1 s.
+    time_difference = (
+        output_model.meta.resample.product_exposure_time
+        - 3 * exposure_1[0].meta.exposure.effective_exposure_time
+    )
+    assert np.abs(time_difference) < 0.1
+    assert (
+        output_model.meta.basic.time_first_mjd
+        == exposure_1[0].meta.exposure.start_time.mjd
+    )
+    assert (
+        output_model.meta.basic.time_last_mjd
+        == exposure_1[0].meta.exposure.end_time.mjd
+    )
 
 
 def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure_2):
     """Test that update_exposure_times is properly updating the exposure parameters
     for a set of the same SCA but belonging to different exposures."""
     input_models = ModelLibrary([exposure_1[0], exposure_2[0]])
-    resample_data = ResampleData(input_models)
+    output_model = ResampleStep().run(input_models)
 
     with input_models:
         models = list(input_models)
@@ -563,95 +457,41 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
         last_mjd = max(x.meta.exposure.end_time for x in models).mjd
         [input_models.shelve(model, i, modify=False) for i, model in enumerate(models)]
 
-    output_models = resample_data.resample_many_to_one()
-    with output_models:
-        output_model = output_models.borrow(0)
-
-        exptime_tot = resample_data.resample_exposure_time(output_model)
-        resample_data.update_exposure_times(output_model, exptime_tot)
-
-        assert len(resample_data.input_models.group_names) == 2
-
-        # these exposures overlap perfectly so the max exposure time should
-        # be equal to the individual time times two.
-        time_difference = (
-            output_model.meta.resample.product_exposure_time
-            - 2 * exposure_1[0].meta.exposure.effective_exposure_time
-        )
-        assert np.abs(time_difference) < 0.1
-
-        assert output_model.meta.basic.time_first_mjd == first_mjd
-
-        assert output_model.meta.basic.time_last_mjd == last_mjd
-
-        # likewise the per-pixel median exposure time is just 2x the individual
-        # sca exposure time.
-        time_difference = (
-            output_model.meta.basic.max_exposure_time
-            - 2 * exposure_1[0].meta.exposure.effective_exposure_time
-        )
-        assert np.abs(time_difference) < 0.1
-
-        output_models.shelve(output_model, 0, modify=False)
-
-
-@pytest.mark.parametrize(
-    "name",
-    ["var_rnoise", "var_poisson", "var_flat"],
-)
-def test_resample_variance_array(wfi_sca1, wfi_sca4, name):
-    """Test that the mean value for the variance array lies within 1% of the
-    expectation."""
-    input_models = ModelLibrary([wfi_sca1, wfi_sca4])
-    resample_data = ResampleData(input_models, **{"rotation": 0})
-
-    output_model = resample_data.blank_output.copy()
-    output_model.meta["resample"] = {}
-    driz = gwcs_drizzle.GWCSDrizzle(
-        output_model,
-        outwcs=resample_data.output_wcs,
-        pixfrac=resample_data.pixfrac,
-        kernel=resample_data.kernel,
-        fillval=resample_data.fillval,
+    # these exposures overlap perfectly so the max exposure time should
+    # be equal to the individual time times two.
+    time_difference = (
+        output_model.meta.resample.product_exposure_time
+        - 2 * exposure_1[0].meta.exposure.effective_exposure_time
     )
-    with resample_data.input_models:
-        mean_data = []
-        for i, model in enumerate(resample_data.input_models):
-            driz.add_image(model.data, model.meta.wcs)
-            mean_data.append(getattr(model, name)[:])
-            resample_data.input_models.shelve(model, i, modify=False)
+    assert np.abs(time_difference) < 0.1
 
-    resample_data.resample_variance_array(name, output_model)
+    assert output_model.meta.basic.time_first_mjd == first_mjd
 
-    # combined variance is inversely proportional to the number of "measurements"
-    expected_combined_variance_value = np.nanmean(mean_data) / len(input_models)
+    assert output_model.meta.basic.time_last_mjd == last_mjd
 
-    np.isclose(
-        np.nanmean(getattr(output_model, name)),
-        expected_combined_variance_value,
-        atol=0.01,
+    # likewise the per-pixel median exposure time is just 2x the individual
+    # sca exposure time.
+    time_difference = (
+        output_model.meta.basic.max_exposure_time
+        - 2 * exposure_1[0].meta.exposure.effective_exposure_time
     )
+    assert np.abs(time_difference) < 0.1
 
 
-def test_custom_wcs_input_small_overlap_no_rotation(wfi_sca1, wfi_sca3):
+def test_custom_wcs_input_small_overlap_no_rotation(wfi_sca1, wfi_sca3, tmp_path):
     """Test that resample can create a proper output in the edge case where the
     desired output WCS does not encompass the entire input datamodel but, instead, have
     just a small overlap."""
     input_models = ModelLibrary([wfi_sca1])
-    resample_data = ResampleData(
-        input_models,
-        **{"output_wcs": wfi_sca3.meta.wcs, "rotation": 0},
-    )
+    wcs_path = tmp_path / "wcs.asdf"
+    asdf.AsdfFile({"wcs": wfi_sca3.meta.wcs}).write_to(wcs_path)
 
-    output_models = resample_data.resample_many_to_one()
+    output_model = ResampleStep(output_wcs=str(wcs_path), rotation=0).run(input_models)
 
-    with output_models:
-        model = output_models.borrow(0)
-        np.testing.assert_allclose(model.meta.wcs(0, 0), wfi_sca3.meta.wcs(0, 0))
-        output_models.shelve(model, 0, modify=False)
+    np.testing.assert_allclose(output_model.meta.wcs(0, 0), wfi_sca3.meta.wcs(0, 0))
 
 
-def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures):
+def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures, tmp_path):
     """Test that resample can create a proper output that encompasses the entire
     combined FOV of the input datamodels."""
     input_models = ModelLibrary(multiple_exposures)
@@ -664,19 +504,14 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures):
             rotation=0,
         )
         [input_models.shelve(model, i, modify=False) for i, model in enumerate(models)]
-    resample_data = ResampleData(
-        input_models,
-        **{"output_wcs": output_wcs},
-    )
 
-    output_models = resample_data.resample_many_to_one()
+    wcs_path = tmp_path / "wcs.asdf"
+    asdf.AsdfFile({"wcs": output_wcs}).write_to(wcs_path)
+    output_model = ResampleStep(output_wcs=str(wcs_path)).run(input_models)
 
-    with output_models:
-        model = output_models.borrow(0)
-        output_min_value = np.min(model.meta.wcs.footprint())
-        output_max_value = np.max(model.meta.wcs.footprint())
-        pscale = get_resampled_wcs_pixel_scale(model.meta.wcs)
-        output_models.shelve(model, 0, modify=False)
+    output_min_value = np.min(output_model.meta.wcs.footprint())
+    output_max_value = np.max(output_model.meta.wcs.footprint())
+    pscale = get_resampled_wcs_pixel_scale(output_model.meta.wcs)
 
     def get_footprint(model, index):
         return model.meta.wcs.footprint()
@@ -702,353 +537,8 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
     """Test that resample methods return non-empty weight arrays."""
 
     input_models = ModelLibrary(exposure_1)
-    resample_data = ResampleData(input_models, wht_type=weight_type)
-
-    output_models_many_to_one = resample_data.resample_many_to_one()
-    output_models_many_to_many = resample_data.resample_many_to_many()
-
-    with output_models_many_to_one, output_models_many_to_many:
-        many_to_many_model = output_models_many_to_many.borrow(0)
-        many_to_one_model = output_models_many_to_one.borrow(0)
-        assert np.any(many_to_one_model.weight > 0)
-        assert np.any(many_to_many_model.weight > 0)
-        output_models_many_to_many.shelve(many_to_many_model, 0, modify=False)
-        output_models_many_to_one.shelve(many_to_one_model, 0, modify=False)
-
-
-def test_populate_mosaic_basic_single_exposure(exposure_1):
-    """
-    Test the populate_mosaic_basic function with a given exposure.
-    """
-    input_models = ModelLibrary(exposure_1)
-    with input_models:
-        models = list(input_models)
-        crpix = tuple(s // 2 for s in models[0].data.shape[::-1])
-        crval = models[0].meta.wcs(*crpix)
-        output_wcs = resample_utils.make_output_wcs(
-            models,
-            pscale_ratio=1,
-            pscale=0.000031,
-            rotation=0,
-            shape=None,
-            crpix=(0, 0),
-            crval=crval,
-        )
-
-        output_model = maker_utils.mk_datamodel(
-            datamodels.MosaicModel, shape=tuple(output_wcs.array_shape)
-        )
-
-        populate_mosaic_basic(output_model, input_models=models)
-
-        input_meta = [datamodel.meta for datamodel in models]
-
-        [input_models.shelve(model, i, modify=False) for i, model in enumerate(models)]
-
-    assert output_model.meta.basic.time_first_mjd == np.min(
-        [x.exposure.start_time.mjd for x in input_meta]
-    )
-    assert output_model.meta.basic.time_last_mjd == np.max(
-        [x.exposure.end_time.mjd for x in input_meta]
-    )
-    assert output_model.meta.basic.time_mean_mjd == np.mean(
-        [x.exposure.mid_time.mjd for x in input_meta]
-    )
-    assert output_model.meta.basic.visit == (
-        input_meta[0].observation.visit
-        if len({x.observation.visit for x in input_meta}) == 1
-        else -1
-    )
-    assert output_model.meta.basic.segment == (
-        input_meta[0].observation.segment
-        if len({x.observation.segment for x in input_meta}) == 1
-        else -1
-    )
-    assert output_model.meta.basic["pass"] == (
-        input_meta[0].observation["pass"]
-        if len({x.observation["pass"] for x in input_meta}) == 1
-        else -1
-    )
-    assert output_model.meta.basic.program == (
-        input_meta[0].observation.program
-        if len({x.observation.program for x in input_meta}) == 1
-        else -1
-    )
-    assert (
-        output_model.meta.basic.optical_element
-        == input_meta[0].instrument.optical_element
-    )
-    assert output_model.meta.basic.instrument == input_meta[0].instrument.name
-
-
-@pytest.mark.parametrize(
-    "input_models_data, expected_output",
-    [
-        (
-            [
-                (
-                    59000.0,
-                    59000.5,
-                    1,
-                    1,
-                    1,
-                    12345,
-                    "N/A",
-                    "F158",
-                    "WFI",
-                ),
-                (
-                    59000.5,
-                    59001.0,
-                    1,
-                    1,
-                    1,
-                    12345,
-                    "N/A",
-                    "F158",
-                    "WFI",
-                ),
-            ],
-            {
-                "time_first_mjd": 59000.0,
-                "time_last_mjd": 59001.0,
-                "time_mean_mjd": 59000.5,
-                "visit": 1,
-                "segment": 1,
-                "pass": 1,
-                "program": 12345,
-                "survey": "N/A",
-                "optical_element": "F158",
-                "instrument": "WFI",
-            },
-        ),
-        # different visits
-        (
-            [
-                (
-                    59000.0,
-                    59000.5,
-                    1,
-                    1,
-                    1,
-                    12345,
-                    "N/A",
-                    "F158",
-                    "WFI",
-                ),
-                (
-                    59000.5,
-                    59001.0,
-                    2,
-                    1,
-                    1,
-                    12345,
-                    "N/A",
-                    "F158",
-                    "WFI",
-                ),
-            ],
-            {
-                "time_first_mjd": 59000.0,
-                "time_last_mjd": 59001.0,
-                "time_mean_mjd": 59000.5,
-                "visit": -1,
-                "segment": 1,
-                "pass": 1,
-                "program": 12345,
-                "survey": "N/A",
-                "optical_element": "F158",
-                "instrument": "WFI",
-            },
-        ),
-        # different segments
-        (
-            [
-                (
-                    59000.0,
-                    59000.5,
-                    1,
-                    1,
-                    1,
-                    12345,
-                    "N/A",
-                    "F158",
-                    "WFI",
-                ),
-                (
-                    59000.5,
-                    59001.0,
-                    1,
-                    2,
-                    1,
-                    12345,
-                    "N/A",
-                    "F158",
-                    "WFI",
-                ),
-            ],
-            {
-                "time_first_mjd": 59000.0,
-                "time_last_mjd": 59001.0,
-                "time_mean_mjd": 59000.5,
-                "visit": 1,
-                "segment": -1,
-                "pass": 1,
-                "program": 12345,
-                "survey": "N/A",
-                "optical_element": "F158",
-                "instrument": "WFI",
-            },
-        ),
-        # different passes
-        (
-            [
-                (
-                    59000.0,
-                    59000.5,
-                    1,
-                    1,
-                    1,
-                    12345,
-                    "HLS",
-                    "F158",
-                    "WFI",
-                ),
-                (
-                    59000.5,
-                    59001.0,
-                    1,
-                    1,
-                    2,
-                    12345,
-                    "EMS",
-                    "F158",
-                    "WFI",
-                ),
-            ],
-            {
-                "time_first_mjd": 59000.0,
-                "time_last_mjd": 59001.0,
-                "time_mean_mjd": 59000.5,
-                "visit": 1,
-                "segment": 1,
-                "pass": -1,
-                "program": 12345,
-                "survey": "MULTIPLE",
-                "optical_element": "F158",
-                "instrument": "WFI",
-            },
-        ),
-        # different programs
-        (
-            [
-                (
-                    59000.0,
-                    59000.5,
-                    1,
-                    1,
-                    1,
-                    12345,
-                    "N/A",
-                    "F158",
-                    "WFI",
-                ),
-                (
-                    59000.5,
-                    59001.0,
-                    1,
-                    1,
-                    1,
-                    54321,
-                    "N/A",
-                    "F158",
-                    "WFI",
-                ),
-            ],
-            {
-                "time_first_mjd": 59000.0,
-                "time_last_mjd": 59001.0,
-                "time_mean_mjd": 59000.5,
-                "visit": 1,
-                "segment": 1,
-                "pass": 1,
-                "program": -1,
-                "survey": "N/A",
-                "optical_element": "F158",
-                "instrument": "WFI",
-            },
-        ),
-        # different surveys
-        (
-            [
-                (
-                    59000.0,
-                    59000.5,
-                    1,
-                    1,
-                    1,
-                    12345,
-                    "HLS",
-                    "F158",
-                    "WFI",
-                ),
-                (
-                    59000.5,
-                    59001.0,
-                    1,
-                    1,
-                    1,
-                    12345,
-                    "EMS",
-                    "F158",
-                    "WFI",
-                ),
-            ],
-            {
-                "time_first_mjd": 59000.0,
-                "time_last_mjd": 59001.0,
-                "time_mean_mjd": 59000.5,
-                "visit": 1,
-                "segment": 1,
-                "pass": 1,
-                "program": 12345,
-                "survey": "MULTIPLE",
-                "optical_element": "F158",
-                "instrument": "WFI",
-            },
-        ),
-    ],
-)
-def test_populate_mosaic_basic_different_observations(
-    input_models_data, expected_output
-):
-    """Test that populate_mosaic_basic function works properly under different observational scenarios."""
-    input_models = [create_mock_model(*data) for data in input_models_data]
-    output_wcs = resample_utils.make_output_wcs(
-        input_models,
-        pscale_ratio=1,
-        pscale=0.000031,
-        rotation=0,
-        shape=None,
-        crpix=(0, 0),
-        crval=(30, 45),
-    )
-    output_model = maker_utils.mk_datamodel(
-        datamodels.MosaicModel, shape=tuple(output_wcs.array_shape)
-    )
-
-    # Act
-    populate_mosaic_basic(output_model, input_models)
-
-    # Assert
-    assert output_model.meta.basic.time_first_mjd == expected_output["time_first_mjd"]
-    assert output_model.meta.basic.time_last_mjd == expected_output["time_last_mjd"]
-    assert output_model.meta.basic.time_mean_mjd == expected_output["time_mean_mjd"]
-    assert output_model.meta.basic.visit == expected_output["visit"]
-    assert output_model.meta.basic.segment == expected_output["segment"]
-    assert output_model.meta.basic.program == expected_output["program"]
-    assert output_model.meta.basic.optical_element == expected_output["optical_element"]
-    assert output_model.meta.basic.instrument == expected_output["instrument"]
+    output_model = ResampleStep(weight_type=weight_type).run(input_models)
+    assert np.any(output_model.weight > 0)
 
 
 def test_l3_wcsinfo(multiple_exposures):
@@ -1088,39 +578,10 @@ def test_l3_wcsinfo(multiple_exposures):
     )
 
     input_models = ModelLibrary(multiple_exposures)
-    resample_data = ResampleData(input_models)
+    output_model = ResampleStep().run(input_models)
 
-    output_models = resample_data.resample_many_to_one()
-
-    with output_models:
-        output_model = output_models.borrow(0)
-        assert output_model.meta.wcsinfo.projection == expected.projection
-        assert word_precision_check(
-            output_model.meta.wcsinfo.s_region, expected.s_region
-        )
-        for key in expected.keys():
-            if key not in ["projection", "s_region"]:
-                assert np.allclose(output_model.meta.wcsinfo[key], expected[key])
-        output_models.shelve(output_model, 0, modify=False)
-
-
-def test_l3_individual_image_meta(multiple_exposures):
-    """Test that the individual_image_meta is being populated"""
-    input_models = multiple_exposures
-    output_model = maker_utils.mk_datamodel(datamodels.MosaicModel)
-
-    # Act
-    populate_mosaic_individual(output_model, input_models)
-
-    # Assert sizes are expected
-    n_inputs = len(input_models)
-    for value in output_model.meta.individual_image_meta.values():
-        assert isinstance(value, QTable)
-        assert len(value) == n_inputs
-
-    # Assert spot check on filename, which is different for each mock input
-    basic_table = output_model.meta.individual_image_meta.basic
-    for idx, input in enumerate(input_models):
-        assert input.meta.filename == basic_table["filename"][idx]
-
-    assert "background" in output_model.meta.individual_image_meta
+    assert output_model.meta.wcsinfo.projection == expected.projection
+    assert word_precision_check(output_model.meta.wcsinfo.s_region, expected.s_region)
+    for key in expected.keys():
+        if key not in ["projection", "s_region"]:
+            assert np.allclose(output_model.meta.wcsinfo[key], expected[key])
