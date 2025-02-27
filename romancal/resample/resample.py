@@ -224,10 +224,6 @@ class ResampleData(Resample):
             "subtracted": subtracted,
         }
 
-    def _get_intensity_scale(self, model):
-        # FIXME we lie about this to retain the old behavior
-        return 1
-
     def add_model(self, model):
         model_dict = self._input_model_to_dict(model)
         super().add_model(model_dict)
