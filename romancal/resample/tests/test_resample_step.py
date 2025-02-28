@@ -12,6 +12,7 @@ from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
 
+from romancal.assign_wcs.utils import add_s_region
 from romancal.datamodels import ModelLibrary
 from romancal.resample import ResampleStep
 
@@ -152,6 +153,7 @@ def test_set_good_bits_in_resample_meta(base_image, good_bits):
     model.meta.wcsinfo["vparity"] = -1
 
     img = datamodels.ImageModel(model)
+    add_s_region(img)
 
     img.data *= img.meta.photometry.conversion_megajanskys / img.data
 

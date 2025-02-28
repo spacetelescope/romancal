@@ -8,39 +8,11 @@ from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
-from roman_datamodels.maker_utils import mk_common_meta, mk_level2_image
 
+from romancal.assign_wcs.utils import add_s_region
 from romancal.datamodels import ModelLibrary
 from romancal.lib.tests.helpers import word_precision_check
 from romancal.resample import ResampleStep, resample_utils
-
-
-# Helper function to create a mock input model with specified metadata
-def create_mock_model(
-    start_time,
-    end_time,
-    visit,
-    segment,
-    pass_,
-    program,
-    survey,
-    optical_element,
-    instrument_name,
-):
-    meta = mk_common_meta()
-    mock_model = mk_level2_image(**{"meta": meta})
-    mock_model.meta.exposure.start_time = Time(start_time, format="mjd")
-    mock_model.meta.exposure.end_time = Time(end_time, format="mjd")
-    mock_model.meta.exposure.mid_time = Time((start_time + end_time) / 2, format="mjd")
-    mock_model.meta.observation.visit = visit
-    mock_model.meta.observation.segment = segment
-    mock_model.meta.observation["pass"] = pass_
-    mock_model.meta.observation.program = program
-    mock_model.meta.instrument.optical_element = optical_element
-    mock_model.meta.instrument.name = instrument_name
-    mock_model.meta.wcsinfo.vparity = -1
-    mock_model.meta.wcsinfo.v3yangle = -60
-    return mock_model
 
 
 class WfiSca:
@@ -101,7 +73,9 @@ class WfiSca:
             pscale=self.pscale,
             shape=self.shape,
         )
-        return datamodels.ImageModel(l2)
+        model = datamodels.ImageModel(l2)
+        add_s_region(model)
+        return model
 
 
 def create_wcs_object_without_distortion(fiducial_world, pscale, shape):
