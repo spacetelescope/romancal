@@ -1,0 +1,1 @@
+Compute combined wcs from input s_regions.

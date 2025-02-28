@@ -358,7 +358,7 @@ def compute_fiducial(wcslist, bounding_box=None):
     return fiducial
 
 
-def create_footprint(wcs, shape=None, center=True):
+def create_footprint(wcs, shape=None, center=False):
     """Calculate sky footprint
 
     Parameters
@@ -411,7 +411,9 @@ def add_s_region(model):
     -------
     A formatted string representing the detector's footprint
     """
-    update_s_region_keyword(model, create_footprint(model.meta.wcs, shape=model.shape))
+    update_s_region_keyword(
+        model, create_footprint(model.meta.wcs, shape=model.shape, center=False)
+    )
 
 
 def update_s_region_keyword(model, footprint):
