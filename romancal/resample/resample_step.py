@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 import asdf
 import numpy as np
 from roman_datamodels import datamodels
-from stcal.alignment import util
 
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
@@ -156,9 +155,6 @@ class ResampleStep(RomanStep):
 
     def _final_updates(self, model, input_models):
         model.meta.cal_step["resample"] = "COMPLETE"
-        model.meta.wcsinfo.s_region = util.compute_s_region_imaging(
-            model.meta.wcs, model.data.shape
-        )
 
         # if pixel_scale exists, it will override pixel_scale_ratio.
         # calculate the actual value of pixel_scale_ratio based on pixel_scale
