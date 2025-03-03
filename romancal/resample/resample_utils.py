@@ -55,6 +55,12 @@ def make_output_wcs(
     -------
     output_wcs : object
         WCS object, with defined domain, covering entire set of input frames
+
+    pscale : float
+        The computed (or provided) input pixel scale.
+
+    pscale_ratio : float, optional
+        The computed (or provided) input pixel scale ratio.
     """
     sregions = []
     ref_wcs = None
