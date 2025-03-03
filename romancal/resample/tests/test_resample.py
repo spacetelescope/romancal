@@ -8,39 +8,11 @@ from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels, maker_utils
-from roman_datamodels.maker_utils import mk_common_meta, mk_level2_image
 
+from romancal.assign_wcs.utils import add_s_region
 from romancal.datamodels import ModelLibrary
 from romancal.lib.tests.helpers import word_precision_check
 from romancal.resample import ResampleStep, resample_utils
-
-
-# Helper function to create a mock input model with specified metadata
-def create_mock_model(
-    start_time,
-    end_time,
-    visit,
-    segment,
-    pass_,
-    program,
-    survey,
-    optical_element,
-    instrument_name,
-):
-    meta = mk_common_meta()
-    mock_model = mk_level2_image(**{"meta": meta})
-    mock_model.meta.exposure.start_time = Time(start_time, format="mjd")
-    mock_model.meta.exposure.end_time = Time(end_time, format="mjd")
-    mock_model.meta.exposure.mid_time = Time((start_time + end_time) / 2, format="mjd")
-    mock_model.meta.observation.visit = visit
-    mock_model.meta.observation.segment = segment
-    mock_model.meta.observation["pass"] = pass_
-    mock_model.meta.observation.program = program
-    mock_model.meta.instrument.optical_element = optical_element
-    mock_model.meta.instrument.name = instrument_name
-    mock_model.meta.wcsinfo.vparity = -1
-    mock_model.meta.wcsinfo.v3yangle = -60
-    return mock_model
 
 
 class WfiSca:
@@ -101,7 +73,9 @@ class WfiSca:
             pscale=self.pscale,
             shape=self.shape,
         )
-        return datamodels.ImageModel(l2)
+        model = datamodels.ImageModel(l2)
+        add_s_region(model)
+        return model
 
 
 def create_wcs_object_without_distortion(fiducial_world, pscale, shape):
@@ -496,14 +470,10 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures, tmp_path)
     combined FOV of the input datamodels."""
     input_models = ModelLibrary(multiple_exposures)
 
-    with input_models:
-        models = list(input_models)
-        # create output WCS encompassing the entire exposure FOV
-        output_wcs = resample_utils.make_output_wcs(
-            models,
-            rotation=0,
-        )
-        [input_models.shelve(model, i, modify=False) for i, model in enumerate(models)]
+    output_wcs, _, _ = resample_utils.make_output_wcs(
+        input_models,
+        rotation=0,
+    )
 
     wcs_path = tmp_path / "wcs.asdf"
     asdf.AsdfFile({"wcs": output_wcs}).write_to(wcs_path)
@@ -558,21 +528,20 @@ def test_l3_wcsinfo(multiple_exposures):
             "pixel_shape": (161, 213),
             "ra_center": 10.002930353020417,
             "dec_center": 0.0015101325554100666,
-            "ra_corn1": 10.005109345783163,
-            "dec_corn1": -0.001982743978690467,
-            "ra_corn2": 10.006897960220385,
-            "dec_corn2": 0.002676755917536623,
-            "ra_corn3": 10.000733528663718,
-            "dec_corn3": 0.005043059486913547,
-            "ra_corn4": 9.998944914237953,
-            "dec_corn4": 0.00038355958555111314,
+            "ra_corn1": 10.005118261576513,
+            "dec_corn1": -0.0020027691784169498,
+            "ra_corn2": 10.006906876013732,
+            "dec_corn2": 0.0026567307177480667,
+            "ra_corn3": 10.000742444457124,
+            "dec_corn3": 0.005023034287225611,
+            "ra_corn4": 9.998953830031317,
+            "dec_corn4": 0.00036353438578227396,
             "orientat_local": 20.999999978134802,
-            "orientat": 20.999999978134802,
+            "orientat": 20.99999999880985,
             "projection": "TAN",
             "s_region": (
-                "POLYGON ICRS 10.005109345783163 -0.001982743978690467 10.006897960220385 "
-                "0.002676755917536623 10.000733528663718 0.005043059486913547 "
-                "9.998944914237953 0.00038355958555111314 "
+                "POLYGON ICRS  10.005118262 -0.002002769 10.006906876 "
+                "0.002656731 10.000742444 0.005023034 9.998953830 0.000363534"
             ),
         }
     )

@@ -87,8 +87,8 @@ class ResampleData(Resample):
             A dictionary of custom WCS parameters used to define an
             output WCS from input models' outlines. This argument is ignored
             when ``output_wcs`` is specified. See
-            `romancal.resample.resample_utils.make_output_wcs` for supported
-            options.
+            `romancal.resample.resample_utils.make_output_wcs`
+            for supported options.
         """
         # fillval indef doesn't define a starting value
         # since we're not resampling onto an existing array
@@ -103,68 +103,11 @@ class ResampleData(Resample):
         if output_wcs is None:
             if wcs_kwargs is None:
                 wcs_kwargs = {}
-            with input_models:
-                models = list(input_models)
-                wcs = make_output_wcs(
-                    models,
-                    **wcs_kwargs,
-                )
-                for i, m in enumerate(models):
-                    input_models.shelve(m, i, modify=False)
-
-            # FIXME use s_regions here, but this causes data differences
-            # since s_regions are not using center=False
-            # sregions = []
-            # ref_wcs = None
-            # ref_wcsinfo = None
-            # shape = None
-            # with input_models:
-            #     for model in input_models:
-            #         if ref_wcs is None:
-            #             ref_wcs = model.meta.wcs
-            #             ref_wcsinfo = model.meta.wcsinfo
-            #             shape = model.data.shape
-            #         sregions.append(model.meta.wcsinfo.s_region)
-            #         input_models.shelve(model, modify=False)
-            #     output_wcs = ref_wcs
-
-            # if (pscale := wcs_kwargs.get("pixel_scale")) is not None:
-            #     pscale /= 3600.0
-
-            # pixel_scale_ratio = wcs_kwargs.get("pixel_scale_ratio", 1.0)
-
-            # if pscale is None:
-            #     pscale_in0 = compute_scale(
-            #         ref_wcs,
-            #         fiducial=np.array([ref_wcsinfo["ra_ref"], ref_wcsinfo["dec_ref"]])
-            #     )
-            #     pixel_scale = pscale_in0 * pixel_scale_ratio
-            # else:
-            #     pscale_in0 = np.rad2deg(
-            #         math.sqrt(compute_mean_pixel_area(ref_wcs, shape=shape))
-            #     )
-
-            #     pixel_scale_ratio = pixel_scale / pscale_in0
-
-            # wcs = wcs_from_sregions(
-            #     sregions,
-            #     ref_wcs=ref_wcs,
-            #     ref_wcsinfo=ref_wcsinfo,
-            #     pscale_ratio=pixel_scale_ratio,
-            #     pscale=pixel_scale,
-            #     shape=wcs_kwargs.get("shape"),
-            #     rotation=wcs_kwargs.get("rotation"),
-            #     crpix=wcs_kwargs.get("crpix"),
-            #     crval=wcs_kwargs.get("crval"),
-            # )
-
-            # ps = pixel_scale
-            # ps_ratio = pixel_scale_ratio
-
+            wcs, ps, ps_ratio = make_output_wcs(input_models, **wcs_kwargs)
             output_wcs = {
                 "wcs": wcs,
-                # "pixel_scale": 3600.0 * ps,
-                # "pixel_scale_ratio": ps_ratio,
+                "pixel_scale": ps,
+                "pixel_scale_ratio": ps_ratio,
             }
 
         super().__init__(

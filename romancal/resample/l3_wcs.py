@@ -44,7 +44,7 @@ def assign_l3_wcs(model, wcs):
     l3_wcsinfo.pixel_scale_local = compute_scale(wcs, world_center)
     l3_wcsinfo.orientat_local = calc_pa(wcs, *world_center)
     try:
-        footprint = utils.create_footprint(wcs, model.shape)
+        footprint = utils.create_footprint(wcs, model.shape, center=False)
     except Exception as excp:
         log.warning("Could not determine footprint due to %s", excp)
     else:
