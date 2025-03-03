@@ -7,7 +7,7 @@ from stcal.resample import Resample
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
 from .meta_blender import MetaBlender
-from .resample_utils import wcs_from_footprints
+from .resample_utils import make_output_wcs
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -87,7 +87,7 @@ class ResampleData(Resample):
             A dictionary of custom WCS parameters used to define an
             output WCS from input models' outlines. This argument is ignored
             when ``output_wcs`` is specified. See
-            `romancal.resample.resample_utils.wcs_from_footprints`
+            `romancal.resample.resample_utils.make_output_wcs`
             for supported options.
         """
         # fillval indef doesn't define a starting value
@@ -103,7 +103,7 @@ class ResampleData(Resample):
         if output_wcs is None:
             if wcs_kwargs is None:
                 wcs_kwargs = {}
-            wcs, ps, ps_ratio = wcs_from_footprints(input_models, **wcs_kwargs)
+            wcs, ps, ps_ratio = make_output_wcs(input_models, **wcs_kwargs)
             output_wcs = {
                 "wcs": wcs,
                 "pixel_scale": ps,

@@ -18,6 +18,7 @@ from numpy.testing import assert_allclose
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
+from romancal.datamodels import ModelLibrary
 from romancal.tweakreg.astrometric_utils import (
     compute_radius,
     create_astrometric_catalog,
@@ -458,7 +459,7 @@ def test_create_astrometric_catalog_variable_num_sources(
     output_filename = "ref_cat.ecsv"
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     res = create_astrometric_catalog(
-        [img],
+        ModelLibrary([img]),
         catalog=catalog,
         output=os.path.join(tmp_path, output_filename),
         num_sources=num_sources,
@@ -480,7 +481,7 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
 
     for table_format in list_of_supported_formats:
         res = create_astrometric_catalog(
-            [img],
+            ModelLibrary([img]),
             catalog="GAIADR3",
             output=os.path.join(tmp_path, output_filename),
             table_format=table_format,
@@ -515,7 +516,7 @@ def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, reques
     )
 
     res = create_astrometric_catalog(
-        [img],
+        ModelLibrary([img]),
         catalog=catalog,
         output=os.path.join(tmp_path, output_filename),
         epoch=epoch,
