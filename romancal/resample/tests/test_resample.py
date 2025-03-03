@@ -470,14 +470,10 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures, tmp_path)
     combined FOV of the input datamodels."""
     input_models = ModelLibrary(multiple_exposures)
 
-    with input_models:
-        models = list(input_models)
-        # create output WCS encompassing the entire exposure FOV
-        output_wcs = resample_utils.make_output_wcs(
-            models,
-            rotation=0,
-        )
-        [input_models.shelve(model, i, modify=False) for i, model in enumerate(models)]
+    output_wcs, _, _ = resample_utils.wcs_from_footprints(
+        input_models,
+        rotation=0,
+    )
 
     wcs_path = tmp_path / "wcs.asdf"
     asdf.AsdfFile({"wcs": output_wcs}).write_to(wcs_path)

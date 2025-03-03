@@ -1,12 +1,65 @@
 import logging
+import math
 
 import numpy as np
-from stcal.alignment.util import wcs_from_footprints
+from stcal.alignment.util import compute_scale, wcs_from_sregions
+from stcal.alignment.util import wcs_from_footprints as stcal_wcs_from_footprints
+from stcal.resample.utils import compute_mean_pixel_area
 
 from romancal.assign_wcs.utils import wcs_bbox_from_shape
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+def wcs_from_footprints(
+    input_models,
+    pscale=None,
+    pscale_ratio=1.0,
+    shape=None,
+    rotation=None,
+    crpix=None,
+    crval=None,
+):
+    sregions = []
+    ref_wcs = None
+    ref_wcsinfo = None
+    ref_shape = None
+    with input_models:
+        for model in input_models:
+            if ref_wcs is None:
+                ref_wcs = model.meta.wcs
+                ref_wcsinfo = model.meta.wcsinfo
+                ref_shape = model.data.shape
+            sregions.append(model.meta.wcs.footprint())
+            input_models.shelve(model, modify=False)
+
+    if pscale is None:
+        pscale = (
+            compute_scale(
+                ref_wcs,
+                fiducial=np.array([ref_wcsinfo["ra_ref"], ref_wcsinfo["dec_ref"]]),
+            )
+            * pscale_ratio
+        )
+    else:
+        pscale_ratio = pscale / np.rad2deg(
+            math.sqrt(compute_mean_pixel_area(ref_wcs, shape=ref_shape))
+        )
+
+    wcs = wcs_from_sregions(
+        sregions,
+        ref_wcs=ref_wcs,
+        ref_wcsinfo=ref_wcsinfo,
+        pscale_ratio=pscale_ratio,
+        pscale=pscale,
+        shape=shape,
+        rotation=rotation,
+        crpix=crpix,
+        crval=crval,
+    )
+
+    return wcs, pscale * 3600.0, pscale_ratio
 
 
 def make_output_wcs(
@@ -70,7 +123,7 @@ def make_output_wcs(
     if naxes != 2:
         raise RuntimeError(f"Output WCS needs 2 axes.{wcslist[0]} has {naxes}.")
 
-    output_wcs = wcs_from_footprints(
+    output_wcs = stcal_wcs_from_footprints(
         wcslist,
         None,
         dict(input_models[0].meta.wcsinfo),
