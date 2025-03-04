@@ -360,18 +360,39 @@ def skycell_to_wcs(skycell_record):
     return wcsobj
 
 
-def to_skycell_wcs(input):
-    # check to see if the product name contains a skycell name & if true get the skycell record
-    if "target" not in input.asn:
-        return None
-    skycell_name = input.asn["target"]
+def to_skycell_wcs(library):
+    """If available read the skycell WCS from the input library association.
 
-    if not re.match(r"r\d{3}\w{2}\d{2}x\d{2}y\d{2}", skycell_name):
-        return None
+    If the association information contains a "skycell_wcs_info" entry that
+    is not "none" it will be interpreted as a skycell wcs. If not, the
+    association "target" name will be checked. If it matches a skycell
+    name the patch table will be loaded and the skycell wcs will be
+    looked up based on the name. If neither condition is met None
+    will be returned.
 
-    if "skycell_wcs_info" in input.asn and input.asn["skycell_wcs_info"] != "none":
-        skycell_record = input.asn["skycell_wcs_info"]
+    Parameters
+    ----------
+    library : ModelLibrary
+        ModelLibrary instance containing association information.
+
+    Returns
+    -------
+    wcsobj : wcs.GWCS or None
+        The GWCS object from the skycell record or None if
+        none was found.
+    """
+
+    if "skycell_wcs_info" in library.asn and library.asn["skycell_wcs_info"] != "none":
+        skycell_record = library.asn["skycell_wcs_info"]
     else:
+        if "target" not in library.asn:
+            return None
+        # check to see if the product name contains a skycell name & if true get the skycell record
+        skycell_name = library.asn["target"]
+
+        if not re.match(r"r\d{3}\w{2}\d{2}x\d{2}y\d{2}", skycell_name):
+            return None
+
         if PATCH_TABLE is None:
             load_patch_table()
         skycell_record = PATCH_TABLE[
