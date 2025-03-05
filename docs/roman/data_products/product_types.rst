@@ -64,7 +64,7 @@ High Level Processing (HLP) Steps And Data Products
 +------------------------------------------------------------------+------------------------+--------------------------+------+-----------------------+---------------------------------------+
 | Pipeline                                                         | Input                  |  Output(s)               | Base | Units                 | Description                           |
 +==================================================================+========================+==========================+======+=======================+=======================================+
-| :ref:`romancal.pipeline.MosaicPipeline <mosaic_pipeline>`        | cal                    | coadd                    | Exp  | DN/s                  | 2-D calibrated data                   |
+| :ref:`romancal.pipeline.MosaicPipeline <mosaic_pipeline>`        | cal                    | coadd                    | Exp  | MJy/sr                | 2-D calibrated data                   |
 +------------------------------------------------------------------+------------------------+--------------------------+------+-----------------------+---------------------------------------+
 
 The following table contain lists of all data product types for the Mosaic Processing Pipeline in the HLP,
@@ -80,11 +80,11 @@ the user is running the pipeline. The input for each optional step is the output
 +===================================================+=================+==============================+=====================+======================+=======================================+
 | :ref:`flux <flux_step>`                           | asn             | flux (opt)                   | ImageModel          | MJy/sr               | A 2D flux image                       |
 +---------------------------------------------------+-----------------+------------------------------+---------------------+----------------------+---------------------------------------+
-| :ref:`sky_match <skymatch_step>`                  | asn             | skymatch (opt)               | ImageModel          | MJy/sr               | A 2D image with sky levels computed   |
+| :ref:`sky_match <skymatch_step>`                  | asn             | skymatch (opt)               | ModelLibrary        | MJy/sr               | A 2D image with sky levels computed   |
 +---------------------------------------------------+-----------------+------------------------------+---------------------+----------------------+---------------------------------------+
-| :ref:`outlier_detection <outlier_detection_step>` | asn             | outlier_detection_step (opt) | ImageModel          | MJy/sr               | A 2D image with outliers flagged      |
+| :ref:`outlier_detection <outlier_detection_step>` | asn             | outlier_detection_step (opt) | ModelLibrary        | MJy/sr               | A 2D image with outliers flagged      |
 +---------------------------------------------------+-----------------+------------------------------+---------------------+----------------------+---------------------------------------+
-| :ref:`resample <resample_step>`                   | asn             | coadd                        | MosaicModel         | MJy/sr               | A 2D resampled image                  |
+| :ref:`resample <resample_step>`                   | asn             | coadd                        | ModelLibrary        | MJy/sr               | A 2D resampled image                  |
 +---------------------------------------------------+-----------------+------------------------------+---------------------+----------------------+---------------------------------------+
 | :ref:`source catalog <source_catalog_step>`       | image           | cat                          | astropy.table       |:math:`\mu\text{Jy}`  | A catalog of detected sources         |
 +---------------------------------------------------+-----------------+------------------------------+---------------------+----------------------+---------------------------------------+
