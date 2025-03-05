@@ -16,6 +16,7 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
 from romancal.assign_wcs import pointing
+from romancal.assign_wcs.utils import add_s_region
 
 collect_ignore = ["lib/dqflags.py"]
 
@@ -221,6 +222,8 @@ def _create_wcs(input_dm, shift_1=0, shift_2=0):
     wcs_obj.bounding_box = ((-0.5, shape[-2] + 0.5), (-0.5, shape[-1] + 0.5))
 
     input_dm.meta["wcs"] = wcs_obj
+
+    add_s_region(input_dm)
 
 
 @pytest.fixture

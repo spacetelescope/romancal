@@ -1,51 +1,54 @@
 .. _resample_step_args:
 
+For more details about step arguments (including datatypes, possible values
+and defaults) see :py:obj:`romancal.resample.ResampleStep.spec`.
+
 Step Arguments
 ==============
 The ``resample`` step has the following optional arguments that control
 the behavior of the processing and the characteristics of the resampled
 image.
 
-``--pixfrac`` (float, default=1.0)
+``--pixfrac``
     The fraction by which input pixels are "shrunk" before being drizzled
     onto the output image grid, given as a real number between 0 and 1.
 
-``--kernel`` (str, default='square')
+``--kernel``
     The form of the kernel function used to distribute flux onto the output
     image.  Available kernels are `square`, `gaussian`, `point`, `tophat`,
     `turbo`, `lanczos2`, and `lanczos3`.
 
-``--pixel_scale_ratio`` (float, default=1.0)
+``--pixel_scale_ratio``
     Ratio of input to output pixel scale.  A value of 0.5 means the output
     image would have 4 pixels sampling each input pixel.
     Ignored when ``pixel_scale`` or ``output_wcs`` are provided.
 
-``--pixel_scale`` (float, default=None)
+``--pixel_scale``
     Absolute pixel scale in ``arcsec``. When provided, overrides
     ``pixel_scale_ratio``. Ignored when ``output_wcs`` is provided.
 
-``--rotation`` (float, default=None)
+``--rotation``
     Position angle of output image’s Y-axis relative to North.
     A value of 0.0 would orient the final output image to be North up.
-    The default of `None` specifies that the images will not be rotated,
+    The value of `None` specifies that the images will not be rotated,
     but will instead be resampled in the default orientation for the camera
     with the x and y axes of the resampled image corresponding
     approximately to the detector axes. Ignored when ``pixel_scale``
     or ``output_wcs`` are provided.
 
-``--crpix`` (tuple of float, default=None)
+``--crpix``
     Position of the reference pixel in the image array in the ``x, y`` order.
     If ``crpix`` is not specified, it will be set to the center of the bounding
     box of the returned WCS object. When supplied from command line, it should
     be a comma-separated list of floats. Ignored when ``output_wcs``
     is provided.
 
-``--crval`` (tuple of float, default=None)
+``--crval``
     Right ascension and declination of the reference pixel. Automatically
     computed if not provided. When supplied from command line, it should be a
     comma-separated list of floats. Ignored when ``output_wcs`` is provided.
 
-``--output_shape`` (tuple of int, default=None)
+``--output_shape``
     Shape of the image (data array) using "standard" ``nx`` first and ``ny``
     second (as opposite to the ``numpy.ndarray`` convention - ``ny`` first and
     ``nx`` second). This value will be assigned to
@@ -57,7 +60,7 @@ image.
         Specifying ``output_shape`` *is required* when the WCS in
         ``output_wcs`` does not have ``bounding_box`` property set.
 
-``--output_wcs`` (str, default='')
+``--output_wcs``
     File name of a ``ASDF`` file with a GWCS stored under the ``"wcs"`` key
     under the root of the file. The output image size is determined from the
     bounding box of the WCS (if any). Argument ``output_shape`` overrides
@@ -69,13 +72,13 @@ image.
         ``pixel_scale_ratio``, ``pixel_scale``, ``rotation``, ``crpix``,
         and ``crval`` will be ignored.
 
-``--fillval`` (str, default='INDEF')
+``--fillval``
     The value to assign to output pixels that have zero weight or do not
     receive any flux from any input pixels during drizzling.
 
-``--weight_type`` (str, default='ivm')
+``--weight_type``
     The weighting type for each input image.
-    If `weight_type=ivm` (the default), the scaling value
+    If `weight_type=ivm`, the scaling value
     will be determined per-pixel using the inverse of the read noise
     (``VAR_RNOISE``) array stored in each input image. If the ``VAR_RNOISE`` array does
     not exist, the weight is set to 1 for all pixels (equal weighting).
@@ -93,16 +96,16 @@ image.
     If the ``VAR_SKY`` array does not exist (which implies missing ``VAR_RNOISE`` and/or ``VAR_POISSON``),
     the weight is set to 1 for all pixels (equal weighting).
 
-``--in_memory`` (bool, default=True)
+``--in_memory``
     If set to `False`, write output datamodel to disk.
 
-``--good_bits`` (str, default='~DO_NOT_USE+NON_SCIENCE')
+``--good_bits``
     Specifies the bits to use when creating the resampling mask.
     Either a single bit value or a combination of them can be provided.
     If the string starts with a tilde (`~`), then the provided bit(s)
     will be excluded when creating the resampling mask.
-    The default value is to exclude pixels flagged with ``DO_NOT_USE``
-    and ``NON_SCIENCE``.
+    A value of ``~DO_NOT_USE+NON_SCIENCE`` will exclude pixels
+    flagged with ``DO_NOT_USE`` and ``NON_SCIENCE``.
 
     The bit value can be provided in a few different ways, but always as
     a string type. For example, if the user deems OK to use pixels with

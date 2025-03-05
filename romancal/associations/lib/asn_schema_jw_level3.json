@@ -22,37 +22,55 @@
             "type": "string"
         },
         "skycell_wcs_info": {
-            "description": "WCS information for the projection cell",
-            "type": "string",
-		"properties":{
-		"pixel_scale": {
-		    "type": "number"
-		},
-	        "ra_cent": {
-		    "type": "number"
-		},
-		"dec_cent": {
-		    "type": "number"
-		},
-		"shiftx": {
-		    "type": "integer"
-		},
-		"shifty": {
-		    "type": "integer"
-		},
-		"nx": {
-		    "type": "integer"
-		},
-		"ny": {
-		    "type": "integer"
-		},
-		"orient": {
-		    "type": "number"
-		},
-		"orientat_projection_center": {
-		    "type": "number"
-		}
-		}
+            "oneOf": [
+                {
+                    "type": "string",
+                    "enum": ["none"]
+                },
+                {
+                    "description": "WCS information for the projection cell",
+                    "type": "object",
+                    "properties":{
+                        "name": {
+                            "type": "string"
+                        },
+                        "pixel_scale": {
+                            "type": "number"
+                        },
+                        "ra_projection_center": {
+                            "type": "number"
+                        },
+                        "dec_projection_center": {
+                            "type": "number"
+                        },
+                        "x0_projection": {
+                            "type": "number"
+                        },
+                        "y0_projection": {
+                            "type": "number"
+                        },
+                        "ra_center": {
+                            "type": "number"
+                        },
+                        "dec_center": {
+                            "type": "number"
+                        },
+                        "nx": {
+                            "type": "number"
+                        },
+                        "ny": {
+                            "type": "number"
+                        },
+                        "orientat": {
+                            "type": "number"
+                        },
+                        "orientat_projection_center": {
+                            "type": "number"
+                        }
+                    },
+                    "required": ["name", "pixel_scale", "ra_projection_center", "dec_projection_center", "x0_projection", "y0_projection", "ra_center", "dec_center", "nx", "ny", "orientat", "orientat_projection_center"]
+                }
+            ]
         },
         "target": {
             "description": "Canonical name of the astronomical object being observed.",

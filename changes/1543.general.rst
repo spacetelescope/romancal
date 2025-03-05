@@ -1,1 +1,0 @@
-Bump min Python version to 3.11 per SPEC 0.

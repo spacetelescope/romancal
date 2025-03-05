@@ -31,21 +31,19 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
 
     step.log.info(
         "ResampleStep recorded as complete? :"
-        f' {resample_out.meta.cal_step.resample == "COMPLETE"}'
+        f" {resample_out.meta.cal_step.resample == 'COMPLETE'}"
     )
     assert resample_out.meta.cal_step.resample == "COMPLETE"
 
     step.log.info(
         "ResampleStep created 'meta.resample'? :"
-        f' {hasattr(resample_out.meta, "resample")}'
+        f" {hasattr(resample_out.meta, 'resample')}"
     )
     assert hasattr(resample_out.meta, "resample")
 
     step.log.info(
         f"""DMS342 MSG: Was ICRS used as the mosaic astrometric reference frame? :\
-            {
-                resample_out.meta.coordinates.reference_frame == "ICRS"
-            }
+            {resample_out.meta.coordinates.reference_frame == "ICRS"}
         """
     )
     assert resample_out.meta.coordinates.reference_frame == "ICRS"
@@ -53,17 +51,18 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
     step.log.info(
         f"""DMS343 MSG: ResampleStep created new attribute data quality information? :\
             {
-                all(
-                    hasattr(resample_out, x) for x in [
-                        "data",
-                        "err",
-                        "var_poisson",
-                        "var_rnoise",
-                        "var_flat",
-                        "var_sky",
-                    ]
-                )
-            }"""
+            all(
+                hasattr(resample_out, x)
+                for x in [
+                    "data",
+                    "err",
+                    "var_poisson",
+                    "var_rnoise",
+                    "var_flat",
+                    "var_sky",
+                ]
+            )
+        }"""
     )
     assert all(
         hasattr(resample_out, x)
@@ -73,14 +72,15 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
     step.log.info(
         f"""DMS343 MSG: Were the variance arrays populated (variance propagation)? :\
             {
-                all(
-                    np.sum(~np.isnan(getattr(resample_out, x))) for x in [
-                        "var_poisson",
-                        "var_rnoise",
-                        "var_sky",
-                    ]
-                )
-            }"""
+            all(
+                np.sum(~np.isnan(getattr(resample_out, x)))
+                for x in [
+                    "var_poisson",
+                    "var_rnoise",
+                    "var_sky",
+                ]
+            )
+        }"""
     )
     assert all(
         np.sum(~np.isnan(getattr(resample_out, x)))
@@ -90,16 +90,17 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
     step.log.info(
         f"""DMS343 MSG: Are there NaNs or zeros in the variance arrays, indicating poor data quality? :\
             {
-                any(
-                    np.sum(
-                        np.logical_or(
-                            np.isnan(getattr(resample_out, x)),
-                            np.equal(getattr(resample_out, x), 0)
-                        )
-                    ) > 0 for x in ["var_poisson", "var_rnoise", "var_flat", "var_sky"]
+            any(
+                np.sum(
+                    np.logical_or(
+                        np.isnan(getattr(resample_out, x)),
+                        np.equal(getattr(resample_out, x), 0),
+                    )
                 )
-
-            }"""
+                > 0
+                for x in ["var_poisson", "var_rnoise", "var_flat", "var_sky"]
+            )
+        }"""
     )
     assert all(
         np.sum(np.isnan(getattr(resample_out, x)))
@@ -116,19 +117,19 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
     step.log.info(
         f"""DMS345 MSG: ResampleStep included all metadata relevant to the creation of the mosaic? :\
             {
-                all(
-                    hasattr(resample_out.meta.resample, x)
-                    and bool(getattr(resample_out.meta.resample, x))
-                    for x in [
-                        "pixel_scale_ratio",
-                        "pixfrac",
-                        "pointings",
-                        "product_exposure_time",
-                        "weight_type",
-                        "members",
-                    ]
-                )
-            }"""
+            all(
+                hasattr(resample_out.meta.resample, x)
+                and bool(getattr(resample_out.meta.resample, x))
+                for x in [
+                    "pixel_scale_ratio",
+                    "pixfrac",
+                    "pointings",
+                    "product_exposure_time",
+                    "weight_type",
+                    "members",
+                ]
+            )
+        }"""
     )
     assert all(
         hasattr(resample_out.meta.resample, x)
@@ -144,5 +145,5 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
     )
 
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
-    step.log.info("Was the proper Resample data produced?" f" : {diff.identical}")
+    step.log.info(f"Was the proper Resample data produced? : {diff.identical}")
     assert diff.identical, diff.report()

@@ -17,7 +17,7 @@ def test_outlier_raises_error_on_invalid_input_models(input_models):
     """Test that OutlierDetection raises an Exception if input is invalid."""
 
     with pytest.raises(IsADirectoryError):
-        OutlierDetectionStep.call(input_models)
+        OutlierDetectionStep().run(input_models)
 
 
 def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
@@ -25,7 +25,7 @@ def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
     and sets the appropriate metadata for the skipped step."""
     img = base_image()
 
-    res = OutlierDetectionStep.call(ModelLibrary([img]))
+    res = OutlierDetectionStep().run(ModelLibrary([img]))
 
     with res:
         for i, m in enumerate(res):
@@ -43,7 +43,7 @@ def test_outlier_raises_exception_on_exposure_type_different_from_wfi_image(base
     img_2.meta.exposure.type = "WFI_PRISM"
 
     with pytest.raises(ValueError, match="only supports WFI_IMAGE"):
-        OutlierDetectionStep.call(ModelLibrary([img_1, img_2]))
+        OutlierDetectionStep().run(ModelLibrary([img_1, img_2]))
 
 
 def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
@@ -59,12 +59,11 @@ def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
 
     asn_filepath = create_mock_asn_file(tmp_path)
 
-    res = OutlierDetectionStep.call(
-        asn_filepath,
+    res = OutlierDetectionStep(
         output_dir=tmp_path.as_posix(),
         in_memory=True,
         resample_data=False,
-    )
+    ).run(asn_filepath)
 
     # assert step.skip is False
     with res:
@@ -84,11 +83,10 @@ def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
 
     library = ModelLibrary([img_1, img_2])
 
-    res = OutlierDetectionStep.call(
-        library,
+    res = OutlierDetectionStep(
         in_memory=True,
         resample_data=False,
-    )
+    ).run(library)
 
     with res:
         for i, m in enumerate(res):
@@ -283,7 +281,7 @@ def test_outlier_detection_always_returns_modelcontainer_with_updated_datamodels
 
     step_input = step_input_map.get(input_type)
 
-    res = OutlierDetectionStep.call(step_input)
+    res = OutlierDetectionStep().run(step_input)
 
     assert isinstance(res, ModelLibrary)
     with res:

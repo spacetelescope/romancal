@@ -40,8 +40,9 @@ def create_astrometric_catalog(
 
     Parameters
     ----------
-    input_models : str, list
-        Filenames of images to be aligned to astrometric catalog
+    input_models : ModelLibrary
+        ModelLibrary of images to use for determining the wcs (if
+        existing_wcs is not provided) and epoch (if not provided).
 
     catalog : str, optional
         Name of catalog to extract astrometric positions for sources in the
@@ -95,15 +96,15 @@ def create_astrometric_catalog(
     if existing_wcs is not None:
         outwcs = existing_wcs
     else:
-        outwcs = resample_utils.make_output_wcs(input_models)
+        outwcs, _, _ = resample_utils.make_output_wcs(input_models)
     radius, fiducial = compute_radius(outwcs)
 
     # perform query for this field-of-view
-    epoch = (
-        epoch
-        if epoch is not None
-        else input_models[0].meta.exposure.mid_time.decimalyear
-    )
+    if epoch is None:
+        with input_models:
+            model = input_models.borrow(0)
+            epoch = model.meta.exposure.mid_time.decimalyear
+            input_models.shelve(model, 0)
     if not isinstance(epoch, float):
         # keep only decimal point and digit characters
         epoch = float("".join(c for c in str(epoch) if c == "." or c.isdigit()))

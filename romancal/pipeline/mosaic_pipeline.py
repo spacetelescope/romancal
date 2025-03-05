@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-import json
 import logging
 import re
 from os.path import basename, isfile
@@ -96,9 +95,12 @@ class MosaicPipeline(RomanPipeline):
             if re.match(r"r\d{3}\w{2}\d{2}x\d{2}y\d{2}", skycell_name):
                 # check to see if the skycell coords are in the asn header if
                 # so read the string and convert to a dictionary to match the patch table
-                try:
-                    skycell_record = json.loads(input.asn["skycell_wcs_info"])
-                except (KeyError, json.JSONDecodeError):
+                if (
+                    "skycell_wcs_info" in input.asn
+                    and input.asn["skycell_wcs_info"] != "none"
+                ):
+                    skycell_record = input.asn["skycell_wcs_info"]
+                else:
                     if patch_match.PATCH_TABLE is None:
                         patch_match.load_patch_table()
                     skycell_record = patch_match.PATCH_TABLE[
