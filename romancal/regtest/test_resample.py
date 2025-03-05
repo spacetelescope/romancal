@@ -59,6 +59,7 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
                     "var_poisson",
                     "var_rnoise",
                     "var_flat",
+                    "var_sky",
                 ]
             )
         }"""
@@ -76,6 +77,7 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
                 for x in [
                     "var_poisson",
                     "var_rnoise",
+                    "var_sky",
                 ]
             )
         }"""
@@ -96,13 +98,13 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
                     )
                 )
                 > 0
-                for x in ["var_poisson", "var_rnoise", "var_flat"]
+                for x in ["var_poisson", "var_rnoise", "var_flat", "var_sky"]
             )
         }"""
     )
     assert all(
         np.sum(np.isnan(getattr(resample_out, x)))
-        for x in ["var_poisson", "var_rnoise", "var_flat"]
+        for x in ["var_poisson", "var_rnoise", "var_flat", "var_sky"]
     )
 
     step.log.info(
