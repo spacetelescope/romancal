@@ -4,6 +4,8 @@ import numpy as np
 from roman_datamodels import datamodels, dqflags, maker_utils
 from stcal.resample import Resample
 
+from romancal.patch_match.patch_match import to_skycell_wcs
+
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
 from .meta_blender import MetaBlender
@@ -32,6 +34,7 @@ class ResampleData(Resample):
         compute_err,
         compute_exptime,
         blend_meta,
+        resample_on_skycell,
         wcs_kwargs=None,
     ):
         """
@@ -83,6 +86,10 @@ class ResampleData(Resample):
             If `True` include blended input model metadata in the output
             model.
 
+        resample_on_skycell : bool
+            If `True` and the association contains skycell information
+            use the skycell wcs.
+
         wcs_kwargs : dict, None
             A dictionary of custom WCS parameters used to define an
             output WCS from input models' outlines. This argument is ignored
@@ -99,6 +106,12 @@ class ResampleData(Resample):
 
         self._compute_exptime = compute_exptime
         self._blend_meta = blend_meta
+
+        if output_wcs is None and resample_on_skycell:
+            # first try to use any skycell from the asn
+            if skycell_wcs := to_skycell_wcs(self.input_models):
+                log.info("Resampling to skycell wcs")
+                output_wcs = {"wcs": skycell_wcs}
 
         if output_wcs is None:
             if wcs_kwargs is None:

@@ -85,6 +85,11 @@ behavior of the processing:
   Boolean specifying whether or not to resample the input images when performing outlier
   detection.
 
+``--resample_on_skycell``
+  If input association contains skycell information use it for the resampling
+  wcs. If `False` (or if the association contains no skycell information) the
+  resampled wcs will be the combined wcs of all input models.
+
 ``--good_bits``
   The DQ bit values from the input image DQ arrays that should be considered 'good'
   when creating masks of bad pixels during outlier detection when resampling the data.

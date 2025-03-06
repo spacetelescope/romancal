@@ -63,6 +63,7 @@ class ResampleStep(RomanStep):
         pixel_scale_ratio = float(default=1.0) # Ratio of input to output pixel scale
         pixel_scale = float(default=None) # Absolute pixel scale in arcsec
         output_wcs = string(default='')  # Custom output WCS.
+        resample_on_skycell = boolean(default=True)  # if association contains skycell information use it for the wcs
         in_memory = boolean(default=True)
         good_bits = string(default='~DO_NOT_USE+NON_SCIENCE')  # The good bits to use for building the resampling mask.
     """
@@ -144,6 +145,7 @@ class ResampleStep(RomanStep):
             "from_var",
             True,
             True,
+            self.resample_on_skycell,
             wcs_kwargs,
         )
         result = resamp.resample_group(range(len(input_models)))

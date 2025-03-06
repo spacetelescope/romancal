@@ -72,6 +72,12 @@ image.
         ``pixel_scale_ratio``, ``pixel_scale``, ``rotation``, ``crpix``,
         and ``crval`` will be ignored.
 
+``--resample_on_skycell``
+    If input association contains skycell information use it to compute
+    the output wcs. If ``output_wcs`` is defined it will be used instead.
+    If ``resample_on_skycell`` is `False` the output wcs will be the combined
+    wcs of all input models.
+
 ``--fillval``
     The value to assign to output pixels that have zero weight or do not
     receive any flux from any input pixels during drizzling.
