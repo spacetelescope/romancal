@@ -67,6 +67,7 @@ class WfiSca:
             },
         )
         # data from WFISim simulation of SCA #01
+        l2.data[:] = 0.01
         l2.meta.filename = self.filename
         l2.meta["wcs"] = create_wcs_object_without_distortion(
             fiducial_world=self.fiducial_world,
@@ -499,12 +500,16 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures, tmp_path)
     )
 
 
-@pytest.mark.parametrize("weight_type", ["ivm", "exptime"])
+@pytest.mark.parametrize("weight_type", ["ivm", "exptime", "ivsky"])
 def test_resampledata_do_drizzle_default_single_exposure_weight_array(
     exposure_1,
     weight_type,
 ):
     """Test that resample methods return non-empty weight arrays."""
+
+    # adding a few zero flux pixels
+    for i, model in enumerate(exposure_1):
+        model.data[10 + i, 40 - i] = 0
 
     input_models = ModelLibrary(exposure_1)
     output_model = ResampleStep(weight_type=weight_type).run(input_models)
