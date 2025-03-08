@@ -1,0 +1,1 @@
+Remove half pixel offset of s_region.

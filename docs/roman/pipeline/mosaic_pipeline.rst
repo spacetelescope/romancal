@@ -34,8 +34,17 @@ table below.
 
 Arguments
 ---------
-The ``mosaic`` pipeline has no optional arguments:
 
+For more details about step arguments (including datatypes, possible values
+and defaults) see :py:obj:`romancal.pipeline.mosaic_pipeline.MosaicPipeline.spec`.
+
+``--on_disk``
+  When `True` the input association will be opened in a way that uses
+  temporary files to avoid keeping all input models in memory.
+
+``--resample_on_skycell``
+  For outlier detection and resampling if the input association contains
+  skycell information use it to compute the wcs to use for resampling.
 
 You can see the options for strun using:
 
