@@ -8,6 +8,7 @@ import json
 import os
 import pytest
 
+import romancal.patch_match.patch_match as pm
 from romancal.associations import mk_patchlist, mk_skycellasn
 
 # mark all tests in this module
