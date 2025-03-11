@@ -33,8 +33,6 @@ def mk_patchlist(filelist):
         List of file names to be processed.
     """
 
-    all_patches = []
-    file_list = []
     for file_name in filelist:
         cal_file = rdm.open(file_name)
         file_patch_list = pm.find_patch_matches(cal_file.meta.wcs)

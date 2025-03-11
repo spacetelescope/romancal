@@ -65,8 +65,6 @@ def mk_skycellasn(filelist, release_product, optical_element):
         projcell_info = get_projectioncell_wcs(item)
         parsed_visit_id = parse_visitID(member_list[0][1:20])
         program_id = parsed_visit_id["Program"]
-        root_asn_name = parsed_visit_id
-        product_release = release_product
 
         asn_file_name = ('r' + program_id + '_'
                          + release_product + '_'
