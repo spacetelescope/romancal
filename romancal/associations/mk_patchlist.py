@@ -21,9 +21,10 @@ logger.setLevel("INFO")
 
 def mk_patchlist(filelist):
     """
-    Create a list of skycell id's based on a list of level2 files.
+    Create a list of skycell id's based on a list of level 2 files.
 
-    This function processes a list of files, identifies matching patches and creates
+    This function processes a list of calibrated detector files,
+    identifies matching patches on the sky and creates
     file with that list of sky patches the level 2 file touches.
 
     Parameters

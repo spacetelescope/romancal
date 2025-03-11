@@ -8,3 +8,6 @@ Association Commands
 
    asn_from_list.rst
    skycell_asn.rst
+   mk_patchlist.rst
+   mk_skycellasn.rst
+   

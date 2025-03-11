@@ -1,4 +1,8 @@
-"""Roman tests for generating associatinos based on skycells"""
+"""Roman tests for generating associations based on skycells using
+     a two step process. The first creates match files with a list of the patch
+     indexes. The second step reads these match files and generates a
+     set of association files based the patch index. 
+"""
 
 import json
 import os
