@@ -34,7 +34,6 @@ def mk_skycellasn(filelist, release_product, optical_element):
         List of file names to be processed.
     """
 
-    file_list = []
     patch_list = []
     for file_name in filelist:
         with open(file_name) as match_file:
