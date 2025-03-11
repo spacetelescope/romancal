@@ -10,4 +10,3 @@ Association Commands
    skycell_asn.rst
    mk_patchlist.rst
    mk_skycellasn.rst
-   
