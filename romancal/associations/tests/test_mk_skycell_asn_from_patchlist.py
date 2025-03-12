@@ -21,16 +21,6 @@ def test_cmdline_fails():
         _cli(["-o", "test_asn.json"])
 
 
-@pytest.mark.parametrize(
-    "input_value, output_type",
-    [
-        (np.int64(55), type(dict)),
-        (55, NoneType),
-        (55., NoneType),
-        ('r000dp90x00y55', NoneType),
-    ],
-)
-
 def override_patch_table(monkeypatch):
     """
     For the tests in this file, monkeypatch the global
@@ -40,6 +30,15 @@ def override_patch_table(monkeypatch):
     monkeypatch.setattr(pm, "PATCH_TABLE", PATCH_SUBSET)
     yield
 
+@pytest.mark.parametrize(
+    "input_value, output_type",
+    [
+        (np.int64(55), type(dict)),
+        (55, NoneType),
+        (55., NoneType),
+        ('r000dp90x00y55', NoneType),
+    ],
+)
 
 def test_get_projectioncell_wcs(input_value, output_type):
     """ Test for getting the projection information for wcs information"""
