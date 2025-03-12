@@ -30,6 +30,17 @@ def test_cmdline_fails():
         ('r000dp90x00y55', NoneType),
     ],
 )
+
+def override_patch_table(monkeypatch):
+    """
+    For the tests in this file, monkeypatch the global
+    PATCH_TABLE to a smaller PATCH_SUBSET to allow these tests
+    to run without access to the full patch table.
+    """
+    monkeypatch.setattr(pm, "PATCH_TABLE", PATCH_SUBSET)
+    yield
+
+
 def test_get_projectioncell_wcs(input_value, output_type):
     """ Test for getting the projection information for wcs information"""
 
