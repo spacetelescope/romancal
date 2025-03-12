@@ -3,7 +3,7 @@
 import argparse
 import logging
 import sys
-from os.path import basename
+import os.path
 import pdb
 
 import numpy as np
@@ -47,8 +47,8 @@ def mk_skycell_asn_from_patchlist(filelist, release_product, optical_element):
     # get a list of all patches in the match files
     patch_array = []
     for item in patch_list:
-        patch_array.append(item[1])
         #pdb.set_trace()
+        patch_array.append(item[1])
 
     logger.debug(f"patch_array: {patch_array}")
     unique_patches = np.unique(np.concatenate(patch_array))
@@ -59,7 +59,8 @@ def mk_skycell_asn_from_patchlist(filelist, release_product, optical_element):
         patch_name = pm.PATCH_TABLE[item]["name"]
         for entry in patch_list:
             if np.isin(item, entry[1]):
-                member_list.append(entry[0])
+                #pdb.set_trace()
+                member_list.append(os.path.basename(entry[0]).split(".")[0])
 
         # grab all the wcs parameters needed for generate_tan_wcs
         projcell_info = get_projectioncell_wcs(item)
