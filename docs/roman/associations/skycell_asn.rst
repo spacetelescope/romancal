@@ -92,13 +92,13 @@ contribute data to. The association files will be json files with names based
 
 .. code-block:: text
 
-	r0099101001001003001_<release product name>_<skycell name>_<filter>_coadd_asn.json
+	r0099_<release product name>_v<visit_id>_<skycell name>_<filter>_coadd_asn.json
 
 or for the selections above
 
 .. code-block:: text
 
-	r0099101001001003001_p_r257dp63x98y83_F158_coadd_asn.json
+	r00991_p_v101001001003001_r257dp63x98y83_F158_coadd_asn.json
 
 where the skycell name can vary based on the location on the celestial sphere and the coadd indicates
 that this is resampled 2-d imaging data. The release product name can be changed from the default

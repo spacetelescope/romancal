@@ -9,7 +9,7 @@ import os
 import pytest
 
 import romancal.patch_match.patch_match as pm
-from romancal.associations import mk_patchlist, mk_skycellasn
+from romancal.associations import mk_patchlist, mk_skycell_asn_from_patchlist
 
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata]
@@ -58,7 +58,7 @@ def run_skycellasn(rtdata_module):
         "r0000101001001001001_0002_wfi10_cal.match",
     ]
 
-    mk_skycellasn._cli(args)
+    mk_skycell_asn_from_patchlist._cli(args)
     return rtdata
 
 @pytest.mark.parametrize("expected_asn_files", EXPECTED_ASN_FILENAMES)

@@ -3,7 +3,7 @@
 import argparse
 import logging
 import sys
-from os.path import basename
+import os.path
 
 import numpy as np
 import roman_datamodels as rdm
@@ -19,7 +19,7 @@ logger.addHandler(logging.NullHandler())
 logger.setLevel("INFO")
 
 
-def mk_patchlist(filelist):
+def mk_patchlist(output_dir, filelist):
     """
     Create a list of skycell id's based on a list of level 2 files.
 
@@ -34,10 +34,16 @@ def mk_patchlist(filelist):
     """
 
     for file_name in filelist:
+        input_dir, input_file = os.path.split(file_name)
         cal_file = rdm.open(file_name)
         file_patch_list = pm.find_patch_matches(cal_file.meta.wcs)
         logger.info(f"Patch List:{file_name}, {file_patch_list[0]}")
-        output_file_name = basename(file_name).split(".")[0]
+        output_file_name = os.path.basename(input_file).split(".")[0]
+        if not output_dir:
+            output_file_name = os.path.join(input_dir, output_file_name)
+        else:
+            output_file_name = os.path.join(output_dir, output_file_name)
+            
         with open(output_file_name + ".match", "w") as outfile:
             out_string = file_name+ ' ' + np.array2string(file_patch_list[0], separator=',')
             outfile.write(out_string)
@@ -68,6 +74,13 @@ def _cli(args=None):
         usage="mk_patchlist *_cal.asdf ",
     )
     parser.add_argument(
+        "--output_dir",
+        type=str,
+        default = '',
+        help="The optional directory to write the list of patches",
+    )
+
+    parser.add_argument(
         "filelist",
         type=str,
         nargs="+",
@@ -77,5 +90,6 @@ def _cli(args=None):
     parsed = parser.parse_args(args=args)
     logger.info("Command-line arguments: %s", parsed)
     mk_patchlist(
+        parsed.output_dir,
         parsed.filelist,
     )

@@ -42,7 +42,7 @@ To create the list of match files, use the following command:
 
 		mk_patchlist file_list 
 
-where the individual calibrated detector files are in the current directory and the -o is the root
+where the individual calibrated detector files are in a directory and the -o is the root
 for the output associations. To get a complete list of options you can run the command with the
 \-h option
 
@@ -57,11 +57,15 @@ for the output associations. To get a complete list of options you can run the c
                 filelist    Input file list to generate a list of patchs
 
                 options:
-                -h, --help  show this help message and exit
+                 -h, --help            show this help message and exit
+                 --output_dir OUTPUT_DIR
+                           The optional directory to write the list of patches
 
 The match file names are based on the input calibrated file names with the .asdf extention replaced
 with .match and the match file contains the name of the calibrated exposure file and a list of index
-values of the skycells that touch the input exposure. 
+values of the skycells that touch the input exposure. The output directory for the match files is
+determined from the input directory of the calibrated exposures. You can override this by using
+the flag to set the output directory.
 
 As an example to create a list of match files for all the exposures in a visit the command is
 

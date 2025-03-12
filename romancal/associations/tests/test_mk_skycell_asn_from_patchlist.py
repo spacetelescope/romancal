@@ -5,8 +5,8 @@ import numpy as np
 from types import NoneType
 
 # from romancal.associations import Association, AssociationRegistry, load_asn
-import romancal.associations.mk_skycellasn as mk_skycellasn
-from romancal.associations.mk_skycellasn import _cli
+import romancal.associations.mk_skycell_asn_from_patchlist as mk_skycell_asn_from_patchlist
+from romancal.associations.mk_skycell_asn_from_patchlist import _cli
 
 
 def test_cmdline_fails():
@@ -33,5 +33,5 @@ def test_cmdline_fails():
 def test_get_projectioncell_wcs(input_value, output_type):
     """ Test for getting the projection information for wcs information"""
 
-    output = type(mk_skycellasn.get_projectioncell_wcs(input_value))
+    output = type(mk_skycell_asn_from_patchlist.get_projectioncell_wcs(input_value))
     assert isinstance(output, type(output_type))

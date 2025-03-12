@@ -9,11 +9,12 @@ import pdb
 import numpy as np
 
 import romancal.patch_match.patch_match as pm
+from romancal.patch_match.patch_match import get_projectioncell_wcs
 from romancal.associations import asn_from_list
 from romancal.lib.basic_utils import parse_visitID as parse_visitID
 
 
-__all__ = ["mk_skycellasn"]
+__all__ = ["mk_skycell_asn_from_patchlist"]
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ logger.addHandler(logging.NullHandler())
 logger.setLevel("INFO")
 
 
-def mk_skycellasn(filelist, release_product, optical_element):
+def mk_skycell_asn_from_patchlist(filelist, release_product, optical_element):
     """
     Create level 3 associations from a list of match files generated with mk_patchlist.
 
@@ -85,48 +86,8 @@ def mk_skycellasn(filelist, release_product, optical_element):
         with open(asn_file_name + "_asn.json", "w") as outfile:
             outfile.write(serialized)
 
-def get_projectioncell_wcs(index):
-    """Return the projection cell wcs info as a dictionary based on the db index number"""
-
-    # check to see if an index is being passed
-    if not isinstance(index, np.int64):
-        logger.info(f"Input index needs to be a numpy int64 variable")
-        return None
-    
-    # check to see if the patch table is loaded if not load it
-    if pm.PATCH_TABLE is None:
-        pm.load_patch_table()
-        
-    projcell_info = dict(
-        [
-            ("name", pm.PATCH_TABLE[index]["name"]),
-            ("pixel_scale", float(pm.PATCH_TABLE[index]["pixel_scale"])),
-            (
-                "ra_projection_center",
-                float(pm.PATCH_TABLE[index]["ra_projection_center"]),
-            ),
-            (
-                "dec_projection_center",
-                float(pm.PATCH_TABLE[index]["dec_projection_center"]),
-            ),
-            ("x0_projection", float(pm.PATCH_TABLE[index]["x0_projection"])),
-            ("y0_projection", float(pm.PATCH_TABLE[index]["y0_projection"])),
-            ("ra_center", float(pm.PATCH_TABLE[index]["ra_center"])),
-            ("dec_center", float(pm.PATCH_TABLE[index]["dec_center"])),
-            ("nx", int(pm.PATCH_TABLE[index]["nx"])),
-            ("ny", int(pm.PATCH_TABLE[index]["ny"])),
-            ("orientat", float(pm.PATCH_TABLE[index]["orientat"])),
-            (
-                "orientat_projection_center",
-                float(pm.PATCH_TABLE[index]["orientat_projection_center"]),
-            ),
-        ]
-    )
-
-    return projcell_info
-
 def _cli(args=None):
-    """Command-line interface for mk_skycellasn
+    """Command-line interface for mk_skycell_asn_from_patchlist
 
     Parameters
     ----------
@@ -147,7 +108,7 @@ def _cli(args=None):
 
     parser = argparse.ArgumentParser(
         description="Create level 3 associations from a list of match files",
-        usage="mk_skycellasn *.match ",
+        usage="mk_skycell_asn_from_patchlist *.match ",
     )
     parser.add_argument(
         "filelist",
@@ -172,7 +133,7 @@ def _cli(args=None):
 
     parsed = parser.parse_args(args=args)
     logger.info("Command-line arguments: %s", parsed)
-    mk_skycellasn(
+    mk_skycell_asn_from_patchlist(
         parsed.filelist,
         parsed.release_product,
         parsed.optical_element,
