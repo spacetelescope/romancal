@@ -27,7 +27,7 @@ def override_patch_table(monkeypatch):
     PATCH_TABLE to a smaller PATCH_SUBSET to allow these tests
     to run without access to the full patch table.
     """
-    monkeypatch.setattr(pm, "PATCH_PATH_TABLE", PATCH_SUBSET)
+    monkeypatch.setattr(pm, "PATCH_TABLE_PATH", PATCH_SUBSET)
     yield
 
 @pytest.mark.parametrize(
