@@ -14,14 +14,14 @@ file containing the division of the sky into patches. This is done
 by setting the environment variable PATCH_TABLE_PATH.
 As an example:
 ::
-   
+
    export PATCH_TABLE_PATH=<location of my patch table>
 
 .. Note::
 
    The patch table will be available in the CRDS system soon.
 
-   
+
 .. Note::
 
    **For STScI Users Only:**
@@ -29,7 +29,7 @@ As an example:
     data files from the Central Storage network. Set the following
     environment variables in your ``bash`` shell. (You will probably
     want to add this to your bash setup file.) ::
-      
+
       export PATCH_TABLE_PATH="/grp/roman/scsb/tesselation/patches.asdf"
 
 
@@ -40,10 +40,10 @@ To create the list of association files, use the following command:
 
 .. code-block:: python
 
-		mk_skycellasn file_list 
+		mk_skycellasn file_list
 
 where the individual calibrated detector files are in the current directory and the file_list is a
-list of the match files that will be used to generate the list of associations. 
+list of the match files that will be used to generate the list of associations.
 To get a complete list of options you can run the command with the
 \-h option
 
@@ -63,10 +63,10 @@ To get a complete list of options you can run the command with the
                                     The release product when creating the association
                 --optical_element OPTICAL_ELEMENT
                                     The optical element used for the visit
- 
+
 The match file names are based on the input calibrated file names with the .asdf extention replaced
 with .match and the match file contains the name of the calibrated exposure file and a list of index
-values of the skycells that touch the input exposure. 
+values of the skycells that touch the input exposure.
 
 .. code-block:: text
 
@@ -74,5 +74,4 @@ values of the skycells that touch the input exposure.
 
 Where the wildcard selects all the exposures for visit 001 and generates associations based on the
 list of skycell matches for each of the exposures. There will be one association for each unique
-skycell index in the match files. 
-
+skycell index in the match files.

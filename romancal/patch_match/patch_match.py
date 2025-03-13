@@ -408,18 +408,19 @@ def to_skycell_wcs(library):
     )
     return skycell_to_wcs(skycell_record)
 
+
 def get_projectioncell_wcs(index):
     """Return the projection cell wcs info as a dictionary based on the db index number"""
 
     # check to see if an index is being passed
     if not isinstance(index, np.int64):
-        log.info(f"Input index needs to be a numpy int64 variable")
+        log.info("Input index needs to be a numpy int64 variable")
         return None
 
     # check to see if the patch table is loaded if not load it
     if PATCH_TABLE is None:
         load_patch_table()
-        
+
     projcell_info = dict(
         [
             ("name", PATCH_TABLE[index]["name"]),
