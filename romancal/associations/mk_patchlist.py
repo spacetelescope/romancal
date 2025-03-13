@@ -9,7 +9,6 @@ import numpy as np
 import roman_datamodels as rdm
 
 import romancal.patch_match.patch_match as pm
-from romancal.lib.basic_utils import parse_visitID as parse_visitID
 
 __all__ = ["mk_patchlist"]
 
@@ -43,11 +42,11 @@ def mk_patchlist(output_dir, filelist):
             output_file_name = os.path.join(input_dir, output_file_name)
         else:
             output_file_name = os.path.join(output_dir, output_file_name)
-            
+
         with open(output_file_name + ".match", "w") as outfile:
             out_string = file_name+ ' ' + np.array2string(file_patch_list[0], separator=',')
             outfile.write(out_string)
-        
+
 
 def _cli(args=None):
     """Command-line interface for mk_patchlist
@@ -63,7 +62,7 @@ def _cli(args=None):
 
     def __init__(self, args=None):
         self.configure(args)
-    
+
     if args is None:
         args = sys.argv[1:]
     if isinstance(args, str):

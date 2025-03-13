@@ -4,14 +4,13 @@ import argparse
 import logging
 import sys
 import os.path
-import pdb
 
 import numpy as np
 
 import romancal.patch_match.patch_match as pm
 from romancal.patch_match.patch_match import get_projectioncell_wcs
 from romancal.associations import asn_from_list
-from romancal.lib.basic_utils import parse_visitID as parse_visitID
+from romancal.lib.basic_utils import parse_visitID
 
 
 __all__ = ["mk_skycell_asn_from_patchlist"]
@@ -101,7 +100,7 @@ def _cli(args=None):
 
     def __init__(self, args=None):
         self.configure(args)
-    
+
     if args is None:
         args = sys.argv[1:]
     if isinstance(args, str):
@@ -138,5 +137,4 @@ def _cli(args=None):
         parsed.filelist,
         parsed.release_product,
         parsed.optical_element,
-    )
-    
+    )    
