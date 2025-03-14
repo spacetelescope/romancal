@@ -90,6 +90,8 @@ roman_static_preview = "romancal.scripts.static_preview:command"
 verify_install_requires = "romancal.scripts.verify_install_requires:main"
 asn_from_list = "romancal.associations.asn_from_list:_cli"
 skycell_asn = "romancal.associations.skycell_asn:_cli"
+mk_patchlist = "romancal.associations.mk_patchlist:_cli"
+mk_skycell_asn_from_patchlist = "romancal.associations.mk_skycell_asn_from_patchlist:_cli"
 
 [build-system]
 requires = [
