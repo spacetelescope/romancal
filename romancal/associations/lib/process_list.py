@@ -6,8 +6,8 @@ from functools import reduce
 
 __all__ = [
     "ListCategory",
-    "ProcessList",
     "ProcessItem",
+    "ProcessList",
     "ProcessQueue",
     "ProcessQueueSorted",
 ]
@@ -154,11 +154,7 @@ class ProcessList:
             self.only_on_match = process_list.only_on_match
 
     def __str__(self):
-        result = "{}(n_items: {}, {})".format(
-            self.__class__.__name__,
-            len(self.items),
-            {str_attr: getattr(self, str_attr) for str_attr in self._str_attrs},
-        )
+        result = f"{self.__class__.__name__}(n_items: {len(self.items)}, { ({str_attr: getattr(self, str_attr) for str_attr in self._str_attrs}) })"
         return result
 
 

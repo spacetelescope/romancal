@@ -1,18 +1,18 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 import logging
-from os.path import basename
+from typing import TYPE_CHECKING
 
 import numpy as np
-from roman_datamodels import datamodels as rdm
 from roman_datamodels.dqflags import group
 
 import romancal.datamodels.filetype as filetype
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
-from romancal.associations.asn_from_list import asn_from_list
-from romancal.associations.load_asn import load_asn
 from romancal.dark_current import DarkCurrentStep
+from romancal.datamodels.library import ModelLibrary
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
 from romancal.lib.basic_utils import is_fully_saturated
@@ -26,6 +26,9 @@ from romancal.tweakreg import TweakRegStep
 
 from ..stpipe import RomanPipeline
 
+if TYPE_CHECKING:
+    from typing import ClassVar
+
 __all__ = ["ExposurePipeline"]
 
 # Define logging
@@ -36,22 +39,19 @@ log.setLevel(logging.DEBUG)
 class ExposurePipeline(RomanPipeline):
     """
     ExposurePipeline: Apply all calibration steps to raw Roman WFI
-    ramps to produce a 2-D slope product. Included steps are:
-    dq_init, saturation, linearity, dark current, jump detection, ramp_fit,
-    assign_wcs, flatfield (only applied to WFI imaging data), photom,
-    and source_detection.
+    ramps to produce a 2-D slope product. Included steps are documented
+    in the ``step_defs``.
     """
 
     class_alias = "roman_elp"
 
     spec = """
-        save_calibrated_ramp = boolean(default=False)
         save_results = boolean(default=False)
         suffix = string(default="cal")
     """
 
     # Define aliases to steps
-    step_defs = {
+    step_defs: ClassVar = {
         "dq_init": dq_init_step.DQInitStep,
         "saturation": SaturationStep,
         "refpix": RefPixStep,
@@ -73,123 +73,89 @@ class ExposurePipeline(RomanPipeline):
         self.source_catalog.return_updated_model = True
         # make sure we update source catalog coordinates afer running TweakRegStep
         self.tweakreg.update_source_catalog_coordinates = True
+        # make output filenames based on input filenames
+        self.output_use_model = True
 
         log.info("Starting Roman exposure calibration pipeline ...")
-        if isinstance(input, str):
-            input_filename = basename(input)
-        else:
-            input_filename = None
 
         # determine the input type
         file_type = filetype.check(input)
-        if file_type == "asn":
-            with open(input_filename) as f:
-                asn = load_asn(f)
-        elif file_type == "asdf":
-            try:
-                # set the product name based on the input filename
-                asn = asn_from_list([input], product_name=input_filename.split(".")[0])
-                file_type = "asn"
-            except TypeError:
-                log.debug("Error opening file:")
-                return
+        return_lib = True
+        if file_type == "ModelLibrary":
+            lib = input
+        elif file_type == "asn":
+            lib = ModelLibrary(input)
+        else:
+            # for a non-asn non-library input process it as a library
+            lib = ModelLibrary([input])
+            # but return it as a datamodel
+            return_lib = False
 
-        # Build a list of observations to process
-        expos_file = []
-        n_members = 0
-        # extract the members from the asn to run the files through the steps
-        results = []
-        tweakreg_input = []
+        # Flag to track if any of the input models are fully saturated
+        any_saturated = False
 
-        # populate expos_file
-        if file_type == "asn":
-            for product in asn["products"]:
-                # extract the members from the asn to run the files through the steps
-                n_members = len(product["members"])
-                for member in product["members"]:
-                    expos_file.append(member["expname"])
-        elif file_type == "DataModel":
-            expos_file.append(input)
+        with lib:
+            for model_index, model in enumerate(lib):
+                self.dq_init.suffix = "dq_init"
+                result = self.dq_init.run(model)
 
-        for in_file in expos_file:
-            if isinstance(in_file, str):
-                input_filename = basename(in_file)
-                # Open the file
-                input = rdm.open(in_file)
-            elif isinstance(in_file, rdm.DataModel):
-                input_filename = in_file.meta.filename
-            else:
-                input_filename = None
+                del model
 
-            log.info(f"Processing a WFI exposure {input_filename}")
+                result = self.saturation.run(result)
 
-            self.dq_init.suffix = "dq_init"
-            result = self.dq_init.run(input)
+                if is_fully_saturated(result):
+                    log.info("All pixels are saturated. Returning a zeroed-out image.")
+                    result = self.create_fully_saturated_zeroed_image(result)
 
-            if input_filename:
-                result.meta.filename = input_filename
+                    # Track that we've seen a fully saturated input
+                    any_saturated = True
+                    log.warning(
+                        "tweakreg will not be run due to a fully saturated input"
+                    )
+                else:
+                    result = self.refpix.run(result)
+                    result = self.linearity.run(result)
+                    result = self.dark_current.run(result)
+                    result = self.rampfit.run(result)
+                    result = self.assign_wcs.run(result)
 
-            result = self.saturation.run(result)
+                    if result.meta.exposure.type == "WFI_IMAGE":
+                        result = self.flatfield.run(result)
+                        result = self.photom.run(result)
+                        result = self.source_catalog.run(result)
+                    else:
+                        log.info("Flat Field step is being SKIPPED")
+                        log.info("Photom step is being SKIPPED")
+                        log.info("Source Detection step is being SKIPPED")
+                        log.info("Tweakreg step is being SKIPPED")
+                        result.meta.cal_step.flat_field = "SKIPPED"
+                        result.meta.cal_step.photom = "SKIPPED"
+                        result.meta.cal_step.source_catalog = "SKIPPED"
 
-            # Test for fully saturated data
-            if is_fully_saturated(result):
-                # Return fully saturated image file (stopping pipeline)
-                log.info("All pixels are saturated. Returning a zeroed-out image.")
-
-                #    if is_fully_saturated(result):
-                # Set all subsequent steps to skipped
-                for step_str in [
-                    "assign_wcs",
-                    "flat_field",
-                    "photom",
-                    "source_detection",
-                    "dark",
-                    "refpix",
-                    "linearity",
-                    "ramp_fit",
-                    "jump",
-                    "tweakreg",
-                ]:
-                    result.meta.cal_step[step_str] = "SKIPPED"
-
-                results.append(result)
-                return results
-
-            result = self.refpix.run(result)
-            result = self.linearity.run(result)
-            result = self.dark_current.run(result)
-            result = self.rampfit.run(result)
-            result = self.assign_wcs.run(result)
-
-            if result.meta.exposure.type == "WFI_IMAGE":
-                result = self.flatfield.run(result)
-                result = self.photom.run(result)
-                result = self.source_catalog.run(result)
-                tweakreg_input.append(result)
-                log.info(
-                    f"Number of models to tweakreg:   {len(tweakreg_input), n_members}"
-                )
-            else:
-                log.info("Flat Field step is being SKIPPED")
-                log.info("Photom step is being SKIPPED")
-                log.info("Source Detection step is being SKIPPED")
-                log.info("Tweakreg step is being SKIPPED")
-                result.meta.cal_step.flat_field = "SKIPPED"
-                result.meta.cal_step.photom = "SKIPPED"
-                result.meta.cal_step.source_detection = "SKIPPED"
-                result.meta.cal_step.tweakreg = "SKIPPED"
-
-            self.output_use_model = True
-            results.append(result)
+                if any_saturated:
+                    # the input association contains a fully saturated model
+                    # where source_catalog can't be run which means we
+                    # also can't run tweakreg.
+                    result.meta.cal_step.tweakreg = "SKIPPED"
+                lib.shelve(result, model_index)
 
         # Now that all the exposures are collated, run tweakreg
         # Note: this does not cover the case where the asn mixes imaging and spectral
         #          observations. This should not occur on-prem
-        result = self.tweakreg.run(results)
+        if not any_saturated:
+            self.tweakreg.run(lib)
 
         log.info("Roman exposure calibration pipeline ending...")
 
-        return results
+        # return a ModelLibrary
+        if return_lib:
+            return lib
+
+        # or a DataModel (for non-asn non-lib inputs)
+        with lib:
+            model = lib.borrow(0)
+            lib.shelve(model)
+        return model
 
     def create_fully_saturated_zeroed_image(self, input_model):
         """
@@ -209,14 +175,14 @@ class ExposurePipeline(RomanPipeline):
 
         # Set all subsequent steps to skipped
         for step_str in [
+            "refpix",
             "linearity",
             "dark",
             "ramp_fit",
             "assign_wcs",
             "flat_field",
             "photom",
-            "source_detection",
-            "tweakreg",
+            "source_catalog",
         ]:
             fully_saturated_model.meta.cal_step[step_str] = "SKIPPED"
 

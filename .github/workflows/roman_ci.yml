@@ -36,8 +36,8 @@ jobs:
     with:
       envs: |
         - linux: check-dependencies
-  webbpsf_data_cache:
-    uses: spacetelescope/webbpsf/.github/workflows/retrieve_cache.yml@develop
+  stpsf_data_cache:
+    uses: ./.github/workflows/retrieve_cache.yml
     with:
       minimal: true
   latest_crds_contexts:
@@ -52,12 +52,12 @@ jobs:
       context: ${{ steps.context.outputs.context }}
   test:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
-    needs: [ webbpsf_data_cache, crds_context ]
+    needs: [ stpsf_data_cache, crds_context ]
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     with:
       setenv: |
-        WEBBPSF_PATH: /tmp/data/webbpsf-data/
+        STPSF_PATH: /tmp/data/stpsf-data/
         CRDS_PATH: /tmp/data/crds_cache/
         CRDS_SERVER_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.crds_server || 'https://roman-crds.stsci.edu' }}
         CRDS_CONTEXT: ${{ needs.crds_context.outputs.context }}
@@ -69,18 +69,17 @@ jobs:
         DD_GIT_COMMIT_SHA: ${{ github.sha }}
         DD_GIT_BRANCH: ${{ github.ref_name }}
       cache-path: /tmp/data/
-      cache-key: data-${{ needs.webbpsf_data_cache.outputs.cache_key }}-${{ needs.crds_context.outputs.context }}
-      cache-restore-keys: ${{ needs.webbpsf_data_cache.outputs.cache_key }}
+      cache-key: data-${{ needs.stpsf_data_cache.outputs.cache_key }}-${{ needs.crds_context.outputs.context }}
+      cache-restore-keys: ${{ needs.stpsf_data_cache.outputs.cache_key }}
       envs: |
-        - linux: py310-oldestdeps-webbpsf-cov
-          pytest-results-summary: true
-        - linux: py310-webbpsf-nolegacypath
-          pytest-results-summary: true
-        - linux: py311-ddtrace-webbpsf
-          pytest-results-summary: true
-        - macos: py311-ddtrace-webbpsf
-          pytest-results-summary: true
-        - linux: py311-webbpsf-cov
+        - linux: py311-oldestdeps-stpsf-cov
+        - linux: py311-stpsf-nolegacypath
+        - linux: py312-ddtrace-stpsf
+        - macos: py312-ddtrace-stpsf
+        # `tox` does not currently respect `requires-python` versions when creating testing environments;
+        # if this breaks, add an upper pin to `requires-python` and revert this py3 to the latest working version
+        - linux: py3-stpsf-cov
           coverage: codecov
           pytest-results-summary: true
-        - linux: py312-webbpsf
+        - macos: py3-stpsf
+          pytest-results-summary: true

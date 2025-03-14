@@ -47,10 +47,10 @@ name. If the input file name already has a known suffix, that suffix
 will be replaced. For example:
 ::
 
-   $ strun romancal.dq_init.DQInitStep r0008308002010007027_06311_0019_WFI01_uncal.asdf
+   $ strun romancal.dq_init.DQInitStep r0008308002010007027_0019_wfi01_uncal.asdf
 
 produces an output file named
-``r0008308002010007027_06311_0019_WFI01_dq_init.asdf``.
+``r0008308002010007027_0019_wfi01_dq_init.asdf``.
 
 
 .. _pipeline_step_suffix_definitions:

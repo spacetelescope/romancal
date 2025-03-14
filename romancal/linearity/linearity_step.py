@@ -2,12 +2,19 @@
 Apply linearity correction to a science image
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from roman_datamodels import datamodels as rdd
 from roman_datamodels.dqflags import pixel
 from stcal.linearity.linearity import linearity_correction
 
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["LinearityStep"]
 
@@ -20,7 +27,7 @@ class LinearityStep(RomanStep):
 
     class_alias = "linearity"
 
-    reference_file_types = ["linearity"]
+    reference_file_types: ClassVar = ["linearity"]
 
     def process(self, input):
         # Open the input data model

@@ -4,7 +4,6 @@ import os
 import shutil
 from io import StringIO
 from pathlib import Path
-from typing import Tuple
 
 import numpy as np
 import pytest
@@ -204,15 +203,15 @@ def _create_tel2sky_model(input_dm):
 def create_basic_wcs(
     img_shape: tuple = (100, 100),
     ref_pix: tuple = (0, 0),
-    ref_val: Tuple[u.Quantity, u.Quantity] = (
+    ref_val: tuple[u.Quantity, u.Quantity] = (
         u.Quantity("10 deg"),
         u.Quantity("0 deg"),
     ),
-    pix_scale: Tuple[u.Quantity, u.Quantity] = (
+    pix_scale: tuple[u.Quantity, u.Quantity] = (
         u.Quantity("0.1 arcsec"),
         u.Quantity("0.1 arcsec"),
     ),
-    theta: u.Quantity = u.Quantity("0 deg"),
+    theta: u.Quantity | None = None,
 ):
     """
     Creates a basic WCS (no distortion) to map pixel coordinates
@@ -248,6 +247,7 @@ def create_basic_wcs(
     does not contain the required steps to validate against the
     TweakReg pipeline.
     """
+    theta = u.Quantity("0 deg") if theta is None else theta
 
     # linear transformations
     shift_pixel_coords = models.Shift(-ref_pix[0]) & models.Shift(-ref_pix[1])
@@ -316,7 +316,6 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
 
     # create necessary transformations
     distortion = Shift(-shift_1) & Shift(-shift_2)
-    distortion.bounding_box = ((-0.5, shape[-1] + 0.5), (-0.5, shape[-2] + 0.5))
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
@@ -337,6 +336,7 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     ]
 
     wcs_obj = wcs.WCS(pipeline)
+    wcs_obj.bounding_box = ((-0.5, shape[-2] + 0.5), (-0.5, shape[-1] + 0.5))
 
     input_dm.meta["wcs"] = wcs_obj
 
@@ -347,9 +347,14 @@ def get_catalog_data(input_dm, **kwargs):
     sr = kwargs.get("sr", 100 / 3600)
     add_shifts = kwargs.get("add_shifts", False)
     gaia_cat = get_catalog(right_ascension=ra, declination=dec, search_radius=sr)
-    gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
+    gaia_source_coords = [
+        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)
+    ]
     catalog_data = np.array(
-        [input_dm.meta.wcs.world_to_pixel(ra, dec) for ra, dec in gaia_source_coords]
+        [
+            input_dm.meta.wcs.world_to_pixel_values(ra, dec)
+            for ra, dec in gaia_source_coords
+        ]
     )
     if add_shifts:
         rng = np.random.default_rng(seed=int(ra + dec))
@@ -388,7 +393,7 @@ def create_base_image_source_catalog(
     t = Table(src_detector_coords, names=("x", "y"))
     if save_catalogs:
         t.write((tmp_path / output), format=catalog_format)
-    # mimic the same output format from SourceDetectionStep
+    # mimic the same output format from SourceCatalogStep
     t.add_column([i for i in range(len(t))], name="id", index=0)
     t.add_column([np.float64(i) for i in range(len(t))], name="flux")
     t.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
@@ -446,16 +451,16 @@ def add_tweakreg_catalog_attribute(
         save_catalogs=save_catalogs,
     )
 
-    input_dm.meta["source_detection"] = maker_utils.mk_source_detection()
+    input_dm.meta["source_catalog"] = maker_utils.mk_source_catalog()
 
     if save_catalogs:
-        # SourceDetectionStep adds the catalog path+filename
-        input_dm.meta.source_detection["tweakreg_catalog_name"] = os.path.join(
+        # SourceCatalogStep adds the catalog path+filename
+        input_dm.meta.source_catalog["tweakreg_catalog_name"] = os.path.join(
             tmp_path, tweakreg_catalog_filename
         )
     else:
-        # SourceDetectionStep attaches the catalog data as a structured array
-        input_dm.meta.source_detection["tweakreg_catalog"] = source_catalog
+        # SourceCatalogStep attaches the catalog data as a structured array
+        input_dm.meta.source_catalog["tweakreg_catalog"] = source_catalog
 
 
 @pytest.fixture
@@ -507,7 +512,7 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     """
     img = base_image()
     # remove attribute
-    del img.meta.source_detection["tweakreg_catalog_name"]
+    del img.meta.source_catalog["tweakreg_catalog_name"]
     with pytest.raises(AttributeError):
         trs.TweakRegStep.call([img])
 
@@ -748,7 +753,7 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
     assert isinstance(res, ModelLibrary)
 
     with res:
-        for i, (model, target) in enumerate(zip(res, [img1, img2, img3])):
+        for i, (model, target) in enumerate(zip(res, [img1, img2, img3], strict=False)):
             assert hasattr(model.meta, "asn")
 
             assert (
@@ -789,14 +794,16 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     gaia_cat = get_catalog(
         right_ascension=270, declination=66, search_radius=100 / 3600
     )
-    gaia_source_coords = [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"])]
+    gaia_source_coords = [
+        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)
+    ]
 
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     original_wcs = copy.deepcopy(img.meta.wcs)
 
     # calculate original (x,y) for Gaia sources
     original_xy_gaia_sources = np.array(
-        [original_wcs.world_to_pixel(ra, dec) for ra, dec in gaia_source_coords]
+        [original_wcs.world_to_pixel_values(ra, dec) for ra, dec in gaia_source_coords]
     )
     # move Gaia sources around by applying linear transformations
     # to their coords in the projected plane (same as a "wrong WCS")
@@ -832,16 +839,18 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     # (rounded to the 10th decimal place to avoid floating point issues)
     dist1 = [
         np.round(gref.separation(oref), 10)
-        for gref, oref in zip(gaia_ref_source, original_ref_source)
+        for gref, oref in zip(gaia_ref_source, original_ref_source, strict=False)
     ]
     # calculate distance between tweaked WCS result and Gaia
     # (rounded to the 10th decimal place to avoid floating point issues)
     dist2 = [
         np.round(gref.separation(nref), 10)
-        for gref, nref in zip(gaia_ref_source, new_ref_source)
+        for gref, nref in zip(gaia_ref_source, new_ref_source, strict=False)
     ]
 
-    assert np.array([np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2)]).all()
+    assert np.array(
+        [np.less_equal(d2, d1) for d1, d2 in zip(dist1, dist2, strict=False)]
+    ).all()
 
 
 def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
@@ -929,7 +938,7 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
 
     assert len(res.group_names) == 2
     with res:
-        for r, i in zip(res, [img1, img2]):
+        for r, i in zip(res, [img1, img2], strict=False):
             assert r.meta.group_id == i.meta.observation.observation_id
             res.shelve(r, modify=False)
 
@@ -947,7 +956,8 @@ def test_parse_catfile_valid_catalog(tmp_path, base_image):
     catdict = trs._parse_catfile(catfile)
 
     assert all(
-        x.meta.filename == y for x, y in zip(res_dict.get("datamodels"), catdict.keys())
+        x.meta.filename == y
+        for x, y in zip(res_dict.get("datamodels"), catdict.keys(), strict=False)
     )
 
 
@@ -1016,10 +1026,10 @@ def test_update_source_catalog_coordinates(tmp_path, base_image):
 
     tweakreg = trs.TweakRegStep()
 
-    # create SourceCatalogModel
+    # create ImageSourceCatalogModel
     source_catalog_model = setup_source_catalog_model(img)
 
-    # save SourceCatalogModel
+    # save ImageSourceCatalogModel
     tweakreg.save_model(
         source_catalog_model,
         output_file="img_1.asdf",
@@ -1028,7 +1038,7 @@ def test_update_source_catalog_coordinates(tmp_path, base_image):
     )
 
     # update tweakreg catalog name
-    img.meta.source_detection.tweakreg_catalog_name = "img_1_cat.asdf"
+    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.asdf"
 
     # run TweakRegStep
     res = trs.TweakRegStep.call([img])
@@ -1036,9 +1046,9 @@ def test_update_source_catalog_coordinates(tmp_path, base_image):
     # tweak the current WCS using TweakRegStep and save the updated cat file
     with res:
         dm = res.borrow(0)
-        assert dm.meta.source_detection.tweakreg_catalog_name == "img_1_cat.asdf"
+        assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.asdf"
         tweakreg.update_catalog_coordinates(
-            dm.meta.source_detection.tweakreg_catalog_name, dm.meta.wcs
+            dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
         )
         res.shelve(dm, 0)
 
@@ -1074,10 +1084,10 @@ def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
 
     tweakreg = trs.TweakRegStep()
 
-    # create SourceCatalogModel
+    # create ImageSourceCatalogModel
     source_catalog_model = setup_source_catalog_model(img)
 
-    # save SourceCatalogModel
+    # save ImageSourceCatalogModel
     tweakreg.save_model(
         source_catalog_model,
         output_file="img_1.asdf",
@@ -1088,7 +1098,7 @@ def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
     shutil.copy("img_1_cat.asdf", "img_1_cat_original.asdf")
 
     # update tweakreg catalog name
-    img.meta.source_detection.tweakreg_catalog_name = "img_1_cat.asdf"
+    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.asdf"
 
     # run TweakRegStep
     res = trs.TweakRegStep.call([img])
@@ -1096,9 +1106,9 @@ def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
     # tweak the current WCS using TweakRegStep and save the updated cat file
     with res:
         dm = res.borrow(0)
-        assert dm.meta.source_detection.tweakreg_catalog_name == "img_1_cat.asdf"
+        assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.asdf"
         tweakreg.update_catalog_coordinates(
-            dm.meta.source_detection.tweakreg_catalog_name, dm.meta.wcs
+            dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
         )
         res.shelve(dm, 0)
 
@@ -1171,7 +1181,7 @@ def setup_source_catalog_model(img):
     expected names, adds mock PSF coordinates, applies random shifts to the centroid
     and PSF coordinates, and calculates the world coordinates for the centroids.
     """
-    cat_model = rdm.SourceCatalogModel
+    cat_model = rdm.ImageSourceCatalogModel
     source_catalog_model = maker_utils.mk_datamodel(cat_model)
     # this will be the output filename
     source_catalog_model.meta.filename = "img_1.asdf"
@@ -1221,7 +1231,7 @@ def setup_source_catalog_model(img):
     source_catalog["ra_psf"].unit = u.deg
     source_catalog["dec_psf"].unit = u.deg
 
-    # add source catalog to SourceCatalogModel
+    # add source catalog to ImageSourceCatalogModel
     source_catalog_model.source_catalog = source_catalog
 
     return source_catalog_model
@@ -1252,15 +1262,15 @@ def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_ima
     [
         # both 'x' and 'y' columns present
         ({"x": [1, 2, 3], "y": [4, 5, 6]}, ["x", "y"], False),
-        # 'xcentroid' and 'ycentroid' columns present, should be renamed
-        ({"xcentroid": [1, 2, 3], "ycentroid": [4, 5, 6]}, ["x", "y"], False),
-        # 'x' present, 'ycentroid' present, should rename 'ycentroid' to 'y'
-        ({"x": [1, 2, 3], "ycentroid": [4, 5, 6]}, ["x", "y"], False),
-        # 'xcentroid' present, 'y' present, should rename 'xcentroid' to 'x'
-        ({"xcentroid": [1, 2, 3], "y": [4, 5, 6]}, ["x", "y"], False),
-        # neither 'x' nor 'xcentroid' present
+        # 'x_psf' and 'y_psf' columns present, should be renamed
+        ({"x_psf": [1, 2, 3], "y_psf": [4, 5, 6]}, ["x", "y"], False),
+        # 'x' present, 'y_psf' present, should rename 'y_psf' to 'y'
+        ({"x": [1, 2, 3], "y_psf": [4, 5, 6]}, ["x", "y"], False),
+        # 'x_psf' present, 'y' present, should rename 'x_psf' to 'x'
+        ({"x_psf": [1, 2, 3], "y": [4, 5, 6]}, ["x", "y"], False),
+        # neither 'x' nor 'x_psf' present
         ({"y": [4, 5, 6]}, None, True),
-        # neither 'y' nor 'ycentroid' present
+        # neither 'y' nor 'y_psf' present
         ({"x": [1, 2, 3]}, None, True),
         # no relevant columns present
         (

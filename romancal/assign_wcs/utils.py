@@ -1,6 +1,5 @@
 import functools
 import logging
-from typing import List, Tuple, Union
 
 import numpy as np
 from astropy.coordinates import SkyCoord
@@ -44,8 +43,8 @@ def wcs_from_footprints(
     pscale=None,
     rotation=None,
     shape=None,
-    ref_pixel: Tuple[float, float] = None,
-    ref_coord: Tuple[float, float] = None,
+    ref_pixel: tuple[float, float] | None = None,
+    ref_coord: tuple[float, float] | None = None,
 ):
     """
     Create a WCS from a list of input data models.
@@ -217,9 +216,9 @@ def wcs_from_footprints(
 
 def compute_scale(
     wcs: WCS,
-    fiducial: Union[tuple, np.ndarray],
-    disp_axis: int = None,
-    pscale_ratio: float = None,
+    fiducial: tuple | np.ndarray,
+    disp_axis: int | None = None,
+    pscale_ratio: float | None = None,
 ) -> float:
     """Compute scaling transform.
 
@@ -282,7 +281,7 @@ def compute_scale(
 
 def calc_rotation_matrix(
     roll_ref: float, v3i_yang: float, vparity: int = 1
-) -> List[float]:
+) -> list[float]:
     """Calculate the rotation matrix.
 
     Parameters
@@ -359,7 +358,7 @@ def compute_fiducial(wcslist, bounding_box=None):
     return fiducial
 
 
-def create_footprint(wcs, shape=None, center=True):
+def create_footprint(wcs, shape=None, center=False):
     """Calculate sky footprint
 
     Parameters
@@ -412,7 +411,9 @@ def add_s_region(model):
     -------
     A formatted string representing the detector's footprint
     """
-    update_s_region_keyword(model, create_footprint(model.meta.wcs, shape=model.shape))
+    update_s_region_keyword(
+        model, create_footprint(model.meta.wcs, shape=model.shape, center=False)
+    )
 
 
 def update_s_region_keyword(model, footprint):

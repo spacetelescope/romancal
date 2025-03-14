@@ -1,4 +1,4 @@
-""" Module to test rampfit with optional output
+"""Module to test rampfit with optional output
 
 Notes
 -----
@@ -109,7 +109,7 @@ CONDITIONS_FULL = [
     cond_is_step_complete,
     cond_is_uneven,
 ]
-CONDITIONS_TRUNC = CONDITIONS_FULL + [cond_is_truncated]
+CONDITIONS_TRUNC = [*CONDITIONS_FULL, cond_is_truncated]
 
 
 # ######################

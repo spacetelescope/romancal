@@ -1,12 +1,14 @@
-""" Roman tests for the High Level Pipeline """
+"""Roman tests for the High Level Pipeline"""
 
 import os
 
 import pytest
 import roman_datamodels as rdm
 
+from romancal.patch_match.patch_match import wcsinfo_to_wcs
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
+from . import util
 from .regtestdata import compare_asdf
 
 # mark all tests in this module
@@ -20,7 +22,7 @@ def run_mos(rtdata_module):
     rtdata.get_asn("WFI/image/L3_regtest_asn.json")
 
     # Test Pipeline
-    output = "r0099101001001001001_F158_visit_i2d.asdf"
+    output = "r0099101001001001001_F158_visit_coadd.asdf"
     rtdata.output = output
 
     args = [
@@ -53,7 +55,7 @@ def truth_filename(run_mos):
 def thumbnail_filename(output_filename):
     thumbnail_filename = output_filename.rsplit("_", 1)[0] + "_thumb.png"
     preview_cmd = f"stpreview to {output_filename} {thumbnail_filename} 256 256 roman"
-    os.system(preview_cmd)  # nosec
+    os.system(preview_cmd)  # noqa: S605
     return thumbnail_filename
 
 
@@ -61,7 +63,7 @@ def thumbnail_filename(output_filename):
 def preview_filename(output_filename):
     preview_filename = output_filename.rsplit("_", 1)[0] + "_preview.png"
     preview_cmd = f"stpreview to {output_filename} {preview_filename} 1080 1080 roman"
-    os.system(preview_cmd)  # nosec
+    os.system(preview_cmd)  # noqa: S605
     return preview_filename
 
 
@@ -116,3 +118,11 @@ def test_added_background(output_model):
 def test_added_background_level(output_model):
     # DMS400
     assert any(output_model.meta.individual_image_meta.background["level"] != 0)
+
+
+def test_wcsinfo_wcs_roundtrip(output_model):
+    """Test that the contents of wcsinfo reproduces the wcs"""
+    wcs_from_wcsinfo = wcsinfo_to_wcs(output_model.meta.wcsinfo)
+
+    ra_mad, dec_mad = util.comp_wcs_grids_arcs(output_model.meta.wcs, wcs_from_wcsinfo)
+    assert (ra_mad + dec_mad) / 2.0 < 1.0e-5

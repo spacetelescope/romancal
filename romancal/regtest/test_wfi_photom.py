@@ -33,7 +33,7 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
         "CRDS selected photom file applied."
     )
 
-    step.log.info(f'DMS140 MSG: Image data file: {rtdata.input.rsplit("/", 1)[1]}')
+    step.log.info(f"DMS140 MSG: Image data file: {rtdata.input.rsplit('/', 1)[1]}")
 
     # Note: if any of the following tests fail, check for a different
     # photom match from CRDS. Values come from roman_wfi_photom_0034.asdf
@@ -52,22 +52,23 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
 
     step.log.info(
         "DMS140 MSG: Photom step recorded as complete? :"
-        f' {photom_out.meta.cal_step.photom == "COMPLETE"}'
+        f" {photom_out.meta.cal_step.photom == 'COMPLETE'}"
     )
     assert photom_out.meta.cal_step.photom == "COMPLETE"
 
+    convval = 0.73678
     step.log.info(
         "DMS140 MSG: Photom megajansky conversion calculated? : "
         + str(
             math.isclose(
                 photom_out.meta.photometry.conversion_megajanskys,
-                0.3324,
+                convval,
                 abs_tol=0.0001,
             )
         )
     )
     assert math.isclose(
-        photom_out.meta.photometry.conversion_megajanskys, 0.3324, abs_tol=0.0001
+        photom_out.meta.photometry.conversion_megajanskys, convval, abs_tol=0.0001
     )
 
     step.log.info(
@@ -86,19 +87,20 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
         abs_tol=1.0e-17,
     )
 
+    uncval = 0.02866405
     step.log.info(
         "DMS140 MSG: Photom megajansky conversion uncertainty calculated? : "
         + str(
             math.isclose(
                 photom_out.meta.photometry.conversion_megajanskys_uncertainty,
-                0.0,
+                uncval,
                 abs_tol=1.0e-6,
             )
         )
     )
     assert math.isclose(
         photom_out.meta.photometry.conversion_megajanskys_uncertainty,
-        0.0,
+        uncval,
         abs_tol=1.0e-6,
     )
 

@@ -7,7 +7,7 @@ Description
 Overview
 --------
 This step uses the coordinates of point-like sources from an input catalog
-(i.e. the result from `SourceDetectionStep` saved in the
+(i.e. the result from `SourceCatalogStep` saved in the
 `meta.tweakreg_catalog` attribute) and compares them with the
 coordinates from a Gaia catalog to compute corrections to
 the WCS of the input images such that sky catalogs obtained from the image catalogs
@@ -20,7 +20,7 @@ providing a file name to a custom source catalog in the
 ``meta.tweakreg_catalog`` attribute of input data models.
 The catalog must be in a format automatically recognized by
 :py:meth:`~astropy.table.Table.read`. The catalog must contain
-either ``'x'`` and ``'y'`` or ``'xcentroid'`` and ``'ycentroid'`` columns which
+either ``'x'`` and ``'y'`` or ``'x_psf'`` and ``'y_psf'`` columns which
 indicate source *image* coordinates (in pixels). Pixel coordinates are
 0-indexed.
 
@@ -68,7 +68,7 @@ attributes to the catalog file names provided in either in the ASN table or
 
 Alignment
 ---------
-The source catalog (either created by `SourceDetectionStep` or provided by the user)
+The source catalog (either created by `SourceCatalogStep` or provided by the user)
 gets cross-matched and fit to an astrometric reference catalog
 (set by ``TweakRegStep.abs_refcat``) and the results are stored in
 ``model.meta.wcs_fit_results``. The pipeline initially supports fitting to any

@@ -1,10 +1,13 @@
 """Base classes which define the ELPP Associations"""
 
+from __future__ import annotations
+
 import copy
 import logging
 import re
 from collections import defaultdict
 from os.path import basename, split, splitext
+from typing import TYPE_CHECKING
 
 from stpipe.format_template import FormatTemplate
 
@@ -33,35 +36,38 @@ from romancal.associations.lib.product_utils import (
 from romancal.associations.lib.utilities import evaluate, is_iterable
 from romancal.associations.registry import RegistryMarker
 
+if TYPE_CHECKING:
+    from typing import ClassVar
+
 __all__ = [
     "ASN_SCHEMA",
     "AsnMixin_AuxData",
-    "AsnMixin_Science",
-    "AsnMixin_Spectrum",
     "AsnMixin_Lv2FOV",
-    "AsnMixin_Lv2Image",
     "AsnMixin_Lv2GBTDSfull",
     "AsnMixin_Lv2GBTDSpass",
+    "AsnMixin_Lv2Image",
+    "AsnMixin_Science",
+    "AsnMixin_Spectrum",
     "Constraint",
     "Constraint_Base",
     "Constraint_Category",
     "Constraint_Expos",
+    "Constraint_Filename",
     "Constraint_Image",
+    "Constraint_Image_Science",
     "Constraint_Instrument",
     "Constraint_Obsnum",
     "Constraint_Optical_Path",
     "Constraint_Pass",
-    "Constraint_Spectral",
-    "Constraint_SubCategory",
-    "Constraint_Tile",
-    "Constraint_Image_Science",
     "Constraint_Sequence",
     "Constraint_Single_Science",
+    "Constraint_Spectral",
     "Constraint_Spectral_Science",
+    "Constraint_SubCategory",
     "Constraint_Target",
-    "Constraint_Filename",
-    "DMS_ELPP_Base",
+    "Constraint_Tile",
     "DMSAttrConstraint",
+    "DMS_ELPP_Base",
     "ProcessList",
     "SimpleConstraint",
     "Utility",
@@ -101,7 +107,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
     INVALID_VALUES = _EMPTY
 
     # Make sequences type-dependent
-    _sequences = defaultdict(Counter)
+    _sequences: ClassVar = defaultdict(Counter)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -213,9 +219,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         if subarray:
             subarray = "-" + subarray
 
-        product_name = (
-            "r{program}-{acid}" "_{target}" "_{instrument}" "_{opt_elem}{subarray}"
-        )
+        product_name = "r{program}-{acid}_{target}_{instrument}_{opt_elem}{subarray}"
         if "Full" in association.data["asn_rule"]:
             subarray = "Full"
 
@@ -390,7 +394,7 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         members.append(member)
         if member["exposerr"] not in _EMPTY:
             logger.warning(
-                f"Member {item['filename']} has exposure error \"{member['exposerr']}\""
+                f'Member {item["filename"]} has exposure error "{member["exposerr"]}"'
             )
 
         # Update meta info
@@ -510,10 +514,8 @@ class Utility:
         match = re.match(_LEVEL1B_REGEX, level1b_name)
         if match is None or match.group("type") != "_uncal":
             logger.warning(
-                (
-                    'Item FILENAME="{}" is not a Level 1b name. Cannot transform to'
-                    " Level 2b."
-                ).format(level1b_name)
+                f'Item FILENAME="{level1b_name}" is not a Level 1b name. Cannot transform to'
+                " Level 2b."
             )
             return level1b_name
 

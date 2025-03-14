@@ -2,7 +2,7 @@
 name = "romancal"
 description = "Library for calibration of science observations from the Nancy Grace Roman Space Telescope"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     { name = "Roman calibration pipeline developers", email = "help@stsci.edu" },
 ]
@@ -15,26 +15,31 @@ classifiers = [
 dependencies = [
     "asdf >=3.3.0",
     "asdf-astropy >=0.5.0",
-    "astropy >=5.3.0",
+    "astropy >=6.0.0",
     "crds >=11.16.16",
-    "gwcs >=0.21.0",
+    "gwcs >=0.22.0",
     "jsonschema >=4.8",
-    "numpy >=1.23",
+    "numpy >=1.25",
     "photutils >=1.13.0",
     "pyparsing >=2.4.7",
     "requests >=2.26",
-    "roman_datamodels>=0.22.0,<0.23.0",
-    # "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
-    "scipy >=1.11",
-   "stcal>=1.10.0,<1.11.0",
-    # "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
-    "stpipe >=0.7.0,<0.8.0",
-    # "stpipe @ git+https://github.com/spacetelescope/stpipe.git@main",
+    # "roman_datamodels>=0.23.1,<0.24.0",
+    "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
+    "scipy >=1.14.1",
+    # "stcal>=1.11.0,<1.12.0",
+    "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
+    # "stpipe >=0.8.0,<0.9.0",
+    "stpipe @ git+https://github.com/spacetelescope/stpipe.git@main",
     "tweakwcs >=0.8.8",
     "spherical-geometry >= 1.2.22",
     "stsci.imagestats >= 1.6.3",
-    "drizzle >= 1.15.0",
-    "webbpsf >= 1.2.1",
+    "drizzle >= 2.0.1",
+    "stpsf >= 2.0.0",
+    # pysiaf required by stpsf uses pkg_resources which doesn't
+    # exist in python 3.12 without setuptools.
+    # TODO: drop this dependency when stpsf is dropped
+    # (or when pysiaf no longer requires pkg_resources).
+    "setuptools >= 60 ; python_version >= '3.12'",
 ]
 dynamic = [
     "version",
@@ -52,7 +57,6 @@ docs = [
     "sphinx-rtd-theme",
     "stsci-rtd-theme",
     "sphinx-autobuild",
-    "tomli; python_version <=\"3.11\"",
 ]
 test = [
     "ci-watson >=0.5.0",
@@ -79,16 +83,13 @@ repository = "https://github.com/spacetelescope/romancal"
 romancal = "romancal.stpipe.integration:get_steps"
 
 [project.entry-points.pytest11]
-webbpsf = "pytest_plugin.webbpsf_plugin"
+stpsf = "pytest_romancal.stpsf_plugin"
 
 [project.scripts]
 roman_static_preview = "romancal.scripts.static_preview:command"
-okify_regtests = "romancal.scripts.okify_regtests:main"
-schema_editor = "romancal.scripts.schema_editor:main"
-schemadoc = "romancal.scripts.schemadoc:main"
 verify_install_requires = "romancal.scripts.verify_install_requires:main"
-asn_from_list = "romancal.associations.asn_from_list:Main"
-skycell_asn = "romancal.associations.skycell_asn:Main"
+asn_from_list = "romancal.associations.asn_from_list:_cli"
+skycell_asn = "romancal.associations.skycell_asn:_cli"
 
 [build-system]
 requires = [
@@ -104,6 +105,8 @@ build-backend = "setuptools.build_meta"
 zip-safe = false
 
 [tool.setuptools.packages.find]
+namespaces = false
+include = ["romancal*", "pytest_romancal*"]
 
 [tool.setuptools.package-data]
 # package_data values are glob patterns relative to each specific subpackage.
@@ -119,7 +122,7 @@ zip-safe = false
 ]
 
 [tool.pytest.ini_options]
-minversion = 4.6
+minversion = 6.0
 norecursedirs = [
     "docs/_build",
     "romancal/scripts",
@@ -137,9 +140,14 @@ doctest_plus = "enabled"
 doctest_rst = "enabled"
 text_file_format = "rst"
 log_cli_level = "info"
+xfail_strict = true
 addopts = [
+    "--color=yes",      # color test output
+    "--doctest-rst",    # enable doctests
     "--doctest-ignore-import-errors",
-    "--color=yes",
+    "--strict-config",  # fail on unknown config options
+    "--strict-markers", # fail on unknown markers
+    "-ra",              # Show summary of all failures/errorsproduct_names
 ]
 markers = [
     "soctests: run only the SOC tests in the suite.",
@@ -171,30 +179,19 @@ exclude_lines = [
     "if __name__ == \"__main__\":",
 ]
 
-[tool.bandit]
-skips = [
-    "B101",
-    "B307",
-    "B404",
-    "B603",
-]
-exclude_dirs = [
-    "romancal/regtest/scripts",
-]
-
-[tool.isort]
-profile = "black"
-filter_files = true
-line_length = 88
-
-[tool.black]
-line-length = 88
-force-exclude = "^/(\n  (\n      \\.eggs\n    | \\.git\n    | \\.pytest_cache\n    | \\.tox\n  )/\n)\n"
-
 [tool.ruff]
 line-length = 88
 
+
 [tool.ruff.lint]
+extend-select = [
+    "UP",   # PyUpgrade
+    "I",    # isort
+    "B",    # BugBear
+    "S",    # Bandit
+    "RUF",  # ruff specific
+    "NPY",  # Numpy lint
+]
 exclude = [
     "jdocs",
     ".tox",
@@ -204,13 +201,19 @@ exclude = [
 ignore = [
     "E741", # ambiguous variable name
 ]
-extend-select = [
-    "NPY",
-]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "romancal/associations/__init__.py" = [
     "E402",
+]
+"romancal/**/tests/**.py" = [
+    "S101" # Bandit: Use of assert detected (fine in test files)
+]
+"romancal/**/test/**.py" = [
+    "S101" # Bandit: Use of assert detected (fine in test files)
+]
+"romancal/regtest/**.py" = [
+    "S101" # Bandit: Use of assert detected (fine in test files)
 ]
 
 [tool.cibuildwheel.macos]
@@ -257,6 +260,11 @@ showcontent = true
 [[tool.towncrier.type]]
 directory = "scripts"
 name = "Scripts"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "exposure_pipeline"
+name = "``exposure_pipeline``"
 showcontent = true
 
 [[tool.towncrier.type]]

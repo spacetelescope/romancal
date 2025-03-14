@@ -1,6 +1,5 @@
 import os
 from io import StringIO
-from typing import Tuple
 
 import numpy as np
 import pytest
@@ -19,6 +18,7 @@ from numpy.testing import assert_allclose
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
+from romancal.datamodels import ModelLibrary
 from romancal.tweakreg.astrometric_utils import (
     compute_radius,
     create_astrometric_catalog,
@@ -59,7 +59,7 @@ def get_parallax_correction_barycenter(epoch, gaia_ref_epoch_coords):
         correction = get_parallax_correction_earth_barycenter(epoch, gaia_coords)
         print(correction)
         (0.001, -0.002)
-    """  # noqa: E501
+    """
 
     obs_date = Time(epoch, format="decimalyear")
     earths_center_barycentric_coords = coord.get_body_barycentric(
@@ -125,7 +125,7 @@ def get_proper_motion_correction(epoch, gaia_ref_epoch_coords, gaia_ref_epoch):
     }
     gaia_ref_epoch = 2020.0
     get_proper_motion_correction(epoch, gaia_coords, gaia_ref_epoch)
-    """  # noqa: E501
+    """
 
     expected_new_dec = (
         np.array(
@@ -137,7 +137,9 @@ def get_proper_motion_correction(epoch, gaia_ref_epoch_coords, gaia_ref_epoch):
     average_dec = np.array(
         [
             np.mean([new, old])
-            for new, old in zip(expected_new_dec, gaia_ref_epoch_coords["dec"])
+            for new, old in zip(
+                expected_new_dec, gaia_ref_epoch_coords["dec"], strict=False
+            )
         ]
     )
     pmra = gaia_ref_epoch_coords["pmra"] / np.cos(np.deg2rad(average_dec))
@@ -195,7 +197,7 @@ def get_parallax_correction(epoch, gaia_ref_epoch_coords):
             "parallax": 2.5
         }
         get_parallax_correction(epoch, gaia_coords)
-    """  # noqa: E501
+    """
 
     # get parallax correction using textbook calculations (i.e. Earth's barycenter)
     parallax_corr = get_parallax_correction_barycenter(
@@ -254,7 +256,6 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
 
     # create necessary transformations
     distortion = Shift(-shift_1) & Shift(-shift_2)
-    distortion.bounding_box = ((-0.5, shape[-1] + 0.5), (-0.5, shape[-2] + 0.5))
     tel2sky = _create_tel2sky_model(input_dm)
 
     # create required frames
@@ -276,6 +277,7 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     ]
 
     wcs_obj = wcs.WCS(pipeline)
+    wcs_obj.bounding_box = ((-0.5, shape[-2] + 0.5), (-0.5, shape[-1] + 0.5))
 
     input_dm.meta["wcs"] = wcs_obj
 
@@ -325,15 +327,15 @@ def _create_tel2sky_model(input_dm):
 def create_basic_wcs(
     img_shape: tuple = (100, 100),
     ref_pix: tuple = (0, 0),
-    ref_val: Tuple[u.Quantity, u.Quantity] = (
+    ref_val: tuple[u.Quantity, u.Quantity] = (
         u.Quantity("10 deg"),
         u.Quantity("0 deg"),
     ),
-    pix_scale: Tuple[u.Quantity, u.Quantity] = (
+    pix_scale: tuple[u.Quantity, u.Quantity] = (
         u.Quantity("0.1 arcsec"),
         u.Quantity("0.1 arcsec"),
     ),
-    theta: u.Quantity = u.Quantity("0 deg"),
+    theta: u.Quantity | None = None,
 ):
     """
     Creates a basic WCS (no distortion) to map pixel coordinates
@@ -369,6 +371,7 @@ def create_basic_wcs(
     does not contain the required steps to validate against the
     TweakReg pipeline.
     """
+    theta = u.Quantity("0 deg") if theta is None else theta
 
     # linear transformations
     shift_pixel_coords = models.Shift(-ref_pix[0]) & models.Shift(-ref_pix[1])
@@ -456,7 +459,7 @@ def test_create_astrometric_catalog_variable_num_sources(
     output_filename = "ref_cat.ecsv"
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
     res = create_astrometric_catalog(
-        [img],
+        ModelLibrary([img]),
         catalog=catalog,
         output=os.path.join(tmp_path, output_filename),
         num_sources=num_sources,
@@ -478,7 +481,7 @@ def test_create_astrometric_catalog_write_results_to_disk(tmp_path, base_image):
 
     for table_format in list_of_supported_formats:
         res = create_astrometric_catalog(
-            [img],
+            ModelLibrary([img]),
             catalog="GAIADR3",
             output=os.path.join(tmp_path, output_filename),
             table_format=table_format,
@@ -513,7 +516,7 @@ def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, reques
     )
 
     res = create_astrometric_catalog(
-        [img],
+        ModelLibrary([img]),
         catalog=catalog,
         output=os.path.join(tmp_path, output_filename),
         epoch=epoch,

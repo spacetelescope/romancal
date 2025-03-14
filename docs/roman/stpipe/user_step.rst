@@ -172,15 +172,14 @@ for ``strun``. The call signature is::
 
 For example, given the following command-line::
 
-    $ strun romancal.pipeline.ExposurePipeline r0000101001001001001_01101_0001_WFI01_uncal.asdf \
-            --steps.jump.override_gain=roman_wfi_gain_0033.asdf
+    $ strun romancal.pipeline.ExposurePipeline r0000101001001001001_0001_wfi01_uncal.asdf \
+            --steps.ramp_fit.override_gain=roman_wfi_gain_0033.asdf
 
 the equivalent `from_cmdline` call would be::
 
     from romancal.pipeline import ExposurePipeline
-    ExposurePipeline.from_cmdline([' r0000101001001001001_01101_0001_WFI01_uncal.asdf',
-                                   'steps.jump.override_gain', 'roman_wfi_gain_0033.asdf'])
-
+    ExposurePipeline.from_cmdline([' r0000101001001001001_0001_wfi01_uncal.asdf',
+                                   'steps.ramp_fit.override_gain', 'roman_wfi_gain_0033.asdf'])
 
 call()
 ``````
@@ -202,19 +201,19 @@ particular step accepts. The method returns the result of the step. A basic
 example is::
 
     from romancal.jump import JumpStep
-    output = JumpStep.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
+    output = JumpStep.call('r0000101001001001001_0001_wfi01_uncal.asdf')
 
 makes a new instance of `JumpStep` and executes using the specified exposure
 file. `JumpStep` has a parameter ``rejection_threshold``. To use a different
 value than the default, the statement would be::
 
-    output = JumpStep.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf',
+    output = JumpStep.call('r0000101001001001001_0001_wfi01_uncal.asdf',
                            rejection_threshold=42.0)
 
 If one wishes to use a :ref:`parameter file<parameter_files>`, specify the path
 to it using the ``config_file`` argument::
 
-    output = JumpStep.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf',
+    output = JumpStep.call('r0000101001001001001_0001_wfi01_uncal.asdf',
                            config_file='my_jumpstep_config.asdf')
 
 run()

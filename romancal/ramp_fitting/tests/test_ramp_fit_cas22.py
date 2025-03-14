@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-from astropy import units as u
 from astropy.time import Time
 from roman_datamodels import maker_utils
 from roman_datamodels.datamodels import (
@@ -272,23 +271,11 @@ def generate_wfi_reffiles(
     gain_ref["meta"]["useafter"] = Time("2022-01-01T11:11:11.111")
 
     if randomize:
-        gain_ref["data"] = u.Quantity(
-            (rng.random(shape) * 0.5).astype(np.float32) * ingain,
-            u.electron / u.DN,
-            dtype=np.float32,
-        )
+        gain_ref["data"] = (rng.random(shape) * 0.5).astype(np.float32) * ingain
     else:
-        gain_ref["data"] = u.Quantity(
-            np.ones(shape).astype(np.float32) * ingain,
-            u.electron / u.DN,
-            dtype=np.float32,
-        )
+        gain_ref["data"] = np.ones(shape).astype(np.float32) * ingain
     gain_ref["dq"] = np.zeros(shape, dtype=np.uint16)
-    gain_ref["err"] = u.Quantity(
-        (rng.random(shape) * 0.05).astype(np.float32),
-        u.electron / u.DN,
-        dtype=np.float32,
-    )
+    gain_ref["err"] = (rng.random(shape) * 0.05).astype(np.float32)
 
     gain_ref_model = GainRefModel(gain_ref)
 
@@ -303,22 +290,16 @@ def generate_wfi_reffiles(
     rn_ref["meta"]["exposure"]["frame_time"] = 666
 
     if randomize:
-        rn_ref["data"] = u.Quantity(
-            (rng.random(shape) * rnoise).astype(np.float32),
-            u.DN,
-            dtype=np.float32,
-        )
+        rn_ref["data"] = ((rng.random(shape) * rnoise).astype(np.float32),)
     else:
-        rn_ref["data"] = u.Quantity(
-            np.ones(shape).astype(np.float32) * rnoise, u.DN, dtype=np.float32
-        )
+        rn_ref["data"] = np.ones(shape).astype(np.float32) * rnoise
 
     rn_ref_model = ReadnoiseRefModel(rn_ref)
 
     # Create temporary dark reference file
     # shape needs to be 3D but does not matter because the ramp fitting
     # step only uses the 2-D dark slope component
-    dark_ref = maker_utils.mk_dark(shape=(1,) + shape)
+    dark_ref = maker_utils.mk_dark(shape=(1, *shape))
     dark_ref["meta"]["instrument"]["detector"] = "WFI01"
     dark_ref["meta"]["instrument"]["name"] = "WFI"
     dark_ref["meta"]["reftype"] = "DARK"
@@ -327,9 +308,7 @@ def generate_wfi_reffiles(
     dark_ref["meta"]["exposure"]["type"] = "WFI_IMAGE"
     dark_ref["meta"]["exposure"]["frame_time"] = 666
 
-    dark_ref["dark_slope"] = u.Quantity(
-        np.zeros(shape).astype(np.float32) * 0.01, u.DN / u.s, dtype=np.float32
-    )
+    dark_ref["dark_slope"] = np.zeros(shape).astype(np.float32) * 0.01
 
     dark_ref_model = DarkRefModel(dark_ref)
 

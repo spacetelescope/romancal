@@ -27,9 +27,7 @@ Specifically, this routine performs the following operations:
      a single exposure ever contributes to each pixel in these mosaics.
    * The ``fillval`` parameter specifies what value to use in the output
      resampled image for any pixel which has no valid contribution from any
-     input exposure.  The default value of ``INDEF`` indicates that the value
-     from the last exposure will be used, while a value of 0 would result in
-     holes.
+     input exposure.
    * The resampling can be controlled with the ``pixfrac``, ``kernel`` and
      ``weight_type`` parameters.
    * The ``pixfrac`` indicates the fraction by
@@ -46,7 +44,7 @@ Specifically, this routine performs the following operations:
      should be used when resampling to create the output mosaic.  Any pixel with a
      DQ value not included in this value (or list of values) will be ignored when
      resampling.
-   * Resampled images will be written out to disk with suffix `_outlier_i2d` by default.
+   * Resampled images will be written out to disk with suffix `_outlier_coadd` by default.
    * **If resampling is turned off** through the use of the ``resample_data`` parameter,
      a copy of the unrectified input images (as a ModelLibrary)
      will be used for subsequent processing.

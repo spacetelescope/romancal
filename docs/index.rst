@@ -14,6 +14,8 @@ The Roman Space Telescope Calibration Pipeline
    :align: center
    :alt: Nancy Roman Space Telescope
 
+**Version**: |release|
+
 Welcome to the documentation for the Roman calibration software,
 `romancal <https://github.com/spacetelescope/romancal>`__.
 This package contains the Python software suite for the

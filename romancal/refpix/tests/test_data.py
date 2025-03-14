@@ -308,7 +308,7 @@ class TestStandardView:
         assert (new.data != data).any()
 
         # Check that the data has been correctly modified
-        for new_frame, frame in zip(new.data, data):
+        for new_frame, frame in zip(new.data, data, strict=False):
             assert (new_frame == (frame + offset)).all()
 
         # Check if no offset is passed

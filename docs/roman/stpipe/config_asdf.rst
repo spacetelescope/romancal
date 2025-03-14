@@ -16,13 +16,13 @@ class, Step class, or already existing .asdf or .cfg file, and run that step
 using the ``--save-parameters`` option. For example, to get the parameters for
 the ``ExposurePipeline`` pipeline, do the following: ::
 
-   $ strun --save-parameters=exp_pars.asdf roman_elp r0000101001001001001_01101_0001_WFI01_uncal.asdf
+   $ strun --save-parameters=exp_pars.asdf roman_elp r0000101001001001001_0001_wfi01_uncal.asdf
 
 Once created and modified as necessary, the file can now be used by ``strun``
 to run the step/pipeline with the desired parameters:
 ::
 
-   $ strun exp_pars.asdf r0000101001001001001_01101_0001_WFI01_uncal.asdf
+   $ strun exp_pars.asdf r0000101001001001001_0001_wfi01_uncal.asdf
 
 The remaining sections will describe the file format and contents.
 
@@ -30,7 +30,8 @@ File Contents
 -------------
 
 To describe the contents of an ASDF file, the configuration for the step
-``roman_elp`` will be used as the example:
+``roman_elp`` will be used as the example which only shows some of the
+entries for clarity:
 
 .. code-block::
 
@@ -40,16 +41,18 @@ To describe the contents of an ASDF file, the configuration for the step
     %TAG ! tag:stsci.edu:asdf/
     --- !core/asdf-1.1.0
     asdf_library: !core/software-1.0.0 {author: The ASDF Developers, homepage: 'http://github.com/asdf-format/asdf',
-      name: asdf, version: 2.13.0}
+    name: asdf, version: 3.3.0}
     history:
-      extensions:
-      - !core/extension_metadata-1.0.0
-        extension_class: asdf.extension.BuiltinExtension
-        software: !core/software-1.0.0 {name: asdf, version: 2.13.0}
+    extensions:
+    - !core/extension_metadata-1.0.0
+	extension_class: asdf.extension._manifest.ManifestExtension
+	extension_uri: asdf://asdf-format.org/core/extensions/core-1.5.0
+	manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.1.1}
+	software: !core/software-1.0.0 {name: asdf, version: 3.3.0}
     class: romancal.pipeline.exposure_pipeline.ExposurePipeline
     meta:
       author: <SPECIFY>
-      date: '2022-09-15T13:59:54'
+      date: '2024-11-20T19:41:22'
       description: Parameters for calibration step romancal.pipeline.exposure_pipeline.ExposurePipeline
       instrument: {name: <SPECIFY>}
       origin: <SPECIFY>
@@ -59,7 +62,7 @@ To describe the contents of an ASDF file, the configuration for the step
       useafter: <SPECIFY>
     name: ExposurePipeline
     parameters:
-      input_dir: ''
+      input_dir: rsim
       output_dir: null
       output_ext: .asdf
       output_file: null
@@ -67,37 +70,40 @@ To describe the contents of an ASDF file, the configuration for the step
       output_use_model: false
       post_hooks: []
       pre_hooks: []
-      save_calibrated_ramp: false
       save_results: true
       search_output_file: true
       skip: false
-      suffix: null
+      suffix: cal
     steps:
-    - class: romancal.jump.jump_step.JumpStep
-      name: jump
+    - class: romancal.source_catalog.source_catalog_step.SourceCatalogStep
+      name: source_catalog
       parameters:
-        flag_4_neighbors: true
-        four_group_rejection_threshold: 190.0
-        input_dir: ''
-        max_jump_to_flag_neighbors: 1000.0
-        maximum_cores: none
-        min_jump_to_flag_neighbors: 10.0
-        output_dir: null
-        output_ext: .asdf
-        output_file: null
-        output_use_index: true
-        output_use_model: false
-        post_hooks: []
-        pre_hooks: []
-        rejection_threshold: 180.0
-        save_results: false
-        search_output_file: true
-        skip: false
-        suffix: null
-        three_group_rejection_threshold: 185.0
-    ...
+	aperture_ee1: 30
+	aperture_ee2: 50
+	aperture_ee3: 70
+	bkg_boxsize: 1000
+	ci1_star_threshold: 2.0
+	ci2_star_threshold: 1.8
+	deblend: false
+	fit_psf: true
+	input_dir: rsim
+	kernel_fwhm: 2.0
+	npixels: 25
+	output_dir: null
+	output_ext: .asdf
+	output_file: null
+	output_use_index: true
+	output_use_model: false
+	post_hooks: []
+	pre_hooks: []
+	save_results: false
+	search_output_file: true
+	skip: false
+	snr_threshold: 3.0
+	suffix: cat
+	...
 
-Required Components
+REQUIRED Components
 ~~~~~~~~~~~~~~~~~~~
 
 Preamble
@@ -146,11 +152,8 @@ For example, the ``parameters`` block above could also have been formatted as:
 
 .. code-block::
 
-    parameters: {flag_4_neighbors: true, four_group_rejection_threshold: 190.0,
-      max_jump_to_flag_neighbors: 1000.0, maximum_cores: none,
-      min_jump_to_flag_neighbors: 10.0, output_dir: null, output_ext: .asdf,
-      output_file: null, output_use_index: true, output_use_model: false,
-      rejection_threshold: 180.0, three_group_rejection_threshold: 185.0}
+    parameters:{ aperture_ee1: 30, aperture_ee2: 50, aperture_ee3: 70,
+    bkg_boxsize: 1000, ci1_star_threshold: 2.0, ci2_star_threshold: 1.8}
 
 Optional Components
 ~~~~~~~~~~~~~~~~~~~
@@ -173,14 +176,14 @@ step is executed.
 Remember that parameter values can come from numerous sources. Refer to
 :ref:`Parameter Precedence` for a full listing of how parameters can be set.
 
-From the ``JumpStep`` example, if all that needed to change is the
-``rejection_threshold`` parameter with a setting of ``80.0``,
+From the ``SourceCatalogStep`` example, if all that needed to change is the
+``aperture_ee1`` parameter with a setting of ``30``,
 the ``parameters`` block need only contain the following:
 
 .. code-block::
 
     parameters:
-      rejection_threshold: 80.0
+      aperture_ee1: 30
 
 
 Pipeline Configuration
@@ -190,8 +193,8 @@ Pipelines are essentially steps that refer to sub-steps. As in the original cfg
 format, parameters for sub-steps can also be specified. All sub-step parameters
 appear in a key called `steps`. Sub-step parameters are specified by using the
 sub-step name as the key, then underneath and indented, the parameters to change
-for that sub-step. For example, to define the ``rejection_threshold`` of the
-``JumpStep`` step in a ``ExposurePipeline`` parameter file, the parameter
+for that sub-step. For example, to define the ``aperture_ee1`` of the
+``SourceCatalogStep`` step in a ``ExposurePipeline`` parameter file, the parameter
 block would look as follows:
 
 .. code-block::
@@ -199,9 +202,9 @@ block would look as follows:
    class: romancal.pipeline.exposure_pipeline.ExposurePipeline
    parameters: {}
    steps:
-   - class: romancal.jump.jump_step.JumpStep
+   - class: romancal.source_catalog.source_catalog_step.SourceCatalogStep
      parameters:
-       rejection_threshold: 80.0
+       aperture_ee1: 30
 
 As with step parameter files, not all sub-steps need to be specified. If left
 unspecified, the sub-steps will be run with their default parameter sets. For
@@ -236,14 +239,14 @@ There are a number of ways to create an ASDF parameter file. From the
 command line utility ``strun``, the option ``--save-parameters`` can be used.
 
 Within a Python script, the method ``Step.export_config(filename: str)`` can be
-used. For example, to create a parameter file for ``JumpStep``, use the
+used. For example, to create a parameter file for ``SourceCatalogStep``, use the
 following:
 
 .. doctest-skip::
 
-   >>> from romancal.jump import JumpStep
-   >>> step = JumpStep()
-   >>> step.export_config('jump_step.asdf')
+   >>> from romancal..source_catalog import SourceCatalogStep
+   >>> step = SourceCatalogStep()
+   >>> step.export_config('source_catalog_step.asdf')
 
 
 

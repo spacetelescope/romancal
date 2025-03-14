@@ -63,7 +63,6 @@ class:
     output_use_model: false
     post_hooks: []
     pre_hooks: []
-    save_calibrated_ramp: false
     save_results: true
     search_output_file: true
     skip: false
@@ -105,35 +104,37 @@ parameter file that contains:
 
 .. code-block:: yaml
 
-    - class: romancal.jump.jump_step.JumpStep
-      name: jump
-      parameters:
-        flag_4_neighbors: true
-        four_group_rejection_threshold: 190.0
-        input_dir: ''
-        max_jump_to_flag_neighbors: 1000.0
-        maximum_cores: none
-        min_jump_to_flag_neighbors: 10.0
+ - class: romancal.source_catalog.source_catalog_step.SourceCatalogStep
+    name: SourceCatalogStep
+    parameters:
+      aperture_ee1: 30
+      aperture_ee2: 50
+      aperture_ee3: 70
+      bkg_boxsize: 1000
+      ci1_star_threshold: 2.0
+      ci2_star_threshold: 1.8
+      deblend: false
+      fit_psf: true
 
 is equivalent to:
 
 .. code-block:: yaml
 
    steps:
-   - class: romancal.jump.jump_step.JumpStep
-     name: jump
+   - class: romancal.source_catalog.source_catalog_step.SourceCatalogStep
+     name: SourceCatalogStep
      parameters:
-        config_file = myjump.asdf
+        config_file = myconfig.asdf
 
-with the file ``myjump.asdf.`` in the same directory:
+with the file ``myconfig.asdf.`` in the same directory:
 
 .. code-block:: yaml
 
-   class: romancal.jump.jump_step.JumpStep
-   name: jump
+   class: romancal.source_catalog.source_catalog_step.SourceCatalogStep
+   name: SourceCatalogStep
    parameters:
-     flag_4_neighbors: true
-     four_group_rejection_threshold: 190.0
+      aperture_ee1: 30
+      aperture_ee2: 50
 
 If both a ``config_file`` and additional parameters are specified, the
 ``config_file`` is loaded, and then the local parameters override
@@ -154,31 +155,29 @@ equivalent of the parameter file above:
 
 .. code-block:: python
 
-    from stpipe.pipeline import Image2Pipeline
+    from romancal.pipeline import ExposurePipeline
 
     steps = {
-        'jump':{'rejection_threshold': 180.,
-                'three_group_rejection_threshold': 190.,
-                'four_group_rejection_threshold':195.
-    }
+        'source_catalog':{ 'aperture_ee1': 3, 'aperture_ee2': 5, 'aperture_ee3': 7}
+	}
 
     pipe = ExposurePipeline(steps=steps)
 
 Running a Pipeline
 ==================
 
-From the commandline
---------------------
+From the command line
+---------------------
 
-The same ``strun`` script used to run Steps from the commandline can
+The same ``strun`` script used to run Steps from the command line can
 also run Pipelines.
 
 The only wrinkle is that any parameters overridden from the
-commandline use dot notation to specify the parameter name.  For
-example, to override the ``rejection_threshold`` value on the ``jump``
+command line use dot notation to specify the parameter name.  For
+example, to override the ``aperture_ee1`` value on the ``source_catalog``
 step in the example above, one can do::
 
-    > strun romancal.pipeline.ExposurePipeline --steps.jump.rejection_threshold=180.
+    > strun romancal.pipeline.ExposurePipeline --steps.source_catalog.aperture_ee1=3
 
 From Python
 -----------

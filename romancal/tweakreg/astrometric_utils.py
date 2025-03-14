@@ -40,8 +40,9 @@ def create_astrometric_catalog(
 
     Parameters
     ----------
-    input_models : str, list
-        Filenames of images to be aligned to astrometric catalog
+    input_models : ModelLibrary
+        ModelLibrary of images to use for determining the wcs (if
+        existing_wcs is not provided) and epoch (if not provided).
 
     catalog : str, optional
         Name of catalog to extract astrometric positions for sources in the
@@ -95,15 +96,15 @@ def create_astrometric_catalog(
     if existing_wcs is not None:
         outwcs = existing_wcs
     else:
-        outwcs = resample_utils.make_output_wcs(input_models)
+        outwcs, _, _ = resample_utils.make_output_wcs(input_models)
     radius, fiducial = compute_radius(outwcs)
 
     # perform query for this field-of-view
-    epoch = (
-        epoch
-        if epoch is not None
-        else input_models[0].meta.exposure.mid_time.decimalyear
-    )
+    if epoch is None:
+        with input_models:
+            model = input_models.borrow(0)
+            epoch = model.meta.exposure.mid_time.decimalyear
+            input_models.shelve(model, 0)
     if not isinstance(epoch, float):
         # keep only decimal point and digit characters
         epoch = float("".join(c for c in str(epoch) if c == "." or c.isdigit()))
@@ -213,16 +214,18 @@ def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3", timeout=TIMEOU
     service_url = f"{SERVICELOCATION}/{service_type}?{spec}"
     try:
         rawcat = requests.get(service_url, headers=headers, timeout=timeout)
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.ConnectionError as err:
         raise requests.exceptions.ConnectionError(
             "Could not connect to the VO API server. Try again later."
-        )
-    except requests.exceptions.Timeout:
-        raise requests.exceptions.Timeout("The request to the VO API server timed out.")
-    except requests.exceptions.RequestException:
+        ) from err
+    except requests.exceptions.Timeout as err:
+        raise requests.exceptions.Timeout(
+            "The request to the VO API server timed out."
+        ) from err
+    except requests.exceptions.RequestException as err:
         raise requests.exceptions.RequestException(
             "There was an unexpected error with the request."
-        )
+        ) from err
     # convert from bytes to a String
     r_contents = rawcat.content.decode()
     rstr = r_contents.split("\r\n")

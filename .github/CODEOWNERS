@@ -1,3 +1,11 @@
 # automatically requests pull request reviews for files matching the given pattern; the last match takes precendence
 
-*       @spacetelescope/romancal-maintainers
+# maintainers own everything
+* @spacetelescope/romancal-maintainers
+
+# developers can own some specific paths
+/.github/ @spacetelescope/romancal-developers  # CI files
+/* @spacetelescope/romancal-developers  # top level files only
+/changes/** @spacetelescope/romancal-developers  # changelogs
+/docs/** @spacetelescope/romancal-developers  # docs
+/romancal/regtest/** @spacetelescope/romancal-developers  # regtest code

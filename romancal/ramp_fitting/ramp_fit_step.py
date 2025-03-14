@@ -1,9 +1,11 @@
 #! /usr/bin/env python
 #
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
-from astropy import units as u
 from roman_datamodels import datamodels as rdd
 from roman_datamodels import maker_utils
 from roman_datamodels import stnode as rds
@@ -12,6 +14,9 @@ from stcal.ramp_fitting import ols_cas22_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -34,11 +39,11 @@ class RampFitStep(RomanStep):
         use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
         threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
         threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
-    """  # noqa: E501
+    """
 
     weighting = "optimal"  # Only weighting allowed for OLS
 
-    reference_file_types = ["readnoise", "gain", "dark"]
+    reference_file_types: ClassVar = ["readnoise", "gain", "dark"]
 
     def process(self, input):
         with rdd.open(input, mode="rw") as input_model:
@@ -103,21 +108,19 @@ class RampFitStep(RomanStep):
 
         resultants = input_model.data
         dq = input_model.groupdq
-        read_noise = readnoise_model.data.value
-        gain = gain_model.data.value
+        read_noise = readnoise_model.data
+        gain = gain_model.data
         read_time = input_model.meta.exposure.frame_time
 
         # Force read pattern to be pure lists not LNodes
         read_pattern = [list(reads) for reads in input_model.meta.exposure.read_pattern]
         if len(read_pattern) != resultants.shape[0]:
-            raise RuntimeError("mismatch between resultants shape and " "read_pattern.")
+            raise RuntimeError("mismatch between resultants shape and read_pattern.")
 
         # add dark current back into resultants so that Poisson noise is
         # properly accounted for
         tbar = np.array([np.mean(reads) * read_time for reads in read_pattern])
-        resultants += (
-            dark_model.dark_slope.to(u.DN / u.s).value[None, ...] * tbar[:, None, None]
-        )
+        resultants += dark_model.dark_slope[None, ...] * tbar[:, None, None]
 
         # account for the gain
         resultants *= gain
@@ -142,7 +145,7 @@ class RampFitStep(RomanStep):
         dq = output.dq.astype(np.uint32)
 
         # remove dark current contribution to slopes
-        slopes -= dark_model.dark_slope.to(u.DN / u.s).value * gain
+        slopes -= dark_model.dark_slope * gain
 
         # Propagate DQ flags forward.
         ramp_dq = get_pixeldq_flags(dq, input_model.pixeldq, slopes, err, gain)

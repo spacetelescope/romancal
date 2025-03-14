@@ -1,4 +1,4 @@
-""" Utilities for product manipulation."""
+"""Utilities for product manipulation."""
 
 import copy
 import logging
@@ -115,19 +115,22 @@ def prune_duplicate_products(asns):
         Pruned list of associations
 
     """
-    product_names, dups = get_product_names(asns)
+    _, dups = get_product_names(asns)
     if not dups:
         return asns
 
-    warnings.warn(f"Duplicate associations exist: {dups}", RuntimeWarning)
+    warnings.warn(f"Duplicate associations exist: {dups}", RuntimeWarning, stacklevel=2)
     if config.DEBUG:
         warnings.warn(
             'Duplicate associations will have "dupXXX" prepended to their names, where'
-            ' "XXX" is a 3-digit sequence.'
+            ' "XXX" is a 3-digit sequence.',
+            stacklevel=2,
         )
     else:
         warnings.warn(
-            "Duplicates will be removed, leaving only one of each.", RuntimeWarning
+            "Duplicates will be removed, leaving only one of each.",
+            RuntimeWarning,
+            stacklevel=2,
         )
 
     pruned = copy.copy(asns)
@@ -138,7 +141,7 @@ def prune_duplicate_products(asns):
             to_prune[product_name].append(asn)
 
     dup_count = 0
-    for product_name, asns_to_prune in to_prune.items():
+    for asns_to_prune in to_prune.values():
         asns_to_prune = sort_by_candidate(asns_to_prune)
         for asn in asns_to_prune[1:]:
             if config.DEBUG:

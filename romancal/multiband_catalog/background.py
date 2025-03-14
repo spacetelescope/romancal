@@ -22,7 +22,7 @@ def subtract_background(model, box_size=1000):
     model : ImageModel or MosaicModel
         The input model with the background subtracted.
     """
-    if not isinstance(model, (ImageModel, MosaicModel)):
+    if not isinstance(model, ImageModel | MosaicModel):
         raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
     # Subtract the background

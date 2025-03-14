@@ -67,16 +67,16 @@ Examples
 
 .. code-block:: shell
 
-	roman_static_preview preview r0000501001001001001_01101_0001_WFI01_cal.asdf r0000501001001001001_01101_0001_WFI01_cal.png 400 400
+	roman_static_preview preview r0000501001001001001_0001_wfi01_cal.asdf r0000501001001001001_0001_wfi01_cal.png 400 400
 
-.. image:: ../images/r0000501001001001001_01101_0001_WFI01_cal.png
+.. image:: ../images/r0000501001001001001_0001_wfi01_cal.png
    :alt: preview of Roman imagery, with compass rose showing orientation
 
 .. code-block:: shell
 
-	roman_static_preview thumbnail r0000501001001001001_01101_0001_WFI01_cal.asdf r0000501001001001001_01101_0001_WFI01_cal_thumb.png
+	roman_static_preview thumbnail r0000501001001001001_0001_wfi01_cal.asdf r0000501001001001001_0001_wfi01_cal_thumb.png
 
-.. image:: ../images/r0000501001001001001_01101_0001_WFI01_cal_thumb.png
+.. image:: ../images/r0000501001001001001_0001_wfi01_cal_thumb.png
    :alt: thumbnail of Roman imagery
 
 using ``stpreview`` directly

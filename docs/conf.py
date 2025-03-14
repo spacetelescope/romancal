@@ -14,17 +14,12 @@ import datetime
 import importlib
 import os
 import sys
+import tomllib
 from distutils.version import LooseVersion
 from pathlib import Path
 
 import sphinx
 import stsci_rtd_theme
-
-if sys.version_info < (3, 11):
-    import tomli as tomllib
-else:
-    import tomllib
-
 from sphinx.ext.autodoc import AttributeDocumenter
 
 from romancal.stpipe import RomanStep
@@ -99,21 +94,15 @@ intersphinx_mapping = {
     "gwcs": ("https://gwcs.readthedocs.io/en/latest/", None),
     "astropy": ("https://docs.astropy.org/en/stable/", None),
     "photutils": ("https://photutils.readthedocs.io/en/stable/", None),
-    "webbpsf": ("https://webbpsf.readthedocs.io/en/latest/", None),
+    "stpsf": ("https://stpsf.readthedocs.io/en/latest/", None),
     "roman_datamodels": ("https://roman-datamodels.readthedocs.io/en/latest/", None),
     "rad": ("https://rad.readthedocs.io/en/latest/", None),
+    "drizzle": ("https://spacetelescope-drizzle.readthedocs.io/en/latest/", None),
+    "stcal": ("https://stcal.readthedocs.io/en/latest/", None),
 }
 
 intersphinx_disabled_reftypes = ["*"]
 
-if sys.version_info[0] == 2:
-    intersphinx_mapping["python"] = ("http://docs.python.org/2/", None)
-    intersphinx_mapping["pythonloc"] = (
-        "http://docs.python.org/",
-        os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "local/python2_local_links.inv")
-        ),
-    )
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -171,7 +160,7 @@ suppress_warnings = [
 
 # General information about the project
 project = setup_cfg["name"]
-author = f'{setup_cfg["authors"][0]["name"]} <{setup_cfg["authors"][0]["email"]}>'
+author = f"{setup_cfg['authors'][0]['name']} <{setup_cfg['authors'][0]['email']}>"
 copyright = f"{datetime.datetime.now().year}, {author}"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -234,6 +223,8 @@ graphviz_dot_args = [
     "-Gfontname=Helvetica Neue, Helvetica, Arial, sans-serif",
 ]
 
+# activate figure numbering
+numfig = True
 # If true, '()' will be appended to :func: etc. cross-reference text.
 # add_function_parentheses = True
 

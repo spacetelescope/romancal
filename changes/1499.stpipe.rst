@@ -1,1 +1,0 @@
-Remove Step.__call__ usage (which will be deprecated in stpipe).

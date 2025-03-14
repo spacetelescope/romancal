@@ -4,7 +4,6 @@ Module to calculate the source catalog.
 
 import logging
 import warnings
-from typing import List
 
 import astropy.units as u
 import numpy as np
@@ -23,7 +22,7 @@ from scipy import ndimage
 from scipy.spatial import KDTree
 
 from romancal import __version__ as romancal_version
-from romancal.lib import psf
+from romancal.source_catalog import psf
 
 from ._wcs_helpers import pixel_scale_angle_at_skycoord
 
@@ -73,6 +72,11 @@ class RomanSourceCatalog:
     fit_psf : bool
         Whether to fit a PSF model to the sources.
 
+    mask : 2D `~numpy.ndarray` or `None`, optional
+        A 2D boolean mask image with the same shape as the input data.
+        This mask is used for PSF photometry. The mask should be the
+        same one used to create the segmentation image.
+
     detection_cat : `None` or `~photutils.segmentation.SourceCatalog`, optional
         A `~photutils.segmentation.SourceCatalog` object for the
         detection image. The segmentation image used to create
@@ -103,11 +107,11 @@ class RomanSourceCatalog:
         ci_star_thresholds,
         kernel_fwhm,
         fit_psf,
+        mask=None,
         detection_cat=None,
         flux_unit="uJy",
     ):
-
-        if not isinstance(model, (ImageModel, MosaicModel)):
+        if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
         self.model = model  # background was previously subtracted
 
@@ -116,6 +120,7 @@ class RomanSourceCatalog:
         self.aperture_params = aperture_params
         self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
         self.fit_psf = fit_psf
+        self.mask = mask
         self.detection_cat = detection_cat
 
         if len(ci_star_thresholds) != 2:
@@ -549,8 +554,15 @@ class RomanSourceCatalog:
                 bkg_data = mask.get_values(self.model.data)
                 values = sigclip(bkg_data, masked=False)
                 nvalues.append(values.size)
-                bkg_median.append(np.median(values))
-                bkg_std.append(np.std(values))
+                med = np.median(values)
+                std = np.std(values)
+                if values.size == 0:
+                    # handle case where source is completely masked due to
+                    # forced photometry
+                    med *= self.model.data.unit
+                    std *= self.model.data.unit
+                bkg_median.append(med)
+                bkg_std.append(std)
 
             nvalues = np.array(nvalues)
             bkg_median = u.Quantity(bkg_median)
@@ -614,9 +626,6 @@ class RomanSourceCatalog:
         for the additional catalog values.
         """
         desc = {}
-        for idx, colname in enumerate(self.ci_colnames):
-            desc[colname] = self.ci_colname_descriptions[idx]
-
         desc["flags"] = "Data quality flags"
         desc["is_extended"] = "Flag indicating whether the source is extended"
         desc["sharpness"] = "The DAOFind source sharpness statistic"
@@ -632,19 +641,22 @@ class RomanSourceCatalog:
         """
         Data quality flags.
         """
-        xyidx = np.round(self._xypos).astype(int)
+        badpos = ~np.isfinite(self._xypos[:, 0]) | ~np.isfinite(self._xypos[:, 1])
+        m = ~badpos
+        xyidx = np.round(self._xypos[m, :]).astype(int)
+        flags = np.full(self._xypos.shape[0], pixel.DO_NOT_USE, dtype=int)
 
         try:
             # L2 images have a dq array
             dqflags = self.model.dq[xyidx[:, 1], xyidx[:, 0]]
             # if dqflags contains the DO_NOT_USE flag, set to DO_NOT_USE
             # (dq=1), otherwise 0
-            flags = dqflags & pixel.DO_NOT_USE
+            flags[m] = dqflags & pixel.DO_NOT_USE
 
         except AttributeError:
             # L3 images
             mask = self.model.weight == 0
-            flags = mask[xyidx[:, 1], xyidx[:, 0]].astype(int)
+            flags[m] = mask[xyidx[:, 1], xyidx[:, 0]].astype(int)
 
         return flags
 
@@ -705,7 +717,9 @@ class RomanSourceCatalog:
         Set the concentration indices as dynamic attributes on the class
         instance.
         """
-        for name, value in zip(self.ci_colnames, self.concentration_indices):
+        for name, value in zip(
+            self.ci_colnames, self.concentration_indices, strict=False
+        ):
             setattr(self, name, value)
 
     @lazyproperty
@@ -781,7 +795,7 @@ class RomanSourceCatalog:
         which has odd dimensions.
         """
         cutout = []
-        for xcen, ycen in zip(*np.transpose(self._xypos_aper)):
+        for xcen, ycen in zip(*np.transpose(self._xypos_aper), strict=False):
             try:
                 cutout_ = extract_array(
                     self.model.data,
@@ -805,7 +819,7 @@ class RomanSourceCatalog:
         which has odd dimensions.
         """
         cutout = []
-        for xcen, ycen in zip(*np.transpose(self._xypos_aper)):
+        for xcen, ycen in zip(*np.transpose(self._xypos_aper), strict=False):
             try:
                 cutout_ = extract_array(
                     self._daofind_convolved_data,
@@ -918,7 +932,7 @@ class RomanSourceCatalog:
         if self.n_sources == 1:
             return -1
 
-        nn_label = self.label[self._kdtree_query[1]]
+        nn_label = self.label[self._kdtree_query[1]].astype("i4")
         # assign a label of -1 for non-finite xypos
         nn_label[self._xypos_nonfinite_mask] = -1
 
@@ -1012,8 +1026,13 @@ class RomanSourceCatalog:
 
         else:
             # NOTE: label is need to join the tables
+            _ = self.extras_colnames  # trigger updating the descriptions
             colnames = [
                 "label",
+                "flags",
+                "is_extended",
+                "sharpness",
+                "roundness",
                 "isophotal_flux",
                 "isophotal_flux_err",
                 "kron_flux",
@@ -1086,7 +1105,7 @@ class RomanSourceCatalog:
         return table
 
     @staticmethod
-    def get_psf_photometry_catalog_colnames_mapping() -> List:
+    def get_psf_photometry_catalog_colnames_mapping() -> list:
         """
         Set the mapping between the PSF photometry table column names
         and the final catalog column names.
@@ -1136,7 +1155,7 @@ class RomanSourceCatalog:
         ]
 
     @lazyproperty
-    def psf_photometry_colnames(self) -> List:
+    def psf_photometry_colnames(self) -> list:
         """
         Update and return column descriptions for PSF photometry results.
 
@@ -1180,6 +1199,7 @@ class RomanSourceCatalog:
         xinit, yinit = np.transpose(self._xypos)
         psf_photometry_table, photometry = psf.fit_psf_to_image_model(
             image_model=self.model,
+            mask=self.mask,
             psf_model=gridded_psf_model,
             x_init=xinit,
             y_init=yinit,

@@ -16,6 +16,7 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import maker_utils
 
 from romancal.assign_wcs import pointing
+from romancal.assign_wcs.utils import add_s_region
 
 collect_ignore = ["lib/dqflags.py"]
 
@@ -113,7 +114,7 @@ class TestDescriptionPlugin:
 
 @pytest.fixture(scope="function")
 def create_mock_asn_file():
-    def _create_asn_file(tmp_path: str, members_mapping: dict = None) -> str:
+    def _create_asn_file(tmp_path: str, members_mapping: dict | None = None) -> str:
         """
         Create a mock association file with the provided members mapping.
 
@@ -198,7 +199,6 @@ def _create_wcs(input_dm, shift_1=0, shift_2=0):
 
     # create necessary transformations
     distortion = Shift(-shift_1) & Shift(-shift_2)
-    distortion.bounding_box = ((-0.5, shape[-1] + 0.5), (-0.5, shape[-2] + 0.5))
     tel2sky = pointing.v23tosky(input_dm)
 
     # create required frames
@@ -219,8 +219,11 @@ def _create_wcs(input_dm, shift_1=0, shift_2=0):
     ]
 
     wcs_obj = wcs.WCS(pipeline)
+    wcs_obj.bounding_box = ((-0.5, shape[-2] + 0.5), (-0.5, shape[-1] + 0.5))
 
     input_dm.meta["wcs"] = wcs_obj
+
+    add_s_region(input_dm)
 
 
 @pytest.fixture
