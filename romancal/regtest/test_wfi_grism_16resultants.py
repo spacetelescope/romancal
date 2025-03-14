@@ -1,4 +1,4 @@
-""" Roman tests for flat field correction """
+"""Roman tests for flat field correction"""
 
 import pytest
 import roman_datamodels as rdm

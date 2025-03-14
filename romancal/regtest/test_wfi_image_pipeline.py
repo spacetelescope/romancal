@@ -5,6 +5,7 @@ import pytest
 import roman_datamodels as rdm
 from gwcs.wcstools import grid_from_bounding_box
 from numpy.testing import assert_allclose
+from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
 
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
@@ -227,12 +228,13 @@ def test_elp_input_dm(rtdata, ignore_asdf_paths):
         assert model.meta.cal_step.photom == "COMPLETE"
 
 
-def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
-    """Tests for fully saturated data skipping steps in the pipeline
-
-    Note that this test mimics how the pipeline is run in OPS.
-    Any changes to this test should be coordinated with OPS.
+@pytest.fixture(scope="module")
+def run_all_saturated(rtdata_module):
     """
+    Test ELP handling of an all saturated input model
+    """
+    rtdata = rtdata_module
+
     input_data = "r0000101001001001001_0001_wfi01_ALL_SATURATED_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
@@ -245,22 +247,60 @@ def test_processing_pipeline_all_saturated(rtdata, ignore_asdf_paths):
         rtdata.input,
     ]
     ExposurePipeline.from_cmdline(args)
-    rtdata.get_truth(f"truth/WFI/image/{output}")
 
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    # get truth file
+    rtdata.get_truth(f"truth/WFI/image/{output}")
+    return rtdata
+
+
+@pytest.fixture(scope="module")
+def all_saturated_model(run_all_saturated):
+    with rdm.open(run_all_saturated.output) as model:
+        yield model
+
+
+def test_all_saturated_against_truth(run_all_saturated, ignore_asdf_paths):
+    diff = compare_asdf(
+        run_all_saturated.output, run_all_saturated.truth, **ignore_asdf_paths
+    )
     assert diff.identical, diff.report()
 
-    # Ensure step completion is as expected
-    with rdm.open(rtdata.output) as model:
-        assert model.meta.cal_step.dq_init == "COMPLETE"
-        assert model.meta.cal_step.saturation == "COMPLETE"
-        assert model.meta.cal_step.linearity == "SKIPPED"
-        assert model.meta.cal_step.dark == "SKIPPED"
-        assert model.meta.cal_step.jump == "SKIPPED"
-        assert model.meta.cal_step.ramp_fit == "SKIPPED"
-        assert model.meta.cal_step.assign_wcs == "SKIPPED"
-        assert model.meta.cal_step.flat_field == "SKIPPED"
-        assert model.meta.cal_step.photom == "SKIPPED"
+
+@pytest.mark.parametrize(
+    "step_name, status",
+    [
+        ("dq_init", "COMPLETE"),
+        ("saturation", "COMPLETE"),
+        ("linearity", "SKIPPED"),
+        ("dark", "SKIPPED"),
+        ("ramp_fit", "SKIPPED"),
+        ("assign_wcs", "SKIPPED"),
+        ("flat_field", "SKIPPED"),
+        ("photom", "SKIPPED"),
+        ("source_catalog", "SKIPPED"),
+        ("tweakreg", "SKIPPED"),
+    ],
+)
+def test_all_saturated_status(all_saturated_model, step_name, status):
+    """
+    For an all saturated input the pipeline should skip all steps after saturation.
+    """
+    assert getattr(all_saturated_model.meta.cal_step, step_name) == status
+
+
+def test_all_saturated_model_type(all_saturated_model):
+    """
+    For an all saturated input the output model should be an ImageModel.
+    """
+    assert isinstance(all_saturated_model, ImageModel)
+
+
+@pytest.mark.parametrize("array_name", ["data", "err", "var_poisson", "var_rnoise"])
+def test_all_saturated_zeroed(all_saturated_model, array_name):
+    """
+    For an all saturated input the output model should contain 0s for data and err arrays.
+    """
+    np.testing.assert_array_equal(getattr(all_saturated_model, array_name), 0)
 
 
 def test_pipeline_suffix(rtdata, ignore_asdf_paths):
@@ -299,6 +339,6 @@ def test_pipeline_suffix(rtdata, ignore_asdf_paths):
         assert model.meta.cal_step.assign_wcs == "COMPLETE"
         assert model.meta.cal_step.flat_field == "COMPLETE"
         assert model.meta.cal_step.photom == "COMPLETE"
-        assert model.meta.cal_step.source_detection == "COMPLETE"
-        assert model.meta.cal_step.tweakreg == "INCOMPLETE"
+        assert model.meta.cal_step.source_catalog == "COMPLETE"
+        assert model.meta.cal_step.tweakreg == "SKIPPED"
         assert model.meta.filename == output

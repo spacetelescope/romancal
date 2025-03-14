@@ -3,7 +3,6 @@ import shutil
 import pytest
 
 SCRIPTS = [
-    "okify_regtests",
     "verify_install_requires",
 ]
 

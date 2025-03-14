@@ -32,16 +32,17 @@ class OutlierDetectionStep(RomanStep):
         weight_type = option('ivm','exptime',default='ivm') # Weighting type to use to create the median image
         pixfrac = float(default=1.0) # Fraction by which input pixels are shrunk before being drizzled onto the output image grid
         kernel = string(default='square') # Shape of the kernel used for flux distribution onto output images
-        fillval = string(default='INDEF') # Value assigned to output pixels that have zero weight or no flux during drizzling
+        fillval = string(default='NaN') # Value assigned to output pixels that have zero weight or no flux during drizzling
         maskpt = float(default=0.7) # Percentage of weight image values below which they are flagged as bad pixels
         snr = string(default='5.0 4.0') # The signal-to-noise values to use for bad pixel identification
         scale = string(default='1.2 0.7') # The scaling factor applied to derivative used to identify bad pixels
         backg = float(default=0.0) # User-specified background value to subtract during final identification step
         save_intermediate_results = boolean(default=False) # Specifies whether or not to write out intermediate products to disk
         resample_data = boolean(default=True) # Specifies whether or not to resample the input images when performing outlier detection
+        resample_on_skycell = boolean(default=True) # if association contains skycell information use the skycell wcs for resampling
         good_bits = string(default="~DO_NOT_USE+NON_SCIENCE")  # DQ bit value to be considered 'good'
         in_memory = boolean(default=False) # Specifies whether or not to keep all intermediate products and datamodels in memory
-    """  # noqa: E501
+    """
 
     def process(self, input_models):
         """Perform outlier detection processing on input data."""
@@ -103,6 +104,7 @@ class OutlierDetectionStep(RomanStep):
             self.resample_data,
             self.good_bits,
             self.in_memory,
+            self.resample_on_skycell,
             self.make_output_path,
         )
         return library

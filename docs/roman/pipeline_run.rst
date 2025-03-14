@@ -21,7 +21,7 @@ For example, the exposure level  pipeline is implemented by the class
 run this pipeline is:
 ::
 
-  $ strun romancal.pipeline.ExposurePipeline r0008308002010007027_06311_0019_WFI01_uncal.asdf
+  $ strun romancal.pipeline.ExposurePipeline r0008308002010007027_0019_wfi01_uncal.asdf
 
 
 Pipeline classes also have a **pipeline name**, or **alias**, that can be used
@@ -48,6 +48,13 @@ The mosaic level pipeline also has an alias, ``roman_mos``, and can be run as
 
  $ strun roman_mos r0008308002010007027_asn.json
 
+.. note::
+
+   When using an **alias** with strun (for example ``strun resample``) you may
+   need to provide the ``romancal`` package name if you have other packages installed
+   that also use the same **alias**. The package name is provided prior to the
+   **alias** separated by ``::`` (for example ``strun romancal::resample``).
+
 
 Exit Status
 ```````````
@@ -64,7 +71,8 @@ From the Python Prompt
 ------------------------------
 
 You can execute a pipeline or a step from within python by using the
-``call`` method of the class.
+``call`` method of the class. This creates a new instance of the class
+and runs the pipeline or step.
 
 The ``call`` method creates a new instance of the class and runs the pipeline or
 step. Optional parameter settings can be specified by via keyword arguments or
@@ -75,10 +83,10 @@ For the exposure pipeline and steps,
 ::
 
  from romancal.pipeline import ExposurePipeline
- result = ExposurePipeline.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
+ result = ExposurePipeline.call('r0000101001001001001_0001_wfi01_uncal.asdf')
 
  from romancal.linearity import LinearityStep
- result = LinearityStep.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf')
+ result = LinearityStep.call('r0000101001001001001_0001_wfi01_uncal.asdf')
 
 One difference between the mosaic level pipeline and the exposure level pipeline is that the
 mosaic level pipeline is generally designed to run on multiple overlapping exposures. To achieve

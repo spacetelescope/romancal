@@ -1,9 +1,15 @@
 #! /usr/bin/env python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
 
 from romancal.photom import photom
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["PhotomStep"]
 
@@ -16,7 +22,7 @@ class PhotomStep(RomanStep):
 
     class_alias = "photom"
 
-    reference_file_types = ["photom"]
+    reference_file_types: ClassVar = ["photom"]
 
     def process(self, input):
         """Perform the photometric calibration step

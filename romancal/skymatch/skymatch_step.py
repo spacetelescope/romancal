@@ -2,20 +2,23 @@
 Roman step for sky matching.
 """
 
+from __future__ import annotations
+
 import logging
 from copy import deepcopy
+from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
 from roman_datamodels import maker_utils
 from roman_datamodels.dqflags import pixel
+from stcal.skymatch import SkyImage, SkyStats, skymatch
 
 from romancal.datamodels import ModelLibrary
 from romancal.stpipe import RomanStep
 
-from .skyimage import SkyImage
-from .skymatch import match
-from .skystatistics import SkyStats
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["SkyMatchStep"]
 
@@ -45,9 +48,9 @@ class SkyMatchStep(RomanStep):
         lsigma = float(min=0.0, default=4.0) # Lower clipping limit, in sigma
         usigma = float(min=0.0, default=4.0) # Upper clipping limit, in sigma
         binwidth = float(min=0.0, default=0.1) # Bin width for 'mode' and 'midpt' `skystat`, in sigma
-    """  # noqa: E501
+    """
 
-    reference_file_types = []
+    reference_file_types: ClassVar = []
 
     def process(self, input):
         self.log.setLevel(logging.DEBUG)
@@ -73,11 +76,11 @@ class SkyMatchStep(RomanStep):
         # create a list of "Sky" Images and/or Groups:
         images = []
         with library:
-            for index, model in enumerate(library):
+            for model in library:
                 images.append(self._imodel2skyim(model))
 
             # match/compute sky values:
-            match(
+            skymatch(
                 images,
                 skymethod=self.skymethod,
                 match_down=self.match_down,
@@ -118,37 +121,27 @@ class SkyMatchStep(RomanStep):
         # see if 'skymatch' was previously run and raise an exception
         # if 'subtract' mode has changed compared to the previous pass:
         level = image_model.meta.background.level
-        if image_model.meta.background.subtracted is None:
-            if level is not None:
-                # report inconsistency:
-                raise ValueError(
-                    "Background level was set but the "
-                    "'subtracted' property is undefined (None)."
-                )
-            # Assume level is zero:
-            level = 0.0
 
-        else:
-            if image_model.meta.background.subtracted and level is None:
-                # NOTE: In principle we could assume that level is 0 and
-                # possibly add a log entry documenting this, however,
-                # at this moment I think it is safer to quit and...
-                #
-                # report inconsistency:
-                raise ValueError(
-                    "Background level was subtracted but the "
-                    "'level' property is undefined (None)."
-                )
+        if image_model.meta.background.subtracted and level is None:
+            # NOTE: In principle we could assume that level is 0 and
+            # possibly add a log entry documenting this, however,
+            # at this moment I think it is safer to quit and...
+            #
+            # report inconsistency:
+            raise ValueError(
+                "Background level was subtracted but the "
+                "'level' property is undefined (None)."
+            )
 
-            if image_model.meta.background.subtracted and self.subtract:
-                # cannot run 'skymatch' step on already "skymatched" images
-                # when 'subtract' spec is inconsistent with
-                # meta.background.subtracted:
-                raise ValueError(
-                    "'subtract' step's specification is "
-                    "inconsistent with background info already "
-                    "present in image '{:s}' meta.".format(image_model.meta.filename)
-                )
+        if image_model.meta.background.subtracted and self.subtract:
+            # cannot run 'skymatch' step on already "skymatched" images
+            # when 'subtract' spec is inconsistent with
+            # meta.background.subtracted:
+            raise ValueError(
+                "'subtract' step's specification is "
+                "inconsistent with background info already "
+                f"present in image '{image_model.meta.filename:s}' meta."
+            )
 
         wcs = deepcopy(image_model.meta.wcs)
 
@@ -159,14 +152,14 @@ class SkyMatchStep(RomanStep):
             pix_area=1.0,  # TODO: pixel area
             convf=1.0,  # TODO: conv. factor to brightness
             mask=dqmask,
-            id=image_model.meta.filename,  # file name?
+            sky_id=image_model.meta.filename,  # file name?
             skystat=self._skystat,
             stepsize=self.stepsize,
             reduce_memory_usage=False,
             meta={"image_model": input_image_model},
         )
 
-        if self.subtract:
+        if self.subtract and level is not None:
             sky_im.sky = level
 
         return sky_im

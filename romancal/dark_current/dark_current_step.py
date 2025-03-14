@@ -1,8 +1,14 @@
 #! /usr/bin/env python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from roman_datamodels import datamodels as rdm
 
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["DarkCurrentStep"]
 
@@ -19,7 +25,7 @@ class DarkCurrentStep(RomanStep):
         dark_output = output_file(default = None) # Dark corrected model
     """
 
-    reference_file_types = ["dark"]
+    reference_file_types: ClassVar = ["dark"]
 
     def process(self, input):
         if isinstance(input, rdm.DataModel):
@@ -50,7 +56,7 @@ class DarkCurrentStep(RomanStep):
             # Do the dark correction
             out_model = input_model
             nresultants = len(input_model.meta.exposure["read_pattern"])
-            out_model.data -= dark_model.data[:nresultants].value
+            out_model.data -= dark_model.data[:nresultants]
             out_model.pixeldq |= dark_model.dq
             out_model.meta.cal_step.dark = "COMPLETE"
 

@@ -40,7 +40,7 @@ class ReferenceData:
     """
 
     def __init__(self, model, aperture_ee):
-        if not isinstance(model, (ImageModel, MosaicModel)):
+        if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be a MosaicModel.")
         self.model = model
 

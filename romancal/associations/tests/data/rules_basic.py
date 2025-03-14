@@ -1,5 +1,4 @@
-"""Association Rules: Basic
-"""
+"""Association Rules: Basic"""
 
 from romancal.associations import Association
 from romancal.associations.lib.constraint import ConstraintTrue

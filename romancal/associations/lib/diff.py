@@ -1,4 +1,4 @@
-""""Diff and compare associations"""
+""" "Diff and compare associations"""
 
 import logging
 import re
@@ -267,9 +267,9 @@ def compare_membership(left, right):
             )
         )
 
-    for left_idx, left_product in enumerate(products_left):
+    for left_product in products_left:
         left_product_name = components(left_product["name"])
-        for right_idx, right_product in enumerate(products_right):
+        for right_product in products_right:
             if components(right_product["name"]) != left_product_name:
                 continue
             try:

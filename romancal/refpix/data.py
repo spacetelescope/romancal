@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 from itertools import islice
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from roman_datamodels.datamodels import RampModel, RefpixRefModel
@@ -33,7 +33,7 @@ class Const(IntEnum):
     N_COLUMNS = CHAN_WIDTH * N_DETECT_CHAN
 
 
-_offset = Optional[np.ndarray]
+_offset = np.ndarray | None
 
 
 @dataclass
@@ -340,8 +340,10 @@ class ChannelView(BaseView):
         not_zero = self.data != 0
 
         # fit needs to be done for each channel and frame separately
-        for chan_data, chan_not_zero in zip(self.data, not_zero):
-            for frame_data, frame_not_zero in zip(chan_data, chan_not_zero):
+        for chan_data, chan_not_zero in zip(self.data, not_zero, strict=False):
+            for frame_data, frame_not_zero in zip(
+                chan_data, chan_not_zero, strict=False
+            ):
                 # Find the non-zero reference pixels for this channel and frame
                 mask = frame_not_zero[REF_ROWS, :]
 
@@ -613,4 +615,4 @@ class Coefficients:
         return cls(ref.gamma, ref.zeta, ref.alpha)
 
     def __iter__(self):
-        return zip(self.gamma, self.zeta, self.alpha)
+        return zip(self.gamma, self.zeta, self.alpha, strict=False)

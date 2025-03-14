@@ -60,14 +60,14 @@ def test_dark_step_subtraction(instrument, exptype):
     # populate data array of science cube
     for i in range(0, 20):
         ramp_model.data[0, 0, i] = i
-        darkref_model.data[0, 0, i] = i * 0.1 * darkref_model.data.unit
+        darkref_model.data[0, 0, i] = i * 0.1
     orig_model = ramp_model.copy()
 
     # Perform Dark Current subtraction step
     result = DarkCurrentStep.call(ramp_model, override_dark=darkref_model)
 
     # check that the dark file is subtracted frame by frame from the science data
-    diff = orig_model.data - darkref_model.data.value
+    diff = orig_model.data - darkref_model.data
 
     # test that the output data file is equal to the difference found when subtracting
     # reffile from sci file

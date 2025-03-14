@@ -2,7 +2,10 @@
 Module for the multiband source catalog step.
 """
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy.table import Table, join
@@ -16,6 +19,9 @@ from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 __all__ = ["MultibandCatalogStep"]
 
@@ -37,7 +43,7 @@ class MultibandCatalogStep(RomanStep):
     """
 
     class_alias = "multiband_catalog"
-    reference_file_types = []
+    reference_file_types: ClassVar = []
 
     spec = """
         bkg_boxsize = integer(default=100)   # background mesh box size in pixels
@@ -95,13 +101,12 @@ class MultibandCatalogStep(RomanStep):
 
         # estimate background rms from detection image to calculate a
         # threshold for source detection
-        mask = np.isnan(det_img)
-        coverage_mask = np.isnan(det_err)
+
+        mask = ~np.isfinite(det_img) | ~np.isfinite(det_err) | (det_err <= 0)
         bkg = RomanBackground(
             det_img,
             box_size=self.bkg_boxsize,
-            mask=mask,
-            coverage_mask=coverage_mask,
+            coverage_mask=mask,
         )
         bkg_rms = bkg.background_rms
 
@@ -111,8 +116,9 @@ class MultibandCatalogStep(RomanStep):
             npixels=self.npixels,
             bkg_rms=bkg_rms,
             deblend=self.deblend,
-            mask=coverage_mask,
+            mask=mask,
         )
+        segment_img.detection_image = det_img
 
         if segment_img is None:  # no sources found
             source_catalog_model.source_catalog = Table()
@@ -149,12 +155,19 @@ class MultibandCatalogStep(RomanStep):
                 star_kernel_fwhm,
                 self.fit_psf,
                 detection_cat=None,
+                mask=mask,
             )
             det_cat = remove_columns(det_catobj.catalog)
 
             # loop over each image
             with library:
                 for model in library:
+                    mask = (
+                        ~np.isfinite(model.data)
+                        | ~np.isfinite(model.err)
+                        | (model.err <= 0)
+                    )
+
                     catobj = RomanSourceCatalog(
                         model,
                         segment_img,
@@ -164,6 +177,7 @@ class MultibandCatalogStep(RomanStep):
                         star_kernel_fwhm,
                         self.fit_psf,
                         detection_cat=det_catobj,
+                        mask=mask,
                     )
 
                     filter_name = model.meta.basic.optical_element
@@ -204,6 +218,7 @@ class MultibandCatalogStep(RomanStep):
 
         if segment_img is not None:
             segmentation_model.data = segment_img.data.astype(np.uint32)
+            segmentation_model["detection_image"] = segment_img.detection_image
             self.save_model(
                 segmentation_model,
                 output_file=output_filename,

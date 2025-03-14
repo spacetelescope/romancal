@@ -89,6 +89,16 @@ coordinate system using a package called `PySIAF <https://github.com/spacetelesc
   >>> ap = siaf['WFI01_FULL']
   >>> V2_REF, V3_REF = ap.get_reference_point('tel')
 
+Corrections Due to Spacecraft Motion
+------------------------------------
+
+The WCS transforms contain two corrections due to motion of the observatory.
+
+Absolute velocity aberration is calculated onboard when acquiring the guide star, but
+differential velocity aberration effects are calculated during the ``assign_wcs`` step.
+This introduces corrections in the conversion from sky coordinates to observatory
+V2/V3 coordinates, and is stored in the WCS under the ``v2v3vacorr`` frame.
+
 
 .. rubric:: Footnotes
 

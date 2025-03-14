@@ -51,10 +51,6 @@ documentation on each reference file.
 +---------------------------------------------+--------------------------------------------------+
 | :ref:`flatfield <flatfield_step>`           | :ref:`FLAT <flat_reffile>`                       |
 +---------------------------------------------+--------------------------------------------------+
-| :ref:`jump_detection <jump_step>`           | :ref:`GAIN <gain_reffile>`                       |
-+                                             +--------------------------------------------------+
-|                                             | :ref:`READNOISE <readnoise_reffile>`             |
-+---------------------------------------------+--------------------------------------------------+
 | :ref:`linearity <linearity_step>`           | :ref:`LINEARITY <linearity_reffile>`             |
 +---------------------------------------------+--------------------------------------------------+
 | :ref:`photom <photom_step>`                 | :ref:`PHOTOM <photom_reffile>`                   |
@@ -76,9 +72,7 @@ documentation on each reference file.
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`FLAT <flat_reffile>`                       | :ref:`flatfield <flatfield_step>`           |
 +--------------------------------------------------+---------------------------------------------+
-| :ref:`GAIN <gain_reffile>`                       | :ref:`jump_detection <jump_step>`           |
-+                                                  +---------------------------------------------+
-|                                                  | :ref:`ramp_fitting <ramp_fitting_step>`     |
+| :ref:`GAIN <gain_reffile>`                       | :ref:`ramp_fitting <ramp_fitting_step>`     |
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`LINEARITY <linearity_reffile>`             | :ref:`linearity <linearity_step>`           |
 +--------------------------------------------------+---------------------------------------------+
@@ -86,9 +80,7 @@ documentation on each reference file.
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`PHOTOM <photom_reffile>`                   | :ref:`photom <photom_step>`                 |
 +--------------------------------------------------+---------------------------------------------+
-| :ref:`READNOISE <readnoise_reffile>`             | :ref:`jump_detection <jump_step>`           |
-+                                                  +---------------------------------------------+
-|                                                  | :ref:`ramp_fitting <ramp_fitting_step>`     |
+| :ref:`READNOISE <readnoise_reffile>`             | :ref:`ramp_fitting <ramp_fitting_step>`     |
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`SATURATION <saturation_reffile>`           | :ref:`saturation <saturation_step>`         |
 +--------------------------------------------------+---------------------------------------------+

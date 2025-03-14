@@ -9,11 +9,11 @@ or a Roman datamodel `ImageModel`.
 
                 from romancal.tweakreg.tweakreg_step import TweakRegStep
                 step = TweakRegStep()
-                step.call([img])
+                step.run([img])
 
         .. note::
             If the input is a single Roman ``DataModel``,
-            either ``step.call([img])`` or ``step.call(img)`` will work. For multiple elements as input,
+            either ``step.run([img])`` or ``step.run(img)`` will work. For multiple elements as input,
             they must be passed in as either a list or a ModelLibrary.
 
 #. To run TweakReg in a Python session on an association file with the default parameters:
@@ -22,7 +22,7 @@ or a Roman datamodel `ImageModel`.
 
                 from romancal.tweakreg.tweakreg_step import TweakRegStep
                 step = TweakRegStep()
-                step.call("asn_file.json")
+                step.run("asn_file.json")
 
 #. To run TweakReg on a Roman's exposure with default astrometric parameters and save
    the absolute catalog data:
@@ -34,7 +34,7 @@ or a Roman datamodel `ImageModel`.
                 step.save_abs_catalog = True # save the catalog data used for absolute astrometry
                 step.abs_refcat = 'GAIADR3' # use Gaia DR3 for absolute astrometry
                 step.catalog_path = '/path/for/the/abs/catalog' # save the Gaia catalog to this path
-                step.call([img])
+                step.run([img])
 
 #. To run TweakReg using a custom source catalog with the default parameters:
 
@@ -93,4 +93,4 @@ or a Roman datamodel `ImageModel`.
                 step.use_custom_catalogs = True # use custom catalogs
                 step.catalog_format = "ascii.ecsv" # custom catalogs format
                 step.catfile = '/path/to/catfile/catfilename' # path to datamodel:catalog mapping
-                step.call([img])
+                step.run([img])

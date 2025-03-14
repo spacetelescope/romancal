@@ -34,14 +34,14 @@ def test_flat_field_image_step(rtdata, ignore_asdf_paths):
     assert diff.identical, diff.report()
 
 
-@pytest.mark.xfail(reason="Wrong input for the purpose of this test")
+# @pytest.mark.xfail(reason="Wrong input for the purpose of this test")
 @pytest.mark.bigdata
 def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     """Test for the flat field step using grism data. The reference file for
     the grism and prism data should be None, only testing the grism
     case here."""
 
-    input_file = "r0000201001001001001_0001_wfi01_uncal.asdf"
+    input_file = "r0000201001001001001_0001_wfi01_assignwcs.asdf"
     rtdata.get_data(f"WFI/grism/{input_file}")
     rtdata.input = input_file
 
@@ -64,6 +64,8 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     RomanStep.from_cmdline(args)
+    output_model = rdm.open(rtdata.output)
+    assert output_model.meta.cal_step.flat_field == "SKIPPED"
     rtdata.get_truth(f"truth/WFI/grism/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
@@ -88,12 +90,12 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
         " correct use after date"
     )
 
-    step.log.info(f'DMS79 MSG: First data file: {rtdata.input.rsplit("/", 1)[1]}')
+    step.log.info(f"DMS79 MSG: First data file: {rtdata.input.rsplit('/', 1)[1]}")
     step.log.info(f"DMS79 MSG: Observation date: {model.meta.exposure.start_time}")
 
     ref_file_path = step.get_reference_file(model, "flat")
     step.log.info(
-        f'DMS79 MSG: CRDS matched flat file: {ref_file_path.rsplit("/", 1)[1]}'
+        f"DMS79 MSG: CRDS matched flat file: {ref_file_path.rsplit('/', 1)[1]}"
     )
     flat = rdm.open(ref_file_path)
     step.log.info(f"DMS79 MSG: flat file UseAfter date: {flat.meta.useafter}")
@@ -116,9 +118,7 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
 
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     step.log.info(
-        "DMS79 MSG: Was proper flat fielded "
-        "Level 2 data produced? : "
-        f"{diff.identical}"
+        f"DMS79 MSG: Was proper flat fielded Level 2 data produced? : {diff.identical}"
     )
     assert diff.identical, diff.report()
 
@@ -135,12 +135,12 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     step = FlatFieldStep()
     model = rdm.open(rtdata.input)
 
-    step.log.info(f'DMS79 MSG: Second data file: {rtdata.input.rsplit("/", 1)[1]}')
+    step.log.info(f"DMS79 MSG: Second data file: {rtdata.input.rsplit('/', 1)[1]}")
     step.log.info(f"DMS79 MSG: Observation date: {model.meta.exposure.start_time}")
 
     ref_file_path_b = step.get_reference_file(model, "flat")
     step.log.info(
-        f'DMS79 MSG: CRDS matched flat file: {ref_file_path_b.rsplit("/", 1)[1]}'
+        f"DMS79 MSG: CRDS matched flat file: {ref_file_path_b.rsplit('/', 1)[1]}"
     )
     flat = rdm.open(ref_file_path_b)
     step.log.info(f"DMS79 MSG: flat file UseAfter date: {flat.meta.useafter}")
@@ -162,9 +162,7 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     rtdata.get_truth(f"truth/WFI/image/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     step.log.info(
-        "DMS79 MSG: Was proper flat fielded "
-        "Level 2 data produced? : "
-        f"{diff.identical}"
+        f"DMS79 MSG: Was proper flat fielded Level 2 data produced? : {diff.identical}"
     )
     assert diff.identical, diff.report()
 
@@ -172,8 +170,8 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
     step.log.info(
         "DMS79 MSG REQUIRED TEST: Are the two data files "
         "matched to different flat files? : "
-        f'{("/".join(ref_file_path.rsplit("/", 3)[1:]))} != '
-        f'{("/".join(ref_file_path_b.rsplit("/", 3)[1:]))}'
+        f"{('/'.join(ref_file_path.rsplit('/', 3)[1:]))} != "
+        f"{('/'.join(ref_file_path_b.rsplit('/', 3)[1:]))}"
     )
     assert "/".join(ref_file_path.rsplit("/", 1)[1:]) != "/".join(
         ref_file_path_b.rsplit("/", 1)[1:]
