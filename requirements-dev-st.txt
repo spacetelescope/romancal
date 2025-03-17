@@ -10,6 +10,6 @@ git+https://github.com/spacetelescope/stpipe.git
 git+https://github.com/spacetelescope/crds.git
 git+https://github.com/spacetelescope/gwcs.git
 git+https://github.com/spacetelescope/tweakwcs.git
-git+https://github.com/spacetelescope/webbpsf.git
-# although not directly used install the dev version of poppy for webbpsf
+git+https://github.com/spacetelescope/stpsf.git
+# although not directly used install the dev version of poppy for stpsf
 git+https://github.com/spacetelescope/poppy.git

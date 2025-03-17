@@ -4,6 +4,8 @@
 
 :ref:`genindex`  |  :ref:`modindex`
 
+.. _roman-pipeline-doc-index:
+
 ==============================================
 The Roman Space Telescope Calibration Pipeline
 ==============================================
@@ -11,6 +13,8 @@ The Roman Space Telescope Calibration Pipeline
 .. image:: _static/roman_logo_black_w200px.png
    :align: center
    :alt: Nancy Roman Space Telescope
+
+**Version**: |release|
 
 Welcome to the documentation for the Roman calibration software,
 `romancal <https://github.com/spacetelescope/romancal>`__.

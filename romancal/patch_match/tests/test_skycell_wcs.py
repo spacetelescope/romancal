@@ -1,8 +1,8 @@
-"""Unit tests for the mosaic pipeline"""
+"""Unit tests for skycell wcs functions"""
 
 import numpy as np
 
-import romancal.pipeline.mosaic_pipeline as mp
+from romancal.patch_match.patch_match import skycell_to_wcs, wcsinfo_to_wcs
 
 
 def test_skycell_to_wcs():
@@ -61,7 +61,7 @@ def test_skycell_to_wcs():
         ],
     )
 
-    wcs = mp.skycell_to_wcs(skycell)
+    wcs = skycell_to_wcs(skycell)
 
     assert np.allclose(
         wcs(
@@ -112,7 +112,7 @@ def test_wcsinfo_to_wcs():
         "orientat": 359.8466793994546,
     }
 
-    wcs = mp.wcsinfo_to_wcs(wcsinfo)
+    wcs = wcsinfo_to_wcs(wcsinfo)
 
     assert np.allclose(
         wcs(wcsinfo["x_ref"], wcsinfo["y_ref"]), (wcsinfo["ra_ref"], wcsinfo["dec_ref"])
