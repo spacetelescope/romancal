@@ -92,7 +92,7 @@ contribute data to. The association files will be json files with names based
 
 .. code-block:: text
 
-	r0099_<release product name>_v<visit_id>_<skycell name>_<filter>_coadd_asn.json
+	r00991_<release product name>_v<visit_id>_<skycell name>_<filter>_coadd_asn.json
 
 or for the selections above
 
@@ -109,4 +109,4 @@ the F158 filter.
 
 .. code-block:: text
 
-		skycell_asn r0099101???003*_*_cal.asdf  -o  r0099101 --product-type p
+		skycell_asn r0099101001003001_*_cal.asdf  -o  r00991 --product-type visit
