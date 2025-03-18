@@ -7,6 +7,28 @@ Create an association using either the command line tool
 ``skycell_asn`` or through the Python API using
 :func:`romancal.associations.skycellasn.skycell_asn`
 
+Running this command requires that you have the patch to the
+file containing the division of the sky into patches. This is done
+by setting the environment variable PATCH_TABLE_PATH.
+As an example:
+::
+
+   export PATCH_TABLE_PATH=<location of my patch table>
+
+.. Note::
+
+   The patch table will be available in the CRDS system soon.
+
+
+.. Note::
+
+   **For STScI Users Only:**
+    Users at STScI may access the required
+    data files from the Central Storage network. Set the following
+    environment variables in your ``bash`` shell. (You will probably
+    want to add this to your bash setup file.) ::
+
+      export PATCH_TABLE_PATH="/grp/roman/scsb/tesselation/patches.asdf"
 
 Associations
 ^^^^^^^^^^^^
@@ -70,13 +92,13 @@ contribute data to. The association files will be json files with names based
 
 .. code-block:: text
 
-	r0099101001001003001_<skycell name>_<product_type>_<filter>_<release product name>_coadd_asn.json
+	r00991_<release product name>_v<visit_id>_<skycell name>_<filter>_coadd_asn.json
 
 or for the selections above
 
 .. code-block:: text
 
-	r0099101001001003001_r257dp63x98y83_visit_F158_prompt_coadd_asn.json
+	r00991_p_v101001001003001_r257dp63x98y83_F158_coadd_asn.json
 
 where the skycell name can vary based on the location on the celestial sphere and the coadd indicates
 that this is resampled 2-d imaging data. The release product name can be changed from the default
@@ -87,4 +109,4 @@ the F158 filter.
 
 .. code-block:: text
 
-		skycell_asn r0099101???003*_*_cal.asdf  -o  r0099101 --product-type pass
+		skycell_asn r0099101001003001_*_cal.asdf  -o  r00991 --product-type visit

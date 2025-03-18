@@ -10,6 +10,7 @@ import roman_datamodels as rdm
 import romancal.patch_match.patch_match as pm
 from romancal.associations import asn_from_list
 from romancal.lib.basic_utils import parse_visitID as parse_visitID
+from romancal.patch_match.patch_match import get_projectioncell_wcs
 
 __all__ = ["skycell_asn"]
 
@@ -60,31 +61,7 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
                 member_list.append(a[0])
 
         # grab all the wcs parameters needed for generate_tan_wcs
-        projcell_info = dict(
-            [
-                ("name", pm.PATCH_TABLE[item]["name"]),
-                ("pixel_scale", float(pm.PATCH_TABLE[item]["pixel_scale"])),
-                (
-                    "ra_projection_center",
-                    float(pm.PATCH_TABLE[item]["ra_projection_center"]),
-                ),
-                (
-                    "dec_projection_center",
-                    float(pm.PATCH_TABLE[item]["dec_projection_center"]),
-                ),
-                ("x0_projection", float(pm.PATCH_TABLE[item]["x0_projection"])),
-                ("y0_projection", float(pm.PATCH_TABLE[item]["y0_projection"])),
-                ("ra_center", float(pm.PATCH_TABLE[item]["ra_center"])),
-                ("dec_center", float(pm.PATCH_TABLE[item]["dec_center"])),
-                ("nx", int(pm.PATCH_TABLE[item]["nx"])),
-                ("ny", int(pm.PATCH_TABLE[item]["ny"])),
-                ("orientat", float(pm.PATCH_TABLE[item]["orientat"])),
-                (
-                    "orientat_projection_center",
-                    float(pm.PATCH_TABLE[item]["orientat_projection_center"]),
-                ),
-            ]
-        )
+        projcell_info = get_projectioncell_wcs(item)
         parsed_visit_id = parse_visitID(member_list[0][1:20])
         program_id = parsed_visit_id["Program"]
         root_asn_name = output_file_root
