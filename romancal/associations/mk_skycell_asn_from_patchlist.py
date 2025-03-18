@@ -2,16 +2,15 @@
 
 import argparse
 import logging
-import sys
 import os.path
+import sys
 
 import numpy as np
 
 import romancal.patch_match.patch_match as pm
-from romancal.patch_match.patch_match import get_projectioncell_wcs
 from romancal.associations import asn_from_list
 from romancal.lib.basic_utils import parse_visitID
-
+from romancal.patch_match.patch_match import get_projectioncell_wcs
 
 __all__ = ["mk_skycell_asn_from_patchlist"]
 
@@ -26,7 +25,7 @@ def mk_skycell_asn_from_patchlist(filelist, release_product, optical_element):
     Create level 3 associations from a list of match files generated with mk_patchlist.
 
     This function processes a list of match files, sorts them based on which input exposures
-    contribute to a given skycell and output an association with the needed exposure files. 
+    contribute to a given skycell and output an association with the needed exposure files.
 
     Parameters
     ----------
@@ -43,9 +42,10 @@ def mk_skycell_asn_from_patchlist(filelist, release_product, optical_element):
         with open(file_name) as match_file:
             logger.debug(f"Working on file:{file_name}")
             match_list = match_file.read().split(" ")
-            match_list[1]= np.fromstring(match_list[1].strip('[]'), dtype='int', sep=',')
+            match_list[1] = np.fromstring(
+                match_list[1].strip("[]"), dtype="int", sep=","
+            )
             patch_list.append(match_list)
-
 
     # get a list of all patches in the match files
     patch_array = []
@@ -68,11 +68,19 @@ def mk_skycell_asn_from_patchlist(filelist, release_product, optical_element):
         parsed_visit_id = parse_visitID(member_list[0][1:20])
         program_id = parsed_visit_id["Program"]
 
-        asn_file_name = ('r' + program_id + '_'
-                         + release_product + '_'
-                         + 'v' + member_list[0][1:20] + '_'
-                         + patch_name +  '_'
-                         + optical_element)
+        asn_file_name = (
+            "r"
+            + program_id
+            + "_"
+            + release_product
+            + "_"
+            + "v"
+            + member_list[0][1:20]
+            + "_"
+            + patch_name
+            + "_"
+            + optical_element
+        )
         prompt_product_asn = asn_from_list.asn_from_list(
             member_list, product_name=asn_file_name
         )
@@ -87,6 +95,7 @@ def mk_skycell_asn_from_patchlist(filelist, release_product, optical_element):
 
         with open(asn_file_name + "_asn.json", "w") as outfile:
             outfile.write(serialized)
+
 
 def _cli(args=None):
     """Command-line interface for mk_skycell_asn_from_patchlist
@@ -130,7 +139,7 @@ def _cli(args=None):
         type=str,
         default="f158",
         help="The optical element used for the visit",
-        dest="optical_element"
+        dest="optical_element",
     )
 
     parsed = parser.parse_args(args=args)
@@ -139,4 +148,4 @@ def _cli(args=None):
         parsed.filelist,
         parsed.release_product,
         parsed.optical_element,
-    )    
+    )

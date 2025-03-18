@@ -14,14 +14,14 @@ file containing the division of the sky into patches. This is done
 by setting the environment variable PATCH_TABLE_PATH.
 As an example:
 ::
-   
+
    export PATCH_TABLE_PATH=<location of my patch table>
 
 .. Note::
 
    The patch table will be available in the CRDS system soon.
 
-   
+
 .. Note::
 
    **For STScI Users Only:**
@@ -29,10 +29,10 @@ As an example:
     data files from the Central Storage network. Set the following
     environment variables in your ``bash`` shell. (You will probably
     want to add this to your bash setup file.) ::
-      
+
       export PATCH_TABLE_PATH="/grp/roman/scsb/tesselation/patches.asdf"
 
-      
+
 Match Files
 ^^^^^^^^^^^
 
@@ -40,7 +40,7 @@ To create the list of match files, use the following command:
 
 .. code-block:: python
 
-		mk_patchlist file_list 
+		mk_patchlist file_list
 
 where the individual calibrated detector files are in a directory.
 To get a complete list of options you can run the command with the
@@ -73,9 +73,9 @@ As an example to create a list of match files for all the exposures in a visit t
 
 		mk_patchlist r0099101001001003001_*_cal.asdf
 
-Where the wildcard selects all the exposures for visit 001 and generates a list of skycell matches for each 
+Where the wildcard selects all the exposures for visit 001 and generates a list of skycell matches for each
 of the exposures. There will be one match file for each input exposure file. For the example above this
-will create match files named, with the `*` replaced by the exposure number of the file, 
+will create match files named, with the `*` replaced by the exposure number of the file,
 
 .. code-block:: text
 

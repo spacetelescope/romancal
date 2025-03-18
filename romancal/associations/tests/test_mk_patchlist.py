@@ -3,7 +3,6 @@
 import pytest
 
 # from romancal.associations import Association, AssociationRegistry, load_asn
-import romancal.associations.mk_patchlist as mk_patchlist
 from romancal.associations.mk_patchlist import _cli
 
 

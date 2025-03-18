@@ -12,14 +12,14 @@ file containing the division of the sky into patches. This is done
 by setting the environment variable PATCH_TABLE_PATH.
 As an example:
 ::
-   
+
    export PATCH_TABLE_PATH=<location of my patch table>
 
 .. Note::
 
    The patch table will be available in the CRDS system soon.
 
-   
+
 .. Note::
 
    **For STScI Users Only:**
@@ -27,7 +27,7 @@ As an example:
     data files from the Central Storage network. Set the following
     environment variables in your ``bash`` shell. (You will probably
     want to add this to your bash setup file.) ::
-      
+
       export PATCH_TABLE_PATH="/grp/roman/scsb/tesselation/patches.asdf"
 
 Associations

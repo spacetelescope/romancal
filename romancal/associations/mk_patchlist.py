@@ -2,8 +2,8 @@
 
 import argparse
 import logging
-import sys
 import os.path
+import sys
 
 import numpy as np
 import roman_datamodels as rdm
@@ -46,7 +46,9 @@ def mk_patchlist(output_dir, filelist):
             output_file_name = os.path.join(output_dir, output_file_name)
 
         with open(output_file_name + ".match", "w") as outfile:
-            out_string = file_name+ ' ' + np.array2string(file_patch_list[0], separator=',')
+            out_string = (
+                file_name + " " + np.array2string(file_patch_list[0], separator=",")
+            )
             outfile.write(out_string)
 
 
@@ -77,7 +79,7 @@ def _cli(args=None):
     parser.add_argument(
         "--output_dir",
         type=str,
-        default = '',
+        default="",
         help="The optional directory to write the list of patches",
     )
 
