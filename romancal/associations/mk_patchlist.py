@@ -30,6 +30,8 @@ def mk_patchlist(output_dir, filelist):
     ----------
     filelist : list or str
         List of file names to be processed.
+    output_dir : str
+        Directory for the output patch file.
     """
 
     for file_name in filelist:

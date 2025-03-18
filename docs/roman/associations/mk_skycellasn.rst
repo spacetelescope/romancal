@@ -3,7 +3,7 @@
 mk_skycellasn
 =============
 
-THe function reads a list ascii match files that that were created using the mk_patchlist
+The function reads a list of ascii match files that were created using the ``mk_patchlist``
 program and generates a list of associations for all the skycells that touch the given exposure.
 using either the command line tool
 ``mk_skycellasn`` or through the Python API using

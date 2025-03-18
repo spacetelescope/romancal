@@ -9,7 +9,7 @@ ascii format. These are created using either the command line tool
 ``mk_patchfile`` or through the Python API using
 :func:`romancal.associations.mk_patchlist.mk_patchlist`
 
-Running this command requires that you have the patch to the
+Running this command requires that you have the path to the
 file containing the division of the sky into patches. This is done
 by setting the environment variable PATCH_TABLE_PATH.
 As an example:
@@ -42,8 +42,8 @@ To create the list of match files, use the following command:
 
 		mk_patchlist file_list 
 
-where the individual calibrated detector files are in a directory and the -o is the root
-for the output associations. To get a complete list of options you can run the command with the
+where the individual calibrated detector files are in a directory.
+To get a complete list of options you can run the command with the
 \-h option
 
 .. code-block:: python
@@ -61,7 +61,7 @@ for the output associations. To get a complete list of options you can run the c
                  --output_dir OUTPUT_DIR
                            The optional directory to write the list of patches
 
-The match file names are based on the input calibrated file names with the .asdf extention replaced
+The match file names are based on the input Level 2 calibrated file names with the .asdf extention replaced
 with .match and the match file contains the name of the calibrated exposure file and a list of index
 values of the skycells that touch the input exposure. The output directory for the match files is
 determined from the input directory of the calibrated exposures. You can override this by using

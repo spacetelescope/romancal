@@ -32,6 +32,10 @@ def mk_skycell_asn_from_patchlist(filelist, release_product, optical_element):
     ----------
     filelist : list or str
         List of file names to be processed.
+    release-product: str
+        The name of the release product
+    optical_element: str
+        The name of the optical element for the associations
     """
 
     patch_list = []
