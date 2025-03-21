@@ -1,0 +1,1 @@
+Improve runtime by using ``add_model_hook`` from stcal resample.
