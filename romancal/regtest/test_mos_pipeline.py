@@ -11,12 +11,14 @@ from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 from . import util
 from .regtestdata import compare_asdf
 
+BENCHMARK_NAME = "mosiac_pipeline"
+
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 
 @pytest.fixture(scope="module")
-def run_mos(rtdata_module):
+def run_mos(rtdata_module, benchmark):
     rtdata = rtdata_module
 
     rtdata.get_asn("WFI/image/L3_regtest_asn.json")
@@ -29,7 +31,8 @@ def run_mos(rtdata_module):
         "roman_mos",
         rtdata.input,
     ]
-    MosaicPipeline.from_cmdline(args)
+    with benchmark(BENCHMARK_NAME):
+        MosaicPipeline.from_cmdline(args)
 
     rtdata.get_truth(f"truth/WFI/image/{output}")
     return rtdata
@@ -65,6 +68,10 @@ def preview_filename(output_filename):
     preview_cmd = f"stpreview to {output_filename} {preview_filename} 1080 1080 roman"
     os.system(preview_cmd)  # noqa: S605
     return preview_filename
+
+
+def test_benchmark(log_benchmark, run_mos):
+    log_benchmark(BENCHMARK_NAME)
 
 
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):

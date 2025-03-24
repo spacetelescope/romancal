@@ -7,12 +7,14 @@ from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 from . import util
 from .regtestdata import compare_asdf
 
+BENCHMARK_NAME = "mosiac_pipeline_skycell"
+
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 
 @pytest.fixture(scope="module")
-def run_mos(rtdata_module):
+def run_mos(rtdata_module, benchmark):
     rtdata = rtdata_module
 
     # Test Pipeline
@@ -23,7 +25,8 @@ def run_mos(rtdata_module):
         "roman_mos",
         rtdata.input,
     ]
-    MosaicPipeline.from_cmdline(args)
+    with benchmark(BENCHMARK_NAME):
+        MosaicPipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
     return rtdata
 
@@ -42,6 +45,10 @@ def output_model(output_filename):
 @pytest.fixture(scope="module")
 def truth_filename(run_mos):
     return run_mos.truth
+
+
+def test_benchmark(log_benchmark, run_mos):
+    log_benchmark(BENCHMARK_NAME)
 
 
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):

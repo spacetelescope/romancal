@@ -1,0 +1,52 @@
+import time
+import tracemalloc
+
+
+class TrackRuntime:
+    def __enter__(self):
+        self._t0 = time.monotonic()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.value = time.monotonic() - self._t0
+
+    def log(self):
+        return ("bench-time", self.value)
+
+
+class TrackMemory:
+    def __enter__(self):
+        tracemalloc.start()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        _, self.value = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+
+    def log(self):
+        return ("bench-peakmem", self.value)
+
+
+class Benchmark:
+    def __init__(self):
+        self.trackers = [TrackMemory(), TrackRuntime()]
+
+    def __enter__(self):
+        [t.__enter__() for t in self.trackers]
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        [t.__exit__(exc_type, exc_value, traceback) for t in self.trackers]
+
+    def log(self, user_properties):
+        user_properties.extend(t.log() for t in self.trackers)
+
+
+class BenchmarkManager:
+    def __init__(self):
+        self.benchmarks = {}
+
+    def __call__(self, name):
+        benchmark = Benchmark()
+        self.benchmarks[name] = benchmark
+        return benchmark
+
+    def log(self, name, user_properties):
+        self.benchmarks[name].log(user_properties)
