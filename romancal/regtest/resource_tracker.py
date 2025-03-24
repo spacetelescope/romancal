@@ -10,7 +10,7 @@ class TrackRuntime:
         self.value = time.monotonic() - self._t0
 
     def log(self):
-        return ("bench-time", self.value)
+        return ("tracked-time", self.value)
 
 
 class TrackMemory:
@@ -22,10 +22,10 @@ class TrackMemory:
         tracemalloc.stop()
 
     def log(self):
-        return ("bench-peakmem", self.value)
+        return ("tracked-peakmem", self.value)
 
 
-class Benchmark:
+class ResourceTracker:
     def __init__(self):
         self.trackers = [TrackMemory(), TrackRuntime()]
 
@@ -39,14 +39,14 @@ class Benchmark:
         user_properties.extend(t.log() for t in self.trackers)
 
 
-class BenchmarkManager:
+class ResourceTrackerManager:
     def __init__(self):
-        self.benchmarks = {}
+        self.named_trackers = {}
 
-    def __call__(self, name):
-        benchmark = Benchmark()
-        self.benchmarks[name] = benchmark
-        return benchmark
+    def track(self, name):
+        named_tracker = ResourceTracker()
+        self.named_trackers[name] = named_tracker
+        return named_tracker
 
     def log(self, name, user_properties):
-        self.benchmarks[name].log(user_properties)
+        self.named_trackers[name].log(user_properties)

@@ -9,8 +9,8 @@ from astropy.table import Table
 from ci_watson.artifactory_helpers import UPLOAD_SCHEMA
 from numpy.testing import assert_allclose, assert_equal
 
-from romancal.regtest.benchmarks import BenchmarkManager
 from romancal.regtest.regtestdata import RegtestData
+from romancal.regtest.resource_tracker import ResourceTrackerManager
 
 TODAYS_DATE = datetime.now().strftime("%Y-%m-%d")
 
@@ -235,14 +235,14 @@ def ignore_asdf_paths():
 
 
 @pytest.fixture(scope="module")
-def benchmark():
-    return BenchmarkManager()
+def resource_tracker():
+    return ResourceTrackerManager()
 
 
 @pytest.fixture()
-def log_benchmark(benchmark, request):
+def log_tracked_resources(resource_tracker, request):
     def callback(fixture_name):
-        benchmark.log(fixture_name, request.node.user_properties)
+        resource_tracker.log(fixture_name, request.node.user_properties)
 
     yield callback
 
