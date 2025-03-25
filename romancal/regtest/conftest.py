@@ -236,11 +236,44 @@ def ignore_asdf_paths():
 
 @pytest.fixture(scope="module")
 def resource_tracker():
+    """Fixture to return the current module-scoped ResourceTracker.
+
+    Use by calling ``track`` to generate a context in which resource
+    usage will be tracked.
+
+    >>>
+    >> with resource_tracker.track():
+    >>     # do stuff
+
+    For resources used during tests providing a function-scoped
+    request fixture result as the log argument will also log the
+    used resources to the junit results.xml.
+
+    >>>
+    >> def test_something(resource_tracker, request):
+    >>     with resource_tracker.track(log=request):
+    >>         # do stuff
+
+    For resources used during fixtures the tracked resources
+    can be logged in a separate test using ``log_tracked_resources``.
+    """
     return ResourceTracker()
 
 
 @pytest.fixture()
 def log_tracked_resources(resource_tracker, request):
+    """Fixture to log resources tracked by ``resource_tracker``.
+
+    >>>
+    >> @pytest.fixture
+    >> def my_fixture(resource_tracker):
+    >>     with resource_tracker.track():
+    >>         # do stuff
+    >>
+    >> def test_write_log(log_tracked_resources, my_fixture):
+    >>     log_tracked_resources()
+    """
+
     def callback():
         resource_tracker.log(request)
 
