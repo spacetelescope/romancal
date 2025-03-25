@@ -6,8 +6,6 @@ import pytest
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 from romancal.stpipe import RomanStep
 
-RESOURCE_TRACKER_NAME = "source_catalog"
-
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
@@ -37,7 +35,7 @@ def run_source_catalog(rtdata_module, request, resource_tracker):
         "romancal.step.SourceCatalogStep",
         rtdata.input,
     ]
-    with resource_tracker.track(f"{RESOURCE_TRACKER_NAME}_{inputfn}"):
+    with resource_tracker.track():
         RomanStep.from_cmdline(args)
     return rtdata_module
 
