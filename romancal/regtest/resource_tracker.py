@@ -1,5 +1,6 @@
 import time
 import tracemalloc
+import uuid
 
 
 class TrackRuntime:
@@ -43,7 +44,9 @@ class ResourceTrackerManager:
     def __init__(self):
         self.named_trackers = {}
 
-    def track(self, name):
+    def track(self, name=None):
+        if name is None:
+            name = str(uuid.uuid4())
         named_tracker = ResourceTracker()
         self.named_trackers[name] = named_tracker
         return named_tracker
