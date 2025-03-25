@@ -7,8 +7,6 @@ from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 from . import util
 from .regtestdata import compare_asdf
 
-RESOURCE_TRACKER_NAME = "mosaic_pipeline_skycell"
-
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
@@ -25,7 +23,7 @@ def run_mos(rtdata_module, resource_tracker):
         "roman_mos",
         rtdata.input,
     ]
-    with resource_tracker.track(RESOURCE_TRACKER_NAME):
+    with resource_tracker.track():
         MosaicPipeline.from_cmdline(args)
     rtdata.get_truth(f"truth/WFI/image/{output}")
     return rtdata
@@ -48,7 +46,7 @@ def truth_filename(run_mos):
 
 
 def test_log_tracked_resources(log_tracked_resources, run_mos):
-    log_tracked_resources(RESOURCE_TRACKER_NAME)
+    log_tracked_resources()
 
 
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):

@@ -19,7 +19,7 @@ def test_dark_current_subtraction_step(
     rtdata.input = input_datafile
 
     args = ["romancal.step.DarkCurrentStep", rtdata.input]
-    with resource_tracker.track("dark"):
+    with resource_tracker.track():
         RomanStep.from_cmdline(args)
     resource_tracker.log(request)
     output = "r0000101001001001001_0001_wfi01_darkcurrent.asdf"
@@ -44,7 +44,7 @@ def test_dark_current_outfile_step(
         rtdata.input,
         "--output_file=Test_darkcurrent",
     ]
-    with resource_tracker.track("dark"):
+    with resource_tracker.track():
         RomanStep.from_cmdline(args)
     resource_tracker.log(request)
     output = "Test_darkcurrent.asdf"
@@ -70,7 +70,7 @@ def test_dark_current_outfile_suffix(
         "--output_file=Test_dark",
         '--suffix="suffix_test"',
     ]
-    with resource_tracker.track("dark"):
+    with resource_tracker.track():
         RomanStep.from_cmdline(args)
     resource_tracker.log(request)
     output = "Test_darkcurrent.asdf"
