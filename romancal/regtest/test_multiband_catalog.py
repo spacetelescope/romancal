@@ -48,9 +48,8 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request):
         "--deblend",
         "True",  # use deblending, DMS 393
     ]
-    with resource_tracker.track():
+    with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request)
     afcat = asdf.open(outputfn)
     for field in fieldlist:
         assert field in afcat["roman"]["source_catalog"].dtype.names

@@ -1,6 +1,6 @@
 import time
 import tracemalloc
-import uuid
+from contextlib import contextmanager
 
 
 class TrackRuntime:
@@ -36,24 +36,14 @@ class ResourceTracker:
     def __exit__(self, exc_type, exc_value, traceback):
         [t.__exit__(exc_type, exc_value, traceback) for t in self.trackers]
 
-    def log(self, user_properties):
-        user_properties.extend(t.log() for t in self.trackers)
+    def log(self, request):
+        request.node.user_properties.extend(t.log() for t in self.trackers)
 
-
-class ResourceTrackerManager:
-    def __init__(self):
-        self.named_trackers = {}
-
-    def track(self, name=None):
-        if name is None:
-            name = str(uuid.uuid4())
-        named_tracker = ResourceTracker()
-        self.named_trackers[name] = named_tracker
-        return named_tracker
-
-    def log(self, request, name=None):
-        if name is None:
-            tracker = self.named_trackers.popitem()[1]
-        else:
-            self.named_trackers[name]
-        tracker.log(request.node.user_properties)
+    @contextmanager
+    def track(self, log=None):
+        try:
+            with self:
+                yield self
+        finally:
+            if log:
+                self.log(log)

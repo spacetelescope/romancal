@@ -39,9 +39,8 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path, resource_tracker, request
         f"--output_file='{rtdata.output}'",
         "--suffix='tweakregstep'",
     ]
-    with resource_tracker.track():
+    with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request)
 
     tweakreg_out = rdm.open(rtdata.output)
 

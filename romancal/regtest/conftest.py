@@ -10,7 +10,7 @@ from ci_watson.artifactory_helpers import UPLOAD_SCHEMA
 from numpy.testing import assert_allclose, assert_equal
 
 from romancal.regtest.regtestdata import RegtestData
-from romancal.regtest.resource_tracker import ResourceTrackerManager
+from romancal.regtest.resource_tracker import ResourceTracker
 
 TODAYS_DATE = datetime.now().strftime("%Y-%m-%d")
 
@@ -236,13 +236,13 @@ def ignore_asdf_paths():
 
 @pytest.fixture(scope="module")
 def resource_tracker():
-    return ResourceTrackerManager()
+    return ResourceTracker()
 
 
 @pytest.fixture()
 def log_tracked_resources(resource_tracker, request):
-    def callback(fixture_name=None):
-        resource_tracker.log(request, fixture_name)
+    def callback():
+        resource_tracker.log(request)
 
     yield callback
 

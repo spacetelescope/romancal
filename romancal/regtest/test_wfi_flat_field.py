@@ -28,9 +28,8 @@ def test_flat_field_image_step(rtdata, ignore_asdf_paths, resource_tracker, requ
     output = "r0000101001001001001_0001_wfi01_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
-    with resource_tracker.track():
+    with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request)
 
     rtdata.get_truth(f"truth/WFI/image/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
@@ -65,9 +64,8 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths, resource_tracker, requ
     output = "r0000201001001001001_0001_wfi01_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
-    with resource_tracker.track():
+    with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request)
 
     output_model = rdm.open(rtdata.output)
     assert output_model.meta.cal_step.flat_field == "SKIPPED"
@@ -120,9 +118,8 @@ def test_flat_field_crds_match_image_step(
         "expected, due to extra CRDS parameters not having been "
         "implemented yet."
     )
-    with resource_tracker.track():
+    with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request)
 
     rtdata.get_truth(f"truth/WFI/image/{output}")
 

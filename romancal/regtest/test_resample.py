@@ -27,9 +27,8 @@ def test_resample_single_file(rtdata, ignore_asdf_paths, resource_tracker, reque
         "--resample_on_skycell=False",
         f"--output_file='{rtdata.output}'",
     ]
-    with resource_tracker.track():
+    with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request)
 
     resample_out = rdm.open(rtdata.output)
 

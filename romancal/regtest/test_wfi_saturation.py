@@ -34,9 +34,8 @@ def test_saturation_image_step(rtdata, ignore_asdf_paths, resource_tracker, requ
     rtdata.output = output
 
     args = ["romancal.step.SaturationStep", rtdata.input]
-    with resource_tracker.track():
+    with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request)
 
     ramp_out = rdm.open(rtdata.output)
     assert "roman.pixeldq" in ramp_out.to_flat_dict()
@@ -69,7 +68,7 @@ def test_saturation_grism_step(rtdata, ignore_asdf_paths, resource_tracker, requ
     rtdata.output = output
 
     args = ["romancal.step.SaturationStep", rtdata.input]
-    with resource_tracker.track():
+    with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
     resource_tracker.log(request)
 

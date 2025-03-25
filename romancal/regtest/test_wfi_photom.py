@@ -49,9 +49,8 @@ def test_absolute_photometric_calibration(
         " The first ERROR is expected, due to extra CRDS parameters"
         " not having been implemented yet."
     )
-    with resource_tracker.track():
+    with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request)
 
     photom_out = rdm.open(rtdata.output)
 
