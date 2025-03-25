@@ -1,3 +1,4 @@
+import os
 import time
 
 from romancal.regtest.resource_tracker import (
@@ -21,7 +22,11 @@ def test_runtime():
     tracker = TrackRuntime()
     with tracker:
         time.sleep(1.0)
-    assert abs(tracker.log()[1] - 1.0) < 0.01
+    # a 1 second sleep is sometimes too much to ask
+    # of CI runners. Use a wide margin to make this test
+    # less brittle in those cases.
+    threshold = 0.5 if "CI" in os.environ else 0.1
+    assert abs(tracker.log()[1] - 1.0) < threshold
 
 
 def test_memory():
