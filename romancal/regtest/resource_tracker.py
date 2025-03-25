@@ -48,5 +48,8 @@ class ResourceTrackerManager:
         self.named_trackers[name] = named_tracker
         return named_tracker
 
-    def log(self, name, user_properties):
-        self.named_trackers[name].log(user_properties)
+    def log(self, user_properties, name=None):
+        if name is None:
+            self.named_trackers.popitem()[1].log(user_properties)
+        else:
+            self.named_trackers[name].log(user_properties)
