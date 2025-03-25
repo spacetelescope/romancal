@@ -12,7 +12,7 @@ from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
-def test_dq_init_image_step(rtdata, ignore_asdf_paths):
+def test_dq_init_image_step(rtdata, ignore_asdf_paths, resource_tracker, request):
     """DMS25 Test: Testing retrieval of best ref file for image data,
     and creation of a ramp file with CRDS selected mask file applied."""
 
@@ -48,7 +48,10 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
         " The first ERROR is expected, due to extra CRDS parameters"
         " not having been implemented yet."
     )
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track():
+        RomanStep.from_cmdline(args)
+    resource_tracker.log(request.node.user_properties)
+
     ramp_out = rdm.open(rtdata.output)
     step.log.info(
         "DMS25 MSG: Does ramp data contain pixeldq from mask file? :"
@@ -67,7 +70,7 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
 
 
 @pytest.mark.bigdata
-def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
+def test_dq_init_grism_step(rtdata, ignore_asdf_paths, resource_tracker, request):
     """DMS25 Test: Testing retrieval of best ref file for grism data,
     and creation of a ramp file with CRDS selected mask file applied."""
 
@@ -103,7 +106,10 @@ def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
         "The first ERROR is expected, due to extra CRDS parameters "
         "not having been implemented yet."
     )
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track():
+        RomanStep.from_cmdline(args)
+    resource_tracker.log(request.node.user_properties)
+
     ramp_out = rdm.open(rtdata.output)
     step.log.info(
         "DMS25 MSG: Does ramp data contain pixeldq from mask file? :"
