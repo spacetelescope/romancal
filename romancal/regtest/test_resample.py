@@ -7,9 +7,11 @@ from romancal.stpipe import RomanStep
 
 from .regtestdata import compare_asdf
 
+RESOURCE_TRACKER_NAME = "resample"
+
 
 @pytest.mark.bigdata
-def test_resample_single_file(rtdata, ignore_asdf_paths):
+def test_resample_single_file(rtdata, ignore_asdf_paths, resource_tracker, request):
     output_data = "mosaic_resamplestep.asdf"
 
     rtdata.get_asn("WFI/image/L3_mosaic_asn.json")
@@ -27,7 +29,10 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
         "--resample_on_skycell=False",
         f"--output_file='{rtdata.output}'",
     ]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(RESOURCE_TRACKER_NAME):
+        RomanStep.from_cmdline(args)
+    resource_tracker.log(request.node.user_properties, RESOURCE_TRACKER_NAME)
+
     resample_out = rdm.open(rtdata.output)
 
     step.log.info(
