@@ -1,6 +1,10 @@
 import time
 
-from romancal.regtest.resource_tracker import ResourceTracker, TrackMemory, TrackRuntime
+from romancal.regtest.resource_tracker import (
+    ResourceTracker,
+    TrackPeakMemory,
+    TrackRuntime,
+)
 
 
 class FakeNode:
@@ -21,7 +25,7 @@ def test_runtime():
 
 
 def test_memory():
-    tracker = TrackMemory()
+    tracker = TrackPeakMemory()
     N = 1024 * 1024
     with tracker:
         b = b"0" * N  # noqa: F841
