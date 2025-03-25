@@ -17,7 +17,7 @@ def test_refpix_step(rtdata, ignore_asdf_paths, resource_tracker, request):
     args = ["romancal.step.RefPixStep", rtdata.input]
     with resource_tracker.track():
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request.node.user_properties)
+    resource_tracker.log(request)
 
     # Again I have no idea here
     output = "r0000101001001001001_0001_wfi01_refpix.asdf"

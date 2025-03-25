@@ -51,7 +51,7 @@ def test_absolute_photometric_calibration(
     )
     with resource_tracker.track():
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request.node.user_properties)
+    resource_tracker.log(request)
 
     photom_out = rdm.open(rtdata.output)
 

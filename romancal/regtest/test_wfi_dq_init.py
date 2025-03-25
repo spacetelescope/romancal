@@ -50,7 +50,7 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths, resource_tracker, request
     )
     with resource_tracker.track():
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request.node.user_properties)
+    resource_tracker.log(request)
 
     ramp_out = rdm.open(rtdata.output)
     step.log.info(
@@ -108,7 +108,7 @@ def test_dq_init_grism_step(rtdata, ignore_asdf_paths, resource_tracker, request
     )
     with resource_tracker.track():
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request.node.user_properties)
+    resource_tracker.log(request)
 
     ramp_out = rdm.open(rtdata.output)
     step.log.info(

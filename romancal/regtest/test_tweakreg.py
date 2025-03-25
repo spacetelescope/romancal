@@ -9,8 +9,6 @@ from romancal.tweakreg.tweakreg_step import TweakRegStep
 
 from .regtestdata import compare_asdf
 
-RESOURCE_TRACKER_NAME = "tweakreg"
-
 
 @pytest.mark.bigdata
 def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path, resource_tracker, request):
@@ -41,9 +39,9 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path, resource_tracker, request
         f"--output_file='{rtdata.output}'",
         "--suffix='tweakregstep'",
     ]
-    with resource_tracker.track(RESOURCE_TRACKER_NAME):
+    with resource_tracker.track():
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request.node.user_properties, RESOURCE_TRACKER_NAME)
+    resource_tracker.log(request)
 
     tweakreg_out = rdm.open(rtdata.output)
 

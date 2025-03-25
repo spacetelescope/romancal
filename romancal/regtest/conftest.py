@@ -242,7 +242,7 @@ def resource_tracker():
 @pytest.fixture()
 def log_tracked_resources(resource_tracker, request):
     def callback(fixture_name=None):
-        resource_tracker.log(request.node.user_properties, fixture_name)
+        resource_tracker.log(request, fixture_name)
 
     yield callback
 

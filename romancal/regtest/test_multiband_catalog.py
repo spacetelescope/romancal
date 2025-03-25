@@ -50,7 +50,7 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request):
     ]
     with resource_tracker.track():
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request.node.user_properties)
+    resource_tracker.log(request)
     afcat = asdf.open(outputfn)
     for field in fieldlist:
         assert field in afcat["roman"]["source_catalog"].dtype.names

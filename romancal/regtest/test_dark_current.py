@@ -21,7 +21,7 @@ def test_dark_current_subtraction_step(
     args = ["romancal.step.DarkCurrentStep", rtdata.input]
     with resource_tracker.track("dark"):
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request.node.user_properties)
+    resource_tracker.log(request)
     output = "r0000101001001001001_0001_wfi01_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
@@ -46,7 +46,7 @@ def test_dark_current_outfile_step(
     ]
     with resource_tracker.track("dark"):
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request.node.user_properties)
+    resource_tracker.log(request)
     output = "Test_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
@@ -72,7 +72,7 @@ def test_dark_current_outfile_suffix(
     ]
     with resource_tracker.track("dark"):
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request.node.user_properties)
+    resource_tracker.log(request)
     output = "Test_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
@@ -97,7 +97,7 @@ def test_dark_current_output(rtdata, ignore_asdf_paths, resource_tracker, reques
     ]
     with resource_tracker.track("dark"):
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request.node.user_properties)
+    resource_tracker.log(request)
     output = "r0000101001001001001_0001_wfi01_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")

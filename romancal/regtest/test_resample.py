@@ -29,7 +29,7 @@ def test_resample_single_file(rtdata, ignore_asdf_paths, resource_tracker, reque
     ]
     with resource_tracker.track():
         RomanStep.from_cmdline(args)
-    resource_tracker.log(request.node.user_properties)
+    resource_tracker.log(request)
 
     resample_out = rdm.open(rtdata.output)
 
