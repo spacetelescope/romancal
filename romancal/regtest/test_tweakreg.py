@@ -9,9 +9,11 @@ from romancal.tweakreg.tweakreg_step import TweakRegStep
 
 from .regtestdata import compare_asdf
 
+RESOURCE_TRACKER_NAME = "tweakreg"
+
 
 @pytest.mark.bigdata
-def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
+def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path, resource_tracker, request):
     # N.B.: uncal file is from simulator
     # ``shifted'' version is created in make_regtestdata.sh; cal file is taken,
     # the wcsinfo is perturbed, and AssignWCS is run to update the WCS with the
@@ -39,7 +41,10 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
         f"--output_file='{rtdata.output}'",
         "--suffix='tweakregstep'",
     ]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(RESOURCE_TRACKER_NAME):
+        RomanStep.from_cmdline(args)
+    resource_tracker.log(request.node.user_properties, RESOURCE_TRACKER_NAME)
+
     tweakreg_out = rdm.open(rtdata.output)
 
     step.log.info(
