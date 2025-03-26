@@ -19,7 +19,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
     ],
     ids=["L3", "L2", "L3skycell"],
 )
-def run_source_catalog(rtdata_module, request):
+def run_source_catalog(rtdata_module, request, resource_tracker):
     rtdata = rtdata_module
 
     inputfn = request.param
@@ -35,7 +35,8 @@ def run_source_catalog(rtdata_module, request):
         "romancal.step.SourceCatalogStep",
         rtdata.input,
     ]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track():
+        RomanStep.from_cmdline(args)
     return rtdata_module
 
 
@@ -66,6 +67,10 @@ def fields(catalog):
 )
 def test_has_field(fields, field):
     assert field in fields
+
+
+def test_log_tracked_resources(log_tracked_resources, run_source_catalog):
+    log_tracked_resources()
 
 
 def test_forced_catalog(rtdata_module):

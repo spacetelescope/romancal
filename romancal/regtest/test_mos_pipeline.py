@@ -16,7 +16,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 
 @pytest.fixture(scope="module")
-def run_mos(rtdata_module):
+def run_mos(rtdata_module, resource_tracker):
     rtdata = rtdata_module
 
     rtdata.get_asn("WFI/image/L3_regtest_asn.json")
@@ -29,7 +29,8 @@ def run_mos(rtdata_module):
         "roman_mos",
         rtdata.input,
     ]
-    MosaicPipeline.from_cmdline(args)
+    with resource_tracker.track():
+        MosaicPipeline.from_cmdline(args)
 
     rtdata.get_truth(f"truth/WFI/image/{output}")
     return rtdata
@@ -65,6 +66,10 @@ def preview_filename(output_filename):
     preview_cmd = f"stpreview to {output_filename} {preview_filename} 1080 1080 roman"
     os.system(preview_cmd)  # noqa: S605
     return preview_filename
+
+
+def test_log_tracked_resources(log_tracked_resources, run_mos):
+    log_tracked_resources()
 
 
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):

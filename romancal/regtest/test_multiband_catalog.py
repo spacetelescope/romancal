@@ -29,7 +29,7 @@ fieldlist = [
 ]
 
 
-def test_multiband_catalog(rtdata_module):
+def test_multiband_catalog(rtdata_module, resource_tracker, request):
     rtdata = rtdata_module
     inputasnfn = "L3_skycell_mbcat_asn.json"
     # note that this input association currently only has a single
@@ -48,7 +48,8 @@ def test_multiband_catalog(rtdata_module):
         "--deblend",
         "True",  # use deblending, DMS 393
     ]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
     afcat = asdf.open(outputfn)
     for field in fieldlist:
         assert field in afcat["roman"]["source_catalog"].dtype.names

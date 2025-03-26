@@ -9,7 +9,7 @@ from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
-def test_resample_single_file(rtdata, ignore_asdf_paths):
+def test_resample_single_file(rtdata, ignore_asdf_paths, resource_tracker, request):
     output_data = "mosaic_resamplestep.asdf"
 
     rtdata.get_asn("WFI/image/L3_mosaic_asn.json")
@@ -27,7 +27,9 @@ def test_resample_single_file(rtdata, ignore_asdf_paths):
         "--resample_on_skycell=False",
         f"--output_file='{rtdata.output}'",
     ]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
+
     resample_out = rdm.open(rtdata.output)
 
     step.log.info(
