@@ -11,7 +11,7 @@ from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
-def test_flat_field_image_step(rtdata, ignore_asdf_paths):
+def test_flat_field_image_step(rtdata, ignore_asdf_paths, resource_tracker, request):
     """Test for the flat field step using imaging data."""
 
     input_data = "r0000101001001001001_0001_wfi01_assignwcs.asdf"
@@ -28,15 +28,16 @@ def test_flat_field_image_step(rtdata, ignore_asdf_paths):
     output = "r0000101001001001001_0001_wfi01_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
+
     rtdata.get_truth(f"truth/WFI/image/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
 
-# @pytest.mark.xfail(reason="Wrong input for the purpose of this test")
 @pytest.mark.bigdata
-def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
+def test_flat_field_grism_step(rtdata, ignore_asdf_paths, resource_tracker, request):
     """Test for the flat field step using grism data. The reference file for
     the grism and prism data should be None, only testing the grism
     case here."""
@@ -63,7 +64,9 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
     output = "r0000201001001001001_0001_wfi01_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
+
     output_model = rdm.open(rtdata.output)
     assert output_model.meta.cal_step.flat_field == "SKIPPED"
     rtdata.get_truth(f"truth/WFI/grism/{output}")
@@ -73,7 +76,9 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths):
 
 @pytest.mark.bigdata
 @pytest.mark.soctests
-def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
+def test_flat_field_crds_match_image_step(
+    rtdata, ignore_asdf_paths, resource_tracker, request
+):
     """DMS79 Test: Testing that different datetimes pull different
     flat files and successfully make level 2 output"""
 
@@ -113,7 +118,9 @@ def test_flat_field_crds_match_image_step(rtdata, ignore_asdf_paths):
         "expected, due to extra CRDS parameters not having been "
         "implemented yet."
     )
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
+
     rtdata.get_truth(f"truth/WFI/image/{output}")
 
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)

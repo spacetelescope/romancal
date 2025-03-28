@@ -18,7 +18,7 @@ pytestmark = pytest.mark.bigdata
 
 
 @pytest.fixture(scope="module")
-def run_elp(rtdata_module):
+def run_elp(rtdata_module, resource_tracker):
     rtdata = rtdata_module
 
     input_data = "r0000101001001001001_0001_wfi01_uncal.asdf"
@@ -32,7 +32,8 @@ def run_elp(rtdata_module):
         "roman_elp",
         rtdata.input,
     ]
-    ExposurePipeline.from_cmdline(args)
+    with resource_tracker.track():
+        ExposurePipeline.from_cmdline(args)
 
     # get truth file
     rtdata.get_truth(f"truth/WFI/image/{output}")
@@ -82,6 +83,10 @@ def repointed_filename_and_delta(output_filename):
         model.to_asdf(repointed_filename)
 
     return repointed_filename, delta
+
+
+def test_log_tracked_resources(log_tracked_resources, run_elp):
+    log_tracked_resources()
 
 
 @pytest.mark.soctests

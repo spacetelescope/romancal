@@ -12,7 +12,7 @@ from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
-def test_saturation_image_step(rtdata, ignore_asdf_paths):
+def test_saturation_image_step(rtdata, ignore_asdf_paths, resource_tracker, request):
     """Testing retrieval of best ref file for image data,
     and creation of a ramp file with CRDS selected saturation file applied."""
 
@@ -34,7 +34,8 @@ def test_saturation_image_step(rtdata, ignore_asdf_paths):
     rtdata.output = output
 
     args = ["romancal.step.SaturationStep", rtdata.input]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
 
     ramp_out = rdm.open(rtdata.output)
     assert "roman.pixeldq" in ramp_out.to_flat_dict()
@@ -45,7 +46,7 @@ def test_saturation_image_step(rtdata, ignore_asdf_paths):
 
 
 @pytest.mark.bigdata
-def test_saturation_grism_step(rtdata, ignore_asdf_paths):
+def test_saturation_grism_step(rtdata, ignore_asdf_paths, resource_tracker, request):
     """Testing retrieval of best ref file for grism data,
     and creation of a ramp file with CRDS selected saturation file applied."""
 
@@ -67,7 +68,9 @@ def test_saturation_grism_step(rtdata, ignore_asdf_paths):
     rtdata.output = output
 
     args = ["romancal.step.SaturationStep", rtdata.input]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
+    resource_tracker.log(request)
 
     ramp_out = rdm.open(rtdata.output)
     assert "roman.pixeldq" in ramp_out.to_flat_dict()

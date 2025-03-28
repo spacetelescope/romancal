@@ -8,7 +8,9 @@ from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
-def test_dark_current_subtraction_step(rtdata, ignore_asdf_paths):
+def test_dark_current_subtraction_step(
+    rtdata, ignore_asdf_paths, resource_tracker, request
+):
     """Function to run and compare Dark Current subtraction files. Note: This
     should include tests for overrides etc."""
 
@@ -17,7 +19,8 @@ def test_dark_current_subtraction_step(rtdata, ignore_asdf_paths):
     rtdata.input = input_datafile
 
     args = ["romancal.step.DarkCurrentStep", rtdata.input]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
     output = "r0000101001001001001_0001_wfi01_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
@@ -26,7 +29,9 @@ def test_dark_current_subtraction_step(rtdata, ignore_asdf_paths):
 
 
 @pytest.mark.bigdata
-def test_dark_current_outfile_step(rtdata, ignore_asdf_paths):
+def test_dark_current_outfile_step(
+    rtdata, ignore_asdf_paths, resource_tracker, request
+):
     """Function to run and compare Dark Current subtraction files. Here the
     test is for renaming the output file."""
     input_datafile = "r0000101001001001001_0001_wfi01_linearity.asdf"
@@ -38,7 +43,8 @@ def test_dark_current_outfile_step(rtdata, ignore_asdf_paths):
         rtdata.input,
         "--output_file=Test_darkcurrent",
     ]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
     output = "Test_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
@@ -47,7 +53,9 @@ def test_dark_current_outfile_step(rtdata, ignore_asdf_paths):
 
 
 @pytest.mark.bigdata
-def test_dark_current_outfile_suffix(rtdata, ignore_asdf_paths):
+def test_dark_current_outfile_suffix(
+    rtdata, ignore_asdf_paths, resource_tracker, request
+):
     """Function to run and compare Dark Current subtraction files. Here the
     test is for renaming the output file."""
     input_datafile = "r0000101001001001001_0001_wfi01_linearity.asdf"
@@ -60,7 +68,8 @@ def test_dark_current_outfile_suffix(rtdata, ignore_asdf_paths):
         "--output_file=Test_dark",
         '--suffix="suffix_test"',
     ]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
     output = "Test_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
@@ -69,7 +78,7 @@ def test_dark_current_outfile_suffix(rtdata, ignore_asdf_paths):
 
 
 @pytest.mark.bigdata
-def test_dark_current_output(rtdata, ignore_asdf_paths):
+def test_dark_current_output(rtdata, ignore_asdf_paths, resource_tracker, request):
     """Function to run and compare Dark Current subtraction files. Here the
     test for overriding the CRDS dark reference file."""
 
@@ -83,7 +92,8 @@ def test_dark_current_output(rtdata, ignore_asdf_paths):
         rtdata.input,
         f"--dark_output={dark_output_name}",
     ]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
     output = "r0000101001001001001_0001_wfi01_darkcurrent.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")

@@ -5,11 +5,10 @@ import os
 from datetime import datetime
 
 import pytest
-from astropy.table import Table
 from ci_watson.artifactory_helpers import UPLOAD_SCHEMA
-from numpy.testing import assert_allclose, assert_equal
 
 from romancal.regtest.regtestdata import RegtestData
+from romancal.regtest.resource_tracker import ResourceTracker
 
 TODAYS_DATE = datetime.now().strftime("%Y-%m-%d")
 
@@ -233,70 +232,47 @@ def ignore_asdf_paths():
     return {"ignore": ignore_attr}
 
 
-@pytest.fixture
-def diff_astropy_tables():
-    """Compare astropy tables with tolerances for float columns."""
+@pytest.fixture(scope="module")
+def resource_tracker():
+    """Fixture to return the current module-scoped ResourceTracker.
 
-    def _diff_astropy_tables(result_path, truth_path, rtol=1e-5, atol=1e-7):
-        __tracebackhide__ = True
-        result = Table.read(result_path)
-        truth = Table.read(truth_path)
+    Use by calling ``track`` to generate a context in which resource
+    usage will be tracked.
 
-        diffs = []
+    >>>
+    >> with resource_tracker.track():
+    >>     # do stuff
 
-        try:
-            assert result.colnames == truth.colnames
-        except AssertionError as err:
-            diffs.append(f"Column names (or order) do not match\n{err}")
+    For resources used during tests providing a function-scoped
+    request fixture result as the log argument will also log the
+    used resources to the junit results.xml.
 
-        try:
-            assert len(result) == len(truth)
-        except AssertionError as err:
-            diffs.append(f"Row count does not match\n{err}")
+    >>>
+    >> def test_something(resource_tracker, request):
+    >>     with resource_tracker.track(log=request):
+    >>         # do stuff
 
-        # If either the columns or the row count is mismatched, then don't
-        # bother checking the individual column values.
-        if len(diffs) > 0:
-            raise AssertionError("\n".join(diffs))
+    For resources used during fixtures the tracked resources
+    can be logged in a separate test using ``log_tracked_resources``.
+    """
+    return ResourceTracker()
 
-        # Disable meta comparison for now, until we're able to specify
-        # individual entries for comparison
-        # if result.meta != truth.meta:
-        #    diffs.append("Metadata does not match")
 
-        for col_name in truth.colnames:
-            try:
-                try:
-                    assert result[col_name].dtype == truth[col_name].dtype
-                except AssertionError as err:
-                    diffs.append(f"Column '{col_name}' dtype does not match\n{err}")
-                    continue
+@pytest.fixture()
+def log_tracked_resources(resource_tracker, request):
+    """Fixture to log resources tracked by ``resource_tracker``.
 
-                if truth[col_name].dtype.kind == "f":
-                    try:
-                        assert_allclose(
-                            result[col_name], truth[col_name], rtol=rtol, atol=atol
-                        )
-                    except AssertionError as err:
-                        diffs.append(
-                            "\n----------------------------------\n"
-                            + f"Column '{col_name}' values do not "
-                            + f"match (within tolerances) \n{err}"
-                        )
-                else:
-                    try:
-                        assert_equal(result[col_name], truth[col_name])
-                    except AssertionError as err:
-                        diffs.append(f"Column '{col_name}' values do not match\n{err}")
-            except AttributeError:
-                # Ignore case where a column does not have a dtype, as in the case
-                # of SkyCoord objects
-                pass
+    >>>
+    >> @pytest.fixture
+    >> def my_fixture(resource_tracker):
+    >>     with resource_tracker.track():
+    >>         # do stuff
+    >>
+    >> def test_write_log(log_tracked_resources, my_fixture):
+    >>     log_tracked_resources()
+    """
 
-        if len(diffs) != 0:
-            raise AssertionError("\n".join(diffs))
+    def callback():
+        resource_tracker.log(request)
 
-        # No differences
-        return True
-
-    return _diff_astropy_tables
+    yield callback
