@@ -3,16 +3,17 @@
 # takes one argument: the directory into which to start putting the regtest files.
 
 # input files needed:
-# r0000101001001001001_0001_wfi01 - default for most steps
-# r0000201001001001001_0001_wfi01 - equivalent for spectroscopic data
-# r0000101001001001001_0002_wfi01 - a second resample exposure, only cal step needed
-# r0000101001001001001_0003_wfi01 - for ramp fitting; truncated image
-# r0000201001001001001_0003_wfi01 - for ramp fitting; truncated spectroscopic
+# r0000101001001001001_0001_wfi01_f158  - default for most steps
+# r0000201001001001001_0001_wfi01_grism - equivalent for spectroscopic data
+# r0000101001001001001_0002_wfi01_f158  - a second resample exposure, only cal step needed
+# r0000101001001001001_0003_wfi01_f158  - for ramp fitting; truncated image
+# r0000201001001001001_0003_wfi01_grism - for ramp fitting; truncated spectroscopic
 #                                         we need only darkcurrent & ramp fit for these
-#
-# r00r1601001001001001_0001_wfi01 - special 16 resultant file, imaging, only need cal file
-# r10r1601001001001001_0001_wfi01 - special 16 resultant file, spectroscopy, only need cal file
+# r0000101001001001001_0004_wfi01_f158  - 16 resultant imaging file
+# r0000201001001001001_0004_wfi01_grism - 16 resultant spectroscopy file
 
+# this script also downloads two files from artifactory for TVAC tests; these
+# do not come from romanisim.
 
 if [ $# -eq 0 ]; then
     echo "Please provide an output directory as a command line argument"
@@ -41,10 +42,11 @@ mkdir -p $outdir/roman-pipeline/dev/WFI/image
 mkdir -p $outdir/roman-pipeline/dev/truth/WFI/image
 mkdir -p $outdir/roman-pipeline/dev/WFI/grism
 mkdir -p $outdir/roman-pipeline/dev/truth/WFI/grism
+mkdir -p $outdir/roman-pipeline/dev/references
 
 
 # most regtests; run the pipeline and save a lot of results.
-for fn in r0000101001001001001_0001_wfi01 r0000201001001001001_0001_wfi01
+for fn in r0000101001001001001_0001_wfi01_f158 r0000201001001001001_0001_wfi01_grism
 do
     echo "Running pipeline on ${fn}..."
     strun roman_elp ${fn}_uncal.asdf --steps.dq_init.save_results True --steps.saturation.save_results True --steps.linearity.save_results True --steps.dark_current.save_results True --steps.rampfit.save_results True --steps.assign_wcs.save_results True --steps.photom.save_results True --steps.refpix.save_results True --steps.flatfield.save_results True --steps.assign_wcs.save_results True
@@ -57,11 +59,11 @@ do
 done
 
 # L2 catalog
-cp r0000101001001001001_0001_wfi01_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-cp r0000101001001001001_0001_wfi01_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp r0000101001001001001_0001_wfi01_f158_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp r0000101001001001001_0001_wfi01_f158_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # truncated files for ramp fit regtests
-for fn in r0000101001001001001_0003_wfi01 r0000201001001001001_0003_wfi01
+for fn in r0000101001001001001_0003_wfi01_f158 r0000201001001001001_0003_wfi01_grism
 do
     echo "Running pipeline on ${fn}..."
     strun roman_elp ${fn}_uncal.asdf --steps.dark_current.save_results True --steps.rampfit.save_results True
@@ -69,23 +71,23 @@ do
     cp ${fn}_darkcurrent.asdf $outdir/roman-pipeline/dev/WFI/$dirname/
     cp ${fn}_rampfit.asdf $outdir/roman-pipeline/dev/truth/WFI/$dirname/
 done
-cp r0000101001001001001_0003_wfi01_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
+cp r0000101001001001001_0003_wfi01_f158_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
 
 
 # second imaging exposure
-strun roman_elp r0000101001001001001_0002_wfi01_uncal.asdf
-cp r0000101001001001001_0002_wfi01_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
+strun roman_elp r0000101001001001001_0002_wfi01_f158_uncal.asdf
+cp r0000101001001001001_0002_wfi01_f158_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
 
 # image used in the skycell generation test
-strun roman_elp r0000101001001001001_0002_wfi10_uncal.asdf
-cp r0000101001001001001_0002_wfi10_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
+strun roman_elp r0000101001001001001_0002_wfi10_f158_uncal.asdf
+cp r0000101001001001001_0002_wfi10_f158_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
 
 
 # CRDS test needs the "usual" r00001..._0001_wfi01 files.
 # It also needs a hacked r00001..._0001_wfi01 file, with the time changed.
 # this makes the hacked version.
 echo "Creating regtest files for CRDS tests..."
-basename="r0000101001001001001_0001_wfi01"
+basename="r0000101001001001001_0001_wfi01_f158"
 python -c "
 import asdf
 from roman_datamodels import stnode
@@ -103,7 +105,7 @@ cp ${basename}_changetime_flat.asdf $outdir/roman-pipeline/dev/truth/WFI/image
 
 # need to make a special ALL_SATURATED file for the all saturated test.
 echo "Creating regtest files for all saturated tests..."
-basename="r0000101001001001001_0001_wfi01"
+basename="r0000101001001001001_0001_wfi01_f158"
 python -c "
 import asdf
 from roman_datamodels import stnode
@@ -120,18 +122,18 @@ cp ${basename}_ALL_SATURATED_cal.asdf $outdir/roman-pipeline/dev/truth/WFI/image
 
 
 # make a special file dark file with a different name
-strun romancal.step.DarkCurrentStep r0000101001001001001_0001_wfi01_linearity.asdf --output_file=Test_dark
+strun romancal.step.DarkCurrentStep r0000101001001001001_0001_wfi01_f158_linearity.asdf --output_file=Test_dark
 cp Test_darkcurrent.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 
 # make a special linearity file with a different suffix
-strun romancal.step.LinearityStep r0000101001001001001_0001_wfi01_refpix.asdf --output_file=Test_linearity
+strun romancal.step.LinearityStep r0000101001001001001_0001_wfi01_f158_refpix.asdf --output_file=Test_linearity
 cp Test_linearity.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 
 # we have a test that runs the flat field step directly on an _L1_ spectroscopic
 # file and verifies that it gets skipped.
-basename="r0000201001001001001_0001_wfi01"
+basename="r0000201001001001001_0001_wfi01_grism"
 strun romancal.step.FlatFieldStep ${basename}_assignwcs.asdf
 cp ${basename}_flat.asdf $outdir/roman-pipeline/dev/truth/WFI/grism/
 
@@ -140,7 +142,7 @@ cp ${basename}_flat.asdf $outdir/roman-pipeline/dev/truth/WFI/grism/
 # we haven't updated the filename in these files, but the regtest mechanism
 # also doesn't
 # update them, and we need to match.
-for basename in r0000101001001001001_0001_wfi01 r0000201001001001001_0001_wfi01
+for basename in r0000101001001001001_0001_wfi01_f158 r0000201001001001001_0001_wfi01_grism
 do
     python -c "
 import asdf
@@ -162,7 +164,7 @@ model.to_asdf(f'${basename}_cal_repoint.asdf')"
 done
 
 # Test tweakreg with repointed file, only shifted by 1"
-for basename in r0000101001001001001_0001_wfi01
+for basename in r0000101001001001001_0001_wfi01_f158
 do
     python -c "
 import asdf
@@ -183,17 +185,17 @@ model.to_asdf(f'${basename}_shift_cal.asdf')"
 done
 
 
-strun roman_elp r0000101001001001001_0004_wfi01_uncal.asdf
-strun roman_elp r0000201001001001001_0004_wfi01_uncal.asdf
-cp r0000101001001001001_0004_wfi01_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
-cp r0000201001001001001_0004_wfi01_uncal.asdf $outdir/roman-pipeline/dev/WFI/grism/
+strun roman_elp r0000101001001001001_0004_wfi01_f158_uncal.asdf
+strun roman_elp r0000201001001001001_0004_wfi01_grism_uncal.asdf
+cp r0000101001001001001_0004_wfi01_f158_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
+cp r0000201001001001001_0004_wfi01_grism_uncal.asdf $outdir/roman-pipeline/dev/WFI/grism/
 
 # tests passing suffix to the pipeline
-strun roman_elp r0000101001001001001_0001_wfi01_uncal.asdf --steps.tweakreg.skip=True --suffix=star
-cp r0000101001001001001_0001_wfi01_star.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+strun roman_elp r0000101001001001001_0001_wfi01_f158_uncal.asdf --steps.tweakreg.skip=True --suffix=star
+cp r0000101001001001001_0001_wfi01_f158_star.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
-l3name="r0099101001001001001_F158_visit"
-asn_from_list r0000101001001001001_0001_wfi01_cal.asdf r0000101001001001001_0002_wfi01_cal.asdf r0000101001001001001_0003_wfi01_cal.asdf -o L3_regtest_asn.json --product-name $l3name
+l3name="r0000101001001001001_f158"
+asn_from_list r0000101001001001001_0001_wfi01_f158_cal.asdf r0000101001001001001_0002_wfi01_f158_cal.asdf r0000101001001001001_0003_wfi01_f158_cal.asdf -o L3_regtest_asn.json --product-name $l3name
 strun roman_mos L3_regtest_asn.json
 cp L3_regtest_asn.json $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
@@ -202,8 +204,8 @@ cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # L3 on skycell
-l3name="r0099101001001001001_r274dp63x31y81_prompt_F158"
-asn_from_list r0000101001001001001_0001_wfi01_cal.asdf r0000101001001001001_0002_wfi01_cal.asdf r0000101001001001001_0003_wfi01_cal.asdf -o L3_mosaic_asn.json --product-name $l3name --target r274dp63x31y81
+l3name="r00001_p_v01001001001001_r274dp63x31y81_f158"
+asn_from_list r0000101001001001001_0001_wfi01_f158_cal.asdf r0000101001001001001_0002_wfi01_f158_cal.asdf r0000101001001001001_0003_wfi01_f158_cal.asdf -o L3_mosaic_asn.json --product-name $l3name --target r274dp63x31y81
 # The pipeline will silently do nothing and not return an error exit code if the output
 # file already exists.
 # see: https://github.com/spacetelescope/romancal/issues/1544
@@ -221,7 +223,7 @@ cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/WFI/image/
 
-strun romancal.step.ResampleStep L3_mosaic_asn.json --rotation=0 --output_file=mosaic.asdf
+strun romancal.step.ResampleStep L3_mosaic_asn.json --resample-on-skycell=False --rotation=0 --output_file=mosaic.asdf
 cp mosaic_resamplestep.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # multiband catalog
@@ -232,8 +234,8 @@ cp ${l3name}_mbcat_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_mbcat_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # 2nd L3 on skycell
-l3name="r0099101001001001001_0001_r274dp63x31y81_prompt_F158"
-asn_from_list r0000101001001001001_0001_wfi01_cal.asdf -o L3_mosaic_0001_asn.json --product-name $l3name --target r274dp63x31y81
+l3name="r00001_p_e01001001001001_0001_r274dp63x31y81_f158"
+asn_from_list r0000101001001001001_0001_wfi01_f158_cal.asdf -o L3_mosaic_0001_asn.json --product-name $l3name --target r274dp63x31y81
 # The pipeline will silently do nothing and not return an error exit code if the output
 # file already exists.
 # see: https://github.com/spacetelescope/romancal/issues/1544
@@ -245,6 +247,13 @@ strun roman_mos L3_mosaic_0001_asn.json
 cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
 
 # forced photometry on shallow skycell from deep skycell
-strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf --forced_segmentation r0099101001001001001_r274dp63x31y81_prompt_F158_segm.asdf --output_file ${l3name}_force_cat.asdf
+strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf --forced_segmentation r00001_p_v01001001001001_r274dp63x31y81_f158_segm.asdf --output_file ${l3name}_force_cat.asdf
 cp ${l3name}_force_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_force_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
+jf rt dl roman-pipeline/dev/WFI/image/TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf --flat
+jf rt dl roman-pipeline/dev/references/dark_ma510.asdf --flat
+cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
+cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_cal.asdf regtestdata/roman-pipeline/dev/truth/WFI/image/
+cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_dqinit.asdf regtestdata/roman-pipeline/dev/truth/WFI/image/
+cp dark_ma510.asdf $outdir/roman-pipeline/dev/references/

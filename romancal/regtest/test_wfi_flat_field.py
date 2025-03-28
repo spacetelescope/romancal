@@ -14,7 +14,7 @@ from .regtestdata import compare_asdf
 def test_flat_field_image_step(rtdata, ignore_asdf_paths, resource_tracker, request):
     """Test for the flat field step using imaging data."""
 
-    input_data = "r0000101001001001001_0001_wfi01_assignwcs.asdf"
+    input_data = "r0000101001001001001_0001_wfi01_f158_assignwcs.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
@@ -25,7 +25,7 @@ def test_flat_field_image_step(rtdata, ignore_asdf_paths, resource_tracker, requ
     ref_file_name = os.path.split(ref_file_path)[-1]
     assert "roman_wfi_flat" in ref_file_name
     # Test FlatFieldStep
-    output = "r0000101001001001001_0001_wfi01_flat.asdf"
+    output = "r0000101001001001001_0001_wfi01_f158_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     with resource_tracker.track(log=request):
@@ -42,7 +42,7 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths, resource_tracker, requ
     the grism and prism data should be None, only testing the grism
     case here."""
 
-    input_file = "r0000201001001001001_0001_wfi01_assignwcs.asdf"
+    input_file = "r0000201001001001001_0001_wfi01_grism_assignwcs.asdf"
     rtdata.get_data(f"WFI/grism/{input_file}")
     rtdata.input = input_file
 
@@ -61,7 +61,7 @@ def test_flat_field_grism_step(rtdata, ignore_asdf_paths, resource_tracker, requ
     assert ref_file_name == "N/A"
 
     # Test FlatFieldStep
-    output = "r0000201001001001001_0001_wfi01_flat.asdf"
+    output = "r0000201001001001001_0001_wfi01_grism_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     with resource_tracker.track(log=request):
@@ -83,7 +83,7 @@ def test_flat_field_crds_match_image_step(
     flat files and successfully make level 2 output"""
 
     # First file
-    input_l2_file = "r0000101001001001001_0001_wfi01_assignwcs.asdf"
+    input_l2_file = "r0000101001001001001_0001_wfi01_f158_assignwcs.asdf"
     rtdata.get_data(f"WFI/image/{input_l2_file}")
     rtdata.input = input_l2_file
 
@@ -110,7 +110,7 @@ def test_flat_field_crds_match_image_step(
     )
 
     # Test FlatFieldStep
-    output = "r0000101001001001001_0001_wfi01_flat.asdf"
+    output = "r0000101001001001001_0001_wfi01_f158_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     step.log.info(
@@ -134,7 +134,7 @@ def test_flat_field_crds_match_image_step(
     #  to separate flat files in CRDS.
 
     # Second file
-    input_file = "r0000101001001001001_0001_wfi01_changetime_assignwcs.asdf"
+    input_file = "r0000101001001001001_0001_wfi01_f158_changetime_assignwcs.asdf"
     rtdata.get_data(f"WFI/image/{input_file}")
     rtdata.input = input_file
 
@@ -157,7 +157,7 @@ def test_flat_field_crds_match_image_step(
     )
 
     # Test FlatFieldStep
-    output = "r0000101001001001001_0001_wfi01_changetime_flat.asdf"
+    output = "r0000101001001001001_0001_wfi01_f158_changetime_flat.asdf"
     rtdata.output = output
     args = ["romancal.step.FlatFieldStep", rtdata.input]
     step.log.info(

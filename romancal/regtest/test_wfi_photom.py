@@ -18,7 +18,7 @@ def test_absolute_photometric_calibration(
     """DMS140 Test: Testing application of photometric correction using
     CRDS selected photom file."""
 
-    input_data = "r0000101001001001001_0001_wfi01_flat.asdf"
+    input_data = "r0000101001001001001_0001_wfi01_f158_flat.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
@@ -41,7 +41,7 @@ def test_absolute_photometric_calibration(
     # photom match from CRDS. Values come from roman_wfi_photom_0034.asdf
 
     # Test PhotomStep
-    output = "r0000101001001001001_0001_wfi01_photom.asdf"
+    output = "r0000101001001001001_0001_wfi01_f158_photom.asdf"
     rtdata.output = output
     args = ["romancal.step.PhotomStep", rtdata.input]
     step.log.info(
