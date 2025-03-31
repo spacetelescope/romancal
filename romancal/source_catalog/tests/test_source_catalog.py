@@ -198,6 +198,8 @@ def test_l2_source_catalog(
     if nsources > 0:
         for col in columns:
             assert col in cat.colnames
+            if "flux" in col:
+                assert cat[col].unit == "nJy"
         assert np.min(cat["xcentroid"]) > 0.0
         assert np.min(cat["ycentroid"]) > 0.0
         assert np.max(cat["xcentroid"]) < 100.0
@@ -281,6 +283,8 @@ def test_l3_source_catalog(
     if nsources > 0:
         for col in columns:
             assert col in cat.colnames
+            if "flux" in col:
+                assert cat[col].unit == "nJy"
         assert np.min(cat["xcentroid"]) > 0.0
         assert np.min(cat["ycentroid"]) > 0.0
         assert np.max(cat["xcentroid"]) < 100.0
@@ -457,6 +461,11 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
     cat = result.source_catalog
 
     assert isinstance(cat, Table)
+
+    if fit_psf:
+        for colname in cat.colnames:
+            if "flux" in colname:
+                assert cat[colname].unit == "nJy"
 
     # check if the PSF photometry column names are present or not based on fit_psf value
     psf_colnames_present = all(
