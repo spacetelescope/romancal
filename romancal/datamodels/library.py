@@ -42,7 +42,7 @@ class ModelLibrary(AbstractModelLibrary):
         if group_id := meta.get("group_id"):
             return group_id
         if "observation" in meta:
-            return _mapping_to_group_id(meta["observation"])
+            return meta["observation"]["observation_id"]
         raise NoGroupID(f"{filename} missing group_id")
 
     def _model_to_group_id(self, model):
@@ -52,17 +52,14 @@ class ModelLibrary(AbstractModelLibrary):
         if (group_id := getattr(model.meta, "group_id", None)) is not None:
             return group_id
         if hasattr(model.meta, "observation"):
-            return _mapping_to_group_id(model.meta.observation)
+            return model.meta.observation.observation_id
         raise NoGroupID(f"{model} missing group_id")
 
     def _assign_member_to_model(self, model, member):
-        # roman_datamodels doesn't allow assignment of meta.group_id
-        # (since it's not in the schema). To work around this use
+        # roman_datamodels doesn't allow assignment of attributes
+        # not defined in the schema. To work around this use
         # __setitem__ calls here instead of setattr
-        for attr in (
-            "group_id",
-            "tweakreg_catalog",
-        ):
+        for attr in ("tweakreg_catalog",):
             if attr in member:
                 model.meta[attr] = member[attr]
 
@@ -75,10 +72,3 @@ class ModelLibrary(AbstractModelLibrary):
             if not hasattr(model.meta, "asn"):
                 model.meta["asn"] = {}
             model.meta.asn[dm_attr] = self.asn[asn_attr]
-
-
-def _mapping_to_group_id(mapping):
-    """
-    Combine a number of file metadata values into a ``group_id`` string
-    """
-    return "{observation_id}".format_map(mapping)

@@ -170,7 +170,7 @@ class ResampleData(Resample):
             "filename": model.meta.filename,
             "wcs": model.meta.wcs,
             "pixelarea_steradians": pixel_area,
-            "group_id": model.meta.group_id,
+            "group_id": self.input_models._model_to_group_id(model),
             "measurement_time": None,  # falls back to exposure_time
             "exposure_time": exposure_time,
             "start_time": model.meta.exposure.start_time,

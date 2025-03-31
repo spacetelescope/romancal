@@ -634,18 +634,6 @@ def test_tweakreg_updates_cal_step(tmp_path, base_image):
         res.shelve(model, 0, modify=False)
 
 
-def test_tweakreg_updates_group_id(tmp_path, base_image):
-    """Test that TweakReg updates 'group_id' with a non-zero length string."""
-    img = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img)
-    res = trs.TweakRegStep.call([img])
-
-    with res:
-        model = res.borrow(0)
-        assert hasattr(model.meta, "group_id")
-        res.shelve(model, 0, modify=False)
-
-
 @pytest.mark.parametrize(
     "abs_refcat",
     (
@@ -740,8 +728,6 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
             {"expname": img3.meta.filename, "exptype": "science"},
         ],
     )
-    with open(asn_filepath) as f:
-        asn_content = json.load(f)
 
     res = trs.TweakRegStep.call(
         asn_filepath,
@@ -755,11 +741,6 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
     with res:
         for i, (model, target) in enumerate(zip(res, [img1, img2, img3], strict=False)):
             assert hasattr(model.meta, "asn")
-
-            assert (
-                model.meta["exptype"]
-                == asn_content["products"][0]["members"][i]["exptype"]
-            )
 
             assert model.meta.filename == target.meta.filename
 
@@ -875,14 +856,6 @@ def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
     with res:
         models = list(res)
         assert hasattr(models[0].meta, "asn")
-        assert (
-            models[0].meta["exptype"]
-            == asn_content["products"][0]["members"][0]["exptype"]
-        )
-        assert (
-            models[1].meta["exptype"]
-            == asn_content["products"][0]["members"][1]["exptype"]
-        )
         assert models[0].meta.asn["pool_name"] == asn_content["asn_pool"]
         assert models[1].meta.asn["pool_name"] == asn_content["asn_pool"]
 
@@ -937,10 +910,6 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     res = trs.TweakRegStep.call([img1, img2])
 
     assert len(res.group_names) == 2
-    with res:
-        for r, i in zip(res, [img1, img2], strict=False):
-            assert r.meta.group_id == i.meta.observation.observation_id
-            res.shelve(r, modify=False)
 
 
 def test_parse_catfile_valid_catalog(tmp_path, base_image):
