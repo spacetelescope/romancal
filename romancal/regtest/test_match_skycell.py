@@ -51,7 +51,7 @@ def test_match_files(run_patchlist, expected_match_files):
 
 
 @pytest.fixture(scope="module")
-def run_skycellasn(rtdata_module):
+def run_skycellasn(rtdata_module, run_patchlist):
     rtdata = rtdata_module
 
     # This test should generate six association files

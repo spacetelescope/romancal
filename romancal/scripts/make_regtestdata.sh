@@ -223,7 +223,7 @@ cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/WFI/image/
 
-strun romancal.step.ResampleStep L3_mosaic_asn.json --resample-on-skycell=False --rotation=0 --output_file=mosaic.asdf
+strun romancal.step.ResampleStep L3_mosaic_asn.json --resample_on_skycell=False --rotation=0 --output_file=mosaic.asdf
 cp mosaic_resamplestep.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # multiband catalog
@@ -253,6 +253,7 @@ cp ${l3name}_force_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 jf rt dl roman-pipeline/dev/WFI/image/TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf --flat
 jf rt dl roman-pipeline/dev/references/dark_ma510.asdf --flat
+strun roman_elp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf --steps.tweakreg.skip=true --steps.source_catalog.skip=true --steps.dq_init.save=true --steps.dark_current.override_dark=dark_ma510.asdf --steps.rampfit.override_dark=dark_ma510.asdf
 cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_cal.asdf regtestdata/roman-pipeline/dev/truth/WFI/image/
 cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_dqinit.asdf regtestdata/roman-pipeline/dev/truth/WFI/image/
