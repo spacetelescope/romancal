@@ -211,7 +211,7 @@ class TweakRegStep(RomanStep):
                         wcs=image_model.meta.wcs,
                         refang=image_model.meta.wcsinfo,
                         catalog=catalog_table,
-                        group_id=image_model.meta.group_id,
+                        group_id=images._model_to_group_id(image_model),
                     )
                     imcat.meta["model_index"] = i
                     imcats.append(imcat)
