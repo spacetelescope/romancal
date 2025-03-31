@@ -59,16 +59,22 @@ class ModelLibrary(AbstractModelLibrary):
         # roman_datamodels doesn't allow assignment of meta.group_id
         # (since it's not in the schema). To work around this use
         # __setitem__ calls here instead of setattr
-        for attr in ("group_id", "tweakreg_catalog"):
+        for attr in (
+            "group_id",
+            "tweakreg_catalog",
+        ):
             if attr in member:
                 model.meta[attr] = member[attr]
-        if not hasattr(model.meta, "asn"):
-            model.meta["asn"] = {}
 
-        if "table_name" in self.asn:
-            model.meta.asn["table_name"] = self.asn["table_name"]
-        if "asn_pool" in self.asn:
-            model.meta.asn["pool_name"] = self.asn["asn_pool"]
+        for asn_attr, dm_attr in (
+            ("table_name", "table_name"),
+            ("asn_pool", "pool_name"),
+        ):
+            if asn_attr not in self.asn:
+                continue
+            if not hasattr(model.meta, "asn"):
+                model.meta["asn"] = {}
+            model.meta.asn[dm_attr] = self.asn[asn_attr]
 
 
 def _mapping_to_group_id(mapping):
