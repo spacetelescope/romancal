@@ -131,7 +131,6 @@ class RomanSourceCatalog:
         self.aperture_ee = self.aperture_params["aperture_ee"]
         self.n_aper = len(self.aperture_ee)
         self.wcs = self.model.meta.wcs
-        self.column_desc = {}
         self.meta = {}
         if self.fit_psf:
             # get the necessary columns for the PSF photometry table
@@ -249,7 +248,7 @@ class RomanSourceCatalog:
 
         return abmag, abmag_err
 
-    def set_segment_properties(self):
+    def calc_segment_properties(self):
         """
         Calculate the segment-based properties calculated by
         `~photutils.segmentation.SourceCatalog`.
@@ -411,44 +410,6 @@ class RomanSourceCatalog:
 
         return colnames
 
-    def _make_aperture_descriptions(self, name):
-        """
-        Make aperture column descriptions.
-
-        Parameters
-        ----------
-        name : {'flux', 'abmag'}
-            The name type of the column.
-
-        Returns
-        -------
-        descriptions : list of str
-            A list of the output column descriptions.
-        """
-        if name == "flux":
-            ftype = "Flux"
-            ftype2 = "flux"
-        elif name == "abmag":
-            ftype = ftype2 = "AB magnitude"
-
-        desc = []
-        for aper_ee in self.aperture_ee:
-            desc.append(
-                f"{ftype} within the {aper_ee}% encircled energy circular aperture"
-            )
-            desc.append(
-                f"{ftype} error within the {aper_ee}% encircled energy circular aperture"
-            )
-
-        desc.append(
-            f"Total aperture-corrected {ftype2} based on the {self.aperture_ee[-1]}% encircled energy circular aperture; should be used only for unresolved sources."
-        )
-        desc.append(
-            f"Total aperture-corrected {ftype2} error based on the {self.aperture_ee[-1]}% encircled energy circular aperture; should be used only for unresolved sources."
-        )
-
-        return desc
-
     @lazyproperty
     def aperture_flux_colnames(self):
         """
@@ -457,49 +418,11 @@ class RomanSourceCatalog:
         return self._make_aperture_colnames("flux")
 
     @lazyproperty
-    def aperture_flux_descriptions(self):
-        """
-        The aperture flux column descriptions.
-        """
-        return self._make_aperture_descriptions("flux")
-
-    @lazyproperty
     def aperture_abmag_colnames(self):
         """
         The aperture AB magnitude column names.
         """
         return self._make_aperture_colnames("abmag")
-
-    @lazyproperty
-    def aperture_abmag_descriptions(self):
-        """
-        The aperture AB magnitude column descriptions.
-        """
-        return self._make_aperture_descriptions("abmag")
-
-    @lazyproperty
-    def aperture_colnames(self):
-        """
-        A dictionary of the output table column names and descriptions
-        for the aperture catalog.
-        """
-        desc = {}
-        desc["aper_bkg_flux"] = (
-            "The local background value calculated as the sigma-clipped median value in the background annulus aperture"
-        )
-        desc["aper_bkg_flux_err"] = (
-            "The standard error of the sigma-clipped median background value"
-        )
-
-        for idx, colname in enumerate(self.aperture_flux_colnames):
-            desc[colname] = self.aperture_flux_descriptions[idx]
-        # TEMP: do not include ABmags
-        # for idx, colname in enumerate(self.aperture_abmag_colnames):
-        #     desc[colname] = self.aperture_abmag_descriptions[idx]
-
-        self.column_desc.update(desc)
-
-        return list(desc.keys())
 
     @lazyproperty
     def _aper_local_background(self):
@@ -563,7 +486,7 @@ class RomanSourceCatalog:
         """
         return self._aper_local_background[1]
 
-    def set_aperture_properties(self):
+    def calc_aperture_photometry(self):
         """
         Calculate the aperture photometry.
 
@@ -594,23 +517,6 @@ class RomanSourceCatalog:
             setattr(self, self.aperture_flux_colnames[idx1], flux_err)
             setattr(self, self.aperture_abmag_colnames[idx0], abmag)
             setattr(self, self.aperture_abmag_colnames[idx1], abmag_err)
-
-    @lazyproperty
-    def extras_colnames(self):
-        """
-        A dictionary of the output table column names and descriptions
-        for the additional catalog values.
-        """
-        desc = {}
-        desc["flags"] = "Data quality flags"
-        desc["is_extended"] = "Flag indicating whether the source is extended"
-        desc["sharpness"] = "The DAOFind source sharpness statistic"
-        desc["roundness"] = "The DAOFind source roundness statistic"
-        desc["nn_label"] = "The label number of the nearest neighbor"
-        desc["nn_dist"] = "The distance in pixels to the nearest neighbor"
-        self.column_desc.update(desc)
-
-        return list(desc.keys())
 
     @lazyproperty
     def flags(self):
@@ -655,18 +561,6 @@ class RomanSourceCatalog:
         ]
 
     @lazyproperty
-    def ci_colname_descriptions(self):
-        """
-        The concentration indices column descriptions.
-        """
-        return [
-            "Concentration index calculated as "
-            f"({self.aperture_flux_colnames[2 * j]} / "
-            f"{self.aperture_flux_colnames[2 * i]})"
-            for (i, j) in self._ci_ee_indices
-        ]
-
-    @lazyproperty
     def concentration_indices(self):
         """
         A list of concentration indices, calculated as the flux
@@ -688,7 +582,7 @@ class RomanSourceCatalog:
             for flux1, flux2 in fluxes
         ]
 
-    def set_ci_properties(self):
+    def calc_ci_properties(self):
         """
         Set the concentration indices as dynamic attributes on the class
         instance.
@@ -1039,7 +933,8 @@ class RomanSourceCatalog:
                 table.add_columns(
                     [ra, dec], names=[ra_colname, dec_colname], indexes=[idx, idx]
                 )
-                desc = self.column_desc[colname]
+
+                desc = self.catalog_descriptions[colname]
                 ra_desc = desc.replace("Sky coordinate", "Right ascension")
                 dec_desc = desc.replace("Sky coordinate", "Declination")
                 table[ra_colname].info.description = ra_desc
@@ -1115,7 +1010,7 @@ class RomanSourceCatalog:
 
         return list(desc.keys())
 
-    def do_psf_photometry(self) -> None:
+    def calc_psf_photometry(self) -> None:
         """
         Perform PSF photometry by fitting PSF models to detected sources for refined astrometry.
 
@@ -1158,6 +1053,44 @@ class RomanSourceCatalog:
         # append PSF results to the class instance with the proper column name
         for old_name, new_name in old_name_to_new_name_mapping.items():
             setattr(self, new_name, psf_photometry_table[old_name])
+
+    def _make_aperture_descriptions(self, name):
+        """
+        Make aperture column descriptions.
+
+        Parameters
+        ----------
+        name : {'flux', 'abmag'}
+            The name type of the column.
+
+        Returns
+        -------
+        descriptions : list of str
+            A list of the output column descriptions.
+        """
+        if name == "flux":
+            ftype = "Flux"
+            ftype2 = "flux"
+        elif name == "abmag":
+            ftype = ftype2 = "AB magnitude"
+
+        desc = []
+        for aper_ee in self.aperture_ee:
+            desc.append(
+                f"{ftype} within the {aper_ee}% encircled energy circular aperture"
+            )
+            desc.append(
+                f"{ftype} error within the {aper_ee}% encircled energy circular aperture"
+            )
+
+        desc.append(
+            f"Total aperture-corrected {ftype2} based on the {self.aperture_ee[-1]}% encircled energy circular aperture; should be used only for unresolved sources."
+        )
+        desc.append(
+            f"Total aperture-corrected {ftype2} error based on the {self.aperture_ee[-1]}% encircled energy circular aperture; should be used only for unresolved sources."
+        )
+
+        return desc
 
     @lazyproperty
     def catalog_descriptions(self):
@@ -1209,31 +1142,83 @@ class RomanSourceCatalog:
             "Sky coordinate (ICRS) of the upper-right vertex of the minimal bounding box of the source"
         )
 
+        col["aper_bkg_flux"] = (
+            "The local background value calculated as the sigma-clipped median value in the background annulus aperture"
+        )
+        col["aper_bkg_flux_err"] = (
+            "The standard error of the sigma-clipped median background value"
+        )
+        aperture_descriptions = self._make_aperture_descriptions("flux")
+        for idx, colname in enumerate(self.aperture_flux_colnames):
+            col[colname] = aperture_descriptions[idx]
+
+        col["flags"] = "Data quality flags"
+        col["is_extended"] = "Flag indicating whether the source is extended"
+        col["sharpness"] = "The DAOFind source sharpness statistic"
+        col["roundness"] = "The DAOFind source roundness statistic"
+        col["nn_label"] = "The label number of the nearest neighbor"
+        col["nn_dist"] = "The distance in pixels to the nearest neighbor"
+
+        col["flag_psf"] = "Data quality flags"
+        col["x_psf"] = "X coordinate as determined by PSF fitting"
+        col["x_psf_err"] = "Error on X coordinate of PSF fitting"
+        col["y_psf"] = "Y coordinate as determined by PSF fitting"
+        col["y_psf_err"] = "Error on Y coordinate of PSF fitting"
+        col["flux_psf"] = "Source flux as determined by PSF photometry"
+        col["flux_psf_err"] = "Source flux error as determined by PSF photometry"
         return col
 
     @lazyproperty
     def catalog_colnames(self):
         """
-        A dictionary of the output catalog column names and their
-        descriptions.
-
-        The order of the dictionary keys determines the order of the
-        output columns.
+        An ordered list of the output catalog column names.
         """
-        segment_colnames = list(self.catalog_descriptions.keys())
-        self.column_desc.update(self.catalog_descriptions)
+        aper_colnames = [
+            "aper_bkg_flux",
+            "aper_bkg_flux_err",
+            "aper30_flux",
+            "aper30_flux_err",
+            "aper50_flux",
+            "aper50_flux_err",
+            "aper70_flux",
+            "aper70_flux_err",
+            "aper_total_flux",
+            "aper_total_flux_err",
+        ]
 
         if self.detection_cat is None:
-            colnames = segment_colnames[:4]
-            colnames.extend(self.aperture_colnames)
-            colnames.extend(self.extras_colnames)
-            colnames.extend(segment_colnames[4:])
-            if self.fit_psf:
-                colnames.extend(self.psf_photometry_colnames)
+            colnames = [
+                "label",
+                "xcentroid",
+                "ycentroid",
+                "sky_centroid",
+            ]
+            colnames.extend(aper_colnames)
+            colnames2 = [
+                "flags",
+                "is_extended",
+                "sharpness",
+                "roundness",
+                "nn_label",
+                "nn_dist",
+                "isophotal_flux",
+                "isophotal_flux_err",
+                "isophotal_area",
+                "kron_flux",
+                "kron_flux_err",
+                "semimajor_sigma",
+                "semiminor_sigma",
+                "ellipticity",
+                "orientation",
+                "sky_orientation",
+                "sky_bbox_ll",
+                "sky_bbox_ul",
+                "sky_bbox_lr",
+                "sky_bbox_ur",
+            ]
+            colnames.extend(colnames2)
 
         else:
-            # NOTE: label is need to join the tables
-            _ = self.extras_colnames  # trigger updating the descriptions
             colnames = [
                 "label",
                 "flags",
@@ -1245,9 +1230,19 @@ class RomanSourceCatalog:
                 "kron_flux",
                 "kron_flux_err",
             ]
-            colnames.extend(self.aperture_colnames)
-            if self.fit_psf:
-                colnames.extend(self.psf_photometry_colnames)
+            colnames.extend(aper_colnames)
+
+        if self.fit_psf:
+            psf_colnames = [
+                "flag_psf",
+                "x_psf",
+                "x_psf_err",
+                "y_psf",
+                "y_psf_err",
+                "flux_psf",
+                "flux_psf_err",
+            ]
+            colnames.extend(psf_colnames)
 
         return colnames
 
@@ -1256,21 +1251,24 @@ class RomanSourceCatalog:
         """
         The final source catalog.
         """
-        # convert L2 data units back to MJy/sr
+        # convert data to flux units
         if isinstance(self.model, ImageModel):
             self.convert_l2_to_sb()
-
         self.convert_sb_to_flux_density()
-        self.set_segment_properties()
-        self.set_aperture_properties()
-        self.set_ci_properties()
-        if self.fit_psf:
-            self.do_psf_photometry()
 
+        # make measurements
+        self.calc_segment_properties()
+        self.calc_aperture_photometry()
+        self.calc_ci_properties()
+        if self.fit_psf:
+            self.calc_psf_photometry()
+
+        # put the measurements into a Table
         catalog = QTable()
         for column in self.catalog_colnames:
             catalog[column] = getattr(self, column)
-            catalog[column].info.description = self.column_desc[column]
+            descrip = self.catalog_descriptions.get(column, None)
+            catalog[column].info.description = descrip
         self._update_metadata()
         catalog.meta.update(self.meta)
 
