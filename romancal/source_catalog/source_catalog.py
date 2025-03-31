@@ -249,62 +249,10 @@ class RomanSourceCatalog:
 
         return abmag, abmag_err
 
-    @lazyproperty
-    def segment_colnames(self):
-        """
-        A dictionary of the output table column names and descriptions
-        for the segment catalog.
-        """
-        desc = {}
-        desc["label"] = "Unique source identification label number"
-        desc["xcentroid"] = "X pixel value of the source centroid (0 indexed)"
-        desc["ycentroid"] = "Y pixel value of the source centroid (0 indexed)"
-        desc["sky_centroid"] = " Sky coordinate (ICRS) of the source centroid"
-        desc["isophotal_flux"] = "Isophotal flux"
-        desc["isophotal_flux_err"] = "Isophotal flux error"
-        # isophotal_flux and isophotal_flux_err must be listed before isophotal_abmag
-        # TEMP: do not include ABmags
-        # desc["isophotal_abmag"] = "Isophotal AB magnitude"
-        # desc["isophotal_abmag_err"] = "Isophotal AB magnitude error"
-        desc["isophotal_area"] = "Isophotal area"
-        desc["kron_flux"] = "Kron flux"
-        desc["kron_flux_err"] = "Kron flux error"
-        desc["semimajor_sigma"] = (
-            "1-sigma standard deviation along the semimajor axis of the 2D Gaussian function that has the same second-order central moments as the source"
-        )
-        desc["semiminor_sigma"] = (
-            "1-sigma standard deviation along the semiminor axis of the 2D Gaussian function that has the same second-order central moments as the source"
-        )
-        desc["ellipticity"] = (
-            "1 minus the ratio of the 1-sigma lengths of the semimajor and semiminor axes"
-        )
-        desc["orientation"] = (
-            "The angle (degrees) between the positive X axis and the major axis (increases counter-clockwise)"
-        )
-        # orientation must be listed before sky_orientation
-        desc["sky_orientation"] = (
-            "The position angle (degrees) from North of the major axis"
-        )
-        desc["sky_bbox_ll"] = (
-            "Sky coordinate (ICRS) of the lower-left vertex of the minimal bounding box of the source"
-        )
-        desc["sky_bbox_ul"] = (
-            "Sky coordinate (ICRS) of the upper-left vertex of the minimal bounding box of the source"
-        )
-        desc["sky_bbox_lr"] = (
-            "Sky coordinate (ICRS) of the lower-right vertex of the minimal bounding box of the source"
-        )
-        desc["sky_bbox_ur"] = (
-            "Sky coordinate (ICRS) of the upper-right vertex of the minimal bounding box of the source"
-        )
-
-        self.column_desc.update(desc)
-
-        return list(desc.keys())
-
     def set_segment_properties(self):
         """
-        Calculate the segment-based source photometry and morphologies.
+        Calculate the segment-based properties calculated by
+        `~photutils.segmentation.SourceCatalog`.
 
         The results are set as dynamic attributes on the class instance.
         """
@@ -312,6 +260,7 @@ class RomanSourceCatalog:
             detection_cat = self.detection_cat.segm_sourcecat
         else:
             detection_cat = None
+
         segm_cat = SourceCatalog(
             self.model.data,
             self.segment_img,
@@ -321,26 +270,53 @@ class RomanSourceCatalog:
             detection_cat=detection_cat,
         )
         self.segm_sourcecat = segm_cat
-
         self.meta.update(segm_cat.meta)
 
-        # rename some columns in the output catalog
-        prop_names = {}
-        prop_names["isophotal_flux"] = "segment_flux"
-        prop_names["isophotal_flux_err"] = "segment_fluxerr"
-        prop_names["isophotal_area"] = "area"
-        prop_names["kron_flux_err"] = "kron_fluxerr"
+        # Extract the properties from the segment catalog. These
+        # names are the SourceCatalog property names and the order
+        # is not important; the final column order is set by the the
+        # catalog_colnames method.
+        columns = (
+            "label",
+            "xcentroid",
+            "ycentroid",
+            "sky_centroid",
+            "bbox_xmin",
+            "bbox_xmax",
+            "bbox_ymin",
+            "bbox_ymax",
+            "area",
+            "semimajor_sigma",
+            "semiminor_sigma",
+            "orientation",
+            "ellipticity",
+            "kron_radius",
+            "segment_flux",
+            "segment_fluxerr",
+            "kron_flux",
+            "kron_fluxerr",
+            "sky_bbox_ll",
+            "sky_bbox_ul",
+            "sky_bbox_lr",
+            "sky_bbox_ur",
+        )
 
-        # dynamically set the attributes
-        for column in self.segment_colnames:
-            # use the renamed column name if it exists in prop_names
-            prop_name = prop_names.get(column, column)
-            try:
-                value = getattr(segm_cat, prop_name)
-            except AttributeError:
-                # isophotal_abmag, isophotal_abmag_err, sky_orientation
-                value = getattr(self, prop_name)
-            setattr(self, column, value)
+        # if needed, map column names from photutils to the output catalog
+        column_map = {}
+        column_map["segment_flux"] = "isophotal_flux"
+        column_map["segment_fluxerr"] = "isophotal_flux_err"
+        column_map["area"] = "isophotal_area"
+        column_map["kron_fluxerr"] = "kron_flux_err"
+
+        # set these columns as attributes of this instance
+        for column in columns:
+            # use the renamed column name
+            if column in column_map:
+                out_column = column_map[column]
+            else:
+                out_column = column
+
+            setattr(self, out_column, getattr(segm_cat, column))
 
     @lazyproperty
     def _xypos(self):
@@ -1011,39 +987,6 @@ class RomanSourceCatalog:
         """
         return self._abmag_total[1]
 
-    @lazyproperty
-    def colnames(self):
-        """
-        The column name order for the final source catalog.
-        """
-        if self.detection_cat is None:
-            colnames = self.segment_colnames[:4]
-            colnames.extend(self.aperture_colnames)
-            colnames.extend(self.extras_colnames)
-            colnames.extend(self.segment_colnames[4:])
-            if self.fit_psf:
-                colnames.extend(self.psf_photometry_colnames)
-
-        else:
-            # NOTE: label is need to join the tables
-            _ = self.extras_colnames  # trigger updating the descriptions
-            colnames = [
-                "label",
-                "flags",
-                "is_extended",
-                "sharpness",
-                "roundness",
-                "isophotal_flux",
-                "isophotal_flux_err",
-                "kron_flux",
-                "kron_flux_err",
-            ]
-            colnames.extend(self.aperture_colnames)
-            if self.fit_psf:
-                colnames.extend(self.psf_photometry_colnames)
-
-        return colnames
-
     def _update_metadata(self):
         """
         Update the metadata dictionary with the package version
@@ -1217,6 +1160,98 @@ class RomanSourceCatalog:
             setattr(self, new_name, psf_photometry_table[old_name])
 
     @lazyproperty
+    def catalog_descriptions(self):
+        """
+        A dictionary of the output catalog column descriptions.
+
+        The order is not important.
+        """
+        col = {}
+        col["label"] = "Unique source identification label number"
+        col["xcentroid"] = "X pixel value of the source centroid (0 indexed)"
+        col["ycentroid"] = "Y pixel value of the source centroid (0 indexed)"
+        col["sky_centroid"] = " Sky coordinate (ICRS) of the source centroid"
+        col["isophotal_flux"] = "Isophotal flux"
+        col["isophotal_flux_err"] = "Isophotal flux error"
+        # isophotal_flux and isophotal_flux_err must be listed before isophotal_abmag
+        # TEMP: do not include ABmags
+        # desc["isophotal_abmag"] = "Isophotal AB magnitude"
+        # desc["isophotal_abmag_err"] = "Isophotal AB magnitude error"
+        col["isophotal_area"] = "Isophotal area"
+        col["kron_flux"] = "Kron flux"
+        col["kron_flux_err"] = "Kron flux error"
+        col["semimajor_sigma"] = (
+            "1-sigma standard deviation along the semimajor axis of the 2D Gaussian function that has the same second-order central moments as the source"
+        )
+        col["semiminor_sigma"] = (
+            "1-sigma standard deviation along the semiminor axis of the 2D Gaussian function that has the same second-order central moments as the source"
+        )
+        col["ellipticity"] = (
+            "1 minus the ratio of the 1-sigma lengths of the semimajor and semiminor axes"
+        )
+        col["orientation"] = (
+            "The angle (degrees) between the positive X axis and the major axis (increases counter-clockwise)"
+        )
+        # orientation must be listed before sky_orientation
+        col["sky_orientation"] = (
+            "The position angle (degrees) from North of the major axis"
+        )
+        col["sky_bbox_ll"] = (
+            "Sky coordinate (ICRS) of the lower-left vertex of the minimal bounding box of the source"
+        )
+        col["sky_bbox_ul"] = (
+            "Sky coordinate (ICRS) of the upper-left vertex of the minimal bounding box of the source"
+        )
+        col["sky_bbox_lr"] = (
+            "Sky coordinate (ICRS) of the lower-right vertex of the minimal bounding box of the source"
+        )
+        col["sky_bbox_ur"] = (
+            "Sky coordinate (ICRS) of the upper-right vertex of the minimal bounding box of the source"
+        )
+
+        return col
+
+    @lazyproperty
+    def catalog_colnames(self):
+        """
+        A dictionary of the output catalog column names and their
+        descriptions.
+
+        The order of the dictionary keys determines the order of the
+        output columns.
+        """
+        segment_colnames = list(self.catalog_descriptions.keys())
+        self.column_desc.update(self.catalog_descriptions)
+
+        if self.detection_cat is None:
+            colnames = segment_colnames[:4]
+            colnames.extend(self.aperture_colnames)
+            colnames.extend(self.extras_colnames)
+            colnames.extend(segment_colnames[4:])
+            if self.fit_psf:
+                colnames.extend(self.psf_photometry_colnames)
+
+        else:
+            # NOTE: label is need to join the tables
+            _ = self.extras_colnames  # trigger updating the descriptions
+            colnames = [
+                "label",
+                "flags",
+                "is_extended",
+                "sharpness",
+                "roundness",
+                "isophotal_flux",
+                "isophotal_flux_err",
+                "kron_flux",
+                "kron_flux_err",
+            ]
+            colnames.extend(self.aperture_colnames)
+            if self.fit_psf:
+                colnames.extend(self.psf_photometry_colnames)
+
+        return colnames
+
+    @lazyproperty
     def catalog(self):
         """
         The final source catalog.
@@ -1233,7 +1268,7 @@ class RomanSourceCatalog:
             self.do_psf_photometry()
 
         catalog = QTable()
-        for column in self.colnames:
+        for column in self.catalog_colnames:
             catalog[column] = getattr(self, column)
             catalog[column].info.description = self.column_desc[column]
         self._update_metadata()
