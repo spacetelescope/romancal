@@ -14,8 +14,8 @@ from romancal.associations import mk_patchlist, mk_skycell_asn_from_patchlist
 pytestmark = [pytest.mark.bigdata]
 
 EXPECTED_MATCH_FILENAMES = [
-    "r0000101001001001001_0002_wfi01_cal.match",
-    "r0000101001001001001_0002_wfi10_cal.match",
+    "r0000101001001001001_0002_wfi01_f158_cal.match",
+    "r0000101001001001001_0002_wfi10_f158_cal.match",
 ]
 
 EXPECTED_ASN_FILENAMES = [
@@ -34,11 +34,11 @@ def run_patchlist(rtdata_module):
 
     # This test should generate two match files
     args = [
-        "r0000101001001001001_0002_wfi01_cal.asdf",
-        "r0000101001001001001_0002_wfi10_cal.asdf",
+        "r0000101001001001001_0002_wfi01_f158_cal.asdf",
+        "r0000101001001001001_0002_wfi10_f158_cal.asdf",
     ]
-    rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi01_cal.asdf")
-    rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi10_cal.asdf")
+    rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi01_f158_cal.asdf")
+    rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi10_f158_cal.asdf")
 
     mk_patchlist._cli(args)
     return rtdata
@@ -51,13 +51,13 @@ def test_match_files(run_patchlist, expected_match_files):
 
 
 @pytest.fixture(scope="module")
-def run_skycellasn(rtdata_module):
+def run_skycellasn(rtdata_module, run_patchlist):
     rtdata = rtdata_module
 
     # This test should generate six association files
     args = [
-        "r0000101001001001001_0002_wfi01_cal.match",
-        "r0000101001001001001_0002_wfi10_cal.match",
+        "r0000101001001001001_0002_wfi01_f158_cal.match",
+        "r0000101001001001001_0002_wfi10_f158_cal.match",
     ]
 
     mk_skycell_asn_from_patchlist._cli(args)

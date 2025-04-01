@@ -268,5 +268,5 @@ using the centroid and shape information given in the ``xcentroid``,
 fields.
 
 Forced source catalogs may be produced by specifying a segmentation
-image with the --forced_segmentation argument when running the source
+image with the ``--forced_segmentation`` argument when running the source
 catalog step.
