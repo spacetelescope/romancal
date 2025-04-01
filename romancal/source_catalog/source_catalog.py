@@ -384,59 +384,42 @@ class RomanSourceCatalog:
         """
         return (180.0 * u.deg) - self._wcs_angle + self.orientation
 
-    def _make_aperture_colnames(self, name):
+    @lazyproperty
+    def aperture_radii(self):
         """
-        Make the aperture column names.
+        A dictionary of the aperture radii.
 
-        There are separate columns for the flux/magnitude for each of
-        the encircled energies and the total flux/magnitude.
-
-        Parameters
-        ----------
-        name : {'flux', 'abmag'}
-            The name type of the column.
-
-        Returns
-        -------
-        colnames : list of str
-            A list of the output column names.
+        The radii are floats in units of pixels.
         """
-        colnames = []
-        for aper_ee in self.aperture_ee:
-            basename = f"aper{aper_ee}_{name}"
-            colnames.append(basename)
-            colnames.append(f"{basename}_err")
+        params = {}
+        radii = np.array((0.1, 0.2, 0.4, 0.8, 1.6)) << u.arcsec
+        annulus_radii = np.array((2.4, 2.8)) << u.arcsec
+        params["circle"] = radii.copy()
+        params["annulus"] = annulus_radii.copy()
 
-        return colnames
+        radii /= self._pixel_scale
+        annulus_radii /= self._pixel_scale
+        radii = radii.to(u.dimensionless_unscaled).value
+        annulus_radii = annulus_radii.to(u.dimensionless_unscaled).value
+        params["circle_pix"] = radii
+        params["annulus_pix"] = annulus_radii
+
+        return params
 
     @lazyproperty
-    def aperture_flux_colnames(self):
-        """
-        The aperture flux column names.
-        """
-        return self._make_aperture_colnames("flux")
-
-    @lazyproperty
-    def aperture_abmag_colnames(self):
-        """
-        The aperture AB magnitude column names.
-        """
-        return self._make_aperture_colnames("abmag")
-
-    @lazyproperty
-    def _aper_local_background(self):
+    def _aperture_background(self):
         """
         Estimate the local background and error using a circular annulus
         aperture.
 
         The local background is the sigma-clipped median value in the
-        annulus.  The background error is the standard error of the
-        median, sqrt(pi / 2N) * std.
+        annulus. The background error is the standard error of the
+        median, sqrt(pi / (2 * N)) * std.
         """
         bkg_aper = CircularAnnulus(
             self._xypos_aper,
-            self.aperture_params["bkg_aperture_inner_radius"],
-            self.aperture_params["bkg_aperture_outer_radius"],
+            self.aperture_radii["annulus_pix"][0],
+            self.aperture_radii["annulus_pix"][1],
         )
         bkg_aper_masks = bkg_aper.to_mask(method="center")
         sigclip = SigmaClip(sigma=3.0)
@@ -476,14 +459,31 @@ class RomanSourceCatalog:
         """
         The aperture local background flux (per pixel).
         """
-        return self._aper_local_background[0]
+        return self._aperture_background[0]
 
     @lazyproperty
     def aper_bkg_flux_err(self):
         """
         The aperture local background flux error (per pixel).
         """
-        return self._aper_local_background[1]
+        return self._aperture_background[1]
+
+    @lazyproperty
+    def aperture_flux_colnames(self):
+        """
+        The aperture flux column names.
+
+        The column names are based on the circular aperture radii in
+        tenths of arcsec. For example, the flux in a r=0.2 arcsec
+        aperture is "aper02_flux".
+        """
+        flux_columns = []
+        for radius in self.aperture_radii["circle"]:
+            radius /= 0.1 * u.arcsec
+            radius_str = np.round(radius.value).astype(int)
+            flux_columns.append(f"aper{radius_str:02d}_flux")
+
+        return flux_columns
 
     def calc_aperture_photometry(self):
         """
@@ -493,29 +493,25 @@ class RomanSourceCatalog:
         """
         apertures = [
             CircularAperture(self._xypos_aper, radius)
-            for radius in self.aperture_params["aperture_radii"]
+            for radius in self.aperture_radii["circle_pix"]
         ]
         aper_phot = aperture_photometry(
             self.model.data, apertures, error=self.model.err
         )
 
         for i, aperture in enumerate(apertures):
-            flux_col = f"aperture_sum_{i}"
-            flux_err_col = f"aperture_sum_err_{i}"
+            tmp_flux_col = f"aperture_sum_{i}"
+            tmp_flux_err_col = f"aperture_sum_err_{i}"
 
             # subtract the local background measured in the annulus
-            aper_phot[flux_col] -= self.aper_bkg_flux * aperture.area
+            aper_areas = aperture.area_overlap(self.model.data)
+            aper_phot[tmp_flux_col] -= self.aper_bkg_flux * aper_areas
 
-            flux = aper_phot[flux_col]
-            flux_err = aper_phot[flux_err_col]
-            abmag, abmag_err = self.convert_flux_to_abmag(flux, flux_err)
-
-            idx0 = 2 * i
-            idx1 = (2 * i) + 1
-            setattr(self, self.aperture_flux_colnames[idx0], flux)
-            setattr(self, self.aperture_flux_colnames[idx1], flux_err)
-            setattr(self, self.aperture_abmag_colnames[idx0], abmag)
-            setattr(self, self.aperture_abmag_colnames[idx1], abmag_err)
+            # set the flux and error attributes
+            flux_col = self.aperture_flux_colnames[i]
+            flux_err_col = f"{flux_col}_err"
+            setattr(self, flux_col, aper_phot[tmp_flux_col])
+            setattr(self, flux_err_col, aper_phot[tmp_flux_err_col])
 
     @lazyproperty
     def flags(self):
@@ -1036,9 +1032,14 @@ class RomanSourceCatalog:
         col["aper_bkg_flux_err"] = (
             "The standard error of the sigma-clipped median background value"
         )
-        aperture_descriptions = self._make_aperture_descriptions("flux")
-        for idx, colname in enumerate(self.aperture_flux_colnames):
-            col[colname] = aperture_descriptions[idx]
+
+        for i, colname in enumerate(self.aperture_flux_colnames):
+            desc = (
+                "within a circular aperture of radius="
+                f"{self.aperture_radii['circle'][i]:0.1f}"
+            )
+            col[colname] = f"Flux {desc}"
+            col[f"{colname}_err"] = f"Flux error {desc}"
 
         col["flags"] = "Data quality flags"
         col["is_extended"] = "Flag indicating whether the source is extended"
@@ -1061,16 +1062,10 @@ class RomanSourceCatalog:
         """
         An ordered list of the output catalog column names.
         """
-        aper_colnames = [
-            "aper_bkg_flux",
-            "aper_bkg_flux_err",
-            "aper30_flux",
-            "aper30_flux_err",
-            "aper50_flux",
-            "aper50_flux_err",
-            "aper70_flux",
-            "aper70_flux_err",
-        ]
+        aper_colnames = []
+        for colname in self.aperture_flux_colnames:
+            aper_colnames.append(colname)
+            aper_colnames.append(f"{colname}_err")
 
         if self.detection_cat is None:
             colnames = [
@@ -1078,8 +1073,12 @@ class RomanSourceCatalog:
                 "xcentroid",
                 "ycentroid",
                 "sky_centroid",
+                "aper_bkg_flux",
+                "aper_bkg_flux_err",
             ]
+
             colnames.extend(aper_colnames)
+
             colnames2 = [
                 "flags",
                 "is_extended",
@@ -1127,6 +1126,8 @@ class RomanSourceCatalog:
                 "y_psf_err",
                 "flux_psf",
                 "flux_psf_err",
+                "aper_bkg_flux",
+                "aper_bkg_flux_err",
             ]
             colnames.extend(psf_colnames)
 
