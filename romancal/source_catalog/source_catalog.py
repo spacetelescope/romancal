@@ -543,63 +543,11 @@ class RomanSourceCatalog:
         return flags
 
     @lazyproperty
-    def _ci_ee_indices(self):
-        """
-        The EE indices for the concentration indices.
-        """
-        # NOTE: the EE values are always in increasing order
-        return (0, 1), (1, 2), (0, 2)
-
-    @lazyproperty
-    def ci_colnames(self):
-        """
-        The column names of the three concentration indices.
-        """
-        return [
-            f"CI_{self.aperture_ee[j]}_{self.aperture_ee[i]}"
-            for (i, j) in self._ci_ee_indices
-        ]
-
-    @lazyproperty
-    def concentration_indices(self):
-        """
-        A list of concentration indices, calculated as the flux
-        ratios of:
-
-            * the (middle / smallest) aperture flux ratio
-              e.g., CI_50_30 = aper50_flux / aper30_flux
-            * the (largest / middle) aperture flux ratio
-              e.g., CI_70_50 = aper70_flux / aper50_flux
-            * the (largest / smallest) aperture flux ratio
-              e.g., CI_70_30 = aper70_flux / aper30_flux
-        """
-        fluxes = [
-            (self.aperture_flux_colnames[2 * j], self.aperture_flux_colnames[2 * i])
-            for (i, j) in self._ci_ee_indices
-        ]
-        return [
-            getattr(self, flux1).value / getattr(self, flux2).value
-            for flux1, flux2 in fluxes
-        ]
-
-    def calc_ci_properties(self):
-        """
-        Set the concentration indices as dynamic attributes on the class
-        instance.
-        """
-        for name, value in zip(
-            self.ci_colnames, self.concentration_indices, strict=False
-        ):
-            setattr(self, name, value)
-
-    @lazyproperty
     def is_extended(self):
         """
         Boolean indicating whether the source is extended.
         """
-        mask1 = self.concentration_indices[0] > self.ci_star_thresholds[0]
-        mask2 = self.concentration_indices[1] > self.ci_star_thresholds[1]
-        return np.logical_and(mask1, mask2)
+        return np.zeros(self.n_sources, dtype=np.float32)
 
     @lazyproperty
     def _daofind_kernel_size(self):
@@ -1259,7 +1207,6 @@ class RomanSourceCatalog:
         # make measurements
         self.calc_segment_properties()
         self.calc_aperture_photometry()
-        self.calc_ci_properties()
         if self.fit_psf:
             self.calc_psf_photometry()
 
