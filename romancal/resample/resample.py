@@ -239,7 +239,9 @@ class ResampleData(Resample):
         if self.compute_exptime and hasattr(self, "_exptime_resampler"):
             exptime_total = self._exptime_resampler.finalize()
             m = exptime_total > 0
-            total_exposure_time = np.mean(exptime_total[m]) if np.any(m) else 0
+            total_exposure_time = (
+                np.mean(exptime_total[m], dtype="f8") if np.any(m) else 0
+            )
             max_exposure_time = np.max(exptime_total)
             log.info(
                 f"Mean, max exposure times: {total_exposure_time:.1f}, "
