@@ -295,6 +295,14 @@ class RomanSourceCatalog:
             setattr(self, out_column, getattr(segm_cat, column))
 
     @lazyproperty
+    def sky_orientation(self):
+        """
+        The position angle of the source major axis in degrees measured
+        East of North.
+        """
+        return (180.0 * u.deg) - self._wcs_angle + self.orientation
+
+    @lazyproperty
     def _xypos(self):
         """
         The (x, y) source positions.
@@ -303,21 +311,23 @@ class RomanSourceCatalog:
         centroids are used. Otherwise, the segment catalog centroids are
         used.
         """
-        if self.detection_cat is not None:
-            xycen = (self.detection_cat.xcentroid, self.detection_cat.ycentroid)
-        else:
+        if self.detection_cat is None:
             xycen = (self.xcentroid, self.ycentroid)
+        else:
+            xycen = (self.detection_cat.xcentroid, self.detection_cat.ycentroid)
         return np.transpose(xycen)
 
     @lazyproperty
-    def _xypos_aper(self):
+    def _xypos_finite(self):
         """
-        The (x, y) source positions for the circular apertures and
-        annuli.
+        The (x, y) source positions where non-finite values have been
+        replaced by to a large negative value.
 
-        Non-finite positions are set to a large negative value. At this
-        position the aperture will not overlap the data, thus returning
-        NaN fluxes and errors.
+        This is used with functions that fail with non-finite centroid
+        values.
+
+        For aperture photometry, at this position the aperture will not
+        overlap the data, thus returning NaN fluxes and errors.
         """
         xypos = self._xypos.copy()
         nanmask = ~np.isfinite(xypos)
@@ -333,38 +343,9 @@ class RomanSourceCatalog:
         return ~np.isfinite(self._xypos).all(axis=1)
 
     @lazyproperty
-    def _isophotal_abmag(self):
-        """
-        The isophotal AB magnitude and error.
-        """
-        return self.convert_flux_to_abmag(self.isophotal_flux, self.isophotal_flux_err)
-
-    @lazyproperty
-    def isophotal_abmag(self):
-        """
-        The isophotal AB magnitude.
-        """
-        return self._isophotal_abmag[0]
-
-    @lazyproperty
-    def isophotal_abmag_err(self):
-        """
-        The isophotal AB magnitude error.
-        """
-        return self._isophotal_abmag[1]
-
-    @lazyproperty
-    def sky_orientation(self):
-        """
-        The orientation of the source major axis as the position angle
-        in degrees measured East of North.
-        """
-        return (180.0 * u.deg) - self._wcs_angle + self.orientation
-
-    @lazyproperty
     def aperture_radii(self):
         """
-        A dictionary of the aperture radii.
+        A dictionary of the aperture radii used for aperture photometry.
 
         The radii are floats in units of pixels.
         """
@@ -386,15 +367,15 @@ class RomanSourceCatalog:
     @lazyproperty
     def _aperture_background(self):
         """
-        Estimate the local background and error using a circular annulus
-        aperture.
+        The local background and error estimated using a circular
+        annulus aperture.
 
         The local background is the sigma-clipped median value in the
         annulus. The background error is the standard error of the
         median, sqrt(pi / (2 * N)) * std.
         """
         bkg_aper = CircularAnnulus(
-            self._xypos_aper,
+            self._xypos_finite,
             self.aperture_radii["annulus_pix"][0],
             self.aperture_radii["annulus_pix"][1],
         )
@@ -469,7 +450,7 @@ class RomanSourceCatalog:
         The results are set as dynamic attributes on the class instance.
         """
         apertures = [
-            CircularAperture(self._xypos_aper, radius)
+            CircularAperture(self._xypos_finite, radius)
             for radius in self.aperture_radii["circle_pix"]
         ]
         aper_phot = aperture_photometry(
@@ -491,26 +472,36 @@ class RomanSourceCatalog:
             setattr(self, flux_err_col, aper_phot[tmp_flux_err_col])
 
     @lazyproperty
-    def flags(self):
+    def image_flags(self):
         """
-        Data quality flags.
+        Data quality bit flags (0 = good).
+
+        Currently sets the bits:
+
+        * 1:
+          - L2: sources whose rounded centroid pixel is not finite or has
+                DO_NOT_USE set in the model DQ
+          - L3: sources whose rounded centroid pixel is not finite or has
+                a weight of 0
         """
-        badpos = ~np.isfinite(self._xypos[:, 0]) | ~np.isfinite(self._xypos[:, 1])
-        m = ~badpos
-        xyidx = np.round(self._xypos[m, :]).astype(int)
-        flags = np.full(self._xypos.shape[0], pixel.DO_NOT_USE, dtype=int)
+        xymask = np.isfinite(self._xypos[:, 0]) & np.isfinite(self._xypos[:, 1])
+        xyidx = np.round(self._xypos[xymask, :]).astype(int)
+        flags = np.full(self._xypos.shape[0], 0, dtype=np.int32)
+
+        # sources whose centroid pixel is not finite
+        flags[~xymask] = pixel.DO_NOT_USE
 
         try:
             # L2 images have a dq array
             dqflags = self.model.dq[xyidx[:, 1], xyidx[:, 0]]
             # if dqflags contains the DO_NOT_USE flag, set to DO_NOT_USE
             # (dq=1), otherwise 0
-            flags[m] = dqflags & pixel.DO_NOT_USE
+            flags[xymask] = dqflags & pixel.DO_NOT_USE
 
         except AttributeError:
             # L3 images
             mask = self.model.weight == 0
-            flags[m] = mask[xyidx[:, 1], xyidx[:, 0]].astype(int)
+            flags[xymask] = mask[xyidx[:, 1], xyidx[:, 0]].astype(np.int32)
 
         return flags
 
@@ -518,6 +509,8 @@ class RomanSourceCatalog:
     def is_extended(self):
         """
         Boolean indicating whether the source is extended.
+
+        Algorithm TBD.
         """
         return np.zeros(len(self), dtype=np.float32)
 
@@ -585,7 +578,7 @@ class RomanSourceCatalog:
         which has odd dimensions.
         """
         cutout = []
-        for xcen, ycen in zip(*np.transpose(self._xypos_aper), strict=False):
+        for xcen, ycen in zip(*np.transpose(self._xypos_finite), strict=False):
             try:
                 cutout_ = extract_array(
                     self.model.data,
@@ -609,7 +602,7 @@ class RomanSourceCatalog:
         which has odd dimensions.
         """
         cutout = []
-        for xcen, ycen in zip(*np.transpose(self._xypos_aper), strict=False):
+        for xcen, ycen in zip(*np.transpose(self._xypos_finite), strict=False):
             try:
                 cutout_ = extract_array(
                     self._daofind_convolved_data,
@@ -707,8 +700,8 @@ class RomanSourceCatalog:
             return [np.nan], [np.nan]
 
         # non-finite xypos causes memory errors on linux, but not MacOS
-        tree = KDTree(self._xypos_aper)
-        qdist, qidx = tree.query(self._xypos_aper, k=[2])
+        tree = KDTree(self._xypos_finite)
+        qdist, qidx = tree.query(self._xypos_finite, k=[2])
         return np.transpose(qdist)[0], np.transpose(qidx)[0]
 
     @lazyproperty
@@ -717,12 +710,12 @@ class RomanSourceCatalog:
         The label number of the nearest neighbor.
 
         A label value of -1 is returned if there is only one detected
-        source and for sources with a non-finite xcentroid or ycentroid.
+        source and for sources with a non-finite centroid.
         """
         if len(self) == 1:
             return np.int32(-1)
 
-        nn_label = self.label[self._kdtree_query[1]].astype("i4")
+        nn_label = self.label[self._kdtree_query[1]].astype(np.int32)
         # assign a label of -1 for non-finite xypos
         nn_label[self._xypos_nonfinite_mask] = -1
 
@@ -748,7 +741,7 @@ class RomanSourceCatalog:
         information and aperture parameters.
         """
         ver_key = "versions"
-        if "version" in self.meta.keys():
+        if "version" in self.meta:
             # depends on photutils version
             self.meta[ver_key] = self.meta.pop("version")
 
@@ -841,7 +834,7 @@ class RomanSourceCatalog:
         """
         log.info("Fitting a PSF model to sources for improved astrometric precision.")
         xinit, yinit = np.transpose(self._xypos)
-        psf_photometry_table, photometry = psf.fit_psf_to_image_model(
+        psf_photometry_table, _ = psf.fit_psf_to_image_model(
             image_model=self.model,
             mask=self.mask,
             psf_model=self.psf_model,
@@ -861,46 +854,8 @@ class RomanSourceCatalog:
         column_map["flux_err"] = "psf_flux_err"
 
         # set these columns as attributes of this instance
-        for column in column_map.keys():
-            setattr(self, column_map[column], psf_photometry_table[column])
-
-    def _make_aperture_descriptions(self, name):
-        """
-        Make aperture column descriptions.
-
-        Parameters
-        ----------
-        name : {'flux', 'abmag'}
-            The name type of the column.
-
-        Returns
-        -------
-        descriptions : list of str
-            A list of the output column descriptions.
-        """
-        if name == "flux":
-            ftype = "Flux"
-            ftype2 = "flux"
-        elif name == "abmag":
-            ftype = ftype2 = "AB magnitude"
-
-        desc = []
-        for aper_ee in self.aperture_ee:
-            desc.append(
-                f"{ftype} within the {aper_ee}% encircled energy circular aperture"
-            )
-            desc.append(
-                f"{ftype} error within the {aper_ee}% encircled energy circular aperture"
-            )
-
-        desc.append(
-            f"Total aperture-corrected {ftype2} based on the {self.aperture_ee[-1]}% encircled energy circular aperture; should be used only for unresolved sources."
-        )
-        desc.append(
-            f"Total aperture-corrected {ftype2} error based on the {self.aperture_ee[-1]}% encircled energy circular aperture; should be used only for unresolved sources."
-        )
-
-        return desc
+        for old_column, new_column in column_map.items():
+            setattr(self, new_column, psf_photometry_table[old_column])
 
     @lazyproperty
     def catalog_descriptions(self):
@@ -955,7 +910,7 @@ class RomanSourceCatalog:
             col[colname] = f"Flux {desc}"
             col[f"{colname}_err"] = f"Flux error {desc}"
 
-        col["flags"] = "Data quality flags"
+        col["image_flags"] = "Data quality flags"
         col["is_extended"] = "Flag indicating whether the source is extended"
         col["sharpness"] = "The DAOFind source sharpness statistic"
         col["roundness"] = "The DAOFind source roundness statistic"
@@ -995,7 +950,7 @@ class RomanSourceCatalog:
             colnames.extend(aper_colnames)
 
             colnames2 = [
-                "flags",
+                "image_flags",
                 "is_extended",
                 "sharpness",
                 "roundness",
@@ -1017,7 +972,7 @@ class RomanSourceCatalog:
         else:
             colnames = [
                 "label",
-                "flags",
+                "image_flags",
                 "is_extended",
                 "sharpness",
                 "roundness",

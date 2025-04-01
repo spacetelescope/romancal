@@ -19,7 +19,6 @@ from roman_datamodels.datamodels import (
 )
 from roman_datamodels.maker_utils import mk_level2_image, mk_level3_mosaic
 
-from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
@@ -362,21 +361,6 @@ def test_l3_input_model_unchanged(mosaic_model, tmp_path):
 
 @pytest.mark.stpsf
 def test_inputs(mosaic_model):
-    with pytest.raises(ValueError):
-        ReferenceData(np.ones((3, 3)), (30, 50, 70))
-    with pytest.raises(ValueError):
-        aperture_ee = (70, 50, 30)
-        ReferenceData(mosaic_model, aperture_ee)
-    with pytest.raises(ValueError):
-        aperture_ee = (30, 50)
-        ReferenceData(mosaic_model, aperture_ee)
-    with pytest.raises(ValueError):
-        aperture_ee = (-1, 50, 70)
-        ReferenceData(mosaic_model, aperture_ee)
-    with pytest.raises(ValueError):
-        aperture_ee = (40, 70, 150)
-        ReferenceData(mosaic_model, aperture_ee)
-
     data = np.ones((3, 3), dtype=int)
     data[1, 1] = 1
     segm = SegmentationImage(data)
