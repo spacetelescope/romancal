@@ -47,22 +47,7 @@ class RomanSourceCatalog:
 
     convolved_data : 2D `~numpy.ndarray` or `None`
         The 2D array used to calculate the source centroid and shape
-        measurements.
-
-    aperture_params : `dict`
-        A dictionary containing the parameters (radii, aperture
-        corrections, and background annulus inner and outer radii) used
-        to perform aperture photometry.
-
-    ci_star_thresholds : array-like of 2 floats
-        The concentration index (CI) thresholds for determining whether
-        a source is a star. The first threshold corresponds to the
-        concentration index calculated from the smallest and middle
-        aperture radii (see ``aperture_params``). The second threshold
-        corresponds to the concentration index calculated from the
-        middle and largest aperture radii. An object is considered
-        extended if both concentration indices are greater than the
-        corresponding thresholds, otherwise it is considered a star.
+        measurements. The image is assumed to be background subtracted.
 
     kernel_fwhm : float
         The full-width at half-maximum (FWHM) of the 2D Gaussian kernel.
@@ -103,8 +88,6 @@ class RomanSourceCatalog:
         model,
         segment_img,
         convolved_data,
-        aperture_params,
-        ci_star_thresholds,
         kernel_fwhm,
         fit_psf,
         mask=None,
@@ -117,19 +100,12 @@ class RomanSourceCatalog:
 
         self.segment_img = segment_img
         self.convolved_data = convolved_data
-        self.aperture_params = aperture_params
         self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
         self.fit_psf = fit_psf
         self.mask = mask
         self.detection_cat = detection_cat
 
-        if len(ci_star_thresholds) != 2:
-            raise ValueError("ci_star_thresholds must contain only 2 items")
-        self.ci_star_thresholds = ci_star_thresholds
-
         self.n_sources = len(self.segment_img.labels)
-        self.aperture_ee = self.aperture_params["aperture_ee"]
-        self.n_aper = len(self.aperture_ee)
         self.wcs = self.model.meta.wcs
         self.meta = {}
         if self.fit_psf:
@@ -790,7 +766,12 @@ class RomanSourceCatalog:
             ver_dict = {key: ver_dict[key] for key in packages if key in ver_dict}
             self.meta[ver_key] = ver_dict
 
-        self.meta["aperture_params"] = self.aperture_params
+        # reformat the aperture radii for the metadata to remove
+        # Quantity objects
+        aper_radii = self.aperture_radii.copy()
+        aper_radii["circle_arcsec"] = aper_radii.pop("circle").value
+        aper_radii["annulus_arcsec"] = aper_radii.pop("annulus").value
+        self.meta["aperture_radii"] = aper_radii
 
     def _split_skycoord(self, table):
         """
