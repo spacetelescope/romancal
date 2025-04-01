@@ -275,10 +275,6 @@ class RomanSourceCatalog:
             "segment_fluxerr",
             "kron_flux",
             "kron_fluxerr",
-            "sky_bbox_ll",
-            "sky_bbox_ul",
-            "sky_bbox_lr",
-            "sky_bbox_ur",
         )
 
         # if needed, map column names from photutils to the output catalog
@@ -943,18 +939,6 @@ class RomanSourceCatalog:
         col["sky_orientation"] = (
             "The position angle (degrees) from North of the major axis"
         )
-        col["sky_bbox_ll"] = (
-            "Sky coordinate (ICRS) of the lower-left vertex of the minimal bounding box of the source"
-        )
-        col["sky_bbox_ul"] = (
-            "Sky coordinate (ICRS) of the upper-left vertex of the minimal bounding box of the source"
-        )
-        col["sky_bbox_lr"] = (
-            "Sky coordinate (ICRS) of the lower-right vertex of the minimal bounding box of the source"
-        )
-        col["sky_bbox_ur"] = (
-            "Sky coordinate (ICRS) of the upper-right vertex of the minimal bounding box of the source"
-        )
 
         col["aper_bkg_flux"] = (
             "The local background value calculated as the sigma-clipped median value in the background annulus aperture"
@@ -1027,10 +1011,6 @@ class RomanSourceCatalog:
                 "ellipticity",
                 "orientation",
                 "sky_orientation",
-                "sky_bbox_ll",
-                "sky_bbox_ul",
-                "sky_bbox_lr",
-                "sky_bbox_ur",
             ]
             colnames.extend(colnames2)
 
