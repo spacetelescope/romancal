@@ -406,7 +406,6 @@ class RomanSourceCatalog:
             basename = f"aper{aper_ee}_{name}"
             colnames.append(basename)
             colnames.append(f"{basename}_err")
-        colnames.extend([f"aper_total_{name}", f"aper_total_{name}_err"])
 
         return colnames
 
@@ -770,65 +769,6 @@ class RomanSourceCatalog:
         nn_dist[self._xypos_nonfinite_mask] = np.nan
         return nn_dist * u.pixel
 
-    @lazyproperty
-    def aper_total_flux(self):
-        """
-        The aperture-corrected total flux for sources, based on the flux
-        in largest aperture.
-
-        The aperture-corrected total flux should be used only for
-        unresolved sources.
-        """
-        idx = self.n_aper - 1  # use apcorr for the largest EE (largest radius)
-        flux = self.aperture_params["aperture_corrections"][idx] * getattr(
-            self, self.aperture_flux_colnames[idx * 2]
-        )
-        return flux
-
-    @lazyproperty
-    def aper_total_flux_err(self):
-        """
-        The aperture-corrected total flux error for sources,
-        based on the flux in largest aperture.
-
-        The aperture-corrected total flux error should be used only for
-        unresolved sources.
-        """
-        idx = self.n_aper - 1  # use apcorr for the largest EE (largest radius)
-        flux_err = self.aperture_params["aperture_corrections"][idx] * getattr(
-            self, self.aperture_flux_colnames[idx * 2 + 1]
-        )
-        return flux_err
-
-    @lazyproperty
-    def _abmag_total(self):
-        """
-        The total AB magnitude and error.
-        """
-        return self.convert_flux_to_abmag(
-            self.aper_total_flux, self.aper_total_flux_err
-        )
-
-    @lazyproperty
-    def aper_total_abmag(self):
-        """
-        The aperture-corrected total AB magnitude.
-
-        The aperture-corrected total magnitude should be used only for
-        unresolved sources.
-        """
-        return self._abmag_total[0]
-
-    @lazyproperty
-    def aper_total_abmag_err(self):
-        """
-        The aperture-corrected total AB magnitude error.
-
-        The aperture-corrected total magnitude error should be used only
-        for unresolved sources.
-        """
-        return self._abmag_total[1]
-
     def _update_metadata(self):
         """
         Update the metadata dictionary with the package version
@@ -1130,8 +1070,6 @@ class RomanSourceCatalog:
             "aper50_flux_err",
             "aper70_flux",
             "aper70_flux_err",
-            "aper_total_flux",
-            "aper_total_flux_err",
         ]
 
         if self.detection_cat is None:
