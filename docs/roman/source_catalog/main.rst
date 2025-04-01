@@ -56,6 +56,13 @@ semimajor and semiminor axis lengths, orientation of the major axis,
 and sky coordinates at corners of the minimal bounding box enclosing
 the source.
 
+The units of all fluxes are in nJy. To calculate AB magnitudes, use the
+following formula:
+
+.. math::
+
+    m_{\rm AB} = -2.5 \log_{10}(f_{\rm nJy}) + 31.4
+
 Photometric errors are calculated from the resampled total-error
 array contained in the ``ERR`` (``model.err``) array. Note that this
 total-error array includes source Poisson noise.

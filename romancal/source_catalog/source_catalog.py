@@ -88,7 +88,7 @@ class RomanSourceCatalog:
         used to perform aperture photometry (i.e., circular and Kron).
 
     flux_unit : str, optional
-        The unit of the flux density. Default is 'uJy'.
+        The unit of the flux density. Default is 'nJy'.
 
     Notes
     -----
@@ -109,7 +109,7 @@ class RomanSourceCatalog:
         fit_psf,
         mask=None,
         detection_cat=None,
-        flux_unit="uJy",
+        flux_unit="nJy",
     ):
         if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
