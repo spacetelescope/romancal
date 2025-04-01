@@ -54,7 +54,7 @@ class RomanSourceCatalog:
         This is needed to calculate the DAOFind sharpness and roundness
         properties (DAOFind uses a special kernel that sums to zero).
 
-    fit_psf : bool
+    fit_psf : bool, optional
         Whether to fit a PSF model to the sources.
 
     mask : 2D `~numpy.ndarray` or `None`, optional
@@ -89,34 +89,30 @@ class RomanSourceCatalog:
         segment_img,
         convolved_data,
         kernel_fwhm,
-        fit_psf,
+        *,
+        fit_psf=True,
         mask=None,
         detection_cat=None,
         flux_unit="nJy",
     ):
         if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
-        self.model = model  # background was previously subtracted
 
+        self.model = model  # input model is background-subtracted
         self.segment_img = segment_img
         self.convolved_data = convolved_data
         self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
         self.fit_psf = fit_psf
         self.mask = mask
         self.detection_cat = detection_cat
+        self.flux_unit = flux_unit
 
-        self.n_sources = len(self.segment_img.labels)
+        self.n_sources = len(segment_img.labels)
         self.wcs = self.model.meta.wcs
         self.meta = {}
-        if self.fit_psf:
-            # get the necessary columns for the PSF photometry table
-            # and its name mapping to the final catalog
-            self.psf_photometry_catalog_mapping = (
-                self.get_psf_photometry_catalog_colnames_mapping()
-            )
 
-        self.flux_unit = flux_unit
-        self.l2_conv_factor = self.model.meta.photometry.conversion_megajanskys
+        # define flux unit conversion factors
+        self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
         self.sb_to_flux = (1.0 * (u.MJy / u.sr) * self.pixel_area).to(
             u.Unit(self.flux_unit)
         )
@@ -124,8 +120,18 @@ class RomanSourceCatalog:
         # needed for Kron photometry
         self.segm_sourcecat = None
 
+    def __len__(self):
+        return self.n_sources
+
     @lazyproperty
     def _pixscale_angle(self):
+        """
+        The pixel scale in arcseconds and the angle in degrees measured
+        counterclockwise from the positive x axis to the "North" axis of
+        the celestial coordinate system.
+
+        Both are measured at the center of the image.
+        """
         ysize, xsize = self.model.data.shape
         ycen = (ysize - 1) / 2.0
         xcen = (xsize - 1) / 2.0
@@ -136,16 +142,17 @@ class RomanSourceCatalog:
     @lazyproperty
     def _pixel_scale(self):
         """
-        The pixel scale in arcseconds at the center of the image.
+        The pixel scale (as a Quantity in arcseconds) at the center of
+        the image.
         """
         return self._pixscale_angle[0]
 
     @lazyproperty
     def _wcs_angle(self):
         """
-        The angle (in degrees) measured counterclockwise from the
-        positive x axis to the "North" axis of the celestial coordinate
-        system.
+        The angle (as a Quantity in degrees) measured counterclockwise
+        from the positive x axis to the "North" axis of the celestial
+        coordinate system.
 
         Measured at the center of the image.
         """
@@ -154,7 +161,7 @@ class RomanSourceCatalog:
     @lazyproperty
     def pixel_area(self):
         """
-        The pixel area in steradians.
+        The pixel area (as a Quantity in steradians).
 
         If the meta.photometry.pixel_area value is a negative
         placeholder (e.g., -999999 sr), the value is calculated from the
@@ -167,22 +174,20 @@ class RomanSourceCatalog:
 
     def convert_l2_to_sb(self):
         """
-        Convert a level-2 image from units of DN/s to MJy/sr (surface
+        Convert level-2 data from units of DN/s to MJy/sr (surface
         brightness).
         """
         # the conversion in done in-place to avoid making copies of the data;
         # use a dictionary to set the value to avoid on-the-fly validation
-        self.model["data"] *= self.l2_conv_factor
-        self.model["err"] *= self.l2_conv_factor
+        self.model["data"] *= self.l2_to_sb
+        self.model["err"] *= self.l2_to_sb
         if self.convolved_data is not None:
-            self.convolved_data *= self.l2_conv_factor
+            self.convolved_data *= self.l2_to_sb
 
     def convert_sb_to_flux_density(self):
         """
-        Convert the data and error arrays from MJy/sr (surface
-        brightness) to flux density units.
-
-        The arrays are converted in-place to Quantity arrays.
+        Convert level-3 data from units of MJy/sr (surface brightness)
+        to flux density units.
 
         The flux density unit is defined by self.flux_unit.
         """
@@ -226,7 +231,7 @@ class RomanSourceCatalog:
 
     def calc_segment_properties(self):
         """
-        Calculate the segment-based properties calculated by
+        Calculate the segment-based properties provided by
         `~photutils.segmentation.SourceCatalog`.
 
         The results are set as dynamic attributes on the class instance.
@@ -518,7 +523,7 @@ class RomanSourceCatalog:
         """
         Boolean indicating whether the source is extended.
         """
-        return np.zeros(self.n_sources, dtype=np.float32)
+        return np.zeros(len(self), dtype=np.float32)
 
     @lazyproperty
     def _daofind_kernel_size(self):
@@ -702,7 +707,7 @@ class RomanSourceCatalog:
         """
         The distance in pixels to the nearest neighbor and its index.
         """
-        if self.n_sources == 1:
+        if len(self) == 1:
             return [np.nan], [np.nan]
 
         # non-finite xypos causes memory errors on linux, but not MacOS
@@ -718,7 +723,7 @@ class RomanSourceCatalog:
         A label value of -1 is returned if there is only one detected
         source and for sources with a non-finite xcentroid or ycentroid.
         """
-        if self.n_sources == 1:
+        if len(self) == 1:
             return np.int32(-1)
 
         nn_label = self.label[self._kdtree_query[1]].astype("i4")
@@ -733,7 +738,7 @@ class RomanSourceCatalog:
         The distance in pixels to the nearest neighbor.
         """
         nn_dist = self._kdtree_query[0]
-        if self.n_sources == 1:
+        if len(self) == 1:
             # NaN if only one detected source
             return nn_dist * u.pixel
 
@@ -807,81 +812,14 @@ class RomanSourceCatalog:
 
         return table
 
-    @staticmethod
-    def get_psf_photometry_catalog_colnames_mapping() -> list:
-        """
-        Set the mapping between the PSF photometry table column names
-        and the final catalog column names.
-
-        Returns
-        -------
-            List of dictionaries containing old column names, new column names,
-            and descriptions for PSF photometry catalog.
-        """
-
-        return [
-            {
-                "old_name": "flags",
-                "new_name": "flag_psf",
-                "desc": "Data quality flags",
-            },
-            {
-                "old_name": "x_fit",
-                "new_name": "x_psf",
-                "desc": "X coordinate as determined by PSF fitting",
-            },
-            {
-                "old_name": "x_err",
-                "new_name": "x_psf_err",
-                "desc": "Error on X coordinate of PSF fitting",
-            },
-            {
-                "old_name": "y_fit",
-                "new_name": "y_psf",
-                "desc": "Y coordinate as determined by PSF fitting",
-            },
-            {
-                "old_name": "y_err",
-                "new_name": "y_psf_err",
-                "desc": "Error on Y coordinate of PSF fitting",
-            },
-            {
-                "old_name": "flux_fit",
-                "new_name": "flux_psf",
-                "desc": "Source flux as determined by PSF photometry",
-            },
-            {
-                "old_name": "flux_err",
-                "new_name": "flux_psf_err",
-                "desc": "Source flux error as determined by PSF photometry",
-            },
-        ]
-
     @lazyproperty
-    def psf_photometry_colnames(self) -> list:
+    def psf_model(self):
         """
-        Update and return column descriptions for PSF photometry results.
+        A gridded PSF model based on instrument and detector
+        information.
 
-        This method updates the column descriptions with PSF photometry-related information
-        and returns a list of column names.
-
-        Returns
-        -------
-            List of column names for PSF photometry results.
-        """
-        desc = {x["new_name"]: x["desc"] for x in self.psf_photometry_catalog_mapping}
-
-        self.column_desc.update(desc)
-
-        return list(desc.keys())
-
-    def calc_psf_photometry(self) -> None:
-        """
-        Perform PSF photometry by fitting PSF models to detected sources for refined astrometry.
-
-        This method constructs a gridded PSF model based on instrument and detector information.
-        It then fits the PSF model to the image model's sources to improve astrometric precision.
-
+        The `~photutils.psf.GriddedPSF` model is created using the
+        STPSF library.
         """
         log.info("Constructing a gridded PSF model.")
         if hasattr(self.model.meta, "instrument"):
@@ -892,32 +830,43 @@ class RomanSourceCatalog:
             # MosaicModel (L3 datamodel)
             filt = self.model.meta.basic.optical_element
             detector = "SCA02"
-        # prefix of the temporary FITS file that will contain the gridded PSF model
+
         gridded_psf_model, _ = psf.create_gridded_psf_model(
             filt=filt,
             detector=detector,
         )
 
+        return gridded_psf_model
+
+    def calc_psf_photometry(self) -> None:
+        """
+        Perform PSF photometry by fitting PSF models to detected sources
+        for refined astrometry.
+        """
         log.info("Fitting a PSF model to sources for improved astrometric precision.")
         xinit, yinit = np.transpose(self._xypos)
         psf_photometry_table, photometry = psf.fit_psf_to_image_model(
             image_model=self.model,
             mask=self.mask,
-            psf_model=gridded_psf_model,
+            psf_model=self.psf_model,
             x_init=xinit,
             y_init=yinit,
             exclude_out_of_bounds=True,
         )
 
-        # mapping between the columns of the PSF photometry table
-        # and the name that will be used in the final catalog
-        old_name_to_new_name_mapping = {
-            x["old_name"]: x["new_name"] for x in self.psf_photometry_catalog_mapping
-        }
+        # map column names from photutils to the output catalog
+        column_map = {}
+        column_map["flags"] = "psf_flags"
+        column_map["x_fit"] = "x_psf"
+        column_map["x_err"] = "x_psf_err"
+        column_map["y_fit"] = "y_psf"
+        column_map["y_err"] = "y_psf_err"
+        column_map["flux_fit"] = "flux_psf"
+        column_map["flux_err"] = "flux_psf_err"
 
-        # append PSF results to the class instance with the proper column name
-        for old_name, new_name in old_name_to_new_name_mapping.items():
-            setattr(self, new_name, psf_photometry_table[old_name])
+        # set these columns as attributes of this instance
+        for column in column_map.keys():
+            setattr(self, column_map[column], psf_photometry_table[column])
 
     def _make_aperture_descriptions(self, name):
         """
@@ -1100,15 +1049,13 @@ class RomanSourceCatalog:
 
         if self.fit_psf:
             psf_colnames = [
-                "flag_psf",
+                "psf_flags",
                 "x_psf",
                 "x_psf_err",
                 "y_psf",
                 "y_psf_err",
                 "flux_psf",
                 "flux_psf_err",
-                "aper_bkg_flux",
-                "aper_bkg_flux_err",
             ]
             colnames.extend(psf_colnames)
 

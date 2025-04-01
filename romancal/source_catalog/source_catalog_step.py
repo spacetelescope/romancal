@@ -151,7 +151,7 @@ class SourceCatalogStep(RomanStep):
                 segment_img,
                 detection_image,
                 self.kernel_fwhm,
-                self.fit_psf & (not forced),
+                fit_psf=self.fit_psf & (not forced),
                 mask=mask,
             )
             cat = catobj.catalog
@@ -164,7 +164,7 @@ class SourceCatalogStep(RomanStep):
                 segment_img,
                 forced_detection_image,
                 self.kernel_fwhm,
-                self.fit_psf,
+                fit_psf=self.fit_psf,
                 mask=mask,
             )
             # we have two catalogs, both using a specified set of
