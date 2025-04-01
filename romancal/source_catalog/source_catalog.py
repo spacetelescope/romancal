@@ -861,8 +861,8 @@ class RomanSourceCatalog:
         column_map["x_err"] = "x_psf_err"
         column_map["y_fit"] = "y_psf"
         column_map["y_err"] = "y_psf_err"
-        column_map["flux_fit"] = "flux_psf"
-        column_map["flux_err"] = "flux_psf_err"
+        column_map["flux_fit"] = "psf_flux"
+        column_map["flux_err"] = "psf_flux_err"
 
         # set these columns as attributes of this instance
         for column in column_map.keys():
@@ -978,13 +978,14 @@ class RomanSourceCatalog:
         col["nn_label"] = "The label number of the nearest neighbor"
         col["nn_dist"] = "The distance in pixels to the nearest neighbor"
 
-        col["flag_psf"] = "Data quality flags"
-        col["x_psf"] = "X coordinate as determined by PSF fitting"
-        col["x_psf_err"] = "Error on X coordinate of PSF fitting"
-        col["y_psf"] = "Y coordinate as determined by PSF fitting"
-        col["y_psf_err"] = "Error on Y coordinate of PSF fitting"
-        col["flux_psf"] = "Source flux as determined by PSF photometry"
-        col["flux_psf_err"] = "Source flux error as determined by PSF photometry"
+        col["psf_flags"] = "PSF fitting flags"
+        col["x_psf"] = "Column position of the source from PSF fitting (0 indexed)"
+        col["x_psf_err"] = "Uncertainty in x_psf"
+        col["y_psf"] = "Row position of the source from PSF fitting (0 indexed)"
+        col["y_psf_err"] = "Uncertainty in y_psf"
+        col["psf_flux"] = "Total PSF flux"
+        col["psf_flux_err"] = "Uncertainty in psf_flux"
+
         return col
 
     @lazyproperty
@@ -1054,8 +1055,8 @@ class RomanSourceCatalog:
                 "x_psf_err",
                 "y_psf",
                 "y_psf_err",
-                "flux_psf",
-                "flux_psf_err",
+                "psf_flux",
+                "psf_flux_err",
             ]
             colnames.extend(psf_colnames)
 
