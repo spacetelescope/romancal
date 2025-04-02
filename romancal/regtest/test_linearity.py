@@ -8,15 +8,16 @@ from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
-def test_linearity_step(rtdata, ignore_asdf_paths):
+def test_linearity_step(rtdata, ignore_asdf_paths, resource_tracker, request):
     """Function to run and compare linearity correction files."""
-    input_file = "r0000101001001001001_0001_wfi01_refpix.asdf"
+    input_file = "r0000101001001001001_0001_wfi01_f158_refpix.asdf"
     rtdata.get_data(f"WFI/image/{input_file}")
     rtdata.input = input_file
 
     args = ["romancal.step.LinearityStep", rtdata.input]
-    RomanStep.from_cmdline(args)
-    output = "r0000101001001001001_0001_wfi01_linearity.asdf"
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
+    output = "r0000101001001001001_0001_wfi01_f158_linearity.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
@@ -24,15 +25,16 @@ def test_linearity_step(rtdata, ignore_asdf_paths):
 
 
 @pytest.mark.bigdata
-def test_linearity_outfile_step(rtdata, ignore_asdf_paths):
+def test_linearity_outfile_step(rtdata, ignore_asdf_paths, resource_tracker, request):
     """Function to run and linearity correction files. Here the
     test is for renaming the output file."""
-    input_file = "r0000101001001001001_0001_wfi01_refpix.asdf"
+    input_file = "r0000101001001001001_0001_wfi01_f158_refpix.asdf"
     rtdata.get_data(f"WFI/image/{input_file}")
     rtdata.input = input_file
 
     args = ["romancal.step.LinearityStep", rtdata.input, "--output_file=Test_linearity"]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
     output = "Test_linearity.asdf"
     rtdata.output = output
     rtdata.get_truth(f"truth/WFI/image/{output}")

@@ -3,7 +3,6 @@
 import inspect
 import json
 import os
-import tempfile
 from io import StringIO
 
 import pytest
@@ -19,21 +18,6 @@ from romancal.assign_wcs import pointing
 from romancal.assign_wcs.utils import add_s_region
 
 collect_ignore = ["lib/dqflags.py"]
-
-
-@pytest.fixture
-def mk_tmp_dirs():
-    """Create a set of temporary directorys and change to one of them."""
-    tmp_current_path = tempfile.mkdtemp()
-    tmp_data_path = tempfile.mkdtemp()
-    tmp_config_path = tempfile.mkdtemp()
-
-    old_path = os.getcwd()
-    try:
-        os.chdir(tmp_current_path)
-        yield (tmp_current_path, tmp_data_path, tmp_config_path)
-    finally:
-        os.chdir(old_path)
 
 
 @pytest.fixture

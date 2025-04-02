@@ -10,24 +10,22 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 
 @pytest.fixture(scope="module")
-def run_elp(rtdata_module):
+def run_elp(rtdata_module, resource_tracker):
     rtdata = rtdata_module
 
-    # The input data is from INS for stress testing at some point this should be generated
-    # every time new data is needed.
-
-    input_data = "r0000101001001001001_0004_wfi01_uncal.asdf"
+    input_data = "r0000101001001001001_0004_wfi01_f158_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
     # Test Pipeline
-    output = "r0000101001001001001_0004_wfi01_cal.asdf"
+    output = "r0000101001001001001_0004_wfi01_f158_cal.asdf"
     rtdata.output = output
     args = [
         "roman_elp",
         rtdata.input,
     ]
-    ExposurePipeline.from_cmdline(args)
+    with resource_tracker.track():
+        ExposurePipeline.from_cmdline(args)
     return rtdata
 
 
@@ -51,6 +49,10 @@ def input_filename(run_elp):
 def input_model(input_filename):
     with rdm.open(input_filename) as model:
         yield model
+
+
+def test_log_tracked_resources(log_tracked_resources, run_elp):
+    log_tracked_resources()
 
 
 def test_output_is_image_model(output_model):

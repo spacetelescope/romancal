@@ -12,11 +12,13 @@ from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
-def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
+def test_absolute_photometric_calibration(
+    rtdata, ignore_asdf_paths, resource_tracker, request
+):
     """DMS140 Test: Testing application of photometric correction using
     CRDS selected photom file."""
 
-    input_data = "r0000101001001001001_0001_wfi01_flat.asdf"
+    input_data = "r0000101001001001001_0001_wfi01_f158_flat.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
@@ -39,7 +41,7 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
     # photom match from CRDS. Values come from roman_wfi_photom_0034.asdf
 
     # Test PhotomStep
-    output = "r0000101001001001001_0001_wfi01_photom.asdf"
+    output = "r0000101001001001001_0001_wfi01_f158_photom.asdf"
     rtdata.output = output
     args = ["romancal.step.PhotomStep", rtdata.input]
     step.log.info(
@@ -47,7 +49,9 @@ def test_absolute_photometric_calibration(rtdata, ignore_asdf_paths):
         " The first ERROR is expected, due to extra CRDS parameters"
         " not having been implemented yet."
     )
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
+
     photom_out = rdm.open(rtdata.output)
 
     step.log.info(

@@ -12,11 +12,11 @@ from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
-def test_dq_init_image_step(rtdata, ignore_asdf_paths):
+def test_dq_init_image_step(rtdata, ignore_asdf_paths, resource_tracker, request):
     """DMS25 Test: Testing retrieval of best ref file for image data,
     and creation of a ramp file with CRDS selected mask file applied."""
 
-    input_file = "r0000101001001001001_0001_wfi01_uncal.asdf"
+    input_file = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_file}")
     rtdata.input = input_file
 
@@ -40,7 +40,7 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
     assert "roman_wfi_mask" in ref_file_name
 
     # Test DQInitStep
-    output = "r0000101001001001001_0001_wfi01_dqinit.asdf"
+    output = "r0000101001001001001_0001_wfi01_f158_dqinit.asdf"
     rtdata.output = output
     args = ["romancal.step.DQInitStep", rtdata.input]
     step.log.info(
@@ -48,7 +48,9 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
         " The first ERROR is expected, due to extra CRDS parameters"
         " not having been implemented yet."
     )
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
+
     ramp_out = rdm.open(rtdata.output)
     step.log.info(
         "DMS25 MSG: Does ramp data contain pixeldq from mask file? :"
@@ -67,11 +69,11 @@ def test_dq_init_image_step(rtdata, ignore_asdf_paths):
 
 
 @pytest.mark.bigdata
-def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
+def test_dq_init_grism_step(rtdata, ignore_asdf_paths, resource_tracker, request):
     """DMS25 Test: Testing retrieval of best ref file for grism data,
     and creation of a ramp file with CRDS selected mask file applied."""
 
-    input_file = "r0000201001001001001_0001_wfi01_uncal.asdf"
+    input_file = "r0000201001001001001_0001_wfi01_grism_uncal.asdf"
     rtdata.get_data(f"WFI/grism/{input_file}")
     rtdata.input = input_file
 
@@ -95,7 +97,7 @@ def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
     assert "roman_wfi_mask" in ref_file_name
 
     # Test DQInitStep
-    output = "r0000201001001001001_0001_wfi01_dqinit.asdf"
+    output = "r0000201001001001001_0001_wfi01_grism_dqinit.asdf"
     rtdata.output = output
     args = ["romancal.step.DQInitStep", rtdata.input]
     step.log.info(
@@ -103,7 +105,9 @@ def test_dq_init_grism_step(rtdata, ignore_asdf_paths):
         "The first ERROR is expected, due to extra CRDS parameters "
         "not having been implemented yet."
     )
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
+
     ramp_out = rdm.open(rtdata.output)
     step.log.info(
         "DMS25 MSG: Does ramp data contain pixeldq from mask file? :"

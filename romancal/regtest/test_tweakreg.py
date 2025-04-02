@@ -11,16 +11,16 @@ from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
-def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
+def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path, resource_tracker, request):
     # N.B.: uncal file is from simulator
     # ``shifted'' version is created in make_regtestdata.sh; cal file is taken,
     # the wcsinfo is perturbed, and AssignWCS is run to update the WCS with the
     # perturbed information
-    orig_uncal = "r0000101001001001001_0001_wfi01_uncal.asdf"
-    orig_catfile = "r0000101001001001001_0001_wfi01_cat.asdf"
-    input_data = "r0000101001001001001_0001_wfi01_shift_cal.asdf"
-    output_data = "r0000101001001001001_0001_wfi01_shift_tweakregstep.asdf"
-    truth_data = "r0000101001001001001_0001_wfi01_shift_tweakregstep.asdf"
+    orig_uncal = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
+    orig_catfile = "r0000101001001001001_0001_wfi01_f158_cat.asdf"
+    input_data = "r0000101001001001001_0001_wfi01_f158_shift_cal.asdf"
+    output_data = "r0000101001001001001_0001_wfi01_f158_shift_tweakregstep.asdf"
+    truth_data = "r0000101001001001001_0001_wfi01_f158_shift_tweakregstep.asdf"
 
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.get_data(f"WFI/image/{orig_catfile}")
@@ -39,7 +39,9 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path):
         f"--output_file='{rtdata.output}'",
         "--suffix='tweakregstep'",
     ]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
+
     tweakreg_out = rdm.open(rtdata.output)
 
     step.log.info(

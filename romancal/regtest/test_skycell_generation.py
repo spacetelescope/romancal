@@ -13,12 +13,12 @@ from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 pytestmark = [pytest.mark.bigdata]
 
 EXPECTED_FILENAMES = [
-    "r512_p_v01001001001_r274dp63x31y80_f158_asn.json",
-    "r512_p_v01001001001_r274dp63x31y81_f158_asn.json",
-    "r512_p_v01001001001_r274dp63x32y82_f158_asn.json",
-    "r512_p_v01001001001_r274dp63x32y80_f158_asn.json",
-    "r512_p_v01001001001_r274dp63x32y81_f158_asn.json",
-    "r512_p_v01001001001_r274dp63x32y82_f158_asn.json",
+    "r00001_p_v01001001001_r274dp63x31y80_f158_asn.json",
+    "r00001_p_v01001001001_r274dp63x31y81_f158_asn.json",
+    "r00001_p_v01001001001_r274dp63x32y82_f158_asn.json",
+    "r00001_p_v01001001001_r274dp63x32y80_f158_asn.json",
+    "r00001_p_v01001001001_r274dp63x32y81_f158_asn.json",
+    "r00001_p_v01001001001_r274dp63x32y82_f158_asn.json",
 ]
 
 
@@ -28,13 +28,13 @@ def run_skycell_asn(rtdata_module):
 
     # This test should generate seven json files
     args = [
-        "r0000101001001001001_0002_wfi01_cal.asdf",
-        "r0000101001001001001_0002_wfi10_cal.asdf",
+        "r0000101001001001001_0002_wfi01_f158_cal.asdf",
+        "r0000101001001001001_0002_wfi10_f158_cal.asdf",
         "-o",
-        "r512",
+        "r00001",
     ]
-    rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi01_cal.asdf")
-    rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi10_cal.asdf")
+    rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi01_f158_cal.asdf")
+    rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi10_f158_cal.asdf")
 
     skycell_asn._cli(args)
     return rtdata

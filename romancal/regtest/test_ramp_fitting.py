@@ -120,28 +120,28 @@ CONDITIONS_TRUNC = [*CONDITIONS_FULL, cond_is_truncated]
     params=[
         (
             "DMS362",
-            Path("WFI/image/r0000101001001001001_0001_wfi01_darkcurrent.asdf"),
+            Path("WFI/image/r0000101001001001001_0001_wfi01_f158_darkcurrent.asdf"),
             CONDITIONS_FULL,
         ),
         (
             "DMS366",
-            Path("WFI/grism/r0000201001001001001_0001_wfi01_darkcurrent.asdf"),
+            Path("WFI/grism/r0000201001001001001_0001_wfi01_grism_darkcurrent.asdf"),
             CONDITIONS_FULL,
         ),
         (
             "DMS363",
-            Path("WFI/image/r0000101001001001001_0003_wfi01_darkcurrent.asdf"),
+            Path("WFI/image/r0000101001001001001_0003_wfi01_f158_darkcurrent.asdf"),
             CONDITIONS_TRUNC,
         ),
         (
             "DMS367",
-            Path("WFI/grism/r0000201001001001001_0003_wfi01_darkcurrent.asdf"),
+            Path("WFI/grism/r0000201001001001001_0003_wfi01_grism_darkcurrent.asdf"),
             CONDITIONS_TRUNC,
         ),
     ],
     ids=["image_full", "spec_full", "image_trunc", "spec_trunc"],
 )
-def rampfit_result(request, rtdata_module):
+def rampfit_result(request, rtdata_module, resource_tracker):
     """Run RampFitStep
 
     Parameters
@@ -160,7 +160,8 @@ def rampfit_result(request, rtdata_module):
     rtdata_module.input = input_data
 
     # Execute the step
-    result_model = RampFitStep.call(input_data, save_results=True)
+    with resource_tracker.track():
+        result_model = RampFitStep.call(input_data, save_results=True)
 
     # Setup outputs
     input_data_path = Path(input_data)
@@ -181,6 +182,11 @@ def rampfit_result(request, rtdata_module):
 # #####
 # Tests
 # #####
+@pytest.mark.bigdata
+def test_log_tracked_resources(log_tracked_resources, rampfit_result):
+    log_tracked_resources()
+
+
 @pytest.mark.bigdata
 def test_rampfit_step(rampfit_result, rtdata_module, ignore_asdf_paths):
     """Test rampfit result against various conditions"""

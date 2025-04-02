@@ -29,14 +29,14 @@ fieldlist = [
 ]
 
 
-def test_multiband_catalog(rtdata_module):
+def test_multiband_catalog(rtdata_module, resource_tracker, request):
     rtdata = rtdata_module
     inputasnfn = "L3_skycell_mbcat_asn.json"
     # note that this input association currently only has a single
     # filter in it, so this is more of an existence proof for the multiband
     # catalogs than a detailed test.  Using only a single catalog lets us
     # rely on the existing regtest files.
-    outputfn = "r0099101001001001001_r274dp63x31y81_prompt_F158_mbcat_cat.asdf"
+    outputfn = "r00001_p_v01001001001001_r274dp63x31y81_f158_mbcat_cat.asdf"
     rtdata.get_asn(f"WFI/image/{inputasnfn}")
     rtdata.output = outputfn
     rtdata.input = inputasnfn
@@ -48,7 +48,8 @@ def test_multiband_catalog(rtdata_module):
         "--deblend",
         "True",  # use deblending, DMS 393
     ]
-    RomanStep.from_cmdline(args)
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
     afcat = asdf.open(outputfn)
     for field in fieldlist:
         assert field in afcat["roman"]["source_catalog"].dtype.names
