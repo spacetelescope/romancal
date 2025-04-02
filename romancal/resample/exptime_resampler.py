@@ -1,10 +1,8 @@
 import numpy as np
 from drizzle.resample import Drizzle
-from drizzle.utils import calc_pixmap
 from roman_datamodels import dqflags
 from stcal.resample.utils import (
     build_driz_weight,
-    resample_range,
 )
 
 
@@ -26,27 +24,18 @@ class ExptimeResampler:
             disable_ctx=True,
         )
 
-    def add_image(self, model):
-        data = np.full(model.data.shape, model.meta.exposure.effective_exposure_time)
+    def add_image(self, model, pixmap, xmin, xmax, ymin, ymax):
+        data = np.full(model["data"].shape, model["effective_exposure_time"])
 
         # create a unit weight map for all the input pixels with science data
         inwht = build_driz_weight(
             {
-                "data": model.data,
-                "dq": model.dq,
+                "data": model["data"],
+                "dq": model["dq"],
             },
             weight_type=None,
             good_bits=self.good_bits,
             flag_name_map=dqflags.pixel,
-        )
-
-        xmin, xmax, ymin, ymax = resample_range(data.shape, model.meta.wcs.bounding_box)
-        # FIXME reuse pixmap
-        # this would require major reworking of stcals resample
-        pixmap = calc_pixmap(
-            model.meta.wcs,
-            self.out_wcs,
-            data.shape,
         )
 
         self._driz.add_image(
