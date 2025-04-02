@@ -930,7 +930,7 @@ class RomanSourceCatalog:
         source and for sources with a non-finite xcentroid or ycentroid.
         """
         if self.n_sources == 1:
-            return -1
+            return np.int32(-1)
 
         nn_label = self.label[self._kdtree_query[1]].astype("i4")
         # assign a label of -1 for non-finite xypos
