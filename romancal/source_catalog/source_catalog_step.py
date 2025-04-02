@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING
 import numpy as np
 from astropy.table import Table, join
 from photutils.segmentation import SegmentationImage
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
-from roman_datamodels.maker_utils import mk_datamodel
+from roman_datamodels.stnode import SourceCatalog
 
 from romancal.multiband_catalog import utils
 from romancal.source_catalog.background import RomanBackground
@@ -74,19 +74,15 @@ class SourceCatalogStep(RomanStep):
         )
 
         # Copy the data and error arrays to avoid modifying the input
-        # model. We use mk_datamodel to copy *only* the data and err
-        # arrays. The metadata and dq and weight arrays are not copied
-        # because they are not modified in this step. The other model
-        # arrays (e.g., var_rnoise) are not currently used by this step.
+        # model.
+        # The metadata and dq and weight arrays are not copied
+        # because they are not modified in this step.
         if isinstance(input_model, ImageModel):
-            model = mk_datamodel(
-                ImageModel,
-                meta=input_model.meta,
-                shape=(0, 0),
-                data=input_model.data.copy(),
-                err=input_model.err.copy(),
-                dq=input_model.dq,
-            )
+            model = ImageModel()
+            model.meta = input_model.meta
+            model.data = input_model.data.copy()
+            model.err = input_model.err.copy()
+            model.dq = input_model.dq
 
             # Create a DQ mask for pixels to be excluded; currently all
             # pixels with any DQ flag are excluded from the source catalog
@@ -99,22 +95,20 @@ class SourceCatalogStep(RomanStep):
             # dq_mask = np.any(model.dq[..., None] & dq_flags, axis=-1)
             mask |= dq_mask
         elif isinstance(input_model, MosaicModel):
-            model = mk_datamodel(
-                MosaicModel,
-                meta=input_model.meta,
-                shape=(0, 0),
-                data=input_model.data.copy(),
-                err=input_model.err.copy(),
-                weight=input_model.weight,
-            )
+            model = MosaicModel()
+            model.meta = input_model.meta
+            model.data = input_model.data.copy()
+            model.err = input_model.err.copy()
+            model.weight = input_model.weight
 
         if isinstance(model, ImageModel):
             cat_model = datamodels.ImageSourceCatalogModel
         else:
             cat_model = datamodels.MosaicSourceCatalogModel
-        source_catalog_model = maker_utils.mk_datamodel(cat_model)
+        source_catalog_model = cat_model()
+        source_catalog_model.meta = {}
 
-        for key in source_catalog_model.meta.keys():
+        for key in source_catalog_model.meta._schema_attributes.explicit_properties:
             value = (
                 model.meta.instrument[key]
                 if key == "optical_element"
@@ -270,8 +264,9 @@ class SourceCatalogStep(RomanStep):
         else:
             seg_model = datamodels.MosaicSegmentationMapModel
 
-        segmentation_model = maker_utils.mk_datamodel(seg_model)
-        for key in segmentation_model.meta.keys():
+        segmentation_model = seg_model()
+        segmentation_model.meta = {}
+        for key in segmentation_model.meta._schema_attributes.explicit_properties:
             segmentation_model.meta[key] = source_catalog_model.meta[key]
 
         if segment_img is not None:
@@ -295,7 +290,6 @@ class SourceCatalogStep(RomanStep):
 
 def update_metadata(model, output_catalog_name):
     # update datamodel to point to the source catalog file destination
-    model.meta["source_catalog"] = maker_utils.mk_source_catalog(
-        tweakreg_catalog_name=output_catalog_name
-    )
+    model.meta.source_catalog = SourceCatalog()
+    model.meta.source_catalog.tweakreg_catalog_name = output_catalog_name
     model.meta.cal_step.source_catalog = "COMPLETE"
