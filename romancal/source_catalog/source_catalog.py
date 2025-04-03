@@ -279,20 +279,31 @@ class RomanSourceCatalog:
 
         # if needed, map column names from photutils to the output catalog
         column_map = {}
+        column_map["xcentroid"] = "x_centroid"
+        column_map["ycentroid"] = "y_centroid"
         column_map["segment_flux"] = "isophotal_flux"
         column_map["segment_fluxerr"] = "isophotal_flux_err"
         column_map["area"] = "isophotal_area"
         column_map["kron_fluxerr"] = "kron_flux_err"
 
+        # if needed, map photutils dtypes to the output catalog;
+        # the column names are for the output catalog
+        dtype_map = {}
+        dtype_map["x_centroid"] = np.float32
+        dtype_map["y_centroid"] = np.float32
+
         # set these columns as attributes of this instance
         for column in columns:
             # use the renamed column name
-            if column in column_map:
-                out_column = column_map[column]
-            else:
-                out_column = column
+            new_column = column_map.get(column, column)
 
-            setattr(self, out_column, getattr(segm_cat, column))
+            # change the dtype if needed
+            if new_column in dtype_map:
+                value = getattr(segm_cat, column).astype(dtype_map[new_column])
+            else:
+                value = getattr(segm_cat, column)
+
+            setattr(self, new_column, value)
 
     @lazyproperty
     def sky_orientation(self):
@@ -312,7 +323,7 @@ class RomanSourceCatalog:
         used.
         """
         if self.detection_cat is None:
-            xycen = (self.xcentroid, self.ycentroid)
+            xycen = (self.x_centroid, self.y_centroid)
         else:
             xycen = (self.detection_cat.xcentroid, self.detection_cat.ycentroid)
         return np.transpose(xycen)
@@ -338,7 +349,7 @@ class RomanSourceCatalog:
     def _xypos_nonfinite_mask(self):
         """
         A 1D boolean mask where `True` values denote sources where
-        either the xcentroid or the ycentroid is not finite.
+        either the x_centroid or the y_centroid is not finite.
         """
         return ~np.isfinite(self._xypos).all(axis=1)
 
@@ -866,8 +877,8 @@ class RomanSourceCatalog:
         """
         col = {}
         col["label"] = "Unique source identification label number"
-        col["xcentroid"] = "X pixel value of the source centroid (0 indexed)"
-        col["ycentroid"] = "Y pixel value of the source centroid (0 indexed)"
+        col["x_centroid"] = "X pixel value of the source centroid (0 indexed)"
+        col["y_centroid"] = "Y pixel value of the source centroid (0 indexed)"
         col["sky_centroid"] = " Sky coordinate (ICRS) of the source centroid"
         col["isophotal_flux"] = "Isophotal flux"
         col["isophotal_flux_err"] = "Isophotal flux error"
@@ -940,8 +951,8 @@ class RomanSourceCatalog:
         if self.detection_cat is None:
             colnames = [
                 "label",
-                "xcentroid",
-                "ycentroid",
+                "x_centroid",
+                "y_centroid",
                 "sky_centroid",
                 "aper_bkg_flux",
                 "aper_bkg_flux_err",
