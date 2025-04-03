@@ -430,7 +430,7 @@ class RomanSourceCatalog:
             # standard error of the median
             bkg_median_err = np.sqrt(np.pi / (2.0 * nvalues)) * bkg_std
 
-        return bkg_median, bkg_median_err
+        return bkg_median.astype(np.float32), bkg_median_err.astype(np.float32)
 
     @lazyproperty
     def aper_bkg_flux(self):
@@ -488,8 +488,8 @@ class RomanSourceCatalog:
             # set the flux and error attributes
             flux_col = self.aperture_flux_colnames[i]
             flux_err_col = f"{flux_col}_err"
-            setattr(self, flux_col, aper_phot[tmp_flux_col])
-            setattr(self, flux_err_col, aper_phot[tmp_flux_err_col])
+            setattr(self, flux_col, aper_phot[tmp_flux_col].astype(np.float32))
+            setattr(self, flux_err_col, aper_phot[tmp_flux_err_col].astype(np.float32))
 
     @lazyproperty
     def image_flags(self):
@@ -875,18 +875,14 @@ class RomanSourceCatalog:
         )
         col["ellipticity"] = "1 - (semimajor_sigma / semiminor_sigma)"
         col["orientation_pix"] = (
-            "The angle measured counter-clockwise from the positive X axis to the major axis computed from image moments."
+            "The angle measured counter-clockwise from the positive X axis to the major axis computed from image moments"
         )
         col["orientation_sky"] = (
             "The position angle from North of the major axis computed from "
-            "image moments."
+            "image moments"
         )
-        col["aper_bkg_flux"] = (
-            "The local background value calculated as the sigma-clipped median value in the background annulus aperture"
-        )
-        col["aper_bkg_flux_err"] = (
-            "The standard error of the sigma-clipped median background value"
-        )
+        col["aper_bkg_flux"] = "The local background estimate for aperture photometry"
+        col["aper_bkg_flux_err"] = "Uncertainty in aper_bkg_flux"
 
         for i, colname in enumerate(self.aperture_flux_colnames):
             desc = (
@@ -894,7 +890,7 @@ class RomanSourceCatalog:
                 f"{self.aperture_radii['circle'][i]:0.1f}"
             )
             col[colname] = f"Flux {desc}"
-            col[f"{colname}_err"] = f"Flux error {desc}"
+            col[f"{colname}_err"] = f"Uncertainty in {colname}"
 
         col["image_flags"] = "Data quality flags"
         col["is_extended"] = "Flag indicating whether the source is extended"
