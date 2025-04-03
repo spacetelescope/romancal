@@ -281,9 +281,8 @@ class RomanSourceCatalog:
         column_map = {}
         column_map["xcentroid"] = "x_centroid"
         column_map["ycentroid"] = "y_centroid"
-        column_map["segment_flux"] = "isophotal_flux"
-        column_map["segment_fluxerr"] = "isophotal_flux_err"
-        column_map["area"] = "isophotal_area"
+        column_map["segment_fluxerr"] = "segment_flux_err"
+        column_map["area"] = "segment_area"
         column_map["kron_fluxerr"] = "kron_flux_err"
 
         # if needed, map photutils dtypes to the output catalog;
@@ -291,6 +290,9 @@ class RomanSourceCatalog:
         dtype_map = {}
         dtype_map["x_centroid"] = np.float32
         dtype_map["y_centroid"] = np.float32
+        dtype_map["segment_flux"] = np.float32
+        dtype_map["segment_flux_err"] = np.float32
+        dtype_map["segment_area"] = np.float32
 
         # set these columns as attributes of this instance
         for column in columns:
@@ -302,6 +304,12 @@ class RomanSourceCatalog:
                 value = getattr(segm_cat, column).astype(dtype_map[new_column])
             else:
                 value = getattr(segm_cat, column)
+
+            # handle any unit conversions
+            if new_column == "segment_area":
+                value = (value.value * self.pixel_area.to(u.arcsec**2)).astype(
+                    np.float32
+                )
 
             setattr(self, new_column, value)
 
@@ -880,13 +888,9 @@ class RomanSourceCatalog:
         col["x_centroid"] = "X pixel value of the source centroid (0 indexed)"
         col["y_centroid"] = "Y pixel value of the source centroid (0 indexed)"
         col["sky_centroid"] = " Sky coordinate (ICRS) of the source centroid"
-        col["isophotal_flux"] = "Isophotal flux"
-        col["isophotal_flux_err"] = "Isophotal flux error"
-        # isophotal_flux and isophotal_flux_err must be listed before isophotal_abmag
-        # TEMP: do not include ABmags
-        # desc["isophotal_abmag"] = "Isophotal AB magnitude"
-        # desc["isophotal_abmag_err"] = "Isophotal AB magnitude error"
-        col["isophotal_area"] = "Isophotal area"
+        col["segment_flux"] = "Isophotal flux"
+        col["segment_flux_err"] = "Isophotal flux error"
+        col["segment_area"] = "Area of the source segment"
         col["kron_flux"] = "Kron flux"
         col["kron_flux_err"] = "Kron flux error"
         col["semimajor_sigma"] = (
@@ -967,9 +971,9 @@ class RomanSourceCatalog:
                 "roundness",
                 "nn_label",
                 "nn_dist",
-                "isophotal_flux",
-                "isophotal_flux_err",
-                "isophotal_area",
+                "segment_flux",
+                "segment_flux_err",
+                "segment_area",
                 "kron_flux",
                 "kron_flux_err",
                 "semimajor_sigma",
@@ -987,8 +991,8 @@ class RomanSourceCatalog:
                 "is_extended",
                 "sharpness",
                 "roundness",
-                "isophotal_flux",
-                "isophotal_flux_err",
+                "segment_flux",
+                "segment_flux_err",
                 "kron_flux",
                 "kron_flux_err",
             ]
