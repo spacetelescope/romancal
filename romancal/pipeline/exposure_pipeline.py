@@ -5,6 +5,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
+from roman_datamodels.datamodels import WfiWcsModel
 from roman_datamodels.dqflags import group
 
 import romancal.datamodels.filetype as filetype
@@ -145,6 +146,9 @@ class ExposurePipeline(RomanPipeline):
         if not any_saturated:
             self.tweakreg.run(lib)
 
+        # Write out the WfiWcs products
+        self.save_wfiwcs(lib)
+
         log.info("Roman exposure calibration pipeline ending...")
 
         # return a ModelLibrary
@@ -188,3 +192,18 @@ class ExposurePipeline(RomanPipeline):
 
         # Return zeroed-out image file
         return fully_saturated_model
+
+    def save_wfiwcs(self, lib):
+        """Create and save the WfiWcs products
+
+        Parameters
+        ----------
+        lib : ModelLibrary
+            The final L2 models
+        """
+        log.info('Writing the WCS files...')
+        with lib:
+            for model in lib:
+                wfiwcs = WfiWcsModel.from_model_with_wcs(model)
+                self.save_model(wfiwcs, suffix='wcs')
+                lib.shelve(model)
