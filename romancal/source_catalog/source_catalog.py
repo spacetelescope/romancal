@@ -8,7 +8,6 @@ import warnings
 import astropy.units as u
 import numpy as np
 from astropy.convolution import Gaussian2DKernel
-from astropy.coordinates import SkyCoord
 from astropy.nddata.utils import NoOverlapError, extract_array
 from astropy.stats import SigmaClip, gaussian_fwhm_to_sigma
 from astropy.table import QTable, Table
@@ -254,9 +253,8 @@ class RomanSourceCatalog:
 
         # Extract the properties from the segment catalog. These
         # names are the SourceCatalog property names and the order
-        # is not important; the final column order is set by the the
-        # catalog_colnames method.
-        columns = (
+        # is not important.
+        photutils_names = (
             "label",
             "xcentroid",
             "ycentroid",
@@ -277,49 +275,52 @@ class RomanSourceCatalog:
             "kron_fluxerr",
         )
 
-        # if needed, map column names from photutils to the output catalog
-        column_map = {}
-        column_map["xcentroid"] = "x_centroid"
-        column_map["ycentroid"] = "y_centroid"
-        column_map["segment_fluxerr"] = "segment_flux_err"
-        column_map["area"] = "segment_area"
-        column_map["kron_fluxerr"] = "kron_flux_err"
+        # if needed, map names from photutils to the output catalog names
+        name_map = {}
+        name_map["xcentroid"] = "x_centroid"
+        name_map["ycentroid"] = "y_centroid"
+        name_map["area"] = "segment_area"
+        name_map["orientation"] = "orientation_pix"
+        name_map["segment_fluxerr"] = "segment_flux_err"
+        name_map["kron_fluxerr"] = "kron_flux_err"
 
-        # if needed, map photutils dtypes to the output catalog;
-        # the column names are for the output catalog
-        dtype_map = {}
-        dtype_map["x_centroid"] = np.float32
-        dtype_map["y_centroid"] = np.float32
-        dtype_map["segment_flux"] = np.float32
-        dtype_map["segment_flux_err"] = np.float32
-        dtype_map["segment_area"] = np.float32
+        # set the source properties as attributes of this instance
+        for name in photutils_names:
+            new_name = name_map.get(name, name)
+            value = getattr(segm_cat, name)
 
-        # set these columns as attributes of this instance
-        for column in columns:
-            # use the renamed column name
-            new_column = column_map.get(column, column)
-
-            # change the dtype if needed
-            if new_column in dtype_map:
-                value = getattr(segm_cat, column).astype(dtype_map[new_column])
-            else:
-                value = getattr(segm_cat, column)
+            # change the photutils dtypes
+            if new_name != "sky_centroid":
+                if np.issubdtype(value.dtype, np.integer):
+                    value = value.astype(np.int32)
+                elif np.issubdtype(value.dtype, np.floating):
+                    value = value.astype(np.float32)
 
             # handle any unit conversions
-            if new_column == "segment_area":
+            if new_name in ("x_centroid", "y_centroid"):
+                value *= u.pix
+            if new_name == "segment_area":
                 value = (value.value * self.pixel_area.to(u.arcsec**2)).astype(
                     np.float32
                 )
 
-            setattr(self, new_column, value)
+            # split the sky_centroid values into separate RA and Dec
+            # values
+            if new_name == "sky_centroid":
+                self.ra_centroid = value.ra
+                self.dec_centroid = value.dec
+            else:
+                setattr(self, new_name, value)
 
     @lazyproperty
-    def sky_orientation(self):
+    def orientation_sky(self):
         """
         The position angle of the source major axis in degrees measured
         East of North.
         """
-        return (180.0 * u.deg) - self._wcs_angle + self.orientation
+        return ((180.0 * u.deg) - self._wcs_angle + self.orientation_pix).astype(
+            np.float32
+        )
 
     @lazyproperty
     def _xypos(self):
@@ -786,40 +787,6 @@ class RomanSourceCatalog:
         aper_radii["annulus_arcsec"] = aper_radii.pop("annulus").value
         self.meta["aperture_radii"] = aper_radii
 
-    def _split_skycoord(self, table):
-        """
-        Split SkyCoord columns into separate RA and Dec columns.
-
-        Parameters
-        ----------
-        table : `~astropy.table.Table`
-            The input table.
-
-        Returns
-        -------
-        table : `~astropy.table.Table`
-            The output table with separate RA and Dec columns.
-        """
-        for colname in table.colnames:
-            if isinstance(table[colname], SkyCoord):
-                idx = table.colnames.index(colname)
-                ra = table[colname].ra
-                dec = table[colname].dec
-                ra_colname = colname.replace("sky", "ra")
-                dec_colname = colname.replace("sky", "dec")
-                table.remove_column(colname)
-                table.add_columns(
-                    [ra, dec], names=[ra_colname, dec_colname], indexes=[idx, idx]
-                )
-
-                desc = self.catalog_descriptions[colname]
-                ra_desc = desc.replace("Sky coordinate", "Right ascension")
-                dec_desc = desc.replace("Sky coordinate", "Declination")
-                table[ra_colname].info.description = ra_desc
-                table[dec_colname].info.description = dec_desc
-
-        return table
-
     @lazyproperty
     def psf_model(self):
         """
@@ -862,19 +829,19 @@ class RomanSourceCatalog:
             exclude_out_of_bounds=True,
         )
 
-        # map column names from photutils to the output catalog
-        column_map = {}
-        column_map["flags"] = "psf_flags"
-        column_map["x_fit"] = "x_psf"
-        column_map["x_err"] = "x_psf_err"
-        column_map["y_fit"] = "y_psf"
-        column_map["y_err"] = "y_psf_err"
-        column_map["flux_fit"] = "psf_flux"
-        column_map["flux_err"] = "psf_flux_err"
+        # map photutils column names to the output catalog names
+        name_map = {}
+        name_map["flags"] = "psf_flags"
+        name_map["x_fit"] = "x_psf"
+        name_map["x_err"] = "x_psf_err"
+        name_map["y_fit"] = "y_psf"
+        name_map["y_err"] = "y_psf_err"
+        name_map["flux_fit"] = "psf_flux"
+        name_map["flux_err"] = "psf_flux_err"
 
         # set these columns as attributes of this instance
-        for old_column, new_column in column_map.items():
-            setattr(self, new_column, psf_photometry_table[old_column])
+        for old_name, new_name in name_map.items():
+            setattr(self, new_name, psf_photometry_table[old_name])
 
     @lazyproperty
     def catalog_descriptions(self):
@@ -884,32 +851,36 @@ class RomanSourceCatalog:
         The order is not important.
         """
         col = {}
-        col["label"] = "Unique source identification label number"
-        col["x_centroid"] = "X pixel value of the source centroid (0 indexed)"
-        col["y_centroid"] = "Y pixel value of the source centroid (0 indexed)"
-        col["sky_centroid"] = " Sky coordinate (ICRS) of the source centroid"
+        col["label"] = "Label of the source segment in the segmentation image"
+        col["x_centroid"] = (
+            "Column coordinate of the source centroid in the detection "
+            "image from image moments (0 indexed)"
+        )
+        col["y_centroid"] = (
+            "Row coordinate of the source centroid in the detection image "
+            "from image moments (0 indexed)"
+        )
+        col["ra_centroid"] = "Right ascension (ICRS) of the image centroid"
+        col["dec_centroid"] = "Declination (ICRS) of the image centroid"
         col["segment_flux"] = "Isophotal flux"
-        col["segment_flux_err"] = "Isophotal flux error"
+        col["segment_flux_err"] = "Uncertainty in segment_flux"
         col["segment_area"] = "Area of the source segment"
         col["kron_flux"] = "Kron flux"
-        col["kron_flux_err"] = "Kron flux error"
+        col["kron_flux_err"] = "Uncertainty in kron_flux"
         col["semimajor_sigma"] = (
             "1-sigma standard deviation along the semimajor axis of the 2D Gaussian function that has the same second-order central moments as the source"
         )
         col["semiminor_sigma"] = (
             "1-sigma standard deviation along the semiminor axis of the 2D Gaussian function that has the same second-order central moments as the source"
         )
-        col["ellipticity"] = (
-            "1 minus the ratio of the 1-sigma lengths of the semimajor and semiminor axes"
+        col["ellipticity"] = "1 - (semimajor_sigma / semiminor_sigma)"
+        col["orientation_pix"] = (
+            "The angle measured counter-clockwise from the positive X axis to the major axis computed from image moments."
         )
-        col["orientation"] = (
-            "The angle (degrees) between the positive X axis and the major axis (increases counter-clockwise)"
+        col["orientation_sky"] = (
+            "The position angle from North of the major axis computed from "
+            "image moments."
         )
-        # orientation must be listed before sky_orientation
-        col["sky_orientation"] = (
-            "The position angle (degrees) from North of the major axis"
-        )
-
         col["aper_bkg_flux"] = (
             "The local background value calculated as the sigma-clipped median value in the background annulus aperture"
         )
@@ -957,7 +928,8 @@ class RomanSourceCatalog:
                 "label",
                 "x_centroid",
                 "y_centroid",
-                "sky_centroid",
+                "ra_centroid",
+                "dec_centroid",
                 "aper_bkg_flux",
                 "aper_bkg_flux_err",
             ]
@@ -979,8 +951,8 @@ class RomanSourceCatalog:
                 "semimajor_sigma",
                 "semiminor_sigma",
                 "ellipticity",
-                "orientation",
-                "sky_orientation",
+                "orientation_pix",
+                "orientation_sky",
             ]
             colnames.extend(colnames2)
 
@@ -1039,8 +1011,5 @@ class RomanSourceCatalog:
 
         # convert QTable to Table to avoid having Quantity columns
         catalog = Table(catalog)
-
-        # split SkyCoord columns into separate RA and Dec columns
-        catalog = self._split_skycoord(catalog)
 
         return catalog
