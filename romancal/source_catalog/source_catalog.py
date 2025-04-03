@@ -19,6 +19,7 @@ from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
 from scipy import ndimage
 from scipy.spatial import KDTree
+from stpsf import __version__ as stpsf_version
 
 from romancal import __version__ as romancal_version
 from romancal.source_catalog import psf
@@ -492,6 +493,15 @@ class RomanSourceCatalog:
             setattr(self, flux_err_col, aper_phot[tmp_flux_err_col].astype(np.float32))
 
     @lazyproperty
+    def is_extended(self):
+        """
+        Boolean indicating whether the source is extended.
+
+        Algorithm TBD.
+        """
+        return np.zeros(len(self), dtype=bool)
+
+    @lazyproperty
     def image_flags(self):
         """
         Data quality bit flags (0 = good).
@@ -524,15 +534,6 @@ class RomanSourceCatalog:
             flags[xymask] = mask[xyidx[:, 1], xyidx[:, 0]].astype(np.int32)
 
         return flags
-
-    @lazyproperty
-    def is_extended(self):
-        """
-        Boolean indicating whether the source is extended.
-
-        Algorithm TBD.
-        """
-        return np.zeros(len(self), dtype=np.float32)
 
     @lazyproperty
     def _daofind_kernel_size(self):
@@ -744,16 +745,16 @@ class RomanSourceCatalog:
     @lazyproperty
     def nn_dist(self):
         """
-        The distance in pixels to the nearest neighbor.
+        The distance in arcsec to the nearest neighbor.
+
+        NaN is returned for non-finite centroid positions or when
+        the catalog contains only one source.
         """
         nn_dist = self._kdtree_query[0]
-        if len(self) == 1:
-            # NaN if only one detected source
-            return nn_dist * u.pixel
-
-        # assign a distance of np.nan for non-finite xypos
-        nn_dist[self._xypos_nonfinite_mask] = np.nan
-        return nn_dist * u.pixel
+        if len(self) != 1:
+            # assign a distance of np.nan for non-finite xypos
+            nn_dist[self._xypos_nonfinite_mask] = np.nan
+        return (nn_dist * self._pixel_scale).astype(np.float32)
 
     def _update_metadata(self):
         """
@@ -768,6 +769,7 @@ class RomanSourceCatalog:
         ver_dict = self.meta.get("versions", None)
         if ver_dict is not None:
             ver_dict["romancal"] = romancal_version
+            ver_dict["stpsf"] = stpsf_version
             packages = [
                 "Python",
                 "numpy",
@@ -775,10 +777,17 @@ class RomanSourceCatalog:
                 "astropy",
                 "photutils",
                 "gwcs",
+                "stpsf",
                 "romancal",
             ]
             ver_dict = {key: ver_dict[key] for key in packages if key in ver_dict}
             self.meta[ver_key] = ver_dict
+
+        # reorder the metadata dictionary
+        self.meta.pop("localbkg_width")
+        keys = ["date", "versions", "apermask_method", "kron_params"]
+        old_meta = self.meta.copy()
+        self.meta = {key: old_meta[key] for key in keys}
 
         # reformat the aperture radii for the metadata to remove
         # Quantity objects
@@ -862,11 +871,6 @@ class RomanSourceCatalog:
         )
         col["ra_centroid"] = "Right ascension (ICRS) of the image centroid"
         col["dec_centroid"] = "Declination (ICRS) of the image centroid"
-        col["segment_flux"] = "Isophotal flux"
-        col["segment_flux_err"] = "Uncertainty in segment_flux"
-        col["segment_area"] = "Area of the source segment"
-        col["kron_flux"] = "Kron flux"
-        col["kron_flux_err"] = "Uncertainty in kron_flux"
         col["semimajor_sigma"] = (
             "1-sigma standard deviation along the semimajor axis of the 2D Gaussian function that has the same second-order central moments as the source"
         )
@@ -881,6 +885,12 @@ class RomanSourceCatalog:
             "The position angle from North of the major axis computed from "
             "image moments"
         )
+
+        col["segment_flux"] = "Isophotal flux"
+        col["segment_flux_err"] = "Uncertainty in segment_flux"
+        col["segment_area"] = "Area of the source segment"
+        col["kron_flux"] = "Flux within the elliptical Kron aperture"
+        col["kron_flux_err"] = "Uncertainty in kron_flux"
         col["aper_bkg_flux"] = "The local background estimate for aperture photometry"
         col["aper_bkg_flux_err"] = "Uncertainty in aper_bkg_flux"
 
@@ -892,20 +902,20 @@ class RomanSourceCatalog:
             col[colname] = f"Flux {desc}"
             col[f"{colname}_err"] = f"Uncertainty in {colname}"
 
-        col["image_flags"] = "Data quality flags"
-        col["is_extended"] = "Flag indicating whether the source is extended"
-        col["sharpness"] = "The DAOFind source sharpness statistic"
-        col["roundness"] = "The DAOFind source roundness statistic"
-        col["nn_label"] = "The label number of the nearest neighbor"
-        col["nn_dist"] = "The distance in pixels to the nearest neighbor"
-
-        col["psf_flags"] = "PSF fitting flags"
         col["x_psf"] = "Column position of the source from PSF fitting (0 indexed)"
         col["x_psf_err"] = "Uncertainty in x_psf"
         col["y_psf"] = "Row position of the source from PSF fitting (0 indexed)"
         col["y_psf_err"] = "Uncertainty in y_psf"
         col["psf_flux"] = "Total PSF flux"
         col["psf_flux_err"] = "Uncertainty in psf_flux"
+        col["psf_flags"] = "PSF fitting bit flags"
+
+        col["image_flags"] = "Data quality bit flags"
+        col["is_extended"] = "Flag indicating whether the source is extended"
+        col["sharpness"] = "The DAOFind source sharpness statistic"
+        col["roundness"] = "The DAOFind source roundness statistic"
+        col["nn_label"] = "The label number of the nearest neighbor in this skycell"
+        col["nn_dist"] = "The distance to the nearest neighbor in this skycell"
 
         return col
 
