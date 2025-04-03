@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from roman_datamodels import datamodels as rdd
-from roman_datamodels import maker_utils
 from roman_datamodels import stnode as rds
 from roman_datamodels.dqflags import group, pixel
 from stcal.ramp_fitting import ols_cas22_fit
@@ -194,8 +193,14 @@ def create_image_model(input_model, image_info):
     meta = dict(wcs=None)  # default empty WCS
     meta.update(input_model.meta)
     meta["cal_step"]["ramp_fit"] = "INCOMPLETE"
-    meta["cal_logs"] = maker_utils.mk_cal_logs()
-    meta["photometry"] = maker_utils.mk_photometry()
+    meta["cal_logs"] = rds.CalLogs()
+    meta["photometry"] = rds.Photometry(
+        {
+            "conversion_megajanskys": None,
+            "conversion_megajanskys_uncertainty": None,
+            "pixel_area": None,
+        }
+    )
     inst = {
         "meta": meta,
         "data": data,
