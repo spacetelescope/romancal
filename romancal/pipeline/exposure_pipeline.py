@@ -201,9 +201,9 @@ class ExposurePipeline(RomanPipeline):
         lib : ModelLibrary
             The final L2 models
         """
-        log.info('Writing the WCS files...')
+        log.info("Writing the WCS files...")
         with lib:
             for model in lib:
                 wfiwcs = WfiWcsModel.from_model_with_wcs(model)
-                self.save_model(wfiwcs, suffix='wcs')
+                self.save_model(wfiwcs, suffix="wcs")
                 lib.shelve(model)
