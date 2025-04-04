@@ -205,7 +205,7 @@ class RomanSourceCatalog:
         if self.detection_cat is None:
             xycen = (self.x_centroid, self.y_centroid)
         else:
-            xycen = (self.detection_cat.xcentroid, self.detection_cat.ycentroid)
+            xycen = (self.detection_cat.x_centroid, self.detection_cat.y_centroid)
         return np.transpose(xycen)
 
     @lazyproperty
@@ -245,6 +245,9 @@ class RomanSourceCatalog:
         self.meta.update(segment_cat.meta)
         for name in segment_cat.names:
             setattr(self, name, getattr(segment_cat, name))
+
+        # needed for detection_cat
+        self.segment_cat = segment_cat
 
     def calc_aperture_photometry(self):
         """

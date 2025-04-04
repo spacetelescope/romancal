@@ -82,8 +82,8 @@ class SegmentCatalog:
         self.wcs = self.model.meta.wcs
         self.meta = {}
 
-        # needed for Kron photometry
-        self.segm_sourcecat = None
+        # needed for detection_cat
+        self.source_cat = None
 
         # calculate the segment properties
         self.calc_segment_properties()
@@ -142,8 +142,11 @@ class SegmentCatalog:
 
         The results are set as dynamic attributes on the class instance.
         """
+        # detection_cat is a RomanSourceCatalog object
+        # segment_cat is a SegmentCatalog object
+        # source_cat is a SourceCatalog object
         if self.detection_cat is not None:
-            detection_cat = self.detection_cat.segm_sourcecat
+            detection_cat = self.detection_cat.segment_cat.source_cat
         else:
             detection_cat = None
 
@@ -155,7 +158,7 @@ class SegmentCatalog:
             wcs=self.wcs,
             detection_cat=detection_cat,
         )
-        self.segm_sourcecat = segm_cat
+        self.source_cat = segm_cat
         self.meta.update(segm_cat.meta)
 
         # Extract the properties from the segment catalog. These
