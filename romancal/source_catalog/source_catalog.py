@@ -18,8 +18,8 @@ from scipy.spatial import KDTree
 from stpsf import __version__ as stpsf_version
 
 from romancal import __version__ as romancal_version
-from romancal.source_catalog import psf
 from romancal.source_catalog.daofind import DAOFindCatalog
+from romancal.source_catalog.psf import PSFCatalog
 from romancal.source_catalog.segment import SegmentCatalog
 
 from ._wcs_helpers import pixel_scale_angle_at_skycoord
@@ -219,6 +219,39 @@ class RomanSourceCatalog:
         self.meta.update(segment_cat.meta)
         for name in segment_cat.names:
             setattr(self, name, getattr(segment_cat, name))
+
+    def calc_psf_photometry(self):
+        """
+        Perform PSF photometry on the sources.
+
+        The results are set as dynamic attributes on the class instance.
+        """
+        psf_cat = PSFCatalog(self.model, self._xypos, self.mask)
+        for name in psf_cat.names:
+            setattr(self, name, getattr(psf_cat, name))
+
+    def calc_daofind_properties(self):
+        """
+        Calculate the DAOFind sharpness and roundness1 statistics.
+
+        The sharpness statistic measures the ratio of the difference
+        between the height of the central pixel and the mean of the
+        surrounding non-bad pixels to the height of the best fitting
+        Gaussian function at that point. Stars generally have a
+        "sharpness" between 0.2 and 1.0.
+
+        The roundness1 statistic computes the ratio of a measure of the
+        bilateral symmetry of the object to a measure of the four-fold
+        symmetry of the object. "Round" objects have a "roundness" close
+        to 0, generally between -1 and 1.
+
+        The results are set as dynamic attributes on the class instance.
+        """
+        daofind_cat = DAOFindCatalog(
+            self.model.data, self._xypos_finite, self.kernel_sigma
+        )
+        for name in daofind_cat.names:
+            setattr(self, name, getattr(daofind_cat, name))
 
     @lazyproperty
     def _xypos(self):
@@ -432,29 +465,6 @@ class RomanSourceCatalog:
 
         return flags
 
-    def calc_daofind_properties(self):
-        """
-        Calculate the DAOFind sharpness and roundness1 statistics.
-
-        The sharpness statistic measures the ratio of the difference
-        between the height of the central pixel and the mean of the
-        surrounding non-bad pixels to the height of the best fitting
-        Gaussian function at that point. Stars generally have a
-        "sharpness" between 0.2 and 1.0.
-
-        The roundness1 statistic computes the ratio of a measure of the
-        bilateral symmetry of the object to a measure of the four-fold
-        symmetry of the object. "Round" objects have a "roundness" close
-        to 0, generally between -1 and 1.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        daofind_cat = DAOFindCatalog(
-            self.model.data, self._xypos_finite, self.kernel_sigma
-        )
-        for name in daofind_cat.names:
-            setattr(self, name, getattr(daofind_cat, name))
-
     @lazyproperty
     def _kdtree_query(self):
         """
@@ -538,74 +548,6 @@ class RomanSourceCatalog:
         aper_radii["circle_arcsec"] = aper_radii.pop("circle").value
         aper_radii["annulus_arcsec"] = aper_radii.pop("annulus").value
         self.meta["aperture_radii"] = aper_radii
-
-    @lazyproperty
-    def psf_model(self):
-        """
-        A gridded PSF model based on instrument and detector
-        information.
-
-        The `~photutils.psf.GriddedPSF` model is created using the
-        STPSF library.
-        """
-        log.info("Constructing a gridded PSF model.")
-        if hasattr(self.model.meta, "instrument"):
-            # ImageModel (L2 datamodel)
-            filt = self.model.meta.instrument.optical_element
-            detector = self.model.meta.instrument.detector.replace("WFI", "SCA")
-        else:
-            # MosaicModel (L3 datamodel)
-            filt = self.model.meta.basic.optical_element
-            detector = "SCA02"
-
-        gridded_psf_model, _ = psf.create_gridded_psf_model(
-            filt=filt,
-            detector=detector,
-        )
-
-        return gridded_psf_model
-
-    def calc_psf_photometry(self) -> None:
-        """
-        Perform PSF photometry by fitting PSF models to detected sources
-        for refined astrometry.
-        """
-        log.info("Fitting a PSF model to sources for improved astrometric precision.")
-        xinit, yinit = np.transpose(self._xypos)
-        psf_photometry_table, _ = psf.fit_psf_to_image_model(
-            image_model=self.model,
-            mask=self.mask,
-            psf_model=self.psf_model,
-            x_init=xinit,
-            y_init=yinit,
-            exclude_out_of_bounds=True,
-        )
-
-        # map photutils column names to the output catalog names
-        name_map = {}
-        name_map["flags"] = "psf_flags"
-        name_map["x_fit"] = "x_psf"
-        name_map["x_err"] = "x_psf_err"
-        name_map["y_fit"] = "y_psf"
-        name_map["y_err"] = "y_psf_err"
-        name_map["flux_fit"] = "psf_flux"
-        name_map["flux_err"] = "psf_flux_err"
-
-        # set these columns as attributes of this instance
-        for old_name, new_name in name_map.items():
-            value = psf_photometry_table[old_name]
-
-            # change the photutils dtypes
-            if np.issubdtype(value.dtype, np.integer):
-                value = value.astype(np.int32)
-            elif np.issubdtype(value.dtype, np.floating):
-                value = value.astype(np.float32)
-
-            # handle any unit conversions
-            if new_name in ("x_psf", "y_psf", "x_psf_err", "y_psf_err"):
-                value *= u.pix
-
-            setattr(self, new_name, value)
 
     @lazyproperty
     def catalog_descriptions(self):
