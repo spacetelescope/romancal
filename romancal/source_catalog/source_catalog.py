@@ -12,7 +12,6 @@ from astropy.table import QTable, Table
 from astropy.utils import lazyproperty
 from astropy.utils.exceptions import AstropyUserWarning
 from photutils.aperture import CircularAnnulus, CircularAperture, aperture_photometry
-from photutils.segmentation import SourceCatalog
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
 from scipy.spatial import KDTree
@@ -21,6 +20,7 @@ from stpsf import __version__ as stpsf_version
 from romancal import __version__ as romancal_version
 from romancal.source_catalog import psf
 from romancal.source_catalog.daofind import DAOFindCatalog
+from romancal.source_catalog.segment import SegmentCatalog
 
 from ._wcs_helpers import pixel_scale_angle_at_skycoord
 
@@ -199,34 +199,6 @@ class RomanSourceCatalog:
             self.convolved_data *= self.sb_to_flux.value
             self.convolved_data <<= self.sb_to_flux.unit
 
-    def convert_flux_to_abmag(self, flux, flux_err):
-        """
-        Convert flux (and error) to AB magnitude (and error).
-
-        Parameters
-        ----------
-        flux, flux_err : `~numpy.ndarray`
-            The input flux and error arrays.
-
-        Returns
-        -------
-        abmag, abmag_err : `~astropy.ndarray`
-            The output AB magnitude and error arrays.
-        """
-        # ignore RunTimeWarning if flux or flux_err contains NaNs
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=RuntimeWarning)
-
-            abmag = flux.to(u.ABmag).value
-            abmag_err = 2.5 * np.log10(1.0 + (flux_err / flux))
-
-            # handle negative fluxes
-            idx = flux.value < 0
-            abmag[idx] = np.nan
-            abmag_err[idx] = np.nan
-
-        return abmag, abmag_err
-
     def calc_segment_properties(self):
         """
         Calculate the segment-based properties provided by
@@ -234,92 +206,19 @@ class RomanSourceCatalog:
 
         The results are set as dynamic attributes on the class instance.
         """
-        if self.detection_cat is not None:
-            detection_cat = self.detection_cat.segm_sourcecat
-        else:
-            detection_cat = None
-
-        segm_cat = SourceCatalog(
-            self.model.data,
+        segment_cat = SegmentCatalog(
+            self.model,
             self.segment_img,
-            convolved_data=self.convolved_data,
-            error=self.model.err,
-            wcs=self.wcs,
-            detection_cat=detection_cat,
-        )
-        self.segm_sourcecat = segm_cat
-        self.meta.update(segm_cat.meta)
-
-        # Extract the properties from the segment catalog. These
-        # names are the SourceCatalog property names and the order
-        # is not important.
-        photutils_names = (
-            "label",
-            "xcentroid",
-            "ycentroid",
-            "sky_centroid",
-            "bbox_xmin",
-            "bbox_xmax",
-            "bbox_ymin",
-            "bbox_ymax",
-            "area",
-            "semimajor_sigma",
-            "semiminor_sigma",
-            "orientation",
-            "ellipticity",
-            "kron_radius",
-            "segment_flux",
-            "segment_fluxerr",
-            "kron_flux",
-            "kron_fluxerr",
+            self.convolved_data,
+            self.pixel_area,
+            self._wcs_angle,
+            detection_cat=self.detection_cat,
+            flux_unit=self.flux_unit,
         )
 
-        # if needed, map names from photutils to the output catalog names
-        name_map = {}
-        name_map["xcentroid"] = "x_centroid"
-        name_map["ycentroid"] = "y_centroid"
-        name_map["area"] = "segment_area"
-        name_map["orientation"] = "orientation_pix"
-        name_map["segment_fluxerr"] = "segment_flux_err"
-        name_map["kron_fluxerr"] = "kron_flux_err"
-
-        # set the source properties as attributes of this instance
-        for name in photutils_names:
-            new_name = name_map.get(name, name)
-            value = getattr(segm_cat, name)
-
-            # change the photutils dtypes
-            if new_name != "sky_centroid":
-                if np.issubdtype(value.dtype, np.integer):
-                    value = value.astype(np.int32)
-                elif np.issubdtype(value.dtype, np.floating):
-                    value = value.astype(np.float32)
-
-            # handle any unit conversions
-            if new_name in ("x_centroid", "y_centroid"):
-                value *= u.pix
-            if new_name == "segment_area":
-                value = (value.value * self.pixel_area.to(u.arcsec**2)).astype(
-                    np.float32
-                )
-
-            # split the sky_centroid values into separate RA and Dec
-            # values
-            if new_name == "sky_centroid":
-                self.ra_centroid = value.ra
-                self.dec_centroid = value.dec
-            else:
-                setattr(self, new_name, value)
-
-    @lazyproperty
-    def orientation_sky(self):
-        """
-        The position angle of the source major axis in degrees measured
-        East of North.
-        """
-        return ((180.0 * u.deg) - self._wcs_angle + self.orientation_pix).astype(
-            np.float32
-        )
+        self.meta.update(segment_cat.meta)
+        for name in segment_cat.names:
+            setattr(self, name, getattr(segment_cat, name))
 
     @lazyproperty
     def _xypos(self):
