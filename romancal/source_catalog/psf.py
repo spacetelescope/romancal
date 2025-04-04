@@ -1,51 +1,22 @@
 """
-Utilities for fitting model PSFs to rate images.
+Module to calculate PSF photometry.
 """
 
 import logging
 
+import astropy.units as u
 import numpy as np
 import stpsf
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.table import Table
+from astropy.utils import lazyproperty
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
 from photutils.psf import IterativePSFPhotometry, PSFPhotometry, SourceGrouper
 from stpsf import gridded_library
 
-__all__ = [
-    "create_gridded_psf_model",
-    "fit_psf_to_image_model",
-]
-
-# set loggers to debug level by default:
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-
-# Phase C central wavelengths [micron], released by Goddard (Jan 2023):
-# https://roman.ipac.caltech.edu/sims/Param_db.html#wfi_filters
-filter_central_wavelengths = {
-    "F062": 0.620,
-    "F087": 0.869,
-    "F106": 1.060,
-    "F129": 1.293,
-    "F146": 1.464,
-    "F158": 1.577,
-    "F184": 1.842,
-    "F213": 2.125,
-}
-
-default_finder = DAOStarFinder(
-    # these defaults extracted from the
-    # romancal SourceDetectionStep
-    fwhm=1.0,
-    threshold=0.0,
-    sharplo=0.0,
-    sharphi=1.0,
-    roundlo=-1.0,
-    roundhi=1.0,
-    peakmax=None,
-)
 
 
 def create_gridded_psf_model(
@@ -238,7 +209,18 @@ def fit_psf_to_image_model(
     psf_photometry_kwargs = {}
     if photometry_cls is IterativePSFPhotometry or (x_init is None and y_init is None):
         if finder is None:
-            finder = default_finder
+            # these defaults extracted from the
+            # romancal SourceDetectionStep
+            finder = DAOStarFinder(
+                fwhm=1.0,
+                threshold=0.0,
+                sharplo=0.0,
+                sharphi=1.0,
+                roundlo=-1.0,
+                roundhi=1.0,
+                peakmax=None,
+            )
+
         psf_photometry_kwargs["finder"] = finder
 
     if localbkg_estimator is None:
@@ -296,3 +278,102 @@ def fit_psf_to_image_model(
 
     # results are stored on the PSFPhotometry instance:
     return results_table, photometry
+
+
+class PSFCatalog:
+    """
+    Class to calculate PSF photometry.
+
+    Parameters
+    ----------
+    model : `ImageModel` or `MosaicModel`
+        The input data model. The image data is assumed to be background
+        subtracted.
+
+    xypos : `numpy.ndarray`
+        Pixel coordinates of sources to fit. The shape of this array should
+        be (N, 2), where N is the number of sources to fit.
+
+    mask : 2D `~numpy.ndarray` or `None`, optional
+        A 2D boolean mask image with the same shape as the input data.
+        This mask is used for PSF photometry. The mask should be the
+        same one used to create the segmentation image.
+    """
+
+    def __init__(self, model, xypos, mask=None):
+        self.model = model
+        self.xypos = xypos
+        self.mask = mask
+
+        self.names = []
+
+        self.calc_psf_photometry()
+
+    @lazyproperty
+    def psf_model(self):
+        """
+        A gridded PSF model based on instrument and detector
+        information.
+
+        The `~photutils.psf.GriddedPSF` model is created using the
+        STPSF library.
+        """
+        log.info("Constructing a gridded PSF model.")
+        if hasattr(self.model.meta, "instrument"):
+            # ImageModel (L2 datamodel)
+            filt = self.model.meta.instrument.optical_element
+            detector = self.model.meta.instrument.detector.replace("WFI", "SCA")
+        else:
+            # MosaicModel (L3 datamodel)
+            filt = self.model.meta.basic.optical_element
+            detector = "SCA02"
+
+        gridded_psf_model, _ = create_gridded_psf_model(
+            filt=filt,
+            detector=detector,
+        )
+
+        return gridded_psf_model
+
+    def calc_psf_photometry(self):
+        """
+        Perform PSF photometry by fitting PSF models to detected sources
+        for refined astrometry.
+        """
+        log.info("Fitting a PSF model to sources for improved astrometric precision.")
+        xinit, yinit = np.transpose(self.xypos)
+        psf_photometry_table, _ = fit_psf_to_image_model(
+            image_model=self.model,
+            mask=self.mask,
+            psf_model=self.psf_model,
+            x_init=xinit,
+            y_init=yinit,
+            exclude_out_of_bounds=True,
+        )
+
+        # map photutils column names to the output catalog names
+        name_map = {}
+        name_map["flags"] = "psf_flags"
+        name_map["x_fit"] = "x_psf"
+        name_map["x_err"] = "x_psf_err"
+        name_map["y_fit"] = "y_psf"
+        name_map["y_err"] = "y_psf_err"
+        name_map["flux_fit"] = "psf_flux"
+        name_map["flux_err"] = "psf_flux_err"
+
+        # set these columns as attributes of this instance
+        for old_name, new_name in name_map.items():
+            value = psf_photometry_table[old_name]
+
+            # change the photutils dtypes
+            if np.issubdtype(value.dtype, np.integer):
+                value = value.astype(np.int32)
+            elif np.issubdtype(value.dtype, np.floating):
+                value = value.astype(np.float32)
+
+            # handle any unit conversions
+            if new_name in ("x_psf", "y_psf", "x_psf_err", "y_psf_err"):
+                value *= u.pix
+
+            setattr(self, new_name, value)
+            self.names.append(new_name)
