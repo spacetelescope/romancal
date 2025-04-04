@@ -24,11 +24,8 @@ def get_direct_image_columns(table):
             col.startswith("aper")
             or col.startswith("segment_flux")
             or col.startswith("kron_flux")
-            or "psf" in col
-            or col == "is_extended"
             or col == "sharpness"
             or col == "roundness"
-            or "flags" in col
         ):
             phot_cols.append(col)
 
