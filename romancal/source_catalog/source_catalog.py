@@ -500,7 +500,7 @@ class RomanSourceCatalog:
         return np.zeros(len(self), dtype=bool)
 
     @lazyproperty
-    def image_flags(self):
+    def warning_flags(self):
         """
         Data quality bit flags (0 = good).
 
@@ -731,35 +731,35 @@ class RomanSourceCatalog:
         )
 
         col["segment_flux"] = "Isophotal flux"
-        col["segment_flux_err"] = "Uncertainty in segment_flux"
         col["segment_area"] = "Area of the source segment"
         col["kron_flux"] = "Flux within the elliptical Kron aperture"
-        col["kron_flux_err"] = "Uncertainty in kron_flux"
         col["aper_bkg_flux"] = "The local background estimate for aperture photometry"
-        col["aper_bkg_flux_err"] = "Uncertainty in aper_bkg_flux"
 
+        col["x_psf"] = "Column position of the source from PSF fitting (0 indexed)"
+        col["y_psf"] = "Row position of the source from PSF fitting (0 indexed)"
+        col["psf_flux"] = "Total PSF flux"
+        col["psf_flags"] = "PSF fitting bit flags"
+
+        col["warning_flags"] = "Warning bit flags"
+        col["is_extended"] = "Flag indicating whether the source is extended"
+        col["sharpness"] = "The DAOFind sharpness statistic"
+        col["roundness"] = "The DAOFind roundness1 statistic"
+        col["nn_label"] = "The label number of the nearest neighbor in this skycell"
+        col["nn_dist"] = "The distance to the nearest neighbor in this skycell"
+
+        # add the aperture flux column descriptions
         for i, colname in enumerate(self.aperture_flux_colnames):
             desc = (
                 "within a circular aperture of radius="
                 f"{self.aperture_radii['circle'][i]:0.1f}"
             )
             col[colname] = f"Flux {desc}"
-            col[f"{colname}_err"] = f"Uncertainty in {colname}"
 
-        col["x_psf"] = "Column position of the source from PSF fitting (0 indexed)"
-        col["x_psf_err"] = "Uncertainty in x_psf"
-        col["y_psf"] = "Row position of the source from PSF fitting (0 indexed)"
-        col["y_psf_err"] = "Uncertainty in y_psf"
-        col["psf_flux"] = "Total PSF flux"
-        col["psf_flux_err"] = "Uncertainty in psf_flux"
-        col["psf_flags"] = "PSF fitting bit flags"
-
-        col["image_flags"] = "Data quality bit flags"
-        col["is_extended"] = "Flag indicating whether the source is extended"
-        col["sharpness"] = "The DAOFind sharpness statistic"
-        col["roundness"] = "The DAOFind roundness1 statistic"
-        col["nn_label"] = "The label number of the nearest neighbor in this skycell"
-        col["nn_dist"] = "The distance to the nearest neighbor in this skycell"
+        # add the "*_err" column descriptions
+        for column in self.catalog_colnames:
+            if column.endswith("_err"):
+                base_column = column.replace("_err", "")
+                col[column] = f"Uncertainty in {base_column}"
 
         return col
 
@@ -787,7 +787,7 @@ class RomanSourceCatalog:
             colnames.extend(aper_colnames)
 
             colnames2 = [
-                "image_flags",
+                "warning_flags",
                 "is_extended",
                 "sharpness",
                 "roundness",
@@ -809,7 +809,7 @@ class RomanSourceCatalog:
         else:
             colnames = [
                 "label",
-                "image_flags",
+                "warning_flags",
                 "is_extended",
                 "sharpness",
                 "roundness",
