@@ -7,6 +7,7 @@ import warnings
 import numpy as np
 from astropy.convolution import Gaussian2DKernel
 from astropy.nddata.utils import NoOverlapError, extract_array
+from astropy.stats import gaussian_fwhm_to_sigma
 from astropy.utils.decorators import lazyproperty
 from scipy import ndimage
 
@@ -29,10 +30,10 @@ class DAOFindCatalog:
         value.
     """
 
-    def __init__(self, data, xypos, kernel_sigma):
+    def __init__(self, data, xypos, kernel_fwhm):
         self.data = data
         self.xypos = xypos
-        self.kernel_sigma = kernel_sigma
+        self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
 
         self.names = ["sharpness", "roundness"]
 
@@ -167,11 +168,11 @@ class DAOFindCatalog:
         """
         The DAOFind source roundness1 statistic based on symmetry.
 
-        The roundness characteristic computes the ratio of a measure of
-        the bilateral symmetry of the object to a measure of the
-        four-fold symmetry of the object.
+        The roundness1 statistic computes the ratio of a measure of the
+        bilateral symmetry of the object to a measure of the four-fold
+        symmetry of the object.
 
-        "Round" objects have a ``roundness`` close to 0, generally
+        "Round" objects have a "roundness1" close to 0, generally
         between -1 and 1.
         """
         # set the central (peak) pixel to zero

@@ -6,7 +6,6 @@ import logging
 
 import astropy.units as u
 import numpy as np
-from astropy.stats import gaussian_fwhm_to_sigma
 from astropy.table import QTable, Table
 from astropy.utils import lazyproperty
 from roman_datamodels.datamodels import ImageModel, MosaicModel
@@ -97,7 +96,7 @@ class RomanSourceCatalog:
         self.model = model  # input model is background-subtracted
         self.segment_img = segment_img
         self.convolved_data = convolved_data
-        self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
+        self.kernel_fwhm = kernel_fwhm
         self.fit_psf = fit_psf
         self.mask = mask
         self.detection_cat = detection_cat
@@ -109,7 +108,7 @@ class RomanSourceCatalog:
 
         # define flux unit conversion factors
         self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
-        self.sb_to_flux = (1.0 * (u.MJy / u.sr) * self.pixel_area).to(
+        self.sb_to_flux = (1.0 * (u.MJy / u.sr) * self._pixel_area).to(
             u.Unit(self.flux_unit)
         )
 
@@ -118,6 +117,35 @@ class RomanSourceCatalog:
 
     def __len__(self):
         return self.n_sources
+
+    def convert_l2_to_sb(self):
+        """
+        Convert level-2 data from units of DN/s to MJy/sr (surface
+        brightness).
+        """
+        # the conversion in done in-place to avoid making copies of the data;
+        # use a dictionary to set the value to avoid on-the-fly validation
+        self.model["data"] *= self.l2_to_sb
+        self.model["err"] *= self.l2_to_sb
+        if self.convolved_data is not None:
+            self.convolved_data *= self.l2_to_sb
+
+    def convert_sb_to_flux_density(self):
+        """
+        Convert level-3 data from units of MJy/sr (surface brightness)
+        to flux density units.
+
+        The flux density unit is defined by self.flux_unit.
+        """
+        # the conversion in done in-place to avoid making copies of the data;
+        # use a dictionary to set the value to avoid on-the-fly validation
+        self.model["data"] *= self.sb_to_flux.value
+        self.model["data"] <<= self.sb_to_flux.unit
+        self.model["err"] *= self.sb_to_flux.value
+        self.model["err"] <<= self.sb_to_flux.unit
+        if self.convolved_data is not None:
+            self.convolved_data *= self.sb_to_flux.value
+            self.convolved_data <<= self.sb_to_flux.unit
 
     @lazyproperty
     def _pixscale_angle(self):
@@ -155,7 +183,7 @@ class RomanSourceCatalog:
         return self._pixscale_angle[1]
 
     @lazyproperty
-    def pixel_area(self):
+    def _pixel_area(self):
         """
         The pixel area (as a Quantity in steradians).
 
@@ -167,106 +195,6 @@ class RomanSourceCatalog:
         if pixel_area < 0:
             pixel_area = (self._pixel_scale**2).to(u.sr)
         return pixel_area
-
-    def convert_l2_to_sb(self):
-        """
-        Convert level-2 data from units of DN/s to MJy/sr (surface
-        brightness).
-        """
-        # the conversion in done in-place to avoid making copies of the data;
-        # use a dictionary to set the value to avoid on-the-fly validation
-        self.model["data"] *= self.l2_to_sb
-        self.model["err"] *= self.l2_to_sb
-        if self.convolved_data is not None:
-            self.convolved_data *= self.l2_to_sb
-
-    def convert_sb_to_flux_density(self):
-        """
-        Convert level-3 data from units of MJy/sr (surface brightness)
-        to flux density units.
-
-        The flux density unit is defined by self.flux_unit.
-        """
-        # the conversion in done in-place to avoid making copies of the data;
-        # use a dictionary to set the value to avoid on-the-fly validation
-        self.model["data"] *= self.sb_to_flux.value
-        self.model["data"] <<= self.sb_to_flux.unit
-        self.model["err"] *= self.sb_to_flux.value
-        self.model["err"] <<= self.sb_to_flux.unit
-        if self.convolved_data is not None:
-            self.convolved_data *= self.sb_to_flux.value
-            self.convolved_data <<= self.sb_to_flux.unit
-
-    def calc_segment_properties(self):
-        """
-        Calculate the segment-based properties provided by
-        `~photutils.segmentation.SourceCatalog`.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        segment_cat = SegmentCatalog(
-            self.model,
-            self.segment_img,
-            self.convolved_data,
-            self.pixel_area,
-            self._wcs_angle,
-            detection_cat=self.detection_cat,
-            flux_unit=self.flux_unit,
-        )
-
-        self.meta.update(segment_cat.meta)
-        for name in segment_cat.names:
-            setattr(self, name, getattr(segment_cat, name))
-
-    def calc_aperture_photometry(self):
-        """
-        Calculate aperture photometry.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        aperture_cat = ApertureCatalog(
-            self.model,
-            self._pixel_scale,
-            self._xypos_finite,
-        )
-        for name in aperture_cat.names:
-            setattr(self, name, getattr(aperture_cat, name))
-
-        # needed to get aperture flux column names and descriptions
-        self.aperture_cat = aperture_cat
-
-    def calc_psf_photometry(self):
-        """
-        Perform PSF photometry on the sources.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        psf_cat = PSFCatalog(self.model, self._xypos, self.mask)
-        for name in psf_cat.names:
-            setattr(self, name, getattr(psf_cat, name))
-
-    def calc_daofind_properties(self):
-        """
-        Calculate the DAOFind sharpness and roundness1 statistics.
-
-        The sharpness statistic measures the ratio of the difference
-        between the height of the central pixel and the mean of the
-        surrounding non-bad pixels to the height of the best fitting
-        Gaussian function at that point. Stars generally have a
-        "sharpness" between 0.2 and 1.0.
-
-        The roundness1 statistic computes the ratio of a measure of the
-        bilateral symmetry of the object to a measure of the four-fold
-        symmetry of the object. "Round" objects have a "roundness" close
-        to 0, generally between -1 and 1.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        daofind_cat = DAOFindCatalog(
-            self.model.data, self._xypos_finite, self.kernel_sigma
-        )
-        for name in daofind_cat.names:
-            setattr(self, name, getattr(daofind_cat, name))
 
     @lazyproperty
     def _xypos(self):
@@ -307,6 +235,66 @@ class RomanSourceCatalog:
         either the x_centroid or the y_centroid is not finite.
         """
         return ~np.isfinite(self._xypos).all(axis=1)
+
+    def calc_segment_properties(self):
+        """
+        Calculate the segment-based properties provided by
+        `~photutils.segmentation.SourceCatalog`.
+
+        The results are set as dynamic attributes on the class instance.
+        """
+        segment_cat = SegmentCatalog(
+            self.model,
+            self.segment_img,
+            self.convolved_data,
+            self._pixel_area,
+            self._wcs_angle,
+            detection_cat=self.detection_cat,
+            flux_unit=self.flux_unit,
+        )
+
+        self.meta.update(segment_cat.meta)
+        for name in segment_cat.names:
+            setattr(self, name, getattr(segment_cat, name))
+
+    def calc_aperture_photometry(self):
+        """
+        Calculate aperture photometry.
+
+        The results are set as dynamic attributes on the class instance.
+        """
+        aperture_cat = ApertureCatalog(
+            self.model,
+            self._pixel_scale,
+            self._xypos_finite,
+        )
+        for name in aperture_cat.names:
+            setattr(self, name, getattr(aperture_cat, name))
+
+        # needed to get aperture flux column names and descriptions
+        self.aperture_cat = aperture_cat
+
+    def calc_psf_photometry(self):
+        """
+        Perform PSF photometry on the sources.
+
+        The results are set as dynamic attributes on the class instance.
+        """
+        psf_cat = PSFCatalog(self.model, self._xypos, self.mask)
+        for name in psf_cat.names:
+            setattr(self, name, getattr(psf_cat, name))
+
+    def calc_daofind_properties(self):
+        """
+        Calculate the DAOFind sharpness and roundness1 statistics.
+
+        The results are set as dynamic attributes on the class instance.
+        """
+        daofind_cat = DAOFindCatalog(
+            self.model.data, self._xypos_finite, self.kernel_fwhm
+        )
+        for name in daofind_cat.names:
+            setattr(self, name, getattr(daofind_cat, name))
 
     @lazyproperty
     def is_extended(self):
