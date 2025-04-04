@@ -109,3 +109,14 @@ raw 3D data. In addition to being a 2-dimensional
 image the output from the pipeline has the :ref:`reference pixels <refpix>`
 removed from the edges of the science array and saved as additional 3D arrays. The
 source catalog and segmentation map from the individual exposues is also saved.
+
+WFI Level 1/Level 2 WCS (WfiWcsModel)
++++++++++++++++++++++++++++++++++++++
+
+:Data model: `~romancal.datamodels.WfiWcsModel`
+:File suffix: _wcs
+
+Contains a copy of the final, GAIA-aligned, Level 2 Generalized World Coordinate
+System (GWCS) information along with a modified Level 1 GWCS which accounts for
+the border pixels. The Level 1 GWCS can be used directly with the related Level
+1 product.
