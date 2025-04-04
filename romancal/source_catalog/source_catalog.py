@@ -7,8 +7,6 @@ import warnings
 
 import astropy.units as u
 import numpy as np
-from astropy.convolution import Gaussian2DKernel
-from astropy.nddata.utils import NoOverlapError, extract_array
 from astropy.stats import SigmaClip, gaussian_fwhm_to_sigma
 from astropy.table import QTable, Table
 from astropy.utils import lazyproperty
@@ -17,12 +15,12 @@ from photutils.aperture import CircularAnnulus, CircularAperture, aperture_photo
 from photutils.segmentation import SourceCatalog
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
-from scipy import ndimage
 from scipy.spatial import KDTree
 from stpsf import __version__ as stpsf_version
 
 from romancal import __version__ as romancal_version
 from romancal.source_catalog import psf
+from romancal.source_catalog.daofind import DAOFindCatalog
 
 from ._wcs_helpers import pixel_scale_angle_at_skycoord
 
@@ -535,182 +533,28 @@ class RomanSourceCatalog:
 
         return flags
 
-    @lazyproperty
-    def _daofind_kernel_size(self):
+    def calc_daofind_properties(self):
         """
-        The DAOFind kernel size (in both x and y dimensions).
-        """
-        # always odd
-        return 2 * int(max(2.0, 1.5 * self.kernel_sigma)) + 1
-
-    @lazyproperty
-    def _daofind_kernel_center(self):
-        """
-        The DAOFind kernel x/y center.
-        """
-        return (self._daofind_kernel_size - 1) // 2
-
-    @lazyproperty
-    def _daofind_kernel_mask(self):
-        """
-        The DAOFind kernel circular mask.
-
-        NOTE: 1=good pixels, 0=masked pixels
-        """
-        yy, xx = np.mgrid[0 : self._daofind_kernel_size, 0 : self._daofind_kernel_size]
-        radius = np.sqrt(
-            (xx - self._daofind_kernel_center) ** 2
-            + (yy - self._daofind_kernel_center) ** 2
-        )
-        return (radius <= max(2.0, 1.5 * self.kernel_sigma)).astype(int)
-
-    @lazyproperty
-    def _daofind_kernel(self):
-        """
-        The DAOFind kernel, a 2D circular Gaussian normalized to have
-        zero sum.
-        """
-        size = self._daofind_kernel_size
-        kernel = Gaussian2DKernel(self.kernel_sigma, x_size=size, y_size=size).array
-        kernel *= self._daofind_kernel_mask
-        kernel /= np.max(kernel)
-
-        # normalize the kernel to zero sum
-        npixels = self._daofind_kernel_mask.sum()
-        denom = np.sum(kernel**2) - (np.sum(kernel) ** 2 / npixels)
-        return ((kernel - (kernel.sum() / npixels)) / denom) * self._daofind_kernel_mask
-
-    @lazyproperty
-    def _daofind_convolved_data(self):
-        """
-        The DAOFind convolved data.
-        """
-        return ndimage.convolve(
-            self.model.data.value, self._daofind_kernel, mode="constant", cval=0.0
-        )
-
-    @lazyproperty
-    def _daofind_cutout(self):
-        """
-        3D array containing 2D cutouts centered on each source from the
-        input data.
-
-        The cutout size always matches the size of the DAOFind kernel,
-        which has odd dimensions.
-        """
-        cutout = []
-        for xcen, ycen in zip(*np.transpose(self._xypos_finite), strict=False):
-            try:
-                cutout_ = extract_array(
-                    self.model.data,
-                    self._daofind_kernel.shape,
-                    (ycen, xcen),
-                    fill_value=0.0,
-                )
-            except NoOverlapError:
-                cutout_ = np.zeros(self._daofind_kernel.shape)
-            cutout.append(cutout_)
-
-        return np.array(cutout)  # all cutouts are the same size
-
-    @lazyproperty
-    def _daofind_cutout_conv(self):
-        """
-        3D array containing 2D cutouts centered on each source from the
-        DAOFind convolved data.
-
-        The cutout size always matches the size of the DAOFind kernel,
-        which has odd dimensions.
-        """
-        cutout = []
-        for xcen, ycen in zip(*np.transpose(self._xypos_finite), strict=False):
-            try:
-                cutout_ = extract_array(
-                    self._daofind_convolved_data,
-                    self._daofind_kernel.shape,
-                    (ycen, xcen),
-                    fill_value=0.0,
-                )
-            except NoOverlapError:
-                cutout_ = np.zeros(self._daofind_kernel.shape)
-            cutout.append(cutout_)
-
-        return np.array(cutout)  # all cutouts are the same size
-
-    @lazyproperty
-    def sharpness(self):
-        """
-        The DAOFind source sharpness statistic.
+        Calculate the DAOFind sharpness and roundness1 statistics.
 
         The sharpness statistic measures the ratio of the difference
         between the height of the central pixel and the mean of the
         surrounding non-bad pixels to the height of the best fitting
-        Gaussian function at that point.
+        Gaussian function at that point. Stars generally have a
+        "sharpness" between 0.2 and 1.0.
 
-        Stars generally have a ``sharpness`` between 0.2 and 1.0.
+        The roundness1 statistic computes the ratio of a measure of the
+        bilateral symmetry of the object to a measure of the four-fold
+        symmetry of the object. "Round" objects have a "roundness" close
+        to 0, generally between -1 and 1.
+
+        The results are set as dynamic attributes on the class instance.
         """
-        npixels = self._daofind_kernel_mask.sum() - 1  # exclude the peak pixel
-        data_masked = self._daofind_cutout * self._daofind_kernel_mask
-        data_peak = self._daofind_cutout[
-            :, self._daofind_kernel_center, self._daofind_kernel_center
-        ]
-        conv_peak = self._daofind_cutout_conv[
-            :, self._daofind_kernel_center, self._daofind_kernel_center
-        ]
-
-        data_mean = (np.sum(data_masked, axis=(1, 2)) - data_peak) / npixels
-
-        with warnings.catch_warnings():
-            # ignore 0 / 0 for non-finite xypos
-            warnings.simplefilter("ignore", category=RuntimeWarning)
-            return (data_peak - data_mean) / conv_peak
-
-    @lazyproperty
-    def roundness(self):
-        """
-        The DAOFind source roundness statistic based on symmetry.
-
-        The roundness characteristic computes the ratio of a measure of
-        the bilateral symmetry of the object to a measure of the
-        four-fold symmetry of the object.
-
-        "Round" objects have a ``roundness`` close to 0, generally
-        between -1 and 1.
-        """
-        # set the central (peak) pixel to zero
-        cutout = self._daofind_cutout_conv.copy()
-        cutout[:, self._daofind_kernel_center, self._daofind_kernel_center] = 0.0
-
-        # calculate the four roundness quadrants
-        quad1 = cutout[
-            :, 0 : self._daofind_kernel_center + 1, self._daofind_kernel_center + 1 :
-        ]
-        quad2 = cutout[
-            :, 0 : self._daofind_kernel_center, 0 : self._daofind_kernel_center + 1
-        ]
-        quad3 = cutout[
-            :, self._daofind_kernel_center :, 0 : self._daofind_kernel_center
-        ]
-        quad4 = cutout[
-            :, self._daofind_kernel_center + 1 :, self._daofind_kernel_center :
-        ]
-
-        axis = (1, 2)
-        sum2 = (
-            -quad1.sum(axis=axis)
-            + quad2.sum(axis=axis)
-            - quad3.sum(axis=axis)
-            + quad4.sum(axis=axis)
+        daofind_cat = DAOFindCatalog(
+            self.model.data, self._xypos_finite, self.kernel_sigma
         )
-        sum2[sum2 == 0] = 0.0
-
-        sum4 = np.abs(cutout).sum(axis=axis)
-        sum4[sum4 == 0] = np.nan
-
-        with warnings.catch_warnings():
-            # ignore 0 / 0 for non-finite xypos
-            warnings.simplefilter("ignore", category=RuntimeWarning)
-            return 2.0 * sum2 / sum4
+        for name in daofind_cat.names:
+            setattr(self, name, getattr(daofind_cat, name))
 
     @lazyproperty
     def _kdtree_query(self):
@@ -912,8 +756,8 @@ class RomanSourceCatalog:
 
         col["image_flags"] = "Data quality bit flags"
         col["is_extended"] = "Flag indicating whether the source is extended"
-        col["sharpness"] = "The DAOFind source sharpness statistic"
-        col["roundness"] = "The DAOFind source roundness statistic"
+        col["sharpness"] = "The DAOFind sharpness statistic"
+        col["roundness"] = "The DAOFind roundness1 statistic"
         col["nn_label"] = "The label number of the nearest neighbor in this skycell"
         col["nn_dist"] = "The distance to the nearest neighbor in this skycell"
 
@@ -1003,6 +847,7 @@ class RomanSourceCatalog:
         # make measurements
         self.calc_segment_properties()
         self.calc_aperture_photometry()
+        self.calc_daofind_properties()
         if self.fit_psf:
             self.calc_psf_photometry()
 
