@@ -17,7 +17,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
         "r0000101001001001001_f158_coadd.asdf",
         "r0000101001001001001_0001_wfi01_f158_cal.asdf",
     ],
-    ids=["L3", "L2", "L3skycell"],
+    ids=["L3skycell", "L3", "L2"],
 )
 def run_source_catalog(rtdata_module, request, resource_tracker):
     rtdata = rtdata_module
