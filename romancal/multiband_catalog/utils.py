@@ -24,7 +24,7 @@ def get_direct_image_columns(table):
             col.startswith("aper")
             or col.startswith("segment_flux")
             or col.startswith("kron_flux")
-            or "_psf" in col
+            or "psf" in col
             or col == "is_extended"
             or col == "sharpness"
             or col == "roundness"
@@ -118,5 +118,41 @@ def remove_columns(table):
     for col in table.colnames:
         if col in phot_cols:
             table.remove_column(col)
+
+    return table
+
+
+def add_filter_to_colnames(table, filter_name):
+    """
+    Add a filter name to the column names in an astropy table.
+
+    The filter name is inserted before the "_flux" part of the column
+    name.
+
+    Parameters
+    ----------
+    table : `~astropy.table.Table`
+        The table to update.
+
+    filter_name : str
+        The filter name to add to the column names.
+
+    Returns
+    -------
+    result : `~astropy.table.Table`
+        The updated table.
+    """
+    if not isinstance(filter_name, str):
+        raise ValueError("filter_name must be a string")
+
+    filter_name = filter_name.lower()
+
+    for colname in table.colnames:
+        if "_flux" in colname:
+            parts = colname.split("_flux")
+            new_col = f"{parts[0]}_{filter_name}_flux"
+            if len(parts) > 1:
+                new_col += f"{parts[1]}"
+            table.rename_column(colname, new_col)
 
     return table

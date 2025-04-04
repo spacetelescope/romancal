@@ -459,6 +459,28 @@ class RomanSourceCatalog:
             aper_colnames.append(colname)
             aper_colnames.append(f"{colname}_err")
 
+        # define the flux column names
+        flux_colnames = [
+            "aper_bkg_flux",
+            "aper_bkg_flux_err",
+        ]
+        flux_colnames.extend(aper_colnames)
+        if self.fit_psf:
+            flux_colnames.extend(
+                [
+                    "psf_flux",
+                    "psf_flux_err",
+                ]
+            )
+        flux_colnames.extend(
+            [
+                "segment_flux",
+                "segment_flux_err",
+                "kron_flux",
+                "kron_flux_err",
+            ]
+        )
+
         if self.detection_cat is None:
             colnames = [
                 "label",
@@ -489,55 +511,17 @@ class RomanSourceCatalog:
                     "roundness",
                     "nn_label",
                     "nn_dist",
-                    "aper_bkg_flux",
-                    "aper_bkg_flux_err",
                 ]
             )
-            colnames.extend(aper_colnames)
-            if self.fit_psf:
-                colnames.extend(
-                    [
-                        "psf_flux",
-                        "psf_flux_err",
-                    ]
-                )
-            colnames.extend(
-                [
-                    "segment_flux",
-                    "segment_flux_err",
-                    "kron_flux",
-                    "kron_flux_err",
-                ]
-            )
+            colnames.extend(flux_colnames)
             colnames.append("warning_flags")
             if self.fit_psf:
                 colnames.append("psf_flags")
 
         else:
-            colnames = [
-                "label",
-                "warning_flags",
-                "is_extended",
-                "sharpness",
-                "roundness",
-                "segment_flux",
-                "segment_flux_err",
-                "kron_flux",
-                "kron_flux_err",
-            ]
-            colnames.extend(aper_colnames)
-
-        if self.fit_psf:
-            psf_colnames = [
-                "psf_flags",
-                "x_psf",
-                "x_psf_err",
-                "y_psf",
-                "y_psf_err",
-                "psf_flux",
-                "psf_flux_err",
-            ]
-            colnames.extend(psf_colnames)
+            # these are band-specific columns for the multiband catalog
+            colnames = ["label"]  # label is needed to join the filter catalogs
+            colnames.extend(flux_colnames)
 
         return colnames
 

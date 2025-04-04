@@ -96,6 +96,6 @@ def test_multiband_catalog(
         for colname in cat.colnames:
             if "flux" in colname:
                 assert cat[colname].unit == u.nJy
-                assert "F158" in colname or "F184" in colname
+                assert "f158" in colname or "f184" in colname
             if colname.endswith("_flux"):
                 assert f"{colname}_err" in cat.colnames

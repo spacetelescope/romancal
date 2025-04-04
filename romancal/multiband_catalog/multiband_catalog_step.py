@@ -14,7 +14,7 @@ from roman_datamodels import datamodels, maker_utils
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog.background import subtract_background_library
 from romancal.multiband_catalog.detection_image import make_detection_image
-from romancal.multiband_catalog.utils import prefix_colnames, remove_columns
+from romancal.multiband_catalog.utils import add_filter_to_colnames, remove_columns
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
@@ -154,8 +154,7 @@ class MultibandCatalogStep(RomanStep):
                     )
 
                     filter_name = model.meta.basic.optical_element
-                    prefix = f"{filter_name}_"
-                    cat = prefix_colnames(catobj.catalog, prefix=prefix)
+                    cat = add_filter_to_colnames(catobj.catalog, filter_name)
                     # TODO: what metadata do we want to keep, if any,
                     # from the filter catalogs?
                     cat.meta = None  # temporary
