@@ -22,14 +22,13 @@ def get_direct_image_columns(table):
     for col in table.colnames:
         if (
             col.startswith("aper")
-            or col.startswith("CI_")
-            or col.startswith("isophotal_flux")
+            or col.startswith("segment_flux")
             or col.startswith("kron_flux")
             or "_psf" in col
             or col == "is_extended"
             or col == "sharpness"
             or col == "roundness"
-            or col == "flags"
+            or "flags" in col
         ):
             phot_cols.append(col)
 
@@ -59,9 +58,8 @@ def get_detection_image_columns(table):
             col.endswith("centroid")
             or col.startswith("nn_")
             or col in ["semimajor_sigma", "semiminor_sigma", "ellipticity"]
-            or col == "ellipticity"
             or col.endswith("orientation")
-            or col == "isophotal_area"
+            or col == "segment_area"
         ):
             phot_cols.append(col)
 

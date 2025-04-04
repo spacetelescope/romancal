@@ -51,13 +51,8 @@ class MultibandCatalogStep(RomanStep):
         snr_threshold = float(default=3.0)    # per-pixel SNR threshold above the bkg
         npixels = integer(default=25)         # min number of pixels in source
         deblend = boolean(default=False)      # deblend sources?
-        aperture_ee1 = integer(default=30)    # aperture encircled energy 1
-        aperture_ee2 = integer(default=50)    # aperture encircled energy 2
-        aperture_ee3 = integer(default=70)    # aperture encircled energy 3
-        ci1_star_threshold = float(default=2.0)  # CI 1 star threshold
-        ci2_star_threshold = float(default=1.8)  # CI 2 star threshold
         suffix = string(default='cat')        # Default suffix for output files
-        fit_psf = boolean(default=True)      # fit source PSFs for accurate astrometry?
+        fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
     """
 
     def process(self, library):
@@ -82,18 +77,6 @@ class MultibandCatalogStep(RomanStep):
         if self.kernel_fwhms is None:
             self.kernel_fwhms = [2.0, 20.0]
 
-        # define the aperture parameters for the source catalog
-        # based on the input encircled energy fractions
-        # TODO: define these values in RomanSourceCatalog
-        aperture_ee = (self.aperture_ee1, self.aperture_ee2, self.aperture_ee3)
-        aperture_params = {
-            "aperture_radii": np.array((1.0, 2.0, 3.0)),
-            "aperture_corrections": np.array((1.0, 1.0, 1.0)),
-            "aperture_ee": aperture_ee,
-            "bkg_aperture_inner_radius": 5.0,
-            "bkg_aperture_outer_radius": 10.0,
-        }
-
         library = subtract_background_library(library, self.bkg_boxsize)
 
         # TODO: where to save the det_img and det_err?
@@ -101,7 +84,6 @@ class MultibandCatalogStep(RomanStep):
 
         # estimate background rms from detection image to calculate a
         # threshold for source detection
-
         mask = ~np.isfinite(det_img) | ~np.isfinite(det_err) | (det_err <= 0)
         bkg = RomanBackground(
             det_img,
@@ -123,11 +105,6 @@ class MultibandCatalogStep(RomanStep):
         if segment_img is None:  # no sources found
             source_catalog_model.source_catalog = Table()
         else:
-            ci_star_thresholds = (
-                self.ci1_star_threshold,
-                self.ci2_star_threshold,
-            )
-
             # this is needed for the DAOStarFinder sharpness and roundness
             # properties
             # TODO: measure on a secondary detection image with minimal
@@ -150,10 +127,8 @@ class MultibandCatalogStep(RomanStep):
                 det_model,
                 segment_img,
                 det_img,
-                aperture_params,
-                ci_star_thresholds,
                 star_kernel_fwhm,
-                self.fit_psf,
+                fit_psf=self.fit_psf,
                 detection_cat=None,
                 mask=mask,
             )
@@ -172,10 +147,8 @@ class MultibandCatalogStep(RomanStep):
                         model,
                         segment_img,
                         None,
-                        aperture_params,
-                        ci_star_thresholds,
                         star_kernel_fwhm,
-                        self.fit_psf,
+                        fit_psf=self.fit_psf,
                         detection_cat=det_catobj,
                         mask=mask,
                     )
