@@ -694,7 +694,19 @@ class RomanSourceCatalog:
 
         # set these columns as attributes of this instance
         for old_name, new_name in name_map.items():
-            setattr(self, new_name, psf_photometry_table[old_name])
+            value = psf_photometry_table[old_name]
+
+            # change the photutils dtypes
+            if np.issubdtype(value.dtype, np.integer):
+                value = value.astype(np.int32)
+            elif np.issubdtype(value.dtype, np.floating):
+                value = value.astype(np.float32)
+
+            # handle any unit conversions
+            if new_name in ("x_psf", "y_psf", "x_psf_err", "y_psf_err"):
+                value *= u.pix
+
+            setattr(self, new_name, value)
 
     @lazyproperty
     def catalog_descriptions(self):
@@ -809,6 +821,13 @@ class RomanSourceCatalog:
                 ]
             )
             colnames.extend(aper_colnames)
+            if self.fit_psf:
+                colnames.extend(
+                    [
+                        "psf_flux",
+                        "psf_flux_err",
+                    ]
+                )
             colnames.extend(
                 [
                     "segment_flux",
@@ -817,13 +836,6 @@ class RomanSourceCatalog:
                     "kron_flux_err",
                 ]
             )
-            if self.fit_psf:
-                colnames.extend(
-                    [
-                        "psf_flux",
-                        "psf_flux_err",
-                    ]
-                )
             colnames.extend(
                 [
                     "warning_flags",
