@@ -9,6 +9,7 @@ from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
 
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
+from romancal.lib.suffix import replace_suffix
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
 from .regtestdata import compare_asdf
@@ -99,6 +100,20 @@ def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths
 def test_output_is_image_model(output_model):
     # DMS280 result is an ImageModel
     assert isinstance(output_model, rdm.datamodels.ImageModel)
+
+
+def test_wcs_matches_truth(run_elp, ignore_asdf_paths):
+    output_path = Path(run_elp.output)
+    wcs_filename = replace_suffix(output_path.stem, "wcs") + output_path.suffix
+    wcs_path = output_path.parent / wcs_filename
+
+    run_elp.output = wcs_filename
+    run_elp.get_truth(f"truth/WFI/image/{wcs_filename}")
+
+    truth_path = Path(run_elp.truth)
+
+    diff = compare_asdf(wcs_path, truth_path, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
 
 @pytest.mark.soctests
