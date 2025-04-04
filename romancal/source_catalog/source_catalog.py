@@ -10,12 +10,12 @@ from astropy.table import QTable, Table
 from astropy.utils import lazyproperty
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
-from scipy.spatial import KDTree
 from stpsf import __version__ as stpsf_version
 
 from romancal import __version__ as romancal_version
 from romancal.source_catalog.aperture import ApertureCatalog
 from romancal.source_catalog.daofind import DAOFindCatalog
+from romancal.source_catalog.neighbors import NNCatalog
 from romancal.source_catalog.psf import PSFCatalog
 from romancal.source_catalog.segment import SegmentCatalog
 
@@ -296,6 +296,18 @@ class RomanSourceCatalog:
         for name in daofind_cat.names:
             setattr(self, name, getattr(daofind_cat, name))
 
+    def calc_nn_properties(self):
+        """
+        Calculate the nearest neighbor properties.
+
+        The results are set as dynamic attributes on the class instance.
+        """
+        nn_cat = NNCatalog(
+            self.label, self._xypos, self._xypos_finite, self._pixel_scale
+        )
+        for name in nn_cat.names:
+            setattr(self, name, getattr(nn_cat, name))
+
     @lazyproperty
     def is_extended(self):
         """
@@ -338,50 +350,6 @@ class RomanSourceCatalog:
             flags[xymask] = mask[xyidx[:, 1], xyidx[:, 0]].astype(np.int32)
 
         return flags
-
-    @lazyproperty
-    def _kdtree_query(self):
-        """
-        The distance in pixels to the nearest neighbor and its index.
-        """
-        if len(self) == 1:
-            return [np.nan], [np.nan]
-
-        # non-finite xypos causes memory errors on linux, but not MacOS
-        tree = KDTree(self._xypos_finite)
-        qdist, qidx = tree.query(self._xypos_finite, k=[2])
-        return np.transpose(qdist)[0], np.transpose(qidx)[0]
-
-    @lazyproperty
-    def nn_label(self):
-        """
-        The label number of the nearest neighbor.
-
-        A label value of -1 is returned if there is only one detected
-        source and for sources with a non-finite centroid.
-        """
-        if len(self) == 1:
-            return np.int32(-1)
-
-        nn_label = self.label[self._kdtree_query[1]].astype(np.int32)
-        # assign a label of -1 for non-finite xypos
-        nn_label[self._xypos_nonfinite_mask] = -1
-
-        return nn_label
-
-    @lazyproperty
-    def nn_dist(self):
-        """
-        The distance in arcsec to the nearest neighbor.
-
-        NaN is returned for non-finite centroid positions or when
-        the catalog contains only one source.
-        """
-        nn_dist = self._kdtree_query[0]
-        if len(self) != 1:
-            # assign a distance of np.nan for non-finite xypos
-            nn_dist[self._xypos_nonfinite_mask] = np.nan
-        return (nn_dist * self._pixel_scale).astype(np.float32)
 
     def _update_metadata(self):
         """
@@ -595,6 +563,7 @@ class RomanSourceCatalog:
         self.calc_segment_properties()
         self.calc_aperture_photometry()
         self.calc_daofind_properties()
+        self.calc_nn_properties()
         if self.fit_psf:
             self.calc_psf_photometry()
 
