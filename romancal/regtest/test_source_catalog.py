@@ -56,13 +56,15 @@ def fields(catalog):
     (
         "ra_centroid",  # DMS374 positions on ICRF
         "dec_centroid",  # DMS374 positions on ICRF
-        "aper30_flux",  # DMS399 aperture fluxes
-        "aper50_flux",  # DMS399 aperture fluxes
-        "aper70_flux",  # DMS399 aperture fluxes
-        "aper_total_flux",  # DMS375 fluxes
+        "segment_flux",  # DMS375 fluxes
+        "kron_flux",  # DMS375 fluxes
+        "aper02_flux",  # DMS399 aperture fluxes
+        "aper04_flux",  # DMS399 aperture fluxes
+        "aper08_flux",  # DMS399 aperture fluxes
+        "aper02_flux_err",  # DMS386 flux uncertainties
+        "segment_flux_err",  # DMS386 flux uncertainties
         "is_extended",  # DMS376 type of source
-        "aper_total_flux_err",  # DMS386 flux uncertainties
-        "flags",  # DMS387 dq_flags
+        "warning_flags",  # DMS387 dq_flags
     ),
 )
 def test_has_field(fields, field):
@@ -98,8 +100,8 @@ def test_forced_catalog(rtdata_module):
     afcat = asdf.open(outputfn)
     fieldlist = [
         "forced_kron_flux",
-        "forced_isophotal_flux",
-        "forced_aper30_flux",
+        "forced_segment_flux",
+        "forced_aper02_flux",
         "forced_semimajor_sigma",
         "forced_semiminor_sigma",
         "forced_ellipticity",
