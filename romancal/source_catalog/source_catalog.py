@@ -112,9 +112,6 @@ class RomanSourceCatalog:
             u.Unit(self.flux_unit)
         )
 
-        # needed for Kron photometry
-        self.segm_sourcecat = None
-
     def __len__(self):
         return self.n_sources
 
@@ -227,14 +224,6 @@ class RomanSourceCatalog:
         nanmask = ~np.isfinite(xypos)
         xypos[nanmask] = -1000.0
         return xypos
-
-    @lazyproperty
-    def _xypos_nonfinite_mask(self):
-        """
-        A 1D boolean mask where `True` values denote sources where
-        either the x_centroid or the y_centroid is not finite.
-        """
-        return ~np.isfinite(self._xypos).all(axis=1)
 
     def calc_segment_properties(self):
         """
@@ -351,7 +340,7 @@ class RomanSourceCatalog:
 
         return flags
 
-    def _update_metadata(self):
+    def update_metadata(self):
         """
         Update the metadata dictionary with the package version
         information and aperture parameters.
@@ -392,7 +381,7 @@ class RomanSourceCatalog:
         self.meta["aperture_radii"] = aper_radii
 
     @lazyproperty
-    def catalog_descriptions(self):
+    def column_descriptions(self):
         """
         A dictionary of the output catalog column descriptions.
 
@@ -446,7 +435,7 @@ class RomanSourceCatalog:
         col.update(self.aperture_cat.aperture_flux_descriptions)
 
         # add the "*_err" column descriptions
-        for column in self.catalog_colnames:
+        for column in self.column_names:
             if column.endswith("_err"):
                 base_column = column.replace("_err", "")
                 col[column] = f"Uncertainty in {base_column}"
@@ -454,7 +443,7 @@ class RomanSourceCatalog:
         return col
 
     @lazyproperty
-    def catalog_colnames(self):
+    def column_names(self):
         """
         An ordered list of the output catalog column names.
         """
@@ -514,12 +503,9 @@ class RomanSourceCatalog:
                     "kron_flux_err",
                 ]
             )
-            colnames.extend(
-                [
-                    "warning_flags",
-                    "psf_flags",
-                ]
-            )
+            colnames.append("warning_flags")
+            if self.fit_psf:
+                colnames.append("psf_flags")
 
         else:
             colnames = [
@@ -552,7 +538,7 @@ class RomanSourceCatalog:
     @lazyproperty
     def catalog(self):
         """
-        The final source catalog.
+        The final source catalog as an Astropy Table.
         """
         # convert data to flux units
         if isinstance(self.model, ImageModel):
@@ -569,11 +555,11 @@ class RomanSourceCatalog:
 
         # put the measurements into a Table
         catalog = QTable()
-        for column in self.catalog_colnames:
+        for column in self.column_names:
             catalog[column] = getattr(self, column)
-            descrip = self.catalog_descriptions.get(column, None)
+            descrip = self.column_descriptions.get(column, None)
             catalog[column].info.description = descrip
-        self._update_metadata()
+        self.update_metadata()
         catalog.meta.update(self.meta)
 
         # convert QTable to Table to avoid having Quantity columns
