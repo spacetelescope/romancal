@@ -207,8 +207,10 @@ class ExposurePipeline(RomanPipeline):
                 try:
                     wfiwcs = WfiWcsModel.from_model_with_wcs(model)
                 except ValueError:
-                    log.info(f'No WCS information for model {model}. Now `_wcs` product will be created.')
+                    log.info(
+                        f"No WCS information for model {model}. Now `_wcs` product will be created."
+                    )
                     lib.shelve(model)
                     continue
-                self.save_model(wfiwcs, suffix='wcs')
+                self.save_model(wfiwcs, suffix="wcs")
                 lib.shelve(model)
