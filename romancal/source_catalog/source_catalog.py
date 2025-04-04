@@ -45,9 +45,10 @@ class RomanSourceCatalog:
         measurements. The image is assumed to be background subtracted.
 
     kernel_fwhm : float
-        The full-width at half-maximum (FWHM) of the 2D Gaussian kernel.
-        This is needed to calculate the DAOFind sharpness and roundness
-        properties (DAOFind uses a special kernel that sums to zero).
+        The full-width at half-maximum (FWHM) of the DAOFind 2D Gaussian
+        kernel. This kernel is used to calculate the DAOFind sharpness
+        and roundness properties. DAOFind uses a special kernel that
+        sums to zero.
 
     fit_psf : bool, optional
         Whether to fit a PSF model to the sources.
@@ -57,15 +58,15 @@ class RomanSourceCatalog:
         This mask is used for PSF photometry. The mask should be the
         same one used to create the segmentation image.
 
-    detection_cat : `None` or `~photutils.segmentation.SourceCatalog`, optional
-        A `~photutils.segmentation.SourceCatalog` object for the
-        detection image. The segmentation image used to create
-        the detection catalog must be the same one input to
-        ``segment_image``. If input, then the detection catalog source
-        centroids and morphological/shape properties will be returned
-        instead of calculating them from the input ``data``. The
-        detection catalog centroids and shape properties will also be
-        used to perform aperture photometry (i.e., circular and Kron).
+    detection_cat : `None` or `RomanSourceCatalog`, optional
+        A `RomanSourceCatalog` object for the detection image. The
+        segmentation image used to create the detection catalog must
+        be the same one input to ``segment_image``. If input, then the
+        detection catalog source centroids and morphological/shape
+        properties will be returned instead of calculating them from
+        the input ``data``. The detection catalog centroids and shape
+        properties will also be used to perform aperture photometry
+        (i.e., circular and Kron).
 
     flux_unit : str, optional
         The unit of the flux density. Default is 'nJy'.
@@ -74,8 +75,8 @@ class RomanSourceCatalog:
     -----
     ``model.err`` is assumed to be the total error array corresponding
     to the input science ``model.data`` array. It is assumed to include
-    *all* sources of error, including the Poisson error of the sources,
-    and have the same shape and units as the science data array.
+    all sources of error, including the Poisson error of the sources. It
+    must also have the same shape and units as the science data array.
     """
 
     def __init__(
@@ -121,7 +122,7 @@ class RomanSourceCatalog:
         brightness).
         """
         # the conversion in done in-place to avoid making copies of the data;
-        # use a dictionary to set the value to avoid on-the-fly validation
+        # use dictionary syntax to set the value to avoid on-the-fly validation
         self.model["data"] *= self.l2_to_sb
         self.model["err"] *= self.l2_to_sb
         if self.convolved_data is not None:
@@ -135,7 +136,7 @@ class RomanSourceCatalog:
         The flux density unit is defined by self.flux_unit.
         """
         # the conversion in done in-place to avoid making copies of the data;
-        # use a dictionary to set the value to avoid on-the-fly validation
+        # use dictionary syntax to set the value to avoid on-the-fly validation
         self.model["data"] *= self.sb_to_flux.value
         self.model["data"] <<= self.sb_to_flux.unit
         self.model["err"] *= self.sb_to_flux.value
@@ -150,6 +151,9 @@ class RomanSourceCatalog:
         The pixel scale in arcseconds and the angle in degrees measured
         counterclockwise from the positive x axis to the "North" axis of
         the celestial coordinate system.
+
+        The pixel is returns as a Quantity in arcsec and the angle is
+        returned as a Quantity in degrees.
 
         Both are measured at the center of the image.
         """
@@ -304,9 +308,8 @@ class RomanSourceCatalog:
     def is_extended(self):
         """
         Boolean indicating whether the source is extended.
-
-        Algorithm TBD.
         """
+        # TODO
         return np.zeros(len(self), dtype=bool)
 
     @lazyproperty
