@@ -408,6 +408,10 @@ class RomanSourceCatalog:
         col["semimajor_sigma"] = (
             "1-sigma standard deviation along the semimajor axis of the 2D Gaussian function that has the same second-order central moments as the source"
         )
+        col["bbox_xmin"] = "Column index of the left edge of the source bounding box"
+        col["bbox_xmax"] = "Column index of the right edge of the source bounding box"
+        col["bbox_ymin"] = "Row index of the bottom edge of the source bounding box"
+        col["bbox_ymax"] = "Row index of the top edge of the source bounding box"
         col["semiminor_sigma"] = (
             "1-sigma standard deviation along the semiminor axis of the 2D Gaussian function that has the same second-order central moments as the source"
         )
@@ -500,6 +504,10 @@ class RomanSourceCatalog:
                 [
                     "ra_centroid",
                     "dec_centroid",
+                    "bbox_xmin",
+                    "bbox_xmax",
+                    "bbox_ymin",
+                    "bbox_ymax",
                     "semimajor_sigma",
                     "semiminor_sigma",
                     "ellipticity",
