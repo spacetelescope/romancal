@@ -768,6 +768,7 @@ class RomanSourceCatalog:
         """
         An ordered list of the output catalog column names.
         """
+        # define the aperture flux column names
         aper_colnames = []
         for colname in self.aperture_flux_colnames:
             aper_colnames.append(colname)
@@ -778,33 +779,57 @@ class RomanSourceCatalog:
                 "label",
                 "x_centroid",
                 "y_centroid",
-                "ra_centroid",
-                "dec_centroid",
-                "aper_bkg_flux",
-                "aper_bkg_flux_err",
             ]
-
+            if self.fit_psf:
+                colnames.extend(
+                    [
+                        "x_psf",
+                        "x_psf_err",
+                        "y_psf",
+                        "y_psf_err",
+                    ]
+                )
+            colnames.extend(
+                [
+                    "ra_centroid",
+                    "dec_centroid",
+                    "semimajor_sigma",
+                    "semiminor_sigma",
+                    "ellipticity",
+                    "orientation_pix",
+                    "orientation_sky",
+                    "segment_area",
+                    "is_extended",
+                    "sharpness",
+                    "roundness",
+                    "nn_label",
+                    "nn_dist",
+                    "aper_bkg_flux",
+                    "aper_bkg_flux_err",
+                ]
+            )
             colnames.extend(aper_colnames)
-
-            colnames2 = [
-                "warning_flags",
-                "is_extended",
-                "sharpness",
-                "roundness",
-                "nn_label",
-                "nn_dist",
-                "segment_flux",
-                "segment_flux_err",
-                "segment_area",
-                "kron_flux",
-                "kron_flux_err",
-                "semimajor_sigma",
-                "semiminor_sigma",
-                "ellipticity",
-                "orientation_pix",
-                "orientation_sky",
-            ]
-            colnames.extend(colnames2)
+            colnames.extend(
+                [
+                    "segment_flux",
+                    "segment_flux_err",
+                    "kron_flux",
+                    "kron_flux_err",
+                ]
+            )
+            if self.fit_psf:
+                colnames.extend(
+                    [
+                        "psf_flux",
+                        "psf_flux_err",
+                    ]
+                )
+            colnames.extend(
+                [
+                    "warning_flags",
+                    "psf_flags",
+                ]
+            )
 
         else:
             colnames = [
