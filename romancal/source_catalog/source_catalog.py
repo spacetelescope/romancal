@@ -3,21 +3,19 @@ Module to calculate the source catalog.
 """
 
 import logging
-import warnings
 
 import astropy.units as u
 import numpy as np
-from astropy.stats import SigmaClip, gaussian_fwhm_to_sigma
+from astropy.stats import gaussian_fwhm_to_sigma
 from astropy.table import QTable, Table
 from astropy.utils import lazyproperty
-from astropy.utils.exceptions import AstropyUserWarning
-from photutils.aperture import CircularAnnulus, CircularAperture, aperture_photometry
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
 from scipy.spatial import KDTree
 from stpsf import __version__ as stpsf_version
 
 from romancal import __version__ as romancal_version
+from romancal.source_catalog.aperture import ApertureCatalog
 from romancal.source_catalog.daofind import DAOFindCatalog
 from romancal.source_catalog.psf import PSFCatalog
 from romancal.source_catalog.segment import SegmentCatalog
@@ -220,6 +218,23 @@ class RomanSourceCatalog:
         for name in segment_cat.names:
             setattr(self, name, getattr(segment_cat, name))
 
+    def calc_aperture_photometry(self):
+        """
+        Calculate aperture photometry.
+
+        The results are set as dynamic attributes on the class instance.
+        """
+        aperture_cat = ApertureCatalog(
+            self.model,
+            self._pixel_scale,
+            self._xypos_finite,
+        )
+        for name in aperture_cat.names:
+            setattr(self, name, getattr(aperture_cat, name))
+
+        # needed to get aperture flux column names and descriptions
+        self.aperture_cat = aperture_cat
+
     def calc_psf_photometry(self):
         """
         Perform PSF photometry on the sources.
@@ -292,135 +307,6 @@ class RomanSourceCatalog:
         either the x_centroid or the y_centroid is not finite.
         """
         return ~np.isfinite(self._xypos).all(axis=1)
-
-    @lazyproperty
-    def aperture_radii(self):
-        """
-        A dictionary of the aperture radii used for aperture photometry.
-
-        The radii are floats in units of pixels.
-        """
-        params = {}
-        radii = np.array((0.1, 0.2, 0.4, 0.8, 1.6)) << u.arcsec
-        annulus_radii = np.array((2.4, 2.8)) << u.arcsec
-        params["circle"] = radii.copy()
-        params["annulus"] = annulus_radii.copy()
-
-        radii /= self._pixel_scale
-        annulus_radii /= self._pixel_scale
-        radii = radii.to(u.dimensionless_unscaled).value
-        annulus_radii = annulus_radii.to(u.dimensionless_unscaled).value
-        params["circle_pix"] = radii
-        params["annulus_pix"] = annulus_radii
-
-        return params
-
-    @lazyproperty
-    def _aperture_background(self):
-        """
-        The local background and error estimated using a circular
-        annulus aperture.
-
-        The local background is the sigma-clipped median value in the
-        annulus. The background error is the standard error of the
-        median, sqrt(pi / (2 * N)) * std.
-        """
-        bkg_aper = CircularAnnulus(
-            self._xypos_finite,
-            self.aperture_radii["annulus_pix"][0],
-            self.aperture_radii["annulus_pix"][1],
-        )
-        bkg_aper_masks = bkg_aper.to_mask(method="center")
-        sigclip = SigmaClip(sigma=3.0)
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=RuntimeWarning)
-            warnings.simplefilter("ignore", category=AstropyUserWarning)
-
-            nvalues = []
-            bkg_median = []
-            bkg_std = []
-            for mask in bkg_aper_masks:
-                bkg_data = mask.get_values(self.model.data)
-                values = sigclip(bkg_data, masked=False)
-                nvalues.append(values.size)
-                med = np.median(values)
-                std = np.std(values)
-                if values.size == 0:
-                    # handle case where source is completely masked due to
-                    # forced photometry
-                    med *= self.model.data.unit
-                    std *= self.model.data.unit
-                bkg_median.append(med)
-                bkg_std.append(std)
-
-            nvalues = np.array(nvalues)
-            bkg_median = u.Quantity(bkg_median)
-            bkg_std = u.Quantity(bkg_std)
-
-            # standard error of the median
-            bkg_median_err = np.sqrt(np.pi / (2.0 * nvalues)) * bkg_std
-
-        return bkg_median.astype(np.float32), bkg_median_err.astype(np.float32)
-
-    @lazyproperty
-    def aper_bkg_flux(self):
-        """
-        The aperture local background flux (per pixel).
-        """
-        return self._aperture_background[0]
-
-    @lazyproperty
-    def aper_bkg_flux_err(self):
-        """
-        The aperture local background flux error (per pixel).
-        """
-        return self._aperture_background[1]
-
-    @lazyproperty
-    def aperture_flux_colnames(self):
-        """
-        The aperture flux column names.
-
-        The column names are based on the circular aperture radii in
-        tenths of arcsec. For example, the flux in a r=0.2 arcsec
-        aperture is "aper02_flux".
-        """
-        flux_columns = []
-        for radius in self.aperture_radii["circle"]:
-            radius /= 0.1 * u.arcsec
-            radius_str = np.round(radius.value).astype(int)
-            flux_columns.append(f"aper{radius_str:02d}_flux")
-
-        return flux_columns
-
-    def calc_aperture_photometry(self):
-        """
-        Calculate the aperture photometry.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        apertures = [
-            CircularAperture(self._xypos_finite, radius)
-            for radius in self.aperture_radii["circle_pix"]
-        ]
-        aper_phot = aperture_photometry(
-            self.model.data, apertures, error=self.model.err
-        )
-
-        for i, aperture in enumerate(apertures):
-            tmp_flux_col = f"aperture_sum_{i}"
-            tmp_flux_err_col = f"aperture_sum_err_{i}"
-
-            # subtract the local background measured in the annulus
-            aper_areas = aperture.area_overlap(self.model.data)
-            aper_phot[tmp_flux_col] -= self.aper_bkg_flux * aper_areas
-
-            # set the flux and error attributes
-            flux_col = self.aperture_flux_colnames[i]
-            flux_err_col = f"{flux_col}_err"
-            setattr(self, flux_col, aper_phot[tmp_flux_col].astype(np.float32))
-            setattr(self, flux_err_col, aper_phot[tmp_flux_err_col].astype(np.float32))
 
     @lazyproperty
     def is_extended(self):
@@ -544,7 +430,7 @@ class RomanSourceCatalog:
 
         # reformat the aperture radii for the metadata to remove
         # Quantity objects
-        aper_radii = self.aperture_radii.copy()
+        aper_radii = self.aperture_cat.aperture_radii.copy()
         aper_radii["circle_arcsec"] = aper_radii.pop("circle").value
         aper_radii["annulus_arcsec"] = aper_radii.pop("annulus").value
         self.meta["aperture_radii"] = aper_radii
@@ -601,12 +487,7 @@ class RomanSourceCatalog:
         col["nn_dist"] = "The distance to the nearest neighbor in this skycell"
 
         # add the aperture flux column descriptions
-        for i, colname in enumerate(self.aperture_flux_colnames):
-            desc = (
-                "within a circular aperture of radius="
-                f"{self.aperture_radii['circle'][i]:0.1f}"
-            )
-            col[colname] = f"Flux {desc}"
+        col.update(self.aperture_cat.aperture_flux_descriptions)
 
         # add the "*_err" column descriptions
         for column in self.catalog_colnames:
@@ -623,7 +504,7 @@ class RomanSourceCatalog:
         """
         # define the aperture flux column names
         aper_colnames = []
-        for colname in self.aperture_flux_colnames:
+        for colname in self.aperture_cat.aperture_flux_colnames:
             aper_colnames.append(colname)
             aper_colnames.append(f"{colname}_err")
 
@@ -722,7 +603,7 @@ class RomanSourceCatalog:
             self.convert_l2_to_sb()
         self.convert_sb_to_flux_density()
 
-        # make measurements
+        # make measurements - the order of these calculations is important
         self.calc_segment_properties()
         self.calc_aperture_photometry()
         self.calc_daofind_properties()
