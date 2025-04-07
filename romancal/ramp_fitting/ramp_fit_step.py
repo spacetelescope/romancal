@@ -196,9 +196,9 @@ def create_image_model(input_model, image_info):
     meta["cal_logs"] = rds.CalLogs()
     meta["photometry"] = rds.Photometry(
         {
-            "conversion_megajanskys": None,
-            "conversion_megajanskys_uncertainty": None,
-            "pixel_area": None,
+            "conversion_megajanskys": -999999,
+            "conversion_megajanskys_uncertainty": -999999,
+            "pixel_area": -999999,
         }
     )
     inst = {
