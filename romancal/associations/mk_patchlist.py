@@ -8,7 +8,7 @@ import sys
 import numpy as np
 import roman_datamodels as rdm
 
-import romancal.patch_match.patch_match as pm
+import romancal.proj_match.proj_match as pm
 
 __all__ = ["mk_patchlist"]
 
@@ -37,7 +37,7 @@ def mk_patchlist(output_dir, filelist):
     for file_name in filelist:
         input_dir, input_file = os.path.split(file_name)
         cal_file = rdm.open(file_name)
-        file_patch_list = pm.find_patch_matches(cal_file.meta.wcs)
+        file_patch_list = pm.find_proj_matches(cal_file.meta.wcs)
         logger.info(f"Patch List:{file_name}, {file_patch_list[0]}")
         output_file_name = os.path.basename(input_file).split(".")[0]
         if not output_dir:

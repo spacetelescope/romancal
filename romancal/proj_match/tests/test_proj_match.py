@@ -1,5 +1,5 @@
 """
-Unit tests for patch_match.
+Unit tests for proj_match.
 
 These tests depend very strongly on the contents of the referenced table of patches.
 Changes to the contents of this table will require changes to the tests for
@@ -37,7 +37,7 @@ import pytest
 import spherical_geometry.vector as sgv
 from spherical_geometry.vector import rotate_around as rotate
 
-import romancal.patch_match.patch_match as pm
+import romancal.proj_match.proj_match as pm
 
 PATCH_SUBSET_PATH = Path(__file__).parent / "patches_subset.asdf"
 # do not use load_patch_table here as it will modify global state
@@ -179,7 +179,7 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
 )
 def test_corners(pars, expected):
     corners = mk_im_corners(*pars)
-    matches, close = pm.find_patch_matches(corners)
+    matches, close = pm.find_proj_matches(corners)
     # map matches to absolute index
     mmatches = tuple([PATCH_SUBSET[match]["index"] for match in matches])
     assert tuple(mmatches) == expected
@@ -188,18 +188,18 @@ def test_corners(pars, expected):
 def test_wcs_corners():
     imshape = (4096, 4096)
     wcsobj = mk_gwcs()
-    matches, close = pm.find_patch_matches(wcsobj, image_shape=imshape)
+    matches, close = pm.find_proj_matches(wcsobj, image_shape=imshape)
     mmatches = tuple([PATCH_SUBSET[match]["index"] for match in matches])
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.pixel_shape = imshape
-    matches, close = pm.find_patch_matches(wcsobj)
+    matches, close = pm.find_proj_matches(wcsobj)
     mmatches = tuple([PATCH_SUBSET[match]["index"] for match in matches])
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.pixel_shape = None
     wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
-    matches, close = pm.find_patch_matches(wcsobj)
+    matches, close = pm.find_proj_matches(wcsobj)
     mmatches = tuple([PATCH_SUBSET[match]["index"] for match in matches])
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.bounding_box = None
     with pytest.raises(ValueError):
-        matches, close = pm.find_patch_matches(wcsobj)
+        matches, close = pm.find_proj_matches(wcsobj)

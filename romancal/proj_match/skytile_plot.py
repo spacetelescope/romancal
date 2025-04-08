@@ -6,7 +6,7 @@ matplotlib dependency is optional.
 
 import spherical_geometry.vector as sgv
 
-import romancal.patch_match.patch_match as pm
+import romancal.proj_match.proj_match as pm
 
 try:
     from matplotlib import pyplot as plt
