@@ -7,11 +7,11 @@ import sys
 
 import numpy as np
 
-import romancal.patch_match.patch_match as pm
+import romancal.proj_match.proj_match as pm
 from romancal.associations import asn_from_list
 from romancal.associations.lib.utilities import mk_level3_asn_name
 from romancal.lib.basic_utils import parse_visitID
-from romancal.patch_match.patch_match import get_projectioncell_wcs
+from romancal.proj_match.proj_match import get_projectioncell_wcs
 
 __all__ = ["mk_skycell_asn_from_patchlist"]
 

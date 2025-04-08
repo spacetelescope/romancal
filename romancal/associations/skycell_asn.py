@@ -7,11 +7,11 @@ import sys
 import numpy as np
 import roman_datamodels as rdm
 
-import romancal.patch_match.patch_match as pm
+import romancal.proj_match.proj_match as pm
 from romancal.associations import asn_from_list
 from romancal.associations.lib.utilities import mk_level3_asn_name
 from romancal.lib.basic_utils import parse_visitID as parse_visitID
-from romancal.patch_match.patch_match import get_projectioncell_wcs
+from romancal.proj_match.proj_match import get_projectioncell_wcs
 
 __all__ = ["skycell_asn"]
 
@@ -48,7 +48,7 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
     for file_name in filelist:
         cal_file = rdm.open(file_name)
         filter_id = cal_file.meta.instrument.optical_element.lower()
-        file_patch_list = pm.find_patch_matches(cal_file.meta.wcs)
+        file_patch_list = pm.find_proj_matches(cal_file.meta.wcs)
         logger.info(f"Patch List:{file_name}, {file_patch_list[0]}")
         file_list.append([file_name, file_patch_list[0]])
         all_patches.append(file_patch_list[0])

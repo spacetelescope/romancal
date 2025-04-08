@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from romancal.patch_match.patch_match import skycell_to_wcs, wcsinfo_to_wcs
+from romancal.proj_match.proj_match import skycell_to_wcs, wcsinfo_to_wcs
 
 
 def test_skycell_to_wcs():

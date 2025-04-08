@@ -1,8 +1,8 @@
 import pytest
 import roman_datamodels as rdm
 
-from romancal.patch_match.patch_match import wcsinfo_to_wcs
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
+from romancal.proj_match.proj_match import wcsinfo_to_wcs
 
 from . import util
 from .regtestdata import compare_asdf
