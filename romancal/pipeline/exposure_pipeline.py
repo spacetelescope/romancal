@@ -47,6 +47,7 @@ class ExposurePipeline(RomanPipeline):
     class_alias = "roman_elp"
 
     spec = """
+        save_l1_wcs = boolean(default=True)
         save_results = boolean(default=False)
         suffix = string(default="cal")
     """
@@ -147,7 +148,8 @@ class ExposurePipeline(RomanPipeline):
             self.tweakreg.run(lib)
 
         # Write out the WfiWcs products
-        save_wfiwcs(self, lib)
+        if self.save_l1_wcs:
+            save_wfiwcs(self, lib)
 
         log.info("Roman exposure calibration pipeline ending...")
 
