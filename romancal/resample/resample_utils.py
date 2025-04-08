@@ -4,6 +4,8 @@ import numpy as np
 from stcal.alignment.util import compute_scale, wcs_from_sregions
 from stcal.resample.utils import compute_mean_pixel_area
 
+from ..datamodels import ModelLibrary
+
 
 def make_output_wcs(
     input_models,

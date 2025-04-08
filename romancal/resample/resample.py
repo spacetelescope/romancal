@@ -110,6 +110,9 @@ class ResampleData(Resample):
 
         self._compute_exptime = compute_exptime
         self._blend_meta = blend_meta
+        
+        # add sky variance array to each model
+        add_var_sky_array(self.input_models)
 
         # add sky variance array to each model
         # compute_var_sky(self.input_models)
