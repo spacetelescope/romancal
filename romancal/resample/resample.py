@@ -9,7 +9,7 @@ from romancal.patch_match.patch_match import to_skycell_wcs
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
 from .meta_blender import MetaBlender
-from .resample_utils import make_output_wcs
+from .resample_utils import make_output_wcs, add_var_sky_array
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -106,6 +106,9 @@ class ResampleData(Resample):
 
         self._compute_exptime = compute_exptime
         self._blend_meta = blend_meta
+        
+        # add sky variance array to each model
+        add_var_sky_array(self.input_models)
 
         if output_wcs is None and resample_on_skycell:
             # first try to use any skycell from the asn
@@ -166,6 +169,7 @@ class ResampleData(Resample):
             "var_rnoise": model.var_rnoise,
             "var_poisson": model.var_poisson,
             "var_flat": model.var_flat,
+            "var_sky": model.var_sky,
             "err": model.err,
             "filename": model.meta.filename,
             "wcs": model.meta.wcs,

@@ -88,8 +88,21 @@ image.
     will be determined per-pixel using the inverse of the read noise
     (VAR_RNOISE) array stored in each input image. If the VAR_RNOISE array does
     not exist, the variance is set to 1 for all pixels (equal weighting).
+    If `weight_type=ivsky`, the scaling value
+    will be determined per-pixel using the inverse of the sky variance
+    (VAR_SKY) array stored in each input image. If the VAR_SKY array does
+    not exist, the variance is set to 1 for all pixels (equal weighting).
     If `weight_type=exptime`, the scaling value will be set equal to the
     exposure time found in the image header.
+
+    .. note::
+        VAR_SKY is calculated as follows:
+
+        VAR_SKY = (VAR_RNOISE + VAR_POISSON) / (DATA * MEDIAN(DATA))
+
+        where VAR_RNOISE is the read noise variance, VAR_POISSON is the
+        Poisson noise variance, DATA is the science data, and MEDIAN(DATA)
+        is the median of the science data.
 
 ``--in_memory``
     If set to `False`, write output datamodel to disk.
