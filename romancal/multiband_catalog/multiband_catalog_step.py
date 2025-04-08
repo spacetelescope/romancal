@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy.table import Table, join
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog.background import subtract_background_library
@@ -63,8 +63,20 @@ class MultibandCatalogStep(RomanStep):
         if not isinstance(library, ModelLibrary):
             raise TypeError("library input must be a ModelLibrary object")
 
-        cat_model = datamodels.MosaicSourceCatalogModel
-        source_catalog_model = maker_utils.mk_datamodel(cat_model)
+        with library:
+            example_model = library.borrow(0)
+            library.shelve(example_model, modify=False)
+
+        source_catalog_model = datamodels.MosaicSourceCatalogModel()
+        source_catalog_model.meta = {}
+        for key in source_catalog_model.meta._schema_attributes.explicit_properties:
+            value = (
+                example_model.meta.instrument[key]
+                if key == "optical_element"
+                else example_model.meta[key]
+            )
+            source_catalog_model.meta[key] = value
+
         try:
             source_catalog_model.meta.filename = library.asn["products"][0]["name"]
         except (AttributeError, KeyError):
@@ -111,17 +123,14 @@ class MultibandCatalogStep(RomanStep):
             # smoothing; same for basic shape parameters
             star_kernel_fwhm = np.min(self.kernel_fwhms)  # ??
 
-            det_model = maker_utils.mk_datamodel(datamodels.MosaicModel)
+            det_model = datamodels.MosaicModel()
             det_model.data = det_img
             det_model.err = det_err
 
             # TODO: this is a temporary solution to get model attributes
             # currently needed in RomanSourceCatalog
-            with library:
-                model = library.borrow(0)
-                det_model.weight = model.weight
-                det_model.meta = model.meta
-                library.shelve(model, modify=False)
+            det_model.weight = example_model.weight
+            det_model.meta = example_model.meta
 
             det_catobj = RomanSourceCatalog(
                 det_model,
@@ -183,9 +192,9 @@ class MultibandCatalogStep(RomanStep):
             else source_catalog_model.meta.filename
         )
 
-        seg_model = datamodels.MosaicSegmentationMapModel
-        segmentation_model = maker_utils.mk_datamodel(seg_model)
-        for key in segmentation_model.meta.keys():
+        segmentation_model = datamodels.MosaicSegmentationMapModel()
+        segmentation_model.meta = {}
+        for key in segmentation_model.meta._schema_attributes.explicit_properties:
             segmentation_model.meta[key] = source_catalog_model.meta[key]
 
         if segment_img is not None:
