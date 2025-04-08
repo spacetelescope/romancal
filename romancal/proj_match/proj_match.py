@@ -67,8 +67,8 @@ def image_coords_to_vec(image_corners):
     return vec_im_corners
 
 
-def find_patch_matches(image_corners, image_shape=None):
-    """Find patches that the image overlaps with
+def find_proj_matches(image_corners, image_shape=None):
+    """Find projection regions that the image overlaps with
 
     Parameters
     ----------
