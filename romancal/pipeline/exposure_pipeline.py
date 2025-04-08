@@ -8,7 +8,6 @@ import numpy as np
 from roman_datamodels.dqflags import group
 
 import romancal.datamodels.filetype as filetype
-from romancal.lib.save_wcs import save_wfiwcs
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
@@ -17,6 +16,7 @@ from romancal.datamodels.library import ModelLibrary
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
 from romancal.lib.basic_utils import is_fully_saturated
+from romancal.lib.save_wcs import save_wfiwcs
 from romancal.linearity import LinearityStep
 from romancal.photom import PhotomStep
 from romancal.ramp_fitting import ramp_fit_step
