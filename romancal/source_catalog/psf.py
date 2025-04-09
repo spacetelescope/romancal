@@ -359,6 +359,7 @@ class PSFCatalog:
         name_map["y_err"] = "y_psf_err"
         name_map["flux_fit"] = "psf_flux"
         name_map["flux_err"] = "psf_flux_err"
+        name_map["qfit"] = "psf_gof"
 
         # set these columns as attributes of this instance
         for old_name, new_name in name_map.items():

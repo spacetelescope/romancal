@@ -478,6 +478,7 @@ class RomanSourceCatalog:
         col["x_psf"] = "Column position of the source from PSF fitting (0 indexed)"
         col["y_psf"] = "Row position of the source from PSF fitting (0 indexed)"
         col["psf_flux"] = "Total PSF flux"
+        col["psf_gof"] = "PSF goodness of fit metric"
         col["psf_flags"] = "PSF fitting bit flags"
 
         col["warning_flags"] = "Warning bit flags"
@@ -595,6 +596,10 @@ class RomanSourceCatalog:
             "y_psf",
             "y_psf_err",
         ]
+        psf_flags_colnames = [
+            "psf_gof",
+            "psf_flags",
+        ]
 
         if self.cat_type == "prompt":
             colnames = []
@@ -607,7 +612,7 @@ class RomanSourceCatalog:
             colnames.extend(self.flux_colnames)
             colnames.append("warning_flags")
             if self.fit_psf:
-                colnames.append("psf_flags")
+                colnames.extend(psf_flags_colnames)
 
         elif self.cat_type == "dr_det":
             colnames = []
@@ -621,7 +626,7 @@ class RomanSourceCatalog:
             colnames = ["label"]  # label is needed to join the filter catalogs
             if self.fit_psf:
                 colnames.extend(psf_xypos_colnames)
-            colnames.append("psf_flags")
+            colnames.extend(psf_flags_colnames)
             colnames.extend(band_colnames)
             colnames.extend(self.flux_colnames)
 
