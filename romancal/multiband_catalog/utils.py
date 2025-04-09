@@ -145,10 +145,8 @@ def insert_filter(colname, filter_name):
 
 def add_filter_to_colnames(table, filter_name):
     """
-    Add a filter name to the column names in an astropy table.
-
-    The filter name is inserted before the "_flux" part of the column
-    name.
+    Add a filter name to the column names in an astropy table
+    for the multiband catalog.
 
     Parameters
     ----------
@@ -168,7 +166,7 @@ def add_filter_to_colnames(table, filter_name):
 
     filter_name = filter_name.lower()
     insert_col_exts = ("_flux", "_psf", "_abmag")
-    append_cols = ("is_extended", "sharpness", "roundness1", "psf_flags")
+    append_cols = ("is_extended", "sharpness", "roundness1", "psf_gof", "psf_flags")
 
     for colname in table.colnames:
         if any(ext in colname for ext in insert_col_exts):
