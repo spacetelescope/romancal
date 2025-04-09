@@ -447,7 +447,7 @@ class RomanSourceCatalog:
         col["warning_flags"] = "Warning bit flags"
         col["is_extended"] = "Flag indicating whether the source is extended"
         col["sharpness"] = "The DAOFind sharpness statistic"
-        col["roundness"] = "The DAOFind roundness1 statistic"
+        col["roundness1"] = "The DAOFind roundness1 statistic"
         col["nn_label"] = "The label number of the nearest neighbor in this skycell"
         col["nn_dist"] = "The distance to the nearest neighbor in this skycell"
 
@@ -547,7 +547,7 @@ class RomanSourceCatalog:
                     "segment_area",
                     "is_extended",
                     "sharpness",
-                    "roundness",
+                    "roundness1",
                     "nn_label",
                     "nn_dist",
                 ]
@@ -596,7 +596,7 @@ class RomanSourceCatalog:
                 [
                     "is_extended",
                     "sharpness",
-                    "roundness",
+                    "roundness1",
                 ]
             )
             colnames.extend(self.flux_colnames)
