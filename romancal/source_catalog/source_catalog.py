@@ -439,6 +439,16 @@ class RomanSourceCatalog:
             "image moments"
         )
 
+        col["cxx"] = (
+            "Coefficient for the x**2 term in the generalized quadratic ellipse equation"
+        )
+        col["cxy"] = (
+            "Coefficient for the x*y term in the generalized quadratic ellipse equation"
+        )
+        col["cyy"] = (
+            "Coefficient for the y**2 term in the generalized quadratic ellipse equation"
+        )
+
         col["segment_flux"] = "Isophotal flux"
         col["segment_area"] = "Area of the source segment"
         col["kron_radius"] = (
@@ -546,6 +556,9 @@ class RomanSourceCatalog:
             "ellipticity",
             "orientation_pix",
             "orientation_sky",
+            "cxx",
+            "cxy",
+            "cyy",
             "kron_radius",
             "nn_label",
             "nn_dist",
