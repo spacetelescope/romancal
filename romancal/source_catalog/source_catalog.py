@@ -415,17 +415,17 @@ class RomanSourceCatalog:
         )
         col["ra_centroid"] = "Right ascension (ICRS) of the image centroid"
         col["dec_centroid"] = "Declination (ICRS) of the image centroid"
-        col["semimajor_sigma"] = (
-            "1-sigma standard deviation along the semimajor axis of the 2D Gaussian function that has the same second-order central moments as the source"
-        )
         col["bbox_xmin"] = "Column index of the left edge of the source bounding box"
         col["bbox_xmax"] = "Column index of the right edge of the source bounding box"
         col["bbox_ymin"] = "Row index of the bottom edge of the source bounding box"
         col["bbox_ymax"] = "Row index of the top edge of the source bounding box"
-        col["semiminor_sigma"] = (
+        col["semimajor"] = (
+            "1-sigma standard deviation along the semimajor axis of the 2D Gaussian function that has the same second-order central moments as the source"
+        )
+        col["semiminor"] = (
             "1-sigma standard deviation along the semiminor axis of the 2D Gaussian function that has the same second-order central moments as the source"
         )
-        col["ellipticity"] = "1 - (semimajor_sigma / semiminor_sigma)"
+        col["ellipticity"] = "Source ellipticity as 1 - (semimajor / semiminor)"
         col["orientation_pix"] = (
             "The angle measured counter-clockwise from the positive X axis to the major axis computed from image moments"
         )
@@ -539,8 +539,8 @@ class RomanSourceCatalog:
                     "bbox_xmax",
                     "bbox_ymin",
                     "bbox_ymax",
-                    "semimajor_sigma",
-                    "semiminor_sigma",
+                    "semimajor",
+                    "semiminor",
                     "ellipticity",
                     "orientation_pix",
                     "orientation_sky",
@@ -568,8 +568,8 @@ class RomanSourceCatalog:
                 "bbox_xmax",
                 "bbox_ymin",
                 "bbox_ymax",
-                "semimajor_sigma",
-                "semiminor_sigma",
+                "semimajor",
+                "semiminor",
                 "ellipticity",
                 "orientation_pix",
                 "orientation_sky",
