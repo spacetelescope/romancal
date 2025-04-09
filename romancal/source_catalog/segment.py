@@ -239,3 +239,21 @@ class SegmentCatalog:
         return ((180.0 * u.deg) - self.wcs_angle + self.orientation_pix).astype(
             np.float32
         )
+
+    @lazyproperty
+    def _kron_abmag(self):
+        return self.convert_flux_to_abmag(self.kron_flux, self.kron_flux_err)
+
+    @lazyproperty
+    def kron_abmag(self):
+        """
+        The Kron magnitude in AB magnitudes.
+        """
+        return self._kron_abmag[0] * u.mag
+
+    @lazyproperty
+    def kron_abmag_err(self):
+        """
+        The Kron magnitude error in AB magnitudes.
+        """
+        return self._kron_abmag[1] * u.mag

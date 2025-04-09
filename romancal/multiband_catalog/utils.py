@@ -167,10 +167,11 @@ def add_filter_to_colnames(table, filter_name):
         raise ValueError("filter_name must be a string")
 
     filter_name = filter_name.lower()
+    insert_col_exts = ("_flux", "_psf", "_abmag")
     append_cols = ("is_extended", "sharpness", "roundness1", "psf_flags")
 
     for colname in table.colnames:
-        if "_flux" in colname or "_psf" in colname:
+        if any(ext in colname for ext in insert_col_exts):
             new_colname = insert_filter(colname, filter_name)
             table.rename_column(colname, new_colname)
         elif colname in append_cols:
