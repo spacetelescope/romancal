@@ -456,6 +456,7 @@ class RomanSourceCatalog:
             "(r_i * I_i) / Sum_i (I_i), with r_i as an elliptical radius"
         )
         col["kron_flux"] = "Flux within the elliptical Kron aperture"
+        col["kron_abmag"] = "AB magnitude within the elliptical Kron aperture"
         col["aper_bkg_flux"] = "The local background estimate for aperture photometry"
 
         col["x_psf"] = "Column position of the source from PSF fitting (0 indexed)"
@@ -510,6 +511,8 @@ class RomanSourceCatalog:
             "segment_flux_err",
             "kron_flux",
             "kron_flux_err",
+            "kron_abmag",
+            "kron_abmag_err",
         ]
         psf_colnames = ["psf_flux", "psf_flux_err"]
 
