@@ -25,7 +25,7 @@ def get_direct_image_columns(table):
             or col.startswith("segment_flux")
             or col.startswith("kron_flux")
             or col == "sharpness"
-            or col == "roundness"
+            or col == "roundness1"
         ):
             phot_cols.append(col)
 
@@ -167,7 +167,7 @@ def add_filter_to_colnames(table, filter_name):
         raise ValueError("filter_name must be a string")
 
     filter_name = filter_name.lower()
-    append_cols = ("is_extended", "sharpness", "roundness", "psf_flags")
+    append_cols = ("is_extended", "sharpness", "roundness1", "psf_flags")
 
     for colname in table.colnames:
         if "_flux" in colname or "_psf" in colname:
