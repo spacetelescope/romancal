@@ -141,6 +141,7 @@ class MultibandCatalogStep(RomanStep):
                 fit_psf=self.fit_psf,
                 detection_cat=None,
                 mask=mask,
+                cat_type="dr_det",
             )
             det_cat = remove_columns(det_catobj.catalog)
 
@@ -161,6 +162,7 @@ class MultibandCatalogStep(RomanStep):
                         fit_psf=self.fit_psf,
                         detection_cat=det_catobj,
                         mask=mask,
+                        cat_type="dr_band",
                     )
 
                     filter_name = model.meta.basic.optical_element

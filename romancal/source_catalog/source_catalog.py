@@ -71,6 +71,12 @@ class RomanSourceCatalog:
     flux_unit : str, optional
         The unit of the flux density. Default is 'nJy'.
 
+    cat_type : {'prompt', 'dr_det', 'dr_band'}, optional
+        The type of catalog to create. The default is 'prompt'. This
+        determines the columns in the output catalog. The 'dr_det' and
+        'dr_band' catalogs are band-specific catalogs for the
+        multiband source detection.
+
     Notes
     -----
     ``model.err`` is assumed to be the total error array corresponding
@@ -90,6 +96,7 @@ class RomanSourceCatalog:
         mask=None,
         detection_cat=None,
         flux_unit="nJy",
+        cat_type="prompt",
     ):
         if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
@@ -102,6 +109,7 @@ class RomanSourceCatalog:
         self.mask = mask
         self.detection_cat = detection_cat
         self.flux_unit = flux_unit
+        self.cat_type = cat_type
 
         self.n_sources = len(segment_img.labels)
         self.wcs = self.model.meta.wcs
@@ -455,39 +463,60 @@ class RomanSourceCatalog:
         return col
 
     @lazyproperty
-    def column_names(self):
+    def aper_colnames(self):
         """
-        An ordered list of the output catalog column names.
+        An ordered list of the aperture column names.
         """
-        # define the aperture flux column names
-        aper_colnames = []
+        # define the aperture background flux column names
+        aper_colnames = [
+            "aper_bkg_flux",
+            "aper_bkg_flux_err",
+        ]
+
+        # define the aperture flux column names,
+        # e.g, aper01_flux, aper01_flux_err, etc.
         for colname in self.aperture_cat.aperture_flux_colnames:
             aper_colnames.append(colname)
             aper_colnames.append(f"{colname}_err")
 
-        # define the flux column names
-        flux_colnames = [
-            "aper_bkg_flux",
-            "aper_bkg_flux_err",
-        ]
-        flux_colnames.extend(aper_colnames)
-        if self.fit_psf:
-            flux_colnames.extend(
-                [
-                    "psf_flux",
-                    "psf_flux_err",
-                ]
-            )
-        flux_colnames.extend(
-            [
-                "segment_flux",
-                "segment_flux_err",
-                "kron_flux",
-                "kron_flux_err",
-            ]
-        )
+        return aper_colnames
 
-        if self.detection_cat is None:
+    @lazyproperty
+    def flux_colnames(self):
+        """
+        An ordered list of the flux column names.
+        """
+        other_colnames = [
+            "segment_flux",
+            "segment_flux_err",
+            "kron_flux",
+            "kron_flux_err",
+        ]
+        psf_colnames = ["psf_flux", "psf_flux_err"]
+
+        if self.cat_type in ("prompt", "dr_band"):
+            flux_colnames = self.aper_colnames
+            if self.fit_psf:
+                flux_colnames.extend(psf_colnames)
+            flux_colnames.extend(other_colnames)
+
+        elif self.cat_type == "dr_det":
+            flux_colnames = []
+
+        else:
+            raise ValueError(f"Unknown catalog type: {self.cat_type}")
+
+        return flux_colnames
+
+    @lazyproperty
+    def column_names(self):
+        """
+        An ordered list of the output catalog column names.
+
+        This list determines which values are calculated in the output
+        catalog.
+        """
+        if self.cat_type == "prompt":
             colnames = [
                 "label",
                 "x_centroid",
@@ -523,15 +552,54 @@ class RomanSourceCatalog:
                     "nn_dist",
                 ]
             )
-            colnames.extend(flux_colnames)
+            colnames.extend(self.flux_colnames)
             colnames.append("warning_flags")
             if self.fit_psf:
                 colnames.append("psf_flags")
 
-        else:
+        elif self.cat_type == "dr_det":
+            colnames = [
+                "label",
+                "x_centroid",
+                "y_centroid",
+                "ra_centroid",
+                "dec_centroid",
+                "bbox_xmin",
+                "bbox_xmax",
+                "bbox_ymin",
+                "bbox_ymax",
+                "semimajor_sigma",
+                "semiminor_sigma",
+                "ellipticity",
+                "orientation_pix",
+                "orientation_sky",
+                "segment_area",
+                "nn_label",
+                "nn_dist",
+                "warning_flags",
+            ]
+
+        elif self.cat_type == "dr_band":
             # these are band-specific columns for the multiband catalog
             colnames = ["label"]  # label is needed to join the filter catalogs
-            colnames.extend(flux_colnames)
+            if self.fit_psf:
+                colnames.extend(
+                    [
+                        "x_psf",
+                        "x_psf_err",
+                        "y_psf",
+                        "y_psf_err",
+                        "psf_flags",
+                    ]
+                )
+            colnames.extend(
+                [
+                    "is_extended",
+                    "sharpness",
+                    "roundness",
+                ]
+            )
+            colnames.extend(self.flux_colnames)
 
         return colnames
 
@@ -549,8 +617,9 @@ class RomanSourceCatalog:
         self.calc_segment_properties()
         self.calc_aperture_photometry()
         self.calc_daofind_properties()
-        self.calc_nn_properties()
-        if self.fit_psf:
+        if self.cat_type in ("prompt", "dr_det"):
+            self.calc_nn_properties()
+        if self.cat_type in ("prompt", "dr_band") and self.fit_psf:
             self.calc_psf_photometry()
 
         # put the measurements into a Table
