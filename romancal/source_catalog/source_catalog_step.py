@@ -9,15 +9,14 @@ from typing import TYPE_CHECKING
 import numpy as np
 from astropy.table import Table, join
 from photutils.segmentation import SegmentationImage
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
-from roman_datamodels.maker_utils import mk_datamodel
+from roman_datamodels.stnode import SourceCatalog
 
 from romancal.multiband_catalog import utils
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
-from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
 
@@ -47,11 +46,6 @@ class SourceCatalogStep(RomanStep):
         snr_threshold = float(default=3.0)    # per-pixel SNR threshold above the bkg
         npixels = integer(default=25)         # min number of pixels in source
         deblend = boolean(default=False)      # deblend sources?
-        aperture_ee1 = integer(default=30)    # aperture encircled energy 1
-        aperture_ee2 = integer(default=50)    # aperture encircled energy 2
-        aperture_ee3 = integer(default=70)    # aperture encircled energy 3
-        ci1_star_threshold = float(default=2.0)  # CI 1 star threshold
-        ci2_star_threshold = float(default=1.8)  # CI 2 star threshold
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
         forced_segmentation = string(default='')  # force the use of this segmentation map
@@ -74,19 +68,15 @@ class SourceCatalogStep(RomanStep):
         )
 
         # Copy the data and error arrays to avoid modifying the input
-        # model. We use mk_datamodel to copy *only* the data and err
-        # arrays. The metadata and dq and weight arrays are not copied
-        # because they are not modified in this step. The other model
-        # arrays (e.g., var_rnoise) are not currently used by this step.
+        # model.
+        # The metadata and dq and weight arrays are not copied
+        # because they are not modified in this step.
         if isinstance(input_model, ImageModel):
-            model = mk_datamodel(
-                ImageModel,
-                meta=input_model.meta,
-                shape=(0, 0),
-                data=input_model.data.copy(),
-                err=input_model.err.copy(),
-                dq=input_model.dq,
-            )
+            model = ImageModel()
+            model.meta = input_model.meta
+            model.data = input_model.data.copy()
+            model.err = input_model.err.copy()
+            model.dq = input_model.dq
 
             # Create a DQ mask for pixels to be excluded; currently all
             # pixels with any DQ flag are excluded from the source catalog
@@ -99,22 +89,20 @@ class SourceCatalogStep(RomanStep):
             # dq_mask = np.any(model.dq[..., None] & dq_flags, axis=-1)
             mask |= dq_mask
         elif isinstance(input_model, MosaicModel):
-            model = mk_datamodel(
-                MosaicModel,
-                meta=input_model.meta,
-                shape=(0, 0),
-                data=input_model.data.copy(),
-                err=input_model.err.copy(),
-                weight=input_model.weight,
-            )
+            model = MosaicModel()
+            model.meta = input_model.meta
+            model.data = input_model.data.copy()
+            model.err = input_model.err.copy()
+            model.weight = input_model.weight
 
         if isinstance(model, ImageModel):
             cat_model = datamodels.ImageSourceCatalogModel
         else:
             cat_model = datamodels.MosaicSourceCatalogModel
-        source_catalog_model = maker_utils.mk_datamodel(cat_model)
+        source_catalog_model = cat_model()
+        source_catalog_model.meta = {}
 
-        for key in source_catalog_model.meta.keys():
+        for key in source_catalog_model.meta._schema_attributes.explicit_properties:
             value = (
                 model.meta.instrument[key]
                 if key == "optical_element"
@@ -127,10 +115,6 @@ class SourceCatalogStep(RomanStep):
             forced = True
         else:
             forced = False
-
-        aperture_ee = (self.aperture_ee1, self.aperture_ee2, self.aperture_ee3)
-        refdata = ReferenceData(model, aperture_ee)
-        aperture_params = refdata.aperture_params
 
         bkg = RomanBackground(
             model.data,
@@ -161,19 +145,13 @@ class SourceCatalogStep(RomanStep):
         if segment_img is None:  # no sources found
             cat = Table()
         else:
-            ci_star_thresholds = (
-                self.ci1_star_threshold,
-                self.ci2_star_threshold,
-            )
+            # PSF photometry is skipped when forcing; happens later
             catobj = RomanSourceCatalog(
                 model,
                 segment_img,
                 detection_image,
-                aperture_params,
-                ci_star_thresholds,
                 self.kernel_fwhm,
-                self.fit_psf & (not forced),
-                # don't need to do PSF photometry here when forcing; happens later
+                fit_psf=self.fit_psf & (not forced),
                 mask=mask,
             )
             cat = catobj.catalog
@@ -185,10 +163,8 @@ class SourceCatalogStep(RomanStep):
                 model,
                 segment_img,
                 forced_detection_image,
-                aperture_params,
-                ci_star_thresholds,
                 self.kernel_fwhm,
-                self.fit_psf,
+                fit_psf=self.fit_psf,
                 mask=mask,
             )
             # we have two catalogs, both using a specified set of
@@ -270,8 +246,9 @@ class SourceCatalogStep(RomanStep):
         else:
             seg_model = datamodels.MosaicSegmentationMapModel
 
-        segmentation_model = maker_utils.mk_datamodel(seg_model)
-        for key in segmentation_model.meta.keys():
+        segmentation_model = seg_model()
+        segmentation_model.meta = {}
+        for key in segmentation_model.meta._schema_attributes.explicit_properties:
             segmentation_model.meta[key] = source_catalog_model.meta[key]
 
         if segment_img is not None:
@@ -295,7 +272,6 @@ class SourceCatalogStep(RomanStep):
 
 def update_metadata(model, output_catalog_name):
     # update datamodel to point to the source catalog file destination
-    model.meta["source_catalog"] = maker_utils.mk_source_catalog(
-        tweakreg_catalog_name=output_catalog_name
-    )
+    model.meta.source_catalog = SourceCatalog()
+    model.meta.source_catalog.tweakreg_catalog_name = output_catalog_name
     model.meta.cal_step.source_catalog = "COMPLETE"

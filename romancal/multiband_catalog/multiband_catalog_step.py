@@ -9,12 +9,12 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy.table import Table, join
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog.background import subtract_background_library
 from romancal.multiband_catalog.detection_image import make_detection_image
-from romancal.multiband_catalog.utils import prefix_colnames, remove_columns
+from romancal.multiband_catalog.utils import add_filter_to_colnames, remove_columns
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
@@ -51,13 +51,8 @@ class MultibandCatalogStep(RomanStep):
         snr_threshold = float(default=3.0)    # per-pixel SNR threshold above the bkg
         npixels = integer(default=25)         # min number of pixels in source
         deblend = boolean(default=False)      # deblend sources?
-        aperture_ee1 = integer(default=30)    # aperture encircled energy 1
-        aperture_ee2 = integer(default=50)    # aperture encircled energy 2
-        aperture_ee3 = integer(default=70)    # aperture encircled energy 3
-        ci1_star_threshold = float(default=2.0)  # CI 1 star threshold
-        ci2_star_threshold = float(default=1.8)  # CI 2 star threshold
         suffix = string(default='cat')        # Default suffix for output files
-        fit_psf = boolean(default=True)      # fit source PSFs for accurate astrometry?
+        fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
     """
 
     def process(self, library):
@@ -68,8 +63,20 @@ class MultibandCatalogStep(RomanStep):
         if not isinstance(library, ModelLibrary):
             raise TypeError("library input must be a ModelLibrary object")
 
-        cat_model = datamodels.MosaicSourceCatalogModel
-        source_catalog_model = maker_utils.mk_datamodel(cat_model)
+        with library:
+            example_model = library.borrow(0)
+            library.shelve(example_model, modify=False)
+
+        source_catalog_model = datamodels.MosaicSourceCatalogModel()
+        source_catalog_model.meta = {}
+        for key in source_catalog_model.meta._schema_attributes.explicit_properties:
+            value = (
+                example_model.meta.instrument[key]
+                if key == "optical_element"
+                else example_model.meta[key]
+            )
+            source_catalog_model.meta[key] = value
+
         try:
             source_catalog_model.meta.filename = library.asn["products"][0]["name"]
         except (AttributeError, KeyError):
@@ -82,18 +89,6 @@ class MultibandCatalogStep(RomanStep):
         if self.kernel_fwhms is None:
             self.kernel_fwhms = [2.0, 20.0]
 
-        # define the aperture parameters for the source catalog
-        # based on the input encircled energy fractions
-        # TODO: define these values in RomanSourceCatalog
-        aperture_ee = (self.aperture_ee1, self.aperture_ee2, self.aperture_ee3)
-        aperture_params = {
-            "aperture_radii": np.array((1.0, 2.0, 3.0)),
-            "aperture_corrections": np.array((1.0, 1.0, 1.0)),
-            "aperture_ee": aperture_ee,
-            "bkg_aperture_inner_radius": 5.0,
-            "bkg_aperture_outer_radius": 10.0,
-        }
-
         library = subtract_background_library(library, self.bkg_boxsize)
 
         # TODO: where to save the det_img and det_err?
@@ -101,7 +96,6 @@ class MultibandCatalogStep(RomanStep):
 
         # estimate background rms from detection image to calculate a
         # threshold for source detection
-
         mask = ~np.isfinite(det_img) | ~np.isfinite(det_err) | (det_err <= 0)
         bkg = RomanBackground(
             det_img,
@@ -123,37 +117,27 @@ class MultibandCatalogStep(RomanStep):
         if segment_img is None:  # no sources found
             source_catalog_model.source_catalog = Table()
         else:
-            ci_star_thresholds = (
-                self.ci1_star_threshold,
-                self.ci2_star_threshold,
-            )
-
             # this is needed for the DAOStarFinder sharpness and roundness
             # properties
             # TODO: measure on a secondary detection image with minimal
             # smoothing; same for basic shape parameters
             star_kernel_fwhm = np.min(self.kernel_fwhms)  # ??
 
-            det_model = maker_utils.mk_datamodel(datamodels.MosaicModel)
+            det_model = datamodels.MosaicModel()
             det_model.data = det_img
             det_model.err = det_err
 
             # TODO: this is a temporary solution to get model attributes
             # currently needed in RomanSourceCatalog
-            with library:
-                model = library.borrow(0)
-                det_model.weight = model.weight
-                det_model.meta = model.meta
-                library.shelve(model, modify=False)
+            det_model.weight = example_model.weight
+            det_model.meta = example_model.meta
 
             det_catobj = RomanSourceCatalog(
                 det_model,
                 segment_img,
                 det_img,
-                aperture_params,
-                ci_star_thresholds,
                 star_kernel_fwhm,
-                self.fit_psf,
+                fit_psf=self.fit_psf,
                 detection_cat=None,
                 mask=mask,
             )
@@ -172,17 +156,14 @@ class MultibandCatalogStep(RomanStep):
                         model,
                         segment_img,
                         None,
-                        aperture_params,
-                        ci_star_thresholds,
                         star_kernel_fwhm,
-                        self.fit_psf,
+                        fit_psf=self.fit_psf,
                         detection_cat=det_catobj,
                         mask=mask,
                     )
 
                     filter_name = model.meta.basic.optical_element
-                    prefix = f"{filter_name}_"
-                    cat = prefix_colnames(catobj.catalog, prefix=prefix)
+                    cat = add_filter_to_colnames(catobj.catalog, filter_name)
                     # TODO: what metadata do we want to keep, if any,
                     # from the filter catalogs?
                     cat.meta = None  # temporary
@@ -211,9 +192,9 @@ class MultibandCatalogStep(RomanStep):
             else source_catalog_model.meta.filename
         )
 
-        seg_model = datamodels.MosaicSegmentationMapModel
-        segmentation_model = maker_utils.mk_datamodel(seg_model)
-        for key in segmentation_model.meta.keys():
+        segmentation_model = datamodels.MosaicSegmentationMapModel()
+        segmentation_model.meta = {}
+        for key in segmentation_model.meta._schema_attributes.explicit_properties:
             segmentation_model.meta[key] = source_catalog_model.meta[key]
 
         if segment_img is not None:

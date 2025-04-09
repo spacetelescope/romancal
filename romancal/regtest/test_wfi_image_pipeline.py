@@ -21,12 +21,12 @@ pytestmark = pytest.mark.bigdata
 def run_elp(rtdata_module, resource_tracker):
     rtdata = rtdata_module
 
-    input_data = "r0000101001001001001_0001_wfi01_uncal.asdf"
+    input_data = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
     # Test Pipeline
-    output = "r0000101001001001001_0001_wfi01_cal.asdf"
+    output = "r0000101001001001001_0001_wfi01_f158_cal.asdf"
     rtdata.output = output
     args = [
         "roman_elp",
@@ -211,12 +211,12 @@ def test_repointed_wcs_differs(repointed_filename_and_delta, output_model):
 
 def test_elp_input_dm(rtdata, ignore_asdf_paths):
     """Test for input roman Datamodel to exposure level pipeline"""
-    input_data = "r0000101001001001001_0001_wfi01_uncal.asdf"
+    input_data = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     dm_input = rdm.open(rtdata.input)
 
     # Test Pipeline with input datamodel
-    output = "r0000101001001001001_0001_wfi01_cal.asdf"
+    output = "r0000101001001001001_0001_wfi01_f158_cal.asdf"
     rtdata.output = output
     ExposurePipeline.call(dm_input, save_results=True)
     rtdata.get_truth(f"truth/WFI/image/{output}")
@@ -240,12 +240,12 @@ def run_all_saturated(rtdata_module):
     """
     rtdata = rtdata_module
 
-    input_data = "r0000101001001001001_0001_wfi01_ALL_SATURATED_uncal.asdf"
+    input_data = "r0000101001001001001_0001_wfi01_f158_ALL_SATURATED_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
     # Test Pipeline
-    output = "r0000101001001001001_0001_wfi01_ALL_SATURATED_cal.asdf"
+    output = "r0000101001001001001_0001_wfi01_f158_ALL_SATURATED_cal.asdf"
     rtdata.output = output
     args = [
         "roman_elp",
@@ -316,10 +316,10 @@ def test_pipeline_suffix(rtdata, ignore_asdf_paths):
 
     Any changes to this test should be coordinated with OPS.
     """
-    input_data = "r0000101001001001001_0001_wfi01_uncal.asdf"
+    input_data = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
 
-    output = "r0000101001001001001_0001_wfi01_star.asdf"
+    output = "r0000101001001001001_0001_wfi01_f158_star.asdf"
     rtdata.output = output
 
     args = [
