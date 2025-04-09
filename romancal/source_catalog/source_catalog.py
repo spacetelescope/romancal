@@ -309,8 +309,10 @@ class RomanSourceCatalog:
         """
         Boolean indicating whether the source is extended.
         """
-        # TODO
-        return np.zeros(len(self), dtype=bool)
+        # TODO: replace with filter-dependent ee_ratio from reference file
+        # ee_ratio = ee_fraction_04 / ee_fraction_02
+        ee_ratio = 1.4  # F213 placeholder value
+        return self.aper04_flux > (self.aper02_flux * 1.1 * ee_ratio)
 
     @lazyproperty
     def warning_flags(self):
