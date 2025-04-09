@@ -54,7 +54,7 @@ def get_detection_image_columns(table):
         if (
             col.endswith("centroid")
             or col.startswith("nn_")
-            or col in ["semimajor_sigma", "semiminor_sigma", "ellipticity"]
+            or col in ["semimajor", "semiminor", "ellipticity"]
             or col.endswith("orientation")
             or col == "segment_area"
         ):

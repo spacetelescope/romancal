@@ -190,6 +190,8 @@ class SegmentCatalog:
         name_map["xcentroid"] = "x_centroid"
         name_map["ycentroid"] = "y_centroid"
         name_map["area"] = "segment_area"
+        name_map["semimajor_sigma"] = "semimajor"
+        name_map["semiminor_sigma"] = "semiminor"
         name_map["orientation"] = "orientation_pix"
         name_map["segment_fluxerr"] = "segment_flux_err"
         name_map["kron_fluxerr"] = "kron_flux_err"
