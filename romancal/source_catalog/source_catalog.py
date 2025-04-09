@@ -421,8 +421,13 @@ class RomanSourceCatalog:
             "Row coordinate of the windowed source centroid in the "
             "detection image from image moments (0 indexed)"
         )
-        col["ra_centroid"] = "Right ascension (ICRS) of the image centroid"
-        col["dec_centroid"] = "Declination (ICRS) of the image centroid"
+        col["ra_centroid"] = "Right ascension (ICRS) of the source centroid"
+        col["dec_centroid"] = "Declination (ICRS) of the source centroid"
+        col["ra_centroid_win"] = (
+            "Right ascension (ICRS) of the windowed source centroid"
+        )
+        col["dec_centroid_win"] = "Declination (ICRS) of the windowed source centroid"
+
         col["bbox_xmin"] = (
             "Column index of the left edge of the source bounding box (0 indexed)"
         )
@@ -565,6 +570,8 @@ class RomanSourceCatalog:
         skycoord_colnames = [
             "ra_centroid",
             "dec_centroid",
+            "ra_centroid_win",
+            "dec_centroid_win",
         ]
         det_colnames = [
             "bbox_xmin",
