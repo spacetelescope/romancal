@@ -413,12 +413,28 @@ class RomanSourceCatalog:
             "Row coordinate of the source centroid in the detection image "
             "from image moments (0 indexed)"
         )
+        col["x_centroid_win"] = (
+            "Column coordinate of the windowed source centroid in the "
+            "detection image from image moments (0 indexed)"
+        )
+        col["y_centroid_win"] = (
+            "Row coordinate of the windowed source centroid in the "
+            "detection image from image moments (0 indexed)"
+        )
         col["ra_centroid"] = "Right ascension (ICRS) of the image centroid"
         col["dec_centroid"] = "Declination (ICRS) of the image centroid"
-        col["bbox_xmin"] = "Column index of the left edge of the source bounding box"
-        col["bbox_xmax"] = "Column index of the right edge of the source bounding box"
-        col["bbox_ymin"] = "Row index of the bottom edge of the source bounding box"
-        col["bbox_ymax"] = "Row index of the top edge of the source bounding box"
+        col["bbox_xmin"] = (
+            "Column index of the left edge of the source bounding box (0 indexed)"
+        )
+        col["bbox_xmax"] = (
+            "Column index of the right edge of the source bounding box (0 indexed)"
+        )
+        col["bbox_ymin"] = (
+            "Row index of the bottom edge of the source bounding box (0 indexed)"
+        )
+        col["bbox_ymax"] = (
+            "Row index of the top edge of the source bounding box (0 indexed)"
+        )
         col["semimajor"] = (
             "1-sigma standard deviation along the semimajor axis of the 2D Gaussian function that has the same second-order central moments as the source"
         )
@@ -542,6 +558,8 @@ class RomanSourceCatalog:
             "label",
             "x_centroid",
             "y_centroid",
+            "x_centroid_win",
+            "y_centroid_win",
         ]
         skycoord_colnames = [
             "ra_centroid",

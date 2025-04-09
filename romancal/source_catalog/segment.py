@@ -168,6 +168,8 @@ class SegmentCatalog:
             "label",
             "xcentroid",
             "ycentroid",
+            "xcentroid_win",
+            "ycentroid_win",
             "sky_centroid",
             "bbox_xmin",
             "bbox_xmax",
@@ -193,6 +195,8 @@ class SegmentCatalog:
         name_map = {}
         name_map["xcentroid"] = "x_centroid"
         name_map["ycentroid"] = "y_centroid"
+        name_map["xcentroid_win"] = "x_centroid_win"
+        name_map["ycentroid_win"] = "y_centroid_win"
         name_map["area"] = "segment_area"
         name_map["semimajor_sigma"] = "semimajor"
         name_map["semiminor_sigma"] = "semiminor"
