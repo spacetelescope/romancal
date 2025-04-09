@@ -318,7 +318,7 @@ class PSFCatalog:
         The `~photutils.psf.GriddedPSF` model is created using the
         STPSF library.
         """
-        log.info("Constructing a gridded PSF model.")
+        log.info("Constructing a gridded PSF model")
         if hasattr(self.model.meta, "instrument"):
             # ImageModel (L2 datamodel)
             filt = self.model.meta.instrument.optical_element
@@ -340,7 +340,6 @@ class PSFCatalog:
         Perform PSF photometry by fitting PSF models to detected sources
         for refined astrometry.
         """
-        log.info("Fitting a PSF model to sources for improved astrometric precision.")
         xinit, yinit = np.transpose(self.xypos)
         psf_photometry_table, _ = fit_psf_to_image_model(
             image_model=self.model,

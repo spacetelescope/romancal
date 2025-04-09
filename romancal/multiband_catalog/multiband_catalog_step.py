@@ -133,6 +133,7 @@ class MultibandCatalogStep(RomanStep):
             det_model.weight = example_model.weight
             det_model.meta = example_model.meta
 
+            log.info("Creating catalog for detection image")
             det_catobj = RomanSourceCatalog(
                 det_model,
                 segment_img,
@@ -154,6 +155,8 @@ class MultibandCatalogStep(RomanStep):
                         | (model.err <= 0)
                     )
 
+                    filter_name = model.meta.basic.optical_element  # L3
+                    log.info(f"Creating catalog for {filter_name} image")
                     catobj = RomanSourceCatalog(
                         model,
                         segment_img,
