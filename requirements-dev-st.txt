@@ -1,9 +1,9 @@
 # Roman upstream packages
 git+https://github.com/spacetelescope/roman_datamodels.git
-git+https://github.com/spacetelescope/rad.git
+git+https://github.com/mairanteodoro/rad.git@add-varsky-to-mosaic-schema
 
 # shared upstream packages
-git+https://github.com/spacetelescope/stcal.git
+git+https://github.com/mairanteodoro/stcal.git@mteodoro_sky_var_rdnoise
 git+https://github.com/spacetelescope/stpipe.git
 
 # Other important upstream packages
