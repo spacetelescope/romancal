@@ -441,6 +441,10 @@ class RomanSourceCatalog:
 
         col["segment_flux"] = "Isophotal flux"
         col["segment_area"] = "Area of the source segment"
+        col["kron_radius"] = (
+            "Unscaled first-moment Kron radius defined as r = Sum_i "
+            "(r_i * I_i) / Sum_i (I_i), with r_i as an elliptical radius"
+        )
         col["kron_flux"] = "Flux within the elliptical Kron aperture"
         col["aper_bkg_flux"] = "The local background estimate for aperture photometry"
 
@@ -535,13 +539,14 @@ class RomanSourceCatalog:
             "bbox_xmax",
             "bbox_ymin",
             "bbox_ymax",
+            "segment_area",
             "semimajor",
             "semiminor",
             "fwhm",
             "ellipticity",
             "orientation_pix",
             "orientation_sky",
-            "segment_area",
+            "kron_radius",
             "nn_label",
             "nn_dist",
         ]
