@@ -425,6 +425,11 @@ class RomanSourceCatalog:
         col["semiminor"] = (
             "1-sigma standard deviation along the semiminor axis of the 2D Gaussian function that has the same second-order central moments as the source"
         )
+        col["fwhm"] = (
+            "Circularized full width at half maximum (FWHM) "
+            "calculated from the semimajor and semiminor axes "
+            "as 2*sqrt(ln(2) * (semimajor**2 + semiminor**2))"
+        )
         col["ellipticity"] = "Source ellipticity as 1 - (semimajor / semiminor)"
         col["orientation_pix"] = (
             "The angle measured counter-clockwise from the positive X axis to the major axis computed from image moments"
@@ -516,89 +521,69 @@ class RomanSourceCatalog:
         This list determines which values are calculated in the output
         catalog.
         """
+        base_colnames = [
+            "label",
+            "x_centroid",
+            "y_centroid",
+        ]
+        skycoord_colnames = [
+            "ra_centroid",
+            "dec_centroid",
+        ]
+        det_colnames = [
+            "bbox_xmin",
+            "bbox_xmax",
+            "bbox_ymin",
+            "bbox_ymax",
+            "semimajor",
+            "semiminor",
+            "fwhm",
+            "ellipticity",
+            "orientation_pix",
+            "orientation_sky",
+            "segment_area",
+            "nn_label",
+            "nn_dist",
+        ]
+        band_colnames = [
+            "sharpness",
+            "roundness1",
+            "is_extended",
+        ]
+        psf_xypos_colnames = [
+            "x_psf",
+            "x_psf_err",
+            "y_psf",
+            "y_psf_err",
+        ]
+
         if self.cat_type == "prompt":
-            colnames = [
-                "label",
-                "x_centroid",
-                "y_centroid",
-            ]
+            colnames = []
+            colnames.extend(base_colnames)
             if self.fit_psf:
-                colnames.extend(
-                    [
-                        "x_psf",
-                        "x_psf_err",
-                        "y_psf",
-                        "y_psf_err",
-                    ]
-                )
-            colnames.extend(
-                [
-                    "ra_centroid",
-                    "dec_centroid",
-                    "bbox_xmin",
-                    "bbox_xmax",
-                    "bbox_ymin",
-                    "bbox_ymax",
-                    "semimajor",
-                    "semiminor",
-                    "ellipticity",
-                    "orientation_pix",
-                    "orientation_sky",
-                    "segment_area",
-                    "is_extended",
-                    "sharpness",
-                    "roundness1",
-                    "nn_label",
-                    "nn_dist",
-                ]
-            )
+                colnames.extend(psf_xypos_colnames)
+            colnames.extend(skycoord_colnames)
+            colnames.extend(det_colnames)
+            colnames.extend(band_colnames)
             colnames.extend(self.flux_colnames)
             colnames.append("warning_flags")
             if self.fit_psf:
                 colnames.append("psf_flags")
 
         elif self.cat_type == "dr_det":
-            colnames = [
-                "label",
-                "x_centroid",
-                "y_centroid",
-                "ra_centroid",
-                "dec_centroid",
-                "bbox_xmin",
-                "bbox_xmax",
-                "bbox_ymin",
-                "bbox_ymax",
-                "semimajor",
-                "semiminor",
-                "ellipticity",
-                "orientation_pix",
-                "orientation_sky",
-                "segment_area",
-                "nn_label",
-                "nn_dist",
-                "warning_flags",
-            ]
+            colnames = []
+            colnames.extend(base_colnames)
+            colnames.extend(skycoord_colnames)
+            colnames.extend(det_colnames)
+            colnames.append("warning_flags")
 
         elif self.cat_type == "dr_band":
             # these are band-specific columns for the multiband catalog
             colnames = ["label"]  # label is needed to join the filter catalogs
             if self.fit_psf:
-                colnames.extend(
-                    [
-                        "x_psf",
-                        "x_psf_err",
-                        "y_psf",
-                        "y_psf_err",
-                        "psf_flags",
-                    ]
-                )
-            colnames.extend(
-                [
-                    "is_extended",
-                    "sharpness",
-                    "roundness1",
-                ]
-            )
+                colnames.extend(psf_xypos_colnames)
+            colnames.append("psf_flags")
+            colnames.extend(band_colnames)
             colnames.extend(self.flux_colnames)
 
         return colnames

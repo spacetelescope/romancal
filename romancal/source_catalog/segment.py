@@ -176,6 +176,7 @@ class SegmentCatalog:
             "area",
             "semimajor_sigma",
             "semiminor_sigma",
+            "fwhm",
             "orientation",
             "ellipticity",
             "kron_radius",
