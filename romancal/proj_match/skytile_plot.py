@@ -23,7 +23,7 @@ def plot_field(corners, id="", fill=None, color=None):
 def plot_patch(corners, id="", color=None):
     plt.plot(corners[0], corners[1], color=color)
     if id:
-        idstr = str(pm.PATCH_TABLE[id]["index"])
+        idstr = str(pm.PROJREGION_TABLE[id]["index"])
         center = (corners[0][:-1].mean(), corners[1][:-1].mean())
         plt.annotate(idstr, center, va="center", ha="center", size=10)
 
@@ -49,8 +49,8 @@ def plot(image_corners, patches_touched_ids, patches_candidate_ids):
     plt.clf()
     plt.gca().invert_xaxis()
     plt.plot(0, 0, "*", markersize=10)
-    patches_touched = [pm.PATCH_TABLE[index] for index in patches_touched_ids]
-    patches_candidate = [pm.PATCH_TABLE[index] for index in patches_candidate_ids]
+    patches_touched = [pm.PROJREGION[index] for index in patches_touched_ids]
+    patches_candidate = [pm.PROJREGION[index] for index in patches_candidate_ids]
     tangent_point, patch_tp_id_touched = pm.find_closest_tangent_point(
         patches_touched, image_corners
     )

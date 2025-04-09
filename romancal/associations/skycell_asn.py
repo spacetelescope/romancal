@@ -56,7 +56,7 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
     unique_patches = np.unique(np.concatenate(all_patches))
     for item in unique_patches:
         member_list = []
-        patch_name = pm.PATCH_TABLE[item]["name"]
+        patch_name = pm.PROJREGION_TABLE[item]["name"]
         for a in file_list:
             if np.isin(item, a[1]):
                 member_list.append(a[0])
