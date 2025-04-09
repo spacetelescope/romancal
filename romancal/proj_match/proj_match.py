@@ -1,5 +1,5 @@
 """
-This module determines which patch files overlap with the given image.
+This module determines which projection regions ("sky tiles") overlap with the given image.
 
 Currently this assumes that the sky projected borders of all images are straight.
 """
@@ -10,7 +10,6 @@ import os.path
 import re
 
 import asdf
-import gwcs.wcs as wcs
 import numpy as np
 import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
@@ -18,39 +17,49 @@ from astropy import coordinates
 from astropy import units as u
 from astropy.modeling import models
 from gwcs import WCS, coordinate_frames
+from numpy.typing import NDArray
+from roman_datamodels import stnode
 from spherical_geometry.vector import normalize_vector
 from stcal.alignment import util as wcs_util
+
+from romancal.datamodels.library import ModelLibrary
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 RAD_TO_ARCSEC = 180.0 / np.pi * 3600.0
 
-PATCH_TABLE = None
-CANDIDATE_RADIUS = 0.5  # Radius of circle for which patch centers must lie within
+PROJREGION_TABLE: dict = None
+CANDIDATE_RADIUS = (
+    0.5  # Radius of circle for which projection region centers must lie within
+)
 # to be tested for intersection (in degrees)
 
 
-def load_patch_table(tablepath=None):
+def load_projregion_table(tablepath: str | os.PathLike | None = None):
     """
-    Load the patch table. If no tablepath is supplied the path is obtained
-    from the environmental variable PATCH_TABLE_PATH
+    Load the table of projection regions. If no tablepath is supplied the path is obtained
+    from the environmental variable PROJREGION_TABLE_PATH
     """
-    global PATCH_TABLE
+    global PROJREGION_TABLE
     if tablepath is None:
         try:
-            tablepath = os.environ["PATCH_TABLE_PATH"]
+            tablepath = os.environ["PROJREGION_TABLE_PATH"]
         except KeyError:
-            log.error("PATCH_TABLE_PATH environmental variable not found")
+            log.error("PROJREGION_TABLE_PATH environmental variable not found")
             return
     try:
         with asdf.open(tablepath) as af:
-            PATCH_TABLE = af.tree["patches"].copy()
+            PROJREGION_TABLE = af.tree["roman"]["projection_regions"].copy()
     except FileNotFoundError as err:
-        raise FileNotFoundError("Specified patch table file path not found") from err
+        raise FileNotFoundError(
+            "Specified projection region table file path not found"
+        ) from err
 
 
-def image_coords_to_vec(image_corners):
+def image_coords_to_vec(
+    image_corners: list[tuple[float, float]] | tuple[list[float], list[float]],
+) -> NDArray[float]:
     """
     This routine can handle the corners in both organizations, whether
     a sequence of ra, dec pairs or a list of ra coordinates, followed
@@ -67,7 +76,10 @@ def image_coords_to_vec(image_corners):
     return vec_im_corners
 
 
-def find_proj_matches(image_corners, image_shape=None):
+def find_proj_matches(
+    image_corners: list[tuple[float, float]] | NDArray[float] | WCS,
+    image_shape: tuple[int, int] | None = None,
+):
     """Find projection regions that the image overlaps with
 
     Parameters
@@ -84,16 +96,16 @@ def find_proj_matches(image_corners, image_shape=None):
 
     Returns
     -------
-    A sequence of the indices of all patches that overlap the supplied image
-    (in the referenced patch table). The indices may be used to obtain all
-    necessary information about the patches.
+    A sequence of the indices of all projection regions that overlap the supplied image
+    (in the referenced projection region table). The indices may be used to obtain all
+    necessary information about the projection regions.
     """
 
-    if PATCH_TABLE is None:
-        load_patch_table()
-    if PATCH_TABLE is None:
-        raise RuntimeError("No patch table has been loaded")
-    if isinstance(image_corners, wcs.WCS):
+    if PROJREGION_TABLE is None:
+        load_projregion_table()
+    if PROJREGION_TABLE is None:
+        raise RuntimeError("No projection region table has been loaded")
+    if isinstance(image_corners, WCS):
         iwcs = image_corners
         # Now must find size of correspinding image, with three possible
         # sources of that information.
@@ -125,7 +137,7 @@ def find_proj_matches(image_corners, image_shape=None):
             (-0.5, image_shape[0] - 0.5),
         )
         image_corners = (iwcs(cxp, cyp), iwcs(cxm, cyp), iwcs(cxm, cym), iwcs(cxp, cym))
-    ptab = PATCH_TABLE
+    ptab = PROJREGION_TABLE
     ra = ptab[:]["ra_center"]
     dec = ptab[:]["dec_center"]
     # # Convert all celestial coordinates to cartesion coordinates.
@@ -136,7 +148,7 @@ def find_proj_matches(image_corners, image_shape=None):
     vec_im_corners = image_coords_to_vec(image_corners)
     # Approximate center of image by averaging corner vectors
     im_center = normalize_vector(vec_im_corners.mean(axis=1))
-    # Compute difference vector between image center and patch centers
+    # Compute difference vector between image center and projection region centers
     diff = vec_centers - im_center
     dist = np.sqrt((diff**2).sum(axis=1)) * 180 / np.pi
     match = np.where(dist < 0.5)
@@ -173,38 +185,43 @@ def find_proj_matches(image_corners, image_shape=None):
     return match[0][realmatch], match[0]
 
 
-def get_cartesian_corners(patch):
+def get_cartesian_corners(
+    projection_region: dict[str, NDArray[float]],
+) -> tuple[NDArray[float], NDArray[float]]:
     """
-    Cons] truct a the vertex coordinates for a patch from a patch definition suitable
+    Construct vertex coordinates for a projection region definition suitable
     for plotting the defined region (ra coordinates, dec coordinates). It returns
     coordinates in the cartesian system so that it avoids the distortions in plots
     due to areas approaching the poles.
     """
     dec_corners = np.array(
         (
-            patch["dec_corn1"],
-            patch["dec_corn2"],
-            patch["dec_corn3"],
-            patch["dec_corn4"],
-            patch["dec_corn1"],
+            projection_region["dec_corn1"],
+            projection_region["dec_corn2"],
+            projection_region["dec_corn3"],
+            projection_region["dec_corn4"],
+            projection_region["dec_corn1"],
         )
     )
     ra_corners = np.array(
         (
-            patch["ra_corn1"],
-            patch["ra_corn2"],
-            patch["ra_corn3"],
-            patch["ra_corn4"],
-            patch["ra_corn1"],
+            projection_region["ra_corn1"],
+            projection_region["ra_corn2"],
+            projection_region["ra_corn3"],
+            projection_region["ra_corn4"],
+            projection_region["ra_corn1"],
         )
     )
     vec_corners = sgv.lonlat_to_vector(ra_corners, dec_corners)
     return vec_corners
 
 
-def find_closest_tangent_point(patches, image_corners):
+def find_closest_tangent_point(
+    projection_regions: list[dict],
+    image_corners: list[tuple[float, float]] | tuple[list[float], list[float]],
+):
     """
-    Out of all listed patches, find the closest tangent point to the center
+    Out of all listed projection regions, find the closest tangent point to the center
     coordinate of the image.
     """
     # To deal with the corner case, it is necessary to use spherical_geometry
@@ -213,12 +230,12 @@ def find_closest_tangent_point(patches, image_corners):
     vec_im_corners = image_coords_to_vec(image_corners)
     im_center = np.array(normalize_vector(vec_im_corners.mean(axis=1)))
     tangent_point_set = set()
-    patch_tangent_points = [
-        (patch["ra_projection_center"], patch["dec_projection_center"])
-        for patch in patches
+    proj_tangent_points = [
+        (region["ra_projection_center"], region["dec_projection_center"])
+        for region in projection_regions
     ]
-    for tangent_point in patch_tangent_points:
-        tangent_point_set.add(tangent_point)
+    for proj_tangent_point in proj_tangent_points:
+        tangent_point_set.add(proj_tangent_point)
     unique_tangent_points = list(tangent_point_set)
     # Compute distance for each tangent point from im_center
     dist = [
@@ -230,16 +247,20 @@ def find_closest_tangent_point(patches, image_corners):
         unique_tangent_points[sorted_dist[1]] for sorted_dist in sorted_dist_indices
     ]
     closest_tangent_point = np.array(sgv.lonlat_to_vector(*sorted_tangent_points[0]))
-    # Now associate index of sorted_tangent_points with that of all patches
-    patch_tp_id = []
-    for patch_tp in patch_tangent_points:
-        for i, tp in enumerate(sorted_tangent_points):
-            if tp == patch_tp:
-                patch_tp_id.append(i)
-    return closest_tangent_point, patch_tp_id
+    # Now associate index of sorted_tangent_points with that of all projection regions
+    projregion_tangentpoint_indices = [
+        index
+        for proj_tangent_point in proj_tangent_points
+        for index, tangent_point in enumerate(sorted_tangent_points)
+        if tangent_point == proj_tangent_point
+    ]
+    return closest_tangent_point, projregion_tangentpoint_indices
 
 
-def veccoords_to_tangent_plane(vertices, tangent_point_vec):
+def veccoords_to_tangent_plane(
+    vertices: list[tuple[float, float, float]],
+    tangent_point_vec: tuple[float, float, float],
+):
     """
     Convert the spherical geometry vectors to tangent plane coordinates
     in arcseconds. This algorithm is not precise, but should be good
@@ -260,7 +281,11 @@ def veccoords_to_tangent_plane(vertices, tangent_point_vec):
     return x_coords, y_coords
 
 
-def wcsinfo_to_wcs(wcsinfo, bounding_box=None, name="wcsinfo"):
+def wcsinfo_to_wcs(
+    wcsinfo: dict | stnode.Wcsinfo,
+    bounding_box: None | tuple[float, float, float, float] = None,
+    name: str = "wcsinfo",
+) -> WCS:
     """Create a GWCS from the L3 wcsinfo meta
 
     Parameters
@@ -360,7 +385,7 @@ def skycell_to_wcs(skycell_record):
     return wcsobj
 
 
-def to_skycell_wcs(library):
+def to_skycell_wcs(library: ModelLibrary) -> WCS:
     """If available read the skycell WCS from the input library association.
 
     If the association information contains a "skycell_wcs_info" entry that
@@ -393,10 +418,10 @@ def to_skycell_wcs(library):
         if not re.match(r"r\d{3}\w{2}\d{2}x\d{2}y\d{2}", skycell_name):
             return None
 
-        if PATCH_TABLE is None:
-            load_patch_table()
-        skycell_record = PATCH_TABLE[
-            np.where(PATCH_TABLE["name"][:] == skycell_name)[0][0]
+        if PROJREGION_TABLE is None:
+            load_projregion_table()
+        skycell_record = PROJREGION_TABLE[
+            np.where(PROJREGION_TABLE["name"][:] == skycell_name)[0][0]
         ]
     log.info("Skycell record %s:", skycell_record)
 
@@ -409,7 +434,7 @@ def to_skycell_wcs(library):
     return skycell_to_wcs(skycell_record)
 
 
-def get_projectioncell_wcs(index):
+def get_projectioncell_wcs(index: np.int64) -> dict | None:
     """Return the projection cell wcs info as a dictionary based on the db index number"""
 
     # check to see if an index is being passed
@@ -418,31 +443,31 @@ def get_projectioncell_wcs(index):
         return None
 
     # check to see if the patch table is loaded if not load it
-    if PATCH_TABLE is None:
-        load_patch_table()
+    if PROJREGION_TABLE is None:
+        load_projregion_table()
 
     projcell_info = dict(
         [
-            ("name", PATCH_TABLE[index]["name"]),
-            ("pixel_scale", float(PATCH_TABLE[index]["pixel_scale"])),
+            ("name", PROJREGION_TABLE[index]["name"]),
+            ("pixel_scale", float(PROJREGION_TABLE[index]["pixel_scale"])),
             (
                 "ra_projection_center",
-                float(PATCH_TABLE[index]["ra_projection_center"]),
+                float(PROJREGION_TABLE[index]["ra_projection_center"]),
             ),
             (
                 "dec_projection_center",
-                float(PATCH_TABLE[index]["dec_projection_center"]),
+                float(PROJREGION_TABLE[index]["dec_projection_center"]),
             ),
-            ("x0_projection", float(PATCH_TABLE[index]["x0_projection"])),
-            ("y0_projection", float(PATCH_TABLE[index]["y0_projection"])),
-            ("ra_center", float(PATCH_TABLE[index]["ra_center"])),
-            ("dec_center", float(PATCH_TABLE[index]["dec_center"])),
-            ("nx", int(PATCH_TABLE[index]["nx"])),
-            ("ny", int(PATCH_TABLE[index]["ny"])),
-            ("orientat", float(PATCH_TABLE[index]["orientat"])),
+            ("x0_projection", float(PROJREGION_TABLE[index]["x0_projection"])),
+            ("y0_projection", float(PROJREGION_TABLE[index]["y0_projection"])),
+            ("ra_center", float(PROJREGION_TABLE[index]["ra_center"])),
+            ("dec_center", float(PROJREGION_TABLE[index]["dec_center"])),
+            ("nx", int(PROJREGION_TABLE[index]["nx"])),
+            ("ny", int(PROJREGION_TABLE[index]["ny"])),
+            ("orientat", float(PROJREGION_TABLE[index]["orientat"])),
             (
                 "orientat_projection_center",
-                float(PATCH_TABLE[index]["orientat_projection_center"]),
+                float(PROJREGION_TABLE[index]["orientat_projection_center"]),
             ),
         ]
     )

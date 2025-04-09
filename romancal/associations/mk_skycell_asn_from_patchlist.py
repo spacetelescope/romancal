@@ -58,7 +58,7 @@ def mk_skycell_asn_from_patchlist(filelist, release_product, optical_element):
     pm.load_patch_table()
     for item in unique_patches:
         member_list = []
-        patch_name = pm.PATCH_TABLE[item]["name"]
+        patch_name = pm.PROJREGION_TABLE[item]["name"]
         for entry in patch_list:
             if np.isin(item, entry[1]):
                 member_list.append(os.path.basename(entry[0]).split(".")[0])
