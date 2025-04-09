@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pyarrow
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
 from stcal.tweakreg import tweakreg
@@ -330,9 +331,12 @@ class TweakRegStep(RomanStep):
         """
         Reads a source catalog from a specified file.
 
-        This function determines the format of the catalog based on the file extension.
-        If the file ends with "asdf", it uses a specific method to open and read the catalog;
-        otherwise, it reads the catalog using a standard table format.
+        This function determines the format of the catalog based on the
+        file extension:
+
+        * "asdf":  uses roman datamodels
+        * "parquet":  uses pyarrow
+        * otherwise:  uses astropy Table.
 
         Parameters
         ----------
@@ -350,8 +354,11 @@ class TweakRegStep(RomanStep):
             If the catalog format is unsupported.
         """
         if catalog_name.endswith("asdf"):
+            # leave this for now
             with rdm.open(catalog_name) as source_catalog_model:
                 catalog = source_catalog_model.source_catalog
+        elif catalog_name.endswith("parquet"):
+            catalog = pyarrow.parquet.read_table(catalog_name)
         else:
             catalog = Table.read(catalog_name, format=self.catalog_format)
         return catalog
