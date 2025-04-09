@@ -28,5 +28,6 @@ def save_wfiwcs(step, lib):
                 )
                 lib.shelve(model)
                 continue
+            step.finalize_result(wfiwcs, [])
             step.save_model(wfiwcs, suffix="wcs")
             lib.shelve(model)
