@@ -171,6 +171,7 @@ class SegmentCatalog:
             "xcentroid_win",
             "ycentroid_win",
             "sky_centroid",
+            "sky_centroid_win",
             "bbox_xmin",
             "bbox_xmax",
             "bbox_ymin",
@@ -210,7 +211,7 @@ class SegmentCatalog:
             value = getattr(segm_cat, name)
 
             # change the photutils dtypes
-            if new_name != "sky_centroid":
+            if new_name not in ("sky_centroid", "sky_centroid_win"):
                 if np.issubdtype(value.dtype, np.integer):
                     value = value.astype(np.int32)
                 elif np.issubdtype(value.dtype, np.floating):
@@ -230,6 +231,10 @@ class SegmentCatalog:
                 self.ra_centroid = value.ra
                 self.dec_centroid = value.dec
                 self.names.extend(["ra_centroid", "dec_centroid"])
+            elif new_name == "sky_centroid_win":
+                self.ra_centroid_win = value.ra
+                self.dec_centroid_win = value.dec
+                self.names.extend(["ra_centroid_win", "dec_centroid_win"])
             else:
                 setattr(self, new_name, value)
                 self.names.append(new_name)
