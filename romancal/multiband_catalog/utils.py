@@ -119,6 +119,30 @@ def remove_columns(table):
     return table
 
 
+def insert_filter(colname, filter_name):
+    """
+    Insert the filter name into the column name.
+
+    Parameters
+    ----------
+    colname : str
+        The original column name.
+
+    filter_name : str
+        The filter name to insert.
+
+    Returns
+    -------
+    result : str
+        The updated column name.
+    """
+    if colname.endswith("_err"):
+        base = colname[:-4]
+        return f"{base}_{filter_name}_err"
+    else:
+        return f"{colname}_{filter_name}"
+
+
 def add_filter_to_colnames(table, filter_name):
     """
     Add a filter name to the column names in an astropy table.
@@ -143,13 +167,13 @@ def add_filter_to_colnames(table, filter_name):
         raise ValueError("filter_name must be a string")
 
     filter_name = filter_name.lower()
+    append_cols = ("is_extended", "sharpness", "roundness", "psf_flags")
 
     for colname in table.colnames:
-        if "_flux" in colname:
-            parts = colname.split("_flux")
-            new_col = f"{parts[0]}_{filter_name}_flux"
-            if len(parts) > 1:
-                new_col += f"{parts[1]}"
-            table.rename_column(colname, new_col)
+        if "_flux" in colname or "_psf" in colname:
+            new_colname = insert_filter(colname, filter_name)
+            table.rename_column(colname, new_colname)
+        elif colname in append_cols:
+            table.rename_column(colname, f"{colname}_{filter_name}")
 
     return table
