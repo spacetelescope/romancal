@@ -614,12 +614,21 @@ class RomanSourceCatalog:
         self.convert_sb_to_flux_density()
 
         # make measurements - the order of these calculations is important
+        log.info("Calculating segment properties")
         self.calc_segment_properties()
+
+        log.info("Calculating aperture photometry")
         self.calc_aperture_photometry()
+
+        log.info("Calculating DAOFind properties")
         self.calc_daofind_properties()
+
         if self.cat_type in ("prompt", "dr_det"):
+            log.info("Calculating nearest neighbor properties")
             self.calc_nn_properties()
+
         if self.cat_type in ("prompt", "dr_band") and self.fit_psf:
+            log.info("Calculating PSF photometry")
             self.calc_psf_photometry()
 
         # put the measurements into a Table
