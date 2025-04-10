@@ -51,7 +51,7 @@ def load_skycells_table(tablepath: str | os.PathLike | None = None):
             log.error(f"{TABLE_ENVIRONMENT_VARIABLE} environmental variable not found")
             return
     try:
-        SKYCELLS_TABLE = asdf.open(tablepath).tree
+        SKYCELLS_TABLE = asdf.open(tablepath).copy()
     except FileNotFoundError as err:
         raise FileNotFoundError(f"skycells table not found at {tablepath}") from err
 
@@ -144,7 +144,7 @@ class SkyCell:
         return SKYCELLS_TABLE["roman"]["meta"]["pixel_scale"] / 3600.0
 
     @property
-    def shape(self) -> tuple[int, int]:
+    def pixel_shape(self) -> tuple[int, int]:
         return SKYCELLS_TABLE["roman"]["meta"]["nxy_skycell"], SKYCELLS_TABLE["roman"][
             "meta"
         ]["nxy_skycell"]
@@ -171,8 +171,8 @@ class SkyCell:
 
         # Bounding box of the skycell. Note that the center of the pixels are at (0.5, 0.5)
         bounding_box = (
-            (-0.5, -0.5 + self.shape[0]),
-            (-0.5, -0.5 + self.shape[1]),
+            (-0.5, -0.5 + self.pixel_shape[0]),
+            (-0.5, -0.5 + self.pixel_shape[1]),
         )
 
         wcsobj = wcsinfo_to_wcs(
@@ -197,7 +197,7 @@ class ProjectionRegion:
         if SKYCELLS_TABLE is None:
             load_skycells_table()
 
-        for projregion in SKYCELLS_TABLE["projection_regions"]:
+        for projregion in SKYCELLS_TABLE["roman"]["projection_regions"]:
             if (
                 int(projregion["skycell_start"])
                 < index
@@ -241,7 +241,7 @@ class ProjectionRegion:
         return self.data[8], self.data[9]
 
     @property
-    def shape(self) -> tuple[int, int]:
+    def pixel_shape(self) -> tuple[int, int]:
         return self.data[10], self.data[11]
 
     @property
@@ -308,8 +308,8 @@ class ProjectionRegion:
 
         # Bounding box of the projection region. Note that the center of the pixels are at (0.5, 0.5)
         bounding_box = (
-            (-0.5, -0.5 + self.shape[0]),
-            (-0.5, -0.5 + self.shape[1]),
+            (-0.5, -0.5 + self.pixel_shape[0]),
+            (-0.5, -0.5 + self.pixel_shape[1]),
         )
 
         wcsobj = wcsinfo_to_wcs(
@@ -407,8 +407,7 @@ def find_skycell_matches(
             (-0.5, image_shape[0] - 0.5),  # type: ignore[index]
         )
         image_corners = (iwcs(cxp, cyp), iwcs(cxm, cyp), iwcs(cxm, cym), iwcs(cxp, cym))
-    ptab = SKYCELLS_TABLE
-    skycells = ptab["skycells"]
+    skycells = SKYCELLS_TABLE["roman"]["skycells"]
     ra = skycells[:]["ra_center"]
     dec = skycells[:]["dec_center"]
     # # Convert all celestial coordinates to cartesion coordinates.
@@ -690,8 +689,10 @@ def to_skycell_wcs(library: ModelLibrary) -> WCS | None:
 
         if SKYCELLS_TABLE is None:
             load_skycells_table()
-        skycell_asn_record = SKYCELLS_TABLE[
-            np.where(SKYCELLS_TABLE["name"][:] == skycell_name)[0][0]
+        skycell_asn_record = SKYCELLS_TABLE["roman"]["skycells"][
+            np.where(SKYCELLS_TABLE["roman"]["skycells"]["name"][:] == skycell_name)[0][
+                0
+            ]
         ]
 
     log.info("Skycell record %s:", skycell_asn_record)
