@@ -39,20 +39,14 @@ from spherical_geometry.vector import rotate_around as rotate
 
 import romancal.skycell.match as sm
 
-SKYCELLS_SUBSET_PATH = Path(__file__).parent / "skycells_subset.asdf"
+SKYCELLS_TABLE_SUBSET_PATH = Path(__file__).parent / "skycells_subset.asdf"
 # do not use load_patch_table here as it will modify global state
-with asdf.open(SKYCELLS_SUBSET_PATH) as af:
-    SKYCELLS_SUBSET = af["roman"]["skycells"].copy()
-    PROJREGION_TABLE = af["roman"]["projection_regions"].copy()
+with asdf.open(SKYCELLS_TABLE_SUBSET_PATH) as skycells_subset:
+    SKYCELLS_TABLE_SUBSET = skycells_subset.copy()
 
-print(SKYCELLS_SUBSET[:]["name"])
-crecord = SKYCELLS_SUBSET[np.where(SKYCELLS_SUBSET[:]["name"] == 925050)]
+crecord = SKYCELLS_TABLE_SUBSET["roman"]["skycells"][0]
 cra = crecord["ra_corn3"]
-if len(cra) == 1:
-    cra = cra[0]
 cdec = crecord["dec_corn3"]
-if len(cdec) == 1:
-    cdec = cdec[0]
 
 cpa = 45.0
 csize = 0.001
@@ -63,10 +57,10 @@ e = 0.0011  # epsilon offset in degrees
 def override_patch_table(monkeypatch):
     """
     For the tests in this file, monkeypatch the global
-    PROJREGION_TABLE to a smaller PATCH_SUBSET to allow these tests
+    SKYCELLS_TABLE to a smaller SKYCELLS_TABLE_SUBSET to allow these tests
     to run without access to the full patch table.
     """
-    monkeypatch.setattr(sm, "SKYCELLS_TABLE", SKYCELLS_SUBSET)
+    monkeypatch.setattr(sm, "SKYCELLS_TABLE", SKYCELLS_TABLE_SUBSET)
     yield
 
 
@@ -127,54 +121,84 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
 @pytest.mark.parametrize(
     "pars, expected",
     [
-        ((cra, cdec + e, cpa, csize), (925051, 925151)),
-        ((cra, cdec - e, cpa, csize), (925050, 925150)),
-        ((cra + e, cdec, cpa, csize), (925150, 925151)),
-        ((cra - e, cdec, cpa, csize), (925050, 925051)),
-        ((cra, cdec, cpa, csize), (925050, 925051, 925150, 925151)),
+        (
+            (cra, cdec + e, cpa, csize),
+            (
+                "225p90x26y50",
+                "225p90x26y51",
+            ),
+        ),
+        (
+            (cra, cdec - e, cpa, csize),
+            (
+                "225p90x25y50",
+                "225p90x25y51",
+                "225p90x26y50",
+                "225p90x26y51",
+            ),
+        ),
+        (
+            (cra + e, cdec, cpa, csize),
+            (
+                "225p90x25y50",
+                "225p90x25y51",
+                "225p90x26y50",
+                "225p90x26y51",
+            ),
+        ),
+        (
+            (cra - e, cdec, cpa, csize),
+            (
+                "225p90x25y50",
+                "225p90x25y51",
+                "225p90x26y50",
+                "225p90x26y51",
+            ),
+        ),
+        (
+            (cra, cdec, cpa, csize),
+            (
+                "225p90x25y50",
+                "225p90x25y51",
+                "225p90x26y50",
+                "225p90x26y51",
+            ),
+        ),
         (
             (cra, cdec, cpa, 0.5),
             (
-                924750,
-                924751,
-                924849,
-                924850,
-                924851,
-                924852,
-                924948,
-                924949,
-                924950,
-                924951,
-                924952,
-                924953,
-                925047,
-                925048,
-                925049,
-                925050,
-                925051,
-                925052,
-                925053,
-                925054,
-                925147,
-                925148,
-                925149,
-                925150,
-                925151,
-                925152,
-                925153,
-                925154,
-                925248,
-                925249,
-                925250,
-                925251,
-                925252,
-                925253,
-                925349,
-                925350,
-                925351,
-                925352,
-                925450,
-                925451,
+                "225p90x25y50",
+                "225p90x25y51",
+                "225p90x26y46",
+                "225p90x26y47",
+                "225p90x26y48",
+                "225p90x26y49",
+                "225p90x26y50",
+                "225p90x26y51",
+                "225p90x26y52",
+                "225p90x26y53",
+                "225p90x26y54",
+                "225p90x26y55",
+                "225p90x27y47",
+                "225p90x27y48",
+                "225p90x27y49",
+                "225p90x27y50",
+                "225p90x27y51",
+                "225p90x27y52",
+                "225p90x27y53",
+                "225p90x27y54",
+                "225p90x28y48",
+                "225p90x28y49",
+                "225p90x28y50",
+                "225p90x28y51",
+                "225p90x28y52",
+                "225p90x28y53",
+                "225p90x29y49",
+                "225p90x29y50",
+                "225p90x29y51",
+                "225p90x29y52",
+                "225p90x30y50",
+                "225p90x30y51",
             ),
         ),
     ],
@@ -184,7 +208,10 @@ def test_corners(pars, expected):
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(corners)
     # map matches to absolute index
     mmatches = tuple(
-        [SKYCELLS_SUBSET[match]["index"] for match in intersecting_skycells]
+        [
+            SKYCELLS_TABLE_SUBSET["roman"]["skycells"][index]["name"]
+            for index in intersecting_skycells
+        ]
     )
     assert tuple(mmatches) == expected
 
@@ -196,22 +223,61 @@ def test_wcs_corners():
         wcsobj, image_shape=imshape
     )
     mmatches = tuple(
-        [SKYCELLS_SUBSET[match]["index"] for match in intersecting_skycells]
+        [
+            SKYCELLS_TABLE_SUBSET["roman"]["skycells"][index]["name"]
+            for index in intersecting_skycells
+        ]
     )
-    assert tuple(mmatches) == (925050, 925051, 925150, 925151)
+    assert tuple(mmatches) == (
+        "225p90x25y50",
+        "225p90x25y51",
+        "225p90x26y49",
+        "225p90x26y50",
+        "225p90x26y51",
+        "225p90x26y52",
+        "225p90x27y50",
+        "225p90x27y51",
+    )
+
     wcsobj.pixel_shape = imshape
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
     mmatches = tuple(
-        [SKYCELLS_SUBSET[match]["index"] for match in intersecting_skycells]
+        [
+            SKYCELLS_TABLE_SUBSET["roman"]["skycells"][index]["name"]
+            for index in intersecting_skycells
+        ]
     )
-    assert tuple(mmatches) == (925050, 925051, 925150, 925151)
+    assert tuple(mmatches) == (
+        "225p90x25y50",
+        "225p90x25y51",
+        "225p90x26y49",
+        "225p90x26y50",
+        "225p90x26y51",
+        "225p90x26y52",
+        "225p90x27y50",
+        "225p90x27y51",
+    )
+
     wcsobj.pixel_shape = None
     wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
     mmatches = tuple(
-        [SKYCELLS_SUBSET[match]["index"] for match in intersecting_skycells]
+        [
+            SKYCELLS_TABLE_SUBSET["roman"]["skycells"][match]["name"]
+            for match in intersecting_skycells
+        ]
     )
-    assert tuple(mmatches) == (925050, 925051, 925150, 925151)
+    assert tuple(mmatches) == (
+        "225p90x25y50",
+        "225p90x25y51",
+        "225p90x26y49",
+        "225p90x26y50",
+        "225p90x26y51",
+        "225p90x26y52",
+        "225p90x27y50",
+        "225p90x27y51",
+    )
+
     wcsobj.bounding_box = None
     with pytest.raises(ValueError):
         intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
