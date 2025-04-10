@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from romancal.associations import mk_patchlist, mk_skycell_asn_from_patchlist
+from romancal.associations import mk_skycell_asn_from_skycell_list, mk_skycell_list
 
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata]
@@ -40,7 +40,7 @@ def run_patchlist(rtdata_module):
     rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi01_f158_cal.asdf")
     rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi10_f158_cal.asdf")
 
-    mk_patchlist._cli(args)
+    mk_skycell_list._cli(args)
     return rtdata
 
 
@@ -60,7 +60,7 @@ def run_skycellasn(rtdata_module, run_patchlist):
         "r0000101001001001001_0002_wfi10_f158_cal.match",
     ]
 
-    mk_skycell_asn_from_patchlist._cli(args)
+    mk_skycell_asn_from_skycell_list._cli(args)
     return rtdata
 
 

@@ -29,12 +29,12 @@ def plot_field(corners, id="", fill=None, color=None):
 def plot_skycell(corners, id="", color=None):
     plt.plot(corners[0], corners[1], color=color)
     if id:
-        idstr = str(SKYCELLS_TABLE["skycells"][id]["index"])
+        idstr = str(SKYCELLS_TABLE["roman"]["skycells"][id]["index"])
         center = (corners[0][:-1].mean(), corners[1][:-1].mean())
         plt.annotate(idstr, center, va="center", ha="center", size=10)
 
 
-def plot(image_corners, touched_skycell_ids, candidate_skycell_indices):
+def plot(image_corners, touched_skycell_indices, candidate_skycell_indices):
     """
     This plots a list of skycell footprints against the image footprint.
 
@@ -55,8 +55,13 @@ def plot(image_corners, touched_skycell_ids, candidate_skycell_indices):
     plt.clf()
     plt.gca().invert_xaxis()
     plt.plot(0, 0, "*", markersize=10)
-    touched_skycells = [SKYCELLS_TABLE[index] for index in touched_skycell_ids]
-    candidate_skycells = [SKYCELLS_TABLE[index] for index in candidate_skycell_indices]
+    touched_skycells = [
+        SKYCELLS_TABLE["roman"]["skycells"][index] for index in touched_skycell_indices
+    ]
+    candidate_skycells = [
+        SKYCELLS_TABLE["roman"]["skycells"][index]
+        for index in candidate_skycell_indices
+    ]
     tangent_point, touched_skycell_index = find_closest_tangent_point(
         touched_skycells, image_corners
     )
@@ -78,7 +83,7 @@ def plot(image_corners, touched_skycell_ids, candidate_skycell_indices):
             color="lightgray",
         )
     for touched_skycell, touched_skycell_index in zip(
-        touched_skycells, touched_skycell_ids, strict=False
+        touched_skycells, touched_skycell_indices, strict=False
     ):
         plot_skycell(
             veccoords_to_tangent_plane(
