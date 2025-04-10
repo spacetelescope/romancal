@@ -1,12 +1,10 @@
 """Roman tests for source catalog creation"""
 
-import asdf
 import pytest
 from astropy.table import Table
 
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 from romancal.stpipe import RomanStep
-
 
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]

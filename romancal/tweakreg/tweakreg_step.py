@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
-import pyarrow
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
 from stcal.tweakreg import tweakreg
@@ -353,8 +352,9 @@ class TweakRegStep(RomanStep):
         ValueError
             If the catalog format is unsupported.
         """
-        filetype = ("parquet" if catalog_name.endswith("parquet")
-                    else self.catalog_format)
+        filetype = (
+            "parquet" if catalog_name.endswith("parquet") else self.catalog_format
+        )
         if catalog_name.endswith("asdf"):
             # leave this for now
             with rdm.open(catalog_name) as source_catalog_model:

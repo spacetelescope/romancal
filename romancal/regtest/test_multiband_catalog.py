@@ -1,6 +1,5 @@
 """Roman tests for source catalog creation"""
 
-import asdf
 import pytest
 from astropy.table import Table
 
