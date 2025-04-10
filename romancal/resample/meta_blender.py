@@ -34,7 +34,7 @@ class TableBuilder:
     def add_row(self, data_dict, row_index):
         updated = set()
         for key, value in data_dict.items():
-            svalue = self._santize_value(value)
+            svalue = self._sanitize_value(value)
             if svalue is None:
                 self._flagged_columns.add(key)
             self._get_column(key, row_index).append(svalue)
