@@ -6,7 +6,13 @@ matplotlib dependency is optional.
 
 import spherical_geometry.vector as sgv
 
-import romancal.proj_match.proj_match as pm
+from .match import (
+    SKYCELLS_TABLE,
+    find_closest_tangent_point,
+    get_cartesian_corners,
+    image_coords_to_vec,
+    veccoords_to_tangent_plane,
+)
 
 try:
     from matplotlib import pyplot as plt
@@ -23,7 +29,7 @@ def plot_field(corners, id="", fill=None, color=None):
 def plot_patch(corners, id="", color=None):
     plt.plot(corners[0], corners[1], color=color)
     if id:
-        idstr = str(pm.PROJREGION_TABLE[id]["index"])
+        idstr = str(SKYCELLS_TABLE[id]["index"])
         center = (corners[0][:-1].mean(), corners[1][:-1].mean())
         plt.annotate(idstr, center, va="center", ha="center", size=10)
 
@@ -49,29 +55,25 @@ def plot(image_corners, patches_touched_ids, patches_candidate_ids):
     plt.clf()
     plt.gca().invert_xaxis()
     plt.plot(0, 0, "*", markersize=10)
-    patches_touched = [pm.PROJREGION[index] for index in patches_touched_ids]
-    patches_candidate = [pm.PROJREGION[index] for index in patches_candidate_ids]
-    tangent_point, patch_tp_id_touched = pm.find_closest_tangent_point(
+    patches_touched = [SKYCELLS_TABLE[index] for index in patches_touched_ids]
+    patches_candidate = [SKYCELLS_TABLE[index] for index in patches_candidate_ids]
+    tangent_point, patch_tp_id_touched = find_closest_tangent_point(
         patches_touched, image_corners
     )
     ra, dec = sgv.vector_to_lonlat(*tangent_point)
-    dummy, patch_tp_id = pm.find_closest_tangent_point(patches_candidate, image_corners)
-    vec_image_corners = pm.image_coords_to_vec(image_corners)
-    tp_image_corners = pm.veccoords_to_tangent_plane(vec_image_corners, tangent_point)
+    dummy, patch_tp_id = find_closest_tangent_point(patches_candidate, image_corners)
+    vec_image_corners = image_coords_to_vec(image_corners)
+    tp_image_corners = veccoords_to_tangent_plane(vec_image_corners, tangent_point)
     plot_field(tp_image_corners, fill="lightgrey", color="black")
     for patch, id in zip(patches_candidate, patches_candidate_ids, strict=False):
         plot_patch(
-            pm.veccoords_to_tangent_plane(
-                pm.get_cartesian_corners(patch), tangent_point
-            ),
+            veccoords_to_tangent_plane(get_cartesian_corners(patch), tangent_point),
             id=id,
             color="lightgray",
         )
     for patch, id in zip(patches_touched, patches_touched_ids, strict=False):
         plot_patch(
-            pm.veccoords_to_tangent_plane(
-                pm.get_cartesian_corners(patch), tangent_point
-            ),
+            veccoords_to_tangent_plane(get_cartesian_corners(patch), tangent_point),
             id=id,
             color="blue",
         )

@@ -8,11 +8,13 @@ import logging
 import os
 import os.path
 import re
+from functools import cached_property
 
 import asdf
 import numpy as np
 import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
+from asdf._asdf import AsdfObject
 from astropy import coordinates
 from astropy import units as u
 from astropy.modeling import models
@@ -29,36 +31,306 @@ log.setLevel(logging.DEBUG)
 
 RAD_TO_ARCSEC = 180.0 / np.pi * 3600.0
 
-PROJREGION_TABLE: dict = None
-CANDIDATE_RADIUS = (
-    0.5  # Radius of circle for which projection region centers must lie within
-)
-# to be tested for intersection (in degrees)
+TABLE_ENVIRONMENT_VARIABLE = "SKYCELLS_TABLE_PATH"
+SKYCELLS_TABLE: AsdfObject = None
+
+# Radius in degrees within which projection region centers must lie within to be tested for intersection
+CANDIDATE_RADIUS = 0.5
 
 
-def load_projregion_table(tablepath: str | os.PathLike | None = None):
+def load_skycells_table(tablepath: str | os.PathLike | None = None):
     """
     Load the table of projection regions. If no tablepath is supplied the path is obtained
-    from the environmental variable PROJREGION_TABLE_PATH
+    from the environmental variable SKYCELLS_TABLE_PATH
     """
-    global PROJREGION_TABLE
+    global SKYCELLS_TABLE
     if tablepath is None:
         try:
-            tablepath = os.environ["PROJREGION_TABLE_PATH"]
+            tablepath = os.environ[TABLE_ENVIRONMENT_VARIABLE]
         except KeyError:
-            log.error("PROJREGION_TABLE_PATH environmental variable not found")
+            log.error(f"{TABLE_ENVIRONMENT_VARIABLE} environmental variable not found")
             return
     try:
-        with asdf.open(tablepath) as af:
-            PROJREGION_TABLE = af.tree["roman"]["projection_regions"].copy()
+        SKYCELLS_TABLE = asdf.open(tablepath).tree
     except FileNotFoundError as err:
-        raise FileNotFoundError(
-            "Specified projection region table file path not found"
-        ) from err
+        raise FileNotFoundError(f"skycells table not found at {tablepath}") from err
+
+
+class SkyCell:
+    __name: str
+
+    def __init__(self, name: str):
+        if not re.match(r"r\d{3}\w{2}\d{2}x\d{2}y\d{2}", name):
+            raise ValueError(f"invalid skycell name {name}")
+        self.__name = name
+
+    @classmethod
+    def from_center_and_coordinates(
+        cls,
+        center: tuple[float, float],
+        coordinates: tuple[float, float],
+    ) -> "SkyCell":
+        return cls(
+            f"r{round(center[0]):03}d{'p' if center[1] >= 0 else 'm'}{round(center[1]):02}x{'p' if coordinates[1] >= 0 else 'm'}{coordinates[1]:02}y{'p' if coordinates[1] >= 0 else 'm'}{coordinates[1]:02}"
+        )
+
+    @classmethod
+    def from_index(cls, index: int) -> "SkyCell":
+        if SKYCELLS_TABLE is None:
+            load_skycells_table()
+        return SkyCell(SKYCELLS_TABLE["roman"]["skycells"][index][0])
+
+    @property
+    def name(self) -> str:
+        return self.__name
+
+    @cached_property
+    def index(self) -> int:
+        if SKYCELLS_TABLE is None:
+            load_skycells_table()
+        return np.where(SKYCELLS_TABLE["roman"]["skycells"][:, 0] == self.name)
+
+    @cached_property
+    def record(self) -> AsdfObject:
+        if SKYCELLS_TABLE is None:
+            load_skycells_table()
+        return SKYCELLS_TABLE["roman"]["skycells"][self.index]
+
+    @property
+    def radec_center(self) -> tuple[float, float]:
+        return self.record[1], self.record[2]
+
+    @property
+    def orientation(self) -> float:
+        return self.record["orientat"]
+
+    @property
+    def xy_tangent(self) -> tuple[float, float]:
+        return self.record["x_tangent"], self.record["y_tangent"]
+
+    @property
+    def radec_corners(
+        self,
+    ) -> tuple[
+        tuple[float, float],
+        tuple[float, float],
+        tuple[float, float],
+        tuple[float, float],
+    ]:
+        return (
+            (self.record["ra_corn1"], self.record["dec_corn1"]),
+            (self.record["ra_corn2"], self.record["dec_corn2"]),
+            (self.record["ra_corn3"], self.record["dec_corn3"]),
+            (self.record["ra_corn4"], self.record["dec_corn4"]),
+        )
+
+    @property
+    def polygon(self) -> sgp.SingleSphericalPolygon:
+        # convert all radec points to vectors (the first one is the center point)
+        vectors = normalize_vector(
+            image_coords_to_vec([self.radec_center, *self.radec_corners])
+        )
+
+        # construct polygon from corner points and center point
+        return sgp.SingleSphericalPolygon(points=vectors[1:], inside=vectors[0])
+
+    @cached_property
+    def projection_region(self) -> "ProjectionRegion":
+        return ProjectionRegion.from_skycell_index(self.index)
+
+    @property
+    def pixel_scale(self) -> float:
+        # The scale is given in arcseconds per pixel. Convert to degrees.
+        return SKYCELLS_TABLE["roman"]["meta"]["pixel_scale"] / 3600.0
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        return SKYCELLS_TABLE["roman"]["meta"]["nxy_skycell"], SKYCELLS_TABLE["roman"][
+            "meta"
+        ]["nxy_skycell"]
+
+    @property
+    def wcsinfo(self) -> dict:
+        """WCS info in the form of a Wcsinfo object"""
+        if SKYCELLS_TABLE is None:
+            load_skycells_table()
+
+        return {
+            "pixel_scale": self.pixel_scale,
+            "ra_ref": self.radec_center[0],
+            "dec_ref": self.radec_center[1],
+            "x_ref": self.xy_tangent[0],
+            "y_ref": self.xy_tangent[1],
+            "orientat": self.orientation,
+            "rotation_matrix": None,
+        }
+
+    @cached_property
+    def wcs(self) -> WCS:
+        """WCS object"""
+        if SKYCELLS_TABLE is None:
+            load_skycells_table()
+
+        # Bounding box of the skycell. Note that the center of the pixels are at (0.5, 0.5)
+        bounding_box = (
+            (-0.5, -0.5 + self.shape[0]),
+            (-0.5, -0.5 + self.shape[1]),
+        )
+
+        wcsobj = wcsinfo_to_wcs(
+            wcsinfo=self.wcsinfo, bounding_box=bounding_box, name=self.name
+        )
+        wcsobj.array_shape = tuple(
+            int(axs[1] - axs[0] + 0.5)
+            for axs in wcsobj.bounding_box.bounding_box(order="C")
+        )
+
+        return wcsobj
+
+
+class ProjectionRegion:
+    __index: int
+
+    def __init__(self, index: int):
+        self.__index = index
+
+    @classmethod
+    def from_skycell_index(cls, index: int) -> "ProjectionRegion":
+        if SKYCELLS_TABLE is None:
+            load_skycells_table()
+
+        for projregion in SKYCELLS_TABLE["projection_regions"]:
+            if (
+                int(projregion["skycell_start"])
+                < index
+                < int(projregion["skycell_end"])
+            ):
+                return cls(projregion[0])
+        else:
+            raise KeyError(
+                f"sky cell index {index} not found in any projection regions"
+            )
+
+    @property
+    def index(self) -> int:
+        return self.__index
+
+    @cached_property
+    def data(self) -> AsdfObject:
+        if SKYCELLS_TABLE is None:
+            load_skycells_table()
+        return SKYCELLS_TABLE["roman"]["projection_regions"][self.index]
+
+    @property
+    def radec_tangent(self) -> tuple[float, float]:
+        return self.data[1], self.data[2]
+
+    @property
+    def radec_bounds(self) -> tuple[float, float, float, float]:
+        return (
+            self.data[3],
+            self.data[4],
+            self.data[5],
+            self.data[6],
+        )
+
+    @property
+    def orientation(self) -> float:
+        return self.data[7]
+
+    @property
+    def xy_tangent(self) -> tuple[float, float]:
+        return self.data[8], self.data[9]
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        return self.data[10], self.data[11]
+
+    @property
+    def skycell_index_range(self) -> tuple[int, int]:
+        return self.data[12], self.data[13]
+
+    @cached_property
+    def radec_center(self) -> tuple[float, float]:
+        return np.mean(
+            [(self.data[3], self.data[5]), (self.data[4], self.data[6])], axis=0
+        )
+
+    @property
+    def radec_corners(
+        self,
+    ) -> tuple[
+        tuple[float, float],
+        tuple[float, float],
+        tuple[float, float],
+        tuple[float, float],
+    ]:
+        """in clockwise order"""
+        return (
+            (self.data[3], self.data[5]),
+            (self.data[3], self.data[6]),
+            (self.data[4], self.data[5]),
+            (self.data[4], self.data[6]),
+        )
+
+    @property
+    def polygon(self) -> sgp.SingleSphericalPolygon:
+        # convert all radec points to vectors (the first one is the center point)
+        vectors = normalize_vector(
+            image_coords_to_vec([self.radec_center, *self.radec_corners])
+        ).T
+
+        # construct polygon from corner points and center point
+        return sgp.SingleSphericalPolygon(points=vectors[1:], inside=vectors[0])
+
+    @property
+    def pixel_scale(self) -> float:
+        # The scale is given in arcseconds per pixel. Convert to degrees.
+        return SKYCELLS_TABLE["roman"]["meta"]["pixel_scale"] / 3600.0
+
+    @property
+    def wcsinfo(self) -> dict:
+        if SKYCELLS_TABLE is None:
+            load_skycells_table()
+
+        return {
+            "pixel_scale": self.pixel_scale,
+            "ra_ref": self.radec_center[0],
+            "dec_ref": self.radec_center[1],
+            "x_ref": self.xy_tangent[0],
+            "y_ref": self.xy_tangent[1],
+            "orientat": self.orientation,
+            "rotation_matrix": None,
+        }
+
+    @cached_property
+    def wcs(self) -> WCS:
+        if SKYCELLS_TABLE is None:
+            load_skycells_table()
+
+        # Bounding box of the projection region. Note that the center of the pixels are at (0.5, 0.5)
+        bounding_box = (
+            (-0.5, -0.5 + self.shape[0]),
+            (-0.5, -0.5 + self.shape[1]),
+        )
+
+        wcsobj = wcsinfo_to_wcs(
+            wcsinfo=self.wcsinfo,
+            bounding_box=bounding_box,
+            name=f"projregion {self.index}",
+        )
+        wcsobj.array_shape = tuple(
+            int(axs[1] - axs[0] + 0.5)
+            for axs in wcsobj.bounding_box.bounding_box(order="C")
+        )
+
+        return wcsobj
 
 
 def image_coords_to_vec(
-    image_corners: list[tuple[float, float]] | tuple[list[float], list[float]],
+    image_corners: list[tuple[float, float]]
+    | tuple[list[float], list[float]]
+    | NDArray[float],
 ) -> NDArray[float]:
     """
     This routine can handle the corners in both organizations, whether
@@ -101,9 +373,9 @@ def find_proj_matches(
     necessary information about the projection regions.
     """
 
-    if PROJREGION_TABLE is None:
-        load_projregion_table()
-    if PROJREGION_TABLE is None:
+    if SKYCELLS_TABLE is None:
+        load_skycells_table()
+    if SKYCELLS_TABLE is None:
         raise RuntimeError("No projection region table has been loaded")
     if isinstance(image_corners, WCS):
         iwcs = image_corners
@@ -137,9 +409,10 @@ def find_proj_matches(
             (-0.5, image_shape[0] - 0.5),
         )
         image_corners = (iwcs(cxp, cyp), iwcs(cxm, cyp), iwcs(cxm, cym), iwcs(cxp, cym))
-    ptab = PROJREGION_TABLE
-    ra = ptab[:]["ra_center"]
-    dec = ptab[:]["dec_center"]
+    ptab = SKYCELLS_TABLE
+    skycells = ptab["skycells"]
+    ra = skycells[:]["ra_center"]
+    dec = skycells[:]["dec_center"]
     # # Convert all celestial coordinates to cartesion coordinates.
     vec_centers = np.array(sgv.lonlat_to_vector(ra, dec)).transpose()
     # # Organize corners into two ra, dec lists
@@ -156,14 +429,14 @@ def find_proj_matches(
     # Now see which of these that are close actually overlap the supplied image.
     # (Is it necessary to check that the corners are in a sensible order?)
     # All the corner coordinates are returned as arrays.
-    mra1 = ptab[match]["ra_corn1"]
-    mra2 = ptab[match]["ra_corn2"]
-    mra3 = ptab[match]["ra_corn3"]
-    mra4 = ptab[match]["ra_corn4"]
-    mdec1 = ptab[match]["dec_corn1"]
-    mdec2 = ptab[match]["dec_corn2"]
-    mdec3 = ptab[match]["dec_corn3"]
-    mdec4 = ptab[match]["dec_corn4"]
+    mra1 = skycells[match]["ra_corn1"]
+    mra2 = skycells[match]["ra_corn2"]
+    mra3 = skycells[match]["ra_corn3"]
+    mra4 = skycells[match]["ra_corn4"]
+    mdec1 = skycells[match]["dec_corn1"]
+    mdec2 = skycells[match]["dec_corn2"]
+    mdec3 = skycells[match]["dec_corn3"]
+    mdec4 = skycells[match]["dec_corn4"]
     mcenters = vec_centers[match]
     mra = np.vstack([mra1, mra2, mra3, mra4, mra1])
     mdec = np.vstack([mdec1, mdec2, mdec3, mdec4, mdec1])
@@ -283,7 +556,7 @@ def veccoords_to_tangent_plane(
 
 def wcsinfo_to_wcs(
     wcsinfo: dict | stnode.Wcsinfo,
-    bounding_box: None | tuple[float, float, float, float] = None,
+    bounding_box: None | tuple[tuple[float, float], tuple[float, float]] = None,
     name: str = "wcsinfo",
 ) -> WCS:
     """Create a GWCS from the L3 wcsinfo meta
@@ -385,15 +658,14 @@ def skycell_to_wcs(skycell_record):
     return wcsobj
 
 
-def to_skycell_wcs(library: ModelLibrary) -> WCS:
+def to_skycell_wcs(library: ModelLibrary) -> WCS | None:
     """If available read the skycell WCS from the input library association.
 
     If the association information contains a "skycell_wcs_info" entry that
     is not "none" it will be interpreted as a skycell wcs. If not, the
     association "target" name will be checked. If it matches a skycell
-    name the patch table will be loaded and the skycell wcs will be
-    looked up based on the name. If neither condition is met None
-    will be returned.
+    name the skycell table will be loaded and a WCS constructed based on the name.
+    If neither condition is met None will be returned.
 
     Parameters
     ----------
@@ -408,7 +680,7 @@ def to_skycell_wcs(library: ModelLibrary) -> WCS:
     """
 
     if "skycell_wcs_info" in library.asn and library.asn["skycell_wcs_info"] != "none":
-        skycell_record = library.asn["skycell_wcs_info"]
+        skycell_asn_record = library.asn["skycell_wcs_info"]
     else:
         if "target" not in library.asn:
             return None
@@ -418,58 +690,24 @@ def to_skycell_wcs(library: ModelLibrary) -> WCS:
         if not re.match(r"r\d{3}\w{2}\d{2}x\d{2}y\d{2}", skycell_name):
             return None
 
-        if PROJREGION_TABLE is None:
-            load_projregion_table()
-        skycell_record = PROJREGION_TABLE[
-            np.where(PROJREGION_TABLE["name"][:] == skycell_name)[0][0]
+        if SKYCELLS_TABLE is None:
+            load_skycells_table()
+        skycell_asn_record = SKYCELLS_TABLE[
+            np.where(SKYCELLS_TABLE["name"][:] == skycell_name)[0][0]
         ]
-    log.info("Skycell record %s:", skycell_record)
+
+    log.info("Skycell record %s:", skycell_asn_record)
 
     # extract the wcs info from the record for skycell_to_wcs
     log.info(
         "Creating skycell image at ra: %f  dec %f",
-        float(skycell_record["ra_center"]),
-        float(skycell_record["dec_center"]),
+        float(skycell_asn_record["ra_center"]),
+        float(skycell_asn_record["dec_center"]),
     )
-    return skycell_to_wcs(skycell_record)
+    return skycell_to_wcs(skycell_asn_record)
 
 
 def get_projectioncell_wcs(index: np.int64) -> dict | None:
     """Return the projection cell wcs info as a dictionary based on the db index number"""
 
-    # check to see if an index is being passed
-    if not isinstance(index, np.int64):
-        log.info("Input index needs to be a numpy int64 variable")
-        return None
-
-    # check to see if the patch table is loaded if not load it
-    if PROJREGION_TABLE is None:
-        load_projregion_table()
-
-    projcell_info = dict(
-        [
-            ("name", PROJREGION_TABLE[index]["name"]),
-            ("pixel_scale", float(PROJREGION_TABLE[index]["pixel_scale"])),
-            (
-                "ra_projection_center",
-                float(PROJREGION_TABLE[index]["ra_projection_center"]),
-            ),
-            (
-                "dec_projection_center",
-                float(PROJREGION_TABLE[index]["dec_projection_center"]),
-            ),
-            ("x0_projection", float(PROJREGION_TABLE[index]["x0_projection"])),
-            ("y0_projection", float(PROJREGION_TABLE[index]["y0_projection"])),
-            ("ra_center", float(PROJREGION_TABLE[index]["ra_center"])),
-            ("dec_center", float(PROJREGION_TABLE[index]["dec_center"])),
-            ("nx", int(PROJREGION_TABLE[index]["nx"])),
-            ("ny", int(PROJREGION_TABLE[index]["ny"])),
-            ("orientat", float(PROJREGION_TABLE[index]["orientat"])),
-            (
-                "orientat_projection_center",
-                float(PROJREGION_TABLE[index]["orientat_projection_center"]),
-            ),
-        ]
-    )
-
-    return projcell_info
+    return SkyCell.from_index(index).wcsinfo

@@ -7,11 +7,10 @@ import sys
 import numpy as np
 import roman_datamodels as rdm
 
-import romancal.proj_match.proj_match as pm
+import romancal.skycell.match as sm
 from romancal.associations import asn_from_list
 from romancal.associations.lib.utilities import mk_level3_asn_name
 from romancal.lib.basic_utils import parse_visitID as parse_visitID
-from romancal.proj_match.proj_match import get_projectioncell_wcs
 
 __all__ = ["skycell_asn"]
 
@@ -48,7 +47,7 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
     for file_name in filelist:
         cal_file = rdm.open(file_name)
         filter_id = cal_file.meta.instrument.optical_element.lower()
-        file_patch_list = pm.find_proj_matches(cal_file.meta.wcs)
+        file_patch_list = sm.find_proj_matches(cal_file.meta.wcs)
         logger.info(f"Patch List:{file_name}, {file_patch_list[0]}")
         file_list.append([file_name, file_patch_list[0]])
         all_patches.append(file_patch_list[0])
@@ -56,13 +55,13 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
     unique_patches = np.unique(np.concatenate(all_patches))
     for item in unique_patches:
         member_list = []
-        patch_name = pm.PROJREGION_TABLE[item]["name"]
+        patch_name = sm.SKYCELLS_TABLE[item]["name"]
         for a in file_list:
             if np.isin(item, a[1]):
                 member_list.append(a[0])
 
         # grab all the wcs parameters needed for generate_tan_wcs
-        projcell_info = get_projectioncell_wcs(item)
+        projcell_info = sm.get_projectioncell_wcs(item)
         parsed_visit_id = parse_visitID(member_list[0][1:20])
         program_id = parsed_visit_id["Program"]
         asn_file_name = mk_level3_asn_name(

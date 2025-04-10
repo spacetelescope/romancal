@@ -273,8 +273,8 @@ name = "``mosaic_pipeline``"
 showcontent = true
 
 [[tool.towncrier.type]]
-directory = "proj_match"
-name = "``proj_match``"
+directory = "skycell"
+name = "``skycell``"
 showcontent = true
 
 # steps
