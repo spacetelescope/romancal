@@ -151,7 +151,6 @@ class SkyCell:
 
     @property
     def wcsinfo(self) -> dict:
-        """WCS info in the form of a Wcsinfo object"""
         if SKYCELLS_TABLE is None:
             load_skycells_table()
 
@@ -167,7 +166,6 @@ class SkyCell:
 
     @cached_property
     def wcs(self) -> WCS:
-        """WCS object"""
         if SKYCELLS_TABLE is None:
             load_skycells_table()
 
@@ -348,10 +346,10 @@ def image_coords_to_vec(
     return vec_im_corners
 
 
-def find_proj_matches(
+def find_skycell_matches(
     image_corners: list[tuple[float, float]] | NDArray[float] | WCS,
     image_shape: tuple[int, int] | None = None,
-):
+) -> tuple[list[int], list[int]]:
     """Find projection regions that the image overlaps with
 
     Parameters
@@ -405,8 +403,8 @@ def find_proj_matches(
                 image_shape = (iwcs.pixel_shape[1], iwcs.pixel_shape[0])
         # Compute the image corners ra, dec from the wcs
         (cxm, cxp), (cym, cyp) = (
-            (-0.5, image_shape[1] - 0.5),
-            (-0.5, image_shape[0] - 0.5),
+            (-0.5, image_shape[1] - 0.5),  # type: ignore[index]
+            (-0.5, image_shape[0] - 0.5),  # type: ignore[index]
         )
         image_corners = (iwcs(cxp, cyp), iwcs(cxm, cyp), iwcs(cxm, cym), iwcs(cxp, cym))
     ptab = SKYCELLS_TABLE
@@ -424,20 +422,20 @@ def find_proj_matches(
     # Compute difference vector between image center and projection region centers
     diff = vec_centers - im_center
     dist = np.sqrt((diff**2).sum(axis=1)) * 180 / np.pi
-    match = np.where(dist < 0.5)
-    ncandidates = len(match[0])
+    indices = np.where(dist < 0.5)
+    ncandidates = len(indices[0])
     # Now see which of these that are close actually overlap the supplied image.
     # (Is it necessary to check that the corners are in a sensible order?)
     # All the corner coordinates are returned as arrays.
-    mra1 = skycells[match]["ra_corn1"]
-    mra2 = skycells[match]["ra_corn2"]
-    mra3 = skycells[match]["ra_corn3"]
-    mra4 = skycells[match]["ra_corn4"]
-    mdec1 = skycells[match]["dec_corn1"]
-    mdec2 = skycells[match]["dec_corn2"]
-    mdec3 = skycells[match]["dec_corn3"]
-    mdec4 = skycells[match]["dec_corn4"]
-    mcenters = vec_centers[match]
+    mra1 = skycells[indices]["ra_corn1"]
+    mra2 = skycells[indices]["ra_corn2"]
+    mra3 = skycells[indices]["ra_corn3"]
+    mra4 = skycells[indices]["ra_corn4"]
+    mdec1 = skycells[indices]["dec_corn1"]
+    mdec2 = skycells[indices]["dec_corn2"]
+    mdec3 = skycells[indices]["dec_corn3"]
+    mdec4 = skycells[indices]["dec_corn4"]
+    mcenters = vec_centers[indices]
     mra = np.vstack([mra1, mra2, mra3, mra4, mra1])
     mdec = np.vstack([mdec1, mdec2, mdec3, mdec4, mdec1])
     points = np.array(sgv.lonlat_to_vector(mra, mdec))
@@ -455,7 +453,7 @@ def find_proj_matches(
         if impoly.intersects_poly(cellpoly):
             # print(f"candidate {i} intersects")
             realmatch.append(i)
-    return match[0][realmatch], match[0]
+    return indices[0][realmatch], indices[0]
 
 
 def get_cartesian_corners(
@@ -705,9 +703,3 @@ def to_skycell_wcs(library: ModelLibrary) -> WCS | None:
         float(skycell_asn_record["dec_center"]),
     )
     return skycell_to_wcs(skycell_asn_record)
-
-
-def get_projectioncell_wcs(index: np.int64) -> dict | None:
-    """Return the projection cell wcs info as a dictionary based on the db index number"""
-
-    return SkyCell.from_index(index).wcsinfo
