@@ -26,7 +26,7 @@ class TableBuilder:
             self._columns[name] = [MISSING_CELL] * row_index
         return self._columns[name]
 
-    def _santize_value(self, value):
+    def _sanitize_value(self, value):
         if isinstance(value, list | dict | AsdfDictNode | AsdfListNode):
             return str(value)
         return value
