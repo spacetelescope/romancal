@@ -7,10 +7,9 @@ import sys
 
 import numpy as np
 
-import romancal.proj_match.proj_match as pm
+import romancal.skycell.match as sm
 from romancal.associations import asn_from_list
 from romancal.lib.basic_utils import parse_visitID
-from romancal.proj_match.proj_match import get_projectioncell_wcs
 
 __all__ = ["mk_skycell_asn_from_patchlist"]
 
@@ -55,16 +54,16 @@ def mk_skycell_asn_from_patchlist(filelist, release_product, optical_element):
     logger.debug(f"patch_array: {patch_array}")
     unique_patches = np.unique(np.concatenate(patch_array))
     logger.info(f"Unique Patches: {unique_patches}")
-    pm.load_patch_table()
+    sm.load_skycells_table()
     for item in unique_patches:
         member_list = []
-        patch_name = pm.PROJREGION_TABLE[item]["name"]
+        patch_name = sm.SKYCELLS_TABLE[item]["name"]
         for entry in patch_list:
             if np.isin(item, entry[1]):
                 member_list.append(os.path.basename(entry[0]).split(".")[0])
 
         # grab all the wcs parameters needed for generate_tan_wcs
-        projcell_info = get_projectioncell_wcs(item)
+        projcell_info = sm.get_projectioncell_wcs(item)
         parsed_visit_id = parse_visitID(member_list[0][1:20])
         program_id = parsed_visit_id["Program"]
 

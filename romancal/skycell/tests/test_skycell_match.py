@@ -37,15 +37,16 @@ import pytest
 import spherical_geometry.vector as sgv
 from spherical_geometry.vector import rotate_around as rotate
 
-import romancal.proj_match.proj_match as pm
+import romancal.skycell.match as sm
 
 SKYCELLS_SUBSET_PATH = Path(__file__).parent / "skycells_subset.asdf"
 # do not use load_patch_table here as it will modify global state
 with asdf.open(SKYCELLS_SUBSET_PATH) as af:
     SKYCELLS_SUBSET = af["roman"]["skycells"].copy()
+    PROJREGION_TABLE = af["roman"]["projection_regions"].copy()
 
-print(SKYCELLS_SUBSET)
-crecord = SKYCELLS_SUBSET[np.where(SKYCELLS_SUBSET[:]["index"] == 925050)]
+print(SKYCELLS_SUBSET[:]["name"])
+crecord = SKYCELLS_SUBSET[np.where(SKYCELLS_SUBSET[:]["name"] == 925050)]
 cra = crecord["ra_corn3"]
 if len(cra) == 1:
     cra = cra[0]
@@ -65,7 +66,7 @@ def override_patch_table(monkeypatch):
     PROJREGION_TABLE to a smaller PATCH_SUBSET to allow these tests
     to run without access to the full patch table.
     """
-    monkeypatch.setattr(pm, "PROJREGION_TABLE", SKYCELLS_SUBSET)
+    monkeypatch.setattr(sm, "SKYCELLS_TABLE", SKYCELLS_SUBSET)
     yield
 
 
@@ -180,7 +181,7 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
 )
 def test_corners(pars, expected):
     corners = mk_im_corners(*pars)
-    matches, close = pm.find_proj_matches(corners)
+    matches, close = sm.find_proj_matches(corners)
     # map matches to absolute index
     mmatches = tuple([SKYCELLS_SUBSET[match]["index"] for match in matches])
     assert tuple(mmatches) == expected
@@ -189,18 +190,18 @@ def test_corners(pars, expected):
 def test_wcs_corners():
     imshape = (4096, 4096)
     wcsobj = mk_gwcs()
-    matches, close = pm.find_proj_matches(wcsobj, image_shape=imshape)
+    matches, close = sm.find_proj_matches(wcsobj, image_shape=imshape)
     mmatches = tuple([SKYCELLS_SUBSET[match]["index"] for match in matches])
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.pixel_shape = imshape
-    matches, close = pm.find_proj_matches(wcsobj)
+    matches, close = sm.find_proj_matches(wcsobj)
     mmatches = tuple([SKYCELLS_SUBSET[match]["index"] for match in matches])
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.pixel_shape = None
     wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
-    matches, close = pm.find_proj_matches(wcsobj)
+    matches, close = sm.find_proj_matches(wcsobj)
     mmatches = tuple([SKYCELLS_SUBSET[match]["index"] for match in matches])
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.bounding_box = None
     with pytest.raises(ValueError):
-        matches, close = pm.find_proj_matches(wcsobj)
+        matches, close = sm.find_proj_matches(wcsobj)
