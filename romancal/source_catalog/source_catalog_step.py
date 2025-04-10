@@ -237,10 +237,11 @@ class SourceCatalogStep(RomanStep):
         if getattr(self, "return_updated_model", False):
             # define the catalog filename; self.save_model will
             # determine whether to use a fully qualified path
-            self.output_ext = "asdf"
+            self.output_ext = "parquet"
             output_catalog_name = self.make_output_path(
                 basepath=model.meta.filename, suffix="cat"
             )
+            self.output_ext = "asdf"
 
             # set the suffix to something else to prevent the step from
             # overwriting the source catalog file with a datamodel

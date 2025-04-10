@@ -17,7 +17,7 @@ def test_tweakreg(rtdata, ignore_asdf_paths, tmp_path, resource_tracker, request
     # the wcsinfo is perturbed, and AssignWCS is run to update the WCS with the
     # perturbed information
     orig_uncal = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
-    orig_catfile = "r0000101001001001001_0001_wfi01_f158_cat.asdf"
+    orig_catfile = "r0000101001001001001_0001_wfi01_f158_cat.parquet"
     input_data = "r0000101001001001001_0001_wfi01_f158_shift_cal.asdf"
     output_data = "r0000101001001001001_0001_wfi01_f158_shift_tweakregstep.asdf"
     truth_data = "r0000101001001001001_0001_wfi01_f158_shift_tweakregstep.asdf"

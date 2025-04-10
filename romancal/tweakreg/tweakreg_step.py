@@ -353,14 +353,14 @@ class TweakRegStep(RomanStep):
         ValueError
             If the catalog format is unsupported.
         """
+        filetype = ("parquet" if catalog_name.endswith("parquet")
+                    else self.catalog_format)
         if catalog_name.endswith("asdf"):
             # leave this for now
             with rdm.open(catalog_name) as source_catalog_model:
                 catalog = source_catalog_model.source_catalog
-        elif catalog_name.endswith("parquet"):
-            catalog = pyarrow.parquet.read_table(catalog_name)
         else:
-            catalog = Table.read(catalog_name, format=self.catalog_format)
+            catalog = Table.read(catalog_name, format=filetype)
         return catalog
 
     def get_tweakreg_catalog(self, source_catalog, image_model):
