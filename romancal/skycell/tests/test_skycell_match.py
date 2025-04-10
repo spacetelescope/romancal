@@ -181,27 +181,37 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
 )
 def test_corners(pars, expected):
     corners = mk_im_corners(*pars)
-    matches, close = sm.find_proj_matches(corners)
+    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(corners)
     # map matches to absolute index
-    mmatches = tuple([SKYCELLS_SUBSET[match]["index"] for match in matches])
+    mmatches = tuple(
+        [SKYCELLS_SUBSET[match]["index"] for match in intersecting_skycells]
+    )
     assert tuple(mmatches) == expected
 
 
 def test_wcs_corners():
     imshape = (4096, 4096)
     wcsobj = mk_gwcs()
-    matches, close = sm.find_proj_matches(wcsobj, image_shape=imshape)
-    mmatches = tuple([SKYCELLS_SUBSET[match]["index"] for match in matches])
+    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
+        wcsobj, image_shape=imshape
+    )
+    mmatches = tuple(
+        [SKYCELLS_SUBSET[match]["index"] for match in intersecting_skycells]
+    )
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.pixel_shape = imshape
-    matches, close = sm.find_proj_matches(wcsobj)
-    mmatches = tuple([SKYCELLS_SUBSET[match]["index"] for match in matches])
+    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
+    mmatches = tuple(
+        [SKYCELLS_SUBSET[match]["index"] for match in intersecting_skycells]
+    )
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.pixel_shape = None
     wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
-    matches, close = sm.find_proj_matches(wcsobj)
-    mmatches = tuple([SKYCELLS_SUBSET[match]["index"] for match in matches])
+    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
+    mmatches = tuple(
+        [SKYCELLS_SUBSET[match]["index"] for match in intersecting_skycells]
+    )
     assert tuple(mmatches) == (925050, 925051, 925150, 925151)
     wcsobj.bounding_box = None
     with pytest.raises(ValueError):
-        matches, close = sm.find_proj_matches(wcsobj)
+        intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
