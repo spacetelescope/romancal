@@ -1,5 +1,5 @@
 """
-Plotting utilities for plotting patches against supplied image
+Plotting utilities for plotting skycells against supplied image
 
 matplotlib dependency is optional.
 """
@@ -26,19 +26,19 @@ def plot_field(corners, id="", fill=None, color=None):
     plt.fill(corners[0], corners[1], color=fill, edgecolor=color)
 
 
-def plot_patch(corners, id="", color=None):
+def plot_skycell(corners, id="", color=None):
     plt.plot(corners[0], corners[1], color=color)
     if id:
-        idstr = str(SKYCELLS_TABLE[id]["index"])
+        idstr = str(SKYCELLS_TABLE["skycells"][id]["index"])
         center = (corners[0][:-1].mean(), corners[1][:-1].mean())
         plt.annotate(idstr, center, va="center", ha="center", size=10)
 
 
-def plot(image_corners, patches_touched_ids, patches_candidate_ids):
+def plot(image_corners, touched_skycell_ids, candidate_skycell_indices):
     """
-    This plots a list of patch footprints against the image footprint.
+    This plots a list of skycell footprints against the image footprint.
 
-    Both the touched patchs as well as candidate patches are plotted.
+    Both the touched skycells as well as candidate skycells are plotted.
 
 
     Parameters
@@ -46,35 +46,45 @@ def plot(image_corners, patches_touched_ids, patches_candidate_ids):
     image_corners : Either a squence of 4 (ra, dec) pairs, or
         equivalent 2-d numpy array
 
-    patches_touched_ids: A list of the indices into the patch table of
-        patches touched by the image footprint.
+    touched_skycell_ids: A list of the indices in the skycell table of
+        skycells touched by the image footprint.
 
-    patches_candidate_ids: A list of the indices selected to see if they
+    candidate_skycell_ids: A list of the indices selected to see if they
         close enough to test if touched by the image footprint.
     """
     plt.clf()
     plt.gca().invert_xaxis()
     plt.plot(0, 0, "*", markersize=10)
-    patches_touched = [SKYCELLS_TABLE[index] for index in patches_touched_ids]
-    patches_candidate = [SKYCELLS_TABLE[index] for index in patches_candidate_ids]
-    tangent_point, patch_tp_id_touched = find_closest_tangent_point(
-        patches_touched, image_corners
+    touched_skycells = [SKYCELLS_TABLE[index] for index in touched_skycell_ids]
+    candidate_skycells = [SKYCELLS_TABLE[index] for index in candidate_skycell_indices]
+    tangent_point, touched_skycell_index = find_closest_tangent_point(
+        touched_skycells, image_corners
     )
     ra, dec = sgv.vector_to_lonlat(*tangent_point)
-    dummy, patch_tp_id = find_closest_tangent_point(patches_candidate, image_corners)
+    dummy, skycell_tp_index = find_closest_tangent_point(
+        candidate_skycells, image_corners
+    )
     vec_image_corners = image_coords_to_vec(image_corners)
     tp_image_corners = veccoords_to_tangent_plane(vec_image_corners, tangent_point)
     plot_field(tp_image_corners, fill="lightgrey", color="black")
-    for patch, id in zip(patches_candidate, patches_candidate_ids, strict=False):
-        plot_patch(
-            veccoords_to_tangent_plane(get_cartesian_corners(patch), tangent_point),
-            id=id,
+    for candidate_skycell, candidate_skycell_index in zip(
+        candidate_skycells, candidate_skycell_indices, strict=False
+    ):
+        plot_skycell(
+            veccoords_to_tangent_plane(
+                get_cartesian_corners(candidate_skycell), tangent_point
+            ),
+            id=candidate_skycell_index,
             color="lightgray",
         )
-    for patch, id in zip(patches_touched, patches_touched_ids, strict=False):
-        plot_patch(
-            veccoords_to_tangent_plane(get_cartesian_corners(patch), tangent_point),
-            id=id,
+    for touched_skycell, touched_skycell_index in zip(
+        touched_skycells, touched_skycell_ids, strict=False
+    ):
+        plot_skycell(
+            veccoords_to_tangent_plane(
+                get_cartesian_corners(touched_skycell), tangent_point
+            ),
+            id=touched_skycell_index,
             color="blue",
         )
     plt.xlabel("Offset from nearest tangent point in arcsec")

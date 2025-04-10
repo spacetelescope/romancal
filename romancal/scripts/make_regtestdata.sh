@@ -20,11 +20,6 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-if [ -z "${PATCH_TABLE_PATH}" ]; then
-    echo "Please set the PATCH_TABLE_PATH environment variable"
-    exit 1
-fi
-
 outdir="$1"
 
 logfile="$outdir/make_regtestdata.log"

@@ -24,8 +24,8 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
     """
     Create the skycell association from the list of files.
 
-    This function processes a list of files, identifies matching patches, generates
-    TAN WCS parameters, and creates an association file for the identified sky patches.
+    This function processes a list of files, identifies matching skycells, generates
+    TAN WCS parameters, and creates an association file for the identified skycells.
 
     Parameters
     ----------
@@ -42,26 +42,28 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
     -------
     None
     """
-    all_patches = []
+    skycell_indices = []
     file_list = []
     for file_name in filelist:
         cal_file = rdm.open(file_name)
         filter_id = cal_file.meta.instrument.optical_element.lower()
-        file_patch_list = sm.find_proj_matches(cal_file.meta.wcs)
-        logger.info(f"Patch List:{file_name}, {file_patch_list[0]}")
-        file_list.append([file_name, file_patch_list[0]])
-        all_patches.append(file_patch_list[0])
+        intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
+            cal_file.meta.wcs
+        )
+        logger.info(f"Skycell List:{file_name}, {intersecting_skycells}")
+        file_list.append([file_name, intersecting_skycells])
+        skycell_indices.extend(intersecting_skycells)
 
-    unique_patches = np.unique(np.concatenate(all_patches))
-    for item in unique_patches:
+    unique_skycell_indices = np.unique(skycell_indices)
+    for skycell_index in unique_skycell_indices:
         member_list = []
-        patch_name = sm.SKYCELLS_TABLE[item]["name"]
+        skycell = sm.SkyCell(skycell_index)
         for a in file_list:
-            if np.isin(item, a[1]):
+            if np.isin(skycell_index, a[1]):
                 member_list.append(a[0])
 
         # grab all the wcs parameters needed for generate_tan_wcs
-        projcell_info = sm.get_projectioncell_wcs(item)
+        projcell_info = skycell.wcsinfo
         parsed_visit_id = parse_visitID(member_list[0][1:20])
         program_id = parsed_visit_id["Program"]
         asn_file_name = mk_level3_asn_name(
@@ -70,7 +72,7 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
             filter_id,
             release_product,
             product_type,
-            patch_name,
+            skycell.name,
         )
 
         prompt_product_asn = asn_from_list.asn_from_list(
@@ -78,7 +80,7 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
         )
         prompt_product_asn["asn_type"] = "image"
         prompt_product_asn["program"] = program_id
-        prompt_product_asn["target"] = patch_name
+        prompt_product_asn["target"] = skycell.name
         prompt_product_asn["skycell_wcs_info"] = projcell_info
 
         _, serialized = prompt_product_asn.dump(format="json")
