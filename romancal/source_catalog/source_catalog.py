@@ -427,6 +427,8 @@ class RomanSourceCatalog:
             "Right ascension (ICRS) of the windowed source centroid"
         )
         col["dec_centroid_win"] = "Declination (ICRS) of the windowed source centroid"
+        col["ra_psf"] = "Right ascension (ICRS) of the fitted-PSF position"
+        col["dec_psf"] = "Declination (ICRS) of the fitted_PSF position"
 
         col["bbox_xmin"] = (
             "Column index of the left edge of the source bounding box (0 indexed)"
@@ -573,6 +575,10 @@ class RomanSourceCatalog:
             "ra_centroid_win",
             "dec_centroid_win",
         ]
+        psf_skycoord_colnames = [
+            "ra_psf",
+            "dec_psf",
+        ]
         det_colnames = [
             "bbox_xmin",
             "bbox_xmax",
@@ -614,6 +620,8 @@ class RomanSourceCatalog:
             if self.fit_psf:
                 colnames.extend(psf_xypos_colnames)
             colnames.extend(skycoord_colnames)
+            if self.fit_psf:
+                colnames.extend(psf_skycoord_colnames)
             colnames.extend(det_colnames)
             colnames.extend(band_colnames)
             colnames.extend(self.flux_colnames)
@@ -633,7 +641,8 @@ class RomanSourceCatalog:
             colnames = ["label"]  # label is needed to join the filter catalogs
             if self.fit_psf:
                 colnames.extend(psf_xypos_colnames)
-            colnames.extend(psf_flags_colnames)
+                colnames.extend(psf_skycoord_colnames)
+                colnames.extend(psf_flags_colnames)
             colnames.extend(band_colnames)
             colnames.extend(self.flux_colnames)
 
