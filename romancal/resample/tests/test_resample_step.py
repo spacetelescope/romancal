@@ -254,10 +254,6 @@ def test_populate_mosaic_basic(base_image, meta_overrides, expected_basic):
 
         model.meta.exposure.start_time = Time(59000 + i, format="mjd")
         model.meta.exposure.end_time = Time(59001 + i, format="mjd")
-        model.meta.exposure.mid_time = Time(
-            (model.meta.exposure.start_time.mjd + model.meta.exposure.end_time.mjd) / 2,
-            format="mjd",
-        )
         model.meta.exposure.exposure_time = 3600 * 24
 
         for key, value in meta_override.items():
@@ -275,7 +271,8 @@ def test_populate_mosaic_basic(base_image, meta_overrides, expected_basic):
         output_model.meta.basic.time_last_mjd == models[-1].meta.exposure.end_time.mjd
     )
     assert output_model.meta.basic.time_mean_mjd == np.mean(
-        [m.meta.exposure.mid_time.mjd for m in models]
+        [m.meta.exposure.start_time.mjd + m.meta.exposure.exposure_time / 60 / 60 / 24
+         for m in models]
     )
 
     for key, value in expected_basic.items():
