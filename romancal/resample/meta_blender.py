@@ -51,8 +51,10 @@ class MetaBlender:
         self._model["individual_image_cal_logs"].append(model.meta.cal_logs)
         self._meta.resample.members.append(model.meta.filename)
 
-        mid_time = (model.meta.exposure.start_time.mjd +
-                    model.meta.exposure.exposure_time / 60 / 60 / 24)
+        mid_time = (
+            model.meta.exposure.start_time.mjd
+            + model.meta.exposure.exposure_time / 60 / 60 / 24
+        )
         self._mid_mjds.append(mid_time)
 
         # FIXME this is an existing hack that we have to reproduce here
