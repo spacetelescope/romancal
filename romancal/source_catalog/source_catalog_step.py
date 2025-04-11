@@ -17,6 +17,7 @@ from roman_datamodels.stnode import SourceCatalog
 from romancal.multiband_catalog import utils
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
+from romancal.source_catalog.save_utils import save_segment_image
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
 
@@ -207,8 +208,28 @@ class SourceCatalogStep(RomanStep):
         # put the resulting catalog in the model
         source_catalog_model.source_catalog = cat
 
-        # always save the segmentation image and source catalog
-        self.save_base_results(segment_img, source_catalog_model)
+        # define the output filename
+        output_filename = (
+            self.output_file
+            if self.output_file is not None
+            else source_catalog_model.meta.filename
+        )
+
+        # always save the segmentation image
+        save_segment_image(self, segment_img, source_catalog_model, output_filename)
+
+        # Always save the source catalog, but don't save it twice.
+        # If save_results=False or return_update_model=True, we need to
+        # explicitly save it.
+        return_updated_model = getattr(self, "return_updated_model", False)
+        if not self.save_results or return_updated_model:
+            self.output_ext = "parquet"
+            self.save_model(
+                source_catalog_model,
+                output_file=output_filename,
+                suffix="cat",
+                force=True,
+            )
 
         # Return the source catalog object or the input model. If the
         # input model is an ImageModel, the metadata is updated with the
@@ -216,9 +237,11 @@ class SourceCatalogStep(RomanStep):
         if getattr(self, "return_updated_model", False):
             # define the catalog filename; self.save_model will
             # determine whether to use a fully qualified path
+            self.output_ext = "parquet"
             output_catalog_name = self.make_output_path(
                 basepath=model.meta.filename, suffix="cat"
             )
+            self.output_ext = "asdf"
 
             # set the suffix to something else to prevent the step from
             # overwriting the source catalog file with a datamodel
@@ -229,45 +252,10 @@ class SourceCatalogStep(RomanStep):
 
             result = input_model
         else:
+            self.output_ext = "parquet"
             result = source_catalog_model
 
         return result
-
-    def save_base_results(self, segment_img, source_catalog_model):
-        # save the segmentation map and source catalog
-        output_filename = (
-            self.output_file
-            if self.output_file is not None
-            else source_catalog_model.meta.filename
-        )
-
-        if isinstance(source_catalog_model, datamodels.ImageSourceCatalogModel):
-            seg_model = datamodels.SegmentationMapModel
-        else:
-            seg_model = datamodels.MosaicSegmentationMapModel
-
-        segmentation_model = seg_model()
-        segmentation_model.meta = {}
-        for key in segmentation_model.meta._schema_attributes.explicit_properties:
-            segmentation_model.meta[key] = source_catalog_model.meta[key]
-
-        if segment_img is not None:
-            segmentation_model.data = segment_img.data.astype(np.uint32)
-            segmentation_model["detection_image"] = segment_img.detection_image
-            self.save_model(
-                segmentation_model,
-                output_file=output_filename,
-                suffix="segm",
-                force=True,
-            )
-
-        # save the source catalog
-        self.save_model(
-            source_catalog_model,
-            output_file=output_filename,
-            suffix="cat",
-            force=True,
-        )
 
 
 def update_metadata(model, output_catalog_name):
