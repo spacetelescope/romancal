@@ -465,7 +465,7 @@ class TweakRegStep(RomanStep):
             self.abs_refcat,
             ref_wcs=ref_image.meta.wcs,
             ref_wcsinfo=ref_image.meta.wcsinfo,
-            epoch=ref_image.meta.exposure.mid_time.decimalyear,
+            epoch=ref_image.meta.exposure.start_time.decimalyear,
             abs_minobj=self.abs_minobj,
             abs_fitgeometry=self.abs_fitgeometry,
             abs_nclip=self.abs_nclip,

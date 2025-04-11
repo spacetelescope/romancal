@@ -433,7 +433,7 @@ def base_image():
 
     def _base_image(shift_1=0, shift_2=0):
         l2 = maker_utils.mk_level2_image(shape=(2000, 2000))
-        l2.meta.exposure.mid_time = Time("2016-01-01T00:00:00")
+        l2.meta.exposure.start_time = Time("2016-01-01T00:00:00")
         # update wcsinfo
         update_wcsinfo(l2)
         # add a dummy WCS object
@@ -509,7 +509,7 @@ def test_create_astrometric_catalog_using_epoch(tmp_path, catalog, epoch, reques
     img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
 
     metadata_epoch = (
-        epoch if epoch is not None else img.meta.exposure.mid_time.decimalyear
+        epoch if epoch is not None else img.meta.exposure.start_time.decimalyear
     )
     metadata_epoch = float(
         "".join(c for c in str(metadata_epoch) if c == "." or c.isdigit())

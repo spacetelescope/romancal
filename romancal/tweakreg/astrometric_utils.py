@@ -103,7 +103,7 @@ def create_astrometric_catalog(
     if epoch is None:
         with input_models:
             model = input_models.borrow(0)
-            epoch = model.meta.exposure.mid_time.decimalyear
+            epoch = model.meta.exposure.start_time.decimalyear
             input_models.shelve(model, 0)
     if not isinstance(epoch, float):
         # keep only decimal point and digit characters
