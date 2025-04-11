@@ -1,0 +1,1 @@
+Added many new columns to the source catalog.
