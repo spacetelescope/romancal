@@ -284,7 +284,7 @@ class TweakRegStep(RomanStep):
 
         # Write out the WfiWcs products
         if self.save_l1_wcs:
-            save_wfiwcs(self, images)
+            save_wfiwcs(self, images, force=True)
 
         return images
 

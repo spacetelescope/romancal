@@ -9,13 +9,17 @@ log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 
 
-def save_wfiwcs(step, lib):
+def save_wfiwcs(step, lib, force=False):
     """Create and save the WfiWcs products
 
     Parameters
     ----------
     lib : ModelLibrary
          The final L2 models
+
+    force : boolean
+        Regardless of whether ``save_results`` is `False`
+        and no ``output_file`` is specified, try saving.
     """
     log.info("Writing the WCS files...")
     with lib:
@@ -29,5 +33,5 @@ def save_wfiwcs(step, lib):
                 lib.shelve(model)
                 continue
             step.finalize_result(wfiwcs, [])
-            step.save_model(wfiwcs, suffix="wcs")
+            step.save_model(wfiwcs, suffix="wcs", force=force)
             lib.shelve(model)
