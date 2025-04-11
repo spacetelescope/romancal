@@ -14,7 +14,7 @@ from roman_datamodels import datamodels
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog.background import subtract_background_library
 from romancal.multiband_catalog.detection_image import make_detection_image
-from romancal.multiband_catalog.utils import add_filter_to_colnames, remove_columns
+from romancal.multiband_catalog.utils import add_filter_to_colnames
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.save_utils import save_segment_image
@@ -144,7 +144,9 @@ class MultibandCatalogStep(RomanStep):
                 mask=mask,
                 cat_type="dr_det",
             )
-            det_cat = remove_columns(det_catobj.catalog)
+            # need to generate the catalog before we pass the det_catobj
+            # to the RomanSourceCatalog constructor
+            det_cat = det_catobj.catalog
 
             # loop over each image
             with library:
