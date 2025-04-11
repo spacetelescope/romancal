@@ -330,9 +330,12 @@ class TweakRegStep(RomanStep):
         """
         Reads a source catalog from a specified file.
 
-        This function determines the format of the catalog based on the file extension.
-        If the file ends with "asdf", it uses a specific method to open and read the catalog;
-        otherwise, it reads the catalog using a standard table format.
+        This function determines the format of the catalog based on the
+        file extension:
+
+        * "asdf":  uses roman datamodels
+        * "parquet":  uses pyarrow
+        * otherwise:  uses astropy Table.
 
         Parameters
         ----------
@@ -349,11 +352,15 @@ class TweakRegStep(RomanStep):
         ValueError
             If the catalog format is unsupported.
         """
+        filetype = (
+            "parquet" if catalog_name.endswith("parquet") else self.catalog_format
+        )
         if catalog_name.endswith("asdf"):
+            # leave this for now
             with rdm.open(catalog_name) as source_catalog_model:
                 catalog = source_catalog_model.source_catalog
         else:
-            catalog = Table.read(catalog_name, format=self.catalog_format)
+            catalog = Table.read(catalog_name, format=filetype)
         return catalog
 
     def get_tweakreg_catalog(self, source_catalog, image_model):

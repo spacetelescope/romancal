@@ -59,8 +59,8 @@ do
 done
 
 # L2 catalog
-cp r0000101001001001001_0001_wfi01_f158_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-cp r0000101001001001001_0001_wfi01_f158_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp r0000101001001001001_0001_wfi01_f158_cat.parquet $outdir/roman-pipeline/dev/truth/WFI/image/
+cp r0000101001001001001_0001_wfi01_f158_cat.parquet $outdir/roman-pipeline/dev/WFI/image/
 
 # truncated files for ramp fit regtests
 for fn in r0000101001001001001_0003_wfi01_f158 r0000201001001001001_0003_wfi01_grism
@@ -200,7 +200,7 @@ strun roman_mos L3_regtest_asn.json
 cp L3_regtest_asn.json $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
-cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_cat.parquet $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # L3 on skycell
@@ -217,10 +217,10 @@ strun roman_mos L3_mosaic_asn.json
 cp L3_mosaic_asn.json $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_cat.parquet $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 # also copy outside of truth for input to forced photometry tests
-cp ${l3name}_cat.asdf $outdir/roman-pipeline/dev/WFI/image/
+cp ${l3name}_cat.parquet $outdir/roman-pipeline/dev/WFI/image/
 cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/WFI/image/
 
 strun romancal.step.ResampleStep L3_mosaic_asn.json --resample_on_skycell=False --rotation=0 --output_file=mosaic.asdf
@@ -230,7 +230,7 @@ cp mosaic_resamplestep.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 asn_from_list --product-name=${l3name}_mbcat ${l3name}_coadd.asdf -o L3_skycell_mbcat_asn.json
 strun romancal.step.MultibandCatalogStep L3_skycell_mbcat_asn.json --deblend True
 cp L3_skycell_mbcat_asn.json $outdir/roman-pipeline/dev/WFI/image/
-cp ${l3name}_mbcat_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_mbcat_cat.parquet $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_mbcat_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # 2nd L3 on skycell
@@ -247,9 +247,9 @@ strun roman_mos L3_mosaic_0001_asn.json
 cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
 
 # forced photometry on shallow skycell from deep skycell
-strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf --forced_segmentation r00001_p_v01001001001001_r274dp63x31y81_f158_segm.asdf --output_file ${l3name}_force_cat.asdf
+strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf --forced_segmentation r00001_p_v01001001001001_r274dp63x31y81_f158_segm.asdf --output_file ${l3name}_force_cat.parquet
 cp ${l3name}_force_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-cp ${l3name}_force_cat.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name}_force_cat.parquet $outdir/roman-pipeline/dev/truth/WFI/image/
 
 jf rt dl roman-pipeline/dev/WFI/image/TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf --flat
 jf rt dl roman-pipeline/dev/references/dark_ma510.asdf --flat
