@@ -71,7 +71,7 @@ class RomanSourceCatalog:
     flux_unit : str, optional
         The unit of the flux density. Default is 'nJy'.
 
-    cat_type : {'prompt', 'dr_det', 'dr_band'}, optional
+    cat_type : {'prompt', 'dr_det', 'dr_band', 'forced_full', 'forced_det'}, optional
         The type of catalog to create. The default is 'prompt'. This
         determines the columns in the output catalog. The 'dr_det' and
         'dr_band' catalogs are band-specific catalogs for the
@@ -114,6 +114,7 @@ class RomanSourceCatalog:
         self.n_sources = len(segment_img.labels)
         self.wcs = self.model.meta.wcs
         self.meta = {}
+        self.aperture_cat = None
 
         # define flux unit conversion factors
         self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
@@ -391,10 +392,11 @@ class RomanSourceCatalog:
 
         # reformat the aperture radii for the metadata to remove
         # Quantity objects
-        aper_radii = self.aperture_cat.aperture_radii.copy()
-        aper_radii["circle_arcsec"] = aper_radii.pop("circle").value
-        aper_radii["annulus_arcsec"] = aper_radii.pop("annulus").value
-        self.meta["aperture_radii"] = aper_radii
+        if self.aperture_cat is not None:
+            aper_radii = self.aperture_cat.aperture_radii.copy()
+            aper_radii["circle_arcsec"] = aper_radii.pop("circle").value
+            aper_radii["annulus_arcsec"] = aper_radii.pop("annulus").value
+            self.meta["aperture_radii"] = aper_radii
 
     @lazyproperty
     def column_descriptions(self):
@@ -496,7 +498,8 @@ class RomanSourceCatalog:
         col["nn_dist"] = "The distance to the nearest neighbor in this skycell"
 
         # add the aperture flux column descriptions
-        col.update(self.aperture_cat.aperture_flux_descriptions)
+        if self.aperture_cat is not None:
+            col.update(self.aperture_cat.aperture_flux_descriptions)
 
         # add the "*_err" column descriptions
         for column in self.column_names:
@@ -540,13 +543,13 @@ class RomanSourceCatalog:
         ]
         psf_colnames = ["psf_flux", "psf_flux_err"]
 
-        if self.cat_type in ("prompt", "dr_band"):
+        if self.cat_type in ("prompt", "forced_full", "dr_band"):
             flux_colnames = self.aper_colnames
             if self.fit_psf:
                 flux_colnames.extend(psf_colnames)
             flux_colnames.extend(other_colnames)
 
-        elif self.cat_type == "dr_det":
+        elif self.cat_type in ("dr_det", "forced_det"):
             flux_colnames = []
 
         else:
@@ -566,25 +569,31 @@ class RomanSourceCatalog:
             "label",
             "x_centroid",
             "y_centroid",
+        ]
+        xywin_colnames = [
             "x_centroid_win",
             "y_centroid_win",
         ]
-        skycoord_colnames = [
+        sky_colnames = [
             "ra_centroid",
             "dec_centroid",
+        ]
+        skywin_colnames = [
             "ra_centroid_win",
             "dec_centroid_win",
         ]
-        psf_skycoord_colnames = [
+        skypsf_colnames = [
             "ra_psf",
             "dec_psf",
         ]
-        det_colnames = [
+        segm_colnames = [
             "bbox_xmin",
             "bbox_xmax",
             "bbox_ymin",
             "bbox_ymax",
             "segment_area",
+        ]
+        shape_colnames = [
             "semimajor",
             "semiminor",
             "fwhm",
@@ -595,15 +604,17 @@ class RomanSourceCatalog:
             "cxy",
             "cyy",
             "kron_radius",
+        ]
+        nn_colnames = [
             "nn_label",
             "nn_dist",
         ]
-        band_colnames = [
+        psfstat_colnames = [
             "sharpness",
             "roundness1",
             "is_extended",
         ]
-        psf_xypos_colnames = [
+        xypsf_colnames = [
             "x_psf",
             "x_psf_err",
             "y_psf",
@@ -614,39 +625,88 @@ class RomanSourceCatalog:
             "psf_flags",
         ]
 
-        if self.cat_type == "prompt":
+        det_colnames = []
+        det_colnames.extend(segm_colnames)
+        det_colnames.extend(shape_colnames)
+        det_colnames.extend(nn_colnames)
+
+        # These are band-specific columns for the multiband catalog.
+        # They are also used for the forced catalog.
+        band_colnames = ["label"]  # needed to join the filter catalogs
+        if self.fit_psf:
+            band_colnames.extend(xypsf_colnames)
+            band_colnames.extend(skypsf_colnames)
+            band_colnames.extend(psf_flags_colnames)
+        band_colnames.extend(psfstat_colnames)
+        band_colnames.extend(self.flux_colnames)
+        self.band_colnames = band_colnames
+
+        if self.cat_type in ("prompt", "forced_full"):
             colnames = []
             colnames.extend(base_colnames)
+            colnames.extend(xywin_colnames)
             if self.fit_psf:
-                colnames.extend(psf_xypos_colnames)
-            colnames.extend(skycoord_colnames)
+                colnames.extend(xypsf_colnames)
+            colnames.extend(sky_colnames)
+            colnames.extend(skywin_colnames)
             if self.fit_psf:
-                colnames.extend(psf_skycoord_colnames)
+                colnames.extend(skypsf_colnames)
             colnames.extend(det_colnames)
-            colnames.extend(band_colnames)
+            colnames.extend(psfstat_colnames)
             colnames.extend(self.flux_colnames)
             colnames.append("warning_flags")
             if self.fit_psf:
                 colnames.extend(psf_flags_colnames)
+
+        elif self.cat_type == "forced_det":
+            colnames = ["label"]  # needed to join the forced catalogs
+            colnames.extend(base_colnames)
+            colnames.extend(sky_colnames)
+            colnames.extend(shape_colnames)
+            colnames.extend(nn_colnames)
 
         elif self.cat_type == "dr_det":
             colnames = []
             colnames.extend(base_colnames)
-            colnames.extend(skycoord_colnames)
+            colnames.extend(xywin_colnames)
+            colnames.extend(sky_colnames)
+            colnames.extend(skywin_colnames)
             colnames.extend(det_colnames)
             colnames.append("warning_flags")
 
         elif self.cat_type == "dr_band":
-            # these are band-specific columns for the multiband catalog
-            colnames = ["label"]  # label is needed to join the filter catalogs
-            if self.fit_psf:
-                colnames.extend(psf_xypos_colnames)
-                colnames.extend(psf_skycoord_colnames)
-                colnames.extend(psf_flags_colnames)
-            colnames.extend(band_colnames)
-            colnames.extend(self.flux_colnames)
+            colnames = band_colnames.copy()
 
         return colnames
+
+    def _prefix_forced(self, catalog):
+        """
+        Prefix select columns of the catalog with "forced_" for the
+        forced catalog.
+
+        Parameters
+        ----------
+        catalog : `~astropy.table.Table`
+            The source catalog to prefix.
+
+        Returns
+        -------
+        catalog : `~astropy.table.Table`
+            The updated source catalog.
+        """
+        # prefix all columns (except "label") with "forced_"
+        if self.cat_type == "forced_det":
+            for colname in catalog.colnames:
+                if colname != "label":
+                    catalog.rename_column(colname, f"forced_{colname}")
+
+        # prefix the self.band_colnames with "forced_"
+        if self.cat_type == "forced_full":
+            for colname in [*self.band_colnames, "warning_flags"]:
+                if colname in catalog.colnames and colname != "label":
+                    catalog.rename_column(colname, f"forced_{colname}")
+
+        return catalog
 
     @lazyproperty
     def catalog(self):
@@ -662,17 +722,24 @@ class RomanSourceCatalog:
         log.info("Calculating segment properties")
         self.calc_segment_properties()
 
-        log.info("Calculating aperture photometry")
-        self.calc_aperture_photometry()
+        # NOTE: we cannot access self.column_names before
+        # calc_aperture_photometry is called because the aperture columns
+        # names are dynmically generated
+        if self.cat_type != "forced_det":
+            log.info("Calculating aperture photometry")
+            self.calc_aperture_photometry()
 
-        log.info("Calculating DAOFind properties")
-        self.calc_daofind_properties()
+        daofind_cols = {"sharpness", "roundness1"}
+        if daofind_cols & set(self.column_names):
+            log.info("Calculating DAOFind properties")
+            self.calc_daofind_properties()
 
-        if self.cat_type in ("prompt", "dr_det"):
+        if any("nn_" in col for col in self.column_names):
             log.info("Calculating nearest neighbor properties")
             self.calc_nn_properties()
 
-        if self.cat_type in ("prompt", "dr_band") and self.fit_psf:
+        if any("psf" in col for col in self.column_names):
+            # TODO: compute force_full PSF photometry at forced positions
             log.info("Calculating PSF photometry")
             self.calc_psf_photometry()
 
@@ -684,6 +751,9 @@ class RomanSourceCatalog:
             catalog[column].info.description = descrip
         self.update_metadata()
         catalog.meta.update(self.meta)
+
+        # prefix select columns with "forced_" for the forced catalog
+        catalog = self._prefix_forced(catalog)
 
         # convert QTable to Table to avoid having Quantity columns
         catalog = Table(catalog)
