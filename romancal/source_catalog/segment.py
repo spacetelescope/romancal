@@ -266,3 +266,10 @@ class SegmentCatalog:
         The Kron magnitude error in AB magnitudes.
         """
         return self._kron_abmag[1] * u.mag
+
+    @lazyproperty
+    def fluxfrac_radius_50(self):
+        """
+        The radius (in pixels) at which the flux fraction is 50%.
+        """
+        return self.source_cat.fluxfrac_radius(0.5).astype(np.float32)

@@ -480,6 +480,9 @@ class RomanSourceCatalog:
             "Unscaled first-moment Kron radius defined as r = Sum_i "
             "(r_i * I_i) / Sum_i (I_i), with r_i as an elliptical radius"
         )
+        col["fluxfrac_radius_50"] = (
+            "The circular radius that encloses 50% of the source Kron flux."
+        )
         col["kron_flux"] = "Flux within the elliptical Kron aperture"
         col["kron_abmag"] = "AB magnitude within the elliptical Kron aperture"
         col["aper_bkg_flux"] = "The local background estimate for aperture photometry"
@@ -609,10 +612,11 @@ class RomanSourceCatalog:
             "nn_label",
             "nn_dist",
         ]
-        psfstat_colnames = [
+        othershape_colnames = [
             "sharpness",
             "roundness1",
             "is_extended",
+            "fluxfrac_radius_50",
         ]
         xypsf_colnames = [
             "x_psf",
@@ -637,7 +641,7 @@ class RomanSourceCatalog:
             band_colnames.extend(xypsf_colnames)
             band_colnames.extend(skypsf_colnames)
             band_colnames.extend(psf_flags_colnames)
-        band_colnames.extend(psfstat_colnames)
+        band_colnames.extend(othershape_colnames)
         band_colnames.extend(self.flux_colnames)
         self.band_colnames = band_colnames
 
@@ -652,7 +656,7 @@ class RomanSourceCatalog:
             if self.fit_psf:
                 colnames.extend(skypsf_colnames)
             colnames.extend(det_colnames)
-            colnames.extend(psfstat_colnames)
+            colnames.extend(othershape_colnames)
             colnames.extend(self.flux_colnames)
             colnames.append("warning_flags")
             if self.fit_psf:

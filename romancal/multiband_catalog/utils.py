@@ -45,7 +45,14 @@ def add_filter_to_colnames(table, filter_name):
 
     filter_name = filter_name.lower()
     insert_col_exts = ("_flux", "_psf", "_abmag")
-    append_cols = ("is_extended", "sharpness", "roundness1", "psf_gof", "psf_flags")
+    append_cols = (
+        "sharpness",
+        "roundness1",
+        "is_extended",
+        "fluxfrac_radius_50",
+        "psf_gof",
+        "psf_flags",
+    )
 
     for colname in table.colnames:
         if any(ext in colname for ext in insert_col_exts):
