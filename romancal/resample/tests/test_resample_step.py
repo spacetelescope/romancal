@@ -166,8 +166,24 @@ def test_set_good_bits_in_resample_meta(base_image, good_bits):
 
 def test_individual_image_meta(base_image):
     """Test that the individual_image_meta is being populated"""
-    input_models = ModelLibrary([base_image() for _ in range(2)])
+    models = [base_image() for _ in range(2)]
+    # add a None value
+    models[0].meta.photometry.pixel_area = None
+    models[1].meta.photometry.pixel_area = 1
+
+    # add "extra" stuff (similar to "wcs_fit_results")
+    # this will end up in the "basic" table
+    models[1].meta["extra"] = {}
+    models[1].meta.extra = {"a": 1}
+
+    # remove "background" from one model
+    del models[0].meta["background"]
+
+    input_models = ModelLibrary(models)
     output_model = ResampleStep().run(input_models)
+
+    # Check that blended table doesn't make model invalid
+    output_model.validate()
 
     # Assert sizes are expected
     n_inputs = len(input_models)
@@ -182,7 +198,17 @@ def test_individual_image_meta(base_image):
             assert input.meta.filename == basic_table["filename"][idx]
             input_models.shelve(input, index=idx)
 
-    assert "background" in output_model.meta.individual_image_meta
+    output_tables = output_model.meta.individual_image_meta
+
+    assert "background" in output_tables
+
+    assert "photometry" in output_tables
+    assert np.isnan(output_tables["photometry"]["pixel_area"][0])
+    assert output_tables["photometry"]["pixel_area"][1] == 1
+
+    assert "extra" not in output_tables
+    assert "extra" in output_tables["basic"].colnames
+    assert isinstance(output_tables["basic"]["extra"][0], str)
 
 
 @pytest.mark.parametrize(
