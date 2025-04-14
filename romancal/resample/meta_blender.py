@@ -75,7 +75,7 @@ class TableBuilder:
 
 class MetaBlender:
     def __init__(self):
-        self._tables = defaultdict(lambda: TableBuilder())
+        self._tables = defaultdict(TableBuilder)
         self._n_rows = 0
 
     def _blend_first(self, model):
