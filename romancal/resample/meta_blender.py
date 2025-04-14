@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 from asdf.lazy_nodes import AsdfDictNode, AsdfListNode
 from asdf.tags.core.ndarray import NDArrayType
-from astropy.table import QTable
+from astropy.table import Table
 from roman_datamodels import datamodels, maker_utils, stnode
 
 
@@ -70,7 +70,7 @@ class TableBuilder:
             # if all else fails, convert everything to a string
             array_columns[name] = [str(v) for v in values]
 
-        return QTable(array_columns)
+        return Table(array_columns)
 
 
 class MetaBlender:
@@ -119,7 +119,7 @@ class MetaBlender:
 
             if isinstance(value, stnode.DNode):
                 self._tables[key].add_row(value, self._n_rows)
-            elif not isinstance(value, dict | NDArrayType | QTable | AsdfDictNode):
+            elif not isinstance(value, dict | NDArrayType | Table | AsdfDictNode):
                 basic_data[key] = value
         if basic_data:
             self._tables["basic"].add_row(basic_data, self._n_rows)

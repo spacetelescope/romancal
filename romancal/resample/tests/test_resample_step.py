@@ -6,7 +6,7 @@ from asdf import AsdfFile
 from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
-from astropy.table import QTable
+from astropy.table import Table
 from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
@@ -188,7 +188,7 @@ def test_individual_image_meta(base_image):
     # Assert sizes are expected
     n_inputs = len(input_models)
     for value in output_model.meta.individual_image_meta.values():
-        assert isinstance(value, QTable)
+        assert type(value) is Table
         assert len(value) == n_inputs
 
     # Assert spot check on filename, which is different for each mock input
