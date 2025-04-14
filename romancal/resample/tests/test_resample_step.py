@@ -207,8 +207,7 @@ def test_individual_image_meta(base_image):
     assert output_tables["photometry"]["pixel_area"][1] == 1
 
     assert "extra" not in output_tables
-    assert "extra" in output_tables["basic"].colnames
-    assert isinstance(output_tables["basic"]["extra"][0], str)
+    assert "extra" not in output_tables["basic"].colnames
 
 
 @pytest.mark.parametrize(
