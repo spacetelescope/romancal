@@ -94,37 +94,6 @@ def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
             res.shelve(m, i, modify=False)
 
 
-def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_image):
-    """
-    Test that OutlierDetection can create files on disk in a custom location.
-    """
-    img_1 = base_image()
-    img_1.meta.filename = "img1_cal.asdf"
-    img_1.meta.background.level = 0
-    img_2 = base_image()
-    img_2.meta.filename = "img2_cal.asdf"
-    img_2.meta.background.level = 0
-    input_models = ModelLibrary([img_1, img_2])
-
-    outlier_step = OutlierDetectionStep(
-        in_memory=False,
-        save_intermediate_results=True,
-    )
-    # set output dir for all files created by the step
-    outlier_step.output_dir = tmp_path.as_posix()
-
-    outlier_step.run(input_models)
-
-    # meta.filename for the median image created by OutlierDetection.do_detection()
-    median_path = tmp_path / "drizzled_median.asdf"
-
-    outlier_files_path = [
-        median_path,
-    ]
-
-    assert all(x.exists() for x in outlier_files_path)
-
-
 @pytest.mark.parametrize("on_disk", (True, False))
 def test_find_outliers(tmp_path, base_image, on_disk):
     """

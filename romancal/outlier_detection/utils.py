@@ -1,6 +1,5 @@
 import copy
 import logging
-from functools import partial
 
 import numpy as np
 from roman_datamodels.dqflags import pixel
@@ -15,8 +14,6 @@ from stcal.resample.utils import build_driz_weight
 
 from romancal.resample.resample import ResampleData
 
-from . import _fileio
-
 __all__ = ["detect_outliers"]
 
 
@@ -28,8 +25,6 @@ def _median_with_resampling(
     input_models,
     resamp,
     maskpt,
-    save_intermediate_results,
-    make_output_path,
     buffer_size=None,
 ):
     """
@@ -46,12 +41,6 @@ def _median_with_resampling(
     maskpt : float
         The weight threshold for masking out low weight pixels.
 
-    save_intermediate_results : bool
-        if True, save the drizzled models and median model to fits.
-
-    make_output_path : function
-        The functools.partial instance to pass to save_median.
-
     buffer_size : int
         The size of chunk in bytes that will be read into memory when computing the median.
         This parameter has no effect if the input library has its on_disk attribute
@@ -61,22 +50,16 @@ def _median_with_resampling(
     in_memory = not input_models._on_disk
     indices_by_group = list(input_models.group_indices.values())
     nresultants = len(indices_by_group)
-    example_model = None
     median_wcs = resamp.output_wcs
 
     with input_models:
         for i, indices in enumerate(indices_by_group):
             drizzled_model = resamp.resample_group(indices)
 
-            if save_intermediate_results:
-                # write the drizzled model to file
-                _fileio.save_drizzled(drizzled_model, make_output_path)
-
             if i == 0:
                 input_shape = (nresultants, *drizzled_model.data.shape)
                 dtype = drizzled_model.data.dtype
                 computer = MedianComputer(input_shape, in_memory, buffer_size, dtype)
-                example_model = drizzled_model
 
             weight_threshold = compute_weight_threshold(drizzled_model.weight, maskpt)
             drizzled_model.data[drizzled_model.weight < weight_threshold] = np.nan
@@ -86,15 +69,6 @@ def _median_with_resampling(
     # Perform median combination on set of drizzled mosaics
     median_data = computer.evaluate()
 
-    if save_intermediate_results:
-        # drizzled model already contains asn_id
-        _fileio.save_median(
-            example_model,
-            median_data,
-            median_wcs,
-            partial(make_output_path, asn_id=None),
-        )
-
     return median_data, median_wcs
 
 
@@ -103,8 +77,6 @@ def _median_without_resampling(
     maskpt,
     weight_type,
     good_bits,
-    save_intermediate_results,
-    make_output_path,
     buffer_size=None,
 ):
     """
@@ -126,12 +98,6 @@ def _median_without_resampling(
         The bit values that are considered good when determining the
         data quality of the input.
 
-    save_intermediate_results : bool
-        if True, save the models and median model to fits.
-
-    make_output_path : function
-        The functools.partial instance to pass to save_median.
-
     buffer_size : int
         The size of chunk in bytes that will be read into memory when computing the median.
         This parameter has no effect if the input library has its on_disk attribute
@@ -141,7 +107,6 @@ def _median_without_resampling(
     """
     in_memory = not input_models._on_disk
     nresultants = len(input_models)
-    example_model = None
 
     with input_models:
         for i in range(len(input_models)):
@@ -154,15 +119,10 @@ def _median_without_resampling(
                 flag_name_map=pixel,
             )
 
-            if save_intermediate_results:
-                # write the model to file
-                _fileio.save_drizzled(model, make_output_path)
-
             if i == 0:
                 input_shape = (nresultants, *model.data.shape)
                 dtype = model.data.dtype
                 computer = MedianComputer(input_shape, in_memory, buffer_size, dtype)
-                example_model = model
                 median_wcs = copy.deepcopy(model.meta.wcs)
 
             weight_threshold = compute_weight_threshold(wht, maskpt)
@@ -177,9 +137,6 @@ def _median_without_resampling(
     # Perform median combination on set of drizzled mosaics
     median_data = computer.evaluate()
 
-    if save_intermediate_results:
-        _fileio.save_median(example_model, median_data, median_wcs, make_output_path)
-
     return median_data, median_wcs
 
 
@@ -193,8 +150,6 @@ def _flag_resampled_model_crs(
     scale2,
     backg,
     fillval,
-    save_intermediate_results,
-    make_output_path,
 ):
     if fillval is None or fillval.strip().upper() == "INDEF":
         fillval = 0
@@ -247,12 +202,10 @@ def detect_outliers(
     scale1,
     scale2,
     backg,
-    save_intermediate_results,
     resample_data,
     good_bits,
     in_memory,
     resample_on_skycell,
-    make_output_path,
 ):
     # setup ResampleData
     # call
@@ -280,8 +233,6 @@ def detect_outliers(
             library,
             resamp,
             maskpt,
-            save_intermediate_results=save_intermediate_results,
-            make_output_path=make_output_path,
         )
     else:
         median_data, median_wcs = _median_without_resampling(
@@ -289,8 +240,6 @@ def detect_outliers(
             maskpt,
             weight_type,
             good_bits,
-            save_intermediate_results=save_intermediate_results,
-            make_output_path=make_output_path,
         )
 
     # Perform outlier detection using statistical comparisons between
@@ -308,8 +257,6 @@ def detect_outliers(
                     scale2,
                     backg,
                     fillval,
-                    save_intermediate_results,
-                    make_output_path,
                 )
             else:
                 _flag_model_crs(image, median_data, snr1)
