@@ -7,9 +7,9 @@ import sys
 
 import numpy as np
 
-import romancal.skycell.match as sm
 from romancal.associations import asn_from_list
 from romancal.lib.basic_utils import parse_visitID
+from romancal.skycell.skycells import SkyCell
 
 __all__ = ["mk_skycell_asn_from_skycell_list"]
 
@@ -52,10 +52,9 @@ def mk_skycell_asn_from_skycell_list(filelist, release_product, optical_element)
     logger.debug(f"All Skycells: {skycell_indices_array}")
     unique_skycell_indices = np.unique(np.concatenate(skycell_indices_array))
     logger.info(f"Unique Skycells: {unique_skycell_indices}")
-    sm.load_skycells_table()
     for skycell_index in unique_skycell_indices:
         member_list = []
-        skycell = sm.SkyCell(skycell_index)
+        skycell = SkyCell(skycell_index)
         for entry in skycell_indices:
             if np.isin(skycell_index, entry[1]):
                 member_list.append(os.path.basename(entry[0]).split(".")[0])
