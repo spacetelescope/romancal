@@ -1,5 +1,5 @@
 """
-Unit tests for proj_match.
+Unit tests for skycell.match.
 
 These tests depend very strongly on the contents of the referenced table of patches.
 Changes to the contents of this table will require changes to the tests for
@@ -26,7 +26,6 @@ retain the same index obtained.)
 
 from pathlib import Path
 
-import asdf
 import astropy.coordinates as coord
 import astropy.modeling.models as amm
 import astropy.units as u
@@ -38,15 +37,12 @@ import spherical_geometry.vector as sgv
 from spherical_geometry.vector import rotate_around as rotate
 
 import romancal.skycell.match as sm
+import romancal.skycell.skycells as sc
 
-SKYCELLS_TABLE_SUBSET_PATH = Path(__file__).parent / "skycells_subset.asdf"
-# do not use load_patch_table here as it will modify global state
-with asdf.open(SKYCELLS_TABLE_SUBSET_PATH) as skycells_subset:
-    SKYCELLS_TABLE_SUBSET = skycells_subset.copy()
+SKYCELLS_SUBSET = sc.SkyCells(Path(__file__).parent / "skycells_subset.asdf")
 
-crecord = SKYCELLS_TABLE_SUBSET["roman"]["skycells"][0]
-cra = crecord["ra_corn3"]
-cdec = crecord["dec_corn3"]
+cra = SKYCELLS_SUBSET.skycells[0]["ra_corn3"]
+cdec = SKYCELLS_SUBSET.skycells[0]["dec_corn3"]
 
 cpa = 45.0
 csize = 0.001
@@ -57,14 +53,18 @@ e = 0.0011  # epsilon offset in degrees
 def override_patch_table(monkeypatch):
     """
     For the tests in this file, monkeypatch the global
-    SKYCELLS_TABLE to a smaller SKYCELLS_TABLE_SUBSET to allow these tests
-    to run without access to the full patch table.
+    SKYCELLS to a smaller SKYCELLS_SUBSET to allow these tests
+    to run without access to the full skycells table.
     """
-    monkeypatch.setattr(sm, "SKYCELLS_TABLE", SKYCELLS_TABLE_SUBSET)
+    monkeypatch.setattr(sc, "SKYCELLS", SKYCELLS_SUBSET)
     yield
 
 
-def mk_im_corners(ra, dec, pa, size):
+def mk_im_corners(
+    ra: float, dec: float, pa: float, size: float
+) -> tuple[
+    tuple[float, float], tuple[float, float], tuple[float, float], tuple[float, float]
+]:
     """
     Generate 4 image corners of a square with the center at the supplied
     side size, ra, dec, and position angle (all in degrees).
@@ -88,7 +88,7 @@ def mk_im_corners(ra, dec, pa, size):
     rrect = [rotate(*(vec + radecvec + (pa,))) for vec in trect]
     frect = [sgv.vector_to_lonlat(*vec) for vec in rrect]
     # Reorganize by ra, dec arrays
-    radecrect = np.array(frect).transpose()
+    radecrect = np.array(frect)
     return radecrect
 
 
@@ -208,10 +208,7 @@ def test_corners(pars, expected):
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(corners)
     # map matches to absolute index
     mmatches = tuple(
-        [
-            SKYCELLS_TABLE_SUBSET["roman"]["skycells"][index]["name"]
-            for index in intersecting_skycells
-        ]
+        [SKYCELLS_SUBSET.skycells[index]["name"] for index in intersecting_skycells]
     )
     assert tuple(mmatches) == expected
 
@@ -223,10 +220,7 @@ def test_wcs_corners():
         wcsobj, image_shape=imshape
     )
     mmatches = tuple(
-        [
-            SKYCELLS_TABLE_SUBSET["roman"]["skycells"][index]["name"]
-            for index in intersecting_skycells
-        ]
+        [SKYCELLS_SUBSET.skycells[index]["name"] for index in intersecting_skycells]
     )
     assert tuple(mmatches) == (
         "225p90x25y50",
@@ -242,10 +236,7 @@ def test_wcs_corners():
     wcsobj.pixel_shape = imshape
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
     mmatches = tuple(
-        [
-            SKYCELLS_TABLE_SUBSET["roman"]["skycells"][index]["name"]
-            for index in intersecting_skycells
-        ]
+        [SKYCELLS_SUBSET.skycells[index]["name"] for index in intersecting_skycells]
     )
     assert tuple(mmatches) == (
         "225p90x25y50",
@@ -262,10 +253,7 @@ def test_wcs_corners():
     wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
     mmatches = tuple(
-        [
-            SKYCELLS_TABLE_SUBSET["roman"]["skycells"][match]["name"]
-            for match in intersecting_skycells
-        ]
+        [SKYCELLS_SUBSET.skycells[index]["name"] for index in intersecting_skycells]
     )
     assert tuple(mmatches) == (
         "225p90x25y50",

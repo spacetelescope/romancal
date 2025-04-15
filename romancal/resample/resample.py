@@ -4,7 +4,7 @@ import numpy as np
 from roman_datamodels import datamodels, dqflags, maker_utils
 from stcal.resample import Resample
 
-from romancal.skycell.match import to_skycell_wcs
+from romancal.skycell.skycells import to_skycell_wcs
 
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
