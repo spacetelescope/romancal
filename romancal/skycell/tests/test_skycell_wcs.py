@@ -64,22 +64,23 @@ def test_skycell_to_wcs():
     skycell = SkyCell.from_name("225p90x30y51")
 
     assert np.allclose(
-        skycell.wcs.wcs_pix2world(0.0, skycell.pixel_shape[1] - 1),
+        skycell.wcs.wcs_pix2world([(0.0, 0.0)], 0),
         skycell.radec_corners[0],
     )
     assert np.allclose(
-        skycell.wcs.wcs_pix2world(
-            skycell.pixel_shape[0] - 1, skycell.pixel_shape[1] - 1
-        ),
+        skycell.wcs.wcs_pix2world([(skycell.pixel_shape[0] - 1, 0.0)], 0),
         skycell.radec_corners[1],
     )
     assert np.allclose(
         skycell.wcs.wcs_pix2world(
-            skycell.pixel_shape[0] - 1, skycell.pixel_shape[1] - 1
+            [(skycell.pixel_shape[0] - 1, skycell.pixel_shape[1] - 1)], 0
         ),
         skycell.radec_corners[2],
     )
-    assert np.allclose(skycell.wcs.wcs_pix2world(0.0, 0.0), skycell.radec_corners[3])
+    assert np.allclose(
+        skycell.wcs.wcs_pix2world([(0.0, skycell.pixel_shape[1] - 1)], 0),
+        skycell.radec_corners[3],
+    )
 
 
 def test_wcsinfo_to_wcs():
