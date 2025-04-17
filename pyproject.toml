@@ -35,6 +35,7 @@ dependencies = [
     "stsci.imagestats >= 1.6.3",
     "drizzle >= 2.0.1",
     "stpsf >= 2.0.0",
+    "pyarrow >= 19.0.1",
     "pandas >= 2.0.0",  # for Table.read(...) support in astropy for parquet files
     # pysiaf required by stpsf uses pkg_resources which doesn't
     # exist in python 3.12 without setuptools.
