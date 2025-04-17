@@ -83,8 +83,8 @@ def test_skycell_to_wcs():
     )
 
 
-def test_wcsinfo_to_wcs():
-    """Test integrity of wcsinfo_to_wcs"""
+def test_wcsinfo_to_gwcs():
+    """Test integrity of wcsinfo_to_gwcs"""
     wcsinfo = {
         "ra_ref": 269.83219987378925,
         "dec_ref": 66.04081466149024,
