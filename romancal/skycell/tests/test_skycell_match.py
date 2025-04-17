@@ -24,6 +24,7 @@ of its columns so that subsets of the table selected to reduce the filesize stil
 retain the same index obtained.)
 """
 
+import os
 from pathlib import Path
 
 import astropy.coordinates as coord
@@ -36,28 +37,17 @@ import pytest
 import spherical_geometry.vector as sgv
 from spherical_geometry.vector import rotate_around as rotate
 
+os.environ["SKYMAP_PATH"] = str(Path(__file__).parent / "skymap_subset.asdf")
+
 import romancal.skycell.match as sm
-import romancal.skycell.skycells as sc
+import romancal.skycell.skymap as sc
 
-SKYCELLS_SUBSET = sc.SkyCells(Path(__file__).parent / "skycells_subset.asdf")
-
-cra = SKYCELLS_SUBSET.skycells[0]["ra_corn3"]
-cdec = SKYCELLS_SUBSET.skycells[0]["dec_corn3"]
+cra = sc.SKYMAP.skycells[0]["ra_corn3"]
+cdec = sc.SKYMAP.skycells[0]["dec_corn3"]
 
 cpa = 45.0
 csize = 0.001
 e = 0.0011  # epsilon offset in degrees
-
-
-@pytest.fixture(autouse=True)
-def override_patch_table(monkeypatch):
-    """
-    For the tests in this file, monkeypatch the global
-    SKYCELLS to a smaller SKYCELLS_SUBSET to allow these tests
-    to run without access to the full skycells table.
-    """
-    monkeypatch.setattr(sc, "SKYCELLS", SKYCELLS_SUBSET)
-    yield
 
 
 def mk_im_corners(
@@ -208,7 +198,7 @@ def test_corners(pars, expected):
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(corners)
     # map matches to absolute index
     mmatches = tuple(
-        [SKYCELLS_SUBSET.skycells[index]["name"] for index in intersecting_skycells]
+        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
     )
     assert tuple(mmatches) == expected
 
@@ -220,50 +210,59 @@ def test_wcs_corners():
         wcsobj, image_shape=imshape
     )
     mmatches = tuple(
-        [SKYCELLS_SUBSET.skycells[index]["name"] for index in intersecting_skycells]
+        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
     )
-    assert tuple(mmatches) == (
-        "225p90x25y50",
-        "225p90x25y51",
-        "225p90x26y49",
-        "225p90x26y50",
-        "225p90x26y51",
-        "225p90x26y52",
-        "225p90x27y50",
-        "225p90x27y51",
+    assert sorted(mmatches) == sorted(
+        (
+            "225p90x25y49",
+            "225p90x25y50",
+            "225p90x25y51",
+            "225p90x26y48",
+            "225p90x26y49",
+            "225p90x26y50",
+            "225p90x26y51",
+            "225p90x27y49",
+            "225p90x27y50",
+        )
     )
 
     wcsobj.pixel_shape = imshape
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
     mmatches = tuple(
-        [SKYCELLS_SUBSET.skycells[index]["name"] for index in intersecting_skycells]
+        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
     )
-    assert tuple(mmatches) == (
-        "225p90x25y50",
-        "225p90x25y51",
-        "225p90x26y49",
-        "225p90x26y50",
-        "225p90x26y51",
-        "225p90x26y52",
-        "225p90x27y50",
-        "225p90x27y51",
+    assert sorted(mmatches) == sorted(
+        (
+            "225p90x25y49",
+            "225p90x25y50",
+            "225p90x25y51",
+            "225p90x26y48",
+            "225p90x26y49",
+            "225p90x26y50",
+            "225p90x26y51",
+            "225p90x27y49",
+            "225p90x27y50",
+        )
     )
 
     wcsobj.pixel_shape = None
     wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
     mmatches = tuple(
-        [SKYCELLS_SUBSET.skycells[index]["name"] for index in intersecting_skycells]
+        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
     )
-    assert tuple(mmatches) == (
-        "225p90x25y50",
-        "225p90x25y51",
-        "225p90x26y49",
-        "225p90x26y50",
-        "225p90x26y51",
-        "225p90x26y52",
-        "225p90x27y50",
-        "225p90x27y51",
+    assert sorted(mmatches) == sorted(
+        (
+            "225p90x25y49",
+            "225p90x25y50",
+            "225p90x25y51",
+            "225p90x26y48",
+            "225p90x26y49",
+            "225p90x26y50",
+            "225p90x26y51",
+            "225p90x27y49",
+            "225p90x27y50",
+        )
     )
 
     wcsobj.bounding_box = None

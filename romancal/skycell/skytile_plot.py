@@ -9,7 +9,7 @@ import spherical_geometry.vector as sgv
 from numpy.typing import NDArray
 from spherical_geometry.vector import normalize_vector
 
-from .skycells import SKYCELLS, ProjectionRegion, image_coords_to_vec
+from .skymap import SKYMAP, SkyTile, image_coords_to_vec
 
 try:
     from matplotlib import pyplot as plt
@@ -20,7 +20,7 @@ RAD_TO_ARCSEC = 180.0 / np.pi * 3600.0
 
 
 def get_cartesian_corners(
-    projection_region: ProjectionRegion,
+    projection_region: SkyTile,
 ) -> tuple[NDArray[float], NDArray[float]]:
     """
     Construct vertex coordinates for a projection region definition suitable
@@ -34,7 +34,7 @@ def get_cartesian_corners(
 
 
 def find_closest_tangent_point(
-    projection_regions: list[ProjectionRegion],
+    projection_regions: list[SkyTile],
     image_corners: list[tuple[float, float]] | tuple[list[float], list[float]],
 ) -> tuple[tuple[float, float, float], list[int]]:
     """
@@ -107,19 +107,24 @@ def veccoords_to_tangent_plane(
 plt.ion()
 
 
-def plot_field(corners, id="", fill=None, color=None):
-    plt.fill(corners[0], corners[1], color=fill, edgecolor=color)
+def plot_field(corners: NDArray[float], id: str = "", fill=None, color=None):
+    plt.fill(corners[:, 0], corners[:, 1], color=fill, edgecolor=color)
 
 
-def plot_skycell(corners, id="", color=None):
-    plt.plot(corners[0], corners[1], color=color)
+def plot_skycell(corners: NDArray[float], id: str = "", color=None):
+    corners = np.concatenate([corners, corners[None, -1]])
+    plt.plot(corners[:, 0], corners[:, 1], color=color)
     if id:
-        idstr = str(SKYCELLS.skycells[id]["index"])
-        center = (corners[0][:-1].mean(), corners[1][:-1].mean())
+        idstr = str(SKYMAP.skycells[id]["index"])
+        center = np.mean(corners[:-1], axis=0)
         plt.annotate(idstr, center, va="center", ha="center", size=10)
 
 
-def plot(image_corners, touched_skycell_indices, candidate_skycell_indices):
+def plot(
+    image_corners: list[tuple[float, float]],
+    touched_skycell_indices: list[int],
+    candidate_skycell_indices: list[int],
+):
     """
     This plots a list of skycell footprints against the image footprint.
 
@@ -140,10 +145,8 @@ def plot(image_corners, touched_skycell_indices, candidate_skycell_indices):
     plt.clf()
     plt.gca().invert_xaxis()
     plt.plot(0, 0, "*", markersize=10)
-    touched_skycells = [SKYCELLS.skycells[index] for index in touched_skycell_indices]
-    candidate_skycells = [
-        SKYCELLS.skycells[index] for index in candidate_skycell_indices
-    ]
+    touched_skycells = [SKYMAP.skycells[index] for index in touched_skycell_indices]
+    candidate_skycells = [SKYMAP.skycells[index] for index in candidate_skycell_indices]
     tangent_point, touched_skycell_index = find_closest_tangent_point(
         touched_skycells, image_corners
     )

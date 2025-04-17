@@ -10,7 +10,7 @@ import numpy as np
 from romancal.associations import asn_from_list
 from romancal.associations.lib.utilities import mk_level3_asn_name
 from romancal.lib.basic_utils import parse_visitID
-from romancal.skycell.skycells import SkyCell
+from romancal.skycell.skymap import SkyCell
 
 __all__ = ["mk_skycell_asn_from_skycell_list"]
 

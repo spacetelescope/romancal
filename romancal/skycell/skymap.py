@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 from collections.abc import Generator
 from functools import cached_property
@@ -6,6 +7,7 @@ from pathlib import Path
 
 import asdf
 import crds
+import gwcs
 import numpy as np
 import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
@@ -14,7 +16,7 @@ from asdf._asdf import AsdfObject
 from astropy import coordinates
 from astropy import units as u
 from astropy.modeling import models
-from gwcs import WCS, coordinate_frames
+from astropy.wcs import WCS
 from numpy.typing import NDArray
 from roman_datamodels import stnode
 from stcal.alignment import util as wcs_util
@@ -56,13 +58,13 @@ class SkyCell:
     def __init__(self, index: int | None):
         self.__index = index
         if index is not None:
-            self.__data = SKYCELLS.skycells[index]
+            self.__data = SKYMAP.skycells[index]
 
     @classmethod
     def from_name(cls, name: str):
         if not re.match(r"\d{3}\w\d{2}x\d{2}y\d{2}", name):
             raise ValueError(f"invalid skycell name {name}")
-        return SkyCell(np.where(SKYCELLS.skycells["name"] == name)[0][0])
+        return SkyCell(np.where(SKYMAP.skycells["name"] == name)[0][0])
 
     @classmethod
     def from_data(cls, data: np.void) -> "SkyCell":
@@ -147,46 +149,28 @@ class SkyCell:
         )
 
     @cached_property
-    def projection_region(self) -> "ProjectionRegion":
+    def skytile(self) -> "SkyTile":
         if self.index is None:
             raise ValueError("no index provided")
-        return ProjectionRegion.from_skycell_index(self.index)
+        return SkyTile.from_skycell_index(self.index)
 
     @property
     def pixel_scale(self) -> float:
-        return SKYCELLS.pixel_scale
+        return SKYMAP.pixel_scale
 
     @property
     def pixel_shape(self) -> tuple[int, int]:
-        return SKYCELLS.pixel_shape
-
-    @property
-    def wcsinfo(self) -> dict:
-        return {
-            "pixel_scale": self.pixel_scale,
-            "ra_ref": self.radec_center[0],
-            "dec_ref": self.radec_center[1],
-            "x_ref": -0.5 + self.pixel_shape[0] / 2.0,
-            "y_ref": -0.5 + self.pixel_shape[1] / 2.0,
-            "orientat": self.orientation,
-        }
+        return SKYMAP.pixel_shape
 
     @cached_property
     def wcs(self) -> WCS:
-        # Bounding box of the skycell. Note that the center of the pixels are at (0.5, 0.5)
-        bounding_box = (
-            (-0.5, -0.5 + self.pixel_shape[0]),
-            (-0.5, -0.5 + self.pixel_shape[1]),
-        )
-
-        wcs = wcsinfo_to_wcs(
-            wcsinfo=self.wcsinfo, bounding_box=bounding_box, name=self.name
-        )
-        wcs.array_shape = tuple(
-            int(axs[1] - axs[0] + 0.5)
-            for axs in wcs.bounding_box.bounding_box(order="C")
-        )
-
+        wcs = WCS(naxis=2)
+        wcs.wcs.cdelt = [self.pixel_scale, self.pixel_scale]
+        wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+        wcs.wcs.crval = list(self.skytile.radec_tangent)
+        wcs.wcs.crpix = list(self.xy_tangent)
+        wcs.wcs.crota = [0, self.skytile.orientation]  # CROTA2 is the rotation angle
+        wcs.array_shape = list(self.pixel_shape)
         return wcs
 
     def __eq__(self, other) -> bool:
@@ -196,24 +180,24 @@ class SkyCell:
         return self.data == other.data
 
 
-class ProjectionRegion:
+class SkyTile:
     __index: int | None
     __data: np.void
 
     def __init__(self, index: int | None):
         self.__index = index
         if index is not None:
-            self.__data = SKYCELLS.projection_regions[index]
+            self.__data = SKYMAP.skytiles[index]
 
     @classmethod
-    def from_data(cls, data: np.void) -> "ProjectionRegion":
+    def from_data(cls, data: np.void) -> "SkyTile":
         instance = cls(index=None)
         instance.__data = data
         return instance
 
     @classmethod
-    def from_skycell_index(cls, index: int) -> "ProjectionRegion":
-        for projregion in SKYCELLS.projection_regions:
+    def from_skycell_index(cls, index: int) -> "SkyTile":
+        for projregion in SKYMAP.skytiles:
             if (
                 int(projregion["skycell_start"])
                 < index
@@ -300,51 +284,31 @@ class ProjectionRegion:
 
     @property
     def pixel_scale(self) -> float:
-        return SKYCELLS.pixel_scale
-
-    @property
-    def wcsinfo(self) -> dict:
-        return {
-            "pixel_scale": self.pixel_scale,
-            "ra_ref": self.radec_center[0],
-            "dec_ref": self.radec_center[1],
-            "x_ref": self.xy_tangent[0],
-            "y_ref": self.xy_tangent[1],
-            "orientat": self.orientation,
-        }
+        return SKYMAP.pixel_scale
 
     @cached_property
     def wcs(self) -> WCS:
-        # Bounding box of the projection region. Note that the center of the pixels are at (0.5, 0.5)
-        bounding_box = (
-            (-0.5, -0.5 + self.pixel_shape[0]),
-            (-0.5, -0.5 + self.pixel_shape[1]),
-        )
-
-        wcs = wcsinfo_to_wcs(
-            wcsinfo=self.wcsinfo,
-            bounding_box=bounding_box,
-            name=f"projregion {self.index}",
-        )
-        wcs.array_shape = tuple(
-            int(axs[1] - axs[0] + 0.5)
-            for axs in wcs.bounding_box.bounding_box(order="C")
-        )
-
+        wcs = WCS(naxis=2)
+        wcs.wcs.cdelt = [self.pixel_scale, self.pixel_scale]
+        wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+        wcs.wcs.crval = list(self.radec_tangent)
+        wcs.wcs.crpix = list(self.xy_tangent)
+        wcs.wcs.crota = [0, self.orientation]  # CROTA2 is the rotation angle
+        wcs.array_shape = list(self.pixel_shape)
         return wcs
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, ProjectionRegion):
+        if not isinstance(other, SkyTile):
             return NotImplemented
 
         return self.data == other.data
 
 
-def wcsinfo_to_wcs(
+def wcsinfo_to_gwcs(
     wcsinfo: dict | stnode.Wcsinfo,
     bounding_box: None | tuple[tuple[float, float], tuple[float, float]] = None,
     name: str = "wcsinfo",
-) -> WCS:
+) -> gwcs.WCS:
     """Create a GWCS from the L3 wcsinfo meta
 
     Parameters
@@ -389,13 +353,13 @@ def wcsinfo_to_wcs(
         pixelshift | rotation | pixelscale | tangent_projection | celestial_rotation
     )
 
-    detector_frame = coordinate_frames.Frame2D(
+    detector_frame = gwcs.coordinate_frames.Frame2D(
         name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)
     )
-    sky_frame = coordinate_frames.CelestialFrame(
+    sky_frame = gwcs.coordinate_frames.CelestialFrame(
         reference_frame=coordinates.ICRS(), name="icrs", unit=(u.deg, u.deg)
     )
-    wcsobj = WCS([(detector_frame, det2sky), (sky_frame, None)], name=name)
+    wcsobj = gwcs.WCS([(detector_frame, det2sky), (sky_frame, None)], name=name)
 
     if bounding_box:
         wcsobj.bounding_box = bounding_box
@@ -403,7 +367,7 @@ def wcsinfo_to_wcs(
     return wcsobj
 
 
-def skycell_to_wcs(skycell_record: dict):
+def skycell_to_gwcs(skycell_record: dict) -> gwcs.WCS:
     """From a skycell record, generate a GWCS
 
     Parameters
@@ -434,7 +398,7 @@ def skycell_to_wcs(skycell_record: dict):
         (-0.5, -0.5 + skycell_record["ny"]),
     )
 
-    wcsobj = wcsinfo_to_wcs(wcsinfo, bounding_box=bounding_box)
+    wcsobj = wcsinfo_to_gwcs(wcsinfo, bounding_box=bounding_box)
 
     wcsobj.array_shape = tuple(
         int(axs[1] - axs[0] + 0.5)
@@ -479,10 +443,12 @@ def to_skycell_wcs(library: ModelLibrary) -> WCS | None:
         return None
 
 
-class SkyCells:
+class SkyMap:
     __path: None | Path
 
-    def __init__(self, path: None | Path = None):
+    def __init__(self, path: None | Path | str = None):
+        if path is not None and not isinstance(path, Path):
+            path = Path(path)
         self.__path = path
 
     @property
@@ -511,7 +477,7 @@ class SkyCells:
         return self.data["roman"]["skycells"]
 
     @property
-    def projection_regions(self) -> AsdfObject:
+    def skytiles(self) -> AsdfObject:
         return self.data["roman"]["projection_regions"]
 
     @property
@@ -529,4 +495,4 @@ class SkyCells:
         return SkyCell(self.data["roman"]["skycells"][index])
 
 
-SKYCELLS = SkyCells()
+SKYMAP = SkyMap(path=os.environ.get("SKYMAP_PATH", None))
