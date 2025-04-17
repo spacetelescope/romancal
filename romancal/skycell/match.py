@@ -13,7 +13,7 @@ import spherical_geometry.vector as sgv
 from gwcs import WCS
 from numpy.typing import NDArray
 
-from .skycells import SKYCELLS, SkyCell, image_coords_to_vec
+from .skymap import SKYMAP, SkyCell, image_coords_to_vec
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -111,7 +111,7 @@ def find_skycell_matches(
     else:
         footprint = ImageFootprint(*image_corners)
 
-    skycells = SKYCELLS.skycells
+    skycells = SKYMAP.skycells
 
     # Convert all celestial coordinates to cartesion coordinates.
     skycell_center_vectorpoints = np.array(
@@ -138,10 +138,10 @@ def find_skycell_matches(
     # TODO: and then use a spatial index to find the `n` nearest skycells to the image center to test intersection with the image footprint.
     intersecting = []
     for skycell_candidate_index in skycell_candidate_indices[0]:
-        # print(i)
+        # print(skycell_candidate_index)
         skycell = SkyCell(skycell_candidate_index)
         if footprint.polygon.intersects_poly(skycell.polygon):
-            # print(f"candidate {i} intersects")
+            # print(f"candidate {skycell_candidate_index} intersects")
             intersecting.append(skycell_candidate_index)
 
     return skycell_candidate_indices[0][intersecting], skycell_candidate_indices[0]
