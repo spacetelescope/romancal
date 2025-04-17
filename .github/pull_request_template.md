@@ -29,7 +29,7 @@ This PR addresses ...
   - ``changes/<PR#>.associations.rst``
   - ``changes/<PR#>.scripts.rst``
   - ``changes/<PR#>.mosaic_pipeline.rst``
-  - ``changes/<PR#>.patch_match.rst``
+  - ``changes/<PR#>.skycell.rst``
 
   ## steps
   - ``changes/<PR#>.dq_init.rst``
