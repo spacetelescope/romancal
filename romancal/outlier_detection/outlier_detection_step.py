@@ -1,7 +1,5 @@
 """Public common step definition for OutlierDetection processing."""
 
-from functools import partial
-
 from romancal.datamodels import ModelLibrary
 from romancal.outlier_detection.utils import detect_outliers
 
@@ -37,7 +35,6 @@ class OutlierDetectionStep(RomanStep):
         snr = string(default='5.0 4.0') # The signal-to-noise values to use for bad pixel identification
         scale = string(default='1.2 0.7') # The scaling factor applied to derivative used to identify bad pixels
         backg = float(default=0.0) # User-specified background value to subtract during final identification step
-        save_intermediate_results = boolean(default=False) # Specifies whether or not to write out intermediate products to disk
         resample_data = boolean(default=True) # Specifies whether or not to resample the input images when performing outlier detection
         resample_on_skycell = boolean(default=True) # if association contains skycell information use the skycell wcs for resampling
         good_bits = string(default="~DO_NOT_USE+NON_SCIENCE")  # DQ bit value to be considered 'good'
@@ -78,12 +75,6 @@ class OutlierDetectionStep(RomanStep):
                 f"outlier_detection only supports WFI_IMAGE exposure types: {set(exptypes)}"
             )
 
-        # Setup output path naming if associations are involved.
-        asn_id = library.asn.get("asn_id", None)
-        if asn_id is not None:
-            _make_output_path = self.search_attr("_make_output_path", parent_first=True)
-            self._make_output_path = partial(_make_output_path, asn_id=asn_id)
-
         snr1, snr2 = (float(v) for v in self.snr.split())
         scale1, scale2 = (float(v) for v in self.scale.split())
 
@@ -100,11 +91,9 @@ class OutlierDetectionStep(RomanStep):
             scale1,
             scale2,
             self.backg,
-            self.save_intermediate_results,
             self.resample_data,
             self.good_bits,
             self.in_memory,
             self.resample_on_skycell,
-            self.make_output_path,
         )
         return library

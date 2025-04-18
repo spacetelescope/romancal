@@ -76,11 +76,6 @@ behavior of the processing:
   User-specified background value (scalar) to subtract during final identification
   step of outliers in `driz_cr` computation.
 
-``--save_intermediate_results``
-  Boolean specifying whether or not to write out intermediate products such as median image or
-  resampled individual input exposures to disk. Typically, only used to track down
-  problems with final results when too many or too few pixels are flagged as outliers.
-
 ``--resample_data``
   Boolean specifying whether or not to resample the input images when performing outlier
   detection.
