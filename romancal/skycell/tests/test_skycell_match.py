@@ -42,11 +42,11 @@ os.environ["SKYMAP_PATH"] = str(Path(__file__).parent / "skymap_subset.asdf")
 import romancal.skycell.match as sm
 import romancal.skycell.skymap as sc
 
-cra = sc.SKYMAP.skycells[0]["ra_corn3"]
-cdec = sc.SKYMAP.skycells[0]["dec_corn3"]
+crecord = sc.SKYMAP.skycells[0]
+cra = crecord["ra_corn3"]
+cdec = crecord["dec_corn3"]
 
 cpa = 45.0
-csize = 0.001
 e = 0.0011  # epsilon offset in degrees
 
 
@@ -112,49 +112,36 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
     "pars, expected",
     [
         (
-            (cra, cdec + e, cpa, csize),
-            ("225p90x26y49", "225p90x26y50", "315p86x50y75", "315p86x51y75"),
-        ),
-        (
-            (cra, cdec - e, cpa, csize),
+            (cra, cdec + e, cpa, 0.001),
             (
-                "225p90x25y49",
-                "225p90x25y50",
-                "225p90x26y49",
-                "225p90x26y50",
                 "315p86x50y75",
                 "315p86x51y75",
             ),
         ),
         (
-            (cra + e, cdec, cpa, csize),
+            (cra, cdec - e, cpa, 0.001),
             (
-                "225p90x25y49",
-                "225p90x25y50",
-                "225p90x26y49",
-                "225p90x26y50",
                 "315p86x50y75",
                 "315p86x51y75",
             ),
         ),
         (
-            (cra - e, cdec, cpa, csize),
+            (cra + e, cdec, cpa, 0.001),
             (
-                "225p90x25y49",
-                "225p90x25y50",
-                "225p90x26y49",
-                "225p90x26y50",
                 "315p86x50y75",
                 "315p86x51y75",
             ),
         ),
         (
-            (cra, cdec, cpa, csize),
+            (cra - e, cdec, cpa, 0.001),
             (
-                "225p90x25y49",
-                "225p90x25y50",
-                "225p90x26y49",
-                "225p90x26y50",
+                "315p86x50y75",
+                "315p86x51y75",
+            ),
+        ),
+        (
+            (cra, cdec, cpa, 0.001),
+            (
                 "315p86x50y75",
                 "315p86x51y75",
             ),
@@ -162,39 +149,6 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
         (
             (cra, cdec, cpa, 0.5),
             (
-                "225p90x25y49",
-                "225p90x25y50",
-                "225p90x25y51",
-                "225p90x26y45",
-                "225p90x26y46",
-                "225p90x26y47",
-                "225p90x26y48",
-                "225p90x26y49",
-                "225p90x26y50",
-                "225p90x26y51",
-                "225p90x26y52",
-                "225p90x26y53",
-                "225p90x26y54",
-                "225p90x27y46",
-                "225p90x27y47",
-                "225p90x27y48",
-                "225p90x27y49",
-                "225p90x27y50",
-                "225p90x27y51",
-                "225p90x27y52",
-                "225p90x27y53",
-                "225p90x28y47",
-                "225p90x28y48",
-                "225p90x28y49",
-                "225p90x28y50",
-                "225p90x28y51",
-                "225p90x28y52",
-                "225p90x29y48",
-                "225p90x29y49",
-                "225p90x29y50",
-                "225p90x29y51",
-                "225p90x30y49",
-                "225p90x30y50",
                 "315p86x46y74",
                 "315p86x46y75",
                 "315p86x47y73",
@@ -239,14 +193,14 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
         ),
     ],
 )
-def test_corners(pars, expected):
+def test_skycell_match(pars, expected):
     corners = mk_im_corners(*pars)
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(corners)
     # map matches to absolute index
     mmatches = tuple(
         [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
     )
-    assert tuple(mmatches) == expected
+    assert mmatches == expected
 
 
 def test_wcs_corners():
@@ -255,91 +209,58 @@ def test_wcs_corners():
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
         wcsobj, image_shape=imshape
     )
-    mmatches = tuple(
+    mmatches = np.array(
         [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
-    )
-    assert sorted(mmatches) == sorted(
-        (
-            "225p90x25y49",
-            "225p90x25y50",
-            "225p90x25y51",
-            "225p90x26y48",
-            "225p90x26y49",
-            "225p90x26y50",
-            "225p90x26y51",
-            "225p90x27y49",
-            "225p90x27y50",
-            "315p86x49y74",
-            "315p86x49y75",
-            "315p86x50y73",
-            "315p86x50y74",
-            "315p86x50y75",
-            "315p86x51y73",
-            "315p86x51y74",
-            "315p86x51y75",
-            "315p86x52y74",
-            "315p86x52y75",
-        )
-    )
+    ).tolist()
+    assert mmatches == [
+        "315p86x49y74",
+        "315p86x49y75",
+        "315p86x50y73",
+        "315p86x50y74",
+        "315p86x50y75",
+        "315p86x51y73",
+        "315p86x51y74",
+        "315p86x51y75",
+        "315p86x52y74",
+        "315p86x52y75",
+    ]
 
     wcsobj.pixel_shape = imshape
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
-    mmatches = tuple(
+    mmatches = np.array(
         [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
-    )
-    assert sorted(mmatches) == sorted(
-        (
-            "225p90x25y49",
-            "225p90x25y50",
-            "225p90x25y51",
-            "225p90x26y48",
-            "225p90x26y49",
-            "225p90x26y50",
-            "225p90x26y51",
-            "225p90x27y49",
-            "225p90x27y50",
-            "315p86x49y74",
-            "315p86x49y75",
-            "315p86x50y73",
-            "315p86x50y74",
-            "315p86x50y75",
-            "315p86x51y73",
-            "315p86x51y74",
-            "315p86x51y75",
-            "315p86x52y74",
-            "315p86x52y75",
-        )
-    )
+    ).tolist()
+    assert mmatches == [
+        "315p86x49y74",
+        "315p86x49y75",
+        "315p86x50y73",
+        "315p86x50y74",
+        "315p86x50y75",
+        "315p86x51y73",
+        "315p86x51y74",
+        "315p86x51y75",
+        "315p86x52y74",
+        "315p86x52y75",
+    ]
 
     wcsobj.pixel_shape = None
     wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
-    mmatches = tuple(
+    mmatches = np.array(
         [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
-    )
-    assert sorted(mmatches) == sorted(
-        (
-            "225p90x25y49",
-            "225p90x25y50",
-            "225p90x25y51",
-            "225p90x26y48",
-            "225p90x26y49",
-            "225p90x26y50",
-            "225p90x26y51",
-            "225p90x27y49",
-            "225p90x27y50",
-            "315p86x49y74",
-            "315p86x49y75",
-            "315p86x50y73",
-            "315p86x50y74",
-            "315p86x50y75",
-            "315p86x51y73",
-            "315p86x51y74",
-            "315p86x51y75",
-            "315p86x52y74",
-            "315p86x52y75",
-        )
-    )
+    ).tolist()
+    assert mmatches == [
+        "315p86x49y74",
+        "315p86x49y75",
+        "315p86x50y73",
+        "315p86x50y74",
+        "315p86x50y75",
+        "315p86x51y73",
+        "315p86x51y74",
+        "315p86x51y75",
+        "315p86x52y74",
+        "315p86x52y75",
+    ]
 
     wcsobj.bounding_box = None
     with pytest.raises(ValueError):
