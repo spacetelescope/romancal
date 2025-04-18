@@ -138,14 +138,14 @@ class SkyCell:
 
     @property
     def polygon(self) -> sgp.SingleSphericalPolygon:
-        # convert all radec points to vectors (the first one is the center point)
-        vectorpoints = sgv.normalize_vector(
-            image_coords_to_vec([self.radec_center, *self.radec_corners])
-        )
+        # convert all radec points to vectors
+        corner_vectorpoints = image_coords_to_vec(self.radec_corners)
+        center_vectorpoint = image_coords_to_vec([self.radec_center])
 
         # construct polygon from corner points and center point
         return sgp.SingleSphericalPolygon(
-            points=vectorpoints[1:], inside=vectorpoints[0]
+            points=sgv.normalize_vector(corner_vectorpoints),
+            inside=sgv.normalize_vector(center_vectorpoint),
         )
 
     @cached_property
@@ -288,10 +288,10 @@ class SkyTile:
         """in clockwise order"""
         return np.array(
             (
-                (self.data[3], self.data[5]),
-                (self.data[3], self.data[6]),
-                (self.data[4], self.data[5]),
-                (self.data[4], self.data[6]),
+                (self.data["ra_min"], self.data["dec_min"]),
+                (self.data["ra_max"], self.data["dec_min"]),
+                (self.data["ra_max"], self.data["dec_max"]),
+                (self.data["ra_min"], self.data["dec_max"]),
             )
         )
 

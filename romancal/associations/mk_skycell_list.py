@@ -41,7 +41,7 @@ def mk_skycell_list(output_dir, filelist):
             cal_file.meta.wcs
         )
         logger.info(
-            f"Skycell List:{file_name}, {intersecting_skycells, nearby_skycells[0]}"
+            f"Skycell List:{file_name}, {intersecting_skycells, nearby_skycells}"
         )
         output_file_name = os.path.basename(input_file).split(".")[0]
         if not output_dir:
