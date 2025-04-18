@@ -73,11 +73,12 @@ class ImageFootprint:
         corner_vectorpoints = image_coords_to_vec(self.corners)
 
         # Approximate center of image by averaging corner vectors
-        center_vectorpoint = sgv.normalize_vector(corner_vectorpoints.mean(axis=0))
+        center_vectorpoint = corner_vectorpoints.mean(axis=0)
 
         # construct polygon from corner points and center point
         return sgp.SingleSphericalPolygon(
-            points=sgv.normalize_vector(corner_vectorpoints), inside=center_vectorpoint
+            points=sgv.normalize_vector(corner_vectorpoints),
+            inside=sgv.normalize_vector(center_vectorpoint),
         )
 
 

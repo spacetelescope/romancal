@@ -113,7 +113,7 @@ class SkyCell:
 
     @property
     def radec_center(self) -> tuple[float, float]:
-        return self.data[1], self.data[2]
+        return self.data["ra_center"], self.data["dec_center"]
 
     @property
     def orientation(self) -> float:
@@ -161,6 +161,29 @@ class SkyCell:
     @property
     def pixel_shape(self) -> tuple[int, int]:
         return SKYMAP.pixel_shape
+
+    @property
+    def wcsinfo(self) -> dict:
+        return {
+            "ra_ref": self.skytile.data["ra_tangent"],
+            "dec_ref": self.skytile.data["dec_tangent"],
+            "x_ref": self.skytile.data["x_tangent"],
+            "y_ref": self.skytile.data["y_tangent"],
+            "rotation_matrix": None,
+            "orientat": self.data["orientat"],
+            "pixel_scale": self.pixel_scale,
+            "pixel_shape": self.pixel_shape,
+            "ra_center": self.data["ra_center"],
+            "dec_center": self.data["dec_center"],
+            "ra_corn1": self.data["ra_corn1"],
+            "dec_corn1": self.data["dec_corn1"],
+            "ra_corn2": self.data["ra_corn2"],
+            "dec_corn2": self.data["dec_corn2"],
+            "ra_corn3": self.data["ra_corn3"],
+            "dec_corn3": self.data["dec_corn3"],
+            "ra_corn4": self.data["ra_corn4"],
+            "dec_corn4": self.data["dec_corn5"],
+        }
 
     @cached_property
     def wcs(self) -> WCS:
@@ -219,32 +242,32 @@ class SkyTile:
 
     @property
     def radec_tangent(self) -> tuple[float, float]:
-        return self.data[1], self.data[2]
+        return self.data["ra_tangent"], self.data["dec_tangent"]
 
     @property
     def radec_bounds(self) -> tuple[float, float, float, float]:
         return (
-            self.data[3],
-            self.data[4],
-            self.data[5],
-            self.data[6],
+            self.data["ra_min"],
+            self.data["dec_min"],
+            self.data["ra_max"],
+            self.data["dec_max"],
         )
 
     @property
     def orientation(self) -> float:
-        return self.data[7]
+        return self.data["orientat"]
 
     @property
     def xy_tangent(self) -> tuple[float, float]:
-        return self.data[8], self.data[9]
+        return self.data["x_tangent"], self.data["y_tangent"]
 
     @property
     def pixel_shape(self) -> tuple[int, int]:
-        return self.data[10], self.data[11]
+        return self.data["nx"], self.data["ny"]
 
     @property
     def skycell_indices(self) -> range:
-        return range(self.data[12], self.data[13])
+        return range(self.data["skycell_start"], self.data["skycell_end"])
 
     @cached_property
     def skycells(self) -> Generator[SkyCell]:
@@ -252,8 +275,10 @@ class SkyTile:
 
     @cached_property
     def radec_center(self) -> tuple[float, float]:
-        return np.mean(
-            [(self.data[3], self.data[5]), (self.data[4], self.data[6])], axis=0
+        corner_vectorpoints = image_coords_to_vec(self.radec_corners)
+        center_vectorpoint = np.mean(corner_vectorpoints, axis=0)
+        return sgv.vector_to_lonlat(
+            *sgv.normalize_vecotr(center_vectorpoint), degrees=True
         )
 
     @property
@@ -272,14 +297,14 @@ class SkyTile:
 
     @property
     def polygon(self) -> sgp.SingleSphericalPolygon:
-        # convert all radec points to vectors (the first one is the center point)
-        vectorpoints = sgv.normalize_vector(
-            image_coords_to_vec([self.radec_center, *self.radec_corners])
-        )
+        # convert all radec points to vectors
+        corner_vectorpoints = image_coords_to_vec(self.radec_corners)
+        center_vectorpoint = np.mean(corner_vectorpoints, axis=0)
 
         # construct polygon from corner points and center point
         return sgp.SingleSphericalPolygon(
-            points=vectorpoints[1:], inside=vectorpoints[0]
+            points=sgv.normalize_vector(corner_vectorpoints),
+            inside=sgv.normalize_vector(center_vectorpoint),
         )
 
     @property
