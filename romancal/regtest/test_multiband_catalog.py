@@ -1,7 +1,7 @@
 """Roman tests for source catalog creation"""
 
-import asdf
 import pytest
+from astropy.table import Table
 
 from romancal.multiband_catalog.multiband_catalog_step import MultibandCatalogStep
 from romancal.stpipe import RomanStep
@@ -12,20 +12,22 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 fieldlist = [
     "ra_centroid",  # DMS374 positions on ICRF
     "dec_centroid",  # DMS374 positions on ICRF
-    "F158_aper30_flux",  # DMS399 aperture fluxes
-    "F158_aper50_flux",  # DMS399 aperture fluxes
-    "F158_aper70_flux",  # DMS399 aperture fluxes
-    "F158_aper_total_flux",  # DMS375 fluxes
-    "F158_aper_total_flux_err",  # DMS386 flux uncertainties
-    "F158_flags",  # DMS387 dq_flags
-    "F158_is_extended",  # DMS392 source classification
+    "aper01_f158_flux",  # DMS399 aperture fluxes
+    "aper02_f158_flux",  # DMS399 aperture fluxes
+    "aper04_f158_flux",  # DMS399 aperture fluxes
+    "segment_f158_flux",  # DMS375 fluxes
+    "kron_f158_flux",  # DMS375 fluxes
+    "aper01_f158_flux_err",  # DMS386 flux uncertainties
+    "aper02_f158_flux_err",  # DMS386 flux uncertainties
+    "warning_flags",  # DMS387 dq_flags
+    "is_extended",  # DMS392 source classification
     "semimajor_sigma",  # DMS394 galaxy morphology
     "semiminor_sigma",  # DMS394 galaxy morphology
-    "orientation",  # DMS394 galaxy morphology
-    "F158_isophotal_flux_err",  # DMS395 basic statistical uncertainties
-    "F158_kron_flux_err",  # DMS395 basic statistical uncertainties
-    "F158_aper30_flux_err",  # DMS395 basic statistical uncertainties
-    "F158_x_psf_err",  # DMS395 basic statistical uncertainties
+    "orientation_pix",  # DMS394 galaxy morphology
+    "segment_f158_flux_err",  # DMS395 basic statistical uncertainties
+    "kron_f158_flux_err",  # DMS395 basic statistical uncertainties
+    "aper01_f158_flux_err",  # DMS395 basic statistical uncertainties
+    "x_psf_err",  # DMS395 basic statistical uncertainties
 ]
 
 
@@ -36,12 +38,12 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request):
     # filter in it, so this is more of an existence proof for the multiband
     # catalogs than a detailed test.  Using only a single catalog lets us
     # rely on the existing regtest files.
-    outputfn = "r00001_p_v01001001001001_r274dp63x31y81_f158_mbcat_cat.asdf"
+    outputfn = "r00001_p_v01001001001001_r274dp63x31y81_f158_mbcat_cat.parquet"
     rtdata.get_asn(f"WFI/image/{inputasnfn}")
     rtdata.output = outputfn
     rtdata.input = inputasnfn
     rtdata.get_truth(f"truth/WFI/image/{outputfn}")
-    aftruth = asdf.open(f"truth/{outputfn}")
+    cattruth = Table.read(f"truth/{outputfn}")
     args = [
         "romancal.step.MultibandCatalogStep",
         inputasnfn,
@@ -50,9 +52,9 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request):
     ]
     with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
-    afcat = asdf.open(outputfn)
+    cat = Table.read(outputfn)
     for field in fieldlist:
-        assert field in afcat["roman"]["source_catalog"].dtype.names
+        assert field in cat.dtype.names
 
     step = MultibandCatalogStep()
     step.log.info(
@@ -62,9 +64,7 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request):
 
     # DMS 393: multiband catalog uses both PSF-like and extend-source-like
     # kernels
-    assert set(aftruth["roman"]["source_catalog"].dtype.names) == set(
-        afcat["roman"]["source_catalog"].dtype.names
-    )
+    assert set(cat.dtype.names) == set(cattruth.dtype.names)
     # weak assertion that our truth file must at least have the same
     # catalog fields as the file produced here.  Exactly matching rows
     # would require a lot of okifying things that aren't obviously

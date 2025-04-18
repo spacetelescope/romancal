@@ -93,20 +93,20 @@
     "romancal.regtest.test_mos_skycell_pipeline.test_resample_ran"
   ],
   "DMS374": [
-    "romancal.regtest.test_catalog.test_has_field",
+    "romancal.regtest.test_source_catalog.test_has_field",
     "romancal.regtest.test_mos_pipeline.test_file_exists"
   ],
   "DMS375": [
-    "romancal.regtest.test_catalog.test_has_field"
+    "romancal.regtest.test_source_catalog.test_has_field"
   ],
   "DMS376": [
-    "romancal.regtest.test_catalog.test_has_field"
+    "romancal.regtest.test_source_catalog.test_has_field"
   ],
   "DMS386": [
-    "romancal.regtest.test_catalog.test_has_field"
+    "romancal.regtest.test_source_catalog.test_has_field"
   ],
   "DMS387": [
-    "romancal.regtest.test_catalog.test_has_field"
+    "romancal.regtest.test_source_catalog.test_has_field"
   ],
   "DMS391": [
     "romancal.regtest.test_multiband_catalog.test_multiband_catalog"

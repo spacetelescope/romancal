@@ -1,11 +1,14 @@
 import os
+from pathlib import Path
 
 import astropy.units as u
 import numpy as np
+import pyarrow
 import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
-from roman_datamodels.datamodels import MosaicModel
+from roman_datamodels import datamodels as rdm
+from roman_datamodels.datamodels import MosaicModel, MosaicSegmentationMapModel
 from roman_datamodels.maker_utils import mk_level3_mosaic
 
 from romancal.datamodels import ModelLibrary
@@ -84,54 +87,28 @@ def test_multiband_catalog(
     )
 
     cat = result.source_catalog
-
     assert isinstance(cat, Table)
-
-    columns = [
-        "label",
-        "xcentroid",
-        "ycentroid",
-        "ra_centroid",
-        "dec_centroid",
-        "nn_label",
-        "nn_dist",
-        "isophotal_area",
-        "semimajor_sigma",
-        "semiminor_sigma",
-        "ellipticity",
-        "orientation",
-        "sky_orientation",
-        "ra_bbox_ll",
-        "dec_bbox_ll",
-        "ra_bbox_ul",
-        "dec_bbox_ul",
-        "ra_bbox_lr",
-        "dec_bbox_lr",
-        "ra_bbox_ur",
-        "dec_bbox_ur",
-    ]
-
     assert len(cat) == 7
 
     if len(cat) > 0:
-        for col in columns:
-            assert col in cat.colnames
-        assert np.min(cat["xcentroid"]) > 0.0
-        assert np.min(cat["ycentroid"]) > 0.0
-        assert np.max(cat["xcentroid"]) < 100.0
-        assert np.max(cat["ycentroid"]) < 100.0
+        assert np.min(cat["x_centroid"]) > 0.0
+        assert np.min(cat["y_centroid"]) > 0.0
+        assert np.max(cat["x_centroid"]) < 100.0
+        assert np.max(cat["y_centroid"]) < 100.0
 
-        for phottype in (
-            "isophotal_flux",
-            "kron_flux",
-            "aper30_flux",
-            "aper_total_flux",
-            "is_extended",
-            "sharpness",
-            "roundness",
-        ):
-            for filt in ("F158", "F184"):
-                colname = f"{filt}_{phottype}"
-                assert colname in cat.colnames
-                if colname.endswith("flux"):
-                    assert colname + "_err" in cat.colnames
+        for colname in cat.colnames:
+            if "flux" in colname:
+                assert cat[colname].unit == u.nJy
+                assert "f158" in colname or "f184" in colname
+            if colname.endswith("_flux"):
+                assert f"{colname}_err" in cat.colnames
+
+    if save_results:
+        filepath = Path(tmp_path / f"{result.meta.filename}_cat.parquet")
+        assert filepath.exists()
+        tbl = pyarrow.parquet.read_table(filepath)
+        assert isinstance(tbl, pyarrow.Table)
+
+        filepath = Path(tmp_path / f"{result.meta.filename}_segm.asdf")
+        assert filepath.exists()
+        assert isinstance(rdm.open(filepath), MosaicSegmentationMapModel)

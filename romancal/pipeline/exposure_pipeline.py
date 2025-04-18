@@ -16,6 +16,7 @@ from romancal.datamodels.library import ModelLibrary
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
 from romancal.lib.basic_utils import is_fully_saturated
+from romancal.lib.save_wcs import save_wfiwcs
 from romancal.linearity import LinearityStep
 from romancal.photom import PhotomStep
 from romancal.ramp_fitting import ramp_fit_step
@@ -46,6 +47,7 @@ class ExposurePipeline(RomanPipeline):
     class_alias = "roman_elp"
 
     spec = """
+        save_l1_wcs = boolean(default=False)
         save_results = boolean(default=False)
         suffix = string(default="cal")
     """
@@ -73,6 +75,8 @@ class ExposurePipeline(RomanPipeline):
         self.source_catalog.return_updated_model = True
         # make sure we update source catalog coordinates afer running TweakRegStep
         self.tweakreg.update_source_catalog_coordinates = True
+        # tweakreg currently holds responsibiility for creating the L1 WCS files.
+        self.tweakreg.save_l1_wcs = True
         # make output filenames based on input filenames
         self.output_use_model = True
 
@@ -144,6 +148,10 @@ class ExposurePipeline(RomanPipeline):
         #          observations. This should not occur on-prem
         if not any_saturated:
             self.tweakreg.run(lib)
+
+        # Write out the WfiWcs products
+        if self.save_l1_wcs:
+            save_wfiwcs(self, lib)
 
         log.info("Roman exposure calibration pipeline ending...")
 

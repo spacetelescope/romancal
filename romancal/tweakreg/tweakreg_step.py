@@ -15,6 +15,7 @@ from stcal.tweakreg import tweakreg
 from stcal.tweakreg.tweakreg import _SINGLE_GROUP_REFCAT_STR, SINGLE_GROUP_REFCAT
 
 from romancal.assign_wcs.utils import add_s_region
+from romancal.lib.save_wcs import save_wfiwcs
 
 # LOCAL
 from ..datamodels import ModelLibrary
@@ -66,6 +67,7 @@ class TweakRegStep(RomanStep):
         abs_sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units when performing absolute astrometry
         output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
         update_source_catalog_coordinates = boolean(default=False) # Update source catalog file with tweaked coordinates?
+        save_l1_wcs = boolean(default=True)
     """
 
     reference_file_types: ClassVar = []
@@ -280,6 +282,10 @@ class TweakRegStep(RomanStep):
 
                     images.shelve(image_model, imcat.meta["model_index"])
 
+        # Write out the WfiWcs products
+        if self.save_l1_wcs:
+            save_wfiwcs(self, images, force=True)
+
         return images
 
     def update_catalog_coordinates(self, tweakreg_catalog_name, tweaked_wcs):
@@ -330,9 +336,12 @@ class TweakRegStep(RomanStep):
         """
         Reads a source catalog from a specified file.
 
-        This function determines the format of the catalog based on the file extension.
-        If the file ends with "asdf", it uses a specific method to open and read the catalog;
-        otherwise, it reads the catalog using a standard table format.
+        This function determines the format of the catalog based on the
+        file extension:
+
+        * "asdf":  uses roman datamodels
+        * "parquet":  uses pyarrow
+        * otherwise:  uses astropy Table.
 
         Parameters
         ----------
@@ -349,11 +358,15 @@ class TweakRegStep(RomanStep):
         ValueError
             If the catalog format is unsupported.
         """
+        filetype = (
+            "parquet" if catalog_name.endswith("parquet") else self.catalog_format
+        )
         if catalog_name.endswith("asdf"):
+            # leave this for now
             with rdm.open(catalog_name) as source_catalog_model:
                 catalog = source_catalog_model.source_catalog
         else:
-            catalog = Table.read(catalog_name, format=self.catalog_format)
+            catalog = Table.read(catalog_name, format=filetype)
         return catalog
 
     def get_tweakreg_catalog(self, source_catalog, image_model):
@@ -452,7 +465,7 @@ class TweakRegStep(RomanStep):
             self.abs_refcat,
             ref_wcs=ref_image.meta.wcs,
             ref_wcsinfo=ref_image.meta.wcsinfo,
-            epoch=ref_image.meta.exposure.mid_time.decimalyear,
+            epoch=ref_image.meta.exposure.start_time.decimalyear,
             abs_minobj=self.abs_minobj,
             abs_fitgeometry=self.abs_fitgeometry,
             abs_nclip=self.abs_nclip,

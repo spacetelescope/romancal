@@ -3,6 +3,7 @@ from pathlib import Path
 
 import astropy.units as u
 import numpy as np
+import pyarrow
 import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
@@ -19,7 +20,6 @@ from roman_datamodels.datamodels import (
 )
 from roman_datamodels.maker_utils import mk_level2_image, mk_level3_mosaic
 
-from romancal.source_catalog.reference_data import ReferenceData
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
@@ -151,59 +151,17 @@ def test_l2_source_catalog(
     )
 
     cat = result.source_catalog
-
     assert isinstance(cat, Table)
-
-    columns = [
-        "label",
-        "xcentroid",
-        "ycentroid",
-        "ra_centroid",
-        "dec_centroid",
-        "aper_bkg_flux",
-        "aper_bkg_flux_err",
-        "aper30_flux",
-        "aper30_flux_err",
-        "aper50_flux",
-        "aper50_flux_err",
-        "aper70_flux",
-        "aper70_flux_err",
-        "aper_total_flux",
-        "aper_total_flux_err",
-        "is_extended",
-        "sharpness",
-        "roundness",
-        "nn_label",
-        "nn_dist",
-        "isophotal_flux",
-        "isophotal_flux_err",
-        "isophotal_area",
-        "semimajor_sigma",
-        "semiminor_sigma",
-        "ellipticity",
-        "orientation",
-        "sky_orientation",
-        "ra_bbox_ll",
-        "dec_bbox_ll",
-        "ra_bbox_ul",
-        "dec_bbox_ul",
-        "ra_bbox_lr",
-        "dec_bbox_lr",
-        "ra_bbox_ur",
-        "dec_bbox_ur",
-    ]
-
     assert len(cat) == nsources
 
     if nsources > 0:
-        for col in columns:
-            assert col in cat.colnames
+        for col in cat.columns:
             if "flux" in col:
                 assert cat[col].unit == "nJy"
-        assert np.min(cat["xcentroid"]) > 0.0
-        assert np.min(cat["ycentroid"]) > 0.0
-        assert np.max(cat["xcentroid"]) < 100.0
-        assert np.max(cat["ycentroid"]) < 100.0
+        assert np.min(cat["x_centroid"]) > 0.0
+        assert np.min(cat["y_centroid"]) > 0.0
+        assert np.max(cat["x_centroid"]) < 100.0
+        assert np.max(cat["y_centroid"]) < 100.0
 
 
 @pytest.mark.stpsf
@@ -236,59 +194,17 @@ def test_l3_source_catalog(
     )
 
     cat = result.source_catalog
-
     assert isinstance(cat, Table)
-
-    columns = [
-        "label",
-        "xcentroid",
-        "ycentroid",
-        "ra_centroid",
-        "dec_centroid",
-        "aper_bkg_flux",
-        "aper_bkg_flux_err",
-        "aper30_flux",
-        "aper30_flux_err",
-        "aper50_flux",
-        "aper50_flux_err",
-        "aper70_flux",
-        "aper70_flux_err",
-        "aper_total_flux",
-        "aper_total_flux_err",
-        "is_extended",
-        "sharpness",
-        "roundness",
-        "nn_label",
-        "nn_dist",
-        "isophotal_flux",
-        "isophotal_flux_err",
-        "isophotal_area",
-        "semimajor_sigma",
-        "semiminor_sigma",
-        "ellipticity",
-        "orientation",
-        "sky_orientation",
-        "ra_bbox_ll",
-        "dec_bbox_ll",
-        "ra_bbox_ul",
-        "dec_bbox_ul",
-        "ra_bbox_lr",
-        "dec_bbox_lr",
-        "ra_bbox_ur",
-        "dec_bbox_ur",
-    ]
-
     assert len(cat) == nsources
 
     if nsources > 0:
-        for col in columns:
-            assert col in cat.colnames
+        for col in cat.columns:
             if "flux" in col:
                 assert cat[col].unit == "nJy"
-        assert np.min(cat["xcentroid"]) > 0.0
-        assert np.min(cat["ycentroid"]) > 0.0
-        assert np.max(cat["xcentroid"]) < 100.0
-        assert np.max(cat["ycentroid"]) < 100.0
+        assert np.min(cat["x_centroid"]) > 0.0
+        assert np.min(cat["y_centroid"]) > 0.0
+        assert np.max(cat["x_centroid"]) < 100.0
+        assert np.max(cat["y_centroid"]) < 100.0
 
 
 @pytest.mark.stpsf
@@ -330,6 +246,7 @@ def test_l2_input_model_unchanged(image_model, tmp_path):
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         save_results=False,
+        fit_psf=False,
     )
 
     assert_equal(original_data, image_model.data)
@@ -354,6 +271,7 @@ def test_l3_input_model_unchanged(mosaic_model, tmp_path):
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         save_results=False,
+        fit_psf=False,
     )
 
     assert_equal(original_data, mosaic_model.data)
@@ -362,55 +280,20 @@ def test_l3_input_model_unchanged(mosaic_model, tmp_path):
 
 @pytest.mark.stpsf
 def test_inputs(mosaic_model):
-    with pytest.raises(ValueError):
-        ReferenceData(np.ones((3, 3)), (30, 50, 70))
-    with pytest.raises(ValueError):
-        aperture_ee = (70, 50, 30)
-        ReferenceData(mosaic_model, aperture_ee)
-    with pytest.raises(ValueError):
-        aperture_ee = (30, 50)
-        ReferenceData(mosaic_model, aperture_ee)
-    with pytest.raises(ValueError):
-        aperture_ee = (-1, 50, 70)
-        ReferenceData(mosaic_model, aperture_ee)
-    with pytest.raises(ValueError):
-        aperture_ee = (40, 70, 150)
-        ReferenceData(mosaic_model, aperture_ee)
-
     data = np.ones((3, 3), dtype=int)
     data[1, 1] = 1
     segm = SegmentationImage(data)
     cdata = np.ones((3, 3))
-    aper_params = {}
-    ci_thresh = 100.0
+    kernel_fwhm = 2.0
     with pytest.raises(ValueError):
-        RomanSourceCatalog(
-            np.ones((3, 3)), segm, cdata, aper_params, ci_thresh, 2.0, fit_psf=True
-        )
-
-    with pytest.raises(ValueError):
-        RomanSourceCatalog(
-            mosaic_model, segm, cdata, aper_params, (1.0, 2.0, 3.0), 2.0, fit_psf=True
-        )
+        RomanSourceCatalog(np.ones((3, 3)), segm, cdata, kernel_fwhm, fit_psf=True)
 
 
 @pytest.mark.stpsf
-def test_do_psf_photometry(tmp_path, image_model):
+def test_psf_photometry(tmp_path, image_model):
     """
-    Test that do_psf_photometry can recover mock sources and their position and photometry.
+    Test PSF photometry.
     """
-    os.chdir(tmp_path)
-
-    # get column names mapping for PSF photometry
-    psf_colnames_mapping = (
-        RomanSourceCatalog.get_psf_photometry_catalog_colnames_mapping()
-    )
-    psf_colnames = [
-        x.get("new_name")
-        for x in psf_colnames_mapping
-        if x.get("old_name") in ["x_fit", "y_fit", "flux_fit"]
-    ]
-
     step = SourceCatalogStep()
     result = step.call(
         image_model,
@@ -422,15 +305,17 @@ def test_do_psf_photometry(tmp_path, image_model):
     )
 
     cat = result.source_catalog
-
     assert isinstance(cat, Table)
-
-    # check the number of sources that have been detected
     assert len(cat) == 7
-    # check that all sources have both position and flux determined (ignore errors/flags)
-    for col_name in psf_colnames:
-        assert len(cat[col_name])  # make sure the column isn't empty
-        assert not np.any(np.isnan(cat[col_name]))  # and contains no nans
+
+    for colname in cat.colnames:
+        if "flux" in colname:
+            assert cat[colname].unit == "nJy"
+
+    for colname in cat.colnames:
+        if "psf" in colname:
+            assert len(cat[colname])  # make sure the column isn't empty
+            assert not np.any(np.isnan(cat[colname]))  # and contains no nans
 
 
 @pytest.mark.stpsf
@@ -440,13 +325,6 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
     Test that fit_psf will determine whether the PSF
     photometry columns are added to the final catalog or not.
     """
-    os.chdir(tmp_path)
-
-    # get column names mapping for PSF photometry
-    psf_colnames_mapping = (
-        RomanSourceCatalog.get_psf_photometry_catalog_colnames_mapping()
-    )
-
     step = SourceCatalogStep()
     result = step.call(
         image_model,
@@ -459,25 +337,17 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
     )
 
     cat = result.source_catalog
-
     assert isinstance(cat, Table)
 
+    psf_colnames = []
+    for colname in cat.colnames:
+        if "psf" in colname:
+            psf_colnames.append(colname)
+
     if fit_psf:
-        for colname in cat.colnames:
-            if "flux" in colname:
-                assert cat[colname].unit == "nJy"
-
-    # check if the PSF photometry column names are present or not based on fit_psf value
-    psf_colnames_present = all(
-        x.get("new_name") in cat.colnames for x in psf_colnames_mapping
-    )
-    psf_colnames_not_present = all(
-        x.get("new_name") not in cat.colnames for x in psf_colnames_mapping
-    )
-
-    assert (fit_psf and psf_colnames_present) or (
-        not fit_psf and psf_colnames_not_present
-    )
+        assert len(psf_colnames) > 0
+    else:
+        assert len(psf_colnames) == 0
 
 
 @pytest.mark.stpsf
@@ -567,20 +437,23 @@ def test_l2_source_catalog_keywords(
     # assert that we returned the correct object
     assert isinstance(result, expected_result)
 
-    # assert that the desired output files were saved to disk
-    assert all(
-        Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf").exists()
-        for suffix in expected_outputs.keys()
-    )
+    # assert that the desired output files were saved to disk and that
+    # they are of the correct type
+    for suffix in expected_outputs.keys():
+        if suffix == "cat":
+            ext = "parquet"
+        else:
+            ext = "asdf"
 
-    # assert that the desired output files were saved with the correct datamodel type
-    assert all(
-        isinstance(
-            rdm.open(Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf")),
-            expected_outputs.get(suffix),
-        )
-        for suffix in expected_outputs.keys()
-    )
+        filepath = Path(tmp_path / f"{result.meta.filename}_{suffix}.{ext}")
+        assert filepath.exists()
+
+        if suffix == "cat":
+            # the catalog is saved as a parquet file
+            tbl = pyarrow.parquet.read_table(filepath)
+            assert isinstance(tbl, pyarrow.Table)
+        else:
+            assert isinstance(rdm.open(filepath), expected_outputs.get(suffix))
 
 
 @pytest.mark.stpsf
@@ -670,20 +543,23 @@ def test_l3_source_catalog_keywords(
     # assert that we returned the correct object
     assert isinstance(result, expected_result)
 
-    # assert that the desired output files were saved to disk
-    assert all(
-        Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf").exists()
-        for suffix in expected_outputs.keys()
-    )
+    # assert that the desired output files were saved to disk and that
+    # they are of the correct type
+    for suffix in expected_outputs.keys():
+        if suffix == "cat":
+            ext = "parquet"
+        else:
+            ext = "asdf"
 
-    # assert that the desired output files were saved with the correct datamodel type
-    assert all(
-        isinstance(
-            rdm.open(Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf")),
-            expected_outputs.get(suffix),
-        )
-        for suffix in expected_outputs.keys()
-    )
+        filepath = Path(tmp_path / f"{result.meta.filename}_{suffix}.{ext}")
+        assert filepath.exists()
+
+        if suffix == "cat":
+            # the catalog is saved as a parquet file
+            tbl = pyarrow.parquet.read_table(filepath)
+            assert isinstance(tbl, pyarrow.Table)
+        else:
+            assert isinstance(rdm.open(filepath), expected_outputs.get(suffix))
 
 
 @pytest.mark.stpsf
