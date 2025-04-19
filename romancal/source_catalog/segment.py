@@ -168,7 +168,10 @@ class SegmentCatalog:
             "label",
             "xcentroid",
             "ycentroid",
+            "xcentroid_win",
+            "ycentroid_win",
             "sky_centroid",
+            "sky_centroid_win",
             "bbox_xmin",
             "bbox_xmax",
             "bbox_ymin",
@@ -176,8 +179,12 @@ class SegmentCatalog:
             "area",
             "semimajor_sigma",
             "semiminor_sigma",
+            "fwhm",
             "orientation",
             "ellipticity",
+            "cxx",
+            "cxy",
+            "cyy",
             "kron_radius",
             "segment_flux",
             "segment_fluxerr",
@@ -189,7 +196,11 @@ class SegmentCatalog:
         name_map = {}
         name_map["xcentroid"] = "x_centroid"
         name_map["ycentroid"] = "y_centroid"
+        name_map["xcentroid_win"] = "x_centroid_win"
+        name_map["ycentroid_win"] = "y_centroid_win"
         name_map["area"] = "segment_area"
+        name_map["semimajor_sigma"] = "semimajor"
+        name_map["semiminor_sigma"] = "semiminor"
         name_map["orientation"] = "orientation_pix"
         name_map["segment_fluxerr"] = "segment_flux_err"
         name_map["kron_fluxerr"] = "kron_flux_err"
@@ -200,7 +211,7 @@ class SegmentCatalog:
             value = getattr(segm_cat, name)
 
             # change the photutils dtypes
-            if new_name != "sky_centroid":
+            if new_name not in ("sky_centroid", "sky_centroid_win"):
                 if np.issubdtype(value.dtype, np.integer):
                     value = value.astype(np.int32)
                 elif np.issubdtype(value.dtype, np.floating):
@@ -220,6 +231,10 @@ class SegmentCatalog:
                 self.ra_centroid = value.ra
                 self.dec_centroid = value.dec
                 self.names.extend(["ra_centroid", "dec_centroid"])
+            elif new_name == "sky_centroid_win":
+                self.ra_centroid_win = value.ra
+                self.dec_centroid_win = value.dec
+                self.names.extend(["ra_centroid_win", "dec_centroid_win"])
             else:
                 setattr(self, new_name, value)
                 self.names.append(new_name)
@@ -233,3 +248,28 @@ class SegmentCatalog:
         return ((180.0 * u.deg) - self.wcs_angle + self.orientation_pix).astype(
             np.float32
         )
+
+    @lazyproperty
+    def _kron_abmag(self):
+        return self.convert_flux_to_abmag(self.kron_flux, self.kron_flux_err)
+
+    @lazyproperty
+    def kron_abmag(self):
+        """
+        The Kron magnitude in AB magnitudes.
+        """
+        return self._kron_abmag[0] * u.mag
+
+    @lazyproperty
+    def kron_abmag_err(self):
+        """
+        The Kron magnitude error in AB magnitudes.
+        """
+        return self._kron_abmag[1] * u.mag
+
+    @lazyproperty
+    def fluxfrac_radius_50(self):
+        """
+        The radius (in pixels) at which the flux fraction is 50%.
+        """
+        return self.source_cat.fluxfrac_radius(0.5).astype(np.float32)

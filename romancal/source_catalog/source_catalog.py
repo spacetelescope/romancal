@@ -71,6 +71,12 @@ class RomanSourceCatalog:
     flux_unit : str, optional
         The unit of the flux density. Default is 'nJy'.
 
+    cat_type : {'prompt', 'dr_det', 'dr_band', 'forced_full', 'forced_det'}, optional
+        The type of catalog to create. The default is 'prompt'. This
+        determines the columns in the output catalog. The 'dr_det' and
+        'dr_band' catalogs are band-specific catalogs for the
+        multiband source detection.
+
     Notes
     -----
     ``model.err`` is assumed to be the total error array corresponding
@@ -90,6 +96,7 @@ class RomanSourceCatalog:
         mask=None,
         detection_cat=None,
         flux_unit="nJy",
+        cat_type="prompt",
     ):
         if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
@@ -102,10 +109,12 @@ class RomanSourceCatalog:
         self.mask = mask
         self.detection_cat = detection_cat
         self.flux_unit = flux_unit
+        self.cat_type = cat_type
 
         self.n_sources = len(segment_img.labels)
         self.wcs = self.model.meta.wcs
         self.meta = {}
+        self.aperture_cat = None
 
         # define flux unit conversion factors
         self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
@@ -383,10 +392,11 @@ class RomanSourceCatalog:
 
         # reformat the aperture radii for the metadata to remove
         # Quantity objects
-        aper_radii = self.aperture_cat.aperture_radii.copy()
-        aper_radii["circle_arcsec"] = aper_radii.pop("circle").value
-        aper_radii["annulus_arcsec"] = aper_radii.pop("annulus").value
-        self.meta["aperture_radii"] = aper_radii
+        if self.aperture_cat is not None:
+            aper_radii = self.aperture_cat.aperture_radii.copy()
+            aper_radii["circle_arcsec"] = aper_radii.pop("circle").value
+            aper_radii["annulus_arcsec"] = aper_radii.pop("annulus").value
+            self.meta["aperture_radii"] = aper_radii
 
     @lazyproperty
     def column_descriptions(self):
@@ -405,19 +415,47 @@ class RomanSourceCatalog:
             "Row coordinate of the source centroid in the detection image "
             "from image moments (0 indexed)"
         )
-        col["ra_centroid"] = "Right ascension (ICRS) of the image centroid"
-        col["dec_centroid"] = "Declination (ICRS) of the image centroid"
-        col["semimajor_sigma"] = (
+        col["x_centroid_win"] = (
+            "Column coordinate of the windowed source centroid in the "
+            "detection image from image moments (0 indexed)"
+        )
+        col["y_centroid_win"] = (
+            "Row coordinate of the windowed source centroid in the "
+            "detection image from image moments (0 indexed)"
+        )
+        col["ra_centroid"] = "Right ascension (ICRS) of the source centroid"
+        col["dec_centroid"] = "Declination (ICRS) of the source centroid"
+        col["ra_centroid_win"] = (
+            "Right ascension (ICRS) of the windowed source centroid"
+        )
+        col["dec_centroid_win"] = "Declination (ICRS) of the windowed source centroid"
+        col["ra_psf"] = "Right ascension (ICRS) of the fitted-PSF position"
+        col["dec_psf"] = "Declination (ICRS) of the fitted_PSF position"
+
+        col["bbox_xmin"] = (
+            "Column index of the left edge of the source bounding box (0 indexed)"
+        )
+        col["bbox_xmax"] = (
+            "Column index of the right edge of the source bounding box (0 indexed)"
+        )
+        col["bbox_ymin"] = (
+            "Row index of the bottom edge of the source bounding box (0 indexed)"
+        )
+        col["bbox_ymax"] = (
+            "Row index of the top edge of the source bounding box (0 indexed)"
+        )
+        col["semimajor"] = (
             "1-sigma standard deviation along the semimajor axis of the 2D Gaussian function that has the same second-order central moments as the source"
         )
-        col["bbox_xmin"] = "Column index of the left edge of the source bounding box"
-        col["bbox_xmax"] = "Column index of the right edge of the source bounding box"
-        col["bbox_ymin"] = "Row index of the bottom edge of the source bounding box"
-        col["bbox_ymax"] = "Row index of the top edge of the source bounding box"
-        col["semiminor_sigma"] = (
+        col["semiminor"] = (
             "1-sigma standard deviation along the semiminor axis of the 2D Gaussian function that has the same second-order central moments as the source"
         )
-        col["ellipticity"] = "1 - (semimajor_sigma / semiminor_sigma)"
+        col["fwhm"] = (
+            "Circularized full width at half maximum (FWHM) "
+            "calculated from the semimajor and semiminor axes "
+            "as 2*sqrt(ln(2) * (semimajor**2 + semiminor**2))"
+        )
+        col["ellipticity"] = "Source ellipticity as 1 - (semimajor / semiminor)"
         col["orientation_pix"] = (
             "The angle measured counter-clockwise from the positive X axis to the major axis computed from image moments"
         )
@@ -426,25 +464,45 @@ class RomanSourceCatalog:
             "image moments"
         )
 
+        col["cxx"] = (
+            "Coefficient for the x**2 term in the generalized quadratic ellipse equation"
+        )
+        col["cxy"] = (
+            "Coefficient for the x*y term in the generalized quadratic ellipse equation"
+        )
+        col["cyy"] = (
+            "Coefficient for the y**2 term in the generalized quadratic ellipse equation"
+        )
+
         col["segment_flux"] = "Isophotal flux"
         col["segment_area"] = "Area of the source segment"
+        col["kron_radius"] = (
+            "Unscaled first-moment Kron radius defined as r = Sum_i "
+            "(r_i * I_i) / Sum_i (I_i), with r_i as an elliptical radius"
+        )
+        col["fluxfrac_radius_50"] = (
+            "The circular radius that encloses 50% of the source Kron flux."
+        )
         col["kron_flux"] = "Flux within the elliptical Kron aperture"
+        col["kron_abmag"] = "AB magnitude within the elliptical Kron aperture"
         col["aper_bkg_flux"] = "The local background estimate for aperture photometry"
 
         col["x_psf"] = "Column position of the source from PSF fitting (0 indexed)"
         col["y_psf"] = "Row position of the source from PSF fitting (0 indexed)"
         col["psf_flux"] = "Total PSF flux"
+        col["psf_gof"] = "PSF goodness of fit metric"
         col["psf_flags"] = "PSF fitting bit flags"
 
         col["warning_flags"] = "Warning bit flags"
         col["is_extended"] = "Flag indicating whether the source is extended"
         col["sharpness"] = "The DAOFind sharpness statistic"
-        col["roundness"] = "The DAOFind roundness1 statistic"
+        col["roundness1"] = "The DAOFind roundness1 statistic"
         col["nn_label"] = "The label number of the nearest neighbor in this skycell"
         col["nn_dist"] = "The distance to the nearest neighbor in this skycell"
 
         # add the aperture flux column descriptions
-        col.update(self.aperture_cat.aperture_flux_descriptions)
+        if self.aperture_cat is not None:
+            col.update(self.aperture_cat.aperture_flux_descriptions)
 
         # add the "*_err" column descriptions
         for column in self.column_names:
@@ -455,85 +513,204 @@ class RomanSourceCatalog:
         return col
 
     @lazyproperty
-    def column_names(self):
+    def aper_colnames(self):
         """
-        An ordered list of the output catalog column names.
+        An ordered list of the aperture column names.
         """
-        # define the aperture flux column names
-        aper_colnames = []
+        # define the aperture background flux column names
+        aper_colnames = [
+            "aper_bkg_flux",
+            "aper_bkg_flux_err",
+        ]
+
+        # define the aperture flux column names,
+        # e.g, aper01_flux, aper01_flux_err, etc.
         for colname in self.aperture_cat.aperture_flux_colnames:
             aper_colnames.append(colname)
             aper_colnames.append(f"{colname}_err")
 
-        # define the flux column names
-        flux_colnames = [
-            "aper_bkg_flux",
-            "aper_bkg_flux_err",
-        ]
-        flux_colnames.extend(aper_colnames)
-        if self.fit_psf:
-            flux_colnames.extend(
-                [
-                    "psf_flux",
-                    "psf_flux_err",
-                ]
-            )
-        flux_colnames.extend(
-            [
-                "segment_flux",
-                "segment_flux_err",
-                "kron_flux",
-                "kron_flux_err",
-            ]
-        )
+        return aper_colnames
 
-        if self.detection_cat is None:
-            colnames = [
-                "label",
-                "x_centroid",
-                "y_centroid",
-            ]
+    @lazyproperty
+    def flux_colnames(self):
+        """
+        An ordered list of the flux column names.
+        """
+        other_colnames = [
+            "segment_flux",
+            "segment_flux_err",
+            "kron_flux",
+            "kron_flux_err",
+            "kron_abmag",
+            "kron_abmag_err",
+        ]
+        psf_colnames = ["psf_flux", "psf_flux_err"]
+
+        if self.cat_type in ("prompt", "forced_full", "dr_band"):
+            flux_colnames = self.aper_colnames
             if self.fit_psf:
-                colnames.extend(
-                    [
-                        "x_psf",
-                        "x_psf_err",
-                        "y_psf",
-                        "y_psf_err",
-                    ]
-                )
-            colnames.extend(
-                [
-                    "ra_centroid",
-                    "dec_centroid",
-                    "bbox_xmin",
-                    "bbox_xmax",
-                    "bbox_ymin",
-                    "bbox_ymax",
-                    "semimajor_sigma",
-                    "semiminor_sigma",
-                    "ellipticity",
-                    "orientation_pix",
-                    "orientation_sky",
-                    "segment_area",
-                    "is_extended",
-                    "sharpness",
-                    "roundness",
-                    "nn_label",
-                    "nn_dist",
-                ]
-            )
-            colnames.extend(flux_colnames)
-            colnames.append("warning_flags")
-            if self.fit_psf:
-                colnames.append("psf_flags")
+                flux_colnames.extend(psf_colnames)
+            flux_colnames.extend(other_colnames)
+
+        elif self.cat_type in ("dr_det", "forced_det"):
+            flux_colnames = []
 
         else:
-            # these are band-specific columns for the multiband catalog
-            colnames = ["label"]  # label is needed to join the filter catalogs
-            colnames.extend(flux_colnames)
+            raise ValueError(f"Unknown catalog type: {self.cat_type}")
+
+        return flux_colnames
+
+    @lazyproperty
+    def column_names(self):
+        """
+        An ordered list of the output catalog column names.
+
+        This list determines which values are calculated in the output
+        catalog.
+        """
+        base_colnames = [
+            "label",
+            "x_centroid",
+            "y_centroid",
+        ]
+        xywin_colnames = [
+            "x_centroid_win",
+            "y_centroid_win",
+        ]
+        sky_colnames = [
+            "ra_centroid",
+            "dec_centroid",
+        ]
+        skywin_colnames = [
+            "ra_centroid_win",
+            "dec_centroid_win",
+        ]
+        skypsf_colnames = [
+            "ra_psf",
+            "dec_psf",
+        ]
+        segm_colnames = [
+            "bbox_xmin",
+            "bbox_xmax",
+            "bbox_ymin",
+            "bbox_ymax",
+            "segment_area",
+        ]
+        shape_colnames = [
+            "semimajor",
+            "semiminor",
+            "fwhm",
+            "ellipticity",
+            "orientation_pix",
+            "orientation_sky",
+            "cxx",
+            "cxy",
+            "cyy",
+            "kron_radius",
+        ]
+        nn_colnames = [
+            "nn_label",
+            "nn_dist",
+        ]
+        othershape_colnames = [
+            "sharpness",
+            "roundness1",
+            "is_extended",
+            "fluxfrac_radius_50",
+        ]
+        xypsf_colnames = [
+            "x_psf",
+            "x_psf_err",
+            "y_psf",
+            "y_psf_err",
+        ]
+        psf_flags_colnames = [
+            "psf_gof",
+            "psf_flags",
+        ]
+
+        det_colnames = []
+        det_colnames.extend(segm_colnames)
+        det_colnames.extend(shape_colnames)
+        det_colnames.extend(nn_colnames)
+
+        # These are band-specific columns for the multiband catalog.
+        # They are also used for the forced catalog.
+        band_colnames = ["label"]  # needed to join the filter catalogs
+        if self.fit_psf:
+            band_colnames.extend(xypsf_colnames)
+            band_colnames.extend(skypsf_colnames)
+            band_colnames.extend(psf_flags_colnames)
+        band_colnames.extend(othershape_colnames)
+        band_colnames.extend(self.flux_colnames)
+        self.band_colnames = band_colnames
+
+        if self.cat_type in ("prompt", "forced_full"):
+            colnames = []
+            colnames.extend(base_colnames)
+            colnames.extend(xywin_colnames)
+            if self.fit_psf:
+                colnames.extend(xypsf_colnames)
+            colnames.extend(sky_colnames)
+            colnames.extend(skywin_colnames)
+            if self.fit_psf:
+                colnames.extend(skypsf_colnames)
+            colnames.extend(det_colnames)
+            colnames.extend(othershape_colnames)
+            colnames.extend(self.flux_colnames)
+            colnames.append("warning_flags")
+            if self.fit_psf:
+                colnames.extend(psf_flags_colnames)
+
+        elif self.cat_type == "forced_det":
+            colnames = ["label"]  # needed to join the forced catalogs
+            colnames.extend(base_colnames)
+            colnames.extend(sky_colnames)
+            colnames.extend(shape_colnames)
+            colnames.extend(nn_colnames)
+
+        elif self.cat_type == "dr_det":
+            colnames = []
+            colnames.extend(base_colnames)
+            colnames.extend(xywin_colnames)
+            colnames.extend(sky_colnames)
+            colnames.extend(skywin_colnames)
+            colnames.extend(det_colnames)
+            colnames.append("warning_flags")
+
+        elif self.cat_type == "dr_band":
+            colnames = band_colnames.copy()
 
         return colnames
+
+    def _prefix_forced(self, catalog):
+        """
+        Prefix select columns of the catalog with "forced_" for the
+        forced catalog.
+
+        Parameters
+        ----------
+        catalog : `~astropy.table.Table`
+            The source catalog to prefix.
+
+        Returns
+        -------
+        catalog : `~astropy.table.Table`
+            The updated source catalog.
+        """
+        # prefix all columns (except "label") with "forced_"
+        if self.cat_type == "forced_det":
+            for colname in catalog.colnames:
+                if colname != "label":
+                    catalog.rename_column(colname, f"forced_{colname}")
+
+        # prefix the self.band_colnames with "forced_"
+        if self.cat_type == "forced_full":
+            for colname in [*self.band_colnames, "warning_flags"]:
+                if colname in catalog.colnames and colname != "label":
+                    catalog.rename_column(colname, f"forced_{colname}")
+
+        return catalog
 
     @lazyproperty
     def catalog(self):
@@ -546,11 +723,28 @@ class RomanSourceCatalog:
         self.convert_sb_to_flux_density()
 
         # make measurements - the order of these calculations is important
+        log.info("Calculating segment properties")
         self.calc_segment_properties()
-        self.calc_aperture_photometry()
-        self.calc_daofind_properties()
-        self.calc_nn_properties()
-        if self.fit_psf:
+
+        # NOTE: we cannot access self.column_names before
+        # calc_aperture_photometry is called because the aperture columns
+        # names are dynmically generated
+        if self.cat_type != "forced_det":
+            log.info("Calculating aperture photometry")
+            self.calc_aperture_photometry()
+
+        daofind_cols = {"sharpness", "roundness1"}
+        if daofind_cols & set(self.column_names):
+            log.info("Calculating DAOFind properties")
+            self.calc_daofind_properties()
+
+        if any("nn_" in col for col in self.column_names):
+            log.info("Calculating nearest neighbor properties")
+            self.calc_nn_properties()
+
+        if any("psf" in col for col in self.column_names):
+            # TODO: compute force_full PSF photometry at forced positions
+            log.info("Calculating PSF photometry")
             self.calc_psf_photometry()
 
         # put the measurements into a Table
@@ -561,6 +755,9 @@ class RomanSourceCatalog:
             catalog[column].info.description = descrip
         self.update_metadata()
         catalog.meta.update(self.meta)
+
+        # prefix select columns with "forced_" for the forced catalog
+        catalog = self._prefix_forced(catalog)
 
         # convert QTable to Table to avoid having Quantity columns
         catalog = Table(catalog)
