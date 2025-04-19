@@ -146,7 +146,7 @@ class ApertureCatalog:
             descriptions[colname] = desc
         return descriptions
 
-    def calc_aperture_photometry(self):
+    def calc_aperture_photometry(self, subtract_local_bkg=False):
         """
         Calculate the aperture photometry.
 
@@ -164,9 +164,10 @@ class ApertureCatalog:
             tmp_flux_col = f"aperture_sum_{i}"
             tmp_flux_err_col = f"aperture_sum_err_{i}"
 
-            # subtract the local background measured in the annulus
-            aper_areas = aperture.area_overlap(self.model.data)
-            aper_phot[tmp_flux_col] -= self.aper_bkg_flux * aper_areas
+            if subtract_local_bkg:
+                # subtract the local background measured in the annulus
+                aper_areas = aperture.area_overlap(self.model.data)
+                aper_phot[tmp_flux_col] -= self.aper_bkg_flux * aper_areas
 
             # set the flux and error attributes
             flux_col = self.aperture_flux_colnames[i]
