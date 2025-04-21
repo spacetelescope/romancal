@@ -182,7 +182,7 @@ class SkyCell:
             "ra_corn3": self.data["ra_corn3"],
             "dec_corn3": self.data["dec_corn3"],
             "ra_corn4": self.data["ra_corn4"],
-            "dec_corn4": self.data["dec_corn5"],
+            "dec_corn4": self.data["dec_corn4"],
         }
 
     @cached_property
