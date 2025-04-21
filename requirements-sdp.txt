@@ -1,9 +1,0 @@
-# To generate this file:
-#
-#     pip install -e .[test,sdp]
-#     pip freeze | grep -v romancal.git >> requirements-sdp.txt
-#
-# Add a CRDS context number for the delivery as a record here
-#
-# CRDS_CONTEXT = roman_0065.pmap
-#

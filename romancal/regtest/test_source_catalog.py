@@ -1,7 +1,7 @@
 """Roman tests for source catalog creation"""
 
-import asdf
 import pytest
+from astropy.table import Table
 
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 from romancal.stpipe import RomanStep
@@ -24,7 +24,7 @@ def run_source_catalog(rtdata_module, request, resource_tracker):
 
     inputfn = request.param
 
-    outputfn = inputfn.rsplit("_", 1)[0] + "_cat.asdf"
+    outputfn = inputfn.rsplit("_", 1)[0] + "_cat.parquet"
     rtdata.output = outputfn
 
     rtdata.get_data(f"WFI/image/{inputfn}")
@@ -42,8 +42,7 @@ def run_source_catalog(rtdata_module, request, resource_tracker):
 
 @pytest.fixture(scope="module")
 def catalog(run_source_catalog):
-    with asdf.open(run_source_catalog.output) as af:
-        yield af["roman"]["source_catalog"]
+    yield Table.read(run_source_catalog.output)
 
 
 @pytest.fixture(scope="module")
@@ -79,12 +78,12 @@ def test_forced_catalog(rtdata_module):
     rtdata = rtdata_module
     input_deep_segm = "r00001_p_v01001001001001_r274dp63x31y81_f158_segm.asdf"
     input_shallow_coadd = "r00001_p_e01001001001001_0001_r274dp63x31y81_f158_coadd.asdf"
-    truth_cat = "r00001_p_e01001001001001_0001_r274dp63x31y81_f158_force_cat.asdf"
+    truth_cat = "r00001_p_e01001001001001_0001_r274dp63x31y81_f158_force_cat.parquet"
     rtdata.get_data(f"WFI/image/{input_deep_segm}")
     rtdata.get_data(f"WFI/image/{input_shallow_coadd}")
     truth_cat = rtdata.get_truth(f"truth/WFI/image/{truth_cat}")
     rtdata.input = input_shallow_coadd
-    outputfn = input_shallow_coadd.rsplit("_", 1)[0] + "_force_cat.asdf"
+    outputfn = input_shallow_coadd.rsplit("_", 1)[0] + "_force_cat.parquet"
     rtdata.output = outputfn
 
     args = [
@@ -97,7 +96,7 @@ def test_forced_catalog(rtdata_module):
     ]
     RomanStep.from_cmdline(args)
 
-    afcat = asdf.open(outputfn)
+    cat = Table.read(outputfn)
     fieldlist = [
         "forced_kron_flux",
         "forced_segment_flux",
@@ -107,7 +106,7 @@ def test_forced_catalog(rtdata_module):
         "forced_ellipticity",
     ]
     for field in fieldlist:
-        assert field in afcat["roman"]["source_catalog"].dtype.names
+        assert field in cat.dtype.names
 
     step = SourceCatalogStep()
     step.log.info(
@@ -117,10 +116,8 @@ def test_forced_catalog(rtdata_module):
         "at multiple epochs."
     )
 
-    aftruth = asdf.open(truth_cat)
-    assert set(aftruth["roman"]["source_catalog"].dtype.names) == set(
-        afcat["roman"]["source_catalog"].dtype.names
-    )
+    cattruth = Table.read(truth_cat)
+    assert set(cattruth.dtype.names) == set(cattruth.dtype.names)
     # weak assertion that our truth file must at least have the same
     # catalog fields as the file produced here.  Exactly matching rows
     # would require a lot of okifying things that aren't obviously

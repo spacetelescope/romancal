@@ -17,6 +17,7 @@ from romancal.multiband_catalog.detection_image import make_detection_image
 from romancal.multiband_catalog.utils import add_filter_to_colnames, remove_columns
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
+from romancal.source_catalog.save_utils import save_segment_image
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
 
@@ -176,33 +177,14 @@ class MultibandCatalogStep(RomanStep):
             # put the resulting catalog in the model
             source_catalog_model.source_catalog = det_cat
 
-        # explicitly save the segmentation image;
-        # the multiband catalog is automatically saved by stpipe
-        self.save_segm(segment_img, source_catalog_model)
-
-        return source_catalog_model
-
-    def save_segm(self, segment_img, source_catalog_model):
-        """
-        Save the segmentation image.
-        """
+        # always save the segmentation image
         output_filename = (
             self.output_file
             if self.output_file is not None
             else source_catalog_model.meta.filename
         )
+        save_segment_image(self, segment_img, source_catalog_model, output_filename)
 
-        segmentation_model = datamodels.MosaicSegmentationMapModel()
-        segmentation_model.meta = {}
-        for key in segmentation_model.meta._schema_attributes.explicit_properties:
-            segmentation_model.meta[key] = source_catalog_model.meta[key]
+        self.output_ext = "parquet"
 
-        if segment_img is not None:
-            segmentation_model.data = segment_img.data.astype(np.uint32)
-            segmentation_model["detection_image"] = segment_img.detection_image
-            self.save_model(
-                segmentation_model,
-                output_file=output_filename,
-                suffix="segm",
-                force=True,
-            )
+        return source_catalog_model

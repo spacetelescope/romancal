@@ -1,11 +1,14 @@
 import os
+from pathlib import Path
 
 import astropy.units as u
 import numpy as np
+import pyarrow
 import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
-from roman_datamodels.datamodels import MosaicModel
+from roman_datamodels import datamodels as rdm
+from roman_datamodels.datamodels import MosaicModel, MosaicSegmentationMapModel
 from roman_datamodels.maker_utils import mk_level3_mosaic
 
 from romancal.datamodels import ModelLibrary
@@ -99,3 +102,13 @@ def test_multiband_catalog(
                 assert "f158" in colname or "f184" in colname
             if colname.endswith("_flux"):
                 assert f"{colname}_err" in cat.colnames
+
+    if save_results:
+        filepath = Path(tmp_path / f"{result.meta.filename}_cat.parquet")
+        assert filepath.exists()
+        tbl = pyarrow.parquet.read_table(filepath)
+        assert isinstance(tbl, pyarrow.Table)
+
+        filepath = Path(tmp_path / f"{result.meta.filename}_segm.asdf")
+        assert filepath.exists()
+        assert isinstance(rdm.open(filepath), MosaicSegmentationMapModel)

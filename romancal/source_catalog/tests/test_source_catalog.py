@@ -3,6 +3,7 @@ from pathlib import Path
 
 import astropy.units as u
 import numpy as np
+import pyarrow
 import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
@@ -436,20 +437,23 @@ def test_l2_source_catalog_keywords(
     # assert that we returned the correct object
     assert isinstance(result, expected_result)
 
-    # assert that the desired output files were saved to disk
-    assert all(
-        Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf").exists()
-        for suffix in expected_outputs.keys()
-    )
+    # assert that the desired output files were saved to disk and that
+    # they are of the correct type
+    for suffix in expected_outputs.keys():
+        if suffix == "cat":
+            ext = "parquet"
+        else:
+            ext = "asdf"
 
-    # assert that the desired output files were saved with the correct datamodel type
-    assert all(
-        isinstance(
-            rdm.open(Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf")),
-            expected_outputs.get(suffix),
-        )
-        for suffix in expected_outputs.keys()
-    )
+        filepath = Path(tmp_path / f"{result.meta.filename}_{suffix}.{ext}")
+        assert filepath.exists()
+
+        if suffix == "cat":
+            # the catalog is saved as a parquet file
+            tbl = pyarrow.parquet.read_table(filepath)
+            assert isinstance(tbl, pyarrow.Table)
+        else:
+            assert isinstance(rdm.open(filepath), expected_outputs.get(suffix))
 
 
 @pytest.mark.stpsf
@@ -539,20 +543,23 @@ def test_l3_source_catalog_keywords(
     # assert that we returned the correct object
     assert isinstance(result, expected_result)
 
-    # assert that the desired output files were saved to disk
-    assert all(
-        Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf").exists()
-        for suffix in expected_outputs.keys()
-    )
+    # assert that the desired output files were saved to disk and that
+    # they are of the correct type
+    for suffix in expected_outputs.keys():
+        if suffix == "cat":
+            ext = "parquet"
+        else:
+            ext = "asdf"
 
-    # assert that the desired output files were saved with the correct datamodel type
-    assert all(
-        isinstance(
-            rdm.open(Path(tmp_path / f"{result.meta.filename}_{suffix}.asdf")),
-            expected_outputs.get(suffix),
-        )
-        for suffix in expected_outputs.keys()
-    )
+        filepath = Path(tmp_path / f"{result.meta.filename}_{suffix}.{ext}")
+        assert filepath.exists()
+
+        if suffix == "cat":
+            # the catalog is saved as a parquet file
+            tbl = pyarrow.parquet.read_table(filepath)
+            assert isinstance(tbl, pyarrow.Table)
+        else:
+            assert isinstance(rdm.open(filepath), expected_outputs.get(suffix))
 
 
 @pytest.mark.stpsf
