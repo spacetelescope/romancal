@@ -156,7 +156,7 @@ def test_l2_source_catalog(
 
     if nsources > 0:
         for col in cat.columns:
-            if "flux" in col:
+            if "flux" in col and "fluxfrac" not in col:
                 assert cat[col].unit == "nJy"
         assert np.min(cat["x_centroid"]) > 0.0
         assert np.min(cat["y_centroid"]) > 0.0
@@ -199,7 +199,7 @@ def test_l3_source_catalog(
 
     if nsources > 0:
         for col in cat.columns:
-            if "flux" in col:
+            if "flux" in col and "fluxfrac" not in col:
                 assert cat[col].unit == "nJy"
         assert np.min(cat["x_centroid"]) > 0.0
         assert np.min(cat["y_centroid"]) > 0.0
@@ -309,7 +309,7 @@ def test_psf_photometry(tmp_path, image_model):
     assert len(cat) == 7
 
     for colname in cat.colnames:
-        if "flux" in colname:
+        if "flux" in colname and "fluxfrac" not in colname:
             assert cat[colname].unit == "nJy"
 
     for colname in cat.colnames:
