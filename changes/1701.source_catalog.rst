@@ -1,0 +1,1 @@
+Local background is no longer subtracted from aperture fluxes.
