@@ -77,7 +77,7 @@ def wcs_from_footprints(
         Bounding_box of the new WCS.
         If not supplied it is computed from the bounding_box of all inputs.
     pscale_ratio : float, None, optional
-        Ratio of input to output pixel scale. Ignored when either
+        Ratio of output pixel scale to input pixel scale. Ignored when either
         ``transform`` or ``pscale`` are provided.
     pscale : float, None, optional
         Absolute pixel scale in degrees. When provided, overrides
@@ -236,7 +236,7 @@ def compute_scale(
         `wcsinfo.dispersion_direction`
 
     pscale_ratio : int
-        Ratio of input to output pixel scale
+        Ratio of output pixel scale to input pixel scale.
 
     Returns
     -------
