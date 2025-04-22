@@ -14,7 +14,7 @@ from roman_datamodels import datamodels
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog.background import subtract_background_library
 from romancal.multiband_catalog.detection_image import make_detection_image
-from romancal.multiband_catalog.utils import add_filter_to_colnames, remove_columns
+from romancal.multiband_catalog.utils import add_filter_to_colnames
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.save_utils import save_segment_image
@@ -133,6 +133,7 @@ class MultibandCatalogStep(RomanStep):
             det_model.weight = example_model.weight
             det_model.meta = example_model.meta
 
+            log.info("Creating catalog for detection image")
             det_catobj = RomanSourceCatalog(
                 det_model,
                 segment_img,
@@ -141,8 +142,11 @@ class MultibandCatalogStep(RomanStep):
                 fit_psf=self.fit_psf,
                 detection_cat=None,
                 mask=mask,
+                cat_type="dr_det",
             )
-            det_cat = remove_columns(det_catobj.catalog)
+            # need to generate the catalog before we pass the det_catobj
+            # to the RomanSourceCatalog constructor
+            det_cat = det_catobj.catalog
 
             # loop over each image
             with library:
@@ -153,6 +157,8 @@ class MultibandCatalogStep(RomanStep):
                         | (model.err <= 0)
                     )
 
+                    filter_name = model.meta.basic.optical_element  # L3
+                    log.info(f"Creating catalog for {filter_name} image")
                     catobj = RomanSourceCatalog(
                         model,
                         segment_img,
@@ -161,6 +167,7 @@ class MultibandCatalogStep(RomanStep):
                         fit_psf=self.fit_psf,
                         detection_cat=det_catobj,
                         mask=mask,
+                        cat_type="dr_band",
                     )
 
                     filter_name = model.meta.basic.optical_element

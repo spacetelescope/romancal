@@ -305,7 +305,8 @@ class PSFCatalog:
         self.xypos = xypos
         self.mask = mask
 
-        self.names = []
+        self.names = list(self._name_map.values())
+        self.names.extend(["ra_psf", "dec_psf"])
 
         self.calc_psf_photometry()
 
@@ -318,7 +319,7 @@ class PSFCatalog:
         The `~photutils.psf.GriddedPSF` model is created using the
         STPSF library.
         """
-        log.info("Constructing a gridded PSF model.")
+        log.info("Constructing a gridded PSF model")
         if hasattr(self.model.meta, "instrument"):
             # ImageModel (L2 datamodel)
             filt = self.model.meta.instrument.optical_element
@@ -335,12 +336,27 @@ class PSFCatalog:
 
         return gridded_psf_model
 
+    @lazyproperty
+    def _name_map(self):
+        """
+        Mapping of photutils column names to the output catalog names.
+        """
+        name_map = {}
+        name_map["x_fit"] = "x_psf"
+        name_map["x_err"] = "x_psf_err"
+        name_map["y_fit"] = "y_psf"
+        name_map["y_err"] = "y_psf_err"
+        name_map["flux_fit"] = "psf_flux"
+        name_map["flux_err"] = "psf_flux_err"
+        name_map["qfit"] = "psf_gof"
+        name_map["flags"] = "psf_flags"
+        return name_map
+
     def calc_psf_photometry(self):
         """
-        Perform PSF photometry by fitting PSF models to detected sources
-        for refined astrometry.
+        Perform PSF photometry by fitting PSF models to detected
+        sources.
         """
-        log.info("Fitting a PSF model to sources for improved astrometric precision.")
         xinit, yinit = np.transpose(self.xypos)
         psf_photometry_table, _ = fit_psf_to_image_model(
             image_model=self.model,
@@ -351,18 +367,8 @@ class PSFCatalog:
             exclude_out_of_bounds=True,
         )
 
-        # map photutils column names to the output catalog names
-        name_map = {}
-        name_map["flags"] = "psf_flags"
-        name_map["x_fit"] = "x_psf"
-        name_map["x_err"] = "x_psf_err"
-        name_map["y_fit"] = "y_psf"
-        name_map["y_err"] = "y_psf_err"
-        name_map["flux_fit"] = "psf_flux"
-        name_map["flux_err"] = "psf_flux_err"
-
         # set these columns as attributes of this instance
-        for old_name, new_name in name_map.items():
+        for old_name, new_name in self._name_map.items():
             value = psf_photometry_table[old_name]
 
             # change the photutils dtypes
@@ -376,4 +382,24 @@ class PSFCatalog:
                 value *= u.pix
 
             setattr(self, new_name, value)
-            self.names.append(new_name)
+
+    @lazyproperty
+    def _sky_psf(self):
+        """
+        The pixel coordinates of the fitted-PSF pixel position.
+        """
+        return self.model.meta.wcs.pixel_to_world(self.x_psf, self.y_psf)
+
+    @lazyproperty
+    def ra_psf(self):
+        """
+        Right Ascension of the fitted-PSF pixel position.
+        """
+        return self._sky_psf.ra
+
+    @lazyproperty
+    def dec_psf(self):
+        """
+        Declination of the fitted-PSF pixel position.
+        """
+        return self._sky_psf.dec
