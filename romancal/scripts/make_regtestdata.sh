@@ -30,12 +30,10 @@ outdir="$1"
 logfile="$outdir/make_regtestdata.log"
 
 # stop on an error
-# FIXME we can't do this because asn_from_list always returns an error
-# see: https://github.com/spacetelescope/romancal/issues/1535
-#set -e
+set -e
 
-# Redirect all output to the logfile
-exec > $logfile 2>&1
+# Redirect all output to the logfile and the terminal
+exec > >(tee $logfile) 2>&1
 
 # set up the directory structure
 mkdir -p $outdir/roman-pipeline/dev/WFI/image
