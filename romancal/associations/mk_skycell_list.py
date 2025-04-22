@@ -5,7 +5,6 @@ import logging
 import os.path
 import sys
 
-import numpy as np
 import roman_datamodels as rdm
 
 import romancal.skycell.match as sm
@@ -41,7 +40,7 @@ def mk_skycell_list(output_dir, filelist):
             cal_file.meta.wcs
         )
         logger.info(
-            f"Skycell List:{file_name}, {intersecting_skycells, nearby_skycells}"
+            f"Skycell List: {file_name}, {intersecting_skycells}, {nearby_skycells}"
         )
         output_file_name = os.path.basename(input_file).split(".")[0]
         if not output_dir:
@@ -50,9 +49,7 @@ def mk_skycell_list(output_dir, filelist):
             output_file_name = os.path.join(output_dir, output_file_name)
 
         with open(output_file_name + ".match", "w") as outfile:
-            outfile.write(
-                f"{file_name} {np.array2string(intersecting_skycells, separator=',')}"
-            )
+            outfile.write(f"{file_name} {intersecting_skycells}")
 
 
 def _cli(args=None):
