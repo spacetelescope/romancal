@@ -100,7 +100,7 @@ class SkyCell:
                 "cannot extract skycell information from modellibrary association with neither WCS nor target info"
             )
 
-        return SkyCell(skycell_name)
+        return SkyCell.from_name(skycell_name)
 
     @property
     def index(self) -> int | None:
