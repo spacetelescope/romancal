@@ -290,7 +290,7 @@ class ProjectionRegion:
         for projregion in SKYMAP.projregions:
             if (
                 int(projregion["skycell_start"])
-                < index
+                <= index
                 < int(projregion["skycell_end"])
             ):
                 return cls(projregion[0])
