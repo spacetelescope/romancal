@@ -12,22 +12,22 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 fieldlist = [
     "ra_centroid",  # DMS374 positions on ICRF
     "dec_centroid",  # DMS374 positions on ICRF
-    "aper01_f158_flux",  # DMS399 aperture fluxes
-    "aper02_f158_flux",  # DMS399 aperture fluxes
-    "aper04_f158_flux",  # DMS399 aperture fluxes
-    "segment_f158_flux",  # DMS375 fluxes
-    "kron_f158_flux",  # DMS375 fluxes
-    "aper01_f158_flux_err",  # DMS386 flux uncertainties
-    "aper02_f158_flux_err",  # DMS386 flux uncertainties
+    "aper01_flux_f158",  # DMS399 aperture fluxes
+    "aper02_flux_f158",  # DMS399 aperture fluxes
+    "aper04_flux_f158",  # DMS399 aperture fluxes
+    "segment_flux_f158",  # DMS375 fluxes
+    "kron_flux_f158",  # DMS375 fluxes
+    "aper01_flux_f158_err",  # DMS386 flux uncertainties
+    "aper02_flux_f158_err",  # DMS386 flux uncertainties
     "warning_flags",  # DMS387 dq_flags
-    "is_extended",  # DMS392 source classification
-    "semimajor_sigma",  # DMS394 galaxy morphology
-    "semiminor_sigma",  # DMS394 galaxy morphology
-    "orientation_pix",  # DMS394 galaxy morphology
-    "segment_f158_flux_err",  # DMS395 basic statistical uncertainties
-    "kron_f158_flux_err",  # DMS395 basic statistical uncertainties
-    "aper01_f158_flux_err",  # DMS395 basic statistical uncertainties
-    "x_psf_err",  # DMS395 basic statistical uncertainties
+    "is_extended_f158",  # DMS392 source classification
+    "semimajor",  # DMS394 galaxy morphology
+    "semiminor",  # DMS394 galaxy morphology
+    "orientation_sky",  # DMS394 galaxy morphology
+    "segment_flux_f158_err",  # DMS395 basic statistical uncertainties
+    "kron_flux_f158_err",  # DMS395 basic statistical uncertainties
+    "aper01_flux_f158_err",  # DMS395 basic statistical uncertainties
+    "x_psf_f158_err",  # DMS395 basic statistical uncertainties
 ]
 
 

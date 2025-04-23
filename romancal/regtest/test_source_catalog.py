@@ -101,8 +101,8 @@ def test_forced_catalog(rtdata_module):
         "forced_kron_flux",
         "forced_segment_flux",
         "forced_aper02_flux",
-        "forced_semimajor_sigma",
-        "forced_semiminor_sigma",
+        "forced_semimajor",
+        "forced_semiminor",
         "forced_ellipticity",
     ]
     for field in fieldlist:
