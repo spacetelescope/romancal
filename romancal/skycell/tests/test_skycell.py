@@ -5,10 +5,11 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from numpy.testing import assert_allclose
 
 os.environ["SKYMAP_PATH"] = str(Path(__file__).parent / "skymap_subset.asdf")
 
-from romancal.skycell.skymap import ProjectionRegion, SkyCell, wcsinfo_to_gwcs
+from romancal.skycell.skymap import ProjectionRegion, SkyCell
 
 
 def test_skycell_init():
@@ -75,73 +76,46 @@ def test_projregion_from_skycell():
     assert ProjectionRegion.from_skycell_index(0) == ProjectionRegion(0)
 
 
-def test_skycell_to_wcs():
+@pytest.mark.parametrize(
+    "name",
+    ["225p90x30y51", "225p90x31y51"],
+)
+def test_skycell_to_wcs(name):
     """Test integrity of skycell.wcs"""
 
-    skycell = SkyCell.from_name("225p90x30y51")
+    skycell = SkyCell.from_name(name)
 
-    assert np.allclose(
-        skycell.wcs.wcs_pix2world([(0.0, 0.0)], 0),
-        skycell.radec_corners[0],
-    )
-    assert np.allclose(
-        skycell.wcs.wcs_pix2world([(skycell.pixel_shape[0] - 1, 0.0)], 0),
-        skycell.radec_corners[1],
-    )
-    assert np.allclose(
-        skycell.wcs.wcs_pix2world(
-            [(skycell.pixel_shape[0] - 1, skycell.pixel_shape[1] - 1)], 0
+    wcs = skycell.wcs
+
+    assert_allclose(
+        np.array(
+            [
+                wcs(0.0, 0.0),
+                wcs(skycell.pixel_shape[0] - 1, 0.0),
+                wcs(skycell.pixel_shape[0] - 1, skycell.pixel_shape[1] - 1),
+                wcs(0.0, skycell.pixel_shape[1] - 1),
+            ]
         ),
-        skycell.radec_corners[2],
-    )
-    assert np.allclose(
-        skycell.wcs.wcs_pix2world([(0.0, skycell.pixel_shape[1] - 1)], 0),
-        skycell.radec_corners[3],
+        skycell.radec_corners,
     )
 
+    wcsinfo = skycell.wcsinfo
 
-def test_wcsinfo_to_gwcs():
-    """Test integrity of wcsinfo_to_gwcs"""
-    wcsinfo = {
-        "ra_ref": 269.83219987378925,
-        "dec_ref": 66.04081466149024,
-        "x_ref": 2069.0914958388985,
-        "y_ref": 2194.658767532754,
-        "rotation_matrix": [
-            [-0.9999964196507396, -0.00267594575838714],
-            [-0.00267594575838714, 0.9999964196507396],
-        ],
-        "pixel_scale": 3.036307317109957e-05,
-        "pixel_shape": [4389, 4138],
-        "ra_center": 269.82284964811464,
-        "dec_center": 66.0369888162117,
-        "ra_corn1": 269.98694025887136,
-        "dec_corn1": 65.97426875366378,
-        "ra_corn2": 269.98687579251805,
-        "dec_corn2": 66.09988065827382,
-        "ra_corn3": 269.6579498847431,
-        "dec_corn3": 66.099533603104,
-        "ra_corn4": 269.6596332616879,
-        "dec_corn4": 65.97389321243348,
-        "orientat": 359.8466793994546,
-    }
-
-    wcs = wcsinfo_to_gwcs(wcsinfo)
-
-    assert np.allclose(
+    assert_allclose(
         wcs(wcsinfo["x_ref"], wcsinfo["y_ref"]), (wcsinfo["ra_ref"], wcsinfo["dec_ref"])
     )
-    assert np.allclose(
-        wcs(4389 / 2.0, 4138 / 2.0), (wcsinfo["ra_center"], wcsinfo["dec_center"])
+    assert_allclose(
+        wcs(wcsinfo["pixel_shape"][0] / 2.0, wcsinfo["pixel_shape"][1] / 2.0),
+        (wcsinfo["ra_center"], wcsinfo["dec_center"]),
     )
-    assert np.allclose(wcs(0.0, 0.0), (wcsinfo["ra_corn1"], wcsinfo["dec_corn1"]))
-    assert np.allclose(
+    assert_allclose(wcs(0.0, 0.0), (wcsinfo["ra_corn1"], wcsinfo["dec_corn1"]))
+    assert_allclose(
         wcs(0.0, wcsinfo["pixel_shape"][1]), (wcsinfo["ra_corn2"], wcsinfo["dec_corn2"])
     )
-    assert np.allclose(
+    assert_allclose(
         wcs(wcsinfo["pixel_shape"][0], wcsinfo["pixel_shape"][1]),
         (wcsinfo["ra_corn3"], wcsinfo["dec_corn3"]),
     )
-    assert np.allclose(
+    assert_allclose(
         wcs(wcsinfo["pixel_shape"][0], 0.0), (wcsinfo["ra_corn4"], wcsinfo["dec_corn4"])
     )

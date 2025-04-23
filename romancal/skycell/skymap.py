@@ -7,7 +7,6 @@ from pathlib import Path
 
 import asdf
 import crds
-import gwcs
 import numpy as np
 import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
@@ -15,7 +14,7 @@ from asdf import AsdfFile
 from astropy import coordinates
 from astropy import units as u
 from astropy.modeling import models
-from astropy.wcs import WCS
+from gwcs import WCS, coordinate_frames
 from numpy.typing import NDArray
 from roman_datamodels import stnode
 from scipy.spatial import KDTree
@@ -215,10 +214,10 @@ class SkyCell:
         return {
             "ra_ref": self.projregion.data["ra_tangent"],
             "dec_ref": self.projregion.data["dec_tangent"],
-            "x_ref": self.projregion.data["x_tangent"],
-            "y_ref": self.projregion.data["y_tangent"],
+            "x_ref": self.data["x_tangent"],
+            "y_ref": self.data["y_tangent"],
             "rotation_matrix": None,
-            "orientat": self.data["orientat"],
+            "orientat": self.projregion.data["orientat"],
             "pixel_scale": self.pixel_scale,
             "pixel_shape": self.pixel_shape,
             "ra_center": self.data["ra_center"],
@@ -234,21 +233,9 @@ class SkyCell:
         }
 
     @cached_property
-    def gwcs(self) -> gwcs.WCS:
-        """GWCS representing this sky cell"""
-        wcsinfo_to_gwcs(self.wcsinfo)
-
-    @cached_property
     def wcs(self) -> WCS:
-        """FITS WCS representing this sky cell"""
-        wcs = WCS(naxis=2)
-        wcs.wcs.cdelt = [self.pixel_scale, self.pixel_scale]
-        wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
-        wcs.wcs.crval = list(self.projregion.radec_tangent)
-        wcs.wcs.crpix = list(self.xy_tangent)
-        wcs.wcs.crota = [0, self.projregion.orientation]  # CROTA2 is the rotation angle
-        wcs.array_shape = list(self.pixel_shape)
-        return wcs
+        """WCS representing this sky cell"""
+        return wcsinfo_to_wcs(self.wcsinfo)
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, SkyCell):
@@ -403,18 +390,6 @@ class ProjectionRegion:
         """degrees per pixel"""
         return SKYMAP.pixel_scale
 
-    @cached_property
-    def wcs(self) -> WCS:
-        """FITS WCS representing this region"""
-        wcs = WCS(naxis=2)
-        wcs.wcs.cdelt = [self.pixel_scale, self.pixel_scale]
-        wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
-        wcs.wcs.crval = list(self.radec_tangent)
-        wcs.wcs.crpix = list(self.xy_tangent)
-        wcs.wcs.crota = [0, self.orientation]  # CROTA2 is the rotation angle
-        wcs.array_shape = list(self.pixel_shape)
-        return wcs
-
     def __eq__(self, other) -> bool:
         if not isinstance(other, ProjectionRegion):
             return NotImplemented
@@ -422,29 +397,29 @@ class ProjectionRegion:
         return self.data == other.data
 
 
-def wcsinfo_to_gwcs(
+def wcsinfo_to_wcs(
     wcsinfo: dict | stnode.Wcsinfo,
     bounding_box: None | tuple[tuple[float, float], tuple[float, float]] = None,
     name: str = "wcsinfo",
-) -> gwcs.WCS:
-    """Create a GWCS from the L3 wcsinfo meta
+) -> WCS:
+    """Create a WCS from the L3 wcsinfo meta
 
     Parameters
     ----------
     wcsinfo : dict or MosaicModel.meta.wcsinfo
-        The L3 wcsinfo to create a GWCS from.
+        The L3 wcsinfo to create a WCS from.
 
     bounding_box : None or 4-tuple
         The bounding box in detector/pixel space. Form of input is:
         (x_left, x_right, y_bottom, y_top)
 
     name : str
-        Value of the `name` attribute of the GWCS object.
+        Value of the `name` attribute of the WCS object.
 
     Returns
     -------
-    wcs : wcs.GWCS
-        The GWCS object created.
+    wcs : WCS
+        The WCS object created.
     """
     pixelshift = models.Shift(-wcsinfo["x_ref"], name="crpix1") & models.Shift(
         -wcsinfo["y_ref"], name="crpix2"
@@ -471,13 +446,13 @@ def wcsinfo_to_gwcs(
         pixelshift | rotation | pixelscale | tangent_projection | celestial_rotation
     )
 
-    detector_frame = gwcs.coordinate_frames.Frame2D(
+    detector_frame = coordinate_frames.Frame2D(
         name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)
     )
-    sky_frame = gwcs.coordinate_frames.CelestialFrame(
+    sky_frame = coordinate_frames.CelestialFrame(
         reference_frame=coordinates.ICRS(), name="icrs", unit=(u.deg, u.deg)
     )
-    wcsobj = gwcs.WCS([(detector_frame, det2sky), (sky_frame, None)], name=name)
+    wcsobj = WCS([(detector_frame, det2sky), (sky_frame, None)], name=name)
 
     if bounding_box:
         wcsobj.bounding_box = bounding_box
@@ -485,8 +460,8 @@ def wcsinfo_to_gwcs(
     return wcsobj
 
 
-def skycell_to_gwcs(skycell_record: dict) -> gwcs.WCS:
-    """From a skycell record, generate a GWCS
+def skycell_to_wcs(skycell_record: dict) -> WCS:
+    """From a skycell record, generate a WCS
 
     Parameters
     ----------
@@ -495,8 +470,8 @@ def skycell_to_gwcs(skycell_record: dict) -> gwcs.WCS:
 
     Returns
     -------
-    wcsobj : wcs.GWCS
-        The GWCS object from the skycell record.
+    wcsobj : WCS
+        The WCS object from the skycell record.
     """
     wcsinfo = dict()
 
@@ -516,7 +491,7 @@ def skycell_to_gwcs(skycell_record: dict) -> gwcs.WCS:
         (-0.5, -0.5 + skycell_record["ny"]),
     )
 
-    wcsobj = wcsinfo_to_gwcs(wcsinfo, bounding_box=bounding_box)
+    wcsobj = wcsinfo_to_wcs(wcsinfo, bounding_box=bounding_box)
 
     wcsobj.array_shape = tuple(
         int(axs[1] - axs[0] + 0.5)
@@ -541,8 +516,8 @@ def to_skycell_wcs(library: ModelLibrary) -> WCS | None:
 
     Returns
     -------
-    wcsobj : wcs.GWCS or None
-        The GWCS object from the skycell record or None if
+    wcsobj : WCS or None
+        The WCS object from the skycell record or None if
         none was found.
     """
 

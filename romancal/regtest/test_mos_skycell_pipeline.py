@@ -2,7 +2,7 @@ import pytest
 import roman_datamodels as rdm
 
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
-from romancal.skycell.skymap import wcsinfo_to_gwcs
+from romancal.skycell.skymap import wcsinfo_to_wcs
 
 from . import util
 from .regtestdata import compare_asdf
@@ -67,7 +67,7 @@ def test_location_name(output_model):
 
 def test_wcsinfo_wcs_roundtrip(output_model):
     """Test that the contents of wcsinfo reproduces the wcs"""
-    gwcs_from_wcsinfo = wcsinfo_to_gwcs(output_model.meta.wcsinfo)
+    gwcs_from_wcsinfo = wcsinfo_to_wcs(output_model.meta.wcsinfo)
 
     ra_mad, dec_mad = util.comp_wcs_grids_arcs(output_model.meta.wcs, gwcs_from_wcsinfo)
     assert (ra_mad + dec_mad) / 2.0 < 1.0e-5
