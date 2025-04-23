@@ -55,22 +55,39 @@ def image_coords_to_vec(
 
 
 class SkyCell:
+    """
+    square subpartition of a projection region, approx 4.6' x 4.6' and 5000 pixels across
+    """
+
     __index: int | None
     __data: np.void
 
     def __init__(self, index: int | None):
+        """
+        :param index: index in the global sky map
+        """
         self.__index = index
         if index is not None:
             self.__data = SKYMAP.skycells[index]
 
     @classmethod
-    def from_name(cls, name: str):
+    def from_name(cls, name: str) -> "SkyCell":
+        """
+        retrieve a sky cell from the sky map by its name
+
+
+        :param name: name of a sky cell, for instance `315p86x50y75`
+        """
         if not re.match(r"\d{3}\w\d{2}x\d{2}y\d{2}", name):
             raise ValueError(f"invalid skycell name {name}")
         return SkyCell(np.where(SKYMAP.skycells["name"] == name)[0][0])
 
     @classmethod
     def from_data(cls, data: np.void) -> "SkyCell":
+        """
+        build an index-less sky cell instance from a data array
+        :param data: array with sky cell parameters (see schema)
+        """
         instance = cls(index=None)
         instance.__data = data
         return instance
@@ -79,14 +96,25 @@ class SkyCell:
     def from_center_and_coordinates(
         cls,
         skytile_center: tuple[float, float],
-        skycell_coordinates: tuple[float, float],
+        skycell_coordinates: tuple[int, int],
     ) -> "SkyCell":
+        """
+        retrieve a sky cell from the sky map using its location within its containins sky tile
+
+        :param skytile_center: center coordinates of its containing sky tile in right ascension and declination
+        :param skycell_coordinates: XY location of the sky cell within its sky tile, in units of ordinal sky cells from the center
+        """
         return cls.from_name(
             f"r{round(skytile_center[0]):03}d{'p' if skytile_center[1] >= 0 else 'm'}{round(skytile_center[1]):02}x{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}y{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}"
         )
 
     @classmethod
     def from_modellibrary(cls, library: ModelLibrary) -> "SkyCell":
+        """
+        retrieve a sky cell from WCS info or a target specified in a model library
+
+        :param library: ModelLibrary instance
+        """
         if (
             "skycell_wcs_info" in library.asn
             and library.asn["skycell_wcs_info"] != "none"
@@ -104,32 +132,46 @@ class SkyCell:
 
     @property
     def index(self) -> int | None:
+        """index of this sky cell in the sky map"""
         return self.__index
 
     @property
     def data(self) -> np.void:
+        """properties from the sky map"""
         return self.__data
 
     @property
     def name(self) -> str:
+        """
+        name of this sky cell, for instance `315p86x50y75`
+
+        NOTE
+        ----
+        the name of a sky cell center comrpises the rounded coordinates of its containing sky tile in right ascension and declination,
+        and the XY location of the sky cell within its sky tile in units of ordinal sky cells
+        """
         return self.data[0]
 
     @property
     def radec_center(self) -> tuple[float, float]:
+        """center point in right ascension and declination"""
         return self.data["ra_center"], self.data["dec_center"]
 
     @property
     def orientation(self) -> float:
+        """orientation from zenith"""
         return self.data["orientat"]
 
     @property
     def xy_tangent(self) -> tuple[float, float]:
+        """center point in pixel coordinates"""
         return self.data["x_tangent"], self.data["y_tangent"]
 
     @property
     def radec_corners(
         self,
     ) -> NDArray[float]:
+        """corners in right ascension and declination in the order given by the sky map"""
         return np.array(
             (
                 (self.data["ra_corn1"], self.data["dec_corn1"]),
@@ -141,6 +183,7 @@ class SkyCell:
 
     @property
     def polygon(self) -> sgp.SingleSphericalPolygon:
+        """spherical polygon representing this sky cell"""
         # convert all radec points to vectors
         corner_vectorpoints = image_coords_to_vec(self.radec_corners)
         center_vectorpoint = image_coords_to_vec([self.radec_center])
@@ -153,20 +196,24 @@ class SkyCell:
 
     @cached_property
     def projregion(self) -> "ProjectionRegion":
+        """projection region containing this sky cell"""
         if self.index is None:
             raise ValueError("no index provided")
         return ProjectionRegion.from_skycell_index(self.index)
 
     @property
     def pixel_scale(self) -> float:
+        """degrees per pixel"""
         return SKYMAP.pixel_scale
 
     @property
     def pixel_shape(self) -> tuple[int, int]:
+        """number of pixels across"""
         return SKYMAP.pixel_shape
 
     @property
     def wcsinfo(self) -> dict:
+        """WCS properties"""
         return {
             "ra_ref": self.projregion.data["ra_tangent"],
             "dec_ref": self.projregion.data["dec_tangent"],
@@ -190,6 +237,7 @@ class SkyCell:
 
     @cached_property
     def wcs(self) -> WCS:
+        """FITS WCS object representing this sky cell"""
         wcs = WCS(naxis=2)
         wcs.wcs.cdelt = [self.pixel_scale, self.pixel_scale]
         wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
@@ -207,22 +255,35 @@ class SkyCell:
 
 
 class ProjectionRegion:
+    """projection region in the sky map, corresponding to a single sky tile"""
+
     __index: int | None
     __data: np.void
 
     def __init__(self, index: int | None):
+        """
+        :param index: index of the projection region in the sky map array
+        """
         self.__index = index
         if index is not None:
             self.__data = SKYMAP.projregions[index]
 
     @classmethod
     def from_data(cls, data: np.void) -> "ProjectionRegion":
+        """
+        build an index-less projection region instance from a data array
+        :param data: array with projection region parameters (see schema)
+        """
         instance = cls(index=None)
         instance.__data = data
         return instance
 
     @classmethod
     def from_skycell_index(cls, index: int) -> "ProjectionRegion":
+        """
+        :param index: index of the sky cell
+        :returns: projection region corresponding to the given sky cell
+        """
         for projregion in SKYMAP.projregions:
             if (
                 int(projregion["skycell_start"])
@@ -237,18 +298,22 @@ class ProjectionRegion:
 
     @property
     def index(self) -> int | None:
+        """index in the sky map"""
         return self.__index
 
     @property
     def data(self) -> np.void:
+        """properties from the sky map"""
         return self.__data
 
     @property
     def radec_tangent(self) -> tuple[float, float]:
+        """projection origin (tangent point with the celestial sphere) in right ascension and declination"""
         return self.data["ra_tangent"], self.data["dec_tangent"]
 
     @property
     def radec_bounds(self) -> tuple[float, float, float, float]:
+        """bounds in right ascension and declination in order [xmin, ymin, xmax, ymax]"""
         return (
             self.data["ra_min"],
             self.data["dec_min"],
@@ -258,22 +323,27 @@ class ProjectionRegion:
 
     @property
     def orientation(self) -> float:
+        """orientation from zenith"""
         return self.data["orientat"]
 
     @property
     def xy_tangent(self) -> tuple[float, float]:
+        """projection origin (tangent point with the celestial sphere) in pixel coordinates"""
         return self.data["x_tangent"], self.data["y_tangent"]
 
     @property
     def pixel_shape(self) -> tuple[int, int]:
+        """number of pixels across"""
         return self.data["nx"], self.data["ny"]
 
     @cached_property
     def skycell_indices(self) -> NDArray[int]:
+        """indices of sky cells in the sky map within this region"""
         return np.arange(self.data["skycell_start"], self.data["skycell_end"])
 
     @property
     def skycells(self) -> np.void:
+        """subset array of sky cells from the sky map within this region"""
         return SKYMAP.skycells[self.skycell_indices]
 
     @cached_property
@@ -298,19 +368,11 @@ class ProjectionRegion:
             )
         )
 
-    @cached_property
-    def radec_center(self) -> tuple[float, float]:
-        corner_vectorpoints = image_coords_to_vec(self.radec_corners)
-        center_vectorpoint = np.mean(corner_vectorpoints, axis=0)
-        return sgv.vector_to_lonlat(
-            *sgv.normalize_vecotr(center_vectorpoint), degrees=True
-        )
-
     @property
     def radec_corners(
         self,
     ) -> NDArray:
-        """in clockwise order"""
+        """corners in right ascension and declination in clockwise order"""
         return np.array(
             (
                 (self.data["ra_min"], self.data["dec_min"]),
@@ -322,6 +384,7 @@ class ProjectionRegion:
 
     @property
     def polygon(self) -> sgp.SingleSphericalPolygon:
+        """spherical polygon representing this region"""
         # convert all radec points to vectors
         corner_vectorpoints = image_coords_to_vec(self.radec_corners)
         center_vectorpoint = np.mean(corner_vectorpoints, axis=0)
@@ -334,10 +397,12 @@ class ProjectionRegion:
 
     @property
     def pixel_scale(self) -> float:
+        """degrees per pixel"""
         return SKYMAP.pixel_scale
 
     @cached_property
     def wcs(self) -> WCS:
+        """FITS WCS object representing this region"""
         wcs = WCS(naxis=2)
         wcs.wcs.cdelt = [self.pixel_scale, self.pixel_scale]
         wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
@@ -495,22 +560,29 @@ def to_skycell_wcs(library: ModelLibrary) -> WCS | None:
 
 class SkyMap:
     """
-    There are 8 million sky cells in the table, ~2000 per projection region.
+    Abstract representation of the sky map, comprising of
+    - 4096 tesellated non-rectangular tiles ("sky tiles"), each with a corresponding rectangular region of gnomonic projection ("projection region")
+    - ~2000 square subpartitions ("sky cells", ~8 million in total) for each projection region, each 4.6' or 5000px across
     """
 
     __path: None | Path
 
     def __init__(self, path: None | Path | str = None):
+        """
+        :param path: load sky map from a custom ASDF file (defaults to `skycells` ref on CRDS)
+        """
         if path is not None and not isinstance(path, Path):
             path = Path(path)
         self.__path = path
 
     @property
     def path(self) -> None | Path:
+        """location of sky map reference file on filesystem"""
         return self.__path
 
     @cached_property
     def data(self) -> AsdfFile:
+        """ASDF representation of sky map"""
         if self.__path is None:
             rmap = crds.getreferences(
                 {
@@ -528,6 +600,7 @@ class SkyMap:
 
     @property
     def skycells(self) -> np.void:
+        """array of sky cells"""
         return self.data["roman"]["skycells"]
 
     @cached_property
@@ -539,7 +612,6 @@ class SkyMap:
         ----
         there are 8 million skycells in the skymap; constructing this tree will take a long time. It is recommended that you instead use the `.skycells_kdtree` property of an individual projection region instead.
         """
-
         return KDTree(
             sgv.normalize_vector(
                 np.stack(
@@ -553,18 +625,12 @@ class SkyMap:
 
     @property
     def projregions(self) -> np.void:
-        """
-        projection regions (one per skytile)
-        """
-
+        """array of projection regions (one per sky tile)"""
         return self.data["roman"]["projection_regions"]
 
     @cached_property
     def projregions_kdtree(self) -> KDTree:
-        """
-        k-d tree of all projection regions in the skymap, using normalized center vectorpoints in 3D space
-        """
-
+        """k-d tree of all projection regions in the skymap, using normalized center vectorpoints in 3D space"""
         return KDTree(
             sgv.normalize_vector(
                 np.stack(
@@ -578,16 +644,19 @@ class SkyMap:
 
     @property
     def pixel_scale(self) -> float:
+        """degrees per pixel"""
         # The scale is given in arcseconds per pixel. Convert to degrees.
         return self.data["roman"]["meta"]["pixel_scale"] / 3600.0
 
     @property
     def pixel_shape(self) -> tuple[int, int]:
+        """number of pixels per sky cell"""
         return self.data["roman"]["meta"]["nxy_skycell"], self.data["roman"]["meta"][
             "nxy_skycell"
         ]
 
     def __getitem__(self, index: int) -> SkyCell:
+        """`SkyCell` at the given index in the sky cells array"""
         return SkyCell(self.data["roman"]["skycells"][index])
 
 
