@@ -1,4 +1,4 @@
-"""Unit tests for skycell wcs functions"""
+"""Unit tests for skycell functions"""
 
 import os
 from pathlib import Path
@@ -7,10 +7,11 @@ import numpy as np
 import pytest
 
 os.environ["SKYMAP_PATH"] = str(Path(__file__).parent / "skymap_subset.asdf")
-from romancal.skycell.skymap import SkyCell, wcsinfo_to_gwcs
+
+from romancal.skycell.skymap import ProjectionRegion, SkyCell, wcsinfo_to_gwcs
 
 
-def test_skycell_index():
+def test_skycell_init():
     skycell = SkyCell.from_data(
         np.void(
             (
@@ -56,6 +57,22 @@ def test_skycell_index():
 
     with pytest.raises(ValueError):
         SkyCell.from_name("notaskycellname")
+
+
+def test_skycell_from_projregion():
+    projregion = ProjectionRegion(0)
+
+    assert projregion.skycells[100] == SkyCell.from_name("225p90x30y44").data
+
+    assert projregion.skycell_indices[-1] != ProjectionRegion(1).skycell_indices[0]
+
+
+def test_projregion_from_skycell():
+    skycell = SkyCell.from_name("225p90x30y51")
+
+    assert skycell.projregion == ProjectionRegion(0)
+    assert ProjectionRegion.from_skycell_index(107) == ProjectionRegion(0)
+    assert ProjectionRegion.from_skycell_index(0) == ProjectionRegion(0)
 
 
 def test_skycell_to_wcs():
