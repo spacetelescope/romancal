@@ -234,8 +234,13 @@ class SkyCell:
         }
 
     @cached_property
+    def gwcs(self) -> gwcs.WCS:
+        """GWCS representing this sky cell"""
+        wcsinfo_to_gwcs(self.wcsinfo)
+
+    @cached_property
     def wcs(self) -> WCS:
-        """FITS WCS object representing this sky cell"""
+        """FITS WCS representing this sky cell"""
         wcs = WCS(naxis=2)
         wcs.wcs.cdelt = [self.pixel_scale, self.pixel_scale]
         wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
@@ -400,7 +405,7 @@ class ProjectionRegion:
 
     @cached_property
     def wcs(self) -> WCS:
-        """FITS WCS object representing this region"""
+        """FITS WCS representing this region"""
         wcs = WCS(naxis=2)
         wcs.wcs.cdelt = [self.pixel_scale, self.pixel_scale]
         wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
