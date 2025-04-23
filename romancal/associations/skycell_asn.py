@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import os
 import sys
 
 import numpy as np
@@ -20,7 +21,12 @@ logger.addHandler(logging.NullHandler())
 logger.setLevel("INFO")
 
 
-def skycell_asn(filelist, output_file_root, product_type, release_product):
+def skycell_asn(
+    filelist: list[str],
+    output_file_root: os.PathLike,
+    product_type: str,
+    release_product: str,
+):
     """
     Create the skycell association from the list of files.
 
