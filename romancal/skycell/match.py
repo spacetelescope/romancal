@@ -14,6 +14,7 @@ from gwcs import WCS
 from numpy.typing import NDArray
 
 import romancal.skycell.skymap as sm
+from romancal.assign_wcs.utils import wcs_bbox_from_shape
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -22,52 +23,77 @@ log.setLevel(logging.DEBUG)
 class ImageFootprint:
     """abstraction of an image footprint"""
 
-    __radec_corners: NDArray[float]
+    __radec_bounds: tuple[float, float, float, float]
 
     def __init__(
         self,
-        *radec_corners: tuple[float, float],
+        ra_min: float,
+        dec_min: float,
+        ra_max: float,
+        dec_max: float,
     ):
         """
-        :param radec_corners: corners in right ascension and declination, in either clockwise or counterclockwise order
+        :param ra_min: minimum right ascension
+        :param dec_min: minimum declination
+        :param ra_max: maximum right ascension
+        :param dec_max: maximum declination
         """
-        if len(radec_corners) != 4:
-            raise ValueError(f"need 4 corners, not {len(radec_corners)}")
-        self.__radec_corners = np.array(radec_corners)
+        self.__radec_bounds = ra_min, dec_min, ra_max, dec_max
+
+    @classmethod
+    def from_corners(cls, radec_corners: list[tuple[float, float]]) -> "ImageFootprint":
+        """build footprint from corner points in right ascension and declination"""
+        radec_corners = np.array(radec_corners)
+        if radec_corners.shape[0] != 4:
+            raise ValueError(f"need 4 corners, not {radec_corners.shape[0]}")
+        return cls(*np.min(radec_corners, axis=0), *np.max(radec_corners, axis=0))
 
     @classmethod
     def from_gwcs(
         cls, iwcs: WCS, image_shape: tuple[int, int] | None = None
     ) -> "ImageFootprint":
-        """create an image footprint from a GWCS object and image shape"""
-        # Now must find size of corresponding image, with three possible sources of that information.
-        if image_shape is None:
-            # Both bounding_box and pixel_shape are in x, y order contrary to numpy convention.
-            if hasattr(iwcs, "bounding_box") and iwcs.bounding_box is not None:
-                bbintervals = iwcs.bounding_box.intervals
-                # This compensates for the half pixel adjustment in the general code.
-                image_shape = (bbintervals[1].upper + 0.5, bbintervals[0].upper + 0.5)
-            elif hasattr(iwcs, "pixel_shape") and iwcs.pixel_shape is not None:
-                image_shape = (iwcs.pixel_shape[1], iwcs.pixel_shape[0])
-            else:
-                raise ValueError(
-                    "Use of a wcs object requires at least one of the bounding_box"
-                    " or pixel_shape attributes be set to the image shape or that the"
-                    "image_shape argument be set"
-                )
+        """create an image footprint from a GWCS object (and image shape, if no bounding box is present)"""
 
-        # Compute the image corners ra, dec from the wcs
-        (cxm, cxp), (cym, cyp) = (
-            (-0.5, image_shape[1] - 0.5),
-            (-0.5, image_shape[0] - 0.5),
-        )
+        if iwcs.bounding_box is None:
+            if image_shape is None:
+                # Now must find size of corresponding image, with three possible sources of that information.
+                # Both bounding_box and pixel_shape are in x, y order contrary to numpy convention.
+                if hasattr(iwcs, "bounding_box") and iwcs.bounding_box is not None:
+                    bbintervals = iwcs.bounding_box.intervals
+                    # This compensates for the half pixel adjustment in the general code.
+                    image_shape = (
+                        bbintervals[1].upper + 0.5,
+                        bbintervals[0].upper + 0.5,
+                    )
+                elif hasattr(iwcs, "pixel_shape") and iwcs.pixel_shape is not None:
+                    image_shape = (iwcs.pixel_shape[1], iwcs.pixel_shape[0])
+                else:
+                    raise ValueError(
+                        "Cannot infer an image footprint from a GWCS object because "
+                        "`image_shape` was not specified and "
+                        "the GWCS object does not have `.bounding_box` nor `.pixel_shape`."
+                    )
 
-        return cls(iwcs(cxp, cyp), iwcs(cxm, cyp), iwcs(cxm, cym), iwcs(cxp, cym))
+            iwcs.bounding_box = wcs_bbox_from_shape(image_shape)
+
+        return cls.from_corners(iwcs.footprint(center=False))
+
+    @property
+    def radec_bounds(self) -> tuple[float, float, float, float]:
+        """bounds in right ascension and declination in order [xmin, ymin, xmax, ymax]"""
+        return self.__radec_bounds
 
     @property
     def radec_corners(self) -> NDArray:
-        """corners in right ascension and declination"""
-        return self.__radec_corners
+        """corners in right ascension and declination in counterclockwise order"""
+        return np.array(
+            [
+                (self.radec_bounds[0], self.radec_bounds[1]),
+                (self.radec_bounds[2], self.radec_bounds[1]),
+                (self.radec_bounds[2], self.radec_bounds[3]),
+                (self.radec_bounds[0], self.radec_bounds[3]),
+            ]
+        )
 
     @cached_property
     def radec_center(self) -> tuple[float, float]:
@@ -120,7 +146,7 @@ def find_skycell_matches(
     if isinstance(image_corners, WCS):
         footprint = ImageFootprint.from_gwcs(image_corners, image_shape)
     else:
-        footprint = ImageFootprint(*image_corners)
+        footprint = ImageFootprint.from_corners(image_corners)
 
     footprint_center_vectorpoint = sgv.normalize_vector(
         sm.image_coords_to_vec(footprint.radec_corners).mean(axis=0)
