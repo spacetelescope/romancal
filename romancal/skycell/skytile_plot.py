@@ -9,7 +9,7 @@ import spherical_geometry.vector as sgv
 from numpy.typing import NDArray
 from spherical_geometry.vector import normalize_vector
 
-from .skymap import SKYMAP, SkyTile, image_coords_to_vec
+from .skymap import SKYMAP, ProjectionRegion, image_coords_to_vec
 
 try:
     from matplotlib import pyplot as plt
@@ -20,7 +20,7 @@ RAD_TO_ARCSEC = 180.0 / np.pi * 3600.0
 
 
 def get_cartesian_corners(
-    projection_region: SkyTile,
+    projection_region: ProjectionRegion,
 ) -> tuple[NDArray[float], NDArray[float]]:
     """
     Construct vertex coordinates for a projection region definition suitable
@@ -34,7 +34,7 @@ def get_cartesian_corners(
 
 
 def find_closest_tangent_point(
-    projection_regions: list[SkyTile],
+    projection_regions: list[ProjectionRegion],
     image_corners: list[tuple[float, float]] | tuple[list[float], list[float]],
 ) -> tuple[tuple[float, float, float], list[int]]:
     """

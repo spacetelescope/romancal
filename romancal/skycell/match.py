@@ -117,7 +117,7 @@ def find_skycell_matches(
         sm.image_coords_to_vec(footprint.radec_corners).mean(axis=0)
     )
 
-    # derive the maximum number of possibly intersecting skytiles and skycells
+    # derive the maximum number of possibly intersecting skytiles (analogous to projection regions) and skycells
     # based on the image footprint area and the known skytile and skycell area
     # TODO: improve these calculations, they are probably over-estimating...
     max_num_intersecting_skytiles = 8 + 2 * int(
@@ -130,29 +130,28 @@ def find_skycell_matches(
     nearby_skycell_indices = []
     intersecting_skycell_indices = []
 
-    # query the global k-d tree of skytiles for possible intersection candidates in (normalized) 3D space
-    _, nearby_skytile_indices = sm.SKYMAP.skytile_kdtree.query(
+    # query the global k-d tree of projection regions for possible intersection candidates in (normalized) 3D space
+    _, nearby_projregion_indices = sm.SKYMAP.projregions_kdtree.query(
         footprint_center_vectorpoint, k=max_num_intersecting_skytiles
     )
 
-    for skytile_index in nearby_skytile_indices:
-        print(skytile_index)
-        skytile = sm.SkyTile(skytile_index)
-        if footprint.polygon.intersects_poly(skytile.polygon):
+    for projregion_index in nearby_projregion_indices:
+        projregion = sm.ProjectionRegion(projregion_index)
+        if footprint.polygon.intersects_poly(projregion.polygon):
             # query the LOCAL k-d tree of skycells for possible intersection candidates in (normalized) 3D space
-            _, skytile_nearby_skycell_indices = skytile.skycell_kdtree.query(
+            _, projregion_nearby_skycell_indices = projregion.skycells_kdtree.query(
                 footprint_center_vectorpoint, k=max_num_intersecting_skycells
             )
 
             # convert to absolute indices over the full skycell table
-            skytile_nearby_skycell_indices = [
-                skytile.data["skycell_start"] + index
-                for index in skytile_nearby_skycell_indices
+            projregion_nearby_skycell_indices = [
+                projregion.data["skycell_start"] + index
+                for index in projregion_nearby_skycell_indices
             ]
-            nearby_skycell_indices.extend(skytile_nearby_skycell_indices)
+            nearby_skycell_indices.extend(projregion_nearby_skycell_indices)
 
             # find polygons that intersect the image footprint
-            for nearby_skycell_index in skytile_nearby_skycell_indices:
+            for nearby_skycell_index in projregion_nearby_skycell_indices:
                 # print(nearby_skycell_index)
                 skycell = sm.SkyCell(nearby_skycell_index)
                 if footprint.polygon.intersects_poly(skycell.polygon):

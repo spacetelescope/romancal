@@ -152,10 +152,10 @@ class SkyCell:
         )
 
     @cached_property
-    def skytile(self) -> "SkyTile":
+    def projregion(self) -> "ProjectionRegion":
         if self.index is None:
             raise ValueError("no index provided")
-        return SkyTile.from_skycell_index(self.index)
+        return ProjectionRegion.from_skycell_index(self.index)
 
     @property
     def pixel_scale(self) -> float:
@@ -168,10 +168,10 @@ class SkyCell:
     @property
     def wcsinfo(self) -> dict:
         return {
-            "ra_ref": self.skytile.data["ra_tangent"],
-            "dec_ref": self.skytile.data["dec_tangent"],
-            "x_ref": self.skytile.data["x_tangent"],
-            "y_ref": self.skytile.data["y_tangent"],
+            "ra_ref": self.projregion.data["ra_tangent"],
+            "dec_ref": self.projregion.data["dec_tangent"],
+            "x_ref": self.projregion.data["x_tangent"],
+            "y_ref": self.projregion.data["y_tangent"],
             "rotation_matrix": None,
             "orientat": self.data["orientat"],
             "pixel_scale": self.pixel_scale,
@@ -193,9 +193,9 @@ class SkyCell:
         wcs = WCS(naxis=2)
         wcs.wcs.cdelt = [self.pixel_scale, self.pixel_scale]
         wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
-        wcs.wcs.crval = list(self.skytile.radec_tangent)
+        wcs.wcs.crval = list(self.projregion.radec_tangent)
         wcs.wcs.crpix = list(self.xy_tangent)
-        wcs.wcs.crota = [0, self.skytile.orientation]  # CROTA2 is the rotation angle
+        wcs.wcs.crota = [0, self.projregion.orientation]  # CROTA2 is the rotation angle
         wcs.array_shape = list(self.pixel_shape)
         return wcs
 
@@ -206,24 +206,24 @@ class SkyCell:
         return self.data == other.data
 
 
-class SkyTile:
+class ProjectionRegion:
     __index: int | None
     __data: np.void
 
     def __init__(self, index: int | None):
         self.__index = index
         if index is not None:
-            self.__data = SKYMAP.skytiles[index]
+            self.__data = SKYMAP.projregions[index]
 
     @classmethod
-    def from_data(cls, data: np.void) -> "SkyTile":
+    def from_data(cls, data: np.void) -> "ProjectionRegion":
         instance = cls(index=None)
         instance.__data = data
         return instance
 
     @classmethod
-    def from_skycell_index(cls, index: int) -> "SkyTile":
-        for projregion in SKYMAP.skytiles:
+    def from_skycell_index(cls, index: int) -> "ProjectionRegion":
+        for projregion in SKYMAP.projregions:
             if (
                 int(projregion["skycell_start"])
                 < index
@@ -277,11 +277,13 @@ class SkyTile:
         return SKYMAP.skycells[self.skycell_indices]
 
     @cached_property
-    def skycell_kdtree(self) -> KDTree:
+    def skycells_kdtree(self) -> KDTree:
         """
-        k-d tree of normalized center vectorpoints in 3D space of each skycell in this skytile
+        LOCAL k-d tree of skycells in this projection region, using normalized center vectorpoints in 3D space
 
-        NOTE: add `skycell_start` to the indices returned by this tree to convert to skycell indices in the parent skymap
+        NOTE
+        ----
+        add `skycell_start` to the indices returned by this tree to convert to skycell indices in the parent skymap
         """
 
         return KDTree(
@@ -346,7 +348,7 @@ class SkyTile:
         return wcs
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, SkyTile):
+        if not isinstance(other, ProjectionRegion):
             return NotImplemented
 
         return self.data == other.data
@@ -493,7 +495,7 @@ def to_skycell_wcs(library: ModelLibrary) -> WCS | None:
 
 class SkyMap:
     """
-    There are 8 million sky cells in the table, ~2000 per skytile.
+    There are 8 million sky cells in the table, ~2000 per projection region.
     """
 
     __path: None | Path
@@ -529,9 +531,13 @@ class SkyMap:
         return self.data["roman"]["skycells"]
 
     @cached_property
-    def skycell_kdtree(self) -> KDTree:
+    def skycells_kdtree(self) -> KDTree:
         """
-        k-d tree of normalized center vectorpoints in 3D space of each skycell
+        k-d tree of all skycells in the skymap, using normalized center vectorpoints in 3D space
+
+        NOTE
+        ----
+        there are 8 million skycells in the skymap; constructing this tree will take a long time. It is recommended that you instead use the `.skycells_kdtree` property of an individual projection region instead.
         """
 
         return KDTree(
@@ -546,24 +552,24 @@ class SkyMap:
         )
 
     @property
-    def skytiles(self) -> np.void:
+    def projregions(self) -> np.void:
         """
-        skytiles (projection regions)
+        projection regions (one per skytile)
         """
 
         return self.data["roman"]["projection_regions"]
 
     @cached_property
-    def skytile_kdtree(self) -> KDTree:
+    def projregions_kdtree(self) -> KDTree:
         """
-        k-d tree of normalized center vectorpoints in 3D space of each skytile
+        k-d tree of all projection regions in the skymap, using normalized center vectorpoints in 3D space
         """
 
         return KDTree(
             sgv.normalize_vector(
                 np.stack(
                     sgv.lonlat_to_vector(
-                        self.skytiles["ra_tangent"], self.skytiles["dec_tangent"]
+                        self.projregions["ra_tangent"], self.projregions["dec_tangent"]
                     ),
                     axis=1,
                 )
