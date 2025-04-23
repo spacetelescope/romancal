@@ -160,11 +160,12 @@ class ResampleData(Resample):
         else:
             level = 0
             subtracted = True
-        res = {
+        return {
             "data": model.data,
             "dq": model.dq,
             "var_rnoise": model.var_rnoise,
             "var_poisson": model.var_poisson,
+            "var_flat": getattr(model, "var_flat", None),
             "err": model.err,
             "filename": model.meta.filename,
             "wcs": model.meta.wcs,
@@ -178,8 +179,6 @@ class ResampleData(Resample):
             "level": level,
             "subtracted": subtracted,
         }
-        if hasattr(model, 'var_flat'):
-            res['var_flat'] = model.var_flat
 
     def _get_intensity_scale(self, model):
         # FIXME we lie about this to retain the old behavior
@@ -214,6 +213,9 @@ class ResampleData(Resample):
         output_model.meta.resample.weight_type = self.weight_type
         output_model.meta.resample.pixfrac = self.output_model["pixfrac"]
         output_model.meta.basic.product_type = "TBD"
+
+        if isinstance(self.enable_var, list) and "var_flat" not in self.enable_var:
+            del output_model._instance["var_flat"]
 
         pixel_scale_ratio = self.output_model["pixel_scale_ratio"]
         if pixel_scale_ratio is not None:
@@ -255,7 +257,7 @@ class ResampleData(Resample):
         if self._enable_ctx:
             output_model.context = self.output_model["con"].astype(np.uint32)
 
-        for arr_name in ("err", "var_rnoise", "var_poisson", "var_flat"):
+        for arr_name in ["err", "var_rnoise", "var_poisson", "var_flat"]:
             if arr_name in self.output_model:
                 new_array = self.output_model[arr_name]
                 if new_array is not None:

@@ -131,6 +131,14 @@ class ResampleStep(RomanStep):
         else:
             wcs_kwargs = None
 
+        with input_models:
+            model = input_models.borrow(0)
+            if not hasattr(model, 'var_flat'):
+                enable_var = ['var_poisson', 'var_rnoise']
+            else:
+                enable_var = True
+            input_models.shelve(model, modify=False)
+
         # Call the resampling routine
         resamp = ResampleData(
             input_models,
@@ -141,7 +149,7 @@ class ResampleStep(RomanStep):
             self.weight_type,
             self.good_bits,
             True,
-            True,
+            enable_var,
             "from_var",
             True,
             True,
