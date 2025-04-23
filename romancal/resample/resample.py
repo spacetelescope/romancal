@@ -182,7 +182,7 @@ class ResampleData(Resample):
         }
 
     def _get_intensity_scale(self, model):
-        # FIXME we lie about this to retain the old behavior
+        # always provide 1: https://github.com/spacetelescope/romancal/issues/1637
         return 1
 
     def add_model_hook(self, model, pixmap, iscale, weight_map, xmin, xmax, ymin, ymax):
