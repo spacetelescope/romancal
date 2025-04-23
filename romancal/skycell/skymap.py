@@ -110,20 +110,17 @@ class SkyCell:
         )
 
     @classmethod
-    def from_modellibrary(cls, library: ModelLibrary) -> "SkyCell":
+    def from_asn(cls, asn: ModelLibrary) -> "SkyCell":
         """
-        retrieve a sky cell from WCS info or a target specified in a model library
+        retrieve a sky cell from WCS info or a target specified in an association
 
-        :param library: ModelLibrary instance
+        :param asn: ModelLibrary instance
         """
-        if (
-            "skycell_wcs_info" in library.asn
-            and library.asn["skycell_wcs_info"] != "none"
-        ):
-            skycell_name = library.asn["skycell_wcs_info"]["name"]
-        elif "target" in library.asn:
+        if "skycell_wcs_info" in asn.asn and asn.asn["skycell_wcs_info"] != "none":
+            skycell_name = asn.asn["skycell_wcs_info"]["name"]
+        elif "target" in asn.asn:
             # check to see if the product name contains a skycell name & if true get the skycell record
-            skycell_name = library.asn["target"]
+            skycell_name = asn.asn["target"]
         else:
             raise ValueError(
                 "cannot extract skycell information from modellibrary association with neither WCS nor target info"
@@ -545,7 +542,7 @@ def to_skycell_wcs(library: ModelLibrary) -> WCS | None:
     """
 
     try:
-        skycell = SkyCell.from_modellibrary(library)
+        skycell = SkyCell.from_asn(library)
 
         log.info(f"Skycell record: {skycell.data}")
 
@@ -657,7 +654,7 @@ class SkyMap:
 
     def __getitem__(self, index: int) -> SkyCell:
         """`SkyCell` at the given index in the sky cells array"""
-        return SkyCell(self.data["roman"]["skycells"][index])
+        return SkyCell(index)
 
 
 SKYMAP = SkyMap(path=os.environ.get("SKYMAP_PATH", None))
