@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+from datetime import datetime
 from functools import cached_property
 from pathlib import Path
 
@@ -587,10 +588,9 @@ class SkyMap:
             rmap = crds.getreferences(
                 {
                     "roman.meta.instrument.name": "WFI",
-                    "roman.meta.exposure.start_time": "2000-01-01 00:00:00",
+                    "roman.meta.exposure.start_time": f"{datetime.now():%Y-%m-%d %H:%M:%S}",
                 },
                 reftypes=["skycells"],
-                context="roman_0081.pmap",
                 observatory="roman",
             )
             self.__path = Path(rmap["skycells"])
