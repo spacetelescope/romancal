@@ -49,7 +49,7 @@ def find_closest_tangent_point(
 
     unique_tangent_points = []
     for projection_region in projection_regions:
-        tangent_point = projection_region.radec_center
+        tangent_point = projection_region.radec_tangent
         if tangent_point not in unique_tangent_points:
             unique_tangent_points.append(tangent_point)
 
@@ -75,7 +75,7 @@ def find_closest_tangent_point(
         index
         for projection_region in projection_regions
         for index, (_, tangent_point_index) in enumerate(sorted_distance_indices)
-        if unique_tangent_points[tangent_point_index] == projection_region.radec_center
+        if unique_tangent_points[tangent_point_index] == projection_region.radec_tangent
     ]
     return closest_tangent_point, projregion_tangentpoint_indices
 

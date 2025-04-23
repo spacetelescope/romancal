@@ -1,7 +1,7 @@
 """
 This module determines which projection regions (associated with "sky tiles") overlap with the given image.
 
-Currently this assumes that the sky projected borders of all images are straight.
+Currently this assumes that the sky projected borders of all calibrated L2 images are straight.
 """
 
 import logging
@@ -20,12 +20,17 @@ log.setLevel(logging.DEBUG)
 
 
 class ImageFootprint:
+    """abstraction of an image footprint"""
+
     __radec_corners: NDArray[float]
 
     def __init__(
         self,
         *radec_corners: tuple[float, float],
     ):
+        """
+        :param radec_corners: corners in right ascension and declination, in either clockwise or counterclockwise order
+        """
         if len(radec_corners) != 4:
             raise ValueError(f"need 4 corners, not {len(radec_corners)}")
         self.__radec_corners = np.array(radec_corners)
@@ -34,11 +39,11 @@ class ImageFootprint:
     def from_gwcs(
         cls, iwcs: WCS, image_shape: tuple[int, int] | None = None
     ) -> "ImageFootprint":
+        """create an image footprint from a GWCS object and image shape"""
         # Now must find size of corresponding image, with three possible sources of that information.
         if image_shape is None:
             # Both bounding_box and pixel_shape are in x, y order contrary to numpy convention.
             if hasattr(iwcs, "bounding_box") and iwcs.bounding_box is not None:
-                # Presumes that the bounding_box matches image array boundaries
                 bbintervals = iwcs.bounding_box.intervals
                 # This compensates for the half pixel adjustment in the general code.
                 image_shape = (bbintervals[1].upper + 0.5, bbintervals[0].upper + 0.5)
@@ -61,16 +66,20 @@ class ImageFootprint:
 
     @property
     def radec_corners(self) -> NDArray:
+        """corners in right ascension and declination"""
         return self.__radec_corners
 
     @cached_property
     def radec_center(self) -> tuple[float, float]:
+        """center point in right ascension and declination"""
         return sgv.vector_to_lonlat(
             *sm.image_coords_to_vec(self.radec_corners).mean(axis=0)
         )
 
     @cached_property
     def polygon(self) -> sgp.SingleSphericalPolygon:
+        """spherical polygon representing this image footprint"""
+
         corner_vectorpoints = sm.image_coords_to_vec(self.radec_corners)
 
         # Approximate center of image by averaging corner vectors
