@@ -30,7 +30,7 @@ def skycell_asn(
     """
     Create the skycell association from a list of L2 calibrated files.
 
-    This function processes a list of files, identifies matching skycells, generates
+    This function processes a list of Level 2 calibrated files, identifies matching skycells, generates
     TAN WCS parameters, and creates an association file for the identified skycells.
 
     Parameters
