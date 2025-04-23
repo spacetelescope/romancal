@@ -45,10 +45,10 @@ def image_coords_to_vec(
     """
 
     radec_coords = np.array(radec_coords)
-    if radec_coords.shape == (2, 4):
+    if radec_coords.shape[0] == 2:
         radec_coords = radec_coords.transpose()
 
-    # Convert all celestial coordinates to cartesion coordinates.
+    # Convert all celestial coordinates to cartesian coordinates.
     return np.stack(
         sgv.lonlat_to_vector(radec_coords[:, 0], radec_coords[:, 1]), axis=1
     )
