@@ -149,46 +149,46 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
         (
             (cra, cdec, cpa, 0.5),
             (
-                "315p86x46y74",
-                "315p86x46y75",
-                "315p86x47y73",
-                "315p86x47y74",
-                "315p86x47y75",
-                "315p86x48y72",
-                "315p86x48y73",
-                "315p86x48y74",
-                "315p86x48y75",
-                "315p86x49y71",
-                "315p86x49y72",
-                "315p86x49y73",
-                "315p86x49y74",
-                "315p86x49y75",
-                "315p86x50y70",
-                "315p86x50y71",
-                "315p86x50y72",
-                "315p86x50y73",
-                "315p86x50y74",
                 "315p86x50y75",
-                "315p86x51y70",
-                "315p86x51y71",
-                "315p86x51y72",
-                "315p86x51y73",
-                "315p86x51y74",
                 "315p86x51y75",
-                "315p86x52y71",
-                "315p86x52y72",
-                "315p86x52y73",
-                "315p86x52y74",
+                "315p86x50y74",
+                "315p86x51y74",
+                "315p86x49y75",
                 "315p86x52y75",
-                "315p86x53y72",
-                "315p86x53y73",
-                "315p86x53y74",
+                "315p86x49y74",
+                "315p86x52y74",
+                "315p86x50y73",
+                "315p86x51y73",
+                "315p86x49y73",
+                "315p86x52y73",
+                "315p86x48y75",
                 "315p86x53y75",
-                "315p86x54y73",
-                "315p86x54y74",
+                "315p86x48y74",
+                "315p86x53y74",
+                "315p86x50y72",
+                "315p86x51y72",
+                "315p86x48y73",
+                "315p86x53y73",
+                "315p86x49y72",
+                "315p86x52y72",
+                "315p86x47y75",
+                "315p86x47y74",
                 "315p86x54y75",
-                "315p86x55y74",
+                "315p86x54y74",
+                "315p86x48y72",
+                "315p86x53y72",
+                "315p86x50y71",
+                "315p86x51y71",
+                "315p86x47y73",
+                "315p86x54y73",
+                "315p86x49y71",
+                "315p86x52y71",
+                "315p86x46y75",
+                "315p86x46y74",
                 "315p86x55y75",
+                "315p86x55y74",
+                "315p86x50y70",
+                "315p86x51y70",
             ),
         ),
     ],
@@ -198,7 +198,9 @@ def test_skycell_match(pars, expected):
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(corners)
     # map matches to absolute index
     mmatches = tuple(
-        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
+        np.array(
+            [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
+        ).tolist()
     )
     assert mmatches == expected
 
@@ -213,16 +215,16 @@ def test_wcs_corners():
         [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
     assert mmatches == [
-        "315p86x49y74",
-        "315p86x49y75",
-        "315p86x50y73",
-        "315p86x50y74",
         "315p86x50y75",
-        "315p86x51y73",
-        "315p86x51y74",
         "315p86x51y75",
-        "315p86x52y74",
+        "315p86x50y74",
+        "315p86x51y74",
+        "315p86x49y75",
         "315p86x52y75",
+        "315p86x49y74",
+        "315p86x52y74",
+        "315p86x50y73",
+        "315p86x51y73",
     ]
 
     wcsobj.pixel_shape = imshape
@@ -231,16 +233,16 @@ def test_wcs_corners():
         [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
     assert mmatches == [
-        "315p86x49y74",
-        "315p86x49y75",
-        "315p86x50y73",
-        "315p86x50y74",
         "315p86x50y75",
-        "315p86x51y73",
-        "315p86x51y74",
         "315p86x51y75",
-        "315p86x52y74",
+        "315p86x50y74",
+        "315p86x51y74",
+        "315p86x49y75",
         "315p86x52y75",
+        "315p86x49y74",
+        "315p86x52y74",
+        "315p86x50y73",
+        "315p86x51y73",
     ]
 
     wcsobj.pixel_shape = None
@@ -250,16 +252,16 @@ def test_wcs_corners():
         [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
     assert mmatches == [
-        "315p86x49y74",
-        "315p86x49y75",
-        "315p86x50y73",
-        "315p86x50y74",
         "315p86x50y75",
-        "315p86x51y73",
-        "315p86x51y74",
         "315p86x51y75",
-        "315p86x52y74",
+        "315p86x50y74",
+        "315p86x51y74",
+        "315p86x49y75",
         "315p86x52y75",
+        "315p86x49y74",
+        "315p86x52y74",
+        "315p86x50y73",
+        "315p86x51y73",
     ]
 
     wcsobj.bounding_box = None

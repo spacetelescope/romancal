@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-from collections.abc import Generator
 from functools import cached_property
 from pathlib import Path
 
@@ -12,19 +11,23 @@ import numpy as np
 import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
 from asdf import AsdfFile
-from asdf._asdf import AsdfObject
 from astropy import coordinates
 from astropy import units as u
 from astropy.modeling import models
 from astropy.wcs import WCS
 from numpy.typing import NDArray
 from roman_datamodels import stnode
+from scipy.spatial import KDTree
 from stcal.alignment import util as wcs_util
 
 from romancal.datamodels.library import ModelLibrary
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+SKYCELL_AREA = (4.6 / 3600.0) ** 2
+SKYTILE_AREA = (0.5) ** 2
 
 
 def image_coords_to_vec(
@@ -265,13 +268,33 @@ class SkyTile:
     def pixel_shape(self) -> tuple[int, int]:
         return self.data["nx"], self.data["ny"]
 
+    @cached_property
+    def skycell_indices(self) -> NDArray[int]:
+        return np.arange(self.data["skycell_start"], self.data["skycell_end"])
+
     @property
-    def skycell_indices(self) -> range:
-        return range(self.data["skycell_start"], self.data["skycell_end"])
+    def skycells(self) -> np.void:
+        return SKYMAP.skycells[self.skycell_indices]
 
     @cached_property
-    def skycells(self) -> Generator[SkyCell]:
-        return (SkyCell(index) for index in self.skycell_indices)
+    def skycell_kdtree(self) -> KDTree:
+        """
+        k-d tree of normalized center vectorpoints in 3D space of each skycell in this skytile
+
+        NOTE: add `skycell_start` to the indices returned by this tree to convert to skycell indices in the parent skymap
+        """
+
+        return KDTree(
+            sgv.normalize_vector(
+                np.stack(
+                    sgv.lonlat_to_vector(
+                        self.skycells["ra_center"],
+                        self.skycells["dec_center"],
+                    ),
+                    axis=1,
+                )
+            )
+        )
 
     @cached_property
     def radec_center(self) -> tuple[float, float]:
@@ -469,6 +492,10 @@ def to_skycell_wcs(library: ModelLibrary) -> WCS | None:
 
 
 class SkyMap:
+    """
+    There are 8 million sky cells in the table, ~2000 per skytile.
+    """
+
     __path: None | Path
 
     def __init__(self, path: None | Path | str = None):
@@ -493,17 +520,55 @@ class SkyMap:
                 observatory="roman",
             )
             self.__path = Path(rmap["skycells"])
-        with asdf.open(self.__path) as file:
+        with asdf.open(self.__path, memmap=True) as file:
             output = file.copy()
         return output
 
     @property
-    def skycells(self) -> AsdfObject:
+    def skycells(self) -> np.void:
         return self.data["roman"]["skycells"]
 
+    @cached_property
+    def skycell_kdtree(self) -> KDTree:
+        """
+        k-d tree of normalized center vectorpoints in 3D space of each skycell
+        """
+
+        return KDTree(
+            sgv.normalize_vector(
+                np.stack(
+                    sgv.lonlat_to_vector(
+                        self.skycells["ra_center"], self.skycells["dec_center"]
+                    ),
+                    axis=1,
+                )
+            )
+        )
+
     @property
-    def skytiles(self) -> AsdfObject:
+    def skytiles(self) -> np.void:
+        """
+        skytiles (projection regions)
+        """
+
         return self.data["roman"]["projection_regions"]
+
+    @cached_property
+    def skytile_kdtree(self) -> KDTree:
+        """
+        k-d tree of normalized center vectorpoints in 3D space of each skytile
+        """
+
+        return KDTree(
+            sgv.normalize_vector(
+                np.stack(
+                    sgv.lonlat_to_vector(
+                        self.skytiles["ra_tangent"], self.skytiles["dec_tangent"]
+                    ),
+                    axis=1,
+                )
+            )
+        )
 
     @property
     def pixel_scale(self) -> float:
