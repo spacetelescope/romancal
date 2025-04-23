@@ -69,7 +69,7 @@ class ImageFootprint:
                     image_shape = (iwcs.pixel_shape[1], iwcs.pixel_shape[0])
                 else:
                     raise ValueError(
-                        "Cannot infer an image footprint from a GWCS object because "
+                        "Cannot infer image footprint from GWCS object because "
                         "`image_shape` was not specified and "
                         "the GWCS object does not have `.bounding_box` nor `.pixel_shape`."
                     )
