@@ -231,8 +231,13 @@ class SkyCell:
             "dec_ref": self.projregion.data["dec_tangent"],
             "x_ref": self.data["x_tangent"],
             "y_ref": self.data["y_tangent"],
-            "rotation_matrix": None,
-            "orientat": self.projregion.data["orientat"],
+            "rotation_matrix": np.reshape(
+                wcs_util.calc_rotation_matrix(
+                    np.deg2rad(self.data["orientat"]), v3i_yangle=0.0, vparity=1
+                ),
+                (2, 2),
+            ),
+            "orientat": self.data["orientat"],
             "pixel_scale": self.pixel_scale,
             "pixel_shape": self.pixel_shape,
             "ra_center": self.data["ra_center"],
@@ -462,7 +467,7 @@ def wcsinfo_to_wcs(
     )
 
     matrix = wcsinfo.get("rotation_matrix", None)
-    if matrix:
+    if matrix is not None:
         matrix = np.array(matrix)
     else:
         orientat = wcsinfo.get("orientat", 0.0)
@@ -474,6 +479,7 @@ def wcsinfo_to_wcs(
     det2sky = (
         pixelshift | rotation | pixelscale | tangent_projection | celestial_rotation
     )
+    det2sky.name = "linear_transform"
 
     detector_frame = coordinate_frames.Frame2D(
         name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)
