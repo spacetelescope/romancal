@@ -64,7 +64,10 @@ class SkyCell:
 
     def __init__(self, index: int | None):
         """
-        :param index: index in the global sky map
+        Parameters
+        ----------
+        index : int
+            index in the global sky map
         """
         self.__index = index
         if index is not None:
@@ -75,8 +78,10 @@ class SkyCell:
         """
         retrieve a sky cell from the sky map by its name
 
-
-        :param name: name of a sky cell, for instance `315p86x50y75`
+        Parameters
+        ----------
+        name : str
+            name of a sky cell, for instance `315p86x50y75`
         """
         if not re.match(r"\d{3}\w\d{2}x\d{2}y\d{2}", name):
             raise ValueError(f"invalid skycell name {name}")
@@ -86,7 +91,11 @@ class SkyCell:
     def from_data(cls, data: np.void) -> "SkyCell":
         """
         build an index-less sky cell instance from a data array
-        :param data: array with sky cell parameters (see schema)
+
+        Parameters
+        ----------
+        data : numpy.void
+            array with sky cell parameters (see schema)
         """
         instance = cls(index=None)
         instance.__data = data
@@ -101,8 +110,12 @@ class SkyCell:
         """
         retrieve a sky cell from the sky map using its location within its containins sky tile
 
-        :param skytile_center: center coordinates of its containing sky tile in right ascension and declination
-        :param skycell_coordinates: XY location of the sky cell within its sky tile, in units of ordinal sky cells from the center
+        Parameters
+        ----------
+        skytile_center : tuple[float, float]
+            center coordinates of its containing sky tile in right ascension and declination
+        skycell_coordinates : tuple[int, int]
+            XY location of the sky cell within its sky tile, in units of ordinal sky cells from the center
         """
         return cls.from_name(
             f"r{round(skytile_center[0]):03}d{'p' if skytile_center[1] >= 0 else 'm'}{round(skytile_center[1]):02}x{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}y{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}"
@@ -113,7 +126,9 @@ class SkyCell:
         """
         retrieve a sky cell from WCS info or a target specified in an association
 
-        :param asn: ModelLibrary instance
+        Parameters
+        ----------
+        asn : ModelLibrary
         """
         if "skycell_wcs_info" in asn.asn and asn.asn["skycell_wcs_info"] != "none":
             skycell_name = asn.asn["skycell_wcs_info"]["name"]
@@ -252,7 +267,10 @@ class ProjectionRegion:
 
     def __init__(self, index: int | None):
         """
-        :param index: index of the projection region in the sky map array
+        Parameters
+        ----------
+        index : int
+            index of the projection region in the sky map array
         """
         self.__index = index
         if index is not None:
@@ -262,7 +280,11 @@ class ProjectionRegion:
     def from_data(cls, data: np.void) -> "ProjectionRegion":
         """
         build an index-less projection region instance from a data array
-        :param data: array with projection region parameters (see schema)
+
+        Parameters
+        ----------
+        data : numpy.void
+            array with projection region parameters (see schema)
         """
         instance = cls(index=None)
         instance.__data = data
@@ -271,8 +293,15 @@ class ProjectionRegion:
     @classmethod
     def from_skycell_index(cls, index: int) -> "ProjectionRegion":
         """
-        :param index: index of the sky cell
-        :returns: projection region corresponding to the given sky cell
+        Parameters
+        ----------
+        index : int
+            index of the sky cell
+
+        Returns
+        -------
+        ProjectionRegion
+            projection region corresponding to the given sky cell
         """
         for projregion in SKYMAP.projregions:
             if (
@@ -547,7 +576,10 @@ class SkyMap:
 
     def __init__(self, path: None | Path | str = None):
         """
-        :param path: load sky map from a custom ASDF file (defaults to `skycells` ref on CRDS)
+        Parameters
+        ----------
+        path : None | Path | str, optional
+            load sky map from a custom ASDF file (defaults to `skycells` ref on CRDS)
         """
         if path is not None and not isinstance(path, Path):
             path = Path(path)
