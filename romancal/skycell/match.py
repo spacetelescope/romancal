@@ -23,36 +23,19 @@ log.setLevel(logging.DEBUG)
 class ImageFootprint:
     """abstraction of an image footprint"""
 
-    __radec_bounds: tuple[float, float, float, float]
+    __radec_corners: NDArray[float]
 
-    def __init__(
-        self,
-        ra_min: float,
-        dec_min: float,
-        ra_max: float,
-        dec_max: float,
-    ):
+    def __init__(self, radec_corners: list[tuple[float, float]]):
         """
         Parameters
         ----------
-        ra_min : float
-            minimum right ascension
-        dec_min : float
-            minimum declination
-        ra_max : float
-            maximum right ascension
-        dec_max : float
-            maximum declination
+        radec_corners: list[tuple[float, float]]
+            four corners of the image in right ascension and declination
         """
-        self.__radec_bounds = ra_min, dec_min, ra_max, dec_max
-
-    @classmethod
-    def from_corners(cls, radec_corners: list[tuple[float, float]]) -> "ImageFootprint":
-        """build footprint from corner points in right ascension and declination"""
         radec_corners = np.array(radec_corners)
         if radec_corners.shape[0] != 4:
             raise ValueError(f"need 4 corners, not {radec_corners.shape[0]}")
-        return cls(*np.min(radec_corners, axis=0), *np.max(radec_corners, axis=0))
+        self.__radec_corners = radec_corners
 
     @classmethod
     def from_gwcs(
@@ -82,24 +65,12 @@ class ImageFootprint:
 
             iwcs.bounding_box = wcs_bbox_from_shape(image_shape)
 
-        return cls.from_corners(iwcs.footprint(center=False))
-
-    @property
-    def radec_bounds(self) -> tuple[float, float, float, float]:
-        """bounds in right ascension and declination in order [xmin, ymin, xmax, ymax]"""
-        return self.__radec_bounds
+        return cls(iwcs.footprint(center=False))
 
     @property
     def radec_corners(self) -> NDArray:
         """corners in right ascension and declination in counterclockwise order"""
-        return np.array(
-            [
-                (self.radec_bounds[0], self.radec_bounds[1]),
-                (self.radec_bounds[2], self.radec_bounds[1]),
-                (self.radec_bounds[2], self.radec_bounds[3]),
-                (self.radec_bounds[0], self.radec_bounds[3]),
-            ]
-        )
+        return self.__radec_corners
 
     @cached_property
     def radec_center(self) -> tuple[float, float]:
@@ -152,7 +123,7 @@ def find_skycell_matches(
     if isinstance(image_corners, WCS):
         footprint = ImageFootprint.from_gwcs(image_corners, image_shape)
     else:
-        footprint = ImageFootprint.from_corners(image_corners)
+        footprint = ImageFootprint(image_corners)
 
     footprint_center_vectorpoint = sgv.normalize_vector(
         sm.image_coords_to_vec(footprint.radec_corners).mean(axis=0)
