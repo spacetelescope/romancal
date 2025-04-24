@@ -579,7 +579,7 @@ class SkyMap:
         Parameters
         ----------
         path : None | Path | str, optional
-            load sky map from a custom ASDF file (defaults to `skycells` ref on CRDS)
+            load sky map from the specified ASDF file (defaults to latest `skycells` ref on CRDS)
         """
         if path is not None and not isinstance(path, Path):
             path = Path(path)
