@@ -87,6 +87,7 @@ def test_skycell_to_wcs(name):
 
     wcs = skycell.wcs
 
+    # forward transform to radec corners
     assert_allclose(
         np.array(
             [
@@ -97,6 +98,19 @@ def test_skycell_to_wcs(name):
             ]
         ),
         skycell.radec_corners,
+    )
+
+    # inverse transform to pixel corners
+    assert_allclose(
+        np.array([wcs.invert(*corner) for corner in skycell.radec_corners]),
+        np.array(
+            [
+                (0.0, 0.0),
+                (skycell.pixel_shape[0] - 1, 0.0),
+                (skycell.pixel_shape[0] - 1, skycell.pixel_shape[1] - 1),
+                (0.0, skycell.pixel_shape[1] - 1),
+            ]
+        ),
     )
 
     wcsinfo = skycell.wcsinfo
