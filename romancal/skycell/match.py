@@ -33,10 +33,16 @@ class ImageFootprint:
         dec_max: float,
     ):
         """
-        :param ra_min: minimum right ascension
-        :param dec_min: minimum declination
-        :param ra_max: maximum right ascension
-        :param dec_max: maximum declination
+        Parameters
+        ----------
+        ra_min : float
+            minimum right ascension
+        dec_min : float
+            minimum declination
+        ra_max : float
+            maximum right ascension
+        dec_max : float
+            maximum declination
         """
         self.__radec_bounds = ra_min, dec_min, ra_max, dec_max
 
