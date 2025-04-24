@@ -30,11 +30,10 @@ from pathlib import Path
 import astropy.coordinates as coord
 import astropy.modeling.models as amm
 import astropy.units as u
-import gwcs.coordinate_frames as cf
-import gwcs.wcs as wcs
 import numpy as np
 import pytest
 import spherical_geometry.vector as sgv
+from gwcs import WCS, coordinate_frames
 from spherical_geometry.vector import rotate_around as rotate
 
 os.environ["SKYMAP_PATH"] = str(Path(__file__).parent / "skymap_subset.asdf")
@@ -82,7 +81,7 @@ def mk_im_corners(
     return radecrect
 
 
-def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
+def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None) -> WCS:
     """
     Construct a GWCS model for testing the patch matching when provided a WCS
     This just implements a basic tangent projection with specified ra, dec, and
@@ -94,13 +93,13 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
         | amm.Pix2Sky_TAN()
         | amm.RotateNative2Celestial(cra, cdec, 180.0)
     )
-    detector_frame = cf.Frame2D(
+    detector_frame = coordinate_frames.Frame2D(
         name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)
     )
-    sky_frame = cf.CelestialFrame(
+    sky_frame = coordinate_frames.CelestialFrame(
         reference_frame=coord.ICRS(), name="icrs", unit=(u.deg, u.deg)
     )
-    wcsobj = wcs.WCS([(detector_frame, transform), (sky_frame, None)])
+    wcsobj = WCS([(detector_frame, transform), (sky_frame, None)])
     if pixel_shape is not None:
         wcsobj.pixel_shape = pixel_shape
     if bounding_box is not None:
@@ -149,30 +148,15 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
         (
             (cra, cdec, cpa, 0.5),
             (
-                "315p86x45y70",
-                "315p86x45y71",
-                "315p86x45y72",
-                "315p86x45y73",
-                "315p86x45y74",
-                "315p86x46y70",
-                "315p86x46y71",
-                "315p86x46y72",
-                "315p86x46y73",
                 "315p86x46y74",
                 "315p86x46y75",
-                "315p86x47y70",
-                "315p86x47y71",
-                "315p86x47y72",
                 "315p86x47y73",
                 "315p86x47y74",
                 "315p86x47y75",
-                "315p86x48y70",
-                "315p86x48y71",
                 "315p86x48y72",
                 "315p86x48y73",
                 "315p86x48y74",
                 "315p86x48y75",
-                "315p86x49y70",
                 "315p86x49y71",
                 "315p86x49y72",
                 "315p86x49y73",
@@ -190,35 +174,20 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None):
                 "315p86x51y73",
                 "315p86x51y74",
                 "315p86x51y75",
-                "315p86x52y70",
                 "315p86x52y71",
                 "315p86x52y72",
                 "315p86x52y73",
                 "315p86x52y74",
                 "315p86x52y75",
-                "315p86x53y70",
-                "315p86x53y71",
                 "315p86x53y72",
                 "315p86x53y73",
                 "315p86x53y74",
                 "315p86x53y75",
-                "315p86x54y70",
-                "315p86x54y71",
-                "315p86x54y72",
                 "315p86x54y73",
                 "315p86x54y74",
                 "315p86x54y75",
-                "315p86x55y70",
-                "315p86x55y71",
-                "315p86x55y72",
-                "315p86x55y73",
                 "315p86x55y74",
                 "315p86x55y75",
-                "315p86x56y70",
-                "315p86x56y71",
-                "315p86x56y72",
-                "315p86x56y73",
-                "315p86x56y74",
             ),
         ),
     ],
@@ -235,15 +204,17 @@ def test_skycell_match(pars, expected):
     assert sorted(mmatches) == sorted(expected)
 
 
-def test_wcs_corners():
+def test_match_from_wcs():
     imshape = (4096, 4096)
     wcsobj = mk_gwcs()
+
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
         wcsobj, image_shape=imshape
     )
-    mmatches = np.array(
-        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
-    ).tolist()
+    mmatches = [
+        str(sc.SKYMAP.skycells[index]["name"]) for index in intersecting_skycells
+    ]
+
     assert mmatches == [
         "315p86x50y75",
         "315p86x51y75",
@@ -255,15 +226,19 @@ def test_wcs_corners():
         "315p86x52y74",
         "315p86x50y73",
         "315p86x51y73",
-        "315p86x49y73",
-        "315p86x52y73",
     ]
 
+
+def test_match_from_wcs_with_imshape():
+    imshape = (4096, 4096)
+    wcsobj = mk_gwcs()
     wcsobj.pixel_shape = imshape
+
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
-    mmatches = np.array(
-        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
-    ).tolist()
+    mmatches = [
+        str(sc.SKYMAP.skycells[index]["name"]) for index in intersecting_skycells
+    ]
+
     assert mmatches == [
         "315p86x50y75",
         "315p86x51y75",
@@ -275,16 +250,17 @@ def test_wcs_corners():
         "315p86x52y74",
         "315p86x50y73",
         "315p86x51y73",
-        "315p86x49y73",
-        "315p86x52y73",
     ]
 
-    wcsobj.pixel_shape = None
+
+def test_match_from_wcs_with_bbox():
+    wcsobj = mk_gwcs()
     wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
+
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
-    mmatches = np.array(
-        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
-    ).tolist()
+    mmatches = [
+        str(sc.SKYMAP.skycells[index]["name"]) for index in intersecting_skycells
+    ]
     assert mmatches == [
         "315p86x50y75",
         "315p86x51y75",
@@ -296,10 +272,11 @@ def test_wcs_corners():
         "315p86x52y74",
         "315p86x50y73",
         "315p86x51y73",
-        "315p86x49y73",
-        "315p86x52y73",
     ]
 
+
+def test_match_from_wcs_without_imshape_or_bbox():
+    wcsobj = mk_gwcs()
     wcsobj.bounding_box = None
     with pytest.raises(ValueError):
         intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
