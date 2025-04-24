@@ -1,5 +1,5 @@
 """
-This module determines which projection regions (associated with "sky tiles") overlap with the given image.
+This module determines which sky cells overlap with the given image.
 
 Currently this assumes that the sky projected borders of all calibrated L2 images are straight.
 """
