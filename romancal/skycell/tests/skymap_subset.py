@@ -1,17 +1,17 @@
 from pathlib import Path
 
-import romancal.skycell.skymap as sm
+import romancal.skycell.skymap as sc
 
-NUM_PROJREGIONS = 23
+LAST_PROJREGION_INDEX = 2
 
 if __name__ == "__main__":
-    skymap_subset = sm.SKYMAP.data.copy()
+    skymap_subset = sc.SKYMAP.data.copy()
 
     # to maintain the proper indices, the subset must contain all the previous projection regions up to the specified index
-    skymap_subset["roman"]["projection_regions"] = sm.SKYMAP.projregions[
-        : NUM_PROJREGIONS + 1
+    skymap_subset["roman"]["projection_regions"] = sc.SKYMAP.projregions[
+        : LAST_PROJREGION_INDEX + 1
     ].copy()
-    skymap_subset["roman"]["skycells"] = sm.SKYMAP.skycells[
+    skymap_subset["roman"]["skycells"] = sc.SKYMAP.skycells[
         : skymap_subset["roman"]["projection_regions"][-1]["skycell_end"] + 1
     ].copy()
 
