@@ -29,7 +29,7 @@ def find_intersecting_projregions(
     # find the closest projection regions to the image center
     _, nearby_projregion_indices = sc.SKYMAP.projregions_kdtree.query(
         footprint.vectorpoint_center,
-        k=8 + 2 * (footprint.polygon.area() / sc.SKYTILE_AREA),
+        k=8 + 2 * (footprint.polygon.area() / sc.PROJREGION_AREA),
     )
 
     intersecting_projregion_indices = []

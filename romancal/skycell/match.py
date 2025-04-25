@@ -140,11 +140,11 @@ def find_skycell_matches(
         sm.image_coords_to_vec(footprint.radec_corners).mean(axis=0)
     )
 
-    # derive the maximum number of possibly intersecting skytiles (analogous to projection regions) and skycells
-    # based on the image footprint area and the known skytile and skycell area
+    # derive the maximum number of possibly intersecting projection regions and skycells
+    # based on the image footprint area and the known projregion and skycell area
     # TODO: improve these calculations, they are probably over-estimating...
-    max_num_intersecting_skytiles = 8 + 2 * int(
-        np.ceil(footprint.polygon.area() / sm.SKYTILE_AREA)
+    max_num_intersecting_projregions = 8 + 2 * int(
+        np.ceil(footprint.polygon.area() / sm.PROJREGION_AREA)
     )
     max_num_intersecting_skycells = 8 + 2 * int(
         np.ceil(footprint.polygon.area() / sm.SKYCELL_AREA)
@@ -155,7 +155,7 @@ def find_skycell_matches(
 
     # query the global k-d tree of projection regions for possible intersection candidates in (normalized) 3D space
     _, nearby_projregion_indices = sm.SKYMAP.projregions_kdtree.query(
-        footprint_center_vectorpoint, k=max_num_intersecting_skytiles
+        footprint_center_vectorpoint, k=max_num_intersecting_projregions
     )
 
     for projregion_index in nearby_projregion_indices:

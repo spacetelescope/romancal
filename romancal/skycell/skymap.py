@@ -27,7 +27,7 @@ log.setLevel(logging.DEBUG)
 
 
 SKYCELL_AREA = (4.6 / 3600.0) ** 2
-SKYTILE_AREA = (0.5) ** 2
+PROJREGION_AREA = (0.5) ** 2
 
 
 def image_coords_to_vec(
@@ -104,7 +104,7 @@ class SkyCell:
     @classmethod
     def from_center_and_coordinates(
         cls,
-        skytile_center: tuple[float, float],
+        projregion_center: tuple[float, float],
         skycell_coordinates: tuple[int, int],
     ) -> "SkyCell":
         """
@@ -112,13 +112,13 @@ class SkyCell:
 
         Parameters
         ----------
-        skytile_center : tuple[float, float]
+        projregion_center : tuple[float, float]
             center coordinates of its containing sky tile in right ascension and declination
         skycell_coordinates : tuple[int, int]
             XY location of the sky cell within its sky tile, in units of ordinal sky cells from the center
         """
         return cls.from_name(
-            f"r{round(skytile_center[0]):03}d{'p' if skytile_center[1] >= 0 else 'm'}{round(skytile_center[1]):02}x{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}y{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}"
+            f"r{round(projregion_center[0]):03}d{'p' if projregion_center[1] >= 0 else 'm'}{round(projregion_center[1]):02}x{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}y{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}"
         )
 
     @classmethod
