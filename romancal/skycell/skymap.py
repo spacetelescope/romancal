@@ -122,19 +122,22 @@ class SkyCell:
         )
 
     @classmethod
-    def from_asn(cls, asn: ModelLibrary) -> "SkyCell":
+    def from_asn(cls, asn: asdf.AsdfTree | Path) -> "SkyCell":
         """
         retrieve a sky cell from WCS info or a target specified in an association
 
         Parameters
         ----------
-        asn : ModelLibrary
+        asn : asdf.AsdfTree | Path
+            association dictionary or a path to an association file to load
         """
-        if "skycell_wcs_info" in asn.asn and asn.asn["skycell_wcs_info"] != "none":
-            skycell_name = asn.asn["skycell_wcs_info"]["name"]
-        elif "target" in asn.asn:
+        if isinstance(asn, Path):
+            asn = ModelLibrary._load_asn(asn).asn
+        if "skycell_wcs_info" in asn and asn.asn["skycell_wcs_info"] != "none":
+            skycell_name = asn["skycell_wcs_info"]["name"]
+        elif "target" in asn:
             # check to see if the product name contains a skycell name & if true get the skycell record
-            skycell_name = asn.asn["target"]
+            skycell_name = asn["target"]
         else:
             raise ValueError(
                 "cannot extract skycell information from modellibrary association with neither WCS nor target info"
@@ -566,7 +569,7 @@ def to_skycell_wcs(library: ModelLibrary) -> WCS | None:
     """
 
     try:
-        skycell = SkyCell.from_asn(library)
+        skycell = SkyCell.from_asn(library.asn)
 
         log.info(f"Skycell record: {skycell.data}")
 
