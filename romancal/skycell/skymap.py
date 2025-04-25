@@ -76,12 +76,16 @@ class SkyCell:
     @classmethod
     def from_name(cls, name: str) -> "SkyCell":
         """
-        Retrieve a sky cell from the sky map by its name.
+        Retrieve a sky cell from the sky map by its name (see handbook [1] for explanation).
 
         Parameters
         ----------
         name : str
             Name of a sky cell, for instance `315p86x50y75`.
+
+        References
+        ----------
+        .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
         """
         if not re.match(r"\d{3}\w\d{2}x\d{2}y\d{2}", name):
             raise ValueError(f"invalid skycell name {name}")
@@ -111,11 +115,15 @@ class SkyCell:
     @classmethod
     def from_center_and_coordinates(
         cls,
-        projregion_center: tuple[float, float],
+        skytile_center: tuple[float, float],
         skycell_coordinates: tuple[int, int],
     ) -> "SkyCell":
         """
-        retrieve a sky cell from the sky map using its location within its containins sky tile
+        Retrieve a sky cell from the sky map using
+        - the center of its containing sky tile
+        - the ordinal XY coordinates of the sky cell from the sky tile origin (number of sky cells away from the center)
+
+        (see handbook [1] for further explanation)
 
         Parameters
         ----------
@@ -123,9 +131,13 @@ class SkyCell:
             center coordinates of its containing sky tile in right ascension and declination
         skycell_coordinates : tuple[int, int]
             XY location of the sky cell within its sky tile, in units of ordinal sky cells from the center
+
+        References
+        ----------
+        .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
         """
         return cls.from_name(
-            f"r{round(projregion_center[0]):03}d{'p' if projregion_center[1] >= 0 else 'm'}{round(projregion_center[1]):02}x{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}y{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}"
+            f"r{round(skytile_center[0]):03}d{'p' if skytile_center[1] >= 0 else 'm'}{round(skytile_center[1]):02}x{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}y{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}"
         )
 
     @classmethod
