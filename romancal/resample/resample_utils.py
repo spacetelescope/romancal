@@ -22,7 +22,12 @@ def _make_empty_mosaic_model():
         "product_type": stnode.ProductType("l2"),
         "sdf_software_version": stnode.SdfSoftwareVersion("7.7.7"),
         "telescope": stnode.Telescope("ROMAN"),
-        "asn": stnode.MosaicAssociations(),
+        "asn": stnode.MosaicAssociations(
+            {
+                "pool_name": "?",
+                "table_name": "?",
+            }
+        ),
         "basic": stnode.MosaicBasic(
             {
                 "survey": "?",
@@ -52,19 +57,21 @@ def _make_empty_mosaic_model():
         "program": stnode.Program(),
         "ref_file": stnode.RefFile(
             {
-                "crds": {},
+                "apcorr": "N/A",
+                "area": "N/A",
                 "dark": "N/A",
                 "distortion": "N/A",
-                "mask": "N/A",
+                "epsf": "N/A",
                 "flat": "N/A",
                 "gain": "N/A",
-                "readnoise": "N/A",
-                "linearity": "N/A",
                 "inverse_linearity": "N/A",
+                "linearity": "N/A",
+                "mask": "N/A",
                 "photom": "N/A",
-                "area": "N/A",
-                "saturation": "N/A",
+                "readnoise": "N/A",
                 "refpix": "N/A",
+                "saturation": "N/A",
+                "crds": {},
             }
         ),
         "resample": stnode.Resample({"members": []}),
