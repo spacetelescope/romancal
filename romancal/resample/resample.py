@@ -1,7 +1,7 @@
 import logging
 
 import numpy as np
-from roman_datamodels import dqflags
+from roman_datamodels import dqflags, stnode
 from stcal.resample import Resample
 
 from romancal.patch_match.patch_match import to_skycell_wcs
@@ -225,12 +225,9 @@ class ResampleData(Resample):
         output_model.meta.basic.location_name = self.input_models.asn.get(
             "target", "None"
         )
-        if (asn_pool := self.input_models.asn.get("asn_pool", None)) is not None:
-            output_model.meta.asn.pool_name = asn_pool
-        if (
-            asn_table_name := self.input_models.asn.get("table_name", None)
-        ) is not None:
-            output_model.meta.asn.table_name = asn_table_name
+        output_model.meta.asn = stnode.MosaicAssociations()
+        output_model.meta.asn.pool_name = self.input_models.asn.get("asn_pool", "?")
+        output_model.meta.asn.table_name = self.input_models.asn.get("table_name", "?")
 
         # every resampling will generate these
         output_model.data = self.output_model["data"]

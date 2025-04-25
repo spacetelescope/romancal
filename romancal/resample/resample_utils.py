@@ -29,12 +29,6 @@ def _make_empty_mosaic_model():
         "prd_version": stnode.PrdVersion("8.8.8"),
         "product_type": stnode.ProductType("l2"),
         "sdf_software_version": stnode.SdfSoftwareVersion("7.7.7"),
-        "asn": stnode.MosaicAssociations(
-            {
-                "pool_name": "?",
-                "table_name": "?",
-            }
-        ),
         "basic": stnode.MosaicBasic(
             {
                 "survey": "?",
