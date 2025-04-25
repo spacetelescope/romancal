@@ -50,8 +50,8 @@ def _make_empty_mosaic_model():
         "photometry": stnode.Photometry(
             {
                 "pixel_area": -999999.0,
-                "conversion_megajanskys": -999999.0,
-                "conversion_megajanskys_uncertainty": -999999.0,
+                "conversion_megajanskys": -999999,
+                "conversion_megajanskys_uncertainty": -999999,
             }
         ),
         "program": stnode.Program(),
