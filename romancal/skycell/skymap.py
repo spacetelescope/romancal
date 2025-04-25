@@ -56,7 +56,7 @@ def image_coords_to_vec(
 
 class SkyCell:
     """
-    square subpartition of a projection region, approx 4.6' x 4.6' and 5000 pixels across
+    Square subregion of a projection region, 4.6 arcminutes per side.
     """
 
     __index: int | None
@@ -67,7 +67,7 @@ class SkyCell:
         Parameters
         ----------
         index : int
-            index in the global sky map
+            Index in the global sky map.
         """
         self.__index = index
         if index is not None:
@@ -76,12 +76,12 @@ class SkyCell:
     @classmethod
     def from_name(cls, name: str) -> "SkyCell":
         """
-        retrieve a sky cell from the sky map by its name
+        Retrieve a sky cell from the sky map by its name.
 
         Parameters
         ----------
         name : str
-            name of a sky cell, for instance `315p86x50y75`
+            Name of a sky cell, for instance `315p86x50y75`.
         """
         if not re.match(r"\d{3}\w\d{2}x\d{2}y\d{2}", name):
             raise ValueError(f"invalid skycell name {name}")
@@ -275,7 +275,7 @@ class SkyCell:
 
 
 class ProjectionRegion:
-    """projection region in the sky map, corresponding to a single sky tile"""
+    """projection region in the sky map, corresponding to a single sky tile on the sky map"""
 
     __index: int | None
     __data: np.void
@@ -585,9 +585,15 @@ def to_skycell_wcs(library: ModelLibrary) -> WCS | None:
 
 class SkyMap:
     """
-    Abstract representation of the sky map, comprising of
-    - 4096 tesellated non-rectangular tiles ("sky tiles"), each with a corresponding rectangular region of gnomonic projection ("projection region")
-    - ~2000 square subpartitions ("sky cells", ~8 million in total) for each projection region, each 4.6' or 5000px across
+    Abstract representation of the sky map, comprising of 4058 tesellated non-rectangular "sky tiles", each with an area of 10 square degrees.
+
+    For each sky tile, a corresponding gnomonic projection defining a rectangular "projection region" on to a uniform pixel grid entirely covering the sky tile. By necessity, projection regions will overlap other projection regions somewhat. The pixel scale for all projection regions is identical.
+
+    Each projection region is subdivided into ~2000 square subregions ("sky cells", ~8 million in total), each 4.6' across. These sky cells also overlap each other by a standard number of pixels.
+
+    References
+    ----------
+    .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
     """
 
     __path: None | Path
