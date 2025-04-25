@@ -85,7 +85,14 @@ class SkyCell:
         """
         if not re.match(r"\d{3}\w\d{2}x\d{2}y\d{2}", name):
             raise ValueError(f"invalid skycell name {name}")
-        return SkyCell(np.where(SKYMAP.skycells["name"] == name)[0][0])
+
+        indices = np.where(SKYMAP.skycells["name"] == name[0])
+        if len(indices) > 0:
+            return SkyCell(indices[0])
+        else:
+            raise KeyError(
+                f"skycell with name '{name}' does not exist in the currently-loaded sky map"
+            )
 
     @classmethod
     def from_data(cls, data: np.void) -> "SkyCell":
