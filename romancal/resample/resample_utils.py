@@ -1,8 +1,77 @@
 import math
 
 import numpy as np
+from astropy.table import QTable
+from astropy.time import Time
+from roman_datamodels import stnode
+from roman_datamodels.datamodels import MosaicModel
 from stcal.alignment.util import compute_scale, wcs_from_sregions
 from stcal.resample.utils import compute_mean_pixel_area
+
+
+def _make_empty_mosaic_model():
+    m = MosaicModel()
+    m.meta = {
+        "calibration_software_name": stnode.CalibrationSoftwareName("RomanCAL"),
+        "file_date": stnode.FileDate(
+            Time("2020-01-01T00:00:00.0", format="isot", scale="utc")
+        ),
+        "model_type": stnode.ModelType("MosaicModel"),
+        "origin": stnode.Origin("STSCI/SOC"),
+        "prd_version": stnode.PrdVersion("8.8.8"),
+        "product_type": stnode.ProductType("l2"),
+        "sdf_software_version": stnode.SdfSoftwareVersion("7.7.7"),
+        "telescope": stnode.Telescope("ROMAN"),
+        "asn": stnode.MosaicAssociations(),
+        "basic": stnode.MosaicBasic(
+            {
+                "survey": "?",
+            }
+        ),
+        "cal_step": stnode.L3CalStep(
+            {
+                "flux": "INCOMPLETE",
+                "outlier_detection": "INCOMPLETE",
+                "skymatch": "INCOMPLETE",
+                "resample": "INCOMPLETE",
+            }
+        ),
+        "individual_image_meta": stnode.IndividualImageMeta(
+            {
+                "basic": QTable({"dummy": [-1]}),
+            }
+        ),
+        "coordinates": stnode.Coordinates(),
+        "photometry": stnode.Photometry(
+            {
+                "pixel_area": -999999.0,
+                "conversion_megajanskys": -999999.0,
+                "conversion_megajanskys_uncertainty": -999999.0,
+            }
+        ),
+        "program": stnode.Program(),
+        "ref_file": stnode.RefFile(
+            {
+                "crds": {},
+                "dark": "N/A",
+                "distortion": "N/A",
+                "mask": "N/A",
+                "flat": "N/A",
+                "gain": "N/A",
+                "readnoise": "N/A",
+                "linearity": "N/A",
+                "inverse_linearity": "N/A",
+                "photom": "N/A",
+                "area": "N/A",
+                "saturation": "N/A",
+                "refpix": "N/A",
+            }
+        ),
+        "resample": stnode.Resample({"members": []}),
+        "wcsinfo": stnode.MosaicWcsinfo(),
+    }
+    m.cal_logs = stnode.CalLogs()
+    return m
 
 
 def make_output_wcs(
