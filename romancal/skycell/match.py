@@ -75,9 +75,19 @@ class ImageFootprint:
     @cached_property
     def radec_center(self) -> tuple[float, float]:
         """center point in right ascension and declination"""
-        return sgv.vector_to_lonlat(
-            *sm.image_coords_to_vec(self.radec_corners).mean(axis=0)
+        return sgv.vector_to_lonlat(self.vectorpoint_center)
+
+    @cached_property
+    def vectorpoint_corners(self) -> NDArray[float]:
+        """corners in 3D Cartesian space on the unit sphere"""
+        return sgv.normalize_vector(
+            np.stack(sgv.lonlat_to_vector(*np.array(self.radec_corners).T), axis=1)
         )
+
+    @cached_property
+    def vectorpoint_center(self) -> tuple[float, float, float]:
+        """center in 3D Cartesian space on the unit sphere"""
+        return sgv.normalize_vector(np.mean(self.vectorpoint_corners, axis=0))
 
     @cached_property
     def polygon(self) -> sgp.SingleSphericalPolygon:
@@ -149,6 +159,10 @@ def find_skycell_matches(
     )
 
     for projregion_index in nearby_projregion_indices:
+        # filter out missing neighbors
+        if projregion_index == sm.SKYMAP.projregions_kdtree.n:
+            continue
+
         projregion = sm.ProjectionRegion(projregion_index)
         if footprint.polygon.intersects_poly(projregion.polygon):
             # query the LOCAL k-d tree of skycells for possible intersection candidates in (normalized) 3D space
@@ -164,11 +178,15 @@ def find_skycell_matches(
             nearby_skycell_indices.extend(projregion_nearby_skycell_indices)
 
             # find polygons that intersect the image footprint
-            for nearby_skycell_index in projregion_nearby_skycell_indices:
+            for skycell_index in projregion_nearby_skycell_indices:
+                # filter out missing neighbors
+                if skycell_index == projregion.skycells_kdtree.n:
+                    continue
+
                 # print(nearby_skycell_index)
-                skycell = sm.SkyCell(nearby_skycell_index)
+                skycell = sm.SkyCell(skycell_index)
                 if footprint.polygon.intersects_poly(skycell.polygon):
                     # print(f"candidate {nearby_skycell_index} intersects")
-                    intersecting_skycell_indices.append(nearby_skycell_index)
+                    intersecting_skycell_indices.append(skycell_index)
 
-    return intersecting_skycell_indices, nearby_skycell_indices
+    return np.array(intersecting_skycell_indices), np.array(nearby_skycell_indices)

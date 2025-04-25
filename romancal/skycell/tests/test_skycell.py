@@ -1,19 +1,27 @@
 """Unit tests for skycell functions"""
 
-import os
 from pathlib import Path
 
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-os.environ["SKYMAP_PATH"] = str(Path(__file__).parent / "skymap_subset.asdf")
+import romancal.skycell.skymap as sc
 
-from romancal.skycell.skymap import ProjectionRegion, SkyCell
+
+@pytest.fixture(autouse=True)
+def override_skymap(monkeypatch):
+    """
+    For the tests in this file, monkeypatch the global
+    skymap path to a smaller subset to allow these tests
+    to run without access to the full skymap from CRDS.
+    """
+    monkeypatch.setattr(sc.SKYMAP, "path", Path(__file__).parent / "skymap_subset.asdf")
+    yield
 
 
 def test_skycell_init():
-    skycell = SkyCell.from_data(
+    skycell = sc.SkyCell.from_data(
         np.void(
             (
                 "225p90x30y51",
@@ -50,40 +58,40 @@ def test_skycell_init():
         )
     )
 
-    assert skycell.data == SkyCell(107).data
-    assert skycell.data == SkyCell.from_name("225p90x30y51").data
+    assert skycell.data == sc.SkyCell(107).data
+    assert skycell.data == sc.SkyCell.from_name("225p90x30y51").data
 
     with pytest.raises(ValueError):
-        SkyCell.from_name("r274dp63x31y81")
+        sc.SkyCell.from_name("r274dp63x31y81")
 
     with pytest.raises(ValueError):
-        SkyCell.from_name("notaskycellname")
+        sc.SkyCell.from_name("notaskycellname")
 
 
 def test_skycell_from_projregion():
-    projregion = ProjectionRegion(0)
+    projregion = sc.ProjectionRegion(0)
 
-    assert projregion.skycells[100] == SkyCell.from_name("225p90x30y44").data
+    assert projregion.skycells[100] == sc.SkyCell.from_name("225p90x30y44").data
 
-    assert projregion.skycell_indices[-1] != ProjectionRegion(1).skycell_indices[0]
+    assert projregion.skycell_indices[-1] != sc.ProjectionRegion(1).skycell_indices[0]
 
 
 def test_projregion_from_skycell():
-    skycell = SkyCell.from_name("225p90x30y51")
+    skycell = sc.SkyCell.from_name("225p90x30y51")
 
-    assert skycell.projregion == ProjectionRegion(0)
-    assert ProjectionRegion.from_skycell_index(107) == ProjectionRegion(0)
-    assert ProjectionRegion.from_skycell_index(0) == ProjectionRegion(0)
+    assert skycell.projregion == sc.ProjectionRegion(0)
+    assert sc.ProjectionRegion.from_skycell_index(107) == sc.ProjectionRegion(0)
+    assert sc.ProjectionRegion.from_skycell_index(0) == sc.ProjectionRegion(0)
 
 
 @pytest.mark.parametrize(
     "name",
-    ["225p90x30y51", "225p90x31y51"],
+    ["000p86x30y34", "045p86x29y34"],
 )
 def test_skycell_to_wcs(name):
     """Test integrity of skycell.wcs"""
 
-    skycell = SkyCell.from_name(name)
+    skycell = sc.SkyCell.from_name(name)
 
     wcs = skycell.wcs
 

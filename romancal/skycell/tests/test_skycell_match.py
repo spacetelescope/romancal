@@ -24,7 +24,6 @@ of its columns so that subsets of the table selected to reduce the filesize stil
 retain the same index obtained.)
 """
 
-import os
 from pathlib import Path
 
 import astropy.coordinates as coord
@@ -36,24 +35,34 @@ import spherical_geometry.vector as sgv
 from gwcs import WCS, coordinate_frames
 from spherical_geometry.vector import rotate_around as rotate
 
-os.environ["SKYMAP_PATH"] = str(Path(__file__).parent / "skymap_subset.asdf")
-
 import romancal.skycell.match as sm
 import romancal.skycell.skymap as sc
 
-crecord = sc.SKYMAP.skycells[0]
-cra = crecord["ra_corn3"]
-cdec = crecord["dec_corn3"]
-
-cpa = 45.0
 e = 0.0011  # epsilon offset in degrees
+cpa = 45.0
+
+
+@pytest.fixture(autouse=True)
+def override_skymap(monkeypatch):
+    """
+    For the tests in this file, monkeypatch the global
+    skymap path to a smaller subset to allow these tests
+    to run without access to the full skymap from CRDS.
+    """
+    monkeypatch.setattr(sc.SKYMAP, "path", Path(__file__).parent / "skymap_subset.asdf")
+    yield
+
+
+@pytest.fixture
+def sample_point() -> list[float]:
+    """sample point of skycell 000p86x61y68, near the boundary of projection regions 1 and 2"""
+    crecord = sc.SKYMAP.skycells[3560]
+    return [crecord["ra_corn3"], crecord["dec_corn3"]]
 
 
 def mk_im_corners(
     ra: float, dec: float, pa: float, size: float
-) -> tuple[
-    tuple[float, float], tuple[float, float], tuple[float, float], tuple[float, float]
-]:
+) -> list[tuple[float, float]]:
     """
     Generate 4 image corners of a square with the center at the supplied
     side size, ra, dec, and position angle (all in degrees).
@@ -81,7 +90,7 @@ def mk_im_corners(
     return radecrect
 
 
-def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None) -> WCS:
+def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
     """
     Construct a GWCS model for testing the patch matching when provided a WCS
     This just implements a basic tangent projection with specified ra, dec, and
@@ -91,7 +100,7 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None) -> WC
         amm.Scale(0.11 / 3600.0) & amm.Scale(0.11 / 3600.0)
         | amm.Rotation2D(pa)
         | amm.Pix2Sky_TAN()
-        | amm.RotateNative2Celestial(cra, cdec, 180.0)
+        | amm.RotateNative2Celestial(ra, dec, 180.0)
     )
     detector_frame = coordinate_frames.Frame2D(
         name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)
@@ -107,176 +116,227 @@ def mk_gwcs(ra=cra, dec=cdec, pa=cpa, bounding_box=None, pixel_shape=None) -> WC
     return wcsobj
 
 
+@pytest.fixture
+def sample_wcs(sample_point) -> WCS:
+    return mk_gwcs(sample_point[0], sample_point[1], cpa)
+
+
 @pytest.mark.parametrize(
-    "pars, expected",
+    "pars, expected_skycell_names",
     [
         (
-            (cra, cdec + e, cpa, 0.001),
+            (0, +e, cpa, 0.001),
             (
-                "315p86x50y75",
-                "315p86x51y75",
+                "000p86x61y69",
+                "000p86x62y69",
             ),
         ),
         (
-            (cra, cdec - e, cpa, 0.001),
+            (0, -e, cpa, 0.001),
             (
-                "315p86x50y75",
-                "315p86x51y75",
+                "000p86x61y68",
+                "000p86x61y69",
+                "000p86x62y68",
+                "000p86x62y69",
             ),
         ),
         (
-            (cra + e, cdec, cpa, 0.001),
+            (+e, 0, cpa, 0.001),
             (
-                "315p86x50y75",
-                "315p86x51y75",
+                "000p86x61y68",
+                "000p86x61y69",
+                "000p86x62y68",
+                "000p86x62y69",
             ),
         ),
         (
-            (cra - e, cdec, cpa, 0.001),
+            (-e, 0, cpa, 0.001),
             (
-                "315p86x50y75",
-                "315p86x51y75",
+                "000p86x61y68",
+                "000p86x61y69",
+                "000p86x62y68",
+                "000p86x62y69",
             ),
         ),
         (
-            (cra, cdec, cpa, 0.001),
+            (0, 0, cpa, 0.001),
             (
-                "315p86x50y75",
-                "315p86x51y75",
+                "000p86x61y68",
+                "000p86x61y69",
+                "000p86x62y68",
+                "000p86x62y69",
             ),
         ),
         (
-            (cra, cdec, cpa, 0.5),
+            (0, 0, cpa, 0.5),
             (
-                "315p86x46y74",
-                "315p86x46y75",
-                "315p86x47y73",
-                "315p86x47y74",
-                "315p86x47y75",
-                "315p86x48y72",
-                "315p86x48y73",
-                "315p86x48y74",
-                "315p86x48y75",
-                "315p86x49y71",
-                "315p86x49y72",
-                "315p86x49y73",
-                "315p86x49y74",
-                "315p86x49y75",
-                "315p86x50y70",
-                "315p86x50y71",
-                "315p86x50y72",
-                "315p86x50y73",
-                "315p86x50y74",
-                "315p86x50y75",
-                "315p86x51y70",
-                "315p86x51y71",
-                "315p86x51y72",
-                "315p86x51y73",
-                "315p86x51y74",
-                "315p86x51y75",
-                "315p86x52y71",
-                "315p86x52y72",
-                "315p86x52y73",
-                "315p86x52y74",
-                "315p86x52y75",
-                "315p86x53y72",
-                "315p86x53y73",
-                "315p86x53y74",
-                "315p86x53y75",
-                "315p86x54y73",
-                "315p86x54y74",
-                "315p86x54y75",
-                "315p86x55y74",
-                "315p86x55y75",
+                "000p86x57y67",
+                "000p86x57y68",
+                "000p86x58y66",
+                "000p86x58y67",
+                "000p86x58y68",
+                "000p86x58y69",
+                "000p86x58y70",
+                "000p86x59y66",
+                "000p86x59y67",
+                "000p86x59y68",
+                "000p86x59y69",
+                "000p86x59y70",
+                "000p86x59y71",
+                "000p86x59y72",
+                "000p86x60y65",
+                "000p86x60y66",
+                "000p86x60y67",
+                "000p86x60y68",
+                "000p86x60y69",
+                "000p86x60y70",
+                "000p86x60y71",
+                "000p86x60y72",
+                "000p86x60y73",
+                "000p86x61y65",
+                "000p86x61y66",
+                "000p86x61y67",
+                "000p86x61y68",
+                "000p86x61y69",
+                "000p86x61y70",
+                "000p86x61y71",
+                "000p86x61y72",
+                "000p86x61y73",
+                "000p86x62y64",
+                "000p86x62y65",
+                "000p86x62y66",
+                "000p86x62y67",
+                "000p86x62y68",
+                "000p86x62y69",
+                "000p86x62y70",
+                "000p86x62y71",
+                "000p86x63y64",
+                "000p86x63y65",
+                "000p86x63y66",
+                "000p86x63y67",
+                "000p86x63y68",
+                "000p86x63y69",
+                "000p86x64y65",
+                "000p86x64y66",
+                "045p86x36y65",
+                "045p86x36y66",
+                "045p86x37y66",
+                "045p86x37y67",
+                "045p86x37y68",
+                "045p86x37y69",
+                "045p86x38y66",
+                "045p86x38y67",
+                "045p86x38y68",
+                "045p86x38y69",
+                "045p86x38y70",
+                "045p86x38y71",
+                "045p86x39y66",
+                "045p86x39y67",
+                "045p86x39y68",
+                "045p86x39y69",
+                "045p86x39y70",
+                "045p86x39y71",
+                "045p86x39y72",
+                "045p86x39y73",
+                "045p86x39y74",
+                "045p86x40y67",
+                "045p86x40y68",
+                "045p86x40y69",
+                "045p86x40y70",
+                "045p86x40y71",
+                "045p86x41y67",
+                "045p86x41y68",
+                "045p86x41y69",
             ),
         ),
     ],
 )
-def test_skycell_match(pars, expected):
-    corners = mk_im_corners(*pars)
+def test_skycell_match(pars, expected_skycell_names, sample_point):
+    sample_point[0] += pars[0]
+    sample_point[1] += pars[1]
+    corners = mk_im_corners(*sample_point, pars[2], pars[3])
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(corners)
     # map matches to absolute index
-    mmatches = tuple(
+    skycell_names = tuple(
         np.array(
             [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
         ).tolist()
     )
-    assert sorted(mmatches) == sorted(expected)
+    assert sorted(skycell_names) == sorted(expected_skycell_names)
 
 
-def test_match_from_wcs():
+def test_match_from_wcs(sample_wcs):
     imshape = (4096, 4096)
-    wcsobj = mk_gwcs()
 
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
-        wcsobj, image_shape=imshape
+        sample_wcs, image_shape=imshape
     )
     mmatches = [
         str(sc.SKYMAP.skycells[index]["name"]) for index in intersecting_skycells
     ]
 
     assert mmatches == [
-        "315p86x50y75",
-        "315p86x51y75",
-        "315p86x50y74",
-        "315p86x51y74",
-        "315p86x49y75",
-        "315p86x52y75",
-        "315p86x49y74",
-        "315p86x52y74",
-        "315p86x50y73",
-        "315p86x51y73",
+        "000p86x62y69",
+        "000p86x62y68",
+        "000p86x61y69",
+        "000p86x61y68",
+        "000p86x63y69",
+        "000p86x61y70",
+        "000p86x62y67",
+        "000p86x60y68",
+        "045p86x37y69",
+        "045p86x37y68",
+        "045p86x38y69",
     ]
 
 
-def test_match_from_wcs_with_imshape():
+def test_match_from_wcs_with_imshape(sample_wcs):
     imshape = (4096, 4096)
-    wcsobj = mk_gwcs()
-    wcsobj.pixel_shape = imshape
+    sample_wcs.pixel_shape = imshape
 
-    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
-    mmatches = [
+    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(sample_wcs)
+    skycell_names = [
         str(sc.SKYMAP.skycells[index]["name"]) for index in intersecting_skycells
     ]
 
-    assert mmatches == [
-        "315p86x50y75",
-        "315p86x51y75",
-        "315p86x50y74",
-        "315p86x51y74",
-        "315p86x49y75",
-        "315p86x52y75",
-        "315p86x49y74",
-        "315p86x52y74",
-        "315p86x50y73",
-        "315p86x51y73",
+    assert skycell_names == [
+        "000p86x62y69",
+        "000p86x62y68",
+        "000p86x61y69",
+        "000p86x61y68",
+        "000p86x63y69",
+        "000p86x61y70",
+        "000p86x62y67",
+        "000p86x60y68",
+        "045p86x37y69",
+        "045p86x37y68",
+        "045p86x38y69",
     ]
 
 
-def test_match_from_wcs_with_bbox():
-    wcsobj = mk_gwcs()
-    wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
+def test_match_from_wcs_with_bbox(sample_wcs):
+    sample_wcs.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
 
-    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
-    mmatches = [
+    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(sample_wcs)
+    skycell_names = [
         str(sc.SKYMAP.skycells[index]["name"]) for index in intersecting_skycells
     ]
-    assert mmatches == [
-        "315p86x50y75",
-        "315p86x51y75",
-        "315p86x50y74",
-        "315p86x51y74",
-        "315p86x49y75",
-        "315p86x52y75",
-        "315p86x49y74",
-        "315p86x52y74",
-        "315p86x50y73",
-        "315p86x51y73",
+    assert skycell_names == [
+        "000p86x62y69",
+        "000p86x62y68",
+        "000p86x61y69",
+        "000p86x61y68",
+        "000p86x63y69",
+        "000p86x61y70",
+        "000p86x62y67",
+        "000p86x60y68",
+        "045p86x37y69",
+        "045p86x37y68",
+        "045p86x38y69",
     ]
 
 
-def test_match_from_wcs_without_imshape_or_bbox():
-    wcsobj = mk_gwcs()
-    wcsobj.bounding_box = None
+def test_match_from_wcs_without_imshape_or_bbox(sample_wcs):
+    sample_wcs.bounding_box = None
     with pytest.raises(ValueError):
-        intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
+        intersecting_skycells, nearby_skycells = sm.find_skycell_matches(sample_wcs)

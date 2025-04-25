@@ -193,17 +193,24 @@ class SkyCell:
             )
         )
 
-    @property
+    @cached_property
+    def vectorpoint_corners(self) -> NDArray[float]:
+        """corners in 3D Cartesian space on the unit sphere"""
+        return sgv.normalize_vector(
+            np.stack(sgv.lonlat_to_vector(*np.array(self.radec_corners).T), axis=1)
+        )
+
+    @cached_property
+    def vectorpoint_center(self) -> tuple[float, float, float]:
+        """center in 3D Cartesian space on the unit sphere"""
+        return sgv.normalize_vector(np.array(sgv.lonlat_to_vector(*self.radec_center)))
+
+    @cached_property
     def polygon(self) -> sgp.SingleSphericalPolygon:
         """spherical polygon representing this sky cell"""
-        # convert all radec points to vectors
-        corner_vectorpoints = image_coords_to_vec(self.radec_corners)
-        center_vectorpoint = image_coords_to_vec([self.radec_center])
-
-        # construct polygon from corner points and center point
         return sgp.SingleSphericalPolygon(
-            points=sgv.normalize_vector(corner_vectorpoints),
-            inside=sgv.normalize_vector(center_vectorpoint),
+            points=self.vectorpoint_corners,
+            inside=self.vectorpoint_center,
         )
 
     @cached_property
@@ -314,7 +321,7 @@ class ProjectionRegion:
                 <= index
                 < int(projregion["skycell_end"])
             ):
-                return cls(projregion[0])
+                return cls(projregion["index"])
         else:
             raise KeyError(
                 f"sky cell index {index} not found in any projection regions"
@@ -333,17 +340,12 @@ class ProjectionRegion:
     @property
     def radec_tangent(self) -> tuple[float, float]:
         """projection origin (tangent point with the celestial sphere) in right ascension and declination"""
-        return self.data["ra_tangent"], self.data["dec_tangent"]
+        return self.data[["ra_tangent", "dec_tangent"]]
 
     @property
     def radec_bounds(self) -> tuple[float, float, float, float]:
         """bounds in right ascension and declination in order [xmin, ymin, xmax, ymax]"""
-        return (
-            self.data["ra_min"],
-            self.data["dec_min"],
-            self.data["ra_max"],
-            self.data["dec_max"],
-        )
+        return self.data[["ra_min", "dec_min", "ra_max", "dec_max"]]
 
     @property
     def orientation(self) -> float:
@@ -353,12 +355,12 @@ class ProjectionRegion:
     @property
     def xy_tangent(self) -> tuple[float, float]:
         """projection origin (tangent point with the celestial sphere) in pixel coordinates"""
-        return self.data["x_tangent"], self.data["y_tangent"]
+        return self.data[["x_tangent", "y_tangent"]]
 
     @property
     def pixel_shape(self) -> tuple[int, int]:
         """number of pixels across"""
-        return self.data["nx"], self.data["ny"]
+        return self.data[["nx", "ny"]]
 
     @cached_property
     def skycell_indices(self) -> NDArray[int]:
@@ -406,17 +408,24 @@ class ProjectionRegion:
             )
         )
 
-    @property
+    @cached_property
+    def vectorpoint_corners(self) -> NDArray[float]:
+        """corners in 3D Cartesian space on the unit sphere"""
+        return sgv.normalize_vector(
+            np.stack(sgv.lonlat_to_vector(*np.array(self.radec_corners).T), axis=1)
+        )
+
+    @cached_property
+    def vectorpoint_center(self) -> tuple[float, float, float]:
+        """center in 3D Cartesian space on the unit sphere"""
+        return sgv.normalize_vector(np.mean(self.vectorpoint_corners, axis=0))
+
+    @cached_property
     def polygon(self) -> sgp.SingleSphericalPolygon:
         """spherical polygon representing this region"""
-        # convert all radec points to vectors
-        corner_vectorpoints = image_coords_to_vec(self.radec_corners)
-        center_vectorpoint = np.mean(corner_vectorpoints, axis=0)
-
-        # construct polygon from corner points and center point
         return sgp.SingleSphericalPolygon(
-            points=sgv.normalize_vector(corner_vectorpoints),
-            inside=sgv.normalize_vector(center_vectorpoint),
+            points=self.vectorpoint_corners,
+            inside=self.vectorpoint_center,
         )
 
     @property
@@ -579,6 +588,7 @@ class SkyMap:
     """
 
     __path: None | Path
+    __data: AsdfFile
 
     def __init__(self, path: None | Path | str = None):
         """
@@ -590,28 +600,36 @@ class SkyMap:
         if path is not None and not isinstance(path, Path):
             path = Path(path)
         self.__path = path
+        self.__data = None
 
     @property
     def path(self) -> None | Path:
         """location of sky map reference file on filesystem"""
         return self.__path
 
-    @cached_property
+    @path.setter
+    def path(self, path: None | Path):
+        self.__path = path
+        # reset data if retrieved
+        self.__data = None
+
+    @property
     def data(self) -> AsdfFile:
         """ASDF representation of sky map"""
-        if self.__path is None:
-            rmap = crds.getreferences(
-                {
-                    "roman.meta.instrument.name": "WFI",
-                    "roman.meta.exposure.start_time": f"{datetime.now():%Y-%m-%d %H:%M:%S}",
-                },
-                reftypes=["skycells"],
-                observatory="roman",
-            )
-            self.__path = Path(rmap["skycells"])
-        with asdf.open(self.__path, memmap=True) as file:
-            output = file.copy()
-        return output
+        if self.__data is None:
+            if self.__path is None:
+                rmap = crds.getreferences(
+                    {
+                        "roman.meta.instrument.name": "WFI",
+                        "roman.meta.exposure.start_time": f"{datetime.now():%Y-%m-%d %H:%M:%S}",
+                    },
+                    reftypes=["skycells"],
+                    observatory="roman",
+                )
+                self.__path = Path(rmap["skycells"])
+            with asdf.open(self.__path, memmap=True) as file:
+                self.__data = file.copy()
+        return self.__data
 
     @property
     def skycells(self) -> np.void:
