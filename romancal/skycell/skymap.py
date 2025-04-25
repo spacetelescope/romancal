@@ -141,7 +141,7 @@ class SkyCell:
         )
 
     @classmethod
-    def from_asn(cls, asn: asdf.AsdfTree | Path) -> "SkyCell":
+    def from_asn(cls, asn: dict | Path) -> "SkyCell":
         """
         retrieve a sky cell from WCS info or a target specified in an association
 
@@ -152,7 +152,7 @@ class SkyCell:
         """
         if isinstance(asn, Path):
             asn = ModelLibrary._load_asn(asn).asn
-        if "skycell_wcs_info" in asn and asn.asn["skycell_wcs_info"] != "none":
+        if "skycell_wcs_info" in asn and asn["skycell_wcs_info"] != "none":
             skycell_name = asn["skycell_wcs_info"]["name"]
         elif "target" in asn:
             # check to see if the product name contains a skycell name & if true get the skycell record
