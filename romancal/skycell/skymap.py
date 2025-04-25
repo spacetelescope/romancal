@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-SKYCELL_AREA = (4.6 / 3600.0) ** 2
+SKYCELL_AREA = (4.6 / 60.0) ** 2
 PROJREGION_AREA = (0.5) ** 2
 
 
@@ -70,8 +70,7 @@ class SkyCell:
             Index in the global sky map.
         """
         self.__index = index
-        if index is not None:
-            self.__data = SKYMAP.skycells[index]
+        self.__data = None
 
     @classmethod
     def from_name(cls, name: str) -> "SkyCell":
@@ -90,7 +89,7 @@ class SkyCell:
         if not re.match(r"\d{3}\w\d{2}x\d{2}y\d{2}", name):
             raise ValueError(f"invalid skycell name {name}")
 
-        indices = np.where(SKYMAP.skycells["name"] == name[0])
+        indices = np.where(SKYMAP.skycells["name"] == name)[0]
         if len(indices) > 0:
             return SkyCell(indices[0])
         else:
@@ -172,6 +171,8 @@ class SkyCell:
     @property
     def data(self) -> np.void:
         """properties from the sky map"""
+        if self.__data is None and self.index is not None:
+            self.__data = SKYMAP.skycells[self.index]
         return self.__data
 
     @property
