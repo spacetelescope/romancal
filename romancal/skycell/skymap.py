@@ -193,7 +193,6 @@ class SkyCell:
 
     @property
     def orientation(self) -> float:
-        """orientation from zenith"""
         return self.data["orientat"]
 
     @property
@@ -371,7 +370,6 @@ class ProjectionRegion:
 
     @property
     def orientation(self) -> float:
-        """orientation from zenith"""
         return self.data["orientat"]
 
     @property
