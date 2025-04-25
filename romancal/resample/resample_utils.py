@@ -1,7 +1,6 @@
 import math
 
 import numpy as np
-from astropy.table import QTable
 from astropy.time import Time
 from roman_datamodels import stnode
 from roman_datamodels.datamodels import MosaicModel
@@ -39,11 +38,6 @@ def _make_empty_mosaic_model():
                 "outlier_detection": "INCOMPLETE",
                 "skymatch": "INCOMPLETE",
                 "resample": "INCOMPLETE",
-            }
-        ),
-        "individual_image_meta": stnode.IndividualImageMeta(
-            {
-                "basic": QTable({"dummy": [-1]}),
             }
         ),
         "coordinates": stnode.Coordinates(),
