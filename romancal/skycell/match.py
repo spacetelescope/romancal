@@ -99,7 +99,8 @@ def find_skycell_matches(
     image_corners: list[tuple[float, float]] | NDArray[float] | WCS,
     image_shape: tuple[int, int] | None = None,
 ) -> tuple[list[int], list[int]]:
-    """Find projection regions that the image overlaps with
+    """
+    Find sky cells overlapping the provided image footprint
 
     Parameters
     ----------
