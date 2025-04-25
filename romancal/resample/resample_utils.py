@@ -11,6 +11,7 @@ from stcal.resample.utils import compute_mean_pixel_area
 def _make_empty_mosaic_model():
     m = MosaicModel()
     m.meta = {
+        # these all seem like reasonable defaults
         "calibration_software_name": stnode.CalibrationSoftwareName("RomanCAL"),
         "file_date": stnode.FileDate(
             Time("2020-01-01T00:00:00.0", format="isot", scale="utc")
@@ -26,23 +27,6 @@ def _make_empty_mosaic_model():
                 "resample": "INCOMPLETE",
             }
         ),
-        "prd_version": stnode.PrdVersion("8.8.8"),
-        "product_type": stnode.ProductType("l2"),
-        "sdf_software_version": stnode.SdfSoftwareVersion("7.7.7"),
-        "basic": stnode.MosaicBasic(
-            {
-                "survey": "?",
-            }
-        ),
-        "coordinates": stnode.Coordinates(),
-        "photometry": stnode.Photometry(
-            {
-                "pixel_area": -999999.0,
-                "conversion_megajanskys": -999999,
-                "conversion_megajanskys_uncertainty": -999999,
-            }
-        ),
-        "program": stnode.Program(),
         "ref_file": stnode.RefFile(
             {
                 "apcorr": "N/A",
@@ -62,7 +46,26 @@ def _make_empty_mosaic_model():
                 "crds": {},
             }
         ),
+        # these are "containers" added to during blending
         "resample": stnode.Resample({"members": []}),
+        "coordinates": stnode.Coordinates(),
+        "program": stnode.Program(),
+        # these are never set so assume previous defaults
+        "prd_version": stnode.PrdVersion("8.8.8"),
+        "sdf_software_version": stnode.SdfSoftwareVersion("7.7.7"),
+        "product_type": stnode.ProductType("l2"),
+        "basic": stnode.MosaicBasic(
+            {
+                "survey": "?",
+            }
+        ),
+        "photometry": stnode.Photometry(
+            {
+                "pixel_area": -999999.0,
+                "conversion_megajanskys": -999999,
+                "conversion_megajanskys_uncertainty": -999999,
+            }
+        ),
     }
     m.cal_logs = stnode.CalLogs()
     return m
