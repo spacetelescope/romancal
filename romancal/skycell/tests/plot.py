@@ -9,7 +9,7 @@ if __name__ == "__main__":
     cra = crecord["ra_corn3"]
     cdec = crecord["dec_corn3"]
 
-    # corners = tsm.mk_im_corners(tsm.cra, tsm.cdec + tsm.e, tsm.cpa, 0.001)
+    # corners = tsm.mk_im_corners(cra, cdec + tsm.e, tsm.cpa, 0.001)
     corners = tsm.mk_im_corners(cra, cdec, tsm.cpa, 0.5)
 
     sp.plot_image_footprint_and_skycells(corners)
