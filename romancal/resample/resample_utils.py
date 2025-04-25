@@ -17,10 +17,18 @@ def _make_empty_mosaic_model():
         ),
         "model_type": stnode.ModelType("MosaicModel"),
         "origin": stnode.Origin("STSCI/SOC"),
+        "telescope": stnode.Telescope("ROMAN"),
+        "cal_step": stnode.L3CalStep(
+            {
+                "flux": "INCOMPLETE",
+                "outlier_detection": "INCOMPLETE",
+                "skymatch": "INCOMPLETE",
+                "resample": "INCOMPLETE",
+            }
+        ),
         "prd_version": stnode.PrdVersion("8.8.8"),
         "product_type": stnode.ProductType("l2"),
         "sdf_software_version": stnode.SdfSoftwareVersion("7.7.7"),
-        "telescope": stnode.Telescope("ROMAN"),
         "asn": stnode.MosaicAssociations(
             {
                 "pool_name": "?",
@@ -30,14 +38,6 @@ def _make_empty_mosaic_model():
         "basic": stnode.MosaicBasic(
             {
                 "survey": "?",
-            }
-        ),
-        "cal_step": stnode.L3CalStep(
-            {
-                "flux": "INCOMPLETE",
-                "outlier_detection": "INCOMPLETE",
-                "skymatch": "INCOMPLETE",
-                "resample": "INCOMPLETE",
             }
         ),
         "coordinates": stnode.Coordinates(),
@@ -69,7 +69,6 @@ def _make_empty_mosaic_model():
             }
         ),
         "resample": stnode.Resample({"members": []}),
-        "wcsinfo": stnode.MosaicWcsinfo(),
     }
     m.cal_logs = stnode.CalLogs()
     return m
