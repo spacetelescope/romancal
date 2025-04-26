@@ -8,12 +8,13 @@ import logging
 from functools import cached_property
 
 import numpy as np
+import spherical_geometry.great_circle_arc as sga
 import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
 from gwcs import WCS
 from numpy.typing import NDArray
 
-import romancal.skycell.skymap as sm
+import romancal.skycell.skymap as sc
 from romancal.assign_wcs.utils import wcs_bbox_from_shape
 
 log = logging.getLogger(__name__)
@@ -90,19 +91,61 @@ class ImageFootprint:
         return sgv.normalize_vector(np.mean(self.vectorpoint_corners, axis=0))
 
     @cached_property
+    def length(self) -> float:
+        """diagonal length of the rectangular footprint"""
+        # assume radial against sky background
+        return sga.length(self.vectorpoint_corners[0], self.vectorpoint_corners[2])
+
+    @cached_property
+    def circumference(self) -> float:
+        """circumference of the rectangular footprint"""
+        return sum(
+            sga.length(
+                self.vectorpoint_corners[index], self.vectorpoint_corners[index + 1]
+            )
+            for index in range(-1, len(self.vectorpoint_corners) - 1)
+        )
+
+    @cached_property
     def polygon(self) -> sgp.SingleSphericalPolygon:
         """spherical polygon representing this image footprint"""
-
-        corner_vectorpoints = sm.image_coords_to_vec(self.radec_corners)
-
-        # Approximate center of image by averaging corner vectors
-        center_vectorpoint = corner_vectorpoints.mean(axis=0)
-
-        # construct polygon from corner points and center point
         return sgp.SingleSphericalPolygon(
-            points=sgv.normalize_vector(corner_vectorpoints),
-            inside=sgv.normalize_vector(center_vectorpoint),
+            points=self.vectorpoint_corners,
+            inside=self.vectorpoint_center,
         )
+
+    @cached_property
+    def area(self) -> float:
+        """area of this footprint on the sphere in degrees squared"""
+        return self.polygon.area()
+
+    @cached_property
+    def possibly_intersecting_projregions(self) -> int:
+        """number of possibly intersecting projection regions"""
+        if self.area > sc.SkyCell.area:
+            return (
+                # the number of times the smallest projection region could fit in the image footprint
+                np.ceil(self.area / sc.ProjectionRegion.MIN_AREA)
+                # plus multiplier for partial intersections on the perimeter
+                * 8
+            )
+        else:
+            # 4 foundational intersections
+            return 4
+
+    @cached_property
+    def possibly_intersecting_skycells(self) -> int:
+        """number of possibly intersecting skycells"""
+        if self.polygon.area() > sc.SkyCell.area:
+            return (
+                # number of times a skycell could fit in the image footprint
+                np.ceil(self.polygon.area() / sc.SkyCell.area)
+                # plus multiplier for partial intersections on the perimeter
+                * 8
+            )
+        else:
+            # 4 foundational intersections
+            return 4
 
 
 def find_skycell_matches(
@@ -136,38 +179,28 @@ def find_skycell_matches(
     else:
         footprint = ImageFootprint(image_corners)
 
-    footprint_center_vectorpoint = sgv.normalize_vector(
-        sm.image_coords_to_vec(footprint.radec_corners).mean(axis=0)
-    )
-
-    # derive the maximum number of possibly intersecting projection regions and skycells
-    # based on the image footprint area and the known projregion and skycell area
-    # TODO: improve these calculations, they are probably over-estimating...
-    max_num_intersecting_projregions = 8 + 2 * int(
-        np.ceil(footprint.polygon.area() / sm.PROJREGION_AREA)
-    )
-    max_num_intersecting_skycells = 8 + 2 * int(
-        np.ceil(footprint.polygon.area() / sm.SKYCELL_AREA)
-    )
-
     nearby_skycell_indices = []
     intersecting_skycell_indices = []
 
     # query the global k-d tree of projection regions for possible intersection candidates in (normalized) 3D space
-    _, nearby_projregion_indices = sm.SKYMAP.projregions_kdtree.query(
-        footprint_center_vectorpoint, k=max_num_intersecting_projregions
+    _, nearby_projregion_indices = sc.SKYMAP.projregions_kdtree.query(
+        footprint.vectorpoint_center,
+        k=footprint.possibly_intersecting_projregions,
+        distance_upper_bound=footprint.length / 2 + sc.ProjectionRegion.MAX_LENGTH,
     )
 
     for projregion_index in nearby_projregion_indices:
         # filter out missing neighbors
-        if projregion_index == sm.SKYMAP.projregions_kdtree.n:
+        if projregion_index == sc.SKYMAP.projregions_kdtree.n:
             continue
 
-        projregion = sm.ProjectionRegion(projregion_index)
+        projregion = sc.ProjectionRegion(projregion_index)
         if footprint.polygon.intersects_poly(projregion.polygon):
             # query the LOCAL k-d tree of skycells for possible intersection candidates in (normalized) 3D space
             _, projregion_nearby_skycell_indices = projregion.skycells_kdtree.query(
-                footprint_center_vectorpoint, k=max_num_intersecting_skycells
+                footprint.vectorpoint_center,
+                k=footprint.possibly_intersecting_skycells,
+                distance_upper_bound=footprint.length / 2 + sc.SkyCell.length,
             )
 
             # convert to absolute indices over the full skycell table
@@ -184,7 +217,7 @@ def find_skycell_matches(
                     continue
 
                 # print(nearby_skycell_index)
-                skycell = sm.SkyCell(skycell_index)
+                skycell = sc.SkyCell(skycell_index)
                 if footprint.polygon.intersects_poly(skycell.polygon):
                     # print(f"candidate {nearby_skycell_index} intersects")
                     intersecting_skycell_indices.append(skycell_index)
