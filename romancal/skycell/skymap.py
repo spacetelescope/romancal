@@ -8,6 +8,7 @@ from pathlib import Path
 import asdf
 import crds
 import numpy as np
+import spherical_geometry.great_circle_arc as sga
 import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
 from asdf import AsdfFile
@@ -24,10 +25,6 @@ from romancal.datamodels.library import ModelLibrary
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-
-
-SKYCELL_AREA = (4.6 / 60.0) ** 2
-PROJREGION_AREA = (0.5) ** 2
 
 
 def image_coords_to_vec(
@@ -61,6 +58,11 @@ class SkyCell:
 
     __index: int | None
     __data: np.void
+
+    area = 1.7747910696641611e-06
+
+    # diagonal length of a skycell
+    length = np.sqrt(2 * ((4.6 / 60.0) ** 2))
 
     def __init__(self, index: int | None):
         """
@@ -299,6 +301,11 @@ class ProjectionRegion:
     __index: int | None
     __data: np.void
 
+    MIN_AREA = 0.002791388883915502
+    MAX_AREA = 0.003099159706138721
+    MIN_LENGTH = 0.031405005216643245
+    MAX_LENGTH = 0.08174916691321586
+
     def __init__(self, index: int | None):
         """
         Parameters
@@ -440,6 +447,12 @@ class ProjectionRegion:
     def vectorpoint_center(self) -> tuple[float, float, float]:
         """center in 3D Cartesian space on the unit sphere"""
         return sgv.normalize_vector(np.mean(self.vectorpoint_corners, axis=0))
+
+    @cached_property
+    def length(self) -> float:
+        """diagonal length of the region"""
+        # assume radial against sky background
+        return sga.length(self.vectorpoint_corners[0], self.vectorpoint_corners[2])
 
     @cached_property
     def polygon(self) -> sgp.SingleSphericalPolygon:

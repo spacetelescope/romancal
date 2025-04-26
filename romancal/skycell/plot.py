@@ -23,13 +23,14 @@ def find_intersecting_projregions(
     footprint: sm.ImageFootprint,
 ) -> tuple[list[int], list[int]]:
     """
-    Out of all projection regions, find the closest tangent point to the center coordinate of the image.
+    Out of all projection regions, find ones that intersect the given image footprint
     """
 
     # find the closest projection regions to the image center
     _, nearby_projregion_indices = sc.SKYMAP.projregions_kdtree.query(
         footprint.vectorpoint_center,
-        k=8 + 2 * (footprint.polygon.area() / sc.PROJREGION_AREA),
+        k=footprint.possibly_intersecting_projregions,
+        distance_upper_bound=footprint.length / 2 + sc.ProjectionRegion.MAX_LENGTH,
     )
 
     intersecting_projregion_indices = []
@@ -171,9 +172,19 @@ def plot_image_footprint_and_skycells(
 
         plot_projregion(projregion, color="lightgrey")
 
+        for skycell_index in projregion.skycell_indices:
+            skycell = sc.SkyCell(skycell_index)
+            plot_skycell(
+                skycell,
+                tangent_vectorpoint,
+                color="darkgrey",
+                label=False,
+            )
+
         _, nearby_skycell_indices = projregion.skycells_kdtree.query(
             footprint.vectorpoint_center,
-            k=8 + 2 * (footprint.polygon.area() / sc.SKYCELL_AREA),
+            k=footprint.possibly_intersecting_skycells,
+            distance_upper_bound=footprint.length / 2 + sc.SkyCell.length,
         )
 
         for skycell_index in nearby_skycell_indices:
@@ -182,6 +193,7 @@ def plot_image_footprint_and_skycells(
                 skycell,
                 tangent_vectorpoint,
                 color="red",
+                label=False,
             )
 
             if footprint.polygon.intersects_poly(skycell.polygon):

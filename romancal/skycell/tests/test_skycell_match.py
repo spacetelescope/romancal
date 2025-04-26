@@ -38,8 +38,7 @@ from spherical_geometry.vector import rotate_around as rotate
 import romancal.skycell.match as sm
 import romancal.skycell.skymap as sc
 
-e = 0.0011  # epsilon offset in degrees
-cpa = 45.0
+EPSILON = 0.0011  # epsilon offset in degrees
 
 
 @pytest.fixture(autouse=True)
@@ -54,10 +53,11 @@ def override_skymap(monkeypatch):
 
 
 @pytest.fixture
-def sample_point() -> list[float]:
-    """sample point of skycell 000p86x61y68, near the boundary of projection regions 1 and 2"""
-    crecord = sc.SKYMAP.skycells[3560]
-    return [crecord["ra_corn3"], crecord["dec_corn3"]]
+def sample_points() -> list[tuple[float, float]]:
+    skycell_indices = [3000, 3560]
+    return [
+        sc.SkyCell(skycell_index).radec_corners[2] for skycell_index in skycell_indices
+    ]
 
 
 def mk_im_corners(
@@ -116,23 +116,46 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
     return wcsobj
 
 
-@pytest.fixture
-def sample_wcs(sample_point) -> WCS:
-    return mk_gwcs(sample_point[0], sample_point[1], cpa)
-
-
 @pytest.mark.parametrize(
-    "pars, expected_skycell_names",
+    "sample_point_index,offset,rotation,size,expected_skycell_names",
     [
         (
-            (0, +e, cpa, 0.001),
+            0,
+            (0, 0),
+            45,
+            0.001,
+            (
+                "000p86x50y65",
+                "000p86x50y66",
+                "000p86x51y65",
+                "000p86x51y66",
+            ),
+        ),
+        (
+            0,
+            (0, +EPSILON),
+            45,
+            0.001,
+            (
+                "000p86x50y66",
+                "000p86x51y66",
+            ),
+        ),
+        (
+            1,
+            (0, +EPSILON),
+            45,
+            0.001,
             (
                 "000p86x61y69",
                 "000p86x62y69",
             ),
         ),
         (
-            (0, -e, cpa, 0.001),
+            1,
+            (0, -EPSILON),
+            45,
+            0.001,
             (
                 "000p86x61y68",
                 "000p86x61y69",
@@ -141,7 +164,10 @@ def sample_wcs(sample_point) -> WCS:
             ),
         ),
         (
-            (+e, 0, cpa, 0.001),
+            1,
+            (+EPSILON, 0),
+            45,
+            0.001,
             (
                 "000p86x61y68",
                 "000p86x61y69",
@@ -150,7 +176,10 @@ def sample_wcs(sample_point) -> WCS:
             ),
         ),
         (
-            (-e, 0, cpa, 0.001),
+            1,
+            (-EPSILON, 0),
+            45,
+            0.001,
             (
                 "000p86x61y68",
                 "000p86x61y69",
@@ -159,7 +188,10 @@ def sample_wcs(sample_point) -> WCS:
             ),
         ),
         (
-            (0, 0, cpa, 0.001),
+            1,
+            (0, 0),
+            45,
+            0.001,
             (
                 "000p86x61y68",
                 "000p86x61y69",
@@ -168,55 +200,152 @@ def sample_wcs(sample_point) -> WCS:
             ),
         ),
         (
-            (0, 0, cpa, 0.5),
+            0,
+            (0, 0),
+            45,
+            0.3,
             (
+                "000p86x48y65",
+                "000p86x48y66",
+                "000p86x49y64",
+                "000p86x49y65",
+                "000p86x49y66",
+                "000p86x49y67",
+                "000p86x50y63",
+                "000p86x50y64",
+                "000p86x50y65",
+                "000p86x50y66",
+                "000p86x50y67",
+                "000p86x50y68",
+                "000p86x51y63",
+                "000p86x51y64",
+                "000p86x51y65",
+                "000p86x51y66",
+                "000p86x51y67",
+                "000p86x51y68",
+                "000p86x52y64",
+                "000p86x52y65",
+                "000p86x52y66",
+                "000p86x52y67",
+                "000p86x53y65",
+                "000p86x53y66",
+            ),
+        ),
+        (
+            1,
+            (0, 0),
+            45,
+            0.5,
+            (
+                "000p86x57y67",
+                "000p86x57y68",
+                "000p86x58y66",
+                "000p86x58y67",
+                "000p86x58y68",
+                "000p86x58y69",
+                "000p86x58y70",
+                "000p86x59y66",
+                "000p86x59y67",
+                "000p86x59y68",
+                "000p86x59y69",
+                "000p86x59y70",
+                "000p86x59y71",
+                "000p86x59y72",
+                "000p86x60y65",
+                "000p86x60y66",
+                "000p86x60y67",
+                "000p86x60y68",
                 "000p86x60y69",
+                "000p86x60y70",
+                "000p86x60y71",
+                "000p86x60y72",
+                "000p86x60y73",
+                "000p86x61y65",
+                "000p86x61y66",
+                "000p86x61y67",
                 "000p86x61y68",
                 "000p86x61y69",
                 "000p86x61y70",
+                "000p86x61y71",
+                "000p86x61y72",
+                "000p86x61y73",
+                "000p86x62y64",
+                "000p86x62y65",
+                "000p86x62y66",
                 "000p86x62y67",
                 "000p86x62y68",
                 "000p86x62y69",
                 "000p86x62y70",
+                "000p86x62y71",
+                "000p86x63y64",
+                "000p86x63y65",
+                "000p86x63y66",
+                "000p86x63y67",
                 "000p86x63y68",
                 "000p86x63y69",
+                "000p86x64y65",
+                "000p86x64y66",
+                "045p86x36y65",
+                "045p86x36y66",
+                "045p86x37y66",
                 "045p86x37y67",
                 "045p86x37y68",
                 "045p86x37y69",
+                "045p86x38y66",
                 "045p86x38y67",
                 "045p86x38y68",
                 "045p86x38y69",
                 "045p86x38y70",
                 "045p86x38y71",
+                "045p86x39y66",
+                "045p86x39y67",
+                "045p86x39y68",
                 "045p86x39y69",
                 "045p86x39y70",
+                "045p86x39y71",
+                "045p86x39y72",
+                "045p86x39y73",
+                "045p86x39y74",
+                "045p86x40y67",
+                "045p86x40y68",
+                "045p86x40y69",
+                "045p86x40y70",
+                "045p86x40y71",
+                "045p86x41y67",
+                "045p86x41y68",
+                "045p86x41y69",
             ),
         ),
     ],
 )
-def test_skycell_match(pars, expected_skycell_names, sample_point):
-    sample_point[0] += pars[0]
-    sample_point[1] += pars[1]
-    corners = mk_im_corners(*sample_point, pars[2], pars[3])
-    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(corners)
-    # map matches to absolute index
-    skycell_names = tuple(
-        np.array(
-            [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
-        ).tolist()
+def test_skycell_match(
+    sample_points, sample_point_index, offset, rotation, size, expected_skycell_names
+):
+    corners = mk_im_corners(
+        *sample_points[sample_point_index] + np.array(offset), rotation, size
     )
+
+    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(corners)
+
+    skycell_names = np.array(
+        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
+    ).tolist()
+
     assert sorted(skycell_names) == sorted(expected_skycell_names)
 
 
-def test_match_from_wcs(sample_wcs):
+@pytest.mark.parametrize("sample_point_index", [1])
+def test_match_from_wcs(sample_points, sample_point_index):
+    wcsobj = mk_gwcs(*sample_points[sample_point_index], 45)
     imshape = (4096, 4096)
 
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
-        sample_wcs, image_shape=imshape
+        wcsobj, image_shape=imshape
     )
-    skycell_names = [
-        str(sc.SKYMAP.skycells[index]["name"]) for index in intersecting_skycells
-    ]
+
+    skycell_names = np.array(
+        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
+    ).tolist()
 
     assert skycell_names == [
         "000p86x62y69",
@@ -226,20 +355,24 @@ def test_match_from_wcs(sample_wcs):
         "000p86x63y69",
         "000p86x61y70",
         "000p86x62y67",
+        "000p86x60y68",
         "045p86x37y69",
         "045p86x37y68",
         "045p86x38y69",
     ]
 
 
-def test_match_from_wcs_with_imshape(sample_wcs):
+@pytest.mark.parametrize("sample_point_index", [1])
+def test_match_from_wcs_with_imshape(sample_points, sample_point_index):
+    wcsobj = mk_gwcs(*sample_points[sample_point_index], 45)
     imshape = (4096, 4096)
-    sample_wcs.pixel_shape = imshape
+    wcsobj.pixel_shape = imshape
 
-    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(sample_wcs)
-    skycell_names = [
-        str(sc.SKYMAP.skycells[index]["name"]) for index in intersecting_skycells
-    ]
+    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
+
+    skycell_names = np.array(
+        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
+    ).tolist()
 
     assert skycell_names == [
         "000p86x62y69",
@@ -249,19 +382,24 @@ def test_match_from_wcs_with_imshape(sample_wcs):
         "000p86x63y69",
         "000p86x61y70",
         "000p86x62y67",
+        "000p86x60y68",
         "045p86x37y69",
         "045p86x37y68",
         "045p86x38y69",
     ]
 
 
-def test_match_from_wcs_with_bbox(sample_wcs):
-    sample_wcs.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
+@pytest.mark.parametrize("sample_point_index", [1])
+def test_match_from_wcs_with_bbox(sample_points, sample_point_index):
+    wcsobj = mk_gwcs(*sample_points[sample_point_index], 45)
+    wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
 
-    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(sample_wcs)
-    skycell_names = [
-        str(sc.SKYMAP.skycells[index]["name"]) for index in intersecting_skycells
-    ]
+    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
+
+    skycell_names = np.array(
+        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
+    ).tolist()
+
     assert skycell_names == [
         "000p86x62y69",
         "000p86x62y68",
@@ -270,13 +408,17 @@ def test_match_from_wcs_with_bbox(sample_wcs):
         "000p86x63y69",
         "000p86x61y70",
         "000p86x62y67",
+        "000p86x60y68",
         "045p86x37y69",
         "045p86x37y68",
         "045p86x38y69",
     ]
 
 
-def test_match_from_wcs_without_imshape_or_bbox(sample_wcs):
-    sample_wcs.bounding_box = None
+@pytest.mark.parametrize("sample_point_index", [1])
+def test_match_from_wcs_without_imshape_or_bbox(sample_points, sample_point_index):
+    wcsobj = mk_gwcs(*sample_points[sample_point_index], 45)
+    wcsobj.bounding_box = None
+
     with pytest.raises(ValueError):
-        intersecting_skycells, nearby_skycells = sm.find_skycell_matches(sample_wcs)
+        intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
