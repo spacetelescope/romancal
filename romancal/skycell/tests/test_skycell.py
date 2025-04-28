@@ -85,11 +85,16 @@ def test_projregion_from_skycell():
 
 @pytest.mark.parametrize(
     "name",
-    ["000p86x30y34", "000p86x50y65", "000p86x61y68", "045p86x29y34", "225p90x30y51"],
+    [
+        "000p86x30y34",
+        "000p86x50y65",
+        "000p86x59y38",
+        "000p86x61y68",
+        "045p86x29y34",
+        "225p90x30y51",
+    ],
 )
-def test_skycell_to_wcs(name):
-    """Test integrity of skycell.wcs"""
-
+def test_skycell_wcs_pixel_to_world(name):
     skycell = sc.SkyCell.from_name(name)
 
     wcs = skycell.wcs
@@ -97,20 +102,24 @@ def test_skycell_to_wcs(name):
     # forward transform to radec corners
     assert_allclose(
         np.array(
-            [
-                wcs(0.0, 0.0),
-                wcs(skycell.pixel_shape[0] - 1, 0.0),
-                wcs(skycell.pixel_shape[0] - 1, skycell.pixel_shape[1] - 1),
-                wcs(0.0, skycell.pixel_shape[1] - 1),
-            ]
-        ),
+            wcs(
+                *np.array(
+                    [
+                        (0.0, 0.0),
+                        (skycell.pixel_shape[0] - 1, 0.0),
+                        (skycell.pixel_shape[0] - 1, skycell.pixel_shape[1] - 1),
+                        (0.0, skycell.pixel_shape[1] - 1),
+                    ]
+                ).T
+            )
+        ).T,
         skycell.radec_corners,
     )
 
     # inverse transform to pixel corners
     assert_allclose(
-        np.array([wcs.invert(*corner) for corner in skycell.radec_corners]),
-        np.array(
+        np.array(wcs.invert(*skycell.radec_corners.T)).T,
+        (
             [
                 (0.0, 0.0),
                 (skycell.pixel_shape[0] - 1, 0.0),
@@ -120,6 +129,52 @@ def test_skycell_to_wcs(name):
         ),
     )
 
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "000p86x30y34",
+        "000p86x50y65",
+        "000p86x59y38",
+        "000p86x61y68",
+        "045p86x29y34",
+        "225p90x30y51",
+    ],
+)
+def test_skycell_wcs_world_to_pixel(name):
+    skycell = sc.SkyCell.from_name(name)
+
+    wcs = skycell.wcs
+
+    # inverse transform to pixel corners
+    assert_allclose(
+        np.array(wcs.invert(*skycell.radec_corners.T)).T,
+        (
+            [
+                (0.0, 0.0),
+                (skycell.pixel_shape[0] - 1, 0.0),
+                (skycell.pixel_shape[0] - 1, skycell.pixel_shape[1] - 1),
+                (0.0, skycell.pixel_shape[1] - 1),
+            ]
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "000p86x30y34",
+        "000p86x50y65",
+        "000p86x59y38",
+        "000p86x61y68",
+        "045p86x29y34",
+        "225p90x30y51",
+    ],
+)
+def test_skycell_wcsinfo(name):
+    skycell = sc.SkyCell.from_name(name)
+
+    wcs = skycell.wcs
     wcsinfo = skycell.wcsinfo
 
     assert_allclose(
@@ -129,14 +184,26 @@ def test_skycell_to_wcs(name):
         wcs(wcsinfo["pixel_shape"][0] / 2.0, wcsinfo["pixel_shape"][1] / 2.0),
         (wcsinfo["ra_center"], wcsinfo["dec_center"]),
     )
-    assert_allclose(wcs(0.0, 0.0), (wcsinfo["ra_corn1"], wcsinfo["dec_corn1"]))
+
     assert_allclose(
-        wcs(0.0, wcsinfo["pixel_shape"][1]), (wcsinfo["ra_corn2"], wcsinfo["dec_corn2"])
-    )
-    assert_allclose(
-        wcs(wcsinfo["pixel_shape"][0], wcsinfo["pixel_shape"][1]),
-        (wcsinfo["ra_corn3"], wcsinfo["dec_corn3"]),
-    )
-    assert_allclose(
-        wcs(wcsinfo["pixel_shape"][0], 0.0), (wcsinfo["ra_corn4"], wcsinfo["dec_corn4"])
+        np.array(
+            wcs(
+                np.array(
+                    [
+                        (0.0, 0.0),
+                        (0.0, wcsinfo["pixel_shape"][1]),
+                        (wcsinfo["pixel_shape"][0], wcsinfo["pixel_shape"][1]),
+                        (wcsinfo["pixel_shape"][0], 0.0),
+                    ]
+                )
+            )
+        ).T,
+        (
+            [
+                (wcsinfo["ra_corn1"], wcsinfo["dec_corn1"]),
+                (wcsinfo["ra_corn2"], wcsinfo["dec_corn2"]),
+                (wcsinfo["ra_corn3"], wcsinfo["dec_corn3"]),
+                (wcsinfo["ra_corn4"], wcsinfo["dec_corn4"]),
+            ]
+        ),
     )
