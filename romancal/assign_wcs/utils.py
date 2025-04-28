@@ -4,7 +4,6 @@ import logging
 import numpy as np
 from astropy.coordinates import SkyCoord
 from astropy.modeling import models as astmodels
-from astropy.utils.misc import isiterable
 from gwcs import WCS
 from gwcs.wcstools import wcs_from_fiducial
 from roman_datamodels.datamodels import DataModel
@@ -107,7 +106,7 @@ def wcs_from_footprints(
     bb = bounding_box
     wcslist = [im.meta.wcs for im in dmodels]
 
-    if not isiterable(wcslist):
+    if not np.iterable(wcslist):
         raise ValueError("Expected 'wcslist' to be an iterable of WCS objects.")
 
     if not all([isinstance(w, WCS) for w in wcslist]):
