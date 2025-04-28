@@ -79,14 +79,14 @@ def test_skycell_from_projregion():
 def test_projregion_from_skycell():
     skycell = sc.SkyCell.from_name("225p90x30y51")
 
-    assert skycell.projregion == sc.ProjectionRegion(0)
+    assert skycell.projection_region == sc.ProjectionRegion(0)
     assert sc.ProjectionRegion.from_skycell_index(107) == sc.ProjectionRegion(0)
     assert sc.ProjectionRegion.from_skycell_index(0) == sc.ProjectionRegion(0)
 
 
 @pytest.mark.parametrize(
     "name",
-    ["000p86x30y34", "045p86x29y34"],
+    ["000p86x30y34", "000p86x50y65", "000p86x61y68", "045p86x29y34", "225p90x30y51"],
 )
 def test_skycell_to_wcs(name):
     """Test integrity of skycell.wcs"""
