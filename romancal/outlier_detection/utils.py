@@ -61,7 +61,6 @@ def _median_with_resampling(
     in_memory = not input_models._on_disk
     indices_by_group = list(input_models.group_indices.values())
     nresultants = len(indices_by_group)
-    example_model = None
     median_wcs = resamp.output_wcs
 
     with input_models:
@@ -76,7 +75,6 @@ def _median_with_resampling(
                 input_shape = (nresultants, *drizzled_model.data.shape)
                 dtype = drizzled_model.data.dtype
                 computer = MedianComputer(input_shape, in_memory, buffer_size, dtype)
-                example_model = drizzled_model
 
             weight_threshold = compute_weight_threshold(drizzled_model.weight, maskpt)
             drizzled_model.data[drizzled_model.weight < weight_threshold] = np.nan
@@ -89,7 +87,6 @@ def _median_with_resampling(
     if save_intermediate_results:
         # drizzled model already contains asn_id
         _fileio.save_median(
-            example_model,
             median_data,
             median_wcs,
             partial(make_output_path, asn_id=None),
@@ -141,7 +138,6 @@ def _median_without_resampling(
     """
     in_memory = not input_models._on_disk
     nresultants = len(input_models)
-    example_model = None
 
     with input_models:
         for i in range(len(input_models)):
@@ -162,7 +158,6 @@ def _median_without_resampling(
                 input_shape = (nresultants, *model.data.shape)
                 dtype = model.data.dtype
                 computer = MedianComputer(input_shape, in_memory, buffer_size, dtype)
-                example_model = model
                 median_wcs = copy.deepcopy(model.meta.wcs)
 
             weight_threshold = compute_weight_threshold(wht, maskpt)
@@ -178,7 +173,7 @@ def _median_without_resampling(
     median_data = computer.evaluate()
 
     if save_intermediate_results:
-        _fileio.save_median(example_model, median_data, median_wcs, make_output_path)
+        _fileio.save_median(median_data, median_wcs, make_output_path)
 
     return median_data, median_wcs
 
