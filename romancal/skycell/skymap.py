@@ -59,10 +59,11 @@ class SkyCell:
     _index: int | None
     _data: np.void
 
-    area = 1.7747910696641611e-06
+    # average area of a sky cell in square degrees on the sphere
+    area = 1.7760288493318122e-06
 
-    # diagonal length of a skycell
-    length = np.sqrt(2 * ((4.6 / 60.0) ** 2))
+    # average diagonal length of a skycell in degrees on the sphere
+    length = 0.0018846729895155984
 
     def __init__(self, index: int | None):
         """
@@ -297,9 +298,10 @@ class ProjectionRegion:
     _index: int | None
     _data: np.void
 
+    # area of the smallest projection region in square degrees on the sphere
     MIN_AREA = 0.002791388883915502
-    MAX_AREA = 0.003099159706138721
-    MIN_LENGTH = 0.031405005216643245
+
+    # diagonal length of the longest projection region in degrees on the sphere
     MAX_LENGTH = 0.08174916691321586
 
     def __init__(self, index: int | None):
