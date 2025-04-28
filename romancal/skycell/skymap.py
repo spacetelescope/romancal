@@ -664,7 +664,7 @@ class SkyMap:
                     observatory="roman",
                 )
                 self.__path = Path(rmap["skycells"])
-            self.__data = roman_datamodels.open(self.__path)
+            self.__data = roman_datamodels.open(self.__path, memmap=True)
         return self.__data
 
     @property
