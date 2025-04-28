@@ -30,12 +30,10 @@ outdir="$1"
 logfile="$outdir/make_regtestdata.log"
 
 # stop on an error
-# FIXME we can't do this because asn_from_list always returns an error
-# see: https://github.com/spacetelescope/romancal/issues/1535
-#set -e
+set -e
 
-# Redirect all output to the logfile
-exec > $logfile 2>&1
+# Redirect all output to the logfile and the terminal
+exec > >(tee $logfile) 2>&1
 
 # set up the directory structure
 mkdir -p $outdir/roman-pipeline/dev/WFI/image
@@ -255,6 +253,6 @@ jf rt dl roman-pipeline/dev/WFI/image/TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_u
 jf rt dl roman-pipeline/dev/references/dark_ma510.asdf --flat
 strun roman_elp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf --steps.tweakreg.skip=true --steps.source_catalog.skip=true --steps.dq_init.save=true --steps.dark_current.override_dark=dark_ma510.asdf --steps.rampfit.override_dark=dark_ma510.asdf
 cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
-cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_cal.asdf regtestdata/roman-pipeline/dev/truth/WFI/image/
-cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_dqinit.asdf regtestdata/roman-pipeline/dev/truth/WFI/image/
+cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_cal.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_dqinit.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp dark_ma510.asdf $outdir/roman-pipeline/dev/references/

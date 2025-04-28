@@ -178,26 +178,29 @@ class ResampleData(Resample):
             "duration": None,  # unused
             "level": level,
             "subtracted": subtracted,
+            "effective_exposure_time": model.meta.exposure.effective_exposure_time,
         }
 
     def _get_intensity_scale(self, model):
-        # FIXME we lie about this to retain the old behavior
+        # always provide 1: https://github.com/spacetelescope/romancal/issues/1637
         return 1
+
+    def add_model_hook(self, model, pixmap, iscale, weight_map, xmin, xmax, ymin, ymax):
+        if self.compute_exptime:
+            if not hasattr(self, "_exptime_resampler"):
+                self._exptime_resampler = ExptimeResampler(
+                    self.output_wcs,
+                    self.output_array_shape,
+                    self.good_bits,
+                    self.kernel,
+                )
+            self._exptime_resampler.add_image(model, pixmap, xmin, xmax, ymin, ymax)
 
     def add_model(self, model):
         model_dict = self._input_model_to_dict(model)
         super().add_model(model_dict)
         if self.blend_meta:
             self._meta_blender.blend(model)
-        if self.compute_exptime:
-            self._resample_exptime(model)
-
-    def _resample_exptime(self, model):
-        if not hasattr(self, "_exptime_resampler"):
-            self._exptime_resampler = ExptimeResampler(
-                self.output_wcs, self.output_array_shape, self.good_bits, self.kernel
-            )
-        self._exptime_resampler.add_image(model)
 
     def finalize(self):
         super().finalize()
