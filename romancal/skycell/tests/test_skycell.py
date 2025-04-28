@@ -21,45 +21,44 @@ def override_skymap(monkeypatch):
 
 
 def test_skycell_init():
-    skycell = sc.SkyCell.from_data(
-        np.void(
-            (
-                "225p90x30y51",
-                312.1369696579,
-                88.5318370582,
-                -87.13697,
-                98499.5,
-                -2300.5,
-                313.6617771309,
-                88.4950897773,
-                313.5902417923,
-                88.5714066707,
-                310.5350393365,
-                88.5674932367,
-                310.7608411964,
-                88.4913746368,
-            ),
-            dtype=[
-                ("name", "<U16"),
-                ("ra_center", "<f8"),
-                ("dec_center", "<f8"),
-                ("orientat", "<f4"),
-                ("x_tangent", "<f8"),
-                ("y_tangent", "<f8"),
-                ("ra_corn1", "<f8"),
-                ("dec_corn1", "<f8"),
-                ("ra_corn2", "<f8"),
-                ("dec_corn2", "<f8"),
-                ("ra_corn3", "<f8"),
-                ("dec_corn3", "<f8"),
-                ("ra_corn4", "<f8"),
-                ("dec_corn4", "<f8"),
-            ],
-        )
-    )
+    skycell = sc.SkyCell.from_name("225p90x30y51")
 
-    assert skycell.data == sc.SkyCell(107).data
-    assert skycell.data == sc.SkyCell.from_name("225p90x30y51").data
+    assert skycell == sc.SkyCell(107)
+
+    assert skycell.data == np.void(
+        (
+            "225p90x30y51",
+            312.1369696579,
+            88.5318370582,
+            -87.13697,
+            98499.5,
+            -2300.5,
+            313.6617771309,
+            88.4950897773,
+            313.5902417923,
+            88.5714066707,
+            310.5350393365,
+            88.5674932367,
+            310.7608411964,
+            88.4913746368,
+        ),
+        dtype=[
+            ("name", "<U16"),
+            ("ra_center", "<f8"),
+            ("dec_center", "<f8"),
+            ("orientat", "<f4"),
+            ("x_tangent", "<f8"),
+            ("y_tangent", "<f8"),
+            ("ra_corn1", "<f8"),
+            ("dec_corn1", "<f8"),
+            ("ra_corn2", "<f8"),
+            ("dec_corn2", "<f8"),
+            ("ra_corn3", "<f8"),
+            ("dec_corn3", "<f8"),
+            ("ra_corn4", "<f8"),
+            ("dec_corn4", "<f8"),
+        ],
+    )
 
     with pytest.raises(ValueError):
         sc.SkyCell.from_name("r274dp63x31y81")

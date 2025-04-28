@@ -54,9 +54,10 @@ def override_skymap(monkeypatch):
 
 @pytest.fixture
 def sample_points() -> list[tuple[float, float]]:
-    skycell_indices = [3000, 3560]
+    """retrieve sample corner points from skycells in disparate locations for testing"""
     return [
-        sc.SkyCell(skycell_index).radec_corners[2] for skycell_index in skycell_indices
+        sc.SkyCell.from_name(name).radec_corners[2]
+        for name in ["000p86x50y65", "000p86x61y68"]
     ]
 
 
