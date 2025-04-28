@@ -33,7 +33,6 @@ import numpy as np
 import pytest
 import spherical_geometry.vector as sgv
 from gwcs import WCS, coordinate_frames
-from spherical_geometry.vector import rotate_around as rotate
 
 import romancal.skycell.match as sm
 import romancal.skycell.skymap as sc
@@ -73,18 +72,29 @@ def mk_im_corners(
     radecvec = sgv.lonlat_to_vector(ra, dec)
     zaxis = (0.0, 0.0, 1.0)
     yaxis = (0.0, 1.0, 0.0)
-    pp = rotate(*(rotate(*(center + yaxis + (-size / 2,))) + zaxis + (+size / 2,)))
-    pm = rotate(*(rotate(*(center + yaxis + (+size / 2,))) + zaxis + (+size / 2,)))
-    mp = rotate(*(rotate(*(center + yaxis + (-size / 2,))) + zaxis + (-size / 2,)))
-    mm = rotate(*(rotate(*(center + yaxis + (+size / 2,))) + zaxis + (-size / 2,)))
+    pp = sgv.rotate_around(
+        *(sgv.rotate_around(*(center + yaxis + (-size / 2,))) + zaxis + (+size / 2,))
+    )
+    pm = sgv.rotate_around(
+        *(sgv.rotate_around(*(center + yaxis + (+size / 2,))) + zaxis + (+size / 2,))
+    )
+    mp = sgv.rotate_around(
+        *(sgv.rotate_around(*(center + yaxis + (-size / 2,))) + zaxis + (-size / 2,))
+    )
+    mm = sgv.rotate_around(
+        *(sgv.rotate_around(*(center + yaxis + (+size / 2,))) + zaxis + (-size / 2,))
+    )
     rect = [pp, mp, mm, pm]
 
     # Now move to requested ra and dec
     trect = [
-        rotate(*(rotate(*(vec + yaxis + (-dec,))) + zaxis + (ra,))) for vec in rect
+        sgv.rotate_around(
+            *(sgv.rotate_around(*(vec + yaxis + (-dec,))) + zaxis + (ra,))
+        )
+        for vec in rect
     ]
     # Rotate to desired position angle
-    rrect = [rotate(*(vec + radecvec + (pa,))) for vec in trect]
+    rrect = [sgv.rotate_around(*(vec + radecvec + (pa,))) for vec in trect]
     frect = [sgv.vector_to_lonlat(*vec) for vec in rrect]
     # Reorganize by ra, dec arrays
     radecrect = np.array(frect)
