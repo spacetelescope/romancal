@@ -20,7 +20,7 @@ if __name__ == "__main__":
     corners = tsm.mk_im_corners(
         sc.SKYMAP.skycells[3000]["ra_corn3"],
         sc.SKYMAP.skycells[3000]["dec_corn3"],
-        tsm.ROTATION,
+        45.0,
         0.5,
     )
 
