@@ -5,9 +5,9 @@ from datetime import datetime
 from functools import cached_property
 from pathlib import Path
 
-import asdf
 import crds
 import numpy as np
+import roman_datamodels
 import spherical_geometry.great_circle_arc as sga
 import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
@@ -238,7 +238,7 @@ class SkyCell:
         )
 
     @cached_property
-    def projregion(self) -> "ProjectionRegion":
+    def projection_region(self) -> "ProjectionRegion":
         """projection region containing this sky cell"""
         if self.index is None:
             raise ValueError("no index provided")
@@ -257,17 +257,13 @@ class SkyCell:
     @property
     def wcsinfo(self) -> dict:
         """WCS properties"""
+
         return {
-            "ra_ref": self.projregion.data["ra_tangent"],
-            "dec_ref": self.projregion.data["dec_tangent"],
+            "ra_ref": self.projection_region.data["ra_tangent"],
+            "dec_ref": self.projection_region.data["dec_tangent"],
             "x_ref": self.data["x_tangent"],
             "y_ref": self.data["y_tangent"],
-            "rotation_matrix": np.reshape(
-                wcs_util.calc_rotation_matrix(
-                    np.deg2rad(self.data["orientat"]), v3i_yangle=0.0, vparity=1
-                ),
-                (2, 2),
-            ),
+            "rotation_matrix": None,
             "orientat": self.data["orientat"],
             "pixel_scale": self.pixel_scale,
             "pixel_shape": self.pixel_shape,
@@ -315,7 +311,7 @@ class ProjectionRegion:
         """
         self.__index = index
         if index is not None:
-            self.__data = SKYMAP.projregions[index]
+            self.__data = SKYMAP.projection_regions[index]
 
     @classmethod
     def from_data(cls, data: np.void) -> "ProjectionRegion":
@@ -344,7 +340,7 @@ class ProjectionRegion:
         ProjectionRegion
             projection region corresponding to the given sky cell
         """
-        for projregion in SKYMAP.projregions:
+        for projregion in SKYMAP.projection_regions:
             if (
                 int(projregion["skycell_start"])
                 <= index
@@ -513,11 +509,12 @@ def wcsinfo_to_wcs(
     if matrix is not None:
         matrix = np.array(matrix)
     else:
-        orientat = wcsinfo.get("orientat", 0.0)
-        matrix = wcs_util.calc_rotation_matrix(
-            np.deg2rad(orientat), v3i_yangle=0.0, vparity=1
+        matrix = np.reshape(
+            wcs_util.calc_rotation_matrix(
+                np.deg2rad(wcsinfo.get("orientat", 0.0)), v3i_yangle=0.0, vparity=1
+            ),
+            (2, 2),
         )
-        matrix = np.reshape(matrix, (2, 2))
     rotation = models.AffineTransformation2D(matrix, name="pc_rotation_matrix")
     det2sky = (
         pixelshift | rotation | pixelscale | tangent_projection | celestial_rotation
@@ -667,14 +664,13 @@ class SkyMap:
                     observatory="roman",
                 )
                 self.__path = Path(rmap["skycells"])
-            with asdf.open(self.__path, memmap=True) as file:
-                self.__data = file.copy()
+            self.__data = roman_datamodels.open(self.__path)
         return self.__data
 
     @property
     def skycells(self) -> np.void:
         """array of sky cells"""
-        return self.data["roman"]["skycells"]
+        return self.data.skycells
 
     @cached_property
     def skycells_kdtree(self) -> KDTree:
@@ -697,9 +693,9 @@ class SkyMap:
         )
 
     @property
-    def projregions(self) -> np.void:
+    def projection_regions(self) -> np.void:
         """array of projection regions (one per sky tile)"""
-        return self.data["roman"]["projection_regions"]
+        return self.data.projection_regions
 
     @cached_property
     def projregions_kdtree(self) -> KDTree:
@@ -708,7 +704,8 @@ class SkyMap:
             sgv.normalize_vector(
                 np.stack(
                     sgv.lonlat_to_vector(
-                        self.projregions["ra_tangent"], self.projregions["dec_tangent"]
+                        self.projection_regions["ra_tangent"],
+                        self.projection_regions["dec_tangent"],
                     ),
                     axis=1,
                 )
@@ -719,14 +716,12 @@ class SkyMap:
     def pixel_scale(self) -> float:
         """degrees per pixel"""
         # The scale is given in arcseconds per pixel. Convert to degrees.
-        return self.data["roman"]["meta"]["pixel_scale"] / 3600.0
+        return self.data.meta["pixel_scale"] / 3600.0
 
     @property
     def pixel_shape(self) -> tuple[int, int]:
         """number of pixels per sky cell"""
-        return self.data["roman"]["meta"]["nxy_skycell"], self.data["roman"]["meta"][
-            "nxy_skycell"
-        ]
+        return self.data.meta.nxy_skycell, self.data.meta.nxy_skycell
 
     def __getitem__(self, index: int) -> SkyCell:
         """`SkyCell` at the given index in the sky cells array"""
