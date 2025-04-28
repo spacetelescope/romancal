@@ -56,8 +56,8 @@ class SkyCell:
     Square subregion of a projection region, 4.6 arcminutes per side.
     """
 
-    __index: int | None
-    __data: np.void
+    _index: int | None
+    _data: np.void
 
     area = 1.7747910696641611e-06
 
@@ -71,8 +71,8 @@ class SkyCell:
         index : int
             Index in the global sky map.
         """
-        self.__index = index
-        self.__data = None
+        self._index = index
+        self._data = None
 
     @classmethod
     def from_name(cls, name: str) -> "SkyCell":
@@ -110,7 +110,7 @@ class SkyCell:
             array with sky cell parameters (see schema)
         """
         instance = cls(index=None)
-        instance.__data = data
+        instance._data = data
         return instance
 
     @classmethod
@@ -168,14 +168,14 @@ class SkyCell:
     @property
     def index(self) -> int | None:
         """index of this sky cell in the sky map"""
-        return self.__index
+        return self._index
 
     @property
     def data(self) -> np.void:
         """properties from the sky map"""
-        if self.__data is None and self.index is not None:
-            self.__data = SKYMAP.skycells[self.index]
-        return self.__data
+        if self._data is None and self.index is not None:
+            self._data = SKYMAP.skycells[self.index]
+        return self._data
 
     @property
     def name(self) -> str:
@@ -294,8 +294,8 @@ class SkyCell:
 class ProjectionRegion:
     """projection region in the sky map, corresponding to a single sky tile on the sky map"""
 
-    __index: int | None
-    __data: np.void
+    _index: int | None
+    _data: np.void
 
     MIN_AREA = 0.002791388883915502
     MAX_AREA = 0.003099159706138721
@@ -309,9 +309,9 @@ class ProjectionRegion:
         index : int
             index of the projection region in the sky map array
         """
-        self.__index = index
+        self._index = index
         if index is not None:
-            self.__data = SKYMAP.projection_regions[index]
+            self._data = SKYMAP.projection_regions[index]
 
     @classmethod
     def from_data(cls, data: np.void) -> "ProjectionRegion":
@@ -324,7 +324,7 @@ class ProjectionRegion:
             array with projection region parameters (see schema)
         """
         instance = cls(index=None)
-        instance.__data = data
+        instance._data = data
         return instance
 
     @classmethod
@@ -355,12 +355,12 @@ class ProjectionRegion:
     @property
     def index(self) -> int | None:
         """index in the sky map"""
-        return self.__index
+        return self._index
 
     @property
     def data(self) -> np.void:
         """properties from the sky map"""
-        return self.__data
+        return self._data
 
     @property
     def radec_tangent(self) -> tuple[float, float]:
@@ -624,8 +624,8 @@ class SkyMap:
     .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
     """
 
-    __path: None | Path
-    __data: AsdfFile
+    _path: None | Path
+    _data: AsdfFile
 
     def __init__(self, path: None | Path | str = None):
         """
@@ -636,25 +636,25 @@ class SkyMap:
         """
         if path is not None and not isinstance(path, Path):
             path = Path(path)
-        self.__path = path
-        self.__data = None
+        self._path = path
+        self._data = None
 
     @property
     def path(self) -> None | Path:
         """location of sky map reference file on filesystem"""
-        return self.__path
+        return self._path
 
     @path.setter
     def path(self, path: None | Path):
-        self.__path = path
+        self._path = path
         # reset data if retrieved
-        self.__data = None
+        self._data = None
 
     @property
     def data(self) -> AsdfFile:
         """ASDF representation of sky map"""
-        if self.__data is None:
-            if self.__path is None:
+        if self._data is None:
+            if self._path is None:
                 rmap = crds.getreferences(
                     {
                         "roman.meta.instrument.name": "WFI",
@@ -663,9 +663,9 @@ class SkyMap:
                     reftypes=["skycells"],
                     observatory="roman",
                 )
-                self.__path = Path(rmap["skycells"])
-            self.__data = roman_datamodels.open(self.__path, memmap=True)
-        return self.__data
+                self._path = Path(rmap["skycells"])
+            self._data = roman_datamodels.open(self._path, memmap=True)
+        return self._data
 
     @property
     def skycells(self) -> np.void:

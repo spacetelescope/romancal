@@ -24,7 +24,7 @@ log.setLevel(logging.DEBUG)
 class ImageFootprint:
     """abstraction of an image footprint"""
 
-    __radec_corners: NDArray[float]
+    _radec_corners: NDArray[float]
 
     def __init__(self, radec_corners: list[tuple[float, float]]):
         """
@@ -36,7 +36,7 @@ class ImageFootprint:
         radec_corners = np.array(radec_corners)
         if radec_corners.shape[0] != 4:
             raise ValueError(f"need 4 corners, not {radec_corners.shape[0]}")
-        self.__radec_corners = radec_corners
+        self._radec_corners = radec_corners
 
     @classmethod
     def from_gwcs(
@@ -71,7 +71,7 @@ class ImageFootprint:
     @property
     def radec_corners(self) -> NDArray:
         """corners in right ascension and declination in counterclockwise order"""
-        return self.__radec_corners
+        return self._radec_corners
 
     @cached_property
     def radec_center(self) -> tuple[float, float]:
