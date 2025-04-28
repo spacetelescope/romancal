@@ -207,15 +207,13 @@ def find_skycell_matches(
             projregion_nearby_skycell_indices = [
                 projregion.data["skycell_start"] + index
                 for index in projregion_nearby_skycell_indices
+                # filter out missing neighbors
+                if index != projregion.skycells_kdtree.n
             ]
             nearby_skycell_indices.extend(projregion_nearby_skycell_indices)
 
             # find polygons that intersect the image footprint
             for skycell_index in projregion_nearby_skycell_indices:
-                # filter out missing neighbors
-                if skycell_index == projregion.skycells_kdtree.n:
-                    continue
-
                 # print(nearby_skycell_index)
                 skycell = sc.SkyCell(skycell_index)
                 if footprint.polygon.intersects_poly(skycell.polygon):
