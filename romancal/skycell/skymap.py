@@ -265,7 +265,7 @@ class SkyCell:
             "x_ref": self.data["x_tangent"],
             "y_ref": self.data["y_tangent"],
             "rotation_matrix": None,
-            "orientat": self.data["orientat"],
+            "orientat": self.projection_region.data["orientat"],
             "pixel_scale": self.pixel_scale,
             "pixel_shape": self.pixel_shape,
             "ra_center": self.data["ra_center"],
@@ -700,7 +700,7 @@ class SkyMap:
         return self.data.projection_regions
 
     @cached_property
-    def projregions_kdtree(self) -> KDTree:
+    def projection_regions_kdtree(self) -> KDTree:
         """k-d tree of all projection regions in the skymap, using normalized center vectorpoints in 3D space"""
         return KDTree(
             sgv.normalize_vector(
