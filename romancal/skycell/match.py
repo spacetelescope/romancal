@@ -76,7 +76,7 @@ class ImageFootprint:
     @cached_property
     def radec_center(self) -> tuple[float, float]:
         """center point in right ascension and declination"""
-        return sgv.vector_to_lonlat(self.vectorpoint_center)
+        return sgv.vector_to_lonlat(*self.vectorpoint_center)
 
     @cached_property
     def vectorpoint_corners(self) -> NDArray[float]:
