@@ -455,10 +455,23 @@ class ProjectionRegion:
     @cached_property
     def polygon(self) -> sgp.SingleSphericalPolygon:
         """spherical polygon representing this region"""
-        return sgp.SingleSphericalPolygon(
-            points=self.vectorpoint_corners,
-            inside=self.vectorpoint_center,
-        )
+        if self.data["dec_max"] == 90.0 or self.data["dec_min"] == -90.0:
+            # the projection regions at the poles are circular caps on the sphere;
+            # a polygon built from the corners in that case would be degenerate
+            return sgp.SingleSphericalPolygon.from_cone(
+                *self.radec_tangent,
+                radius=(
+                    90.0 - self.radec_bounds[1]
+                    if self.data["dec_max"] == 90.0
+                    else -self.radec_bounds[3]
+                ),
+                steps=16,
+            )
+        else:
+            return sgp.SingleSphericalPolygon(
+                points=self.vectorpoint_corners,
+                inside=self.vectorpoint_center,
+            )
 
     @property
     def pixel_scale(self) -> float:
