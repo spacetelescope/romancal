@@ -12,8 +12,8 @@ from astropy.table import Table
 from astropy.utils import lazyproperty
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
-from photutils.psf import IterativePSFPhotometry, PSFPhotometry, SourceGrouper
-from stpsf import gridded_library
+from photutils.psf import ImagePSF, IterativePSFPhotometry, PSFPhotometry, SourceGrouper
+from stpsf import WFI, gridded_library
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -115,6 +115,71 @@ def create_gridded_psf_model(
     gridmodel = inst.create_grid()
 
     return gridmodel, model_psf_centroids
+
+def create_l3_psf_model(
+    filt,
+    detector='SCA02',
+    oversample=11,
+    fov_pixels=9,
+    instrument_options=None,
+):
+    """
+    Compute a PSF model via `~stpsf.calc_psf`.
+
+    L3 data is an amalgamation of numerous exposures over numerous SCA's.
+    This algorithm does not attempt to merge specific PSF profiles for each
+    SCA that contributes to each pixel. Instead, a simplified version is implemented
+    as described.
+
+        - Base PSF for the given detector, is created. This base has the
+          0.11 arcsec pixel scale convolved in.
+        - PSF is further convolved with the drizzlepac `pixfrac` scale
+        - PSF is further convolved with the images actual pixel scale.
+
+    Parameters
+    ----------
+    filt : str
+        Filter name, starting with "F". For example: `"F184"`.
+    detector : str
+        Computed gridded PSF model for this SCA.
+        Examples include: `"SCA01"` or `"SCA18"`.
+    pixfrac : float
+        drizzlepac pixel fraction used.
+    pixel_scale : float
+        L3 image pixel scale. Often similar to the default detector scale of
+        0.11 arcsec.
+    oversample : int, optional
+        Oversample factor, default is 11. See STPSF docs for details [1]_.
+        Choosing an odd number makes the pixel convolution more accurate.
+    fov_pixels : int, optional
+        Field of view width [pixels]. Default is 12.
+        See STPSF docs for details [1]_.
+    instrument_options : dict, optional
+        Instrument configuration options passed to STPSF.
+        For example, STPSF assumes Roman pointing jitter consistent with
+        mission specs by default, but this can be turned off with:
+        ``{'jitter': None, 'jitter_sigma': 0}``.
+
+    Returns
+    -------
+    psf_model : `photutils.psf.ImagePSF`
+        PSF model.
+
+    References
+    ----------
+    .. [1] `STPSF documentation for `stpsf.JWInstrument.calc_psf`
+       <https://stpsf.readthedocs.io/en/latest/api/stpsf.JWInstrument.html#stpsf.JWInstrument.calc_psf>`_
+
+    """
+    wfi = WFI()
+    wfi.detector = detector
+    wfi.filter = filt
+    wfi_psf = wfi.calc_psf(fov_pixels=fov_pixels, oversample=oversample)
+    x_0 = y_0 = fov_pixels * oversample / 2
+    wfi_psf_model = ImagePSF(wfi_psf[0].data, x_0=x_0, y_0=y_0)
+    psf_model = wfi_psf_model
+
+    return psf_model
 
 
 def fit_psf_to_image_model(
@@ -324,17 +389,16 @@ class PSFCatalog:
             # ImageModel (L2 datamodel)
             filt = self.model.meta.instrument.optical_element
             detector = self.model.meta.instrument.detector.replace("WFI", "SCA")
+            psf_model, _ = create_gridded_psf_model(
+                filt=filt,
+                detector=detector,
+            )
         else:
             # MosaicModel (L3 datamodel)
             filt = self.model.meta.basic.optical_element
-            detector = "SCA02"
+            psf_model = create_l3_psf_model(filt=filt)
 
-        gridded_psf_model, _ = create_gridded_psf_model(
-            filt=filt,
-            detector=detector,
-        )
-
-        return gridded_psf_model
+        return psf_model
 
     @lazyproperty
     def _name_map(self):
