@@ -9,7 +9,6 @@ authors = [
 classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Astronomy",
-    "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
@@ -43,12 +42,10 @@ dependencies = [
     # (or when pysiaf no longer requires pkg_resources).
     "setuptools >= 60 ; python_version >= '3.12'",
 ]
+license-files = ["LICENSE"]
 dynamic = [
     "version",
 ]
-
-[project.license]
-file = "LICENSE"
 
 [project.optional-dependencies]
 docs = [
