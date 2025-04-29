@@ -27,10 +27,10 @@ def find_intersecting_projregions(
     """
 
     # find the closest projection regions to the image center
-    _, nearby_projregion_indices = sc.SKYMAP.projregions_kdtree.query(
+    _, nearby_projregion_indices = sc.SKYMAP.projection_regions_kdtree.query(
         footprint.vectorpoint_center,
         k=footprint.possibly_intersecting_projregions,
-        distance_upper_bound=footprint.length / 2 + sc.ProjectionRegion.MAX_LENGTH,
+        distance_upper_bound=footprint.length + sc.ProjectionRegion.MAX_LENGTH,
     )
 
     intersecting_projregion_indices = []
@@ -111,7 +111,8 @@ def plot_skycell(
     skycell: sc.SkyCell,
     tangent_vectorpoint: tuple[float, float, float],
     color=None,
-    label: bool = True,
+    label: str | None = None,
+    annotation: str | None = None,
     axis=None,
 ):
     if axis is None:
@@ -125,12 +126,14 @@ def plot_skycell(
         [corners_tangentplane, corners_tangentplane[None, -1]]
     )
 
-    axis.plot(corners_tangentplane[:, 0], corners_tangentplane[:, 1], color=color)
+    axis.plot(
+        corners_tangentplane[:, 0], corners_tangentplane[:, 1], color=color, label=label
+    )
 
-    if label:
+    if annotation:
         center = np.mean(corners_tangentplane[:-1], axis=0)
         axis.annotate(
-            skycell.name, center, va="center", ha="center", size=10, color=color
+            annotation, center, va="center", ha="center", size=10, color=color
         )
 
 
@@ -157,7 +160,7 @@ def plot_image_footprint_and_skycells(
         figure.gca().invert_xaxis()
         figure.suptitle(f"projection region {projregion_index}")
         axis = figure.subplots(1, 1)
-        axis.plot(0, 0, "*", markersize=10)
+        axis.plot(0, 0, "+", markersize=10)
 
         projregion = sc.ProjectionRegion(projregion_index)
 
@@ -178,13 +181,12 @@ def plot_image_footprint_and_skycells(
                 skycell,
                 tangent_vectorpoint,
                 color="darkgrey",
-                label=False,
             )
 
         _, nearby_skycell_indices = projregion.skycells_kdtree.query(
             footprint.vectorpoint_center,
             k=footprint.possibly_intersecting_skycells,
-            distance_upper_bound=footprint.length / 2 + sc.SkyCell.length,
+            distance_upper_bound=footprint.length + sc.SkyCell.length,
         )
 
         for skycell_index in nearby_skycell_indices:
@@ -193,14 +195,11 @@ def plot_image_footprint_and_skycells(
                 skycell,
                 tangent_vectorpoint,
                 color="red",
-                label=False,
             )
 
             if footprint.polygon.intersects_poly(skycell.polygon):
                 plot_skycell(
-                    skycell,
-                    tangent_vectorpoint,
-                    color="blue",
+                    skycell, tangent_vectorpoint, color="blue", annotation=skycell.name
                 )
 
         axis.set_xlabel("Offset from nearest tangent point in arcsec")

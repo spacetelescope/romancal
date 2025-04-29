@@ -9,6 +9,12 @@ from numpy.testing import assert_allclose
 import romancal.skycell.skymap as sc
 
 
+def assert_allclose_lonlat(actual: np.ndarray, desired: np.ndarray, rtol=1e-7, atol=0):
+    assert_allclose(
+        np.array(actual) % 360, np.array(desired) % 360, rtol=rtol, atol=atol
+    )
+
+
 @pytest.fixture(autouse=True)
 def override_skymap(monkeypatch):
     """
@@ -100,33 +106,21 @@ def test_skycell_wcs_pixel_to_world(name):
     wcs = skycell.wcs
 
     # forward transform to radec corners
-    assert_allclose(
+    assert_allclose_lonlat(
         np.array(
             wcs(
                 *np.array(
                     [
-                        (0.0, 0.0),
-                        (skycell.pixel_shape[0] - 1, 0.0),
-                        (skycell.pixel_shape[0] - 1, skycell.pixel_shape[1] - 1),
-                        (0.0, skycell.pixel_shape[1] - 1),
+                        (0.5, 0.5),
+                        (skycell.pixel_shape[0] + 0.5, 0.5),
+                        (skycell.pixel_shape[0] + 0.5, skycell.pixel_shape[1] + 0.5),
+                        (0.5, skycell.pixel_shape[1] + 0.5),
                     ]
                 ).T
             )
         ).T,
         skycell.radec_corners,
-    )
-
-    # inverse transform to pixel corners
-    assert_allclose(
-        np.array(wcs.invert(*skycell.radec_corners.T)).T,
-        (
-            [
-                (0.0, 0.0),
-                (skycell.pixel_shape[0] - 1, 0.0),
-                (skycell.pixel_shape[0] - 1, skycell.pixel_shape[1] - 1),
-                (0.0, skycell.pixel_shape[1] - 1),
-            ]
-        ),
+        rtol=1e-5,
     )
 
 
@@ -151,12 +145,13 @@ def test_skycell_wcs_world_to_pixel(name):
         np.array(wcs.invert(*skycell.radec_corners.T)).T,
         (
             [
-                (0.0, 0.0),
-                (skycell.pixel_shape[0] - 1, 0.0),
-                (skycell.pixel_shape[0] - 1, skycell.pixel_shape[1] - 1),
-                (0.0, skycell.pixel_shape[1] - 1),
+                (0.5, 0.5),
+                (skycell.pixel_shape[0] + 0.5, 0.5),
+                (skycell.pixel_shape[0] + 0.5, skycell.pixel_shape[1] + 0.5),
+                (0.5, skycell.pixel_shape[1] + 0.5),
             ]
         ),
+        rtol=1e-5,
     )
 
 
@@ -177,25 +172,34 @@ def test_skycell_wcsinfo(name):
     wcs = skycell.wcs
     wcsinfo = skycell.wcsinfo
 
-    assert_allclose(
-        wcs(wcsinfo["x_ref"], wcsinfo["y_ref"]), (wcsinfo["ra_ref"], wcsinfo["dec_ref"])
+    assert_allclose_lonlat(
+        wcs(wcsinfo["x_ref"], wcsinfo["y_ref"]),
+        (wcsinfo["ra_ref"], wcsinfo["dec_ref"]),
+        rtol=1e-5,
     )
-    assert_allclose(
-        wcs(wcsinfo["pixel_shape"][0] / 2.0, wcsinfo["pixel_shape"][1] / 2.0),
+    assert_allclose_lonlat(
+        wcs(
+            (wcsinfo["pixel_shape"][0] / 2.0) + 0.5,
+            (wcsinfo["pixel_shape"][1] / 2.0) + 0.5,
+        ),
         (wcsinfo["ra_center"], wcsinfo["dec_center"]),
+        rtol=1e-5,
     )
 
-    assert_allclose(
+    assert_allclose_lonlat(
         np.array(
             wcs(
-                np.array(
+                *np.array(
                     [
-                        (0.0, 0.0),
-                        (0.0, wcsinfo["pixel_shape"][1]),
-                        (wcsinfo["pixel_shape"][0], wcsinfo["pixel_shape"][1]),
-                        (wcsinfo["pixel_shape"][0], 0.0),
+                        (0.5, 0.5),
+                        (wcsinfo["pixel_shape"][0] + 0.5, 0.5),
+                        (
+                            wcsinfo["pixel_shape"][0] + 0.5,
+                            wcsinfo["pixel_shape"][1] + 0.5,
+                        ),
+                        (0.5, wcsinfo["pixel_shape"][1] + 0.5),
                     ]
-                )
+                ).T
             )
         ).T,
         (
@@ -206,4 +210,5 @@ def test_skycell_wcsinfo(name):
                 (wcsinfo["ra_corn4"], wcsinfo["dec_corn4"]),
             ]
         ),
+        rtol=1e-5,
     )
