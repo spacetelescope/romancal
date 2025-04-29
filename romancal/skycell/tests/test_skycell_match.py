@@ -37,6 +37,14 @@ from gwcs import WCS, coordinate_frames
 import romancal.skycell.match as sm
 import romancal.skycell.skymap as sc
 
+TEST_POINTS = [
+    (0.88955854, 87.53857137),
+    (20.6543883, 87.60498618),
+    (343.19474696, 85.05565535),
+    (8.94286202, 85.50465173),
+    (27.38417684, 85.03404907),
+    (310.53503934, 88.56749324),
+]
 EPSILON = 0.0011  # epsilon offset in degrees
 
 
@@ -49,22 +57,6 @@ def override_skymap(monkeypatch):
     """
     monkeypatch.setattr(sc.SKYMAP, "path", Path(__file__).parent / "skymap_subset.asdf")
     yield
-
-
-@pytest.fixture
-def sample_points() -> list[tuple[float, float]]:
-    """retrieve sample corner points from skycells in disparate locations for testing"""
-    return [
-        sc.SkyCell.from_name(name).radec_corners[2]
-        for name in [
-            "000p86x50y65",
-            "000p86x61y68",
-            "000p86x30y34",
-            "000p86x59y38",
-            "045p86x29y34",
-            "225p90x30y51",
-        ]
-    ]
 
 
 def mk_im_corners(
@@ -135,10 +127,10 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
 
 
 @pytest.mark.parametrize(
-    "sample_point_index,offset,rotation,size,expected_skycell_names",
+    "test_point,offset,rotation,size,expected_skycell_names",
     [
         (
-            0,
+            TEST_POINTS[0],
             (0, 0),
             45,
             0.001,
@@ -150,7 +142,7 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
             ),
         ),
         (
-            0,
+            TEST_POINTS[0],
             (0, +EPSILON),
             45,
             0.001,
@@ -160,7 +152,7 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
             ),
         ),
         (
-            1,
+            TEST_POINTS[1],
             (0, +EPSILON),
             45,
             0.001,
@@ -170,7 +162,7 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
             ),
         ),
         (
-            1,
+            TEST_POINTS[1],
             (0, -EPSILON),
             45,
             0.001,
@@ -182,7 +174,7 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
             ),
         ),
         (
-            1,
+            TEST_POINTS[1],
             (+EPSILON, 0),
             45,
             0.001,
@@ -194,7 +186,7 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
             ),
         ),
         (
-            1,
+            TEST_POINTS[1],
             (-EPSILON, 0),
             45,
             0.001,
@@ -206,7 +198,7 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
             ),
         ),
         (
-            1,
+            TEST_POINTS[1],
             (0, 0),
             45,
             0.001,
@@ -218,7 +210,7 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
             ),
         ),
         (
-            0,
+            TEST_POINTS[0],
             (0, 0),
             45,
             0.3,
@@ -250,7 +242,7 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
             ),
         ),
         (
-            1,
+            TEST_POINTS[1],
             (0, 0),
             45,
             0.5,
@@ -335,7 +327,7 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
             ),
         ),
         (
-            2,
+            TEST_POINTS[2],
             (0, 0),
             0,
             0.4,
@@ -388,14 +380,14 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
             ),
         ),
         (
-            3,
+            TEST_POINTS[3],
             (-0.5, -0.5),
             0,
             0.001,
             ("000p86x60y32",),
         ),
         (
-            4,
+            TEST_POINTS[4],
             (0, 0),
             -62,
             0.2,
@@ -419,37 +411,33 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
             ),
         ),
         (
-            5,
-            (-0.5, -0.5),
+            TEST_POINTS[5],
+            (0, 0),
             188,
             0.25,
             (
-                "225p90x31y50",
-                "225p90x30y50",
                 "225p90x29y50",
-                "225p90x28y50",
-                "225p90x31y51",
-                "225p90x30y51",
                 "225p90x29y51",
-                "225p90x28y51",
-                "225p90x31y52",
-                "225p90x30y52",
                 "225p90x29y52",
-                "225p90x28y52",
-                "225p90x31y53",
-                "225p90x30y53",
                 "225p90x29y53",
-                "225p90x28y53",
+                "225p90x30y50",
+                "225p90x30y51",
+                "225p90x30y52",
+                "225p90x30y53",
+                "225p90x31y50",
+                "225p90x31y51",
+                "225p90x31y52",
+                "225p90x31y53",
+                "225p90x32y50",
+                "225p90x32y51",
+                "225p90x32y52",
+                "225p90x32y53",
             ),
         ),
     ],
 )
-def test_skycell_match(
-    sample_points, sample_point_index, offset, rotation, size, expected_skycell_names
-):
-    corners = mk_im_corners(
-        *sample_points[sample_point_index] + np.array(offset), rotation, size
-    )
+def test_skycell_match(test_point, offset, rotation, size, expected_skycell_names):
+    corners = mk_im_corners(*test_point + np.array(offset), rotation, size)
 
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(corners)
 
@@ -460,9 +448,29 @@ def test_skycell_match(
     assert sorted(skycell_names) == sorted(expected_skycell_names)
 
 
-@pytest.mark.parametrize("sample_point_index", [1])
-def test_match_from_wcs(sample_points, sample_point_index):
-    wcsobj = mk_gwcs(*sample_points[sample_point_index], 45)
+@pytest.mark.parametrize(
+    "test_point,expected_skycell_names",
+    [
+        (
+            TEST_POINTS[1],
+            [
+                "000p86x62y69",
+                "000p86x62y68",
+                "000p86x61y69",
+                "000p86x61y68",
+                "000p86x63y69",
+                "000p86x61y70",
+                "000p86x62y67",
+                "000p86x60y68",
+                "045p86x37y69",
+                "045p86x37y68",
+                "045p86x38y69",
+            ],
+        )
+    ],
+)
+def test_match_from_wcs(test_point, expected_skycell_names):
+    wcsobj = mk_gwcs(*test_point, 45)
     imshape = (4096, 4096)
 
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
@@ -473,24 +481,32 @@ def test_match_from_wcs(sample_points, sample_point_index):
         [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
 
-    assert skycell_names == [
-        "000p86x62y69",
-        "000p86x62y68",
-        "000p86x61y69",
-        "000p86x61y68",
-        "000p86x63y69",
-        "000p86x61y70",
-        "000p86x62y67",
-        "000p86x60y68",
-        "045p86x37y69",
-        "045p86x37y68",
-        "045p86x38y69",
-    ]
+    assert skycell_names == expected_skycell_names
 
 
-@pytest.mark.parametrize("sample_point_index", [1])
-def test_match_from_wcs_with_imshape(sample_points, sample_point_index):
-    wcsobj = mk_gwcs(*sample_points[sample_point_index], 45)
+@pytest.mark.parametrize(
+    "test_point,expected_skycell_names",
+    [
+        (
+            TEST_POINTS[1],
+            [
+                "000p86x62y69",
+                "000p86x62y68",
+                "000p86x61y69",
+                "000p86x61y68",
+                "000p86x63y69",
+                "000p86x61y70",
+                "000p86x62y67",
+                "000p86x60y68",
+                "045p86x37y69",
+                "045p86x37y68",
+                "045p86x38y69",
+            ],
+        )
+    ],
+)
+def test_match_from_wcs_with_imshape(test_point, expected_skycell_names):
+    wcsobj = mk_gwcs(*test_point, 45)
     imshape = (4096, 4096)
     wcsobj.pixel_shape = imshape
 
@@ -500,24 +516,32 @@ def test_match_from_wcs_with_imshape(sample_points, sample_point_index):
         [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
 
-    assert skycell_names == [
-        "000p86x62y69",
-        "000p86x62y68",
-        "000p86x61y69",
-        "000p86x61y68",
-        "000p86x63y69",
-        "000p86x61y70",
-        "000p86x62y67",
-        "000p86x60y68",
-        "045p86x37y69",
-        "045p86x37y68",
-        "045p86x38y69",
-    ]
+    assert skycell_names == expected_skycell_names
 
 
-@pytest.mark.parametrize("sample_point_index", [1])
-def test_match_from_wcs_with_bbox(sample_points, sample_point_index):
-    wcsobj = mk_gwcs(*sample_points[sample_point_index], 45)
+@pytest.mark.parametrize(
+    "test_point,expected_skycell_names",
+    [
+        (
+            TEST_POINTS[1],
+            [
+                "000p86x62y69",
+                "000p86x62y68",
+                "000p86x61y69",
+                "000p86x61y68",
+                "000p86x63y69",
+                "000p86x61y70",
+                "000p86x62y67",
+                "000p86x60y68",
+                "045p86x37y69",
+                "045p86x37y68",
+                "045p86x38y69",
+            ],
+        )
+    ],
+)
+def test_match_from_wcs_with_bbox(test_point, expected_skycell_names):
+    wcsobj = mk_gwcs(*test_point, 45)
     wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
 
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
@@ -526,24 +550,12 @@ def test_match_from_wcs_with_bbox(sample_points, sample_point_index):
         [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
 
-    assert skycell_names == [
-        "000p86x62y69",
-        "000p86x62y68",
-        "000p86x61y69",
-        "000p86x61y68",
-        "000p86x63y69",
-        "000p86x61y70",
-        "000p86x62y67",
-        "000p86x60y68",
-        "045p86x37y69",
-        "045p86x37y68",
-        "045p86x38y69",
-    ]
+    assert skycell_names == expected_skycell_names
 
 
-@pytest.mark.parametrize("sample_point_index", [1])
-def test_match_from_wcs_without_imshape_or_bbox(sample_points, sample_point_index):
-    wcsobj = mk_gwcs(*sample_points[sample_point_index], 45)
+@pytest.mark.parametrize("test_point", [TEST_POINTS[1]])
+def test_match_from_wcs_without_imshape_or_bbox(test_point):
+    wcsobj = mk_gwcs(*test_point, 45)
     wcsobj.bounding_box = None
 
     with pytest.raises(ValueError):
