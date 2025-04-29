@@ -7,10 +7,10 @@ import sys
 
 import numpy as np
 
+import romancal.skycell.skymap as sc
 from romancal.associations import asn_from_list
 from romancal.associations.lib.utilities import mk_level3_asn_name
 from romancal.lib.basic_utils import parse_visitID
-from romancal.skycell.skymap import SkyCell
 
 __all__ = ["mk_skycell_asn_from_skycell_list"]
 
@@ -55,13 +55,12 @@ def mk_skycell_asn_from_skycell_list(filelist, release_product, product_type, op
     logger.info(f"Unique Skycells: {unique_skycell_indices}")
     for skycell_index in unique_skycell_indices:
         member_list = []
-        skycell = SkyCell(skycell_index)
+        skycell = sc.SkyCell(skycell_index)
         for entry in skycell_indices:
             if np.isin(skycell_index, entry[1]):
                 member_list.append(os.path.basename(entry[0]).split(".")[0])
 
         # grab all the wcs parameters needed for generate_tan_wcs
-        projcell_info = skycell.wcsinfo
         parsed_visit_id = parse_visitID(member_list[0][1:20])
         program_id = parsed_visit_id["Program"]
         output_file_root = "r" + program_id
@@ -80,7 +79,7 @@ def mk_skycell_asn_from_skycell_list(filelist, release_product, product_type, op
         prompt_product_asn["asn_type"] = "image"
         prompt_product_asn["program"] = program_id
         prompt_product_asn["target"] = skycell.name
-        prompt_product_asn["skycell_wcs_info"] = projcell_info
+        prompt_product_asn["skycell_wcs_info"] = skycell.wcsinfo
 
         _, serialized = prompt_product_asn.dump(format="json")
 
