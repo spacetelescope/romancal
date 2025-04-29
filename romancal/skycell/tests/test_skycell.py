@@ -85,7 +85,9 @@ def test_projregion_from_skycell():
     skycell = sc.SkyCell.from_name("225p90x30y51")
 
     assert skycell.projection_region == sc.ProjectionRegion(0)
+
     assert sc.ProjectionRegion.from_skycell_index(107) == sc.ProjectionRegion(0)
+
     assert sc.ProjectionRegion.from_skycell_index(0) == sc.ProjectionRegion(0)
 
 
@@ -97,7 +99,16 @@ def test_projregion_from_skycell():
         "000p86x59y38",
         "000p86x61y68",
         "045p86x29y34",
+        "225p90x25y49",
         "225p90x30y51",
+        "225p90x33y62",
+        "225p90x39y33",
+        "225p90x43y65",
+        "225p90x48y41",
+        "225p90x52y59",
+        "225p90x57y35",
+        "225p90x61y67",
+        "225p90x67y38",
     ],
 )
 def test_skycell_wcs_pixel_to_world(name):
@@ -132,7 +143,16 @@ def test_skycell_wcs_pixel_to_world(name):
         "000p86x59y38",
         "000p86x61y68",
         "045p86x29y34",
+        "225p90x25y49",
         "225p90x30y51",
+        "225p90x33y62",
+        "225p90x39y33",
+        "225p90x43y65",
+        "225p90x48y41",
+        "225p90x52y59",
+        "225p90x57y35",
+        "225p90x61y67",
+        "225p90x67y38",
     ],
 )
 def test_skycell_wcs_world_to_pixel(name):
@@ -164,7 +184,16 @@ def test_skycell_wcs_world_to_pixel(name):
         "000p86x59y38",
         "000p86x61y68",
         "045p86x29y34",
+        "225p90x25y49",
         "225p90x30y51",
+        "225p90x33y62",
+        "225p90x39y33",
+        "225p90x43y65",
+        "225p90x48y41",
+        "225p90x52y59",
+        "225p90x57y35",
+        "225p90x61y67",
+        "225p90x67y38",
     ],
 )
 def test_skycell_wcsinfo(name):
