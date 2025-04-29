@@ -27,30 +27,6 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def image_coords_to_vec(
-    radec_coords: list[tuple[float, float]]
-    | tuple[list[float], list[float]]
-    | NDArray[float],
-) -> NDArray[float]:
-    """
-    This routine can handle the corners in both organizations, whether
-    a sequence of ra, dec pairs or a list of ra coordinates, followed
-    by a list of dec coordinates. So long as either form can be converted
-    to a numpy array it is ok. The spherical geometry routines expect
-    the latter organization, and the returned value will be of that
-    organization.
-    """
-
-    radec_coords = np.array(radec_coords)
-    if radec_coords.shape[0] == 2:
-        radec_coords = radec_coords.transpose()
-
-    # Convert all celestial coordinates to cartesian coordinates.
-    return np.stack(
-        sgv.lonlat_to_vector(radec_coords[:, 0], radec_coords[:, 1]), axis=1
-    )
-
-
 class SkyCell:
     """
     Square subregion of a projection region, 4.6 arcminutes per side.
