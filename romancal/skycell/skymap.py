@@ -444,7 +444,7 @@ class ProjectionRegion:
     @cached_property
     def vectorpoint_center(self) -> tuple[float, float, float]:
         """center in 3D Cartesian space on the unit sphere"""
-        return sgv.normalize_vector(np.mean(self.vectorpoint_corners, axis=0))
+        return np.mean(self.vectorpoint_corners, axis=0)
 
     @cached_property
     def length(self) -> float:
