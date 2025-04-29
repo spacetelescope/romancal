@@ -235,13 +235,19 @@ class SkyCell:
     def wcsinfo(self) -> dict:
         """WCS properties"""
 
+        orientation = self.projection_region.orientation
+        if self.projection_region.is_polar:
+            # rotate polar cap by 180 degrees
+            # TODO: find out why this is necessary...
+            orientation += 180
+
         return {
             "ra_ref": self.projection_region.data["ra_tangent"],
             "dec_ref": self.projection_region.data["dec_tangent"],
             "x_ref": self.data["x_tangent"],
             "y_ref": self.data["y_tangent"],
             "rotation_matrix": None,
-            "orientat": self.projection_region.data["orientat"],
+            "orientat": orientation,
             "pixel_scale": self.pixel_scale,
             "pixel_shape": self.pixel_shape,
             "ra_center": self.data["ra_center"],
@@ -428,10 +434,15 @@ class ProjectionRegion:
         # assume radial against sky background
         return sga.length(self.vectorpoint_corners[0], self.vectorpoint_corners[2])
 
+    @property
+    def is_polar(self) -> bool:
+        """whether this projection region is a polar cap"""
+        return self.data["dec_max"] == 90.0 or self.data["dec_min"] == -90.0
+
     @cached_property
     def polygon(self) -> sgp.SingleSphericalPolygon:
         """spherical polygon representing this region"""
-        if self.data["dec_max"] == 90.0 or self.data["dec_min"] == -90.0:
+        if self.is_polar:
             # the projection regions at the poles are circular caps on the sphere;
             # a polygon built from the corners in that case would be degenerate
             return sgp.SingleSphericalPolygon.from_cone(
