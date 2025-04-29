@@ -93,29 +93,29 @@ class SkyCell:
     @classmethod
     def from_center_and_coordinates(
         cls,
-        skytile_center: tuple[float, float],
+        projregion_center: tuple[float, float],
         skycell_coordinates: tuple[int, int],
     ) -> "SkyCell":
         """
         Retrieve a sky cell from the sky map using
-        - the center of its containing sky tile
-        - the ordinal XY coordinates of the sky cell from the sky tile origin (number of sky cells away from the center)
+        - the center of its containing projection region
+        - the ordinal XY coordinates of the sky cell from the projection region origin (number of sky cells away from the center)
 
         (see handbook [1] for further explanation)
 
         Parameters
         ----------
         projregion_center : tuple[float, float]
-            center coordinates of its containing sky tile in right ascension and declination
+            center coordinates of its containing projection region in right ascension and declination
         skycell_coordinates : tuple[int, int]
-            XY location of the sky cell within its sky tile, in units of ordinal sky cells from the center
+            XY location of the sky cell within its projection region, in units of ordinal sky cells from the center
 
         References
         ----------
         .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
         """
         return cls.from_name(
-            f"r{round(skytile_center[0]):03}d{'p' if skytile_center[1] >= 0 else 'm'}{round(skytile_center[1]):02}x{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}y{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}"
+            f"r{round(projregion_center[0]):03}d{'p' if projregion_center[1] >= 0 else 'm'}{round(projregion_center[1]):02}x{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}y{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}"
         )
 
     @classmethod
@@ -161,8 +161,8 @@ class SkyCell:
 
         NOTE
         ----
-        the name of a sky cell center comrpises the rounded coordinates of its containing sky tile in right ascension and declination,
-        and the XY location of the sky cell within its sky tile in units of ordinal sky cells
+        the name of a sky cell center comrpises the rounded coordinates of its containing projection region in right ascension and declination,
+        and the XY location of the sky cell within its projection region in units of ordinal sky cells
         """
         return self.data[0]
 
@@ -275,7 +275,7 @@ class SkyCell:
 
 
 class ProjectionRegion:
-    """projection region in the sky map, corresponding to a single sky tile on the sky map"""
+    """projection region in the sky map"""
 
     _index: int | None
     _data: np.void
@@ -615,9 +615,8 @@ def to_skycell_wcs(library: ModelLibrary) -> WCS | None:
 
 class SkyMap:
     """
-    Abstract representation of the sky map, comprising of 4058 tesellated non-rectangular "sky tiles", each with an area of 10 square degrees.
-
-    For each sky tile, a corresponding gnomonic projection defining a rectangular "projection region" on to a uniform pixel grid entirely covering the sky tile. By necessity, projection regions will overlap other projection regions somewhat. The pixel scale for all projection regions is identical.
+    Abstract representation of the sky map, comprising of 4058 overlapping rectangular "projection regions" defining gnomonic projection on to uniform pixel grids.
+    The pixel scale for all projection regions is identical.
 
     Each projection region is subdivided into ~2000 square subregions ("sky cells", ~8 million in total), each 4.6' across. These sky cells also overlap each other by a standard number of pixels.
 
@@ -696,7 +695,7 @@ class SkyMap:
 
     @property
     def projection_regions(self) -> np.void:
-        """array of projection regions (one per sky tile)"""
+        """array of projection regions"""
         return self.data.projection_regions
 
     @cached_property
