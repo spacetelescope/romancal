@@ -183,70 +183,36 @@ def find_skycell_matches(
     intersecting_skycell_indices = []
 
     # query the global k-d tree of projection regions for possible intersection candidates in (normalized) 3D space
-    _, nearby_projregion_indices = sc.SKYMAP.projection_regions_kdtree.query(
-        footprint.vectorpoint_center,
-        k=footprint.possibly_intersecting_projregions,
+    nearby_projregion_indices = np.array(
+        sc.SKYMAP.projection_regions_kdtree.query(
+            footprint.vectorpoint_center,
+            k=footprint.possibly_intersecting_projregions,
+        )[1]
     )
-
-    # # find the maximum distance from the footprint center to neighboring projection region centers
-    # footprint_cartesian_length = sga.length(*footprint.vectorpoint_corners[[0, 2]])
-    # max_projregion_cartesian_length = (
-    #     0.08174916691321579  # Cartesian length of the longest projection region
-    # )
-    # max_projregion_cartesian_distance = (
-    #     footprint_cartesian_length + max_projregion_cartesian_length
-    # ) / 2
-    #
-    # # find Cartesian distances from each projection region center to the footprint center
-    # projregion_vectorpoints = sgv.lonlat_to_vector(
-    #     sc.SKYMAP.projection_regions["ra_tangent"],
-    #     sc.SKYMAP.projection_regions["dec_tangent"],
-    # )
-    # distances = projregion_vectorpoints - footprint.vectorpoint_center[:, None]
-    #
-    # # cull Cartesian distances by a radius defined by the longest projection region and the current footprint
-    # nearby_projregion_indices = np.unique(
-    #     np.where(distances < max_projregion_cartesian_distance * 1.1)[0]
-    # )
+    nearby_projregion_indices = nearby_projregion_indices[
+        np.where(nearby_projregion_indices != len(sc.SKYMAP.projection_regions))
+    ]
 
     for projregion_index in nearby_projregion_indices:
-        # filter out missing neighbors from the k-d tree query
-        if projregion_index == len(sc.SKYMAP.projection_regions):
-            continue
-
         projregion = sc.ProjectionRegion(projregion_index)
         if footprint.polygon.intersects_poly(projregion.polygon):
             # query the LOCAL k-d tree of skycells for possible intersection candidates in (normalized) 3D space
-            _, projregion_nearby_skycell_indices = projregion.skycells_kdtree.query(
-                footprint.vectorpoint_center,
-                k=footprint.possibly_intersecting_skycells,
+            projregion_nearby_skycell_indices = np.array(
+                projregion.skycells_kdtree.query(
+                    footprint.vectorpoint_center,
+                    k=footprint.possibly_intersecting_skycells,
+                )[1]
+            )
+            projregion_nearby_skycell_indices = np.array(
+                projregion_nearby_skycell_indices[
+                    np.where(
+                        projregion_nearby_skycell_indices != len(projregion.skycells)
+                    )
+                ]
             )
 
-            # # find the maximum distance from the footprint center to neighboring skycell centers
-            # max_skycell_cartesian_length = 3.290522520333678e-05
-            # max_skycell_cartesian_distance = (
-            #     footprint_cartesian_length + max_skycell_cartesian_length
-            # ) / 2
-            #
-            # # find Cartesian distances from each skycell to the footprint center
-            # skycell_vectorpoints = sgv.lonlat_to_vector(
-            #     projregion.skycells["ra_center"],
-            #     projregion.skycells["dec_center"],
-            # )
-            # distances = skycell_vectorpoints - footprint.vectorpoint_center[:, None]
-            #
-            # # cull Cartesian distances by a radius defined by the average skycell and the current footprint
-            # projregion_nearby_skycell_indices = np.unique(
-            #     np.where(distances < max_skycell_cartesian_distance * 1.1)[0]
-            # )
-
             # convert to absolute indices over the full skycell table
-            projregion_nearby_skycell_indices = [
-                projregion.data["skycell_start"] + index
-                for index in projregion_nearby_skycell_indices
-                # filter out missing neighbors from the k-d tree query
-                if index != len(projregion.skycells)
-            ]
+            projregion_nearby_skycell_indices += projregion.data["skycell_start"]
 
             nearby_skycell_indices.extend(projregion_nearby_skycell_indices)
 
