@@ -71,6 +71,7 @@ class ApertureCatalog:
             warnings.simplefilter("ignore", category=RuntimeWarning)
             warnings.simplefilter("ignore", category=AstropyUserWarning)
 
+            unit = self.model.data.unit
             nvalues = []
             bkg_median = []
             bkg_std = []
@@ -83,14 +84,14 @@ class ApertureCatalog:
                 if values.size == 0:
                     # handle case where source is completely masked due to
                     # forced photometry
-                    med *= self.model.data.unit
-                    std *= self.model.data.unit
+                    med <<= unit
+                    std <<= unit
                 bkg_median.append(med)
                 bkg_std.append(std)
 
             nvalues = np.array(nvalues)
-            bkg_median = u.Quantity(bkg_median)
-            bkg_std = u.Quantity(bkg_std)
+            bkg_median = u.Quantity(bkg_median) / u.pix
+            bkg_std = u.Quantity(bkg_std) / u.pix
 
             # standard error of the median
             bkg_median_err = np.sqrt(np.pi / (2.0 * nvalues)) * bkg_std
