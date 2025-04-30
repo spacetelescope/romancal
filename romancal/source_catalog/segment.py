@@ -233,6 +233,10 @@ class SegmentCatalog:
                     np.float32
                 )
 
+            # remove dimensionless units
+            if new_name == "ellipticity":
+                value = value.value
+
             # split the sky_centroid values into separate RA and Dec
             # values
             if new_name == "sky_centroid":
