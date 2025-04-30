@@ -5,7 +5,7 @@ import logging
 from roman_datamodels.datamodels import WfiWcsModel
 
 # Define logging
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
