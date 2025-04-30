@@ -221,7 +221,12 @@ class SegmentCatalog:
                     value = value.astype(np.float32)
 
             # handle any unit conversions
-            if new_name in ("x_centroid", "y_centroid"):
+            if new_name in (
+                "x_centroid",
+                "y_centroid",
+                "x_centroid_win",
+                "y_centroid_win",
+            ):
                 value *= u.pix
             if new_name == "segment_area":
                 value = (value.value * self.pixel_area.to(u.arcsec**2)).astype(
