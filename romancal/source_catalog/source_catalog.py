@@ -314,6 +314,15 @@ class RomanSourceCatalog:
             setattr(self, name, getattr(nn_cat, name))
 
     @lazyproperty
+    def flagged_spatial_index(self):
+        """
+        The spatial index bit flag encoding the projection, skycell,
+        and (x, y) pixel coordinate of the source and whether the
+        object is inside the skycell core region.
+        """
+        return np.zeros(self.n_sources, dtype=np.int64)
+
+    @lazyproperty
     def is_extended(self):
         """
         Boolean indicating whether the source is extended.
@@ -407,6 +416,11 @@ class RomanSourceCatalog:
         """
         col = {}
         col["label"] = "Label of the source segment in the segmentation image"
+        col["flagged_spatial_index"] = (
+            "Spatial index bit flag encoding the projection, skycell, and "
+            "pixel coordinate of the source"
+        )
+
         col["x_centroid"] = (
             "Column coordinate of the source centroid in the detection "
             "image from image moments (0 indexed)"
@@ -570,6 +584,7 @@ class RomanSourceCatalog:
         """
         base_colnames = [
             "label",
+            "flagged_spatial_index",
             "x_centroid",
             "y_centroid",
         ]
