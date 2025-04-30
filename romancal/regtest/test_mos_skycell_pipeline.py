@@ -17,7 +17,7 @@ def run_mos(rtdata_module, resource_tracker):
 
     # Test Pipeline
     rtdata.get_asn("WFI/image/L3_mosaic_asn.json")
-    output = "r00001_p_v01001001001001_r274dp63x31y81_f158_coadd.asdf"
+    output = "r00001_p_v01001001001001_270p65x49y70_f158_coadd.asdf"
     rtdata.output = output
     args = [
         "roman_mos",
@@ -62,7 +62,7 @@ def test_resample_ran(output_model):
 
 def test_location_name(output_model):
     # test that the location_name matches the skycell selected
-    assert output_model.meta.basic.location_name == "r274dp63x31y81"
+    assert output_model.meta.basic.location_name == "270p65x49y70"
 
 
 def test_wcsinfo_wcs_roundtrip(output_model):

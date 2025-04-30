@@ -13,12 +13,12 @@ from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 pytestmark = [pytest.mark.bigdata]
 
 EXPECTED_FILENAMES = [
-    "r00001_p_v01001001001001_r274dp63x31y80_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x31y81_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x32y82_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x32y80_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x32y81_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x32y82_f158_asn.json",
+    "r00001_p_v01001001001001_225p90x49y67_f158_asn.json",
+    "r00001_p_v01001001001001_225p90x49y69_f158_asn.json",
+    "r00001_p_v01001001001001_225p90x50y70_f158_asn.json",
+    "r00001_p_v01001001001001_225p90x50y67_f158_asn.json",
+    "r00001_p_v01001001001001_225p90x50y69_f158_asn.json",
+    "r00001_p_v01001001001001_225p90x50y70_f158_asn.json",
 ]
 
 
@@ -76,4 +76,4 @@ def test_mosaic_output_is_skycell(mosaic_pipeline_on_skycell_asn):
     rtdata = mosaic_pipeline_on_skycell_asn
     filename = rtdata.output
     with rdm.open(filename) as model:
-        assert model.meta.basic.location_name == "r274dp63x31y80"
+        assert model.meta.basic.location_name == "225p90x49y67"
