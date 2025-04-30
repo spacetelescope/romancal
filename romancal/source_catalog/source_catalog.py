@@ -366,6 +366,16 @@ class RomanSourceCatalog:
 
         return flags
 
+    @lazyproperty
+    def image_flags(self):
+        """
+        Data quality bit flag.
+
+        Non-zero if a pixel within the segment was flagged in one of the
+        input images.
+        """
+        return np.zeros(self.n_sources, dtype=np.int32)
+
     def update_metadata(self):
         """
         Update the metadata dictionary with the package version
@@ -508,6 +518,8 @@ class RomanSourceCatalog:
         col["psf_flags"] = "PSF fitting bit flags"
 
         col["warning_flags"] = "Warning bit flags"
+        col["image_flags"] = "Image quality bit flags"
+
         col["is_extended"] = "Flag indicating whether the source is extended"
         col["sharpness"] = "The DAOFind sharpness statistic"
         col["roundness1"] = "The DAOFind roundness1 statistic"
@@ -639,9 +651,13 @@ class RomanSourceCatalog:
             "y_psf",
             "y_psf_err",
         ]
+        flag_columns = [
+            "warning_flags",
+            "image_flags",
+        ]
         psf_flags_colnames = [
-            "psf_gof",
             "psf_flags",
+            "psf_gof",
         ]
 
         det_colnames = []
@@ -673,7 +689,8 @@ class RomanSourceCatalog:
             colnames.extend(det_colnames)
             colnames.extend(othershape_colnames)
             colnames.extend(self.flux_colnames)
-            colnames.append("warning_flags")
+
+            colnames.extend(flag_columns)
             if self.fit_psf:
                 colnames.extend(psf_flags_colnames)
 
@@ -691,7 +708,7 @@ class RomanSourceCatalog:
             colnames.extend(sky_colnames)
             colnames.extend(skywin_colnames)
             colnames.extend(det_colnames)
-            colnames.append("warning_flags")
+            colnames.extend(flag_columns)
 
         elif self.cat_type == "dr_band":
             colnames = band_colnames.copy()
