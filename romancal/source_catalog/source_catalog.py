@@ -616,10 +616,14 @@ class RomanSourceCatalog:
             "flagged_spatial_index",
             "x_centroid",
             "y_centroid",
+            "x_centroid_err",
+            "y_centroid_err",
         ]
         xywin_colnames = [
             "x_centroid_win",
             "y_centroid_win",
+            "x_centroid_win_err",
+            "y_centroid_win_err",
         ]
         skybest_colnames = [
             "ra",
@@ -628,10 +632,14 @@ class RomanSourceCatalog:
         sky_colnames = [
             "ra_centroid",
             "dec_centroid",
+            "ra_centroid_err",
+            "dec_centroid_err",
         ]
         skywin_colnames = [
             "ra_centroid_win",
             "dec_centroid_win",
+            "ra_centroid_win_err",
+            "dec_centroid_win_err",
         ]
         skypsf_colnames = [
             "ra_psf",

@@ -93,6 +93,9 @@ class SegmentCatalog:
         for name in self._lazyproperties:
             self.names.append(name)
 
+        # add the placeholder attributes
+        self.add_placeholders()
+
     @property
     def _lazyproperties(self):
         """
@@ -238,6 +241,37 @@ class SegmentCatalog:
             else:
                 setattr(self, new_name, value)
                 self.names.append(new_name)
+
+    def add_placeholders(self):
+        """
+        Add placeholder attributes to the class instance.
+        """
+        # pixel columns
+        pix_columns = (
+            "x_centroid_err",
+            "y_centroid_err",
+            "x_centroid_win_err",
+            "y_centroid_win_err",
+        )
+        pix_value = np.zeros(self.source_cat.nlabels, dtype=np.float32) * u.pix
+        for name in pix_columns:
+            if not hasattr(self, name):
+                setattr(self, name, pix_value)
+
+        # sky columns
+        sky_columns = (
+            "ra_centroid_err",
+            "dec_centroid_err",
+            "ra_centroid_win_err",
+            "dec_centroid_win_err",
+        )
+        sky_value = np.zeros(self.source_cat.nlabels, dtype=np.float32) * u.deg
+        for name in sky_columns:
+            if not hasattr(self, name):
+                setattr(self, name, sky_value)
+
+        for name in [*pix_columns, *sky_columns]:
+            self.names.append(name)
 
     @lazyproperty
     def orientation_sky(self):
