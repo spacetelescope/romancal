@@ -6,12 +6,12 @@ import pytest
 
 
 def main():
-    """Import all packages/modules in jwst to test they are importable
+    """Import all packages/modules in romancal to test they are importable
 
-    This script is used in a Travis build that doesn't install any test
-    dependencies from the package. This is to verify that all the modules
-    are at least importable with only the dependencies listed in
-    install_requires in setup.py.
+    This script is used in a GitHub Actions workflow that doesn't
+    install any test dependencies from the package. This is to verify
+    that all the modules are at least importable with only the
+    dependencies listed in install_requires in setup.py.
 
     This is to prevent adding code to the runtime codebase that have
     dependencies that are only pulled in via the test dependencies.  So for
