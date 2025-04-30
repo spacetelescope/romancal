@@ -67,7 +67,7 @@ def test_skycell_init():
     )
 
     with pytest.raises(ValueError):
-        sc.SkyCell.from_name("r274dp63x31y81")
+        sc.SkyCell.from_name("270p65x49y70")
 
     with pytest.raises(ValueError):
         sc.SkyCell.from_name("notaskycellname")
