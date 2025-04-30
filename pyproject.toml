@@ -86,7 +86,6 @@ stpsf = "pytest_romancal.stpsf_plugin"
 
 [project.scripts]
 roman_static_preview = "romancal.scripts.static_preview:command"
-verify_install_requires = "romancal.scripts.verify_install_requires:main"
 asn_from_list = "romancal.associations.asn_from_list:_cli"
 skycell_asn = "romancal.associations.skycell_asn:_cli"
 mk_patchlist = "romancal.associations.mk_patchlist:_cli"
