@@ -79,7 +79,7 @@ def mk_skycell_asn_from_skycell_list(filelist, release_product, product_type, op
         prompt_product_asn["asn_type"] = "image"
         prompt_product_asn["program"] = program_id
         prompt_product_asn["target"] = skycell.name
-        prompt_product_asn["skycell_wcs_info"] = skycell.wcsinfo
+        prompt_product_asn["skycell_wcs_info"] = skycell.wcs_info
 
         _, serialized = prompt_product_asn.dump(format="json")
 

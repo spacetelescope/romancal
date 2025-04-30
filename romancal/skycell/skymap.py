@@ -232,40 +232,32 @@ class SkyCell:
         return SKYMAP.pixel_shape
 
     @property
-    def wcsinfo(self) -> dict:
-        """WCS properties"""
-
-        orientation = self.projection_region.orientation
-        if self.projection_region.is_polar:
-            # rotate polar cap by 180 degrees
-            # TODO: find out why this is necessary...
-            orientation += 180
+    def wcs_info(self) -> dict[str, float | str]:
+        """WCS properties as defined in the Level 3 association schema"""
 
         return {
-            "ra_ref": self.projection_region.data["ra_tangent"],
-            "dec_ref": self.projection_region.data["dec_tangent"],
-            "x_ref": self.data["x_tangent"],
-            "y_ref": self.data["y_tangent"],
-            "rotation_matrix": None,
-            "orientat": orientation,
+            "name": self.name,
             "pixel_scale": self.pixel_scale,
-            "pixel_shape": self.pixel_shape,
+            "ra_projection_center": self.projection_region.data["ra_tangent"],
+            "dec_projection_center": self.projection_region.data["dec_tangent"],
+            "x0_projection": self.data["x_tangent"],
+            "y0_projection": self.data["y_tangent"],
             "ra_center": self.data["ra_center"],
             "dec_center": self.data["dec_center"],
-            "ra_corn1": self.data["ra_corn1"],
-            "dec_corn1": self.data["dec_corn1"],
-            "ra_corn2": self.data["ra_corn2"],
-            "dec_corn2": self.data["dec_corn2"],
-            "ra_corn3": self.data["ra_corn3"],
-            "dec_corn3": self.data["dec_corn3"],
-            "ra_corn4": self.data["ra_corn4"],
-            "dec_corn4": self.data["dec_corn4"],
+            "nx": self.pixel_shape[0],
+            "ny": self.pixel_shape[1],
+            "orientat": self.orientation,
+            "orientat_projection_center": self.projection_region.orientation
+            if not self.projection_region.is_polar
+            # rotate polar cap by 180 degrees
+            # TODO: find out why this is necessary...
+            else self.projection_region.orientation + 180,
         }
 
     @cached_property
     def wcs(self) -> WCS:
         """WCS representing this sky cell"""
-        return wcsinfo_to_wcs(self.wcsinfo)
+        return wcsinfo_to_wcs(self.wcs_info)
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, SkyCell):
@@ -475,7 +467,6 @@ class ProjectionRegion:
 def wcsinfo_to_wcs(
     wcsinfo: dict | stnode.Wcsinfo,
     bounding_box: None | tuple[tuple[float, float], tuple[float, float]] = None,
-    name: str = "wcsinfo",
 ) -> WCS:
     """Create a WCS from the L3 wcsinfo meta
 
@@ -488,23 +479,20 @@ def wcsinfo_to_wcs(
         The bounding box in detector/pixel space. Form of input is:
         (x_left, x_right, y_bottom, y_top)
 
-    name : str
-        Value of the `name` attribute of the WCS object.
-
     Returns
     -------
     wcs : WCS
         The WCS object created.
     """
-    pixelshift = models.Shift(-wcsinfo["x_ref"], name="crpix1") & models.Shift(
-        -wcsinfo["y_ref"], name="crpix2"
+    pixelshift = models.Shift(-wcsinfo["x0_projection"], name="crpix1") & models.Shift(
+        -wcsinfo["y0_projection"], name="crpix2"
     )
     pixelscale = models.Scale(wcsinfo["pixel_scale"], name="cdelt1") & models.Scale(
         wcsinfo["pixel_scale"], name="cdelt2"
     )
     tangent_projection = models.Pix2Sky_TAN()
     celestial_rotation = models.RotateNative2Celestial(
-        wcsinfo["ra_ref"], wcsinfo["dec_ref"], 180.0
+        wcsinfo["ra_projection_center"], wcsinfo["dec_projection_center"], 180.0
     )
 
     matrix = wcsinfo.get("rotation_matrix", None)
@@ -513,7 +501,9 @@ def wcsinfo_to_wcs(
     else:
         matrix = np.reshape(
             wcs_util.calc_rotation_matrix(
-                np.deg2rad(wcsinfo.get("orientat", 0.0)), v3i_yangle=0.0, vparity=1
+                np.deg2rad(wcsinfo.get("orientat_projection_center", 0.0)),
+                v3i_yangle=0.0,
+                vparity=1,
             ),
             (2, 2),
         )
@@ -529,7 +519,9 @@ def wcsinfo_to_wcs(
     sky_frame = coordinate_frames.CelestialFrame(
         reference_frame=coordinates.ICRS(), name="icrs", unit=(u.deg, u.deg)
     )
-    wcsobj = WCS([(detector_frame, det2sky), (sky_frame, None)], name=name)
+    wcsobj = WCS(
+        [(detector_frame, det2sky), (sky_frame, None)], name=wcsinfo.get("name", None)
+    )
 
     if bounding_box:
         wcsobj.bounding_box = bounding_box
