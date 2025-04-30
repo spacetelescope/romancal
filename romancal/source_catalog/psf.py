@@ -171,10 +171,14 @@ def create_l3_psf_model(
        <https://stpsf.readthedocs.io/en/latest/api/stpsf.JWInstrument.html#stpsf.JWInstrument.calc_psf>`_
 
     """
+
+    # Create base PSF.
     wfi = WFI()
     wfi.detector = detector
     wfi.filter = filt
     wfi_psf = wfi.calc_psf(fov_pixels=fov_pixels, oversample=oversample)
+
+    # Create the PSF model.
     x_0 = y_0 = fov_pixels * oversample / 2
     wfi_psf_model = ImagePSF(wfi_psf[0].data, x_0=x_0, y_0=y_0)
     psf_model = wfi_psf_model
