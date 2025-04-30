@@ -323,6 +323,20 @@ class RomanSourceCatalog:
         return np.zeros(self.n_sources, dtype=np.int64)
 
     @lazyproperty
+    def ra(self):
+        """
+        The best estimate of the right ascension (ICRS).
+        """
+        return np.zeros(self.n_sources, dtype=np.float64) * u.deg
+
+    @lazyproperty
+    def dec(self):
+        """
+        The best estimate of the declination (ICRS).
+        """
+        return np.zeros(self.n_sources, dtype=np.float64) * u.deg
+
+    @lazyproperty
     def is_extended(self):
         """
         Boolean indicating whether the source is extended.
@@ -447,6 +461,9 @@ class RomanSourceCatalog:
             "Row coordinate of the windowed source centroid in the "
             "detection image from image moments (0 indexed)"
         )
+
+        col["ra"] = "The best estimate of the right ascension (ICRS)"
+        col["dec"] = "The best estimate of the declination (ICRS)"
         col["ra_centroid"] = "Right ascension (ICRS) of the source centroid"
         col["dec_centroid"] = "Declination (ICRS) of the source centroid"
         col["ra_centroid_win"] = (
@@ -604,6 +621,10 @@ class RomanSourceCatalog:
             "x_centroid_win",
             "y_centroid_win",
         ]
+        skybest_colnames = [
+            "ra",
+            "dec",
+        ]
         sky_colnames = [
             "ra_centroid",
             "dec_centroid",
@@ -682,6 +703,7 @@ class RomanSourceCatalog:
             colnames.extend(xywin_colnames)
             if self.fit_psf:
                 colnames.extend(xypsf_colnames)
+            colnames.extend(skybest_colnames)
             colnames.extend(sky_colnames)
             colnames.extend(skywin_colnames)
             if self.fit_psf:
@@ -697,6 +719,7 @@ class RomanSourceCatalog:
         elif self.cat_type == "forced_det":
             colnames = ["label"]  # needed to join the forced catalogs
             colnames.extend(base_colnames)
+            colnames.extend(skybest_colnames)
             colnames.extend(sky_colnames)
             colnames.extend(shape_colnames)
             colnames.extend(nn_colnames)
@@ -705,6 +728,7 @@ class RomanSourceCatalog:
             colnames = []
             colnames.extend(base_colnames)
             colnames.extend(xywin_colnames)
+            colnames.extend(skybest_colnames)
             colnames.extend(sky_colnames)
             colnames.extend(skywin_colnames)
             colnames.extend(det_colnames)
