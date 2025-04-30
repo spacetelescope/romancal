@@ -306,7 +306,7 @@ class PSFCatalog:
         self.mask = mask
 
         self.names = list(self._name_map.values())
-        self.names.extend(["ra_psf", "dec_psf"])
+        self.names.extend(["ra_psf", "dec_psf", "ra_psf_err", "dec_psf_err"])
 
         self.calc_psf_photometry()
 
@@ -403,3 +403,17 @@ class PSFCatalog:
         Declination of the fitted-PSF pixel position.
         """
         return self._sky_psf.dec
+
+    @lazyproperty
+    def ra_psf_err(self):
+        """
+        The uncertainty in ra_psf.
+        """
+        return np.zeros(self.ra_psf.shape, dtype=np.float32) * u.deg
+
+    @lazyproperty
+    def dec_psf_err(self):
+        """
+        The uncertainty in dec_psf.
+        """
+        return np.zeros(self.dec_psf.shape, dtype=np.float32) * u.deg

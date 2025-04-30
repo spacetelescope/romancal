@@ -644,6 +644,8 @@ class RomanSourceCatalog:
         skypsf_colnames = [
             "ra_psf",
             "dec_psf",
+            "ra_psf_err",
+            "dec_psf_err",
         ]
         segm_colnames = [
             "bbox_xmin",
