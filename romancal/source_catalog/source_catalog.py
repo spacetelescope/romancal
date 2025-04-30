@@ -486,10 +486,10 @@ class RomanSourceCatalog:
             "Row index of the top edge of the source bounding box (0 indexed)"
         )
         col["semimajor"] = (
-            "1-sigma standard deviation along the semimajor axis of the 2D Gaussian function that has the same second-order central moments as the source"
+            "The length of the source semimajor axis computed from image moments"
         )
         col["semiminor"] = (
-            "1-sigma standard deviation along the semiminor axis of the 2D Gaussian function that has the same second-order central moments as the source"
+            "The length of the source semiminor axis computed from image moments"
         )
         col["fwhm"] = (
             "Circularized full width at half maximum (FWHM) "
@@ -522,11 +522,13 @@ class RomanSourceCatalog:
             "(r_i * I_i) / Sum_i (I_i), with r_i as an elliptical radius"
         )
         col["fluxfrac_radius_50"] = (
-            "The circular radius that encloses 50% of the source Kron flux."
+            "The circular radius that encloses 50% of the source Kron flux"
         )
         col["kron_flux"] = "Flux within the elliptical Kron aperture"
         col["kron_abmag"] = "AB magnitude within the elliptical Kron aperture"
-        col["aper_bkg_flux"] = "The local background estimate for aperture photometry"
+        col["aper_bkg_flux"] = (
+            "The local background estimated within a circular annulus"
+        )
 
         col["x_psf"] = "Column position of the source from PSF fitting (0 indexed)"
         col["y_psf"] = "Row position of the source from PSF fitting (0 indexed)"
