@@ -66,7 +66,7 @@ def test_skycell_init():
         ],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         sc.SkyCell.from_name("270p65x49y70")
 
     with pytest.raises(ValueError):
@@ -200,17 +200,17 @@ def test_skycell_wcsinfo(name):
     skycell = sc.SkyCell.from_name(name)
 
     wcs = skycell.wcs
-    wcsinfo = skycell.wcsinfo
+    wcsinfo = skycell.wcs_info
 
     assert_allclose_lonlat(
-        wcs(wcsinfo["x_ref"], wcsinfo["y_ref"]),
-        (wcsinfo["ra_ref"], wcsinfo["dec_ref"]),
+        wcs(wcsinfo["x0_projection"], wcsinfo["y0_projection"]),
+        (wcsinfo["ra_projection_center"], wcsinfo["dec_projection_center"]),
         rtol=1e-5,
     )
     assert_allclose_lonlat(
         wcs(
-            (wcsinfo["pixel_shape"][0] / 2.0) + 0.5,
-            (wcsinfo["pixel_shape"][1] / 2.0) + 0.5,
+            (wcsinfo["nx"] / 2.0) + 0.5,
+            (wcsinfo["ny"] / 2.0) + 0.5,
         ),
         (wcsinfo["ra_center"], wcsinfo["dec_center"]),
         rtol=1e-5,
@@ -222,23 +222,16 @@ def test_skycell_wcsinfo(name):
                 *np.array(
                     [
                         (0.5, 0.5),
-                        (wcsinfo["pixel_shape"][0] + 0.5, 0.5),
+                        (wcsinfo["nx"] + 0.5, 0.5),
                         (
-                            wcsinfo["pixel_shape"][0] + 0.5,
-                            wcsinfo["pixel_shape"][1] + 0.5,
+                            wcsinfo["nx"] + 0.5,
+                            wcsinfo["ny"] + 0.5,
                         ),
-                        (0.5, wcsinfo["pixel_shape"][1] + 0.5),
+                        (0.5, wcsinfo["ny"] + 0.5),
                     ]
                 ).T
             )
         ).T,
-        (
-            [
-                (wcsinfo["ra_corn1"], wcsinfo["dec_corn1"]),
-                (wcsinfo["ra_corn2"], wcsinfo["dec_corn2"]),
-                (wcsinfo["ra_corn3"], wcsinfo["dec_corn3"]),
-                (wcsinfo["ra_corn4"], wcsinfo["dec_corn4"]),
-            ]
-        ),
+        skycell.radec_corners,
         rtol=1e-5,
     )
