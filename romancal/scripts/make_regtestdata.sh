@@ -80,27 +80,6 @@ cp r0000101001001001001_0002_wfi01_f158_cal.asdf $outdir/roman-pipeline/dev/WFI/
 strun roman_elp r0000101001001001001_0002_wfi10_f158_uncal.asdf
 cp r0000101001001001001_0002_wfi10_f158_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
 
-
-# CRDS test needs the "usual" r00001..._0001_wfi01 files.
-# It also needs a hacked r00001..._0001_wfi01 file, with the time changed.
-# this makes the hacked version.
-echo "Creating regtest files for CRDS tests..."
-basename="r0000101001001001001_0001_wfi01_f158"
-python -c "
-import asdf
-from roman_datamodels import stnode
-from astropy.time import Time
-basename = '$basename'
-f = asdf.open(f'{basename}_uncal.asdf')
-f['roman']['meta']['exposure']['start_time'] = Time('2020-01-01T00:00:00', format='isot')
-f['roman']['meta']['filename'] = stnode.Filename(f'{basename}_changetime_uncal.asdf')
-f.write_to(f'{basename}_changetime_uncal.asdf')"
-strun roman_elp ${basename}_changetime_uncal.asdf --steps.assign_wcs.save_results True --steps.flatfield.save_results True
-# copy input and truth files into location
-cp ${basename}_changetime_assignwcs.asdf $outdir/roman-pipeline/dev/WFI/image
-cp ${basename}_changetime_flat.asdf $outdir/roman-pipeline/dev/truth/WFI/image
-
-
 # need to make a special ALL_SATURATED file for the all saturated test.
 echo "Creating regtest files for all saturated tests..."
 basename="r0000101001001001001_0001_wfi01_f158"
