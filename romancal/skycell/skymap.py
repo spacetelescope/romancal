@@ -216,7 +216,7 @@ class SkyCell:
 
     @cached_property
     def projection_region(self) -> "ProjectionRegion":
-        """projection region containing this sky cell"""
+        """Projection region containing this sky cell."""
         if self.index is None:
             raise ValueError("no index provided")
         return ProjectionRegion.from_skycell_index(self.index)
@@ -267,7 +267,7 @@ class SkyCell:
 
 
 class ProjectionRegion:
-    """projection region in the sky map"""
+    """Projection region in the sky map."""
 
     _index: int | None
     _data: np.void
