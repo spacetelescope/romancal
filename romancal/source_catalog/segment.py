@@ -31,8 +31,8 @@ class SegmentCatalog:
         measurements. The image is assumed to be background subtracted.
 
     pixel_area : `~astropy.units.Quantity`
-        The pixel area in steradians. This is used to convert the
-        segment area to square arcseconds.
+        The pixel area in steradians. This is used to convert various
+        measuments from pixels to arcseconds.
 
     wcs_angle : `~astropy.units.Quantity`
         The angle (as a Quantity in degrees) measured counterclockwise
@@ -139,6 +139,14 @@ class SegmentCatalog:
 
         return abmag, abmag_err
 
+    @lazyproperty
+    def pixel_scale(self):
+        """
+        The pixel scale in arcseconds.
+        """
+        # assumes square pixels
+        return np.sqrt(self.pixel_area).to(u.arcsec)
+
     def calc_segment_properties(self):
         """
         Calculate the segment-based properties provided by
@@ -229,10 +237,20 @@ class SegmentCatalog:
                 "y_centroid_win",
             ):
                 value *= u.pix
+
+            # pix**2 -> arcsec**2
             if new_name == "segment_area":
                 value = (value.value * self.pixel_area.to(u.arcsec**2)).astype(
                     np.float32
                 )
+
+            # pix -> arcsec
+            if new_name in ("semimajor", "semiminor", "fwhm", "kron_radius"):
+                value = value.value * self.pixel_scale
+
+            # 1 / pix**2 -> 1 / arcsec**-2
+            if new_name in ("cxx", "cxy", "cyy"):
+                value = value.value / self.pixel_area.to(u.arcsec**2)
 
             # remove dimensionless units
             if new_name == "ellipticity":
@@ -314,6 +332,7 @@ class SegmentCatalog:
     @lazyproperty
     def fluxfrac_radius_50(self):
         """
-        The radius (in pixels) at which the flux fraction is 50%.
+        The radius (in arcsec) at which the flux fraction is 50%.
         """
-        return self.source_cat.fluxfrac_radius(0.5).astype(np.float32)
+        value = self.source_cat.fluxfrac_radius(0.5).astype(np.float32)
+        return value.value * self.pixel_scale
