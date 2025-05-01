@@ -129,7 +129,7 @@ class SkyCell:
             association dictionary or a path to an association file to load
         """
         if isinstance(asn, Path):
-            asn = ModelLibrary._load_asn(asn).asn
+            asn = ModelLibrary._load_asn(asn)
 
         skycell_name = None
         if "skycell_wcs_info" in asn and asn["skycell_wcs_info"] != "none":
@@ -195,10 +195,10 @@ class SkyCell:
         """corners in right ascension and declination in the order given by the sky map"""
         return np.array(
             (
-                (self.data["ra_corn1"].item(), self.data["dec_corn1"].item()),
-                (self.data["ra_corn2"].item(), self.data["dec_corn2"].item()),
-                (self.data["ra_corn3"].item(), self.data["dec_corn3"].item()),
-                (self.data["ra_corn4"].item(), self.data["dec_corn4"].item()),
+                self.data[["ra_corn1", "dec_corn1"]].item(),
+                self.data[["ra_corn2", "dec_corn2"]].item(),
+                self.data[["ra_corn3", "dec_corn3"]].item(),
+                self.data[["ra_corn4", "dec_corn4"]].item(),
             )
         )
 
@@ -353,12 +353,12 @@ class ProjectionRegion:
     @property
     def radec_tangent(self) -> tuple[float, float]:
         """projection origin (tangent point with the celestial sphere) in right ascension and declination"""
-        return self.data[["ra_tangent", "dec_tangent"]]
+        return self.data[["ra_tangent", "dec_tangent"]].item()
 
     @property
     def radec_bounds(self) -> tuple[float, float, float, float]:
         """bounds in right ascension and declination in order [xmin, ymin, xmax, ymax]"""
-        return self.data[["ra_min", "dec_min", "ra_max", "dec_max"]]
+        return self.data[["ra_min", "dec_min", "ra_max", "dec_max"]].item()
 
     @property
     def orientation(self) -> float:
@@ -367,12 +367,12 @@ class ProjectionRegion:
     @property
     def xy_tangent(self) -> tuple[float, float]:
         """projection origin (tangent point with the celestial sphere) in pixel coordinates"""
-        return self.data[["x_tangent", "y_tangent"]]
+        return self.data[["x_tangent", "y_tangent"]].item()
 
     @property
     def pixel_shape(self) -> tuple[int, int]:
         """number of pixels across"""
-        return self.data[["nx", "ny"]]
+        return self.data[["nx", "ny"]].item()
 
     @cached_property
     def skycell_indices(self) -> NDArray[int]:
@@ -413,10 +413,10 @@ class ProjectionRegion:
         """corners in right ascension and declination in clockwise order"""
         return np.array(
             (
-                (self.data["ra_min"].item(), self.data["dec_min"].item()),
-                (self.data["ra_max"].item(), self.data["dec_min"].item()),
-                (self.data["ra_max"].item(), self.data["dec_max"].item()),
-                (self.data["ra_min"].item(), self.data["dec_max"].item()),
+                self.data[["ra_min", "dec_min"]].item(),
+                self.data[["ra_max", "dec_min"]].item(),
+                self.data[["ra_max", "dec_max"]].item(),
+                self.data[["ra_min", "dec_max"]].item(),
             )
         )
 

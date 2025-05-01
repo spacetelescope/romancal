@@ -3,6 +3,7 @@ from pathlib import Path
 import romancal.skycell.skymap as sc
 
 LAST_PROJREGION_INDEX = 2
+DATA_DIRECTORY = Path(__file__).parent / "data"
 
 if __name__ == "__main__":
     skymap_subset = sc.SKYMAP.data.copy()
@@ -15,4 +16,4 @@ if __name__ == "__main__":
         : skymap_subset["roman"]["projection_regions"][-1]["skycell_end"] + 1
     ].copy()
 
-    skymap_subset.write_to(Path(__file__).parent / "skymap_subset.asdf")
+    skymap_subset.write_to(DATA_DIRECTORY / "skymap_subset.asdf")

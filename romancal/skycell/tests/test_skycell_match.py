@@ -46,6 +46,7 @@ TEST_POINTS = [
     (310.53503934, 88.56749324),
 ]
 EPSILON = 0.0011  # epsilon offset in degrees
+DATA_DIRECTORY = Path(__file__).parent / "data"
 
 
 @pytest.fixture(autouse=True)
@@ -55,7 +56,7 @@ def override_skymap(monkeypatch):
     skymap path to a smaller subset to allow these tests
     to run without access to the full skymap from CRDS.
     """
-    monkeypatch.setattr(sc.SKYMAP, "path", Path(__file__).parent / "skymap_subset.asdf")
+    monkeypatch.setattr(sc.SKYMAP, "path", DATA_DIRECTORY / "skymap_subset.asdf")
     yield
 
 
