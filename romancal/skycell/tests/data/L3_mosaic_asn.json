@@ -1,0 +1,32 @@
+{
+    "asn_type": "None",
+    "asn_rule": "DMS_ELPP_Base",
+    "version_id": null,
+    "code_version": "0.18.1.dev102+g74d0e38d",
+    "target": "225p90x49y67",
+    "degraded_status": "No known degraded exposures in association.",
+    "program": "noprogram",
+    "constraints": "No constraints",
+    "asn_id": "a3001",
+    "asn_pool": "none",
+    "skycell_wcs_info": "none",
+    "products": [
+        {
+            "name": "r00001_p_v01001001001001_r274dp63x31y81_f158",
+            "members": [
+                {
+                    "expname": "r0000101001001001001_0001_wfi01_f158_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "r0000101001001001001_0002_wfi01_f158_cal.asdf",
+                    "exptype": "science"
+                },
+                {
+                    "expname": "r0000101001001001001_0003_wfi01_f158_cal.asdf",
+                    "exptype": "science"
+                }
+            ]
+        }
+    ]
+}

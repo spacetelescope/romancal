@@ -8,6 +8,8 @@ from numpy.testing import assert_allclose
 
 import romancal.skycell.skymap as sc
 
+DATA_DIRECTORY = Path(__file__).parent / "data"
+
 
 def assert_allclose_lonlat(actual: np.ndarray, desired: np.ndarray, rtol=1e-7, atol=0):
     assert_allclose(
@@ -22,11 +24,11 @@ def override_skymap(monkeypatch):
     skymap path to a smaller subset to allow these tests
     to run without access to the full skymap from CRDS.
     """
-    monkeypatch.setattr(sc.SKYMAP, "path", Path(__file__).parent / "skymap_subset.asdf")
+    monkeypatch.setattr(sc.SKYMAP, "path", DATA_DIRECTORY / "skymap_subset.asdf")
     yield
 
 
-def test_skycell_init():
+def test_skycell_from_name():
     skycell = sc.SkyCell.from_name("225p90x30y51")
 
     assert skycell == sc.SkyCell(107)
@@ -74,6 +76,17 @@ def test_skycell_init():
 
     with pytest.raises(ValueError):
         sc.SkyCell.from_name("notaskycellname")
+
+
+def test_skycell_from_asn():
+    skycell = sc.SkyCell.from_asn(DATA_DIRECTORY / "L3_mosaic_asn.json")
+    assert skycell.name == "225p90x49y67"
+
+    with pytest.raises(ValueError):
+        sc.SkyCell.from_asn(DATA_DIRECTORY / "L3_regtest_asn.json")
+
+    with pytest.raises(ValueError):
+        sc.SkyCell.from_asn(DATA_DIRECTORY / "L3_skycell_mbcat_asn.json")
 
 
 def test_skycell_from_projregion():
