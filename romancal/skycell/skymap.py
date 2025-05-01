@@ -161,10 +161,10 @@ class SkyCell:
 
         NOTE
         ----
-        the name of a sky cell center comrpises the rounded coordinates of its containing projection region in right ascension and declination,
-        and the XY location of the sky cell within its projection region in units of ordinal sky cells
+        the name of a sky cell center comprises the rounded center coordinates of its containing projection region in right ascension and declination,
+        and the XY location of the sky cell within its projection region in units of ordinal sky cells from that center
         """
-        return self.data[0]
+        return self.data["name"].item()
 
     @property
     def radec_center(self) -> tuple[float, float]:
