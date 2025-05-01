@@ -1,8 +1,8 @@
 import pytest
 import roman_datamodels as rdm
 
+from romancal.lib.wcsinfo_to_wcs import wcsinfo_to_wcs
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
-from romancal.skycell.skymap import wcsinfo_to_wcs
 
 from . import util
 from .regtestdata import compare_asdf
