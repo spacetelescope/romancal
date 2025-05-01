@@ -119,9 +119,13 @@ class SkyCell:
         """
         retrieve a sky cell from WCS info or a target specified in an association
 
+        Attempts to find a sky cell name from the following in order:
+            - `skycell_wcs_info.name`
+            - `target`
+
         Parameters
         ----------
-        asn : asdf.AsdfTree | Path
+        asn : dict | Path
             association dictionary or a path to an association file to load
         """
         if isinstance(asn, Path):
