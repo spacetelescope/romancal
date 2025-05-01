@@ -292,14 +292,14 @@ class ProjectionRegion:
     @classmethod
     def from_data(cls, data: np.void) -> "ProjectionRegion":
         """
-        build an index-less projection region instance from a data array
+        build a projection region instance from a data array
 
         Parameters
         ----------
         data : numpy.void
             array with projection region parameters (see schema)
         """
-        instance = cls(index=None)
+        instance = cls(index=data["index"])
         instance._data = data
         return instance
 
