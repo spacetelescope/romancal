@@ -130,17 +130,21 @@ class SkyCell:
         """
         if isinstance(asn, Path):
             asn = ModelLibrary._load_asn(asn).asn
+
+        skycell_name = None
         if "skycell_wcs_info" in asn and asn["skycell_wcs_info"] != "none":
             skycell_name = asn["skycell_wcs_info"]["name"]
         elif "target" in asn:
-            # check to see if the product name contains a skycell name & if true get the skycell record
             skycell_name = asn["target"]
-        else:
-            raise ValueError(
-                "cannot extract skycell information from modellibrary association with neither WCS nor target info"
-            )
 
-        return SkyCell.from_name(skycell_name)
+        message = "cannot extract skycell information from association"
+        if skycell_name is None:
+            raise ValueError(message)
+        else:
+            try:
+                return SkyCell.from_name(skycell_name)
+            except ValueError as error:
+                raise ValueError(message) from error
 
     @property
     def index(self) -> int | None:
