@@ -128,8 +128,9 @@ class SegmentCatalog:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
 
-            abmag = flux.to(u.ABmag).value
+            abmag = flux.to(u.ABmag)
             abmag_err = 2.5 * np.log10(1.0 + (flux_err / flux))
+            abmag_err = abmag_err.value * u.ABmag
 
             # handle negative fluxes
             idx = flux.value < 0
@@ -301,14 +302,14 @@ class SegmentCatalog:
         """
         The Kron magnitude in AB magnitudes.
         """
-        return self._kron_abmag[0] * u.mag
+        return self._kron_abmag[0]
 
     @lazyproperty
     def kron_abmag_err(self):
         """
         The Kron magnitude error in AB magnitudes.
         """
-        return self._kron_abmag[1] * u.mag
+        return self._kron_abmag[1]
 
     @lazyproperty
     def fluxfrac_radius_50(self):
