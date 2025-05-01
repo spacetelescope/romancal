@@ -492,11 +492,11 @@ def wcsinfo_to_wcs(
     wcs : WCS
         The WCS object created.
     """
-    pixelshift = models.Shift(-wcsinfo["x0_projection"], name="crpix1") & models.Shift(
-        -wcsinfo["y0_projection"], name="crpix2"
+    pixelshift = models.Shift(-wcsinfo["x0_projection"], name="offset") & models.Shift(
+        -wcsinfo["y0_projection"], name="offset"
     )
-    pixelscale = models.Scale(wcsinfo["pixel_scale"], name="cdelt1") & models.Scale(
-        wcsinfo["pixel_scale"], name="cdelt2"
+    pixelscale = models.Scale(wcsinfo["pixel_scale"], name="scale") & models.Scale(
+        wcsinfo["pixel_scale"], name="scale"
     )
     tangent_projection = models.Pix2Sky_TAN()
     celestial_rotation = models.RotateNative2Celestial(
@@ -515,7 +515,7 @@ def wcsinfo_to_wcs(
             ),
             (2, 2),
         )
-    rotation = models.AffineTransformation2D(matrix, name="pc_rotation_matrix")
+    rotation = models.AffineTransformation2D(matrix, name="rotation")
     det2sky = (
         pixelshift | rotation | pixelscale | tangent_projection | celestial_rotation
     )
