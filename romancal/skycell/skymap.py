@@ -261,7 +261,7 @@ class SkyCell:
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, SkyCell):
-            return NotImplemented
+            return False
 
         return self.data == other.data
 
@@ -459,7 +459,7 @@ class ProjectionRegion:
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, ProjectionRegion):
-            return NotImplemented
+            return False
 
         return self.data == other.data
 
