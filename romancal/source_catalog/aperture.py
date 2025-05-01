@@ -90,8 +90,9 @@ class ApertureCatalog:
                 bkg_std.append(std)
 
             nvalues = np.array(nvalues)
-            bkg_median = u.Quantity(bkg_median) / u.pix
-            bkg_std = u.Quantity(bkg_std) / u.pix
+            pixel_area = self.pixel_scale**2
+            bkg_median = u.Quantity(bkg_median) / pixel_area
+            bkg_std = u.Quantity(bkg_std) / pixel_area
 
             # standard error of the median
             bkg_median_err = np.sqrt(np.pi / (2.0 * nvalues)) * bkg_std
