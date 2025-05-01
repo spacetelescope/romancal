@@ -95,10 +95,9 @@ f = asdf.open(f'{basename}_uncal.asdf')
 f['roman']['meta']['exposure']['start_time'] = Time('2020-01-01T00:00:00', format='isot')
 f['roman']['meta']['filename'] = stnode.Filename(f'{basename}_changetime_uncal.asdf')
 f.write_to(f'{basename}_changetime_uncal.asdf')"
-strun roman_elp ${basename}_changetime_uncal.asdf --steps.assign_wcs.save_results True --steps.flatfield.save_results True
+strun roman_elp ${basename}_changetime_uncal.asdf --steps.assign_wcs.save_results True
 # copy input and truth files into location
 cp ${basename}_changetime_assignwcs.asdf $outdir/roman-pipeline/dev/WFI/image
-cp ${basename}_changetime_flat.asdf $outdir/roman-pipeline/dev/truth/WFI/image
 
 
 # need to make a special ALL_SATURATED file for the all saturated test.
