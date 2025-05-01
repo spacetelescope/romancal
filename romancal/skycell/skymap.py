@@ -173,16 +173,16 @@ class SkyCell:
     @property
     def radec_center(self) -> tuple[float, float]:
         """center point in right ascension and declination"""
-        return self.data["ra_center"], self.data["dec_center"]
+        return self.data["ra_center"].item(), self.data["dec_center"].item()
 
     @property
     def orientation(self) -> float:
-        return self.data["orientat"]
+        return self.data["orientat"].item()
 
     @property
     def xy_tangent(self) -> tuple[float, float]:
         """center point in pixel coordinates"""
-        return self.data["x_tangent"], self.data["y_tangent"]
+        return self.data["x_tangent"].item(), self.data["y_tangent"].item()
 
     @property
     def radec_corners(
@@ -191,10 +191,10 @@ class SkyCell:
         """corners in right ascension and declination in the order given by the sky map"""
         return np.array(
             (
-                (self.data["ra_corn1"], self.data["dec_corn1"]),
-                (self.data["ra_corn2"], self.data["dec_corn2"]),
-                (self.data["ra_corn3"], self.data["dec_corn3"]),
-                (self.data["ra_corn4"], self.data["dec_corn4"]),
+                (self.data["ra_corn1"].item(), self.data["dec_corn1"].item()),
+                (self.data["ra_corn2"].item(), self.data["dec_corn2"].item()),
+                (self.data["ra_corn3"].item(), self.data["dec_corn3"].item()),
+                (self.data["ra_corn4"].item(), self.data["dec_corn4"].item()),
             )
         )
 
@@ -242,12 +242,12 @@ class SkyCell:
         return {
             "name": self.name,
             "pixel_scale": self.pixel_scale,
-            "ra_projection_center": self.projection_region.data["ra_tangent"],
-            "dec_projection_center": self.projection_region.data["dec_tangent"],
-            "x0_projection": self.data["x_tangent"],
-            "y0_projection": self.data["y_tangent"],
-            "ra_center": self.data["ra_center"],
-            "dec_center": self.data["dec_center"],
+            "ra_projection_center": self.projection_region.radec_tangent[0],
+            "dec_projection_center": self.projection_region.radec_tangent[1],
+            "x0_projection": self.xy_tangent[0],
+            "y0_projection": self.xy_tangent[1],
+            "ra_center": self.radec_center[0],
+            "dec_center": self.radec_center[1],
             "nx": self.pixel_shape[0],
             "ny": self.pixel_shape[1],
             "orientat": self.orientation,
@@ -358,7 +358,7 @@ class ProjectionRegion:
 
     @property
     def orientation(self) -> float:
-        return self.data["orientat"]
+        return self.data["orientat"].item()
 
     @property
     def xy_tangent(self) -> tuple[float, float]:
@@ -409,10 +409,10 @@ class ProjectionRegion:
         """corners in right ascension and declination in clockwise order"""
         return np.array(
             (
-                (self.data["ra_min"], self.data["dec_min"]),
-                (self.data["ra_max"], self.data["dec_min"]),
-                (self.data["ra_max"], self.data["dec_max"]),
-                (self.data["ra_min"], self.data["dec_max"]),
+                (self.data["ra_min"].item(), self.data["dec_min"].item()),
+                (self.data["ra_max"].item(), self.data["dec_min"].item()),
+                (self.data["ra_max"].item(), self.data["dec_max"].item()),
+                (self.data["ra_min"].item(), self.data["dec_max"].item()),
             )
         )
 
