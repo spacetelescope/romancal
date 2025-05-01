@@ -149,7 +149,11 @@ class SkyCell:
 
     @property
     def data(self) -> np.void:
-        """properties from the sky map"""
+        """
+        Sky cell data.
+
+        ("name", "ra_center", "dec_center", "orientat", "x_tangent", "y_tangent", "ra_corn1", "dec_corn1", "ra_corn2", "dec_corn2", "ra_corn3", "dec_corn3", "ra_corn4", "dec_corn4")
+        """
         if self._data is None and self.index is not None:
             self._data = SKYMAP.skycells[self.index]
         return self._data
@@ -335,7 +339,11 @@ class ProjectionRegion:
 
     @property
     def data(self) -> np.void:
-        """properties from the sky map"""
+        """
+        Projection region data.
+
+        ("index", "ra_tangent", "dec_tangent", "ra_min", "ra_max", "dec_min", "dec_max", "orientat", "x_tangent", "y_tangent", "nx", "ny", "skycell_start", "skycell_end")
+        """
         return self._data
 
     @property
