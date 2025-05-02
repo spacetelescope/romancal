@@ -115,7 +115,7 @@ class SkyCell:
         )
 
     @classmethod
-    def from_asn(cls, asn: dict | Path) -> "SkyCell":
+    def from_asn(cls, asn: dict | str) -> "SkyCell":
         """
         retrieve a sky cell from WCS info or a target specified in an association
 
@@ -125,26 +125,24 @@ class SkyCell:
 
         Parameters
         ----------
-        asn : dict | Path
+        asn : dict | str
             association dictionary or a path to an association file to load
         """
-        if isinstance(asn, Path):
+
+        if isinstance(asn, str | os.PathLike):
             asn = ModelLibrary._load_asn(asn)
 
         skycell_name = None
-        if "skycell_wcs_info" in asn and asn["skycell_wcs_info"] != "none":
+        if "skycell_wcs_info" in asn and isinstance(asn["skycell_wcs_info"], dict):
             skycell_name = asn["skycell_wcs_info"]["name"]
-        elif "target" in asn:
+        elif "target" in asn and asn["target"].lower() != "none":
             skycell_name = asn["target"]
-
-        message = "cannot extract skycell information from association"
-        if skycell_name is None:
-            raise ValueError(message)
         else:
-            try:
-                return SkyCell.from_name(skycell_name)
-            except ValueError as error:
-                raise ValueError(message) from error
+            raise ValueError(
+                "cannot extract skycell information from an association without `skycell_wcs_info` or `target`"
+            )
+
+        return SkyCell.from_name(skycell_name)
 
     @property
     def index(self) -> int | None:
