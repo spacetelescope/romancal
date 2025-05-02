@@ -31,7 +31,7 @@ normal::
     import logging
 
     # ...
-    log = logging.getLogger()
+    log = logging.getLogger(__name__)
 
     # If the log on its own won’t emit, neither will it in the
     # context of an stpipe step, so make sure the level is set to
