@@ -104,6 +104,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 zip-safe = false
+include-package-data = false
 
 [tool.setuptools.packages.find]
 namespaces = false
