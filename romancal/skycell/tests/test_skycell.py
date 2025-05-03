@@ -219,11 +219,6 @@ def test_skycell_wcsinfo(name):
     wcsinfo = skycell.wcs_info
 
     assert_allclose_lonlat(
-        wcs(wcsinfo["x0_projection"], wcsinfo["y0_projection"]),
-        (wcsinfo["ra_projection_center"], wcsinfo["dec_projection_center"]),
-        rtol=1e-5,
-    )
-    assert_allclose_lonlat(
         wcs(
             (wcsinfo["nx"] / 2.0) + 0.5,
             (wcsinfo["ny"] / 2.0) + 0.5,
