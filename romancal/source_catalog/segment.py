@@ -222,13 +222,6 @@ class SegmentCatalog:
             new_name = name_map.get(name, name)
             value = getattr(segm_cat, name)
 
-            # change the photutils dtypes
-            if new_name not in ("sky_centroid", "sky_centroid_win"):
-                if np.issubdtype(value.dtype, np.integer):
-                    value = value.astype(np.int32)
-                elif np.issubdtype(value.dtype, np.floating):
-                    value = value.astype(np.float32)
-
             # handle any unit conversions
             if new_name in (
                 "x_centroid",
@@ -240,9 +233,7 @@ class SegmentCatalog:
 
             # pix**2 -> arcsec**2
             if new_name == "segment_area":
-                value = (value.value * self.pixel_area.to(u.arcsec**2)).astype(
-                    np.float32
-                )
+                value = value.value * self.pixel_area.to(u.arcsec**2)
 
             # pix -> arcsec
             if new_name in ("semimajor", "semiminor", "fwhm", "kron_radius"):
@@ -255,6 +246,13 @@ class SegmentCatalog:
             # remove dimensionless units
             if new_name == "ellipticity":
                 value = value.value
+
+            # change the photutils dtypes
+            if new_name not in ("sky_centroid", "sky_centroid_win"):
+                if np.issubdtype(value.dtype, np.integer):
+                    value = value.astype(np.int32)
+                elif np.issubdtype(value.dtype, np.floating):
+                    value = value.astype(np.float32)
 
             # split the sky_centroid values into separate RA and Dec
             # values
@@ -334,5 +332,5 @@ class SegmentCatalog:
         """
         The radius (in arcsec) at which the flux fraction is 50%.
         """
-        value = self.source_cat.fluxfrac_radius(0.5).astype(np.float32)
-        return value.value * self.pixel_scale
+        value = self.source_cat.fluxfrac_radius(0.5)
+        return (value.value * self.pixel_scale).astype(np.float32)
