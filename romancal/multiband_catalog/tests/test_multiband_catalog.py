@@ -97,8 +97,12 @@ def test_multiband_catalog(
         assert np.max(cat["y_centroid"]) < 100.0
 
         for colname in cat.colnames:
-            if "flux" in colname and "fluxfrac" not in colname:
-                assert cat[colname].unit == u.nJy
+            if (
+                "flux" in colname
+                and "fluxfrac" not in colname
+                and "aper_bkg_flux" not in colname
+            ):
+                assert cat[colname].unit == "nJy"
                 assert "f158" in colname or "f184" in colname
             if colname.endswith("_flux"):
                 assert f"{colname}_err" in cat.colnames

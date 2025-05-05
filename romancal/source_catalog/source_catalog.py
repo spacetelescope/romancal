@@ -314,6 +314,29 @@ class RomanSourceCatalog:
             setattr(self, name, getattr(nn_cat, name))
 
     @lazyproperty
+    def flagged_spatial_index(self):
+        """
+        The spatial index bit flag encoding the projection, skycell,
+        and (x, y) pixel coordinate of the source and whether the
+        object is inside the skycell core region.
+        """
+        return np.zeros(self.n_sources, dtype=np.int64)
+
+    @lazyproperty
+    def ra(self):
+        """
+        The best estimate of the right ascension (ICRS).
+        """
+        return np.zeros(self.n_sources, dtype=np.float64) * u.deg
+
+    @lazyproperty
+    def dec(self):
+        """
+        The best estimate of the declination (ICRS).
+        """
+        return np.zeros(self.n_sources, dtype=np.float64) * u.deg
+
+    @lazyproperty
     def is_extended(self):
         """
         Boolean indicating whether the source is extended.
@@ -356,6 +379,16 @@ class RomanSourceCatalog:
             flags[xymask] = mask[xyidx[:, 1], xyidx[:, 0]].astype(np.int32)
 
         return flags
+
+    @lazyproperty
+    def image_flags(self):
+        """
+        Data quality bit flag.
+
+        Non-zero if a pixel within the segment was flagged in one of the
+        input images.
+        """
+        return np.zeros(self.n_sources, dtype=np.int32)
 
     def update_metadata(self):
         """
@@ -407,6 +440,11 @@ class RomanSourceCatalog:
         """
         col = {}
         col["label"] = "Label of the source segment in the segmentation image"
+        col["flagged_spatial_index"] = (
+            "Bit flag encoding the overlap flag, projection, skycell, and "
+            "pixel coordinates of the source"
+        )
+
         col["x_centroid"] = (
             "Column coordinate of the source centroid in the detection "
             "image from image moments (0 indexed)"
@@ -423,14 +461,17 @@ class RomanSourceCatalog:
             "Row coordinate of the windowed source centroid in the "
             "detection image from image moments (0 indexed)"
         )
+
+        col["ra"] = "Best estimate of the right ascension (ICRS)"
+        col["dec"] = "Best estimate of the declination (ICRS)"
         col["ra_centroid"] = "Right ascension (ICRS) of the source centroid"
         col["dec_centroid"] = "Declination (ICRS) of the source centroid"
         col["ra_centroid_win"] = (
             "Right ascension (ICRS) of the windowed source centroid"
         )
         col["dec_centroid_win"] = "Declination (ICRS) of the windowed source centroid"
-        col["ra_psf"] = "Right ascension (ICRS) of the fitted-PSF position"
-        col["dec_psf"] = "Declination (ICRS) of the fitted_PSF position"
+        col["ra_psf"] = "Right ascension (ICRS) of the PSF-fitted position"
+        col["dec_psf"] = "Declination (ICRS) of the PSF-fitted position"
 
         col["bbox_xmin"] = (
             "Column index of the left edge of the source bounding box (0 indexed)"
@@ -445,10 +486,10 @@ class RomanSourceCatalog:
             "Row index of the top edge of the source bounding box (0 indexed)"
         )
         col["semimajor"] = (
-            "1-sigma standard deviation along the semimajor axis of the 2D Gaussian function that has the same second-order central moments as the source"
+            "Length of the source semimajor axis computed from image moments"
         )
         col["semiminor"] = (
-            "1-sigma standard deviation along the semiminor axis of the 2D Gaussian function that has the same second-order central moments as the source"
+            "Length of the source semiminor axis computed from image moments"
         )
         col["fwhm"] = (
             "Circularized full width at half maximum (FWHM) "
@@ -457,11 +498,10 @@ class RomanSourceCatalog:
         )
         col["ellipticity"] = "Source ellipticity as 1 - (semimajor / semiminor)"
         col["orientation_pix"] = (
-            "The angle measured counter-clockwise from the positive X axis to the major axis computed from image moments"
+            "Angle measured counter-clockwise from the positive X axis to the source major axis computed from image moments"
         )
         col["orientation_sky"] = (
-            "The position angle from North of the major axis computed from "
-            "image moments"
+            "Position angle from North of the source major axis computed from image moments"
         )
 
         col["cxx"] = (
@@ -476,29 +516,30 @@ class RomanSourceCatalog:
 
         col["segment_flux"] = "Isophotal flux"
         col["segment_area"] = "Area of the source segment"
-        col["kron_radius"] = (
-            "Unscaled first-moment Kron radius defined as r = Sum_i "
-            "(r_i * I_i) / Sum_i (I_i), with r_i as an elliptical radius"
-        )
+        col["kron_radius"] = "Unscaled first-moment Kron radius"
         col["fluxfrac_radius_50"] = (
-            "The circular radius that encloses 50% of the source Kron flux."
+            "Radius of a circle centered on the source centroid that encloses 50% of the Kron flux"
         )
         col["kron_flux"] = "Flux within the elliptical Kron aperture"
         col["kron_abmag"] = "AB magnitude within the elliptical Kron aperture"
-        col["aper_bkg_flux"] = "The local background estimate for aperture photometry"
+        col["aper_bkg_flux"] = "Local background estimated within a circular annulus"
 
-        col["x_psf"] = "Column position of the source from PSF fitting (0 indexed)"
-        col["y_psf"] = "Row position of the source from PSF fitting (0 indexed)"
+        col["x_psf"] = "Column coordinate of the source from PSF fitting (0 indexed)"
+        col["y_psf"] = "Row coordinate of the source from PSF fitting (0 indexed)"
         col["psf_flux"] = "Total PSF flux"
         col["psf_gof"] = "PSF goodness of fit metric"
-        col["psf_flags"] = "PSF fitting bit flags"
+        col["psf_flags"] = "PSF fitting bit flags (0 = good)"
 
-        col["warning_flags"] = "Warning bit flags"
-        col["is_extended"] = "Flag indicating whether the source is extended"
-        col["sharpness"] = "The DAOFind sharpness statistic"
-        col["roundness1"] = "The DAOFind roundness1 statistic"
-        col["nn_label"] = "The label number of the nearest neighbor in this skycell"
-        col["nn_dist"] = "The distance to the nearest neighbor in this skycell"
+        col["warning_flags"] = "Warning bit flags (0 = good)"
+        col["image_flags"] = "Image quality bit flags (0 = good)"
+
+        col["is_extended"] = (
+            "Flag indicating that the source appears to be more extended than a point source"
+        )
+        col["sharpness"] = "Photutils DAOStarFinder sharpness statistic"
+        col["roundness1"] = "Photutils DAOStarFinder roundness1 statistic"
+        col["nn_label"] = "Segment label of the nearest neighbor in this skycell"
+        col["nn_dist"] = "Distance to the nearest neighbor in this skycell"
 
         # add the aperture flux column descriptions
         if self.aperture_cat is not None:
@@ -570,24 +611,39 @@ class RomanSourceCatalog:
         """
         base_colnames = [
             "label",
+            "flagged_spatial_index",
             "x_centroid",
             "y_centroid",
+            "x_centroid_err",
+            "y_centroid_err",
         ]
         xywin_colnames = [
             "x_centroid_win",
             "y_centroid_win",
+            "x_centroid_win_err",
+            "y_centroid_win_err",
+        ]
+        skybest_colnames = [
+            "ra",
+            "dec",
         ]
         sky_colnames = [
             "ra_centroid",
             "dec_centroid",
+            "ra_centroid_err",
+            "dec_centroid_err",
         ]
         skywin_colnames = [
             "ra_centroid_win",
             "dec_centroid_win",
+            "ra_centroid_win_err",
+            "dec_centroid_win_err",
         ]
         skypsf_colnames = [
             "ra_psf",
             "dec_psf",
+            "ra_psf_err",
+            "dec_psf_err",
         ]
         segm_colnames = [
             "bbox_xmin",
@@ -624,9 +680,13 @@ class RomanSourceCatalog:
             "y_psf",
             "y_psf_err",
         ]
+        flag_columns = [
+            "warning_flags",
+            "image_flags",
+        ]
         psf_flags_colnames = [
-            "psf_gof",
             "psf_flags",
+            "psf_gof",
         ]
 
         det_colnames = []
@@ -651,6 +711,7 @@ class RomanSourceCatalog:
             colnames.extend(xywin_colnames)
             if self.fit_psf:
                 colnames.extend(xypsf_colnames)
+            colnames.extend(skybest_colnames)
             colnames.extend(sky_colnames)
             colnames.extend(skywin_colnames)
             if self.fit_psf:
@@ -658,13 +719,15 @@ class RomanSourceCatalog:
             colnames.extend(det_colnames)
             colnames.extend(othershape_colnames)
             colnames.extend(self.flux_colnames)
-            colnames.append("warning_flags")
+
+            colnames.extend(flag_columns)
             if self.fit_psf:
                 colnames.extend(psf_flags_colnames)
 
         elif self.cat_type == "forced_det":
             colnames = ["label"]  # needed to join the forced catalogs
             colnames.extend(base_colnames)
+            colnames.extend(skybest_colnames)
             colnames.extend(sky_colnames)
             colnames.extend(shape_colnames)
             colnames.extend(nn_colnames)
@@ -673,10 +736,11 @@ class RomanSourceCatalog:
             colnames = []
             colnames.extend(base_colnames)
             colnames.extend(xywin_colnames)
+            colnames.extend(skybest_colnames)
             colnames.extend(sky_colnames)
             colnames.extend(skywin_colnames)
             colnames.extend(det_colnames)
-            colnames.append("warning_flags")
+            colnames.extend(flag_columns)
 
         elif self.cat_type == "dr_band":
             colnames = band_colnames.copy()
