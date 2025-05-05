@@ -266,8 +266,8 @@ class SkyCell:
         return wcsinfo_to_wcs(
             self.wcs_info,
             bounding_box=(
-                (-0.5, -0.5 + self.pixel_shape[0]),
-                (-0.5, -0.5 + self.pixel_shape[1]),
+                (0.0, self.pixel_shape[0] + 1.0),
+                (0.0, self.pixel_shape[1] + 1.0),
             ),
         )
 
