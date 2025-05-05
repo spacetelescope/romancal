@@ -115,130 +115,188 @@ All pixel coordinates are 0-indexed, following Python's 0-based
 indexing. This means pixel coordinate 0 corresponds to the center of the
 first pixel.
 
-
-+------------------------+----------------------------------------------------+
-| Column                 | Description                                        |
-+========================+====================================================+
-| label                  | Unique source identification label number          |
-+------------------------+----------------------------------------------------+
-| xcentroid              | X pixel value of the source centroid (0 indexed)   |
-+------------------------+----------------------------------------------------+
-| ycentroid              | Y pixel value of the source centroid (0 indexed)   |
-+------------------------+----------------------------------------------------+
-| ra/dec_centroid        | ra/dec coordinate of the source centroid           |
-+------------------------+----------------------------------------------------+
-| aper_bkg_flux          | The local background value calculated as the       |
-|                        | sigma-clipped median value in the background       |
-|                        | annulus aperture                                   |
-+------------------------+----------------------------------------------------+
-| aper_bkg_flux_err      | The standard error of the sigma-clipped median     |
-|                        | background value                                   |
-+------------------------+----------------------------------------------------+
-| aper30_flux            | Flux within the 30% encircled energy circular      |
-|                        | aperture                                           |
-+------------------------+----------------------------------------------------+
-| aper30_flux_err        | Flux error within the 30% encircled energy         |
-|                        | circular aperture                                  |
-+------------------------+----------------------------------------------------+
-| aper50_flux            | Flux within the 50% encircled energy circular      |
-|                        | aperture                                           |
-+------------------------+----------------------------------------------------+
-| aper50_flux_err        | Flux error within the 50% encircled energy         |
-|                        | circular aperture                                  |
-+------------------------+----------------------------------------------------+
-| aper70_flux            | Flux within the 70% encircled energy circular      |
-|                        | aperture                                           |
-+------------------------+----------------------------------------------------+
-| aper70_flux_err        | Flux error within the 70% encircled energy         |
-|                        | circular aperture                                  |
-+------------------------+----------------------------------------------------+
-| aper_total_flux        | Total aperture-corrected flux based on the 70%     |
-|                        | encircled energy circular aperture; should be used |
-|                        | only for unresolved sources                        |
-+------------------------+----------------------------------------------------+
-| aper_total_flux_err    | Total aperture-corrected flux error based on the   |
-|                        | 70% encircled energy circular aperture; should be  |
-|                        | used only for unresolved sources                   |
-+------------------------+----------------------------------------------------+
-| flags                  | Flag recording DQ value of source central pixel    |
-+------------------------+----------------------------------------------------+
-| is_extended            | Flag indicating whether the source is extended     |
-+------------------------+----------------------------------------------------+
-| sharpness              | The DAOFind source sharpness statistic             |
-+------------------------+----------------------------------------------------+
-| roundness              | The DAOFind source roundness statistic             |
-+------------------------+----------------------------------------------------+
-| nn_label               | The label number of the nearest neighbor           |
-+------------------------+----------------------------------------------------+
-| nn_dist                | The distance in pixels to the nearest neighbor     |
-+------------------------+----------------------------------------------------+
-| isophotal_flux         | Isophotal flux                                     |
-+------------------------+----------------------------------------------------+
-| isophotal_flux_err     | Isophotal flux error                               |
-+------------------------+----------------------------------------------------+
-| isophotal_area         | Isophotal area                                     |
-+------------------------+----------------------------------------------------+
-| kron_flux              | Kron flux                                          |
-+------------------------+----------------------------------------------------+
-| kron_flux_err          | Kron flux error                                    |
-+------------------------+----------------------------------------------------+
-| semimajor_sigma        | 1-sigma standard deviation along the semimajor     |
-|                        | axis of the 2D Gaussian function that has the same |
-|                        | second-order central moments as the source         |
-+------------------------+----------------------------------------------------+
-| semiminor_sigma        | 1-sigma standard deviation along the semiminor     |
-|                        | axis of the 2D Gaussian function that has the same |
-|                        | second-order central moments as the source         |
-+------------------------+----------------------------------------------------+
-| ellipticity            | 1 minus the ratio of the 1-sigma lengths of the    |
-|                        | semimajor and semiminor axes                       |
-+------------------------+----------------------------------------------------+
-| orientation            | The angle (degrees) between the positive X axis    |
-|                        | and the major axis (increases counter-clockwise)   |
-+------------------------+----------------------------------------------------+
-| sky_orientation        | The position angle (degrees) from North of the     |
-|                        | major axis                                         |
-+------------------------+----------------------------------------------------+
-| ra_bbox_ll, dec_bbox_ll| Sky coordinate of the lower-left vertex of the     |
-|                        | minimal bounding box of the source                 |
-+------------------------+----------------------------------------------------+
-| ra_bbox_ul, dec_bbox_ul| Sky coordinate of the upper-left vertex of the     |
-|                        | minimal bounding box of the source                 |
-+------------------------+----------------------------------------------------+
-| ra_bbox_lr, dec_bbox_lr| Sky coordinate of the lower-right vertex of the    |
-|                        | minimal bounding box of the source                 |
-+------------------------+----------------------------------------------------+
-| ra_bbox_ur, dec_bbox_ur| Sky coordinate of the upper-right vertex of the    |
-|                        | minimal bounding box of the source                 |
-+------------------------+----------------------------------------------------+
-
-
-If ``fit_psf=True``, the following columns will also be available:
-
-+------------------------+----------------------------------------------------+
-| Column                 | Description                                        |
-+========================+====================================================+
-| x_psf, x_psf_err       | X pixel value of the source and its associated     |
-|                        | error as determined by PSF fitting                 |
-+------------------------+----------------------------------------------------+
-| y_psf, y_psf_err       | Y pixel value of the source and its associated     |
-|                        | error as determined by PSF fitting                 |
-+------------------------+----------------------------------------------------+
-| flux_psf, flux_psf_err | Flux of the source and its associated error as     |
-|                        | determined by PSF fitting                          |
-+------------------------+----------------------------------------------------+
-| flag_psf               | DQ flag of the resulting PSF fitting.              |
-|                        | Possible values are [1]_:                          |
-|                        |                                                    |
-|                        | - 1 : one or more pixels in the fitting region     |
-|                        |   were masked                                      |
-|                        | - 2 : the fit x and/or y position lies outside of  |
-|                        |   the input data                                   |
-|                        | - 4 : the fit flux is less than or equal to zero   |
-|                        | - 8 : the fitter may not have converged            |
-|                        | - 16 : the fitter parameter covariance matrix was  |
-|                        |   not returned                                     |
-+------------------------+----------------------------------------------------+
++-----------------------+-----------------------------------------------------+
+| Column                | Description                                         |
++=======================+=====================================================+
+| label                 | Label of the source segment in the segmentation     |
+|                       | image                                               |
++-----------------------+-----------------------------------------------------+
+| flagged_spatial_index | Bit flag encoding the overlap flag, projection,     |
+|                       | skycell, and pixel coordinates of the source        |
++-----------------------+-----------------------------------------------------+
+| x_centroid            | Column coordinate of the source centroid in the     |
+|                       | detection image from image moments (0 indexed)      |
++-----------------------+-----------------------------------------------------+
+| y_centroid            | Row coordinate of the source centroid in the        |
+|                       | detection image from image moments (0 indexed)      |
++-----------------------+-----------------------------------------------------+
+| x_centroid_err        | Uncertainty in x_centroid                           |
++-----------------------+-----------------------------------------------------+
+| y_centroid_err        | Uncertainty in y_centroid                           |
++-----------------------+-----------------------------------------------------+
+| x_centroid_win        | Column coordinate of the windowed source centroid   |
+|                       | in the detection image from image moments (0        |
+|                       | indexed)                                            |
++-----------------------+-----------------------------------------------------+
+| y_centroid_win        | Row coordinate of the windowed source centroid in   |
+|                       | the detection image from image moments (0 indexed)  |
++-----------------------+-----------------------------------------------------+
+| x_centroid_win_err    | Uncertainty in x_centroid_win                       |
++-----------------------+-----------------------------------------------------+
+| y_centroid_win_err    | Uncertainty in y_centroid_win                       |
++-----------------------+-----------------------------------------------------+
+| x_psf                 | Column coordinate of the source from PSF fitting (0 |
+|                       | indexed)                                            |
++-----------------------+-----------------------------------------------------+
+| x_psf_err             | Uncertainty in x_psf                                |
++-----------------------+-----------------------------------------------------+
+| y_psf                 | Row coordinate of the source from PSF fitting (0    |
+|                       | indexed)                                            |
++-----------------------+-----------------------------------------------------+
+| y_psf_err             | Uncertainty in y_psf                                |
++-----------------------+-----------------------------------------------------+
+| ra                    | Best estimate of the right ascension (ICRS)         |
++-----------------------+-----------------------------------------------------+
+| dec                   | Best estimate of the declination (ICRS)             |
++-----------------------+-----------------------------------------------------+
+| ra_centroid           | Right ascension (ICRS) of the source centroid       |
++-----------------------+-----------------------------------------------------+
+| dec_centroid          | Declination (ICRS) of the source centroid           |
++-----------------------+-----------------------------------------------------+
+| ra_centroid_err       | Uncertainty in ra_centroid                          |
++-----------------------+-----------------------------------------------------+
+| dec_centroid_err      | Uncertainty in dec_centroid                         |
++-----------------------+-----------------------------------------------------+
+| ra_centroid_win       | Right ascension (ICRS) of the windowed source       |
+|                       | centroid                                            |
++-----------------------+-----------------------------------------------------+
+| dec_centroid_win      | Declination (ICRS) of the windowed source centroid  |
++-----------------------+-----------------------------------------------------+
+| ra_centroid_win_err   | Uncertainty in ra_centroid_win                      |
++-----------------------+-----------------------------------------------------+
+| dec_centroid_win_err  | Uncertainty in dec_centroid_win                     |
++-----------------------+-----------------------------------------------------+
+| ra_psf                | Right ascension (ICRS) of the PSF-fitted position   |
++-----------------------+-----------------------------------------------------+
+| dec_psf               | Declination (ICRS) of the PSF-fitted position       |
++-----------------------+-----------------------------------------------------+
+| ra_psf_err            | Uncertainty in ra_psf                               |
++-----------------------+-----------------------------------------------------+
+| dec_psf_err           | Uncertainty in dec_psf                              |
++-----------------------+-----------------------------------------------------+
+| bbox_xmin             | Column index of the left edge of the source         |
+|                       | bounding box (0 indexed)                            |
++-----------------------+-----------------------------------------------------+
+| bbox_xmax             | Column index of the right edge of the source        |
+|                       | bounding box (0 indexed)                            |
++-----------------------+-----------------------------------------------------+
+| bbox_ymin             | Row index of the bottom edge of the source bounding |
+|                       | box (0 indexed)                                     |
++-----------------------+-----------------------------------------------------+
+| bbox_ymax             | Row index of the top edge of the source bounding    |
+|                       | box (0 indexed)                                     |
++-----------------------+-----------------------------------------------------+
+| segment_area          | Area of the source segment                          |
++-----------------------+-----------------------------------------------------+
+| semimajor             | Length of the source semimajor axis computed from   |
+|                       | image moments                                       |
++-----------------------+-----------------------------------------------------+
+| semiminor             | Length of the source semiminor axis computed from   |
+|                       | image moments                                       |
++-----------------------+-----------------------------------------------------+
+| fwhm                  | Circularized full width at half maximum (FWHM)      |
+|                       | calculated from the semimajor and semiminor axes as |
+|                       | 2*sqrt(ln(2) * (semimajor**2 + semiminor**2))       |
++-----------------------+-----------------------------------------------------+
+| ellipticity           | Source ellipticity as 1 - (semimajor / semiminor)   |
++-----------------------+-----------------------------------------------------+
+| orientation_pix       | Angle measured counter-clockwise from the positive  |
+|                       | X axis to the source major axis computed from image |
+|                       | moments                                             |
++-----------------------+-----------------------------------------------------+
+| orientation_sky       | Position angle from North of the source major axis  |
+|                       | computed from image moments                         |
++-----------------------+-----------------------------------------------------+
+| cxx                   | Coefficient for the x**2 term in the generalized    |
+|                       | quadratic ellipse equation                          |
++-----------------------+-----------------------------------------------------+
+| cxy                   | Coefficient for the x*y term in the generalized     |
+|                       | quadratic ellipse equation                          |
++-----------------------+-----------------------------------------------------+
+| cyy                   | Coefficient for the y**2 term in the generalized    |
+|                       | quadratic ellipse equation                          |
++-----------------------+-----------------------------------------------------+
+| kron_radius           | Unscaled first-moment Kron radius                   |
++-----------------------+-----------------------------------------------------+
+| nn_label              | Segment label of the nearest neighbor in this       |
+|                       | skycell                                             |
++-----------------------+-----------------------------------------------------+
+| nn_distance           | Distance to the nearest neighbor in this skycell    |
++-----------------------+-----------------------------------------------------+
+| sharpness             | Photutils DAOStarFinder sharpness statistic         |
++-----------------------+-----------------------------------------------------+
+| roundness1            | Photutils DAOStarFinder roundness1 statistic        |
++-----------------------+-----------------------------------------------------+
+| is_extended           | Flag indicating that the source appears to be more  |
+|                       | extended than a point source                        |
++-----------------------+-----------------------------------------------------+
+| fluxfrac_radius_50    | Radius of a circle centered on the source centroid  |
+|                       | that encloses 50% of the Kron flux                  |
++-----------------------+-----------------------------------------------------+
+| aper_bkg_flux         | Local background estimated within a circular        |
+|                       | annulus                                             |
++-----------------------+-----------------------------------------------------+
+| aper_bkg_flux_err     | Uncertainty in aper_bkg_flux                        |
++-----------------------+-----------------------------------------------------+
+| aper01_flux           | Flux within a circular aperture of radius=0.1       |
+|                       | arcsec                                              |
++-----------------------+-----------------------------------------------------+
+| aper01_flux_err       | Uncertainty in aper01_flux                          |
++-----------------------+-----------------------------------------------------+
+| aper02_flux           | Flux within a circular aperture of radius=0.2       |
+|                       | arcsec                                              |
++-----------------------+-----------------------------------------------------+
+| aper02_flux_err       | Uncertainty in aper02_flux                          |
++-----------------------+-----------------------------------------------------+
+| aper04_flux           | Flux within a circular aperture of radius=0.4       |
+|                       | arcsec                                              |
++-----------------------+-----------------------------------------------------+
+| aper04_flux_err       | Uncertainty in aper04_flux                          |
++-----------------------+-----------------------------------------------------+
+| aper08_flux           | Flux within a circular aperture of radius=0.8       |
+|                       | arcsec                                              |
++-----------------------+-----------------------------------------------------+
+| aper08_flux_err       | Uncertainty in aper08_flux                          |
++-----------------------+-----------------------------------------------------+
+| aper16_flux           | Flux within a circular aperture of radius=1.6       |
+|                       | arcsec                                              |
++-----------------------+-----------------------------------------------------+
+| aper16_flux_err       | Uncertainty in aper16_flux                          |
++-----------------------+-----------------------------------------------------+
+| psf_flux              | Total PSF flux                                      |
++-----------------------+-----------------------------------------------------+
+| psf_flux_err          | Uncertainty in psf_flux                             |
++-----------------------+-----------------------------------------------------+
+| segment_flux          | Isophotal flux                                      |
++-----------------------+-----------------------------------------------------+
+| segment_flux_err      | Uncertainty in segment_flux                         |
++-----------------------+-----------------------------------------------------+
+| kron_flux             | Flux within the elliptical Kron aperture            |
++-----------------------+-----------------------------------------------------+
+| kron_flux_err         | Uncertainty in kron_flux                            |
++-----------------------+-----------------------------------------------------+
+| kron_abmag            | AB magnitude within the elliptical Kron aperture    |
++-----------------------+-----------------------------------------------------+
+| kron_abmag_err        | Uncertainty in kron_abmag                           |
++-----------------------+-----------------------------------------------------+
+| warning_flags         | Warning bit flags (0 = good)                        |
++-----------------------+-----------------------------------------------------+
+| image_flags           | Image quality bit flags (0 = good)                  |
++-----------------------+-----------------------------------------------------+
+| psf_flags             | PSF fitting bit flags (0 = good)                    |
++-----------------------+-----------------------------------------------------+
+| psf_gof               | PSF goodness of fit metric                          |
++-----------------------+-----------------------------------------------------+
 
 
 Segmentation Map
