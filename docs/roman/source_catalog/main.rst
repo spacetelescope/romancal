@@ -4,89 +4,117 @@ Description
 :Class: `romancal.source_catalog.SourceCatalogStep`
 :Alias: source_catalog
 
-This step creates a catalog of source photometry and morphologies.
-Both aperture and isophotal (segment-based) photometry are calculated.
-Source morphologies are based on 2D image moments within the source
-segment.
+This step detects sources in an image and generates a catalog of their
+properties, including photometric and shape measurements.
+
+
+Background Subtraction
+----------------------
+
+A two-dimensional background is estimated and subtracted from the
+data. The background and background noise are estimated using the
+:py:class:`photutils.background.Background2D` class from `Photutils
+<https://photutils.readthedocs.io/en/stable/index.html>`_. This class
+calculates the background by measuring the sigma-clipped median within
+user-defined boxes of a specified size (``bkg_boxsize``). The background
+RMS noise is then estimated using the sigma-clipped standard deviation
+within the same boxes.
 
 
 Source Detection
 ----------------
-Sources are detected using `image segmentation
-<https://en.wikipedia.org/wiki/Image_segmentation>`_, which is a
-process of assigning a label to every pixel in an image such that
-pixels with the same label are part of the same source.  The
-segmentation procedure used is from `Photutils source extraction
-<https://photutils.readthedocs.io/en/latest/segmentation.html>`_.
-Detected sources must have a minimum number of connected pixels that
-are each greater than a specified threshold value in an image.  The
-threshold level is usually defined at some multiple of the background
-standard deviation above the background.  The image can also be
-filtered before thresholding to smooth the noise and maximize the
-detectability of objects with a shape similar to the filter kernel.
 
-Source Deblending
------------------
-Overlapping sources are detected as single sources.  Separating those
-sources requires a deblending procedure, such as a multi-thresholding
-technique used by `SExtractor
-<https://www.astromatic.net/software/sextractor>`_.  Here we use the
-`Photutils deblender
-<https://photutils.readthedocs.io/en/latest/segmentation.html#source-deblending>`_,
-which is an algorithm that deblends sources using a combination of
-multi-thresholding and `watershed segmentation
-<https://en.wikipedia.org/wiki/Watershed_(image_processing)>`_.  In
-order to deblend sources, they must be separated enough such that
-there is a saddle between them.
+Sources are detected using `image segmentation
+<https://en.wikipedia.org/wiki/Image_segmentation>`_, a process that
+assigns an integer label to each pixel in an image, such that pixels
+with the same label correspond to the same source. Source extraction is
+then performed using the `Photutils segmentation <https://photutils.readthedocs.io/en/latest/user_guide/segmentation.html>`_ tools.
+
+The background-subtracted image is convolved with a Gaussian kernel
+to smooth the noise and enhance the detectability of objects with a
+shape similar to the kernel. The Gaussian kernel is defined by
+the ``kernel_fwhm`` parameter, which specifies the full-width at half-maximum
+(FWHM) of the kernel. The kernel is normalized to have a total
+flux of 1.0.
+
+Detected sources must consist of a minimum number of connected pixels
+(``npixels``), each exceeding a specified threshold value in
+the convolved image. The threshold level is defined as a per-pixel
+multiple (``snr_threshold``) of the background RMS image.
+
+Overlapping sources are deblended using the `Photutils deblender
+<https://photutils.readthedocs.io/en/latest/user_guide/segmentation.html
+#source-deblending>`_. The deblending algorithm first applies
+a multi-thresholding approach to identify potentially
+overlapping sources, then uses `watershed segmentation
+<https://en.wikipedia.org/wiki/Watershed_(image_processing)>`_
+to separate them. For successful deblending, the sources must be
+sufficiently separated so that a saddle exists between them. Currently,
+the ``deblend`` keyword must be set to deblend sources.
+
 
 Source Photometry and Properties
 --------------------------------
+
 After detecting sources using image segmentation, we can measure their
-photometry, centroids, and morphological properties.  The aperture
-photometry is measured in three apertures, based on the input
-encircled energy values.  The total aperture-corrected flux and
-magnitudes are also calculated, based on the largest aperture.
+photometry, centroids, and shape/morphological properties.
 
-The isophotal photometry is based on `photutils segmentation
-<https://photutils.readthedocs.org/en/latest/segmentation.html>`_.
-The properties that are currently calculated for each source include
-source centroids (both in pixel and sky coordinates), isophotal fluxes
-(and errors), isophotal area,
-semimajor and semiminor axis lengths, orientation of the major axis,
-and sky coordinates at corners of the minimal bounding box enclosing
-the source.
+The source centroids and shape properties are derived from 2D image
+moments of the pixel values within the source segments. These properties
+include the semimajor and semiminor axes, ellipticity, and orientation
+of the major axis.
 
-The units of all fluxes are in nJy. To calculate AB magnitudes, use the
+Circular aperture photometry is performed at several aperture sizes
+(:math:`r` = 0.1, 0.2, 0.4, 0.8, 1.6 arcsec) for each source. Elliptical
+Kron aperture photometry is also performed, where the aperture size is
+determined by the source shape.
+
+Isophotal photometry is measured using the total flux within the source
+segment.
+
+Optionally, Point Spread Function (PSF) photometry can be
+performed by setting the ``fit_psf`` keyword. Enabling
+this option fits a model PSF to each source to measure its
+position and flux. The PSF model is generated using the
+`STPSF <https://stpsf.readthedocs.io/en/latest/roman.html>`_
+package. PSF photometry is performed using the
+:py:class:`photutils.psf.PSFPhotometry` class from Photutils.
+
+A local background is estimated using a circular annulus around the
+source. The annulus is defined by the inner and outer radii of 2.4 and
+2.8 arcsec, respectively. The local background flux is calculated as
+the sigma-clipped median value within the annulus. Although this local
+background value is included in the source catalog, it is not subtracted
+from any of the measured fluxes.
+
+All fluxes are reported in nJy. To calculate AB magnitudes, use the
 following formula:
 
 .. math::
 
     m_{\rm AB} = -2.5 \log_{10}(f_{\rm nJy}) + 31.4
 
-Photometric errors are calculated from the resampled total-error
-array contained in the ``ERR`` (``model.err``) array. Note that this
-total-error array includes source Poisson noise.
+Photometric errors are calculated from the resampled total-error array
+contained in the ``model.err`` array. Note that this array includes
+source Poisson noise.
 
-PSF Fitting
------------
-
-Star finding algorithms like `~photutils.detection.DAOStarFinder` provide
-approximate stellar centroids. More precise centroids may be inferred by
-fitting model PSFs to the observations. Setting the SourceCatalogStep's
-option `fit_psf` to True will generate model Roman PSFs with
-`STPSF <https://stpsf.readthedocs.io/en/latest/roman.html>`_, and fit
-those models to each of the sources detected by
-`~photutils.detection.DAOStarFinder`. More details are in :doc:`psf`.
 
 Output Products
 ---------------
 
 Source Catalog Table
 ^^^^^^^^^^^^^^^^^^^^
-The output source catalog table is saved in `asdf` format.
 
-The table contains a row for each source, with the following default
-columns (assuming the default encircled energies of 30, 50, and 70):
+The output source catalog table is saved to a file in the `Parquet
+<https://parquet.apache.org/>`_ format.
+
+The table contains one row for each source, with the columns listed
+below (assuming PSF-photometry is requested).
+
+All pixel coordinates are 0-indexed, following Python's 0-based
+indexing. This means pixel coordinate 0 corresponds to the center of the
+first pixel.
+
 
 +------------------------+----------------------------------------------------+
 | Column                 | Description                                        |
@@ -212,61 +240,65 @@ If ``fit_psf=True``, the following columns will also be available:
 |                        |   not returned                                     |
 +------------------------+----------------------------------------------------+
 
-.. [1] See `PSFPhotometry <https://photutils.readthedocs.io/en/stable/api/photutils.psf.PSFPhotometry.html#photutils.psf.PSFPhotometry>`_ for more details.
-
-Note that pixel coordinates are 0 indexed, matching the Python 0-based
-indexing. That means pixel coordinate ``0`` is the center of the first
-pixel.
-
 
 Segmentation Map
 ^^^^^^^^^^^^^^^^
 
-The segmentation map computed during the source finding process is saved
-to a single 2D image extension in a FITS file. Each image pixel contains an
-integer value corresponding to a source label number in the source catalog
-product. Pixels that don't belong to any source have a value of zero.
+The segmentation map generated during the
+source-finding process is saved as an `ASDF
+<https://en.wikipedia.org/wiki/Advanced_Scientific_Data_Format>`_ file.
+Each pixel in the image contains an integer value corresponding to a
+source label in the source catalog. Pixels that do not belong to any
+source are assigned a value of zero.
 
 
 Multiband Catalogs
 ------------------
-Multiband catalogs use a combination of images to construct a deep
-detection image which is used to detect sources and find segments.
-The measured positions and shapes of the sources in these deep images
-are then used for aperture and Kron photometry in each filter.
-Catalog fields are broadly similar to those in the source catalog
-schema above.  However, they have the following differences:
 
-* Fields derived from the individual filter images are prefixed with
-  the name of the filter from which they were derived.  For example,
-  there will be a series of fields like ``<filter>_flux_psf`` giving
-  the PSF flux in each filter.
-* Fields derived from the detection image and segmentation map have no
-  filter prefix.
+Multiband catalogs combine multiple images to create a deep detection
+image, which is used to detect sources and identify segments. The
+measured positions and shapes of the sources in these deep images are
+then used to perform aperture, Kron, isophotal, and PSF photometry for
+each filter.
 
-Multiband catalogs are produced by the ``MultibandCatalogStep`` and
-take an association file as an argument, listing the different images
-which need to be photometered simultaneously.
+The catalog fields are similar to those in the source catalog schema,
+but with the following differences:
+
+* Fields derived from individual filter images include the
+  filter name from which they were derived. For example, fields
+  like ``aper_flux_<filter>``, ``segment_flux_<filter>``,
+  ``kron_flux_<filter>``, and ``psf_flux_<filter>`` provide the aperture
+  and PSF flux for each filter, respectively.
+
+* Fields derived from the detection image and segmentation map do not
+  include the filter name.
+
+Multiband catalogs are generated by the
+:py:class:`~romancal.multiband_catalog.MultibandCatalogStep`, which
+takes an association file as input. This file lists the images that need
+to be photometered simultaneously.
 
 
 Forced Source Catalogs
 ----------------------
 
-Source catalogs may optionally be produced by taking the segmentation
-image from one image (the "forcing" image) and asking to compute shapes and fluxes on those
-same segments in another image (the "forced" image).  The two images must be perfectly
-aligned for this to make sense.  In this mode, the source catalog
-contains a number of fields with the ``forced`` prefix in addition to
-those described above.  Fields without the "forced" prefix indicate
-shape and location information derived from forcing image and give the
-locations where information was measured on the forced image.  Fields
-with the ``forced`` prefix indicate values computed on the forced image,
-using the information from the forcing image.  For example, the field
-``forced_kron_flux`` is the Kron flux measured on the "forced" image
-using the centroid and shape information given in the ``xcentroid``,
-``ycentroid``, ``semimajor_sigma``, ``semiminor_sigma``, and ``orientation``
-fields.
+Source catalogs can optionally be generated by using the segmentation
+image from one image (the "forcing" image) and computing shapes and
+fluxes for those same segments in another image (the "forced" image).
+For this to work, the two images must be perfectly aligned in pixel
+space.
 
-Forced source catalogs may be produced by specifying a segmentation
-image with the ``--forced_segmentation`` argument when running the source
+Forced source catalogs can be generated by specifying a segmentation
+image with the ``forced_segmentation`` keyword when running the source
 catalog step.
+
+In this mode, the source catalog contains fields with the ``forced``
+prefix, in addition to the fields described above. Fields without the
+"forced" prefix contain position and shape information derived from
+the forcing image, indicating where measurements were taken on the
+forced image. Fields with the forced prefix represent values computed
+on the forced image, using the information from the forcing image.
+For example, the field ``forced_kron_flux`` represents the Kron flux
+measured on the forced image, using the centroid and shape information
+from the ``x_centroid``, ``y_centroid``, ``semimajor``, ``semiminor``,
+and ``orientation_pix`` fields.
