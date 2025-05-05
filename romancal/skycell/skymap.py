@@ -519,8 +519,8 @@ class SkyMap:
         self._data = None
 
     @property
-    def data(self) -> AsdfFile:
-        """ASDF representation of sky map"""
+    def model(self) -> AsdfFile:
+        """data model of sky map"""
         if self._data is None:
             if self._path is None:
                 rmap = crds.getreferences(
@@ -538,7 +538,7 @@ class SkyMap:
     @property
     def skycells(self) -> np.void:
         """array of sky cells"""
-        return self.data.skycells
+        return self.model.skycells
 
     @cached_property
     def skycells_kdtree(self) -> KDTree:
@@ -563,7 +563,7 @@ class SkyMap:
     @property
     def projection_regions(self) -> np.void:
         """array of projection regions"""
-        return self.data.projection_regions
+        return self.model.projection_regions
 
     @cached_property
     def projection_regions_kdtree(self) -> KDTree:
@@ -584,12 +584,12 @@ class SkyMap:
     def pixel_scale(self) -> float:
         """degrees per pixel"""
         # The scale is given in arcseconds per pixel. Convert to degrees.
-        return self.data.meta["pixel_scale"] / 3600.0
+        return self.model.meta["pixel_scale"] / 3600.0
 
     @property
     def pixel_shape(self) -> tuple[int, int]:
         """number of pixels per sky cell"""
-        return self.data.meta.nxy_skycell, self.data.meta.nxy_skycell
+        return self.model.meta.nxy_skycell, self.model.meta.nxy_skycell
 
     def __getitem__(self, index: int) -> SkyCell:
         """`SkyCell` at the given index in the sky cells array"""
