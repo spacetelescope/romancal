@@ -409,11 +409,11 @@ class PSFCatalog:
         """
         The uncertainty in ra_psf.
         """
-        return np.zeros(self.ra_psf.shape, dtype=np.float32) * u.deg
+        return np.zeros(self.ra_psf.shape, dtype=np.float32) * u.arcsec
 
     @lazyproperty
     def dec_psf_err(self):
         """
         The uncertainty in dec_psf.
         """
-        return np.zeros(self.dec_psf.shape, dtype=np.float32) * u.deg
+        return np.zeros(self.dec_psf.shape, dtype=np.float32) * u.arcsec

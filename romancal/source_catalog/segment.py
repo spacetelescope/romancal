@@ -291,7 +291,7 @@ class SegmentCatalog:
             "ra_centroid_win_err",
             "dec_centroid_win_err",
         )
-        sky_value = np.zeros(self.source_cat.nlabels, dtype=np.float32) * u.deg
+        sky_value = np.zeros(self.source_cat.nlabels, dtype=np.float32) * u.arcsec
         for name in sky_columns:
             if not hasattr(self, name):
                 setattr(self, name, sky_value)
