@@ -462,8 +462,8 @@ class RomanSourceCatalog:
             "detection image from image moments (0 indexed)"
         )
 
-        col["ra"] = "The best estimate of the right ascension (ICRS)"
-        col["dec"] = "The best estimate of the declination (ICRS)"
+        col["ra"] = "Best estimate of the right ascension (ICRS)"
+        col["dec"] = "Best estimate of the declination (ICRS)"
         col["ra_centroid"] = "Right ascension (ICRS) of the source centroid"
         col["dec_centroid"] = "Declination (ICRS) of the source centroid"
         col["ra_centroid_win"] = (
@@ -486,10 +486,10 @@ class RomanSourceCatalog:
             "Row index of the top edge of the source bounding box (0 indexed)"
         )
         col["semimajor"] = (
-            "The length of the source semimajor axis computed from image moments"
+            "Length of the source semimajor axis computed from image moments"
         )
         col["semiminor"] = (
-            "The length of the source semiminor axis computed from image moments"
+            "Length of the source semiminor axis computed from image moments"
         )
         col["fwhm"] = (
             "Circularized full width at half maximum (FWHM) "
@@ -498,11 +498,10 @@ class RomanSourceCatalog:
         )
         col["ellipticity"] = "Source ellipticity as 1 - (semimajor / semiminor)"
         col["orientation_pix"] = (
-            "The angle measured counter-clockwise from the positive X axis to the major axis computed from image moments"
+            "Angle measured counter-clockwise from the positive X axis to the major axis computed from image moments"
         )
         col["orientation_sky"] = (
-            "The position angle from North of the major axis computed from "
-            "image moments"
+            "Position angle from North of the major axis computed from image moments"
         )
 
         col["cxx"] = (
@@ -522,13 +521,11 @@ class RomanSourceCatalog:
             "(r_i * I_i) / Sum_i (I_i), with r_i as an elliptical radius"
         )
         col["fluxfrac_radius_50"] = (
-            "The circular radius that encloses 50% of the source Kron flux"
+            "Circular radius that encloses 50% of the source Kron flux"
         )
         col["kron_flux"] = "Flux within the elliptical Kron aperture"
         col["kron_abmag"] = "AB magnitude within the elliptical Kron aperture"
-        col["aper_bkg_flux"] = (
-            "The local background estimated within a circular annulus"
-        )
+        col["aper_bkg_flux"] = "Local background estimated within a circular annulus"
 
         col["x_psf"] = "Column position of the source from PSF fitting (0 indexed)"
         col["y_psf"] = "Row position of the source from PSF fitting (0 indexed)"
@@ -540,10 +537,10 @@ class RomanSourceCatalog:
         col["image_flags"] = "Image quality bit flags"
 
         col["is_extended"] = "Flag indicating whether the source is extended"
-        col["sharpness"] = "The DAOFind sharpness statistic"
-        col["roundness1"] = "The DAOFind roundness1 statistic"
-        col["nn_label"] = "The label number of the nearest neighbor in this skycell"
-        col["nn_dist"] = "The distance to the nearest neighbor in this skycell"
+        col["sharpness"] = "Photutils DAOStarFinder sharpness statistic"
+        col["roundness1"] = "Photutils DAOStarFinder roundness1 statistic"
+        col["nn_label"] = "Label number of the nearest neighbor in this skycell"
+        col["nn_dist"] = "Distance to the nearest neighbor in this skycell"
 
         # add the aperture flux column descriptions
         if self.aperture_cat is not None:
