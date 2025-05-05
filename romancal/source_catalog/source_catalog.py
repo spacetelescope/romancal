@@ -441,8 +441,8 @@ class RomanSourceCatalog:
         col = {}
         col["label"] = "Label of the source segment in the segmentation image"
         col["flagged_spatial_index"] = (
-            "Spatial index bit flag encoding the projection, skycell, and "
-            "pixel coordinate of the source"
+            "Bit flag encoding the overlap flag, projection, skycell, and "
+            "pixel coordinates of the source"
         )
 
         col["x_centroid"] = (
@@ -470,8 +470,8 @@ class RomanSourceCatalog:
             "Right ascension (ICRS) of the windowed source centroid"
         )
         col["dec_centroid_win"] = "Declination (ICRS) of the windowed source centroid"
-        col["ra_psf"] = "Right ascension (ICRS) of the fitted-PSF position"
-        col["dec_psf"] = "Declination (ICRS) of the fitted_PSF position"
+        col["ra_psf"] = "Right ascension (ICRS) of the PSF-fitted position"
+        col["dec_psf"] = "Declination (ICRS) of the PSF-fitted position"
 
         col["bbox_xmin"] = (
             "Column index of the left edge of the source bounding box (0 indexed)"
@@ -498,10 +498,10 @@ class RomanSourceCatalog:
         )
         col["ellipticity"] = "Source ellipticity as 1 - (semimajor / semiminor)"
         col["orientation_pix"] = (
-            "Angle measured counter-clockwise from the positive X axis to the major axis computed from image moments"
+            "Angle measured counter-clockwise from the positive X axis to the source major axis computed from image moments"
         )
         col["orientation_sky"] = (
-            "Position angle from North of the major axis computed from image moments"
+            "Position angle from North of the source major axis computed from image moments"
         )
 
         col["cxx"] = (
@@ -516,30 +516,29 @@ class RomanSourceCatalog:
 
         col["segment_flux"] = "Isophotal flux"
         col["segment_area"] = "Area of the source segment"
-        col["kron_radius"] = (
-            "Unscaled first-moment Kron radius defined as r = Sum_i "
-            "(r_i * I_i) / Sum_i (I_i), with r_i as an elliptical radius"
-        )
+        col["kron_radius"] = "Unscaled first-moment Kron radius"
         col["fluxfrac_radius_50"] = (
-            "Circular radius that encloses 50% of the source Kron flux"
+            "Radius of a circle centered on the source centroid that encloses 50% of the Kron flux"
         )
         col["kron_flux"] = "Flux within the elliptical Kron aperture"
         col["kron_abmag"] = "AB magnitude within the elliptical Kron aperture"
         col["aper_bkg_flux"] = "Local background estimated within a circular annulus"
 
-        col["x_psf"] = "Column position of the source from PSF fitting (0 indexed)"
-        col["y_psf"] = "Row position of the source from PSF fitting (0 indexed)"
+        col["x_psf"] = "Column coordinate of the source from PSF fitting (0 indexed)"
+        col["y_psf"] = "Row coordinate of the source from PSF fitting (0 indexed)"
         col["psf_flux"] = "Total PSF flux"
         col["psf_gof"] = "PSF goodness of fit metric"
-        col["psf_flags"] = "PSF fitting bit flags"
+        col["psf_flags"] = "PSF fitting bit flags (0 = good)"
 
-        col["warning_flags"] = "Warning bit flags"
-        col["image_flags"] = "Image quality bit flags"
+        col["warning_flags"] = "Warning bit flags (0 = good)"
+        col["image_flags"] = "Image quality bit flags (0 = good)"
 
-        col["is_extended"] = "Flag indicating whether the source is extended"
+        col["is_extended"] = (
+            "Flag indicating that the source appears to be more extended than a point source"
+        )
         col["sharpness"] = "Photutils DAOStarFinder sharpness statistic"
         col["roundness1"] = "Photutils DAOStarFinder roundness1 statistic"
-        col["nn_label"] = "Label number of the nearest neighbor in this skycell"
+        col["nn_label"] = "Segment label of the nearest neighbor in this skycell"
         col["nn_dist"] = "Distance to the nearest neighbor in this skycell"
 
         # add the aperture flux column descriptions
