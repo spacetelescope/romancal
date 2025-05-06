@@ -9,7 +9,6 @@ authors = [
 classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Astronomy",
-    "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
@@ -43,12 +42,10 @@ dependencies = [
     # (or when pysiaf no longer requires pkg_resources).
     "setuptools >= 60 ; python_version >= '3.12'",
 ]
+license-files = ["LICENSE"]
 dynamic = [
     "version",
 ]
-
-[project.license]
-file = "LICENSE"
 
 [project.optional-dependencies]
 docs = [
@@ -89,7 +86,6 @@ stpsf = "pytest_romancal.stpsf_plugin"
 
 [project.scripts]
 roman_static_preview = "romancal.scripts.static_preview:command"
-verify_install_requires = "romancal.scripts.verify_install_requires:main"
 asn_from_list = "romancal.associations.asn_from_list:_cli"
 skycell_asn = "romancal.associations.skycell_asn:_cli"
 mk_patchlist = "romancal.associations.mk_patchlist:_cli"
@@ -107,6 +103,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 zip-safe = false
+include-package-data = false
 
 [tool.setuptools.packages.find]
 namespaces = false

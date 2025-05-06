@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 __all__ = ["ExposurePipeline"]
 
 # Define logging
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 

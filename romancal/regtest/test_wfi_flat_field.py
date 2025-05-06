@@ -1,185 +1,82 @@
-import os
+from pathlib import Path
 
 import pytest
 import roman_datamodels as rdm
-from crds.core.exceptions import CrdsLookupError
+from astropy.time import Time
 
+from romancal.lib.suffix import replace_suffix
 from romancal.step import FlatFieldStep
 from romancal.stpipe import RomanStep
 
 from .regtestdata import compare_asdf
 
+# mark all tests in this module
+pytestmark = [pytest.mark.bigdata]
 
-@pytest.mark.bigdata
-def test_flat_field_image_step(rtdata, ignore_asdf_paths, resource_tracker, request):
-    """Test for the flat field step using imaging data."""
+IMAGE_FILENAME = "r0000101001001001001_0001_wfi01_f158_assignwcs.asdf"
+GRISM_FILENAME = "r0000201001001001001_0001_wfi01_grism_assignwcs.asdf"
 
-    input_data = "r0000101001001001001_0001_wfi01_f158_assignwcs.asdf"
-    rtdata.get_data(f"WFI/image/{input_data}")
-    rtdata.input = input_data
 
-    # Test CRDS
-    step = FlatFieldStep()
-    model = rdm.open(rtdata.input)
-    ref_file_path = step.get_reference_file(model, "flat")
-    ref_file_name = os.path.split(ref_file_path)[-1]
-    assert "roman_wfi_flat" in ref_file_name
-    # Test FlatFieldStep
-    output = "r0000101001001001001_0001_wfi01_f158_flat.asdf"
-    rtdata.output = output
-    args = ["romancal.step.FlatFieldStep", rtdata.input]
-    with resource_tracker.track(log=request):
-        RomanStep.from_cmdline(args)
+@pytest.fixture(
+    params=[
+        IMAGE_FILENAME,
+        GRISM_FILENAME,
+    ],
+    scope="module",
+)
+def run_flat_field(rtdata_module, resource_tracker, request):
+    rtdata = rtdata_module
+    input_fn = request.param
+    output_fn = replace_suffix(Path(input_fn).stem, "flat") + ".asdf"
+    file_type = "grism" if "grism" in input_fn else "image"
+    rtdata.get_data(f"WFI/{file_type}/{input_fn}")
+    rtdata.output = output_fn
+    rtdata.get_truth(f"truth/WFI/{file_type}/{output_fn}")
+    with resource_tracker.track():
+        RomanStep.from_cmdline(["romancal.step.FlatFieldStep", rtdata.input])
+    return rtdata
 
-    rtdata.get_truth(f"truth/WFI/image/{output}")
+
+@pytest.fixture(scope="module")
+def output_model(run_flat_field):
+    with rdm.open(run_flat_field.output) as model:
+        yield model
+
+
+def test_log_tracked_resources(log_tracked_resources, run_flat_field):
+    log_tracked_resources()
+
+
+def test_output_matches_truth(run_flat_field, ignore_asdf_paths):
+    rtdata = run_flat_field
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
 
-@pytest.mark.bigdata
-def test_flat_field_grism_step(rtdata, ignore_asdf_paths, resource_tracker, request):
-    """Test for the flat field step using grism data. The reference file for
-    the grism and prism data should be None, only testing the grism
-    case here."""
+def test_cal_step_updated(output_model):
+    """Test that cal_step is step as expected"""
+    if output_model.meta.exposure.type == "WFI_IMAGE":
+        assert output_model.meta.cal_step.flat_field == "COMPLETE"
+    else:
+        assert output_model.meta.cal_step.flat_field == "SKIPPED"
 
-    input_file = "r0000201001001001001_0001_wfi01_grism_assignwcs.asdf"
-    rtdata.get_data(f"WFI/grism/{input_file}")
-    rtdata.input = input_file
 
-    # Test CRDS
+def test_ref_file_used(output_model):
+    """Test that a ref file was used and recorded where expected"""
+    if output_model.meta.exposure.type == "WFI_IMAGE":
+        assert "roman_wfi_flat" in output_model.meta.ref_file.flat
+    else:
+        assert output_model.meta.ref_file.flat == "N/A"
+
+
+def test_ref_file_query(rtdata):
+    """Test DMS79: 2 different start times return different flats"""
+    rtdata.get_data(f"WFI/image/{IMAGE_FILENAME}")
     step = FlatFieldStep()
-    model = rdm.open(rtdata.input)
-    try:
-        ref_file_path = step.get_reference_file(model, "flat")
-        # Check for a valid reference file
-        if ref_file_path != "N/A":
-            ref_file_name = os.path.split(ref_file_path)[-1]
-        elif ref_file_path == "N/A":
-            ref_file_name = ref_file_path
-    except CrdsLookupError:
-        ref_file_name = None
-    assert ref_file_name == "N/A"
-
-    # Test FlatFieldStep
-    output = "r0000201001001001001_0001_wfi01_grism_flat.asdf"
-    rtdata.output = output
-    args = ["romancal.step.FlatFieldStep", rtdata.input]
-    with resource_tracker.track(log=request):
-        RomanStep.from_cmdline(args)
-
-    output_model = rdm.open(rtdata.output)
-    assert output_model.meta.cal_step.flat_field == "SKIPPED"
-    rtdata.get_truth(f"truth/WFI/grism/{output}")
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
-    assert diff.identical, diff.report()
-
-
-@pytest.mark.bigdata
-@pytest.mark.soctests
-def test_flat_field_crds_match_image_step(
-    rtdata, ignore_asdf_paths, resource_tracker, request
-):
-    """DMS79 Test: Testing that different datetimes pull different
-    flat files and successfully make level 2 output"""
-
-    # First file
-    input_l2_file = "r0000101001001001001_0001_wfi01_f158_assignwcs.asdf"
-    rtdata.get_data(f"WFI/image/{input_l2_file}")
-    rtdata.input = input_l2_file
-
-    # Test CRDS
-    step = FlatFieldStep()
-    model = rdm.open(rtdata.input)
-    step.log.info(
-        "DMS79 MSG: Testing retrieval of best ref file, Success is flat file with"
-        " correct use after date"
-    )
-
-    step.log.info(f"DMS79 MSG: First data file: {rtdata.input.rsplit('/', 1)[1]}")
-    step.log.info(f"DMS79 MSG: Observation date: {model.meta.exposure.start_time}")
-
-    ref_file_path = step.get_reference_file(model, "flat")
-    step.log.info(
-        f"DMS79 MSG: CRDS matched flat file: {ref_file_path.rsplit('/', 1)[1]}"
-    )
-    flat = rdm.open(ref_file_path)
-    step.log.info(f"DMS79 MSG: flat file UseAfter date: {flat.meta.useafter}")
-    step.log.info(
-        "DMS79 MSG: UseAfter date before observation date? :"
-        f" {(flat.meta.useafter < model.meta.exposure.start_time)}"
-    )
-
-    # Test FlatFieldStep
-    output = "r0000101001001001001_0001_wfi01_f158_flat.asdf"
-    rtdata.output = output
-    args = ["romancal.step.FlatFieldStep", rtdata.input]
-    step.log.info(
-        "DMS79 MSG: Running flat fielding step. The first ERROR is"
-        "expected, due to extra CRDS parameters not having been "
-        "implemented yet."
-    )
-    with resource_tracker.track(log=request):
-        RomanStep.from_cmdline(args)
-
-    rtdata.get_truth(f"truth/WFI/image/{output}")
-
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
-    step.log.info(
-        f"DMS79 MSG: Was proper flat fielded Level 2 data produced? : {diff.identical}"
-    )
-    assert diff.identical, diff.report()
-
-    # This test requires a second file, in order to meet the DMS79 requirement.
-    # The test will show that two files with different observation dates match
-    #  to separate flat files in CRDS.
-
-    # Second file
-    input_file = "r0000101001001001001_0001_wfi01_f158_changetime_assignwcs.asdf"
-    rtdata.get_data(f"WFI/image/{input_file}")
-    rtdata.input = input_file
-
-    # Test CRDS
-    step = FlatFieldStep()
-    model = rdm.open(rtdata.input)
-
-    step.log.info(f"DMS79 MSG: Second data file: {rtdata.input.rsplit('/', 1)[1]}")
-    step.log.info(f"DMS79 MSG: Observation date: {model.meta.exposure.start_time}")
-
-    ref_file_path_b = step.get_reference_file(model, "flat")
-    step.log.info(
-        f"DMS79 MSG: CRDS matched flat file: {ref_file_path_b.rsplit('/', 1)[1]}"
-    )
-    flat = rdm.open(ref_file_path_b)
-    step.log.info(f"DMS79 MSG: flat file UseAfter date: {flat.meta.useafter}")
-    step.log.info(
-        "DMS79 MSG: UseAfter date before observation date? :"
-        f" {(flat.meta.useafter < model.meta.exposure.start_time)}"
-    )
-
-    # Test FlatFieldStep
-    output = "r0000101001001001001_0001_wfi01_f158_changetime_flat.asdf"
-    rtdata.output = output
-    args = ["romancal.step.FlatFieldStep", rtdata.input]
-    step.log.info(
-        "DMS79 MSG: Running flat fielding step. The first ERROR is"
-        "expected, due to extra CRDS parameters not having been "
-        "implemented yet."
-    )
-    RomanStep.from_cmdline(args)
-    rtdata.get_truth(f"truth/WFI/image/{output}")
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
-    step.log.info(
-        f"DMS79 MSG: Was proper flat fielded Level 2 data produced? : {diff.identical}"
-    )
-    assert diff.identical, diff.report()
-
-    # Test differing flat matches
-    step.log.info(
-        "DMS79 MSG REQUIRED TEST: Are the two data files "
-        "matched to different flat files? : "
-        f"{('/'.join(ref_file_path.rsplit('/', 3)[1:]))} != "
-        f"{('/'.join(ref_file_path_b.rsplit('/', 3)[1:]))}"
-    )
-    assert "/".join(ref_file_path.rsplit("/", 1)[1:]) != "/".join(
-        ref_file_path_b.rsplit("/", 1)[1:]
-    )
+    with rdm.open(IMAGE_FILENAME) as model:
+        ref_a = step.get_reference_file(model, "flat")
+        model.meta.exposure.start_time = Time("2020-01-01T00:00:00", format="isot")
+        ref_b = step.get_reference_file(model, "flat")
+    assert ref_a != "N/A"
+    assert ref_b != "N/A"
+    assert ref_a != ref_b
