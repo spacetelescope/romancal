@@ -1,25 +1,35 @@
-def insert_filter(colname, filter_name):
+def insert_substring(original, insert_str, substring, before=True):
     """
-    Insert the filter name into the column name.
+    Insert ``insert_str`` into ``original`` before or after ``substring``.
+
+    If ``substring`` is not found, then ``insert_str`` is appended to
+    ``original``.
 
     Parameters
     ----------
-    colname : str
-        The original column name.
-
-    filter_name : str
-        The filter name to insert.
+    original : str
+        Original string to modify.
+    insert_str : str
+        Substring to insert.
+    substrings : str
+        Substring to match.
+    before : bool, optional
+        If True, insert before the substring. If False, insert
+        after the substring. Default is True.
 
     Returns
     -------
     result : str
-        The updated column name.
+        Modified string.
     """
-    if colname.endswith("_err"):
-        base = colname[:-4]
-        return f"{base}_{filter_name}_err"
-    else:
-        return f"{colname}_{filter_name}"
+    if (idx := original.find(substring)) != -1:
+        if before:
+            pos = idx
+        else:
+            pos = idx + len(substring)
+        return original[:pos] + insert_str + original[pos:]
+
+    return original + insert_str
 
 
 def add_filter_to_colnames(table, filter_name):
@@ -55,10 +65,16 @@ def add_filter_to_colnames(table, filter_name):
     )
 
     for colname in table.colnames:
-        if any(ext in colname for ext in insert_col_exts):
-            new_colname = insert_filter(colname, filter_name)
-            table.rename_column(colname, new_colname)
-        elif colname in append_cols:
+        if colname in append_cols:
             table.rename_column(colname, f"{colname}_{filter_name}")
+        else:
+            for ext in insert_col_exts:
+                if ext in colname:
+                    before = False if ext == "_psf" else True
+                    new_colname = insert_substring(
+                        colname, "_" + filter_name, ext, before=before
+                    )
+                    table.rename_column(colname, new_colname)
+                    break  # no need to check other ext
 
     return table
