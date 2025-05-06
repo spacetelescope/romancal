@@ -167,7 +167,7 @@ class ResampleData(Resample):
         else:
             level = 0
             subtracted = True
-        res =  {
+        res = {
             "data": model.data,
             "dq": model.dq,
             "var_rnoise": model.var_rnoise,

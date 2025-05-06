@@ -54,15 +54,16 @@ def test_resample_single_file(rtdata, ignore_asdf_paths, resource_tracker, reque
     step.log.info(
         f"""DMS343 MSG: ResampleStep created new attribute data quality information? :\
             {
-                all(
-                    hasattr(resample_out, x) for x in [
-                        "data",
-                        "err",
-                        "var_poisson",
-                        "var_rnoise",
-                    ]
-                )
-            }"""
+            all(
+                hasattr(resample_out, x)
+                for x in [
+                    "data",
+                    "err",
+                    "var_poisson",
+                    "var_rnoise",
+                ]
+            )
+        }"""
     )
     assert all(
         hasattr(resample_out, x) for x in ["data", "err", "var_poisson", "var_rnoise"]

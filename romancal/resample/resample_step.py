@@ -131,11 +131,11 @@ class ResampleStep(RomanStep):
         else:
             wcs_kwargs = None
 
-        variance_array_names = ['var_rnoise', 'var_poisson']
+        variance_array_names = ["var_rnoise", "var_poisson"]
         with input_models:
             model = input_models.borrow(0)
-            if hasattr(model, 'var_flat'):
-                variance_array_names.append('var_flat')
+            if hasattr(model, "var_flat"):
+                variance_array_names.append("var_flat")
             input_models.shelve(model, modify=False)
 
         # Call the resampling routine
