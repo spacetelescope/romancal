@@ -1,0 +1,1 @@
+Remove verify_install_requires script which was only for testing and not to be packaged.
