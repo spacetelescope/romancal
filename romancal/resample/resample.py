@@ -272,7 +272,7 @@ class ResampleData(Resample):
         if self._enable_ctx:
             output_model.context = self.output_model["con"].astype(np.uint32)
 
-        for arr_name in ["err"] + self.variance_array_names:
+        for arr_name in ["err", *self.variance_array_names]:
             if arr_name in self.output_model:
                 new_array = self.output_model[arr_name]
                 if new_array is not None:

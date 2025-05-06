@@ -107,7 +107,7 @@ def apply_flux_correction(model):
     DATA = ("data", "err")
     VARIANCES = ("var_rnoise", "var_poisson")
     if hasattr(model, "var_flat"):
-        VARIANCES = VARIANCES + ("var_flat",)
+        VARIANCES = (*VARIANCES, "var_flat")
 
     if model.meta.cal_step["flux"] == "COMPLETE":
         message = (

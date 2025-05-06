@@ -23,7 +23,7 @@ class FlatFieldStep(RomanStep):
     class_alias = "flat_field"
     spec = """
         include_var_flat = boolean(default=False) # include flat field variance
-    """  # noqa: E501
+    """
 
     reference_file_types: ClassVar = ["flat"]
 
