@@ -99,21 +99,21 @@ contained in the ``model.err`` array. Note that this array includes
 source Poisson noise.
 
 
-Output Products
----------------
-
 Source Catalog Table
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
-The output source catalog table is saved to a file in the `Parquet
-<https://parquet.apache.org/>`_ format.
-
-The table contains one row for each source, with the columns listed
-below (assuming PSF-photometry is requested).
+The source catalog table contains one row for each source, with the
+columns listed below (assuming PSF-photometry is requested).
 
 All pixel coordinates are 0-indexed, following Python's 0-based
 indexing. This means pixel coordinate 0 corresponds to the center of the
 first pixel.
+
+All sky coordinates are in decimal degrees in the International
+Celestial Reference System (ICRS) reference frame.
+
+Uncertainties are reported as the 1-sigma (68.27% confidence) errors.
+
 
 +-----------------------+-----------------------------------------------------+
 | Column                | Description                                         |
@@ -297,6 +297,60 @@ first pixel.
 +-----------------------+-----------------------------------------------------+
 | psf_gof               | PSF goodness of fit metric                          |
 +-----------------------+-----------------------------------------------------+
+
+
+Detailed descriptions of many of the columns can be found in the
+`Photutils documentation <https://photutils.readthedocs.io/en/latest/>`_:
+
+* `SourceCatalog
+  <https://photutils.readthedocs.io/en/latest/api/photutils.segmentation.SourceCatalog.html>`_
+
+* `PSFPhotometry
+  <https://photutils.readthedocs.io/en/latest/api/photutils.psf.PSFPhotometry.html>`_
+
+* `DAOStarFinder
+  <https://photutils.readthedocs.io/en/latest/api/photutils.detection.DAOStarFinder.html>`_
+
+
+Flag Columns
+^^^^^^^^^^^^
+
+The ``warning_flags`` column contains the following bit flags:
+
+- 0 : good
+- 1 :
+
+  * Level 2: sources whose rounded centroid pixel is not finite or has
+    DO_NOT_USE set in the model DQ
+
+  * Level 3: sources whose rounded centroid pixel is not finite or has a
+    weight of 0
+
+The ``image_flags`` column contains the following bit flags:
+
+- 0 : good
+- 1 : one or more pixels in the source segment was flagged
+
+The ``psf_flags`` column contains the following bit flags defined by the
+:py:class:`photutils.psf.PSFPhotometry` class:
+
+- 0 : good
+- 1 : one or more pixels in the ``fit_shape`` region were masked
+- 2 : the fit x and/or y position lies outside of the input data
+- 4 : the fit flux is less than or equal to zero
+- 8 : the fitter may not have converged
+- 16 : the fitter parameter covariance matrix was not returned
+- 32 : the fit x or y position is at the bounded value
+
+
+Output Products
+---------------
+
+Source Catalog Table
+^^^^^^^^^^^^^^^^^^^^
+
+The output source catalog table is saved to a file in the `Parquet
+<https://parquet.apache.org/>`_ format.
 
 
 Segmentation Map
