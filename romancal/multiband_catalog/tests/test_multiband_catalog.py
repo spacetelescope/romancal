@@ -100,7 +100,7 @@ def test_multiband_catalog(
             if (
                 "flux" in colname
                 and "fluxfrac" not in colname
-                and "aper_bkg_flux" not in colname
+                and "aper_bkg" not in colname
             ):
                 assert cat[colname].unit == "nJy"
                 assert "f158" in colname or "f184" in colname
