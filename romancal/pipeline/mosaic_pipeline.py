@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 __all__ = ["MosaicPipeline"]
 
 # Define logging
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
