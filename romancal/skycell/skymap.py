@@ -30,6 +30,7 @@ class SkyCell:
 
     _index: int | None
     _data: np.void
+    _skymap: "SkyMap"
 
     # average area of a sky cell in square degrees on the sphere
     area = 1.7760288493318122e-06
@@ -37,18 +38,25 @@ class SkyCell:
     # average diagonal length of a skycell in degrees on the sphere
     length = 0.0018846729895155984
 
-    def __init__(self, index: int | None):
+    def __init__(self, index: int | None, skymap: "SkyMap" = None):
         """
         Parameters
         ----------
         index : int
             Index in the global sky map.
+        skymap: SkyMap
+            sky map instance (defaults to global SKYMAP)
         """
+
+        if skymap is None:
+            skymap = SKYMAP
+
         self._index = index
+        self._skymap = skymap
         self._data = None
 
     @classmethod
-    def from_name(cls, name: str) -> "SkyCell":
+    def from_name(cls, name: str, skymap: "SkyMap" = None) -> "SkyCell":
         """
         Retrieve a sky cell from the sky map by its name (see handbook [1] for explanation).
 
@@ -56,6 +64,8 @@ class SkyCell:
         ----------
         name : str
             Name of a sky cell, for instance `315p86x50y75`.
+        skymap: SkyMap
+            sky map instance (defaults to global SKYMAP)
 
         References
         ----------
@@ -64,16 +74,19 @@ class SkyCell:
         if not re.match(r"\d{3}\w\d{2}x\d{2}y\d{2}", name):
             raise ValueError(f"invalid skycell name {name}")
 
-        indices = np.where(SKYMAP.model.skycells["name"] == name)[0]
+        if skymap is None:
+            skymap = SKYMAP
+
+        indices = np.where(skymap.model.skycells["name"] == name)[0]
         if len(indices) > 0:
-            return SkyCell(indices[0])
+            return SkyCell(indices[0], skymap=skymap)
         else:
             raise KeyError(
                 f"skycell with name '{name}' does not exist in the currently-loaded sky map"
             )
 
     @classmethod
-    def from_data(cls, data: np.void) -> "SkyCell":
+    def from_data(cls, data: np.void, skymap: "SkyMap" = None) -> "SkyCell":
         """
         build an index-less sky cell instance from a data array
 
@@ -81,8 +94,10 @@ class SkyCell:
         ----------
         data : numpy.void
             array with sky cell parameters (see schema)
+        skymap: SkyMap
+            sky map instance (defaults to global SKYMAP)
         """
-        instance = cls(index=None)
+        instance = cls(index=None, skymap=skymap)
         instance._data = data
         return instance
 
@@ -91,6 +106,7 @@ class SkyCell:
         cls,
         projregion_center: tuple[float, float],
         skycell_coordinates: tuple[int, int],
+        skymap: "SkyMap" = None,
     ) -> "SkyCell":
         """
         Retrieve a sky cell from the sky map using
@@ -105,17 +121,20 @@ class SkyCell:
             center coordinates of its containing projection region in right ascension and declination
         skycell_coordinates : tuple[int, int]
             XY location of the sky cell within its projection region, in units of ordinal sky cells from the center
+        skymap: SkyMap
+            sky map instance (defaults to global SKYMAP)
 
         References
         ----------
         .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
         """
         return cls.from_name(
-            f"r{round(projregion_center[0]):03}d{'p' if projregion_center[1] >= 0 else 'm'}{round(projregion_center[1]):02}x{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}y{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}"
+            f"r{round(projregion_center[0]):03}d{'p' if projregion_center[1] >= 0 else 'm'}{round(projregion_center[1]):02}x{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}y{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}",
+            skymap=skymap,
         )
 
     @classmethod
-    def from_asn(cls, asn: dict | str) -> "SkyCell":
+    def from_asn(cls, asn: dict | str, skymap: "SkyMap" = None) -> "SkyCell":
         """
         retrieve a sky cell from WCS info or a target specified in an association
 
@@ -127,6 +146,8 @@ class SkyCell:
         ----------
         asn : dict | str
             association dictionary or a path to an association file to load
+        skymap: SkyMap
+            sky map instance (defaults to global SKYMAP)
         """
 
         if isinstance(asn, str | os.PathLike):
@@ -142,7 +163,7 @@ class SkyCell:
                 "cannot extract skycell information from an association without `skycell_wcs_info` or `target`"
             )
 
-        return SkyCell.from_name(skycell_name)
+        return SkyCell.from_name(skycell_name, skymap=skymap)
 
     @property
     def index(self) -> int | None:
@@ -157,7 +178,7 @@ class SkyCell:
         ("name", "ra_center", "dec_center", "orientat", "x_tangent", "y_tangent", "ra_corn1", "dec_corn1", "ra_corn2", "dec_corn2", "ra_corn3", "dec_corn3", "ra_corn4", "dec_corn4")
         """
         if self._data is None and self.index is not None:
-            self._data = SKYMAP.model.skycells[self.index]
+            self._data = self._skymap.model.skycells[self.index]
         return self._data
 
     @property
@@ -230,12 +251,12 @@ class SkyCell:
     @property
     def pixel_scale(self) -> float:
         """degrees per pixel"""
-        return SKYMAP.pixel_scale
+        return self._skymap.pixel_scale
 
     @property
     def pixel_shape(self) -> tuple[int, int]:
         """number of pixels across"""
-        return SKYMAP.pixel_shape
+        return self._skymap.pixel_shape
 
     @property
     def wcs_info(self) -> dict[str, float | str]:
@@ -285,6 +306,7 @@ class ProjectionRegion:
 
     _index: int | None
     _data: np.void
+    _skymap: "SkyMap"
 
     # area of the smallest projection region in square degrees on the sphere
     MIN_AREA = 0.002791388883915502
@@ -292,19 +314,26 @@ class ProjectionRegion:
     # diagonal length of the longest projection region in degrees on the sphere
     MAX_LENGTH = 0.08174916691321586
 
-    def __init__(self, index: int | None):
+    def __init__(self, index: int | None, skymap: "SkyMap" = None):
         """
         Parameters
         ----------
         index : int
             index of the projection region in the sky map array
+        skymap: SkyMap
+            sky map instance (defaults to global SKYMAP)
         """
+
+        if skymap is None:
+            skymap = SKYMAP
+
         self._index = index
+        self._skymap = skymap
         if index is not None:
-            self._data = SKYMAP.model.projection_regions[index]
+            self._data = self._skymap.model.projection_regions[index]
 
     @classmethod
-    def from_data(cls, data: np.void) -> "ProjectionRegion":
+    def from_data(cls, data: np.void, skymap: "SkyMap" = None) -> "ProjectionRegion":
         """
         build a projection region instance from a data array
 
@@ -312,35 +341,47 @@ class ProjectionRegion:
         ----------
         data : numpy.void
             array with projection region parameters (see schema)
+        skymap: SkyMap
+            sky map instance (defaults to global SKYMAP)
         """
-        instance = cls(index=data["index"])
+        instance = cls(index=data["index"], skymap=skymap)
         instance._data = data
         return instance
 
     @classmethod
-    def from_skycell_index(cls, index: int) -> "ProjectionRegion":
+    def from_skycell_index(
+        cls, index: int, skymap: "SkyMap" = None
+    ) -> "ProjectionRegion":
         """
         Parameters
         ----------
         index : int
             index of the sky cell
+        skymap: SkyMap
+            sky map instance (defaults to global SKYMAP)
 
         Returns
         -------
         ProjectionRegion
             projection region corresponding to the given sky cell
         """
-        for projregion in SKYMAP.model.projection_regions:
-            if (
-                int(projregion["skycell_start"])
-                <= index
-                < int(projregion["skycell_end"])
-            ):
-                return cls(projregion["index"])
+
+        if skymap is None:
+            skymap = SKYMAP
+
+        projregion_indices = np.where(
+            (index >= skymap.model.projection_regions["skycell_start"])
+            & (index < skymap.model.projection_regions["skycell_end"])
+        )[0]
+        if len(projregion_indices) == 1:
+            return cls(projregion_indices[0], skymap=skymap)
         else:
-            raise KeyError(
+            msg = (
                 f"sky cell index {index} not found in any projection regions"
+                if len(projregion_indices) == 0
+                else f"sky cell index {index} found in multiple projection regions; possibly malformed sky map at {skymap.path}"
             )
+            raise KeyError(msg)
 
     @property
     def index(self) -> int | None:
@@ -388,7 +429,7 @@ class ProjectionRegion:
     @property
     def skycells(self) -> np.void:
         """subset array of sky cells from the sky map within this region"""
-        return SKYMAP.model.skycells[self.skycell_indices]
+        return self._skymap.model.skycells[self.skycell_indices]
 
     @cached_property
     def skycells_kdtree(self) -> KDTree:
@@ -473,7 +514,7 @@ class ProjectionRegion:
     @property
     def pixel_scale(self) -> float:
         """degrees per pixel"""
-        return SKYMAP.pixel_scale
+        return self._skymap.pixel_scale
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, ProjectionRegion):

@@ -151,6 +151,7 @@ class ImageFootprint:
 def find_skycell_matches(
     image_corners: list[tuple[float, float]] | NDArray[float] | WCS,
     image_shape: tuple[int, int] | None = None,
+    skymap: sc.SkyMap = None,
 ) -> tuple[list[int], list[int]]:
     """
     Find sky cells overlapping the provided image footprint
@@ -162,10 +163,11 @@ def find_skycell_matches(
         a GWCS instance. The instance must have either the bounding_box or
         pixel_shape attribute defined, or the following image_shape argument
         must be supplied
-
     image_shape : image shape to be used if a GWCS instance is supplied
         and does not contain a value for either the bounding_box or
         pixel_shape attributes. Default value is None.
+    skymap: SkyMap
+        sky map instance (defaults to global SKYMAP)
 
     Returns
     -------
@@ -179,18 +181,21 @@ def find_skycell_matches(
     else:
         footprint = ImageFootprint(image_corners)
 
+    if skymap is None:
+        skymap = sc.SKYMAP
+
     nearby_skycell_indices = []
     intersecting_skycell_indices = []
 
     # query the global k-d tree of projection regions for possible intersection candidates in (normalized) 3D space
     nearby_projregion_indices = np.array(
-        sc.SKYMAP.projection_regions_kdtree.query(
+        skymap.projection_regions_kdtree.query(
             footprint.vectorpoint_center,
             k=footprint.possibly_intersecting_projregions,
         )[1]
     )
     nearby_projregion_indices = nearby_projregion_indices[
-        np.where(nearby_projregion_indices != len(sc.SKYMAP.model.projection_regions))
+        np.where(nearby_projregion_indices != len(skymap.model.projection_regions))
     ]
 
     for projregion_index in nearby_projregion_indices:

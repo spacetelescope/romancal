@@ -49,15 +49,13 @@ EPSILON = 0.0011  # epsilon offset in degrees
 DATA_DIRECTORY = Path(__file__).parent / "data"
 
 
-@pytest.fixture(autouse=True)
-def override_skymap(monkeypatch):
+@pytest.fixture()
+def skymap_subset() -> sc.SkyMap:
     """
-    For the tests in this file, monkeypatch the global
-    skymap path to a smaller subset to allow these tests
+    smaller subset to allow these tests
     to run without access to the full skymap from CRDS.
     """
-    monkeypatch.setattr(sc.SKYMAP, "path", DATA_DIRECTORY / "skymap_subset.asdf")
-    yield
+    return sc.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
 
 
 def mk_im_corners(
@@ -437,13 +435,17 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
         ),
     ],
 )
-def test_skycell_match(test_point, offset, rotation, size, expected_skycell_names):
+def test_skycell_match(
+    test_point, offset, rotation, size, expected_skycell_names, skymap_subset
+):
     corners = mk_im_corners(*test_point + np.array(offset), rotation, size)
 
-    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(corners)
+    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
+        corners, skymap=skymap_subset
+    )
 
     skycell_names = np.array(
-        [sc.SKYMAP.model.skycells[index]["name"] for index in intersecting_skycells]
+        [skymap_subset.model.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
 
     assert sorted(skycell_names) == sorted(expected_skycell_names)
@@ -470,16 +472,16 @@ def test_skycell_match(test_point, offset, rotation, size, expected_skycell_name
         )
     ],
 )
-def test_match_from_wcs(test_point, expected_skycell_names):
+def test_match_from_wcs(test_point, expected_skycell_names, skymap_subset):
     wcsobj = mk_gwcs(*test_point, 45)
     imshape = (4096, 4096)
 
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
-        wcsobj, image_shape=imshape
+        wcsobj, image_shape=imshape, skymap=skymap_subset
     )
 
     skycell_names = np.array(
-        [sc.SKYMAP.model.skycells[index]["name"] for index in intersecting_skycells]
+        [skymap_subset.model.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
 
     assert skycell_names == expected_skycell_names
@@ -506,15 +508,17 @@ def test_match_from_wcs(test_point, expected_skycell_names):
         )
     ],
 )
-def test_match_from_wcs_with_imshape(test_point, expected_skycell_names):
+def test_match_from_wcs_with_imshape(test_point, expected_skycell_names, skymap_subset):
     wcsobj = mk_gwcs(*test_point, 45)
     imshape = (4096, 4096)
     wcsobj.pixel_shape = imshape
 
-    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
+    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
+        wcsobj, skymap=skymap_subset
+    )
 
     skycell_names = np.array(
-        [sc.SKYMAP.model.skycells[index]["name"] for index in intersecting_skycells]
+        [skymap_subset.model.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
 
     assert skycell_names == expected_skycell_names
@@ -541,14 +545,16 @@ def test_match_from_wcs_with_imshape(test_point, expected_skycell_names):
         )
     ],
 )
-def test_match_from_wcs_with_bbox(test_point, expected_skycell_names):
+def test_match_from_wcs_with_bbox(test_point, expected_skycell_names, skymap_subset):
     wcsobj = mk_gwcs(*test_point, 45)
     wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
 
-    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
+    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
+        wcsobj, skymap=skymap_subset
+    )
 
     skycell_names = np.array(
-        [sc.SKYMAP.model.skycells[index]["name"] for index in intersecting_skycells]
+        [skymap_subset.model.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
 
     assert skycell_names == expected_skycell_names
@@ -560,4 +566,6 @@ def test_match_from_wcs_without_imshape_or_bbox(test_point):
     wcsobj.bounding_box = None
 
     with pytest.raises(ValueError):
-        intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
+        intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
+            wcsobj, skymap=skymap_subset
+        )

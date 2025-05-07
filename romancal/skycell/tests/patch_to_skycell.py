@@ -25,7 +25,7 @@ def patch_names_to_skycell_names(
         patch_radec_center = np.array(
             sgv.lonlat_to_vector(patch["ra_center"], patch["dec_center"])
         ).T[0]
-        neighboring_projregion_indices = sc.SKYMAP.projection_regions_kdtree.query(
+        neighboring_projregion_indices = skymap.projection_regions_kdtree.query(
             patch_radec_center,
             k=4,
         )[1]
