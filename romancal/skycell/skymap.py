@@ -263,13 +263,15 @@ class SkyCell:
     @cached_property
     def wcs(self) -> WCS:
         """WCS representing this sky cell"""
-        return wcsinfo_to_wcs(
+        wcsobj = wcsinfo_to_wcs(
             self.wcs_info,
             bounding_box=(
-                (0.0, self.pixel_shape[0] + 1.0),
-                (0.0, self.pixel_shape[1] + 1.0),
+                (-0.5, self.pixel_shape[0] + 0.5),
+                (-0.5, self.pixel_shape[1] + 0.5),
             ),
         )
+        wcsobj.array_shape = self.pixel_shape
+        return wcsobj
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, SkyCell):
