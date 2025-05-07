@@ -141,7 +141,15 @@ class SourceCatalogStep(RomanStep):
         else:
             forced_segmodel = datamodels.open(self.forced_segmentation)
             # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
-            segment_img = SegmentationImage(forced_segmodel.data[...])
+            # remove fully masked segments
+            forced_segimg = forced_segmodel.data[...]
+            unmasked_sources = np.unique(forced_segimg * (mask == 0))
+            fully_masked_sources = (set(np.unique(forced_segimg)) -
+                                    set(unmasked_sources))
+            forced_segimg_mask = np.isin(
+                forced_segimg, np.array(list(fully_masked_sources)))
+            forced_segimg[forced_segimg_mask] = 0
+            segment_img = SegmentationImage(forced_segimg)
 
         if segment_img is None:  # no sources found
             cat = Table()
