@@ -64,7 +64,7 @@ class SkyCell:
         if not re.match(r"\d{3}\w\d{2}x\d{2}y\d{2}", name):
             raise ValueError(f"invalid skycell name {name}")
 
-        indices = np.where(SKYMAP.skycells["name"] == name)[0]
+        indices = np.where(SKYMAP.model.skycells["name"] == name)[0]
         if len(indices) > 0:
             return SkyCell(indices[0])
         else:
@@ -157,7 +157,7 @@ class SkyCell:
         ("name", "ra_center", "dec_center", "orientat", "x_tangent", "y_tangent", "ra_corn1", "dec_corn1", "ra_corn2", "dec_corn2", "ra_corn3", "dec_corn3", "ra_corn4", "dec_corn4")
         """
         if self._data is None and self.index is not None:
-            self._data = SKYMAP.skycells[self.index]
+            self._data = SKYMAP.model.skycells[self.index]
         return self._data
 
     @property
@@ -299,7 +299,7 @@ class ProjectionRegion:
         """
         self._index = index
         if index is not None:
-            self._data = SKYMAP.projection_regions[index]
+            self._data = SKYMAP.model.projection_regions[index]
 
     @classmethod
     def from_data(cls, data: np.void) -> "ProjectionRegion":
@@ -328,7 +328,7 @@ class ProjectionRegion:
         ProjectionRegion
             projection region corresponding to the given sky cell
         """
-        for projregion in SKYMAP.projection_regions:
+        for projregion in SKYMAP.model.projection_regions:
             if (
                 int(projregion["skycell_start"])
                 <= index
@@ -386,7 +386,7 @@ class ProjectionRegion:
     @property
     def skycells(self) -> np.void:
         """subset array of sky cells from the sky map within this region"""
-        return SKYMAP.skycells[self.skycell_indices]
+        return SKYMAP.model.skycells[self.skycell_indices]
 
     @cached_property
     def skycells_kdtree(self) -> KDTree:
@@ -535,11 +535,6 @@ class SkyMap:
             self._data = roman_datamodels.open(self._path, memmap=True)
         return self._data
 
-    @property
-    def skycells(self) -> np.void:
-        """array of sky cells"""
-        return self.model.skycells
-
     @cached_property
     def skycells_kdtree(self) -> KDTree:
         """
@@ -553,17 +548,13 @@ class SkyMap:
             sgv.normalize_vector(
                 np.stack(
                     sgv.lonlat_to_vector(
-                        self.skycells["ra_center"], self.skycells["dec_center"]
+                        self.model.skycells["ra_center"],
+                        self.model.skycells["dec_center"],
                     ),
                     axis=1,
                 )
             )
         )
-
-    @property
-    def projection_regions(self) -> np.void:
-        """array of projection regions"""
-        return self.model.projection_regions
 
     @cached_property
     def projection_regions_kdtree(self) -> KDTree:
@@ -572,8 +563,8 @@ class SkyMap:
             sgv.normalize_vector(
                 np.stack(
                     sgv.lonlat_to_vector(
-                        self.projection_regions["ra_tangent"],
-                        self.projection_regions["dec_tangent"],
+                        self.model.projection_regions["ra_tangent"],
+                        self.model.projection_regions["dec_tangent"],
                     ),
                     axis=1,
                 )
