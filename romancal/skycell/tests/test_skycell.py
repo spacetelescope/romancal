@@ -147,7 +147,7 @@ def test_skycell_wcs_pixel_to_world(name):
             )
         ).T,
         skycell.radec_corners,
-        rtol=1e-5,
+        rtol=1e-7,
     )
 
 
@@ -187,8 +187,7 @@ def test_skycell_wcs_world_to_pixel(name):
                 (0.5, skycell.pixel_shape[1] + 0.5),
             ]
         ),
-        # TODO; figure out why this is so messy in the case of polar caps
-        rtol=1e-5 if not skycell.projection_region.is_polar else 1e-1,
+        rtol=1e-5,
     )
 
 
@@ -224,7 +223,7 @@ def test_skycell_wcsinfo(name):
             (wcsinfo["ny"] / 2.0) + 0.5,
         ),
         (wcsinfo["ra_center"], wcsinfo["dec_center"]),
-        rtol=1e-5,
+        rtol=1e-7,
     )
 
     assert_allclose_lonlat(
@@ -244,5 +243,5 @@ def test_skycell_wcsinfo(name):
             )
         ).T,
         skycell.radec_corners,
-        rtol=1e-5,
+        rtol=1e-7,
     )
