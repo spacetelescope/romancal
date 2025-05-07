@@ -178,7 +178,7 @@ def test_skycell_wcs_world_to_pixel(name):
 
     # inverse transform to pixel corners
     assert_allclose(
-        np.array(wcs.invert(*skycell.radec_corners.T)).T,
+        np.array(wcs.invert(*skycell.radec_corners.T, with_bounding_box=False)).T,
         (
             [
                 (0.5, 0.5),
