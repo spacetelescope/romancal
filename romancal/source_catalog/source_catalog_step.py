@@ -172,7 +172,7 @@ class SourceCatalogStep(RomanStep):
                 segment_img,
                 forced_detection_image,
                 self.kernel_fwhm,
-                fit_psf=self.fit_psf,
+                fit_psf=self.fit_psf & (not forced),  # skip when forced
                 mask=mask,
                 cat_type="forced_full",
             )
