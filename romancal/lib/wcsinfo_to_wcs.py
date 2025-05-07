@@ -29,15 +29,21 @@ def wcsinfo_to_wcs(
     wcs : WCS
         The WCS object created.
     """
-    pixelshift = models.Shift(-wcsinfo["x0_projection"], name="offset") & models.Shift(
-        -wcsinfo["y0_projection"], name="offset"
+    pixelshift = models.Shift(
+        -wcsinfo.get("x0_projection", wcsinfo.get("x_ref", None)),
+        name="crpix1",
+    ) & models.Shift(
+        -wcsinfo.get("y0_projection", wcsinfo.get("y_ref", None)),
+        name="crpix2",
     )
     pixelscale = models.Scale(wcsinfo["pixel_scale"], name="scale") & models.Scale(
         wcsinfo["pixel_scale"], name="scale"
     )
     tangent_projection = models.Pix2Sky_TAN()
     celestial_rotation = models.RotateNative2Celestial(
-        wcsinfo["ra_projection_center"], wcsinfo["dec_projection_center"], 180.0
+        wcsinfo.get("ra_projection_center", wcsinfo.get("ra_ref", None)),
+        wcsinfo.get("dec_projection_center", wcsinfo.get("dec_ref", None)),
+        180.0,
     )
 
     matrix = wcsinfo.get("rotation_matrix", None)
@@ -46,13 +52,17 @@ def wcsinfo_to_wcs(
     else:
         matrix = np.reshape(
             wcs_util.calc_rotation_matrix(
-                np.deg2rad(wcsinfo.get("orientat_projection_center", 0.0)),
+                np.deg2rad(
+                    wcsinfo.get(
+                        "orientat_projection_center", wcsinfo.get("orientat", 0.0)
+                    )
+                ),
                 v3i_yangle=0.0,
                 vparity=1,
             ),
             (2, 2),
         )
-    rotation = models.AffineTransformation2D(matrix, name="rotation")
+    rotation = models.AffineTransformation2D(matrix, name="pc_rotation_matrix")
     det2sky = (
         pixelshift | rotation | pixelscale | tangent_projection | celestial_rotation
     )
