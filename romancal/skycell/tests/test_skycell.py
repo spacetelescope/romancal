@@ -17,21 +17,19 @@ def assert_allclose_lonlat(actual: np.ndarray, desired: np.ndarray, rtol=1e-7, a
     )
 
 
-@pytest.fixture(autouse=True)
-def override_skymap(monkeypatch):
+@pytest.fixture()
+def skymap_subset() -> sc.SkyMap:
     """
-    For the tests in this file, monkeypatch the global
-    skymap path to a smaller subset to allow these tests
+    smaller subset to allow these tests
     to run without access to the full skymap from CRDS.
     """
-    monkeypatch.setattr(sc.SKYMAP, "path", DATA_DIRECTORY / "skymap_subset.asdf")
-    yield
+    return sc.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
 
 
-def test_skycell_from_name():
-    skycell = sc.SkyCell.from_name("225p90x30y51")
+def test_skycell_from_name(skymap_subset):
+    skycell = sc.SkyCell.from_name("225p90x30y51", skymap=skymap_subset)
 
-    assert skycell == sc.SkyCell(107)
+    assert skycell == sc.SkyCell(107, skymap=skymap_subset)
 
     assert skycell.data == np.void(
         (
@@ -69,42 +67,74 @@ def test_skycell_from_name():
     )
 
     with pytest.raises(KeyError):
-        sc.SkyCell.from_name("270p65x49y70")
+        sc.SkyCell.from_name("270p65x49y70", skymap=skymap_subset)
 
     with pytest.raises(ValueError):
-        sc.SkyCell.from_name("r274dp63x63y81")
+        sc.SkyCell.from_name("r274dp63x63y81", skymap=skymap_subset)
 
     with pytest.raises(ValueError):
-        sc.SkyCell.from_name("notaskycellname")
+        sc.SkyCell.from_name("notaskycellname", skymap=skymap_subset)
 
 
-def test_skycell_from_asn():
-    skycell = sc.SkyCell.from_asn(DATA_DIRECTORY / "L3_mosaic_asn.json")
+def test_skycell_from_asn(skymap_subset):
+    skycell = sc.SkyCell.from_asn(
+        DATA_DIRECTORY / "L3_mosaic_asn.json", skymap=skymap_subset
+    )
     assert skycell.name == "225p90x49y67"
 
     with pytest.raises(ValueError):
-        sc.SkyCell.from_asn(DATA_DIRECTORY / "L3_regtest_asn.json")
+        sc.SkyCell.from_asn(
+            DATA_DIRECTORY / "L3_regtest_asn.json", skymap=skymap_subset
+        )
 
     with pytest.raises(ValueError):
-        sc.SkyCell.from_asn(DATA_DIRECTORY / "L3_skycell_mbcat_asn.json")
+        sc.SkyCell.from_asn(
+            DATA_DIRECTORY / "L3_skycell_mbcat_asn.json", skymap=skymap_subset
+        )
 
 
-def test_skycell_from_projregion():
-    projregion = sc.ProjectionRegion(0)
+def test_skycell_from_projregion(skymap_subset):
+    projregion = sc.ProjectionRegion(0, skymap=skymap_subset)
 
-    assert projregion.skycells[100] == sc.SkyCell.from_name("225p90x30y44").data
+    assert (
+        projregion.skycells[100]
+        == sc.SkyCell.from_name("225p90x30y44", skymap=skymap_subset).data
+    )
 
-    assert projregion.skycell_indices[-1] != sc.ProjectionRegion(1).skycell_indices[0]
+    assert (
+        projregion.skycell_indices[-1]
+        != sc.ProjectionRegion(1, skymap=skymap_subset).skycell_indices[0]
+    )
 
 
-def test_projregion_from_skycell():
+def test_projregion_from_skycell(skymap_subset):
     skycell = sc.SkyCell.from_name("225p90x30y51")
 
-    assert skycell.projection_region == sc.ProjectionRegion(0)
+    projregion0 = sc.ProjectionRegion(0, skymap=skymap_subset)
+    projregion1 = sc.ProjectionRegion(1, skymap=skymap_subset)
 
-    assert sc.ProjectionRegion.from_skycell_index(107) == sc.ProjectionRegion(0)
+    assert skycell.projection_region == projregion0
 
-    assert sc.ProjectionRegion.from_skycell_index(0) == sc.ProjectionRegion(0)
+    assert (
+        sc.ProjectionRegion.from_skycell_index(107, skymap=skymap_subset) == projregion0
+    )
+
+    assert (
+        sc.ProjectionRegion.from_skycell_index(0, skymap=skymap_subset) == projregion0
+    )
+
+    assert (
+        sc.ProjectionRegion.from_skycell_index(
+            projregion0.data["skycell_end"], skymap=skymap_subset
+        )
+        == projregion1
+    )
+
+    with pytest.raises(KeyError):
+        sc.ProjectionRegion.from_skycell_index(-1, skymap=skymap_subset)
+
+    with pytest.raises(KeyError):
+        sc.ProjectionRegion.from_skycell_index(10000, skymap=skymap_subset)
 
 
 @pytest.mark.parametrize(
@@ -127,8 +157,8 @@ def test_projregion_from_skycell():
         "225p90x67y38",
     ],
 )
-def test_skycell_wcs_pixel_to_world(name):
-    skycell = sc.SkyCell.from_name(name)
+def test_skycell_wcs_pixel_to_world(name, skymap_subset):
+    skycell = sc.SkyCell.from_name(name, skymap=skymap_subset)
 
     wcs = skycell.wcs
 
@@ -171,8 +201,8 @@ def test_skycell_wcs_pixel_to_world(name):
         "225p90x67y38",
     ],
 )
-def test_skycell_wcs_world_to_pixel(name):
-    skycell = sc.SkyCell.from_name(name)
+def test_skycell_wcs_world_to_pixel(name, skymap_subset):
+    skycell = sc.SkyCell.from_name(name, skymap=skymap_subset)
 
     wcs = skycell.wcs
 
@@ -211,8 +241,8 @@ def test_skycell_wcs_world_to_pixel(name):
         "225p90x67y38",
     ],
 )
-def test_skycell_wcsinfo(name):
-    skycell = sc.SkyCell.from_name(name)
+def test_skycell_wcsinfo(name, skymap_subset):
+    skycell = sc.SkyCell.from_name(name, skymap=skymap_subset)
 
     wcs = skycell.wcs
     wcsinfo = skycell.wcs_info
