@@ -190,7 +190,7 @@ def find_skycell_matches(
         )[1]
     )
     nearby_projregion_indices = nearby_projregion_indices[
-        np.where(nearby_projregion_indices != len(sc.SKYMAP.projection_regions))
+        np.where(nearby_projregion_indices != len(sc.SKYMAP.model.projection_regions))
     ]
 
     for projregion_index in nearby_projregion_indices:

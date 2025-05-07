@@ -443,7 +443,7 @@ def test_skycell_match(test_point, offset, rotation, size, expected_skycell_name
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(corners)
 
     skycell_names = np.array(
-        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
+        [sc.SKYMAP.model.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
 
     assert sorted(skycell_names) == sorted(expected_skycell_names)
@@ -479,7 +479,7 @@ def test_match_from_wcs(test_point, expected_skycell_names):
     )
 
     skycell_names = np.array(
-        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
+        [sc.SKYMAP.model.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
 
     assert skycell_names == expected_skycell_names
@@ -514,7 +514,7 @@ def test_match_from_wcs_with_imshape(test_point, expected_skycell_names):
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
 
     skycell_names = np.array(
-        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
+        [sc.SKYMAP.model.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
 
     assert skycell_names == expected_skycell_names
@@ -548,7 +548,7 @@ def test_match_from_wcs_with_bbox(test_point, expected_skycell_names):
     intersecting_skycells, nearby_skycells = sm.find_skycell_matches(wcsobj)
 
     skycell_names = np.array(
-        [sc.SKYMAP.skycells[index]["name"] for index in intersecting_skycells]
+        [sc.SKYMAP.model.skycells[index]["name"] for index in intersecting_skycells]
     ).tolist()
 
     assert skycell_names == expected_skycell_names
