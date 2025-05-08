@@ -20,7 +20,7 @@ class NNCatalog:
 
         self.nonfinite_mask = ~np.isfinite(xypos).all(axis=1)
 
-        self.names = ["nn_label", "nn_dist"]
+        self.names = ["nn_label", "nn_distance"]
 
     def __len__(self):
         """
@@ -59,16 +59,16 @@ class NNCatalog:
         return nn_label
 
     @lazyproperty
-    def nn_dist(self):
+    def nn_distance(self):
         """
         The distance in arcsec to the nearest neighbor.
 
         NaN is returned for non-finite centroid positions or when
         the catalog contains only one source.
         """
-        nn_dist = self._kdtree_query[0]
+        nn_distance = self._kdtree_query[0]
         if len(self) != 1:
             # assign a distance of np.nan for non-finite xypos
-            nn_dist[self.nonfinite_mask] = np.nan
+            nn_distance[self.nonfinite_mask] = np.nan
 
-        return (nn_dist * self.pixel_scale).astype(np.float32)
+        return (nn_distance * self.pixel_scale).astype(np.float32)

@@ -539,7 +539,7 @@ class RomanSourceCatalog:
         col["sharpness"] = "Photutils DAOStarFinder sharpness statistic"
         col["roundness1"] = "Photutils DAOStarFinder roundness1 statistic"
         col["nn_label"] = "Segment label of the nearest neighbor in this skycell"
-        col["nn_dist"] = "Distance to the nearest neighbor in this skycell"
+        col["nn_distance"] = "Distance to the nearest neighbor in this skycell"
 
         # add the aperture flux column descriptions
         if self.aperture_cat is not None:
@@ -666,7 +666,7 @@ class RomanSourceCatalog:
         ]
         nn_colnames = [
             "nn_label",
-            "nn_dist",
+            "nn_distance",
         ]
         othershape_colnames = [
             "sharpness",
