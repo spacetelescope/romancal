@@ -22,7 +22,7 @@ def wcsinfo_to_wcs(
 
     bounding_box : None or 4-tuple
         The bounding box in detector/pixel space. Form of input is:
-        (x_left, x_right, y_bottom, y_top)
+        ((x_left, x_right), (y_bottom, y_top))
 
     Returns
     -------
