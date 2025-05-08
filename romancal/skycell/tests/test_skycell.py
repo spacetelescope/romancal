@@ -145,6 +145,7 @@ def test_projregion_from_skycell(skymap_subset):
         "000p86x59y38",
         "000p86x61y68",
         "045p86x29y34",
+        # north pole
         "225p90x25y49",
         "225p90x30y51",
         "225p90x33y62",
@@ -189,6 +190,7 @@ def test_skycell_wcs_pixel_to_world(name, skymap_subset):
         "000p86x59y38",
         "000p86x61y68",
         "045p86x29y34",
+        # north pole
         "225p90x25y49",
         "225p90x30y51",
         "225p90x33y62",
@@ -229,6 +231,7 @@ def test_skycell_wcs_world_to_pixel(name, skymap_subset):
         "000p86x59y38",
         "000p86x61y68",
         "045p86x29y34",
+        # north pole
         "225p90x25y49",
         "225p90x30y51",
         "225p90x33y62",
