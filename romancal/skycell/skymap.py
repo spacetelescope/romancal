@@ -309,9 +309,11 @@ class ProjectionRegion:
     _skymap: "SkyMap"
 
     # area of the smallest projection region in square degrees on the sphere
+    #   min(sc.ProjectionRegion(index).polygon.area() for index in range(len(sc.SKYMAP.model.projection_regions)))
     MIN_AREA = 0.002791388883915502
 
     # diagonal length of the longest projection region in degrees on the sphere
+    #   max(sc.ProjectionRegion(index).polygon.length for index in range(len(sc.SKYMAP.model.projection_regions)))
     MAX_LENGTH = 0.08174916691321586
 
     def __init__(self, index: int | None, skymap: "SkyMap" = None):
