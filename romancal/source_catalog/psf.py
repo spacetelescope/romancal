@@ -9,14 +9,25 @@ import astropy.units as u
 import numpy as np
 import stpsf
 from astropy.convolution import Box2DKernel, convolve
+from collections import OrderedDict
+
+import astropy.units as u
+import numpy as np
 from astropy.modeling.fitting import LevMarLSQFitter
+from astropy.nddata import NDData
 from astropy.table import Table
 from astropy.utils import lazyproperty
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
 from photutils.psf import ImagePSF, IterativePSFPhotometry, PSFPhotometry, SourceGrouper
 from scipy.ndimage import map_coordinates
-from stpsf import WFI, gridded_library
+from photutils.psf import (
+    IterativePSFPhotometry,
+    PSFPhotometry,
+    SourceGrouper,
+    GriddedPSFModel,
+)
+import scipy.ndimage as ndimage
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -88,102 +99,37 @@ def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
     return smoothed
 
 
-def create_gridded_psf_model(
-    filt,
-    detector,
-    oversample=11,
-    fov_pixels=9,
-    sqrt_n_psfs=2,
-    buffer_pixels=100,
-    instrument_options=None,
-):
+def get_psf_library(self):
+    """Function to retrieve psf library from CRDS
+
+    Compute a gridded PSF model for one SCA using the
+    reference files in CRDS.
+    The input reference files have 3 focus positions and this is using
+    the in-focus images. There are also three spectral types that are
+    available and this code uses the M5V spectal type.
     """
-    Compute a gridded PSF model for one SCA via
-    `~stpsf.gridded_library.CreatePSFLibrary`.
+    # Open the reference file data model
+    # select the infocus images (0) and we have a selection of spectral types
+    # A0V, G2V, and M6V, pick M5V (2)
+    focus = 0
+    spectral_type = 2
+    jitter_value = 1.1
+    psf_images = self.psf_ref_model.psf[focus, spectral_type, :, :, :]
+    psf_images = ndimage.gaussian_filter(psf_images, sigma=jitter_value)
+    # get the central position of the cutouts in a list
+    psf_positions_x = self.psf_ref_model.meta.pixel_x.data.data
+    psf_positions_y = self.psf_ref_model.meta.pixel_y.data.data
+    meta = OrderedDict()
+    position_list = []
+    for index in range(len(psf_positions_x)):
+        position_list.append([psf_positions_x[index], psf_positions_y[index]])
 
-    Parameters
-    ----------
-    filt : str
-        Filter name, starting with "F". For example: `"F184"`.
-    detector : str
-        Computed gridded PSF model for this SCA.
-        Examples include: `"SCA01"` or `"SCA18"`.
-    oversample : int, optional
-        Oversample factor, default is 11. See STPSF docs for details [1]_.
-        Choosing an odd number makes the pixel convolution more accurate.
-    fov_pixels : int, optional
-        Field of view width [pixels]. Default is 12.
-        See STPSF docs for details [1]_.
-    sqrt_n_psfs : int, optional
-        Square root of the number of PSFs to calculate, distributed uniformly
-        across the detector. Default is 4.
-    buffer_pixels : int, optional
-        Calculate a grid of PSFs distributed uniformly across the detector
-        at least ``buffer_pixels`` away from the detector edges. Default is 100.
-    instrument_options : dict, optional
-        Instrument configuration options passed to STPSF.
-        For example, STPSF assumes Roman pointing jitter consistent with
-        mission specs by default, but this can be turned off with:
-        ``{'jitter': None, 'jitter_sigma': 0}``.
+    meta["grid_xypos"] = position_list
+    meta["oversampling"] = self.psf_ref_model.meta.oversample
+    nd = NDData(psf_images, meta=meta)
+    model = GriddedPSFModel(nd)
 
-    Returns
-    -------
-    gridmodel : `photutils.psf.GriddedPSFModel`
-        Gridded PSF model evaluated at several locations on one SCA.
-    model_psf_centroids : list of tuples
-        Pixel locations of the PSF models calculated for ``gridmodel``.
-
-    References
-    ----------
-    .. [1] `STPSF documentation for `stpsf.JWInstrument.calc_psf`
-       <https://stpsf.readthedocs.io/en/latest/api/stpsf.JWInstrument.html#stpsf.JWInstrument.calc_psf>`_
-
-    """
-    if int(sqrt_n_psfs) != sqrt_n_psfs:
-        raise ValueError(f"`sqrt_n_psfs` must be an integer, got {sqrt_n_psfs}.")
-    n_psfs = int(sqrt_n_psfs) ** 2
-
-    # Choose pixel boundaries for the grid of PSFs:
-    start_pix = 0
-    stop_pix = 4096
-
-    # Choose locations on detector for each PSF:
-    if sqrt_n_psfs != 1:
-        pixel_range = np.linspace(
-            start_pix + buffer_pixels, stop_pix - buffer_pixels, int(sqrt_n_psfs)
-        )
-    else:
-        pixel_range = [(start_pix + stop_pix) / 2]
-
-    # generate PSFs over a grid of detector positions [pix]
-    model_psf_centroids = [(int(x), int(y)) for y in pixel_range for x in pixel_range]
-
-    wfi = stpsf.roman.WFI()
-    wfi.filter = filt
-
-    if instrument_options is not None:
-        wfi.options.update(instrument_options)
-
-    # Initialize the PSF library
-    inst = gridded_library.CreatePSFLibrary(
-        instrument=wfi,
-        filter_name=filt,
-        detectors=detector.upper(),
-        num_psfs=n_psfs,
-        oversample=oversample,
-        fov_pixels=fov_pixels,
-        add_distortion=False,
-        crop_psf=False,
-        save=False,
-        verbose=False,
-    )
-
-    inst.location_list = model_psf_centroids
-
-    # Create the PSF grid:
-    gridmodel = inst.create_grid()
-
-    return gridmodel, model_psf_centroids
+    return model
 
 
 def create_l3_psf_model(
@@ -465,8 +411,9 @@ class PSFCatalog:
         same one used to create the segmentation image.
     """
 
-    def __init__(self, model, xypos, mask=None):
+    def __init__(self, model, psf_ref_model, xypos, mask=None):
         self.model = model
+        self.psf_ref_model = psf_ref_model
         self.xypos = xypos
         self.mask = mask
 
@@ -480,20 +427,12 @@ class PSFCatalog:
         """
         A gridded PSF model based on instrument and detector
         information.
-
-        The `~photutils.psf.GriddedPSF` model is created using the
-        STPSF library.
         """
-        log.info("Constructing a gridded PSF model")
         if hasattr(self.model.meta, "instrument"):
             # ImageModel (L2 datamodel)
-            filt = self.model.meta.instrument.optical_element
-            detector = self.model.meta.instrument.detector.replace("WFI", "SCA")
-            psf_model, _ = create_gridded_psf_model(
-                filt=filt,
-                detector=detector,
-            )
+            gridded_psf_model = get_psf_library(self)
         else:
+            raise NotImplementedError("Need to update l3 psf to use crds")
             # MosaicModel (L3 datamodel)
             filt = self.model.meta.basic.optical_element
             psf_model = create_l3_psf_model(
@@ -503,7 +442,7 @@ class PSFCatalog:
                 pixfrac=self.model.meta.resample.pixfrac,
             )
 
-        return psf_model
+        return gridded_psf_model
 
     @lazyproperty
     def _name_map(self):

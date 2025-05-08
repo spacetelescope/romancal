@@ -10,7 +10,6 @@ from astropy.table import QTable, Table
 from astropy.utils import lazyproperty
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
-from stpsf import __version__ as stpsf_version
 
 from romancal import __version__ as romancal_version
 from romancal.source_catalog.aperture import ApertureCatalog
@@ -94,6 +93,7 @@ class RomanSourceCatalog:
         *,
         fit_psf=True,
         mask=None,
+        psf_ref_model=None,
         detection_cat=None,
         flux_unit="nJy",
         cat_type="prompt",
@@ -107,6 +107,7 @@ class RomanSourceCatalog:
         self.kernel_fwhm = kernel_fwhm
         self.fit_psf = fit_psf
         self.mask = mask
+        self.psf_ref_model = psf_ref_model
         self.detection_cat = detection_cat
         self.flux_unit = flux_unit
         self.cat_type = cat_type
@@ -285,7 +286,7 @@ class RomanSourceCatalog:
 
         The results are set as dynamic attributes on the class instance.
         """
-        psf_cat = PSFCatalog(self.model, self._xypos, self.mask)
+        psf_cat = PSFCatalog(self.model, self.psf_ref_model, self._xypos, self.mask)
         for name in psf_cat.names:
             setattr(self, name, getattr(psf_cat, name))
 
@@ -403,7 +404,6 @@ class RomanSourceCatalog:
         ver_dict = self.meta.get("versions", None)
         if ver_dict is not None:
             ver_dict["romancal"] = romancal_version
-            ver_dict["stpsf"] = stpsf_version
             packages = [
                 "Python",
                 "numpy",
@@ -411,7 +411,6 @@ class RomanSourceCatalog:
                 "astropy",
                 "photutils",
                 "gwcs",
-                "stpsf",
                 "romancal",
             ]
             ver_dict = {key: ver_dict[key] for key in packages if key in ver_dict}
