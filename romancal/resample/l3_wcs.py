@@ -1,6 +1,7 @@
 import logging
 
 from astropy.coordinates import SkyCoord
+from roman_datamodels import stnode
 from stcal.alignment.util import (
     compute_s_region_keyword,
     compute_scale,
@@ -30,9 +31,9 @@ def assign_l3_wcs(model, wcs):
     by indexing. This is fragile and will be a source of issues.
     """
     model.meta.wcs = wcs
-    l3_wcsinfo = model.meta.wcsinfo
     transform = wcs.forward_transform
 
+    l3_wcsinfo = stnode.MosaicWcsinfo()
     l3_wcsinfo.projection = "TAN"
     l3_wcsinfo.pixel_shape = model.shape
 
@@ -92,6 +93,7 @@ def assign_l3_wcs(model, wcs):
         )
         rotation_matrix = utils.calc_rotation_matrix(l3_wcsinfo.orientat, 0.0)
         l3_wcsinfo.rotation_matrix = utils.list_1d_to_2d(rotation_matrix, 2)
+    model.meta.wcsinfo = l3_wcsinfo
 
 
 def calc_pa(wcs, ra, dec):

@@ -74,6 +74,11 @@ class RomanStep(Step):
         """
 
         model.meta.calibration_software_version = importlib.metadata.version("romancal")
+        if hasattr(model.meta, "ref_file"):
+            model.meta.ref_file.crds.version = crds_client.get_svn_version()
+            model.meta.ref_file.crds.context = crds_client.get_context_used(
+                model.crds_observatory
+            )
 
         # FIXME: should cal_logs be brought back into meta for a MosaicModel?
         if isinstance(model, ImageModel):
@@ -86,7 +91,6 @@ class RomanStep(Step):
             for ref_name, ref_file in reference_files_used:
                 if hasattr(model.meta.ref_file, ref_name):
                     setattr(model.meta.ref_file, ref_name, ref_file)
-                    # getattr(model.meta.ref_file, ref_name).name = ref_file
             model.meta.ref_file.crds.version = crds_client.get_svn_version()
             model.meta.ref_file.crds.context = crds_client.get_context_used(
                 model.crds_observatory

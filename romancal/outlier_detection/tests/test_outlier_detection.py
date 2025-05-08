@@ -100,10 +100,12 @@ def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_imag
     """
     img_1 = base_image()
     img_1.meta.filename = "img1_cal.asdf"
+    img_1.meta.observation.observation_id = "abc"
     img_1.meta.background.level = 0
     img_2 = base_image()
     img_2.meta.filename = "img2_cal.asdf"
     img_2.meta.background.level = 0
+    img_2.meta.observation.observation_id = "abc"
     input_models = ModelLibrary([img_1, img_2])
 
     outlier_step = OutlierDetectionStep(
