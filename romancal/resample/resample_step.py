@@ -131,6 +131,13 @@ class ResampleStep(RomanStep):
         else:
             wcs_kwargs = None
 
+        variance_array_names = ["var_rnoise", "var_poisson"]
+        with input_models:
+            model = input_models.borrow(0)
+            if hasattr(model, "var_flat"):
+                variance_array_names.append("var_flat")
+            input_models.shelve(model, modify=False)
+
         # Call the resampling routine
         resamp = ResampleData(
             input_models,
@@ -147,6 +154,7 @@ class ResampleStep(RomanStep):
             True,
             self.resample_on_skycell,
             wcs_kwargs,
+            variance_array_names=variance_array_names,
         )
         result = resamp.resample_group(range(len(input_models)))
         result.meta.filename = output_filename

@@ -13,7 +13,7 @@ log.setLevel(logging.DEBUG)
 MICRONS_100 = 1.0e-4  # 100 microns, in meters
 
 
-def do_correction(input_model, flat=None):
+def do_correction(input_model, flat=None, include_var_flat=False):
     """Flat-field a Roman data model using a flat-field model
 
     Parameters
@@ -24,6 +24,9 @@ def do_correction(input_model, flat=None):
     flat : Roman data model, or None
         Data model containing flat-field for all instruments
 
+    include_var_flat : bool
+        compute & store the flat field variance?
+
     Returns
     -------
     output_model : data model
@@ -31,12 +34,12 @@ def do_correction(input_model, flat=None):
         The data is modified in place.
     """
 
-    do_flat_field(input_model, flat)
+    do_flat_field(input_model, flat, include_var_flat=include_var_flat)
 
     return input_model
 
 
-def do_flat_field(output_model, flat_model):
+def do_flat_field(output_model, flat_model, include_var_flat=False):
     """Apply flat-fielding, and update the output model.
 
     Parameters
@@ -46,6 +49,9 @@ def do_flat_field(output_model, flat_model):
 
     flat_model : Roman data model
         data model containing flat-field
+
+    include_var_flat : bool
+        compute & store the flat field variance?
     """
     if flat_model is not None and output_model.data.shape != flat_model.data.shape:
         # Check to see if flat data array is smaller than science data
@@ -61,11 +67,11 @@ def do_flat_field(output_model, flat_model):
         log.info("Skipping flat field - no flat reference file.")
         output_model.meta.cal_step.flat_field = "SKIPPED"
     else:
-        apply_flat_field(output_model, flat_model)
+        apply_flat_field(output_model, flat_model, include_var_flat=include_var_flat)
         output_model.meta.cal_step.flat_field = "COMPLETE"
 
 
-def apply_flat_field(science, flat):
+def apply_flat_field(science, flat, include_var_flat=False):
     """Flat field the data and error arrays.
 
     Extended summary
@@ -82,6 +88,9 @@ def apply_flat_field(science, flat):
 
     flat : Roman data model
         flat field data model
+
+    include_var_flat : bool
+        compute & store the flat vield variance?
     """
     flat_data = flat.data.copy()
     flat_dq = flat.dq.copy()
@@ -111,13 +120,18 @@ def apply_flat_field(science, flat):
     flat_data_squared = flat_data**2
     science.var_poisson /= flat_data_squared
     science.var_rnoise /= flat_data_squared
-    try:
-        science.var_flat = science.data**2 / flat_data_squared * flat_err**2
-    except AttributeError:
-        science["var_flat"] = np.zeros(shape=science.data.shape, dtype=np.float32)
-        science.var_flat = science.data**2 / flat_data_squared * flat_err**2
 
-    science.err = np.sqrt(science.var_poisson + science.var_rnoise + science.var_flat)
+    total_var = science.var_poisson + science.var_rnoise
+    if include_var_flat:
+        var_flat = science.data**2 / flat_data_squared * flat_err**2
+        try:
+            science.var_flat = var_flat
+        except AttributeError:
+            science["var_flat"] = np.zeros(shape=science.data.shape, dtype=np.float32)
+            science.var_flat = var_flat
+        total_var += science.var_flat
+
+    science.err = np.sqrt(total_var)
 
     # Combine the science and flat DQ arrays
     science.dq = np.bitwise_or(science.dq, flat_dq)

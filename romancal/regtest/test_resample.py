@@ -61,14 +61,12 @@ def test_resample_single_file(rtdata, ignore_asdf_paths, resource_tracker, reque
                     "err",
                     "var_poisson",
                     "var_rnoise",
-                    "var_flat",
                 ]
             )
         }"""
     )
     assert all(
-        hasattr(resample_out, x)
-        for x in ["data", "err", "var_poisson", "var_rnoise", "var_flat"]
+        hasattr(resample_out, x) for x in ["data", "err", "var_poisson", "var_rnoise"]
     )
 
     step.log.info(
@@ -99,13 +97,13 @@ def test_resample_single_file(rtdata, ignore_asdf_paths, resource_tracker, reque
                     )
                 )
                 > 0
-                for x in ["var_poisson", "var_rnoise", "var_flat"]
+                for x in ["var_poisson", "var_rnoise"]
             )
         }"""
     )
     assert all(
         np.sum(np.isnan(getattr(resample_out, x)))
-        for x in ["var_poisson", "var_rnoise", "var_flat"]
+        for x in ["var_poisson", "var_rnoise"]
     )
 
     step.log.info(
