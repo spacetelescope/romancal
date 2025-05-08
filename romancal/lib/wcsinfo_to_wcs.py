@@ -66,7 +66,7 @@ def wcsinfo_to_wcs(
     det2sky = (
         pixelshift | rotation | pixelscale | tangent_projection | celestial_rotation
     )
-    det2sky.name = "linear_transform"
+    det2sky.name = "detector_to_sky"
 
     detector_frame = coordinate_frames.Frame2D(
         name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)
