@@ -275,8 +275,8 @@ class SkyCell:
             "ny": self.pixel_shape[1],
             "orientat": self.orientation,
             "orientat_projection_center": self.projection_region.orientation
-            if not self.projection_region.is_polar
-            # rotate polar cap by 180 degrees
+            if self.projection_region.data["dec_max"] != 90.0
+            # rotate north polar cap by 180 degrees
             # TODO: find out why this is necessary...
             else self.projection_region.orientation + 180,
         }
