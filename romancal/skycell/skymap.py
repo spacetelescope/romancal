@@ -102,38 +102,6 @@ class SkyCell:
         return instance
 
     @classmethod
-    def from_center_and_coordinates(
-        cls,
-        projregion_center: tuple[float, float],
-        skycell_coordinates: tuple[int, int],
-        skymap: "SkyMap" = None,
-    ) -> "SkyCell":
-        """
-        Retrieve a sky cell from the sky map using
-        - the center of its containing projection region
-        - the ordinal XY coordinates of the sky cell from the projection region origin (number of sky cells away from the center)
-
-        (see handbook [1] for further explanation)
-
-        Parameters
-        ----------
-        projregion_center : tuple[float, float]
-            center coordinates of its containing projection region in right ascension and declination
-        skycell_coordinates : tuple[int, int]
-            XY location of the sky cell within its projection region, in units of ordinal sky cells from the center
-        skymap: SkyMap
-            sky map instance (defaults to global SKYMAP)
-
-        References
-        ----------
-        .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
-        """
-        return cls.from_name(
-            f"r{round(projregion_center[0]):03}d{'p' if projregion_center[1] >= 0 else 'm'}{round(projregion_center[1]):02}x{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}y{'p' if skycell_coordinates[1] >= 0 else 'm'}{skycell_coordinates[1]:02}",
-            skymap=skymap,
-        )
-
-    @classmethod
     def from_asn(cls, asn: dict | str, skymap: "SkyMap" = None) -> "SkyCell":
         """
         retrieve a sky cell from WCS info or a target specified in an association
