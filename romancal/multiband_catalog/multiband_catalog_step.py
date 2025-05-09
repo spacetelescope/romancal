@@ -68,15 +68,9 @@ class MultibandCatalogStep(RomanStep):
             example_model = library.borrow(0)
             library.shelve(example_model, modify=False)
 
-        source_catalog_model = datamodels.MosaicSourceCatalogModel()
-        source_catalog_model.meta = {}
-        for key in source_catalog_model.meta._schema_attributes.explicit_properties:
-            value = (
-                example_model.meta.instrument[key]
-                if key == "optical_element"
-                else example_model.meta[key]
-            )
-            source_catalog_model.meta[key] = value
+        source_catalog_model = datamodels.MosaicSourceCatalogModel.from_model(
+            example_model
+        )
 
         try:
             source_catalog_model.meta.filename = library.asn["products"][0]["name"]

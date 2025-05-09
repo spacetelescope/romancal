@@ -99,16 +99,7 @@ class SourceCatalogStep(RomanStep):
             cat_model = datamodels.ImageSourceCatalogModel
         else:
             cat_model = datamodels.MosaicSourceCatalogModel
-        source_catalog_model = cat_model()
-
-        source_catalog_model.meta = {}
-        for key in source_catalog_model.meta._schema_attributes.explicit_properties:
-            value = (
-                model.meta.instrument[key]
-                if key == "optical_element"
-                else model.meta[key]
-            )
-            source_catalog_model.meta[key] = value
+        source_catalog_model = cat_model.from_model(model)
 
         if self.forced_segmentation:
             source_catalog_model.meta["forced_segmentation"] = self.forced_segmentation

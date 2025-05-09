@@ -36,11 +36,10 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
         segm_model = SegmentationMapModel
     else:
         segm_model = MosaicSegmentationMapModel
-    segmentation_model = segm_model()
+    segmentation_model = segm_model.from_schema()
 
     # Copy the metadata from the source catalog model
-    segmentation_model.meta = {}
-    for key in segmentation_model.meta._schema_attributes.explicit_properties:
+    for key in segmentation_model.meta:
         segmentation_model.meta[key] = source_catalog_model.meta[key]
 
     # Set the data and detection image
