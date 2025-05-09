@@ -6,9 +6,10 @@ import sys
 
 import numpy as np
 import roman_datamodels as rdm
+from romancal.associations import asn_from_list
+from romancal.associations.lib.utilities import mk_level3_asn_name
 
 import romancal.patch_match.patch_match as pm
-from romancal.associations import asn_from_list
 from romancal.lib.basic_utils import parse_visitID as parse_visitID
 from romancal.patch_match.patch_match import get_projectioncell_wcs
 
@@ -64,37 +65,13 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
         projcell_info = get_projectioncell_wcs(item)
         parsed_visit_id = parse_visitID(member_list[0][1:20])
         program_id = parsed_visit_id["Program"]
-        root_asn_name = output_file_root
-        product_release = release_product
-        sep = "_"
-
-        product_name_mapping = {
-            "visit": "v"
-            + parsed_visit_id["Execution"]
-            + parsed_visit_id["Pass"]
-            + parsed_visit_id["Segment"]
-            + parsed_visit_id["Observation"],
-            "daily": "d"
-            + parsed_visit_id["Execution"]
-            + parsed_visit_id["Pass"]
-            + parsed_visit_id["Segment"],
-            "pass": "p" + parsed_visit_id["Execution"] + parsed_visit_id["Pass"],
-            "full": "full",
-            "user": "user",
-        }
-
-        pr_name = product_name_mapping.get(product_type, "unknown")
-
-        asn_file_name = (
-            root_asn_name
-            + sep
-            + product_release
-            + sep
-            + pr_name
-            + sep
-            + patch_name
-            + sep
-            + filter_id
+        asn_file_name = mk_level3_asn_name(
+            member_list[0][1:20],
+            output_file_root,
+            filter_id,
+            release_product,
+            product_type,
+            patch_name,
         )
 
         prompt_product_asn = asn_from_list.asn_from_list(
