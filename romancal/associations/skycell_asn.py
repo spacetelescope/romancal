@@ -66,7 +66,7 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
         parsed_visit_id = parse_visitID(member_list[0][1:20])
         program_id = parsed_visit_id["Program"]
         if output_file_root is None:
-            output_file_root = 'r' + program_id
+            output_file_root = "r" + program_id
         root_asn_name = output_file_root
         product_release = release_product
         sep = "_"
