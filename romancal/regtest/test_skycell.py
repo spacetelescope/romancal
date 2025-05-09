@@ -16,6 +16,12 @@ def assert_allclose_lonlat(actual: np.ndarray, desired: np.ndarray, rtol=1e-7, a
     )
 
 
+def test_skycell_from_name():
+    with pytest.raises(KeyError):
+        # this sky cell should not exist, even in the global sky map
+        sc.SkyCell.from_name("270p65x99y70")
+
+
 @pytest.mark.parametrize(
     "name",
     [
