@@ -281,7 +281,7 @@ class ProjectionRegion:
     MIN_AREA = 0.002791388883915502
 
     # diagonal length of the longest projection region in degrees on the sphere
-    #   max(sc.ProjectionRegion(index).polygon.length for index in range(len(sc.SKYMAP.model.projection_regions)))
+    #   max(sc.ProjectionRegion(index).length for index in range(len(sc.SKYMAP.model.projection_regions)))
     MAX_LENGTH = 0.08174916691321586
 
     def __init__(self, index: int | None, skymap: "SkyMap" = None):
@@ -453,7 +453,12 @@ class ProjectionRegion:
     def length(self) -> float:
         """diagonal length of the region"""
         # assume radial against sky background
-        return sga.length(self.vectorpoint_corners[0], self.vectorpoint_corners[2])
+        return max(
+            sga.length(
+                self.vectorpoint_corners[index], self.vectorpoint_corners[index + 2]
+            )
+            for index in range(len(self.vectorpoint_corners) - 3)
+        )
 
     @property
     def is_polar(self) -> bool:
