@@ -31,8 +31,9 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
     ----------
     filelist : list of str
         List of file names to be processed.
-    output_file_root : str
+    output_file_root : str or None
         Root string for the output association file.
+        If None, default to r<PROGRAM>.
     product_type : str
         Type of product when creating the association (e.g., 'visit', 'daily').
     release_product : str
@@ -64,6 +65,8 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
         projcell_info = get_projectioncell_wcs(item)
         parsed_visit_id = parse_visitID(member_list[0][1:20])
         program_id = parsed_visit_id["Program"]
+        if output_file_root is None:
+            output_file_root = 'r' + program_id
         root_asn_name = output_file_root
         product_release = release_product
         sep = "_"
@@ -73,7 +76,8 @@ def skycell_asn(filelist, output_file_root, product_type, release_product):
             + parsed_visit_id["Execution"]
             + parsed_visit_id["Pass"]
             + parsed_visit_id["Segment"]
-            + parsed_visit_id["Observation"],
+            + parsed_visit_id["Observation"]
+            + parsed_visit_id["Visit"],
             "daily": "d"
             + parsed_visit_id["Execution"]
             + parsed_visit_id["Pass"]
@@ -136,8 +140,8 @@ def _cli(args=None):
         "-o",
         "--output-file-root",
         type=str,
-        required=True,
         help="Root string for file to write association to",
+        default=None,
     )
 
     parser.add_argument(
