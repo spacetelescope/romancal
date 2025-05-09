@@ -67,9 +67,6 @@ def veccoords_to_tangent_plane(
     return np.stack([x_coords, y_coords], axis=1)
 
 
-# plt.ion()
-
-
 def plot_field(corners: NDArray[float], id: str = "", fill=None, color=None, axis=None):
     if axis is None:
         axis = plt
