@@ -9,6 +9,7 @@ import numpy as np
 
 import romancal.patch_match.patch_match as pm
 from romancal.associations import asn_from_list
+from romancal.associations.lib.utilities import mk_level3_asn_name
 from romancal.lib.basic_utils import parse_visitID
 from romancal.patch_match.patch_match import get_projectioncell_wcs
 
@@ -20,7 +21,9 @@ logger.addHandler(logging.NullHandler())
 logger.setLevel("INFO")
 
 
-def mk_skycell_asn_from_patchlist(filelist, release_product, optical_element):
+def mk_skycell_asn_from_patchlist(
+    filelist, release_product, product_type, optical_element
+):
     """
     Create level 3 associations from a list of match files generated with mk_patchlist.
 
@@ -67,20 +70,16 @@ def mk_skycell_asn_from_patchlist(filelist, release_product, optical_element):
         projcell_info = get_projectioncell_wcs(item)
         parsed_visit_id = parse_visitID(member_list[0][1:20])
         program_id = parsed_visit_id["Program"]
-
-        asn_file_name = (
-            "r"
-            + program_id
-            + "_"
-            + release_product
-            + "_"
-            + "v"
-            + member_list[0][1:20]
-            + "_"
-            + patch_name
-            + "_"
-            + optical_element
+        output_file_root = "r" + program_id
+        asn_file_name = mk_level3_asn_name(
+            member_list[0][1:20],
+            output_file_root,
+            optical_element,
+            release_product,
+            product_type,
+            patch_name,
         )
+
         prompt_product_asn = asn_from_list.asn_from_list(
             member_list, product_name=asn_file_name
         )
@@ -135,6 +134,12 @@ def _cli(args=None):
         help="The release product when creating the association",
     )
     parser.add_argument(
+        "--product-type",
+        type=str,
+        default="visit",
+        help="The product type when creating the association (visit, pass, ....",
+    )
+    parser.add_argument(
         "--optical_element",
         type=str,
         default="f158",
@@ -147,5 +152,6 @@ def _cli(args=None):
     mk_skycell_asn_from_patchlist(
         parsed.filelist,
         parsed.release_product,
+        parsed.product_type,
         parsed.optical_element,
     )
