@@ -54,7 +54,7 @@ def skycell_asn(
     for file_name in filelist:
         cal_file = rdm.open(file_name)
         filter_id = cal_file.meta.instrument.optical_element.lower()
-        intersecting_skycells, _ = sm.find_skycell_matches(cal_file.meta.wcs)
+        intersecting_skycells = sm.find_skycell_matches(cal_file.meta.wcs)
         logger.info(f"Skycell List:{file_name}, {intersecting_skycells}")
         file_list.append([file_name, intersecting_skycells])
         skycell_indices.extend(intersecting_skycells)

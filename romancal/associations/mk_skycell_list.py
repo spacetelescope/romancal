@@ -36,12 +36,8 @@ def mk_skycell_list(output_dir, filelist):
     for file_name in filelist:
         input_dir, input_file = os.path.split(file_name)
         cal_file = rdm.open(file_name)
-        intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
-            cal_file.meta.wcs
-        )
-        logger.info(
-            f"Skycell List: {file_name}, {intersecting_skycells}, {nearby_skycells}"
-        )
+        intersecting_skycells = sm.find_skycell_matches(cal_file.meta.wcs)
+        logger.info(f"Skycell List: {file_name}, {intersecting_skycells}")
         output_file_name = os.path.basename(input_file).split(".")[0]
         if not output_dir:
             output_file_name = os.path.join(input_dir, output_file_name)

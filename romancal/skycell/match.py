@@ -171,9 +171,9 @@ def find_skycell_matches(
 
     Returns
     -------
-    A sequence of the indices of all projection regions that overlap the supplied image
-    (in the referenced projection region table). The indices may be used to obtain all
-    necessary information about the projection regions.
+    A sequence of the indices of all sky cells that overlap the supplied image
+    (in the referenced sky map). The indices may be used to obtain all
+    necessary information about the sky cells, by calling `romancal.skycell.skymap.SkyCell(index)`.
     """
 
     if isinstance(image_corners, WCS):
@@ -184,7 +184,6 @@ def find_skycell_matches(
     if skymap is None:
         skymap = sc.SKYMAP
 
-    nearby_skycell_indices = []
     intersecting_skycell_indices = []
 
     # query the global k-d tree of projection regions for possible intersection candidates in (normalized) 3D space
@@ -219,8 +218,6 @@ def find_skycell_matches(
             # convert to absolute indices over the full skycell table
             projregion_nearby_skycell_indices += projregion.data["skycell_start"]
 
-            nearby_skycell_indices.extend(projregion_nearby_skycell_indices)
-
             # find polygons that intersect the image footprint
             for skycell_index in projregion_nearby_skycell_indices:
                 # print(nearby_skycell_index)
@@ -229,4 +226,4 @@ def find_skycell_matches(
                     # print(f"candidate {nearby_skycell_index} intersects")
                     intersecting_skycell_indices.append(skycell_index)
 
-    return np.array(intersecting_skycell_indices), np.array(nearby_skycell_indices)
+    return np.array(intersecting_skycell_indices)
