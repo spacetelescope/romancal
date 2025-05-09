@@ -440,9 +440,7 @@ def test_skycell_match(
 ):
     corners = mk_im_corners(*test_point + np.array(offset), rotation, size)
 
-    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
-        corners, skymap=skymap_subset
-    )
+    intersecting_skycells = sm.find_skycell_matches(corners, skymap=skymap_subset)
 
     skycell_names = np.array(
         [skymap_subset.model.skycells[index]["name"] for index in intersecting_skycells]
@@ -476,7 +474,7 @@ def test_match_from_wcs(test_point, expected_skycell_names, skymap_subset):
     wcsobj = mk_gwcs(*test_point, 45)
     imshape = (4096, 4096)
 
-    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
+    intersecting_skycells = sm.find_skycell_matches(
         wcsobj, image_shape=imshape, skymap=skymap_subset
     )
 
@@ -513,9 +511,7 @@ def test_match_from_wcs_with_imshape(test_point, expected_skycell_names, skymap_
     imshape = (4096, 4096)
     wcsobj.pixel_shape = imshape
 
-    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
-        wcsobj, skymap=skymap_subset
-    )
+    intersecting_skycells = sm.find_skycell_matches(wcsobj, skymap=skymap_subset)
 
     skycell_names = np.array(
         [skymap_subset.model.skycells[index]["name"] for index in intersecting_skycells]
@@ -549,9 +545,7 @@ def test_match_from_wcs_with_bbox(test_point, expected_skycell_names, skymap_sub
     wcsobj = mk_gwcs(*test_point, 45)
     wcsobj.bounding_box = ((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
 
-    intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
-        wcsobj, skymap=skymap_subset
-    )
+    intersecting_skycells = sm.find_skycell_matches(wcsobj, skymap=skymap_subset)
 
     skycell_names = np.array(
         [skymap_subset.model.skycells[index]["name"] for index in intersecting_skycells]
@@ -566,6 +560,4 @@ def test_match_from_wcs_without_imshape_or_bbox(test_point):
     wcsobj.bounding_box = None
 
     with pytest.raises(ValueError):
-        intersecting_skycells, nearby_skycells = sm.find_skycell_matches(
-            wcsobj, skymap=skymap_subset
-        )
+        sm.find_skycell_matches(wcsobj, skymap=skymap_subset)
