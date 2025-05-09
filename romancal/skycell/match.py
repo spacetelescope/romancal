@@ -44,18 +44,10 @@ class ImageFootprint:
     ) -> "ImageFootprint":
         """create an image footprint from a GWCS object (and image shape, if no bounding box is present)"""
 
-        if iwcs.bounding_box is None:
+        if not hasattr(iwcs, "bounding_box") or iwcs.bounding_box is None:
             if image_shape is None:
-                # Now must find size of corresponding image, with three possible sources of that information.
-                # Both bounding_box and pixel_shape are in x, y order contrary to numpy convention.
-                if hasattr(iwcs, "bounding_box") and iwcs.bounding_box is not None:
-                    bbintervals = iwcs.bounding_box.intervals
-                    # This compensates for the half pixel adjustment in the general code.
-                    image_shape = (
-                        bbintervals[1].upper + 0.5,
-                        bbintervals[0].upper + 0.5,
-                    )
-                elif hasattr(iwcs, "pixel_shape") and iwcs.pixel_shape is not None:
+                # pixel_shape is in x, y order contrary to numpy convention.
+                if hasattr(iwcs, "pixel_shape") and iwcs.pixel_shape is not None:
                     image_shape = (iwcs.pixel_shape[1], iwcs.pixel_shape[0])
                 else:
                     raise ValueError(
