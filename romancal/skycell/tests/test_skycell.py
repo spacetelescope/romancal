@@ -161,6 +161,7 @@ def test_skycell_wcs_pixel_to_world(name, skymap_subset):
     wcs = skycell.wcs
 
     # forward transform to radec corners
+    # TODO: the corners in the reference file currently use FITS convention (pixel + 0.5) instead of (pixel - 0.5)
     assert_allclose_lonlat(
         np.array(
             wcs(
@@ -206,6 +207,7 @@ def test_skycell_wcs_world_to_pixel(name, skymap_subset):
     wcs = skycell.wcs
 
     # inverse transform to pixel corners
+    # TODO: the corners in the reference file currently use FITS convention (pixel + 0.5) instead of (pixel - 0.5)
     assert_allclose(
         np.array(wcs.invert(*skycell.radec_corners.T, with_bounding_box=False)).T,
         (
@@ -247,6 +249,7 @@ def test_skycell_wcsinfo(name, skymap_subset):
     wcs = skycell.wcs
     wcsinfo = skycell.wcs_info
 
+    # TODO: the corners in the reference file currently use FITS convention (pixel + 0.5) instead of (pixel - 0.5)
     assert_allclose_lonlat(
         wcs(
             (wcsinfo["nx"] / 2.0) + 0.5,
@@ -256,6 +259,7 @@ def test_skycell_wcsinfo(name, skymap_subset):
         rtol=1e-7,
     )
 
+    # TODO: the corners in the reference file currently use FITS convention (pixel + 0.5) instead of (pixel - 0.5)
     assert_allclose_lonlat(
         np.array(
             wcs(
