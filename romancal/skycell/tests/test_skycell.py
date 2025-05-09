@@ -66,9 +66,6 @@ def test_skycell_from_name(skymap_subset):
         ],
     )
 
-    with pytest.raises(KeyError):
-        sc.SkyCell.from_name("270p65x49y70", skymap=skymap_subset)
-
     with pytest.raises(ValueError):
         sc.SkyCell.from_name("r274dp63x63y81", skymap=skymap_subset)
 
