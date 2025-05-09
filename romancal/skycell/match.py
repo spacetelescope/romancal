@@ -86,7 +86,12 @@ class ImageFootprint:
     def length(self) -> float:
         """diagonal length of the rectangular footprint"""
         # assume radial against sky background
-        return sga.length(self.vectorpoint_corners[0], self.vectorpoint_corners[2])
+        return max(
+            sga.length(
+                self.vectorpoint_corners[index], self.vectorpoint_corners[index + 2]
+            )
+            for index in range(len(self.vectorpoint_corners) - 3)
+        )
 
     @cached_property
     def circumference(self) -> float:
@@ -113,7 +118,13 @@ class ImageFootprint:
 
     @cached_property
     def possibly_intersecting_projregions(self) -> int:
-        """number of possibly intersecting projection regions"""
+        """
+        number of possibly intersecting projection regions
+
+        NOTES
+        -----
+        this assumes a non-degenerate tesselation!
+        """
         if self.area > sc.SkyCell.area:
             return (
                 # the number of times the smallest projection region could fit in the image footprint
@@ -127,7 +138,13 @@ class ImageFootprint:
 
     @cached_property
     def possibly_intersecting_skycells(self) -> int:
-        """number of possibly intersecting skycells"""
+        """
+        number of possibly intersecting skycells
+
+        NOTES
+        -----
+        this assumes a non-degenerate tesselation!
+        """
         if self.polygon.area() > sc.SkyCell.area:
             return (
                 # number of times a skycell could fit in the image footprint
@@ -138,6 +155,16 @@ class ImageFootprint:
         else:
             # 4 foundational intersections
             return 4
+
+    @cached_property
+    def possible_intersecting_projregion_distance(self) -> int:
+        """maximum possible distance to the center of an intersecting projection region"""
+        return (self.length + sc.ProjectionRegion.MAX_LENGTH) / 2.0
+
+    @cached_property
+    def possible_intersecting_skycell_distance(self) -> int:
+        """maximum possible distance to the center of an intersecting sky cell"""
+        return (self.length + sc.SkyCell.length) / 2.0
 
 
 def find_skycell_matches(
@@ -182,7 +209,10 @@ def find_skycell_matches(
     nearby_projregion_indices = np.array(
         skymap.projection_regions_kdtree.query(
             footprint.vectorpoint_center,
-            k=footprint.possibly_intersecting_projregions,
+            # NOTE: `k` can be `footprint.possibly_intersecting_projregions` if we assume non-degenerate tesselation
+            k=100,
+            distance_upper_bound=footprint.possible_intersecting_projregion_distance
+            * 1.1,
         )[1]
     )
     nearby_projregion_indices = nearby_projregion_indices[
@@ -196,7 +226,10 @@ def find_skycell_matches(
             projregion_nearby_skycell_indices = np.array(
                 projregion.skycells_kdtree.query(
                     footprint.vectorpoint_center,
-                    k=footprint.possibly_intersecting_skycells,
+                    # NOTE: `k` can be `footprint.possibly_intersecting_skycells` if we assume non-degenerate tesselation
+                    k=100,
+                    distance_upper_bound=footprint.possible_intersecting_skycell_distance
+                    * 1.1,
                 )[1]
             )
             projregion_nearby_skycell_indices = np.array(
