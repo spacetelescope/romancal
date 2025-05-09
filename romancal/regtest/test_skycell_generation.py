@@ -13,12 +13,12 @@ from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 pytestmark = [pytest.mark.bigdata]
 
 EXPECTED_FILENAMES = [
-    "r00001_p_v01001001001_r274dp63x31y80_f158_asn.json",
-    "r00001_p_v01001001001_r274dp63x31y81_f158_asn.json",
-    "r00001_p_v01001001001_r274dp63x32y82_f158_asn.json",
-    "r00001_p_v01001001001_r274dp63x32y80_f158_asn.json",
-    "r00001_p_v01001001001_r274dp63x32y81_f158_asn.json",
-    "r00001_p_v01001001001_r274dp63x32y82_f158_asn.json",
+    "r00001_p_v01001001001001_r274dp63x31y80_f158_asn.json",
+    "r00001_p_v01001001001001_r274dp63x31y81_f158_asn.json",
+    "r00001_p_v01001001001001_r274dp63x32y82_f158_asn.json",
+    "r00001_p_v01001001001001_r274dp63x32y80_f158_asn.json",
+    "r00001_p_v01001001001001_r274dp63x32y81_f158_asn.json",
+    "r00001_p_v01001001001001_r274dp63x32y82_f158_asn.json",
 ]
 
 
