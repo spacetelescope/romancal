@@ -171,7 +171,7 @@ def find_skycell_matches(
     image_corners: list[tuple[float, float]] | NDArray[float] | WCS,
     image_shape: tuple[int, int] | None = None,
     skymap: sc.SkyMap = None,
-) -> tuple[list[int], list[int]]:
+) -> list[int]:
     """
     Find sky cells overlapping the provided image footprint
 
