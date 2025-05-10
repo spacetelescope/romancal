@@ -1,37 +1,13 @@
-.. _mk_skycellasn:
+.. _mk_skycell_asn_from_skycell_list:
 
-mk_skycellasn
-=============
+mk_skycell_asn_from_skycell_list
+=================================
 
-The function reads a list of ascii match files that were created using the ``mk_patchlist``
+The function reads a list of ascii match files that were created using the ``mk_skycell_list``
 program and generates a list of associations for all the skycells that touch the given exposure.
 using either the command line tool
-``mk_skycellasn`` or through the Python API using
-:func:`romancal.associations.mk_skycellasn.mk_skycellasn`
-
-Running this command requires that you have the patch to the
-file containing the division of the sky into patches. This is done
-by setting the environment variable PATCH_TABLE_PATH.
-As an example:
-::
-
-   export PATCH_TABLE_PATH=<location of my patch table>
-
-.. Note::
-
-   The patch table will be available in the CRDS system soon.
-
-
-.. Note::
-
-   **For STScI Users Only:**
-    Users at STScI may access the required
-    data files from the Central Storage network. Set the following
-    environment variables in your ``bash`` shell. (You will probably
-    want to add this to your bash setup file.) ::
-
-      export PATCH_TABLE_PATH="/grp/roman/scsb/tesselation/patches.asdf"
-
+``mk_skycell_asn_from_skycell_list`` or through the Python API using
+:func:`romancal.associations.mk_skycell_asn_from_skycell_list.mk_skycell_asn_from_skycell_list`
 
 Association Files
 ^^^^^^^^^^^^^^^^^^^
@@ -40,7 +16,7 @@ To create the list of association files, use the following command:
 
 .. code-block:: python
 
-		mk_skycellasn file_list
+		mk_skycell_asn_from_skycell_list file_list
 
 where the individual calibrated detector files are in the current directory and the file_list is a
 list of the match files that will be used to generate the list of associations.
@@ -49,8 +25,8 @@ To get a complete list of options you can run the command with the
 
 .. code-block:: python
 
-		mk_skycellasn -h
-                usage: mk_skycellasn *.match
+		mk_skycell_asn_from_skycell_list -h
+                usage: mk_skycell_asn_from_skycell_list *.match
 
                 Create level 3 associations from a list of match files
 
@@ -70,7 +46,7 @@ values of the skycells that touch the input exposure.
 
 .. code-block:: text
 
-		mk_skycellasn r0099101001001003001_*_cal.match
+		mk_skycell_asn_from_skycell_list r0099101001001003001_*_cal.match
 
 Where the wildcard selects all the exposures for visit 001 and generates associations based on the
 list of skycell matches for each of the exposures. There will be one association for each unique

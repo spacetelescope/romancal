@@ -4,7 +4,7 @@ import numpy as np
 from roman_datamodels import datamodels, dqflags, maker_utils
 from stcal.resample import Resample
 
-from romancal.patch_match.patch_match import to_skycell_wcs
+import romancal.skycell.skymap as sc
 
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
@@ -108,10 +108,19 @@ class ResampleData(Resample):
         self._blend_meta = blend_meta
 
         if output_wcs is None and resample_on_skycell:
-            # first try to use any skycell from the asn
-            if skycell_wcs := to_skycell_wcs(self.input_models):
+            # first try to retrieve a sky cell name from the association
+            try:
+                skycell = sc.SkyCell.from_asn(self.input_models.asn)
+
+                log.info(f"Skycell record: {skycell.data}")
+
+                log.info(
+                    f"Creating skycell image at ra: {skycell.radec_center[0]}  dec {skycell.radec_center[1]}",
+                )
                 log.info("Resampling to skycell wcs")
-                output_wcs = {"wcs": skycell_wcs}
+                output_wcs = {"wcs": skycell.wcs}
+            except ValueError:
+                pass
 
         if output_wcs is None:
             if wcs_kwargs is None:
