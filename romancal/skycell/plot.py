@@ -21,25 +21,39 @@ RAD_TO_ARCSEC = 180.0 / np.pi * 3600.0
 
 def find_intersecting_projregions(
     footprint: sm.ImageFootprint,
-) -> tuple[list[int], list[int]]:
+    skymap: sc.SkyMap = None,
+) -> list[int]:
     """
     Out of all projection regions, find ones that intersect the given image footprint
+
+    Parameters
+    ----------
+    footprint: sequence of 4 points (ra, dec) or an `ImageFootprint` object
+    skymap: sky map instance (defaults to global SKYMAP)
+
+    Returns
+    -------
+    indices of projection regions in the sky map that intersect the given footprint
     """
 
+    if skymap is None:
+        skymap = sc.SKYMAP
+
     # find the closest projection regions to the image center
-    _, nearby_projregion_indices = sc.SKYMAP.projection_regions_kdtree.query(
+    _, nearby_projregion_indices = skymap.projection_regions_kdtree.query(
         footprint.vectorpoint_center,
         k=footprint.possibly_intersecting_projregions,
-        distance_upper_bound=footprint.length + sc.ProjectionRegion.MAX_LENGTH,
+        distance_upper_bound=footprint.possible_intersecting_projregion_distance * 1.1,
     )
 
     intersecting_projregion_indices = []
     for projregion_index in nearby_projregion_indices:
-        projregion = sc.ProjectionRegion(projregion_index)
-        if footprint.polygon.intersects_poly(projregion.polygon):
-            intersecting_projregion_indices.append(projregion_index)
+        if projregion_index < skymap.projection_regions_kdtree.n:
+            projregion = sc.ProjectionRegion(projregion_index, skymap=skymap)
+            if footprint.polygon.intersects_poly(projregion.polygon):
+                intersecting_projregion_indices.append(projregion_index)
 
-    return intersecting_projregion_indices, nearby_projregion_indices
+    return intersecting_projregion_indices
 
 
 def veccoords_to_tangent_plane(
@@ -135,7 +149,8 @@ def plot_skycell(
 
 
 def plot_image_footprint_and_skycells(
-    image_corners: list[tuple[float, float]],
+    footprint: list[tuple[float, float]] | sm.ImageFootprint,
+    skymap: sc.SkyMap = None,
 ):
     """
     This plots a list of skycell footprints against the image footprint.
@@ -145,13 +160,20 @@ def plot_image_footprint_and_skycells(
 
     Parameters
     ----------
-    image_corners : sequence of 4 points (ra, dec)
+    footprint: sequence of 4 points (ra, dec) or an `ImageFootprint` object
+    skymap: sky map instance (defaults to global SKYMAP)
     """
 
-    footprint = sm.ImageFootprint(image_corners)
+    if not isinstance(footprint, sm.ImageFootprint):
+        footprint = sm.ImageFootprint(footprint)
+
+    if skymap is None:
+        skymap = sc.SKYMAP
 
     # plot each intersecting projection region's intersection onto a tangent plane
-    intersecting_projregion_indices, _ = find_intersecting_projregions(footprint)
+    intersecting_projregion_indices = find_intersecting_projregions(
+        footprint, skymap=skymap
+    )
     for projregion_index in intersecting_projregion_indices:
         figure = plt.figure()
         figure.gca().invert_xaxis()
@@ -159,7 +181,7 @@ def plot_image_footprint_and_skycells(
         axis = figure.subplots(1, 1)
         axis.plot(0, 0, "+", markersize=10)
 
-        projregion = sc.ProjectionRegion(projregion_index)
+        projregion = sc.ProjectionRegion(projregion_index, skymap=skymap)
 
         tangent_vectorpoint = sgv.normalize_vector(
             sgv.lonlat_to_vector(*projregion.radec_tangent)
@@ -173,7 +195,7 @@ def plot_image_footprint_and_skycells(
         plot_projregion(projregion, color="lightgrey")
 
         for skycell_index in projregion.skycell_indices:
-            skycell = sc.SkyCell(skycell_index)
+            skycell = sc.SkyCell(skycell_index, skymap=skymap)
             plot_skycell(
                 skycell,
                 tangent_vectorpoint,
@@ -187,7 +209,9 @@ def plot_image_footprint_and_skycells(
         )
 
         for skycell_index in nearby_skycell_indices:
-            skycell = sc.SkyCell(projregion.data["skycell_start"] + skycell_index)
+            skycell = sc.SkyCell(
+                projregion.data["skycell_start"] + skycell_index, skymap=skymap
+            )
             plot_skycell(
                 skycell,
                 tangent_vectorpoint,
