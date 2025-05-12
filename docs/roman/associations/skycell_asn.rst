@@ -75,7 +75,7 @@ or for the selections above
 
 .. code-block:: text
 
-	r00991_p_v101001001003001_r257dp63x98y83_F158_asn.json
+	r00991_p_v101001001003001_270p65x48y69_F158_asn.json
 
 where the skycell name can vary based on the location on the celestial sphere.
 The release product name can be changed from the default

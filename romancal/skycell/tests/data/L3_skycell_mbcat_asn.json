@@ -12,10 +12,10 @@
     "skycell_wcs_info": "none",
     "products": [
         {
-            "name": "r00001_p_v01001001001001_r274dp63x31y81_f158_mbcat",
+            "name": "r00001_p_v01001001001001_225p90x49y67_f158_mbcat",
             "members": [
                 {
-                    "expname": "r00001_p_v01001001001001_r274dp63x31y81_f158_coadd.asdf",
+                    "expname": "r00001_p_v01001001001001_225p90x49y67_f158_coadd.asdf",
                     "exptype": "science"
                 }
             ]
