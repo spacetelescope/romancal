@@ -155,9 +155,13 @@ def test_l2_source_catalog(
     assert len(cat) == nsources
 
     if nsources > 0:
-        for col in cat.columns:
-            if "flux" in col:
-                assert cat[col].unit == "nJy"
+        for colname in cat.colnames:
+            if (
+                "flux" in colname
+                and "fluxfrac" not in colname
+                and "aper_bkg_flux" not in colname
+            ):
+                assert cat[colname].unit == "nJy"
         assert np.min(cat["x_centroid"]) > 0.0
         assert np.min(cat["y_centroid"]) > 0.0
         assert np.max(cat["x_centroid"]) < 100.0
@@ -198,9 +202,13 @@ def test_l3_source_catalog(
     assert len(cat) == nsources
 
     if nsources > 0:
-        for col in cat.columns:
-            if "flux" in col:
-                assert cat[col].unit == "nJy"
+        for colname in cat.colnames:
+            if (
+                "flux" in colname
+                and "fluxfrac" not in colname
+                and "aper_bkg_flux" not in colname
+            ):
+                assert cat[colname].unit == "nJy"
         assert np.min(cat["x_centroid"]) > 0.0
         assert np.min(cat["y_centroid"]) > 0.0
         assert np.max(cat["x_centroid"]) < 100.0
@@ -309,7 +317,11 @@ def test_psf_photometry(tmp_path, image_model):
     assert len(cat) == 7
 
     for colname in cat.colnames:
-        if "flux" in colname:
+        if (
+            "flux" in colname
+            and "fluxfrac" not in colname
+            and "aper_bkg_flux" not in colname
+        ):
             assert cat[colname].unit == "nJy"
 
     for colname in cat.colnames:

@@ -31,8 +31,8 @@ class SegmentCatalog:
         measurements. The image is assumed to be background subtracted.
 
     pixel_area : `~astropy.units.Quantity`
-        The pixel area in steradians. This is used to convert the
-        segment area to square arcseconds.
+        The pixel area in steradians. This is used to convert various
+        measuments from pixels to arcseconds.
 
     wcs_angle : `~astropy.units.Quantity`
         The angle (as a Quantity in degrees) measured counterclockwise
@@ -93,6 +93,9 @@ class SegmentCatalog:
         for name in self._lazyproperties:
             self.names.append(name)
 
+        # add the placeholder attributes
+        self.add_placeholders()
+
     @property
     def _lazyproperties(self):
         """
@@ -125,8 +128,9 @@ class SegmentCatalog:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
 
-            abmag = flux.to(u.ABmag).value
+            abmag = flux.to(u.ABmag)
             abmag_err = 2.5 * np.log10(1.0 + (flux_err / flux))
+            abmag_err = abmag_err.value * u.ABmag
 
             # handle negative fluxes
             idx = flux.value < 0
@@ -134,6 +138,14 @@ class SegmentCatalog:
             abmag_err[idx] = np.nan
 
         return abmag, abmag_err
+
+    @lazyproperty
+    def pixel_scale(self):
+        """
+        The pixel scale in arcseconds.
+        """
+        # assumes square pixels
+        return np.sqrt(self.pixel_area).to(u.arcsec)
 
     def calc_segment_properties(self):
         """
@@ -168,7 +180,10 @@ class SegmentCatalog:
             "label",
             "xcentroid",
             "ycentroid",
+            "xcentroid_win",
+            "ycentroid_win",
             "sky_centroid",
+            "sky_centroid_win",
             "bbox_xmin",
             "bbox_xmax",
             "bbox_ymin",
@@ -176,8 +191,12 @@ class SegmentCatalog:
             "area",
             "semimajor_sigma",
             "semiminor_sigma",
+            "fwhm",
             "orientation",
             "ellipticity",
+            "cxx",
+            "cxy",
+            "cyy",
             "kron_radius",
             "segment_flux",
             "segment_fluxerr",
@@ -189,7 +208,11 @@ class SegmentCatalog:
         name_map = {}
         name_map["xcentroid"] = "x_centroid"
         name_map["ycentroid"] = "y_centroid"
+        name_map["xcentroid_win"] = "x_centroid_win"
+        name_map["ycentroid_win"] = "y_centroid_win"
         name_map["area"] = "segment_area"
+        name_map["semimajor_sigma"] = "semimajor"
+        name_map["semiminor_sigma"] = "semiminor"
         name_map["orientation"] = "orientation_pix"
         name_map["segment_fluxerr"] = "segment_flux_err"
         name_map["kron_fluxerr"] = "kron_flux_err"
@@ -199,20 +222,37 @@ class SegmentCatalog:
             new_name = name_map.get(name, name)
             value = getattr(segm_cat, name)
 
+            # handle any unit conversions
+            if new_name in (
+                "x_centroid",
+                "y_centroid",
+                "x_centroid_win",
+                "y_centroid_win",
+            ):
+                value *= u.pix
+
+            # pix**2 -> arcsec**2
+            if new_name == "segment_area":
+                value = value.value * self.pixel_area.to(u.arcsec**2)
+
+            # pix -> arcsec
+            if new_name in ("semimajor", "semiminor", "fwhm", "kron_radius"):
+                value = value.value * self.pixel_scale
+
+            # 1 / pix**2 -> 1 / arcsec**-2
+            if new_name in ("cxx", "cxy", "cyy"):
+                value = value.value / self.pixel_area.to(u.arcsec**2)
+
+            # remove dimensionless units
+            if new_name == "ellipticity":
+                value = value.value
+
             # change the photutils dtypes
-            if new_name != "sky_centroid":
+            if new_name not in ("sky_centroid", "sky_centroid_win"):
                 if np.issubdtype(value.dtype, np.integer):
                     value = value.astype(np.int32)
                 elif np.issubdtype(value.dtype, np.floating):
                     value = value.astype(np.float32)
-
-            # handle any unit conversions
-            if new_name in ("x_centroid", "y_centroid"):
-                value *= u.pix
-            if new_name == "segment_area":
-                value = (value.value * self.pixel_area.to(u.arcsec**2)).astype(
-                    np.float32
-                )
 
             # split the sky_centroid values into separate RA and Dec
             # values
@@ -220,9 +260,44 @@ class SegmentCatalog:
                 self.ra_centroid = value.ra
                 self.dec_centroid = value.dec
                 self.names.extend(["ra_centroid", "dec_centroid"])
+            elif new_name == "sky_centroid_win":
+                self.ra_centroid_win = value.ra
+                self.dec_centroid_win = value.dec
+                self.names.extend(["ra_centroid_win", "dec_centroid_win"])
             else:
                 setattr(self, new_name, value)
                 self.names.append(new_name)
+
+    def add_placeholders(self):
+        """
+        Add placeholder attributes to the class instance.
+        """
+        # pixel columns
+        pix_columns = (
+            "x_centroid_err",
+            "y_centroid_err",
+            "x_centroid_win_err",
+            "y_centroid_win_err",
+        )
+        pix_value = np.zeros(self.source_cat.nlabels, dtype=np.float32) * u.pix
+        for name in pix_columns:
+            if not hasattr(self, name):
+                setattr(self, name, pix_value)
+
+        # sky columns
+        sky_columns = (
+            "ra_centroid_err",
+            "dec_centroid_err",
+            "ra_centroid_win_err",
+            "dec_centroid_win_err",
+        )
+        sky_value = np.zeros(self.source_cat.nlabels, dtype=np.float32) * u.arcsec
+        for name in sky_columns:
+            if not hasattr(self, name):
+                setattr(self, name, sky_value)
+
+        for name in [*pix_columns, *sky_columns]:
+            self.names.append(name)
 
     @lazyproperty
     def orientation_sky(self):
@@ -233,3 +308,29 @@ class SegmentCatalog:
         return ((180.0 * u.deg) - self.wcs_angle + self.orientation_pix).astype(
             np.float32
         )
+
+    @lazyproperty
+    def _kron_abmag(self):
+        return self.convert_flux_to_abmag(self.kron_flux, self.kron_flux_err)
+
+    @lazyproperty
+    def kron_abmag(self):
+        """
+        The Kron magnitude in AB magnitudes.
+        """
+        return self._kron_abmag[0]
+
+    @lazyproperty
+    def kron_abmag_err(self):
+        """
+        The Kron magnitude error in AB magnitudes.
+        """
+        return self._kron_abmag[1]
+
+    @lazyproperty
+    def fluxfrac_radius_50(self):
+        """
+        The radius (in arcsec) at which the flux fraction is 50%.
+        """
+        value = self.source_cat.fluxfrac_radius(0.5)
+        return (value.value * self.pixel_scale).astype(np.float32)

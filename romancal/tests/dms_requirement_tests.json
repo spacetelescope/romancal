@@ -4,7 +4,7 @@
     "romancal.regtest.test_wfi_dq_init.test_dq_init_image_step"
   ],
   "DMS79": [
-    "romancal.regtest.test_wfi_flat_field.test_flat_field_crds_match_image_step"
+    "romancal.regtest.test_wfi_flat_field.test_ref_file_query"
   ],
   "DMS86": [
     "romancal.regtest.test_wfi_image_pipeline.test_steps_ran",

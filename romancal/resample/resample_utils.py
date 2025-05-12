@@ -23,7 +23,8 @@ def make_output_wcs(
         Each datamodel must have a `gwcs.wcs.WCS` object.
 
     pscale_ratio : float, optional
-        Ratio of input to output pixel scale. Ignored when ``pscale`` is provided.
+        Ratio of output pixel scale to input pixel scale.
+        Ignored when ``pscale`` is provided.
 
     pscale : float, None, optional
         Absolute pixel scale in degrees. When provided, overrides ``pscale_ratio``.

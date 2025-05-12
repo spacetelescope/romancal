@@ -35,7 +35,7 @@ class DAOFindCatalog:
         self.xypos = xypos
         self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
 
-        self.names = ["sharpness", "roundness"]
+        self.names = ["sharpness", "roundness1"]
 
     @lazyproperty
     def kernel_size(self):
@@ -164,7 +164,7 @@ class DAOFindCatalog:
             return value.astype(np.float32)
 
     @lazyproperty
-    def roundness(self):
+    def roundness1(self):
         """
         The DAOFind source roundness1 statistic based on symmetry.
 

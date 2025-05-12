@@ -14,7 +14,6 @@ from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
 from roman_datamodels.stnode import SourceCatalog
 
-from romancal.multiband_catalog import utils
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
 from romancal.source_catalog.save_utils import save_segment_image
@@ -101,8 +100,8 @@ class SourceCatalogStep(RomanStep):
         else:
             cat_model = datamodels.MosaicSourceCatalogModel
         source_catalog_model = cat_model()
-        source_catalog_model.meta = {}
 
+        source_catalog_model.meta = {}
         for key in source_catalog_model.meta._schema_attributes.explicit_properties:
             value = (
                 model.meta.instrument[key]
@@ -111,7 +110,7 @@ class SourceCatalogStep(RomanStep):
             )
             source_catalog_model.meta[key] = value
 
-        if self.forced_segmentation != "":
+        if self.forced_segmentation:
             source_catalog_model.meta["forced_segmentation"] = self.forced_segmentation
             forced = True
         else:
@@ -141,69 +140,67 @@ class SourceCatalogStep(RomanStep):
                 segment_img.detection_image = detection_image
         else:
             forced_segmodel = datamodels.open(self.forced_segmentation)
+            # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
             segment_img = SegmentationImage(forced_segmodel.data[...])
 
         if segment_img is None:  # no sources found
             cat = Table()
         else:
-            # PSF photometry is skipped when forcing; happens later
+            if forced:
+                cat_type = "forced_det"
+            else:
+                cat_type = "prompt"
+
             catobj = RomanSourceCatalog(
                 model,
                 segment_img,
                 detection_image,
                 self.kernel_fwhm,
-                fit_psf=self.fit_psf & (not forced),
+                fit_psf=self.fit_psf & (not forced),  # skip when forced
                 mask=mask,
+                cat_type=cat_type,
             )
             cat = catobj.catalog
 
         if forced:
-            forced_detection_image = forced_segmodel.detection_image[...]
+            # TODO: improve this so that the moment-based properties are
+            # not recomputed from the forced_detection_image
+            forced_detection_image = forced_segmodel.detection_image
             segment_img.detection_image = forced_detection_image
-            forcedcatobj = RomanSourceCatalog(
+            forced_catobj = RomanSourceCatalog(
                 model,
                 segment_img,
                 forced_detection_image,
                 self.kernel_fwhm,
                 fit_psf=self.fit_psf,
                 mask=mask,
+                cat_type="forced_full",
             )
-            # we have two catalogs, both using a specified set of
-            # pre-specified segments.  We want:
-            # - keep the original shape parameters computed from
+
+            # We have two catalogs, both using the same segmentation
+            # image. We want:
+            # - the original shape parameters computed from
             #   the forced detection image.  These are needed to
             #   describe where we have computed the forced photometry.
             #   These keep their original names to match up with the deep
             #   catalog used for forcing.
-            # - keep the newly measured fluxes and flags and sharpness
+            # - the newly measured fluxes and flags and sharpness
             #   / roundness from the direct image; these give the new fluxes
             #   at these locations
             #   These gain a forced_ prefix.
-            # - keep the shapes measured from the new detection image.  These
+            # - the shapes measured from the new detection image.  These
             #   seem to me to have less value but are explicitly called out in
             #   a requirement, and it's not crazy to compute new centroids and
             #   moments.
             #   These gain a forced_prefix.
-            # - discard fluxes we measure with the new shapes from the new
-            #   detection image.
             # At the end of the day you get a whole new catalog with the forced_
             # prefix, plus some shape parameters that duplicate values in the
             # original catalog used for forcing.
-            forcedcat = forcedcatobj.catalog
-            utils.prefix_colnames(
-                forcedcat, "forced_", colnames=utils.get_direct_image_columns(forcedcat)
-            )
-            utils.prefix_colnames(
-                cat, "forced_", colnames=utils.get_detection_image_columns(cat)
-            )
-            forcedcat.remove_columns([x for x in forcedcat.colnames if "_bbox_" in x])
-            cat.remove_columns(utils.get_direct_image_columns(cat))
-            forcedcat.meta = None  # redundant with cat.meta
-            cat = join(forcedcat, cat, keys="label", join_type="outer")
-            colnames = [x for x in cat.colnames if not x.startswith("forced_")] + [
-                x for x in cat.colnames if x.startswith("forced_")
-            ]
-            cat = cat[colnames]
+
+            # merge the two forced catalogs
+            forced_cat = forced_catobj.catalog
+            forced_cat.meta = None  # redundant with cat.meta
+            cat = join(forced_cat, cat, keys="label", join_type="outer")
 
         # put the resulting catalog in the model
         source_catalog_model.source_catalog = cat
@@ -255,6 +252,8 @@ class SourceCatalogStep(RomanStep):
             self.output_ext = "parquet"
             result = source_catalog_model
 
+        # validate the result to flush out any lazy-loaded contents
+        result.validate()
         return result
 
 

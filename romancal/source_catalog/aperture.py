@@ -71,6 +71,7 @@ class ApertureCatalog:
             warnings.simplefilter("ignore", category=RuntimeWarning)
             warnings.simplefilter("ignore", category=AstropyUserWarning)
 
+            unit = self.model.data.unit
             nvalues = []
             bkg_median = []
             bkg_std = []
@@ -83,14 +84,15 @@ class ApertureCatalog:
                 if values.size == 0:
                     # handle case where source is completely masked due to
                     # forced photometry
-                    med *= self.model.data.unit
-                    std *= self.model.data.unit
+                    med <<= unit
+                    std <<= unit
                 bkg_median.append(med)
                 bkg_std.append(std)
 
             nvalues = np.array(nvalues)
-            bkg_median = u.Quantity(bkg_median)
-            bkg_std = u.Quantity(bkg_std)
+            pixel_area = self.pixel_scale**2
+            bkg_median = u.Quantity(bkg_median) / pixel_area
+            bkg_std = u.Quantity(bkg_std) / pixel_area
 
             # standard error of the median
             bkg_median_err = np.sqrt(np.pi / (2.0 * nvalues)) * bkg_std
@@ -146,7 +148,7 @@ class ApertureCatalog:
             descriptions[colname] = desc
         return descriptions
 
-    def calc_aperture_photometry(self):
+    def calc_aperture_photometry(self, subtract_local_bkg=False):
         """
         Calculate the aperture photometry.
 
@@ -164,9 +166,10 @@ class ApertureCatalog:
             tmp_flux_col = f"aperture_sum_{i}"
             tmp_flux_err_col = f"aperture_sum_err_{i}"
 
-            # subtract the local background measured in the annulus
-            aper_areas = aperture.area_overlap(self.model.data)
-            aper_phot[tmp_flux_col] -= self.aper_bkg_flux * aper_areas
+            if subtract_local_bkg:
+                # subtract the local background measured in the annulus
+                aper_areas = aperture.area_overlap(self.model.data)
+                aper_phot[tmp_flux_col] -= self.aper_bkg_flux * aper_areas
 
             # set the flux and error attributes
             flux_col = self.aperture_flux_colnames[i]

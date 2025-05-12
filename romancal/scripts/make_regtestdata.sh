@@ -30,12 +30,10 @@ outdir="$1"
 logfile="$outdir/make_regtestdata.log"
 
 # stop on an error
-# FIXME we can't do this because asn_from_list always returns an error
-# see: https://github.com/spacetelescope/romancal/issues/1535
-#set -e
+set -e
 
-# Redirect all output to the logfile
-exec > $logfile 2>&1
+# Redirect all output to the logfile and the terminal
+exec > >(tee $logfile) 2>&1
 
 # set up the directory structure
 mkdir -p $outdir/roman-pipeline/dev/WFI/image
@@ -81,27 +79,6 @@ cp r0000101001001001001_0002_wfi01_f158_cal.asdf $outdir/roman-pipeline/dev/WFI/
 # image used in the skycell generation test
 strun roman_elp r0000101001001001001_0002_wfi10_f158_uncal.asdf
 cp r0000101001001001001_0002_wfi10_f158_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
-
-
-# CRDS test needs the "usual" r00001..._0001_wfi01 files.
-# It also needs a hacked r00001..._0001_wfi01 file, with the time changed.
-# this makes the hacked version.
-echo "Creating regtest files for CRDS tests..."
-basename="r0000101001001001001_0001_wfi01_f158"
-python -c "
-import asdf
-from roman_datamodels import stnode
-from astropy.time import Time
-basename = '$basename'
-f = asdf.open(f'{basename}_uncal.asdf')
-f['roman']['meta']['exposure']['start_time'] = Time('2020-01-01T00:00:00', format='isot')
-f['roman']['meta']['filename'] = stnode.Filename(f'{basename}_changetime_uncal.asdf')
-f.write_to(f'{basename}_changetime_uncal.asdf')"
-strun roman_elp ${basename}_changetime_uncal.asdf --steps.assign_wcs.save_results True --steps.flatfield.save_results True
-# copy input and truth files into location
-cp ${basename}_changetime_assignwcs.asdf $outdir/roman-pipeline/dev/WFI/image
-cp ${basename}_changetime_flat.asdf $outdir/roman-pipeline/dev/truth/WFI/image
-
 
 # need to make a special ALL_SATURATED file for the all saturated test.
 echo "Creating regtest files for all saturated tests..."
@@ -255,6 +232,6 @@ jf rt dl roman-pipeline/dev/WFI/image/TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_u
 jf rt dl roman-pipeline/dev/references/dark_ma510.asdf --flat
 strun roman_elp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf --steps.tweakreg.skip=true --steps.source_catalog.skip=true --steps.dq_init.save=true --steps.dark_current.override_dark=dark_ma510.asdf --steps.rampfit.override_dark=dark_ma510.asdf
 cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
-cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_cal.asdf regtestdata/roman-pipeline/dev/truth/WFI/image/
-cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_dqinit.asdf regtestdata/roman-pipeline/dev/truth/WFI/image/
+cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_cal.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_dqinit.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp dark_ma510.asdf $outdir/roman-pipeline/dev/references/
