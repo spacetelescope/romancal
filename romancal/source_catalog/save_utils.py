@@ -36,7 +36,7 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
         segm_model = SegmentationMapModel
     else:
         segm_model = MosaicSegmentationMapModel
-    segmentation_model = segm_model.from_catalog_model(source_catalog_model)
+    segmentation_model = segm_model.from_schema({"meta": source_catalog_model.meta})
 
     # Set the data and detection image
     segmentation_model.data = segment_img.data.astype(np.uint32)
