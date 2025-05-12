@@ -19,8 +19,21 @@ EXPECTED_MATCH_FILENAMES = [
 ]
 
 EXPECTED_ASN_FILENAMES = [
+    "r00001_p_v01001001001001_270p65x48y69_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x48y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x48y71_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x49y69_f158_asn.json",
     "r00001_p_v01001001001001_270p65x49y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x49y71_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x50y69_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x50y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x50y71_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x51y69_f158_asn.json",
     "r00001_p_v01001001001001_270p65x51y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x51y71_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x52y69_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x52y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x52y71_f158_asn.json",
 ]
 
 
@@ -50,7 +63,7 @@ def test_match_files(run_patchlist, expected_match_files):
 def run_skycellasn(rtdata_module, run_patchlist):
     rtdata = rtdata_module
 
-    # This test should generate six association files
+    # This test should generate several association files
     args = [
         "r0000101001001001001_0002_wfi01_f158_cal.match",
         "r0000101001001001001_0002_wfi10_f158_cal.match",
