@@ -212,6 +212,9 @@ class SourceCatalogStep(RomanStep):
             else source_catalog_model.meta.filename
         )
 
+        # Update the source catalog filename metadata
+        source_catalog_model.meta.filename = output_filename.split("/")[-1]
+
         # always save the segmentation image
         save_segment_image(self, segment_img, source_catalog_model, output_filename)
 
