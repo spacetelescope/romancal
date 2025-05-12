@@ -20,7 +20,9 @@ logger.addHandler(logging.NullHandler())
 logger.setLevel("INFO")
 
 
-def mk_skycell_asn_from_skycell_list(filelist, release_product, product_type, optical_element):
+def mk_skycell_asn_from_skycell_list(
+    filelist, release_product, product_type, optical_element
+):
     """
     Create level 3 associations from a list of match files generated with mk_skycell_list.
 
