@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from romancal.associations import mk_patchlist, mk_skycell_asn_from_patchlist
+from romancal.associations import mk_skycell_asn_from_skycell_list, mk_skycell_list
 
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata]
@@ -19,12 +19,21 @@ EXPECTED_MATCH_FILENAMES = [
 ]
 
 EXPECTED_ASN_FILENAMES = [
-    "r00001_p_v01001001001001_r274dp63x31y80_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x31y81_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x31y82_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x32y80_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x32y81_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x32y82_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x48y69_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x48y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x48y71_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x49y69_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x49y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x49y71_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x50y69_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x50y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x50y71_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x51y69_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x51y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x51y71_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x52y69_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x52y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x52y71_f158_asn.json",
 ]
 
 
@@ -40,7 +49,7 @@ def run_patchlist(rtdata_module):
     rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi01_f158_cal.asdf")
     rtdata.get_data("WFI/image/r0000101001001001001_0002_wfi10_f158_cal.asdf")
 
-    mk_patchlist._cli(args)
+    mk_skycell_list._cli(args)
     return rtdata
 
 
@@ -54,13 +63,13 @@ def test_match_files(run_patchlist, expected_match_files):
 def run_skycellasn(rtdata_module, run_patchlist):
     rtdata = rtdata_module
 
-    # This test should generate six association files
+    # This test should generate several association files
     args = [
         "r0000101001001001001_0002_wfi01_f158_cal.match",
         "r0000101001001001001_0002_wfi10_f158_cal.match",
     ]
 
-    mk_skycell_asn_from_patchlist._cli(args)
+    mk_skycell_asn_from_skycell_list._cli(args)
     return rtdata
 
 

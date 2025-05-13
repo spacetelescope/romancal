@@ -87,8 +87,8 @@ stpsf = "pytest_romancal.stpsf_plugin"
 roman_static_preview = "romancal.scripts.static_preview:command"
 asn_from_list = "romancal.associations.asn_from_list:_cli"
 skycell_asn = "romancal.associations.skycell_asn:_cli"
-mk_patchlist = "romancal.associations.mk_patchlist:_cli"
-mk_skycell_asn_from_patchlist = "romancal.associations.mk_skycell_asn_from_patchlist:_cli"
+mk_skycell_list = "romancal.associations.mk_skycell_list:_cli"
+mk_skycell_asn_from_skycell_list= "romancal.associations.mk_skycell_asn_from_skycell_list:_cli"
 
 [build-system]
 requires = [
@@ -273,8 +273,8 @@ name = "``mosaic_pipeline``"
 showcontent = true
 
 [[tool.towncrier.type]]
-directory = "patch_match"
-name = "``patch_match``"
+directory = "skycell"
+name = "``skycell``"
 showcontent = true
 
 # steps
