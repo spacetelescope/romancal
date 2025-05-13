@@ -2,8 +2,8 @@ from enum import IntEnum
 
 import numpy as np
 import pytest
+from roman_datamodels import stnode
 from roman_datamodels.datamodels import RampModel, RefpixRefModel
-from roman_datamodels.maker_utils import mk_ramp, mk_refpix
 
 from romancal.refpix.data import Coefficients, Const, StandardView
 
@@ -38,12 +38,13 @@ def data():
 
 @pytest.fixture(scope="module")
 def datamodel(data):
-    datamodel = mk_ramp(shape=(2, 2, 2))
+    datamodel = stnode.Ramp.fake_data(shape=(2, 2, 2))
+    datamodel.meta.cal_step = stnode.L2CalStep.fake_data()
 
     detector = data[:, :, : Const.N_COLUMNS]
     amp33 = data[:, :, Const.N_COLUMNS :]
 
-    # Sanity check, that this is in line with the datamodel maker_utils
+    # Sanity check, that this is in line with the datamodels
     assert detector.shape == (Dims.N_FRAMES, Dims.N_ROWS, Const.N_COLUMNS)
     assert amp33.shape == (Dims.N_FRAMES, Dims.N_ROWS, Const.CHAN_WIDTH)
 
@@ -82,6 +83,8 @@ def offset() -> np.ndarray:
 
 @pytest.fixture(scope="module")
 def ref_pix_ref(coeffs):
-    refpix_ref = mk_refpix(gamma=coeffs.gamma, zeta=coeffs.zeta, alpha=coeffs.alpha)
+    refpix_ref = stnode.RefpixRef.fake_data(
+        {"gamma": coeffs.gamma, "zeta": coeffs.zeta, "alpha": coeffs.alpha}
+    )
 
     return RefpixRefModel(refpix_ref)
