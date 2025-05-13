@@ -6,7 +6,7 @@ Unit tests for linearity correction
 
 import numpy as np
 import pytest
-from roman_datamodels import dqflags, maker_utils
+from roman_datamodels import dqflags, stnode
 from roman_datamodels.datamodels import LinearityRefModel, ScienceRawModel
 
 from romancal.dq_init import DQInitStep
@@ -26,7 +26,7 @@ def test_linearity_coeff(instrument, exptype):
     shape = (5, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape)
+    wfi_sci_raw = stnode.WfiScienceRaw.fake_data(shape=shape)
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
@@ -60,8 +60,7 @@ def test_linearity_coeff(instrument, exptype):
     # save the pixel values to make sure they are not altered
     pixels_55 = result.data[0:, 5, 5]
     pixels_65 = result.data[0:, 6, 5]
-    linref = maker_utils.mk_linearity(shape=shape, coeffs=coeffs)
-    linref_model = LinearityRefModel(linref)
+    linref_model = LinearityRefModel.fake_data({"coeffs": coeffs}, shape=shape[1:])
 
     LinearityStep.call(result, override_linearity=linref_model)
 
