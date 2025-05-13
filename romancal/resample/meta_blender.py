@@ -99,7 +99,7 @@ class MetaBlender:
                 },
             }
         )
-        self._model.meta.product_type = (stnode.ProductType("l2"),)
+        self._model.meta.product_type = stnode.ProductType("l2")
         self._model.meta.ref_file = stnode.RefFile.from_schema(
             {"crds": {"version": "12.3.1", "context": "roman_0815.pmap"}}
         )
