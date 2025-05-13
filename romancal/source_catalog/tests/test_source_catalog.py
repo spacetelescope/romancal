@@ -10,6 +10,7 @@ from astropy.table import Table
 from numpy.testing import assert_equal
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels as rdm
+from roman_datamodels import stnode
 from roman_datamodels.datamodels import (
     ImageModel,
     ImageSourceCatalogModel,
@@ -18,7 +19,6 @@ from roman_datamodels.datamodels import (
     MosaicSourceCatalogModel,
     SegmentationMapModel,
 )
-from roman_datamodels.maker_utils import mk_level2_image, mk_level3_mosaic
 
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
@@ -71,8 +71,10 @@ def make_test_image():
 
 @pytest.fixture
 def mosaic_model():
-    wfi_mosaic = mk_level3_mosaic(shape=(101, 101))
-    model = MosaicModel(wfi_mosaic)
+    model = MosaicModel.fake_data(shape=(101, 101))
+    model.meta.filename = "none"
+    model.meta.cal_step = stnode.L3CalStep.fake_data()
+    model.cal_logs = stnode.CalLogs.fake_data()
     data, err = make_test_image()
     model.data = data
     model.err = err
@@ -82,8 +84,10 @@ def mosaic_model():
 
 @pytest.fixture
 def image_model():
-    wfi_image = mk_level2_image(shape=(101, 101))
-    model = ImageModel(wfi_image)
+    model = ImageModel.fake_data(shape=(101, 101))
+    model.meta.filename = "none"
+    model.meta.cal_step = stnode.L2CalStep.fake_data()
+    model.meta.cal_logs = stnode.CalLogs.fake_data()
     data, err = make_test_image()
     model.data = data
     model.err = err
