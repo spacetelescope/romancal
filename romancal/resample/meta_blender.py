@@ -4,6 +4,7 @@ import numpy as np
 from asdf.lazy_nodes import AsdfDictNode, AsdfListNode
 from asdf.tags.core.ndarray import NDArrayType
 from astropy.table import Table
+from astropy.time import Time
 from roman_datamodels import datamodels, stnode
 
 
@@ -84,6 +85,9 @@ class MetaBlender:
         self._model = datamodels.MosaicModel.from_schema(
             {
                 "meta": {
+                    "file_date": Time(
+                        "2020-01-01T00:00:00.0", format="isot", scale="utc"
+                    ),
                     "photometry": {
                         "pixel_area": -999999,
                         "conversion_megajanskys": -999999,
