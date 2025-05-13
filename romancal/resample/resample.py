@@ -1,7 +1,7 @@
 import logging
 
 import numpy as np
-from roman_datamodels import datamodels, dqflags, maker_utils
+from roman_datamodels import datamodels, dqflags
 from stcal.resample import Resample
 
 import romancal.skycell.skymap as sc
@@ -224,9 +224,7 @@ class ResampleData(Resample):
         if self.blend_meta:
             output_model = self._meta_blender.finalize()
         else:
-            output_model = maker_utils.mk_datamodel(
-                datamodels.MosaicModel, n_images=0, shape=(0, 0)
-            )
+            output_model = datamodels.MosaicModel.from_schema()
 
         output_model.meta.resample.good_bits = self.good_bits
         output_model.meta.resample.weight_type = self.weight_type
