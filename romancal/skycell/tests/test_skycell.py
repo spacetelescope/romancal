@@ -172,7 +172,8 @@ def test_skycell_wcs_pixel_to_world(name, skymap_subset):
                         (skycell.pixel_shape[0] + 0.5, skycell.pixel_shape[1] + 0.5),
                         (0.5, skycell.pixel_shape[1] + 0.5),
                     ]
-                ).T
+                ).T,
+                with_bounding_box=False,
             )
         ).T,
         skycell.radec_corners,
@@ -273,7 +274,8 @@ def test_skycell_wcsinfo(name, skymap_subset):
                         ),
                         (0.5, wcsinfo["ny"] + 0.5),
                     ]
-                ).T
+                ).T,
+                with_bounding_box=False,
             )
         ).T,
         skycell.radec_corners,
