@@ -4,7 +4,7 @@ import numpy as np
 from asdf.lazy_nodes import AsdfDictNode, AsdfListNode
 from asdf.tags.core.ndarray import NDArrayType
 from astropy.table import Table
-from roman_datamodels import datamodels, maker_utils, stnode
+from roman_datamodels import datamodels, stnode
 
 
 class MissingCellType:
@@ -80,9 +80,21 @@ class MetaBlender:
 
     def _blend_first(self, model):
         # make a blank mosic metdata node
-        self._model = maker_utils.mk_datamodel(
-            datamodels.MosaicModel, n_images=0, shape=(0, 0)
+        self._model = datamodels.MosaicModel.from_schema(
+            {
+                "meta": {
+                    "photometry": {
+                        "pixel_area": -999999,
+                        "conversion_megajanskys": -999999,
+                        "conversion_megajanskys_uncertainty": -999999,
+                    },
+                    "basic": {
+                        "survey": "?",
+                    },
+                },
+            }
         )
+
         self._meta = self._model.meta
 
         self._model["individual_image_cal_logs"] = []
