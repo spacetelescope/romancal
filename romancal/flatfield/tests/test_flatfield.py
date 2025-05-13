@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from astropy.time import Time
-from roman_datamodels import maker_utils, stnode
+from roman_datamodels import stnode
 from roman_datamodels.datamodels import FlatRefModel, ImageModel
 
 from romancal.flatfield import FlatFieldStep
@@ -20,7 +20,7 @@ def test_flatfield_step_interface(instrument, exptype):
 
     shape = (20, 20)
 
-    wfi_image = maker_utils.mk_level2_image(shape=shape)
+    wfi_image = stnode.WfiImage.fake_data(shape=shape)
     wfi_image.meta.instrument.name = instrument
     wfi_image.meta.instrument.detector = "WFI01"
     wfi_image.meta.instrument.optical_element = "F158"
@@ -33,8 +33,10 @@ def test_flatfield_step_interface(instrument, exptype):
     wfi_image.var_flat = np.zeros(shape, dtype=np.float32)
 
     wfi_image_model = ImageModel(wfi_image)
-    flatref = stnode.FlatRef()
-    meta = maker_utils.mk_ref_common("FLAT")
+    wfi_image_model.meta.cal_step = stnode.L2CalStep.fake_data()
+    wfi_image_model.meta.cal_logs = stnode.CalLogs.fake_data()
+    flatref = stnode.FlatRef.fake_data()
+    meta = flatref.meta
     meta["instrument"]["optical_element"] = "F158"
     meta["instrument"]["detector"] = "WFI01"
     flatref["meta"] = meta
@@ -64,7 +66,9 @@ def test_flatfield_step_interface(instrument, exptype):
 def test_crds_temporal_match(instrument, exptype):
     """Test that the basic inferface works for data requiring a FLAT reffile"""
 
-    wfi_image = maker_utils.mk_level2_image()
+    shape = (20, 20)
+
+    wfi_image = stnode.WfiImage.fake_data(shape=shape)
     wfi_image.meta.instrument.name = instrument
     wfi_image.meta.instrument.detector = "WFI01"
     wfi_image.meta.instrument.optical_element = "F158"
@@ -74,6 +78,8 @@ def test_crds_temporal_match(instrument, exptype):
 
     wfi_image.meta.exposure.type = exptype
     wfi_image_model = ImageModel(wfi_image)
+    wfi_image_model.meta.cal_step = stnode.L2CalStep.fake_data()
+    wfi_image_model.meta.cal_logs = stnode.CalLogs.fake_data()
 
     step = FlatFieldStep()
     ref_file_path = step.get_reference_file(wfi_image_model, "flat")
@@ -115,7 +121,9 @@ def test_skip_var_flat():
     ],
 )
 def test_spectroscopic_skip(instrument, exptype):
-    wfi_image = maker_utils.mk_level2_image()
+    shape = (20, 20)
+
+    wfi_image = stnode.WfiImage.fake_data(shape=shape)
     wfi_image.meta.instrument.name = instrument
     wfi_image.meta.instrument.detector = "WFI01"
     wfi_image.meta.instrument.optical_element = "F158"
@@ -125,6 +133,8 @@ def test_spectroscopic_skip(instrument, exptype):
 
     wfi_image.meta.exposure.type = exptype
     wfi_image_model = ImageModel(wfi_image)
+    wfi_image_model.meta.cal_step = stnode.L2CalStep.fake_data()
+    wfi_image_model.meta.cal_logs = stnode.CalLogs.fake_data()
 
     result = FlatFieldStep.call(wfi_image_model)
     assert result.meta.cal_step.flat_field == "SKIPPED"
