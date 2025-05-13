@@ -7,7 +7,7 @@ from astropy.modeling import models
 from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels
 
 from romancal.assign_wcs.utils import add_s_region
 from romancal.datamodels import ModelLibrary
@@ -33,9 +33,8 @@ class WfiSca:
             An L2 ImageModel datamodel.
         """
         rng = np.random.default_rng(seed=13)
-        l2 = maker_utils.mk_level2_image(
-            shape=self.shape,
-            **{
+        l2 = datamodels.ImageModel.fake_data(
+            {
                 "meta": {
                     "wcsinfo": {
                         "ra_ref": 10,
@@ -65,6 +64,7 @@ class WfiSca:
                 "var_poisson": rng.poisson(1, size=self.shape).astype(np.float32),
                 "var_flat": rng.uniform(0, 1, size=self.shape).astype(np.float32),
             },
+            shape=self.shape,
         )
         # data from WFISim simulation of SCA #01
         l2.meta.filename = self.filename
@@ -537,44 +537,44 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
 
 def test_l3_wcsinfo(multiple_exposures):
     """Test the population of the Level 3 wcsinfo block"""
-    expected = maker_utils.mk_mosaic_wcsinfo(
-        **{
-            "ra_ref": 10.00292450000052,
-            "dec_ref": 0.001534500000533253,
-            "x_ref": 106.4579605214774,
-            "y_ref": 80.66617532540977,
-            "rotation_matrix": [
-                [-0.9335804264969954, 0.3583679495458379],
-                [0.3583679495458379, 0.9335804264969954],
-            ],
-            "pixel_scale": 3.100000000097307e-05,
-            "pixel_scale_local": 3.099999999719185e-05,
-            "pixel_shape": (161, 213),
-            "ra_center": 10.002930353020417,
-            "dec_center": 0.0015101325554100666,
-            "ra_corn1": 10.005118261576513,
-            "dec_corn1": -0.0020027691784169498,
-            "ra_corn2": 10.006906876013732,
-            "dec_corn2": 0.0026567307177480667,
-            "ra_corn3": 10.000742444457124,
-            "dec_corn3": 0.005023034287225611,
-            "ra_corn4": 9.998953830031317,
-            "dec_corn4": 0.00036353438578227396,
-            "orientat_local": 20.999999978134802,
-            "orientat": 20.99999999880985,
-            "projection": "TAN",
-            "s_region": (
-                "POLYGON ICRS  10.005118262 -0.002002769 10.006906876 "
-                "0.002656731 10.000742444 0.005023034 9.998953830 0.000363534"
-            ),
-        }
-    )
+    expected = {
+        "ra_ref": 10.00292450000052,
+        "dec_ref": 0.001534500000533253,
+        "x_ref": 106.4579605214774,
+        "y_ref": 80.66617532540977,
+        "rotation_matrix": [
+            [-0.9335804264969954, 0.3583679495458379],
+            [0.3583679495458379, 0.9335804264969954],
+        ],
+        "pixel_scale": 3.100000000097307e-05,
+        "pixel_scale_local": 3.099999999719185e-05,
+        "pixel_shape": (161, 213),
+        "ra_center": 10.002930353020417,
+        "dec_center": 0.0015101325554100666,
+        "ra_corn1": 10.005118261576513,
+        "dec_corn1": -0.0020027691784169498,
+        "ra_corn2": 10.006906876013732,
+        "dec_corn2": 0.0026567307177480667,
+        "ra_corn3": 10.000742444457124,
+        "dec_corn3": 0.005023034287225611,
+        "ra_corn4": 9.998953830031317,
+        "dec_corn4": 0.00036353438578227396,
+        "orientat_local": 20.999999978134802,
+        "orientat": 20.99999999880985,
+        "projection": "TAN",
+        "s_region": (
+            "POLYGON ICRS  10.005118262 -0.002002769 10.006906876 "
+            "0.002656731 10.000742444 0.005023034 9.998953830 0.000363534"
+        ),
+    }
 
     input_models = ModelLibrary(multiple_exposures)
     output_model = ResampleStep().run(input_models)
 
-    assert output_model.meta.wcsinfo.projection == expected.projection
-    assert word_precision_check(output_model.meta.wcsinfo.s_region, expected.s_region)
+    assert output_model.meta.wcsinfo.projection == expected["projection"]
+    assert word_precision_check(
+        output_model.meta.wcsinfo.s_region, expected["s_region"]
+    )
     for key in expected.keys():
         if key not in ["projection", "s_region"]:
             assert np.allclose(output_model.meta.wcsinfo[key], expected[key])

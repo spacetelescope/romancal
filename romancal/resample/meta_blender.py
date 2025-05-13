@@ -116,12 +116,8 @@ class MetaBlender:
         self._meta.coordinates = model.meta.coordinates
         self._meta.program = model.meta.program
         for step_name in self._meta.cal_step:
-            if hasattr(model.meta.cal_step, step_name):
-                setattr(
-                    self._meta.cal_step,
-                    step_name,
-                    getattr(model.meta.cal_step, step_name),
-                )
+            if value := model.meta.get("cal_step", {}).get(step_name):
+                setattr(self._meta.cal_step, step_name, value)
 
     def _update_tables(self, meta):
         basic_data = {}
@@ -149,7 +145,8 @@ class MetaBlender:
                 self._meta.basic.time_last_mjd, model.meta.exposure.end_time.mjd
             )
 
-        self._model["individual_image_cal_logs"].append(model.meta.cal_logs)
+        if cal_logs := model.meta.get("cal_logs"):
+            self._model["individual_image_cal_logs"].append(cal_logs)
         self._meta.resample.members.append(model.meta.filename)
 
         mid_time = (
