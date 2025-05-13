@@ -8,9 +8,9 @@ from astropy import coordinates as coord
 from astropy.modeling import models
 from gwcs import coordinate_frames as cf
 from gwcs import wcs as gwcs_wcs
+from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
-from roman_datamodels.maker_utils import mk_level2_image, mk_sky_background
 
 from romancal.datamodels import ModelLibrary
 from romancal.skymatch import SkyMatchStep
@@ -72,19 +72,18 @@ def mk_image_model(
     rng=None,
 ):
     rng = np.random.default_rng(619) if rng is None else rng
-    l2 = mk_level2_image(shape=image_shape)
-    l2_im = ImageModel(l2)
+    l2_im = ImageModel.fake_data(shape=image_shape)
     l2_im.data = rng.normal(
         loc=rate_mean, scale=rate_std, size=l2_im.data.shape
     ).astype(np.float32)
 
     l2_im.meta["wcs"] = mk_gwcs(image_shape, sky_offset=sky_offset, rotate=rotation)
 
-    l2_im.meta["background"] = mk_sky_background(
-        level=None, subtracted=False, method="None"
+    l2_im.meta.background = stnode.SkyBackground.fake_data(
+        {"level": None, "subtracted": False, "method": "None"}
     )
-
-    l2_im.meta.cal_step["skymatch"] = "INCOMPLETE"
+    l2_im.meta.cal_step = stnode.L2CalStep.fake_data()
+    l2_im.meta.cal_logs = stnode.CalLogs.fake_data()
     return l2_im
 
 
