@@ -59,13 +59,14 @@ def _median_with_resampling(
         resampled image.
     """
     in_memory = not input_models._on_disk
-    indices_by_group = list(input_models.group_indices.values())
-    nresultants = len(indices_by_group)
+    group_indices_by_id = input_models.group_indices
+    nresultants = len(group_indices_by_id)
     median_wcs = resamp.output_wcs
 
     with input_models:
-        for i, indices in enumerate(indices_by_group):
+        for i, (group_id, indices) in enumerate(group_indices_by_id.items()):
             drizzled_model = resamp.resample_group(indices)
+            drizzled_model.meta.filename = group_id
 
             if save_intermediate_results:
                 # write the drizzled model to file
