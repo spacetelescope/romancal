@@ -7,29 +7,6 @@ Create an association using either the command line tool
 ``skycell_asn`` or through the Python API using
 :func:`romancal.associations.skycellasn.skycell_asn`
 
-Running this command requires that you have the patch to the
-file containing the division of the sky into patches. This is done
-by setting the environment variable PATCH_TABLE_PATH.
-As an example:
-::
-
-   export PATCH_TABLE_PATH=<location of my patch table>
-
-.. Note::
-
-   The patch table will be available in the CRDS system soon.
-
-
-.. Note::
-
-   **For STScI Users Only:**
-    Users at STScI may access the required
-    data files from the Central Storage network. Set the following
-    environment variables in your ``bash`` shell. (You will probably
-    want to add this to your bash setup file.) ::
-
-      export PATCH_TABLE_PATH="/grp/roman/scsb/tesselation/patches.asdf"
-
 Associations
 ^^^^^^^^^^^^
 
@@ -92,16 +69,16 @@ contribute data to. The association files will be json files with names based
 
 .. code-block:: text
 
-	r00991_<release product name>_v<visit_id>_<skycell name>_<filter>_coadd_asn.json
+	r00991_<release product name>_v<visit_id>_<skycell name>_<filter>_asn.json
 
 or for the selections above
 
 .. code-block:: text
 
-	r00991_p_v101001001003001_r257dp63x98y83_F158_coadd_asn.json
+	r00991_p_v101001001003001_270p65x48y69_F158_asn.json
 
-where the skycell name can vary based on the location on the celestial sphere and the coadd indicates
-that this is resampled 2-d imaging data. The release product name can be changed from the default
+where the skycell name can vary based on the location on the celestial sphere.
+The release product name can be changed from the default
 by adding the optional argument --release-product <new name> to the command line.
 
 An analogous command to generate the pass level products, again setting observation to 003 to only select

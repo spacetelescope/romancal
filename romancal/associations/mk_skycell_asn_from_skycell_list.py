@@ -7,13 +7,12 @@ import sys
 
 import numpy as np
 
-import romancal.patch_match.patch_match as pm
+import romancal.skycell.skymap as sc
 from romancal.associations import asn_from_list
 from romancal.associations.lib.utilities import mk_level3_asn_name
 from romancal.lib.basic_utils import parse_visitID
-from romancal.patch_match.patch_match import get_projectioncell_wcs
 
-__all__ = ["mk_skycell_asn_from_patchlist"]
+__all__ = ["mk_skycell_asn_from_skycell_list"]
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -21,11 +20,11 @@ logger.addHandler(logging.NullHandler())
 logger.setLevel("INFO")
 
 
-def mk_skycell_asn_from_patchlist(
+def mk_skycell_asn_from_skycell_list(
     filelist, release_product, product_type, optical_element
 ):
     """
-    Create level 3 associations from a list of match files generated with mk_patchlist.
+    Create level 3 associations from a list of match files generated with mk_skycell_list.
 
     This function processes a list of match files, sorts them based on which input exposures
     contribute to a given skycell and output an association with the needed exposure files.
@@ -40,7 +39,7 @@ def mk_skycell_asn_from_patchlist(
         The name of the optical element for the associations
     """
 
-    patch_list = []
+    skycell_indices = []
     for file_name in filelist:
         with open(file_name) as match_file:
             logger.debug(f"Working on file:{file_name}")
@@ -48,26 +47,22 @@ def mk_skycell_asn_from_patchlist(
             match_list[1] = np.fromstring(
                 match_list[1].strip("[]"), dtype="int", sep=","
             )
-            patch_list.append(match_list)
+            skycell_indices.append(match_list)
 
-    # get a list of all patches in the match files
-    patch_array = []
-    for item in patch_list:
-        patch_array.append(item[1])
+    # get a list of all skycells in the match files
+    skycell_indices_array = [item[1] for item in skycell_indices]
 
-    logger.debug(f"patch_array: {patch_array}")
-    unique_patches = np.unique(np.concatenate(patch_array))
-    logger.info(f"Unique Patches: {unique_patches}")
-    pm.load_patch_table()
-    for item in unique_patches:
+    logger.debug(f"All Skycells: {skycell_indices_array}")
+    unique_skycell_indices = np.unique(np.concatenate(skycell_indices_array))
+    logger.info(f"Unique Skycells: {unique_skycell_indices}")
+    for skycell_index in unique_skycell_indices:
         member_list = []
-        patch_name = pm.PATCH_TABLE[item]["name"]
-        for entry in patch_list:
-            if np.isin(item, entry[1]):
+        skycell = sc.SkyCell(skycell_index)
+        for entry in skycell_indices:
+            if np.isin(skycell_index, entry[1]):
                 member_list.append(os.path.basename(entry[0]).split(".")[0])
 
         # grab all the wcs parameters needed for generate_tan_wcs
-        projcell_info = get_projectioncell_wcs(item)
         parsed_visit_id = parse_visitID(member_list[0][1:20])
         program_id = parsed_visit_id["Program"]
         output_file_root = "r" + program_id
@@ -77,7 +72,7 @@ def mk_skycell_asn_from_patchlist(
             optical_element,
             release_product,
             product_type,
-            patch_name,
+            skycell.name,
         )
 
         prompt_product_asn = asn_from_list.asn_from_list(
@@ -85,8 +80,8 @@ def mk_skycell_asn_from_patchlist(
         )
         prompt_product_asn["asn_type"] = "image"
         prompt_product_asn["program"] = program_id
-        prompt_product_asn["target"] = patch_name
-        prompt_product_asn["skycell_wcs_info"] = projcell_info
+        prompt_product_asn["target"] = skycell.name
+        prompt_product_asn["skycell_wcs_info"] = skycell.wcs_info
 
         _, serialized = prompt_product_asn.dump(format="json")
 
@@ -97,7 +92,7 @@ def mk_skycell_asn_from_patchlist(
 
 
 def _cli(args=None):
-    """Command-line interface for mk_skycell_asn_from_patchlist
+    """Command-line interface for mk_skycell_asn_from_list
 
     Parameters
     ----------
@@ -118,7 +113,7 @@ def _cli(args=None):
 
     parser = argparse.ArgumentParser(
         description="Create level 3 associations from a list of match files",
-        usage="mk_skycell_asn_from_patchlist *.match ",
+        usage="mk_skycell_asn_from_skycell_list *.match ",
     )
     parser.add_argument(
         "filelist",
@@ -149,7 +144,7 @@ def _cli(args=None):
 
     parsed = parser.parse_args(args=args)
     logger.info("Command-line arguments: %s", parsed)
-    mk_skycell_asn_from_patchlist(
+    mk_skycell_asn_from_skycell_list(
         parsed.filelist,
         parsed.release_product,
         parsed.product_type,
