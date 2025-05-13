@@ -3,21 +3,12 @@ import astropy.table
 import numpy as np
 import pytest
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils
 
-from romancal.assign_wcs.assign_wcs_step import load_wcs
 from romancal.regtest.regtestdata import compare_asdf
 
 
-def _add_wcs(tmp_path, model):
-    dfn = tmp_path / "wcs_distortion.asdf"
-    distortion_model = rdm.DistortionRefModel(maker_utils.mk_distortion())
-    distortion_model.save(dfn)
-    load_wcs(model, {"distortion": dfn})
-
-
 @pytest.mark.parametrize("modification", [None, "small", "large"])
-def test_compare_asdf(tmp_path, modification):
+def test_compare_asdf(tmp_path, modification, base_image):
     # Need to use different directories for the files because the filenames are
     #    now always updated as part of writing a datamodel, see spacetelescope/datamodels#295
     file0 = tmp_path / "test0"
@@ -28,8 +19,7 @@ def test_compare_asdf(tmp_path, modification):
     file0 = file0 / "test.asdf"
     file1 = file1 / "test.asdf"
 
-    l2 = rdm.ImageModel(maker_utils.mk_level2_image(shape=(100, 100)))
-    _add_wcs(tmp_path, l2)
+    l2 = base_image()
     l2.save(file0)
     atol = 0.0001
     if modification == "small":
@@ -95,8 +85,8 @@ def test_compare_asdf_tables(tmp_path, modification):
 def test_model_difference(tmp_path):
     fn0 = tmp_path / "a.asdf"
     fn1 = tmp_path / "b.asdf"
-    ma = rdm.DistortionRefModel(maker_utils.mk_distortion())
-    mb = rdm.LinearityRefModel(maker_utils.mk_linearity())
+    ma = rdm.DistortionRefModel.fake_data()
+    mb = rdm.LinearityRefModel.fake_data()
     ma.save(fn0)
     mb.save(fn1)
     diff = compare_asdf(fn0, fn1)
