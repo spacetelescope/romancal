@@ -236,6 +236,7 @@ class SourceCatalogStep(RomanStep):
                 suffix="cat",
                 force=True,
             )
+            self.output_ext = "asdf"
 
         # Return the source catalog object or the input model. If the
         # input model is an ImageModel, the metadata is updated with the
