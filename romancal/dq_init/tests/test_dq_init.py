@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from roman_datamodels import maker_utils, stnode
-from roman_datamodels.datamodels import MaskRefModel, ScienceRawModel
+from roman_datamodels import stnode
+from roman_datamodels.datamodels import MaskRefModel, RampModel, ScienceRawModel
 from roman_datamodels.dqflags import pixel
 
 from romancal.dq_init import DQInitStep
@@ -15,6 +15,14 @@ test_data = [(1, 1, 2048, 2048, 2, "WFI", "WFI_IMAGE")]
 ids = ["RampModel"]
 
 
+def make_ramp(shape, instrument):
+    model = RampModel.fake_data(shape=shape)
+    model.meta.instrument.name = instrument
+    model.meta.cal_step = stnode.L2CalStep.fake_data()
+    model.pixeldq = np.zeros(shape[1:], dtype=model.pixeldq.dtype)
+    return model
+
+
 @pytest.mark.parametrize(args, test_data, ids=ids)
 def test_dq_im(xstart, ystart, xsize, ysize, nresultants, instrument, exp_type):
     """Check that PIXELDQ is initialized with the information from the reference file.
@@ -23,8 +31,7 @@ def test_dq_im(xstart, ystart, xsize, ysize, nresultants, instrument, exp_type):
     csize = (nresultants, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=csize)
-    dm_ramp.meta.instrument.name = instrument
+    dm_ramp = make_ramp(csize, instrument)
 
     # create a MaskModel elements for the dq input mask
     dq = np.zeros(csize[1:], dtype=np.uint32)
@@ -42,7 +49,7 @@ def test_dq_im(xstart, ystart, xsize, ysize, nresultants, instrument, exp_type):
     dq[400, 200] = 33  # Persistence + do not use
 
     # write mask model
-    ref_data = maker_utils.mk_mask(shape=csize[1:])
+    ref_data = stnode.MaskRef.fake_data(shape=csize[1:])
 
     # Copy in maskmodel elemnts
     ref_data["dq"] = dq
@@ -81,11 +88,10 @@ def test_groupdq():
     csize = (nresultants, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=csize)
-    dm_ramp.meta.instrument.name = instrument
+    dm_ramp = make_ramp(csize, instrument)
 
     # create a MaskModel elements for the dq input mask
-    ref_data = maker_utils.mk_mask(shape=csize[1:])
+    ref_data = stnode.MaskRef.fake_data(shape=csize[1:])
     ref_data["meta"]["instrument"]["name"] = instrument
 
     # run the correction step
@@ -112,11 +118,10 @@ def test_err():
     csize = (nresultants, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=(nresultants, ysize, xsize))
-    dm_ramp.meta.instrument.name = instrument
+    dm_ramp = make_ramp(csize, instrument)
 
     # create a MaskModel elements for the dq input mask
-    ref_data = maker_utils.mk_mask(shape=csize[1:])
+    ref_data = stnode.MaskRef.fake_data(shape=csize[1:])
     ref_data["meta"]["instrument"]["name"] = instrument
 
     # run correction step
@@ -144,8 +149,7 @@ def test_dq_add1_groupdq():
     csize = (nresultants, ysize, xsize)
 
     # create raw input data for step
-    dm_ramp = maker_utils.mk_ramp(shape=(nresultants, ysize, xsize))
-    dm_ramp.meta.instrument.name = instrument
+    dm_ramp = make_ramp(csize, instrument)
 
     # create a MaskModel elements for the dq input mask
     dq = np.zeros(csize[1:], dtype=np.uint32)
@@ -155,7 +159,7 @@ def test_dq_add1_groupdq():
     dq[400, 500] = 3  # do_not_use and saturated pixel
 
     # write mask model
-    ref_data = maker_utils.mk_mask(shape=csize[1:])
+    ref_data = stnode.MaskRef.fake_data(shape=csize[1:])
     ref_data["meta"]["instrument"]["name"] = instrument
 
     # Copy in maskmodel elemnts
@@ -191,7 +195,7 @@ def test_dqinit_step_interface(instrument, exptype):
     extra_value = [1, 2, 3]
 
     # Create test science raw model
-    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape)
+    wfi_sci_raw = stnode.WfiScienceRaw.fake_data(shape=shape)
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
@@ -203,8 +207,8 @@ def test_dqinit_step_interface(instrument, exptype):
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Create mask model
-    maskref = stnode.MaskRef()
-    meta = maker_utils.mk_ref_common("MASK")
+    maskref = stnode.MaskRef.fake_data()
+    meta = maskref.meta
     meta["instrument"]["optical_element"] = "F158"
     meta["instrument"]["detector"] = "WFI01"
     maskref["meta"] = meta
@@ -241,7 +245,7 @@ def test_dqinit_refpix(instrument, exptype):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape)
+    wfi_sci_raw = stnode.WfiScienceRaw.fake_data(shape=shape)
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
@@ -249,11 +253,12 @@ def test_dqinit_refpix(instrument, exptype):
     wfi_sci_raw.meta["guide_star"]["window_xstop"] = 1012 + 16
     wfi_sci_raw.meta.exposure.type = exptype
     wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
+    wfi_sci_raw.amp33 = np.zeros((2, 4096, 128), dtype=wfi_sci_raw.amp33.dtype)
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Create mask model
-    maskref = stnode.MaskRef()
-    meta = maker_utils.mk_ref_common("MASK")
+    maskref = stnode.MaskRef.fake_data()
+    meta = maskref.meta
     meta["instrument"]["optical_element"] = "F158"
     meta["instrument"]["detector"] = "WFI01"
     maskref["meta"] = meta
@@ -291,7 +296,8 @@ def test_dqinit_resultantdq(instrument, exptype):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape, dq=True)
+    wfi_sci_raw = stnode.WfiScienceRaw.fake_data(shape=shape)
+    wfi_sci_raw["resultantdq"] = np.zeros(shape, dtype=np.uint8)
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
@@ -303,8 +309,8 @@ def test_dqinit_resultantdq(instrument, exptype):
     wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
 
     # Create mask model
-    maskref = stnode.MaskRef()
-    meta = maker_utils.mk_ref_common("MASK")
+    maskref = stnode.MaskRef.fake_data()
+    meta = maskref.meta
     meta["instrument"]["optical_element"] = "F158"
     meta["instrument"]["detector"] = "WFI01"
     maskref["meta"] = meta
@@ -340,7 +346,7 @@ def test_dqinit_getbestref(instrument, exptype):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw = maker_utils.mk_level1_science_raw(shape=shape)
+    wfi_sci_raw = stnode.WfiScienceRaw.fake_data(shape=shape)
     wfi_sci_raw.meta.instrument.name = instrument
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
