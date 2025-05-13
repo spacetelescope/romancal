@@ -3,7 +3,7 @@
 import astropy.units as u
 import numpy as np
 import pytest
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels, stnode
 
 from romancal.datamodels import ModelLibrary
 from romancal.flux import FluxStep
@@ -88,12 +88,14 @@ def image_model():
     # Create a random image and specify a conversion
     rng = np.random.default_rng()
     shape = (10, 10)
-    image_model = maker_utils.mk_datamodel(datamodels.ImageModel, shape=shape)
+    image_model = datamodels.ImageModel.fake_data(shape=shape)
     image_model.data = rng.poisson(2.5, size=shape).astype(np.float32)
     image_model.var_rnoise = rng.normal(1, 0.05, size=shape).astype(np.float32)
     image_model.var_poisson = rng.poisson(1, size=shape).astype(np.float32)
     image_model.var_flat = rng.uniform(0, 1, size=shape).astype(np.float32)
     image_model.meta.photometry.conversion_megajanskys = (2.0 * u.MJy / u.sr).value
+    image_model.meta.cal_step = stnode.L2CalStep.fake_data()
+    image_model.meta.cal_logs = stnode.CalLogs.fake_data()
 
     return image_model
 
