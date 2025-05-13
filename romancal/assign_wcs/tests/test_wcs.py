@@ -1,16 +1,23 @@
 import numpy as np
 import pytest
+from astropy.modeling import models
 from gwcs.wcstools import grid_from_bounding_box
 from numpy.testing import assert_allclose
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils
+from roman_datamodels import stnode as st
 
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep, load_wcs
 from romancal.assign_wcs.utils import wcs_bbox_from_shape
 
+DATA_SHAPE = (100, 100)
+TEST_TRANSFORM = models.Shift(1) & models.Shift(2)
+
 
 def create_image():
-    l2 = maker_utils.mk_level2_image()
+    l2 = rdm.ImageModel.fake_data(shape=DATA_SHAPE)
+
+    l2.meta.cal_step = st.L2CalStep.fake_data()
+    l2.meta.cal_logs = st.CalLogs.fake_data()
 
     l2.meta.wcsinfo.v2_ref = -503
     l2.meta.wcsinfo.v3_ref = -318
@@ -19,18 +26,19 @@ def create_image():
     l2.meta.wcsinfo.vparity = -1
     l2.meta.wcsinfo.roll_ref = 0.15
 
-    l2im = rdm.ImageModel(l2)
-    return l2im
+    return l2
 
 
 def create_distortion():
-    distortions = [maker_utils.mk_distortion()]
+    distortions = []
 
-    model = create_image()
-    dist = maker_utils.mk_distortion()
-    dist.coordinate_distortion_transform.bounding_box = wcs_bbox_from_shape(
-        model.data.shape
-    )
+    dist = rdm.DistortionRefModel.fake_data()
+    dist.coordinate_distortion_transform = TEST_TRANSFORM.copy()
+    distortions.append(dist)
+
+    dist = rdm.DistortionRefModel.fake_data()
+    dist.coordinate_distortion_transform = TEST_TRANSFORM.copy()
+    dist.coordinate_distortion_transform.bounding_box = wcs_bbox_from_shape(DATA_SHAPE)
     distortions.append(dist)
 
     return distortions
