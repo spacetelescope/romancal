@@ -1,1 +1,0 @@
-Update create_astrometric_catalog to support ModelLibrary.

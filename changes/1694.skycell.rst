@@ -1,1 +1,0 @@
-match skycells in skymap reference file (`patch_match` -> `skycell.match`)
