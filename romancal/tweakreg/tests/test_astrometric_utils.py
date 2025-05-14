@@ -16,7 +16,6 @@ from gwcs import wcs
 from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from numpy.testing import assert_allclose
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils
 
 from romancal.datamodels import ModelLibrary
 from romancal.tweakreg.astrometric_utils import (
@@ -432,14 +431,13 @@ def base_image():
     """
 
     def _base_image(shift_1=0, shift_2=0):
-        l2 = maker_utils.mk_level2_image(shape=(2000, 2000))
+        l2 = rdm.ImageModel.fake_data(shape=(2000, 2000))
         l2.meta.exposure.start_time = Time("2016-01-01T00:00:00")
         # update wcsinfo
         update_wcsinfo(l2)
         # add a dummy WCS object
         create_wcs_for_tweakreg_pipeline(l2, shift_1=shift_1, shift_2=shift_2)
-        l2_im = rdm.ImageModel(l2)
-        return l2_im
+        return l2
 
     return _base_image
 
