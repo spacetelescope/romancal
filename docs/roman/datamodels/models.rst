@@ -40,6 +40,8 @@ using python.
 
     # set some metadata for the below tests
     >>> image_model.meta.filename = fn
+    >>> image_model.meta.product_type = 'l2'
+    >>> image_model.meta.calibration_software_version = '9.9.0'
 
 
 .. code-block:: python
@@ -139,29 +141,24 @@ You can examine the contents of your model from within python using
 
 .. code-block:: python
 
-    >>> print("\n".join("{: >20}\t{}".format(k, v) for k, v in image_model.items()), "\n") # doctest: +ELLIPSIS
-    meta.calibration_software_name	RomanCAL
-    meta.calibration_software_version	9.9.0
-       meta.product_type	l2
-           meta.filename	r0019106003005004023_0034_wfi01_cal.asdf
-          meta.file_date	2020-01-01T00:00:00.000
-         meta.model_type	ImageModel
-             meta.origin	STSCI/SOC
-        meta.prd_version	8.8.8
-    meta.sdf_software_version	7.7.7
-          meta.telescope	ROMAN
-    meta.coordinates.reference_frame	ICRS
+    >>> image_model.info()  # doctest: +ELLIPSIS
+    root (AsdfObject)
+    └─roman (WfiImage) # Level 2 (L2) Calibrated Roman Wide Field Instrument (WFI) Rate Image.
+      ├─meta (dict)
+      │ ├─calibration_software_name (CalibrationSoftwareName): RomanCAL # Calibration Software Name
+      │ ├─calibration_software_version (CalibrationSoftwareVersion): 9.9.0 # Calibration Software Version Number
+      │ ├─filename (Filename): r0019106003005004023_0034_wfi01_cal.asdf # File Name
+      │ ├─file_date (FileDate): 2020-01-01T00:00:00.000
+      │ ├─model_type (ModelType): ImageModel # Data Model Type
     ...
 
 or you can print specifics
 
 .. code-block:: python
 
-    >>> print("\n".join("{: >20}\t{}".format(k, v) for k, v in image_model.meta.instrument.items()))
-                    name        WFI
-                detector        WFI01
-         optical_element        F158
-
-.. note::
-
-    These will be incorporated as methods in the data models in a future release.
+    >>> image_model.search("detector")
+    root (AsdfObject)
+    └─roman (WfiImage) # Level 2 (L2) Calibrated Roman Wide Field Instrument (WFI) Rate Image.
+      └─meta (dict)
+        └─instrument (WfiMode) # Wide Field Instrument (WFI) Configuration Information
+          └─detector (str): WFI01
