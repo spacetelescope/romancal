@@ -569,7 +569,7 @@ def test_l3_source_catalog_keywords(
         else:
             ext = "asdf"
 
-        basefilename = result.meta.filename.split('_')[0]
+        basefilename = result.meta.filename.split("_")[0]
         filepath = Path(tmp_path / f"{basefilename}_{suffix}.{ext}")
         assert filepath.exists()
 
