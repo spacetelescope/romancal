@@ -1,1 +1,0 @@
-Bump the minimum required version of asdf to 4.1.0 and asdf-astropy to 0.6.0.

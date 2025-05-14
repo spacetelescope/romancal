@@ -1,1 +1,0 @@
-Allow resample to run on files with ``None`` and missing values in metadata.

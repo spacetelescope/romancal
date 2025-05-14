@@ -1,1 +1,0 @@
-The source catalogs are now saved in parquet format.
