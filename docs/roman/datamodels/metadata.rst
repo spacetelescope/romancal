@@ -58,7 +58,7 @@ model.
 
 .. code-block:: python
 
-    >>> raw_science = mk_datamodel(rdm.ScienceRawModel)  # Create a model of the desired type
+    >>> raw_science = rdm.ScienceRawModel.fake_data()  # Create a model of the desired type
     >>> print(raw_science.schema_uri)  # find the associated Schema # doctest: +SKIP
     asdf://stsci.edu/datamodels/roman/schemas/wfi_science_raw-1.0.0
 
