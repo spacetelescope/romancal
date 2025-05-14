@@ -5,7 +5,7 @@ Unit tests for dark current correction
 import numpy as np
 import pytest
 import roman_datamodels as rdm
-from roman_datamodels import maker_utils
+from roman_datamodels import stnode as st
 from roman_datamodels.datamodels import DarkRefModel, RampModel
 
 from romancal.dark_current import DarkCurrentStep
@@ -142,16 +142,18 @@ def create_ramp_and_dark(shape, instrument, exptype):
     """Helper function to create test ramp and dark models"""
 
     # Create test ramp model
-    ramp = maker_utils.mk_ramp(shape=shape)
+    ramp = RampModel.fake_data(shape=shape)
+    ramp.meta.cal_step = st.L2CalStep.fake_data()
     ramp.meta.instrument.name = instrument
     ramp.meta.instrument.detector = "WFI01"
     ramp.meta.instrument.optical_element = "F158"
     ramp.meta.exposure.type = exptype
+    ramp.meta.exposure.read_pattern = [[1], [2, 3], [4], [5, 6, 7, 8], [9, 10], [11]]
     ramp.data = np.ones(shape, dtype=np.float32)
-    ramp_model = RampModel(ramp)
+    ramp.pixeldq = np.zeros(shape[1:], dtype=ramp.pixeldq.dtype)
 
     # Create dark model
-    darkref = maker_utils.mk_dark(shape=shape)
-    darkref_model = DarkRefModel(darkref)
+    darkref = DarkRefModel.fake_data(shape=shape[1:])
+    darkref.data = np.zeros(shape, dtype=darkref.data.dtype)
 
-    return ramp_model, darkref_model
+    return ramp, darkref
