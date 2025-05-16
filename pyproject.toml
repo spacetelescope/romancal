@@ -9,12 +9,11 @@ authors = [
 classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Astronomy",
-    "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "asdf >=3.3.0",
-    "asdf-astropy >=0.5.0",
+    "asdf >=4.1.0",
+    "asdf-astropy >=0.6.0",
     "astropy >=6.0.0",
     "crds >=11.16.16",
     "gwcs >=0.22.0",
@@ -36,18 +35,18 @@ dependencies = [
     "stsci.imagestats >= 1.6.3",
     "drizzle >= 2.0.1",
     "stpsf >= 2.0.0",
+    "pyarrow >= 10.0.1",  # for Table.read(...) support in astropy for parquet files
+    "pandas >= 2.0.0",  # for Table.read(...) support in astropy for parquet files
     # pysiaf required by stpsf uses pkg_resources which doesn't
     # exist in python 3.12 without setuptools.
     # TODO: drop this dependency when stpsf is dropped
     # (or when pysiaf no longer requires pkg_resources).
     "setuptools >= 60 ; python_version >= '3.12'",
 ]
+license-files = ["LICENSE"]
 dynamic = [
     "version",
 ]
-
-[project.license]
-file = "LICENSE"
 
 [project.optional-dependencies]
 docs = [
@@ -88,11 +87,10 @@ stpsf = "pytest_romancal.stpsf_plugin"
 
 [project.scripts]
 roman_static_preview = "romancal.scripts.static_preview:command"
-verify_install_requires = "romancal.scripts.verify_install_requires:main"
 asn_from_list = "romancal.associations.asn_from_list:_cli"
 skycell_asn = "romancal.associations.skycell_asn:_cli"
-mk_patchlist = "romancal.associations.mk_patchlist:_cli"
-mk_skycell_asn_from_patchlist = "romancal.associations.mk_skycell_asn_from_patchlist:_cli"
+mk_skycell_list = "romancal.associations.mk_skycell_list:_cli"
+mk_skycell_asn_from_skycell_list= "romancal.associations.mk_skycell_asn_from_skycell_list:_cli"
 
 [build-system]
 requires = [
@@ -106,6 +104,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 zip-safe = false
+include-package-data = false
 
 [tool.setuptools.packages.find]
 namespaces = false
@@ -276,8 +275,8 @@ name = "``mosaic_pipeline``"
 showcontent = true
 
 [[tool.towncrier.type]]
-directory = "patch_match"
-name = "``patch_match``"
+directory = "skycell"
+name = "``skycell``"
 showcontent = true
 
 # steps

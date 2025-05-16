@@ -5,7 +5,7 @@ import os
 import pytest
 import roman_datamodels as rdm
 
-from romancal.patch_match.patch_match import wcsinfo_to_wcs
+from romancal.lib.wcsinfo_to_wcs import wcsinfo_to_wcs
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
 from . import util
@@ -88,10 +88,10 @@ def test_preview_exists(preview_filename):
     assert os.path.isfile(preview_filename)
 
 
-@pytest.mark.parametrize("suffix", ("cat", "segm"))
+@pytest.mark.parametrize("suffix", ("cat.parquet", "segm.asdf"))
 def test_file_exists(output_filename, suffix):
     # DMS374 for catalog and segm
-    expected_filename = output_filename.rsplit("_", 1)[0] + f"_{suffix}.asdf"
+    expected_filename = output_filename.rsplit("_", 1)[0] + f"_{suffix}"
     assert os.path.isfile(expected_filename)
 
 

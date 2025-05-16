@@ -14,9 +14,9 @@ from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
 from roman_datamodels.stnode import SourceCatalog
 
-from romancal.multiband_catalog import utils
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
+from romancal.source_catalog.save_utils import save_segment_image
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
 
@@ -100,8 +100,8 @@ class SourceCatalogStep(RomanStep):
         else:
             cat_model = datamodels.MosaicSourceCatalogModel
         source_catalog_model = cat_model()
-        source_catalog_model.meta = {}
 
+        source_catalog_model.meta = {}
         for key in source_catalog_model.meta._schema_attributes.explicit_properties:
             value = (
                 model.meta.instrument[key]
@@ -110,7 +110,7 @@ class SourceCatalogStep(RomanStep):
             )
             source_catalog_model.meta[key] = value
 
-        if self.forced_segmentation != "":
+        if self.forced_segmentation:
             source_catalog_model.meta["forced_segmentation"] = self.forced_segmentation
             forced = True
         else:
@@ -140,75 +140,111 @@ class SourceCatalogStep(RomanStep):
                 segment_img.detection_image = detection_image
         else:
             forced_segmodel = datamodels.open(self.forced_segmentation)
-            segment_img = SegmentationImage(forced_segmodel.data[...])
+            # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
+            # remove fully masked segments
+            forced_segimg = forced_segmodel.data[...]
+            unmasked_sources = np.unique(forced_segimg * (mask == 0))
+            fully_masked_sources = set(np.unique(forced_segimg)) - set(unmasked_sources)
+            forced_segimg_mask = np.isin(
+                forced_segimg, np.array(list(fully_masked_sources))
+            )
+            forced_segimg[forced_segimg_mask] = 0
+            segment_img = SegmentationImage(forced_segimg)
 
         if segment_img is None:  # no sources found
             cat = Table()
         else:
-            # PSF photometry is skipped when forcing; happens later
+            if forced:
+                cat_type = "forced_det"
+            else:
+                cat_type = "prompt"
+
             catobj = RomanSourceCatalog(
                 model,
                 segment_img,
                 detection_image,
                 self.kernel_fwhm,
-                fit_psf=self.fit_psf & (not forced),
+                fit_psf=self.fit_psf & (not forced),  # skip when forced
                 mask=mask,
+                cat_type=cat_type,
             )
             cat = catobj.catalog
 
         if forced:
-            forced_detection_image = forced_segmodel.detection_image[...]
+            # TODO: improve this so that the moment-based properties are
+            # not recomputed from the forced_detection_image
+            forced_detection_image = forced_segmodel.detection_image
             segment_img.detection_image = forced_detection_image
-            forcedcatobj = RomanSourceCatalog(
+            forced_catobj = RomanSourceCatalog(
                 model,
                 segment_img,
                 forced_detection_image,
                 self.kernel_fwhm,
                 fit_psf=self.fit_psf,
                 mask=mask,
+                cat_type="forced_full",
             )
-            # we have two catalogs, both using a specified set of
-            # pre-specified segments.  We want:
-            # - keep the original shape parameters computed from
+
+            # We have two catalogs, both using the same segmentation
+            # image. We want:
+            # - the original shape parameters computed from
             #   the forced detection image.  These are needed to
             #   describe where we have computed the forced photometry.
             #   These keep their original names to match up with the deep
             #   catalog used for forcing.
-            # - keep the newly measured fluxes and flags and sharpness
+            # - the newly measured fluxes and flags and sharpness
             #   / roundness from the direct image; these give the new fluxes
             #   at these locations
             #   These gain a forced_ prefix.
-            # - keep the shapes measured from the new detection image.  These
+            # - the shapes measured from the new detection image.  These
             #   seem to me to have less value but are explicitly called out in
             #   a requirement, and it's not crazy to compute new centroids and
             #   moments.
             #   These gain a forced_prefix.
-            # - discard fluxes we measure with the new shapes from the new
-            #   detection image.
             # At the end of the day you get a whole new catalog with the forced_
             # prefix, plus some shape parameters that duplicate values in the
             # original catalog used for forcing.
-            forcedcat = forcedcatobj.catalog
-            utils.prefix_colnames(
-                forcedcat, "forced_", colnames=utils.get_direct_image_columns(forcedcat)
-            )
-            utils.prefix_colnames(
-                cat, "forced_", colnames=utils.get_detection_image_columns(cat)
-            )
-            forcedcat.remove_columns([x for x in forcedcat.colnames if "_bbox_" in x])
-            cat.remove_columns(utils.get_direct_image_columns(cat))
-            forcedcat.meta = None  # redundant with cat.meta
-            cat = join(forcedcat, cat, keys="label", join_type="outer")
-            colnames = [x for x in cat.colnames if not x.startswith("forced_")] + [
-                x for x in cat.colnames if x.startswith("forced_")
-            ]
-            cat = cat[colnames]
+
+            # merge the two forced catalogs
+            forced_cat = forced_catobj.catalog
+            forced_cat.meta = None  # redundant with cat.meta
+            cat = join(forced_cat, cat, keys="label", join_type="outer")
 
         # put the resulting catalog in the model
         source_catalog_model.source_catalog = cat
 
-        # always save the segmentation image and source catalog
-        self.save_base_results(segment_img, source_catalog_model)
+        # define the output filename
+        output_filename = (
+            self.output_file
+            if self.output_file is not None
+            else source_catalog_model.meta.filename
+        )
+
+        # always save the segmentation image
+        save_segment_image(self, segment_img, source_catalog_model, output_filename)
+
+        # Update the source catalog filename metadata
+        # This would be better handled in roman_datamodels.
+        self.output_ext = "parquet"
+        output_catalog_name = self.make_output_path(
+            basepath=model.meta.filename, suffix="cat"
+        )
+        self.output_ext = "asdf"
+        source_catalog_model.meta.filename = output_catalog_name
+
+        # Always save the source catalog, but don't save it twice.
+        # If save_results=False or return_update_model=True, we need to
+        # explicitly save it.
+        return_updated_model = getattr(self, "return_updated_model", False)
+        if not self.save_results or return_updated_model:
+            self.output_ext = "parquet"
+            self.save_model(
+                source_catalog_model,
+                output_file=output_filename,
+                suffix="cat",
+                force=True,
+            )
+            self.output_ext = "asdf"
 
         # Return the source catalog object or the input model. If the
         # input model is an ImageModel, the metadata is updated with the
@@ -216,9 +252,6 @@ class SourceCatalogStep(RomanStep):
         if getattr(self, "return_updated_model", False):
             # define the catalog filename; self.save_model will
             # determine whether to use a fully qualified path
-            output_catalog_name = self.make_output_path(
-                basepath=model.meta.filename, suffix="cat"
-            )
 
             # set the suffix to something else to prevent the step from
             # overwriting the source catalog file with a datamodel
@@ -229,45 +262,12 @@ class SourceCatalogStep(RomanStep):
 
             result = input_model
         else:
+            self.output_ext = "parquet"
             result = source_catalog_model
 
+        # validate the result to flush out any lazy-loaded contents
+        result.validate()
         return result
-
-    def save_base_results(self, segment_img, source_catalog_model):
-        # save the segmentation map and source catalog
-        output_filename = (
-            self.output_file
-            if self.output_file is not None
-            else source_catalog_model.meta.filename
-        )
-
-        if isinstance(source_catalog_model, datamodels.ImageSourceCatalogModel):
-            seg_model = datamodels.SegmentationMapModel
-        else:
-            seg_model = datamodels.MosaicSegmentationMapModel
-
-        segmentation_model = seg_model()
-        segmentation_model.meta = {}
-        for key in segmentation_model.meta._schema_attributes.explicit_properties:
-            segmentation_model.meta[key] = source_catalog_model.meta[key]
-
-        if segment_img is not None:
-            segmentation_model.data = segment_img.data.astype(np.uint32)
-            segmentation_model["detection_image"] = segment_img.detection_image
-            self.save_model(
-                segmentation_model,
-                output_file=output_filename,
-                suffix="segm",
-                force=True,
-            )
-
-        # save the source catalog
-        self.save_model(
-            source_catalog_model,
-            output_file=output_filename,
-            suffix="cat",
-            force=True,
-        )
 
 
 def update_metadata(model, output_catalog_name):

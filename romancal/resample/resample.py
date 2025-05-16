@@ -4,7 +4,7 @@ import numpy as np
 from roman_datamodels import datamodels, dqflags, maker_utils
 from stcal.resample import Resample
 
-from romancal.patch_match.patch_match import to_skycell_wcs
+import romancal.skycell.skymap as sc
 
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
@@ -111,10 +111,19 @@ class ResampleData(Resample):
         add_var_sky_array(self.input_models)
 
         if output_wcs is None and resample_on_skycell:
-            # first try to use any skycell from the asn
-            if skycell_wcs := to_skycell_wcs(self.input_models):
+            # first try to retrieve a sky cell name from the association
+            try:
+                skycell = sc.SkyCell.from_asn(self.input_models.asn)
+
+                log.info(f"Skycell record: {skycell.data}")
+
+                log.info(
+                    f"Creating skycell image at ra: {skycell.radec_center[0]}  dec {skycell.radec_center[1]}",
+                )
                 log.info("Resampling to skycell wcs")
-                output_wcs = {"wcs": skycell_wcs}
+                output_wcs = {"wcs": skycell.wcs}
+            except ValueError:
+                pass
 
         if output_wcs is None:
             if wcs_kwargs is None:
@@ -182,26 +191,29 @@ class ResampleData(Resample):
             "duration": None,  # unused
             "level": level,
             "subtracted": subtracted,
+            "effective_exposure_time": model.meta.exposure.effective_exposure_time,
         }
 
     def _get_intensity_scale(self, model):
-        # FIXME we lie about this to retain the old behavior
+        # always provide 1: https://github.com/spacetelescope/romancal/issues/1637
         return 1
+
+    def add_model_hook(self, model, pixmap, iscale, weight_map, xmin, xmax, ymin, ymax):
+        if self.compute_exptime:
+            if not hasattr(self, "_exptime_resampler"):
+                self._exptime_resampler = ExptimeResampler(
+                    self.output_wcs,
+                    self.output_array_shape,
+                    self.good_bits,
+                    self.kernel,
+                )
+            self._exptime_resampler.add_image(model, pixmap, xmin, xmax, ymin, ymax)
 
     def add_model(self, model):
         model_dict = self._input_model_to_dict(model)
         super().add_model(model_dict)
         if self.blend_meta:
             self._meta_blender.blend(model)
-        if self.compute_exptime:
-            self._resample_exptime(model)
-
-    def _resample_exptime(self, model):
-        if not hasattr(self, "_exptime_resampler"):
-            self._exptime_resampler = ExptimeResampler(
-                self.output_wcs, self.output_array_shape, self.good_bits, self.kernel
-            )
-        self._exptime_resampler.add_image(model)
 
     def finalize(self):
         super().finalize()
