@@ -55,7 +55,7 @@ class ResampleStep(RomanStep):
         pixfrac = float(default=1.0)
         kernel = string(default='square')
         fillval = string(default='NAN' )
-        weight_type = option('ivm', 'exptime', None, default='ivm')
+        weight_type = option('ivm', 'exptime', 'ivsky', None, default='ivm')
         output_shape = int_list(min=2, max=2, default=None)  # [x, y] order
         crpix = float_list(min=2, max=2, default=None)
         crval = float_list(min=2, max=2, default=None)
