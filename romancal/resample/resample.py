@@ -9,7 +9,7 @@ from romancal.patch_match.patch_match import to_skycell_wcs
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
 from .meta_blender import MetaBlender
-from .resample_utils import add_var_sky_array, make_output_wcs
+from .resample_utils import compute_var_sky, make_output_wcs
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
