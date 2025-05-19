@@ -71,10 +71,10 @@ def make_test_image():
 
 @pytest.fixture
 def mosaic_model():
-    model = MosaicModel.fake_data(shape=(101, 101))
+    model = MosaicModel.create_fake_data(shape=(101, 101))
     model.meta.filename = "none"
-    model.meta.cal_step = stnode.L3CalStep.fake_data()
-    model.cal_logs = stnode.CalLogs.fake_data()
+    model.meta.cal_step = stnode.L3CalStep.create_fake_data()
+    model.cal_logs = stnode.CalLogs.create_fake_data()
     data, err = make_test_image()
     model.data = data
     model.err = err
@@ -84,10 +84,10 @@ def mosaic_model():
 
 @pytest.fixture
 def image_model():
-    model = ImageModel.fake_data(shape=(101, 101))
+    model = ImageModel.create_fake_data(shape=(101, 101))
     model.meta.filename = "none"
-    model.meta.cal_step = stnode.L2CalStep.fake_data()
-    model.meta.cal_logs = stnode.CalLogs.fake_data()
+    model.meta.cal_step = stnode.L2CalStep.create_fake_data()
+    model.meta.cal_logs = stnode.CalLogs.create_fake_data()
     data, err = make_test_image()
     model.data = data
     model.err = err

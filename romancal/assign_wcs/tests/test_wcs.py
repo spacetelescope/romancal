@@ -14,10 +14,10 @@ TEST_TRANSFORM = models.Shift(1) & models.Shift(2)
 
 
 def create_image():
-    l2 = rdm.ImageModel.fake_data(shape=DATA_SHAPE)
+    l2 = rdm.ImageModel.create_fake_data(shape=DATA_SHAPE)
 
-    l2.meta.cal_step = st.L2CalStep.fake_data()
-    l2.meta.cal_logs = st.CalLogs.fake_data()
+    l2.meta.cal_step = st.L2CalStep.create_fake_data()
+    l2.meta.cal_logs = st.CalLogs.create_fake_data()
 
     l2.meta.wcsinfo.v2_ref = -503
     l2.meta.wcsinfo.v3_ref = -318
@@ -32,11 +32,11 @@ def create_image():
 def create_distortion():
     distortions = []
 
-    dist = rdm.DistortionRefModel.fake_data()
+    dist = rdm.DistortionRefModel.create_fake_data()
     dist.coordinate_distortion_transform = TEST_TRANSFORM.copy()
     distortions.append(dist)
 
-    dist = rdm.DistortionRefModel.fake_data()
+    dist = rdm.DistortionRefModel.create_fake_data()
     dist.coordinate_distortion_transform = TEST_TRANSFORM.copy()
     dist.coordinate_distortion_transform.bounding_box = wcs_bbox_from_shape(DATA_SHAPE)
     distortions.append(dist)

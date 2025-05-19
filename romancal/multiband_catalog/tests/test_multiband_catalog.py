@@ -45,7 +45,7 @@ def make_test_image():
 
 @pytest.fixture
 def mosaic_model():
-    model = MosaicModel.fake_data(shape=(101, 101))
+    model = MosaicModel.create_fake_data(shape=(101, 101))
     data, err = make_test_image()
     model.data = data
     model.err = err

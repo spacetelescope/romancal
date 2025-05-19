@@ -17,7 +17,7 @@ is called, when the data model is saved or when a file is read.
 
         >>> from roman_datamodels import datamodels as rdm
 
-        >>> model = rdm.ImageModel.fake_data()
+        >>> model = rdm.ImageModel.create_fake_data()
         >>> model.meta.pointing.target_ra = "foo"
         >>> model.validate()  # doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
@@ -58,7 +58,7 @@ model.
 
 .. code-block:: python
 
-    >>> raw_science = rdm.ScienceRawModel.fake_data()  # Create a model of the desired type
+    >>> raw_science = rdm.ScienceRawModel.create_fake_data()  # Create a model of the desired type
     >>> print(raw_science.schema_uri)  # find the associated Schema # doctest: +SKIP
     asdf://stsci.edu/datamodels/roman/schemas/wfi_science_raw-1.0.0
 

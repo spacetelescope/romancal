@@ -70,7 +70,7 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
         reftab[element] = key_dict
 
     # Create default datamodel
-    photom_model = stnode.WfiImgPhotomRef.fake_data()
+    photom_model = stnode.WfiImgPhotomRef.create_fake_data()
 
     # Copy values above into defautl datamodel
     photom_model.phot_table = reftab
@@ -82,7 +82,7 @@ def test_no_photom_match():
     """Test apply_photom warning for no match"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = stnode.WfiImage.fake_data(shape=(20, 20))
+    input_model = stnode.WfiImage.create_fake_data(shape=(20, 20))
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -113,7 +113,7 @@ def test_apply_photom1():
     """Test apply_photom applies correct metadata"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = stnode.WfiImage.fake_data(shape=(20, 20))
+    input_model = stnode.WfiImage.create_fake_data(shape=(20, 20))
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -159,7 +159,7 @@ def test_apply_photom2():
     """Test apply_photom does not change data values"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = stnode.WfiImage.fake_data(shape=(20, 20))
+    input_model = stnode.WfiImage.create_fake_data(shape=(20, 20))
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -189,13 +189,13 @@ def test_photom_step_interface(instrument, exptype):
     shape = (20, 20)
 
     # Create input model
-    wfi_image = stnode.WfiImage.fake_data(shape=shape)
+    wfi_image = stnode.WfiImage.create_fake_data(shape=shape)
     wfi_image_model = ImageModel(wfi_image)
-    wfi_image_model.meta.cal_step = stnode.L2CalStep.fake_data()
-    wfi_image_model.meta.cal_logs = stnode.CalLogs.fake_data()
+    wfi_image_model.meta.cal_step = stnode.L2CalStep.create_fake_data()
+    wfi_image_model.meta.cal_logs = stnode.CalLogs.create_fake_data()
 
     # Create photom model
-    photom = stnode.WfiImgPhotomRef.fake_data()
+    photom = stnode.WfiImgPhotomRef.create_fake_data()
     photom_model = WfiImgPhotomRefModel(photom)
 
     # Run photom correction step
@@ -229,7 +229,7 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     shape = (20, 20)
 
     # Create input node
-    wfi_image = stnode.WfiImage.fake_data(shape=shape)
+    wfi_image = stnode.WfiImage.create_fake_data(shape=shape)
 
     # Select exposure type and optical element
     wfi_image.meta.exposure.type = "WFI_PRISM"
@@ -246,11 +246,11 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
 
     # Create input model
     wfi_image_model = ImageModel(wfi_image)
-    wfi_image_model.meta.cal_step = stnode.L2CalStep.fake_data()
-    wfi_image_model.meta.cal_logs = stnode.CalLogs.fake_data()
+    wfi_image_model.meta.cal_step = stnode.L2CalStep.create_fake_data()
+    wfi_image_model.meta.cal_logs = stnode.CalLogs.create_fake_data()
 
     # Create photom model
-    photom = stnode.WfiImgPhotomRef.fake_data()
+    photom = stnode.WfiImgPhotomRef.create_fake_data()
     photom_model = WfiImgPhotomRefModel(photom)
 
     # Run photom correction step

@@ -33,7 +33,7 @@ class WfiSca:
             An L2 ImageModel datamodel.
         """
         rng = np.random.default_rng(seed=13)
-        l2 = datamodels.ImageModel.fake_data(
+        l2 = datamodels.ImageModel.create_fake_data(
             {
                 "meta": {
                     "wcsinfo": {

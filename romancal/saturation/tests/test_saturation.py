@@ -320,7 +320,7 @@ def test_saturation_getbestref(setup_wfi_datamodels):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw = stnode.WfiScienceRaw.fake_data(shape=shape)
+    wfi_sci_raw = stnode.WfiScienceRaw.create_fake_data(shape=shape)
     wfi_sci_raw.meta.instrument.name = "WFI"
     wfi_sci_raw.meta.instrument.detector = "WFI01"
     wfi_sci_raw.meta.instrument.optical_element = "F158"
@@ -342,7 +342,7 @@ def setup_wfi_datamodels():
 
     def _models(nresultants, nrows, ncols):
         # Create ramp data
-        ramp_model = RampModel.fake_data(shape=(nresultants, nrows, ncols))
+        ramp_model = RampModel.create_fake_data(shape=(nresultants, nrows, ncols))
         ramp_model.meta.exposure.read_pattern = [
             [1],
             [2, 3],
@@ -354,7 +354,7 @@ def setup_wfi_datamodels():
         ramp_model.pixeldq = np.zeros((nrows, ncols), dtype=ramp_model.pixeldq.dtype)
 
         # Create saturation reference data
-        saturation_model = stnode.SaturationRef.fake_data(shape=(nrows, ncols))
+        saturation_model = stnode.SaturationRef.create_fake_data(shape=(nrows, ncols))
 
         return ramp_model, saturation_model
 

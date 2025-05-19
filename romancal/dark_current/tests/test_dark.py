@@ -142,8 +142,8 @@ def create_ramp_and_dark(shape, instrument, exptype):
     """Helper function to create test ramp and dark models"""
 
     # Create test ramp model
-    ramp = RampModel.fake_data(shape=shape)
-    ramp.meta.cal_step = st.L2CalStep.fake_data()
+    ramp = RampModel.create_fake_data(shape=shape)
+    ramp.meta.cal_step = st.L2CalStep.create_fake_data()
     ramp.meta.instrument.name = instrument
     ramp.meta.instrument.detector = "WFI01"
     ramp.meta.instrument.optical_element = "F158"
@@ -153,7 +153,7 @@ def create_ramp_and_dark(shape, instrument, exptype):
     ramp.pixeldq = np.zeros(shape[1:], dtype=ramp.pixeldq.dtype)
 
     # Create dark model
-    darkref = DarkRefModel.fake_data(shape=shape[1:])
+    darkref = DarkRefModel.create_fake_data(shape=shape[1:])
     darkref.data = np.zeros(shape, dtype=darkref.data.dtype)
 
     return ramp, darkref

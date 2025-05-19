@@ -21,7 +21,7 @@ def example_asn_path(tmp_path):
     """
     fns = []
     for i in range(_N_MODELS):
-        m = dm.ImageModel.fake_data(shape=(2, 2))
+        m = dm.ImageModel.create_fake_data(shape=(2, 2))
         m.meta.observation.program = 1
         m.meta.observation.observation = _OBSERVATION_NUMBERS[i]
         m.meta.observation.visit = 1
