@@ -85,8 +85,8 @@ def test_compare_asdf_tables(tmp_path, modification):
 def test_model_difference(tmp_path):
     fn0 = tmp_path / "a.asdf"
     fn1 = tmp_path / "b.asdf"
-    ma = rdm.DistortionRefModel.fake_data()
-    mb = rdm.LinearityRefModel.fake_data()
+    ma = rdm.DistortionRefModel.create_fake_data()
+    mb = rdm.LinearityRefModel.create_fake_data()
     ma.save(fn0)
     mb.save(fn1)
     diff = compare_asdf(fn0, fn1)

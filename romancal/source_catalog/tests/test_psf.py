@@ -28,7 +28,7 @@ def setup_inputs(
     """
     Return ImageModel of level 2 image.
     """
-    wfi_image = stnode.WfiImage.fake_data(shape=shape)
+    wfi_image = stnode.WfiImage.create_fake_data(shape=shape)
     wfi_image.data = np.ones(shape, dtype=np.float32)
     wfi_image.meta.filename = "filename"
     wfi_image.meta.instrument["optical_element"] = "F087"

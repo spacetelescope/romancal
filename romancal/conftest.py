@@ -224,11 +224,11 @@ def base_image():
     """
 
     def _base_image(shift_1=0, shift_2=0):
-        l2 = rdm.ImageModel.fake_data(shape=(100, 100))
+        l2 = rdm.ImageModel.create_fake_data(shape=(100, 100))
         l2.meta.filename = "none"
-        l2.meta.cal_logs = stnode.CalLogs.fake_data()
-        l2.meta.cal_step = stnode.L2CalStep.fake_data()
-        l2.meta.background = stnode.SkyBackground.fake_data()
+        l2.meta.cal_logs = stnode.CalLogs.create_fake_data()
+        l2.meta.cal_step = stnode.L2CalStep.create_fake_data()
+        l2.meta.background = stnode.SkyBackground.create_fake_data()
         l2.var_flat = l2.var_rnoise.copy()
         _create_wcs(l2)
         l2.meta.wcsinfo.vparity = -1

@@ -82,7 +82,7 @@ class MetaBlender:
     def _blend_first(self, model):
         # make a blank mosic metdata node
         # FIXME includes fake values to match the previous maker_utils
-        self._model = datamodels.MosaicModel.from_schema(
+        self._model = datamodels.MosaicModel.create_minimal(
             {
                 "meta": {
                     "prd_version": "8.8.8",
@@ -102,7 +102,7 @@ class MetaBlender:
             }
         )
         self._model.meta.product_type = stnode.ProductType("l2")
-        self._model.meta.ref_file = stnode.RefFile.from_schema(
+        self._model.meta.ref_file = stnode.RefFile.create_minimal(
             {"crds": {"version": "12.3.1", "context": "roman_0815.pmap"}}
         )
 

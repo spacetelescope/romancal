@@ -38,8 +38,8 @@ def data():
 
 @pytest.fixture(scope="module")
 def datamodel(data):
-    datamodel = stnode.Ramp.fake_data(shape=(2, 2, 2))
-    datamodel.meta.cal_step = stnode.L2CalStep.fake_data()
+    datamodel = stnode.Ramp.create_fake_data(shape=(2, 2, 2))
+    datamodel.meta.cal_step = stnode.L2CalStep.create_fake_data()
 
     detector = data[:, :, : Const.N_COLUMNS]
     amp33 = data[:, :, Const.N_COLUMNS :]
@@ -83,7 +83,7 @@ def offset() -> np.ndarray:
 
 @pytest.fixture(scope="module")
 def ref_pix_ref(coeffs):
-    refpix_ref = stnode.RefpixRef.fake_data(
+    refpix_ref = stnode.RefpixRef.create_fake_data(
         {"gamma": coeffs.gamma, "zeta": coeffs.zeta, "alpha": coeffs.alpha}
     )
 

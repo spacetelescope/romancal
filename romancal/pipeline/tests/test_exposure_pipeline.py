@@ -8,7 +8,7 @@ from romancal.pipeline import ExposurePipeline
 
 @pytest.fixture(scope="function")
 def input_value(request, tmp_path):
-    model = rdm.RampModel.fake_data(shape=(2, 20, 20))
+    model = rdm.RampModel.create_fake_data(shape=(2, 20, 20))
     match request.param:
         case "datamodel_fn":
             fn = tmp_path / "model.asdf"

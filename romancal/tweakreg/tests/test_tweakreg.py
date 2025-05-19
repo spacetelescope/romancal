@@ -451,7 +451,7 @@ def add_tweakreg_catalog_attribute(
         save_catalogs=save_catalogs,
     )
 
-    input_dm.meta["source_catalog"] = stnode.SourceCatalog.fake_data()
+    input_dm.meta["source_catalog"] = stnode.SourceCatalog.create_fake_data()
 
     if save_catalogs:
         # SourceCatalogStep adds the catalog path+filename
@@ -477,10 +477,10 @@ def base_image():
     """
 
     def _base_image(shift_1=0, shift_2=0):
-        l2 = rdm.ImageModel.fake_data(shape=(2000, 2000))
+        l2 = rdm.ImageModel.create_fake_data(shape=(2000, 2000))
         l2.meta.filename = "none"
-        l2.meta.cal_step = stnode.L2CalStep.fake_data()
-        l2.meta.cal_logs = stnode.CalLogs.fake_data()
+        l2.meta.cal_step = stnode.L2CalStep.create_fake_data()
+        l2.meta.cal_logs = stnode.CalLogs.create_fake_data()
         l2.meta.exposure.start_time = Time("2016-01-01T00:00:00")
         # update wcsinfo
         update_wcsinfo(l2)
@@ -514,7 +514,7 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     """
     img = base_image()
     # make sure tweakreg_catalog_name doesn't exist
-    img.meta.source_catalog = stnode.SourceCatalog.fake_data()
+    img.meta.source_catalog = stnode.SourceCatalog.create_fake_data()
     assert "tweakreg_catalog_name" not in img.meta.source_catalog
     with pytest.raises(AttributeError):
         trs.TweakRegStep.call([img])
@@ -1153,7 +1153,7 @@ def setup_source_catalog_model(img):
     expected names, adds mock PSF coordinates, applies random shifts to the centroid
     and PSF coordinates, and calculates the world coordinates for the centroids.
     """
-    source_catalog_model = rdm.ImageSourceCatalogModel.fake_data()
+    source_catalog_model = rdm.ImageSourceCatalogModel.create_fake_data()
     # this will be the output filename
     source_catalog_model.meta.filename = "img_1.asdf"
 

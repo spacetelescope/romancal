@@ -224,7 +224,7 @@ class ResampleData(Resample):
         if self.blend_meta:
             output_model = self._meta_blender.finalize()
         else:
-            output_model = datamodels.MosaicModel.from_schema()
+            output_model = datamodels.MosaicModel.create_minimal()
 
         output_model.meta.resample.good_bits = self.good_bits
         output_model.meta.resample.weight_type = self.weight_type
