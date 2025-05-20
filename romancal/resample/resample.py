@@ -9,7 +9,7 @@ import romancal.skycell.skymap as sc
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
 from .meta_blender import MetaBlender
-from .resample_utils import make_output_wcs
+from .resample_utils import compute_var_sky, make_output_wcs
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -108,7 +108,7 @@ class ResampleData(Resample):
         self._blend_meta = blend_meta
 
         # add sky variance array to each model
-        add_var_sky_array(self.input_models)
+        # compute_var_sky(self.input_models)
 
         if output_wcs is None and resample_on_skycell:
             # first try to retrieve a sky cell name from the association
@@ -178,7 +178,7 @@ class ResampleData(Resample):
             "var_rnoise": model.var_rnoise,
             "var_poisson": model.var_poisson,
             "var_flat": model.var_flat,
-            "var_sky": model.var_sky,
+            "var_sky": compute_var_sky(model) if self.weight_type == "ivsky" else None,
             "err": model.err,
             "filename": model.meta.filename,
             "wcs": model.meta.wcs,
