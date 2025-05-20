@@ -168,6 +168,12 @@ class ImageFootprint:
         """maximum possible distance to the center of an intersecting sky cell"""
         return (self.length + sc.SkyCell.length) / 2.0
 
+    def __str__(self) -> str:
+        return f"footprint {self.radec_corners}"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.radec_corners!r})"
+
 
 def find_skycell_matches(
     image_corners: list[tuple[float, float]] | NDArray[float] | WCS,

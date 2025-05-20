@@ -271,6 +271,12 @@ class SkyCell:
 
         return self.data == other.data
 
+    def __str__(self) -> str:
+        return f"{self.name} [{self._skymap.path}]"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.index}, {self._skymap})"
+
 
 class ProjectionRegion:
     """Projection region in the sky map."""
@@ -500,6 +506,12 @@ class ProjectionRegion:
 
         return self.data == other.data
 
+    def __str__(self) -> str:
+        return f"projregion {self.index} [{self._skymap.path}]"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.index}, {self._skymap})"
+
 
 class SkyMap:
     """
@@ -606,6 +618,12 @@ class SkyMap:
     def __getitem__(self, index: int) -> SkyCell:
         """`SkyCell` at the given index in the sky cells array"""
         return SkyCell(index)
+
+    def __str__(self) -> str:
+        return f"skymap {self.path}"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.path})"
 
 
 SKYMAP = SkyMap(path=os.environ.get("SKYMAP_PATH", None))
