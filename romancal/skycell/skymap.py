@@ -23,6 +23,9 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
+__all__ = ["SKYMAP", "ProjectionRegion", "SkyCell", "SkyMap"]
+
+
 class SkyCell:
     """
     Square subregion of a projection region, 4.6 arcminutes per side.

@@ -16,6 +16,14 @@ try:
 except ImportError:
     print("matplotlib is required for this plotting utility")
 
+__all__ = [
+    "plot_field",
+    "plot_image_footprint_and_skycells",
+    "plot_projregion",
+    "plot_skycell",
+    "veccoords_to_tangent_plane",
+]
+
 RAD_TO_ARCSEC = 180.0 / np.pi * 3600.0
 
 
