@@ -499,7 +499,7 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures, tmp_path)
     )
 
 
-@pytest.mark.parametrize("weight_type", ["ivm", "exptime"])
+@pytest.mark.parametrize("weight_type", ["ivm", "exptime", "ivsky"])
 def test_resampledata_do_drizzle_default_single_exposure_weight_array(
     exposure_1,
     weight_type,
