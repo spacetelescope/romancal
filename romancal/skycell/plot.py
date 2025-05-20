@@ -13,6 +13,7 @@ import romancal.skycell.skymap as sc
 
 try:
     from matplotlib import pyplot as plt
+    from matplotlib.axis import Axis
 except ImportError:
     print("matplotlib is required for this plotting utility")
 
@@ -104,12 +105,11 @@ def plot_projregion(
     tangent_vectorpoint = sgv.normalize_vector(
         sgv.lonlat_to_vector(*projregion.radec_tangent)
     )
+    corners = projregion.vectorpoint_corners
+    corners = np.concat([corners, corners[0, :].reshape((1, 3))], axis=0)
     corners_tangentplane = veccoords_to_tangent_plane(
-        projregion.vectorpoint_corners,
+        corners,
         tangent_vectorpoint,
-    )
-    corners_tangentplane = np.concatenate(
-        [corners_tangentplane, corners_tangentplane[None, -1]]
     )
 
     axis.plot(corners_tangentplane[:, 0], corners_tangentplane[:, 1], color=color)
@@ -137,12 +137,11 @@ def plot_skycell(
     if axis is None:
         axis = plt
 
+    corners = skycell.vectorpoint_corners
+    corners = np.concat([corners, corners[0, :].reshape((1, 3))], axis=0)
     corners_tangentplane = veccoords_to_tangent_plane(
-        skycell.vectorpoint_corners,
+        corners,
         tangent_vectorpoint,
-    )
-    corners_tangentplane = np.concatenate(
-        [corners_tangentplane, corners_tangentplane[None, -1]]
     )
 
     axis.plot(
@@ -159,7 +158,7 @@ def plot_skycell(
 def plot_image_footprint_and_skycells(
     footprint: list[tuple[float, float]] | sm.ImageFootprint,
     skymap: sc.SkyMap = None,
-):
+) -> list[tuple[Axis, tuple[float, float, float]]]:
     """
     This plots a list of skycell footprints against the image footprint.
 
@@ -182,6 +181,7 @@ def plot_image_footprint_and_skycells(
     intersecting_projregion_indices = find_intersecting_projregions(
         footprint, skymap=skymap
     )
+    axes = []
     for projregion_index in intersecting_projregion_indices:
         figure = plt.figure()
         figure.gca().invert_xaxis()
@@ -235,3 +235,7 @@ def plot_image_footprint_and_skycells(
         axis.set_ylabel("Offset from nearest tangent point in arcsec")
 
         axis.set_title(f"tangent point radec {np.array(projregion.radec_tangent)}")
+
+        axes.append((axis, tangent_vectorpoint))
+
+    return axes
