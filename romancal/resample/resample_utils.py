@@ -1,8 +1,74 @@
 import math
 
 import numpy as np
+from astropy.time import Time
+from roman_datamodels import stnode
+from roman_datamodels.datamodels import MosaicModel
 from stcal.alignment.util import compute_scale, wcs_from_sregions
 from stcal.resample.utils import compute_mean_pixel_area
+
+
+def _make_empty_mosaic_model():
+    m = MosaicModel()
+    m.meta = {
+        # these all seem like reasonable defaults
+        "calibration_software_name": stnode.CalibrationSoftwareName("RomanCAL"),
+        "file_date": stnode.FileDate(
+            Time("2020-01-01T00:00:00.0", format="isot", scale="utc")
+        ),
+        "model_type": stnode.ModelType("MosaicModel"),
+        "origin": stnode.Origin("STSCI/SOC"),
+        "telescope": stnode.Telescope("ROMAN"),
+        "cal_step": stnode.L3CalStep(
+            {
+                "flux": "INCOMPLETE",
+                "outlier_detection": "INCOMPLETE",
+                "skymatch": "INCOMPLETE",
+                "resample": "INCOMPLETE",
+            }
+        ),
+        "ref_file": stnode.RefFile(
+            {
+                "apcorr": "N/A",
+                "area": "N/A",
+                "dark": "N/A",
+                "distortion": "N/A",
+                "epsf": "N/A",
+                "flat": "N/A",
+                "gain": "N/A",
+                "inverse_linearity": "N/A",
+                "linearity": "N/A",
+                "mask": "N/A",
+                "photom": "N/A",
+                "readnoise": "N/A",
+                "refpix": "N/A",
+                "saturation": "N/A",
+                "crds": {},
+            }
+        ),
+        # these are "containers" added to during blending
+        "resample": stnode.Resample({"members": []}),
+        "coordinates": stnode.Coordinates(),
+        "program": stnode.Program(),
+        # these are never set so assume previous defaults
+        "prd_version": stnode.PrdVersion("8.8.8"),
+        "sdf_software_version": stnode.SdfSoftwareVersion("7.7.7"),
+        "product_type": stnode.ProductType("l2"),
+        "basic": stnode.MosaicBasic(
+            {
+                "survey": "?",
+            }
+        ),
+        "photometry": stnode.Photometry(
+            {
+                "pixel_area": -999999.0,
+                "conversion_megajanskys": -999999,
+                "conversion_megajanskys_uncertainty": -999999,
+            }
+        ),
+    }
+    m.cal_logs = stnode.CalLogs()
+    return m
 
 
 def make_output_wcs(
