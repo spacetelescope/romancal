@@ -231,6 +231,36 @@ class SourceCatalogStep(RomanStep):
         return self.save_all_results(input_model, segment_img, cat)
 
     def save_all_results(self, model, segment_img, cat):
+        """
+        Return and save the results of the source catalog step.
+
+        The segmentation image is always saved.
+
+        If ``save_results`` is True, then either the input model with
+        updated metadata or the source catalog model is saved/returned.
+        If ``return_updated_model`` is True, then the input model is
+        saved/returned with updated metadata. If False, then the source
+        catalog model is saved/returned.
+
+        The source catalog is saved as a parquet file.
+
+        Parameters
+        ----------
+        model : `ImageModel` or `MosaicModel`
+            The input model to the source catalog step.
+
+        segment_img : `photutils.segmentation.SegmentationImage`
+            The segmentation image created by the source catalog step.
+
+        cat : `astropy.table.Table`
+            The source catalog created by the source catalog step.
+
+        Returns
+        -------
+        result : `ImageModel`, `MosaicModel`, or `SourceCatalog`
+            The source catalog model or the input model with updated
+            metadata.
+        """
         if isinstance(segment_img, np.ndarray):
             # convert the segmentation image to a SegmentationImage
             segment_img = SegmentationImage(segment_img)
