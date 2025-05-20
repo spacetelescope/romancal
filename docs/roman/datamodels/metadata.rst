@@ -16,9 +16,8 @@ is called, when the data model is saved or when a file is read.
 .. code-block:: python
 
         >>> from roman_datamodels import datamodels as rdm
-        >>> from roman_datamodels.maker_utils import mk_datamodel
 
-        >>> model = mk_datamodel(rdm.ImageModel)
+        >>> model = rdm.ImageModel.create_fake_data()
         >>> model.meta.pointing.target_ra = "foo"
         >>> model.validate()  # doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
@@ -59,7 +58,7 @@ model.
 
 .. code-block:: python
 
-    >>> raw_science = mk_datamodel(rdm.ScienceRawModel)  # Create a model of the desired type
+    >>> raw_science = rdm.ScienceRawModel.create_fake_data()  # Create a model of the desired type
     >>> print(raw_science.schema_uri)  # find the associated Schema # doctest: +SKIP
     asdf://stsci.edu/datamodels/roman/schemas/wfi_science_raw-1.0.0
 

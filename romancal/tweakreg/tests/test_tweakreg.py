@@ -19,7 +19,7 @@ from gwcs import wcs
 from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from numpy.random import default_rng
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils
+from roman_datamodels import stnode
 from stcal.tweakreg.astrometric_utils import get_catalog
 
 from romancal.datamodels import ModelLibrary
@@ -451,7 +451,7 @@ def add_tweakreg_catalog_attribute(
         save_catalogs=save_catalogs,
     )
 
-    input_dm.meta["source_catalog"] = maker_utils.mk_source_catalog()
+    input_dm.meta["source_catalog"] = stnode.SourceCatalog.create_fake_data()
 
     if save_catalogs:
         # SourceCatalogStep adds the catalog path+filename
@@ -477,14 +477,16 @@ def base_image():
     """
 
     def _base_image(shift_1=0, shift_2=0):
-        l2 = maker_utils.mk_level2_image(shape=(2000, 2000))
+        l2 = rdm.ImageModel.create_fake_data(shape=(2000, 2000))
+        l2.meta.filename = "none"
+        l2.meta.cal_step = stnode.L2CalStep.create_fake_data()
+        l2.meta.cal_logs = stnode.CalLogs.create_fake_data()
         l2.meta.exposure.start_time = Time("2016-01-01T00:00:00")
         # update wcsinfo
         update_wcsinfo(l2)
         # add a dummy WCS object
         create_wcs_for_tweakreg_pipeline(l2, shift_1=shift_1, shift_2=shift_2)
-        l2_im = rdm.ImageModel(l2)
-        return l2_im
+        return l2
 
     return _base_image
 
@@ -511,8 +513,9 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     Test that TweakReg raises an AttributeError if meta.tweakreg_catalog is missing.
     """
     img = base_image()
-    # remove attribute
-    del img.meta.source_catalog["tweakreg_catalog_name"]
+    # make sure tweakreg_catalog_name doesn't exist
+    img.meta.source_catalog = stnode.SourceCatalog.create_fake_data()
+    assert "tweakreg_catalog_name" not in img.meta.source_catalog
     with pytest.raises(AttributeError):
         trs.TweakRegStep.call([img])
 
@@ -1150,8 +1153,7 @@ def setup_source_catalog_model(img):
     expected names, adds mock PSF coordinates, applies random shifts to the centroid
     and PSF coordinates, and calculates the world coordinates for the centroids.
     """
-    cat_model = rdm.ImageSourceCatalogModel
-    source_catalog_model = maker_utils.mk_datamodel(cat_model)
+    source_catalog_model = rdm.ImageSourceCatalogModel.create_fake_data()
     # this will be the output filename
     source_catalog_model.meta.filename = "img_1.asdf"
 

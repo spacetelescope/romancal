@@ -15,7 +15,7 @@ def save_median(median_data, median_wcs, make_output_path):
 
 
 def save_drizzled(drizzled_model, make_output_path):
-    input_path = drizzled_model.meta.filename.replace("_outlier_", "_")
+    input_path = drizzled_model.meta.get("filename", "none").replace("_outlier_", "_")
     _save_intermediate_output(
         drizzled_model.data,
         drizzled_model.meta.wcs,

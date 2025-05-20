@@ -9,7 +9,6 @@ from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import MosaicModel, MosaicSegmentationMapModel
-from roman_datamodels.maker_utils import mk_level3_mosaic
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog import MultibandCatalogStep
@@ -46,13 +45,13 @@ def make_test_image():
 
 @pytest.fixture
 def mosaic_model():
-    wfi_mosaic = mk_level3_mosaic(shape=(101, 101))
-    model = MosaicModel(wfi_mosaic)
+    model = MosaicModel.create_fake_data(shape=(101, 101))
     data, err = make_test_image()
     model.data = data
     model.err = err
     model.var_rnoise = err**2
     model.weight = 1.0 / err
+    model.meta.basic.optical_element = "F184"
     return model
 
 
