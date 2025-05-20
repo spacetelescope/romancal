@@ -62,7 +62,6 @@ def library_model(mosaic_model):
     return ModelLibrary([mosaic_model, model2])
 
 
-@pytest.mark.stpsf
 @pytest.mark.parametrize(
     "snr_threshold, npixels, save_results",
     (
