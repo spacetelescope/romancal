@@ -195,7 +195,7 @@ def plot_image_footprint_and_skycells(
             sgv.lonlat_to_vector(*projregion.radec_tangent)
         )
         image_corners_tangentplane = veccoords_to_tangent_plane(
-            footprint.vectorpoint_corners,
+            footprint.vectorpoint_vertices,
             tangent_vectorpoint,
         )
         plot_field(image_corners_tangentplane, fill="lightgrey", color="black")
