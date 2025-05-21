@@ -125,6 +125,7 @@ class SourceCatalogStep(RomanStep):
             cat = Table()
             return self.save_all_results(input_model, segment_img, cat)
 
+        self.log.info("Calculating and subtracting background")
         bkg = RomanBackground(
             model.data,
             box_size=self.bkg_boxsize,
@@ -132,10 +133,12 @@ class SourceCatalogStep(RomanStep):
         )
         model.data -= bkg.background
 
+        self.log.info("Creating detection image")
         detection_image = convolve_data(
             model.data, kernel_fwhm=self.kernel_fwhm, mask=mask
         )
 
+        self.log.info("Detecting sources")
         if not self.forced_segmentation:
             segment_img = make_segmentation_image(
                 detection_image,
@@ -175,6 +178,7 @@ class SourceCatalogStep(RomanStep):
             cat = Table()
             return self.save_all_results(input_model, segment_img, cat)
 
+        self.log.info("Creating source catalog")
         cat_type = "prompt" if not self.forced_segmentation else "forced_det"
         fit_psf = self.fit_psf & (not self.forced_segmentation)  # skip when forced
         catobj = RomanSourceCatalog(
