@@ -25,8 +25,29 @@ def wcs_bbox_from_shape(shape):
     bbox : tuple
         Bounding box in x, y order.
     """
-    bbox = ((-0.5, shape[-1] - 0.5), (-0.5, shape[-2] - 0.5))
-    return bbox
+    return ((-0.5, shape[-1] - 0.5), (-0.5, shape[-2] - 0.5))
+
+
+def wcs_pixel_shape_from_bbox(
+    bbox: tuple[tuple[float, float], tuple[float, float]],
+) -> tuple[int, int]:
+    """Create a pixel shape from the bounding box of the data.
+    This is appropriate to attach to a wcs object.
+
+    Parameters
+    ----------
+    bbox: tuple
+        The bounding box in center pixel coordinates.
+
+    Returns
+    -------
+    shape : tuple
+        Pixel shape x, y order.
+    """
+    return (
+        bbox[0][1] + 0.5,
+        bbox[1][1] + 0.5,
+    )
 
 
 def compute_scale(
