@@ -470,46 +470,9 @@ def test_skycell_match(
         )
     ],
 )
-def test_match_from_wcs(test_point, expected_skycell_names, skymap_subset):
-    wcsobj = mk_gwcs(*test_point, 45)
-    imshape = (4096, 4096)
-
-    intersecting_skycells = sm.find_skycell_matches(
-        wcsobj, image_shape=imshape, skymap=skymap_subset
-    )
-
-    skycell_names = np.array(
-        [skymap_subset.model.skycells[index]["name"] for index in intersecting_skycells]
-    ).tolist()
-
-    assert skycell_names == expected_skycell_names
-
-
-@pytest.mark.parametrize(
-    "test_point,expected_skycell_names",
-    [
-        (
-            TEST_POINTS[1],
-            [
-                "000p86x62y69",
-                "000p86x62y68",
-                "000p86x61y69",
-                "000p86x61y68",
-                "000p86x63y69",
-                "000p86x61y70",
-                "000p86x62y67",
-                "000p86x60y68",
-                "045p86x37y69",
-                "045p86x37y68",
-                "045p86x38y69",
-            ],
-        )
-    ],
-)
 def test_match_from_wcs_with_imshape(test_point, expected_skycell_names, skymap_subset):
     wcsobj = mk_gwcs(*test_point, 45)
-    imshape = (4096, 4096)
-    wcsobj.pixel_shape = imshape
+    wcsobj.pixel_shape = (4096, 4096)
 
     intersecting_skycells = sm.find_skycell_matches(wcsobj, skymap=skymap_subset)
 
