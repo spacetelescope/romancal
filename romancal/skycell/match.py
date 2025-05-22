@@ -26,14 +26,14 @@ __all__ = ["ImageFootprint", "find_skycell_matches"]
 class ImageFootprint:
     """abstraction of an image footprint"""
 
-    _radec_vertices: NDArray[float]
+    _radec_corners: NDArray[float]
 
     def __init__(self, radec_vertices: list[tuple[float, float]]):
         """
         Parameters
         ----------
         radec_vertices: list[tuple[float, float]]
-            vertices that define the image footprint, in right ascension and declination
+            vertices (usually the corners) of the image in right ascension and declination
         """
         self._radec_vertices = np.array(radec_vertices)
 
@@ -41,7 +41,7 @@ class ImageFootprint:
     def from_wcs(
         cls,
         wcs: WCS,
-        corners: bool = True,
+        vertices: tuple[int, int] = (0, 0),
     ) -> "ImageFootprint":
         """
         create an image footprint from a GWCS object (and image shape, if no bounding box is present)
@@ -50,7 +50,7 @@ class ImageFootprint:
         ----------
 
         wcs: WCS object
-        corners: whether to only use the four corner pixels to define the polygon (otherwise will use every edge pixel)
+        vertices: number of vertices to create on each edge in addition to the corner pixels
         """
 
         # if `.pixel_shape` is not defined, try deriving it from the `.bounding_box`
@@ -65,47 +65,74 @@ class ImageFootprint:
         # pixel_shape is in x, y order contrary to numpy convention.
         image_shape = (wcs.pixel_shape[1], wcs.pixel_shape[0])
 
-        if corners:
+        if vertices != (0, 0):
             if not hasattr(wcs, "bounding_box") or wcs.bounding_box is None:
                 wcs.bounding_box = wcs_bbox_from_shape(image_shape)
 
-            vertices = wcs.footprint(center=False)
+            vertex_points = wcs.footprint(center=False)
         else:
-            # pixel interval between edge vertices
-            step = 100
+            # constrain maximum number of vertices to image shape
+            vertices = (
+                image_shape[0] - 1 if vertices[0] >= image_shape[0] else vertices[0],
+                image_shape[1] - 1 if vertices[1] >= image_shape[1] else vertices[1],
+            )
 
             # build a list of pixel indices that represent equally-spaced edge vertices
             edge_pixel_indices = np.concatenate(
                 [
                     np.stack(
                         [
-                            np.repeat(0, np.ceil((image_shape[1] - 1) / step)),
-                            np.arange(0, image_shape[1] - 1, step),
-                        ],
-                        axis=1,
-                    ),
-                    np.stack(
-                        [
-                            np.arange(0, image_shape[0] - 1, step),
-                            np.repeat(
-                                image_shape[1], np.ceil((image_shape[0] - 1) / step)
+                            np.repeat(0, repeats=vertices[1] + 1),
+                            np.round(
+                                np.linspace(
+                                    0,
+                                    image_shape[1],
+                                    num=vertices[1] + 1,
+                                    endpoint=False,
+                                )
                             ),
                         ],
                         axis=1,
                     ),
                     np.stack(
                         [
-                            np.repeat(
-                                image_shape[0] - 1, np.ceil((image_shape[1] - 1) / step)
+                            np.round(
+                                np.linspace(
+                                    0,
+                                    image_shape[0],
+                                    num=vertices[0] + 1,
+                                    endpoint=False,
+                                )
                             ),
-                            np.arange(image_shape[1] - 1, 0, -step),
+                            np.repeat(image_shape[1], repeats=vertices[0] + 1),
                         ],
                         axis=1,
                     ),
                     np.stack(
                         [
-                            np.arange(image_shape[0] - 1, 0, -step),
-                            np.repeat(0, np.ceil((image_shape[0] - 1) / step)),
+                            np.repeat(image_shape[0] - 1, repeats=vertices[1] + 1),
+                            np.round(
+                                np.linspace(
+                                    image_shape[1],
+                                    0,
+                                    num=vertices[1] + 1,
+                                    endpoint=False,
+                                )
+                            ),
+                        ],
+                        axis=1,
+                    ),
+                    np.stack(
+                        [
+                            np.round(
+                                np.linspace(
+                                    image_shape[0],
+                                    0,
+                                    num=vertices[0] + 1,
+                                    endpoint=False,
+                                )
+                            ),
+                            np.repeat(0, repeats=vertices[0] + 1),
                         ],
                         axis=1,
                     ),
@@ -114,15 +141,15 @@ class ImageFootprint:
             )
 
             # query the WCS for pixel indices at the edges
-            vertices = np.stack(
+            vertex_points = np.stack(
                 wcs(*edge_pixel_indices.T, with_bounding_box=False),
                 axis=1,
             )
 
-        return cls(vertices)
+        return cls(vertex_points)
 
     @property
-    def radec_vertices(self) -> NDArray:
+    def radec_corners(self) -> NDArray:
         """vertices in right ascension and declination in counterclockwise order"""
         return self._radec_vertices
 
@@ -135,7 +162,7 @@ class ImageFootprint:
     def vectorpoint_vertices(self) -> NDArray[float]:
         """vertices in 3D Cartesian space on the unit sphere"""
         return sgv.normalize_vector(
-            np.stack(sgv.lonlat_to_vector(*np.array(self.radec_vertices).T), axis=1)
+            np.stack(sgv.lonlat_to_vector(*np.array(self.radec_corners).T), axis=1)
         )
 
     @cached_property
@@ -261,7 +288,7 @@ def find_skycell_matches(
     """
 
     if isinstance(image_corners, WCS):
-        footprint = ImageFootprint.from_wcs(image_corners, corners=False)
+        footprint = ImageFootprint.from_wcs(image_corners, vertices=(50, 50))
     else:
         footprint = ImageFootprint(image_corners)
 
