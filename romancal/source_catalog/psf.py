@@ -247,13 +247,13 @@ def create_l3_psf_model(
     wfi.filter = filt
     wfi_psf = wfi.calc_psf(fov_pixels=fov_pixels, oversample=oversample)
 
+    # Azimuthally smooth the psf
+    psf_smoothed = azimuthally_smooth(wfi_psf[0].data)
+
     # Create the PSF model.
     x_0 = y_0 = fov_pixels * oversample / 2
-    wfi_psf_model = ImagePSF(wfi_psf[0].data, x_0=x_0, y_0=y_0)
+    wfi_psf_model = ImagePSF(psf_smoothed, x_0=x_0, y_0=y_0)
     psf_model = wfi_psf_model
-
-    # Azimuthally smooth the psf
-    azimuthally_smooth(psf_model)
 
     return psf_model
 
