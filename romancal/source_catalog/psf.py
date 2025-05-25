@@ -13,10 +13,79 @@ from astropy.utils import lazyproperty
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
 from photutils.psf import ImagePSF, IterativePSFPhotometry, PSFPhotometry, SourceGrouper
+from scipy.ndimage import map_coordinates
 from stpsf import WFI, gridded_library
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+def azimuthally_smooth(data, oversample=2, order=4):
+    """Azimuthally smooth model
+
+    The image is converted into polar coordinates using ***** interpolation.
+    The mean is determined for each radius which the replaces all values for
+    that radius.
+
+    Parameters
+    ----------
+    data : nd.array(size=(*, *))
+        Data to be smoothed.
+
+    oversample : int
+        Oversampling of the data to improve fidelity of the conversions
+        between cartesian and polar layout
+
+    order : int
+        Order of the spline interpolation used for the coordinate transformations
+
+    Returns
+    -------
+    smoothed : nd.array(size=(*, *))
+        The azimuthally smoothed image
+    """
+
+    # Define cartesian->polar->cartesian conversion.
+    # Significant difference is the polar back to cartesian uses
+    # the original data's transformation parameters, to reproduce
+    # an image of the correct dimensions.
+    def cart_to_polar(model, oversample=2, order=4):
+        ntheta = 4*model.shape[0]*oversample
+        nrad = model.shape[0]*oversample
+        szo2 = model.shape[0] // 2
+        rr = np.linspace(-5, szo2*np.sqrt(2), nrad)
+        tt = np.linspace(0, 2*np.pi, ntheta, endpoint=False)
+        xx = rr[:, None]*np.cos(tt[None, :])+szo2
+        yy = rr[:, None]*np.sin(tt[None, :])+szo2
+        modelpolar = map_coordinates(model, [xx, yy], order=order,
+                                     mode='nearest',
+                                     output=np.dtype('f4'))
+        return modelpolar, rr, tt
+
+    def polar_to_cart(model, rr, tt, oversample=2, order=4):
+        szo2 = model.shape[0] // 2
+        xo, yo = np.mgrid[-szo2:szo2+1, -szo2:szo2+1]
+        ro = np.sqrt(xo**2 + yo**2)
+        to = np.arctan2(yo, xo) % (2*np.pi)
+        ro = np.interp(ro, rr, np.arange(len(rr)).astype('f4'))
+        to = np.interp(to, tt, np.arange(len(tt)).astype('f4'))
+        res = map_coordinates(model, [ro, to], order=order,
+                              mode='wrap', output=np.dtype('f4'))
+        return res
+
+    polar, rr, tt = cart_to_polar(data, oversample=oversample)
+    polar_mean = np.mean(polar, axis=1, keepdims=True)
+    smoothed = polar_to_cart(polar_mean, rr, tt, oversample=oversample)
+
+    # If oversampling, just take the original dimensional part of the center of the result.
+    x_size, y_size = data.shape
+    x_off = x_size // 2
+    y_off = y_size // 2
+    smooth_x_size, smooth_y_size = smoothed.shape
+    smooth_x_cen = smooth_x_size // 2
+    smooth_y_cen = smooth_y_size // 2
+
+    return smoothed[smooth_x_cen - x_off: smooth_x_cen + x_off, smooth_y_cen - y_off: smooth_y_cen + y_off]
 
 
 def create_gridded_psf_model(
@@ -182,6 +251,9 @@ def create_l3_psf_model(
     x_0 = y_0 = fov_pixels * oversample / 2
     wfi_psf_model = ImagePSF(wfi_psf[0].data, x_0=x_0, y_0=y_0)
     psf_model = wfi_psf_model
+
+    # Azimuthally smooth the psf
+    azimuthally_smooth(psf_model)
 
     return psf_model
 
