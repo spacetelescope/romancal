@@ -46,7 +46,7 @@ class MosaicPipeline(RomanPipeline):
         "skymatch": SkyMatchStep,
         "outlier_detection": OutlierDetectionStep,
         "resample": ResampleStep,
-        "sourcecatalog": SourceCatalogStep,
+        "source_catalog": SourceCatalogStep,
     }
 
     # start the actual processing
@@ -79,7 +79,7 @@ class MosaicPipeline(RomanPipeline):
         self.resample.suffix = "coadd"
         self.output_file = library.asn["products"][0]["name"]
         result = self.resample.run(result)
-        self.sourcecatalog.output_file = self.output_file
-        self.sourcecatalog.run(result)
+        self.source_catalog.output_file = self.output_file
+        self.source_catalog.run(result)
         self.suffix = "coadd"
         return result
