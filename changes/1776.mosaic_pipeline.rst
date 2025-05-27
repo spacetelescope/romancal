@@ -1,0 +1,1 @@
+Updated source_catalog class alias in the mosaic pipeline.
