@@ -20,6 +20,8 @@ from romancal.assign_wcs.utils import wcs_bbox_from_shape
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
+__all__ = ["ImageFootprint", "find_skycell_matches"]
+
 
 class ImageFootprint:
     """abstraction of an image footprint"""
@@ -165,6 +167,12 @@ class ImageFootprint:
     def possible_intersecting_skycell_distance(self) -> int:
         """maximum possible distance to the center of an intersecting sky cell"""
         return (self.length + sc.SkyCell.length) / 2.0
+
+    def __str__(self) -> str:
+        return f"footprint {self.radec_corners}"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.radec_corners!r})"
 
 
 def find_skycell_matches(
