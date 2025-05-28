@@ -13,6 +13,7 @@ from astropy.utils import lazyproperty
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
 from photutils.psf import ImagePSF, IterativePSFPhotometry, PSFPhotometry, SourceGrouper
+from photutils.psf.matching import resize_psf
 from scipy.ndimage import map_coordinates
 from stpsf import WFI, gridded_library
 
@@ -186,11 +187,13 @@ def create_gridded_psf_model(
     return gridmodel, model_psf_centroids
 
 def create_l3_psf_model(
-    filt,
-    detector='SCA02',
-    oversample=11,
-    fov_pixels=9,
-    instrument_options=None,
+        filt,
+        detector='SCA02',
+        pixfrac=1.0,
+        pixel_scale=0.11,
+        oversample=11,
+        fov_pixels=9,
+        instrument_options=None,
 ):
     """
     Compute a PSF model via `~stpsf.calc_psf`.
@@ -215,8 +218,8 @@ def create_l3_psf_model(
     pixfrac : float
         drizzlepac pixel fraction used.
     pixel_scale : float
-        L3 image pixel scale. Often similar to the default detector scale of
-        0.11 arcsec.
+        L3 image pixel scale in arcsec.
+        Often similar to the default detector scale of 0.11 arcsec.
     oversample : int, optional
         Oversample factor, default is 11. See STPSF docs for details [1]_.
         Choosing an odd number makes the pixel convolution more accurate.
@@ -247,12 +250,18 @@ def create_l3_psf_model(
     wfi.filter = filt
     wfi_psf = wfi.calc_psf(fov_pixels=fov_pixels, oversample=oversample, add_distortion=False, crop_psf=False)
     psf = wfi_psf[0].data
+    psf_pixel_scale = wfi_psf[0].header['PIXELSCL']
 
     # Azimuthally smooth the psf
     psf = azimuthally_smooth(psf)
 
+    # Rescale to the image scaling.
+    psf = resize_psf(psf, psf_pixel_scale, pixel_scale)
+
     # Create the PSF model.
-    x_0 = y_0 = fov_pixels * oversample / 2
+    x_0, y_0 = psf.shape
+    x_0 /= 2.0
+    y_0 /= 2.0
     psf_model = ImagePSF(psf, x_0=x_0, y_0=y_0)
 
     return psf_model
@@ -472,7 +481,11 @@ class PSFCatalog:
         else:
             # MosaicModel (L3 datamodel)
             filt = self.model.meta.basic.optical_element
-            psf_model = create_l3_psf_model(filt=filt)
+            psf_model = create_l3_psf_model(
+                filt=filt,
+                pixel_scale=self.model.meta.wcsinfo.pixel_scale * 3600.,  # wcsinfo is in degrees. Need arcsec
+                pixfrac=self.model.meta.resample.pixfrac
+            )
             # psf_model, _ = create_gridded_psf_model(
             #     filt=filt,
             #     detector='SCA02',
