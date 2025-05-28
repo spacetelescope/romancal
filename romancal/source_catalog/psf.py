@@ -245,15 +245,15 @@ def create_l3_psf_model(
     wfi = WFI()
     wfi.detector = detector
     wfi.filter = filt
-    wfi_psf = wfi.calc_psf(fov_pixels=fov_pixels, oversample=oversample)
+    wfi_psf = wfi.calc_psf(fov_pixels=fov_pixels, oversample=oversample, add_distortion=False, crop_psf=False)
+    psf = wfi_psf[0].data
 
     # Azimuthally smooth the psf
-    psf_smoothed = azimuthally_smooth(wfi_psf[0].data)
+    psf = azimuthally_smooth(psf)
 
     # Create the PSF model.
     x_0 = y_0 = fov_pixels * oversample / 2
-    wfi_psf_model = ImagePSF(psf_smoothed, x_0=x_0, y_0=y_0)
-    psf_model = wfi_psf_model
+    psf_model = ImagePSF(psf, x_0=x_0, y_0=y_0)
 
     return psf_model
 
@@ -473,6 +473,11 @@ class PSFCatalog:
             # MosaicModel (L3 datamodel)
             filt = self.model.meta.basic.optical_element
             psf_model = create_l3_psf_model(filt=filt)
+            # psf_model, _ = create_gridded_psf_model(
+            #     filt=filt,
+            #     detector='SCA02',
+            #     sqrt_n_psfs=1,
+            # )
 
         return psf_model
 
