@@ -9,7 +9,7 @@ from ..assign_wcs import utils as wcsutil
 from ..resample import resample_utils
 
 ASTROMETRIC_CAT_ENVVAR = "ASTROMETRIC_CATALOG_URL"
-DEF_CAT_URL = "http://gsss.stsci.edu/webservices"
+DEF_CAT_URL = "https://gsss.stsci.edu/webservices"
 
 # VO request timeout (in seconds)
 TIMEOUT = 30.0
