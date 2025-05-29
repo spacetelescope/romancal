@@ -249,7 +249,7 @@ pygments_style = "default"
 asdf_schema_reference_mappings = [
     (
         "tag:stsci.edu:asdf",
-        "http://asdf-standard.readthedocs.io/en/latest/generated/stsci.edu/asdf/",
+        "https://asdf-standard.readthedocs.io/en/latest/generated/stsci.edu/asdf/",
     ),
 ]
 
