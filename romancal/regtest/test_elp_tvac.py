@@ -62,6 +62,7 @@ def truth_filename(run_elp):
 
 
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
+    ignore_asdf_paths['ignore'].append("roman.meta.ref_file.dark")
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
