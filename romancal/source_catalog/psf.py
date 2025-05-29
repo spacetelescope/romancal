@@ -7,6 +7,7 @@ import logging
 import astropy.units as u
 import numpy as np
 import stpsf
+from astropy.convolution import Box2DKernel, convolve
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.table import Table
 from astropy.utils import lazyproperty
@@ -254,6 +255,15 @@ def create_l3_psf_model(
 
     # Azimuthally smooth the psf
     psf = azimuthally_smooth(psf)
+
+    # Smooth to account for the pixfrac used to create the L3 image.
+    pixfrac_kernel = Box2DKernel(width=pixfrac * oversample)
+    psf = convolve(psf, kernel=pixfrac_kernel)
+
+    # Smooth to the image scale
+    outscale_kernel = Box2DKernel(width=pixel_scale / psf_pixel_scale)
+    psf = convolve(psf, kernel=outscale_kernel)
+
 
     # Rescale to the image scaling.
     psf = resize_psf(psf, psf_pixel_scale, pixel_scale)
