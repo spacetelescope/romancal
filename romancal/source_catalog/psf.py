@@ -256,6 +256,10 @@ def create_l3_psf_model(
     # Azimuthally smooth the psf
     psf = azimuthally_smooth(psf)
 
+    # Pixel response
+    pixel_response_kernal = Box2DKernel(width=oversample)
+    psf = convolve(psf, pixel_response_kernal)
+
     # Smooth to account for the pixfrac used to create the L3 image.
     pixfrac_kernel = Box2DKernel(width=pixfrac * oversample)
     psf = convolve(psf, kernel=pixfrac_kernel)
