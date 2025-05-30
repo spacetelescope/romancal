@@ -123,9 +123,7 @@ def test_wcs_applies_distortion_correction(output_model):
     assert (corrected_coords[1] != original_coords[1]).all()
 
 
-@pytest.mark.parametrize(
-    "arr_name", ("dq", "err", "var_poisson", "var_rnoise")
-)
+@pytest.mark.parametrize("arr_name", ("dq", "err", "var_poisson", "var_rnoise"))
 def test_array_exists(output_model, arr_name):
     assert hasattr(output_model, arr_name)
 
