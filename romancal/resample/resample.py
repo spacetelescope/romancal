@@ -176,7 +176,7 @@ class ResampleData(Resample):
         else:
             level = 0
             subtracted = True
-        res = {
+        return {
             "data": model.data,
             "dq": model.dq,
             "var_rnoise": model.var_rnoise,
@@ -194,10 +194,8 @@ class ResampleData(Resample):
             "level": level,
             "subtracted": subtracted,
             "effective_exposure_time": model.meta.exposure.effective_exposure_time,
+            "var_flat": getattr(model, "var_flat", None),
         }
-        if getattr(model, "var_flat", None) is not None:
-            res["var_flat"] = model.var_flat
-        return res
 
     def _get_intensity_scale(self, model):
         # always provide 1: https://github.com/spacetelescope/romancal/issues/1637

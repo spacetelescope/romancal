@@ -66,6 +66,7 @@ class ResampleStep(RomanStep):
         resample_on_skycell = boolean(default=True)  # if association contains skycell information use it for the wcs
         in_memory = boolean(default=True)
         good_bits = string(default='~DO_NOT_USE+NON_SCIENCE')  # The good bits to use for building the resampling mask.
+        include_var_flat = boolean(default=False)  # include var_flat in output image
     """
 
     reference_file_types: ClassVar = []
@@ -132,11 +133,8 @@ class ResampleStep(RomanStep):
             wcs_kwargs = None
 
         variance_array_names = ["var_rnoise", "var_poisson"]
-        with input_models:
-            model = input_models.borrow(0)
-            if hasattr(model, "var_flat"):
-                variance_array_names.append("var_flat")
-            input_models.shelve(model, modify=False)
+        if self.include_var_flat:
+            variance_array_names.append("var_flat")
 
         # Call the resampling routine
         resamp = ResampleData(
