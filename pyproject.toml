@@ -12,8 +12,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "asdf >=3.3.0",
-    "asdf-astropy >=0.5.0",
+    "asdf >=4.1.0",
+    "asdf-astropy >=0.6.0",
     "astropy >=6.0.0",
     "crds >=11.16.16",
     "gwcs >=0.22.0",
@@ -22,14 +22,12 @@ dependencies = [
     "photutils >=1.13.0",
     "pyparsing >=2.4.7",
     "requests >=2.26",
-    # "roman_datamodels>=0.23.1,<0.24.0",
-    "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
+    "roman_datamodels>=0.25.0,<0.26.0",
+    # "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
     "scipy >=1.14.1",
-    # "stcal>=1.11.0,<1.12.0",
+    "stcal>=1.13.0,<1.14.0",
     # "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
-    "stcal @ git+https://github.com/schlafly/stcal.git@generic-variances",
-    # "stpipe >=0.8.0,<0.9.0",
-    "stpipe @ git+https://github.com/spacetelescope/stpipe.git@main",
+    "stpipe >=0.8.0,<0.9.0",
     "tweakwcs >=0.8.8",
     "spherical-geometry >= 1.2.22",
     "stsci.imagestats >= 1.6.3",
@@ -89,8 +87,8 @@ stpsf = "pytest_romancal.stpsf_plugin"
 roman_static_preview = "romancal.scripts.static_preview:command"
 asn_from_list = "romancal.associations.asn_from_list:_cli"
 skycell_asn = "romancal.associations.skycell_asn:_cli"
-mk_patchlist = "romancal.associations.mk_patchlist:_cli"
-mk_skycell_asn_from_patchlist = "romancal.associations.mk_skycell_asn_from_patchlist:_cli"
+mk_skycell_list = "romancal.associations.mk_skycell_list:_cli"
+mk_skycell_asn_from_skycell_list= "romancal.associations.mk_skycell_asn_from_skycell_list:_cli"
 
 [build-system]
 requires = [
@@ -275,8 +273,8 @@ name = "``mosaic_pipeline``"
 showcontent = true
 
 [[tool.towncrier.type]]
-directory = "patch_match"
-name = "``patch_match``"
+directory = "skycell"
+name = "``skycell``"
 showcontent = true
 
 # steps

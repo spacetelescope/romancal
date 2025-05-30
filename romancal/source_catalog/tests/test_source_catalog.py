@@ -457,7 +457,13 @@ def test_l2_source_catalog_keywords(
         else:
             ext = "asdf"
 
-        filepath = Path(tmp_path / f"{result.meta.filename}_{suffix}.{ext}")
+        # annoying case.  Sometimes we have meta.filename as just "none" and
+        # this test relies on the filename actually being at none_cat.parquet, etc.
+        # But if we return a source catalog with a correct meta.filename (e.g.,
+        # none_cat.parquet), this test needs to know how to translate that back
+        # to the equivalent segmentation file.
+        basefilename = result.meta.filename.split("_")[0]
+        filepath = Path(tmp_path / f"{basefilename}_{suffix}.{ext}")
         assert filepath.exists()
 
         if suffix == "cat":
@@ -563,7 +569,8 @@ def test_l3_source_catalog_keywords(
         else:
             ext = "asdf"
 
-        filepath = Path(tmp_path / f"{result.meta.filename}_{suffix}.{ext}")
+        basefilename = result.meta.filename.split("_")[0]
+        filepath = Path(tmp_path / f"{basefilename}_{suffix}.{ext}")
         assert filepath.exists()
 
         if suffix == "cat":

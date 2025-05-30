@@ -49,4 +49,4 @@ In addition you can also specify a target for the association file,
 
 .. code-block:: python
 
-		asn_from_list -o level3_mosaic_asn.json --product-name level3_mosaic --target r274dp63x32y80  data/*_cal.asdf
+		asn_from_list -o level3_mosaic_asn.json --product-name level3_mosaic --target 270p65x48y69 data/*_cal.asdf

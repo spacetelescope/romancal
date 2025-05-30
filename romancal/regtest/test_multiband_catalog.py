@@ -12,21 +12,21 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 fieldlist = [
     "ra_centroid",  # DMS374 positions on ICRF
     "dec_centroid",  # DMS374 positions on ICRF
-    "aper01_flux_f158",  # DMS399 aperture fluxes
-    "aper02_flux_f158",  # DMS399 aperture fluxes
-    "aper04_flux_f158",  # DMS399 aperture fluxes
-    "segment_flux_f158",  # DMS375 fluxes
-    "kron_flux_f158",  # DMS375 fluxes
-    "aper01_flux_f158_err",  # DMS386 flux uncertainties
-    "aper02_flux_f158_err",  # DMS386 flux uncertainties
+    "aper01_f158_flux",  # DMS399 aperture fluxes
+    "aper02_f158_flux",  # DMS399 aperture fluxes
+    "aper04_f158_flux",  # DMS399 aperture fluxes
+    "segment_f158_flux",  # DMS375 fluxes
+    "kron_f158_flux",  # DMS375 fluxes
+    "aper01_f158_flux_err",  # DMS386 flux uncertainties
+    "aper02_f158_flux_err",  # DMS386 flux uncertainties
     "warning_flags",  # DMS387 dq_flags
     "is_extended_f158",  # DMS392 source classification
     "semimajor",  # DMS394 galaxy morphology
     "semiminor",  # DMS394 galaxy morphology
     "orientation_sky",  # DMS394 galaxy morphology
-    "segment_flux_f158_err",  # DMS395 basic statistical uncertainties
-    "kron_flux_f158_err",  # DMS395 basic statistical uncertainties
-    "aper01_flux_f158_err",  # DMS395 basic statistical uncertainties
+    "segment_f158_flux_err",  # DMS395 basic statistical uncertainties
+    "kron_f158_flux_err",  # DMS395 basic statistical uncertainties
+    "aper01_f158_flux_err",  # DMS395 basic statistical uncertainties
     "x_psf_f158_err",  # DMS395 basic statistical uncertainties
 ]
 
@@ -38,7 +38,7 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request):
     # filter in it, so this is more of an existence proof for the multiband
     # catalogs than a detailed test.  Using only a single catalog lets us
     # rely on the existing regtest files.
-    outputfn = "r00001_p_v01001001001001_r274dp63x31y81_f158_mbcat_cat.parquet"
+    outputfn = "r00001_p_v01001001001001_270p65x49y70_f158_mbcat_cat.parquet"
     rtdata.get_asn(f"WFI/image/{inputasnfn}")
     rtdata.output = outputfn
     rtdata.input = inputasnfn

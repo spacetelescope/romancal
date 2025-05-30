@@ -13,7 +13,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 @pytest.fixture(
     scope="module",
     params=[
-        "r00001_p_v01001001001001_r274dp63x31y81_f158_coadd.asdf",
+        "r00001_p_v01001001001001_270p65x49y70_f158_coadd.asdf",
         "r0000101001001001001_f158_coadd.asdf",
         "r0000101001001001001_0001_wfi01_f158_cal.asdf",
     ],
@@ -76,9 +76,9 @@ def test_log_tracked_resources(log_tracked_resources, run_source_catalog):
 
 def test_forced_catalog(rtdata_module):
     rtdata = rtdata_module
-    input_deep_segm = "r00001_p_v01001001001001_r274dp63x31y81_f158_segm.asdf"
-    input_shallow_coadd = "r00001_p_e01001001001001_0001_r274dp63x31y81_f158_coadd.asdf"
-    truth_cat = "r00001_p_e01001001001001_0001_r274dp63x31y81_f158_force_cat.parquet"
+    input_deep_segm = "r00001_p_v01001001001001_270p65x49y70_f158_segm.asdf"
+    input_shallow_coadd = "r00001_p_e01001001001001_0001_270p65x49y70_f158_coadd.asdf"
+    truth_cat = "r00001_p_v01001001001001_270p65x49y70_f158_cat.parquet"
     rtdata.get_data(f"WFI/image/{input_deep_segm}")
     rtdata.get_data(f"WFI/image/{input_shallow_coadd}")
     truth_cat = rtdata.get_truth(f"truth/WFI/image/{truth_cat}")

@@ -141,7 +141,15 @@ class SourceCatalogStep(RomanStep):
         else:
             forced_segmodel = datamodels.open(self.forced_segmentation)
             # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
-            segment_img = SegmentationImage(forced_segmodel.data[...])
+            # remove fully masked segments
+            forced_segimg = forced_segmodel.data[...]
+            unmasked_sources = np.unique(forced_segimg * (mask == 0))
+            fully_masked_sources = set(np.unique(forced_segimg)) - set(unmasked_sources)
+            forced_segimg_mask = np.isin(
+                forced_segimg, np.array(list(fully_masked_sources))
+            )
+            forced_segimg[forced_segimg_mask] = 0
+            segment_img = SegmentationImage(forced_segimg)
 
         if segment_img is None:  # no sources found
             cat = Table()
@@ -215,6 +223,15 @@ class SourceCatalogStep(RomanStep):
         # always save the segmentation image
         save_segment_image(self, segment_img, source_catalog_model, output_filename)
 
+        # Update the source catalog filename metadata
+        # This would be better handled in roman_datamodels.
+        self.output_ext = "parquet"
+        output_catalog_name = self.make_output_path(
+            basepath=model.meta.filename, suffix="cat"
+        )
+        self.output_ext = "asdf"
+        source_catalog_model.meta.filename = output_catalog_name
+
         # Always save the source catalog, but don't save it twice.
         # If save_results=False or return_update_model=True, we need to
         # explicitly save it.
@@ -227,6 +244,7 @@ class SourceCatalogStep(RomanStep):
                 suffix="cat",
                 force=True,
             )
+            self.output_ext = "asdf"
 
         # Return the source catalog object or the input model. If the
         # input model is an ImageModel, the metadata is updated with the
@@ -234,11 +252,6 @@ class SourceCatalogStep(RomanStep):
         if getattr(self, "return_updated_model", False):
             # define the catalog filename; self.save_model will
             # determine whether to use a fully qualified path
-            self.output_ext = "parquet"
-            output_catalog_name = self.make_output_path(
-                basepath=model.meta.filename, suffix="cat"
-            )
-            self.output_ext = "asdf"
 
             # set the suffix to something else to prevent the step from
             # overwriting the source catalog file with a datamodel
@@ -252,6 +265,8 @@ class SourceCatalogStep(RomanStep):
             self.output_ext = "parquet"
             result = source_catalog_model
 
+        # validate the result to flush out any lazy-loaded contents
+        result.validate()
         return result
 
 
