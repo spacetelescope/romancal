@@ -100,5 +100,3 @@ def make_output_wcs(
         crpix=crpix,
         crval=crval,
     )
-
-    return wcs, pscale * 3600.0, pscale_ratio
