@@ -7,7 +7,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from pathlib import Path
 from astropy.table import Table, join
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels
