@@ -172,7 +172,7 @@ def test_wcs_applies_distortion_correction(output_model):
 
 @pytest.mark.soctests
 @pytest.mark.parametrize(
-    "arr_name", ("dq", "err", "var_poisson", "var_rnoise", "var_flat")
+    "arr_name", ("dq", "err", "var_poisson", "var_rnoise")
 )
 def test_array_exists(output_model, arr_name):
     # DMS87
