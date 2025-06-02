@@ -92,19 +92,14 @@ def test_crds_temporal_match(instrument, exptype):
     )
 
 
-def test_skip_var_flat():
+@pytest.mark.parametrize("include_var_flat", (True, False))
+def test_skip_var_flat(include_var_flat):
     """Test that we don't populate var_flat if requested."""
-
-    wfi_image1 = maker_utils.mk_level2_image()
-    wfi_image2 = maker_utils.mk_level2_image()
-    del wfi_image1["var_flat"]
-    del wfi_image2["var_flat"]
-    wfi_image_model1 = ImageModel(wfi_image1)
-    wfi_image_model2 = ImageModel(wfi_image2)
-    result1 = FlatFieldStep.call(wfi_image_model1, include_var_flat=False)
-    result2 = FlatFieldStep.call(wfi_image_model2, include_var_flat=True)
-    assert not hasattr(result1, "var_flat")
-    assert hasattr(result2, "var_flat")
+    wfi_image_model = ImageModel.create_fake_data(shape=(4088, 4088))
+    wfi_image_model.meta.cal_step = stnode.L2CalStep.create_fake_data()
+    wfi_image_model.meta.cal_logs = stnode.CalLogs.create_fake_data()
+    result = FlatFieldStep.call(wfi_image_model, include_var_flat=include_var_flat)
+    assert hasattr(result, "var_flat") == include_var_flat
 
 
 @pytest.mark.parametrize(
