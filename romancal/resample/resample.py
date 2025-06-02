@@ -1,7 +1,7 @@
 import logging
 
 import numpy as np
-from roman_datamodels import datamodels, dqflags, maker_utils
+from roman_datamodels import datamodels, dqflags
 from stcal.resample import Resample
 
 import romancal.skycell.skymap as sc
@@ -224,9 +224,7 @@ class ResampleData(Resample):
         if self.blend_meta:
             output_model = self._meta_blender.finalize()
         else:
-            output_model = maker_utils.mk_datamodel(
-                datamodels.MosaicModel, n_images=0, shape=(0, 0)
-            )
+            output_model = datamodels.MosaicModel.create_minimal()
 
         output_model.meta.resample.good_bits = self.good_bits
         output_model.meta.resample.weight_type = self.weight_type
@@ -249,12 +247,8 @@ class ResampleData(Resample):
         output_model.meta.basic.location_name = self.input_models.asn.get(
             "target", "None"
         )
-        if (asn_pool := self.input_models.asn.get("asn_pool", None)) is not None:
-            output_model.meta.asn.pool_name = asn_pool
-        if (
-            asn_table_name := self.input_models.asn.get("table_name", None)
-        ) is not None:
-            output_model.meta.asn.table_name = asn_table_name
+        output_model.meta.asn.pool_name = self.input_models.asn.get("asn_pool", "?")
+        output_model.meta.asn.table_name = self.input_models.asn.get("table_name", "?")
 
         # every resampling will generate these
         output_model.data = self.output_model["data"]

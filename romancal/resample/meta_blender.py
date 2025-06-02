@@ -4,7 +4,8 @@ import numpy as np
 from asdf.lazy_nodes import AsdfDictNode, AsdfListNode
 from asdf.tags.core.ndarray import NDArrayType
 from astropy.table import Table
-from roman_datamodels import datamodels, maker_utils, stnode
+from astropy.time import Time
+from roman_datamodels import datamodels, stnode
 
 
 class MissingCellType:
@@ -80,9 +81,31 @@ class MetaBlender:
 
     def _blend_first(self, model):
         # make a blank mosic metdata node
-        self._model = maker_utils.mk_datamodel(
-            datamodels.MosaicModel, n_images=0, shape=(0, 0)
+        # FIXME includes fake values to match the previous maker_utils
+        self._model = datamodels.MosaicModel.create_minimal(
+            {
+                "meta": {
+                    "prd_version": "8.8.8",
+                    "sdf_software_version": "7.7.7",
+                    "file_date": Time(
+                        "2020-01-01T00:00:00.0", format="isot", scale="utc"
+                    ),
+                    "photometry": {
+                        "pixel_area": -999999,
+                        "conversion_megajanskys": -999999,
+                        "conversion_megajanskys_uncertainty": -999999,
+                    },
+                    "basic": {
+                        "survey": "?",
+                    },
+                },
+            }
         )
+        self._model.meta.product_type = stnode.ProductType("l2")
+        self._model.meta.ref_file = stnode.RefFile.create_minimal(
+            {"crds": {"version": "12.3.1", "context": "roman_0815.pmap"}}
+        )
+
         self._meta = self._model.meta
 
         self._model["individual_image_cal_logs"] = []
@@ -104,12 +127,8 @@ class MetaBlender:
         self._meta.coordinates = model.meta.coordinates
         self._meta.program = model.meta.program
         for step_name in self._meta.cal_step:
-            if hasattr(model.meta.cal_step, step_name):
-                setattr(
-                    self._meta.cal_step,
-                    step_name,
-                    getattr(model.meta.cal_step, step_name),
-                )
+            if value := model.meta.get("cal_step", {}).get(step_name):
+                setattr(self._meta.cal_step, step_name, value)
 
     def _update_tables(self, meta):
         basic_data = {}
@@ -137,7 +156,8 @@ class MetaBlender:
                 self._meta.basic.time_last_mjd, model.meta.exposure.end_time.mjd
             )
 
-        self._model["individual_image_cal_logs"].append(model.meta.cal_logs)
+        if cal_logs := model.meta.get("cal_logs"):
+            self._model["individual_image_cal_logs"].append(cal_logs)
         self._meta.resample.members.append(model.meta.filename)
 
         mid_time = (

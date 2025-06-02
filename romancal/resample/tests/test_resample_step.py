@@ -10,7 +10,7 @@ from astropy.table import Table
 from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels
 
 from romancal.assign_wcs.utils import add_s_region
 from romancal.datamodels import ModelLibrary
@@ -149,7 +149,7 @@ def test_load_custom_wcs_asdf_without_wcs_attribute(tmp_path):
     ],
 )
 def test_set_good_bits_in_resample_meta(base_image, good_bits):
-    model = maker_utils.mk_level2_image(shape=(100, 100))
+    model = base_image()
     model.meta.wcsinfo["vparity"] = -1
     model.meta.wcs.bounding_box = (-0.5, 99.5), (-0.5, 99.5)
 
