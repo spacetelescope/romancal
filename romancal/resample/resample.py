@@ -36,6 +36,7 @@ class ResampleData(Resample):
         blend_meta,
         resample_on_skycell,
         wcs_kwargs=None,
+        variance_array_names=None,
     ):
         """
         See the base class `stcal.resample.resample.Resample` for more details.
@@ -96,6 +97,9 @@ class ResampleData(Resample):
             when ``output_wcs`` is specified. See
             `romancal.resample.resample_utils.make_output_wcs`
             for supported options.
+
+        variance_array_names : list, None
+            Variance arrays to resample.  If None, use stcal default.
         """
         # fillval indef doesn't define a starting value
         # since we're not resampling onto an existing array
@@ -131,6 +135,9 @@ class ResampleData(Resample):
                 "pixel_scale": ps,
                 "pixel_scale_ratio": ps_ratio,
             }
+
+        if variance_array_names:
+            self.variance_array_names = variance_array_names
 
         super().__init__(
             output_wcs,
@@ -174,7 +181,6 @@ class ResampleData(Resample):
             "dq": model.dq,
             "var_rnoise": model.var_rnoise,
             "var_poisson": model.var_poisson,
-            "var_flat": model.var_flat,
             "err": model.err,
             "filename": model.meta.filename,
             "wcs": model.meta.wcs,
@@ -188,6 +194,7 @@ class ResampleData(Resample):
             "level": level,
             "subtracted": subtracted,
             "effective_exposure_time": model.meta.exposure.effective_exposure_time,
+            "var_flat": getattr(model, "var_flat", None),
         }
 
     def _get_intensity_scale(self, model):
@@ -225,6 +232,12 @@ class ResampleData(Resample):
         output_model.meta.resample.weight_type = self.weight_type
         output_model.meta.resample.pixfrac = self.output_model["pixfrac"]
         output_model.meta.basic.product_type = "TBD"
+
+        if "var_flat" not in self.variance_array_names:
+            if "var_flat" in output_model._instance:
+                del output_model._instance["var_flat"]
+                # the mk_datamodel makes a var_flat by default,
+                # so this needs to get rid of it.
 
         pixel_scale_ratio = self.output_model["pixel_scale_ratio"]
         if pixel_scale_ratio is not None:
@@ -266,7 +279,7 @@ class ResampleData(Resample):
         if self._enable_ctx:
             output_model.context = self.output_model["con"].astype(np.uint32)
 
-        for arr_name in ("err", "var_rnoise", "var_poisson", "var_flat"):
+        for arr_name in ["err", *self.variance_array_names]:
             if arr_name in self.output_model:
                 new_array = self.output_model[arr_name]
                 if new_array is not None:

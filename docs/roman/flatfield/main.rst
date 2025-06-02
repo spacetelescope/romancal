@@ -59,3 +59,10 @@ and finally the error that is associated with the science data is given by,
 
 The total ERR array in the science exposure is updated as the square root
 of the quadratic sum of VAR_POISSON, VAR_RNOISE, and VAR_FLAT.
+
+Note that by default we do not compute VAR_FLAT nor include its
+contribution to ERR, unless the "include_var_flat" is specified.  This
+means that the uncertainties on very bright pixels are
+underestimated.  However, other effects like charge migration,
+saturation, and non-linearity can be important at these flux levels,
+and their contributions to the uncertainty are never included.
