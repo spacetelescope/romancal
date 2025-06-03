@@ -139,7 +139,7 @@ def test_forced_catalog(image_model, tmp_path):
         (20, 10, 5, False),
         (25, 10, 3, False),
         (35, 10, 1, False),
-        # (50, 10, 0, False),  # TODO re-enable this when 0 source inputs don't produce an empty table
+        (50, 10, 0, False),
     ),
 )
 def test_l2_source_catalog(
@@ -184,7 +184,7 @@ def test_l2_source_catalog(
         (20, 10, 5, False),
         (25, 10, 3, False),
         (35, 10, 1, False),
-        # (50, 10, 0, False),  # FIXME re-enable this when the step doesn't produce an empty table
+        (50, 10, 0, False),
     ),
 )
 def test_l3_source_catalog(

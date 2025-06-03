@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from astropy.table import Table, join
+from astropy.table import Column, Table, join
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels
 from roman_datamodels.datamodels import ImageModel, MosaicModel
@@ -153,8 +153,14 @@ class SourceCatalogStep(RomanStep):
             segment_img = SegmentationImage(forced_segimg)
 
         if segment_img is None:  # no sources found
-            # TODO make fake table here
-            cat = Table()
+            cat = Table(
+                [
+                    Column([], **kwargs)
+                    for kwargs in source_catalog_model._instance.get_column_definitions(
+                        ["00"], ["f184"]
+                    )
+                ]
+            )
         else:
             if forced:
                 cat_type = "forced_det"
