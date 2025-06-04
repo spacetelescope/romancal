@@ -6,8 +6,8 @@ import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
-from roman_datamodels import datamodels as rdd
-from roman_datamodels import stnode as rds
+from roman_datamodels import datamodels as rdm
+from roman_datamodels import stnode
 from roman_datamodels.dqflags import group, pixel
 from stcal.ramp_fitting import ols_cas22_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
@@ -45,20 +45,20 @@ class RampFitStep(RomanStep):
     reference_file_types: ClassVar = ["readnoise", "gain", "dark"]
 
     def process(self, input):
-        with rdd.open(input, mode="rw") as input_model:
+        with rdm.open(input, mode="rw") as input_model:
             # Retrieve reference info
             readnoise_filename = self.get_reference_file(input_model, "readnoise")
             gain_filename = self.get_reference_file(input_model, "gain")
             log.info("Using READNOISE reference file: %s", readnoise_filename)
-            readnoise_model = rdd.open(readnoise_filename, mode="r")
+            readnoise_model = rdm.open(readnoise_filename, mode="r")
             log.info("Using GAIN reference file: %s", gain_filename)
-            gain_model = rdd.open(gain_filename, mode="r")
+            gain_model = rdm.open(gain_filename, mode="r")
 
             # Do the fitting.
             algorithm = self.algorithm.lower()
             if algorithm == "ols_cas22":
                 dark_filename = self.get_reference_file(input_model, "dark")
-                dark_model = rdd.open(dark_filename, mode="r")
+                dark_model = rdm.open(dark_filename, mode="r")
                 out_model = self.ols_cas22(
                     input_model, readnoise_model, gain_model, dark_model
                 )
@@ -184,50 +184,41 @@ def create_image_model(input_model, image_info):
         The output ``ImageModel`` to be returned from the ramp fit step.
     """
     data, dq, var_poisson, var_rnoise, err = image_info
-
-    if dq is None:
-        dq = np.zeros(data.shape, dtype="u4")
-
-    # Create output datamodel
-    # ... and add all keys from input
-    meta = dict(wcs=None)  # default empty WCS
-    meta.update(input_model.meta)
-    meta["cal_step"]["ramp_fit"] = "INCOMPLETE"
-    meta["cal_logs"] = rds.CalLogs()
-    meta["photometry"] = rds.Photometry(
+    im = rdm.ImageModel.create_minimal(
+        {
+            "meta": input_model.meta,
+        }
+    )
+    im.meta.product_type = "l2"
+    im.meta.cal_step = stnode.L2CalStep.create_minimal(input_model.meta.cal_step)
+    im.meta.cal_logs = stnode.CalLogs.create_minimal()
+    im.meta.photometry = stnode.Photometry.create_minimal(
         {
             "conversion_megajanskys": -999999,
             "conversion_megajanskys_uncertainty": -999999,
             "pixel_area": -999999,
         }
     )
-    inst = {
-        "meta": meta,
-        "data": data,
-        "dq": dq,
-        "var_poisson": var_poisson,
-        "var_rnoise": var_rnoise,
-        "err": err,
-        "amp33": input_model.amp33.copy(),
-        "border_ref_pix_left": input_model.border_ref_pix_left.copy(),
-        "border_ref_pix_right": input_model.border_ref_pix_right.copy(),
-        "border_ref_pix_top": input_model.border_ref_pix_top.copy(),
-        "border_ref_pix_bottom": input_model.border_ref_pix_bottom.copy(),
-        "dq_border_ref_pix_left": input_model.dq_border_ref_pix_left.copy(),
-        "dq_border_ref_pix_right": input_model.dq_border_ref_pix_right.copy(),
-        "dq_border_ref_pix_top": input_model.dq_border_ref_pix_top.copy(),
-        "dq_border_ref_pix_bottom": input_model.dq_border_ref_pix_bottom.copy(),
-    }
-    out_node = rds.WfiImage(inst)
-    im = rdd.ImageModel(out_node)
+    im.amp33 = input_model.amp33.copy()
+    im.border_ref_pix_left = input_model.border_ref_pix_left.copy()
+    im.border_ref_pix_right = input_model.border_ref_pix_right.copy()
+    im.border_ref_pix_top = input_model.border_ref_pix_top.copy()
+    im.border_ref_pix_bottom = input_model.border_ref_pix_bottom.copy()
+    im.dq_border_ref_pix_left = input_model.dq_border_ref_pix_left.copy()
+    im.dq_border_ref_pix_right = input_model.dq_border_ref_pix_right.copy()
+    im.dq_border_ref_pix_top = input_model.dq_border_ref_pix_top.copy()
+    im.dq_border_ref_pix_bottom = input_model.dq_border_ref_pix_bottom.copy()
 
     # trim off border reference pixels from science data, dq, err
     # and var_poisson/var_rnoise
-    im.data = im.data[4:-4, 4:-4]
-    im.dq = im.dq[4:-4, 4:-4]
-    im.err = im.err[4:-4, 4:-4]
-    im.var_poisson = im.var_poisson[4:-4, 4:-4]
-    im.var_rnoise = im.var_rnoise[4:-4, 4:-4]
+    im.data = data[4:-4, 4:-4].copy()
+    if dq is not None:
+        im.dq = dq[4:-4, 4:-4].copy()
+    else:
+        im.dq = np.zeros(im.data.shape, dtype="u4")
+    im.err = err[4:-4, 4:-4].copy()
+    im.var_poisson = var_poisson[4:-4, 4:-4].copy()
+    im.var_rnoise = var_rnoise[4:-4, 4:-4].copy()
 
     return im
 
