@@ -1,0 +1,1 @@
+Use ``ImageModel.create_minimal`` to create output model.
