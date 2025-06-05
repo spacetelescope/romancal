@@ -41,7 +41,7 @@ class ImageFootprint:
     def from_wcs(
         cls,
         wcs: WCS,
-        vertices: tuple[int, int] = (0, 0),
+        extra_vertices_per_edge: int = 0,
     ) -> "ImageFootprint":
         """
         create an image footprint from a GWCS object (and image shape, if no bounding box is present)
@@ -50,7 +50,7 @@ class ImageFootprint:
         ----------
 
         wcs: WCS object
-        vertices: number of vertices to create on each edge in addition to the corner pixels
+        extra_vertices_per_edge: extra vertices to create on each edge to capture distortion
         """
 
         # if `.pixel_shape` is not defined, try deriving it from the `.bounding_box`
@@ -65,29 +65,27 @@ class ImageFootprint:
         # pixel_shape is in x, y order contrary to numpy convention.
         image_shape = (wcs.pixel_shape[1], wcs.pixel_shape[0])
 
-        if vertices != (0, 0):
+        if extra_vertices_per_edge <= 0:
             if not hasattr(wcs, "bounding_box") or wcs.bounding_box is None:
                 wcs.bounding_box = wcs_bbox_from_shape(image_shape)
 
             vertex_points = wcs.footprint(center=False)
         else:
-            # constrain maximum number of vertices to image shape
-            vertices = (
-                image_shape[0] - 1 if vertices[0] >= image_shape[0] else vertices[0],
-                image_shape[1] - 1 if vertices[1] >= image_shape[1] else vertices[1],
-            )
+            # constrain number of vertices to the maximum number of pixels on an edge, excluding the corners
+            if extra_vertices_per_edge > max(image_shape) - 2:
+                extra_vertices_per_edge = max(image_shape) - 2
 
             # build a list of pixel indices that represent equally-spaced edge vertices
             edge_pixel_indices = np.concatenate(
                 [
                     np.stack(
                         [
-                            np.repeat(0, repeats=vertices[1] + 1),
+                            np.repeat(0, repeats=extra_vertices_per_edge + 1),
                             np.round(
                                 np.linspace(
                                     0,
                                     image_shape[1],
-                                    num=vertices[1] + 1,
+                                    num=extra_vertices_per_edge + 1,
                                     endpoint=False,
                                 )
                             ),
@@ -100,22 +98,26 @@ class ImageFootprint:
                                 np.linspace(
                                     0,
                                     image_shape[0],
-                                    num=vertices[0] + 1,
+                                    num=extra_vertices_per_edge + 1,
                                     endpoint=False,
                                 )
                             ),
-                            np.repeat(image_shape[1], repeats=vertices[0] + 1),
+                            np.repeat(
+                                image_shape[1], repeats=extra_vertices_per_edge + 1
+                            ),
                         ],
                         axis=1,
                     ),
                     np.stack(
                         [
-                            np.repeat(image_shape[0] - 1, repeats=vertices[1] + 1),
+                            np.repeat(
+                                image_shape[0] - 1, repeats=extra_vertices_per_edge + 1
+                            ),
                             np.round(
                                 np.linspace(
                                     image_shape[1],
                                     0,
-                                    num=vertices[1] + 1,
+                                    num=extra_vertices_per_edge + 1,
                                     endpoint=False,
                                 )
                             ),
@@ -128,11 +130,11 @@ class ImageFootprint:
                                 np.linspace(
                                     image_shape[0],
                                     0,
-                                    num=vertices[0] + 1,
+                                    num=extra_vertices_per_edge + 1,
                                     endpoint=False,
                                 )
                             ),
-                            np.repeat(0, repeats=vertices[0] + 1),
+                            np.repeat(0, repeats=extra_vertices_per_edge + 1),
                         ],
                         axis=1,
                     ),
@@ -288,7 +290,7 @@ def find_skycell_matches(
     """
 
     if isinstance(image_corners, WCS):
-        footprint = ImageFootprint.from_wcs(image_corners, vertices=(50, 50))
+        footprint = ImageFootprint.from_wcs(image_corners, extra_vertices_per_edge=48)
     else:
         footprint = ImageFootprint(image_corners)
 
