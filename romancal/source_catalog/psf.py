@@ -5,6 +5,7 @@ Module to calculate PSF photometry.
 import logging
 
 import astropy.units as u
+import math
 import numpy as np
 import stpsf
 from astropy.convolution import Box2DKernel, convolve
@@ -22,7 +23,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def azimuthally_smooth(data, oversample=2, order=4):
+def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
     """Azimuthally smooth model
 
     The image is converted into polar coordinates using ***** interpolation.
@@ -37,6 +38,9 @@ def azimuthally_smooth(data, oversample=2, order=4):
     oversample : int
         Oversampling of the data to improve fidelity of the conversions
         between cartesian and polar layout
+
+    scaling : float
+        Scale factor to apply to the out result.
 
     order : int
         Order of the spline interpolation used for the coordinate transformations
@@ -64,9 +68,11 @@ def azimuthally_smooth(data, oversample=2, order=4):
                                      output=np.dtype('f4'))
         return modelpolar, rr, tt
 
-    def polar_to_cart(model, rr, tt, oversample=2, order=4):
-        szo2 = model.shape[0] // 2
-        xo, yo = np.mgrid[-szo2:szo2+1, -szo2:szo2+1]
+    def polar_to_cart(model, rr, tt, scaling=1.0, order=4):
+        szo = model.shape[0]
+        szo = math.ceil(szo * scaling)
+        szo2 = szo // 2
+        xo, yo = np.mgrid[-szo2:szo2+1, -szo2:szo2+1] * scaling
         ro = np.sqrt(xo**2 + yo**2)
         to = np.arctan2(yo, xo) % (2*np.pi)
         ro = np.interp(ro, rr, np.arange(len(rr)).astype('f4'))
@@ -77,12 +83,12 @@ def azimuthally_smooth(data, oversample=2, order=4):
 
     polar, rr, tt = cart_to_polar(data, oversample=oversample)
     polar_mean = np.mean(polar, axis=1, keepdims=True)
-    smoothed = polar_to_cart(polar_mean, rr, tt, oversample=oversample)
+    smoothed = polar_to_cart(polar_mean, rr, tt, scaling=scaling)
 
     # If oversampling, just take the original dimensional part of the center of the result.
     x_size, y_size = data.shape
-    x_off = x_size // 2
-    y_off = y_size // 2
+    x_off = int(x_size / 2 * scaling)
+    y_off = int(y_size / 2 * scaling)
     smooth_x_size, smooth_y_size = smoothed.shape
     smooth_x_cen = smooth_x_size // 2
     smooth_y_cen = smooth_y_size // 2
@@ -253,9 +259,6 @@ def create_l3_psf_model(
     psf = wfi_psf[0].data
     psf_pixel_scale = wfi_psf[0].header['PIXELSCL']
 
-    # Azimuthally smooth the psf
-    psf = azimuthally_smooth(psf)
-
     # Pixel response
     pixel_response_kernal = Box2DKernel(width=oversample)
     psf = convolve(psf, pixel_response_kernal)
@@ -268,9 +271,9 @@ def create_l3_psf_model(
     outscale_kernel = Box2DKernel(width=pixel_scale / psf_pixel_scale)
     psf = convolve(psf, kernel=outscale_kernel)
 
-
-    # Rescale to the image scaling.
-    psf = resize_psf(psf, psf_pixel_scale, pixel_scale)
+    # Azimuthally smooth the psf
+    psf = azimuthally_smooth(psf, scaling=psf_pixel_scale / wfi_psf[1].header['PIXELSCL'])
+    # psf = azimuthally_smooth(psf)
 
     # Create the PSF model.
     x_0, y_0 = psf.shape
@@ -279,6 +282,7 @@ def create_l3_psf_model(
     psf_model = ImagePSF(psf, x_0=x_0, y_0=y_0)
 
     return psf_model
+    #return psf
 
 
 def fit_psf_to_image_model(
