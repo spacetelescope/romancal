@@ -76,71 +76,61 @@ class ImageFootprint:
                 extra_vertices_per_edge = max(image_shape) - 2
 
             # build a list of pixel indices that represent equally-spaced edge vertices
-            edge_pixel_indices = np.concatenate(
-                [
-                    np.stack(
-                        [
-                            [0] * (extra_vertices_per_edge + 1),
-                            np.round(
-                                np.linspace(
-                                    0,
-                                    image_shape[1],
-                                    num=extra_vertices_per_edge + 1,
-                                    endpoint=False,
-                                )
-                            ),
-                        ],
-                        axis=1,
-                    ),
-                    np.stack(
-                        [
-                            np.round(
-                                np.linspace(
-                                    0,
-                                    image_shape[0],
-                                    num=extra_vertices_per_edge + 1,
-                                    endpoint=False,
-                                )
-                            ),
-                            [image_shape[1]] * (extra_vertices_per_edge + 1),
-                        ],
-                        axis=1,
-                    ),
-                    np.stack(
-                        [
-                            [image_shape[0] - 1] * (extra_vertices_per_edge + 1),
-                            np.round(
-                                np.linspace(
-                                    image_shape[1],
-                                    0,
-                                    num=extra_vertices_per_edge + 1,
-                                    endpoint=False,
-                                )
-                            ),
-                        ],
-                        axis=1,
-                    ),
-                    np.stack(
-                        [
-                            np.round(
-                                np.linspace(
-                                    image_shape[0],
-                                    0,
-                                    num=extra_vertices_per_edge + 1,
-                                    endpoint=False,
-                                )
-                            ),
-                            [0] * (extra_vertices_per_edge + 1),
-                        ],
-                        axis=1,
-                    ),
-                ],
-                axis=0,
+            edge_xs = np.linspace(
+                0,
+                image_shape[0],
+                num=extra_vertices_per_edge + 1,
+                endpoint=False,
+            )
+            edge_ys = np.linspace(
+                0,
+                image_shape[1],
+                num=extra_vertices_per_edge + 1,
+                endpoint=False,
+            )
+            edge_indices = np.round(
+                np.concatenate(
+                    [
+                        # north edge
+                        np.stack(
+                            [
+                                [0] * (extra_vertices_per_edge + 1),
+                                edge_ys,
+                            ],
+                            axis=1,
+                        ),
+                        # east edge
+                        np.stack(
+                            [
+                                edge_xs,
+                                [image_shape[1] - 1] * (extra_vertices_per_edge + 1),
+                            ],
+                            axis=1,
+                        ),
+                        # south edge
+                        np.stack(
+                            [
+                                [image_shape[0] - 1] * (extra_vertices_per_edge + 1),
+                                reversed(edge_ys),
+                            ],
+                            axis=1,
+                        ),
+                        # west edge
+                        np.stack(
+                            [
+                                reversed(edge_xs),
+                                [0] * (extra_vertices_per_edge + 1),
+                            ],
+                            axis=1,
+                        ),
+                    ],
+                    axis=0,
+                )
             )
 
             # query the WCS for pixel indices at the edges
             vertex_points = np.stack(
-                wcs(*edge_pixel_indices.T, with_bounding_box=False),
+                wcs(*edge_indices.T, with_bounding_box=False),
                 axis=1,
             )
 
