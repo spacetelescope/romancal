@@ -32,49 +32,41 @@ default options to the static preview requirements.
 
 .. code-block:: shell
 
-	❯ roman_static_preview preview --help
-	Usage: roman_static_preview preview [OPTIONS] INPUT [OUTPUT] [SHAPE]...
+	❯ roman_static_preview input.asdf output.png preview --help
+	usage: roman_static_preview INPUT OUTPUT preview [-h] [--no-compass] SHAPE [SHAPE ...]
 
-	  create a preview image with a north arrow overlay indicating orientation
+	positional arguments:
+	  SHAPE         desired pixel shape of output image
 
-	Arguments:
-	  INPUT       path to ASDF file with 2D image data  [required]
-	  [OUTPUT]    path to output image file
-	  [SHAPE]...  desired pixel resolution of output image  [default: 1080, 1080]
-
-	Options:
-	  --compass / --no-compass  whether to draw a north arrow on the image
-	                            [default: compass]
-	  --help                    Show this message and exit.
+	options:
+	  -h, --help    show this help message and exit
+	  --no-compass  do not draw a north arrow on the image
 
 .. code-block:: shell
 
 	❯ roman_static_preview thumbnail --help
-	Usage: roman_static_preview thumbnail [OPTIONS] INPUT [OUTPUT] [SHAPE]...
+	usage: roman_static_preview INPUT OUTPUT thumbnail [-h] [--compass] SHAPE [SHAPE ...]
 
-	Arguments:
-	  INPUT       path to ASDF file with 2D image data  [required]
-	  [OUTPUT]    path to output image file
-	  [SHAPE]...  desired pixel resolution of output image  [default: 300, 300]
+	positional arguments:
+	  SHAPE       desired pixel shape of output image
 
-	Options:
-	  --compass / --no-compass  whether to draw a north arrow on the image
-	                            [default: no-compass]
-	  --help                    Show this message and exit.
+	options:
+	  -h, --help  show this help message and exit
+	  --compass   draw a north arrow on the image
 
 Examples
 --------
 
 .. code-block:: shell
 
-	roman_static_preview preview r0000501001001001001_0001_wfi01_cal.asdf r0000501001001001001_0001_wfi01_cal.png 400 400
+	roman_static_preview r0000501001001001001_0001_wfi01_cal.asdf r0000501001001001001_0001_wfi01_cal.png preview 400 400
 
 .. image:: ../images/r0000501001001001001_0001_wfi01_cal.png
    :alt: preview of Roman imagery, with compass rose showing orientation
 
 .. code-block:: shell
 
-	roman_static_preview thumbnail r0000501001001001001_0001_wfi01_cal.asdf r0000501001001001001_0001_wfi01_cal_thumb.png
+	roman_static_preview r0000501001001001001_0001_wfi01_cal.asdf r0000501001001001001_0001_wfi01_cal_thumb.png thumbnail
 
 .. image:: ../images/r0000501001001001001_0001_wfi01_cal_thumb.png
    :alt: thumbnail of Roman imagery
