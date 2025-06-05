@@ -80,7 +80,7 @@ class ImageFootprint:
                 [
                     np.stack(
                         [
-                            np.repeat(0, repeats=extra_vertices_per_edge + 1),
+                            [0] * (extra_vertices_per_edge + 1),
                             np.round(
                                 np.linspace(
                                     0,
@@ -102,17 +102,13 @@ class ImageFootprint:
                                     endpoint=False,
                                 )
                             ),
-                            np.repeat(
-                                image_shape[1], repeats=extra_vertices_per_edge + 1
-                            ),
+                            [image_shape[1]] * (extra_vertices_per_edge + 1),
                         ],
                         axis=1,
                     ),
                     np.stack(
                         [
-                            np.repeat(
-                                image_shape[0] - 1, repeats=extra_vertices_per_edge + 1
-                            ),
+                            [image_shape[0] - 1] * (extra_vertices_per_edge + 1),
                             np.round(
                                 np.linspace(
                                     image_shape[1],
@@ -134,7 +130,7 @@ class ImageFootprint:
                                     endpoint=False,
                                 )
                             ),
-                            np.repeat(0, repeats=extra_vertices_per_edge + 1),
+                            [0] * (extra_vertices_per_edge + 1),
                         ],
                         axis=1,
                     ),
