@@ -189,6 +189,7 @@ def create_image_model(input_model, image_info):
     im = rdm.ImageModel()
     # use getitem here to avoid copying the DNode
     im.meta = copy.deepcopy(input_model["meta"])
+    im.meta.model_type = "ImageModel"
     # since we've copied nodes let's remove any "read" tags
     for node in asdf.treeutil.iter_tree(im):
         if hasattr(node, "_read_tag"):
