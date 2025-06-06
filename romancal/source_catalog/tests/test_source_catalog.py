@@ -12,6 +12,7 @@ from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import stnode
 from roman_datamodels.datamodels import (
+    ForcedImageSourceCatalogModel,
     ImageModel,
     ImageSourceCatalogModel,
     MosaicModel,
@@ -118,6 +119,7 @@ def test_forced_catalog(image_model, tmp_path):
         output_file="force_cat.asdf",
         forced_segmentation="source_segm.asdf",
     )
+    assert isinstance(result_force, ForcedImageSourceCatalogModel)
     catalog = result_force.source_catalog
     assert isinstance(catalog, Table)
     has_forced_fields = False
@@ -431,17 +433,18 @@ def test_l2_source_catalog_keywords(
     expected_result,
     expected_outputs,
     tmp_path,
+    monkeypatch,
 ):
     """
     Test that the proper object is returned in the call to SourceCatalogStep
     and that the desired output files are saved to the disk with the correct type.
     """
     os.chdir(tmp_path)
-    step = SourceCatalogStep
-    # this step attribute controls whether to return a datamodel or source catalog
-    step.return_updated_model = return_updated_model
+    monkeypatch.setattr(
+        SourceCatalogStep, "return_updated_model", return_updated_model, raising=False
+    )
 
-    result = step.call(
+    result = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
@@ -543,17 +546,19 @@ def test_l3_source_catalog_keywords(
     expected_result,
     expected_outputs,
     tmp_path,
+    monkeypatch,
 ):
     """
     Test that the proper object is returned in the call to SourceCatalogStep
     and that the desired output files are saved to the disk with the correct type.
     """
     os.chdir(tmp_path)
-    step = SourceCatalogStep
     # this step attribute controls whether to return a datamodel or source catalog
-    step.return_updated_model = return_updated_model
+    monkeypatch.setattr(
+        SourceCatalogStep, "return_updated_model", return_updated_model, raising=False
+    )
 
-    result = step.call(
+    result = SourceCatalogStep.call(
         mosaic_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,

@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 from roman_datamodels.datamodels import (
+    ForcedImageSourceCatalogModel,
     ImageSourceCatalogModel,
     MosaicSegmentationMapModel,
     SegmentationMapModel,
@@ -20,7 +21,7 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
     segment_img : `photutils.segmentation.SegmentationImage`
         The segmentation image to save.
 
-    source_catalog_model : `roman_datamodels.datamodels.SourceCatalogModel` or `roman_datamodels.datamodels.MosaicSourceCatalogModel`
+    source_catalog_model : `roman_datamodels.datamodels.ImageSourceCatalogModel` or `roman_datamodels.datamodels.MosaicSourceCatalogModel` or `roman_datamodels.datamodels.ForcedImageSourceCatalogModel` or `roman_datamodels.datamodels.ForcedMosaicSourceCatalogModel`
         The source catalog model to use for metadata.
 
     output_filename : str
@@ -32,7 +33,9 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
 
     # Define the segmentation model based on the source catalog model
     # type
-    if isinstance(source_catalog_model, ImageSourceCatalogModel):
+    if isinstance(
+        source_catalog_model, (ImageSourceCatalogModel | ForcedImageSourceCatalogModel)
+    ):
         segm_model = SegmentationMapModel
     else:
         segm_model = MosaicSegmentationMapModel
