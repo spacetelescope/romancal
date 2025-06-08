@@ -260,7 +260,7 @@ def create_l3_psf_model(
     psf = convolve(psf, kernel=pixfrac_kernel)
 
     # Smooth to the image scale
-    outscale_kernel = Box2DKernel(width=pixel_scale / psf_pixel_scale)
+    outscale_kernel = Box2DKernel(width=oversample * pixel_scale / wfi_psf[1].header['PIXELSCL'])
     psf = convolve(psf, kernel=outscale_kernel)
 
     # Azimuthally smooth the psf
