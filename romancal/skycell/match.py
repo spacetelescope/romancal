@@ -62,9 +62,7 @@ class ImageFootprint:
                     "Cannot infer image footprint from WCS without `.pixel_shape` nor `.bounding_box`."
                 )
 
-        # pixel_shape is in x, y order contrary to numpy convention.
-        image_shape = (wcs.pixel_shape[1], wcs.pixel_shape[0])
-
+        image_shape = wcs.array_shape
         if extra_vertices_per_edge <= 0:
             if not hasattr(wcs, "bounding_box") or wcs.bounding_box is None:
                 wcs.bounding_box = wcs_bbox_from_shape(image_shape)
