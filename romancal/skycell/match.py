@@ -44,14 +44,18 @@ class ImageFootprint:
         wcs: WCS,
         extra_vertices_per_edge: int = 0,
     ) -> "ImageFootprint":
-        """
-        create an image footprint from a GWCS object (and image shape, if no bounding box is present)
+        """create an image footprint from a GWCS object (and image shape, if no bounding box is present)
 
         Parameters
         ----------
+        wcs: WCS :
+            WCS object
+        extra_vertices_per_edge: int :
+            extra vertices to create on each edge to capture distortion (Default value = 0)
 
-        wcs: WCS object
-        extra_vertices_per_edge: extra vertices to create on each edge to capture distortion
+        Returns
+        -------
+        image footprint object
         """
 
         # if `.pixel_shape` is not defined, try deriving it from the `.bounding_box`
@@ -196,13 +200,7 @@ class ImageFootprint:
 
     @cached_property
     def possibly_intersecting_projregions(self) -> int:
-        """
-        number of possibly intersecting projection regions
-
-        NOTES
-        -----
-        this assumes a non-degenerate tesselation!
-        """
+        """number of possibly intersecting projection regions"""
         if self.area > sc.SkyCell.area:
             return (
                 # the number of times the smallest projection region could fit in the image footprint
@@ -216,13 +214,7 @@ class ImageFootprint:
 
     @cached_property
     def possibly_intersecting_skycells(self) -> int:
-        """
-        number of possibly intersecting skycells
-
-        NOTES
-        -----
-        this assumes a non-degenerate tesselation!
-        """
+        """number of possibly intersecting skycells"""
         if self.polygon.area() > sc.SkyCell.area:
             return (
                 # number of times a skycell could fit in the image footprint
@@ -255,17 +247,16 @@ def find_skycell_matches(
     image_corners: list[tuple[float, float]] | NDArray[float] | WCS,
     skymap: sc.SkyMap = None,
 ) -> list[int]:
-    """
-    Find sky cells overlapping the provided image footprint
+    """Find sky cells overlapping the provided image footprint
 
     Parameters
     ----------
-    image_corners :
+    image_corners : list | np.ndarray | WCS :
         Either a squence of 4 (ra, dec) pairs, or
         equivalent 2-d numpy array, or a GWCS instance.
         A GWCS instance must have `.bounding_box` or `.pixel_shape` attribute defined.
-    skymap: SkyMap
-        sky map instance (defaults to global SKYMAP)
+    skymap : sc.SkyMap :
+        sky map instance; defaults to global SKYMAP (Default value = None)
 
     Returns
     -------
