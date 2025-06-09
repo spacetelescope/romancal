@@ -13,7 +13,7 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import stnode
 import scipy
 from roman_datamodels.dqflags import group, pixel
-from stcal.ramp_fitting import ols_cas22_fit
+from stcal.ramp_fitting import ols_cas22_fit, utils
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 from stcal.ramp_fitting.likely_fit import (get_readtimes, compute_image_info,
                                            mask_jumps, fit_ramps)
@@ -78,6 +78,7 @@ class RampFitStep(RomanStep):
                 input_model['rejection_threshold'] = None
                 input_model['flags_jump_det'] = pixel.JUMP_DET
                 #pdb.set_trace()
+                input_model.data = input_model.data[np.newaxis, :, :, :]
                 out_model = self.likely_fit(
                     input_model, readnoise_model.data, gain_model.data)
                 # out_model.meta.cal_step.ramp_fit = "COMPLETE"               
@@ -116,28 +117,30 @@ class RampFitStep(RomanStep):
         
         image_info, integ_info, opt_info = None, None, None
 
-        nints, nrows, ncols = ramp_model.data.shape
+        nints, nresultants, nrows, ncols = ramp_model.data.shape
 
 
-        readtimes = get_readtimes(ramp_model.meta.exposure)
+        readtimes = get_readtimes(ramp_model)
 
         covar = Covar(readtimes)
+        #pdb.set_trace()
         integ_class = IntegInfo(nints, nrows, ncols)
 
         readnoise_2d = readnoise_2d / SQRT2
 
         for integ in range(nints):
-            data = ramp_model.data[integ, :, :]
-            gdq = ramp_model.groupdq[integ, :, :].copy()
+            data = ramp_model.data[integ, :, :, :]
+            gdq = ramp_model.groupdq.copy()
             pdq = ramp_model.pixeldq[:, :].copy()
 
             # Eqn (5)
-            diff = (data[1:] - data[:-1]) / covar.delta_t[:, np.newaxis, np.newaxis]
+            diff = -1.*(data[1:] - data[:-1]) / covar.delta_t[:, np.newaxis, np.newaxis]
             alldiffs2use = np.ones(diff.shape, np.uint8)
 
             for row in range(nrows):
                 d2use = determine_diffs2use(ramp_model, integ, row, diff)
                 d2use_copy = d2use.copy()  # Use to flag jumps
+                if row == 1024: pdb.set_trace()
                 if ramp_model.rejection_threshold is not None:
                     threshold_one_omit = ramp_model.rejection_threshold**2
                     pval = scipy.special.erfc(ramp_model.rejection_threshold/SQRT2)
@@ -151,10 +154,12 @@ class RampFitStep(RomanStep):
                         diffs2use=d2use
                     )
                 else:
+                    #d2use = d2use + 1
                     d2use, countrates = mask_jumps(
                         diff[:, row], covar, readnoise_2d[row], gain_2d[row],
                         diffs2use=d2use
                     )
+                    #pdb.set_trace()
 
                 # Set jump detection flags
                 jump_locs = d2use_copy ^ d2use
@@ -163,7 +168,8 @@ class RampFitStep(RomanStep):
 
                 alldiffs2use[:, row] = d2use
 
-                rateguess = countrates * (countrates > 0) + ramp_data.average_dark_current[row, :]
+                #rateguess = countrates * (countrates > 0) + ramp_data.average_dark_current[row, :]
+                rateguess = countrates * (countrates > 0)
                 result = fit_ramps(
                     diff[:, row],
                     covar,
@@ -174,7 +180,7 @@ class RampFitStep(RomanStep):
                 )
                 integ_class.get_results(result, integ, row)
 
-            pdq = utils.dq_compress_sect(ramp_data, integ, gdq, pdq)
+            pdq = utils.dq_compress_sect(ramp_model, integ, gdq, pdq)
             integ_class.dq[integ, :, :] = pdq
 
             del gdq
@@ -352,7 +358,7 @@ def determine_diffs2use(ramp_data, integ, row, diffs):
     Parameters
     ----------
     ramp_data : RampData
-        Input data necessary for computing ramp fitting.
+        Input data necessary for computig ramp fitting.
 
     integ : int
         The current integration being processed.
@@ -371,7 +377,7 @@ def determine_diffs2use(ramp_data, integ, row, diffs):
         (ngroups-1, ncols)
     """
     # import ipdb; ipdb.set_trace()
-    nresultants, _, ncols = ramp_data.data.shape
+    _, nresultants, _, ncols = ramp_data.data.shape
     dq = np.zeros(shape=(nresultants, ncols), dtype=np.uint8)
     dq[:, :] = ramp_data.groupdq[integ, row, :]
     d2use_tmp = np.ones(shape=diffs.shape, dtype=np.uint8)
@@ -428,3 +434,41 @@ def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
     outpixeldq |= (m * pixel.NO_GAIN_VALUE).astype(np.uint32)
 
     return outpixeldq
+
+def get_readtimes(ramp_data):
+    """
+    Get the read times needed to compute the covariance matrices.
+
+    If there is already a read_pattern in the ramp_data class, then just get it.
+    If not, then one needs to be constructed.  If one needs to be constructed it
+    is assumed the groups are evenly spaced in time, as are the frames that make
+    up the group.  If each group has only one frame and no group gap, then a list
+    of the group times is returned.  If nframes > 0, then a list of lists of each
+    frame time in each group is returned with the assumption:
+        group_time = (nframes + groupgap) * frame_time
+
+    Parameters
+    ----------
+    ramp_data : RampData
+        Input data necessary for computing ramp fitting.
+
+    Returns
+    -------
+    readtimes : list
+        A list of frame times for each frame used in the computation of the ramp.
+    """
+    nresultants = len(ramp_data.meta.exposure.read_pattern)
+    log.info("Number of resultants: %d ", nresultants)
+    rtimes = [np.mean(ramp_data.meta.exposure.read_pattern[k])*ramp_data.meta.exposure.frame_time
+          for k in range(nresultants)]
+
+    ngroups = ramp_data.data.shape[1]
+    tot_frames = ramp_data.meta.exposure.nresultants + 0 #ramp_data.groupgap
+    tot_nreads = np.arange(1, ramp_data.meta.exposure.nresultants + 1)
+    rtimes = [
+        (tot_nreads + k * tot_frames) * ramp_data.meta.exposure.frame_time for k in range(ngroups)
+    ]
+    #pdb.set_trace()
+
+
+    return rtimes
