@@ -105,14 +105,14 @@ class ImageFootprint:
                         np.stack(
                             [
                                 [image_shape[0] - 1] * (extra_vertices_per_edge + 1),
-                                reversed(edge_ys),
+                                list(reversed(edge_ys)),
                             ],
                             axis=1,
                         ),
                         # west edge
                         np.stack(
                             [
-                                reversed(edge_xs),
+                                list(reversed(edge_xs)),
                                 [0] * (extra_vertices_per_edge + 1),
                             ],
                             axis=1,
