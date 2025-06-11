@@ -255,7 +255,7 @@ def create_l3_psf_model(
         crop_psf=False,
     )
     psf = wfi_psf[0].data
-    psf_pixel_scale = wfi_psf[0].header["PIXELSCL"]
+    detector_pixel_scale = wfi_psf[1].header["PIXELSCL"]
 
     # Pixel response
     pixel_response_kernal = Box2DKernel(width=oversample)
@@ -267,12 +267,12 @@ def create_l3_psf_model(
 
     # Smooth to the image scale
     outscale_kernel = Box2DKernel(
-        width=oversample * pixel_scale / wfi_psf[1].header["PIXELSCL"]
+        width=oversample * pixel_scale / detector_pixel_scale
     )
     psf = convolve(psf, kernel=outscale_kernel)
 
     # Azimuthally smooth the psf
-    psf = azimuthally_smooth(psf, scaling=pixel_scale / wfi_psf[1].header["PIXELSCL"])
+    psf = azimuthally_smooth(psf, scaling=pixel_scale / detector_pixel_scale)
 
     # Create the PSF model.
     x_0, y_0 = psf.shape
