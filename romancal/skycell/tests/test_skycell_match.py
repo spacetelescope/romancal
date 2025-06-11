@@ -99,7 +99,7 @@ def mk_im_corners(
     return radecrect
 
 
-def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
+def mk_gwcs(ra, dec, pa, bounding_box=None) -> WCS:
     """
     Construct a GWCS model for testing the patch matching when provided a WCS
     This just implements a basic tangent projection with specified ra, dec, and
@@ -118,10 +118,12 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, pixel_shape=None) -> WCS:
         reference_frame=coord.ICRS(), name="icrs", unit=(u.deg, u.deg)
     )
     wcsobj = WCS([(detector_frame, transform), (sky_frame, None)])
-    if pixel_shape is not None:
-        wcsobj.pixel_shape = pixel_shape
     if bounding_box is not None:
         wcsobj.bounding_box = bounding_box
+        wcsobj.array_shape = tuple(
+            int(bounding_box[index][1] - bounding_box[index][0])
+            for index in range(len(bounding_box), 0, -1)
+        )
     return wcsobj
 
 
@@ -475,7 +477,6 @@ def test_match_from_wcs_with_bbox(test_point, expected_skycell_names, skymap_sub
         *test_point,
         45,
         bounding_box=((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5)),
-        pixel_shape=(4096, 4096),
     )
 
     intersecting_skycells = sm.find_skycell_matches(wcsobj, skymap=skymap_subset)
