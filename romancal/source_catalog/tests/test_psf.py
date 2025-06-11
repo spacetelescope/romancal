@@ -1,10 +1,12 @@
 """
 Unit tests for the Roman source detection step code
 """
-
+from copy import deepcopy
 import numpy as np
 import pytest
+
 from astropy import units as u
+from astropy.modeling.models import Gaussian2D
 from astropy.stats import mad_std
 from astropy.table import QTable
 from photutils.datasets import make_model_image
@@ -12,7 +14,7 @@ from photutils.psf import PSFPhotometry
 from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel
 
-from romancal.source_catalog.psf import create_gridded_psf_model, create_l3_psf_model, fit_psf_to_image_model
+from romancal.source_catalog.psf import azimuthally_smooth, create_gridded_psf_model, create_l3_psf_model, fit_psf_to_image_model
 
 n_trials = 15
 image_model_shape = (50, 50)
@@ -164,3 +166,14 @@ def test_create_l3_psf_model():
     assert psf_model.x_0.value == 9.0
     assert psf_model.y_0.value == 9.0
 
+
+def test_azimuthally_smooth():
+    """Test azimuthally smoothing"""
+    grid_x, grid_y = np.mgrid[0:201, 0:201]
+    gauss_model = Gaussian2D(1., 100, 100, 20, 20)
+    gauss = gauss_model(grid_x, grid_y)
+    smoothed = azimuthally_smooth(gauss, oversample=1)
+    delta = gauss - smoothed
+
+    assert np.mean(delta) < 1.e-6
+    assert mad_std(delta) < 1.e-8
