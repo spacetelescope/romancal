@@ -193,7 +193,11 @@ def test_l3_source_catalog(
     os.chdir(tmp_path)
     step = SourceCatalogStep()
 
+    # Create model and set some crucial meta required to
+    # create the L3 PSF for flux determination.
     im = mosaic_model
+    im.meta.resample.pixfrac = 1.0
+    im.meta.wcsinfo.pixel_scale = 1.5277777769528157e-05  # Taken from regtest test L3 mosaic.
     result = step.call(
         im,
         bkg_boxsize=50,
