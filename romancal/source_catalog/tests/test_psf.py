@@ -2,18 +2,17 @@
 Unit tests for the Roman source detection step code
 """
 
-from copy import deepcopy
-
 import numpy as np
 import pytest
 from astropy import units as u
+from astropy.stats import mad_std
 from astropy.table import QTable
 from photutils.datasets import make_model_image
 from photutils.psf import PSFPhotometry
 from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel
 
-from romancal.source_catalog.psf import create_gridded_psf_model, fit_psf_to_image_model
+from romancal.source_catalog.psf import create_gridded_psf_model, create_l3_psf_model, fit_psf_to_image_model
 
 n_trials = 15
 image_model_shape = (50, 50)
@@ -154,3 +153,14 @@ class TestPSFFitting:
         assert np.all(
             results_table["y_err"] < scale_factor_approx * approx_centroid_err
         )
+
+
+@pytest.mark.stpsf
+def test_create_l3_psf_model():
+    """Test basic results"""
+    psf_model = create_l3_psf_model(filt='F158')
+    assert psf_model.data.shape == (199, 199)
+    assert np.isclose(mad_std(psf_model.data), 0.)
+    assert psf_model.x_0.value == 9.0
+    assert psf_model.y_0.value == 9.0
+
