@@ -13,9 +13,9 @@ import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
 from gwcs import WCS
 from numpy.typing import NDArray
+from stcal.alignment.util import wcs_bbox_from_shape
 
 import romancal.skycell.skymap as sc
-from romancal.assign_wcs.utils import wcs_bbox_from_shape
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
