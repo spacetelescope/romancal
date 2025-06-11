@@ -61,24 +61,31 @@ class ImageFootprint:
                 "Cannot infer image footprint from WCS without a bounding box."
             )
 
-        image_shape = wcs.array_shape
+        array_shape = (
+            wcs.array_shape
+            if hasattr(wcs, "array_shape") and wcs.array_shape is not None
+            else tuple(
+                wcs.bounding_box[index][1] - wcs.bounding_box[index][0]
+                for index in range(len(wcs.bounding_box))
+            )
+        )
         if extra_vertices_per_edge <= 0:
             vertex_points = wcs.footprint(center=False)
         else:
             # constrain number of vertices to the maximum number of pixels on an edge, excluding the corners
-            if extra_vertices_per_edge > max(image_shape) - 2:
-                extra_vertices_per_edge = max(image_shape) - 2
+            if extra_vertices_per_edge > max(array_shape) - 2:
+                extra_vertices_per_edge = max(array_shape) - 2
 
             # build a list of pixel indices that represent equally-spaced edge vertices
             edge_xs = np.linspace(
                 0,
-                image_shape[0],
+                array_shape[0],
                 num=extra_vertices_per_edge + 1,
                 endpoint=False,
             )
             edge_ys = np.linspace(
                 0,
-                image_shape[1],
+                array_shape[1],
                 num=extra_vertices_per_edge + 1,
                 endpoint=False,
             )
@@ -97,14 +104,14 @@ class ImageFootprint:
                         np.stack(
                             [
                                 edge_xs,
-                                [image_shape[1] - 1] * (extra_vertices_per_edge + 1),
+                                [array_shape[1] - 1] * (extra_vertices_per_edge + 1),
                             ],
                             axis=1,
                         ),
                         # south edge
                         np.stack(
                             [
-                                [image_shape[0] - 1] * (extra_vertices_per_edge + 1),
+                                [array_shape[0] - 1] * (extra_vertices_per_edge + 1),
                                 list(reversed(edge_ys)),
                             ],
                             axis=1,
