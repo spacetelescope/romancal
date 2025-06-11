@@ -13,7 +13,6 @@ import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
 from gwcs import WCS
 from numpy.typing import NDArray
-from stcal.alignment.util import wcs_bbox_from_shape
 
 import romancal.skycell.skymap as sc
 
@@ -57,20 +56,13 @@ class ImageFootprint:
         image footprint object
         """
 
-        # if `.pixel_shape` is not defined, try deriving it from the `.bounding_box`
-        if not hasattr(wcs, "pixel_shape") or wcs.pixel_shape is None:
-            if hasattr(wcs, "bounding_box") and wcs.bounding_box is not None:
-                wcs.pixel_shape = wcs_pixel_shape_from_bbox(wcs.bounding_box)
-            else:
-                raise ValueError(
-                    "Cannot infer image footprint from WCS without `.pixel_shape` nor `.bounding_box`."
-                )
+        if not hasattr(wcs, "bounding_box") or wcs.bounding_box is None:
+            raise ValueError(
+                "Cannot infer image footprint from WCS without a bounding box."
+            )
 
         image_shape = wcs.array_shape
         if extra_vertices_per_edge <= 0:
-            if not hasattr(wcs, "bounding_box") or wcs.bounding_box is None:
-                wcs.bounding_box = wcs_bbox_from_shape(image_shape)
-
             vertex_points = wcs.footprint(center=False)
         else:
             # constrain number of vertices to the maximum number of pixels on an edge, excluding the corners
