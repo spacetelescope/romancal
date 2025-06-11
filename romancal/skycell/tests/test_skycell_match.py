@@ -122,7 +122,7 @@ def mk_gwcs(ra, dec, pa, bounding_box=None) -> WCS:
         wcsobj.bounding_box = bounding_box
         wcsobj.array_shape = tuple(
             int(bounding_box[index][1] - bounding_box[index][0])
-            for index in range(len(bounding_box), 0, -1)
+            for index in range(len(bounding_box))
         )
     return wcsobj
 
