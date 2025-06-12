@@ -264,7 +264,7 @@ def find_skycell_matches(
     """
 
     if isinstance(image_corners, WCS):
-        footprint = ImageFootprint.from_wcs(image_corners, extra_vertices_per_edge=48)
+        footprint = ImageFootprint.from_wcs(image_corners, extra_vertices_per_edge=3)
     else:
         footprint = ImageFootprint(image_corners)
 
