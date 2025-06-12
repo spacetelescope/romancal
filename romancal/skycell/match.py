@@ -77,18 +77,6 @@ class ImageFootprint:
                 extra_vertices_per_edge = max(array_shape) - 2
 
             # build a list of pixel indices that represent equally-spaced edge vertices
-            edge_xs = np.linspace(
-                0,
-                array_shape[0],
-                num=extra_vertices_per_edge + 1,
-                endpoint=False,
-            )
-            edge_ys = np.linspace(
-                0,
-                array_shape[1],
-                num=extra_vertices_per_edge + 1,
-                endpoint=False,
-            )
             edge_indices = np.round(
                 np.concatenate(
                     [
@@ -96,14 +84,24 @@ class ImageFootprint:
                         np.stack(
                             [
                                 [0] * (extra_vertices_per_edge + 1),
-                                edge_ys,
+                                np.linspace(
+                                    0,
+                                    array_shape[1],
+                                    num=extra_vertices_per_edge + 1,
+                                    endpoint=False,
+                                ),
                             ],
                             axis=1,
                         ),
                         # east edge
                         np.stack(
                             [
-                                edge_xs,
+                                np.linspace(
+                                    0,
+                                    array_shape[0],
+                                    num=extra_vertices_per_edge + 1,
+                                    endpoint=False,
+                                ),
                                 [array_shape[1] - 1] * (extra_vertices_per_edge + 1),
                             ],
                             axis=1,
@@ -112,14 +110,24 @@ class ImageFootprint:
                         np.stack(
                             [
                                 [array_shape[0] - 1] * (extra_vertices_per_edge + 1),
-                                list(reversed(edge_ys)),
+                                np.linspace(
+                                    array_shape[1],
+                                    0,
+                                    num=extra_vertices_per_edge + 1,
+                                    endpoint=False,
+                                ),
                             ],
                             axis=1,
                         ),
                         # west edge
                         np.stack(
                             [
-                                list(reversed(edge_xs)),
+                                np.linspace(
+                                    array_shape[0],
+                                    0,
+                                    num=extra_vertices_per_edge + 1,
+                                    endpoint=False,
+                                ),
                                 [0] * (extra_vertices_per_edge + 1),
                             ],
                             axis=1,
