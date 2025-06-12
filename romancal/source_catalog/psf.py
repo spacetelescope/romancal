@@ -501,11 +501,6 @@ class PSFCatalog:
                 * 3600.0,  # wcsinfo is in degrees. Need arcsec
                 pixfrac=self.model.meta.resample.pixfrac,
             )
-            # psf_model, _ = create_gridded_psf_model(
-            #     filt=filt,
-            #     detector='SCA02',
-            #     sqrt_n_psfs=1,
-            # )
 
         return psf_model
 
