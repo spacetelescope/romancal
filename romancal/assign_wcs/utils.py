@@ -3,30 +3,12 @@ import logging
 import numpy as np
 from astropy.coordinates import SkyCoord
 from gwcs import WCS
-from stcal.alignment.util import compute_s_region_keyword
+from stcal.alignment.util import compute_s_region_keyword, wcs_bbox_from_shape
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 _MAX_SIP_DEGREE = 6
-
-
-def wcs_bbox_from_shape(shape):
-    """Create a bounding box from the shape of the data.
-    This is appropriate to attach to a wcs object.
-
-    Parameters
-    ----------
-    shape : tuple
-        The shape attribute from a `numpy.ndarray` array.
-
-    Returns
-    -------
-    bbox : tuple
-        Bounding box in x, y order.
-    """
-    bbox = ((-0.5, shape[-1] - 0.5), (-0.5, shape[-2] - 0.5))
-    return bbox
 
 
 def compute_scale(
