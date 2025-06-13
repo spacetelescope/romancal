@@ -68,7 +68,7 @@ class MultibandCatalogStep(RomanStep):
             example_model = library.borrow(0)
             library.shelve(example_model, modify=False)
 
-        source_catalog_model = datamodels.MosaicSourceCatalogModel.create_minimal(
+        source_catalog_model = datamodels.MultibandSourceCatalogModel.create_minimal(
             {"meta": example_model.meta}
         )
         if "instrument" in example_model.meta:

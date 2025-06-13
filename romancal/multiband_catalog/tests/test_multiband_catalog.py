@@ -58,7 +58,7 @@ def mosaic_model():
 @pytest.fixture
 def library_model(mosaic_model):
     model2 = mosaic_model.copy()
-    model2.meta.basic.optical_element = "F184"
+    model2.meta.basic.optical_element = "F158"
     return ModelLibrary([mosaic_model, model2])
 
 

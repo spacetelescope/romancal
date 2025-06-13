@@ -1,0 +1,1 @@
+Enable using schemas to constrain the columns in source catalog tables.

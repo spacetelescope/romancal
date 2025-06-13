@@ -14,10 +14,11 @@ from astropy import units as u
 from astropy.modeling import bind_bounding_box
 from gwcs.wcs import WCS, Step
 from roman_datamodels import datamodels as rdm
+from stcal.alignment.util import wcs_bbox_from_shape
 
 from ..stpipe import RomanStep
 from . import pointing
-from .utils import add_s_region, wcs_bbox_from_shape
+from .utils import add_s_region
 
 if TYPE_CHECKING:
     from typing import ClassVar
