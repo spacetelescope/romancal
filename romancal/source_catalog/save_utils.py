@@ -43,7 +43,8 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
 
     # Set the data and detection image
     segmentation_model.data = segment_img.data.astype(np.uint32)
-    segmentation_model["detection_image"] = segment_img.detection_image
+    if hasattr(segment_img, "detection_image"):
+        segmentation_model["detection_image"] = segment_img.detection_image
 
     # Save the segmentation image to the output file
     self.output_ext = "asdf"

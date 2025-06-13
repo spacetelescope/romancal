@@ -68,8 +68,7 @@ class SourceCatalogStep(RomanStep):
         )
 
         # Copy the data and error arrays to avoid modifying the input
-        # model.
-        # The metadata and dq and weight arrays are not copied
+        # model. The metadata and dq and weight arrays are not copied
         # because they are not modified in this step.
         if isinstance(input_model, ImageModel):
             model = ImageModel()
@@ -95,28 +94,33 @@ class SourceCatalogStep(RomanStep):
             model.err = input_model.err.copy()
             model.weight = input_model.weight
 
+        # Initialize the source catalog model, copying the metadata
+        # from the input model
         if isinstance(model, ImageModel):
             if self.forced_segmentation:
-                cat_model = datamodels.ForcedImageSourceCatalogModel
+                cat_model_cls = datamodels.ForcedImageSourceCatalogModel
             else:
-                cat_model = datamodels.ImageSourceCatalogModel
+                cat_model_cls = datamodels.ImageSourceCatalogModel
         else:
             if self.forced_segmentation:
-                cat_model = datamodels.ForcedMosaicSourceCatalogModel
+                cat_model_cls = datamodels.ForcedMosaicSourceCatalogModel
             else:
-                cat_model = datamodels.MosaicSourceCatalogModel
-        source_catalog_model = cat_model.create_minimal({"meta": model.meta})
+                cat_model_cls = datamodels.MosaicSourceCatalogModel
+        cat_model = cat_model_cls.create_minimal({"meta": model.meta})
         if "instrument" in model.meta:
-            source_catalog_model.meta.optical_element = (
-                model.meta.instrument.optical_element
-            )
-
+            cat_model.meta.optical_element = model.meta.instrument.optical_element
         if self.forced_segmentation:
-            source_catalog_model.meta["forced_segmentation"] = self.forced_segmentation
-            forced = True
-        else:
-            forced = False
+            cat_model.meta["forced_segmentation"] = self.forced_segmentation
 
+        # Return an empty segmentation image and catalog table if all
+        # pixels are masked
+        if np.all(mask):
+            self.log.warning("Cannot create source catalog. All pixels are masked.")
+            segment_img = np.zeros(model.data.shape, dtype=np.uint32)
+            cat_model.source_catalog = cat_model.create_empty_catalog()
+            return self.save_all_results(input_model, segment_img, cat_model)
+
+        self.log.info("Calculating and subtracting background")
         bkg = RomanBackground(
             model.data,
             box_size=self.bkg_boxsize,
@@ -124,11 +128,13 @@ class SourceCatalogStep(RomanStep):
         )
         model.data -= bkg.background
 
+        self.log.info("Creating detection image")
         detection_image = convolve_data(
             model.data, kernel_fwhm=self.kernel_fwhm, mask=mask
         )
 
-        if not forced:
+        self.log.info("Detecting sources")
+        if not self.forced_segmentation:
             segment_img = make_segmentation_image(
                 detection_image,
                 snr_threshold=self.snr_threshold,
@@ -142,8 +148,9 @@ class SourceCatalogStep(RomanStep):
         else:
             forced_segmodel = datamodels.open(self.forced_segmentation)
             # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
-            # remove fully masked segments
             forced_segimg = forced_segmodel.data[...]
+
+            # Remove fully masked segments
             unmasked_sources = np.unique(forced_segimg * (mask == 0))
             fully_masked_sources = set(np.unique(forced_segimg)) - set(unmasked_sources)
             forced_segimg_mask = np.isin(
@@ -152,26 +159,29 @@ class SourceCatalogStep(RomanStep):
             forced_segimg[forced_segimg_mask] = 0
             segment_img = SegmentationImage(forced_segimg)
 
-        if segment_img is None:  # no sources found
-            cat = source_catalog_model.create_empty_catalog()
-        else:
-            if forced:
-                cat_type = "forced_det"
-            else:
-                cat_type = "prompt"
+        # Return an empty segmentation image and catalog table if no
+        # sources are detected
+        if segment_img is None:
+            self.log.warning("Cannot create source catalog. No sources were detected.")
+            segment_img = np.zeros(model.data.shape, dtype=np.uint32)
+            cat_model.source_catalog = cat_model.create_empty_catalog()
+            return self.save_all_results(input_model, segment_img, cat_model)
 
-            catobj = RomanSourceCatalog(
-                model,
-                segment_img,
-                detection_image,
-                self.kernel_fwhm,
-                fit_psf=self.fit_psf & (not forced),  # skip when forced
-                mask=mask,
-                cat_type=cat_type,
-            )
-            cat = catobj.catalog
+        self.log.info("Creating source catalog")
+        cat_type = "prompt" if not self.forced_segmentation else "forced_det"
+        fit_psf = self.fit_psf & (not self.forced_segmentation)  # skip when forced
+        catobj = RomanSourceCatalog(
+            model,
+            segment_img,
+            detection_image,
+            self.kernel_fwhm,
+            fit_psf=fit_psf,
+            mask=mask,
+            cat_type=cat_type,
+        )
+        cat = catobj.catalog
 
-        if forced:
+        if self.forced_segmentation:
             # TODO: improve this so that the moment-based properties are
             # not recomputed from the forced_detection_image
             forced_detection_image = forced_segmodel.detection_image
@@ -211,18 +221,56 @@ class SourceCatalogStep(RomanStep):
             forced_cat.meta = None  # redundant with cat.meta
             cat = join(forced_cat, cat, keys="label", join_type="outer")
 
-        # put the resulting catalog in the model
-        source_catalog_model.source_catalog = cat
+        # Put the resulting catalog table in the catalog model
+        cat_model.source_catalog = cat
+
+        return self.save_all_results(input_model, segment_img, cat_model)
+
+    def save_all_results(self, model, segment_img, cat_model):
+        """
+        Return and save the results of the source catalog step.
+
+        The segmentation image is always saved.
+
+        If ``save_results`` is True, then either the input model with
+        updated metadata or the source catalog model is saved/returned
+        depending on the value of ``return_updated_model``. If
+        ``return_updated_model`` is True, then the input model is
+        saved/returned with updated metadata. If False, then the source
+        catalog model is saved/returned.
+
+        The source catalog is saved as a parquet file.
+
+        Parameters
+        ----------
+        model : `ImageModel` or `MosaicModel`
+            The input model to the source catalog step.
+
+        segment_img : `photutils.segmentation.SegmentationImage`
+            The segmentation image created by the source catalog step.
+
+        cat_model : `datamodels.ImageSourceCatalogModel`, `datamodels.MosaicSourceCatalogModel`, `datamodels.ForcedImageSourceCatalogModel`, or `datamodels.ForcedMosaicSourceCatalogModel`
+            The source catalog model created by the source catalog step.
+
+        Returns
+        -------
+        result : `ImageModel`, `MosaicModel`, or `SourceCatalog`
+            The source catalog model or the input model with updated
+            metadata.
+        """
+        if isinstance(segment_img, np.ndarray):
+            # convert the segmentation image to a SegmentationImage
+            segment_img = SegmentationImage(segment_img)
 
         # define the output filename
         output_filename = (
             self.output_file
             if self.output_file is not None
-            else source_catalog_model.meta.filename
+            else cat_model.meta.filename
         )
 
         # always save the segmentation image
-        save_segment_image(self, segment_img, source_catalog_model, output_filename)
+        save_segment_image(self, segment_img, cat_model, output_filename)
 
         # Update the source catalog filename metadata
         self.output_ext = "parquet"
@@ -238,7 +286,7 @@ class SourceCatalogStep(RomanStep):
         if not self.save_results or return_updated_model:
             self.output_ext = "parquet"
             self.save_model(
-                source_catalog_model,
+                cat_model,
                 output_file=output_filename,
                 suffix="cat",
                 force=True,
@@ -256,21 +304,17 @@ class SourceCatalogStep(RomanStep):
             # overwriting the source catalog file with a datamodel
             self.suffix = "sourcecatalog"
 
-            if isinstance(input_model, ImageModel):
-                update_metadata(input_model, output_catalog_name)
+            # update the input datamodel with the tweakreg catalog name
+            if isinstance(model, ImageModel):
+                model.meta.source_catalog = SourceCatalog()
+                model.meta.source_catalog.tweakreg_catalog_name = output_catalog_name
+                model.meta.cal_step.source_catalog = "COMPLETE"
 
-            result = input_model
+            result = model
         else:
             self.output_ext = "parquet"
-            result = source_catalog_model
+            result = cat_model
 
         # validate the result to flush out any lazy-loaded contents
         result.validate()
         return result
-
-
-def update_metadata(model, output_catalog_name):
-    # update datamodel to point to the source catalog file destination
-    model.meta.source_catalog = SourceCatalog()
-    model.meta.source_catalog.tweakreg_catalog_name = output_catalog_name
-    model.meta.cal_step.source_catalog = "COMPLETE"
