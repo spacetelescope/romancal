@@ -3,7 +3,6 @@ import json
 import os
 import shutil
 from io import StringIO
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -30,11 +29,6 @@ from romancal.tweakreg.tweakreg_step import _validate_catalog_columns
 class MockConnectionError:
     def __init__(self, *args, **kwargs):
         raise requests.exceptions.ConnectionError
-
-
-@pytest.fixture()
-def test_data_dir():
-    return Path.joinpath(Path(__file__).parent, "data")
 
 
 def create_custom_catalogs(tmp_path, base_image, catalog_format="ascii.ecsv"):
@@ -530,7 +524,7 @@ def test_tweakreg_returns_modellibrary_on_roman_datamodel_as_input(
 
     test_input = img
 
-    res = trs.TweakRegStep.call(test_input)
+    res = trs.TweakRegStep.call(test_input, save_l1_wcs=False)
     assert isinstance(res, ModelLibrary)
     with res:
         model = res.borrow(0)
@@ -546,7 +540,7 @@ def test_tweakreg_returns_modellibrary_on_modellibrary_as_input(tmp_path, base_i
 
     test_input = ModelLibrary([img])
 
-    res = trs.TweakRegStep.call(test_input)
+    res = trs.TweakRegStep.call(test_input, save_l1_wcs=False)
     assert isinstance(res, ModelLibrary)
     with res:
         model = res.borrow(0)
@@ -569,7 +563,7 @@ def test_tweakreg_returns_modellibrary_on_association_file_as_input(
 
     test_input = asn_filepath
 
-    res = trs.TweakRegStep.call(test_input)
+    res = trs.TweakRegStep.call(test_input, save_l1_wcs=False)
     assert isinstance(res, ModelLibrary)
     with res:
         for i, model in enumerate(res):
@@ -595,7 +589,7 @@ def test_tweakreg_returns_modellibrary_on_list_of_asdf_file_as_input(
         f"{tmp_path_str}/img_2.asdf",
     ]
 
-    res = trs.TweakRegStep.call(test_input)
+    res = trs.TweakRegStep.call(test_input, save_l1_wcs=False)
     assert isinstance(res, ModelLibrary)
     with res:
         for i, model in enumerate(res):
@@ -616,7 +610,7 @@ def test_tweakreg_returns_modellibrary_on_list_of_roman_datamodels_as_input(
 
     test_input = [img_1, img_2]
 
-    res = trs.TweakRegStep.call(test_input)
+    res = trs.TweakRegStep.call(test_input, save_l1_wcs=False)
     assert isinstance(res, ModelLibrary)
     with res:
         for i, model in enumerate(res):
@@ -628,7 +622,7 @@ def test_tweakreg_updates_cal_step(tmp_path, base_image):
     """Test that TweakReg updates meta.cal_step with tweakreg = COMPLETE."""
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
-    res = trs.TweakRegStep.call([img])
+    res = trs.TweakRegStep.call([img], save_l1_wcs=False)
 
     with res:
         model = res.borrow(0)
@@ -737,6 +731,7 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
         use_custom_catalogs=True,
         catalog_format=catalog_format,
         catfile=catfile,
+        save_l1_wcs=False,
     )
 
     assert isinstance(res, ModelLibrary)
@@ -804,7 +799,7 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
         tmp_path, img, catalog_data=transformed_xy_gaia_sources
     )
 
-    trs.TweakRegStep.call([img], abs_minobj=3)
+    trs.TweakRegStep.call([img], abs_minobj=3, save_l1_wcs=False)
 
     # get world coords for Gaia sources using "wrong WCS"
     original_ref_source = [
@@ -852,7 +847,7 @@ def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
     with open(asn_filepath) as f:
         asn_content = json.load(f)
 
-    res = trs.TweakRegStep.call(asn_filepath)
+    res = trs.TweakRegStep.call(asn_filepath, save_l1_wcs=False)
 
     assert isinstance(res, ModelLibrary)
 
@@ -882,7 +877,7 @@ def test_fit_results_in_meta(tmp_path, base_image):
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    res = trs.TweakRegStep.call([img])
+    res = trs.TweakRegStep.call([img], save_l1_wcs=False)
 
     assert isinstance(res, ModelLibrary)
     with res:
@@ -910,7 +905,7 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     img1.meta["filename"] = "file1.asdf"
     img2.meta["filename"] = "file2.asdf"
 
-    res = trs.TweakRegStep.call([img1, img2])
+    res = trs.TweakRegStep.call([img1, img2], save_l1_wcs=False)
 
     assert len(res.group_names) == 2
 

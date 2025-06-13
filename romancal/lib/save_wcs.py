@@ -1,15 +1,22 @@
 """Step-level utility to create/save WfiWcsModel"""
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 from roman_datamodels.datamodels import WfiWcsModel
+
+if TYPE_CHECKING:
+    from romancal.datamodels import ModelLibrary
+    from romancal.stpipe import RomanStep
 
 # Define logging
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def save_wfiwcs(step, lib, force=False):
+def save_wfiwcs(step: RomanStep, lib: ModelLibrary, force: bool = False):
     """Create and save the WfiWcs products
 
     Parameters
