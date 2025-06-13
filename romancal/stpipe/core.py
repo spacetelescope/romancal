@@ -75,12 +75,9 @@ class RomanStep(Step):
 
         model.meta.calibration_software_version = importlib.metadata.version("romancal")
 
-        # FIXME: should cal_logs be brought back into meta for a MosaicModel?
-        if isinstance(model, ImageModel):
+        if isinstance(model, ImageModel | MosaicModel):
             # convert to model.cal_logs type to avoid validation errors
             model.meta.cal_logs = type(model.meta.cal_logs)(self.log_records)
-        if isinstance(model, MosaicModel):
-            model.cal_logs = type(model.cal_logs)(self.log_records)
 
         if len(reference_files_used) > 0:
             for ref_name, ref_file in reference_files_used:
