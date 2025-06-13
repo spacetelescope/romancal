@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from astropy.table import Table, join
+from astropy.table import join
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels
 from roman_datamodels.datamodels import ImageModel, MosaicModel
@@ -96,9 +96,15 @@ class SourceCatalogStep(RomanStep):
             model.weight = input_model.weight
 
         if isinstance(model, ImageModel):
-            cat_model = datamodels.ImageSourceCatalogModel
+            if self.forced_segmentation:
+                cat_model = datamodels.ForcedImageSourceCatalogModel
+            else:
+                cat_model = datamodels.ImageSourceCatalogModel
         else:
-            cat_model = datamodels.MosaicSourceCatalogModel
+            if self.forced_segmentation:
+                cat_model = datamodels.ForcedMosaicSourceCatalogModel
+            else:
+                cat_model = datamodels.MosaicSourceCatalogModel
         source_catalog_model = cat_model.create_minimal({"meta": model.meta})
         if "instrument" in model.meta:
             source_catalog_model.meta.optical_element = (
@@ -147,7 +153,7 @@ class SourceCatalogStep(RomanStep):
             segment_img = SegmentationImage(forced_segimg)
 
         if segment_img is None:  # no sources found
-            cat = Table()
+            cat = source_catalog_model.create_empty_catalog()
         else:
             if forced:
                 cat_type = "forced_det"
