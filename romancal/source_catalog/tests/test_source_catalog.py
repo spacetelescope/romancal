@@ -72,7 +72,15 @@ def make_test_image():
 
 @pytest.fixture
 def mosaic_model():
-    model = MosaicModel.create_fake_data(shape=(101, 101))
+    defaults = {
+        "meta": {
+            "resample": {"pixfrac": 1.0},
+            "wcsinfo": {
+                "pixel_scale": 1.5277777769528157e-05
+            },  # Taken from regtest test L3 mosaic.
+        }
+    }
+    model = MosaicModel.create_fake_data(defaults=defaults, shape=(101, 101))
     model.meta.filename = "none"
     model.meta.cal_step = stnode.L3CalStep.create_fake_data()
     model.cal_logs = stnode.CalLogs.create_fake_data()
@@ -193,9 +201,10 @@ def test_l3_source_catalog(
     os.chdir(tmp_path)
     step = SourceCatalogStep()
 
-    im = mosaic_model
+    # Create model and set some crucial meta required to
+    # create the L3 PSF for flux determination.
     result = step.call(
-        im,
+        mosaic_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         snr_threshold=snr_threshold,
