@@ -1,0 +1,1 @@
+Move the location of cal_logs setting for MosaicModel
