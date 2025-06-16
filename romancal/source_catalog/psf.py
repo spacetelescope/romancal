@@ -207,6 +207,7 @@ def create_l3_psf_model(
           0.11 arcsec pixel scale convolved in.
         - PSF is further convolved with the drizzlepac `pixfrac` scale
         - PSF is further convolved with the images actual pixel scale.
+        - The PSF is then azimuthally averaged and resampled at the L3 pixel scale.
 
     Parameters
     ----------
