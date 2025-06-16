@@ -39,7 +39,7 @@ def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
         between cartesian and polar layout
 
     scaling : float
-        Scale factor to apply to the out result.
+        Scale factor to apply to the result.
 
     order : int
         Order of the spline interpolation used for the coordinate transformations
