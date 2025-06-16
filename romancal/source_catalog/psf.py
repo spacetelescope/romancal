@@ -25,7 +25,7 @@ log.setLevel(logging.DEBUG)
 def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
     """Azimuthally smooth model
 
-    The image is converted into polar coordinates using ***** interpolation.
+    The image is converted to polar coordinates via a 4th order spline interpolation.
     The mean is determined for each radius which the replaces all values for
     that radius.
 
