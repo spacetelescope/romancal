@@ -293,10 +293,21 @@ def test_l3_input_model_unchanged(mosaic_model, tmp_path):
 
 
 @pytest.mark.stpsf
-def test_inputs(mosaic_model):
-    data = np.ones((3, 3), dtype=int)
-    data[1, 1] = 1
-    segm = SegmentationImage(data)
+def test_invalid_step_inputs(image_model, mosaic_model):
+    for input_model in (image_model, mosaic_model):
+        model = input_model.copy()
+        model.data = np.full(model.data.shape, np.nan)
+        step = SourceCatalogStep()
+        result = step.call(model)
+        cat = result.source_catalog
+        assert isinstance(cat, Table)
+        assert len(cat) == 0
+
+
+@pytest.mark.stpsf
+def test_inputs():
+    segm_data = np.ones((3, 3), dtype=int)
+    segm = SegmentationImage(segm_data)
     cdata = np.ones((3, 3))
     kernel_fwhm = 2.0
     with pytest.raises(ValueError):
