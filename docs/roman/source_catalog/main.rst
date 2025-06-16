@@ -81,12 +81,12 @@ package. PSF photometry is performed using the
 :py:class:`photutils.psf.PSFPhotometry` class from Photutils.
 
 For Level 3 data, since the data contains a mixture of individual detector PSFs
-that have been taken at unknown orientations, further processing is done. The
-base PSF is calculated for center of the SCA02 detector. It is then smoothed to
-account for the different pixel response and scaling, both pixel scale and
-drizzling, introduced during the image construction. Finally, the PSF is
-azimuthally smoothed to take into account any unknown rotations that each
-individual source has undergone.
+with different orientations, further processing is done. The
+base PSF is calculated for the center of the WFI02 detector. It is then scaled and smoothed to
+roughly account for the different pixel scale of the coadded images relative to the detector images,
+and the effect of the image drizzling on the PSF.  Finally, the PSF is
+azimuthally averaged to remove any azimuthal signatures, which will be different in the coadded
+product than in the individual input exposures.
 
 A local background is estimated using a circular annulus around the
 source. The annulus is defined by the inner and outer radii of 2.4 and
