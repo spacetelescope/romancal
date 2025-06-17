@@ -107,15 +107,9 @@ class RampFitStep(RomanStep):
         image_info : tuple
             The tuple of computed ramp fitting arrays.
 
-        integ_info : tuple
-            The tuple of computed integration fitting arrays.
-
-        opt_info : tuple
-            The tuple of computed optional results arrays for fitting.
         """
-        ramp_data = ramp_model.data
         
-        image_info, integ_info, opt_info = None, None, None
+        image_info = None
 
         nints, nresultants, nrows, ncols = ramp_model.data.shape
 
@@ -123,7 +117,6 @@ class RampFitStep(RomanStep):
         readtimes = get_readtimes(ramp_model)
 
         covar = Covar(readtimes)
-        #pdb.set_trace()
         integ_class = IntegInfo(nints, nrows, ncols)
 
         readnoise_2d = readnoise_2d / SQRT2
@@ -134,13 +127,14 @@ class RampFitStep(RomanStep):
             pdq = ramp_model.pixeldq[:, :].copy()
 
             # Eqn (5)
-            diff = -1.*(data[1:] - data[:-1]) / covar.delta_t[:, np.newaxis, np.newaxis]
+            #pdb.set_trace()
+            diff = (data[1:] - data[:-1]) / covar.delta_t[:, np.newaxis, np.newaxis]
             alldiffs2use = np.ones(diff.shape, np.uint8)
 
             for row in range(nrows):
                 d2use = determine_diffs2use(ramp_model, integ, row, diff)
                 d2use_copy = d2use.copy()  # Use to flag jumps
-                if row == 1024: pdb.set_trace()
+                #if row == 1024: pdb.set_trace()
                 if ramp_model.rejection_threshold is not None:
                     threshold_one_omit = ramp_model.rejection_threshold**2
                     pval = scipy.special.erfc(ramp_model.rejection_threshold/SQRT2)
@@ -154,7 +148,6 @@ class RampFitStep(RomanStep):
                         diffs2use=d2use
                     )
                 else:
-                    #d2use = d2use + 1
                     d2use, countrates = mask_jumps(
                         diff[:, row], covar, readnoise_2d[row], gain_2d[row],
                         diffs2use=d2use
@@ -170,6 +163,7 @@ class RampFitStep(RomanStep):
 
                 #rateguess = countrates * (countrates > 0) + ramp_data.average_dark_current[row, :]
                 rateguess = countrates * (countrates > 0)
+                #pdb.set_trace()
                 result = fit_ramps(
                     diff[:, row],
                     covar,
@@ -185,14 +179,17 @@ class RampFitStep(RomanStep):
 
             del gdq
 
-        pdb.set_trace()
-
-        integ_info = integ_class.prepare_info()
         image_info = compute_image_info(integ_class, ramp_model)
 
-        out_model = create_image_model(ramp_model, image_info)
-        #return image_info, integ_info, opt_info
-        return out_model
+        image_model = create_image_model(ramp_model, image_info)
+        # Rescale by the gain back to DN/s
+        image_model.data *= gain_2d[4:-4, 4:-4] ** 2
+        image_model.err /= gain_2d[4:-4, 4:-4] ** 2
+        image_model.var_poisson /= gain_2d[4:-4, 4:-4] ** 2
+        image_model.var_rnoise /= gain_2d[4:-4, 4:-4] ** 2
+        
+        #pdb.set_trace()
+        return image_model
 
 
     def ols_cas22(self, input_model, readnoise_model, gain_model, dark_model):
@@ -457,18 +454,17 @@ def get_readtimes(ramp_data):
     readtimes : list
         A list of frame times for each frame used in the computation of the ramp.
     """
-    nresultants = len(ramp_data.meta.exposure.read_pattern)
+    nresultants = ramp_data.meta.exposure.nresultants
     log.info("Number of resultants: %d ", nresultants)
-    rtimes = [np.mean(ramp_data.meta.exposure.read_pattern[k])*ramp_data.meta.exposure.frame_time
-          for k in range(nresultants)]
 
     ngroups = ramp_data.data.shape[1]
-    tot_frames = ramp_data.meta.exposure.nresultants + 0 #ramp_data.groupgap
+    #tot_frames = ramp_data.meta.exposure.nresultants + 0 #ramp_data.groupgap
+    read_numbers = [x for xs in ramp_data.meta.exposure.read_pattern for x in xs]
+    nskips = np.max(read_numbers) - len(read_numbers)
+    tot_frames = len(read_numbers) + nskips
     tot_nreads = np.arange(1, ramp_data.meta.exposure.nresultants + 1)
     rtimes = [
         (tot_nreads + k * tot_frames) * ramp_data.meta.exposure.frame_time for k in range(ngroups)
     ]
-    #pdb.set_trace()
-
 
     return rtimes
