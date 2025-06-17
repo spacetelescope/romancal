@@ -458,8 +458,8 @@ def test_skycell_match(
             TEST_POINTS[1],
             [
                 "000p86x62y69",
-                "000p86x62y68",
                 "000p86x61y69",
+                "000p86x62y68",
                 "000p86x61y68",
                 "000p86x63y69",
                 "000p86x61y70",

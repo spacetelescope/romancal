@@ -78,7 +78,7 @@ class ImageFootprint:
 
             # build a list of pixel indices that represent equally-spaced edge vertices
             vertices_per_edge = 2 + extra_vertices_per_edge
-            origin_indices = np.zeros(vertices_per_edge - 1)
+            origin_indices = np.zeros(vertices_per_edge - 1) - 0.5
             x_end_indices = array_shape[0] - origin_indices
             y_end_indices = array_shape[1] - origin_indices
             vertices_x = np.linspace(
