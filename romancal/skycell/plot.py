@@ -37,7 +37,7 @@ def find_intersecting_projregions(
     Parameters
     ----------
     footprint: sm.ImageFootprint :
-        sequence of 4 points (ra, dec) or an `ImageFootprint` object
+        sequence of points (ra, dec) or an `ImageFootprint` object
     skymap: sc.SkyMap :
         sky map instance; defaults to global SKYMAP (Default value = None)
 
@@ -166,7 +166,7 @@ def plot_image_footprint_and_skycells(
     Parameters
     ----------
     footprint : list | sm.ImageFootprint :
-        sequence of 4 points (ra, dec) or an `ImageFootprint` object
+        sequence of points (ra, dec) or an `ImageFootprint` object
     skymap : sc.SkyMap :
         sky map instance; defaults to global SKYMAP (Default value = None)
     """
