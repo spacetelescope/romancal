@@ -77,11 +77,10 @@ class RampFitStep(RomanStep):
                 input_model['flags_saturated'] = pixel.SATURATED
                 input_model['rejection_threshold'] = None
                 input_model['flags_jump_det'] = pixel.JUMP_DET
-                #pdb.set_trace()
                 input_model.data = input_model.data[np.newaxis, :, :, :]
                 out_model = self.likely_fit(
                     input_model, readnoise_model.data, gain_model.data)
-                # out_model.meta.cal_step.ramp_fit = "COMPLETE"               
+                out_model.meta.cal_step.ramp_fit = "COMPLETE"               
             else:
                 log.error("Algorithm %s is not supported. Skipping step.")
                 out_model = input
@@ -127,7 +126,6 @@ class RampFitStep(RomanStep):
             pdq = ramp_model.pixeldq[:, :].copy()
 
             # Eqn (5)
-            #pdb.set_trace()
             diff = (data[1:] - data[:-1]) / covar.delta_t[:, np.newaxis, np.newaxis]
             alldiffs2use = np.ones(diff.shape, np.uint8)
 
@@ -152,7 +150,6 @@ class RampFitStep(RomanStep):
                         diff[:, row], covar, readnoise_2d[row], gain_2d[row],
                         diffs2use=d2use
                     )
-                    #pdb.set_trace()
 
                 # Set jump detection flags
                 jump_locs = d2use_copy ^ d2use
@@ -163,7 +160,6 @@ class RampFitStep(RomanStep):
 
                 #rateguess = countrates * (countrates > 0) + ramp_data.average_dark_current[row, :]
                 rateguess = countrates * (countrates > 0)
-                #pdb.set_trace()
                 result = fit_ramps(
                     diff[:, row],
                     covar,
@@ -183,12 +179,11 @@ class RampFitStep(RomanStep):
 
         image_model = create_image_model(ramp_model, image_info)
         # Rescale by the gain back to DN/s
-        image_model.data *= gain_2d[4:-4, 4:-4] ** 2
-        image_model.err /= gain_2d[4:-4, 4:-4] ** 2
+        image_model.data *= gain_2d[4:-4, 4:-4]
+        image_model.err /= gain_2d[4:-4, 4:-4]
         image_model.var_poisson /= gain_2d[4:-4, 4:-4] ** 2
         image_model.var_rnoise /= gain_2d[4:-4, 4:-4] ** 2
         
-        #pdb.set_trace()
         return image_model
 
 
