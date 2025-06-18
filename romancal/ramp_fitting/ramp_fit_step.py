@@ -271,10 +271,10 @@ class RampFitStep(RomanStep):
         image_model = create_image_model(input_model, image_info)
 
         # Rescale by the gain back to DN/s
-        image_model.data /= gain[4:-4, 4:-4]
-        image_model.err /= gain[4:-4, 4:-4]
-        image_model.var_poisson /= gain[4:-4, 4:-4] ** 2
-        image_model.var_rnoise /= gain[4:-4, 4:-4] ** 2
+        #image_model.data /= gain[4:-4, 4:-4]
+        #image_model.err /= gain[4:-4, 4:-4]
+        #image_model.var_poisson /= gain[4:-4, 4:-4] ** 2
+        #image_model.var_rnoise /= gain[4:-4, 4:-4] ** 2
 
         # That's all folks
         return image_model
@@ -452,14 +452,17 @@ def get_readtimes(ramp_data):
     nresultants = ramp_data.meta.exposure.nresultants
     log.info("Number of resultants: %d ", nresultants)
 
-    ngroups = ramp_data.data.shape[1]
+    #ngroups = ramp_data.data.shape[1]
     #tot_frames = ramp_data.meta.exposure.nresultants + 0 #ramp_data.groupgap
-    read_numbers = [x for xs in ramp_data.meta.exposure.read_pattern for x in xs]
-    nskips = np.max(read_numbers) - len(read_numbers)
-    tot_frames = len(read_numbers) + nskips
-    tot_nreads = np.arange(1, ramp_data.meta.exposure.nresultants + 1)
-    rtimes = [
-        (tot_nreads + k * tot_frames) * ramp_data.meta.exposure.frame_time for k in range(ngroups)
-    ]
+    #read_numbers = [x for xs in ramp_data.meta.exposure.read_pattern for x in xs]
+    #nskips = np.max(read_numbers) - len(read_numbers)
+    #tot_frames = len(read_numbers) + nskips
+    #tot_nreads = np.arange(1, ramp_data.meta.exposure.nresultants + 1)
+    #rtimes = [
+    #    (tot_nreads + k * tot_frames) * ramp_data.meta.exposure.frame_time for k in range(ngroups)
+    #]
+
+    rtimes = [list(np.array(r)*ramp_data.meta.exposure.frame_time) for r in ramp_data.meta.exposure.read_pattern]
+    
 
     return rtimes
