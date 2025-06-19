@@ -75,7 +75,7 @@ def make_output_wcs(
                 ref_shape = model.data.shape
             sregions.append(model.meta.wcs.footprint())
             input_models.shelve(model, modify=False)
-
+    
     if pscale is None:
         pscale = (
             compute_scale(
@@ -88,7 +88,7 @@ def make_output_wcs(
         pscale_ratio = pscale / np.rad2deg(
             math.sqrt(compute_mean_pixel_area(ref_wcs, shape=ref_shape))
         )
-
+    print('pscale', pscale)
     wcs = wcs_from_sregions(
         sregions,
         ref_wcs=ref_wcs,
