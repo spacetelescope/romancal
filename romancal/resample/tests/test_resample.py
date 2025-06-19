@@ -77,9 +77,7 @@ class WfiSca:
             pscale=self.pscale,
             shape=self.shape,
         )
-        l2.meta.photometry.pixel_area = compute_mean_pixel_area(
-            l2.meta.wcs, self.shape
-        )
+        l2.meta.photometry.pixel_area = compute_mean_pixel_area(l2.meta.wcs, self.shape)
         model = datamodels.ImageModel(l2)
         add_s_region(model)
         return model
