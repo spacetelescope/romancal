@@ -5,7 +5,7 @@ from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
 from astropy.time import Time
-from gwcs import WCS
+from gwcs import FITSImagingWCSTransform, Step, WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels
 from stcal.resample.utils import compute_mean_pixel_area
@@ -17,7 +17,7 @@ from romancal.resample import ResampleStep, resample_utils
 
 
 class WfiSca:
-    def __init__(self, fiducial_world, pscale, shape, filename):
+    def __init__(self, fiducial_world, pscale=(0.000031, 0.000031), shape=(100, 100), filename="noname"):
         self.fiducial_world = fiducial_world
         self.pscale = pscale
         self.shape = shape
@@ -142,12 +142,9 @@ def create_wcs_object_without_distortion(fiducial_world, pscale, shape):
     return wcs_obj
 
 
-@pytest.fixture
-def wfi_sca1():
+def _wfi_sca1():
     sca = WfiSca(
         fiducial_world=(10, 0),
-        pscale=(0.000031, 0.000031),
-        shape=(100, 100),
         filename="r0000501001001001001_01101_0001_wfi01_cal.asdf",
     )
 
@@ -155,11 +152,13 @@ def wfi_sca1():
 
 
 @pytest.fixture
-def wfi_sca2():
+def wfi_sca1():
+    return _wfi_sca1()
+
+
+def _wfi_sca2():
     sca = WfiSca(
         fiducial_world=(10.00139, 0),
-        pscale=(0.000031, 0.000031),
-        shape=(100, 100),
         filename="r0000501001001001001_01101_0001_wfi02_cal.asdf",
     )
 
@@ -167,11 +166,13 @@ def wfi_sca2():
 
 
 @pytest.fixture
-def wfi_sca3():
+def wfi_sca2():
+    return _wfi_sca2()
+
+
+def _wfi_sca3():
     sca = WfiSca(
         fiducial_world=(10.00278, 0),
-        pscale=(0.000031, 0.000031),
-        shape=(100, 100),
         filename="r0000501001001001001_01101_0001_wfi03_cal.asdf",
     )
 
@@ -179,11 +180,13 @@ def wfi_sca3():
 
 
 @pytest.fixture
-def wfi_sca4():
+def wfi_sca3():
+    return _wfi_sca3()
+
+
+def _wfi_sca4():
     sca = WfiSca(
         fiducial_world=(10, 0),
-        pscale=(0.000031, 0.000031),
-        shape=(100, 100),
         filename="r0000501001001001001_01101_0002_wfi01_cal.asdf",
     )
 
@@ -191,23 +194,24 @@ def wfi_sca4():
 
 
 @pytest.fixture
-def wfi_sca5():
-    sca = WfiSca(
-        fiducial_world=(10.00139, 0),
-        pscale=(0.000031, 0.000031),
-        shape=(100, 100),
-        filename="r0000501001001001001_01101_0002_wfi02_cal.asdf",
-    )
+def wfi_sca4():
+    return _wfi_sca4()
 
+
+def _wfi_sca5():
+    sca = WfiSca(
+    fiducial_world=(10.00139, 0),
+    filename="r0000501001001001001_01101_0002_wfi02_cal.asdf",
+    )
     return sca.create_image()
 
-
 @pytest.fixture
-def wfi_sca6():
+def wfi_sca5():
+    return _wfi_sca5()
+
+def _wfi_sca6():
     sca = WfiSca(
         fiducial_world=(10.00278, 0),
-        pscale=(0.000031, 0.000031),
-        shape=(100, 100),
         filename="r0000501001001001001_01101_0002_wfi03_cal.asdf",
     )
 
@@ -215,7 +219,11 @@ def wfi_sca6():
 
 
 @pytest.fixture
-def exposure_1(wfi_sca1, wfi_sca2, wfi_sca3):
+def wfi_sca6():
+    return _wfi_sca6()
+
+
+def _exposure_1(wfi_sca1, wfi_sca2, wfi_sca3):
     """Returns a list with models corresponding to a dummy exposure 1."""
     # set the same exposure time for all SCAs
     for sca in [wfi_sca1, wfi_sca2, wfi_sca3]:
@@ -231,7 +239,11 @@ def exposure_1(wfi_sca1, wfi_sca2, wfi_sca3):
 
 
 @pytest.fixture
-def exposure_2(wfi_sca4, wfi_sca5, wfi_sca6):
+def exposure_1(wfi_sca1, wfi_sca2, wfi_sca3):
+    return _exposure_1(wfi_sca1, wfi_sca2, wfi_sca3)
+
+
+def _exposure_2(wfi_sca4, wfi_sca5, wfi_sca6):
     """Returns a list with models corresponding to a dummy exposure 2."""
     # set the same exposure time for all SCAs
     for sca in [wfi_sca4, wfi_sca5, wfi_sca6]:
@@ -247,6 +259,12 @@ def exposure_2(wfi_sca4, wfi_sca5, wfi_sca6):
 
 
 @pytest.fixture
+def exposure_2(wfi_sca4, wfi_sca5, wfi_sca6):
+    """Returns a list with models corresponding to a dummy exposure 2."""
+    return _exposure_2(wfi_sca4, wfi_sca5, wfi_sca6)
+
+
+@pytest.fixture
 def multiple_exposures(exposure_1, exposure_2):
     """Returns a list with all the datamodels from exposure 1 and 2."""
     exposure_1.extend(exposure_2)
@@ -254,10 +272,11 @@ def multiple_exposures(exposure_1, exposure_2):
 
 
 def get_resampled_wcs_pixel_scale(wcs):
-    t = wcs.forward_transform
-    for p in t.param_names:
-        if p.startswith("factor"):
-            return getattr(t, p).value
+    # t = wcs.forward_transform
+    # for p in t.param_names:
+    #     if p.startswith("factor"):
+    #         return getattr(t, p).value
+    return wcs.forward_transform.cdelt
 
 
 def test_resampledata_do_drizzle_many_to_one_default_no_rotation_single_exposure(
@@ -346,10 +365,10 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0(exposure_1):
 
     # Assert
     assert (
-        (expected_min_value - 0.5001 * pscale) <= output_min_value <= expected_min_value
+        (expected_min_value - 0.5001 * pscale[0]) <= output_min_value <= expected_min_value
     )
     assert (
-        (expected_max_value + 0.5001 * pscale) >= output_max_value >= expected_max_value
+        (expected_max_value + 0.5001 * pscale[0]) >= output_max_value >= expected_max_value
     )
 
 
@@ -380,10 +399,10 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0_multiple_exposur
 
     # Assert
     assert (
-        (expected_min_value - 0.5001 * pscale) <= output_min_value <= expected_min_value
+        (expected_min_value - 0.5001 * pscale[0]) <= output_min_value <= expected_min_value
     )
     assert (
-        (expected_max_value + 0.5001 * pscale) >= output_max_value >= expected_max_value
+        (expected_max_value + 0.5001 * pscale[0]) >= output_max_value >= expected_max_value
     )
 
 
@@ -398,7 +417,7 @@ def test_resampledata_do_drizzle_many_to_one_single_input_model(wfi_sca1):
     flat_2 = np.sort(output_model.meta.wcs.footprint().flatten())
     pscale = get_resampled_wcs_pixel_scale(output_model.meta.wcs)
 
-    np.testing.assert_allclose(flat_1, flat_2, atol=0.5 * pscale)
+    np.testing.assert_allclose(flat_1, flat_2, atol=0.5 * pscale[0])
 
 
 def test_update_exposure_times_different_sca_same_exposure(exposure_1):
@@ -480,13 +499,29 @@ def test_var_flat_presence(exposure_1, include_var_flat):
         assert hasattr(output_model, "var_flat")
 
 
+def _convert2fitswcs(wcs):
+    forward = wcs.forward_transform
+    crpix = forward[:2].parameters
+    pc = forward[2].matrix.value
+    cdelt = forward[3:5].parameters
+    crval = forward[-1].parameters[:2]
+    fwcs = FITSImagingWCSTransform(projection=models.Pix2Sky_TAN(), crpix=crpix,
+                                   crval=crval, cdelt=cdelt, pc=pc)
+    custom_wcs = WCS([Step(wcs.input_frame, fwcs), Step(wcs.output_frame, None)])
+    custom_wcs.pixel_shape = wcs.pixel_shape
+    custom_wcs.bounding_box = wcs.bounding_box.bounding_box()
+    return custom_wcs
+
+
 def test_custom_wcs_input_small_overlap_no_rotation(wfi_sca1, wfi_sca3, tmp_path):
     """Test that resample can create a proper output in the edge case where the
     desired output WCS does not encompass the entire input datamodel but, instead, have
     just a small overlap."""
     input_models = ModelLibrary([wfi_sca1])
     wcs_path = tmp_path / "wcs.asdf"
-    asdf.AsdfFile({"wcs": wfi_sca3.meta.wcs}).write_to(wcs_path)
+    wcs3 = wfi_sca3.meta.wcs
+    custom_wcs = _convert2fitswcs(wcs3)
+    asdf.AsdfFile({"wcs": custom_wcs}).write_to(wcs_path)
 
     output_model = ResampleStep(output_wcs=str(wcs_path), rotation=0).run(input_models)
 
@@ -520,10 +555,10 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures, tmp_path)
     expected_max_value = np.max(np.stack(input_wcs_list))
 
     assert (
-        (expected_min_value - 0.5001 * pscale) <= output_min_value <= expected_min_value
+        (expected_min_value - 0.5001 * pscale[0]) <= output_min_value <= expected_min_value
     )
     assert (
-        (expected_max_value + 0.5001 * pscale) >= output_max_value >= expected_max_value
+        (expected_max_value + 0.5001 * pscale[0]) >= output_max_value >= expected_max_value
     )
 
 
