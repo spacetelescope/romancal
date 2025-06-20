@@ -13,8 +13,6 @@ DATA_DIRECTORY = Path(__file__).parent / "data"
 
 def assert_allclose_lonlat(actual: np.ndarray, desired: np.ndarray, rtol=1e-7, atol=0):
     assert_allclose(actual, desired)
-    #     np.array(actual) % 360, np.array(desired) % 360, rtol=rtol, atol=atol
-    # )
 
 
 @pytest.fixture()
