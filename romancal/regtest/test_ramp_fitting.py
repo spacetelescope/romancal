@@ -6,16 +6,18 @@ A requirement for the larger mission verification project is to have
 tests tied to reqirements.
 """
 
+import logging
 from pathlib import Path
 
 import pytest
 import roman_datamodels as rdm
-from stpipe import log as stpipe_log
 
 from romancal.lib.suffix import replace_suffix
 from romancal.ramp_fitting import RampFitStep
 
 from .regtestdata import compare_asdf
+
+logger = logging.getLogger(__name__)
 
 
 def log_result(requirement, message, result):
@@ -32,7 +34,6 @@ def log_result(requirement, message, result):
     result : bool
         The result of the test
     """
-    logger = stpipe_log.delegator.log
     result_text = "PASS" if result else "FAIL"
     log_msg = f"{requirement} MSG: {message}.......{result_text}"
     logger.info(log_msg)
