@@ -34,7 +34,9 @@ def assign_l3_wcs(model, wcs):
     transform = wcs.forward_transform
 
     l3_wcsinfo.projection = "TAN"
-    l3_wcsinfo.pixel_shape = model.shape   # Should this be [::-1], pixel_shape is in cartesian coordinates
+    l3_wcsinfo.pixel_shape = (
+        model.shape
+    )  # Should this be [::-1], pixel_shape is in cartesian coordinates
 
     # Fill out image-local information
     pixel_center = [(v - 1) / 2.0 for v in model.shape[::-1]]
@@ -69,7 +71,6 @@ def assign_l3_wcs(model, wcs):
     cdelt1 = transform.cdelt[0]
     cdelt2 = transform.cdelt[1]
     l3_wcsinfo.pixel_scale = (cdelt1 + cdelt2) / 2.0
-    
 
     l3_wcsinfo.orientat = calc_pa(wcs, *world_ref)
 
