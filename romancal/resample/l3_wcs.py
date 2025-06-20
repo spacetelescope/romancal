@@ -58,9 +58,6 @@ def assign_l3_wcs(model, wcs):
         l3_wcsinfo.dec_corn4 = footprint[3][1]
         l3_wcsinfo.s_region = compute_s_region_keyword(footprint)
 
-
-    # l3_wcsinfo.x_ref = -transform["crpix1"].offset.value
-    # l3_wcsinfo.y_ref = -transform["crpix2"].offset.value
     log.info(f"transform {transform}")
     l3_wcsinfo.x_ref = transform.crpix[0]
     l3_wcsinfo.y_ref = transform.crpix[1]

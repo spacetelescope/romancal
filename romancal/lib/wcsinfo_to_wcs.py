@@ -35,22 +35,8 @@ def wcsinfo_to_wcs(
              wcsinfo.get("dec_projection_center", wcsinfo.get("dec_ref", 0))
              ]
     cdelt = [wcsinfo.get("pixel_scale", 1), wcsinfo.get("pixel_scale", 1)]
-    # pixelshift = models.Shift(
-    #     -wcsinfo.get("x0_projection", wcsinfo.get("x_ref", None)),
-    #     name="crpix1",
-    # ) & models.Shift(
-    #     -wcsinfo.get("y0_projection", wcsinfo.get("y_ref", None)),
-    #     name="crpix2",
-    # )
-    # pixelscale = models.Scale(wcsinfo["pixel_scale"], name="scale") & models.Scale(
-    #     wcsinfo["pixel_scale"], name="scale"
-    # )
+
     tangent_projection = models.Pix2Sky_TAN()
-    # celestial_rotation = models.RotateNative2Celestial(
-    #     wcsinfo.get("ra_projection_center", wcsinfo.get("ra_ref", None)),
-    #     wcsinfo.get("dec_projection_center", wcsinfo.get("dec_ref", None)),
-    #     180.0,
-    # )
 
     matrix = wcsinfo.get("rotation_matrix", None)
     if matrix is not None:
@@ -68,11 +54,7 @@ def wcsinfo_to_wcs(
             ),
             (2, 2),
         )
-    # rotation = models.AffineTransformation2D(matrix, name="pc_rotation_matrix")
-    # det2sky = (
-    #     pixelshift | rotation | pixelscale | tangent_projection | celestial_rotation
-    # )
-    # det2sky.name = "detector_to_sky"
+
     det2sky = fitswcs.FITSImagingWCSTransform(
         tangent_projection, crpix=crpix, crval=crval, cdelt=cdelt, pc=matrix)
 
