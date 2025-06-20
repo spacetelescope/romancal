@@ -8,6 +8,7 @@ from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels
+from stcal.resample.utils import compute_mean_pixel_area
 
 from romancal.assign_wcs.utils import add_s_region
 from romancal.datamodels import ModelLibrary
@@ -58,6 +59,9 @@ class WfiSca:
                         "visit_file_activity": "01",
                         "exposure": 1,
                     },
+                    "photometry": {
+                        "pixel_area": None,
+                    },
                 },
                 "data": rng.poisson(2.5, size=self.shape).astype(np.float32),
                 "var_rnoise": rng.normal(1, 0.05, size=self.shape).astype(np.float32),
@@ -73,6 +77,7 @@ class WfiSca:
             pscale=self.pscale,
             shape=self.shape,
         )
+        l2.meta.photometry.pixel_area = compute_mean_pixel_area(l2.meta.wcs, self.shape)
         model = datamodels.ImageModel(l2)
         add_s_region(model)
         return model
