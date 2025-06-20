@@ -17,7 +17,8 @@ from romancal.resample import ResampleStep, resample_utils
 
 
 class WfiSca:
-    def __init__(self, fiducial_world, pscale=(0.000031, 0.000031), shape=(100, 100), filename="noname"):
+    def __init__(self, fiducial_world, pscale=(0.000031, 0.000031),
+                 shape=(100, 100), filename="noname"):
         self.fiducial_world = fiducial_world
         self.pscale = pscale
         self.shape = shape
@@ -272,10 +273,6 @@ def multiple_exposures(exposure_1, exposure_2):
 
 
 def get_resampled_wcs_pixel_scale(wcs):
-    # t = wcs.forward_transform
-    # for p in t.param_names:
-    #     if p.startswith("factor"):
-    #         return getattr(t, p).value
     return wcs.forward_transform.cdelt
 
 
