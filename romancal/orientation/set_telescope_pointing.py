@@ -70,6 +70,7 @@ from astropy.table import Table
 from astropy.time import Time
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.spatial.transform import Rotation
 
 from stdatamodels.jwst import datamodels
 
@@ -2590,6 +2591,36 @@ def calc_m_eci2gsapp(t_pars: TransformParameters):
 
     # That's all folks
     return t
+
+
+def calc_m_eci2b(t_pars: TransformParameters):
+    """
+    Calculate the ECI Direction Cosine Matrix (DCM) from the quaternions
+
+    M_eci_to_b is calculated as presented in the STScI Innerspace document "Quaternion Transforms for Coarse Pointing WCS".
+
+    Parameters
+    ----------
+    t_pars : TransformParameters
+        The transformation parameters. Parameters are updated during processing.
+
+    Returns
+    -------
+    transforms : Transforms
+        The calculated transforms. The target transform is
+        `transforms.m_eci2b`. See the notes for other transforms
+        used and calculated.
+    """
+    # Initial state of the transforms
+    t = Transforms(override=t_pars.override_transforms)
+
+    r = Rotation.from_quat(t.pointing.q)
+    t.m_eci2b = r.as_matrix().T
+    logger.debug("m_eci2b: %s", t.m_eci2b)
+
+    # That's all folks
+    return t
+
 
 def calc_m_fgs12fgsx(fgsid, siaf_db):
     """
