@@ -3,6 +3,7 @@ message: "If you use this software in your work, please cite it using the follow
 authors:
 - family-names: "Schlafly"
   given-names: "Edward"
+  orcid: "https://orcid.org/0000-0002-3569-7421"
 - family-names: "Davis"
   given-names: "David"
 - family-names: "Graham"
