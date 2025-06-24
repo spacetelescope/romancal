@@ -10,4 +10,4 @@ During ramp fitting, the GAIN values are used to temporarily convert the pixel
 values from units of DN to electrons, and convert the results of ramp fitting
 back to DN.  The READNOISE values are used as part of the noise estimate for
 each pixel. The DARK values are needed to estimate the Poisson noise. See
-:ref:`rampfit-algorithm-ols22` for more details.
+:ref:`rampfit-algorithm-ols` for more details.
