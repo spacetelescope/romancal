@@ -1,0 +1,62 @@
+cff-version: 1.2.0
+message: "If you use this software in your work, please cite it using the following metadata."
+authors:
+- family-names: "Schlafly"
+  given-names: "Edward"
+- family-names: "Davis"
+  given-names: "David"
+- family-names: "Graham"
+  given-names: "Brett"
+  orcid: "https://orcid.org/0000-0001-6315-4507"
+- family-names: "Huwe"
+  given-names: "Paul"
+- family-names: "Teodoro"
+  given-names: "Mairan"
+- family-names: "Burnett"
+  given-names: "Zachary"
+- family-names: "Bradley"
+  given-names: "Larry"
+  orcid: "https://orcid.org/0000-0002-7908-9284"
+- family-names: "Jamieson"
+  given-names: "William"
+  orcid: "https://orcid.org/0000-0001-5976-4492"
+- family-names: "Dencheva"
+  given-names: "Nadia"
+  orcid: "https://orcid.org/0000-0002-5686-9632"
+- family-names: "Eisenhamer"
+  given-names: "Jonathan"
+- family-names: "Greenfield"
+  given-names: "Perry"
+  orcid: "https://orcid.org/0000-0003-2269-0551"
+- family-names: "Grumm"
+  given-names: "David"
+- family-names: Morris
+  given-names: Brett M.
+  orcid: https://orcid.org/0000-0003-2528-3409
+- family-names: "Shanahan"
+  given-names: "Clare"
+- family-names: "Cara"
+  given-names: "Mihai"
+  orcid: "https://orcid.org/0000-0002-9294-6551"
+- family-names: "Hunkeler"
+  given-names: "Joseph"
+- family-names: "MacDonald"
+  given-names: "Ken"
+- family-names: "Sosey"
+  given-names: "Megan"
+  orcid: "https://orcid.org/0000-0002-4206-6492"
+- family-names: Lim
+  given-names: Pey Lian
+  orcid: https://orcid.org/0000-0003-0079-4114
+- family-names: "Molter"
+  given-names: "Edward"
+  orcid: "https://orcid.org/0000-0003-3799-9033"
+- family-names: "Geiger"
+  given-names: "Zane"
+- family-names: "Neuheisel"
+  given-names: "Joshua"
+# TODO shahm0
+title: "Roman Calibration Pipeline"
+version: 0.19.0
+date-released: 2025-05-14
+url: "https://github.com/spacetelescope/romancal"
