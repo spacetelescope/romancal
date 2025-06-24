@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 #
 from __future__ import annotations
-import pdb
 
 import copy
 import logging
@@ -9,15 +8,14 @@ from typing import TYPE_CHECKING
 
 import asdf
 import numpy as np
+import scipy
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import stnode
-import scipy
 from roman_datamodels.dqflags import group, pixel
 from stcal.ramp_fitting import ols_cas22_fit, utils
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
-from stcal.ramp_fitting.likely_fit import (get_readtimes, compute_image_info,
-                                           mask_jumps, fit_ramps)
-from stcal.ramp_fitting.likely_algo_classes import IntegInfo, RampResult, Covar
+from stcal.ramp_fitting.likely_algo_classes import Covar, IntegInfo
+from stcal.ramp_fitting.likely_fit import compute_image_info, fit_ramps, mask_jumps
 
 from romancal.stpipe import RomanStep
 
@@ -31,10 +29,8 @@ log.setLevel(logging.DEBUG)
 
 __all__ = ["RampFitStep"]
 
-
 class RampFitStep(RomanStep):
-    """
-    This step fits a straight line to the value of counts vs. time to
+    """This step fits a straight line to the value of counts vs. time to
     determine the mean count rate for each pixel.
     """
 
@@ -69,18 +65,19 @@ class RampFitStep(RomanStep):
                 dark_filename = self.get_reference_file(input_model, "dark")
                 dark_model = rdm.open(dark_filename, mode="r")
                 out_model = self.ols_cas22(
-                    input_model, readnoise_model, gain_model, dark_model
+                    input_model, readnoise_model, gain_model, dark_model,
                 )
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
             elif  algorithm == "likely":
-                input_model['flags_do_not_use'] = pixel.DO_NOT_USE
-                input_model['flags_saturated'] = pixel.SATURATED
-                input_model['rejection_threshold'] = None
-                input_model['flags_jump_det'] = pixel.JUMP_DET
+                input_model["flags_do_not_use"] = pixel.DO_NOT_USE
+                input_model["flags_saturated"] = pixel.SATURATED
+                input_model["rejection_threshold"] = None
+                input_model["flags_jump_det"] = pixel.JUMP_DET
+                # Add an axis to match the JWST data cube
                 input_model.data = input_model.data[np.newaxis, :, :, :]
                 out_model = self.likely_fit(
                     input_model, readnoise_model.data, gain_model.data)
-                out_model.meta.cal_step.ramp_fit = "COMPLETE"               
+                out_model.meta.cal_step.ramp_fit = "COMPLETE"
             else:
                 log.error("Algorithm %s is not supported. Skipping step.")
                 out_model = input
@@ -90,6 +87,7 @@ class RampFitStep(RomanStep):
 
     def likely_fit(self,  ramp_model, readnoise_2d, gain_2d):
         """Ramp fiting using the likelyhood algorithm from stcal
+
         Parameters
         ----------
         ramp_data : RampData
@@ -107,7 +105,6 @@ class RampFitStep(RomanStep):
             The tuple of computed ramp fitting arrays.
 
         """
-        
         image_info = None
 
         nints, nresultants, nrows, ncols = ramp_model.data.shape
@@ -132,7 +129,6 @@ class RampFitStep(RomanStep):
             for row in range(nrows):
                 d2use = determine_diffs2use(ramp_model, integ, row, diff)
                 d2use_copy = d2use.copy()  # Use to flag jumps
-                #if row == 1024: pdb.set_trace()
                 if ramp_model.rejection_threshold is not None:
                     threshold_one_omit = ramp_model.rejection_threshold**2
                     pval = scipy.special.erfc(ramp_model.rejection_threshold/SQRT2)
@@ -143,12 +139,12 @@ class RampFitStep(RomanStep):
                         diff[:, row], covar, readnoise_2d[row], gain_2d[row],
                         threshold_one_omit=threshold_one_omit,
                         threshold_two_omit=threshold_two_omit,
-                        diffs2use=d2use
+                        diffs2use=d2use,
                     )
                 else:
                     d2use, countrates = mask_jumps(
                         diff[:, row], covar, readnoise_2d[row], gain_2d[row],
-                        diffs2use=d2use
+                        diffs2use=d2use,
                     )
 
                 # Set jump detection flags
@@ -158,7 +154,6 @@ class RampFitStep(RomanStep):
 
                 alldiffs2use[:, row] = d2use
 
-                #rateguess = countrates * (countrates > 0) + ramp_data.average_dark_current[row, :]
                 rateguess = countrates * (countrates > 0)
                 result = fit_ramps(
                     diff[:, row],
@@ -178,12 +173,7 @@ class RampFitStep(RomanStep):
         image_info = compute_image_info(integ_class, ramp_model)
 
         image_model = create_image_model(ramp_model, image_info)
-        # Rescale by the gain back to DN/s
-        image_model.data *= gain_2d[4:-4, 4:-4]
-        image_model.err /= gain_2d[4:-4, 4:-4]
-        image_model.var_poisson /= gain_2d[4:-4, 4:-4] ** 2
-        image_model.var_rnoise /= gain_2d[4:-4, 4:-4] ** 2
-        
+
         return image_model
 
 
@@ -208,6 +198,7 @@ class RampFitStep(RomanStep):
         -------
         out_model : ImageModel
             Model containing a count-rate image.
+
         """
         use_jump = self.use_ramp_jump_detection
 
@@ -271,10 +262,10 @@ class RampFitStep(RomanStep):
         image_model = create_image_model(input_model, image_info)
 
         # Rescale by the gain back to DN/s
-        #image_model.data /= gain[4:-4, 4:-4]
-        #image_model.err /= gain[4:-4, 4:-4]
-        #image_model.var_poisson /= gain[4:-4, 4:-4] ** 2
-        #image_model.var_rnoise /= gain[4:-4, 4:-4] ** 2
+        image_model.data /= gain[4:-4, 4:-4]
+        image_model.err /= gain[4:-4, 4:-4]
+        image_model.var_poisson /= gain[4:-4, 4:-4] ** 2
+        image_model.var_rnoise /= gain[4:-4, 4:-4] ** 2
 
         # That's all folks
         return image_model
@@ -284,8 +275,7 @@ class RampFitStep(RomanStep):
 # Utilities
 # #########
 def create_image_model(input_model, image_info):
-    """
-    Creates an ImageModel from the computed arrays from ramp_fit.
+    """Creates an ImageModel from the computed arrays from ramp_fit.
 
     Parameters
     ----------
@@ -299,6 +289,7 @@ def create_image_model(input_model, image_info):
     -------
     out_model : `~roman_datamodels.datamodels.ImageModel`
         The output ``ImageModel`` to be returned from the ramp fit step.
+
     """
     data, dq, var_poisson, var_rnoise, err = image_info
     im = rdm.ImageModel()
@@ -317,7 +308,7 @@ def create_image_model(input_model, image_info):
             "conversion_megajanskys": -999999,
             "conversion_megajanskys_uncertainty": -999999,
             "pixel_area": -999999,
-        }
+        },
     )
     im.amp33 = input_model.amp33.copy()
     im.border_ref_pix_left = input_model.border_ref_pix_left.copy()
@@ -344,8 +335,7 @@ def create_image_model(input_model, image_info):
 
 
 def determine_diffs2use(ramp_data, integ, row, diffs):
-    """
-    Compute the diffs2use mask based on DQ flags of a row.
+    """Compute the diffs2use mask based on DQ flags of a row.
 
     Parameters
     ----------
@@ -367,6 +357,7 @@ def determine_diffs2use(ramp_data, integ, row, diffs):
     d2use : ndarray
         A boolean array definined the segmented ramps for each pixel in a row.
         (ngroups-1, ncols)
+
     """
     # import ipdb; ipdb.set_trace()
     _, nresultants, _, ncols = ramp_data.data.shape
@@ -382,8 +373,7 @@ def determine_diffs2use(ramp_data, integ, row, diffs):
 
 
 def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
-    """
-    Construct pixeldq for ramp fit output from input dqs and ramp slopes.
+    """Construct pixeldq for ramp fit output from input dqs and ramp slopes.
 
     The algorithm is:
     - pass forward existing pixeldq flags
@@ -409,6 +399,7 @@ def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
     -------
     pixeldq : np.ndarray
         Updated pixeldq array combining information from input dq and slopes.
+
     """
     outpixeldq = pixeldq.copy()
     # jump flagging
@@ -428,8 +419,7 @@ def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
     return outpixeldq
 
 def get_readtimes(ramp_data):
-    """
-    Get the read times needed to compute the covariance matrices.
+    """Get the read times needed to compute the covariance matrices.
 
     If there is already a read_pattern in the ramp_data class, then just get it.
     If not, then one needs to be constructed.  If one needs to be constructed it
@@ -448,21 +438,12 @@ def get_readtimes(ramp_data):
     -------
     readtimes : list
         A list of frame times for each frame used in the computation of the ramp.
+
     """
     nresultants = ramp_data.meta.exposure.nresultants
     log.info("Number of resultants: %d ", nresultants)
 
-    #ngroups = ramp_data.data.shape[1]
-    #tot_frames = ramp_data.meta.exposure.nresultants + 0 #ramp_data.groupgap
-    #read_numbers = [x for xs in ramp_data.meta.exposure.read_pattern for x in xs]
-    #nskips = np.max(read_numbers) - len(read_numbers)
-    #tot_frames = len(read_numbers) + nskips
-    #tot_nreads = np.arange(1, ramp_data.meta.exposure.nresultants + 1)
-    #rtimes = [
-    #    (tot_nreads + k * tot_frames) * ramp_data.meta.exposure.frame_time for k in range(ngroups)
-    #]
-
     rtimes = [list(np.array(r)*ramp_data.meta.exposure.frame_time) for r in ramp_data.meta.exposure.read_pattern]
-    
+
 
     return rtimes
