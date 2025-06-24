@@ -2544,6 +2544,53 @@ def calc_m_eci2gs(t_pars: TransformParameters):
     return t
 
 
+def calc_m_eci2gsapp(t_pars: TransformParameters):
+    """
+    Calculate the ECI to Guide Star apparent position
+
+    M_eci_to_gsapp is calculated as presented in the STScI Innerspace document "Quaternion Transforms for Coarse Pointing WCS".
+
+    Parameters
+    ----------
+    t_pars : TransformParameters
+        The transformation parameters. Parameters are updated during processing.
+
+    Returns
+    -------
+    transforms : Transforms
+        The calculated transforms. The target transform is
+        `transforms.m_eci2gs`. See the notes for other transforms
+        used and calculated.
+
+    Notes
+    -----
+    The transform train needed to calculate M_eci_to_gs is::
+
+        M_eci_to_gsapp =
+            M_z_to_x        *
+            M_vacorr        *
+            M_eci_to_gsapp
+
+        where
+
+            M_z_to_x is the ICS to Ideal transform
+            M_vacoor is the velocity aberration correction
+            M_eci_2o_gsapp is the ECI to Guide Star apparent position
+    """
+    # Initial state of the transforms
+    t = Transforms(override=t_pars.override_transforms)
+
+    t = calc_m_fcs2gsapp(t)
+    t = calc_m_eci2b(t)
+    t = calc_m_b2fcs(t)
+
+    # Put it all together
+    t.m_eci2gsapp = np.linalg.multi_dot([t.m_fcs2gsapp, t.m_b2fcs, t.m_eci2b])
+    logger.debug("m_eci2gsapp: %s", t.m_eci2gs)
+
+    # That's all folks
+    return t
+
 def calc_m_fgs12fgsx(fgsid, siaf_db):
     """
     Calculate the FGS1 to FGSx matrix.
