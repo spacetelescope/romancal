@@ -2500,16 +2500,8 @@ def calc_m_fcs2gs(t_pars: TransformParameters):
 
 def calc_m_eci2gs(t_pars: TransformParameters):
     """
-    Calculate the M_eci2gs matrix as per TR presented in 2021-07.
+    Calculate the M_eci2gs matrix as presented in the STScI Innerspace document "Quaternion Transforms for Coarse Pointing WCS".
 
-    This implements Eq. 16 & 17 from Technical Report JWST-STScI-003222, SM-12, Rev. C, 2021-11
-    From Section 3.2:
-
-    The equation is formed by inverting the equation in Section 5.9.1.2 of
-    SE-20 which converts from the attitude specified at the Guide Star into the
-    commanded spacecraft J-frame attitude. With the inversion, the commanded
-    J-frame attitude quaternion is replaced in this equation by the matrix
-    derived from the measured J-frame attitude quaternion.
 
     Parameters
     ----------
@@ -2528,43 +2520,24 @@ def calc_m_eci2gs(t_pars: TransformParameters):
     The transform train needed to calculate M_eci_to_gs is::
 
         M_eci_to_gs =
-            M_z_to_x               *
-            M_gsics_to_gsappics    *
-            M_fgs1ics_to_gsics     *
-            M_j_to_fgs1ics         *
-            M_eci_to_j
+            M_z_to_x        *
+            M_vacorr        *
+            M_eci_to_gsapp
 
         where
 
-            M_eci_to_gs = ECI to Guide Star Ideal Frame
-            M_gsics_to_gsappics = Velocity Aberration correction
-            M_fgs1ics_to_gsics = Convert from the FGS1 ICS frame to Guide Star ICS frame
-            M_j_to_fgs1ics = Convert from J frame to FGS1 ICS frame
-            M_eci_to_j = ECI (quaternion) to J-frame
-
-    Modification for `jwst` release post-1.11.3: The commanded position of the guide
-    star is always relative to FGS1. Hence, the aperture to use is always FGS1.
-    The formulae above have been modified appropriately.
-    However, in the code, note that the transformations go to FGS1, but then
-    is suddenly referred to thereafter as FGSX. The assumption to make is that X is always 1,
-    for FGS1.
+            M_z_to_x is the ICS to Ideal transform
+            M_vacoor is the velocity aberration correction
+            M_eci_2o_gsapp is the ECI to Guide Star apparent position
     """
     # Initial state of the transforms
     t = Transforms(override=t_pars.override_transforms)
 
-    t.m_eci2j = calc_eci2j_matrix(t_pars.pointing.q)
-    t.m_j2fgs1 = calc_j2fgs1_matrix(t_pars.pointing.j2fgs_matrix, t_pars.j2fgs_transpose)
-    t.m_fgsx2gs = calc_m_fgsx2gs(t_pars.pointing.gs_commanded)
-
-    # Apply the Velocity Aberration. To do so, the M_eci2gsics matrix must be created. This
-    # is used to calculate the aberration matrix.
-    # Also, since the aberration is to be removed, the velocity is negated.
-    m_eci2gsics = np.linalg.multi_dot([t.m_fgsx2gs, t.m_j2fgs1, t.m_eci2j])
-    logger.debug("m_eci2gsics: %s", m_eci2gsics)
-    t.m_gs2gsapp = calc_gs2gsapp(m_eci2gsics, t_pars.jwst_velocity)
+    t = calc_m_eci2gsapp(t)
+    t.m_vacorr = calc_gs2gsapp(t.m_eci2gsapp, t.jwst_velocity)
 
     # Put it all together
-    t.m_eci2gs = np.linalg.multi_dot([M_ics2idl, t.m_gs2gsapp, m_eci2gsics])
+    t.m_eci2gs = np.linalg.multi_dot([M_ics2idl, t.m_vacorr, t.m_eci2gsapp])
     logger.debug("m_eci2gs: %s", t.m_eci2gs)
 
     # That's all folks
