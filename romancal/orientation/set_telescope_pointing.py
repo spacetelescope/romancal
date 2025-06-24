@@ -2458,7 +2458,7 @@ def calc_m_eci2v(t_pars: TransformParameters):
     t = Transforms(override=t_pars.override_transforms)
 
     t.m_v2fcs = M_V2FCS0
-    t = calc_m_fcs2gs(t)
+    t.m_fcs2gs = position_to_dcm(t.pointing.gs_commanded[0], t.pointing.gs_commanded[1])
     t = calc_m_eci2gs(t)
 
     # Put it all together
@@ -2468,38 +2468,6 @@ def calc_m_eci2v(t_pars: TransformParameters):
         M_idl2ics,
         t.m_eci2gs])
 
-    return t
-
-def calc_m_fcs2gs(t_pars: TransformParameters):
-    """Calculate the FCS to GS transform
-
-    This converts from FCS ref point to the commanded (x,y) location of star on FCS.
-    M_fcs2gs is calculated as presented in the STScI Innerspace document "Quaternion Transforms for Coarse Pointing WCS"
-
-    Parameters
-    ----------
-    t_pars : TransformParameters
-        The transformation parameters. Parameters are updated during processing.
-
-    Returns
-    -------
-    transforms : Transforms
-        The calculated transforms. The target transform is
-        `transforms.m_fcs2gs`. See the notes for other transforms
-        used and calculated.
-    """
-    # Initial state of the transforms
-    t = Transforms(override=t_pars.override_transforms)
-
-    x = t.pointing.gs_commanded[0]
-    y = t.pointing.gs_commanded[1]
-    m = np.array([
-        [cos(x),           0,       sin(x)],
-        [-sin(x) * sin(y), cos(y),  cos(x) * sin(y)],
-        [-sin(x) * cos(y), -sin(y), cos(x) * cos(y)]
-    ])
-
-    t.m_fcs2gs = m
     return t
 
 
@@ -2585,7 +2553,7 @@ def calc_m_eci2gsapp(t_pars: TransformParameters):
     # Initial state of the transforms
     t = Transforms(override=t_pars.override_transforms)
 
-    t = calc_m_fcs2gsapp(t)
+    t._m_fcs2gsapp = position_to_dcm(x, y)
     t = calc_m_eci2b(t)
     t._m_b2fcs = M_B2FCS0
 
@@ -2595,6 +2563,29 @@ def calc_m_eci2gsapp(t_pars: TransformParameters):
 
     # That's all folks
     return t
+
+
+def position_to_dcm(x, y):
+    """
+    Calculate the Direction Cosine Matrix for a given X,Y position.
+
+    Parameters
+    ----------
+    x, y : float, float
+        Position in arcseconds
+
+    Returns
+    -------
+    dcm : np.array(size=(3, 3))
+        The direction cosine matrix
+    """
+    dcm = np.array([
+        [cos(x),           0,       sin(x)],
+        [-sin(x) * sin(y), cos(y),  cos(x) * sin(y)],
+        [-sin(x) * cos(y), -sin(y), cos(x) * cos(y)]
+    ])
+
+    return dcm
 
 
 def calc_m_eci2b(t_pars: TransformParameters):
