@@ -74,13 +74,11 @@ from scipy.spatial.transform import Rotation
 
 from stdatamodels.jwst import datamodels
 
-from .exposure_types import IMAGING_TYPES, FGS_GUIDE_EXP_TYPES
 from .set_velocity_aberration import compute_va_effects_vector
-from .siafdb import SIAF, SiafDb
-from ..assign_wcs.util import update_s_region_keyword, calc_rotation_matrix
+from ..assign_wcs.utils import update_s_region_keyword, calc_rotation_matrix
 from ..assign_wcs.pointing import v23tosky
 from ..lib.engdb_tools import ENGDB_Service
-from ..lib.pipe_utils import is_tso
+from ..lib.siafdb import SIAF, SiafDb
 
 __all__ = [
     "Methods",
@@ -105,10 +103,12 @@ LOGLEVELS = [logging.INFO, logging.DEBUG, DEBUG_FULL]
 EXPECTED_MODELS = (datamodels.Level1bModel, datamodels.ImageModel, datamodels.CubeModel)
 
 # Exposure types that can be updated, normally
-TYPES_TO_UPDATE = set(list(IMAGING_TYPES) + FGS_GUIDE_EXP_TYPES)
+TYPES_TO_UPDATE = set()
 
 # Mnemonics for each transformation method.
 # dict where value indicates whether the mnemonic is required or not.
+COURSE_MNEMONICS = {}
+
 COURSE_TR_202111_MNEMONICS = {
     "SA_ZATTEST1": True,
     "SA_ZATTEST2": True,
@@ -187,9 +187,17 @@ class Methods(Enum):
         COURSE_MNEMONICS,
     )
 
+    #: COARSE_NB: Algorithm based solely on the notebook
+    COARSE_NB = (
+        'coarse_nb',
+        'calc_transforms_coarse_nb',
+        'calc_wcs',
+        COURSE_MNEMONICS
+    )
+
     # Aliases
     #: Algorithm to use by default. Used by Operations.
-    default = COARSE
+    default = COARSE_NB
     #: Default algorithm under PCS_MODE COARSE.
     # COARSE = COARSE_TR_202111
     #: Default algorithm for use by Operations.
@@ -255,11 +263,11 @@ J2FGS_MATRIX_DEFAULT = np.array(
 # Conversion of the FCS reference point from the V-Frame.
 # This is the pre-launch value, later to be refined and provided
 # in the SIAF
-M_V2FCS0 = np.array(
+M_V2FCS0 = np.array([
     ['-0.0000001', '0.5000141', '0.8660173'],
     ['0.0086567', '-0.8659848', '0.4999953'],
     ['0.9999625', '0.0074969', '-0.0043284']
-)
+], dtype=float)
 
 # Default B-frame to FCS frame, M_b_to_fcs
 # Pre-launch this is the same as M_v_to_fcs.
@@ -287,15 +295,9 @@ PI2 = np.pi * 2.0
 # Attributes are as follows. Except for the observation time, all values
 # are retrieved from the engineering data.
 #    q            : Quaternion of the FGS.
-#    j2fgs_matrix : J-frame to FGS transformation.
-#    fsmcorr      : Fine Steering Mirror position.
-#    obstime      : Mid-point time of the observation at which all other values have been
-#                   calculated.
 #    gs_commanded : Guide star position as originally commanded.
-#    fgsid        : FGS in use, 1 or 2.
-#    gs_position  : X/Y guide star position in the FGS.
 Pointing = namedtuple(
-    "Pointing", ["q", "j2fgs_matrix", "fsmcorr", "obstime", "gs_commanded", "fgsid", "gs_position"]
+    "Pointing", ["q", "gs_commanded"]
 )
 Pointing.__new__.__defaults__ = (None,) * 5
 
@@ -313,18 +315,25 @@ GuideStarPosition.__new__.__defaults__ = (None,) * 3
 class Transforms:
     """The matrices used in calculation of the M_eci2siaf transformation."""
 
+    #: ECI to B-frame
+    m_eci2b: np.ndarray | None = None
+    #: ECI to FCS
+    m_eci2fcs: np.ndarray | None = None
+    #: ECI to GS
+    m_eci2gs: np.ndarray | None = None
+    #: ECI to SIAF
+    m_eci2siaf: np.ndarray | None = None
+    #: ECI to V
+    m_eci2v: np.ndarray | Any = None
+
     #: ECI to FGS1
     m_eci2fgs1: np.ndarray | None = None
     #: ECI to Guide Star
     m_eci2gs: np.ndarray | None = None
     #: ECI to J-Frame
     m_eci2j: np.ndarray | Any = None
-    #: ECI to SIAF
-    m_eci2siaf: np.ndarray | None = None
     #: ECI to SIFOV
     m_eci2sifov: np.ndarray | None = None
-    #: ECI to V
-    m_eci2v: np.ndarray | Any = None
     #: FGSX to Guide Stars transformation
     m_fgsx2gs: np.ndarray | Any = None
     #: FGS1 to SIFOV
@@ -1232,6 +1241,49 @@ def calc_transforms_coarse(t_pars: TransformParameters):
 
     return t
 
+def calc_transforms_coarse_nb(t_pars: TransformParameters):
+    """
+    COARSE calculation.
+
+    This implements the overall coarse-mode transfomations as defined by the
+    example notebook as provided by T.Sohn.
+
+    Parameters
+    ----------
+    t_pars : TransformParameters
+        The transformation parameters. Parameters are updated during processing.
+
+    Returns
+    -------
+    transforms : Transforms
+        The list of coordinate matrix transformations
+
+    Notes
+    -----
+    """
+    logger.info(
+        "Calculating transforms using COARSE_NB Tracking..."
+    )
+    t_pars.method = Methods.COARSE_NB
+    t = Transforms(override=t_pars.override_transforms)
+
+    # Quaternion to M_eci2b
+    t.m_eci2b = calc_m_eci2b(t_pars.pointing.q)
+
+    # ECI to FCS
+    t.m_eci2fcs = np.dot(M_B2FCS0, t.m_eci2b)
+
+    # ECI to GS
+    t.m_eci2gs = np.dot(M_ics2idl, t.m_eci2fcs)
+
+    # ECI to V
+    t.m_eci2v = np.linalg.multi_dot([M_B2FCS0.T, M_idl2ics, t.m_eci2gs])
+
+    # ECI to SIAF
+    t.m_eci2siaf = np.linalg.multi_dot([M_ics2idl, M_B2FCS0, t.m_eci2v])
+
+    return t
+
 
 def calc_transforms_track_tr_202111(t_pars: TransformParameters):
     """
@@ -1482,16 +1534,13 @@ def calc_wcs_from_matrix(m):
     return wcs
 
 
-def calc_eci2j_matrix(q):
+def calc_m_eci2b(q):
     """
-    Calculate ECI to J-frame matrix from quaternions.
+    Calculate ECI to B-frame matrix from quaternions.
 
-    This implements Eq. 24 from Technical Report JWST-STScI-003222, SM-12. Rev. C, 2021-11
-    From Section 3.2.1:
 
-    The M_(ECI→J) DCM is derived from the spacecraft Attitude Control System
-    (ACS) attitude quaternion telemetry using the transformation in SE-20,
-    Appendix B to transform the attitude quaternion into a DCM.
+    This implements the M_eci_to_b calculation as presented in the
+    STScI Innerspace document "Quaternion Transforms for Coarse Pointing WCS".
 
     Parameters
     ----------
@@ -1522,7 +1571,8 @@ def calc_eci2j_matrix(q):
                 2.0 * (q2 * q3 - q1 * q4),
                 1.0 - 2.0 * q1 * q1 - 2.0 * q2 * q2,
             ],
-        ]
+        ],
+        dtype=float
     )
 
     logger.debug("quaternion: %s", transform)
@@ -2458,7 +2508,7 @@ def calc_m_eci2v(t_pars: TransformParameters):
     t = Transforms(override=t_pars.override_transforms)
 
     t.m_v2fcs = M_V2FCS0
-    t.m_fcs2gs = position_to_dcm(t.pointing.gs_commanded[0], t.pointing.gs_commanded[1])
+    t.m_fcs2gs = position_to_dcm(t_pars.pointing.gs_commanded[0], t_pars.pointing.gs_commanded[1])
     t = calc_m_eci2gs(t)
 
     # Put it all together
@@ -2586,35 +2636,6 @@ def position_to_dcm(x, y):
     ])
 
     return dcm
-
-
-def calc_m_eci2b(t_pars: TransformParameters):
-    """
-    Calculate the ECI Direction Cosine Matrix (DCM) from the quaternions
-
-    M_eci_to_b is calculated as presented in the STScI Innerspace document "Quaternion Transforms for Coarse Pointing WCS".
-
-    Parameters
-    ----------
-    t_pars : TransformParameters
-        The transformation parameters. Parameters are updated during processing.
-
-    Returns
-    -------
-    transforms : Transforms
-        The calculated transforms. The target transform is
-        `transforms.m_eci2b`. See the notes for other transforms
-        used and calculated.
-    """
-    # Initial state of the transforms
-    t = Transforms(override=t_pars.override_transforms)
-
-    r = Rotation.from_quat(t.pointing.q)
-    t.m_eci2b = r.as_matrix().T
-    logger.debug("m_eci2b: %s", t.m_eci2b)
-
-    # That's all folks
-    return t
 
 
 def calc_m_fgs12fgsx(fgsid, siaf_db):
