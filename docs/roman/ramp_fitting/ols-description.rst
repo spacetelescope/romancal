@@ -1,7 +1,7 @@
-.. _rampfit-algorithm-ols22:
+.. _rampfit-algorithm-ols:
 
-Description: Optimized Least-squares with Uneven Ramps
-======================================================
+Optimized Least-squares with Uneven Ramps
+==========================================
 
 This step determines the mean count rate, in units of counts per second, for
 each pixel by performing a linear fit to the data in the input file.  The fit
@@ -21,11 +21,6 @@ The 'ols_cas22' algorithm is based on `Casertano et al, STScI Technical Document
 2022
 <https://www.stsci.edu/files/live/sites/www/files/home/roman/_documents/Roman-STScI-000394_DeterminingTheBestFittingSlope.pdf>`_.
 The implementation is what is described in this document.
-
-There is a new algorithm available for testing in ramp fitting, which is the
-likelihood algorithm.  It is selected by setting ``--ramp_fitting.algorithm=likely``.
-The details are in the ``stcal`` documentation at
-:ref:`Likelihood Algorithm Details <stcal:likelihood_algo>`.
 
 Segments
 ++++++++
