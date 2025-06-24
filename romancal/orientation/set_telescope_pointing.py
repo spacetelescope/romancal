@@ -261,6 +261,10 @@ M_V2FCS0 = np.array(
     ['0.9999625', '0.0074969', '-0.0043284']
 )
 
+# Default B-frame to FCS frame, M_b_to_fcs
+# Pre-launch this is the same as M_v_to_fcs.
+M_B2FCS0 = M_V2FCS0
+
 SIFOV2V_DEFAULT = np.array(
     [[0.99999742598, 0.0, 0.00226892608], [0.0, 1.0, 0.0], [-0.00226892608, 0.0, 0.99999742598]]
 )
@@ -2583,7 +2587,7 @@ def calc_m_eci2gsapp(t_pars: TransformParameters):
 
     t = calc_m_fcs2gsapp(t)
     t = calc_m_eci2b(t)
-    t = calc_m_b2fcs(t)
+    t._m_b2fcs = M_B2FCS0
 
     # Put it all together
     t.m_eci2gsapp = np.linalg.multi_dot([t.m_fcs2gsapp, t.m_b2fcs, t.m_eci2b])
