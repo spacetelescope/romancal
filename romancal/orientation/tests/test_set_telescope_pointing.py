@@ -15,10 +15,10 @@ from astropy.time import Time  # noqa: E402
 
 from stdatamodels.jwst import datamodels  # noqa: E402
 
-from jwst.lib import engdb_mast  # noqa: E402
-from jwst.lib import set_telescope_pointing as stp  # noqa: E402
-from jwst.lib import siafdb  # noqa: E402
-from jwst.tests.helpers import word_precision_check  # noqa: E402
+from romancal.lib import engdb_mast  # noqa: E402
+from romancal.orientation import set_telescope_pointing as stp  # noqa: E402
+from romancal.lib import siafdb  # noqa: E402
+# from jwst.tests.helpers import word_precision_check  # noqa: E402
 
 # Ensure that `set_telescope_pointing` logs.
 stp.logger.setLevel(logging.DEBUG)
@@ -199,35 +199,6 @@ def test_methods(calc_transforms, matrix):
         The matrix to compare
     """
     _test_methods(calc_transforms, matrix)
-
-
-def test_coarse_202111_fgsid(calc_coarse_202111_fgsid):
-    """Test COARSE_202111 to ensure correct FGS id is used.
-
-    If an FGS is specifically used for science, the other FGS is the guider.
-    For all other instruments, the assumption is that FGS1 is the guider, but
-    that can be overridden.
-
-    This tests that the correct FGS id was used in the calculations
-    """
-    transforms, t_pars, truth_ext, fgs_expected = calc_coarse_202111_fgsid
-
-    fgsid_used = t_pars.fgsid
-    assert fgsid_used == fgs_expected
-
-
-@pytest.mark.parametrize('matrix', [matrix for matrix in stp.Transforms()._fields])
-def test_coarse_202111_fgsid_matrices(calc_coarse_202111_fgsid, matrix):
-    """Test COARSE_202111 matrices using various FGS settings
-
-    If an FGS is specifically used for science, the other FGS is the guider.
-    For all other instruments, the assumption is that FGS1 is the guider, but
-    that can be overridden.
-
-    This tests that the appropriate transformations were calculated.
-    """
-    transforms, t_pars, truth_ext, fgs_expected = calc_coarse_202111_fgsid
-    _test_methods((transforms, t_pars), matrix, truth_ext=truth_ext)
 
 
 def test_change_engdb_url():
@@ -548,41 +519,24 @@ def test_moving_target_tnotinrange(caplog, data_file_moving_target):
 # ######################
 # Utilities and fixtures
 # ######################
-def make_t_pars(detector='any', fgsid_telem=1, fgsid_user=None):
+def make_t_pars(detector='WFI02'):
     """Setup initial Transforms Parameters
 
-    This set was derived from the first valid group of engineering parameters for exposure
-    jw00624028002_02101_00001_nrca1 retrieved from the SDP regression tests for Build 7.7.1.
+    This set is Visit 1 provided by T.Sohn in a demonstration notebook.
 
     Parameters
     ==========
-    fgsid_telem : [1, 2]
-        The FGS reference guider to report from telemetry.
-
-    fgsid_user : [None, 1, 2]
-        The user-specified FGS to use as the reference guider.
+    detector : str
+        Detector in use.
     """
     t_pars = stp.TransformParameters()
 
     t_pars.detector = detector
-    t_pars.fgsid = fgsid_user
 
-    t_pars.guide_star_wcs = stp.WCSRef(ra=241.24294932221, dec=70.66165389073196, pa=None)
+    t_pars.guide_star_wcs = stp.WCSRef(ra=270., dec=66.5607, pa=None)
     t_pars.pointing = stp.Pointing(
-        q=np.array([-0.20954692, -0.6177655, -0.44653177, 0.61242575]),
-        j2fgs_matrix=np.array([-9.77300013e-04, 3.38988895e-03, 9.99993777e-01,
-                               9.99999522e-01, 8.37175385e-09, 9.77305600e-04,
-                               3.30458575e-06, 9.99994254e-01, -3.38988734e-03]),
-        fsmcorr=np.array([0.00584114, -0.00432878]),
-        obstime=Time(1611628160.325, format='unix'),
-        gs_commanded=np.array([-22.40031242, -8.17869377]),
-        gs_position=np.array([-22.4002638, -8.1786461]),
-        fgsid=fgsid_telem,
+        q=np.array([0.709433, -0.291814,  0.641319, 0.016107]),
     )
-    t_pars.siaf = siafdb.SIAF(v2_ref=120.525464, v3_ref=-527.543132, v3yangle=-0.5627898, vparity=-1,
-                              crpix1=1024.5, crpix2=1024.5, cdelt1=0.03113928, cdelt2=0.03132232,
-                              vertices_idl=(-32.1682, 32.0906, 31.6586, -31.7234, -32.1683, -32.1904, 32.0823, 31.9456))
-    t_pars.siaf_db = siafdb.SiafDb()
 
     return t_pars
 
@@ -617,31 +571,6 @@ def _test_methods(calc_transforms, matrix, truth_ext=''):
         assert value is None
     else:
         assert np.allclose(value, expected_value)
-
-
-@pytest.fixture(scope='module',
-                params=(('any', None, 1), ('any', 1, 1), ('any', 2, 2),
-                        ('guider1', None, 2), ('guider1', 1, 2), ('guider1', 2, 2),
-                        ('guider2', None, 1), ('guider2', 1, 1), ('guider2', 2, 1)),
-                ids=_calc_coarse_202111_fgsid_idfunc)
-def calc_coarse_202111_fgsid(request, tmp_path_factory):
-    """Calculate the transforms for COARSE_202111 with various FGS specifications
-    """
-    detector, fgsid_user, fgs_expected = request.param
-
-    # Create transform parameters.
-    # FGS from telemetry is set to None because, for COARSE mode,
-    # telemetry is unreliable.
-    t_pars = make_t_pars(detector=detector, fgsid_telem=None, fgsid_user=fgsid_user)
-    t_pars.method = stp.Methods.COARSE_TR_202111
-    transforms = stp.calc_transforms(t_pars)
-
-    truth_ext = f'_{detector}-{fgsid_user}'
-
-    # Save transforms for later examination
-    transforms.write_to_asdf(tmp_path_factory.mktemp('transforms') / f'tforms_{t_pars.method}{truth_ext}.asdf')
-
-    return transforms, t_pars, truth_ext, fgs_expected
 
 
 @pytest.fixture(scope='module',

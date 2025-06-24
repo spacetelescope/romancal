@@ -24,8 +24,6 @@ import logging
 import numpy as np
 from gwcs.geometry import SphericalToCartesian, CartesianToSpherical
 from scipy.constants import speed_of_light
-import jwst.datamodels as dm
-from jwst.datamodels import Level1bModel  # type: ignore[attr-defined]
 
 # Configure logging
 logger = logging.getLogger(__name__)
