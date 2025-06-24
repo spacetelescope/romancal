@@ -2441,6 +2441,13 @@ def calc_m_eci2v(t_pars: TransformParameters):
             M_fcs_to_gs : FCS reference point to the command location of the guide star on the FCS
             M_x_to_z : From the Idl frame to the ICS frame
             M_eci_to_gs : ECI to the guide star location on the WFI detector
+
+    Returns
+    -------
+    transforms : Transforms
+        The calculated transforms. The target transform is
+        `transforms.m_eci2v`. See the notes for other transforms
+        used and calculated.
     """
     # Initial state of the transforms
     t = Transforms(override=t_pars.override_transforms)
@@ -2452,11 +2459,44 @@ def calc_m_eci2v(t_pars: TransformParameters):
     # Put it all together
     t.m_eci2v = np.linalg.multi_dot([
         np.transpose(t.m_v2fcs),
-        np.transpose(t._fcs2gs),
+        np.transpose(t.m_fcs2gs),
         M_idl2ics,
         t.m_eci2gs])
 
     return t
+
+def calc_m_fcs2gs(t_pars: TransformParameters):
+    """Calculate the FCS to GS transform
+
+    This converts from FCS ref point to the commanded (x,y) location of star on FCS.
+    M_fcs2gs is calculated as presented in the STScI Innerspace document "Quaternion Transforms for Coarse Pointing WCS"
+
+    Parameters
+    ----------
+    t_pars : TransformParameters
+        The transformation parameters. Parameters are updated during processing.
+
+    Returns
+    -------
+    transforms : Transforms
+        The calculated transforms. The target transform is
+        `transforms.m_fcs2gs`. See the notes for other transforms
+        used and calculated.
+    """
+    # Initial state of the transforms
+    t = Transforms(override=t_pars.override_transforms)
+
+    x = t.pointing.gs_commanded[0]
+    y = t.pointing.gs_commanded[1]
+    m = np.array([
+        [cos(x),           0,       sin(x)],
+        [-sin(x) * sin(y), cos(y),  cos(x) * sin(y)],
+        [-sin(x) * cos(y), -sin(y), cos(x) * cos(y)]
+    ])
+
+    t.m_fcs2gs = m
+    return t
+
 
 def calc_m_eci2gs(t_pars: TransformParameters):
     """
