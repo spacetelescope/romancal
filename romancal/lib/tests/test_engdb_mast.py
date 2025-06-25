@@ -6,8 +6,8 @@ from astropy.table import Table
 from astropy.time import Time
 from astropy.utils.diff import report_diff_values
 
-from jwst.lib.engdb_lib import EngDB_Value
-from jwst.lib import engdb_mast
+from romancal.lib.engdb_lib import EngDB_Value
+from romancal.lib import engdb_mast
 
 # Test query
 QUERY = ('sa_zattest2', '2022-02-02T22:24:58', '2022-02-02T22:24:59')
