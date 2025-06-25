@@ -196,7 +196,6 @@ def test_l2_source_catalog(
         (50, 10, 0, False),
     ),
 )
-@pytest.mark.skip(reason="mosaic model does not have correct CRDS info")
 def test_l3_source_catalog(
     mosaic_model, snr_threshold, npixels, nsources, save_results, tmp_path
 ):
@@ -232,7 +231,6 @@ def test_l3_source_catalog(
         assert np.max(cat["y_centroid"]) < 100.0
 
 
-@pytest.mark.skip(reason="mosaic model does not have correct CRDS info")
 def test_background(mosaic_model, tmp_path):
     """
     Test background fallback when Background2D fails.
@@ -277,7 +275,6 @@ def test_l2_input_model_unchanged(image_model, tmp_path):
     assert_equal(original_err, image_model.err)
 
 
-@pytest.mark.skip(reason="mosaic model does not have correct CRDS info")
 def test_l3_input_model_unchanged(mosaic_model, tmp_path):
     """
     Test that the input model data and error arrays are unchanged after
@@ -552,7 +549,6 @@ def test_l2_source_catalog_keywords(
         ),
     ),
 )
-@pytest.mark.skip(reason="mosaic model does not have correct CRDS info")
 def test_l3_source_catalog_keywords(
     mosaic_model,
     snr_threshold,

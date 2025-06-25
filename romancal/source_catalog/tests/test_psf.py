@@ -19,7 +19,6 @@ from roman_datamodels.datamodels import ImageModel
 
 from romancal.source_catalog.psf import (
     azimuthally_smooth,
-    create_l3_psf_model,
     fit_psf_to_image_model,
     get_psf_library,
 )
@@ -145,10 +144,11 @@ class TestPSFFitting:
 @pytest.mark.skip(reason="l3 psf is broken")
 def test_create_l3_psf_model():
     """Test basic results"""
-    psf_model = create_l3_psf_model(filt="F158")
-    assert psf_model.data.shape == (199, 199)
-    assert psf_model.x_0.value == 9.0
-    assert psf_model.y_0.value == 9.0
+    assert False  # noqa: B011
+    # psf_model = create_l3_psf_model(filt="F158")
+    # assert psf_model.data.shape == (199, 199)
+    # assert psf_model.x_0.value == 9.0
+    # assert psf_model.y_0.value == 9.0
 
 
 def test_azimuthally_smooth():
