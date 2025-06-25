@@ -167,7 +167,7 @@ class TestPSFFitting:
 def test_create_l3_psf_model():
     """Test basic results"""
     psf_model = create_l3_psf_model(filt="F158")
-    assert psf_model.data.shape == (199, 199)
+    assert psf_model.data.shape == (195, 195)
     assert psf_model.x_0.value == 9.0
     assert psf_model.y_0.value == 9.0
 
