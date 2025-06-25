@@ -1,15 +1,16 @@
 """Access the JWST Engineering Mnemonic Database through MAST."""
 
+from ast import literal_eval
 import json
 import logging
 from os import getenv
 from pathlib import Path
 from shutil import copy2
 
-import numpy as np
-import requests
 from astropy.table import Table
 from astropy.time import Time
+import numpy as np
+import requests
 from requests.adapters import HTTPAdapter, Retry
 
 from .engdb_lib import EngDB_Value, EngdbABC, FORCE_STATUSES, RETRIES, TIMEOUT, mnemonic_data_fname
@@ -17,9 +18,8 @@ from .engdb_lib import EngDB_Value, EngdbABC, FORCE_STATUSES, RETRIES, TIMEOUT, 
 __all__ = ["EngdbMast"]
 
 # Default MAST info.
-MAST_BASE_URL = "https://mast.stsci.edu"
-API_URI = "api/v0.1/Download/file"
-SERVICE_URI = "mast:jwstedb/"
+MAST_BASE_URL = "https://mastint.stsci.edu"
+API_URI = 'edp/api/v0.1/mnemonics/fqa/roman/data'
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class EngdbMast(EngdbABC):
 
         # Check for basic aliveness.
         try:
-            resp = requests.get(self.base_url + "api/", timeout=self.timeout)
+            resp = requests.get(self.base_url + "edp/", timeout=self.timeout)
         except requests.exceptions.ConnectionError as exception:
             raise RuntimeError(f"MAST url: {self.base_url} is unreachable.") from exception
         if resp.status_code != 200:
@@ -271,7 +271,7 @@ class EngdbMast(EngdbABC):
 
         # Reformat to the desired list formatting.
         results = _ValueCollection(include_obstime=include_obstime, zip_results=zip_results)
-        values = records["euvalue"]
+        values = records["EUValue"]
         obstimes = Time(records["MJD"], format="mjd")
         for obstime, value in zip(obstimes, values, strict=False):
             results.append(obstime, value)
@@ -339,10 +339,11 @@ class EngdbMast(EngdbABC):
         # Make the request
         mnemonic = mnemonic.strip()
         mnemonic = mnemonic.upper()
-        starttime_fmt = starttime.strftime("%Y%m%dT%H%M%S")
-        endtime_fmt = endtime.strftime("%Y%m%dT%H%M%S")
-        uri = f"{mnemonic}-{starttime_fmt}-{endtime_fmt}.csv"
-        self._req.params = {"uri": SERVICE_URI + uri}
+        starttime_fmt = starttime.strftime("%Y-%m-%dT%H:%M:%S")
+        endtime_fmt = endtime.strftime("%Y-%m-%dT%H:%M:%S")
+        self._req.params = {'mnemonic': mnemonic,
+                            's_time': starttime_fmt,
+                            'e_time': endtime_fmt}
         prepped = self._session.prepare_request(self._req)
         settings = self._session.merge_environment_settings(prepped.url, {}, None, None, None)
         logger.debug("Query: %s", prepped.url)
@@ -352,8 +353,14 @@ class EngdbMast(EngdbABC):
         logger.debug("Response test: %s", self.response.text)
 
         # Convert to table.
-        r_list = self.response.text.split("\r\n")
-        table = Table.read(r_list, format="ascii.csv")
+        response = literal_eval(self.response.text)
+        data = response['Data']
+        del(response['Data'])
+        table = Table(rows=data, meta=response)
+
+        # Create a column MJD that has the MJD version of the data
+        obstime = Time(table['ObsTime'])
+        table['MJD'] = obstime.mjd
 
         return table
 

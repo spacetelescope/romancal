@@ -1,4 +1,5 @@
 """Test the MAST Engineering interface"""
+from pathlib import Path
 import pytest
 import requests
 
@@ -10,17 +11,21 @@ from romancal.lib.engdb_lib import EngDB_Value
 from romancal.lib import engdb_mast
 
 # Test query
-QUERY = ('sa_zattest2', '2022-02-02T22:24:58', '2022-02-02T22:24:59')
+QUERY = ('ope_scf_dir', '2027-02-23T01:00:00', '2027-02-23T01:00:05')
 
 # Expected return from query
-EXPECTED_RESPONSE = ('theTime,MJD,euvalue,sqldataType\r\n'
-                     '2022-02-02 22:24:57.797000,59612.9340022801,-0.7914493680,real\r\n'
-                     '2022-02-02 22:24:58.053000,59612.9340052431,-0.7914494276,real\r\n'
-                     '2022-02-02 22:24:58.309000,59612.9340082060,-0.7914494276,real\r\n'
-                     '2022-02-02 22:24:58.565000,59612.9340111690,-0.7914494276,real\r\n'
-                     '2022-02-02 22:24:58.821000,59612.9340141319,-0.7914493680,real\r\n'
-                     '2022-02-02 22:24:59.077000,59612.9340170949,-0.7914493680,real\r\n')
-EXPECTED_RECORDS = Table.read(EXPECTED_RESPONSE, format='ascii.csv')
+EXPECTED_RESPONSE = ('{"TlmMnemonic":"OPE_SCF_DIR",'
+                     '"ReqSTime":"2027-02-23T01:00:00.000",'
+                     '"ReqETime":"2027-02-23T01:00:05.000",'
+                     '"Count":7,"AllPoints":1,"Data":['
+                     '{"ObsTime":"2027-02-23T00:59:59.054","EUValue":"SCFA"},'
+                     '{"ObsTime":"2027-02-23T01:00:00.052","EUValue":"SCFA"},'
+                     '{"ObsTime":"2027-02-23T01:00:01.052","EUValue":"SCFA"},'
+                     '{"ObsTime":"2027-02-23T01:00:02.162","EUValue":"SCFA"},'
+                     '{"ObsTime":"2027-02-23T01:00:03.161","EUValue":"SCFA"},'
+                     '{"ObsTime":"2027-02-23T01:00:04.161","EUValue":"SCFA"},'
+                     '{"ObsTime":"2027-02-23T01:00:05.163","EUValue":"SCFA"}]}')
+EXPECTED_RECORDS = Table.read(Path(__file__).parent / 'data' / 'test_records_expected.ecsv', format='ascii.ecsv')
 
 
 @pytest.fixture(scope='module')
@@ -65,21 +70,23 @@ def test_get_records(engdb):
 @pytest.mark.parametrize(
     'pars, expected',
     [
-        ({}, [-0.7914494276, -0.7914494276, -0.7914494276, -0.791449368]),
+        ({}, ['SCFA'] * 5 ),
         ({'include_obstime': True},
-         [EngDB_Value(obstime=Time(59612.9340052431, format='mjd'), value=-0.7914494276),
-          EngDB_Value(obstime=Time(59612.9340082060, format='mjd'), value=-0.7914494276),
-          EngDB_Value(obstime=Time(59612.9340111690, format='mjd'), value=-0.7914494276),
-          EngDB_Value(obstime=Time(59612.9340141319, format='mjd'), value=-0.791449368)]),
+         [EngDB_Value(obstime=Time(61459.04166726852, format='mjd'), value='SCFA'),
+          EngDB_Value(obstime=Time(61459.041678842594, format='mjd'), value='SCFA'),
+          EngDB_Value(obstime=Time(61459.04169168982, format='mjd'), value='SCFA'),
+          EngDB_Value(obstime=Time(61459.04170325232, format='mjd'), value='SCFA'),
+          EngDB_Value(obstime=Time(61459.04171482639, format='mjd'), value='SCFA')]),
         ({'include_obstime': True, 'zip_results': False}, EngDB_Value(
             obstime=[
-                Time(59612.9340052431, format='mjd'),
-                Time(59612.9340082060, format='mjd'),
-                Time(59612.9340111690, format='mjd'),
-                Time(59612.9340141319, format='mjd')],
-            value=[-0.7914494276, -0.7914494276, -0.7914494276, -0.791449368])),
+                Time(61459.04166726852, format='mjd'),
+                Time(61459.041678842594, format='mjd'),
+                Time(61459.04169168982, format='mjd'),
+                Time(61459.04170325232, format='mjd'),
+                Time(61459.04171482639, format='mjd')],
+            value=['SCFA'] * 5)),
         ({'include_bracket_values': True},
-         [-0.791449368, -0.7914494276, -0.7914494276, -0.7914494276, -0.791449368, -0.791449368])
+         ['SCFA'] * 7)
     ])
 def test_get_values(engdb, pars, expected):
     values = engdb.get_values(*QUERY, **pars)
