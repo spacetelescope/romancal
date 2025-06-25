@@ -5,7 +5,7 @@ PSF Reference File
 :Data model: `~roman_datamodels.datamodels.EpsfRefModel`
 
 The PSF reference file contains a grid of point spread
-images for a given detector position, filter, and 
+images for a given detector position, filter, and
 spectral type.
 
 .. include:: ../references_general/psf_selection.inc
@@ -35,7 +35,7 @@ The format and content of the file is as follows:
 Data                 Object Type  Dimensions              Data type
 ===================  ============ ======================  =============
 psf                  NDArray      3 x 3 x 9 x 391 x 391   float32
-extended_psf         NDArray      3641 x 3641             float32  
+extended_psf         NDArray      3641 x 3641             float32
 extended_psf_noipc   NDArray      3641 x 3641             float32
 psf_noipc            NDArray      3 x 3 x 9 x 391 x 391   float32
 ===================  ============ ======================  =============

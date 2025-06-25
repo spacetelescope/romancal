@@ -54,9 +54,6 @@ def setup_inputs(
     # construct ImageModel
     mod = ImageModel(wfi_image)
 
-    filt = mod.meta.instrument["optical_element"]
-    detector = mod.meta["instrument"]["detector"].replace("WFI", "SCA")
-
     crds_parameters = mod.get_crds_parameters()
     crds_ref_file = crds.getreferences(
         crds_parameters, reftypes=["epsf"], observatory="roman"

@@ -9,7 +9,6 @@ from collections import OrderedDict
 import astropy.units as u
 import numpy as np
 import scipy.ndimage as ndimage
-from astropy.convolution import Box2DKernel, convolve
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.nddata import NDData
 from astropy.table import Table
@@ -18,7 +17,6 @@ from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
 from photutils.psf import (
     GriddedPSFModel,
-    ImagePSF,
     IterativePSFPhotometry,
     PSFPhotometry,
     SourceGrouper,
@@ -128,100 +126,100 @@ def get_psf_library(self):
     return model
 
 
-def create_l3_psf_model(
-    filt,
-    detector="SCA02",
-    pixfrac=1.0,
-    pixel_scale=0.11,
-    oversample=11,
-    fov_pixels=9,
-    instrument_options=None,
-):
-    """
-    Compute a PSF model via `~stpsf.calc_psf`.
-
-    L3 data is an amalgamation of numerous exposures over numerous SCA's.
-    This algorithm does not attempt to merge specific PSF profiles for each
-    SCA that contributes to each pixel. Instead, a simplified version is implemented
-    as described.
-
-        - Base PSF for the given detector, is created. This base has the
-          0.11 arcsec pixel scale convolved in.
-        - PSF is further convolved with the drizzlepac `pixfrac` scale
-        - PSF is further convolved with the images actual pixel scale.
-        - The PSF is then azimuthally averaged and resampled at the L3 pixel scale.
-
-    Parameters
-    ----------
-    filt : str
-        Filter name, starting with "F". For example: `"F184"`.
-    detector : str
-        Computed gridded PSF model for this SCA.
-        Examples include: `"SCA01"` or `"SCA18"`.
-    pixfrac : float
-        drizzlepac pixel fraction used.
-    pixel_scale : float
-        L3 image pixel scale in arcsec.
-        Often similar to the default detector scale of 0.11 arcsec.
-    oversample : int, optional
-        Oversample factor, default is 11. See STPSF docs for details [1]_.
-        Choosing an odd number makes the pixel convolution more accurate.
-    fov_pixels : int, optional
-        Field of view width [pixels]. Default is 12.
-        See STPSF docs for details [1]_.
-    instrument_options : dict, optional
-        Instrument configuration options passed to STPSF.
-        For example, STPSF assumes Roman pointing jitter consistent with
-        mission specs by default, but this can be turned off with:
-        ``{'jitter': None, 'jitter_sigma': 0}``.
-
-    Returns
-    -------
-    psf_model : `photutils.psf.ImagePSF`
-        PSF model.
-
-    References
-    ----------
-    .. [1] `STPSF documentation for `stpsf.JWInstrument.calc_psf`
-       <https://stpsf.readthedocs.io/en/latest/api/stpsf.JWInstrument.html#stpsf.JWInstrument.calc_psf>`_
-
-    """
-
-    # Create base PSF.
-    wfi = WFI()
-    wfi.detector = detector
-    wfi.filter = filt
-    wfi_psf = wfi.calc_psf(
-        fov_pixels=fov_pixels,
-        oversample=oversample,
-        add_distortion=False,
-        crop_psf=False,
-    )
-    psf = wfi_psf[0].data
-    detector_pixel_scale = wfi_psf[1].header["PIXELSCL"]
-
-    # Pixel response
-    pixel_response_kernal = Box2DKernel(width=oversample)
-    psf = convolve(psf, pixel_response_kernal)
-
-    # Smooth to account for the pixfrac used to create the L3 image.
-    pixfrac_kernel = Box2DKernel(width=pixfrac * oversample)
-    psf = convolve(psf, kernel=pixfrac_kernel)
-
-    # Smooth to the image scale
-    outscale_kernel = Box2DKernel(width=oversample * pixel_scale / detector_pixel_scale)
-    psf = convolve(psf, kernel=outscale_kernel)
-
-    # Azimuthally smooth the psf
-    psf = azimuthally_smooth(psf, scaling=pixel_scale / detector_pixel_scale)
-
-    # Create the PSF model.
-    x_0, y_0 = psf.shape
-    x_0 = (x_0 - 1) / 2.0 / oversample
-    y_0 = (y_0 - 1) / 2.0 / oversample
-    psf_model = ImagePSF(psf, x_0=x_0, y_0=y_0, oversampling=oversample)
-
-    return psf_model
+# def create_l3_psf_model(
+#     filt,
+#     detector="SCA02",
+#     pixfrac=1.0,
+#     pixel_scale=0.11,
+#     oversample=11,
+#     fov_pixels=9,
+#     instrument_options=None,
+# ):
+#     """
+#     Compute a PSF model via `~stpsf.calc_psf`.
+#
+#     L3 data is an amalgamation of numerous exposures over numerous SCA's.
+#     This algorithm does not attempt to merge specific PSF profiles for each
+#     SCA that contributes to each pixel. Instead, a simplified version is implemented
+#     as described.
+#
+#         - Base PSF for the given detector, is created. This base has the
+#           0.11 arcsec pixel scale convolved in.
+#         - PSF is further convolved with the drizzlepac `pixfrac` scale
+#         - PSF is further convolved with the images actual pixel scale.
+#         - The PSF is then azimuthally averaged and resampled at the L3 pixel scale.
+#
+#     Parameters
+#     ----------
+#     filt : str
+#         Filter name, starting with "F". For example: `"F184"`.
+#     detector : str
+#         Computed gridded PSF model for this SCA.
+#         Examples include: `"SCA01"` or `"SCA18"`.
+#     pixfrac : float
+#         drizzlepac pixel fraction used.
+#     pixel_scale : float
+#         L3 image pixel scale in arcsec.
+#         Often similar to the default detector scale of 0.11 arcsec.
+#     oversample : int, optional
+#         Oversample factor, default is 11. See STPSF docs for details [1]_.
+#         Choosing an odd number makes the pixel convolution more accurate.
+#     fov_pixels : int, optional
+#         Field of view width [pixels]. Default is 12.
+#         See STPSF docs for details [1]_.
+#     instrument_options : dict, optional
+#         Instrument configuration options passed to STPSF.
+#         For example, STPSF assumes Roman pointing jitter consistent with
+#         mission specs by default, but this can be turned off with:
+#         ``{'jitter': None, 'jitter_sigma': 0}``.
+#
+#     Returns
+#     -------
+#     psf_model : `photutils.psf.ImagePSF`
+#         PSF model.
+#
+#     References
+#     ----------
+#     .. [1] `STPSF documentation for `stpsf.JWInstrument.calc_psf`
+#        <https://stpsf.readthedocs.io/en/latest/api/stpsf.JWInstrument.html#stpsf.JWInstrument.calc_psf>`_
+#
+#     """
+#
+#     # Create base PSF.
+#     wfi = WFI()
+#     wfi.detector = detector
+#     wfi.filter = filt
+#     wfi_psf = wfi.calc_psf(
+#         fov_pixels=fov_pixels,
+#         oversample=oversample,
+#         add_distortion=False,
+#         crop_psf=False,
+#     )
+#     psf = wfi_psf[0].data
+#     detector_pixel_scale = wfi_psf[1].header["PIXELSCL"]
+#
+#     # Pixel response
+#     pixel_response_kernal = Box2DKernel(width=oversample)
+#     psf = convolve(psf, pixel_response_kernal)
+#
+#     # Smooth to account for the pixfrac used to create the L3 image.
+#     pixfrac_kernel = Box2DKernel(width=pixfrac * oversample)
+#     psf = convolve(psf, kernel=pixfrac_kernel)
+#
+#     # Smooth to the image scale
+#     outscale_kernel = Box2DKernel(width=oversample * pixel_scale / detector_pixel_scale)
+#     psf = convolve(psf, kernel=outscale_kernel)
+#
+#     # Azimuthally smooth the psf
+#     psf = azimuthally_smooth(psf, scaling=pixel_scale / detector_pixel_scale)
+#
+#     # Create the PSF model.
+#     x_0, y_0 = psf.shape
+#     x_0 = (x_0 - 1) / 2.0 / oversample
+#     y_0 = (y_0 - 1) / 2.0 / oversample
+#     psf_model = ImagePSF(psf, x_0=x_0, y_0=y_0, oversampling=oversample)
+#
+#     return psf_model
 
 
 def fit_psf_to_image_model(
@@ -429,14 +427,14 @@ class PSFCatalog:
             gridded_psf_model = get_psf_library(self)
         else:
             raise NotImplementedError("Need to update l3 psf to use crds")
-            # MosaicModel (L3 datamodel)
-            filt = self.model.meta.basic.optical_element
-            psf_model = create_l3_psf_model(
-                filt=filt,
-                pixel_scale=self.model.meta.wcsinfo.pixel_scale
-                * 3600.0,  # wcsinfo is in degrees. Need arcsec
-                pixfrac=self.model.meta.resample.pixfrac,
-            )
+            # # MosaicModel (L3 datamodel)
+            # filt = self.model.meta.basic.optical_element
+            # psf_model = create_l3_psf_model(
+            #     filt=filt,
+            #     pixel_scale=self.model.meta.wcsinfo.pixel_scale
+            #     * 3600.0,  # wcsinfo is in degrees. Need arcsec
+            #     pixfrac=self.model.meta.resample.pixfrac,
+            # )
 
         return gridded_psf_model
 

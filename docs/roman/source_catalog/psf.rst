@@ -10,7 +10,7 @@ Create PSF models
 
 `~romancal.source_catalog.psf.create_gridded_psf_model`
 computes a gridded PSF model for a given detector using
-the reference files in CRDS. 
+the reference files in CRDS.
 
 Fit model PSFs to an ImageModel
 -------------------------------
