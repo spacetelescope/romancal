@@ -56,7 +56,6 @@ The typical workflow is as follows:
 
 import logging
 
-from .engdb_direct import EngdbDirect
 from .engdb_mast import EngdbMast
 
 # Configure logging
@@ -88,7 +87,7 @@ def ENGDB_Service(base_url=None, **service_kwargs):  # noqa: N802
         The engineering database service to use.
     """
     # Determine the database to use
-    for db_attempt in [EngdbMast, EngdbDirect]:
+    for db_attempt in [EngdbMast]:
         try:
             service = db_attempt(base_url=base_url, **service_kwargs)
         except RuntimeError as excp:

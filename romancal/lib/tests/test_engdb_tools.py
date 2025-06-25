@@ -14,7 +14,7 @@ import requests
 
 from astropy.time import Time
 
-from jwst.lib import engdb_direct, engdb_tools
+from romancal.lib import engdb_tools
 
 GOOD_MNEMONIC = 'INRSI_GWA_Y_TILT_AVGED'
 GOOD_STARTTIME = '2022-01-25 23:29:02.188'
@@ -56,7 +56,7 @@ def engdb():
     yield engdb_tools.ENGDB_Service()
 
 
-def test_environmental_bad(jail_environ):
+def test_environmental_bad(environ_jail):
     alternate = 'https://google.com/'
     did_except = False
     os.environ['ENG_BASE_URL'] = alternate
@@ -74,18 +74,6 @@ def test_basic(engdb):
 def test_bad_server():
     with pytest.raises(Exception):
         engdb_tools.ENGDB_Service(BAD_SERVER)
-
-
-def test_db_time():
-    time = 1234567890123
-    stime = ''.join([
-        '/Date(',
-        str(time),
-        '+1234',
-        ')/'
-    ])
-    result = engdb_direct.extract_db_time(stime)
-    assert result == time
 
 
 def test_values(engdb):
@@ -127,15 +115,6 @@ def test_novalues(engdb):
     values = engdb.get_values(
         GOOD_MNEMONIC, NODATA_STARTIME, NODATA_ENDTIME)
     assert len(values) == 0
-
-
-def test_meta(engdb):
-    try:
-        response = engdb.get_meta(GOOD_MNEMONIC)
-    except NotImplementedError:
-        pytest.skip('Test only valid with Direct EngDB connection.')
-    assert response['Count'] == 1
-    assert response['TlmMnemonics'][0]['TlmMnemonic'] == GOOD_MNEMONIC
 
 
 def test_unzip(engdb):

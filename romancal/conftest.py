@@ -80,6 +80,16 @@ def module_jail(request, tmp_path_factory):
     os.chdir(old_dir)
 
 
+@pytest.fixture
+def environ_jail():
+    """Lock changes to the environment."""
+    original = os.environ.copy()
+    try:
+        yield
+    finally:
+        os.environ = original
+
+
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config):
     terminal_reporter = config.pluginmanager.getplugin("terminalreporter")
