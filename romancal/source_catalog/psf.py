@@ -4,30 +4,26 @@ Module to calculate PSF photometry.
 
 import logging
 import math
-
-import astropy.units as u
-import numpy as np
-import stpsf
-from astropy.convolution import Box2DKernel, convolve
 from collections import OrderedDict
 
 import astropy.units as u
 import numpy as np
+import scipy.ndimage as ndimage
+from astropy.convolution import Box2DKernel, convolve
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.nddata import NDData
 from astropy.table import Table
 from astropy.utils import lazyproperty
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
-from photutils.psf import ImagePSF, IterativePSFPhotometry, PSFPhotometry, SourceGrouper
-from scipy.ndimage import map_coordinates
 from photutils.psf import (
+    GriddedPSFModel,
+    ImagePSF,
     IterativePSFPhotometry,
     PSFPhotometry,
     SourceGrouper,
-    GriddedPSFModel,
 )
-import scipy.ndimage as ndimage
+from scipy.ndimage import map_coordinates
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

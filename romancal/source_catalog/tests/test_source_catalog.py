@@ -74,6 +74,9 @@ def make_test_image():
 def mosaic_model():
     defaults = {
         "meta": {
+            "basic": {
+                "time_first_mjd": 60310.5,
+            },
             "resample": {"pixfrac": 1.0},
             "wcsinfo": {
                 "pixel_scale": 1.5277777769528157e-05
@@ -81,6 +84,7 @@ def mosaic_model():
         }
     }
     model = MosaicModel.create_fake_data(defaults=defaults, shape=(101, 101))
+    model.meta.ref_file = stnode.RefFile.create_fake_data()
     model.meta.filename = "none"
     model.meta.cal_step = stnode.L3CalStep.create_fake_data()
     model.cal_logs = stnode.CalLogs.create_fake_data()

@@ -100,21 +100,26 @@ class RomanStep(Step):
             model.meta.cal_logs = type(model.meta.cal_logs)(self.log_records)
 
         if len(reference_files_used) > 0:
-            for ref_name, ref_file in reference_files_used:
-                if hasattr(model.meta.ref_file, ref_name):
-                    setattr(model.meta.ref_file, ref_name, ref_file)
-                    # getattr(model.meta.ref_file, ref_name).name = ref_file
-            model.meta.ref_file.crds.version = crds_client.get_svn_version()
-            model.meta.ref_file.crds.context = crds_client.get_context_used(
-                model.crds_observatory
-            )
-
-            # this will only run if 'parent' is none, which happens when an individual
-            # step is being run or if self is a RomanPipeline and not a RomanStep.
-            if self.parent is None:
-                log.info(
-                    f"Results used CRDS context: {model.meta.ref_file.crds.context}"
+            if not hasattr(model.meta, "ref_file"):
+                log.error(
+                    f"Model[{model}] is missing meta.ref_file. {reference_files_used} will not be recorded"
                 )
+            else:
+                for ref_name, ref_file in reference_files_used:
+                    if hasattr(model.meta.ref_file, ref_name):
+                        setattr(model.meta.ref_file, ref_name, ref_file)
+                        # getattr(model.meta.ref_file, ref_name).name = ref_file
+                model.meta.ref_file.crds.version = crds_client.get_svn_version()
+                model.meta.ref_file.crds.context = crds_client.get_context_used(
+                    model.crds_observatory
+                )
+
+                # this will only run if 'parent' is none, which happens when an individual
+                # step is being run or if self is a RomanPipeline and not a RomanStep.
+                if self.parent is None:
+                    log.info(
+                        f"Results used CRDS context: {model.meta.ref_file.crds.context}"
+                    )
 
     def record_step_status(self, model, step_name, success=True):
         """
