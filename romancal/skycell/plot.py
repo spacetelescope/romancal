@@ -32,13 +32,14 @@ def find_intersecting_projregions(
     footprint: sm.ImageFootprint,
     skymap: sc.SkyMap = None,
 ) -> list[int]:
-    """
-    Out of all projection regions, find ones that intersect the given image footprint
+    """Out of all projection regions, find ones that intersect the given image footprint
 
     Parameters
     ----------
-    footprint: sequence of 4 points (ra, dec) or an `ImageFootprint` object
-    skymap: sky map instance (defaults to global SKYMAP)
+    footprint: sm.ImageFootprint :
+        sequence of points (ra, dec) or an `ImageFootprint` object
+    skymap: sc.SkyMap :
+        sky map instance; defaults to global SKYMAP (Default value = None)
 
     Returns
     -------
@@ -69,8 +70,7 @@ def veccoords_to_tangent_plane(
     vertices: list[tuple[float, float, float]],
     tangent_vectorpoint: tuple[float, float, float],
 ) -> NDArray[float]:
-    """
-    Convert the spherical geometry vectors to tangent plane coordinates
+    """Convert the spherical geometry vectors to tangent plane coordinates
     in arcseconds. This algorithm is not precise, but should be good
     enough for now (and besides, the goal here is visualizaion, not
     ultra-precision). This also breaks down numerically very near the
@@ -159,16 +159,16 @@ def plot_image_footprint_and_skycells(
     footprint: list[tuple[float, float]] | sm.ImageFootprint,
     skymap: sc.SkyMap = None,
 ) -> list[tuple[Axis, tuple[float, float, float]]]:
-    """
-    This plots a list of skycell footprints against the image footprint.
+    """This plots a list of skycell footprints against the image footprint.
 
     Both the touched skycells as well as nearby skycells are plotted.
 
-
     Parameters
     ----------
-    footprint: sequence of 4 points (ra, dec) or an `ImageFootprint` object
-    skymap: sky map instance (defaults to global SKYMAP)
+    footprint : list | sm.ImageFootprint :
+        sequence of points (ra, dec) or an `ImageFootprint` object
+    skymap : sc.SkyMap :
+        sky map instance; defaults to global SKYMAP (Default value = None)
     """
 
     if not isinstance(footprint, sm.ImageFootprint):
@@ -195,7 +195,7 @@ def plot_image_footprint_and_skycells(
             sgv.lonlat_to_vector(*projregion.radec_tangent)
         )
         image_corners_tangentplane = veccoords_to_tangent_plane(
-            footprint.vectorpoint_corners,
+            footprint.vectorpoint_vertices,
             tangent_vectorpoint,
         )
         plot_field(image_corners_tangentplane, fill="lightgrey", color="black")
