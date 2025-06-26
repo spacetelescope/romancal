@@ -204,6 +204,29 @@ def test_transforms(calc_method, matrix):
     _test_transforms(transforms, t_pars, matrix)
 
 
+@pytest.mark.parametrize('wcs_type', ['wcsinfo', 'vinfo'])
+def test_method_wcs(calc_method, wcs_type, truth_ext=''):
+    """Ensure WCS information is correct
+
+    Parameters
+    ----------
+    calc_method : pytest.fixture
+        Equates to tuple (wcsinfo, vinfo, transforms, t_pars)
+
+    wcs_type : str
+        Which particular WCS information to test
+
+    truth_ext : str
+        Arbitrary extension to add to the truth file name.
+    """
+    wcsinfo, vinfo, _, t_pars = calc_method
+    wcs = {'wcsinfo': wcsinfo, 'vinfo': vinfo}
+    with asdf.open(DATA_PATH / f'wcs_{t_pars.method}{truth_ext}.asdf') as af:
+        expected = af.tree[wcs_type]
+
+    assert expected == wcs[wcs_type]._asdict()
+
+
 def test_change_engdb_url():
     """Test changing the engineering database by call for success.
 
@@ -590,8 +613,8 @@ def calc_method(request, tmp_path_factory):
     # Save all for later examination.
     transforms_path = tmp_path_factory.mktemp('transforms')
     transforms.write_to_asdf(transforms_path / f'transforms_{request.param}.asdf')
-    # wcs_asdf_file = asdf.AsdfFile({'wcsinfo': wcsinfo, 'vinfo': vinfo})
-    # wcs_asdf_file.write_to(transforms_path / f'wcs_{request.param}.asdf')
+    wcs_asdf_file = asdf.AsdfFile({'wcsinfo': wcsinfo._asdict(), 'vinfo': vinfo._asdict()})
+    wcs_asdf_file.write_to(transforms_path / f'wcs_{request.param}.asdf')
 
     return wcsinfo, vinfo, transforms, t_pars
 
