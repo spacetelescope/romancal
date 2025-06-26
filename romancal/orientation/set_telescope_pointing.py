@@ -107,7 +107,12 @@ TYPES_TO_UPDATE = set()
 
 # Mnemonics for each transformation method.
 # dict where value indicates whether the mnemonic is required or not.
-COURSE_MNEMONICS = {}
+COURSE_MNEMONICS = {
+    'SCF_AC_FAST_QBJ1',
+    'SCF_AC_FAST_QBJ2',
+    'SCF_AC_FAST_QBJ3',
+    'SCF_AC_FAST_QBJ4',
+}
 
 COURSE_TR_202111_MNEMONICS = {
     "SA_ZATTEST1": True,
@@ -178,15 +183,6 @@ class Methods(Enum):
     """
     Available methods to calculate V1 and aperture WCS information.
     """
-
-    #: COARSE tracking mode algorithm
-    COARSE = (
-        "coarse",
-        "calc_transforms_coarse",
-        "calc_wcs",
-        COURSE_MNEMONICS,
-    )
-
     #: COARSE_NB: Algorithm based solely on the notebook
     COARSE_NB = (
         'coarse_nb',
@@ -201,7 +197,7 @@ class Methods(Enum):
     #: Default algorithm under PCS_MODE COARSE.
     # COARSE = COARSE_TR_202111
     #: Default algorithm for use by Operations.
-    OPS = COARSE
+    OPS = COARSE_NB
 
     def __new__(cls, value, func_name, calc_func, mnemonics):
         """Create new instance of Methods."""  # numpydoc ignore=RT01
