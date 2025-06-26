@@ -563,7 +563,7 @@ def _test_methods(calc_transforms, matrix, truth_ext=''):
     """
     transforms, t_pars = calc_transforms
 
-    expected_tforms = stp.Transforms.from_asdf(DATA_PATH / f'tforms_{t_pars.method}{truth_ext}.asdf')
+    expected_tforms = stp.Transforms.from_asdf(DATA_PATH / f'transforms_{t_pars.method}{truth_ext}.asdf')
     expected_value = getattr(expected_tforms, matrix)
 
     value = getattr(transforms, matrix)
