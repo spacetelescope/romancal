@@ -4,10 +4,12 @@ Test suite for set_telescope_pointing
 import logging
 import numpy as np
 from pathlib import Path
+import pytest
 import warnings
 
-import pytest
 pytest.importorskip('pysiaf')
+
+import asdf
 
 from astropy.io import fits  # noqa: E402
 from astropy.table import Table  # noqa: E402
@@ -187,7 +189,7 @@ def test_transform_serialize(calc_transforms, tmp_path):
 
 
 @pytest.mark.parametrize('matrix', [matrix for matrix in stp.Transforms()._fields])
-def test_methods(calc_transforms, matrix):
+def test_transforms(calc_method, matrix):
     """Ensure expected calculate of the specified matrix
 
     Parameters
@@ -198,7 +200,8 @@ def test_methods(calc_transforms, matrix):
     matrix : str
         The matrix to compare
     """
-    _test_methods(calc_transforms, matrix)
+    _, _, transforms, t_pars = calc_method
+    _test_transforms(transforms, t_pars, matrix)
 
 
 def test_change_engdb_url():
@@ -547,7 +550,7 @@ def _calc_coarse_202111_fgsid_idfunc(value):
     return f'{detector}-{fgsid_user}'
 
 
-def _test_methods(calc_transforms, matrix, truth_ext=''):
+def _test_transforms(transforms, t_pars, matrix, truth_ext=''):
     """Private function to ensure expected calculate of the specified matrix
 
     Parameters
@@ -561,8 +564,6 @@ def _test_methods(calc_transforms, matrix, truth_ext=''):
     truth_ext : str
         Arbitrary extension to add to the truth file name.
     """
-    transforms, t_pars = calc_transforms
-
     expected_tforms = stp.Transforms.from_asdf(DATA_PATH / f'transforms_{t_pars.method}{truth_ext}.asdf')
     expected_value = getattr(expected_tforms, matrix)
 
@@ -575,21 +576,24 @@ def _test_methods(calc_transforms, matrix, truth_ext=''):
 
 @pytest.fixture(scope='module',
                 params=[method for method in stp.Methods])
-def calc_transforms(request, tmp_path_factory):
-    """Calculate matrices for specified method method
+def calc_method(request, tmp_path_factory):
+    """Calculate full transforms and WCS info for a Method
     """
     t_pars = make_t_pars()
 
     # Set the method
     t_pars.method = request.param
 
-    # Calculate the transforms
-    transforms = stp.calc_transforms(t_pars)
+    # Calculate the transforms and WCS information
+    wcsinfo, vinfo, transforms = stp.calc_wcs(t_pars)
 
-    # Save transforms for later examination
-    transforms.write_to_asdf(tmp_path_factory.mktemp('transforms') / f'tforms_{request.param}.asdf')
+    # Save all for later examination.
+    transforms_path = tmp_path_factory.mktemp('transforms')
+    transforms.write_to_asdf(transforms_path / f'transforms_{request.param}.asdf')
+    # wcs_asdf_file = asdf.AsdfFile({'wcsinfo': wcsinfo, 'vinfo': vinfo})
+    # wcs_asdf_file.write_to(transforms_path / f'wcs_{request.param}.asdf')
 
-    return transforms, t_pars
+    return wcsinfo, vinfo, transforms, t_pars
 
 
 @pytest.fixture
