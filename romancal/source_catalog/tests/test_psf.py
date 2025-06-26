@@ -20,7 +20,8 @@ from roman_datamodels.datamodels import ImageModel
 from romancal.source_catalog.psf import (
     azimuthally_smooth,
     fit_psf_to_image_model,
-    get_psf_library,
+    get_gridded_psf_model,
+    create_l3_psf_model,
 )
 
 n_trials = 15
@@ -59,8 +60,9 @@ def setup_inputs(
     )
     psf_ref_file = crds_ref_file["epsf"]
     mod["psf_ref_model"] = rdm.open(psf_ref_file)
+
     # compute gridded PSF model:
-    psf_model = get_psf_library(mod)
+    psf_model = get_gridded_psf_model(mod["psf_ref_model"])
 
     return mod, psf_model
 
@@ -73,10 +75,9 @@ def add_sources(image_model, psf_model, x_true, y_true, flux_true, background=10
 
     shape = image_model.data.shape
     image = make_model_image(shape, psf_model, params_table, model_shape=(19, 19))
-    image += rng.normal(background, 1, size=shape)
+    image += rng.normal(background, image_model.err, size=shape)
 
     image_model.data = image * np.ones_like(image_model.data)
-    image_model.err = background * np.ones_like(image_model.err)
 
 
 class TestPSFFitting:
@@ -97,12 +98,12 @@ class TestPSFFitting:
     def test_psf_fit(self, dx, dy, true_flux):
         # generate an ImageModel
         image_model = deepcopy(self.image_model)
-        init_data_stddev = np.std(image_model.data)
 
         # add synthetic sources to the ImageModel:
         true_x = image_model_shape[0] / 2 + dx
         true_y = image_model_shape[1] / 2 + dy
         add_sources(image_model, self.psf_model, true_x, true_y, true_flux)
+        init_data_stddev = np.std(image_model.data)
 
         # fit the PSF to the ImageModel:
         results_table, photometry = fit_psf_to_image_model(
@@ -131,7 +132,7 @@ class TestPSFFitting:
         approx_centroid_err = approx_fwhm / approx_snr
 
         # centroid err heuristic above is an underestimate, so we scale it up:
-        scale_factor_approx = 1500
+        scale_factor_approx = 2
 
         assert np.all(
             results_table["x_err"] < scale_factor_approx * approx_centroid_err
@@ -139,16 +140,6 @@ class TestPSFFitting:
         assert np.all(
             results_table["y_err"] < scale_factor_approx * approx_centroid_err
         )
-
-
-@pytest.mark.skip(reason="l3 psf is broken")
-def test_create_l3_psf_model():
-    """Test basic results"""
-    assert False  # noqa: B011
-    # psf_model = create_l3_psf_model(filt="F158")
-    # assert psf_model.data.shape == (199, 199)
-    # assert psf_model.x_0.value == 9.0
-    # assert psf_model.y_0.value == 9.0
 
 
 def test_azimuthally_smooth():
