@@ -187,7 +187,7 @@ class Methods(Enum):
     COARSE_NB = (
         'coarse_nb',
         'calc_transforms_coarse_nb',
-        'calc_wcs',
+        'calc_wcs_standard',
         COURSE_MNEMONICS
     )
 
@@ -1124,15 +1124,12 @@ def calc_wcs(t_pars: TransformParameters):
     return wcsinfo, vinfo, transforms
 
 
-def calc_wcs_tr_202111(transforms: Transforms):
+def calc_wcs_standard(transforms: Transforms):
     """
     Calculate WCS transformation.
 
     Given observatory orientation and target aperture,
     calculate V1 and Reference Pixel sky coordinates.
-
-    A refactor of `calc_wcs_orig` to use the standard `calc_wcs_from_matrix`
-    instead of the specific `calc_aperture_wcs`.
 
     Parameters
     ----------
