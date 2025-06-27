@@ -1805,7 +1805,7 @@ def _roll_angle_from_matrix(matrix, v2, v3):
 
 
 def get_mnemonics(
-    obsstart, obsend, tolerance, mnemonics_to_read=TRACK_TR_202111_MNEMONICS, engdb_url=None
+    obsstart, obsend, tolerance, mnemonics_to_read=COURSE_MNEMONICS, engdb_url=None
 ):
     """
     Retrieve pointing mnemonics from the engineering database.
@@ -1813,7 +1813,7 @@ def get_mnemonics(
     Parameters
     ----------
     obsstart, obsend : float
-        MJD observation start/end times.
+        astropy.Time observation start/end times.
 
     tolerance : int
         If no telemetry can be found during the observation,
