@@ -86,6 +86,7 @@ def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
         res = map_coordinates(
             model, [ro, to], order=order, mode="wrap", output=np.dtype("f4")
         )
+        res *= scaling ** 2  # keep normalization at 1
         return res
 
     polar, rr, tt = cart_to_polar(data, oversample=oversample)
@@ -181,7 +182,7 @@ def create_l3_psf_model(
     gridpsf = get_gridded_psf_model(psf_ref_model)
     center = 2044  # Roman SCA center pixel
     szo2 = 10
-    npix = (szo2 * 2 + 1) * oversample
+    npix = szo2 * 2 * oversample + 1
     pts = np.linspace(-szo2 + center, szo2 + center, npix)
     xx, yy = np.meshgrid(pts, pts)
     psf = gridpsf.evaluate(xx, yy, 1, center, center)
