@@ -87,6 +87,11 @@ def test_get_pointing():
     assert np.allclose(q, Q_EXPECTED)
 
 
+def test_get_pointing_fail():
+    with pytest.raises(Exception):
+        obstime, q  = stp.get_pointing(47892.0, 48256.0)
+
+
 @pytest.mark.parametrize(
     'method',
     [method for method in stp.Methods]
@@ -184,15 +189,6 @@ def test_transform_serialize(calc_method, tmp_path):
 # #########################################################################
 # To be refactored below
 # #########################################################################
-
-
-def test_get_pointing_fail():
-    with pytest.raises(Exception):
-        (q,
-         j2fgs_matrix,
-         fmscorr,
-         obstime,
-         gs_commanded) = stp.get_pointing(47892.0, 48256.0)
 
 
 def test_logging(caplog):
