@@ -178,7 +178,7 @@ def test_override(attribute, expected):
 
 def test_override_calc_wcs():
     """Test matrix override in the full calculation"""
-    t_pars = make_t_pars()
+    t_pars = _make_t_pars()
     wcsinfo, vinfo, transforms = stp.calc_wcs(t_pars)
 
     override = stp.Transforms(m_eci2b=np.array([[-0.17690118, -0.39338551,  0.91934622],
@@ -230,7 +230,7 @@ def test_transform_serialize(calc_method, tmp_path):
 # ######################
 # Utilities and fixtures
 # ######################
-def make_t_pars(detector='WFI02'):
+def _make_t_pars(detector='WFI02'):
     """Setup initial Transforms Parameters
 
     This set is Visit 1 provided by T.Sohn in a demonstration notebook.
@@ -295,7 +295,7 @@ def _test_transforms(transforms, t_pars, matrix, truth_ext=''):
 def calc_method(request, tmp_path_factory):
     """Calculate full transforms and WCS info for a Method
     """
-    t_pars = make_t_pars()
+    t_pars = _make_t_pars()
 
     # Set the method
     t_pars.method = request.param
@@ -310,157 +310,6 @@ def calc_method(request, tmp_path_factory):
     wcs_asdf_file.write_to(transforms_path / f'wcs_{request.param}.asdf')
 
     return wcsinfo, vinfo, transforms, t_pars
-
-
-@pytest.fixture
-def data_file(tmp_path):
-    model = datamodels.Level1bModel()
-    model.meta.exposure.start_time = STARTTIME.mjd
-    model.meta.exposure.end_time = ENDTIME.mjd
-    model.meta.target.ra = TARG_RA
-    model.meta.target.dec = TARG_DEC
-    model.meta.guidestar.gs_ra = TARG_RA + 0.0001
-    model.meta.guidestar.gs_dec = TARG_DEC + 0.0001
-    model.meta.aperture.name = "MIRIM_FULL"
-    model.meta.observation.date = '2017-01-01'
-    model.meta.exposure.type = "MIR_IMAGE"
-    model.meta.ephemeris.velocity_x = -25.021
-    model.meta.ephemeris.velocity_y = -16.507
-    model.meta.ephemeris.velocity_z = -7.187
-
-    file_path = tmp_path / 'file.fits'
-    model.save(file_path)
-    model.close()
-    yield file_path
-
-
-@pytest.fixture(params=[('good_model', True), ('bad_model', False), ('fits_nomodel', False)])
-def file_case(request, tmp_path):
-    """Generate files with different model states"""
-    case, allow = request.param
-
-    if case == 'good_model':
-        # Make a model that will always succeed
-        model = datamodels.Level1bModel((10, 10, 10, 10))
-        path = tmp_path / 'level1bmodel.fits'
-        model.save(path)
-    elif case == 'bad_model':
-        # Make a model that will fail if not allowed
-        model = datamodels.IFUCubeModel((10, 10, 10))
-        path = tmp_path / 'image.fits'
-        model.save(path)
-    elif case == 'fits_nomodel':
-        # Create just a plain anything FITS
-        hdu = fits.PrimaryHDU()
-        hdul = fits.HDUList([hdu])
-        path = tmp_path / 'empty.fits'
-        hdul.writeto(path)
-    else:
-        assert False, f'Cannot produce a file for {case}'
-
-    return path, allow
-
-
-@pytest.fixture
-def data_file_nosiaf(tmp_path):
-    model = datamodels.Level1bModel()
-    model.meta.exposure.start_time = STARTTIME.mjd
-    model.meta.exposure.end_time = ENDTIME.mjd
-    model.meta.target.ra = TARG_RA
-    model.meta.target.dec = TARG_DEC
-    model.meta.aperture.name = "UNKNOWN"
-    model.meta.observation.date = '2017-01-01'
-
-    file_path = tmp_path / 'fits_nosiaf.fits'
-    model.save(file_path)
-    model.close()
-    yield file_path
-
-
-@pytest.fixture
-def data_file_fromsim(tmp_path):
-    """Create data using times that were executed during a simulation using the OTB Simulator"""
-    model = datamodels.Level1bModel()
-    model.meta.exposure.start_time = Time('2022-02-02T22:24:58.942').mjd
-    model.meta.exposure.end_time = Time('2022-02-02T22:26:24.836').mjd
-    model.meta.target.ra = TARG_RA
-    model.meta.target.dec = TARG_DEC
-    model.meta.guidestar.gs_ra = TARG_RA + 0.0001
-    model.meta.guidestar.gs_dec = TARG_DEC + 0.0001
-    model.meta.guidestar.gs_pcs_mode = 'COARSE'
-    model.meta.aperture.name = "MIRIM_FULL"
-    model.meta.observation.date = '2017-01-01'
-    model.meta.exposure.type = "MIR_IMAGE"
-    model.meta.ephemeris.velocity_x_bary = -25.021
-    model.meta.ephemeris.velocity_y_bary = -16.507
-    model.meta.ephemeris.velocity_z_bary = -7.187
-
-    file_path = tmp_path / 'file_fromsim.fits'
-    model.save(file_path)
-    model.close()
-    yield file_path
-
-
-@pytest.fixture
-def data_file_acq1(tmp_path):
-    model = datamodels.Level1bModel()
-    model.meta.exposure.start_time = STARTTIME.mjd
-    model.meta.exposure.end_time = ENDTIME.mjd
-    model.meta.target.ra = TARG_RA
-    model.meta.target.dec = TARG_DEC
-    model.meta.guidestar.gs_ra = TARG_RA + 0.0001
-    model.meta.guidestar.gs_dec = TARG_DEC + 0.0001
-    model.meta.aperture.name = "FGS2_FULL"
-    model.meta.observation.date = '2017-01-01'
-    model.meta.exposure.type = "FGS_ACQ1"
-    model.meta.ephemeris.velocity_x = -25.021
-    model.meta.ephemeris.velocity_y = -16.507
-    model.meta.ephemeris.velocity_z = -7.187
-
-    file_path = tmp_path / 'file.fits'
-    model.save(file_path)
-    model.close()
-    yield file_path
-
-
-@pytest.fixture
-def data_file_moving_target(tmp_path):
-    """Example data from simulation."""
-    # Values are from simulated data file jw00634_nrcblong_mttest_uncal.fits
-    model = datamodels.Level1bModel()
-    model.meta.exposure.start_time = 58738.82598848102
-    model.meta.exposure.end_time = 58738.82747969907
-    model.meta.exposure.mid_time = 58738.82673409005
-    model.meta.target.ra = 0.0
-    model.meta.target.dec = 0.0
-    model.meta.guidestar.gs_ra = 0.0001
-    model.meta.guidestar.gs_dec = 0.0001
-    model.meta.aperture.name = "MIRIM_FULL"
-    model.meta.observation.date = '2019-09-12'
-    model.meta.exposure.type = "MIR_IMAGE"
-    model.meta.ephemeris.velocity_x = 0.00651191175424979
-    model.meta.ephemeris.velocity_y = 0.160769793796114
-    model.meta.ephemeris.velocity_z = 0.147663026601154
-
-    model.meta.target.type = 'MOVING'
-    model.meta.moving_target = None
-
-    times = ['2019-09-12T19:49:25.405', '2019-09-12T19:50:29.825', '2019-09-12T19:51:34.246']
-    apparent_ra = [0.0, 6.2e-5, 1.24e-4]
-    apparent_dec = [-6.2e-5,  0.0,  3.0e-5]
-    default = [0.0, 0.0, 0.0]
-    col_names = [item['name'] for item in model.schema['properties']['moving_target']['datatype']]
-    mt_table = Table([times, apparent_ra, apparent_dec],
-                     names=('time', 'mt_apparent_RA', 'mt_apparent_Dec'))
-    for column in col_names:
-        if column not in {'time', 'mt_apparent_RA', 'mt_apparent_Dec'}:
-            mt_table.add_column(default, name=column)
-    model.moving_target = mt_table.as_array()
-
-    file_path = tmp_path / 'file.fits'
-    model.save(file_path)
-    model.close()
-    yield file_path
 
 
 @pytest.fixture
