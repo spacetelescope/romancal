@@ -92,6 +92,14 @@ def test_get_pointing_fail():
         obstime, q  = stp.get_pointing(47892.0, 48256.0)
 
 
+def test_logging(caplog):
+    stp.get_pointing(STARTTIME.mjd, ENDTIME.mjd)
+    assert 'Determining pointing between observations times' in caplog.text
+    assert 'Telemetry search tolerance' in caplog.text
+    assert 'Reduction function' in caplog.text
+    assert 'Querying engineering DB' in caplog.text
+
+
 @pytest.mark.parametrize(
     'method',
     [method for method in stp.Methods]
@@ -189,20 +197,6 @@ def test_transform_serialize(calc_method, tmp_path):
 # #########################################################################
 # To be refactored below
 # #########################################################################
-
-
-def test_logging(caplog):
-    (q,
-     j2fgs_matrix,
-     fsmcorr,
-     obstime,
-     gs_commanded,
-     fgsid,
-     gs_position) = stp.get_pointing(STARTTIME.mjd, ENDTIME.mjd)
-    assert 'Determining pointing between observations times' in caplog.text
-    assert 'Telemetry search tolerance' in caplog.text
-    assert 'Reduction function' in caplog.text
-    assert 'Querying engineering DB' in caplog.text
 
 
 def test_get_pointing_list():
