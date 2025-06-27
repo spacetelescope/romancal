@@ -52,6 +52,18 @@ METAS_ISCLOSE = [
     'meta.pointing.pa_v3',
 ]
 
+def test_change_engdb_url():
+    """Test changing the engineering database by call for success.
+
+    The given time and database should not find any values.
+    """
+    with pytest.raises(ValueError):
+        stp.get_pointing(
+            Time('2015-06-15').mjd,
+            Time('2015-06-17').mjd,
+            engdb_url=engdb_mast.MAST_BASE_URL
+        )
+
 
 @pytest.mark.parametrize(
     'method',
@@ -140,19 +152,9 @@ def test_transform_serialize(calc_method, tmp_path):
     assert isinstance(from_asdf, stp.Transforms)
     assert str(transforms) == str(from_asdf)
 
-
-def test_change_engdb_url():
-    """Test changing the engineering database by call for success.
-
-    The given time and database should not find any values.
-    """
-    with pytest.raises(ValueError):
-        stp.get_pointing(
-            Time('2015-06-15').mjd,
-            Time('2015-06-17').mjd,
-            engdb_url=engdb_mast.MAST_BASE_URL
-        )
-
+# #########################################################################
+# To be refactored below
+# #########################################################################
 
 def test_change_engdb_url_fail():
     """Test changing the engineering database by call"""
