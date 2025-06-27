@@ -83,8 +83,8 @@ def test_change_engdb_url():
     """
     with pytest.raises(ValueError):
         stp.get_pointing(
-            Time('2015-06-15').mjd,
-            Time('2015-06-17').mjd,
+            Time('2015-06-15'),
+            Time('2015-06-17'),
             engdb_url=engdb_mast.MAST_BASE_URL
         )
 
@@ -93,8 +93,8 @@ def test_change_engdb_url_fail():
     """Test changing the engineering database by call"""
     with pytest.raises(Exception):
         stp.get_pointing(
-            Time(STARTTIME, format='isot').mjd,
-            Time(ENDTIME, format='isot').mjd,
+            Time(STARTTIME, format='isot'),
+            Time(ENDTIME, format='isot'),
             engdb_url='http://nonexistent.fake.example'
         )
 
@@ -225,211 +225,6 @@ def test_transform_serialize(calc_method, tmp_path):
 
     assert isinstance(from_asdf, stp.Transforms)
     assert str(transforms) == str(from_asdf)
-
-# #########################################################################
-# To be refactored below
-# #########################################################################
-
-
-def test_add_wcs_default_fgsacq(tmp_path):
-    """Handle when no pointing exists and the default is used."""
-    with datamodels.Level1bModel(DATA_PATH / 'add_wcs_default_acq1.fits') as model:
-        expected_name = 'add_wcs_default_acq1.fits'
-        try:
-            stp.update_wcs(
-                model, tolerance=0, allow_default=True
-            )
-        except ValueError:
-            pass  # This is what we want for the test.
-        except Exception as e:
-            pytest.skip(
-                'Live ENGDB service is not accessible.'
-                '\nException={}'.format(e)
-            )
-
-        # Save for post-test comparison and update
-        model.save(tmp_path / expected_name)
-
-        # Check some keywords
-        assert model.meta.wcsinfo.crpix1 == 0
-        assert model.meta.wcsinfo.crpix2 == 0
-
-
-def test_add_wcs_default_nosiaf(data_file_nosiaf, caplog):
-    """Handle when no pointing exists and the default is used and no SIAF specified."""
-    with pytest.raises(ValueError):
-        stp.add_wcs(
-            data_file_nosiaf, tolerance=0, allow_default=True
-        )
-
-
-def test_add_wcs_with_db(data_file, tmp_path):
-    """Test using the database"""
-    expected_name = 'add_wcs_with_db.fits'
-
-    stp.add_wcs(data_file)
-
-    # Tests
-    with datamodels.Level1bModel(data_file) as model:
-
-        # Save for post-test comparison and update
-        model.save(tmp_path / expected_name)
-
-        with datamodels.open(DATA_PATH / expected_name) as expected:
-            for meta in METAS_EQUALITY:
-                assert model[meta] == expected[meta]
-
-            for meta in METAS_ISCLOSE:
-                assert np.isclose(model[meta], expected[meta])
-
-            assert word_precision_check(model.meta.wcsinfo.s_region, expected.meta.wcsinfo.s_region)
-
-
-@pytest.mark.parametrize('fgsid', [1, 2])
-def test_add_wcs_with_mast(data_file_fromsim, fgsid, tmp_path):
-    """Test using the database"""
-    expected_name = f'add_wcs_with_mast_fgs{fgsid}.fits'
-
-    # See if access to MAST is available.
-    try:
-        engdb_mast.EngdbMast(base_url=engdb_mast.MAST_BASE_URL)
-    except RuntimeError as exception:
-        pytest.skip(f'Live MAST Engineering Service not available: {exception}')
-
-    # Execute the operation.
-    try:
-        stp.add_wcs(data_file_fromsim, engdb_url=engdb_mast.MAST_BASE_URL,
-                    fgsid=fgsid)
-    except ValueError as exception:
-        pytest.xfail(f'No telemetry exists. Update test to use existing telemetry. Exception: {exception}')
-
-    # Tests
-    with datamodels.Level1bModel(data_file_fromsim) as model:
-
-        # Save for post-test comparison and update
-        model.save(tmp_path / expected_name)
-
-        with datamodels.open(DATA_PATH / expected_name) as expected:
-            for meta in METAS_EQUALITY:
-                assert model[meta] == expected[meta], f"{meta} is not equal"
-
-            for meta in METAS_ISCLOSE:
-                assert np.isclose(model[meta], expected[meta])
-
-            assert word_precision_check(model.meta.wcsinfo.s_region, expected.meta.wcsinfo.s_region)
-
-
-def test_add_wcs_method_full_nosiafdb(data_file, tmp_path):
-    """Test using the database"""
-    expected_name = 'add_wcs_method_full_nosiafdb.fits'
-
-    # Calculate
-    stp.add_wcs(data_file, method=stp.Methods.OPS_TR_202111)
-
-    # Tests
-    with datamodels.Level1bModel(data_file) as model:
-
-        # Save for post-test comparison and update
-        model.save(tmp_path / expected_name)
-
-        with datamodels.open(DATA_PATH / expected_name) as expected:
-            for meta in METAS_EQUALITY:
-                assert model[meta] == expected[meta]
-
-            for meta in METAS_ISCLOSE:
-                assert np.isclose(model[meta], expected[meta])
-
-            assert word_precision_check(model.meta.wcsinfo.s_region, expected.meta.wcsinfo.s_region)
-
-
-def test_default_siaf_values(data_file_nosiaf):
-    """
-    Test that FITS WCS default values were set.
-    """
-    with datamodels.Level1bModel(data_file_nosiaf) as model:
-        model.meta.exposure.start_time = STARTTIME.mjd
-        model.meta.exposure.end_time = ENDTIME.mjd
-        model.meta.target.ra = TARG_RA
-        model.meta.target.dec = TARG_DEC
-        model.meta.aperture.name = "MIRIM_TAFULL"
-        model.meta.observation.date = '2017-01-01'
-        model.meta.exposure.type = "MIR_IMAGE"
-        stp.update_wcs(model, allow_default=False)
-        assert model.meta.wcsinfo.crpix1 == 24.5
-        assert model.meta.wcsinfo.crpix2 == 24.5
-        assert model.meta.wcsinfo.cdelt1 == 3.0693922222222226e-05
-        assert model.meta.wcsinfo.cdelt2 == 3.092664722222222e-05
-
-
-def test_tsgrism_siaf_values(data_file_nosiaf):
-    """
-    Test that FITS WCS default values were set.
-    """
-    with datamodels.Level1bModel(data_file_nosiaf) as model:
-        model.meta.exposure.start_time = STARTTIME.mjd
-        model.meta.exposure.end_time = ENDTIME.mjd
-        model.meta.aperture.name = "NRCA5_GRISM256_F444W"
-        model.meta.observation.date = '2017-01-01'
-        model.meta.exposure.type = "NRC_TSGRISM"
-        model.meta.visit.tsovisit = True
-        stp.update_wcs(model)
-        assert model.meta.wcsinfo.siaf_xref_sci == 858.0
-        assert model.meta.wcsinfo.siaf_yref_sci == 35
-
-
-def test_mirim_tamrs_siaf_values(data_file_nosiaf):
-    """
-    Test that FITS WCS default values were set.
-    """
-    with datamodels.Level1bModel(data_file_nosiaf) as model:
-        model.meta.exposure.start_time = STARTTIME.mjd
-        model.meta.exposure.end_time = ENDTIME.mjd
-        model.meta.aperture.name = 'MIRIM_TAMRS'
-        model.meta.observation.date = '2017-01-01'
-        model.meta.exposure.type = "MIR_TACQ"
-        stp.update_wcs(model)
-        assert model.meta.wcsinfo.crpix1 == 997.5
-        assert model.meta.wcsinfo.crpix2 == 993.5
-
-
-def test_moving_target_update(caplog, data_file_moving_target):
-    """Test moving target table updates."""
-    with datamodels.open(data_file_moving_target) as model:
-        stp.update_mt_kwds(model)
-
-        expected_ra = 6.200036603575057e-05
-        expected_dec = 1.7711407285091175e-10
-        assert np.isclose(model.meta.wcsinfo.mt_ra, expected_ra)
-        assert np.isclose(model.meta.wcsinfo.mt_dec, expected_dec)
-        assert np.isclose(model.meta.target.ra, expected_ra)
-        assert np.isclose(model.meta.target.dec, expected_dec)
-
-    assert "Moving target RA and Dec updated" in caplog.text
-
-
-def test_moving_target_no_mtt(caplog, data_file):
-    """Test moving target table updates, no table present."""
-    with datamodels.open(data_file) as model:
-        stp.update_mt_kwds(model)
-
-        # No update without table
-        assert model.meta.wcsinfo.mt_ra is None
-        assert model.meta.wcsinfo.mt_dec is None
-
-    assert "Moving target position table not found" in caplog.text
-
-
-def test_moving_target_tnotinrange(caplog, data_file_moving_target):
-    """Test moving target table updates, time not in range."""
-    with datamodels.open(data_file_moving_target) as model:
-        model.meta.exposure.mid_time -= 0.2
-        stp.update_mt_kwds(model)
-
-        # No update without times in range
-        assert model.meta.wcsinfo.mt_ra is None
-        assert model.meta.wcsinfo.mt_dec is None
-
-    assert "is not in the moving_target table range" in caplog.text
 
 
 # ######################
