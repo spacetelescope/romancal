@@ -65,6 +65,16 @@ def test_change_engdb_url():
         )
 
 
+def test_change_engdb_url_fail():
+    """Test changing the engineering database by call"""
+    with pytest.raises(Exception):
+        stp.get_pointing(
+            Time(STARTTIME, format='isot').mjd,
+            Time(ENDTIME, format='isot').mjd,
+            engdb_url='http://nonexistent.fake.example'
+        )
+
+
 @pytest.mark.parametrize(
     'method',
     [method for method in stp.Methods]
@@ -155,15 +165,6 @@ def test_transform_serialize(calc_method, tmp_path):
 # #########################################################################
 # To be refactored below
 # #########################################################################
-
-def test_change_engdb_url_fail():
-    """Test changing the engineering database by call"""
-    with pytest.raises(Exception):
-        stp.get_pointing(
-            Time(STARTTIME, format='isot').mjd,
-            Time(ENDTIME, format='isot').mjd,
-            engdb_url='http://nonexistent.fake.example'
-        )
 
 
 def test_strict_pointing(data_file_strict):
