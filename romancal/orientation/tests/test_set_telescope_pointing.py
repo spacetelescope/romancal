@@ -135,6 +135,13 @@ def test_override_calc_wcs():
                           stp.WCSRef(ra=245.78706748976023, dec=66.83068216214627, pa=89.45804357482956)))
 
 
+def test_strict_pointing(science_raw_model, tmp_path):
+    """Test failure on strict pointing"""
+    science_raw_model.meta.exposure.end_time = STARTTIME
+    with pytest.raises(ValueError):
+        stp.add_wcs(_model_to_tmpfile(science_raw_model, tmp_path), tolerance=0)
+
+
 @pytest.mark.parametrize('matrix', [matrix for matrix in stp.Transforms()._fields])
 def test_transforms(calc_method, matrix):
     """Ensure expected calculate of the specified matrix
@@ -165,12 +172,6 @@ def test_transform_serialize(calc_method, tmp_path):
 # #########################################################################
 # To be refactored below
 # #########################################################################
-
-
-def test_strict_pointing(data_file_strict):
-    """Test failure on strict pointing"""
-    with pytest.raises(ValueError):
-        stp.add_wcs(data_file_strict, tolerance=0)
 
 
 def test_get_pointing():
@@ -490,6 +491,14 @@ def _calc_coarse_202111_fgsid_idfunc(value):
     return f'{detector}-{fgsid_user}'
 
 
+def _model_to_tmpfile(m, tmp_path, fname='file.asdf'):
+    """Save a DataModel to a general temp file"""
+    file_path = tmp_path / fname
+    m.save(file_path)
+    m.close()
+    return file_path
+
+
 def _test_transforms(transforms, t_pars, matrix, truth_ext=''):
     """Private function to ensure expected calculate of the specified matrix
 
@@ -583,28 +592,6 @@ def file_case(request, tmp_path):
         assert False, f'Cannot produce a file for {case}'
 
     return path, allow
-
-
-@pytest.fixture
-def data_file_strict(tmp_path):
-    model = datamodels.Level1bModel()
-    model.meta.exposure.start_time = STARTTIME.mjd
-    model.meta.exposure.end_time = STARTTIME.mjd
-    model.meta.target.ra = TARG_RA
-    model.meta.target.dec = TARG_DEC
-    model.meta.guidestar.gs_ra = TARG_RA + 0.0001
-    model.meta.guidestar.gs_dec = TARG_DEC + 0.0001
-    model.meta.aperture.name = "MIRIM_FULL"
-    model.meta.observation.date = '2017-01-01'
-    model.meta.exposure.type = "MIR_IMAGE"
-    model.meta.ephemeris.velocity_x = -25.021
-    model.meta.ephemeris.velocity_y = -16.507
-    model.meta.ephemeris.velocity_z = -7.187
-
-    file_path = tmp_path / 'file.fits'
-    model.save(file_path)
-    model.close()
-    yield file_path
 
 
 @pytest.fixture
@@ -707,3 +694,14 @@ def data_file_moving_target(tmp_path):
     model.save(file_path)
     model.close()
     yield file_path
+
+
+@pytest.fixture
+def science_raw_model():
+    """Create the base model for testing"""
+    m = rdm.datamodels.ScienceRawModel.create_fake_data({'meta': {
+        'exposure': {'start_time': STARTTIME, 'end_time': ENDTIME},
+        'pointing': {'target_ra': TARG_RA, 'target_dec': TARG_DEC},
+    }})
+
+    return m
