@@ -35,8 +35,8 @@ TARG_DEC = 66.01
 # Get the mock databases
 DATA_PATH = Path(__file__).parent / 'data'
 
-Q_EXPECTED = np.array([0.37671179, 0.70705936, -0.57895271, 0.15155541])
-OBSTIME_EXPECTED = Time(1654277147.967113, format='unix')
+Q_EXPECTED = np.array([-0.69018802,  0.12195182, -0.695103  ,  0.15999998])
+OBSTIME_EXPECTED = Time(1805829668.0276294, format='unix')
 
 # Meta attributes for test comparisons
 METAS_EQUALITY = ['meta.exposure.engineering_quality',
@@ -73,6 +73,18 @@ def test_change_engdb_url_fail():
             Time(ENDTIME, format='isot').mjd,
             engdb_url='http://nonexistent.fake.example'
         )
+
+
+def test_get_pointing():
+    """Ensure that the averaging works."""
+
+    obstime, q = stp.get_pointing(
+         STARTTIME.mjd,
+         ENDTIME.mjd
+    )
+
+    assert np.isclose(obstime.value, OBSTIME_EXPECTED.value)
+    assert np.allclose(q, Q_EXPECTED)
 
 
 @pytest.mark.parametrize(
@@ -172,26 +184,6 @@ def test_transform_serialize(calc_method, tmp_path):
 # #########################################################################
 # To be refactored below
 # #########################################################################
-
-
-def test_get_pointing():
-    """Ensure that the averaging works."""
-
-    (q,
-     j2fgs_matrix,
-     fsmcorr,
-     obstime,
-     gs_commanded,
-     fgsid,
-     gs_position) = stp.get_pointing(
-         STARTTIME.mjd,
-         ENDTIME.mjd
-    )
-
-    assert np.allclose(q, Q_EXPECTED)
-    assert np.allclose(j2fgs_matrix, J2FGS_EXPECTED)
-    assert np.allclose(fsmcorr, FSMCORR_EXPECTED)
-    assert np.isclose(obstime.value, OBSTIME_EXPECTED.value)
 
 
 def test_get_pointing_fail():
