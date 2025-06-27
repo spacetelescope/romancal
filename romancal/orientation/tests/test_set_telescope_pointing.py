@@ -90,18 +90,6 @@ def test_override_calc_wcs():
                           stp.WCSRef(ra=245.78706748976023, dec=66.83068216214627, pa=89.45804357482956)))
 
 
-def test_transform_serialize(calc_method, tmp_path):
-    """Test serialization of Transforms"""
-    _, _, transforms, _ = calc_method
-
-    path = tmp_path / 'transforms.asdf'
-    transforms.write_to_asdf(path)
-    from_asdf = stp.Transforms.from_asdf(path)
-
-    assert isinstance(from_asdf, stp.Transforms)
-    assert str(transforms) == str(from_asdf)
-
-
 @pytest.mark.parametrize('matrix', [matrix for matrix in stp.Transforms()._fields])
 def test_transforms(calc_method, matrix):
     """Ensure expected calculate of the specified matrix
@@ -116,6 +104,18 @@ def test_transforms(calc_method, matrix):
     """
     _, _, transforms, t_pars = calc_method
     _test_transforms(transforms, t_pars, matrix)
+
+
+def test_transform_serialize(calc_method, tmp_path):
+    """Test serialization of Transforms"""
+    _, _, transforms, _ = calc_method
+
+    path = tmp_path / 'transforms.asdf'
+    transforms.write_to_asdf(path)
+    from_asdf = stp.Transforms.from_asdf(path)
+
+    assert isinstance(from_asdf, stp.Transforms)
+    assert str(transforms) == str(from_asdf)
 
 
 @pytest.mark.parametrize('wcs_type', ['wcsinfo', 'vinfo'])
