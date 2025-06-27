@@ -1925,56 +1925,11 @@ def all_pointings(mnemonics_to_read, mnemonics):  # noqa: ARG001
     filled = fill_mnemonics_chronologically(mnemonics)
     for obstime, mnemonics_at_time in filled.items():
         # Fill out the matrices
-        q = np.array(
-            [
-                mnemonics_at_time["SA_ZATTEST1"].value,
-                mnemonics_at_time["SA_ZATTEST2"].value,
-                mnemonics_at_time["SA_ZATTEST3"].value,
-                mnemonics_at_time["SA_ZATTEST4"].value,
-            ]
-        )
-
-        j2fgs_matrix = np.array(
-            [
-                mnemonics_at_time["SA_ZRFGS2J11"].value,
-                mnemonics_at_time["SA_ZRFGS2J12"].value,
-                mnemonics_at_time["SA_ZRFGS2J13"].value,
-                mnemonics_at_time["SA_ZRFGS2J21"].value,
-                mnemonics_at_time["SA_ZRFGS2J22"].value,
-                mnemonics_at_time["SA_ZRFGS2J23"].value,
-                mnemonics_at_time["SA_ZRFGS2J31"].value,
-                mnemonics_at_time["SA_ZRFGS2J32"].value,
-                mnemonics_at_time["SA_ZRFGS2J33"].value,
-            ]
-        )
-
-        fsmcorr = np.array(
-            [
-                mnemonics_at_time["SA_ZADUCMDX"].value,
-                mnemonics_at_time["SA_ZADUCMDY"].value,
-            ]
-        )
-
-        gs_commanded = np.array(
-            [mnemonics_at_time["SA_ZFGGSCMDX"].value, mnemonics_at_time["SA_ZFGGSCMDY"].value]
-        )
-
-        gs_position = None
-        if all(k in mnemonics for k in ("SA_ZFGGSPOSX", "SA_ZFGGSPOSY")):
-            gs_position = np.array(
-                [mnemonics_at_time["SA_ZFGGSPOSX"].value, mnemonics_at_time["SA_ZFGGSPOSY"].value]
-            )
-
-        fgsid = mnemonics_at_time["SA_ZFGDETID"].value
+        q = np.array([mnemonics_at_time[m].value for m in COURSE_MNEMONICS_QUATERNION_ECI])
 
         pointing = Pointing(
             q=q,
             obstime=obstime,
-            j2fgs_matrix=j2fgs_matrix,
-            fsmcorr=fsmcorr,
-            gs_commanded=gs_commanded,
-            fgsid=fgsid,
-            gs_position=gs_position,
         )
         pointings.append(pointing)
 

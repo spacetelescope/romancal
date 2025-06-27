@@ -92,6 +92,14 @@ def test_get_pointing_fail():
         obstime, q  = stp.get_pointing(47892.0, 48256.0)
 
 
+def test_get_pointing_list():
+    results = stp.get_pointing(STARTTIME.mjd, ENDTIME.mjd, reduce_func=stp.all_pointings)
+    assert isinstance(results, list)
+    assert len(results) > 0
+    assert np.isclose(results[0].q, Q_EXPECTED).all()
+    assert STARTTIME <= results[0].obstime <= ENDTIME
+
+
 def test_logging(caplog):
     stp.get_pointing(STARTTIME.mjd, ENDTIME.mjd)
     assert 'Determining pointing between observations times' in caplog.text
@@ -197,16 +205,6 @@ def test_transform_serialize(calc_method, tmp_path):
 # #########################################################################
 # To be refactored below
 # #########################################################################
-
-
-def test_get_pointing_list():
-    results = stp.get_pointing(STARTTIME.mjd, ENDTIME.mjd, reduce_func=stp.all_pointings)
-    assert isinstance(results, list)
-    assert len(results) > 0
-    assert np.isclose(results[0].q, Q_EXPECTED).all()
-    assert np.isclose(results[0].j2fgs_matrix, J2FGS_MATRIX_EXPECTED).all()
-    assert np.isclose(results[0].fsmcorr, FSMCORR_0_EXPECTED).all()
-    assert STARTTIME <= results[0].obstime <= ENDTIME
 
 
 def test_add_wcs_default(data_file, tmp_path):
