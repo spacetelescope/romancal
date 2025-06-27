@@ -62,6 +62,29 @@ def test_method_string(method):
     assert f'{method}' == method.value
 
 
+@pytest.mark.parametrize('wcs_type', ['wcsinfo', 'vinfo'])
+def test_method_wcs(calc_method, wcs_type, truth_ext=''):
+    """Ensure WCS information is correct
+
+    Parameters
+    ----------
+    calc_method : pytest.fixture
+        Equates to tuple (wcsinfo, vinfo, transforms, t_pars)
+
+    wcs_type : str
+        Which particular WCS information to test
+
+    truth_ext : str
+        Arbitrary extension to add to the truth file name.
+    """
+    wcsinfo, vinfo, _, t_pars = calc_method
+    wcs = {'wcsinfo': wcsinfo, 'vinfo': vinfo}
+    with asdf.open(DATA_PATH / f'wcs_{t_pars.method}{truth_ext}.asdf') as af:
+        expected = af.tree[wcs_type]
+
+    assert expected == wcs[wcs_type]._asdict()
+
+
 @pytest.mark.parametrize(
     'attribute, expected',
     [('m_eci2b', 'overridden'), ('m_eci2v', 'untouched')]
@@ -116,29 +139,6 @@ def test_transform_serialize(calc_method, tmp_path):
 
     assert isinstance(from_asdf, stp.Transforms)
     assert str(transforms) == str(from_asdf)
-
-
-@pytest.mark.parametrize('wcs_type', ['wcsinfo', 'vinfo'])
-def test_method_wcs(calc_method, wcs_type, truth_ext=''):
-    """Ensure WCS information is correct
-
-    Parameters
-    ----------
-    calc_method : pytest.fixture
-        Equates to tuple (wcsinfo, vinfo, transforms, t_pars)
-
-    wcs_type : str
-        Which particular WCS information to test
-
-    truth_ext : str
-        Arbitrary extension to add to the truth file name.
-    """
-    wcsinfo, vinfo, _, t_pars = calc_method
-    wcs = {'wcsinfo': wcsinfo, 'vinfo': vinfo}
-    with asdf.open(DATA_PATH / f'wcs_{t_pars.method}{truth_ext}.asdf') as af:
-        expected = af.tree[wcs_type]
-
-    assert expected == wcs[wcs_type]._asdict()
 
 
 def test_change_engdb_url():
