@@ -62,6 +62,18 @@ def test_method_string(method):
     assert f'{method}' == method.value
 
 
+@pytest.mark.parametrize(
+    'attribute, expected',
+    [('m_eci2b', 'overridden'), ('m_eci2v', 'untouched')]
+)
+def test_override(attribute, expected):
+    """Test overriding of Transforms attributes"""
+    overrides = stp.Transforms(m_eci2b='overridden')
+    to_override = stp.Transforms(m_eci2b='original', m_eci2v='untouched', override=overrides)
+
+    assert getattr(to_override, attribute) == expected
+
+
 def test_override_calc_wcs():
     """Test matrix override in the full calculation"""
     t_pars = make_t_pars()
@@ -76,18 +88,6 @@ def test_override_calc_wcs():
     assert vinfo_new != vinfo
     assert all(np.isclose(vinfo_new,
                           stp.WCSRef(ra=245.78706748976023, dec=66.83068216214627, pa=89.45804357482956)))
-
-
-@pytest.mark.parametrize(
-    'attribute, expected',
-    [('m_eci2j', 'overridden'), ('m_j2fgs1', 'untouched')]
-)
-def test_override(attribute, expected):
-    """Test overriding of Transforms attributes"""
-    overrides = stp.Transforms(m_eci2j='overridden')
-    to_override = stp.Transforms(m_eci2j='original', m_j2fgs1='untouched', override=overrides)
-
-    assert getattr(to_override, attribute) == expected
 
 
 def test_transform_serialize(calc_transforms, tmp_path):
