@@ -72,7 +72,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.spatial.transform import Rotation
 
-from stdatamodels.jwst import datamodels
+import roman_datamodels as rdm
 
 from .set_velocity_aberration import compute_va_effects_vector
 from ..assign_wcs.utils import update_s_region_keyword, calc_rotation_matrix
@@ -100,19 +100,16 @@ DEBUG_FULL = logging.DEBUG - 1
 LOGLEVELS = [logging.INFO, logging.DEBUG, DEBUG_FULL]
 
 # Datamodels that can be updated, normally
-EXPECTED_MODELS = (datamodels.Level1bModel, datamodels.ImageModel, datamodels.CubeModel)
+EXPECTED_MODELS = (rdm.datamodels.ScienceRawModel)
 
 # Exposure types that can be updated, normally
 TYPES_TO_UPDATE = set()
 
 # Mnemonics for each transformation method.
 # dict where value indicates whether the mnemonic is required or not.
-COURSE_MNEMONICS = {
-    'SCF_AC_FAST_QBJ1',
-    'SCF_AC_FAST_QBJ2',
-    'SCF_AC_FAST_QBJ3',
-    'SCF_AC_FAST_QBJ4',
-}
+COURSE_MNEMONICS_QUATERNION_ECI = [f'SCF_AC_SDR_QBJ_{idx + 1}' for idx in range(4)]
+COURSE_MNEMONICS = {q: True for q in COURSE_MNEMONICS_QUATERNION_ECI}
+
 
 COURSE_TR_202111_MNEMONICS = {
     "SA_ZATTEST1": True,
@@ -293,9 +290,9 @@ PI2 = np.pi * 2.0
 #    q            : Quaternion of the FGS.
 #    gs_commanded : Guide star position as originally commanded.
 Pointing = namedtuple(
-    "Pointing", ["q", "gs_commanded"]
+    "Pointing", ['obstime', "q"]
 )
-Pointing.__new__.__defaults__ = (None,) * 5
+Pointing.__new__.__defaults__ = (None,) * 2
 
 # Guide Star ACQ pointing container
 # Attributes are as follows. All values are retrieved from the engineering.
@@ -465,8 +462,6 @@ class TransformParameters:
     obsstart: float | None = None
     #: If set, matrices that should be used instead of the calculated one.
     override_transforms: Transforms | None = None
-    #: The tracking mode in use.
-    pcs_mode: str | None = None
     #: The observatory orientation, represented by the ECI quaternion,
     # and other engineering mnemonics
     pointing: Pointing | Any = None
@@ -504,13 +499,10 @@ class TransformParameters:
 
 def add_wcs(
     filename,
-    allow_any_file=False,
-    force_level1bmodel=False,
     default_pa_v3=0.0,
     siaf_path=None,
     prd=None,
     engdb_url=None,
-    fgsid=None,
     tolerance=60,
     allow_default=False,
     reduce_func=None,
@@ -518,8 +510,7 @@ def add_wcs(
     save_transforms=None,
     **transform_kwargs,
 ):
-    """
-    Add WCS information to a JWST DataModel.
+    """Add WCS information to a JWST DataModel.
 
     Telescope orientation is attempted to be obtained from
     the engineering database. Failing that, a default pointing
@@ -531,15 +522,6 @@ def add_wcs(
     ----------
     filename : str
         The path to a data file.
-
-    allow_any_file : bool
-        Attempt to add the WCS information to any type of file.
-        The default, `False`, only allows modifications of files that contain
-        known datamodels of `Level1bmodel`, `ImageModel`, or `CubeModel`.
-
-    force_level1bmodel : bool
-        If not `allow_any_file`, and the input file model is unknown,
-        open the input file as a Level1bModel regardless.
 
     default_pa_v3 : float
         The V3 position angle to use if the pointing information
@@ -554,10 +536,6 @@ def add_wcs(
 
     engdb_url : str or None
         URL of the engineering telemetry database REST interface.
-
-    fgsid : int or None
-        When in COARSE mode, the FGS to use as the guider reference.
-        If None, use what is provided in telemetry.
 
     tolerance : int
         If no telemetry can be found during the observation,
@@ -582,57 +560,18 @@ def add_wcs(
 
     Notes
     -----
-    This function adds absolute pointing information to the JWST
-    datamodels provided. By default, only Stage 1 and Stage 2a exposures are
-    allowed to be updated. These have the suffixes of "uncal", "rate", and
-    "rateints" representing datamodels Level1bModel, ImageModel, and CubeModel.
+    This function adds absolute pointing information to the Roman datamodels
+    provided. By default, only Stage 1 exposures are allowed to be updated.
+    These have the suffixes of "uncal" representing datamodels ScienceRawModel.
     Any higher level product, from Stage 2b and beyond, that has had the
-    `assign_wcs` step applied, have improved WCS information. Running
-    this task on such files will potentially corrupt the WCS.
-
-    It starts by populating the headers with values from the SIAF database.
-    It adds the following keywords to all files:
-
-    * V2_REF (arcseconds)
-    * V3_REF (arcseconds)
-    * VPARITY (+1 or -1)
-    * V3I_YANG (decimal degrees)
-
-    The keywords computed and added to all files are:
-
-    * RA_V1
-    * DEC_V1
-    * PA_V3
-    * RA_REF
-    * DEC_REF
-    * ROLL_REF
-    * S_REGION
-
-    In addition the following keywords are computed and added to IMAGING_MODES only:
-
-    * CRVAL1
-    * CRVAL2
-    * PC1_1
-    * PC1_2
-    * PC2_1
-    * PC2_2
-
-    It does not currently place the new keywords in any particular location
-    in the header other than what is required by the standard.
+    `assign_wcs` step applied, have improved WCS information. Running this task
+    on such files will potentially corrupt the WCS.
     """
     logger.info("Updating WCS info for file %s", filename)
-    try:
-        model = datamodels.open(filename, guess=allow_any_file)
-    except TypeError:
-        if force_level1bmodel:
-            logger.warning("Input %s is an unknown model, opening as a Level1bModel.", filename)
-            model = datamodels.Level1bModel(filename)
-        else:
-            raise
 
-    try:
-        if type(model) not in EXPECTED_MODELS:
-            logger.warning("Input %s is not of an expected type (uncal, rate, rateints)", model)
+    with rdm.open(filename) as model:
+        if not isinstance(model, EXPECTED_MODELS):
+            logger.warning("Input %s is not of an expected type (uncal)", model)
             logger.warning(
                 "    Updating pointing may have no effect or detrimental effects on the "
                 "WCS information,"
@@ -640,12 +579,10 @@ def add_wcs(
             logger.warning(
                 "    especially if the input is the result of Level2b or higher calibration."
             )
-            if not allow_any_file:
-                raise TypeError(
-                    f"Input model {model} is not one of {EXPECTED_MODELS} and "
-                    "`allow_any_file` is `False`."
-                    "\n\tFailing WCS processing."
-                )
+            raise TypeError(
+                f"Input model {model} is not one of {EXPECTED_MODELS}."
+                "\n\tFailing WCS processing."
+            )
 
         t_pars, transforms = update_wcs(
             model,
@@ -653,20 +590,11 @@ def add_wcs(
             siaf_path=siaf_path,
             prd=prd,
             engdb_url=engdb_url,
-            fgsid=fgsid,
             tolerance=tolerance,
             allow_default=allow_default,
             reduce_func=reduce_func,
             **transform_kwargs,
         )
-
-        try:
-            if model.meta.target.type.lower() == "moving":
-                update_mt_kwds(model)
-        except AttributeError:
-            pass
-
-        model.meta.model_type = None
 
         if dry_run:
             logger.info("Dry run requested; results are not saved.")
@@ -676,55 +604,8 @@ def add_wcs(
             if transforms and save_transforms:
                 logger.info("Saving transform matrices to %s", save_transforms)
                 transforms.write_to_asdf(save_transforms)
-    finally:
-        model.close()
 
     logger.info("...update completed")
-
-
-def update_mt_kwds(model):
-    """
-    Add/update the Moving target header keywords.
-
-    If the target type is "moving_target" check for the moving target position
-    table. If this is available calculate the moving target position keywords
-    and insert or update MT_RA & MT_DEC.
-
-    Returns
-    -------
-    model : DataModel
-       Updated model.
-    """
-    if model.hasattr("moving_target"):
-        time_mt = Time(model.moving_target.time, format="isot")
-        time_mt = [t.mjd for t in time_mt]
-        exp_midpt_mjd = model.meta.exposure.mid_time
-        # check to see if the midpoint of the observation is contained within
-        # the timerange of the MT table
-        if time_mt[0] <= exp_midpt_mjd <= time_mt[-1]:
-            ra = model.moving_target.mt_apparent_RA
-            dec = model.moving_target.mt_apparent_Dec
-            f_ra = interp1d(time_mt, ra)
-            f_dec = interp1d(time_mt, dec)
-            model.meta.wcsinfo.mt_ra = f_ra(exp_midpt_mjd).item(0)
-            model.meta.wcsinfo.mt_dec = f_dec(exp_midpt_mjd).item(0)
-            model.meta.target.ra = f_ra(exp_midpt_mjd).item(0)
-            model.meta.target.dec = f_dec(exp_midpt_mjd).item(0)
-        else:
-            logger.info(
-                "Exposure midpoint %s is not in the moving_target table range of %s to %s",
-                exp_midpt_mjd,
-                time_mt[0],
-                time_mt[-1],
-            )
-            return
-    else:
-        logger.info("Moving target position table not found in the file")
-        return
-
-    logger.info("Moving target RA and Dec updated.")
-    return model
-
 
 def update_wcs(
     model,
@@ -733,7 +614,6 @@ def update_wcs(
     siaf_path=None,
     prd=None,
     engdb_url=None,
-    fgsid=None,
     tolerance=60,
     allow_default=False,
     reduce_func=None,
@@ -767,10 +647,6 @@ def update_wcs(
     engdb_url : str or None
         URL of the engineering telemetry database REST interface.
 
-    fgsid : int or None
-        When in COARSE mode, the FGS to use as the guider reference.
-        If None, use what is provided in telemetry.
-
     tolerance : int
         If no telemetry can be found during the observation,
         the time, in seconds, beyond the observation time to
@@ -796,12 +672,13 @@ def update_wcs(
     """
     t_pars = transforms = None  # Assume telemetry is not used.
 
-    if not prd:
-        prd = model.meta.prd_software_version
-    siaf_db = SiafDb(source=siaf_path, prd=prd)
+    # TODO: determine how to find prd versions
+    # if not prd:
+    #     prd = model.meta.prd_version
+    # siaf_db = SiafDb(source=siaf_path, prd=prd)
 
     # Get model attributes
-    useafter = model.meta.observation.date
+    useafter = model.meta.exposure.start_time
 
     # Configure transformation parameters.
     t_pars = t_pars_from_model(
@@ -811,26 +688,16 @@ def update_wcs(
         tolerance=tolerance,
         allow_default=allow_default,
         reduce_func=reduce_func,
-        siaf_db=siaf_db,
         useafter=useafter,
         **transform_kwargs,
     )
-    if fgsid:
-        t_pars.fgsid = fgsid
 
+    # TODO: Determine if this is necessary
     # Populate header with SIAF information.
-    if t_pars.siaf is None:
-        if t_pars.exp_type not in FGS_GUIDE_EXP_TYPES:
-            raise ValueError("Insufficient SIAF information found in header.")
-    else:
-        populate_model_from_siaf(model, t_pars.siaf)
+    # populate_model_from_siaf(model, t_pars.siaf)
 
     # Calculate WCS.
-    if t_pars.exp_type in FGS_GUIDE_EXP_TYPES:
-        update_wcs_from_fgs_guiding(model, t_pars, default_roll_ref=default_roll_ref)
-        transforms = None
-    else:
-        transforms = update_wcs_from_telem(model, t_pars)
+    transforms = update_wcs_from_telem(model, t_pars)
 
     return t_pars, transforms
 
@@ -919,7 +786,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     transforms = None  # Assume no transforms are calculated.
 
     # Setup default WCS info if actual pointing and calculations fail.
-    wcsinfo = WCSRef(model.meta.target.ra, model.meta.target.dec, t_pars.default_pa_v3)
+    wcsinfo = WCSRef(model.meta.pointing.target_ra, model.meta.pointing.target_dec, model.meta.pointing.pa_v3)
     vinfo = wcsinfo
 
     # Get the pointing information
@@ -967,43 +834,22 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     model.meta.pointing.pa_v3 = vinfo.pa
 
     # Update Aperture pointing
-    model.meta.aperture.position_angle = wcsinfo.pa
+    model.meta.pointing.pa_aperture = wcsinfo.pa
     model.meta.wcsinfo.ra_ref = wcsinfo.ra
     model.meta.wcsinfo.dec_ref = wcsinfo.dec
-    model.meta.wcsinfo.roll_ref = pa_to_roll_ref(wcsinfo.pa, t_pars.siaf)
-    if model.meta.exposure.type.lower() in TYPES_TO_UPDATE:
-        model.meta.wcsinfo.crval1 = wcsinfo.ra
-        model.meta.wcsinfo.crval2 = wcsinfo.dec
-        (
-            model.meta.wcsinfo.pc1_1,
-            model.meta.wcsinfo.pc1_2,
-            model.meta.wcsinfo.pc2_1,
-            model.meta.wcsinfo.pc2_2,
-        ) = calc_rotation_matrix(
-            np.deg2rad(model.meta.wcsinfo.roll_ref),
-            np.deg2rad(model.meta.wcsinfo.v3yangle),
-            vparity=t_pars.siaf.vparity,
-        )
 
+    # TODO: when siaf info is truly incorporated
+    # model.meta.wcsinfo.roll_ref = pa_to_roll_ref(wcsinfo.pa, t_pars.siaf)
+    model.meta.wcsinfo.roll_ref = wcsinfo.pa
+
+    # TODO: when siaf info is truly incorporated
     # Calculate S_REGION with the footprint
     # information
-    try:
-        update_s_region(model, t_pars.siaf)
-    except Exception as e:
-        logger.warning("Calculation of S_REGION failed and will be skipped.")
-        logger.warning("Exception is %s", e)
-
-    # If TARG_RA/TARG_DEC still 0/0 (e.g. pure parallels with no defined target),
-    # populate with RA_REF/DEC_REF values
-    if (model.meta.target.ra == 0.0 and model.meta.target.dec == 0.0) and (
-        "PARALLEL" in model.meta.visit.type
-    ):
-        logger.warning(
-            "No target location specified for parallel observation: "
-            "copying reference point RA/Dec to TARG_RA/TARG_DEC."
-        )
-        model.meta.target.ra = model.meta.wcsinfo.ra_ref
-        model.meta.target.dec = model.meta.wcsinfo.dec_ref
+    # try:
+    #     update_s_region(model, t_pars.siaf)
+    # except Exception as e:
+    #     logger.warning("Calculation of S_REGION failed and will be skipped.")
+    #     logger.warning("Exception is %s", e)
 
     return transforms
 
@@ -2037,7 +1883,7 @@ def get_mnemonics(
             allowed = [
                 value
                 for value in mnemonics[mnemonic]
-                if allowed_start <= value.obstime.mjd <= allowed_end
+                if allowed_start <= value.obstime <= allowed_end
             ]
             if not len(allowed):
                 raise ValueError(
@@ -2267,51 +2113,13 @@ def pointing_from_average(mnemonics_to_read, mnemonics):
         raise ValueError("Bad telemetry values")
 
     # Fill out the pointing matrices.
-    q = np.array(
-        [
-            mnemonic_averages["SA_ZATTEST1"],
-            mnemonic_averages["SA_ZATTEST2"],
-            mnemonic_averages["SA_ZATTEST3"],
-            mnemonic_averages["SA_ZATTEST4"],
-        ]
-    )
-
-    j2fgs_matrix = np.array(
-        [
-            mnemonic_averages["SA_ZRFGS2J11"],
-            mnemonic_averages["SA_ZRFGS2J12"],
-            mnemonic_averages["SA_ZRFGS2J13"],
-            mnemonic_averages["SA_ZRFGS2J21"],
-            mnemonic_averages["SA_ZRFGS2J22"],
-            mnemonic_averages["SA_ZRFGS2J23"],
-            mnemonic_averages["SA_ZRFGS2J31"],
-            mnemonic_averages["SA_ZRFGS2J32"],
-            mnemonic_averages["SA_ZRFGS2J33"],
-        ]
-    )
-
-    fsmcorr = np.array([mnemonic_averages["SA_ZADUCMDX"], mnemonic_averages["SA_ZADUCMDY"]])
-
-    gs_commanded = np.array([mnemonic_averages["SA_ZFGGSCMDX"], mnemonic_averages["SA_ZFGGSCMDY"]])
-
-    gs_position = None
-    if all(k in mnemonic_averages for k in ("SA_ZFGGSPOSX", "SA_ZFGGSPOSY")):
-        gs_position = np.array(
-            [mnemonic_averages["SA_ZFGGSPOSX"], mnemonic_averages["SA_ZFGGSPOSY"]]
-        )
-
-    # For FGS ID, just take the first one.
-    fgsid = mnemonics["SA_ZFGDETID"][0].value
+    q = np.array([mnemonic_averages[m] for m in COURSE_MNEMONICS_QUATERNION_ECI])
 
     pointing = Pointing(
         obstime=obstime,
         q=q,
-        j2fgs_matrix=j2fgs_matrix,
-        fsmcorr=fsmcorr,
-        gs_commanded=gs_commanded,
-        fgsid=fgsid,
-        gs_position=gs_position,
     )
+
     # That's all folks
     return pointing
 
@@ -2863,40 +2671,16 @@ def t_pars_from_model(model, **t_pars_kwargs):
     t_pars.exp_type = exp_type
 
     # observation parameters
-    if t_pars.exp_type in FGS_GUIDE_EXP_TYPES:
-        t_pars.obsstart = Time(model.meta.observation.date_beg, format="isot").mjd
-        t_pars.obsend = Time(model.meta.observation.date_end, format="isot").mjd
-    else:
-        t_pars.obsstart = model.meta.exposure.start_time
-        t_pars.obsend = model.meta.exposure.end_time
+    t_pars.obsstart = model.meta.exposure.start_time
+    t_pars.obsend = model.meta.exposure.end_time
     logger.debug("Observation time: %s - %s", t_pars.obsstart, t_pars.obsend)
 
-    # Get Guide Star information
-    t_pars.guide_star_wcs = WCSRef(
-        model.meta.guidestar.gs_ra,
-        model.meta.guidestar.gs_dec,
-        model.meta.guidestar.gs_v3_pa_science,
-    )
-    t_pars.pcs_mode = model.meta.guidestar.gs_pcs_mode
-    logger.debug("guide_star_wcs from model: %s", t_pars.guide_star_wcs)
-    logger.debug("PCS_MODE: %s", t_pars.pcs_mode)
-
-    # Get jwst velocity
-    t_pars.jwst_velocity = np.array(
-        [
-            model.meta.ephemeris.velocity_x_bary,
-            model.meta.ephemeris.velocity_y_bary,
-            model.meta.ephemeris.velocity_z_bary,
-        ]
-    )
-    logger.debug("JWST Velocity: %s", t_pars.jwst_velocity)
-
     # Set the transform and WCS calculation method.
-    t_pars.method = method_from_pcs_mode(t_pars.pcs_mode)
+    t_pars.method = Methods.default
 
     # Set pointing reduction function if not already set.
     if not t_pars.reduce_func:
-        t_pars.reduce_func = get_reduce_func_from_exptype(t_pars.exp_type)
+        t_pars.reduce_func = pointing_from_average
 
     return t_pars
 
@@ -2941,41 +2725,6 @@ def dcm(alpha, delta, angle):
     )
 
     return dcm
-
-
-# Determine calculation method from tracking mode.
-def method_from_pcs_mode(pcs_mode):
-    """
-    Determine transform/WCS calculation method from PCS_MODE.
-
-    Pointing Control System Mode (PCS_MODE) contains the string representing
-    which mode the JWST tracking system is in. The orientation calculation
-    changes depending on the mode in use.
-
-    Parameters
-    ----------
-    pcs_mode : str
-        The PCS mode in use.
-
-    Returns
-    -------
-    method : Methods
-        The orientation calculation method to use.
-
-    Raises
-    ------
-    ValueError
-        If ``pcs_mode`` does not uniquely define the method to use.
-    """
-    if pcs_mode is None or pcs_mode in ["NONE", "COARSE"]:
-        return Methods.COARSE_TR_202111
-    elif pcs_mode in ["FINEGUIDE", "MOVING", "TRACK"]:
-        return Methods.TRACK_TR_202111
-    else:
-        raise ValueError(
-            f'Invalid PCS_MODE: {pcs_mode}. Should be one of ["NONE", "COARSE", '
-            '"FINEGUIDE", "MOVING", "TRACK"]'
-        )
 
 
 def get_reduce_func_from_exptype(exp_type):
