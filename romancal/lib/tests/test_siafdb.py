@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import pysiaf
 
-from jwst.lib import siafdb
+from romancal.lib import siafdb
 
 
 # Database paths
@@ -35,7 +35,7 @@ OLD_PRD_PATH = PYSIAF_PRD_PATH / OLD_PRD / 'SIAFXML' / 'SIAFXML'
     # `source` overrides `prd`
     (SIAFXML_PATH, OLD_PRD, SIAFXML_PATH, does_not_raise()),
 ])
-def test_create(source, prd, xml_path, exception, jail_environ):
+def test_create(source, prd, xml_path, exception, environ_jail):
     """Test the the right objects are created"""
     source_actual = source
     if source == 'XML_DATA':
