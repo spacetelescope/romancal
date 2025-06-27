@@ -15,127 +15,42 @@ from astropy.io import fits  # noqa: E402
 from astropy.table import Table  # noqa: E402
 from astropy.time import Time  # noqa: E402
 
-from stdatamodels.jwst import datamodels  # noqa: E402
-
 from romancal.lib import engdb_mast  # noqa: E402
 from romancal.orientation import set_telescope_pointing as stp  # noqa: E402
 from romancal.lib import siafdb  # noqa: E402
-# from jwst.tests.helpers import word_precision_check  # noqa: E402
+import roman_datamodels as rdm
 
 # Ensure that `set_telescope_pointing` logs.
 stp.logger.setLevel(logging.DEBUG)
 stp.logger.addHandler(logging.StreamHandler())
 
 # Setup mock engineering service
-STARTTIME = Time('2022-06-03T17:25:40', format='isot')
-ENDTIME = Time('2022-06-03T17:25:56', format='isot')
-ZEROTIME_START = Time('2014-01-01')
-ZEROTIME_END = Time('2014-01-02')
+STARTTIME = Time('2027-03-23T19:20:40', format='isot')
+ENDTIME = Time('2027-03-23T19:21:36', format='isot')
 
 # Header defaults
-TARG_RA = 345.0
-TARG_DEC = -87.0
+TARG_RA = 270.0
+TARG_DEC = 66.01
 
 # Get the mock databases
 DATA_PATH = Path(__file__).parent / 'data'
 
 Q_EXPECTED = np.array([0.37671179, 0.70705936, -0.57895271, 0.15155541])
-J2FGS_EXPECTED = np.array([
-    -4.93963971e-05, 4.25990115e-03, 9.99990925e-01, 9.99745568e-01,
-    -2.25561320e-02, 1.45472042e-04, 2.25565470e-02, 9.99736502e-01,
-    -4.25770310e-03])
-
-J2FGS_MATRIX_EXPECTED = np.array([
-    -4.89526137e-05,  4.25977338e-03,  9.99990926e-01,  9.99745568e-01,
-    -2.25561320e-02,  1.45025485e-04,  2.25565451e-02,  9.99736503e-01,
-    -4.25758537e-03])
-
-FSMCORR_0_EXPECTED = np.array([-0.00188433, -0.21604178])
-FSMCORR_EXPECTED = np.array([0.03592864, -0.18001011])
 OBSTIME_EXPECTED = Time(1654277147.967113, format='unix')
 
 # Meta attributes for test comparisons
-METAS_EQUALITY = ['meta.visit.engdb_pointing_quality',
-                  'meta.wcsinfo.wcsaxes',
-                  'meta.wcsinfo.ctype1',
-                  'meta.wcsinfo.ctype2',
-                  'meta.wcsinfo.cunit1',
-                  'meta.wcsinfo.cunit2',
-                  'meta.wcsinfo.vparity',
+METAS_EQUALITY = ['meta.exposure.engineering_quality',
                   ]
-METAS_ISCLOSE = ['meta.wcsinfo.crpix1',
-                 'meta.wcsinfo.crpix2',
-                 'meta.wcsinfo.crval1',
-                 'meta.wcsinfo.crval2',
-                 'meta.wcsinfo.cdelt1',
-                 'meta.wcsinfo.cdelt2',
-                 'meta.wcsinfo.pc1_1',
-                 'meta.wcsinfo.pc1_2',
-                 'meta.wcsinfo.pc2_1',
-                 'meta.wcsinfo.pc2_2',
-                 'meta.wcsinfo.roll_ref',
-                 'meta.wcsinfo.v2_ref',
-                 'meta.wcsinfo.v3_ref',
-                 'meta.wcsinfo.v3yangle',
-                 'meta.wcsinfo.ra_ref',
-                 'meta.wcsinfo.dec_ref',
-                 'meta.pointing.ra_v1',
-                 'meta.pointing.dec_v1',
-                 'meta.pointing.pa_v3',
-                 ]
-
-
-@pytest.fixture(params=[('good_model', True), ('bad_model', False), ('fits_nomodel', False)])
-def file_case(request, tmp_path):
-    """Generate files with different model states"""
-    case, allow = request.param
-
-    if case == 'good_model':
-        # Make a model that will always succeed
-        model = datamodels.Level1bModel((10, 10, 10, 10))
-        path = tmp_path / 'level1bmodel.fits'
-        model.save(path)
-    elif case == 'bad_model':
-        # Make a model that will fail if not allowed
-        model = datamodels.IFUCubeModel((10, 10, 10))
-        path = tmp_path / 'image.fits'
-        model.save(path)
-    elif case == 'fits_nomodel':
-        # Create just a plain anything FITS
-        hdu = fits.PrimaryHDU()
-        hdul = fits.HDUList([hdu])
-        path = tmp_path / 'empty.fits'
-        hdul.writeto(path)
-    else:
-        assert False, f'Cannot produce a file for {case}'
-
-    return path, allow
-
-
-@pytest.mark.parametrize('allow_any_file', [True, False])
-def test_allow_any_file(file_case, allow_any_file):
-    """Test various files against whether they should be allowed or not
-
-    Parameters
-    ----------
-    file_case : (Path-like, allow)
-        File to test and whether it should always be allowed.
-        If not `allow`, the file should be usable only when `allow_any_file`.
-
-    allow_any_file : bool
-        Value of `allow_any_file` to try
-    """
-    path, allow = file_case
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "model_type not found")
-        if not allow and not allow_any_file:
-            with pytest.raises(TypeError):
-                stp.add_wcs(path, allow_any_file=allow_any_file, dry_run=True)
-        else:
-            # Expected error when trying to actually add the wcs.
-            # The provided files do not have sufficient info to do the calculations.
-            with pytest.raises(AttributeError):
-                stp.add_wcs(path, allow_any_file=allow_any_file, dry_run=True)
+METAS_ISCLOSE = [
+    'meta.wcsinfo.roll_ref',
+    'meta.wcsinfo.v2_ref',
+    'meta.wcsinfo.v3_ref',
+    'meta.wcsinfo.ra_ref',
+    'meta.wcsinfo.dec_ref',
+    'meta.pointing.ra_v1',
+    'meta.pointing.dec_v1',
+    'meta.pointing.pa_v3',
+]
 
 
 @pytest.mark.parametrize(
@@ -150,18 +65,17 @@ def test_method_string(method):
 def test_override_calc_wcs():
     """Test matrix override in the full calculation"""
     t_pars = make_t_pars()
-    t_pars.method = stp.Methods.OPS_TR_202111
-    wcsinfo, vinfo, _ = stp.calc_wcs(t_pars)
+    wcsinfo, vinfo, transforms = stp.calc_wcs(t_pars)
 
-    override = stp.Transforms(m_eci2j=np.array([[0.80583682, 0.51339893, 0.29503999],
-                                                [-0.56953229, 0.8083677, 0.14891175],
-                                                [-0.16204967, -0.28803339, 0.94380971]]))
+    override = stp.Transforms(m_eci2b=np.array([[-0.17690118, -0.39338551,  0.91934622],
+                                                [-0.43470441, -0.82917048, -0.35143805],
+                                                [ 0.90054523, -0.3971454 , 0.00710906]]))
     t_pars.override_transforms = override
     wcsinfo_new, vinfo_new, transforms_new = stp.calc_wcs(t_pars)
 
     assert vinfo_new != vinfo
     assert all(np.isclose(vinfo_new,
-                          stp.WCSRef(ra=32.504066294908846, dec=17.16116653015435, pa=352.2757851954435)))
+                          stp.WCSRef(ra=245.78706748976023, dec=66.83068216214627, pa=89.45804357482956)))
 
 
 @pytest.mark.parametrize(
@@ -639,6 +553,33 @@ def data_file(tmp_path):
     model.save(file_path)
     model.close()
     yield file_path
+
+
+@pytest.fixture(params=[('good_model', True), ('bad_model', False), ('fits_nomodel', False)])
+def file_case(request, tmp_path):
+    """Generate files with different model states"""
+    case, allow = request.param
+
+    if case == 'good_model':
+        # Make a model that will always succeed
+        model = datamodels.Level1bModel((10, 10, 10, 10))
+        path = tmp_path / 'level1bmodel.fits'
+        model.save(path)
+    elif case == 'bad_model':
+        # Make a model that will fail if not allowed
+        model = datamodels.IFUCubeModel((10, 10, 10))
+        path = tmp_path / 'image.fits'
+        model.save(path)
+    elif case == 'fits_nomodel':
+        # Create just a plain anything FITS
+        hdu = fits.PrimaryHDU()
+        hdul = fits.HDUList([hdu])
+        path = tmp_path / 'empty.fits'
+        hdul.writeto(path)
+    else:
+        assert False, f'Cannot produce a file for {case}'
+
+    return path, allow
 
 
 @pytest.fixture
