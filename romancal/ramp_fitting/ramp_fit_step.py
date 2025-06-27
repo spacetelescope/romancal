@@ -8,15 +8,14 @@ from typing import TYPE_CHECKING
 
 import asdf
 import numpy as np
-import scipy
+
+from stcal.ramp_fitting import ols_cas22_fit
+from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
+from stcal.ramp_fitting.likely_fit import likely_ramp_fit
+
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import stnode
 from roman_datamodels.dqflags import group, pixel
-from stcal.ramp_fitting import ols_cas22_fit, utils
-from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
-from stcal.ramp_fitting.likely_algo_classes import Covar, IntegInfo
-from stcal.ramp_fitting.likely_fit import (compute_image_info, fit_ramps, mask_jumps,
-                                           determine_diffs2use)
 
 from romancal.stpipe import RomanStep
 
@@ -60,7 +59,7 @@ class RampFitStep(RomanStep):
             log.info("Using GAIN reference file: %s", gain_filename)
             gain_model = rdm.open(gain_filename, mode="r")
 
-            # Do the fitting.
+            # Do the fitting based on the algorithm selected.
             algorithm = self.algorithm.lower()
             if algorithm == "ols_cas22":
                 dark_filename = self.get_reference_file(input_model, "dark")
@@ -70,14 +69,22 @@ class RampFitStep(RomanStep):
                 )
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
             elif  algorithm == "likely":
+                # Add the needed components to the input model.
                 input_model["flags_do_not_use"] = pixel.DO_NOT_USE
                 input_model["flags_saturated"] = pixel.SATURATED
                 input_model["rejection_threshold"] = None
                 input_model["flags_jump_det"] = pixel.JUMP_DET
                 # Add an axis to match the JWST data cube
                 input_model.data = input_model.data[np.newaxis, :, :, :]
-                out_model = self.likely_fit(
-                    input_model, readnoise_model.data, gain_model.data)
+                input_model.groupdq = input_model.groupdq[np.newaxis, :, :, :]
+                # add ancillary information needed by likelihood fitting 
+                input_model.read_pattern = get_readtimes(input_model)
+                input_model.zeroframe = None
+                input_model.average_dark_current = np.zeros([input_model.data.shape[2], input_model.data.shape[3]])
+                
+                image_info, integ_info, opt_info = likely_ramp_fit(input_model, readnoise_model.data, gain_model.data)
+                
+                out_model = create_image_model(input_model, image_info)
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
             else:
                 log.error("Algorithm %s is not supported. Skipping step.")
@@ -85,97 +92,6 @@ class RampFitStep(RomanStep):
                 out_model.meta.cal_step.ramp_fit = "SKIPPED"
 
         return out_model
-
-    def likely_fit(self,  ramp_model, readnoise_2d, gain_2d):
-        """Ramp fiting using the likelyhood algorithm from stcal
-
-        Parameters
-        ----------
-        ramp_data : RampData
-            Input data necessary for computing ramp fitting.
-
-        readnoise_2d : ndarray
-            readnoise for all pixels
-
-        gain_2d : ndarray
-            gain for all pixels
-
-        Returns
-        -------
-        image_info : tuple
-            The tuple of computed ramp fitting arrays.
-
-        """
-        image_info = None
-
-        nints, nresultants, nrows, ncols = ramp_model.data.shape
-
-
-        readtimes = get_readtimes(ramp_model)
-
-        covar = Covar(readtimes)
-        integ_class = IntegInfo(nints, nrows, ncols)
-
-        readnoise_2d = readnoise_2d / SQRT2
-
-        for integ in range(nints):
-            data = ramp_model.data[integ, :, :, :]
-            gdq = ramp_model.groupdq.copy()
-            pdq = ramp_model.pixeldq[:, :].copy()
-
-            # Eqn (5)
-            diff = (data[1:] - data[:-1]) / covar.delta_t[:, np.newaxis, np.newaxis]
-            alldiffs2use = np.ones(diff.shape, np.uint8)
-
-            for row in range(nrows):
-                d2use = determine_diffs2use(row, diff, gdq)
-                d2use_copy = d2use.copy()  # Use to flag jumps
-                if ramp_model.rejection_threshold is not None:
-                    threshold_one_omit = ramp_model.rejection_threshold**2
-                    pval = scipy.special.erfc(ramp_model.rejection_threshold/SQRT2)
-                    threshold_two_omit = scipy.stats.chi2.isf(pval, 2)
-                    if np.isinf(threshold_two_omit):
-                        threshold_two_omit = threshold_one_omit + 10
-                    d2use, countrates = mask_jumps(
-                        diff[:, row], covar, readnoise_2d[row], gain_2d[row],
-                        threshold_one_omit=threshold_one_omit,
-                        threshold_two_omit=threshold_two_omit,
-                        diffs2use=d2use,
-                    )
-                else:
-                    d2use, countrates = mask_jumps(
-                        diff[:, row], covar, readnoise_2d[row], gain_2d[row],
-                        diffs2use=d2use,
-                    )
-
-                # Set jump detection flags
-                jump_locs = d2use_copy ^ d2use
-                jump_locs[jump_locs > 0] = ramp_model.flags_jump_det
-                gdq[1:, row] |= jump_locs
-
-                alldiffs2use[:, row] = d2use
-
-                rateguess = countrates * (countrates > 0)
-                result = fit_ramps(
-                    diff[:, row],
-                    covar,
-                    gain_2d[row],
-                    readnoise_2d[row],
-                    diffs2use=d2use,
-                    count_rate_guess=rateguess,
-                )
-                integ_class.get_results(result, integ, row)
-
-            pdq = utils.dq_compress_sect(ramp_model, integ, gdq, pdq)
-            integ_class.dq[integ, :, :] = pdq
-
-            del gdq
-
-        image_info = compute_image_info(integ_class, ramp_model)
-
-        image_model = create_image_model(ramp_model, image_info)
-
-        return image_model
 
 
     def ols_cas22(self, input_model, readnoise_model, gain_model, dark_model):
