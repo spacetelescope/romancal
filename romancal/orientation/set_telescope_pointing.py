@@ -1617,12 +1617,12 @@ def calc_position_angle(point, ref):
 
 
 def get_pointing(
-    obsstart,
-    obsend,
-    mnemonics_to_read=TRACK_TR_202111_MNEMONICS,
-    engdb_url=None,
-    tolerance=60,
-    reduce_func=None,
+        obsstart,
+        obsend,
+        mnemonics_to_read=COURSE_MNEMONICS,
+        engdb_url=None,
+        tolerance=60,
+        reduce_func=None,
 ):
     """
     Get telescope pointing engineering data.
