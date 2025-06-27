@@ -52,6 +52,30 @@ METAS_ISCLOSE = [
     'meta.pointing.pa_v3',
 ]
 
+
+def test_add_wcs_default(science_raw_model, tmp_path):
+    """Handle when no pointing exists and the default is used."""
+    m = science_raw_model
+    m.meta.exposure.start_time = Time('2022-01-01T00:00:00')
+    m.meta.exposure.end_time = Time('2022-01-01T01:00:00')
+    model_path = _model_to_tmpfile(m, tmp_path)
+    try:
+        stp.add_wcs(
+            model_path, tolerance=0, allow_default=True
+        )
+    except ValueError:
+        pass  # This is what we want for the test.
+    except Exception as e:
+        pytest.skip(
+            'Live ENGDB service is not accessible.'
+            f'\nException={e}'
+        )
+
+    with rdm.open(model_path) as result:
+        assert result.meta.wcsinfo.ra_ref == result.meta.pointing.target_ra
+        assert result.meta.wcsinfo.dec_ref == result.meta.pointing.target_dec
+
+
 def test_change_engdb_url():
     """Test changing the engineering database by call for success.
 
@@ -205,38 +229,6 @@ def test_transform_serialize(calc_method, tmp_path):
 # #########################################################################
 # To be refactored below
 # #########################################################################
-
-
-def test_add_wcs_default(data_file, tmp_path):
-    """Handle when no pointing exists and the default is used."""
-    expected_name = 'add_wcs_default.fits'
-
-    try:
-        stp.add_wcs(
-            data_file, tolerance=0, allow_default=True
-        )
-    except ValueError:
-        pass  # This is what we want for the test.
-    except Exception as e:
-        pytest.skip(
-            'Live ENGDB service is not accessible.'
-            '\nException={}'.format(e)
-        )
-
-    # Tests
-    with datamodels.Level1bModel(data_file) as model:
-
-        # Save for post-test comparison and update
-        model.save(tmp_path / expected_name)
-
-        with datamodels.open(DATA_PATH / expected_name) as expected:
-            for meta in METAS_EQUALITY:
-                assert model[meta] == expected[meta], f'{meta} has changed'
-
-            for meta in METAS_ISCLOSE:
-                assert np.isclose(model[meta], expected[meta]), f'{meta} has changed'
-
-            assert word_precision_check(model.meta.wcsinfo.s_region, expected.meta.wcsinfo.s_region)
 
 
 def test_add_wcs_default_fgsacq(tmp_path):
