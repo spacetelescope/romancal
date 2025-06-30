@@ -21,7 +21,6 @@ from romancal.source_catalog.psf import (
     azimuthally_smooth,
     fit_psf_to_image_model,
     get_gridded_psf_model,
-    create_l3_psf_model,
 )
 
 n_trials = 15
