@@ -67,9 +67,9 @@ jobs:
       cache-key: data-${{ needs.stpsf_data_cache.outputs.cache_key }}-${{ needs.crds_context.outputs.context }}
       cache-restore-keys: ${{ needs.stpsf_data_cache.outputs.cache_key }}
       envs: |
-        - macos: py311-stpsf
+        - macos: py311
           pytest-results-summary: true
-        - macos: py312-sdpdeps-stpsf
+        - macos: py312-sdpdeps
           pytest-results-summary: true
-        - linux: py3-pyargs-stpsf
+        - linux: py3-pyargs
           pytest-results-summary: true

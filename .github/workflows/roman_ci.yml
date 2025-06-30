@@ -72,14 +72,14 @@ jobs:
       cache-key: data-${{ needs.stpsf_data_cache.outputs.cache_key }}-${{ needs.crds_context.outputs.context }}
       cache-restore-keys: ${{ needs.stpsf_data_cache.outputs.cache_key }}
       envs: |
-        - linux: py311-oldestdeps-stpsf-cov
-        - linux: py311-stpsf-nolegacypath
-        - linux: py312-ddtrace-stpsf
-        - macos: py312-ddtrace-stpsf
+        - linux: py311-oldestdeps-cov
+        - linux: py311-nolegacypath
+        - linux: py312-ddtrace
+        - macos: py312-ddtrace
         # `tox` does not currently respect `requires-python` versions when creating testing environments;
         # if this breaks, add an upper pin to `requires-python` and revert this py3 to the latest working version
-        - linux: py3-stpsf-cov
+        - linux: py3-cov
           coverage: codecov
           pytest-results-summary: true
-        - macos: py3-stpsf
+        - macos: py3
           pytest-results-summary: true
