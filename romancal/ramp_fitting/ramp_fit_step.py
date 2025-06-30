@@ -8,14 +8,12 @@ from typing import TYPE_CHECKING
 
 import asdf
 import numpy as np
-
-from stcal.ramp_fitting import ols_cas22_fit
-from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
-from stcal.ramp_fitting.likely_fit import likely_ramp_fit
-
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import stnode
 from roman_datamodels.dqflags import group, pixel
+from stcal.ramp_fitting import ols_cas22_fit
+from stcal.ramp_fitting.likely_fit import likely_ramp_fit
+from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 
 from romancal.stpipe import RomanStep
 
@@ -28,6 +26,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 __all__ = ["RampFitStep"]
+
 
 class RampFitStep(RomanStep):
     """This step fits a straight line to the value of counts vs. time to
@@ -65,10 +64,13 @@ class RampFitStep(RomanStep):
                 dark_filename = self.get_reference_file(input_model, "dark")
                 dark_model = rdm.open(dark_filename, mode="r")
                 out_model = self.ols_cas22(
-                    input_model, readnoise_model, gain_model, dark_model,
+                    input_model,
+                    readnoise_model,
+                    gain_model,
+                    dark_model,
                 )
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
-            elif  algorithm == "likely":
+            elif algorithm == "likely":
                 # Add the needed components to the input model.
                 input_model["flags_do_not_use"] = pixel.DO_NOT_USE
                 input_model["flags_saturated"] = pixel.SATURATED
@@ -77,13 +79,17 @@ class RampFitStep(RomanStep):
                 # Add an axis to match the JWST data cube
                 input_model.data = input_model.data[np.newaxis, :, :, :]
                 input_model.groupdq = input_model.groupdq[np.newaxis, :, :, :]
-                # add ancillary information needed by likelihood fitting 
+                # add ancillary information needed by likelihood fitting
                 input_model.read_pattern = get_readtimes(input_model)
                 input_model.zeroframe = None
-                input_model.average_dark_current = np.zeros([input_model.data.shape[2], input_model.data.shape[3]])
-                
-                image_info, _, _ = likely_ramp_fit(input_model, readnoise_model.data, gain_model.data)
-                
+                input_model.average_dark_current = np.zeros(
+                    [input_model.data.shape[2], input_model.data.shape[3]]
+                )
+
+                image_info, _, _ = likely_ramp_fit(
+                    input_model, readnoise_model.data, gain_model.data
+                )
+
                 out_model = create_image_model(input_model, image_info)
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
             else:
@@ -92,7 +98,6 @@ class RampFitStep(RomanStep):
                 out_model.meta.cal_step.ramp_fit = "SKIPPED"
 
         return out_model
-
 
     def ols_cas22(self, input_model, readnoise_model, gain_model, dark_model):
         """Peform Optimal Linear Fitting on arbitrarily space resulants
@@ -297,6 +302,7 @@ def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
 
     return outpixeldq
 
+
 def get_readtimes(ramp_data):
     """Get the read times needed to compute the covariance matrices.
 
@@ -322,7 +328,9 @@ def get_readtimes(ramp_data):
     nresultants = ramp_data.meta.exposure.nresultants
     log.info("Number of resultants: %d ", nresultants)
 
-    rtimes = [list(np.array(r)*ramp_data.meta.exposure.frame_time) for r in ramp_data.meta.exposure.read_pattern]
-
+    rtimes = [
+        list(np.array(r) * ramp_data.meta.exposure.frame_time)
+        for r in ramp_data.meta.exposure.read_pattern
+    ]
 
     return rtimes
