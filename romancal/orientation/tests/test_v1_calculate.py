@@ -7,29 +7,28 @@ from astropy.table import Table
 from astropy.time import Time
 import numpy as np
 
-from stdatamodels.jwst.datamodels import ImageModel
-
-from jwst.lib import engdb_mast
-import jwst.lib.set_telescope_pointing as stp
-import jwst.lib.v1_calculate as v1c
+from roman_datamodels.datamodels import ScienceRawModel
+from romancal.lib import engdb_mast
+import romancal.orientation.set_telescope_pointing as stp
+import romancal.orientation.v1_calculate as v1c
 
 DATA_PATH = Path(__file__).parent / 'data'
 
 # Engineering parameters
 # Time range corresponds to OTE-1 exposure jw01134001037_03107_00001_nrcb1_uncal.fits
 # Midpoint is about 2022-02-02T22:25:00
-MAST_GOOD_STARTTIME = Time('59612.93401553055', format='mjd')
-MAST_GOOD_ENDTIME = Time('59612.93500967592', format='mjd')
+MAST_GOOD_STARTTIME = Time('2027-03-23T19:20:40', format='isot')
+MAST_GOOD_ENDTIME = Time('2027-03-23T19:21:36', format='isot')
 
 
 def test_from_models_mast(tmp_path):
     """Test v1_calculate_from_models for basic running"""
-    model = ImageModel()
-    model.meta.exposure.start_time = MAST_GOOD_STARTTIME.mjd
-    model.meta.exposure.end_time = MAST_GOOD_ENDTIME.mjd
+    model = ScienceRawModel.create_fake_data({'meta': {
+        'exposure': {'start_time': MAST_GOOD_STARTTIME, 'end_time': MAST_GOOD_ENDTIME},
+    }})
 
     try:
-        v1_table = v1c.v1_calculate_from_models([model], method=stp.Methods.COARSE_TR_202111, engdb_url=engdb_mast.MAST_BASE_URL)
+        v1_table = v1c.v1_calculate_from_models([model])
     except ValueError as exception:
         pytest.xfail(f'MAST engineering database not available, possibly no token specified: {exception}')
     v1_formatted = v1c.simplify_table(v1_table)
@@ -46,8 +45,7 @@ def test_from_models_mast(tmp_path):
 def test_over_time_mast(tmp_path):
     """Test v1_calculate_over_time for basic running"""
     try:
-        v1_table = v1c.v1_calculate_over_time(MAST_GOOD_STARTTIME.mjd, MAST_GOOD_ENDTIME.mjd,
-                                              method=stp.Methods.COARSE_TR_202111, engdb_url=engdb_mast.MAST_BASE_URL)
+        v1_table = v1c.v1_calculate_over_time(MAST_GOOD_STARTTIME, MAST_GOOD_ENDTIME)
     except ValueError as exception:
         pytest.xfail(f'MAST engineering database not available, possibly no token specified: {exception}')
     v1_formatted = v1c.simplify_table(v1_table)
