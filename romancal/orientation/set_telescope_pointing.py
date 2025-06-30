@@ -87,7 +87,6 @@ __all__ = [
     "WCSRef",
     "add_wcs",
     "calc_transforms",
-    "calc_transforms_ops_tr_202111",
     "calc_wcs",
     "calc_wcs_over_time",
     "update_wcs",
@@ -110,69 +109,35 @@ TYPES_TO_UPDATE = set()
 COURSE_MNEMONICS_QUATERNION_ECI = [f'SCF_AC_SDR_QBJ_{idx + 1}' for idx in range(4)]
 COURSE_MNEMONICS = {q: True for q in COURSE_MNEMONICS_QUATERNION_ECI}
 
+# Conversion from seconds to MJD
+SECONDS2MJD = 1 / 24 / 60 / 60
 
-COURSE_TR_202111_MNEMONICS = {
-    "SA_ZATTEST1": True,
-    "SA_ZATTEST2": True,
-    "SA_ZATTEST3": True,
-    "SA_ZATTEST4": True,
-    "SA_ZRFGS2J11": True,
-    "SA_ZRFGS2J12": True,
-    "SA_ZRFGS2J13": True,
-    "SA_ZRFGS2J21": True,
-    "SA_ZRFGS2J22": True,
-    "SA_ZRFGS2J23": True,
-    "SA_ZRFGS2J31": True,
-    "SA_ZRFGS2J32": True,
-    "SA_ZRFGS2J33": True,
-    "SA_ZADUCMDX": False,
-    "SA_ZADUCMDY": False,
-    "SA_ZFGGSCMDX": False,
-    "SA_ZFGGSCMDY": False,
-    "SA_ZFGDETID": False,
-}
+# Conversion of the FCS reference point from the V-Frame.
+# This is the pre-launch value, later to be refined and provided
+# in the SIAF
+M_V2FCS0 = np.array([
+    ['-0.0000001', '0.5000141', '0.8660173'],
+    ['0.0086567', '-0.8659848', '0.4999953'],
+    ['0.9999625', '0.0074969', '-0.0043284']
+], dtype=float)
 
-TRACK_TR_202111_MNEMONICS = {
-    **COURSE_TR_202111_MNEMONICS,
-    "SA_ZFGGSPOSX": False,
-    "SA_ZFGGSPOSY": False,
-}
+# Default B-frame to FCS frame, M_b_to_fcs
+# Pre-launch this is the same as M_v_to_fcs.
+M_B2FCS0 = M_V2FCS0
 
-FGS_ACQ_EXP_TYPES = ["fgs_acq1", "fgs_acq2"]
-FGS_ACQ_MNEMONICS = {
-    "IFGS_ACQ_DETXCOR": True,
-    "IFGS_ACQ_DETYCOR": True,
-    "IFGS_ACQ_DETXSIZ": True,
-    "IFGS_ACQ_DETYSIZ": True,
-    "IFGS_ACQ_XPOSG": True,
-    "IFGS_ACQ_YPOSG": True,
-}
+# Define the transformation matrices to move between the Idealized Coordinate System (ICS)
+# and the Idealized Coordinate System (Idl). ICS is the spacecraft-centric system used by
+# all frames up through the V-frame. Idl is used by the instruments.
+# Reference: Eqs. 1 & 2 from Technical Report JWST-STScI-003222, SM-12, Rev. C, 2021-11
+M_idl2ics = MX2Z = np.array([[0, 1, 0], [0, 0, 1], [1, 0, 0]])
+M_ics2idl = MZ2X = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
 
-FGS_GUIDED_EXP_TYPES = ["fgs_fineguide", "fgs_track"]
-FGS_GUIDED_MNEMONICS = {
-    "IFGS_TFGGS_X",
-    "IFGS_TFGGS_Y",
-    "IFGS_TFGDET_XCOR",
-    "IFGS_TFGDET_YCOR",
-    "IFGS_TFGDET_XSIZ",
-    "IFGS_TFGDET_YSIZ",
-}
-
-FGS_ID_EXP_TYPES = ["fgs_id-image", "fgs_id-stack"]
-FGS_ID_MNEMONICS = {
-    "IFGS_ID_XPOSG",
-    "IFGS_ID_YPOSG",
-    "IFGS_ID_DETXCOR",
-    "IFGS_ID_DETYCOR",
-    "IFGS_ID_DETXSIZ",
-    "IFGS_ID_DETYSIZ",
-}
-
-# FGS ACQ1/ACQ2 modes, a dedicated range of mmenonics need to be present.
-# These define those ranges. Key is the ACQ exposure type.
-FGS_ACQ_MINVALUES = {"fgs_acq1": 1, "fgs_acq2": 4}
-FGS_ACQ_SLICES = {"fgs_acq1": slice(0, 3), "fgs_acq2": slice(3, 8)}
-FGS_ACQ_WINDOW_INDEX = {"fgs_acq1": 0, "fgs_acq2": -1}
+# Degree, radian, angle transformations
+R2D = 180.0 / np.pi
+D2R = np.pi / 180.0
+A2R = D2R / 3600.0
+R2A = 3600.0 * R2D
+PI2 = np.pi * 2.0
 
 
 # The available methods for transformation
@@ -224,75 +189,16 @@ class Methods(Enum):
         return self.value
 
 
-# FGS id to aperture name
-FGSId2Aper = {1: "FGS1_FULL_OSS", 2: "FGS2_FULL_OSS"}
-
-# FGS Ids
-FGSIDS = [1, 2]
-
-# Definition of th J3 Ideal Y-Angle
-J3IDLYANGLE = -1.25  # Degrees
-
-# Conversion from seconds to MJD
-SECONDS2MJD = 1 / 24 / 60 / 60
-
-# Default transformation matrices
-FGS12SIFOV_DEFAULT = np.array(
-    [
-        [0.9999994955442, 0.0000000000000, 0.0010044457459],
-        [0.0000011174826, 0.9999993811310, -0.0011125359826],
-        [-0.0010044451243, 0.0011125365439, 0.9999988766756],
-    ]
-)
-
-J2FGS_MATRIX_DEFAULT = np.array(
-    [
-        [-0.0010044400033, 0.9999994955442, 0.0000033964915],
-        [0.0033814583568, 0.0000000000000, 0.9999942828533],
-        [0.9999937784005, 0.0010044457459, -0.0033814566510],
-    ]
-)
-
-# Conversion of the FCS reference point from the V-Frame.
-# This is the pre-launch value, later to be refined and provided
-# in the SIAF
-M_V2FCS0 = np.array([
-    ['-0.0000001', '0.5000141', '0.8660173'],
-    ['0.0086567', '-0.8659848', '0.4999953'],
-    ['0.9999625', '0.0074969', '-0.0043284']
-], dtype=float)
-
-# Default B-frame to FCS frame, M_b_to_fcs
-# Pre-launch this is the same as M_v_to_fcs.
-M_B2FCS0 = M_V2FCS0
-
-SIFOV2V_DEFAULT = np.array(
-    [[0.99999742598, 0.0, 0.00226892608], [0.0, 1.0, 0.0], [-0.00226892608, 0.0, 0.99999742598]]
-)
-
-# Define the transformation matrices to move between the Idealized Coordinate System (ICS)
-# and the Idealized Coordinate System (Idl). ICS is the spacecraft-centric system used by
-# all frames up through the V-frame. Idl is used by the instruments.
-# Reference: Eqs. 1 & 2 from Technical Report JWST-STScI-003222, SM-12, Rev. C, 2021-11
-M_idl2ics = MX2Z = np.array([[0, 1, 0], [0, 0, 1], [1, 0, 0]])
-M_ics2idl = MZ2X = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
-
-# Degree, radian, angle transformations
-R2D = 180.0 / np.pi
-D2R = np.pi / 180.0
-A2R = D2R / 3600.0
-R2A = 3600.0 * R2D
-PI2 = np.pi * 2.0
-
 # Pointing container
 # Attributes are as follows. Except for the observation time, all values
 # are retrieved from the engineering data.
+#    obstime      : Time the pointing information refers to.
 #    q            : Quaternion of the FGS.
-#    gs_commanded : Guide star position as originally commanded.
 Pointing = namedtuple(
     "Pointing", ['obstime', "q"]
 )
 Pointing.__new__.__defaults__ = (None,) * 2
+
 
 # Guide Star ACQ pointing container
 # Attributes are as follows. All values are retrieved from the engineering.
@@ -318,29 +224,6 @@ class Transforms:
     m_eci2siaf: np.ndarray | None = None
     #: ECI to V
     m_eci2v: np.ndarray | Any = None
-
-    #: ECI to FGS1
-    m_eci2fgs1: np.ndarray | None = None
-    #: ECI to Guide Star
-    m_eci2gs: np.ndarray | None = None
-    #: ECI to J-Frame
-    m_eci2j: np.ndarray | Any = None
-    #: ECI to SIFOV
-    m_eci2sifov: np.ndarray | None = None
-    #: FGSX to Guide Stars transformation
-    m_fgsx2gs: np.ndarray | Any = None
-    #: FGS1 to SIFOV
-    m_fgs12sifov: np.ndarray | None = None
-    #: Velocity aberration
-    m_gs2gsapp: np.ndarray | Any = None
-    #: J-Frame to FGS1
-    m_j2fgs1: np.ndarray | Any = None
-    #: FSM correction
-    m_sifov_fsm_delta: np.ndarray | None = None
-    #: SIFOV to V1
-    m_sifov2v: np.ndarray | None = None
-    #: V to SIAF
-    m_v2siaf: np.ndarray | Any = None
     #: Override values. Either another Transforms or dict-like object
     override: object | None = None
 
@@ -439,20 +322,6 @@ class TransformParameters:
     dry_run: bool = False
     #: URL of the engineering telemetry database REST interface.
     engdb_url: str | None = None
-    #: Exposure type
-    exp_type: str | None = None
-    #: FGS to use as the guiding FGS. If None, will be set to what telemetry provides.
-    fgsid: int | None = None
-    #: The version of the FSM correction calculation to use. See `calc_sifov_fsm_delta_matrix`
-    fsmcorr_version: str = "latest"
-    #: Units of the FSM correction values. Default is 'arcsec'. See `calc_sifov_fsm_delta_matrix`
-    fsmcorr_units: str = "arcsec"
-    #: Guide star WCS info, typically from the input model.
-    guide_star_wcs: WCSRef = WCSRef(None, None, None)
-    #: Transpose the `j2fgs1` matrix.
-    j2fgs_transpose: bool = True
-    #: The [DX, DY, DZ] barycentri velocity vector
-    jwst_velocity: np.ndarray | None = None
     #: The method, or algorithm, to use in calculating the transform.
     # If not specified, the default method is used.
     method: Methods = Methods.default
@@ -474,11 +343,6 @@ class TransformParameters:
     #: If no telemetry can be found during the observation,
     #: the time, in seconds, beyond the observation time to search for telemetry.
     tolerance: float = 60.0
-    #: The date of observation (`jwst.datamodels.JwstDataModel.meta.date`)
-    useafter: str | None = None
-    #: V3 position angle at Guide Star
-    # (`jwst.datamodels.JwstDataModel.meta.guide_star.gs_v3_pa_science`)
-    v3pa_at_gs: float | None = None
 
     def as_reprdict(self):
         """Return a dict where all values are REPR of their values."""  # numpydoc ignore=RT01
@@ -677,9 +541,6 @@ def update_wcs(
     #     prd = model.meta.prd_version
     # siaf_db = SiafDb(source=siaf_path, prd=prd)
 
-    # Get model attributes
-    useafter = model.meta.exposure.start_time
-
     # Configure transformation parameters.
     t_pars = t_pars_from_model(
         model,
@@ -688,7 +549,6 @@ def update_wcs(
         tolerance=tolerance,
         allow_default=allow_default,
         reduce_func=reduce_func,
-        useafter=useafter,
         **transform_kwargs,
     )
 

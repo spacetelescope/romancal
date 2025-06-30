@@ -27,7 +27,6 @@ transforms:
     - [-4.8062784093552e-05, -0.39786796474219555, 0.9174427481302266]
     datatype: float64
     shape: [3, 3]
-  m_eci2fgs1: null
   m_eci2gs: !core/ndarray-1.1.0
     data:
     - [-4.8062784093552e-05, -0.39786796474219555, 0.9174427481302266]
@@ -35,7 +34,6 @@ transforms:
     - [0.8267773367754087, 0.5160727806726194, 0.22384875379898492]
     datatype: float64
     shape: [3, 3]
-  m_eci2j: null
   m_eci2siaf: !core/ndarray-1.1.0
     data:
     - [-4.807515279530751e-05, -0.3978679335179602, 0.9174426962304693]
@@ -43,7 +41,6 @@ transforms:
     - [0.8267772465358937, 0.5160727616154367, 0.22384873928423318]
     datatype: float64
     shape: [3, 3]
-  m_eci2sifov: null
   m_eci2v: !core/ndarray-1.1.0
     data:
     - [0.007109046136583502, -0.393385481599901, 0.9193461684265393]
@@ -51,11 +48,4 @@ transforms:
     - [0.900545191641315, -0.39714546118049926, -0.17690122635672978]
     datatype: float64
     shape: [3, 3]
-  m_fgs12sifov: null
-  m_fgsx2gs: null
-  m_gs2gsapp: null
-  m_j2fgs1: null
-  m_sifov2v: null
-  m_sifov_fsm_delta: null
-  m_v2siaf: null
 ...
