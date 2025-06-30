@@ -448,7 +448,6 @@ class DMS_ELPP_Base(DMSBaseMixin, Association):
         self.sequence = next(self._sequence)
 
     def __repr__(self):
-        # flake8:  noqa: F821
         try:
             _, json_repr = self.ioregistry["json"].dump(self)
         except KeyValueRegistryError:
