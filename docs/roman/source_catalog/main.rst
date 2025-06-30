@@ -75,9 +75,8 @@ segment.
 Optionally, Point Spread Function (PSF) photometry can be
 performed by setting the ``fit_psf`` keyword. Enabling
 this option fits a model PSF to each source to measure its
-position and flux. The PSF model is generated using the
-`STPSF <https://stpsf.readthedocs.io/en/latest/roman.html>`_
-package. PSF photometry is performed using the
+position and flux. The PSF model is generated using reference
+files on CRDS.  PSF photometry is performed using the
 :py:class:`photutils.psf.PSFPhotometry` class from Photutils.
 
 For Level 3 data, since the data contains a mixture of individual detector PSFs

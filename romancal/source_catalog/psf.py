@@ -409,7 +409,6 @@ class PSFCatalog:
             psf_model = get_gridded_psf_model(self.psf_ref_model)
         else:
             # MosaicModel (L3 datamodel)
-            filt = self.model.meta.basic.optical_element
             psf_model = create_l3_psf_model(
                 self.psf_ref_model,
                 pixel_scale=self.model.meta.wcsinfo.pixel_scale

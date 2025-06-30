@@ -88,6 +88,7 @@ documentation on each reference file.
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`PSF <psf_reffile>`                         | :ref:`source catalog<source_catalog_step>`  |
 +--------------------------------------------------+---------------------------------------------+
+
 .. _`Standard ASDF metadata`:
 
 Standard ASDF metadata
