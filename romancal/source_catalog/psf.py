@@ -8,7 +8,6 @@ from collections import OrderedDict
 
 import astropy.units as u
 import numpy as np
-import scipy.ndimage as ndimage
 from astropy.convolution import Box2DKernel, convolve
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.nddata import NDData
@@ -17,8 +16,8 @@ from astropy.utils import lazyproperty
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
 from photutils.psf import (
-    ImagePSF,
     GriddedPSFModel,
+    ImagePSF,
     IterativePSFPhotometry,
     PSFPhotometry,
     SourceGrouper,
@@ -86,7 +85,7 @@ def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
         res = map_coordinates(
             model, [ro, to], order=order, mode="wrap", output=np.dtype("f4")
         )
-        res *= scaling ** 2  # keep normalization at 1
+        res *= scaling**2  # keep normalization at 1
         return res
 
     polar, rr, tt = cart_to_polar(data, oversample=oversample)
@@ -124,7 +123,7 @@ def get_gridded_psf_model(psf_ref_model):
     pixel_response_kernel = Box2DKernel(width=oversample)
     for i in range(psf_images.shape[0]):
         psf = psf_images[i, :, :]
-        im = convolve(psf, pixel_response_kernel) * oversample ** 2
+        im = convolve(psf, pixel_response_kernel) * oversample**2
         psf_images[i, :, :] = im
 
     meta["grid_xypos"] = position_list
