@@ -1,7 +1,7 @@
-.. _rampfit-algorithm-ols22:
+.. _rampfit-algorithm-ols:
 
-Description: Optimized Least-squares with Uneven Ramps
-======================================================
+Optimized Least-squares with Uneven Ramps
+==========================================
 
 This step determines the mean count rate, in units of counts per second, for
 each pixel by performing a linear fit to the data in the input file.  The fit
