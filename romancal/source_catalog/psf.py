@@ -164,7 +164,7 @@ def create_l3_psf_model(
     pixel_scale : float
         L3 image pixel scale in arcsec.
         Often similar to the default detector scale of 0.11 arcsec.
-    oversample : int
+    oversample : int, optional
         Oversample factor, default is 11.
 
     Returns
