@@ -8,48 +8,41 @@ defines the sky coordinates a particular point on the observatory is pointed to.
 Then, using a set of matrix transformations, the sky coordinates of the
 reference pixel of a desired aperture is calculated.
 
-The transformations are defined by the Technical Reference JWST-STScI-003222,
-SM-12. This document has undergone a number of revisions. The current version
-implemented is based on an internal email version Rev. C, produced 2021-11.
-
-There are a number of algorithms, or *methods*, that have been implemented.
-Most represent the historical refinement of the algorithm. Until the technical
-reference is finalized, all methods will remain in the code. The default,
-state-of-the art algorithm is represented by method ``OPS_TR_202111``,
-implemented by
-`~jwst.lib.set_telescope_pointing.calc_transforms_ops_tr_202111`.
+The transformations are defined by the STScI Innerspace (non-public) document
+titles "Quaternion Transforms for Coarse Pointing WCS". The code itself follows
+a demonstrative jupyter notebook. The significant feature currently missing is
+the correction for velocity aberration.
 
 **Interface**
 
 The primary usage is through the command line interface
-``set_telescope_pointing.py``. Operating on a list of JWST Level 1b exposures,
+``set_telescope_pointing``. Operating on a list of Roman Level 1 exposures,
 this command updates the world coordinate system keywords with the values
 necessary to translate from aperture pixel to sky coordinates.
 
-Access to the JWST Engineering Mnemonic database is required. See the
-:ref:`Engineering Database Interface <engdb>` for more information.
+Access to the Roman Engineering Mnemonic database is required. See the
+:ref:`Engineering Database Interface <engdb>` for more information. Note that
+currently only the MAST access has been defined; there is no need for a direct
+database connection.
 
 Programmatically, the command line is implemented by the function
-`~jwst.lib.set_telescope_pointing.add_wcs`, which calls the basic function
-`~jwst.lib.set_telescope_pointing.calc_wcs`. The available methods are defined
-by `~jwst.lib.set_telescope_pointing.Methods`.
+`~roman.orientation.set_telescope_pointing.add_wcs`, which calls the basic function
+`~roman.orientation.set_telescope_pointing.calc_wcs`. The available methods are defined
+by `~roman.orientation.set_telescope_pointing.Methods`.
 
 There are two data structures used to maintain the state of the transformation.
-`~jwst.lib.set_telescope_pointing.TransformParameters` contains the parameters
+`~roman.orientation.set_telescope_pointing.TransformParameters` contains the parameters
 needed to perform the transformations.
-`~jwst.lib.set_telescope_pointing.Transforms` contains the calculated
+`~roman.orientation.set_telescope_pointing.Transforms` contains the calculated
 transformation matrices.
 
 **Transformation Matrices**
 
 All the transformation matrices, as defined by
-`~jwst.lib.set_telescope_pointing.Transforms`, are Direction Cosine Matrices
+`~roman.orientation.set_telescope_pointing.Transforms`, are Direction Cosine Matrices
 (DCM). A DCM contains the Euler rotation angles that represent the sky
 coordinates for a particular frame-of-reference. The initial DCM is provided
-through the engineering telemetry and represents where in the sky either the
-Fine Guidance Sensor (FGS) or star tracker is pointed to. Then, through a set
-of transformations, the DCM for the reference point of the target aperture
-is calculated.
+through the engineering telemetry and represents how the observatory is orientated.
 """
 
 import sys
@@ -370,7 +363,7 @@ def add_wcs(
     save_transforms=None,
     **transform_kwargs,
 ):
-    """Add WCS information to a JWST DataModel.
+    """Add WCS information to a Roman DataModel.
 
     Telescope orientation is attempted to be obtained from
     the engineering database. Failing that, a default pointing
@@ -421,9 +414,9 @@ def add_wcs(
     Notes
     -----
     This function adds absolute pointing information to the Roman datamodels
-    provided. By default, only Stage 1 exposures are allowed to be updated.
-    These have the suffixes of "uncal" representing datamodels ScienceRawModel.
-    Any higher level product, from Stage 2b and beyond, that has had the
+    provided. By default, only Level 1 exposures are allowed to be updated.
+    These have the suffixes of "uncal" representing datamodel ScienceRawModel.
+    Any higher level product, from Level 2 and beyond, that has had the
     `assign_wcs` step applied, have improved WCS information. Running this task
     on such files will potentially corrupt the WCS.
     """
@@ -482,7 +475,7 @@ def update_wcs(
     """
     Update WCS pointing information.
 
-    Given a `jwst.datamodels.JwstDataModel`, determine the simple WCS parameters
+    Given a `roman.datamodels.DataModel`, determine the simple WCS parameters
     from the SIAF keywords in the model and the engineering parameters
     that contain information about the telescope pointing.
 
@@ -490,7 +483,7 @@ def update_wcs(
 
     Parameters
     ----------
-    model : `~jwst.datamodels.JwstDataModel`
+    model : `~roman.datamodels.DataModel`
         The model to update.
 
     default_roll_ref : float
@@ -562,7 +555,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     """
     Update WCS pointing information.
 
-    Given a `jwst.datamodels.JwstDataModel`, determine the simple WCS parameters
+    Given a `roman.datamodels.DataModel`, determine the simple WCS parameters
     from the SIAF keywords in the model and the engineering parameters
     that contain information about the telescope pointing.
 
@@ -570,7 +563,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
 
     Parameters
     ----------
-    model : `~jwst.datamodels.JwstDataModel`
+    model : `~roman.datamodels.DataModel`
         The model to update. The update is done in-place.
 
     t_pars : `TransformParameters`
@@ -763,8 +756,8 @@ def calc_transforms(t_pars: TransformParameters):
     """
     Calculate transforms  which determine reference point celestial WCS.
 
-    This implements Eq. 3 from Technical Report JWST-STScI-003222, SM-12. Rev. C, 2021-11
-    From Section 3:
+    The implementation is described in the STScI Innerspace document
+    "Quaternion Transforms for Coarse Pointing WCS".
 
     The Direction Cosine Matrix (DCM) that provides the transformation of a
     unit pointing vector defined in inertial frame (ECI J2000) coordinates to a
@@ -829,72 +822,6 @@ def calc_transforms_coarse_nb(t_pars: TransformParameters):
     t.m_eci2siaf = np.linalg.multi_dot([M_ics2idl, M_B2FCS0, t.m_eci2v])
 
     return t
-
-def calc_gs2gsapp(m_eci2gsics, jwst_velocity):
-    """
-    Calculate the Velocity Aberration correction.
-
-    This implements Eq. 40 from Technical Report JWST-STScI-003222, SM-12, Rev. C, 2021-11
-    From Section 3.2.5:
-
-    The velocity aberration correction is applied in the direction of the guide
-    star. The matrix that translates from ECI to the apparent guide star ICS
-    frame is M_(ECI→GSAppICS), where the GS Apparent position vector is along
-    the z-axis in the guide star ICS frame.
-
-    Parameters
-    ----------
-    m_eci2gsics : numpy.array(3, 3)
-        The the ECI to Guide Star transformation matrix, in the ICS frame.
-
-    jwst_velocity : numpy.array([dx, dy, dz])
-        The barycentric velocity of JWST.
-
-    Returns
-    -------
-    m_gs2gsapp : numpy.array(3, 3)
-        The velocity aberration correction matrix.
-    """
-    # Check velocity. If present, negate the velocity since
-    # the desire is to remove the correction.
-    if jwst_velocity is None or any(jwst_velocity == None):  # noqa: E711 Syntax needed for numpy arrays.
-        logger.warning(
-            "Velocity: %s contains None. Cannot calculate aberration. Returning identity matrix",
-            jwst_velocity,
-        )
-        return np.identity(3)
-    velocity = -1 * jwst_velocity
-
-    # Eq. 35: Guide star position vector
-    uz = np.array([0.0, 0.0, 1.0])
-    u_gseci = np.dot(np.transpose(m_eci2gsics), uz)
-
-    # Eq. 36: Compute the apparent shift due to velocity aberration.
-    try:
-        scale_factor, u_gseci_app = compute_va_effects_vector(*velocity, u_gseci)
-    except TypeError:
-        logger.warning("Failure in computing velocity aberration. Returning identity matrix.")
-        logger.warning("Exception: %s", sys.exc_info())
-        return np.identity(3)
-
-    # Eq. 39: Rotate from ICS into the guide star frame.
-    u_gs_app = np.dot(m_eci2gsics, u_gseci_app)
-
-    # Eq. 40: Compute the M_gs2gsapp matrix
-    u_prod = np.cross(uz, u_gs_app)
-    u_prod_mag = np.linalg.norm(u_prod)
-    a_hat = u_prod / u_prod_mag
-    m_a_hat = np.array(
-        [[0.0, -a_hat[2], a_hat[1]], [a_hat[2], 0.0, -a_hat[0]], [-a_hat[1], a_hat[0], 0.0]]
-    )
-    theta = np.arcsin(u_prod_mag)
-
-    m_gs2gsapp = (
-        np.identity(3) - (m_a_hat * np.sin(theta)) + (2 * m_a_hat**2 * np.sin(theta / 2.0) ** 2)
-    )
-
-    logger.debug("m_gs2gsapp: %s", m_gs2gsapp)
-    return m_gs2gsapp
 
 
 def calc_attitude_matrix(wcs, yangle, position):
@@ -1019,37 +946,6 @@ def calc_m_eci2b(q):
     )
 
     logger.debug("quaternion: %s", transform)
-    return transform
-
-
-def calc_v2siaf_matrix(siaf):
-    """
-    Calculate the SIAF transformation matrix.
-
-    This implements Eq. 12 from Technical Report JWST-STScI-003222, SM-12, Rev. C, 2021-11
-    From Section 3.1:
-
-    The V to SIAF parameters V3IdlYang, V2Ref, V3Ref, and VIdlParity are
-    defined and their usage explained in SIAF2017. The parameter values for
-    each aperture are specified in the Project Reference Database (PRD).
-
-    Parameters
-    ----------
-    siaf : SIAF
-        The SIAF parameters, where angles are in arcseconds/degrees.
-
-    Returns
-    -------
-    transform : np.array((3, 3))
-        The V1 to SIAF transformation matrix.
-    """
-    v2, v3, v3idlyang, vparity = (siaf.v2_ref, siaf.v3_ref, siaf.v3yangle, siaf.vparity)
-    mat = dcm(v2 * A2R, v3 * A2R, v3idlyang * D2R)
-    pmat = np.array([[0.0, vparity, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]])
-
-    transform = np.dot(pmat, mat)
-
-    logger.debug("transform: %s", transform)
     return transform
 
 
