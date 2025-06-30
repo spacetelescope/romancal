@@ -82,7 +82,7 @@ class RampFitStep(RomanStep):
                 input_model.zeroframe = None
                 input_model.average_dark_current = np.zeros([input_model.data.shape[2], input_model.data.shape[3]])
                 
-                image_info, integ_info, opt_info = likely_ramp_fit(input_model, readnoise_model.data, gain_model.data)
+                image_info, _, _ = likely_ramp_fit(input_model, readnoise_model.data, gain_model.data)
                 
                 out_model = create_image_model(input_model, image_info)
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
