@@ -63,7 +63,6 @@ import numpy as np
 
 import roman_datamodels as rdm
 
-from .set_velocity_aberration import compute_va_effects_vector
 from ..lib.engdb_tools import ENGDB_Service
 from ..lib.siafdb import SIAF, SiafDb
 
