@@ -157,6 +157,9 @@ class MultibandCatalogStep(RomanStep):
 
                     filter_name = model.meta.basic.optical_element  # L3
                     log.info(f"Creating catalog for {filter_name} image")
+                    ref_file = self.get_reference_file(model, "epsf")
+                    self.log.info("Using ePSF reference file: %s", ref_file)
+                    psf_ref_model = datamodels.open(ref_file)
                     catobj = RomanSourceCatalog(
                         model,
                         segment_img,
@@ -165,6 +168,7 @@ class MultibandCatalogStep(RomanStep):
                         fit_psf=self.fit_psf,
                         detection_cat=det_catobj,
                         mask=mask,
+                        psf_ref_model=psf_ref_model,
                         cat_type="dr_band",
                     )
 
