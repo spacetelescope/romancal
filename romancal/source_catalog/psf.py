@@ -142,7 +142,7 @@ def create_l3_psf_model(
     oversample=11,
 ):
     """
-    Compute a PSF model via `~stpsf.calc_psf`.
+    Compute a PSF model for an L3 image.
 
     L3 data is an amalgamation of numerous exposures over numerous SCA's.
     This algorithm does not attempt to merge specific PSF profiles for each
@@ -171,11 +171,6 @@ def create_l3_psf_model(
     -------
     psf_model : `photutils.psf.ImagePSF`
         PSF model.
-
-    References
-    ----------
-    .. [1] `STPSF documentation for `stpsf.JWInstrument.calc_psf`
-       <https://stpsf.readthedocs.io/en/latest/api/stpsf.JWInstrument.html#stpsf.JWInstrument.calc_psf>`_
 
     """
 
