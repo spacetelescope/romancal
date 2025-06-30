@@ -53,7 +53,7 @@ def mosaic_model():
     model.var_rnoise = err**2
     model.weight = 1.0 / err
     model.meta.basic.optical_element = "F184"
-    model.meta.basic.time_first_mjd = Time('2027-01-01T00:00:00').mjd
+    model.meta.basic.time_first_mjd = Time("2027-01-01T00:00:00").mjd
     return model
 
 
