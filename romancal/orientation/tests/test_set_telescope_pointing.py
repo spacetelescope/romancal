@@ -27,6 +27,8 @@ stp.logger.addHandler(logging.StreamHandler())
 # Setup mock engineering service
 STARTTIME = Time('2027-03-23T19:20:40', format='isot')
 ENDTIME = Time('2027-03-23T19:21:36', format='isot')
+BADSTARTTIME = Time('2020-02-02T02:02:02', format='isot')
+BADENDTIME = Time('2020-02-02T02:12:02', format='isot')
 
 # Header defaults
 TARG_RA = 270.0
@@ -91,7 +93,7 @@ def test_change_engdb_url():
 
 def test_change_engdb_url_fail():
     """Test changing the engineering database by call"""
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         stp.get_pointing(
             Time(STARTTIME, format='isot'),
             Time(ENDTIME, format='isot'),
@@ -103,8 +105,8 @@ def test_get_pointing():
     """Ensure that the averaging works."""
 
     obstime, q = stp.get_pointing(
-         STARTTIME.mjd,
-         ENDTIME.mjd
+         STARTTIME,
+         ENDTIME
     )
 
     assert np.isclose(obstime.value, OBSTIME_EXPECTED.value)
@@ -112,8 +114,8 @@ def test_get_pointing():
 
 
 def test_get_pointing_fail():
-    with pytest.raises(Exception):
-        obstime, q  = stp.get_pointing(47892.0, 48256.0)
+    with pytest.raises(ValueError):
+        obstime, q  = stp.get_pointing(BADSTARTTIME, BADENDTIME)
 
 
 def test_get_pointing_list():

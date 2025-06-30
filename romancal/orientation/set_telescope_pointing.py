@@ -65,7 +65,7 @@ from typing import Any
 from collections.abc import Callable
 
 from astropy.table import Table
-from astropy.time import Time
+from astropy.time import Time, TimeDelta
 import numpy as np
 
 import roman_datamodels as rdm
@@ -1354,7 +1354,7 @@ def get_mnemonics(
                 include_bracket_values=True,
             )
 
-            tolerance_mjd = tolerance * SECONDS2MJD
+            tolerance_mjd = TimeDelta(tolerance, format='sec')
             allowed_start = obsstart - tolerance_mjd
             allowed_end = obsend + tolerance_mjd
             allowed = [
