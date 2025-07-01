@@ -26,7 +26,6 @@ ACQ_EXP_TYPES = (
 )
 
 # Exposure EXP_TYPE to Association EXPTYPE mapping
-# flake8: noqa: E241
 EXPTYPE_MAP = {
     "nrc_dark": "dark",
     "nrc_flat": "flat",
