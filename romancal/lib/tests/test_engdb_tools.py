@@ -16,11 +16,11 @@ from astropy.time import Time
 
 from romancal.lib import engdb_tools
 
-GOOD_MNEMONIC = 'INRSI_GWA_Y_TILT_AVGED'
-GOOD_STARTTIME = '2022-01-25 23:29:02.188'
-GOOD_ENDTIME = '2022-01-26'
+GOOD_MNEMONIC = 'OPE_SCF_DIR'
+GOOD_STARTTIME = '2027-02-23T01:00:00'
+GOOD_ENDTIME = '2027-02-23T01:01:00'
 
-SHORT_STARTTIME = '2022-01-26 02:29:02.188'
+SHORT_STARTTIME = '2027-02-23T01:00:30'
 
 BAD_SERVER = 'https://www.stsci.edu'
 BAD_MNEMONIC = 'No_Such_MNEMONIC'
@@ -84,8 +84,8 @@ def test_values(engdb):
     values = engdb.get_values(
         GOOD_MNEMONIC, GOOD_STARTTIME, SHORT_STARTTIME
     )
-    assert len(values) == 10547
-    assert values[0] == 0
+    assert len(values) == 29
+    assert values[0] == 'SCFA'
 
 
 def test_values_with_bracket(engdb):
@@ -98,7 +98,7 @@ def test_values_with_bracket(engdb):
         include_bracket_values=True
     )
     assert len(values) == 2
-    assert values[1] == 0
+    assert values[1] == 'SCFA'
 
 
 def test_values_with_time(engdb):
