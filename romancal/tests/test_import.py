@@ -24,7 +24,9 @@ def dependencies(package, exclude: [str]):
 
 
 # dqflags is deprecated
-MODULES = dependencies(romancal, exclude=["test", "time", "static_preview", "dqflags", "plot"])
+MODULES = dependencies(
+    romancal, exclude=["test", "time", "static_preview", "dqflags", "plot"]
+)
 
 
 def test_modules_import():
