@@ -75,5 +75,5 @@ jobs:
         - linux: py3-cov
           coverage: codecov
           pytest-results-summary: true
-        - macos: py3
+        - macos: py3-pyargs
           pytest-results-summary: true
