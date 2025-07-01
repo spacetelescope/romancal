@@ -51,7 +51,7 @@ from collections import defaultdict, namedtuple
 from collections.abc import Callable
 from copy import copy
 from enum import Enum
-from math import cos, sin, sqrt
+from math import cos, sin
 from typing import Any
 
 import asdf
@@ -1517,58 +1517,6 @@ def fill_mnemonics_chronologically_table(mnemonics, filled_only=True):
     t = Table(values, names=names)
 
     return t
-
-
-def position_to_dcm(x, y):
-    """
-    Calculate the Direction Cosine Matrix for a given X,Y position.
-
-    Parameters
-    ----------
-    x, y : float, float
-        Position in arcseconds
-
-    Returns
-    -------
-    dcm : np.array(size=(3, 3))
-        The direction cosine matrix
-    """
-    dcm = np.array(
-        [
-            [cos(x), 0, sin(x)],
-            [-sin(x) * sin(y), cos(y), cos(x) * sin(y)],
-            [-sin(x) * cos(y), -sin(y), cos(x) * cos(y)],
-        ]
-    )
-
-    return dcm
-
-
-def cart_to_vector(coord):
-    """
-    Convert Cartesian to a unit vector.
-
-    This implements Eq. 6 from Technical Report JWST-STScI-003222, SM-12, Rev. C, 2021-11
-    From Section 3:
-
-    The Direction Cosine Matrix (DCM) that provides the transformation of a
-    unit pointing vector defined in inertial frame (ECI J2000) coordinates to a
-    unit vector defined in the science aperture Ideal frame coordinates is
-    defined as.
-
-    Parameters
-    ----------
-    coord : numpy.array(2)
-        The Cartesian coordinate.
-
-    Returns
-    -------
-    vector : numpy.array(3)
-        The vector version.
-    """
-    vector = np.array([coord[0], coord[1], sqrt(1 - coord[0] ** 2 - coord[1] ** 2)])
-
-    return vector
 
 
 def pa_to_roll_ref(pa: float, siaf: SIAF):
