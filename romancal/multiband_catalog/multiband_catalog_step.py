@@ -8,7 +8,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
-from astropy.table import Table, join
+from astropy.table import join
 from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelLibrary
@@ -17,7 +17,7 @@ from romancal.multiband_catalog.detection_image import make_detection_image
 from romancal.multiband_catalog.utils import add_filter_to_colnames
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
-from romancal.source_catalog.save_utils import save_segment_image
+from romancal.source_catalog.save_utils import save_all_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
 
@@ -83,8 +83,6 @@ class MultibandCatalogStep(RomanStep):
             cat_model.meta.filename = library.asn["products"][0]["name"]
         except (AttributeError, KeyError):
             cat_model.meta.filename = "multiband_catalog"
-        if self.output_file is None:
-            self.output_file = cat_model.meta.filename
 
         self.log.info("Calculating and subtracting background")
         library = subtract_background_library(library, self.bkg_boxsize)
@@ -96,7 +94,8 @@ class MultibandCatalogStep(RomanStep):
         if self.kernel_fwhms is None:
             self.kernel_fwhms = [2.0, 20.0]
 
-        # TODO: where to save the det_img and det_err?
+        # TODO: det_img is saved in the MosaicSegmentationMapModel;
+        # do we also want to save the det_err?
         det_img, det_err = make_detection_image(library, self.kernel_fwhms)
 
         # Estimate background rms from detection image to calculate a
@@ -121,16 +120,14 @@ class MultibandCatalogStep(RomanStep):
 
         if segment_img is None:  # no sources found
             self.log.warning("Cannot create source catalog. No sources were detected.")
-            cat_model.source_catalog = Table()
+            segment_img = np.zeros(example_model.data.shape, dtype=np.uint32)
+            cat_model.source_catalog = cat_model.create_empty_catalog()
+            return save_all_results(self, segment_img, cat_model)
+
         else:
             segment_img.detection_image = det_img
 
-            # this is needed for the DAOStarFinder sharpness and roundness
-            # properties
-            # TODO: measure on a secondary detection image with minimal
-            # smoothing; same for basic shape parameters
-            star_kernel_fwhm = np.min(self.kernel_fwhms)  # ??
-
+            # Define the detection image model
             det_model = datamodels.MosaicModel()
             det_model.data = det_img
             det_model.err = det_err
@@ -139,6 +136,13 @@ class MultibandCatalogStep(RomanStep):
             # currently needed in RomanSourceCatalog
             det_model.weight = example_model.weight
             det_model.meta = example_model.meta
+
+            # The stellar FWHM is needed to define the kernel used for
+            # the DAOStarFinder sharpness and roundness properties.
+            # TODO: measure on a secondary detection image with minimal
+            # smoothing?; use the same detection image for basic shape
+            # measurements?
+            star_kernel_fwhm = np.min(self.kernel_fwhms)
 
             log.info("Creating catalog for detection image")
             det_catobj = RomanSourceCatalog(
@@ -151,11 +155,13 @@ class MultibandCatalogStep(RomanStep):
                 mask=mask,
                 cat_type="dr_det",
             )
-            # need to generate the catalog before we pass the det_catobj
-            # to the RomanSourceCatalog constructor
+
+            # Generate the catalog for the detection image.
+            # We need to make this catalog before we pass det_catobj
+            # to the RomanSourceCatalog constructor.
             det_cat = det_catobj.catalog
 
-            # loop over each image
+            # Create catalogs for each input image
             with library:
                 for model in library:
                     mask = (
@@ -185,28 +191,22 @@ class MultibandCatalogStep(RomanStep):
                         cat_type="dr_band",
                     )
 
+                    # Add the filter name to the column names
                     filter_name = model.meta.basic.optical_element
                     cat = add_filter_to_colnames(catobj.catalog, filter_name)
+
                     # TODO: what metadata do we want to keep, if any,
                     # from the filter catalogs?
-                    cat.meta = None  # temporary
-                    # outer join prevents empty table if any columns have
-                    # the same name but different values (e.g., repeated
-                    # filter names)
+                    cat.meta = None
+
+                    # Add the filter catalog to the multiband catalog.
+                    # The outer join prevents an empty table if any
+                    # columns have the same name but different values
+                    # (e.g., repeated filter names)
                     det_cat = join(det_cat, cat, keys="label", join_type="outer")
                     library.shelve(model, modify=False)
 
-            # put the resulting catalog in the model
+            # Put the resulting multiband catalog in the model
             cat_model.source_catalog = det_cat
 
-        # always save the segmentation image
-        output_filename = (
-            self.output_file
-            if self.output_file is not None
-            else cat_model.meta.filename
-        )
-        save_segment_image(self, segment_img, cat_model, output_filename)
-
-        self.output_ext = "parquet"
-
-        return cat_model
+        return save_all_results(self, segment_img, cat_model)
