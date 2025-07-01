@@ -66,6 +66,16 @@ def library_model(mosaic_model):
     return ModelLibrary([mosaic_model, model2])
 
 
+@pytest.fixture
+def library_model_all_nan(mosaic_model):
+    model1 = mosaic_model.copy()
+    model1.data[:] = np.nan
+    model2 = mosaic_model.copy()
+    model2.data[:] = np.nan
+    model2.meta.basic.optical_element = "F158"
+    return ModelLibrary([model1, model2])
+
+
 @pytest.mark.parametrize("fit_psf", (True, False))
 @pytest.mark.parametrize(
     "snr_threshold, npixels, save_results",
@@ -128,6 +138,27 @@ def test_multiband_catalog_no_detections(library_model, save_results, tmp_path):
 
     result = step.call(
         library_model,
+        bkg_boxsize=50,
+        snr_threshold=1000,  # high threshold to ensure no detections
+        npixels=10,
+        fit_psf=False,
+        save_results=save_results,
+    )
+
+    cat = result.source_catalog
+    assert isinstance(cat, Table)
+    assert len(cat) == 0
+
+
+@pytest.mark.parametrize("save_results", (True, False))
+def test_multiband_catalog_invalid_inputs(
+    library_model_all_nan, save_results, tmp_path
+):
+    os.chdir(tmp_path)
+    step = MultibandCatalogStep()
+
+    result = step.call(
+        library_model_all_nan,
         bkg_boxsize=50,
         snr_threshold=1000,  # high threshold to ensure no detections
         npixels=10,
