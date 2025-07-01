@@ -9,9 +9,9 @@ a connection to the internal engineering service is needed,
 which is generally not available.
 """
 
+import logging
 import os
 
-import logging
 import pytest
 import requests
 from astropy.time import Time
@@ -51,8 +51,8 @@ def is_alive(url):
         r = requests.get(url, timeout=15)
         is_alive = r.status_code == requests.codes.ok
     except Exception as exception:
-        log.debug('Failure to connect to url %s.', url)
-        log.debug('Failure reason %s', exception)
+        log.debug("Failure to connect to url %s.", url)
+        log.debug("Failure reason %s", exception)
         pass
     return is_alive
 

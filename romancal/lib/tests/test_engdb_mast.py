@@ -1,4 +1,5 @@
 """Test the MAST Engineering interface"""
+
 import logging
 from pathlib import Path
 
@@ -44,8 +45,8 @@ def is_alive():
         r = requests.get(engdb_mast.MAST_BASE_URL, timeout=15)
         is_alive = r.status_code == requests.codes.ok
     except Exception as exception:
-        log.debug('Failure to connect to MAST URL %s.', engdb_mast.MAST_BASE_URL)
-        log.debug('Failure reason %s', exception)
+        log.debug("Failure to connect to MAST URL %s.", engdb_mast.MAST_BASE_URL)
+        log.debug("Failure reason %s", exception)
         pass
     if not is_alive:
         pytest.skip(f"MAST url {engdb_mast.MAST_BASE_URL} not available. Skipping.")
@@ -125,5 +126,6 @@ def test_negative_aliveness():
     """Ensure failure occurs with a bad url"""
     with pytest.raises(RuntimeError):
         engdb_mast.EngdbMast(
-            base_url="https://127.0.0.1/_engdb_mast_test", token="dummytoken"  # noqa: S106
+            base_url="https://127.0.0.1/_engdb_mast_test",
+            token="dummytoken",  # noqa: S106
         )
