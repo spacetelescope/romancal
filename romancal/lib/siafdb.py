@@ -7,10 +7,10 @@ Under operations, the SIAF is found in a sqlite database.
 Otherwise, use the standard interface defined by the `pysiaf` package
 """
 
-from collections import namedtuple
-from datetime import date
 import logging
 import os
+from collections import namedtuple
+from datetime import date
 from pathlib import Path
 
 from .basic_utils import LoggingContext
@@ -20,7 +20,13 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 # Map instrument three character mnemonic to full name
-INSTRUMENT_MAP = {"fgs": "fgs", "mir": "miri", "nis": "niriss", "nrc": "nircam", "nrs": "nirspec"}
+INSTRUMENT_MAP = {
+    "fgs": "fgs",
+    "mir": "miri",
+    "nis": "niriss",
+    "nrc": "nircam",
+    "nrs": "nirspec",
+}
 
 # SIAF container
 # The names should correspond to the names in the ``wcsinfo`` schema.
@@ -217,7 +223,9 @@ class SiafDb:
         if source is not None:
             xml_path = Path(source)
             if not xml_path.is_dir():
-                raise ValueError(f"Source {xml_path}: Needs to be a folder for use with pysiaf")
+                raise ValueError(
+                    f"Source {xml_path}: Needs to be a folder for use with pysiaf"
+                )
 
         # If nothing has been specified, see if XML_DATA says what to do.
         if not xml_path:
@@ -240,7 +248,9 @@ class SiafDb:
         # If nothing else, use the `pysiaf` default.
         if not xml_path:
             xml_path = Path(self.pysiaf.JWST_PRD_DATA_ROOT)
-            logger.info("pysiaf: Using latest installed PRD %s", self.pysiaf.JWST_PRD_VERSION)
+            logger.info(
+                "pysiaf: Using latest installed PRD %s", self.pysiaf.JWST_PRD_VERSION
+            )
             self.prd_version = self.pysiaf.JWST_PRD_VERSION
         else:
             logger.info("pysiaf: Using SIAF XML folder %s", xml_path)

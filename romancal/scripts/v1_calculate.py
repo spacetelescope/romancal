@@ -16,7 +16,9 @@ logger = logging.getLogger("romancal")
 logger.propagate = False
 logger_handler = logging.StreamHandler()
 logger.addHandler(logger_handler)
-logger_format_debug = logging.Formatter("%(levelname)s:%(filename)s::%(funcName)s: %(message)s")
+logger_format_debug = logging.Formatter(
+    "%(levelname)s:%(filename)s::%(funcName)s: %(message)s"
+)
 
 # Available reduce functions
 REDUCE_FUNCS_MAPPING = {
@@ -110,7 +112,9 @@ def main():
         except ValueError:
             input_as_files = True
         else:
-            logger.info(f"Retrieving V1 over the time span {obsstart.isot} - {obsend.isot}")
+            logger.info(
+                f"Retrieving V1 over the time span {obsstart.isot} - {obsend.isot}"
+            )
             input_as_files = False
             if args.pointing != "all":
                 logger.warning(

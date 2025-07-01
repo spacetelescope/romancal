@@ -9,7 +9,7 @@ from sys import stdout
 from romancal.orientation import pointing_summary
 
 log_handler = logging.StreamHandler()
-logger = logging.getLogger('romancal')
+logger = logging.getLogger("romancal")
 logger.addHandler(log_handler)
 LogLevels = [logging.WARNING, logging.INFO, logging.DEBUG]
 

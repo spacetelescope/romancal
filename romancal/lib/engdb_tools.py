@@ -65,7 +65,7 @@ logger.addHandler(logging.NullHandler())
 __all__ = ["ENGDB_Service"]
 
 
-def ENGDB_Service(base_url=None, **service_kwargs):  # noqa: N802
+def ENGDB_Service(base_url=None, **service_kwargs):
     """
     Provide access to the JWST Engineering Database.
 

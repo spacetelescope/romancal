@@ -30,7 +30,7 @@ Delta(target=<SkyCoord (ICRS): (ra, dec) in deg
 >>> delta_refpoint = t["delta_refpoint"][0]
 >>> "%.13f" % delta_refpoint
 '0.0404431476150'
-"""  # noqa: E501
+"""
 
 import logging
 from collections import defaultdict, namedtuple
@@ -40,11 +40,10 @@ import roman_datamodels as rdm
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
 
-
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-__all__ = ["Delta", "calc_pointing_deltas", "calc_deltas"]
+__all__ = ["Delta", "calc_deltas", "calc_pointing_deltas"]
 
 # Basic delta structure
 Delta = namedtuple("Delta", "target, v1, refpoint, delta_v1, delta_refpoint")
@@ -72,9 +71,16 @@ def calc_pointing_deltas(model):
         - 'delta_refpoint': Difference between reference pixel pointing and TARGET.
     """
     # Retrieve the info from the model
-    target = SkyCoord(model.meta.pointing.target_ra * u.degree, model.meta.pointing.target_dec * u.degree)
-    v1 = SkyCoord(model.meta.pointing.ra_v1 * u.degree, model.meta.pointing.dec_v1 * u.degree)
-    refpoint = SkyCoord(model.meta.wcsinfo.ra_ref * u.degree, model.meta.wcsinfo.dec_ref * u.degree)
+    target = SkyCoord(
+        model.meta.pointing.target_ra * u.degree,
+        model.meta.pointing.target_dec * u.degree,
+    )
+    v1 = SkyCoord(
+        model.meta.pointing.ra_v1 * u.degree, model.meta.pointing.dec_v1 * u.degree
+    )
+    refpoint = SkyCoord(
+        model.meta.wcsinfo.ra_ref * u.degree, model.meta.wcsinfo.dec_ref * u.degree
+    )
 
     # Calculate separations
     delta = Delta(
@@ -127,7 +133,10 @@ def calc_deltas(exposures, extra_meta=None):
         with rdm.open(exposure) as model:
             delta = calc_pointing_deltas(model)
             logger.info(
-                "%s: delta v1=%s delta refpoint=%s", model, delta.delta_v1, delta.delta_refpoint
+                "%s: delta v1=%s delta refpoint=%s",
+                model,
+                delta.delta_v1,
+                delta.delta_refpoint,
             )
 
             targets.append(delta.target)
