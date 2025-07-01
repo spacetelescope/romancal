@@ -121,7 +121,6 @@ def test_multiband_catalog(
         assert isinstance(rdm.open(filepath), MosaicSegmentationMapModel)
 
 
-@pytest.mark.stpsf
 @pytest.mark.parametrize("save_results", (True, False))
 def test_multiband_catalog_no_detections(library_model, save_results, tmp_path):
     os.chdir(tmp_path)
