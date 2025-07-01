@@ -7,10 +7,10 @@ TARGET pointing.
 
 Examples
 --------
->>> from stdatamodels.jwst.datamodels import ImageModel
->>> im = ImageModel()
->>> im.meta.target.ra = 90.75541666666666
->>> im.meta.target.dec = -66.56055555555554
+>>> from roman_datamodels.datamodels import ScienceRawModel
+>>> im = ScienceRawModel.create_fake_data()
+>>> im.meta.pointing.target_ra = 90.75541666666666
+>>> im.meta.pointing.target_dec = -66.56055555555554
 >>> im.meta.pointing.ra_v1 = 91.08142004561715
 >>> im.meta.pointing.dec_v1 = -66.60547868904696
 >>> im.meta.wcsinfo.ra_ref = 90.70377653291781
@@ -36,7 +36,7 @@ import logging
 from collections import defaultdict, namedtuple
 
 import astropy.units as u
-import stdatamodels.jwst.datamodels as dm
+import roman_datamodels as rdm
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
 
@@ -72,7 +72,7 @@ def calc_pointing_deltas(model):
         - 'delta_refpoint': Difference between reference pixel pointing and TARGET.
     """
     # Retrieve the info from the model
-    target = SkyCoord(model.meta.target.ra * u.degree, model.meta.target.dec * u.degree)
+    target = SkyCoord(model.meta.pointing.target_ra * u.degree, model.meta.pointing.target_dec * u.degree)
     v1 = SkyCoord(model.meta.pointing.ra_v1 * u.degree, model.meta.pointing.dec_v1 * u.degree)
     refpoint = SkyCoord(model.meta.wcsinfo.ra_ref * u.degree, model.meta.wcsinfo.dec_ref * u.degree)
 
@@ -124,7 +124,7 @@ def calc_deltas(exposures, extra_meta=None):
 
     # Calculate deltas for all input.
     for exposure in exposures:
-        with dm.open(exposure) as model:
+        with rdm.open(exposure) as model:
             delta = calc_pointing_deltas(model)
             logger.info(
                 "%s: delta v1=%s delta refpoint=%s", model, delta.delta_v1, delta.delta_refpoint
