@@ -1,5 +1,5 @@
 """Test the MAST Engineering interface"""
-
+import logging
 from pathlib import Path
 
 import pytest
@@ -10,6 +10,9 @@ from astropy.utils.diff import report_diff_values
 
 from romancal.lib import engdb_mast
 from romancal.lib.engdb_lib import EngDB_Value
+
+# Configure logging
+log = logging.getLogger(__name__)
 
 # Test query
 QUERY = ("ope_scf_dir", "2027-02-23T01:00:00", "2027-02-23T01:00:05")
@@ -38,9 +41,11 @@ def is_alive():
     """Check if the MAST portal is accessible"""
     is_alive = False
     try:
-        r = requests.get(engdb_mast.MAST_BASE_URL)
+        r = requests.get(engdb_mast.MAST_BASE_URL, timeout=15)
         is_alive = r.status_code == requests.codes.ok
-    except Exception:
+    except Exception as exception:
+        log.debug('Failure to connect to MAST URL %s.', engdb_mast.MAST_BASE_URL)
+        log.debug('Failure reason %s', exception)
         pass
     if not is_alive:
         pytest.skip(f"MAST url {engdb_mast.MAST_BASE_URL} not available. Skipping.")
@@ -61,7 +66,7 @@ def test_aliveness(is_alive):
 
     Failure is any failure from instantiation.
     """
-    engdb_mast.EngdbMast(base_url=engdb_mast.MAST_BASE_URL, token="dummytoken")
+    engdb_mast.EngdbMast(base_url=engdb_mast.MAST_BASE_URL, token="dummytoken")  # noqa: S106
 
 
 def test_get_records(engdb):
@@ -120,5 +125,5 @@ def test_negative_aliveness():
     """Ensure failure occurs with a bad url"""
     with pytest.raises(RuntimeError):
         engdb_mast.EngdbMast(
-            base_url="https://127.0.0.1/_engdb_mast_test", token="dummytoken"
+            base_url="https://127.0.0.1/_engdb_mast_test", token="dummytoken"  # noqa: S106
         )

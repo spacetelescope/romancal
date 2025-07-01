@@ -11,11 +11,15 @@ which is generally not available.
 
 import os
 
+import logging
 import pytest
 import requests
 from astropy.time import Time
 
 from romancal.lib import engdb_tools
+
+# Configure logging
+log = logging.getLogger(__name__)
 
 GOOD_MNEMONIC = "OPE_SCF_DIR"
 GOOD_STARTTIME = "2027-02-23T01:00:00"
@@ -44,9 +48,11 @@ def is_alive(url):
     """
     is_alive = False
     try:
-        r = requests.get(url)
+        r = requests.get(url, timeout=15)
         is_alive = r.status_code == requests.codes.ok
-    except Exception:
+    except Exception as exception:
+        log.debug('Failure to connect to url %s.', url)
+        log.debug('Failure reason %s', exception)
         pass
     return is_alive
 
@@ -73,7 +79,7 @@ def test_basic(engdb):
 
 
 def test_bad_server():
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError):
         engdb_tools.ENGDB_Service(BAD_SERVER)
 
 

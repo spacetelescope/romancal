@@ -16,10 +16,8 @@ DATA = "_data.json"
 # For statuses, just blanket cover the 4xx and 5xx errors
 # However, do immediately fail for 404.
 FORCE_STATUSES = list(range(400, 404)) + list(range(405, 460)) + list(range(500, 520))
-# RETRIES = 10
-# TIMEOUT = 10 * 60  # 10 minutes
-RETRIES = 1
-TIMEOUT = 15
+RETRIES = 10
+TIMEOUT = 10 * 60  # 10 minutes
 
 
 class EngdbABC(abc.ABC):
