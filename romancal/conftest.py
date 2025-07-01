@@ -87,7 +87,8 @@ def environ_jail():
     try:
         yield
     finally:
-        os.environ = original
+        os.environ.clear()
+        os.environ = original  # noqa: B003
 
 
 @pytest.hookimpl(trylast=True)

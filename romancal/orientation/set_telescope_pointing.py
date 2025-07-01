@@ -1504,7 +1504,7 @@ def fill_mnemonics_chronologically_table(mnemonics, filled_only=True):
     filled = fill_mnemonics_chronologically(mnemonics, filled_only=filled_only)
 
     names = list(mnemonics.keys())
-    names = ["time"] + names
+    names = ["time", *names]
     time_idx = 0
 
     values = [[] for _ in names]
