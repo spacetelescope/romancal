@@ -1,25 +1,32 @@
 """Access the Roman Engineering Mnemonic Database through MAST."""
 
-from ast import literal_eval
 import json
 import logging
+from ast import literal_eval
 from os import getenv
 from pathlib import Path
 from shutil import copy2
 
-from astropy.table import Table
-from astropy.time import Time
 import numpy as np
 import requests
+from astropy.table import Table
+from astropy.time import Time
 from requests.adapters import HTTPAdapter, Retry
 
-from .engdb_lib import EngDB_Value, EngdbABC, FORCE_STATUSES, RETRIES, TIMEOUT, mnemonic_data_fname
+from .engdb_lib import (
+    FORCE_STATUSES,
+    RETRIES,
+    TIMEOUT,
+    EngDB_Value,
+    EngdbABC,
+    mnemonic_data_fname,
+)
 
 __all__ = ["EngdbMast"]
 
 # Default MAST info.
 MAST_BASE_URL = "https://mastint.stsci.edu"
-API_URI = 'edp/api/v0.1/mnemonics/fqa/roman/data'
+API_URI = "edp/api/v0.1/mnemonics/fqa/roman/data"
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -82,7 +89,9 @@ class EngdbMast(EngdbABC):
         try:
             resp = requests.get(self.base_url + "edp/", timeout=self.timeout)
         except requests.exceptions.ConnectionError as exception:
-            raise RuntimeError(f"MAST url: {self.base_url} is unreachable.") from exception
+            raise RuntimeError(
+                f"MAST url: {self.base_url} is unreachable."
+            ) from exception
         if resp.status_code != 200:
             raise RuntimeError(
                 f"MAST url: {self.base_url} is not available. "
@@ -204,7 +213,9 @@ class EngdbMast(EngdbABC):
 
         The MAST interface does not provide any meta.
         """
-        raise NotImplementedError("MAST Engineering AUI does not provide a meta service")
+        raise NotImplementedError(
+            "MAST Engineering AUI does not provide a meta service"
+        )
 
     def get_values(
         self,
@@ -259,7 +270,10 @@ class EngdbMast(EngdbABC):
             endtime = Time(endtime, format=time_format)
 
         records = self._get_records(
-            mnemonic=mnemonic, starttime=starttime, endtime=endtime, time_format=time_format
+            mnemonic=mnemonic,
+            starttime=starttime,
+            endtime=endtime,
+            time_format=time_format,
         )
 
         # If desired, remove bracket or outside of timeframe entries.
@@ -270,7 +284,9 @@ class EngdbMast(EngdbABC):
             records = records[selection]
 
         # Reformat to the desired list formatting.
-        results = _ValueCollection(include_obstime=include_obstime, zip_results=zip_results)
+        results = _ValueCollection(
+            include_obstime=include_obstime, zip_results=zip_results
+        )
         values = records["EUValue"]
         obstimes = Time(records["MJD"], format="mjd")
         for obstime, value in zip(obstimes, values, strict=False):
@@ -297,7 +313,9 @@ class EngdbMast(EngdbABC):
 
         self._session = s
 
-    def _get_records(self, mnemonic, starttime, endtime, time_format=None, **other_kwargs):  # noqa: ARG002
+    def _get_records(
+        self, mnemonic, starttime, endtime, time_format=None, **other_kwargs
+    ):
         """
         Retrieve all results for a mnemonic in the requested time range.
 
@@ -341,11 +359,15 @@ class EngdbMast(EngdbABC):
         mnemonic = mnemonic.upper()
         starttime_fmt = starttime.strftime("%Y-%m-%dT%H:%M:%S")
         endtime_fmt = endtime.strftime("%Y-%m-%dT%H:%M:%S")
-        self._req.params = {'mnemonic': mnemonic,
-                            's_time': starttime_fmt,
-                            'e_time': endtime_fmt}
+        self._req.params = {
+            "mnemonic": mnemonic,
+            "s_time": starttime_fmt,
+            "e_time": endtime_fmt,
+        }
         prepped = self._session.prepare_request(self._req)
-        settings = self._session.merge_environment_settings(prepped.url, {}, None, None, None)
+        settings = self._session.merge_environment_settings(
+            prepped.url, {}, None, None, None
+        )
         logger.debug("Query: %s", prepped.url)
         self.response = self._session.send(prepped, timeout=self.timeout, **settings)
         self.response.raise_for_status()
@@ -354,13 +376,13 @@ class EngdbMast(EngdbABC):
 
         # Convert to table.
         response = literal_eval(self.response.text)
-        data = response['Data']
-        del(response['Data'])
+        data = response["Data"]
+        del response["Data"]
         table = Table(rows=data, meta=response)
 
         # Create a column MJD that has the MJD version of the data
-        obstime = Time(table['ObsTime'])
-        table['MJD'] = obstime.mjd
+        obstime = Time(table["ObsTime"])
+        table["MJD"] = obstime.mjd
 
         return table
 

@@ -22,7 +22,9 @@ logger = logging.getLogger("romancal")
 logger.propagate = False
 logger_handler = logging.StreamHandler()
 logger.addHandler(logger_handler)
-logger_format_debug = logging.Formatter("%(levelname)s:%(filename)s::%(funcName)s: %(message)s")
+logger_format_debug = logging.Formatter(
+    "%(levelname)s:%(filename)s::%(funcName)s: %(message)s"
+)
 
 
 def main():
@@ -34,7 +36,9 @@ def main():
             " https://roman-pipeline.readthedocs.io/en/latest/roman/orientation/set_telescope_pointing.html"
         )
     )
-    parser.add_argument("exposure", type=str, nargs="+", help="List of Roman exposures to update.")
+    parser.add_argument(
+        "exposure", type=str, nargs="+", help="List of Roman exposures to update."
+    )
     parser.add_argument(
         "-v",
         "--verbose",
@@ -59,7 +63,9 @@ def main():
         default=stp.Methods.default,
         help="Algorithm to use. Default: %(default)s",
     )
-    parser.add_argument("--save-transforms", action="store_true", help="Save transforms.")
+    parser.add_argument(
+        "--save-transforms", action="store_true", help="Save transforms."
+    )
     parser.add_argument(
         "--override-transforms",
         type=str,
@@ -143,7 +149,8 @@ def deprecated_name():
     """Raise warning if filename.* is no longer used, and provide correct one."""
     filename = Path(__file__)
     warnings.warn(
-        f"usage of `{filename.name}` is deprecated; use `{filename.stem}` instead", stacklevel=2
+        f"usage of `{filename.name}` is deprecated; use `{filename.stem}` instead",
+        stacklevel=2,
     )
 
     main()

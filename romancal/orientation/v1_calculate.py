@@ -1,14 +1,13 @@
 """V1 Calculation based on time and engineering database info."""
 
-from collections import defaultdict
 import logging
-
-from astropy.table import Table
+from collections import defaultdict
 
 import roman_datamodels as rdm
+from astropy.table import Table
 
-from . import set_telescope_pointing as stp
 from ..lib import siafdb
+from . import set_telescope_pointing as stp
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -69,7 +68,9 @@ def v1_calculate_from_models(sources, siaf_path=None, **calc_wcs_from_time_kwarg
     return v1_table
 
 
-def v1_calculate_over_time(obsstart, obsend, siaf_path=None, **calc_wcs_from_time_kwargs):
+def v1_calculate_over_time(
+    obsstart, obsend, siaf_path=None, **calc_wcs_from_time_kwargs
+):
     """
     Calculate V1 over the given time period.
 
