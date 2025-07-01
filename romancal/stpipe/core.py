@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 import roman_datamodels as rdm
+from astropy.time import Time
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from stpipe import Pipeline, Step, crds_client
 
@@ -58,6 +59,25 @@ class RomanStep(Step):
             return ModelLibrary(init)
         raise TypeError(f"Invalid input: {init}")
 
+    @classmethod
+    def _get_crds_parameters(cls, dataset):
+        crds_parameters, crds_observatory = super()._get_crds_parameters(dataset)
+        if "roman.meta.instrument.name" not in crds_parameters:
+            crds_parameters["roman.meta.instrument.name"] = crds_parameters[
+                "roman.meta.basic.instrument"
+            ]
+        if "roman.meta.instrument.detector" not in crds_parameters:
+            crds_parameters["roman.meta.instrument.detector"] = "WFI02"
+        if "roman.meta.instrument.optical_element" not in crds_parameters:
+            crds_parameters["roman.meta.instrument.optical_element"] = crds_parameters[
+                "roman.meta.basic.optical_element"
+            ]
+        if "roman.meta.exposure.start_time" not in crds_parameters:
+            crds_parameters["roman.meta.exposure.start_time"] = Time(
+                crds_parameters["roman.meta.basic.time_first_mjd"], format="mjd"
+            ).to_value("isot")
+        return crds_parameters, crds_observatory
+
     def finalize_result(self, model, reference_files_used):
         """
         Hook that allows the Step to set metadata on the output model
@@ -80,21 +100,26 @@ class RomanStep(Step):
             model.meta.cal_logs = type(model.meta.cal_logs)(self.log_records)
 
         if len(reference_files_used) > 0:
-            for ref_name, ref_file in reference_files_used:
-                if hasattr(model.meta.ref_file, ref_name):
-                    setattr(model.meta.ref_file, ref_name, ref_file)
-                    # getattr(model.meta.ref_file, ref_name).name = ref_file
-            model.meta.ref_file.crds.version = crds_client.get_svn_version()
-            model.meta.ref_file.crds.context = crds_client.get_context_used(
-                model.crds_observatory
-            )
-
-            # this will only run if 'parent' is none, which happens when an individual
-            # step is being run or if self is a RomanPipeline and not a RomanStep.
-            if self.parent is None:
-                log.info(
-                    f"Results used CRDS context: {model.meta.ref_file.crds.context}"
+            if not hasattr(model.meta, "ref_file"):
+                log.error(
+                    f"Model[{model}] is missing meta.ref_file. {reference_files_used} will not be recorded"
                 )
+            else:
+                for ref_name, ref_file in reference_files_used:
+                    if hasattr(model.meta.ref_file, ref_name):
+                        setattr(model.meta.ref_file, ref_name, ref_file)
+                        # getattr(model.meta.ref_file, ref_name).name = ref_file
+                model.meta.ref_file.crds.version = crds_client.get_svn_version()
+                model.meta.ref_file.crds.context = crds_client.get_context_used(
+                    model.crds_observatory
+                )
+
+                # this will only run if 'parent' is none, which happens when an individual
+                # step is being run or if self is a RomanPipeline and not a RomanStep.
+                if self.parent is None:
+                    log.info(
+                        f"Results used CRDS context: {model.meta.ref_file.crds.context}"
+                    )
 
     def record_step_status(self, model, step_name, success=True):
         """

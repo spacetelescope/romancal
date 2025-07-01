@@ -7,6 +7,7 @@ import pyarrow
 import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
+from astropy.time import Time
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import MosaicModel, MosaicSegmentationMapModel
 
@@ -52,6 +53,7 @@ def mosaic_model():
     model.var_rnoise = err**2
     model.weight = 1.0 / err
     model.meta.basic.optical_element = "F184"
+    model.meta.basic.time_first_mjd = Time("2027-01-01T00:00:00").mjd
     return model
 
 
@@ -62,7 +64,6 @@ def library_model(mosaic_model):
     return ModelLibrary([mosaic_model, model2])
 
 
-@pytest.mark.stpsf
 @pytest.mark.parametrize(
     "snr_threshold, npixels, save_results",
     (

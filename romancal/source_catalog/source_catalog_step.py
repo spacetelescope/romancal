@@ -60,6 +60,11 @@ class SourceCatalogStep(RomanStep):
         if not isinstance(input_model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
+        # get the name of the psf reference file
+        self.ref_file = self.get_reference_file(input_model, "epsf")
+        self.log.info("Using ePSF reference file: %s", self.ref_file)
+        psf_ref_model = datamodels.open(self.ref_file)
+
         # Define a boolean mask for pixels to be excluded
         mask = (
             ~np.isfinite(input_model.data)
@@ -177,6 +182,7 @@ class SourceCatalogStep(RomanStep):
             self.kernel_fwhm,
             fit_psf=fit_psf,
             mask=mask,
+            psf_ref_model=psf_ref_model,
             cat_type=cat_type,
         )
         cat = catobj.catalog
@@ -193,6 +199,7 @@ class SourceCatalogStep(RomanStep):
                 self.kernel_fwhm,
                 fit_psf=self.fit_psf,
                 mask=mask,
+                psf_ref_model=psf_ref_model,
                 cat_type="forced_full",
             )
 

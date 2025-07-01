@@ -4,8 +4,10 @@ Unit tests for the Roman source detection step code
 
 from copy import deepcopy
 
+import crds
 import numpy as np
 import pytest
+import roman_datamodels as rdm
 from astropy import units as u
 from astropy.modeling.models import Gaussian2D
 from astropy.stats import mad_std
@@ -17,9 +19,8 @@ from roman_datamodels.datamodels import ImageModel
 
 from romancal.source_catalog.psf import (
     azimuthally_smooth,
-    create_gridded_psf_model,
-    create_l3_psf_model,
     fit_psf_to_image_model,
+    get_gridded_psf_model,
 )
 
 n_trials = 15
@@ -52,26 +53,17 @@ def setup_inputs(
     # construct ImageModel
     mod = ImageModel(wfi_image)
 
-    filt = mod.meta.instrument["optical_element"]
-    detector = mod.meta["instrument"]["detector"].replace("WFI", "SCA")
-
-    # input parameters for PSF model:
-    stpsf_config = dict(
-        filt=filt,
-        detector=detector,
-        oversample=12,
-        fov_pixels=15,
+    crds_parameters = mod.get_crds_parameters()
+    crds_ref_file = crds.getreferences(
+        crds_parameters, reftypes=["epsf"], observatory="roman"
     )
+    psf_ref_file = crds_ref_file["epsf"]
+    mod["psf_ref_model"] = rdm.open(psf_ref_file)
 
     # compute gridded PSF model:
-    psf_model, centroids = create_gridded_psf_model(
-        stpsf_config["filt"],
-        stpsf_config["detector"],
-        oversample=stpsf_config["oversample"],
-        fov_pixels=stpsf_config["fov_pixels"],
-    )
+    psf_model = get_gridded_psf_model(mod["psf_ref_model"])
 
-    return mod, stpsf_config, psf_model
+    return mod, psf_model
 
 
 def add_sources(image_model, psf_model, x_true, y_true, flux_true, background=10):
@@ -82,19 +74,17 @@ def add_sources(image_model, psf_model, x_true, y_true, flux_true, background=10
 
     shape = image_model.data.shape
     image = make_model_image(shape, psf_model, params_table, model_shape=(19, 19))
-    image += rng.normal(background, 1, size=shape)
+    image += rng.normal(background, image_model.err, size=shape)
 
     image_model.data = image * np.ones_like(image_model.data)
-    image_model.err = background * np.ones_like(image_model.err)
 
 
 class TestPSFFitting:
     def setup_method(self):
-        self.image_model, self.stpsf_config, self.psf_model = setup_inputs(
+        self.image_model, self.psf_model = setup_inputs(
             shape=image_model_shape,
         )
 
-    @pytest.mark.stpsf
     @pytest.mark.parametrize(
         "dx, dy, true_flux",
         zip(
@@ -107,23 +97,12 @@ class TestPSFFitting:
     def test_psf_fit(self, dx, dy, true_flux):
         # generate an ImageModel
         image_model = deepcopy(self.image_model)
-        init_data_stddev = np.std(image_model.data)
 
         # add synthetic sources to the ImageModel:
         true_x = image_model_shape[0] / 2 + dx
         true_y = image_model_shape[1] / 2 + dy
         add_sources(image_model, self.psf_model, true_x, true_y, true_flux)
-
-        if self.stpsf_config["fov_pixels"] % 2 == 0:
-            fit_shape = (
-                self.stpsf_config["fov_pixels"] + 1,
-                self.stpsf_config["fov_pixels"] + 1,
-            )
-        else:
-            fit_shape = (
-                self.stpsf_config["fov_pixels"],
-                self.stpsf_config["fov_pixels"],
-            )
+        init_data_stddev = np.std(image_model.data)
 
         # fit the PSF to the ImageModel:
         results_table, photometry = fit_psf_to_image_model(
@@ -132,7 +111,6 @@ class TestPSFFitting:
             psf_model=self.psf_model,
             x_init=true_x,
             y_init=true_y,
-            fit_shape=fit_shape,
         )
 
         # difference between input and output, normalized by the
@@ -153,7 +131,7 @@ class TestPSFFitting:
         approx_centroid_err = approx_fwhm / approx_snr
 
         # centroid err heuristic above is an underestimate, so we scale it up:
-        scale_factor_approx = 100
+        scale_factor_approx = 2
 
         assert np.all(
             results_table["x_err"] < scale_factor_approx * approx_centroid_err
@@ -161,15 +139,6 @@ class TestPSFFitting:
         assert np.all(
             results_table["y_err"] < scale_factor_approx * approx_centroid_err
         )
-
-
-@pytest.mark.stpsf
-def test_create_l3_psf_model():
-    """Test basic results"""
-    psf_model = create_l3_psf_model(filt="F158")
-    assert psf_model.data.shape == (195, 195)
-    np.testing.assert_almost_equal(psf_model.x_0.value, 9.0, decimal=0.1)
-    np.testing.assert_almost_equal(psf_model.y_0.value, 9.0, decimal=0.1)
 
 
 def test_azimuthally_smooth():

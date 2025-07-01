@@ -27,19 +27,13 @@ dependencies = [
     "scipy >=1.14.1",
     # "stcal>=1.13.0,<1.14.0",
     "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
-    "stpipe >=0.8.0,<0.9.0",
+    "stpipe >=0.9.0,<0.10.0",
     "tweakwcs >=0.8.8",
     "spherical-geometry >= 1.2.22",
     "stsci.imagestats >= 1.6.3",
     "drizzle >= 2.0.1",
-    "stpsf >= 2.1.0",
     "pyarrow >= 10.0.1",  # for Table.read(...) support in astropy for parquet files
     "pandas >= 2.0.0",  # for Table.read(...) support in astropy for parquet files
-    # pysiaf required by stpsf uses pkg_resources which doesn't
-    # exist in python 3.12 without setuptools.
-    # TODO: drop this dependency when stpsf is dropped
-    # (or when pysiaf no longer requires pkg_resources).
-    "setuptools >= 60 ; python_version >= '3.12'",
 ]
 license-files = ["LICENSE"]
 dynamic = [
@@ -81,7 +75,7 @@ repository = "https://github.com/spacetelescope/romancal"
 romancal = "romancal.stpipe.integration:get_steps"
 
 [project.entry-points.pytest11]
-stpsf = "pytest_romancal.stpsf_plugin"
+
 
 [project.scripts]
 roman_static_preview = "romancal.scripts.static_preview:command"

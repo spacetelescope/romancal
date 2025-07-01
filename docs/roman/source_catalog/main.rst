@@ -75,9 +75,8 @@ segment.
 Optionally, Point Spread Function (PSF) photometry can be
 performed by setting the ``fit_psf`` keyword. Enabling
 this option fits a model PSF to each source to measure its
-position and flux. The PSF model is generated using the
-`STPSF <https://stpsf.readthedocs.io/en/latest/roman.html>`_
-package. PSF photometry is performed using the
+position and flux. The PSF model is generated using reference
+files on CRDS.  PSF photometry is performed using the
 :py:class:`photutils.psf.PSFPhotometry` class from Photutils.
 
 For Level 3 data, since the data contains a mixture of individual detector PSFs
@@ -307,8 +306,13 @@ Uncertainties are reported as the 1-sigma (68.27% confidence) errors.
 +-----------------------+-----------------------------------------------------+
 
 
-Detailed descriptions of many of the columns can be found in the
-`Photutils documentation <https://photutils.readthedocs.io/en/latest/>`_:
+Star finding algorithms like `~photutils.detection.DAOStarFinder` provide
+approximate stellar centroids. More precise centroids may be inferred by
+fitting model PSFs to the observations. Setting the SourceCatalogStep's
+option `fit_psf` to True will generate model Roman PSFs with
+PSF reference files in CRDS, and fit
+those models to each of the sources detected by
+`~photutils.detection.DAOStarFinder`. More details are in :doc:`psf`.
 
 * `SourceCatalog
   <https://photutils.readthedocs.io/en/latest/api/photutils.segmentation.SourceCatalog.html>`_

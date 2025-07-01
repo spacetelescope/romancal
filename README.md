@@ -196,9 +196,6 @@ $ crds sync --contexts roman-edit
 The CRDS_READONLY_CACHE variable should not be set, since references will need to be downloaded to your local cache as
 they are requested.
 
-> **Note**\
-> If it is desired to run tests against STPSF data, use the `pytest --stpsf` flag or the `-stpsf` tox factor and follow [these instructions to download the data files / point to existing files on the shared internal network](https://stpsf.readthedocs.io/en/latest/installation.html#data-install).
-
 ### Running tests
 
 Unit tests can be run via `pytest`. Within the top level of your local `roman` repo checkout:

@@ -61,6 +61,8 @@ documentation on each reference file.
 +---------------------------------------------+--------------------------------------------------+
 | :ref:`saturation <saturation_step>`         | :ref:`SATURATION <saturation_reffile>`           |
 +---------------------------------------------+--------------------------------------------------+
+| :ref:`source catalog<source_catalog_step>`  | :ref:`PSF <psf_reffile>`                         |
++---------------------------------------------+--------------------------------------------------+
 
 
 +--------------------------------------------------+---------------------------------------------+
@@ -83,6 +85,8 @@ documentation on each reference file.
 | :ref:`READNOISE <readnoise_reffile>`             | :ref:`ramp_fitting <ramp_fitting_step>`     |
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`SATURATION <saturation_reffile>`           | :ref:`saturation <saturation_step>`         |
++--------------------------------------------------+---------------------------------------------+
+| :ref:`PSF <psf_reffile>`                         | :ref:`source catalog<source_catalog_step>`  |
 +--------------------------------------------------+---------------------------------------------+
 
 .. _`Standard ASDF metadata`:
