@@ -119,3 +119,23 @@ def test_multiband_catalog(
         filepath = Path(tmp_path / f"{result.meta.filename}_segm.asdf")
         assert filepath.exists()
         assert isinstance(rdm.open(filepath), MosaicSegmentationMapModel)
+
+
+@pytest.mark.stpsf
+@pytest.mark.parametrize("save_results", (True, False))
+def test_multiband_catalog_no_detections(library_model, save_results, tmp_path):
+    os.chdir(tmp_path)
+    step = MultibandCatalogStep()
+
+    result = step.call(
+        library_model,
+        bkg_boxsize=50,
+        snr_threshold=1000,  # high threshold to ensure no detections
+        npixels=10,
+        fit_psf=False,
+        save_results=save_results,
+    )
+
+    cat = result.source_catalog
+    assert isinstance(cat, Table)
+    assert len(cat) == 0

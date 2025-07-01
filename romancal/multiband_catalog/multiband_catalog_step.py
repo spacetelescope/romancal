@@ -68,32 +68,38 @@ class MultibandCatalogStep(RomanStep):
             example_model = library.borrow(0)
             library.shelve(example_model, modify=False)
 
-        source_catalog_model = datamodels.MultibandSourceCatalogModel.create_minimal(
+        # Initialize the source catalog model, copying the metadata
+        # from the input model
+        cat_model = datamodels.MultibandSourceCatalogModel.create_minimal(
             {"meta": example_model.meta}
         )
         if "instrument" in example_model.meta:
-            source_catalog_model.meta.optical_element = (
+            cat_model.meta.optical_element = (
                 example_model.meta.instrument.optical_element
             )
 
+        # Define the output filename for the source catalog model
         try:
-            source_catalog_model.meta.filename = library.asn["products"][0]["name"]
+            cat_model.meta.filename = library.asn["products"][0]["name"]
         except (AttributeError, KeyError):
-            source_catalog_model.meta.filename = "multiband_catalog"
+            cat_model.meta.filename = "multiband_catalog"
         if self.output_file is None:
-            self.output_file = source_catalog_model.meta.filename
+            self.output_file = cat_model.meta.filename
 
+        self.log.info("Calculating and subtracting background")
+        library = subtract_background_library(library, self.bkg_boxsize)
+
+        self.log.info("Creating detection image")
+        # Define the kernel FWHMs for the detection image
         # TODO: sensible defaults
         # TODO: redefine in terms of intrinsic FWHM
         if self.kernel_fwhms is None:
             self.kernel_fwhms = [2.0, 20.0]
 
-        library = subtract_background_library(library, self.bkg_boxsize)
-
         # TODO: where to save the det_img and det_err?
         det_img, det_err = make_detection_image(library, self.kernel_fwhms)
 
-        # estimate background rms from detection image to calculate a
+        # Estimate background rms from detection image to calculate a
         # threshold for source detection
         mask = ~np.isfinite(det_img) | ~np.isfinite(det_err) | (det_err <= 0)
         bkg = RomanBackground(
@@ -103,6 +109,7 @@ class MultibandCatalogStep(RomanStep):
         )
         bkg_rms = bkg.background_rms
 
+        self.log.info("Detecting sources")
         segment_img = make_segmentation_image(
             det_img,
             snr_threshold=self.snr_threshold,
@@ -111,11 +118,13 @@ class MultibandCatalogStep(RomanStep):
             deblend=self.deblend,
             mask=mask,
         )
-        segment_img.detection_image = det_img
 
         if segment_img is None:  # no sources found
-            source_catalog_model.source_catalog = Table()
+            self.log.warning("Cannot create source catalog. No sources were detected.")
+            cat_model.source_catalog = Table()
         else:
+            segment_img.detection_image = det_img
+
             # this is needed for the DAOStarFinder sharpness and roundness
             # properties
             # TODO: measure on a secondary detection image with minimal
@@ -188,16 +197,16 @@ class MultibandCatalogStep(RomanStep):
                     library.shelve(model, modify=False)
 
             # put the resulting catalog in the model
-            source_catalog_model.source_catalog = det_cat
+            cat_model.source_catalog = det_cat
 
         # always save the segmentation image
         output_filename = (
             self.output_file
             if self.output_file is not None
-            else source_catalog_model.meta.filename
+            else cat_model.meta.filename
         )
-        save_segment_image(self, segment_img, source_catalog_model, output_filename)
+        save_segment_image(self, segment_img, cat_model, output_filename)
 
         self.output_ext = "parquet"
 
-        return source_catalog_model
+        return cat_model
