@@ -125,7 +125,9 @@ class SourceCatalogStep(RomanStep):
             self.log.warning("Cannot create source catalog. All pixels are masked.")
             segment_img = np.zeros(model.data.shape, dtype=np.uint32)
             cat_model.source_catalog = cat_model.create_empty_catalog()
-            return save_all_results(self, input_model, segment_img, cat_model)
+            return save_all_results(
+                self, segment_img, cat_model, input_model=input_model
+            )
 
         self.log.info("Calculating and subtracting background")
         bkg = RomanBackground(
@@ -172,7 +174,9 @@ class SourceCatalogStep(RomanStep):
             self.log.warning("Cannot create source catalog. No sources were detected.")
             segment_img = np.zeros(model.data.shape, dtype=np.uint32)
             cat_model.source_catalog = cat_model.create_empty_catalog()
-            return save_all_results(self, input_model, segment_img, cat_model)
+            return save_all_results(
+                self, segment_img, cat_model, input_model=input_model
+            )
 
         self.log.info("Creating source catalog")
         cat_type = "prompt" if not self.forced_segmentation else "forced_det"
@@ -233,4 +237,4 @@ class SourceCatalogStep(RomanStep):
         # Put the resulting catalog table in the catalog model
         cat_model.source_catalog = cat
 
-        return save_all_results(self, input_model, segment_img, cat_model)
+        return save_all_results(self, segment_img, cat_model, input_model=input_model)

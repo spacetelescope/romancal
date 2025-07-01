@@ -11,6 +11,9 @@ from roman_datamodels.datamodels import (
 )
 from roman_datamodels.stnode import SourceCatalog
 
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
+
 
 def save_segment_image(self, segment_img, source_catalog_model, output_filename):
     """
@@ -31,7 +34,7 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
         The output file name.
     """
     if segment_img is None:
-        logging.warning("No segmentation image to save.")
+        log.warning("No segmentation image to save.")
         return
 
     # Define the segmentation model based on the source catalog model
@@ -59,7 +62,7 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
     )
 
 
-def save_all_results(self, model, segment_img, cat_model):
+def save_all_results(self, segment_img, cat_model, input_model=None):
     """
     Return and save the results of the source catalog step.
 
@@ -79,14 +82,16 @@ def save_all_results(self, model, segment_img, cat_model):
     self : `romancal.source_catalog.SourceCatalogStep` or `romancal.multiband_catalog.MultiBandCatalogStep`
         The step instance that is calling this function.
 
-    model : `ImageModel` or `MosaicModel`
-        The input model to the source catalog step.
-
     segment_img : `photutils.segmentation.SegmentationImage`
         The segmentation image created by the source catalog step.
 
     cat_model : `datamodels.ImageSourceCatalogModel`, `datamodels.MosaicSourceCatalogModel`, `datamodels.ForcedImageSourceCatalogModel`, or `datamodels.ForcedMosaicSourceCatalogModel`
         The source catalog model created by the source catalog step.
+
+    input_model : `None`, `ImageModel`, or `MosaicModel`, optional
+        The input model to the source catalog step. This
+        is required only for the SourceCatalogStep when
+        ``self.return_updated_model`` is `True`.
 
     Returns
     -------
@@ -137,15 +142,18 @@ def save_all_results(self, model, segment_img, cat_model):
         self.suffix = "sourcecatalog"
 
         # update the input datamodel with the tweakreg catalog name
-        if isinstance(model, ImageModel):
-            model.meta.source_catalog = SourceCatalog()
-            model.meta.source_catalog.tweakreg_catalog_name = output_catalog_name
-            model.meta.cal_step.source_catalog = "COMPLETE"
+        if isinstance(input_model, ImageModel):
+            input_model.meta.source_catalog = SourceCatalog()
+            input_model.meta.source_catalog.tweakreg_catalog_name = output_catalog_name
+            input_model.meta.cal_step.source_catalog = "COMPLETE"
 
-        result = model
+        result = input_model
     else:
         self.output_ext = "parquet"
         result = cat_model
+
+    if self.output_file is None:
+        self.output_file = cat_model.meta.filename
 
     # validate the result to flush out any lazy-loaded contents
     result.validate()
