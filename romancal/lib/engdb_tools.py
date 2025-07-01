@@ -1,20 +1,20 @@
 """
-Access the JWST Engineering Mnemonic Database.
+Access the Roman Engineering Mnemonic Database.
 
 The engineering mnemonics are provided by multiple services,
 all of which require a level of authentication.
 
 For non-operational use, the providing service is through the MAST AUI website
-(https://mast.stsci.edu/portal/Mashup/Clients/jwstedb/jwstedb.html).
+(TBD).
 
 Authorization can be requested through https://auth.mast.stsci.edu/ site.
 
 **Interface**
 
-The primary entry point is the function `jwst.lib.engdb_tools.ENGDB_Service`.
-This function returns a `jwst.lib.engdb_lib.EngdbABC` connection object. Using
+The primary entry point is the function `romancal.lib.engdb_tools.ENGDB_Service`.
+This function returns a `romancal.lib.engdb_lib.EngdbABC` connection object. Using
 this object, values for a mnemonic covering a specified time range can be
-retrieved using the :meth:`~jwst.lib.engdb_lib.EngdbABC.get_values` method.
+retrieved using the :meth:`~romancal.lib.engdb_lib.EngdbABC.get_values` method.
 
 By default, only values inclusively between the time end points are returned.
 Depending on the frequency a mnemonic is updated, there can be no values. If
@@ -35,7 +35,7 @@ range can be requested.
   If not defined, a default, as defined by the individual services, will be attempted.
 * ``MAST_API_TOKEN``: If no token is provided in code or by command line parameters,
   this value will be used.
-  `~jwst.lib.engdb_mast.EngdbMast` service requires a token to be provided.
+  `~romancal.lib.engdb_mast.EngdbMast` service requires a token to be provided.
   See https://auth.mast.stsci.edu/ for more information.
 * ``ENG_RETRIES``: Number of attempts to make when connecting to the service. Default is 10.
 * ``ENG_TIMEOUT``: Number of seconds before timing out a network connection.
@@ -47,7 +47,7 @@ The typical workflow is as follows:
 
 .. code-block:: python
 
-    from jwst.lib.engdb_tools import ENGDB_Service
+    from romancal.lib.engdb_tools import ENGDB_Service
 
     service = ENGDB_Service()  # By default, will use the public MAST service.
 
@@ -79,11 +79,11 @@ def ENGDB_Service(base_url=None, **service_kwargs):  # noqa: N802
 
     **service_kwargs : dict
         Service-specific keyword arguments. Refer to the concrete implementations
-        of `~jwst.lib.engdb_lib.EngdbABC`.
+        of `~romancal.lib.engdb_lib.EngdbABC`.
 
     Returns
     -------
-    service : `~jwst.lib.engdb_lib.EngdbABC`
+    service : `~romancal.lib.engdb_lib.EngdbABC`
         The engineering database service to use.
     """
     # Determine the database to use
