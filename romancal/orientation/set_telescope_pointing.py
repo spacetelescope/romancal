@@ -89,8 +89,8 @@ TYPES_TO_UPDATE = set()
 
 # Mnemonics for each transformation method.
 # dict where value indicates whether the mnemonic is required or not.
-COURSE_MNEMONICS_QUATERNION_ECI = [f"SCF_AC_SDR_QBJ_{idx + 1}" for idx in range(4)]
-COURSE_MNEMONICS = {q: True for q in COURSE_MNEMONICS_QUATERNION_ECI}
+COARSE_MNEMONICS_QUATERNION_ECI = [f"SCF_AC_SDR_QBJ_{idx + 1}" for idx in range(4)]
+COARSE_MNEMONICS = {q: True for q in COARSE_MNEMONICS_QUATERNION_ECI}
 
 # Conversion from seconds to MJD
 SECONDS2MJD = 1 / 24 / 60 / 60
@@ -100,11 +100,10 @@ SECONDS2MJD = 1 / 24 / 60 / 60
 # in the SIAF
 M_V2FCS0 = np.array(
     [
-        ["-0.0000001", "0.5000141", "0.8660173"],
-        ["0.0086567", "-0.8659848", "0.4999953"],
-        ["0.9999625", "0.0074969", "-0.0043284"],
-    ],
-    dtype=float,
+        [-0.0000001,  0.5000141,  0.8660173],
+        [ 0.0086567, -0.8659848,  0.4999953],
+        [ 0.9999625,  0.0074969, -0.0043284],
+],
 )
 
 # Default B-frame to FCS frame, M_b_to_fcs
@@ -140,7 +139,7 @@ class Methods(Enum):
         "coarse_nb",
         "calc_transforms_coarse_nb",
         "calc_wcs_standard",
-        COURSE_MNEMONICS,
+        COARSE_MNEMONICS,
     )
 
     # Aliases
@@ -1007,7 +1006,7 @@ def calc_position_angle(point, ref):
 def get_pointing(
     obsstart,
     obsend,
-    mnemonics_to_read=COURSE_MNEMONICS,
+    mnemonics_to_read=COARSE_MNEMONICS,
     engdb_url=None,
     tolerance=60,
     reduce_func=None,
@@ -1193,7 +1192,7 @@ def _roll_angle_from_matrix(matrix, v2, v3):
 
 
 def get_mnemonics(
-    obsstart, obsend, tolerance, mnemonics_to_read=COURSE_MNEMONICS, engdb_url=None
+    obsstart, obsend, tolerance, mnemonics_to_read=COARSE_MNEMONICS, engdb_url=None
 ):
     """
     Retrieve pointing mnemonics from the engineering database.
@@ -1322,7 +1321,7 @@ def all_pointings(mnemonics_to_read, mnemonics):
     for obstime, mnemonics_at_time in filled.items():
         # Fill out the matrices
         q = np.array(
-            [mnemonics_at_time[m].value for m in COURSE_MNEMONICS_QUATERNION_ECI]
+            [mnemonics_at_time[m].value for m in COARSE_MNEMONICS_QUATERNION_ECI]
         )
 
         pointing = Pointing(
@@ -1420,7 +1419,7 @@ def pointing_from_average(mnemonics_to_read, mnemonics):
         raise ValueError("Bad telemetry values")
 
     # Fill out the pointing matrices.
-    q = np.array([mnemonic_averages[m] for m in COURSE_MNEMONICS_QUATERNION_ECI])
+    q = np.array([mnemonic_averages[m] for m in COARSE_MNEMONICS_QUATERNION_ECI])
 
     pointing = Pointing(
         obstime=obstime,
