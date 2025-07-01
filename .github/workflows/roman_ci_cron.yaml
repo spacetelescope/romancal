@@ -62,7 +62,5 @@ jobs:
       envs: |
         - macos: py311
           pytest-results-summary: true
-        - macos: py312-sdpdeps
-          pytest-results-summary: true
         - linux: py3-pyargs
           pytest-results-summary: true
