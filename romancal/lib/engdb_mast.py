@@ -1,4 +1,4 @@
-"""Access the JWST Engineering Mnemonic Database through MAST."""
+"""Access the Roman Engineering Mnemonic Database through MAST."""
 
 from ast import literal_eval
 import json
@@ -28,7 +28,7 @@ logger.addHandler(logging.NullHandler())
 
 class EngdbMast(EngdbABC):
     """
-    Access the JWST Engineering Database through MAST.
+    Access the Roman Engineering Database through MAST.
 
     Parameters
     ----------

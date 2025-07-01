@@ -24,7 +24,7 @@ TIMEOUT = 15
 
 class EngdbABC(abc.ABC):
     """
-    Access the JWST Engineering Database.
+    Access the Roman Engineering Database.
 
     This is the minimal API for the service definition. Concrete implementations
     may provide other parameters and attributes.

@@ -31,7 +31,7 @@ def main():
         description=(
             "Update basic WCS information in Roman exposures from the engineering database."
             " For detailed information, see"
-            " TBD"
+            " https://roman-pipeline.readthedocs.io/en/latest/roman/orientation/set_telescope_pointing.html"
         )
     )
     parser.add_argument("exposure", type=str, nargs="+", help="List of Roman exposures to update.")
