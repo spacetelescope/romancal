@@ -15,10 +15,7 @@ import asdf
 import roman_datamodels as rdm
 from astropy.time import Time
 
-from romancal.lib import (
-    engdb_mast,
-    engdb_tools
-)
+from romancal.lib import engdb_mast, engdb_tools
 from romancal.orientation import set_telescope_pointing as stp
 
 # Ensure that `set_telescope_pointing` logs.
@@ -239,7 +236,7 @@ def _test_transforms(transforms, t_pars, matrix):
         assert np.allclose(value, expected_value)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def engdb():
     """Setup the service to operate through the mock service"""
     try:
