@@ -62,24 +62,11 @@ def main():
         ),
     )
     parser.add_argument(
-        "--method",
-        type=stp.Methods,
-        choices=list(stp.Methods),
-        default=stp.Methods.default,
-        help="Algorithm to use. Default: %(default)s",
-    )
-    parser.add_argument(
         "-v",
         "--verbose",
         action="count",
         default=0,
         help="Increase verbosity. Specifying multiple times adds more output.",
-    )
-    parser.add_argument(
-        "--override-transforms",
-        type=str,
-        default=None,
-        help="Transform matrices to use instead of calculated",
     )
     parser.add_argument(
         "--engdb-url",
@@ -99,10 +86,6 @@ def main():
     logger.setLevel(level)
     if level <= logging.DEBUG:
         logger_handler.setFormatter(logger_format_debug)
-
-    override_transforms = args.override_transforms
-    if override_transforms:
-        override_transforms = stp.Transforms.from_asdf(override_transforms)
 
     # Determine whether the sources are time specifications or a file list.
     if len(args.time_sources) == 2:
@@ -135,8 +118,6 @@ def main():
             args.time_sources,
             engdb_url=args.engdb_url,
             reduce_func=REDUCE_FUNCS_MAPPING[args.pointing],
-            method=args.method,
-            override_transforms=override_transforms,
         )
     else:
         v1s = v1_calculate.v1_calculate_over_time(
@@ -145,7 +126,6 @@ def main():
             engdb_url=args.engdb_url,
             reduce_func=REDUCE_FUNCS_MAPPING[args.pointing],
             method=args.method,
-            override_transforms=override_transforms,
         )
 
     formatted = v1_calculate.simplify_table(v1s)
