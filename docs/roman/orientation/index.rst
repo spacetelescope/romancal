@@ -1,4 +1,4 @@
-.. _lib:
+.. _orientation:
 
 ================================
 Obsevatory Orientation Utilities
