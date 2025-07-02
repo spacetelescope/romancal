@@ -86,7 +86,7 @@ def save_all_results(self, segment_img, cat_model, input_model=None):
         The segmentation image created by the source catalog step.
 
     cat_model : `datamodels.ImageSourceCatalogModel`, `datamodels.MosaicSourceCatalogModel`, `datamodels.ForcedImageSourceCatalogModel`, or `datamodels.ForcedMosaicSourceCatalogModel`
-        The source catalog model created by the source catalog step.
+        The source catalog model created by the step
 
     input_model : `None`, `ImageModel`, or `MosaicModel`, optional
         The input model to the source catalog step. This
@@ -158,3 +158,42 @@ def save_all_results(self, segment_img, cat_model, input_model=None):
     # validate the result to flush out any lazy-loaded contents
     result.validate()
     return result
+
+
+def save_empty_results(self, segment_shape, cat_model, input_model=None, msg=""):
+    """
+    Return and save empty results for the source catalog or multiband
+    catalog step.
+
+    Parameters
+    ----------
+    self : `romancal.source_catalog.SourceCatalogStep` or `romancal.multiband_catalog.MultiBandCatalogStep`
+        The step instance that is calling this function.
+
+    segment_shape : tuple
+        The shape of the segmentation image to create.
+
+    cat_model : `datamodels.ImageSourceCatalogModel`, `datamodels.MosaicSourceCatalogModel`, `datamodels.ForcedImageSourceCatalogModel`, or `datamodels.ForcedMosaicSourceCatalogModel`
+        The source catalog model created by the step.
+
+    input_model : `None`, `ImageModel`, or `MosaicModel`, optional
+        The input model to the source catalog step. This
+        is required only for the SourceCatalogStep when
+        ``self.return_updated_model`` is `True`.
+
+    msg : str, optional
+        A message to log if no results were found. Default is an empty
+        string.
+
+    Returns
+    -------
+    result : `ImageModel`, `MosaicModel`, or `SourceCatalog`
+        The source catalog model or the input model with updated
+        metadata.
+    """
+    if msg:
+        log.error(msg)
+
+    segment_img = np.zeros(segment_shape, dtype=np.uint32)
+    cat_model.source_catalog = cat_model.create_empty_catalog()
+    return save_all_results(self, segment_img, cat_model, input_model=input_model)
