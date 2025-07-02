@@ -146,47 +146,6 @@ def test_wcs(calc_wcs, wcs_type):
     assert expected == wcs[wcs_type]._asdict()
 
 
-@pytest.mark.parametrize(
-    "attribute, expected", [("m_eci2b", "overridden"), ("m_eci2v", "untouched")]
-)
-def test_override(attribute, expected):
-    """Test overriding of Transforms attributes"""
-    overrides = stp.Transforms(m_eci2b="overridden")
-    to_override = stp.Transforms(
-        m_eci2b="original", m_eci2v="untouched", override=overrides
-    )
-
-    assert getattr(to_override, attribute) == expected
-
-
-def test_override_calc_wcs():
-    """Test matrix override in the full calculation"""
-    t_pars = _make_t_pars()
-    wcsinfo, vinfo, transforms = stp.calc_wcs(t_pars)
-
-    override = stp.Transforms(
-        m_eci2b=np.array(
-            [
-                [-0.17690118, -0.39338551, 0.91934622],
-                [-0.43470441, -0.82917048, -0.35143805],
-                [0.90054523, -0.3971454, 0.00710906],
-            ]
-        )
-    )
-    t_pars.override_transforms = override
-    wcsinfo_new, vinfo_new, transforms_new = stp.calc_wcs(t_pars)
-
-    assert vinfo_new != vinfo
-    assert all(
-        np.isclose(
-            vinfo_new,
-            stp.WCSRef(
-                ra=245.78706748976023, dec=66.83068216214627, pa=89.45804357482956
-            ),
-        )
-    )
-
-
 def test_strict_pointing(science_raw_model, tmp_path):
     """Test failure on strict pointing"""
     science_raw_model.meta.exposure.end_time = STARTTIME
