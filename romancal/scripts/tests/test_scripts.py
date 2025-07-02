@@ -3,9 +3,9 @@ import shutil
 import pytest
 
 SCRIPTS = [
-    'pointing_summary',
-    'set_telescope_pointing',
-    'v1_calculate',
+    "pointing_summary",
+    "set_telescope_pointing",
+    "v1_calculate",
     "verify_install_requires",
 ]
 
