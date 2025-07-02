@@ -1,7 +1,7 @@
 """
 Test suite for set_telescope_pointing
 """
-
+import dataclasses
 import logging
 from pathlib import Path
 
@@ -194,7 +194,7 @@ def test_strict_pointing(science_raw_model, tmp_path):
         stp.add_wcs(_model_to_tmpfile(science_raw_model, tmp_path), tolerance=0)
 
 
-@pytest.mark.parametrize("matrix", [matrix for matrix in stp.Transforms()._fields])
+@pytest.mark.parametrize("matrix", [matrix for matrix in dataclasses.fields(stp.Transforms())])
 def test_transforms(calc_wcs, matrix):
     """Ensure expected calculate of the specified matrix
 
@@ -207,7 +207,7 @@ def test_transforms(calc_wcs, matrix):
         The matrix to compare
     """
     _, _, transforms, t_pars = calc_wcs
-    _test_transforms(transforms, t_pars, matrix)
+    _test_transforms(transforms, t_pars, matrix.name)
 
 
 def test_transform_serialize(calc_wcs, tmp_path):

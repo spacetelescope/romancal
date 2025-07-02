@@ -158,8 +158,6 @@ class Transforms:
     m_eci2siaf: np.ndarray | None = None
     #: ECI to V
     m_eci2v: np.ndarray | Any = None
-    #: Override values. Either another Transforms or dict-like object
-    override: object | None = None
 
     @classmethod
     def from_asdf(cls, asdf_file):
@@ -192,14 +190,8 @@ class Transforms:
         -------
         asdf_file : asdf.AsdfFile
             The ASDF serialization.
-
-        Notes
-        -----
-        The `override` transforms are not serialized, since the values of this transform
-        automatically represent what is in the override.
         """
         self_dict = dataclasses.asdict(self)
-        del self_dict["override"]  # Do not serialize the override transforms
         asdf_file = asdf.AsdfFile({"transforms": self_dict})
         return asdf_file
 
@@ -214,31 +206,6 @@ class Transforms:
         """
         asdf_file = self.to_asdf()
         asdf_file.write_to(path, all_array_storage="inline")
-
-    def __getattribute__(self, name):
-        """
-        If an override has been specified, return that value regardless.
-
-        Notes
-        -----
-        This dunder method is called for ALL attributes. Tread carefully.
-        """  # numpydoc ignore=RT01
-        # If the attribute is not a field, just return its value. Like NOW.
-        if name.startswith("_") or name not in self._fields or name == "override":
-            return object.__getattribute__(self, name)
-
-        override = self.override
-        override_value = getattr(override, name) if override else None
-        return (
-            override_value
-            if override_value is not None
-            else object.__getattribute__(self, name)
-        )
-
-    def __post_init__(self):
-        """Post-initialization of a DataClass."""
-        # Create a simple list of fields to check against.
-        self._fields = [field.name for field in dataclasses.fields(self)]
 
 
 # WCS reference container
@@ -264,8 +231,6 @@ class TransformParameters:
     obsend: float | None = None
     #: Observation start time
     obsstart: float | None = None
-    #: If set, matrices that should be used instead of the calculated one.
-    override_transforms: Transforms | None = None
     #: The observatory orientation, represented by the ECI quaternion,
     # and other engineering mnemonics
     pointing: Pointing | Any = None
@@ -691,7 +656,7 @@ def calc_transforms(t_pars: TransformParameters):
     -----
     """
     logger.info("Calculating transforms...")
-    t = Transforms(override=t_pars.override_transforms)
+    t = Transforms()
 
     # Quaternion to M_eci2b
     t.m_eci2b = calc_m_eci2b(t_pars.pointing.q)
