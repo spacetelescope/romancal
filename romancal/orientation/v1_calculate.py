@@ -59,9 +59,7 @@ def v1_calculate_from_models(sources, **calc_wcs_from_time_kwargs):
     return v1_table
 
 
-def v1_calculate_over_time(
-    obsstart, obsend, **calc_wcs_from_time_kwargs
-):
+def v1_calculate_over_time(obsstart, obsend, **calc_wcs_from_time_kwargs):
     """
     Calculate V1 over the given time period.
 
