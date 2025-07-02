@@ -84,7 +84,7 @@ EXPECTED_MODELS = rdm.datamodels.ScienceRawModel
 # Exposure types that can be updated, normally
 TYPES_TO_UPDATE = set()
 
-# Mnemonics for each transformation method.
+# Mnemonics needed.
 # dict where value indicates whether the mnemonic is required or not.
 COARSE_MNEMONICS_QUATERNION_ECI = [f"SCF_AC_SDR_QBJ_{idx + 1}" for idx in range(4)]
 COARSE_MNEMONICS = {q: True for q in COARSE_MNEMONICS_QUATERNION_ECI}
