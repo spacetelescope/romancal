@@ -1,0 +1,2 @@
+Update the multiband catalog step to handle the cases where there are no
+valid pixels in the input data or there are no detections found.
