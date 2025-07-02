@@ -54,6 +54,8 @@ def mosaic_model():
     model.weight = 1.0 / err
     model.meta.basic.optical_element = "F184"
     model.meta.basic.time_first_mjd = Time("2027-01-01T00:00:00").mjd
+    model.meta.wcsinfo.pixel_scale = 0.11 / 3600  # degrees
+    model.meta.resample.pixfrac = 0.5
     return model
 
 
