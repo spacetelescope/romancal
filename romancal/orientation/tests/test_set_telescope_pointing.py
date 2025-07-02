@@ -126,30 +126,21 @@ def test_logging(caplog):
     assert "Querying engineering DB" in caplog.text
 
 
-@pytest.mark.parametrize("method", [method for method in stp.Methods])
-def test_method_string(method):
-    """Ensure that the value of the method is the string representation"""
-    assert f"{method}" == method.value
-
-
 @pytest.mark.parametrize("wcs_type", ["wcsinfo", "vinfo"])
-def test_method_wcs(calc_method, wcs_type, truth_ext=""):
+def test_wcs(calc_wcs, wcs_type):
     """Ensure WCS information is correct
 
     Parameters
     ----------
-    calc_method : pytest.fixture
+    calc_wcs : pytest.fixture
         Equates to tuple (wcsinfo, vinfo, transforms, t_pars)
 
     wcs_type : str
         Which particular WCS information to test
-
-    truth_ext : str
-        Arbitrary extension to add to the truth file name.
     """
-    wcsinfo, vinfo, _, t_pars = calc_method
+    wcsinfo, vinfo, _, t_pars = calc_wcs
     wcs = {"wcsinfo": wcsinfo, "vinfo": vinfo}
-    with asdf.open(DATA_PATH / f"wcs_{t_pars.method}{truth_ext}.asdf") as af:
+    with asdf.open(DATA_PATH / "wcs.asdf") as af:
         expected = af.tree[wcs_type]
 
     assert expected == wcs[wcs_type]._asdict()
@@ -204,7 +195,7 @@ def test_strict_pointing(science_raw_model, tmp_path):
 
 
 @pytest.mark.parametrize("matrix", [matrix for matrix in stp.Transforms()._fields])
-def test_transforms(calc_method, matrix):
+def test_transforms(calc_wcs, matrix):
     """Ensure expected calculate of the specified matrix
 
     Parameters
@@ -215,13 +206,13 @@ def test_transforms(calc_method, matrix):
     matrix : str
         The matrix to compare
     """
-    _, _, transforms, t_pars = calc_method
+    _, _, transforms, t_pars = calc_wcs
     _test_transforms(transforms, t_pars, matrix)
 
 
-def test_transform_serialize(calc_method, tmp_path):
+def test_transform_serialize(calc_wcs, tmp_path):
     """Test serialization of Transforms"""
-    _, _, transforms, _ = calc_method
+    _, _, transforms, _ = calc_wcs
 
     path = tmp_path / "transforms.asdf"
     transforms.write_to_asdf(path)
@@ -256,12 +247,6 @@ def _make_t_pars(detector="WFI02"):
     return t_pars
 
 
-def _calc_coarse_202111_fgsid_idfunc(value):
-    """Created test IDS for calc_coarse_202111_fgsid"""
-    detector, fgsid_user, fgs_expected = value
-    return f"{detector}-{fgsid_user}"
-
-
 def _model_to_tmpfile(m, tmp_path, fname="file.asdf"):
     """Save a DataModel to a general temp file"""
     file_path = tmp_path / fname
@@ -270,7 +255,7 @@ def _model_to_tmpfile(m, tmp_path, fname="file.asdf"):
     return file_path
 
 
-def _test_transforms(transforms, t_pars, matrix, truth_ext=""):
+def _test_transforms(transforms, t_pars, matrix):
     """Private function to ensure expected calculate of the specified matrix
 
     Parameters
@@ -280,12 +265,9 @@ def _test_transforms(transforms, t_pars, matrix, truth_ext=""):
 
     matrix : str
         The matrix to compare
-
-    truth_ext : str
-        Arbitrary extension to add to the truth file name.
     """
     expected_tforms = stp.Transforms.from_asdf(
-        DATA_PATH / f"transforms_{t_pars.method}{truth_ext}.asdf"
+        DATA_PATH / "transforms.asdf"
     )
     expected_value = getattr(expected_tforms, matrix)
 
@@ -296,24 +278,21 @@ def _test_transforms(transforms, t_pars, matrix, truth_ext=""):
         assert np.allclose(value, expected_value)
 
 
-@pytest.fixture(scope="module", params=[method for method in stp.Methods])
-def calc_method(request, tmp_path_factory):
-    """Calculate full transforms and WCS info for a Method"""
+@pytest.fixture
+def calc_wcs(tmp_path_factory):
+    """Calculate full transforms and WCS info"""
     t_pars = _make_t_pars()
-
-    # Set the method
-    t_pars.method = request.param
 
     # Calculate the transforms and WCS information
     wcsinfo, vinfo, transforms = stp.calc_wcs(t_pars)
 
     # Save all for later examination.
     transforms_path = tmp_path_factory.mktemp("transforms")
-    transforms.write_to_asdf(transforms_path / f"transforms_{request.param}.asdf")
+    transforms.write_to_asdf(transforms_path / "transforms.asdf")
     wcs_asdf_file = asdf.AsdfFile(
         {"wcsinfo": wcsinfo._asdict(), "vinfo": vinfo._asdict()}
     )
-    wcs_asdf_file.write_to(transforms_path / f"wcs_{request.param}.asdf")
+    wcs_asdf_file.write_to(transforms_path / "wcs.asdf")
 
     return wcsinfo, vinfo, transforms, t_pars
 
