@@ -59,7 +59,6 @@ from astropy.table import Table
 from astropy.time import Time, TimeDelta
 
 from ..lib.engdb_tools import ENGDB_Service
-from ..lib.siafdb import SIAF, SiafDb
 
 __all__ = [
     "TransformParameters",
@@ -236,10 +235,6 @@ class TransformParameters:
     pointing: Pointing | Any = None
     #: Reduction function to use on values.
     reduce_func: Callable | None = None
-    #: The SIAF information for the input model
-    siaf: SIAF | Any = None
-    #: The SIAF database
-    siaf_db: SiafDb | Any = None
     #: If no telemetry can be found during the observation,
     #: the time, in seconds, beyond the observation time to search for telemetry.
     tolerance: float = 60.0
@@ -267,8 +262,6 @@ class TransformParameters:
 def add_wcs(
     filename,
     default_pa_v3=0.0,
-    siaf_path=None,
-    prd=None,
     engdb_url=None,
     tolerance=60,
     allow_default=False,
@@ -293,13 +286,6 @@ def add_wcs(
     default_pa_v3 : float
         The V3 position angle to use if the pointing information
         is not found.
-
-    siaf_path : str or file-like object or None
-        The path to the SIAF database. See `SiafDb` for more information.
-
-    prd : str
-        The PRD version from the `pysiaf` to use.
-        `siaf_path` overrides this value.
 
     engdb_url : str or None
         URL of the engineering telemetry database REST interface.
@@ -354,8 +340,6 @@ def add_wcs(
         t_pars, transforms = update_wcs(
             model,
             default_pa_v3=default_pa_v3,
-            siaf_path=siaf_path,
-            prd=prd,
             engdb_url=engdb_url,
             tolerance=tolerance,
             allow_default=allow_default,
@@ -379,8 +363,6 @@ def update_wcs(
     model,
     default_pa_v3=0.0,
     default_roll_ref=0.0,
-    siaf_path=None,
-    prd=None,
     engdb_url=None,
     tolerance=60,
     allow_default=False,
@@ -404,13 +386,6 @@ def update_wcs(
     default_roll_ref : float
         If pointing information cannot be retrieved,
         use this as the roll ref angle.
-
-    siaf_path : str or Path-like object
-        The path to the SIAF database. See `SiafDb` for more information.
-
-    prd : str
-        The PRD version from the `pysiaf` to use.
-        `siaf_path` overrides this value.
 
     engdb_url : str or None
         URL of the engineering telemetry database REST interface.
@@ -440,11 +415,6 @@ def update_wcs(
     """
     t_pars = transforms = None  # Assume telemetry is not used.
 
-    # TODO: determine how to find prd versions
-    # if not prd:
-    #     prd = model.meta.prd_version
-    # siaf_db = SiafDb(source=siaf_path, prd=prd)
-
     # Configure transformation parameters.
     t_pars = t_pars_from_model(
         model,
@@ -455,10 +425,6 @@ def update_wcs(
         reduce_func=reduce_func,
         **transform_kwargs,
     )
-
-    # TODO: Determine if this is necessary
-    # Populate header with SIAF information.
-    # populate_model_from_siaf(model, t_pars.siaf)
 
     # Calculate WCS.
     transforms = update_wcs_from_telem(model, t_pars)
@@ -619,9 +585,6 @@ def calc_wcs(t_pars: TransformParameters):
         A 3-tuple is returned with the WCS pointing for
         the aperture and the V1 axis, and the transformation matrices.
     """
-    if t_pars.siaf is None:
-        t_pars.siaf = SIAF()
-
     # Calculate transforms
     transforms = calc_transforms(t_pars)
 
@@ -1361,26 +1324,6 @@ def fill_mnemonics_chronologically_table(mnemonics, filled_only=True):
     return t
 
 
-def pa_to_roll_ref(pa: float, siaf: SIAF):
-    """
-    Calculate Roll from the position angle of the given aperture.
-
-    Parameters
-    ----------
-    pa : float
-        Position angle of the aperture, in degrees.
-
-    siaf : SIAF
-        The SIAF of the aperture.
-
-    Returns
-    -------
-    roll_ref : float
-        The roll reference, in degrees.
-    """
-    return pa - siaf.v3yangle
-
-
 def t_pars_from_model(model, **t_pars_kwargs):
     """
     Initialize TransformParameters from a DataModel.
@@ -1400,29 +1343,6 @@ def t_pars_from_model(model, **t_pars_kwargs):
         The initialized parameters.
     """
     t_pars = TransformParameters(**t_pars_kwargs)
-
-    # Retrieve SIAF information
-    if t_pars.siaf is None:
-        siaf = None
-        useafter = None
-        if t_pars.siaf_db is not None:
-            aperture_name = model.meta.aperture.name.upper()
-            useafter = model.meta.observation.date
-            if aperture_name != "UNKNOWN":
-                logger.info("Updating WCS for aperture %s", aperture_name)
-
-                # Special case. With aperture MIRIM_TAMRS, the siaf definition is
-                # for the subarray of interest. However, the whole detector is
-                # read out. Hence, need to convert pixel coordinates to be detector-based.
-                to_detector = False
-                if aperture_name == "MIRIM_TAMRS":
-                    to_detector = True
-                siaf = t_pars.siaf_db.get_wcs(
-                    aperture_name, to_detector=to_detector, useafter=useafter
-                )
-        t_pars.siaf = siaf
-        t_pars.useafter = useafter
-    logger.debug("SIAF: %s", t_pars.siaf)
 
     # Instrument details
     t_pars.detector = model.meta.instrument.detector
