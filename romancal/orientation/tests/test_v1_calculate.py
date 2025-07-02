@@ -9,7 +9,6 @@ from astropy.time import Time
 from roman_datamodels.datamodels import ScienceRawModel
 
 import romancal.orientation.v1_calculate as v1c
-from romancal.lib import engdb_mast
 
 DATA_PATH = Path(__file__).parent / "data"
 

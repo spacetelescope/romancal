@@ -13,7 +13,6 @@ import logging
 import os
 
 import pytest
-import requests
 from astropy.time import Time
 
 from romancal.lib import engdb_tools
