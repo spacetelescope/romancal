@@ -304,6 +304,11 @@ name = "``jump_detection``"
 showcontent = true
 
 [[tool.towncrier.type]]
+directory = "orientation"
+name = "``orientation``"
+showcontent = true
+
+[[tool.towncrier.type]]
 directory = "ramp_fitting"
 name = "``ramp_fitting`` (WFI-Image, WFI-Prism, WFI-Grism)"
 showcontent = true
