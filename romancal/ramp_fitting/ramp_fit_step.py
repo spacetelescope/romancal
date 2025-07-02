@@ -1,10 +1,10 @@
-#! /usr/bin/env python
 #
 from __future__ import annotations
 
 import copy
 import logging
 from typing import TYPE_CHECKING
+import pdb
 
 import asdf
 import numpy as np
@@ -46,7 +46,7 @@ class RampFitStep(RomanStep):
 
     weighting = "optimal"  # Only weighting allowed for OLS
 
-    reference_file_types: ClassVar = ["readnoise", "gain", "dark"]
+    reference_file_types: ClassVar = ["readnoise", "gain"]
 
     def process(self, input):
         with rdm.open(input, mode="rw") as input_model:
@@ -61,8 +61,7 @@ class RampFitStep(RomanStep):
             # Do the fitting based on the algorithm selected.
             algorithm = self.algorithm.lower()
             if algorithm == "ols_cas22":
-                dark_filename = self.get_reference_file(input_model, "dark")
-                dark_model = rdm.open(dark_filename, mode="r")
+                dark_model = None
                 out_model = self.ols_cas22(
                     input_model,
                     readnoise_model,
@@ -146,11 +145,6 @@ class RampFitStep(RomanStep):
         if len(read_pattern) != resultants.shape[0]:
             raise RuntimeError("mismatch between resultants shape and read_pattern.")
 
-        # add dark current back into resultants so that Poisson noise is
-        # properly accounted for
-        tbar = np.array([np.mean(reads) * read_time for reads in read_pattern])
-        resultants += dark_model.dark_slope[None, ...] * tbar[:, None, None]
-
         # account for the gain
         resultants *= gain
         read_noise *= gain
@@ -172,9 +166,6 @@ class RampFitStep(RomanStep):
         var_poisson = output.variances[..., Variance.poisson_var]
         err = np.sqrt(var_poisson + var_rnoise)
         dq = output.dq.astype(np.uint32)
-
-        # remove dark current contribution to slopes
-        slopes -= dark_model.dark_slope * gain
 
         # Propagate DQ flags forward.
         ramp_dq = get_pixeldq_flags(dq, input_model.pixeldq, slopes, err, gain)
