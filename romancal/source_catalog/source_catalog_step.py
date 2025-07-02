@@ -61,9 +61,12 @@ class SourceCatalogStep(RomanStep):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
         # get the name of the psf reference file
-        self.ref_file = self.get_reference_file(input_model, "epsf")
-        self.log.info("Using ePSF reference file: %s", self.ref_file)
-        psf_ref_model = datamodels.open(self.ref_file)
+        if self.fit_psf:
+            self.ref_file = self.get_reference_file(input_model, "epsf")
+            self.log.info("Using ePSF reference file: %s", self.ref_file)
+            psf_ref_model = datamodels.open(self.ref_file)
+        else:
+            psf_ref_model = None
 
         # Define a boolean mask for pixels to be excluded
         mask = (
