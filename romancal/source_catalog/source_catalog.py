@@ -123,6 +123,12 @@ class RomanSourceCatalog:
             u.Unit(self.flux_unit)
         )
 
+        if self.fit_psf and self.psf_ref_model is None:
+            log.error(
+                "PSF fitting is requested but no PSF reference model is provided. Skipping PSF photometry."
+            )
+            self.fit_psf = False
+
     def __len__(self):
         return self.n_sources
 
