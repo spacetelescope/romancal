@@ -17,6 +17,7 @@ from astropy.time import Time
 
 from romancal.lib import (
     engdb_mast,
+    engdb_tools
 )
 from romancal.orientation import set_telescope_pointing as stp
 
@@ -95,7 +96,7 @@ def test_change_engdb_url_fail():
         )
 
 
-def test_get_pointing():
+def test_get_pointing(engdb):
     """Ensure that the averaging works."""
 
     obstime, q = stp.get_pointing(STARTTIME, ENDTIME)
@@ -104,12 +105,12 @@ def test_get_pointing():
     assert np.allclose(q, Q_EXPECTED)
 
 
-def test_get_pointing_fail():
+def test_get_pointing_fail(engdb):
     with pytest.raises(ValueError):
         obstime, q = stp.get_pointing(BADSTARTTIME, BADENDTIME)
 
 
-def test_get_pointing_list():
+def test_get_pointing_list(engdb):
     results = stp.get_pointing(
         STARTTIME.mjd, ENDTIME.mjd, reduce_func=stp.all_pointings
     )
@@ -119,7 +120,7 @@ def test_get_pointing_list():
     assert STARTTIME <= results[0].obstime <= ENDTIME
 
 
-def test_logging(caplog):
+def test_logging(caplog, engdb):
     stp.get_pointing(STARTTIME.mjd, ENDTIME.mjd)
     assert "Determining pointing between observations times" in caplog.text
     assert "Telemetry search tolerance" in caplog.text
@@ -238,8 +239,18 @@ def _test_transforms(transforms, t_pars, matrix):
         assert np.allclose(value, expected_value)
 
 
+@pytest.fixture(scope='module')
+def engdb():
+    """Setup the service to operate through the mock service"""
+    try:
+        engdb = engdb_tools.ENGDB_Service()
+    except RuntimeError as exception:
+        pytest.skip(f"Engineering database unvailable: {exception}.")
+    yield engdb
+
+
 @pytest.fixture
-def calc_wcs(tmp_path_factory):
+def calc_wcs(tmp_path_factory, engdb):
     """Calculate full transforms and WCS info"""
     t_pars = _make_t_pars()
 

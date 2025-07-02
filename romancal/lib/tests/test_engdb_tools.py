@@ -33,34 +33,14 @@ NODATA_STARTIME = "2014-01-01"
 NODATA_ENDTIME = "2014-01-02"
 
 
-def is_alive(url):
-    """Check if a url is alive
-
-    Parameters
-    ----------
-    url: str
-        The URL to check.
-
-    Returns
-    -------
-    is_alive: bool
-        True if alive
-    """
-    is_alive = False
-    try:
-        r = requests.get(url, timeout=15)
-        is_alive = r.status_code == requests.codes.ok
-    except Exception as exception:
-        log.debug("Failure to connect to url %s.", url)
-        log.debug("Failure reason %s", exception)
-        pass
-    return is_alive
-
-
 @pytest.fixture
 def engdb():
     """Setup the service to operate through the mock service"""
-    yield engdb_tools.ENGDB_Service()
+    try:
+        engdb = engdb_tools.ENGDB_Service()
+    except RuntimeError as exception:
+        pytest.skip(f"Engineering database unvailable: {exception}.")
+    yield engdb
 
 
 def test_environmental_bad(environ_jail):
