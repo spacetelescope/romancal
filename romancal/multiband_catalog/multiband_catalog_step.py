@@ -155,11 +155,15 @@ class MultibandCatalogStep(RomanStep):
                         | (model.err <= 0)
                     )
 
-                    filter_name = model.meta.basic.optical_element  # L3
-                    log.info(f"Creating catalog for {filter_name} image")
-                    ref_file = self.get_reference_file(model, "epsf")
-                    self.log.info("Using ePSF reference file: %s", ref_file)
-                    psf_ref_model = datamodels.open(ref_file)
+                    if self.fit_psf:
+                        filter_name = model.meta.basic.optical_element  # L3
+                        log.info(f"Creating catalog for {filter_name} image")
+                        ref_file = self.get_reference_file(model, "epsf")
+                        self.log.info("Using ePSF reference file: %s", ref_file)
+                        psf_ref_model = datamodels.open(ref_file)
+                    else:
+                        psf_ref_model = None
+
                     catobj = RomanSourceCatalog(
                         model,
                         segment_img,
