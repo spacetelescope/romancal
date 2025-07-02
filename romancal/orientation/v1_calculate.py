@@ -6,7 +6,6 @@ from collections import defaultdict
 import roman_datamodels as rdm
 from astropy.table import Table
 
-from ..lib import siafdb
 from . import set_telescope_pointing as stp
 
 logger = logging.getLogger(__name__)
@@ -15,7 +14,7 @@ logger.addHandler(logging.NullHandler())
 __all__ = ["v1_calculate_from_models", "v1_calculate_over_time"]
 
 
-def v1_calculate_from_models(sources, siaf_path=None, **calc_wcs_from_time_kwargs):
+def v1_calculate_from_models(sources, **calc_wcs_from_time_kwargs):
     """
     Calculate V1 over the time period for the given models.
 
@@ -31,11 +30,6 @@ def v1_calculate_from_models(sources, siaf_path=None, **calc_wcs_from_time_kwarg
     sources : [File-like or jwst.datamodels.Datamodel[...]]
         The datamodels to get timings other header parameters from.
 
-    siaf_path : None or file-like
-        The path to the SIAF database. If none, the default used
-        by the ``pysiaf`` package is used. See ``SiafDb`` for more
-        information.
-
     **calc_wcs_from_time_kwargs : dict
         Keyword arguments to pass to ``calc_wcs_from_time``.
 
@@ -46,12 +40,9 @@ def v1_calculate_from_models(sources, siaf_path=None, **calc_wcs_from_time_kwarg
     """
     # Initialize structures.
     v1_dict = defaultdict(list)
-    siaf = siafdb.SIAF(v2_ref=0.0, v3_ref=0.0, v3yangle=0.0, vparity=1.0)
-    t_pars = stp.TransformParameters(siaf=siaf, **calc_wcs_from_time_kwargs)
+    t_pars = stp.TransformParameters(**calc_wcs_from_time_kwargs)
 
     # Calculate V1 for all sources.
-    siaf_db = siafdb.SiafDb(siaf_path)
-    t_pars.siaf_db = siaf_db
     for source in sources:
         with rdm.open(source) as model:
             obsstart = model.meta.exposure.start_time
@@ -69,7 +60,7 @@ def v1_calculate_from_models(sources, siaf_path=None, **calc_wcs_from_time_kwarg
 
 
 def v1_calculate_over_time(
-    obsstart, obsend, siaf_path=None, **calc_wcs_from_time_kwargs
+    obsstart, obsend, **calc_wcs_from_time_kwargs
 ):
     """
     Calculate V1 over the given time period.
@@ -88,11 +79,6 @@ def v1_calculate_over_time(
     obsstart, obsend : float
         The MJD start and end time to search for pointings.
 
-    siaf_path : None or file-like
-        The path to the SIAF database. If None, the default used
-        by the ``pysiaf`` package is used. See ``SiafDb`` for more
-        information.
-
     **calc_wcs_from_time_kwargs : dict
         Keyword arguments to pass to ``calc_wcs_from_time``.
 
@@ -102,12 +88,9 @@ def v1_calculate_over_time(
         Table of V1 pointing.
     """
     # Initialize structures.
-    siaf = siafdb.SIAF(v2_ref=0.0, v3_ref=0.0, v3yangle=0.0, vparity=1.0)
-    t_pars = stp.TransformParameters(siaf=siaf, **calc_wcs_from_time_kwargs)
+    t_pars = stp.TransformParameters(**calc_wcs_from_time_kwargs)
 
     # Calculate V1 for all sources.
-    siaf_db = siafdb.SiafDb(siaf_path)
-    t_pars.siaf_db = siaf_db
     obstimes, _, vinfos = stp.calc_wcs_over_time(obsstart, obsend, t_pars)
     v1_dict = {}
     v1_dict["source"] = ["time range"] * len(obstimes)
