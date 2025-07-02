@@ -91,7 +91,7 @@ def test_change_engdb_url_fail():
         stp.get_pointing(
             Time(STARTTIME, format="isot"),
             Time(ENDTIME, format="isot"),
-            engdb_url="http://nonexistent.fake.example",
+            engdb_url="https://nonexistent.fake.example",
         )
 
 
