@@ -84,6 +84,26 @@ class MultibandCatalogStep(RomanStep):
         except (AttributeError, KeyError):
             cat_model.meta.filename = "multiband_catalog"
 
+        # Check that the input library does not contain a model with
+        # all invalid values
+        with library:
+            all_nans = []
+            for model in library:
+                mask = (
+                    ~np.isfinite(model.data)
+                    | ~np.isfinite(model.err)
+                    | (model.err <= 0)
+                )
+                if np.all(mask):
+                    all_nans.append(model.meta.filename)
+                library.shelve(model, modify=False)
+        if np.any(all_nans):
+            msg = f"All pixels in the following input models are masked: {', '.join(all_nans)}"
+            self.log.warning(msg)
+            segment_img = np.zeros(model.data.shape, dtype=np.uint32)
+            cat_model.source_catalog = cat_model.create_empty_catalog()
+            return save_all_results(self, segment_img, cat_model)
+
         self.log.info("Calculating and subtracting background")
         library = subtract_background_library(library, self.bkg_boxsize)
 
@@ -101,6 +121,17 @@ class MultibandCatalogStep(RomanStep):
         # Estimate background rms from detection image to calculate a
         # threshold for source detection
         mask = ~np.isfinite(det_img) | ~np.isfinite(det_err) | (det_err <= 0)
+
+        # Return an empty segmentation image and catalog table if all
+        # pixels are masked in the detection image.
+        if np.all(mask):
+            self.log.warning(
+                "Cannot create source catalog. All pixels in the detection image are masked."
+            )
+            segment_img = np.zeros(model.data.shape, dtype=np.uint32)
+            cat_model.source_catalog = cat_model.create_empty_catalog()
+            return save_all_results(self, segment_img, cat_model)
+
         bkg = RomanBackground(
             det_img,
             box_size=self.bkg_boxsize,
