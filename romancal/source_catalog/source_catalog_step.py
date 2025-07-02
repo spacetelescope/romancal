@@ -15,7 +15,7 @@ from roman_datamodels.dqflags import pixel
 
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
-from romancal.source_catalog.save_utils import save_all_results
+from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
 
@@ -122,11 +122,9 @@ class SourceCatalogStep(RomanStep):
         # Return an empty segmentation image and catalog table if all
         # pixels are masked
         if np.all(mask):
-            self.log.warning("Cannot create source catalog. All pixels are masked.")
-            segment_img = np.zeros(model.data.shape, dtype=np.uint32)
-            cat_model.source_catalog = cat_model.create_empty_catalog()
-            return save_all_results(
-                self, segment_img, cat_model, input_model=input_model
+            msg = "Cannot create source catalog. All pixels are masked."
+            return save_empty_results(
+                self, model.data.shape, cat_model, input_model=input_model, msg=msg
             )
 
         self.log.info("Calculating and subtracting background")
@@ -171,11 +169,9 @@ class SourceCatalogStep(RomanStep):
         # Return an empty segmentation image and catalog table if no
         # sources are detected
         if segment_img is None:
-            self.log.warning("Cannot create source catalog. No sources were detected.")
-            segment_img = np.zeros(model.data.shape, dtype=np.uint32)
-            cat_model.source_catalog = cat_model.create_empty_catalog()
-            return save_all_results(
-                self, segment_img, cat_model, input_model=input_model
+            msg = "Cannot create source catalog. No sources were detected."
+            return save_empty_results(
+                self, model.data.shape, cat_model, input_model=input_model, msg=msg
             )
 
         self.log.info("Creating source catalog")
