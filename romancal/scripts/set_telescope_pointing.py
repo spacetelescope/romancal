@@ -57,39 +57,13 @@ def main():
         help="Perform all actions but do not save the results",
     )
     parser.add_argument(
-        "--method",
-        type=stp.Methods,
-        choices=list(stp.Methods),
-        default=stp.Methods.default,
-        help="Algorithm to use. Default: %(default)s",
-    )
-    parser.add_argument(
         "--save-transforms", action="store_true", help="Save transforms."
-    )
-    parser.add_argument(
-        "--override-transforms",
-        type=str,
-        default=None,
-        help="Transform matrices to use instead of calculated",
     )
     parser.add_argument(
         "--tolerance",
         type=int,
         default=60,
         help="Seconds beyond the observation time to search for telemetry. Default: %(default)s",
-    )
-    parser.add_argument(
-        "--siaf",
-        type=str,
-        default=None,
-        help="SIAF PRD XML folder or file as defined by the `pysiaf` package. "
-        "Overrides the `prd` option",
-    )
-    parser.add_argument(
-        "--prd",
-        type=str,
-        default=None,
-        help="The PRD version to use, as delivered in the `pysiaf` package.",
     )
     parser.add_argument(
         "--engdb_url",
@@ -111,10 +85,6 @@ def main():
         logger_handler.setFormatter(logger_format_debug)
     logger.info("set_telescope_pointing called with args %s", args)
 
-    override_transforms = args.override_transforms
-    if override_transforms:
-        override_transforms = stp.Transforms.from_asdf(override_transforms)
-
     # Calculate WCS for all inputs.
     for filename in args.exposure:
         logger.info("")
@@ -130,15 +100,11 @@ def main():
         try:
             stp.add_wcs(
                 filename,
-                siaf_path=args.siaf,
-                prd=args.prd,
                 engdb_url=args.engdb_url,
                 tolerance=args.tolerance,
                 allow_default=args.allow_default,
                 dry_run=args.dry_run,
-                method=args.method,
                 save_transforms=transform_path,
-                override_transforms=override_transforms,
             )
         except (TypeError, ValueError) as exception:
             logger.warning("Cannot determine pointing information: %s", str(exception))
