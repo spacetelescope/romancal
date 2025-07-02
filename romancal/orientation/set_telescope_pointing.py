@@ -937,65 +937,6 @@ def angle_to_vector(alpha, delta):
     return [v0, v1, v2]
 
 
-def compute_local_roll(pa_v3, ra_ref, dec_ref, v2_ref, v3_ref):
-    """
-    Compute local roll.
-
-    Compute the position angle of V3 (measured N to E)
-    at the center af an aperture.
-
-    Parameters
-    ----------
-    pa_v3 : float
-        Position angle of V3 at (V2, V3) = (0, 0) [in deg].
-    ra_ref, dec_ref : float
-        RA and DEC corresponding to V2_REF and V3_REF, [in deg].
-    v2_ref, v3_ref : float
-        Reference point in the V2, V3 frame [in arcsec].
-
-    Returns
-    -------
-    new_roll : float
-        The value of ROLL_REF (in deg).
-    """
-    v2 = np.deg2rad(v2_ref / 3600)
-    v3 = np.deg2rad(v3_ref / 3600)
-    ra_ref = np.deg2rad(ra_ref)
-    dec_ref = np.deg2rad(dec_ref)
-    pa_v3 = np.deg2rad(pa_v3)
-
-    m = np.array(
-        [
-            [
-                cos(ra_ref) * cos(dec_ref),
-                -sin(ra_ref) * cos(pa_v3) + cos(ra_ref) * sin(dec_ref) * sin(pa_v3),
-                -sin(ra_ref) * sin(pa_v3) - cos(ra_ref) * sin(dec_ref) * cos(pa_v3),
-            ],
-            [
-                sin(ra_ref) * cos(dec_ref),
-                cos(ra_ref) * cos(pa_v3) + sin(ra_ref) * sin(dec_ref) * sin(pa_v3),
-                cos(ra_ref) * sin(pa_v3) - sin(ra_ref) * sin(dec_ref) * cos(pa_v3),
-            ],
-            [sin(dec_ref), -cos(dec_ref) * sin(pa_v3), cos(dec_ref) * cos(pa_v3)],
-        ]
-    )
-
-    return _roll_angle_from_matrix(m, v2, v3)
-
-
-def _roll_angle_from_matrix(matrix, v2, v3):
-    x = -(matrix[2, 0] * np.cos(v2) + matrix[2, 1] * np.sin(v2)) * np.sin(v3) + matrix[
-        2, 2
-    ] * np.cos(v3)
-    y = (matrix[0, 0] * matrix[1, 2] - matrix[1, 0] * matrix[0, 2]) * np.cos(v2) + (
-        matrix[0, 1] * matrix[1, 2] - matrix[1, 1] * matrix[0, 2]
-    ) * np.sin(v2)
-    new_roll = np.rad2deg(np.arctan2(y, x))
-    if new_roll < 0:
-        new_roll += 360
-    return new_roll
-
-
 def get_mnemonics(
     obsstart, obsend, tolerance, mnemonics_to_read=COARSE_MNEMONICS, engdb_url=None
 ):
