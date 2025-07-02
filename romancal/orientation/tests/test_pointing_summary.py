@@ -26,7 +26,11 @@ TARG_DEC = 66.01
 @pytest.fixture
 def engdb():
     """Setup the service to operate through the mock service"""
-    yield engdb_tools.ENGDB_Service()
+    try:
+        engdb = engdb_tools.ENGDB_Service()
+    except RuntimeError as exception:
+        pytest.skip(f"Engineering database unvailable: {exception}.")
+    yield engdb
 
 
 @pytest.fixture(scope="module")
