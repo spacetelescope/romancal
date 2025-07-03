@@ -54,6 +54,8 @@ from typing import Any
 
 import asdf
 import numpy as np
+from pysiaf import Siaf
+from pysiaf.utils.rotations import attitude_matrix, sky_posangle
 import roman_datamodels as rdm
 from astropy.table import Table
 from astropy.time import Time, TimeDelta
@@ -144,8 +146,6 @@ class Transforms:
     m_eci2fcs: np.ndarray | None = None
     #: ECI to GS
     m_eci2gs: np.ndarray | None = None
-    #: ECI to SIAF
-    m_eci2siaf: np.ndarray | None = None
     #: ECI to V
     m_eci2v: np.ndarray | Any = None
 
@@ -209,10 +209,10 @@ class TransformParameters:
 
     #: If telemetry cannot be determined, use existing information in the observation's header.
     allow_default: bool = False
+    #: Aperture in use
+    aperture: str = ""
     #: The V3 position angle to use if the pointing information is not found.
     default_pa_v3: float = 0.0
-    #: Detector in use.
-    detector: str = ""
     #: Do not write out the modified file.
     dry_run: bool = False
     #: URL of the engineering telemetry database REST interface.
@@ -582,10 +582,42 @@ def calc_wcs(t_pars: TransformParameters):
     vinfo = calc_wcs_from_matrix(transforms.m_eci2v)
 
     # Calculate the Aperture WCS
-    wcsinfo = calc_wcs_from_matrix(transforms.m_eci2siaf)
+    wcsinfo = wcsinfo_from_siaf(t_pars.aperture, vinfo)
 
     # That's all folks
     return wcsinfo, vinfo, transforms
+
+
+def wcsinfo_from_siaf(aperture, vinfo):
+    """Calculate aperture reference point WCS from V-frame WCS and SIAF
+
+    Parameters
+    ----------
+    aperture : str
+        The aperture in use
+
+    vinfo : WCSRef
+        The V-frame WCS
+
+    Returns
+    -------
+    wcsinfo : WCSRef
+        The WCS for the aperture's reference point, as defined by its SIAF
+    """
+    siaf = Siaf('roman')
+    boresight = siaf['BORESIGHT']
+    wfi = siaf[aperture.upper()]
+
+    # For transformations between the telescope frame and all other frames,
+    # an attitude matrix is created using the V-frame WCS information.
+    v_refpoint = boresight.reference_point(to_frame='tel')
+    attitude = attitude_matrix(*v_refpoint, vinfo.ra, vinfo.dec, vinfo.pa)
+    wfi.set_attitude_matrix(attitude)
+    skycoord = wfi.reference_point(to_frame='sky')
+    pa_v3 = sky_posangle(attitude, *skycoord)
+
+    wcsinfo = WCSRef(ra=skycoord[0], dec=skycoord[1], pa=pa_v3)
+    return wcsinfo
 
 
 def calc_transforms(t_pars: TransformParameters):
@@ -622,9 +654,6 @@ def calc_transforms(t_pars: TransformParameters):
 
     # ECI to V
     t.m_eci2v = np.linalg.multi_dot([M_B2FCS0.T, M_idl2ics, t.m_eci2gs])
-
-    # ECI to SIAF
-    t.m_eci2siaf = np.linalg.multi_dot([M_ics2idl, M_B2FCS0, t.m_eci2v])
 
     return t
 
@@ -1276,7 +1305,7 @@ def t_pars_from_model(model, **t_pars_kwargs):
     t_pars = TransformParameters(**t_pars_kwargs)
 
     # Instrument details
-    t_pars.detector = model.meta.instrument.detector
+    t_pars.aperture = model.meta.wcsinfo.aperture_name
     try:
         exp_type = model.meta.exposure.type.lower()
     except AttributeError:
