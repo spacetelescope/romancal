@@ -2,7 +2,9 @@
 
 import inspect
 import json
+import logging
 import os
+import sys
 from io import StringIO
 
 import pytest
@@ -26,6 +28,27 @@ def slow(request):
     has been specified
     """
     return request.config.getoption("--slow")
+
+
+@pytest.fixture(scope="session")
+def dms_logger():
+    """Set up a 'DMS' logger for use in tests.
+
+    The primary use is to report DMS requirement log
+    messages to stderr but can also be used for general
+    stderr logging in tests.
+    """
+    logger = logging.getLogger("DMS")
+    # Don't propagate to root logger to avoid double reporting
+    # during stpipe API calls (like Step.call).
+    logger.propagate = False
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    )
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    return logger
 
 
 @pytest.fixture(scope="function")

@@ -3,7 +3,6 @@
 import pytest
 from astropy.table import Table
 
-from romancal.multiband_catalog.multiband_catalog_step import MultibandCatalogStep
 from romancal.stpipe import RomanStep
 
 # mark all tests in this module
@@ -31,7 +30,7 @@ fieldlist = [
 ]
 
 
-def test_multiband_catalog(rtdata_module, resource_tracker, request):
+def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger):
     rtdata = rtdata_module
     inputasnfn = "L3_skycell_mbcat_asn.json"
     # note that this input association currently only has a single
@@ -56,8 +55,7 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request):
     for field in fieldlist:
         assert field in cat.dtype.names
 
-    step = MultibandCatalogStep()
-    step.log.info(
+    dms_logger.info(
         "DMS374, 399, 375, 386, 387, 392, 394, 395: source catalog includes fields: "
         + ", ".join(fieldlist)
     )
@@ -71,9 +69,9 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request):
     # the same, but we can easily check that the columns match up
     # by name.
 
-    step.log.info("DMS391: successfully used multiple kernels to detect sources.")
-    step.log.info("DMS393: successfully used deblending to separate blended sources.")
-    step.log.info(
+    dms_logger.info("DMS391: successfully used multiple kernels to detect sources.")
+    dms_logger.info("DMS393: successfully used deblending to separate blended sources.")
+    dms_logger.info(
         "DMS399: successfully tested that catalogs contain aperture "
         "fluxes and uncertainties."
     )

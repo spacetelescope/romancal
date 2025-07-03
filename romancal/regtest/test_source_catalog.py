@@ -3,7 +3,6 @@
 import pytest
 from astropy.table import Table
 
-from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 from romancal.stpipe import RomanStep
 
 # mark all tests in this module
@@ -74,7 +73,7 @@ def test_log_tracked_resources(log_tracked_resources, run_source_catalog):
     log_tracked_resources()
 
 
-def test_forced_catalog(rtdata_module):
+def test_forced_catalog(rtdata_module, dms_logger):
     rtdata = rtdata_module
     input_deep_segm = "r00001_p_v01001001001001_270p65x49y70_f158_segm.asdf"
     input_shallow_coadd = "r00001_p_e01001001001001_0001_270p65x49y70_f158_coadd.asdf"
@@ -108,8 +107,7 @@ def test_forced_catalog(rtdata_module):
     for field in fieldlist:
         assert field in cat.dtype.names
 
-    step = SourceCatalogStep()
-    step.log.info(
+    dms_logger.info(
         "DMS397: source catalog includes fields: "
         + ", ".join(fieldlist)
         + ", indicating measurements of morphology and photometry "
