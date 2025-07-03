@@ -84,23 +84,6 @@ class MultibandCatalogStep(RomanStep):
         except (AttributeError, KeyError):
             cat_model.meta.filename = "multiband_catalog"
 
-        # Check that the input library does not contain a model with
-        # all invalid values
-        with library:
-            all_nans = []
-            for model in library:
-                mask = (
-                    ~np.isfinite(model.data)
-                    | ~np.isfinite(model.err)
-                    | (model.err <= 0)
-                )
-                if np.all(mask):
-                    all_nans.append(model.meta.filename)
-                library.shelve(model, modify=False)
-        if any(all_nans):
-            msg = f"All pixels in the following input models are masked: {', '.join(all_nans)}"
-            return save_empty_results(self, model.data.shape, cat_model, msg=msg)
-
         self.log.info("Calculating and subtracting background")
         library = subtract_background_library(library, self.bkg_boxsize)
 
