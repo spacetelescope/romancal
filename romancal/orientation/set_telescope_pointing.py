@@ -54,11 +54,11 @@ from typing import Any
 
 import asdf
 import numpy as np
-from pysiaf import Siaf
-from pysiaf.utils.rotations import attitude_matrix, sky_posangle
 import roman_datamodels as rdm
 from astropy.table import Table
 from astropy.time import Time, TimeDelta
+from pysiaf import Siaf
+from pysiaf.utils.rotations import attitude_matrix, sky_posangle
 
 from ..lib.engdb_tools import ENGDB_Service
 
@@ -604,16 +604,16 @@ def wcsinfo_from_siaf(aperture, vinfo):
     wcsinfo : WCSRef
         The WCS for the aperture's reference point, as defined by its SIAF
     """
-    siaf = Siaf('roman')
-    boresight = siaf['BORESIGHT']
+    siaf = Siaf("roman")
+    boresight = siaf["BORESIGHT"]
     wfi = siaf[aperture.upper()]
 
     # For transformations between the telescope frame and all other frames,
     # an attitude matrix is created using the V-frame WCS information.
-    v_refpoint = boresight.reference_point(to_frame='tel')
+    v_refpoint = boresight.reference_point(to_frame="tel")
     attitude = attitude_matrix(*v_refpoint, vinfo.ra, vinfo.dec, vinfo.pa)
     wfi.set_attitude_matrix(attitude)
-    skycoord = wfi.reference_point(to_frame='sky')
+    skycoord = wfi.reference_point(to_frame="sky")
     pa_v3 = sky_posangle(attitude, *skycoord)
 
     wcsinfo = WCSRef(ra=skycoord[0], dec=skycoord[1], pa=pa_v3)

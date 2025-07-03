@@ -45,7 +45,9 @@ def v1_calculate_from_models(sources, **calc_wcs_from_time_kwargs):
     for source in sources:
         with rdm.open(source) as model:
             t_pars = stp.t_pars_from_model(model, **calc_wcs_from_time_kwargs)
-            obstimes, _, vinfos = stp.calc_wcs_over_time(t_pars.obsstart, t_pars.obsend, t_pars)
+            obstimes, _, vinfos = stp.calc_wcs_over_time(
+                t_pars.obsstart, t_pars.obsend, t_pars
+            )
 
         sources = [source] * len(obstimes)
         v1_dict["source"] += sources
@@ -86,7 +88,7 @@ def v1_calculate_over_time(obsstart, obsend, **calc_wcs_from_time_kwargs):
     # Initialize structures.
     t_pars = stp.TransformParameters(**calc_wcs_from_time_kwargs)
     if len(t_pars.aperture) == 0:
-        t_pars.aperture = 'WFI_CEN'
+        t_pars.aperture = "WFI_CEN"
 
     # Calculate V1 for all sources.
     obstimes, _, vinfos = stp.calc_wcs_over_time(obsstart, obsend, t_pars)

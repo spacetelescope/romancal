@@ -94,7 +94,7 @@ def test_change_engdb_url_fail():
 
 def test_get_pointing(engdb):
     """Ensure that the averaging works."""
-    q_expected = np.array([-0.52558752,  0.3719724 , -0.52016581,  0.38150882])
+    q_expected = np.array([-0.52558752, 0.3719724, -0.52016581, 0.38150882])
     obstime, q = stp.get_pointing(STARTTIME, ENDTIME)
 
     assert np.isclose(obstime.value, OBSTIME_EXPECTED.value)
@@ -107,10 +107,8 @@ def test_get_pointing_fail(engdb):
 
 
 def test_get_pointing_list(engdb):
-    q_expected = np.array([-0.690189,  0.121953, -0.695103,  0.159999])
-    results = stp.get_pointing(
-        STARTTIME, ENDTIME, reduce_func=stp.all_pointings
-    )
+    q_expected = np.array([-0.690189, 0.121953, -0.695103, 0.159999])
+    results = stp.get_pointing(STARTTIME, ENDTIME, reduce_func=stp.all_pointings)
     assert isinstance(results, list)
     assert len(results) > 0
     assert np.isclose(results[0].q, q_expected).all()
@@ -222,7 +220,7 @@ def science_raw_model():
             "meta": {
                 "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
                 "pointing": {"target_ra": TARG_RA, "target_dec": TARG_DEC},
-                'wcsinfo': {'aperture_name': 'WFI_CEN'}
+                "wcsinfo": {"aperture_name": "WFI_CEN"},
             }
         }
     )
