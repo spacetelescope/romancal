@@ -12,17 +12,12 @@
 # - {detector: ''''''}
 # - {dry_run: 'False'}
 # - {engdb_url: None}
-# - {method: '<Methods.COARSE_NB: ''coarse_nb''>'}
 # - {obsend: None}
 # - {obsstart: None}
-# - {override_transforms: None}
-# - {pointing: 'Pointing(obstime=<Time object: scale=''utc'' format=''unix'' value=1805829668.0276294>, q=array([-0.69018802,  0.12195182,
-#     -0.695103  ,  0.15999998]))'}
+# - {pointing: 'Pointing(obstime=<Time object: scale=''utc'' format=''unix'' value=1805829668.0275648>, q=array([-0.52558752,  0.3719724
+#     , -0.52016581,  0.38150882]))'}
 # - {reduce_func: None}
-# - {siaf: 'SIAF(v2_ref=0.0, v3_ref=0.0, v3yangle=0.0, vparity=1.0, crpix1=0, crpix2=0, cdelt1=3600, cdelt2=3600, vertices_idl=(0, 1,
-#     1, 0, 0, 0, 1, 1))'}
-# - {siaf_db: <romancal.lib.siafdb.SiafDb object at 0x1266ac2d0>}
 # - {tolerance: '60.0'}
 # schema: astropy-2.0
 source obstime ra dec pa_v3
-"time range" 2027-03-23T19:21:08.028 270.5746110716807 66.99619310305059 87.42805263041119
+"time range" 2027-03-23T19:21:08.028 283.01561401812717 15.245996535114871 83.44631582862803

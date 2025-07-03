@@ -25,7 +25,7 @@ from .engdb_lib import (
 __all__ = ["EngdbMast"]
 
 # Default MAST info.
-MAST_BASE_URL = "https://mastint.stsci.edu"
+MAST_BASE_URL = "https://masttest.stsci.edu"
 API_URI = "edp/api/v0.1/mnemonics/fqa/roman/data"
 
 # Configure logging
