@@ -52,17 +52,20 @@ docs = [
 ]
 test = [
     "ci-watson >=0.5.0",
+    "pysiaf",
     "pytest >8.0.0",
     "pytest-astropy >= 0.11.0",
     "deepdiff",
     "stpreview>=0.6.0",
 ]
 dev = [
+    "pysiaf",
     "romancal[docs,test]",
     "tox > 4",
     "pre-commit > 3",
 ]
 sdp = [
+    "pysiaf",
     "stpreview>=0.6.0",
 ]
 
