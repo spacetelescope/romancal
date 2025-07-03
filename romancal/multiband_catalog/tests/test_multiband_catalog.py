@@ -160,7 +160,7 @@ def test_multiband_catalog_invalid_inputs(
     result = step.call(
         library_model_all_nan,
         bkg_boxsize=50,
-        snr_threshold=1000,  # high threshold to ensure no detections
+        snr_threshold=3,
         npixels=10,
         fit_psf=False,
         save_results=save_results,
@@ -169,3 +169,35 @@ def test_multiband_catalog_invalid_inputs(
     cat = result.source_catalog
     assert isinstance(cat, Table)
     assert len(cat) == 0
+
+
+@pytest.mark.parametrize("save_results", (True, False))
+def test_multiband_catalog_some_invalid_inputs(library_model, save_results, tmp_path):
+    os.chdir(tmp_path)
+
+    # Modify the first model in the library to have all NaN values
+    with library_model:
+        model = library_model.borrow(0)  # f184 model
+        model.data[:] = np.nan
+        model.err[:] = np.nan
+        model.var_rnoise[:] = np.nan
+        library_model.shelve(model, modify=True)
+
+    step = MultibandCatalogStep()
+
+    result = step.call(
+        library_model,
+        bkg_boxsize=50,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        save_results=save_results,
+    )
+
+    cat = result.source_catalog
+    assert isinstance(cat, Table)
+    assert len(cat) == 7
+    assert "segment_f158_flux" in cat.colnames
+    assert "segment_f184_flux" in cat.colnames
+    assert np.all(np.isnan(cat["segment_f184_flux"]))
+    assert np.all(np.isnan(cat["segment_f184_flux_err"]))
