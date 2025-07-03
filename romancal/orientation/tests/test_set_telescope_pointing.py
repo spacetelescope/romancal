@@ -243,7 +243,6 @@ def _make_t_pars(detector="WFI02"):
 
     t_pars.detector = detector
 
-    t_pars.guide_star_wcs = stp.WCSRef(ra=270.0, dec=66.5607, pa=None)
     t_pars.pointing = stp.Pointing(
         q=np.array([0.709433, -0.291814, 0.641319, 0.016107]),
     )

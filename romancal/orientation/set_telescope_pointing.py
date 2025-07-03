@@ -133,15 +133,6 @@ Pointing = namedtuple("Pointing", ["obstime", "q"])
 Pointing.__new__.__defaults__ = (None,) * 2
 
 
-# Guide Star ACQ pointing container
-# Attributes are as follows. All values are retrieved from the engineering.
-#    position : X/Y position of the guide star within the acquisition window of the FGS.
-#    corner   : X/Y corner of the acquisition window within the FGS.
-#    size     : X/Y size of the acquisition window.
-GuideStarPosition = namedtuple("GuideStarPosition", ["position", "corner", "size"])
-GuideStarPosition.__new__.__defaults__ = (None,) * 3
-
-
 # Transforms
 @dataclasses.dataclass
 class Transforms:
@@ -410,8 +401,7 @@ def update_wcs(
     t_pars, transforms : TransformParameters, Transforms
         The parameters and transforms calculated. May be
         None for either if telemetry calculations were not
-        performed. In particular, FGS GUIDER data does
-        not need `transforms`.
+        performed.
     """
     t_pars = transforms = None  # Assume telemetry is not used.
 
@@ -648,7 +638,7 @@ def calc_attitude_matrix(wcs, yangle, position):
     Parameters
     ----------
     wcs : WCSRef
-        The guide star position.
+        The sky position.
 
     yangle : float
         The IdlYangle of the point in question.
