@@ -14,14 +14,17 @@ Algorithm
 The dark current step removes dark current from a Roman exposure by subtracting
 dark current data stored in a dark reference file.
 
-The current implementation uses dark reference files that are matched to the
-MA table entry in the exposure metadata. Note that the data reference file
-for a science group (SCI) is named `data`. The dark data are then subtracted,
-group-by-group, from the science exposure groups, in which
-each SCI group of the dark data is subtracted from the corresponding SCI
-group of the science data.
+The current implementation uses fitted dark slope information from the dark reference file to
+remove the dark current contribution from the WFI data.
+The read pattern and frame time is retrieved from the input data file and the dark
+reference file supplies the slope fitted to the dark current. This information is used to
+predict the contribution of the dark current, or, more accurately, the background, as
+it includes thermal emission from the telescope and instrument is subtracted from the
+2-d image data produced by the ramp fitting step. 
 
-The ERR arrays of the science data are not modified.
+
+The ERR arrays of the science data are updated and the error in the dark current
+is added in quadrature to the existing error.  
 
 The DQ flags from the dark reference file are propagated into science
 exposure PIXELDQ array using a bitwise OR operation.

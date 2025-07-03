@@ -40,6 +40,10 @@ quadratic sum of the variances. VAR_POISSON and VAR_RNOISE represent the uncerta
 computed slopes (per pixel) due to Poisson and read noise, respectively.
 The details of the calculations can be found at :ref:`ramp_fitting <ramp_fitting_step>`.
 
+dark_current
+++++++++++++
+The science data ERR array is added in quadrature to the error of the dark rates.
+
 flat_field
 ++++++++++
 The SCI array of the exposure being processed is divided by the flat-field reference
