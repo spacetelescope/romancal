@@ -57,8 +57,6 @@ import numpy as np
 import roman_datamodels as rdm
 from astropy.table import Table
 from astropy.time import Time, TimeDelta
-from pysiaf import Siaf
-from pysiaf.utils.rotations import attitude_matrix, sky_posangle
 
 from ..lib.engdb_tools import ENGDB_Service
 
@@ -604,6 +602,9 @@ def wcsinfo_from_siaf(aperture, vinfo):
     wcsinfo : WCSRef
         The WCS for the aperture's reference point, as defined by its SIAF
     """
+    from pysiaf import Siaf
+    from pysiaf.utils.rotations import attitude_matrix, sky_posangle
+    
     siaf = Siaf("roman")
     boresight = siaf["BORESIGHT"]
     wfi = siaf[aperture.upper()]
