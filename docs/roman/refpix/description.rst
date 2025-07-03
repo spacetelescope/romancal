@@ -69,17 +69,3 @@ a component that removes trends across each amplifier and frame using
 the reference pixels at the top and bottom of the amplifier.  This
 removes the discretization bias.
 
-We note that even if the discretization bias were not removed at the
-reference pixel correction stage, it could be corrected at the dark
-subtraction step.  Provided that dark reference images are processed
-through the usual reference pixel correction step, they will have the
-same biases present in the reference-pixel-corrected images.  We have
-decided to perform the dark subtraction of Roman images via
-subtracting precomputed images for each MA table rather than scaling a
-fixed dark rate image by the mean time of each resultant.  These
-precomputed dark images will contain not only the dark current but
-also electronic effects like the discretization bias.
-However, it is better to correct this effect during the
-reference pixel correction so that the dark reference images better
-represent the dark current and can be more easily used to compute
-Poisson uncertainties stemming from dark current.
