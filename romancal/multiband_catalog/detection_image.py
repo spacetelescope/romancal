@@ -148,6 +148,6 @@ def make_detection_image(library, kernel_fwhms):
     det_err = 0
     for kernel_fwhm in kernel_fwhms:
         img, err = make_det_image(library, kernel_fwhm)
-        det_img = np.maximum(det_img, img)
-        det_err = np.maximum(det_err, err)
+        det_img = np.fmax(det_img, img)
+        det_err = np.fmax(det_err, err)
     return det_img, det_err
