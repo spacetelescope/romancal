@@ -199,7 +199,12 @@ def test_rampfit_step(rampfit_result, rtdata_module, ignore_asdf_paths, dms_logg
     # Always do a full regression check.
     try:
         cond_science_verification(
-            requirement, model, expected_path, rtdata_module, ignore_asdf_paths
+            requirement,
+            model,
+            expected_path,
+            rtdata_module,
+            ignore_asdf_paths,
+            dms_logger,
         )
     except AssertionError as e:
         error_msgs.append(str(e))
