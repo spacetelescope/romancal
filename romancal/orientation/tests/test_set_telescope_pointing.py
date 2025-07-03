@@ -142,7 +142,9 @@ def test_wcs(calc_wcs, wcs_type):
 
     wcs_dict = wcs[wcs_type]._asdict()
     for key in wcs_dict:
-        assert np.isclose(expected[key], wcs_dict[key]), f'Key {key} differs expected {expected[key]} calculated {wcs_dict[key]}'
+        assert np.isclose(expected[key], wcs_dict[key]), (
+            f"Key {key} differs expected {expected[key]} calculated {wcs_dict[key]}"
+        )
     assert expected == wcs[wcs_type]._asdict()
 
 
