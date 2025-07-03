@@ -24,11 +24,11 @@ image.
     Ignored when ``pixel_scale`` or ``output_wcs`` are provided.
 
 ``--pixel_scale``
-    Absolute pixel scale in ``arcsec``. When provided, overrides
+    Absolute pixel scale in ``degrees``. When provided, overrides
     ``pixel_scale_ratio``. Ignored when ``output_wcs`` is provided.
 
 ``--rotation``
-    Position angle of output image’s Y-axis relative to North.
+    Position angle (in degrees) of output image’s Y-axis relative to North.
     A value of 0.0 would orient the final output image to be North up.
     The value of `None` specifies that the images will not be rotated,
     but will instead be resampled in the default orientation for the camera
