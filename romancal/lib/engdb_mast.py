@@ -275,6 +275,8 @@ class EngdbMast(EngdbABC):
             endtime=endtime,
             time_format=time_format,
         )
+        if len(records) == 0:
+            return list()
 
         # If desired, remove bracket or outside of timeframe entries.
         if not include_bracket_values:
@@ -381,8 +383,9 @@ class EngdbMast(EngdbABC):
         table = Table(rows=data, meta=response)
 
         # Create a column MJD that has the MJD version of the data
-        obstime = Time(table["ObsTime"])
-        table["MJD"] = obstime.mjd
+        if len(table):
+            obstime = Time(table["ObsTime"])
+            table["MJD"] = obstime.mjd
 
         return table
 

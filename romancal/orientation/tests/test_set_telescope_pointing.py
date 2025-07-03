@@ -109,7 +109,7 @@ def test_get_pointing_fail(engdb):
 
 def test_get_pointing_list(engdb):
     results = stp.get_pointing(
-        STARTTIME.mjd, ENDTIME.mjd, reduce_func=stp.all_pointings
+        STARTTIME, ENDTIME, reduce_func=stp.all_pointings
     )
     assert isinstance(results, list)
     assert len(results) > 0
@@ -118,7 +118,7 @@ def test_get_pointing_list(engdb):
 
 
 def test_logging(caplog, engdb):
-    stp.get_pointing(STARTTIME.mjd, ENDTIME.mjd)
+    stp.get_pointing(STARTTIME, ENDTIME)
     assert "Determining pointing between observations times" in caplog.text
     assert "Telemetry search tolerance" in caplog.text
     assert "Reduction function" in caplog.text
