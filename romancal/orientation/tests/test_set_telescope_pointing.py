@@ -185,6 +185,50 @@ def test_transform_serialize(calc_wcs, tmp_path):
 # ######################
 # Utilities and fixtures
 # ######################
+@pytest.fixture(scope="module")
+def engdb():
+    """Setup the service to operate through the mock service"""
+    try:
+        engdb = engdb_tools.ENGDB_Service()
+    except RuntimeError as exception:
+        pytest.skip(f"Engineering database unvailable: {exception}.")
+    yield engdb
+
+
+@pytest.fixture
+def calc_wcs(tmp_path_factory, engdb):
+    """Calculate full transforms and WCS info"""
+    t_pars = _make_t_pars()
+
+    # Calculate the transforms and WCS information
+    wcsinfo, vinfo, transforms = stp.calc_wcs(t_pars)
+
+    # Save all for later examination.
+    transforms_path = tmp_path_factory.mktemp("transforms")
+    transforms.write_to_asdf(transforms_path / "transforms.asdf")
+    wcs_asdf_file = asdf.AsdfFile(
+        {"wcsinfo": wcsinfo._asdict(), "vinfo": vinfo._asdict()}
+    )
+    wcs_asdf_file.write_to(transforms_path / "wcs.asdf")
+
+    return wcsinfo, vinfo, transforms, t_pars
+
+
+@pytest.fixture
+def science_raw_model():
+    """Create the base model for testing"""
+    m = rdm.datamodels.ScienceRawModel.create_fake_data(
+        {
+            "meta": {
+                "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
+                "pointing": {"target_ra": TARG_RA, "target_dec": TARG_DEC},
+            }
+        }
+    )
+
+    return m
+
+
 def _make_t_pars(detector="WFI02"):
     """Setup initial Transforms Parameters
 
@@ -234,47 +278,3 @@ def _test_transforms(transforms, t_pars, matrix):
         assert value is None
     else:
         assert np.allclose(value, expected_value)
-
-
-@pytest.fixture(scope="module")
-def engdb():
-    """Setup the service to operate through the mock service"""
-    try:
-        engdb = engdb_tools.ENGDB_Service()
-    except RuntimeError as exception:
-        pytest.skip(f"Engineering database unvailable: {exception}.")
-    yield engdb
-
-
-@pytest.fixture
-def calc_wcs(tmp_path_factory, engdb):
-    """Calculate full transforms and WCS info"""
-    t_pars = _make_t_pars()
-
-    # Calculate the transforms and WCS information
-    wcsinfo, vinfo, transforms = stp.calc_wcs(t_pars)
-
-    # Save all for later examination.
-    transforms_path = tmp_path_factory.mktemp("transforms")
-    transforms.write_to_asdf(transforms_path / "transforms.asdf")
-    wcs_asdf_file = asdf.AsdfFile(
-        {"wcsinfo": wcsinfo._asdict(), "vinfo": vinfo._asdict()}
-    )
-    wcs_asdf_file.write_to(transforms_path / "wcs.asdf")
-
-    return wcsinfo, vinfo, transforms, t_pars
-
-
-@pytest.fixture
-def science_raw_model():
-    """Create the base model for testing"""
-    m = rdm.datamodels.ScienceRawModel.create_fake_data(
-        {
-            "meta": {
-                "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
-                "pointing": {"target_ra": TARG_RA, "target_dec": TARG_DEC},
-            }
-        }
-    )
-
-    return m
