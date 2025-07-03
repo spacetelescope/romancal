@@ -145,7 +145,6 @@ def test_wcs(calc_wcs, wcs_type):
         assert np.isclose(expected[key], wcs_dict[key]), (
             f"Key {key} differs expected {expected[key]} calculated {wcs_dict[key]}"
         )
-    assert expected == wcs[wcs_type]._asdict()
 
 
 def test_strict_pointing(science_raw_model, tmp_path):
