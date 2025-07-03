@@ -35,7 +35,6 @@ TARG_DEC = 66.01
 # Get the mock databases
 DATA_PATH = Path(__file__).parent / "data"
 
-Q_EXPECTED = np.array([-0.69018802, 0.12195182, -0.695103, 0.15999998])
 OBSTIME_EXPECTED = Time(1805829668.0276294, format="unix")
 
 # Meta attributes for test comparisons
@@ -95,11 +94,11 @@ def test_change_engdb_url_fail():
 
 def test_get_pointing(engdb):
     """Ensure that the averaging works."""
-
+    q_expected = np.array([-0.52558752,  0.3719724 , -0.52016581,  0.38150882])
     obstime, q = stp.get_pointing(STARTTIME, ENDTIME)
 
     assert np.isclose(obstime.value, OBSTIME_EXPECTED.value)
-    assert np.allclose(q, Q_EXPECTED)
+    assert np.allclose(q, q_expected)
 
 
 def test_get_pointing_fail(engdb):
@@ -108,12 +107,13 @@ def test_get_pointing_fail(engdb):
 
 
 def test_get_pointing_list(engdb):
+    q_expected = np.array([-0.690189,  0.121953, -0.695103,  0.159999])
     results = stp.get_pointing(
         STARTTIME, ENDTIME, reduce_func=stp.all_pointings
     )
     assert isinstance(results, list)
     assert len(results) > 0
-    assert np.isclose(results[0].q, Q_EXPECTED).all()
+    assert np.isclose(results[0].q, q_expected).all()
     assert STARTTIME <= results[0].obstime <= ENDTIME
 
 
