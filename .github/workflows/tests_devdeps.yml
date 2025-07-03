@@ -35,11 +35,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  stpsf_data_cache:
-    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
-    uses: ./.github/workflows/retrieve_cache.yml
-    with:
-      minimal: true
   latest_crds_contexts:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
     uses: ./.github/workflows/contexts.yml
@@ -53,18 +48,16 @@ jobs:
       context: ${{ steps.context.outputs.context }}
   test:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v2
-    needs: [ stpsf_data_cache, crds_context ]
+    needs: [ crds_context ]
     with:
       setenv: |
-        STPSF_PATH: /tmp/data/stpsf-data/
         CRDS_PATH: /tmp/data/crds_cache/
         CRDS_SERVER_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.crds_server || 'https://roman-crds.stsci.edu' }}
         CRDS_CONTEXT: ${{ needs.crds_context.outputs.context }}
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
       cache-path: /tmp/data/
-      cache-key: data-${{ needs.stpsf_data_cache.outputs.cache_key }}-${{ needs.crds_context.outputs.context }}
-      cache-restore-keys: ${{ needs.stpsf_data_cache.outputs.cache_key }}
+      cache-key: data-${{ needs.crds_context.outputs.context }}
       envs: |
         - linux: py3-stdevdeps
           pytest-results-summary: true

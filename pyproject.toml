@@ -74,9 +74,6 @@ repository = "https://github.com/spacetelescope/romancal"
 [project.entry-points."stpipe.steps"]
 romancal = "romancal.stpipe.integration:get_steps"
 
-[project.entry-points.pytest11]
-
-
 [project.scripts]
 roman_static_preview = "romancal.scripts.static_preview:command"
 asn_from_list = "romancal.associations.asn_from_list:_cli"
@@ -100,7 +97,7 @@ include-package-data = false
 
 [tool.setuptools.packages.find]
 namespaces = false
-include = ["romancal*", "pytest_romancal*"]
+include = ["romancal*"]
 
 [tool.setuptools.package-data]
 # package_data values are glob patterns relative to each specific subpackage.
