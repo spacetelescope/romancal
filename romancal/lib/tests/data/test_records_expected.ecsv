@@ -1,0 +1,21 @@
+# %ECSV 1.0
+# ---
+# datatype:
+# - {name: ObsTime, datatype: string}
+# - {name: EUValue, datatype: string}
+# - {name: MJD, datatype: float64}
+# meta: !!omap
+# - {TlmMnemonic: OPE_SCF_DIR}
+# - {ReqSTime: '2027-02-23T01:00:00.000'}
+# - {ReqETime: '2027-02-23T01:00:05.000'}
+# - {Count: 7}
+# - {AllPoints: 1}
+# schema: astropy-2.0
+ObsTime EUValue MJD
+2027-02-23T00:59:59.054 SCFA 61459.04165571759
+2027-02-23T01:00:00.052 SCFA 61459.04166726852
+2027-02-23T01:00:01.052 SCFA 61459.041678842594
+2027-02-23T01:00:02.162 SCFA 61459.04169168982
+2027-02-23T01:00:03.161 SCFA 61459.04170325232
+2027-02-23T01:00:04.161 SCFA 61459.04171482639
+2027-02-23T01:00:05.163 SCFA 61459.04172642361

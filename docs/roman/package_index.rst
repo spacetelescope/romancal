@@ -9,6 +9,7 @@
    flux/index.rst
    linearity/index.rst
    outlier_detection/index.rst
+   orientation/index.rst
    pipeline/index.rst
    ramp_fitting/index.rst
    references_general/index.rst
