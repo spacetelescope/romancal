@@ -12,11 +12,10 @@ from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
-from roman_datamodels.stnode import SourceCatalog
 
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
-from romancal.source_catalog.save_utils import save_segment_image
+from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.stpipe import RomanStep
 
@@ -123,10 +122,10 @@ class SourceCatalogStep(RomanStep):
         # Return an empty segmentation image and catalog table if all
         # pixels are masked
         if np.all(mask):
-            self.log.warning("Cannot create source catalog. All pixels are masked.")
-            segment_img = np.zeros(model.data.shape, dtype=np.uint32)
-            cat_model.source_catalog = cat_model.create_empty_catalog()
-            return self.save_all_results(input_model, segment_img, cat_model)
+            msg = "Cannot create source catalog. All pixels are masked."
+            return save_empty_results(
+                self, model.data.shape, cat_model, input_model=input_model, msg=msg
+            )
 
         self.log.info("Calculating and subtracting background")
         bkg = RomanBackground(
@@ -170,10 +169,10 @@ class SourceCatalogStep(RomanStep):
         # Return an empty segmentation image and catalog table if no
         # sources are detected
         if segment_img is None:
-            self.log.warning("Cannot create source catalog. No sources were detected.")
-            segment_img = np.zeros(model.data.shape, dtype=np.uint32)
-            cat_model.source_catalog = cat_model.create_empty_catalog()
-            return self.save_all_results(input_model, segment_img, cat_model)
+            msg = "Cannot create source catalog. No sources were detected."
+            return save_empty_results(
+                self, model.data.shape, cat_model, input_model=input_model, msg=msg
+            )
 
         self.log.info("Creating source catalog")
         cat_type = "prompt" if not self.forced_segmentation else "forced_det"
@@ -234,97 +233,4 @@ class SourceCatalogStep(RomanStep):
         # Put the resulting catalog table in the catalog model
         cat_model.source_catalog = cat
 
-        return self.save_all_results(input_model, segment_img, cat_model)
-
-    def save_all_results(self, model, segment_img, cat_model):
-        """
-        Return and save the results of the source catalog step.
-
-        The segmentation image is always saved.
-
-        If ``save_results`` is True, then either the input model with
-        updated metadata or the source catalog model is saved/returned
-        depending on the value of ``return_updated_model``. If
-        ``return_updated_model`` is True, then the input model is
-        saved/returned with updated metadata. If False, then the source
-        catalog model is saved/returned.
-
-        The source catalog is saved as a parquet file.
-
-        Parameters
-        ----------
-        model : `ImageModel` or `MosaicModel`
-            The input model to the source catalog step.
-
-        segment_img : `photutils.segmentation.SegmentationImage`
-            The segmentation image created by the source catalog step.
-
-        cat_model : `datamodels.ImageSourceCatalogModel`, `datamodels.MosaicSourceCatalogModel`, `datamodels.ForcedImageSourceCatalogModel`, or `datamodels.ForcedMosaicSourceCatalogModel`
-            The source catalog model created by the source catalog step.
-
-        Returns
-        -------
-        result : `ImageModel`, `MosaicModel`, or `SourceCatalog`
-            The source catalog model or the input model with updated
-            metadata.
-        """
-        if isinstance(segment_img, np.ndarray):
-            # convert the segmentation image to a SegmentationImage
-            segment_img = SegmentationImage(segment_img)
-
-        # define the output filename
-        output_filename = (
-            self.output_file
-            if self.output_file is not None
-            else cat_model.meta.filename
-        )
-
-        # always save the segmentation image
-        save_segment_image(self, segment_img, cat_model, output_filename)
-
-        # Update the source catalog filename metadata
-        self.output_ext = "parquet"
-        output_catalog_name = self.make_output_path(
-            basepath=output_filename, suffix="cat"
-        )
-        self.output_ext = "asdf"
-
-        # Always save the source catalog, but don't save it twice.
-        # If save_results=False or return_update_model=True, we need to
-        # explicitly save it.
-        return_updated_model = getattr(self, "return_updated_model", False)
-        if not self.save_results or return_updated_model:
-            self.output_ext = "parquet"
-            self.save_model(
-                cat_model,
-                output_file=output_filename,
-                suffix="cat",
-                force=True,
-            )
-            self.output_ext = "asdf"
-
-        # Return the source catalog object or the input model. If the
-        # input model is an ImageModel, the metadata is updated with the
-        # source catalog filename.
-        if getattr(self, "return_updated_model", False):
-            # define the catalog filename; self.save_model will
-            # determine whether to use a fully qualified path
-
-            # set the suffix to something else to prevent the step from
-            # overwriting the source catalog file with a datamodel
-            self.suffix = "sourcecatalog"
-
-            # update the input datamodel with the tweakreg catalog name
-            if isinstance(model, ImageModel):
-                model.meta.source_catalog = SourceCatalog()
-                model.meta.source_catalog.tweakreg_catalog_name = output_catalog_name
-                model.meta.cal_step.source_catalog = "COMPLETE"
-
-            result = model
-        else:
-            self.output_ext = "parquet"
-            result = cat_model
-
-        # validate the result to flush out any lazy-loaded contents
-        result.validate()
-        return result
+        return save_all_results(self, segment_img, cat_model, input_model=input_model)
