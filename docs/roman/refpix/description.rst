@@ -68,4 +68,3 @@ pixel correction step.  Presently the reference pixel correct includes
 a component that removes trends across each amplifier and frame using
 the reference pixels at the top and bottom of the amplifier.  This
 removes the discretization bias.
-
