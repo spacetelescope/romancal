@@ -604,7 +604,7 @@ def wcsinfo_from_siaf(aperture, vinfo):
     """
     from pysiaf import Siaf
     from pysiaf.utils.rotations import attitude_matrix, sky_posangle
-    
+
     siaf = Siaf("roman")
     boresight = siaf["BORESIGHT"]
     wfi = siaf[aperture.upper()]
