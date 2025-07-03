@@ -222,6 +222,7 @@ def science_raw_model():
             "meta": {
                 "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
                 "pointing": {"target_ra": TARG_RA, "target_dec": TARG_DEC},
+                'wcsinfo': {'aperture_name': 'WFI_CEN'}
             }
         }
     )
@@ -229,19 +230,19 @@ def science_raw_model():
     return m
 
 
-def _make_t_pars(detector="WFI02"):
+def _make_t_pars(aperture="WFI_CEN"):
     """Setup initial Transforms Parameters
 
     This set is Visit 1 provided by T.Sohn in a demonstration notebook.
 
     Parameters
     ==========
-    detector : str
-        Detector in use.
+    aperture : str
+        Aperture in use.
     """
     t_pars = stp.TransformParameters()
 
-    t_pars.detector = detector
+    t_pars.aperture = aperture
 
     t_pars.pointing = stp.Pointing(
         q=np.array([0.709433, -0.291814, 0.641319, 0.016107]),
