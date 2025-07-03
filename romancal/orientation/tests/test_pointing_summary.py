@@ -71,14 +71,14 @@ def test_calc_pointing_deltas(engdb, model_path):
     assert truth == str(deltas)
 
 
-def test_calc_deltas(engdb, model_path, tmpdir):
+def test_calc_deltas(engdb, model_path, tmp_path):
     """Test `calc_deltas` basic running"""
     with ScienceRawModel(model_path) as model:
         deltas = ps.calc_deltas([model])
 
     # Save the calculated deltas for test debugging
     deltas["exposure"] = [m.meta.filename for m in deltas["exposure"]]
-    deltas.write("calc_deltas_truth.ecsv", format="ascii.ecsv")
+    deltas.write(tmp_path / "calc_deltas_truth.ecsv", format="ascii.ecsv")
 
     truth = Table.read(DATA_PATH / "calc_deltas_truth.ecsv")
 
