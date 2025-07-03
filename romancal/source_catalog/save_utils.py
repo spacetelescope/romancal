@@ -133,7 +133,7 @@ def save_all_results(self, segment_img, cat_model, input_model=None):
     # Return the source catalog object or the input model. If the
     # input model is an ImageModel, the metadata is updated with the
     # source catalog filename.
-    if getattr(self, "return_updated_model", False):
+    if return_updated_model:
         # define the catalog filename; self.save_model will
         # determine whether to use a fully qualified path
 
