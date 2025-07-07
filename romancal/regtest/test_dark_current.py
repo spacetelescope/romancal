@@ -14,7 +14,7 @@ def test_dark_current_subtraction_step(
     """Function to run and compare Dark Current subtraction files. Note: This
     should include tests for overrides etc."""
 
-    input_datafile = "r0000101001001001001_0001_wfi01_f158_linearity.asdf"
+    input_datafile = "r0000101001001001001_0001_wfi01_f158_rampfit.asdf"
     rtdata.get_data(f"WFI/image/{input_datafile}")
     rtdata.input = input_datafile
 
@@ -34,7 +34,7 @@ def test_dark_current_outfile_step(
 ):
     """Function to run and compare Dark Current subtraction files. Here the
     test is for renaming the output file."""
-    input_datafile = "r0000101001001001001_0001_wfi01_f158_linearity.asdf"
+    input_datafile = "r0000101001001001001_0001_wfi01_f158_rampfit.asdf"
     rtdata.get_data(f"WFI/image/{input_datafile}")
     rtdata.input = input_datafile
 
@@ -58,7 +58,7 @@ def test_dark_current_outfile_suffix(
 ):
     """Function to run and compare Dark Current subtraction files. Here the
     test is for renaming the output file."""
-    input_datafile = "r0000101001001001001_0001_wfi01_f158_linearity.asdf"
+    input_datafile = "r0000101001001001001_0001_wfi01_f158_rampfit.asdf"
     rtdata.get_data(f"WFI/image/{input_datafile}")
     rtdata.input = input_datafile
 
@@ -82,7 +82,7 @@ def test_dark_current_output(rtdata, ignore_asdf_paths, resource_tracker, reques
     """Function to run and compare Dark Current subtraction files. Here the
     test for overriding the CRDS dark reference file."""
 
-    input_datafile = "r0000101001001001001_0001_wfi01_f158_linearity.asdf"
+    input_datafile = "r0000101001001001001_0001_wfi01_f158_rampfit.asdf"
     rtdata.get_data(f"WFI/image/{input_datafile}")
     rtdata.input = input_datafile
     dark_output_name = "r0000101001001001001_0001_wfi01_f158_darkcurrent.asdf"
