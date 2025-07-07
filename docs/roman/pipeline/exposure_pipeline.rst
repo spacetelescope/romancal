@@ -40,8 +40,7 @@ table below.
 Arguments
 ---------
 The ``exposure`` pipeline has no specific arguments, all the available step arguments can be found with the command,
-::
-   strun --help roman_elp
+``strun -h roman_elp``
 
 Inputs
 ------
