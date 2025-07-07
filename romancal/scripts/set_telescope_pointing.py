@@ -19,7 +19,6 @@ import romancal.orientation.set_telescope_pointing as stp
 
 # Configure logging
 logger = logging.getLogger("romancal")
-logger.propagate = False
 logger_handler = logging.StreamHandler()
 logger.addHandler(logger_handler)
 logger_format_debug = logging.Formatter(
