@@ -1,4 +1,9 @@
+from __future__ import annotations
+
 import os
+from multiprocessing import Manager
+from multiprocessing.managers import DictProxy, SyncManager
+from threading import Lock
 
 import requests
 from astropy import table
@@ -175,6 +180,69 @@ def compute_radius(wcs):
     return radius, fiducial
 
 
+class _CatalogCacheSingleton:
+    _instance: _CatalogCacheSingleton | None = None
+    _initalized: bool = False
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+
+        return cls._instance
+
+    def __init__(self):
+        if not self._initalized:
+            self._manager: SyncManager = Manager()
+            self._cache: DictProxy[str, table.Table] = self._manager.dict()
+            self._lock: Lock = self._manager.Lock()
+            self.__class__._initalized = True
+
+    def get_catalog(
+        self, ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3", timeout=TIMEOUT
+    ):
+        """
+        Extract catalog from VO web service.
+
+        See `get_catalog` for details on parameters and return value.
+        """
+
+        with self._lock:
+            service_url = f"{SERVICELOCATION}/vo/CatalogSearch.aspx?RA={ra}&DEC={dec}&EPOCH={epoch}&SR={sr}&FORMAT=CSV&CAT={catalog}&MINDET=5"
+            if (catalog := self._cache.get(service_url, None)) is not None:
+                return catalog
+
+            headers = {"Content-Type": "text/csv"}
+
+            try:
+                rawcat = requests.get(service_url, headers=headers, timeout=timeout)
+            except requests.exceptions.ConnectionError as err:
+                raise requests.exceptions.ConnectionError(
+                    "Could not connect to the VO API server. Try again later."
+                ) from err
+            except requests.exceptions.Timeout as err:
+                raise requests.exceptions.Timeout(
+                    "The request to the VO API server timed out."
+                ) from err
+            except requests.exceptions.RequestException as err:
+                raise requests.exceptions.RequestException(
+                    "There was an unexpected error with the request."
+                ) from err
+            # convert from bytes to a String
+            r_contents = rawcat.content.decode()
+            rstr = r_contents.split("\r\n")
+            # remove initial line describing the number of sources returned
+            # CRITICAL to proper interpretation of CSV data
+            del rstr[0]
+            if len(rstr) == 0:
+                raise Exception(
+                    """VO catalog service returned no results.\n
+                    Hint: maybe reviewing the search parameters might help."""
+                )
+
+            self._cache[service_url] = table.Table.read(rstr, format="csv")
+            return self._cache[service_url]
+
+
 def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3", timeout=TIMEOUT):
     """Extract catalog from VO web service.
 
@@ -205,37 +273,7 @@ def get_catalog(ra, dec, epoch=2016.0, sr=0.1, catalog="GAIADR3", timeout=TIMEOU
         A Table object of returned sources with all columns as provided by catalog.
 
     """
-    service_type = "vo/CatalogSearch.aspx"
-    spec_str = "RA={}&DEC={}&EPOCH={}&SR={}&FORMAT={}&CAT={}&MINDET=5"
-    headers = {"Content-Type": "text/csv"}
-    fmt = "CSV"
 
-    spec = spec_str.format(ra, dec, epoch, sr, fmt, catalog)
-    service_url = f"{SERVICELOCATION}/{service_type}?{spec}"
-    try:
-        rawcat = requests.get(service_url, headers=headers, timeout=timeout)
-    except requests.exceptions.ConnectionError as err:
-        raise requests.exceptions.ConnectionError(
-            "Could not connect to the VO API server. Try again later."
-        ) from err
-    except requests.exceptions.Timeout as err:
-        raise requests.exceptions.Timeout(
-            "The request to the VO API server timed out."
-        ) from err
-    except requests.exceptions.RequestException as err:
-        raise requests.exceptions.RequestException(
-            "There was an unexpected error with the request."
-        ) from err
-    # convert from bytes to a String
-    r_contents = rawcat.content.decode()
-    rstr = r_contents.split("\r\n")
-    # remove initial line describing the number of sources returned
-    # CRITICAL to proper interpretation of CSV data
-    del rstr[0]
-    if len(rstr) == 0:
-        raise Exception(
-            """VO catalog service returned no results.\n
-            Hint: maybe reviewing the search parameters might help."""
-        )
-
-    return table.Table.read(rstr, format="csv")
+    return _CatalogCacheSingleton().get_catalog(
+        ra, dec, epoch=epoch, sr=sr, catalog=catalog, timeout=timeout
+    )

@@ -32,6 +32,11 @@ class MockConnectionError:
         raise requests.exceptions.ConnectionError
 
 
+class MockTimeoutError:
+    def __init__(self, *args, **kwargs):
+        raise requests.exceptions.Timeout
+
+
 def get_parallax_correction_barycenter(epoch, gaia_ref_epoch_coords):
     """
     Calculates the parallax correction in the Earth barycenter frame for a given epoch
@@ -696,18 +701,13 @@ def test_get_catalog_using_epoch(ra, dec, epoch):
     assert mad_std(returned_dec - expected_dec) < 2.8e-9
 
 
-def test_get_catalog_timeout():
+def test_get_catalog_timeout(monkeypatch):
     """Test that get_catalog can timeout."""
 
-    with pytest.raises(Exception) as exec_info:
-        for dt in np.arange(1, 0, -0.01):
-            try:
-                get_catalog(10, 10, sr=0.1, catalog="GAIADR3", timeout=dt)
-            except requests.exceptions.ConnectionError:
-                # ignore if it's a connection error instead of timeout
-                pass
+    monkeypatch.setattr("requests.get", MockTimeoutError)
 
-    assert exec_info.type == requests.exceptions.Timeout
+    with pytest.raises(requests.exceptions.Timeout):
+        get_catalog(619, 19, sr=0.324, catalog="GAIADR3")
 
 
 def test_get_catalog_raises_connection_error(monkeypatch):
@@ -715,7 +715,5 @@ def test_get_catalog_raises_connection_error(monkeypatch):
 
     monkeypatch.setattr("requests.get", MockConnectionError)
 
-    with pytest.raises(Exception) as exec_info:
-        get_catalog(10, 10, sr=0.1, catalog="GAIADR3")
-
-    assert exec_info.type == requests.exceptions.ConnectionError
+    with pytest.raises(requests.exceptions.ConnectionError):
+        get_catalog(619, 19, sr=0.324, catalog="GAIADR3")

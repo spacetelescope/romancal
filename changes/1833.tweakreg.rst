@@ -1,0 +1,2 @@
+Add catalog service query to cache to help prevent overloading the catalog service
+with requests.
