@@ -28,6 +28,7 @@ def test_liklihood_rampfit(
     rtdata.output = output
     args = [
         "romancal.step.RampFitStep",
+        "--algorithm='likely' ",
         rtdata.input,
         "--output_file=r0000101001001001001_0001_wfi01_f158_like_rampfit.asdf",
     ]
