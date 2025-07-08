@@ -52,24 +52,32 @@ def assign_l3_wcs(model, wcs):
     footprint = create_footprint(wcs, model.shape, center=False)
     l3_wcsinfo.s_region = compute_s_region_keyword(footprint)
 
-    log.info(f"transform {transform}")
-    l3_wcsinfo.x_ref = transform.crpix[0]
-    l3_wcsinfo.y_ref = transform.crpix[1]
+    try:
+        l3_wcsinfo.x_ref = transform.crpix[0]
+        l3_wcsinfo.y_ref = transform.crpix[1]
+    except AttributeError:
+        log.warning(
+            "WCS has no clear reference pixel defined by crpix1/crpix2. Assuming reference pixel is center."
+        )
+        l3_wcsinfo.x_ref = pixel_center[0]
+        l3_wcsinfo.y_ref = pixel_center[1]
 
     world_ref = wcs(l3_wcsinfo.x_ref, l3_wcsinfo.y_ref, with_bounding_box=False)
     l3_wcsinfo.ra_ref = world_ref[0]
     l3_wcsinfo.dec_ref = world_ref[1]
 
-    cdelt1 = transform.cdelt[0]
-    cdelt2 = transform.cdelt[1]
-    l3_wcsinfo.pixel_scale = (cdelt1 + cdelt2) / 2.0
-    
+    try:
+        cdelt1 = transform.cdelt[0]
+        cdelt2 = transform.cdelt[1]
+        l3_wcsinfo.pixel_scale = (cdelt1 + cdelt2) / 2.0
+    except AttributeError:
+        l3_wcsinfo.pixel_scale = compute_scale(wcs, world_ref)
 
     l3_wcsinfo.orientation_ref = calc_pa(wcs, *world_ref)
 
     try:
         l3_wcsinfo.rotation_matrix = transform.pc.value.tolist()
-    except Exception:
+    except AttributeError:
         log.warning(
             "WCS has no clear rotation matrix defined by pc_rotation_matrix. Calculating one."
         )
