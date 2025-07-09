@@ -5,12 +5,15 @@ import os
 from pathlib import Path
 
 import pytest
-import requests
 from astropy.table import Table
 from astropy.time import Time
 from astropy.utils.diff import report_diff_values
 
-from romancal.lib.engdb import engdb_edp
+try:
+    from romancal.lib.engdb import engdb_edp
+except ModuleNotFoundError as exception:
+    pytest.skip(f'Cannot import EngdbEDP. Reason: {exception}',
+                allow_module_level=True)
 from romancal.lib.engdb.engdb_lib import EngDB_Value
 
 # Configure logging
