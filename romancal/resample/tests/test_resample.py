@@ -415,12 +415,12 @@ def test_update_exposure_times_different_sca_same_exposure(exposure_1):
     )
     assert np.abs(time_difference) < 0.1
     assert (
-        output_model.meta.basic.time_first_mjd
-        == exposure_1[0].meta.exposure.start_time.mjd
+        output_model.meta.coadd_info.time_first
+        == exposure_1[0].meta.exposure.start_time
     )
     assert (
-        output_model.meta.basic.time_last_mjd
-        == exposure_1[0].meta.exposure.end_time.mjd
+        output_model.meta.coadd_info.time_last
+        == exposure_1[0].meta.exposure.end_time
     )
 
 
@@ -432,8 +432,8 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
 
     with input_models:
         models = list(input_models)
-        first_mjd = min(x.meta.exposure.start_time for x in models).mjd
-        last_mjd = max(x.meta.exposure.end_time for x in models).mjd
+        first_time = min(x.meta.exposure.start_time for x in models)
+        last_time = max(x.meta.exposure.end_time for x in models)
         [input_models.shelve(model, i, modify=False) for i, model in enumerate(models)]
 
     # these exposures overlap perfectly so the max exposure time should
@@ -444,14 +444,14 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
     )
     assert np.abs(time_difference) < 0.1
 
-    assert output_model.meta.basic.time_first_mjd == first_mjd
+    assert output_model.meta.coadd_info.time_first == first_time
 
-    assert output_model.meta.basic.time_last_mjd == last_mjd
+    assert output_model.meta.coadd_info.time_last == last_time
 
     # likewise the per-pixel median exposure time is just 2x the individual
     # sca exposure time.
     time_difference = (
-        output_model.meta.basic.max_exposure_time
+        output_model.meta.coadd_info.max_exposure_time
         - 2 * exposure_1[0].meta.exposure.effective_exposure_time
     )
     assert np.abs(time_difference) < 0.1

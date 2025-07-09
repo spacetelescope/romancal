@@ -211,7 +211,7 @@ def test_individual_image_meta(base_image):
 
 
 @pytest.mark.parametrize(
-    "meta_overrides, expected_basic",
+    "meta_overrides, expected",
     [
         (  # 2 exposures, share visit, etc
             (
@@ -233,11 +233,11 @@ def test_individual_image_meta(base_image):
                 },
             ),
             {
-                "visit": 1,
-                "pass": 1,
-                "segment": 1,
-                "optical_element": "F158",
-                "instrument": "WFI",
+                "meta.observation.visit": 1,
+                "meta.observation.pass": 1,
+                "meta.observation.segment": 1,
+                "meta.instrument.optical_element": "F158",
+                "meta.instrument.name": "WFI",
             },
         ),
         (  # 2 exposures, different metadata
@@ -260,17 +260,17 @@ def test_individual_image_meta(base_image):
                 },
             ),
             {
-                "visit": 1,
-                "pass": 1,
-                "segment": 1,
-                "optical_element": "F158",
-                "instrument": "WFI",
+                "meta.observation.visit": 1,
+                "meta.observation.pass": 1,
+                "meta.observation.segment": 1,
+                "meta.instrument.optical_element": "F062, F158",
+                "meta.instrument.name": "WFI",
             },
         ),
     ],
 )
-def test_populate_mosaic_basic(base_image, meta_overrides, expected_basic):
-    """Test that the basic mosaic metadata is being populated"""
+def test_populate_mosaic_metadata(base_image, meta_overrides, expected):
+    """Test that the mosaic metadata is being populated"""
     models = []
     for i, meta_override in enumerate(meta_overrides):
         model = base_image()
@@ -290,21 +290,21 @@ def test_populate_mosaic_basic(base_image, meta_overrides, expected_basic):
     output_model = ResampleStep().run(input_models)
 
     assert (
-        output_model.meta.basic.time_first_mjd == models[0].meta.exposure.start_time.mjd
+        output_model.meta.coadd_info.time_first == models[0].meta.exposure.start_time
     )
     assert (
-        output_model.meta.basic.time_last_mjd == models[-1].meta.exposure.end_time.mjd
+        output_model.meta.coadd_info.time_last == models[-1].meta.exposure.end_time
     )
-    assert output_model.meta.basic.time_mean_mjd == np.mean(
+    assert output_model.meta.coadd_info.time_mean.mjd == np.mean(
         [
             m.meta.exposure.start_time.mjd
-            + m.meta.exposure.exposure_time / 60 / 60 / 24
             for m in models
         ]
     )
 
-    for key, value in expected_basic.items():
-        assert getattr(output_model.meta.basic, key) == value
+    flat_model = output_model.to_flat_dict()
+    for key, value in expected.items():
+        assert flat_model[f"roman.{key}"] == value
 
 
 @pytest.mark.parametrize(
