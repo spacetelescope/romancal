@@ -67,14 +67,6 @@ def test_dark_step_subtraction(instrument, exptype):
     # Perform Dark Current subtraction step
     result = DarkCurrentStep.call(ramp_model, override_dark=darkref_model)
 
-    # check that the dark file is subtracted frame by frame from the science data
-    # get the average time for each resultant
-    read_pattern = ramp_model.meta.exposure.read_pattern
-    frame_time = 3.04
-    time_resultants =  np.array([np.average(x) for x in read_pattern], dtype=np.float32) * frame_time
-    # get the time for the dark file
-    time_dark = np.sum(time_resultants)
-    
     diff = orig_model.data - (darkref_model.dark_slope[4:-4, 4:-4])
 
     # test that the output data file is equal to the difference found when subtracting
