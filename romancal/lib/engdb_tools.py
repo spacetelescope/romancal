@@ -67,7 +67,7 @@ __all__ = ["ENGDB_Service"]
 
 def ENGDB_Service(base_url=None, **service_kwargs):
     """
-    Provide access to the JWST Engineering Database.
+    Provide access to the Roman Engineering Database.
 
     Access can be either through the public MAST API
     or by direct connection to the database server.
