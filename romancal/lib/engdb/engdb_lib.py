@@ -29,20 +29,10 @@ class EngdbABC(abc.ABC):
 
     Parameters
     ----------
-    base_url : str
-        The base url for the engineering RESTful service.
-
     **service_kwargs : dict
         Service-specific keyword arguments. Refer to the concrete implementations
         of EngdbABC.
     """
-
-    @property
-    @abc.abstractmethod
-    def base_url(self):
-        """The URL of the service in use."""
-        pass
-
     @property
     @abc.abstractmethod
     def endtime(self):
@@ -62,7 +52,7 @@ class EngdbABC(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def __init__(self, base_url=None, **service_kwargs):
+    def __init__(self, **service_kwargs):
         pass
 
     @abc.abstractmethod
