@@ -8,6 +8,7 @@ from roman_datamodels import datamodels as rdm
 
 from romancal.stpipe import RomanStep
 
+
 if TYPE_CHECKING:
     from typing import ClassVar
 
@@ -58,20 +59,10 @@ class DarkCurrentStep(RomanStep):
             dark_slope = dark_model.dark_slope[4:-4, 4:-4]
             dark_slope_err = dark_model.dark_slope_error[4:-4, 4:-4]
 
-
-            # get the resultant info from the input file
-            read_pattern = input_model.meta.exposure.read_pattern
-            frame_time = input_model.meta.exposure.frame_time
-
-            # get the average time for each resultant
-            time_resultants =  np.array([np.average(x) for x in read_pattern], dtype=np.float32) * frame_time
-            # get the time for the dark file
-            time_dark = np.sum(time_resultants)
-
             # Do the dark correction
             out_model = input_model
-            out_model.data -= dark_slope * time_dark
-            out_model.err = np.sqrt( out_model.err **2 + (dark_slope_err * time_dark) **2)
+            out_model.data -= dark_slope
+            out_model.err = np.sqrt( out_model.err **2 + (dark_slope_err) **2)
             out_model.meta.cal_step.dark = "COMPLETE"
 
             # Save dark data to file
