@@ -177,7 +177,7 @@ class ResampleStep(RomanStep):
             if self.pixel_scale
             else self.pixel_scale_ratio
         )
-        #if model.meta.photometry.pixel_area is not None:
+        # if model.meta.photometry.pixel_area is not None:
         #    model.meta.photometry.pixel_area *= model.meta.resample.pixel_scale_ratio**2
 
         # TODO statistics are unknown

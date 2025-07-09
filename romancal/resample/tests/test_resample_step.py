@@ -289,17 +289,10 @@ def test_populate_mosaic_metadata(base_image, meta_overrides, expected):
     input_models = ModelLibrary(models)
     output_model = ResampleStep().run(input_models)
 
-    assert (
-        output_model.meta.coadd_info.time_first == models[0].meta.exposure.start_time
-    )
-    assert (
-        output_model.meta.coadd_info.time_last == models[-1].meta.exposure.end_time
-    )
+    assert output_model.meta.coadd_info.time_first == models[0].meta.exposure.start_time
+    assert output_model.meta.coadd_info.time_last == models[-1].meta.exposure.end_time
     assert output_model.meta.coadd_info.time_mean.mjd == np.mean(
-        [
-            m.meta.exposure.start_time.mjd
-            for m in models
-        ]
+        [m.meta.exposure.start_time.mjd for m in models]
     )
 
     flat_model = output_model.to_flat_dict()

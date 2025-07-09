@@ -419,8 +419,7 @@ def test_update_exposure_times_different_sca_same_exposure(exposure_1):
         == exposure_1[0].meta.exposure.start_time
     )
     assert (
-        output_model.meta.coadd_info.time_last
-        == exposure_1[0].meta.exposure.end_time
+        output_model.meta.coadd_info.time_last == exposure_1[0].meta.exposure.end_time
     )
 
 

@@ -227,11 +227,15 @@ class ResampleData(Resample):
             output_model = datamodels.MosaicModel.create_minimal()
 
         # copy over asn information
-        output_model.meta.association.association_name = self.input_models.asn.get("table_name", "?")
+        output_model.meta.association.association_name = self.input_models.asn.get(
+            "table_name", "?"
+        )
 
         # resample parameters
         output_model.meta.resample.good_bits = self.good_bits
-        output_model.meta.resample.pixel_scale_ratio = self.output_model["pixel_scale_ratio"]
+        output_model.meta.resample.pixel_scale_ratio = self.output_model[
+            "pixel_scale_ratio"
+        ]
         output_model.meta.resample.pixfrac = self.output_model["pixfrac"]
         output_model.meta.resample.pointings = self.output_model["pointings"]
         output_model.meta.resample.weight_type = self.weight_type

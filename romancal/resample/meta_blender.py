@@ -113,13 +113,21 @@ class MetaBlender:
         # "blended" from all models
         for key in ("program", "execution_plan", "pass", "segment", "visit"):
             self._meta.observation[key] = model.meta.observation[key]
-        for key in ("title", "investigator_name", "category", "subcategory", "science_category"):
+        for key in (
+            "title",
+            "investigator_name",
+            "category",
+            "subcategory",
+            "science_category",
+        ):
             self._meta.program[key] = model.meta.program[key]
         # TODO we can't propagate L2 categories and subcategories
         self._meta.program.category = "CAL"
         self._meta.program.subcategory = "None"
         for step_name in ("flux", "outlier_detection", "skymatch"):
-            self._meta.cal_step[step_name] = model.meta.get("cal_step", {}).get(step_name, "INCOMPLETE")
+            self._meta.cal_step[step_name] = model.meta.get("cal_step", {}).get(
+                step_name, "INCOMPLETE"
+            )
 
     def _update_tables(self, meta):
         # TODO unpass
@@ -143,12 +151,10 @@ class MetaBlender:
         else:
             # for non-first only blending
             self._meta.coadd_info.time_first = min(
-                self._meta.coadd_info.time_first,
-                model.meta.exposure.start_time
+                self._meta.coadd_info.time_first, model.meta.exposure.start_time
             )
             self._meta.coadd_info.time_last = max(
-                self._meta.coadd_info.time_last,
-                model.meta.exposure.end_time
+                self._meta.coadd_info.time_last, model.meta.exposure.end_time
             )
 
         self._start_times.append(model.meta.exposure.start_time)
@@ -163,9 +169,15 @@ class MetaBlender:
 
     def finalize(self):
         self._meta.coadd_info.time_mean = Time(self._start_times).mean()
-        self._meta.instrument.optical_element = ", ".join(sorted(self._optical_elements))
+        self._meta.instrument.optical_element = ", ".join(
+            sorted(self._optical_elements)
+        )
         # TODO observation.observation?
-        self._meta.observation.exposure_grouping = "v{execution_plan:02d}{pass:03d}{segment:03d}001{visit:03d}".format(**self._meta.observation)
+        self._meta.observation.exposure_grouping = (
+            "v{execution_plan:02d}{pass:03d}{segment:03d}001{visit:03d}".format(
+                **self._meta.observation
+            )
+        )
         self._meta.individual_image_meta = {}
         # TODO unpass
         # for table_name, builder in self._tables.items():
