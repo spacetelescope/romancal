@@ -161,13 +161,14 @@ class ResampleStep(RomanStep):
         result = resamp.resample_group(range(len(input_models)))
         result.meta.filename = output_filename
 
-        self._final_updates(result, input_models)
+        self._final_updates(result)
 
         return result
 
-    def _final_updates(self, model, input_models):
+    def _final_updates(self, model):
         model.meta.cal_step["resample"] = "COMPLETE"
 
+        # TODO set twice?
         # if pixel_scale exists, it will override pixel_scale_ratio.
         # calculate the actual value of pixel_scale_ratio based on pixel_scale
         # because source_catalog uses this value from the header.
@@ -176,10 +177,13 @@ class ResampleStep(RomanStep):
             if self.pixel_scale
             else self.pixel_scale_ratio
         )
-        model.meta.resample.pixfrac = self.pixfrac
-        if model.meta.photometry.pixel_area is not None:
-            model.meta.photometry.pixel_area *= model.meta.resample.pixel_scale_ratio**2
-        model.meta.resample["good_bits"] = self.good_bits
+        #if model.meta.photometry.pixel_area is not None:
+        #    model.meta.photometry.pixel_area *= model.meta.resample.pixel_scale_ratio**2
+
+        # TODO statistics are unknown
+        model.meta.statistics.image_median = np.nan
+        model.meta.statistics.image_rms = np.nan
+        model.meta.statistics.good_pixel_fraction = np.nan
 
     @staticmethod
     def _load_custom_wcs(asdf_wcs_file, output_shape):
