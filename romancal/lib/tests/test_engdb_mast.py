@@ -9,8 +9,8 @@ from astropy.table import Table
 from astropy.time import Time
 from astropy.utils.diff import report_diff_values
 
-from romancal.lib import engdb_mast
-from romancal.lib.engdb_lib import EngDB_Value
+from romancal.lib.engdb import engdb_mast
+from romancal.lib.engdb.engdb_lib import EngDB_Value
 
 # Configure logging
 log = logging.getLogger(__name__)

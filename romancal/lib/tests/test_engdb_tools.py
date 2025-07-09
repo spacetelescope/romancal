@@ -15,7 +15,7 @@ import os
 import pytest
 from astropy.time import Time
 
-from romancal.lib import engdb_tools
+from romancal.lib.engdb import engdb_tools
 
 # Configure logging
 log = logging.getLogger(__name__)

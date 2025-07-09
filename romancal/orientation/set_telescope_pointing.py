@@ -58,7 +58,7 @@ import roman_datamodels as rdm
 from astropy.table import Table
 from astropy.time import Time, TimeDelta
 
-from ..lib.engdb_tools import ENGDB_Service
+from ..lib.engdb.engdb_tools import ENGDB_Service
 
 __all__ = [
     "TransformParameters",

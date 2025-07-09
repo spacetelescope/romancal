@@ -10,7 +10,7 @@ from astropy.utils.diff import report_diff_values
 from roman_datamodels.datamodels import ScienceRawModel
 
 import romancal.orientation.pointing_summary as ps
-from romancal.lib import engdb_tools
+from romancal.lib.engdb import engdb_tools
 
 DATA_PATH = Path(__file__).parent / "data"
 
