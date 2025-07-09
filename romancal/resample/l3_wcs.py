@@ -2,11 +2,12 @@ import logging
 
 from astropy.coordinates import SkyCoord
 from stcal.alignment.util import (
+    calc_rotation_matrix,
     compute_s_region_keyword,
     compute_scale,
 )
 
-from ..assign_wcs import utils
+from romancal.assign_wcs.utils import create_footprint
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -44,7 +45,7 @@ def assign_l3_wcs(model, wcs):
     l3_wcsinfo.pixel_scale_local = compute_scale(wcs, world_center)
     l3_wcsinfo.orientat_local = calc_pa(wcs, *world_center)
     try:
-        footprint = utils.create_footprint(wcs, model.shape, center=False)
+        footprint = create_footprint(wcs, model.shape, center=False)
     except Exception as excp:
         log.warning("Could not determine footprint due to %s", excp)
     else:
@@ -90,8 +91,8 @@ def assign_l3_wcs(model, wcs):
         log.warning(
             "WCS has no clear rotation matrix defined by pc_rotation_matrix. Calculating one."
         )
-        rotation_matrix = utils.calc_rotation_matrix(l3_wcsinfo.orientat, 0.0)
-        l3_wcsinfo.rotation_matrix = utils.list_1d_to_2d(rotation_matrix, 2)
+        rotation_matrix = calc_rotation_matrix(l3_wcsinfo.orientat, 0.0)
+        l3_wcsinfo.rotation_matrix = _list_1d_to_2d(rotation_matrix, 2)
 
 
 def calc_pa(wcs, ra, dec):
@@ -119,3 +120,22 @@ def calc_pa(wcs, ra, dec):
     coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
 
     return coord.position_angle(delta_coord).degree
+
+
+def _list_1d_to_2d(l, n):
+    """Convert 1-dimensional list to 2-dimensional
+
+    Parameters
+    ----------
+    l : list
+        The list to convert.
+
+    n : int
+       The length of the x dimension, or the length of the inner lists.
+
+    Returns
+    -------
+    l2d : list of lists
+        The 2D form
+    """
+    return [l[i : i + n] for i in range(0, len(l), n)]

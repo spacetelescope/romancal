@@ -18,6 +18,5 @@ TweakReg
    :maxdepth: 2
 
    tweakreg_step
-   astrometric_utils
 
 .. automodapi:: romancal.tweakreg
