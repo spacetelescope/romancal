@@ -298,24 +298,3 @@ def test_populate_mosaic_metadata(base_image, meta_overrides, expected):
     flat_model = output_model.to_flat_dict()
     for key, value in expected.items():
         assert flat_model[f"roman.{key}"] == value
-
-
-@pytest.mark.skip(reason="MosaicModel.meta.photometry does not exist")
-@pytest.mark.parametrize(
-    "input_pixel_area, pixel_scale_ratio, expected_pixel_area",
-    [
-        # (None, 1.0, None), # this cannot be tested since it causes the step to crash
-        (1.0, 1.0, -999999.0),
-        (1.0, 2.0, -999999.0 * 4.0),
-    ],
-)
-def test_pixel_area_update(
-    base_image, input_pixel_area, pixel_scale_ratio, expected_pixel_area
-):
-    # if input model has a non-None pixel resample should scale it by the square of the pixel_scale_ratio
-    model = base_image()
-    model.meta.photometry.pixel_area = input_pixel_area
-    output_model = ResampleStep(pixel_scale_ratio=pixel_scale_ratio).run(
-        ModelLibrary([model])
-    )
-    assert output_model.meta.photometry.pixel_area == expected_pixel_area

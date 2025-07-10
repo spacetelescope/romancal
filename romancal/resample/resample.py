@@ -227,7 +227,7 @@ class ResampleData(Resample):
             output_model = datamodels.MosaicModel.create_minimal()
 
         # copy over asn information
-        output_model.meta.association.association_name = self.input_models.asn.get(
+        output_model.meta.association.name = self.input_models.asn.get(
             "table_name", "?"
         )
 
