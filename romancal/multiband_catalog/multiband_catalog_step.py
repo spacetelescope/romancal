@@ -78,9 +78,15 @@ class MultibandCatalogStep(RomanStep):
             # TODO some junk values here
             cat_model.meta.prd_version = "8.8.8"
             cat_model.meta.sdf_software_version = "7.7.7"
-            cat_model.meta.basic.time_first_mjd = example_model.meta.coadd_info.time_first.mjd
-            cat_model.meta.basic.time_last_mjd = example_model.meta.coadd_info.time_last.mjd
-            cat_model.meta.basic.time_mean_mjd = example_model.meta.coadd_info.time_mean.mjd
+            cat_model.meta.basic.time_first_mjd = (
+                example_model.meta.coadd_info.time_first.mjd
+            )
+            cat_model.meta.basic.time_last_mjd = (
+                example_model.meta.coadd_info.time_last.mjd
+            )
+            cat_model.meta.basic.time_mean_mjd = (
+                example_model.meta.coadd_info.time_mean.mjd
+            )
             cat_model.meta.basic.max_exposure_time = example_model.meta.coadd_info.get(
                 "max_exposure_time", np.nan
             )
@@ -93,7 +99,9 @@ class MultibandCatalogStep(RomanStep):
             cat_model.meta.basic.program = example_model.meta.observation.program
             cat_model.meta.basic.survey = "?"
             # TODO handle optical element with multiple values
-            cat_model.meta.basic.optical_element = example_model.meta.instrument.optical_element
+            cat_model.meta.basic.optical_element = (
+                example_model.meta.instrument.optical_element
+            )
             cat_model.meta.basic.instrument = "WFI"
             cat_model.meta.basic.location_name = example_model.meta.wcsinfo.skycell_name
             cat_model.meta.basic.product_type = example_model.meta.product_type

@@ -51,7 +51,9 @@ class ModelLibrary(AbstractModelLibrary):
         """
         if (group_id := getattr(model.meta, "group_id", None)) is not None:
             return group_id
-        if hasattr(model.meta, "observation") and hasattr(model.meta.observation, "observation_id"):
+        if hasattr(model.meta, "observation") and hasattr(
+            model.meta.observation, "observation_id"
+        ):
             return model.meta.observation.observation_id
         raise NoGroupID(f"{model} missing group_id")
 
