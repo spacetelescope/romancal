@@ -132,6 +132,62 @@ class EngdbABC(abc.ABC):
         pass
 
 
+class ValueCollection:
+    """
+    Engineering Value Collection.
+
+    Parameters
+    ----------
+    include_obstime : bool
+        If `True`, the return values will include observation
+        time as `astropy.time.Time`. See `zip_results` for further details.
+
+    zip_results : bool
+        If `True` and `include_obstime` is `True`, the return values
+        will be a list of 2-tuples. If false, the return will
+        be a single 2-tuple, where each element is a list.
+
+    Attributes
+    ----------
+    collection : [value, ...] or [(obstime, value), ...] or ([obstime,...], [value, ...])
+        Returns the list of values.
+        See `include_obstime` and `zip_results` for modifications.
+    """
+
+    def __init__(self, include_obstime=False, zip_results=True):
+        self._include_obstime = include_obstime
+        self._zip_results = zip_results
+        if zip_results:
+            self.collection = []
+        else:
+            self.collection = EngDB_Value([], [])
+
+    def append(self, obstime, value):
+        """
+        Append value to collection.
+
+        Parameters
+        ----------
+        obstime : `astropy.time.Time`
+            Observation time as returned from the engineering.
+
+        value : numeric
+            Value from DB.
+        """
+        # Make all the times readable
+        obstime.format = "isot"
+
+        # Append
+        if self._include_obstime:
+            if self._zip_results:
+                self.collection.append(EngDB_Value(obstime, value))
+            else:
+                self.collection.obstime.append(obstime)
+                self.collection.value.append(value)
+        else:
+            self.collection.append(value)
+
+
 def mnemonic_data_fname(mnemonic):
     """
     Construct the file name for the cached data of the specified mnemonic.
