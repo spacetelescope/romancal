@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import ClassVar
 
 import numpy as np
 from asdf.lazy_nodes import AsdfDictNode, AsdfListNode
@@ -74,7 +75,32 @@ class TableBuilder:
         return Table(array_columns)
 
 
+def _copy_value(src, dst, key, default):
+    *nested_keys, final_key = key.split(".")
+    for subkey in nested_keys:
+        src = src[subkey]
+        dst = dst[subkey]
+    dst[final_key] = src.get(final_key, default)
+
+
 class MetaBlender:
+    _meta_blend_paths: ClassVar = {
+        "observation.program": None,
+        "observation.execution_plan": None,
+        "observation.pass": None,
+        "observation.segment": None,
+        "observation.visit": None,
+        "program.title": None,
+        "program.investigator_name": None,
+        "program.category": None,
+        "program.subcategory": None,
+        "program.science_category": None,
+        "instrument.optical_element": None,
+        "cal_step.flux": "INCOMPLETE",
+        "cal_step.outlier_detection": "INCOMPLETE",
+        "cal_step.skymatch": "INCOMPLETE",
+    }
+
     def __init__(self):
         self._tables = defaultdict(TableBuilder)
         self._n_rows = 0
@@ -82,14 +108,6 @@ class MetaBlender:
     def _blend_first(self, model):
         # make a blank mosic metdata node
         self._model = datamodels.MosaicModel.create_minimal()
-        #     {
-        #         "meta": {
-        #             "file_date": Time(
-        #                 "2020-01-01T00:00:00.0", format="isot", scale="utc"
-        #             ),
-        #         },
-        #     }
-        # )
 
         # FIXME assuming everything is a prompt coadd
         self._model.meta.product_type = stnode.ProductType("p_visit_coadd")
@@ -101,33 +119,19 @@ class MetaBlender:
         # for computing mean start time
         self._start_times = []
 
-        # for computing combined optical element
-        self._optical_elements = set()
-
         # grab start/end times, blended with all other models below
         self._meta.coadd_info.time_first = model.meta.exposure.start_time
         self._meta.coadd_info.time_last = model.meta.exposure.end_time
 
-        # copy some metadata from the first input model
-        # FIXME this is incorrect and these values should be
-        # "blended" from all models
-        for key in ("program", "execution_plan", "pass", "segment", "visit"):
-            self._meta.observation[key] = model.meta.observation[key]
-        for key in (
-            "title",
-            "investigator_name",
-            "category",
-            "subcategory",
-            "science_category",
-        ):
-            self._meta.program[key] = model.meta.program[key]
-        # TODO we can't propagate L2 categories and subcategories
-        self._meta.program.category = "CAL"
-        self._meta.program.subcategory = "None"
-        for step_name in ("flux", "outlier_detection", "skymatch"):
-            self._meta.cal_step[step_name] = model.meta.get("cal_step", {}).get(
-                step_name, "INCOMPLETE"
-            )
+        # copy over metadata from first model
+        for path, default in self._meta_blend_paths.items():
+            dst = self._meta
+            src = model.meta
+            *sub_path, key = path.split(".")
+            for k in sub_path:
+                src = src.get(k, {})
+                dst = dst[k]
+            dst[key] = src.get(key, default)
 
     def _update_tables(self, meta):
         basic_data = {}
@@ -155,8 +159,20 @@ class MetaBlender:
                 self._meta.coadd_info.time_last, model.meta.exposure.end_time
             )
 
+            # blend
+            for path, default in self._meta_blend_paths.items():
+                dst = self._meta
+                src = model.meta
+                *sub_path, key = path.split(".")
+                for k in sub_path:
+                    src = src.get(k, {})
+                    dst = dst[k]
+                if key not in src:
+                    continue
+                if dst[key] != src[key]:
+                    dst[key] = default
+
         self._start_times.append(model.meta.exposure.start_time)
-        self._optical_elements.add(model.meta.instrument.optical_element)
 
         if cal_logs := model.meta.get("cal_logs"):
             self._model["individual_image_cal_logs"].append(cal_logs)
@@ -167,15 +183,13 @@ class MetaBlender:
 
     def finalize(self):
         self._meta.coadd_info.time_mean = Time(self._start_times).mean()
-        self._meta.instrument.optical_element = ", ".join(
-            sorted(self._optical_elements)
-        )
-        # TODO observation.observation?
-        self._meta.observation.exposure_grouping = (
-            "v{execution_plan:02d}{pass:03d}{segment:03d}001{visit:03d}".format(
-                **self._meta.observation
-            )
-        )
+        # TODO observation.observation? what if some of these values are None?
+        self._meta.observation.exposure_grouping = None
+        # (
+        #     "v{execution_plan:02d}{pass:03d}{segment:03d}001{visit:03d}".format(
+        #         **self._meta.observation
+        #     )
+        # )
         self._meta.individual_image_meta = {}
         for table_name, builder in self._tables.items():
             self._meta.individual_image_meta[table_name] = builder.to_table()

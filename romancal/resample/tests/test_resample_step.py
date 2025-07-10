@@ -260,10 +260,10 @@ def test_individual_image_meta(base_image):
                 },
             ),
             {
-                "meta.observation.visit": 1,
-                "meta.observation.pass": 1,
-                "meta.observation.segment": 1,
-                "meta.instrument.optical_element": "F062, F158",
+                "meta.observation.visit": None,
+                "meta.observation.pass": None,
+                "meta.observation.segment": None,
+                "meta.instrument.optical_element": None,
                 "meta.instrument.name": "WFI",
             },
         ),
@@ -295,6 +295,9 @@ def test_populate_mosaic_metadata(base_image, meta_overrides, expected):
         [m.meta.exposure.start_time.mjd for m in models]
     )
 
-    flat_model = output_model.to_flat_dict()
     for key, value in expected.items():
-        assert flat_model[f"roman.{key}"] == value
+        *path, final = key.split(".")
+        obj = output_model
+        for sub_path in path:
+            obj = obj[sub_path]
+        assert obj[final] == value
