@@ -389,6 +389,11 @@ class EngdbMast(EngdbABC):
 
         return table
 
+    def __repr__(self):
+        """What am I"""
+        repr = f"{self.__class__.__name__}(base_url='{self.base_url}')"
+        return repr
+
 
 class _ValueCollection:
     """
