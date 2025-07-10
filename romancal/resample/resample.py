@@ -264,8 +264,6 @@ class ResampleData(Resample):
             )
             output_model.meta.coadd_info.max_exposure_time = max_exposure_time
             output_model.meta.coadd_info.exposure_time = total_exposure_time
-            # TODO exact duplicate
-            output_model.meta.resample.product_exposure_time = max_exposure_time
 
         if self._enable_ctx:
             output_model.context = self.output_model["con"].astype(np.uint32)

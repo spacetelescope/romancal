@@ -410,7 +410,7 @@ def test_update_exposure_times_different_sca_same_exposure(exposure_1):
     # these three SCAs overlap, so the max exposure time is 3x.
     # get this time within 0.1 s.
     time_difference = (
-        output_model.meta.resample.product_exposure_time
+        output_model.meta.coadd_info.max_exposure_time
         - 3 * exposure_1[0].meta.exposure.effective_exposure_time
     )
     assert np.abs(time_difference) < 0.1
@@ -438,7 +438,7 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
     # these exposures overlap perfectly so the max exposure time should
     # be equal to the individual time times two.
     time_difference = (
-        output_model.meta.resample.product_exposure_time
+        output_model.meta.coadd_info.max_exposure_time
         - 2 * exposure_1[0].meta.exposure.effective_exposure_time
     )
     assert np.abs(time_difference) < 0.1

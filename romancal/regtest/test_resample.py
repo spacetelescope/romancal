@@ -106,10 +106,10 @@ def test_resample_single_file(
 
     dms_logger.info(
         f"""DMS344 MSG: ResampleStep created new attribute with total exposure time? :\
-            {"product_exposure_time" in resample_out.meta.resample}
+            {"max_exposure_time" in resample_out.meta.coadd_info}
         """
     )
-    assert "product_exposure_time" in resample_out.meta.resample
+    assert "max_exposure_time" in resample_out.meta.coadd_info
 
     dms_logger.info(
         f"""DMS345 MSG: ResampleStep included all metadata relevant to the creation of the mosaic? :\
@@ -121,7 +121,6 @@ def test_resample_single_file(
                     "pixel_scale_ratio",
                     "pixfrac",
                     "pointings",
-                    "product_exposure_time",
                     "weight_type",
                     "members",
                 ]
@@ -135,7 +134,6 @@ def test_resample_single_file(
             "pixel_scale_ratio",
             "pixfrac",
             "pointings",
-            "product_exposure_time",
             "weight_type",
             "members",
         ]
