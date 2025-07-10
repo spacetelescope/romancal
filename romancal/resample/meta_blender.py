@@ -130,8 +130,6 @@ class MetaBlender:
             )
 
     def _update_tables(self, meta):
-        # TODO unpass
-        pass
         basic_data = {}
         for key, value in meta.to_flat_dict().items():
             if key in {"wcs", "cal_logs"}:
@@ -179,7 +177,6 @@ class MetaBlender:
             )
         )
         self._meta.individual_image_meta = {}
-        # TODO unpass
-        # for table_name, builder in self._tables.items():
-        #     self._meta.individual_image_meta[table_name] = builder.to_table()
+        for table_name, builder in self._tables.items():
+            self._meta.individual_image_meta[table_name] = builder.to_table()
         return self._model
