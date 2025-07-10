@@ -1212,10 +1212,7 @@ def update_catalog_coordinates(tweakreg_catalog_name, tweaked_wcs):
     catalog.write(tweakreg_catalog_name, overwrite=True)
 
 
-@pytest.mark.parametrize(
-    "exposure_type",
-    ["WFI_GRISM", "WFI_PRISM", "WFI_DARK", "WFI_FLAT", "WFI_WFSC"],
-)
+@pytest.mark.parametrize("exposure_type", ["WFI_FLAT", "WFI_WFSC"])
 def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_image):
     """Test that TweakReg updates meta.cal_step with tweakreg = COMPLETE."""
     img1 = base_image(shift_1=1000, shift_2=1000)
@@ -1271,21 +1268,21 @@ def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
     """Test that TweakReg can handle mixed exposure types
     (non-WFI_IMAGE data will be marked as SKIPPED only and won't be processed)."""
     img1 = base_image(shift_1=1000, shift_2=1000)
-    img1.meta.exposure.type = "WFI_GRISM"
+    img1.meta.exposure.type = "WFI_IM_DARK"
 
     img2 = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
     img2.meta.exposure.type = "WFI_IMAGE"
 
     img3 = base_image(shift_1=1000, shift_2=1000)
-    img3.meta.exposure.type = "WFI_GRISM"
+    img3.meta.exposure.type = "WFI_SP_DARK"
 
     img4 = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img4, catalog_filename="img4")
     img4.meta.exposure.type = "WFI_IMAGE"
 
     img5 = base_image(shift_1=1000, shift_2=1000)
-    img5.meta.exposure.type = "WFI_GRISM"
+    img5.meta.exposure.type = "WFI_IM_DARK"
 
     res = trs.TweakRegStep.call([img1, img2, img3, img4, img5])
 
