@@ -8,6 +8,7 @@ from sys import stdout
 
 from astropy.time import Time
 
+from romancal.lib.engdb.engdb_tools import AVAILABLE_SERVICES
 import romancal.orientation.set_telescope_pointing as stp
 from romancal.orientation import v1_calculate
 
@@ -68,15 +69,40 @@ def main():
         help="Increase verbosity. Specifying multiple times adds more output.",
     )
     parser.add_argument(
-        "--engdb-url",
+        '--service',
         type=str,
-        default=None,
-        help=(
-            "The engineering database to use. If unspecified, the value"
-            " of the environment ENG_BASE_URL is used. Otherwise, the production"
-            " system is used."
-        ),
+        default='mast',
+        choices=[name for name in AVAILABLE_SERVICES],
+        help='Database service to use. Default: %(default)s',
     )
+
+    # Arguments pertinent only to the EngdbMast service.
+    if 'mast' in AVAILABLE_SERVICES:
+        parser.add_argument(
+            "--engdb-url",
+            type=str,
+            default=None,
+            help=(
+                "URL of the engineering database."
+                " If not specified, the environment variable 'ENG_BASE_URL' is used."
+                " Otherwise, a hardwired default is used."
+            ),
+        )
+
+    # Arguments pertinent only to the EngdbEDP service
+    if 'edp' in AVAILABLE_SERVICES:
+        parser.add_argument(
+            '--environment',
+            type=str,
+            default='test',
+            choices=['dev', 'test', 'int', 'ops'],
+            help='Operational environment in use. Default: %(default)s'
+        )
+        parser.add_argument(
+            '--path-to-cc',
+            type=str,
+            help='Full path to the required kerberos authentication keytab file',
+        )
 
     args = parser.parse_args()
 
@@ -85,6 +111,14 @@ def main():
     logger.setLevel(level)
     if level <= logging.DEBUG:
         logger_handler.setFormatter(logger_format_debug)
+
+    # Gather the service-specific args
+    service_kwargs = {'service': args.service}
+    for arg in ['engdb_url', 'environment', 'path_to_cc']:
+        try:
+            service_kwargs[arg] = getattr(args, arg)
+        except AttributeError:
+            pass
 
     # Determine whether the sources are time specifications or a file list.
     if len(args.time_sources) == 2:
@@ -115,16 +149,15 @@ def main():
     if input_as_files:
         v1s = v1_calculate.v1_calculate_from_models(
             args.time_sources,
-            engdb_url=args.engdb_url,
             reduce_func=REDUCE_FUNCS_MAPPING[args.pointing],
+            service_kwargs=service_kwargs
         )
     else:
         v1s = v1_calculate.v1_calculate_over_time(
-            obsstart.mjd,
-            obsend.mjd,
-            engdb_url=args.engdb_url,
+            obsstart,
+            obsend,
             reduce_func=REDUCE_FUNCS_MAPPING[args.pointing],
-            method=args.method,
+            service_kwargs=service_kwargs
         )
 
     formatted = v1_calculate.simplify_table(v1s)
