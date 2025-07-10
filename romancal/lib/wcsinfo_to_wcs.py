@@ -13,7 +13,7 @@ def wcsinfo_to_wcs(
     wcsinfo: dict | stnode.Wcsinfo,
     bounding_box: None | tuple[tuple[float, float], tuple[float, float]] = None,
 ) -> WCS:
-    """Create a WCS from the L3 wcsinfo meta
+    """Create a WCS from the L3 wcsinfo meta or a skycell reference file entry
 
     Parameters
     ----------
@@ -29,6 +29,20 @@ def wcsinfo_to_wcs(
     wcs : WCS
         The WCS object created.
     """
+    # this has to handle multiple formats:
+    # -- skycells ----------------- L3
+    # - name                        -
+    # - pixel_scale                 - pixel_scale_ref
+    # - ra_projection_center        - (ra_ref)
+    # - dec_projection_center       - (dec_ref)
+    # - x0_projection               - (x_ref)
+    # - y0_projection               - (y_ref)
+    # - ra_center                   - ra
+    # - dec_center                  - dec
+    # - nx                          -
+    # - ny                          -
+    # - orientat                    - orientation_ref
+    # - orientat_projection_center  -
     pixelshift = models.Shift(
         -wcsinfo.get("x0_projection", wcsinfo.get("x_ref", None)),
         name="crpix1",
@@ -46,22 +60,19 @@ def wcsinfo_to_wcs(
         180.0,
     )
 
-    matrix = wcsinfo.get("rotation_matrix", None)
-    if matrix is not None:
-        matrix = np.array(matrix)
-    else:
-        matrix = np.reshape(
-            wcs_util.calc_rotation_matrix(
-                np.deg2rad(
-                    wcsinfo.get(
-                        "orientat_projection_center", wcsinfo.get("orientat", 0.0)
-                    )
-                ),
-                v3i_yangle=0.0,
-                vparity=1,
+    # no input has a rotation matrix
+    matrix = np.reshape(
+        wcs_util.calc_rotation_matrix(
+            np.deg2rad(
+                wcsinfo.get(
+                    "orientat_projection_center", wcsinfo.get("orientation_ref", 0.0)
+                )
             ),
-            (2, 2),
-        )
+            v3i_yangle=0.0,
+            vparity=1,
+        ),
+        (2, 2),
+    )
     rotation = models.AffineTransformation2D(matrix, name="pc_rotation_matrix")
     det2sky = (
         pixelshift | rotation | pixelscale | tangent_projection | celestial_rotation

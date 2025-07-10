@@ -2,7 +2,6 @@ import logging
 
 from astropy.coordinates import SkyCoord
 from stcal.alignment.util import (
-    # calc_rotation_matrix,
     compute_s_region_keyword,
     compute_scale,
 )
@@ -72,17 +71,6 @@ def assign_l3_wcs(model, wcs):
 
     l3_wcsinfo.orientation_ref = calc_pa(wcs, *world_ref)
 
-    # try:
-    #    l3_wcsinfo.rotation_matrix = transform[
-    #        "pc_rotation_matrix"
-    #    ].matrix.value.tolist()
-    # except Exception:
-    #    log.warning(
-    #        "WCS has no clear rotation matrix defined by pc_rotation_matrix. Calculating one."
-    #    )
-    #    rotation_matrix = calc_rotation_matrix(l3_wcsinfo.orientat, 0.0)
-    #    l3_wcsinfo.rotation_matrix = _list_1d_to_2d(rotation_matrix, 2)
-
 
 def calc_pa(wcs, ra, dec):
     """Calculate position angle at given ra,dec
@@ -109,22 +97,3 @@ def calc_pa(wcs, ra, dec):
     coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
 
     return coord.position_angle(delta_coord).degree
-
-
-# def _list_1d_to_2d(l, n):
-#     """Convert 1-dimensional list to 2-dimensional
-#
-#     Parameters
-#     ----------
-#     l : list
-#         The list to convert.
-#
-#     n : int
-#        The length of the x dimension, or the length of the inner lists.
-#
-#     Returns
-#     -------
-#     l2d : list of lists
-#         The 2D form
-#     """
-#     return [l[i : i + n] for i in range(0, len(l), n)]
