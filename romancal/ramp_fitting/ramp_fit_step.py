@@ -61,12 +61,10 @@ class RampFitStep(RomanStep):
             # Do the fitting based on the algorithm selected.
             algorithm = self.algorithm.lower()
             if algorithm == "ols_cas22":
-                dark_model = None
                 out_model = self.ols_cas22(
                     input_model,
                     readnoise_model,
                     gain_model,
-                    dark_model,
                 )
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
             elif algorithm == "likely":
@@ -98,7 +96,7 @@ class RampFitStep(RomanStep):
 
         return out_model
 
-    def ols_cas22(self, input_model, readnoise_model, gain_model, dark_model):
+    def ols_cas22(self, input_model, readnoise_model, gain_model):
         """Peform Optimal Linear Fitting on arbitrarily space resulants
 
         Parameters
@@ -111,9 +109,6 @@ class RampFitStep(RomanStep):
 
         gain_model : GainRefModel
             Model with the gain reference information.
-
-        dark_model : DarkRefModel
-            Model with the dark reference information
 
         Returns
         -------
