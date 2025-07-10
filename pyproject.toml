@@ -52,6 +52,7 @@ docs = [
 ]
 test = [
     "ci-watson >=0.5.0",
+    "edp-lib @ git+https://grit.stsci.edu/mast/edp-lib",
     "pysiaf",
     "pytest >8.0.0",
     "pytest-astropy >= 0.11.0",
@@ -59,12 +60,14 @@ test = [
     "stpreview>=0.6.0",
 ]
 dev = [
+    "edp-lib @ git+https://grit.stsci.edu/mast/edp-lib",
     "pysiaf",
     "romancal[docs,test]",
     "tox > 4",
     "pre-commit > 3",
 ]
 sdp = [
+    "edp-lib @ git+https://grit.stsci.edu/mast/edp-lib",
     "pysiaf",
     "stpreview>=0.6.0",
 ]
