@@ -41,8 +41,8 @@ class ModelLibrary(AbstractModelLibrary):
         meta = asdf.util.load_yaml(filename)["roman"]["meta"]
         if group_id := meta.get("group_id"):
             return group_id
-        if "observation" in meta:
-            return meta["observation"]["observation_id"]
+        if observation_id := meta.get("observation", {}).get("observation_id", None):
+            return observation_id
         raise NoGroupID(f"{filename} missing group_id")
 
     def _model_to_group_id(self, model):
@@ -51,7 +51,7 @@ class ModelLibrary(AbstractModelLibrary):
         """
         if (group_id := getattr(model.meta, "group_id", None)) is not None:
             return group_id
-        if hasattr(model.meta, "observation"):
+        if hasattr(model.meta, "observation") and hasattr(model.meta.observation, "observation_id"):
             return model.meta.observation.observation_id
         raise NoGroupID(f"{model} missing group_id")
 

@@ -73,7 +73,35 @@ class MultibandCatalogStep(RomanStep):
         cat_model = datamodels.MultibandSourceCatalogModel.create_minimal(
             {"meta": example_model.meta}
         )
-        if "instrument" in example_model.meta:
+        if isinstance(example_model, datamodels.MosaicModel):
+            # map the L3 metadata
+            # TODO some junk values here
+            cat_model.meta.prd_version = "8.8.8"
+            cat_model.meta.sdf_software_version = "7.7.7"
+            cat_model.meta.basic.time_first_mjd = example_model.meta.coadd_info.time_first.mjd
+            cat_model.meta.basic.time_last_mjd = example_model.meta.coadd_info.time_last.mjd
+            cat_model.meta.basic.time_mean_mjd = example_model.meta.coadd_info.time_mean.mjd
+            cat_model.meta.basic.max_exposure_time = example_model.meta.coadd_info.get(
+                "max_exposure_time", np.nan
+            )
+            cat_model.meta.basic.mean_exposure_time = (
+                example_model.meta.coadd_info.exposure_time
+            )
+            cat_model.meta.basic.visit = example_model.meta.observation.visit
+            cat_model.meta.basic.segment = example_model.meta.observation.segment
+            cat_model.meta.basic["pass"] = example_model.meta.observation["pass"]
+            cat_model.meta.basic.program = example_model.meta.observation.program
+            cat_model.meta.basic.survey = "?"
+            # TODO handle optical element with multiple values
+            cat_model.meta.basic.optical_element = example_model.meta.instrument.optical_element
+            cat_model.meta.basic.instrument = "WFI"
+            cat_model.meta.basic.location_name = example_model.meta.wcsinfo.skycell_name
+            cat_model.meta.basic.product_type = example_model.meta.product_type
+            # TODO can we fill these in?
+            cat_model.meta.photometry.conversion_megajanskys = None
+            cat_model.meta.photometry.conversion_megajanskys_uncertainty = None
+            cat_model.meta.photometry.pixel_area = None
+        else:
             cat_model.meta.optical_element = (
                 example_model.meta.instrument.optical_element
             )
@@ -175,7 +203,7 @@ class MultibandCatalogStep(RomanStep):
                 )
 
                 if self.fit_psf:
-                    filter_name = model.meta.basic.optical_element  # L3
+                    filter_name = model.meta.instrument.optical_element
                     log.info(f"Creating catalog for {filter_name} image")
                     ref_file = self.get_reference_file(model, "epsf")
                     self.log.info("Using ePSF reference file: %s", ref_file)
@@ -196,7 +224,7 @@ class MultibandCatalogStep(RomanStep):
                 )
 
                 # Add the filter name to the column names
-                filter_name = model.meta.basic.optical_element
+                filter_name = model.meta.instrument.optical_element
                 cat = add_filter_to_colnames(catobj.catalog, filter_name)
 
                 # TODO: what metadata do we want to keep, if any,

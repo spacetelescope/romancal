@@ -84,7 +84,7 @@ def make_det_image(library, kernel_fwhm):
 
             log.info(
                 f"Processing model {model.meta.filename}: "
-                f"filter={model.meta.basic.optical_element}, {sed_weight=}"
+                f"filter={model.meta.instrument.optical_element}, {sed_weight=}"
             )
 
             # Ideally the weights should be the inverse variance of
