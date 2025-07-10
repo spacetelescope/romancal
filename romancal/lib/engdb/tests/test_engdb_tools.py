@@ -36,7 +36,7 @@ def test_environmental_bad(environ_jail):
     did_except = False
     os.environ["ENG_BASE_URL"] = alternate
     try:
-        engdb = engdb_tools.engdb_service('mast')
+        engdb = engdb_tools.engdb_service("mast")
     except Exception:
         did_except = True
     assert did_except, f"DB connection falsely created for {engdb.base_url}"
@@ -48,7 +48,7 @@ def test_basic(engdb):
 
 def test_bad_service():
     with pytest.raises(RuntimeError):
-        engdb_tools.engdb_service('junk_service')
+        engdb_tools.engdb_service("junk_service")
 
 
 def test_values(engdb):
@@ -99,15 +99,18 @@ def test_unzip(engdb):
 # ########
 # Fixtures
 # ########
-@pytest.fixture(scope='module',
-                params=[name for name in engdb_tools.AVAILABLE_SERVICES])
+@pytest.fixture(
+    scope="module", params=[name for name in engdb_tools.AVAILABLE_SERVICES]
+)
 def engdb(request):
     """Setup a service"""
     service = request.param
     args = {
-        'mast': {},
-        'edp': {'environment': os.environ.get('EDP_ENVIRONMENT', 'test'),
-                'path_to_cc': os.environ.get('PATH_TO_CC', None)}
+        "mast": {},
+        "edp": {
+            "environment": os.environ.get("EDP_ENVIRONMENT", "test"),
+            "path_to_cc": os.environ.get("PATH_TO_CC", None),
+        },
     }
     try:
         engdb = engdb_tools.engdb_service(service, **args[service])

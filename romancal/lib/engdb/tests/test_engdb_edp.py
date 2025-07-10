@@ -12,8 +12,7 @@ from astropy.utils.diff import report_diff_values
 try:
     from romancal.lib.engdb import engdb_edp
 except ModuleNotFoundError as exception:
-    pytest.skip(f'Cannot import EngdbEDP. Reason: {exception}',
-                allow_module_level=True)
+    pytest.skip(f"Cannot import EngdbEDP. Reason: {exception}", allow_module_level=True)
 from romancal.lib.engdb.engdb_lib import EngDB_Value
 
 # Configure logging
@@ -24,19 +23,20 @@ QUERY = ("ope_scf_dir", "2027-02-23T01:00:00", "2027-02-23T01:00:05")
 
 # Expected return from query
 EXPECTED_RESPONSE = {
-    'TlmMnemonic': 'ope_scf_dir',
-    'ReqSTime': '2027-02-23T01:00:00.000',
-    'ReqETime': '2027-02-23T01:00:05.000',
-    'Count': 7, 'AllPoints': 1,
-    'Data': [
-        {'ObsTime': '2027-02-23T00:59:59.054', 'EUValue': 'SCFA'},
-        {'ObsTime': '2027-02-23T01:00:00.052', 'EUValue': 'SCFA'},
-        {'ObsTime': '2027-02-23T01:00:01.052', 'EUValue': 'SCFA'},
-        {'ObsTime': '2027-02-23T01:00:02.162', 'EUValue': 'SCFA'},
-        {'ObsTime': '2027-02-23T01:00:03.161', 'EUValue': 'SCFA'},
-        {'ObsTime': '2027-02-23T01:00:04.161', 'EUValue': 'SCFA'},
-        {'ObsTime': '2027-02-23T01:00:05.163', 'EUValue': 'SCFA'}
-    ]
+    "TlmMnemonic": "ope_scf_dir",
+    "ReqSTime": "2027-02-23T01:00:00.000",
+    "ReqETime": "2027-02-23T01:00:05.000",
+    "Count": 7,
+    "AllPoints": 1,
+    "Data": [
+        {"ObsTime": "2027-02-23T00:59:59.054", "EUValue": "SCFA"},
+        {"ObsTime": "2027-02-23T01:00:00.052", "EUValue": "SCFA"},
+        {"ObsTime": "2027-02-23T01:00:01.052", "EUValue": "SCFA"},
+        {"ObsTime": "2027-02-23T01:00:02.162", "EUValue": "SCFA"},
+        {"ObsTime": "2027-02-23T01:00:03.161", "EUValue": "SCFA"},
+        {"ObsTime": "2027-02-23T01:00:04.161", "EUValue": "SCFA"},
+        {"ObsTime": "2027-02-23T01:00:05.163", "EUValue": "SCFA"},
+    ],
 }
 EXPECTED_RECORDS = Table.read(
     Path(__file__).parent / "data" / "test_records_expected.ecsv", format="ascii.ecsv"
@@ -99,7 +99,7 @@ def test_get_values(engdb, pars, expected):
 def engdb():
     """Open a connection"""
     try:
-        engdb = engdb_edp.EngdbEDP('test', os.environ.get('KRB5CCPATH', None))
+        engdb = engdb_edp.EngdbEDP("test", os.environ.get("KRB5CCPATH", None))
     except RuntimeError as exception:
         pytest.skip(f"Live Engineering Service not available: {exception}")
     return engdb

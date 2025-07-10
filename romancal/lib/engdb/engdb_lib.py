@@ -33,6 +33,7 @@ class EngdbABC(abc.ABC):
         Service-specific keyword arguments. Refer to the concrete implementations
         of EngdbABC.
     """
+
     @property
     @abc.abstractmethod
     def endtime(self):

@@ -76,10 +76,7 @@ def test_change_base_url():
 
     The given time and database should not find any values.
     """
-    service_kwargs = {
-        'service': 'mast',
-        'base_url': engdb_mast.MAST_BASE_URL
-    }
+    service_kwargs = {"service": "mast", "base_url": engdb_mast.MAST_BASE_URL}
     with pytest.raises(ValueError):
         stp.get_pointing(
             Time("2015-06-15"), Time("2015-06-17"), service_kwargs=service_kwargs
@@ -88,15 +85,12 @@ def test_change_base_url():
 
 def test_change_base_url_fail():
     """Test changing the engineering database by call"""
-    service_kwargs = {
-        'service': 'mast',
-        'base_url': "https://nonexistent.fake.example"
-    }
+    service_kwargs = {"service": "mast", "base_url": "https://nonexistent.fake.example"}
     with pytest.raises(ValueError):
         stp.get_pointing(
             Time(STARTTIME, format="isot"),
             Time(ENDTIME, format="isot"),
-            service_kwargs=service_kwargs
+            service_kwargs=service_kwargs,
         )
 
 

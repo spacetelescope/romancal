@@ -53,13 +53,14 @@ logger.addHandler(logging.NullHandler())
 
 # Import specific services, if available.
 from .engdb_mast import EngdbMast
-AVAILABLE_SERVICES ={'mast': EngdbMast}
+
+AVAILABLE_SERVICES = {"mast": EngdbMast}
 try:
     from .engdb_edp import EngdbEDP
 except ImportError as exception:
-    logger.debug('EngdbEDP not available. Reason: %s', exception)
+    logger.debug("EngdbEDP not available. Reason: %s", exception)
 else:
-    AVAILABLE_SERVICES['edp'] = EngdbEDP
+    AVAILABLE_SERVICES["edp"] = EngdbEDP
 
 __all__ = ["engdb_service"]
 
@@ -89,7 +90,7 @@ def engdb_service(service=None, **service_kwargs):
         try:
             engdb = AVAILABLE_SERVICES[service](**service_kwargs)
         except KeyError as excp:
-            raise RuntimeError(f'Service {service} instantiation failed') from excp
+            raise RuntimeError(f"Service {service} instantiation failed") from excp
         return engdb
 
     # No service was specified. Try until one is found.

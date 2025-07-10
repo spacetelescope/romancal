@@ -7,9 +7,8 @@ import numpy as np
 import requests
 from astropy.table import Table
 from astropy.time import Time
-from requests.adapters import HTTPAdapter, Retry
-
 from edp.mnemonics_reader import MnemonicsReader
+from requests.adapters import HTTPAdapter, Retry
 
 from .engdb_lib import (
     FORCE_STATUSES,
@@ -57,6 +56,7 @@ class EngdbEDP(EngdbABC):
     RuntimeError
         Any and all failures with connecting with the MAST server.
     """
+
     #: The end time of the last query.
     endtime = None
 
@@ -87,7 +87,9 @@ class EngdbEDP(EngdbABC):
         try:
             self.configure(environment, path_to_cc)
         except FileNotFoundError as exception:
-            raise RuntimeError(f'Cannot instantiate EDP service with environment: {environment}, path_to_cc: {path_to_cc}') from exception
+            raise RuntimeError(
+                f"Cannot instantiate EDP service with environment: {environment}, path_to_cc: {path_to_cc}"
+            ) from exception
 
         # Check for basic aliveness.
         self.mr.get_mnemonic_metadata()
@@ -108,7 +110,9 @@ class EngdbEDP(EngdbABC):
         self.path_to_cc = path_to_cc
 
         # Create the mnemonic reader
-        self.mr = MnemonicsReader(mission='roman', env=ops_env, access_type='FqA', path_to_cc=path_to_cc)
+        self.mr = MnemonicsReader(
+            mission="roman", env=ops_env, access_type="FqA", path_to_cc=path_to_cc
+        )
 
         # Get various timeout parameters
         self.retries = getenv("ENG_RETRIES", RETRIES)
@@ -283,6 +287,6 @@ class EngdbEDP(EngdbABC):
         """What am I"""
         mr = self.mr
         db_config = mr.db_config.copy()
-        del db_config['ad_name']
+        del db_config["ad_name"]
         repr = f"{self.__class__.__name__}(config={db_config}, mission='{mr.mission}', env='{mr.env}')"
         return repr

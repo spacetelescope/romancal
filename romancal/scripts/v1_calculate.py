@@ -8,8 +8,8 @@ from sys import stdout
 
 from astropy.time import Time
 
-from romancal.lib.engdb.engdb_tools import AVAILABLE_SERVICES
 import romancal.orientation.set_telescope_pointing as stp
+from romancal.lib.engdb.engdb_tools import AVAILABLE_SERVICES
 from romancal.orientation import v1_calculate
 
 # Configure logging
@@ -69,15 +69,15 @@ def main():
         help="Increase verbosity. Specifying multiple times adds more output.",
     )
     parser.add_argument(
-        '--service',
+        "--service",
         type=str,
-        default='mast',
+        default="mast",
         choices=[name for name in AVAILABLE_SERVICES],
-        help='Database service to use. Default: %(default)s',
+        help="Database service to use. Default: %(default)s",
     )
 
     # Arguments pertinent only to the EngdbMast service.
-    if 'mast' in AVAILABLE_SERVICES:
+    if "mast" in AVAILABLE_SERVICES:
         parser.add_argument(
             "--engdb-url",
             type=str,
@@ -90,18 +90,18 @@ def main():
         )
 
     # Arguments pertinent only to the EngdbEDP service
-    if 'edp' in AVAILABLE_SERVICES:
+    if "edp" in AVAILABLE_SERVICES:
         parser.add_argument(
-            '--environment',
+            "--environment",
             type=str,
-            default='test',
-            choices=['dev', 'test', 'int', 'ops'],
-            help='Operational environment in use. Default: %(default)s'
+            default="test",
+            choices=["dev", "test", "int", "ops"],
+            help="Operational environment in use. Default: %(default)s",
         )
         parser.add_argument(
-            '--path-to-cc',
+            "--path-to-cc",
             type=str,
-            help='Full path to the required kerberos authentication keytab file',
+            help="Full path to the required kerberos authentication keytab file",
         )
 
     args = parser.parse_args()
@@ -113,8 +113,8 @@ def main():
         logger_handler.setFormatter(logger_format_debug)
 
     # Gather the service-specific args
-    service_kwargs = {'service': args.service}
-    for arg in ['engdb_url', 'environment', 'path_to_cc']:
+    service_kwargs = {"service": args.service}
+    for arg in ["engdb_url", "environment", "path_to_cc"]:
         try:
             service_kwargs[arg] = getattr(args, arg)
         except AttributeError:
@@ -150,14 +150,14 @@ def main():
         v1s = v1_calculate.v1_calculate_from_models(
             args.time_sources,
             reduce_func=REDUCE_FUNCS_MAPPING[args.pointing],
-            service_kwargs=service_kwargs
+            service_kwargs=service_kwargs,
         )
     else:
         v1s = v1_calculate.v1_calculate_over_time(
             obsstart,
             obsend,
             reduce_func=REDUCE_FUNCS_MAPPING[args.pointing],
-            service_kwargs=service_kwargs
+            service_kwargs=service_kwargs,
         )
 
     formatted = v1_calculate.simplify_table(v1s)

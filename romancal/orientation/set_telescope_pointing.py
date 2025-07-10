@@ -350,14 +350,14 @@ def add_wcs(
 
 
 def update_wcs(
-        model,
-        default_pa_v3=0.0,
-        default_roll_ref=0.0,
-        service_kwargs=None,
-        tolerance=60,
-        allow_default=False,
-        reduce_func=None,
-        **transform_kwargs,
+    model,
+    default_pa_v3=0.0,
+    default_roll_ref=0.0,
+    service_kwargs=None,
+    tolerance=60,
+    allow_default=False,
+    reduce_func=None,
+    **transform_kwargs,
 ):
     """
     Update WCS pointing information.
@@ -831,12 +831,12 @@ def calc_position_angle(point, ref):
 
 
 def get_pointing(
-        obsstart,
-        obsend,
-        mnemonics_to_read=COARSE_MNEMONICS,
-        service_kwargs=None,
-        tolerance=60,
-        reduce_func=None,
+    obsstart,
+    obsend,
+    mnemonics_to_read=COARSE_MNEMONICS,
+    service_kwargs=None,
+    tolerance=60,
+    reduce_func=None,
 ):
     """
     Get telescope pointing engineering data.
@@ -895,7 +895,7 @@ def get_pointing(
         obsend,
         mnemonics_to_read=mnemonics_to_read,
         tolerance=tolerance,
-        service_kwargs=service_kwargs
+        service_kwargs=service_kwargs,
     )
     reduced = reduce_func(mnemonics_to_read, mnemonics)
 
