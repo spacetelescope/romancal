@@ -994,13 +994,15 @@ def get_mnemonics(
     ValueError
         Cannot retrieve engineering information.
     """
+    if service_kwargs is None:
+        service_kwargs = dict()
     try:
         engdb = engdb_service(**service_kwargs)
     except EXPECTED_ERRORS as exception:
         raise ValueError(
             f"Cannot open engineering DB connection\nException: {exception}"
         ) from None
-    logger.info("Querying engineering DB: %s", engdb.base_url)
+    logger.info("Querying engineering DB: %s", engdb)
 
     # Construct the mnemonic values structure.
     mnemonics = {mnemonic: None for mnemonic in mnemonics_to_read}

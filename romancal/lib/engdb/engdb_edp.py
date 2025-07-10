@@ -361,7 +361,7 @@ class EngdbEDP(EngdbABC):
     def __repr__(self):
         """What am I"""
         mr = self.mr
-        db_config = mr.db_config
+        db_config = mr.db_config.copy()
         del db_config['ad_name']
         repr = f"{self.__class__.__name__}(config={db_config}, mission='{mr.mission}', env='{mr.env}')"
         return repr

@@ -71,24 +71,32 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         assert result.meta.wcsinfo.dec_ref == result.meta.pointing.target_dec
 
 
-def test_change_engdb_url():
+def test_change_base_url():
     """Test changing the engineering database by call for success.
 
     The given time and database should not find any values.
     """
+    service_kwargs = {
+        'service': 'mast',
+        'base_url': engdb_mast.MAST_BASE_URL
+    }
     with pytest.raises(ValueError):
         stp.get_pointing(
-            Time("2015-06-15"), Time("2015-06-17"), engdb_url=engdb_mast.MAST_BASE_URL
+            Time("2015-06-15"), Time("2015-06-17"), service_kwargs=service_kwargs
         )
 
 
-def test_change_engdb_url_fail():
+def test_change_base_url_fail():
     """Test changing the engineering database by call"""
+    service_kwargs = {
+        'service': 'mast',
+        'base_url': "https://nonexistent.fake.example"
+    }
     with pytest.raises(ValueError):
         stp.get_pointing(
             Time(STARTTIME, format="isot"),
             Time(ENDTIME, format="isot"),
-            engdb_url="https://nonexistent.fake.example",
+            service_kwargs=service_kwargs
         )
 
 
