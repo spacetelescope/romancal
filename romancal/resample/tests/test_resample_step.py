@@ -300,6 +300,7 @@ def test_populate_mosaic_metadata(base_image, meta_overrides, expected):
         assert flat_model[f"roman.{key}"] == value
 
 
+@pytest.mark.skip(reason="MosaicModel.meta.photometry does not exist")
 @pytest.mark.parametrize(
     "input_pixel_area, pixel_scale_ratio, expected_pixel_area",
     [
