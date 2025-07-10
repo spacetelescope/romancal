@@ -46,7 +46,7 @@ def test_basic(engdb):
     assert engdb._get_records(GOOD_MNEMONIC, GOOD_STARTTIME, GOOD_ENDTIME)
 
 
-def test_bad_server():
+def test_bad_service():
     with pytest.raises(RuntimeError):
         engdb_tools.engdb_service('junk_service')
 
