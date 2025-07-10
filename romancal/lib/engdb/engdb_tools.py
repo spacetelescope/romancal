@@ -53,7 +53,8 @@ logger.addHandler(logging.NullHandler())
 
 # Import specific services, if available.
 from .engdb_mast import EngdbMast  # noqa: E402
-AVAILABLE_SERVICES ={'mast': EngdbMast}
+
+AVAILABLE_SERVICES = {"mast": EngdbMast}
 try:
     from .engdb_edp import EngdbEDP
 except ImportError as exception:
