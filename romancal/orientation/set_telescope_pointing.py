@@ -213,8 +213,6 @@ class TransformParameters:
     default_pa_v3: float = 0.0
     #: Do not write out the modified file.
     dry_run: bool = False
-    #: URL of the engineering telemetry database REST interface.
-    engdb_url: str | None = None
     #: Observation end time
     obsend: float | None = None
     #: Observation start time
@@ -224,6 +222,8 @@ class TransformParameters:
     pointing: Pointing | Any = None
     #: Reduction function to use on values.
     reduce_func: Callable | None = None
+    #: Engineering database information
+    service_kwargs: dict | None = None
     #: If no telemetry can be found during the observation,
     #: the time, in seconds, beyond the observation time to search for telemetry.
     tolerance: float = 60.0
@@ -242,7 +242,7 @@ class TransformParameters:
             self.obsstart,
             self.obsend,
             mnemonics_to_read=COARSE_MNEMONICS,
-            engdb_url=self.engdb_url,
+            service_kwargs=self.service_kwargs,
             tolerance=self.tolerance,
             reduce_func=self.reduce_func,
         )
@@ -251,7 +251,7 @@ class TransformParameters:
 def add_wcs(
     filename,
     default_pa_v3=0.0,
-    engdb_url=None,
+    service_kwargs=None,
     tolerance=60,
     allow_default=False,
     reduce_func=None,
@@ -276,8 +276,9 @@ def add_wcs(
         The V3 position angle to use if the pointing information
         is not found.
 
-    engdb_url : str or None
-        URL of the engineering telemetry database REST interface.
+    service_kwargs : dict or None
+        Keyword arguments passed to `engdb_service` defining what
+        engineering database service to use.
 
     tolerance : int
         If no telemetry can be found during the observation,
@@ -329,7 +330,7 @@ def add_wcs(
         t_pars, transforms = update_wcs(
             model,
             default_pa_v3=default_pa_v3,
-            engdb_url=engdb_url,
+            service_kwargs=service_kwargs,
             tolerance=tolerance,
             allow_default=allow_default,
             reduce_func=reduce_func,
@@ -349,14 +350,14 @@ def add_wcs(
 
 
 def update_wcs(
-    model,
-    default_pa_v3=0.0,
-    default_roll_ref=0.0,
-    engdb_url=None,
-    tolerance=60,
-    allow_default=False,
-    reduce_func=None,
-    **transform_kwargs,
+        model,
+        default_pa_v3=0.0,
+        default_roll_ref=0.0,
+        service_kwargs=None,
+        tolerance=60,
+        allow_default=False,
+        reduce_func=None,
+        **transform_kwargs,
 ):
     """
     Update WCS pointing information.
@@ -376,8 +377,9 @@ def update_wcs(
         If pointing information cannot be retrieved,
         use this as the roll ref angle.
 
-    engdb_url : str or None
-        URL of the engineering telemetry database REST interface.
+    service_kwargs : dict or None
+        Keyword arguments passed to `engdb_service` defining what
+        engineering database service to use.
 
     tolerance : int
         If no telemetry can be found during the observation,
@@ -407,7 +409,7 @@ def update_wcs(
     t_pars = t_pars_from_model(
         model,
         default_pa_v3=default_pa_v3,
-        engdb_url=engdb_url,
+        service_kwargs=service_kwargs,
         tolerance=tolerance,
         allow_default=allow_default,
         reduce_func=reduce_func,
@@ -534,7 +536,7 @@ def calc_wcs_over_time(obsstart, obsend, t_pars: TransformParameters):
         pointings = get_pointing(
             obsstart,
             obsend,
-            engdb_url=t_pars.engdb_url,
+            service_kwargs=t_pars.service_kwargs,
             tolerance=t_pars.tolerance,
             reduce_func=t_pars.reduce_func,
         )
@@ -829,12 +831,12 @@ def calc_position_angle(point, ref):
 
 
 def get_pointing(
-    obsstart,
-    obsend,
-    mnemonics_to_read=COARSE_MNEMONICS,
-    engdb_url=None,
-    tolerance=60,
-    reduce_func=None,
+        obsstart,
+        obsend,
+        mnemonics_to_read=COARSE_MNEMONICS,
+        service_kwargs=None,
+        tolerance=60,
+        reduce_func=None,
 ):
     """
     Get telescope pointing engineering data.
@@ -849,8 +851,9 @@ def get_pointing(
         Value is a boolean indicating whether the mnemonic
         is required to have values or not.
 
-    engdb_url : str or None
-        URL of the engineering telemetry database REST interface.
+    service_kwargs : dict or None
+        Keyword arguments passed to `engdb_service` defining what
+        engineering database service to use.
 
     tolerance : int
         If no telemetry can be found during the observation,
@@ -892,7 +895,7 @@ def get_pointing(
         obsend,
         mnemonics_to_read=mnemonics_to_read,
         tolerance=tolerance,
-        engdb_url=engdb_url,
+        service_kwargs=service_kwargs
     )
     reduced = reduce_func(mnemonics_to_read, mnemonics)
 
@@ -958,7 +961,7 @@ def angle_to_vector(alpha, delta):
 
 
 def get_mnemonics(
-    obsstart, obsend, tolerance, mnemonics_to_read=COARSE_MNEMONICS, engdb_url=None
+    obsstart, obsend, tolerance, mnemonics_to_read=COARSE_MNEMONICS, service_kwargs=None
 ):
     """
     Retrieve pointing mnemonics from the engineering database.
@@ -977,8 +980,9 @@ def get_mnemonics(
         The mnemonics to fetch. key is the mnemonic and
         value is whether it is required to be found.
 
-    engdb_url : str or None
-        URL of the engineering telemetry database REST interface.
+    service_kwargs : dict or None
+        Keyword arguments passed to `engdb_service` defining what
+        engineering database service to use.
 
     Returns
     -------
@@ -991,7 +995,7 @@ def get_mnemonics(
         Cannot retrieve engineering information.
     """
     try:
-        engdb = engdb_service(base_url=engdb_url)
+        engdb = engdb_service(**service_kwargs)
     except EXPECTED_ERRORS as exception:
         raise ValueError(
             f"Cannot open engineering DB connection\nException: {exception}"

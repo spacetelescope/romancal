@@ -15,6 +15,7 @@ import logging
 import warnings
 from pathlib import Path
 
+from romancal.lib.engdb.engdb_tools import AVAILABLE_SERVICES
 import romancal.orientation.set_telescope_pointing as stp
 
 # Configure logging
@@ -65,15 +66,40 @@ def main():
         help="Seconds beyond the observation time to search for telemetry. Default: %(default)s",
     )
     parser.add_argument(
-        "--engdb_url",
+        '--service',
         type=str,
-        default=None,
-        help=(
-            "URL of the engineering database."
-            " If not specified, the environment variable 'ENG_BASE_URL' is used."
-            " Otherwise, a hardwired default is used."
-        ),
+        default='mast',
+        choices=[name for name in AVAILABLE_SERVICES],
+        help='Database service to use. Default: %(default)s',
     )
+
+    # Arguments pertinent only to the EngdbMast service.
+    if 'mast' in AVAILABLE_SERVICES:
+        parser.add_argument(
+            "--engdb-url",
+            type=str,
+            default=None,
+            help=(
+                "URL of the engineering database."
+                " If not specified, the environment variable 'ENG_BASE_URL' is used."
+                " Otherwise, a hardwired default is used."
+            ),
+        )
+
+    # Arguments pertinent only to the EngdbEDP service
+    if 'edp' in AVAILABLE_SERVICES:
+        parser.add_argument(
+            '--environment',
+            type=str,
+            default='test',
+            choices=['dev', 'test', 'int', 'ops'],
+            help='Operational environment in use. Default: %(default)s'
+        )
+        parser.add_argument(
+            '--path-to-cc',
+            type=str,
+            help='Full path to the required kerberos authentication keytab file',
+        )
 
     args = parser.parse_args()
 
@@ -83,6 +109,14 @@ def main():
     if level <= logging.DEBUG:
         logger_handler.setFormatter(logger_format_debug)
     logger.info("set_telescope_pointing called with args %s", args)
+
+    # Gather the service-specific args
+    service_kwargs = {'service': args.service}
+    for arg in ['engdb_url', 'environment', 'path_to_cc']:
+        try:
+            service_kwargs[arg] = getattr(args, arg)
+        except AttributeError:
+            pass
 
     # Calculate WCS for all inputs.
     for filename in args.exposure:
@@ -99,11 +133,11 @@ def main():
         try:
             stp.add_wcs(
                 filename,
-                engdb_url=args.engdb_url,
                 tolerance=args.tolerance,
                 allow_default=args.allow_default,
                 dry_run=args.dry_run,
                 save_transforms=transform_path,
+                service_kwargs= service_kwargs,
             )
         except (TypeError, ValueError) as exception:
             logger.warning("Cannot determine pointing information: %s", str(exception))

@@ -86,12 +86,7 @@ def engdb_service(service=None, **service_kwargs):
         The engineering database service to use.
     """
     if service:
-        try:
-            engdb = AVAILABLE_SERVICES[service](**service_kwargs)
-        except KeyError as exception:
-            raise RuntimeError(f'Cannot instantiate service {service}: Not one of {[name for name in AVAILABLE_SERVICES]}') from exception
-        except:
-            raise
+        engdb = AVAILABLE_SERVICES[service](**service_kwargs)
         return engdb
 
     # No service was specified. Try until one is found.
