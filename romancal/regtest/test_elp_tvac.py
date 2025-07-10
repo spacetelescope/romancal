@@ -36,7 +36,7 @@ def run_elp(rtdata_module):
         "--steps.source_catalog.skip=true",
         "--steps.dq_init.save=true",
         "--steps.dark_current.override_dark=dark_ma510.asdf",
-        "--steps.rampfit.override_dark=dark_ma510.asdf",
+        #"--steps.rampfit.override_dark=dark_ma510.asdf",
     ]
     ExposurePipeline.from_cmdline(args)
 
