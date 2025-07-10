@@ -62,7 +62,7 @@ def test_resample_ran(output_model):
 
 def test_location_name(output_model):
     # test that the location_name matches the skycell selected
-    assert output_model.meta.basic.location_name == "270p65x49y70"
+    assert output_model.meta.wcsinfo.skycell_name == "270p65x49y70"
 
 
 def test_wcsinfo_wcs_roundtrip(output_model):

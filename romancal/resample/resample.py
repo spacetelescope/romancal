@@ -278,8 +278,7 @@ class ResampleData(Resample):
 
         # assign wcs to output model
         assign_l3_wcs(output_model, self.output_wcs)
-        # TODO skycell name
-        output_model.meta.wcsinfo.skycell_name = "?"
+        output_model.meta.wcsinfo.skycell_name = self.input_models.asn.get("target", "None")
 
         return output_model
 
