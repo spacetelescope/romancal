@@ -99,11 +99,18 @@ def test_unzip(engdb):
 # ########
 # Fixtures
 # ########
-@pytest.fixture(scope='module')
-def engdb():
+@pytest.fixture(scope='module',
+                params=[name for name in engdb_tools.AVAILABLE_SERVICES])
+def engdb(request):
     """Setup a service"""
+    service = request.param
+    args = {
+        'mast': {},
+        'edp': {'environment': os.environ.get('EDP_ENVIRONMENT', 'test'),
+                'path_to_cc': os.environ.get('PATH_TO_CC', None)}
+    }
     try:
-        engdb = engdb_tools.engdb_service()
+        engdb = engdb_tools.engdb_service(service, **args[service])
     except RuntimeError as exception:
         pytest.skip(f"Engineering database unvailable: {exception}.")
     yield engdb

@@ -89,7 +89,10 @@ class EngdbEDP(EngdbABC):
     def __init__(self, environment, path_to_cc, **service_kwargs):
         logger.debug("kwargs not used by this service: %s", service_kwargs)
 
-        self.configure(environment, path_to_cc)
+        try:
+            self.configure(environment, path_to_cc)
+        except FileNotFoundError as exception:
+            raise RuntimeError(f'Cannot instantiate EDP service with environment: {environment}, path_to_cc: {path_to_cc}') from exception
 
         # Check for basic aliveness.
         self.mr.get_mnemonic_metadata()

@@ -58,7 +58,7 @@ import roman_datamodels as rdm
 from astropy.table import Table
 from astropy.time import Time, TimeDelta
 
-from ..lib.engdb.engdb_tools import ENGDB_Service
+from ..lib.engdb.engdb_tools import engdb_service
 
 __all__ = [
     "TransformParameters",
@@ -991,7 +991,7 @@ def get_mnemonics(
         Cannot retrieve engineering information.
     """
     try:
-        engdb = ENGDB_Service(base_url=engdb_url)
+        engdb = engdb_service(base_url=engdb_url)
     except EXPECTED_ERRORS as exception:
         raise ValueError(
             f"Cannot open engineering DB connection\nException: {exception}"

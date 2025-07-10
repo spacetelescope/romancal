@@ -191,7 +191,7 @@ def test_transform_serialize(calc_wcs, tmp_path):
 def engdb():
     """Setup the service to operate through the mock service"""
     try:
-        engdb = engdb_tools.ENGDB_Service()
+        engdb = engdb_tools.engdb_service()
     except RuntimeError as exception:
         pytest.skip(f"Engineering database unvailable: {exception}.")
     yield engdb
