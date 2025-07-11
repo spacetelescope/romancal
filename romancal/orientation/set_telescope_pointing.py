@@ -109,7 +109,7 @@ M_B2FCS0 = M_V2FCS0
 # Define the transformation matrices to move between the Idealized Coordinate System (ICS)
 # and the Idealized Coordinate System (Idl). ICS is the spacecraft-centric system used by
 # all frames up through the V-frame. Idl is used by the instruments.
-# Reference: Eqs. 1 & 2 from Technical Report JWST-STScI-003222, SM-12, Rev. C, 2021-11
+# Reference: Innerspace document
 M_idl2ics = MX2Z = np.array([[0, 1, 0], [0, 0, 1], [1, 0, 0]])
 M_ics2idl = MZ2X = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
 
@@ -665,8 +665,6 @@ def calc_attitude_matrix(wcs, yangle, position):
     """
     Calculate the DCM attitude from known positions and roll angles.
 
-    This implements Appendix A from Technical Report JWST-STScI-003222, SM-12. 2021-07.
-
     Parameters
     ----------
     wcs : WCSRef
@@ -790,9 +788,6 @@ def calc_position_angle(point, ref):
     """
     Calculate position angle from reference to point.
 
-    Algorithm implemented is from JWST Technical Report JWST-STScI-001550, SM-12,
-    2017-11-08, Rev A., Section 5.2, page 29, final equation::
-
         tan(pa) = cos(dec_r) * sin(ra_r - ra_p) / (sin(dec_r)cos(dec_p) - cos(dec_r)sin(dec_p)cos(ra_r-ra_p))
 
     where::
@@ -911,9 +906,6 @@ def vector_to_angle(v):
     """
     Return tuple of spherical angles from unit direction Vector.
 
-    This implements Eq. 10 & 11 from Technical Report JWST-STScI-003222, SM-12, Rev. C, 2021-11
-    From Section 3:
-
     The Direction Cosine Matrix (DCM) that provides the transformation of a
     unit pointing vector defined in inertial frame (ECI J2000) coordinates to a
     unit vector defined in the science aperture Ideal frame coordinates is
@@ -939,9 +931,6 @@ def vector_to_angle(v):
 def angle_to_vector(alpha, delta):
     """
     Convert spherical angles to unit vector.
-
-    This implements Eq. 9 from Technical Report JWST-STScI-003222, SM-12, Rev. C, 2021-11
-    From Section 3.
 
     Parameters
     ----------

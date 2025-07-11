@@ -21,13 +21,13 @@ def v1_calculate_from_models(sources, **calc_wcs_from_time_kwargs):
     Returns a table of V1 pointings for all input models.
     The table has the following columns:
 
-    * source (`jwst.datamodels.JwstDataModel`): The model.
+    * source (`roman_datamodels.datamodels.RomanDataModel`): The model.
     * obstime (`astropy.time.Time`): The observation time.
     * v1 (float, float, float): 3-tuple or RA, dec, and position angle.
 
     Parameters
     ----------
-    sources : [File-like or jwst.datamodels.Datamodel[...]]
+    sources : [File-like or roman_datamodels.datamodels.RomanDataModel[...]]
         The datamodels to get timings other header parameters from.
 
     **calc_wcs_from_time_kwargs : dict
@@ -108,7 +108,7 @@ def simplify_table(v1_table):
 
     The tables as produced by the `v1_calculate` functions use native objects.
     For instance, the "obstime" column contains `astropy.time.Time` objects and
-    "v1" is the `jwst.lib.set_telescope_pointing.WCSREF` object.
+    "v1" is the `romancal.orientation.set_telescope_pointing.WCSREF` object.
 
     This routine converts such objects to strings or Python-native builtin objects.
 

@@ -55,7 +55,7 @@ def calc_pointing_deltas(model):
 
     Parameters
     ----------
-    model : `jwst.datamodels.JwstDataModel`
+    model : `roman_datamodel.datamodels.RomanDataModel`
         The model to check pointing information in.
 
     Returns
@@ -100,7 +100,7 @@ def calc_deltas(exposures, extra_meta=None):
     Parameters
     ----------
     exposures : [file-like[,...]] or [DataModel[,...]]
-        List of file-like objects or `jwst.datamodels.JwstDataModel` to retrieve
+        List of file-like objects or `roman_datamodel.datamodels.RomanDataModel` to retrieve
         pointing information from.
 
     extra_meta : [str[,...]] or None
