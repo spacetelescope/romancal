@@ -40,7 +40,7 @@ def test_from_models_mast(tmp_path):
     v1_formatted = v1c.simplify_table(v1_table)
 
     # Save for post-test examination and read in to remove object infomation
-    del v1_formatted['source']
+    del v1_formatted["source"]
     v1_formatted.write(tmp_path / "test_from_models_mast.ecsv", format="ascii.ecsv")
 
     truth = Table.read(DATA_PATH / "test_from_models_mast.ecsv")
@@ -62,7 +62,6 @@ def test_over_time_mast(tmp_path):
 
     truth = Table.read(DATA_PATH / "test_over_time_mast.ecsv")
     assert report_diff_values(v1_formatted, truth)
-
 
 
 # ######################

@@ -198,8 +198,8 @@ class Transforms:
 
 
 # WCS reference container
-WCSRef = namedtuple("WCSRef", ["ra", "dec", "pa", 's_region'])
-WCSRef.__new__.__defaults__ = (None, None, None, '')
+WCSRef = namedtuple("WCSRef", ["ra", "dec", "pa", "s_region"])
+WCSRef.__new__.__defaults__ = (None, None, None, "")
 
 
 @dataclasses.dataclass
@@ -626,7 +626,9 @@ def wcsinfo_from_siaf(aperture, vinfo):
     footprint = np.array([corners[0], corners[1]]).T
     s_region_keyword = compute_s_region_keyword(footprint)
 
-    wcsinfo = WCSRef(ra=skycoord[0], dec=skycoord[1], pa=pa_v3, s_region=s_region_keyword)
+    wcsinfo = WCSRef(
+        ra=skycoord[0], dec=skycoord[1], pa=pa_v3, s_region=s_region_keyword
+    )
     return wcsinfo
 
 
