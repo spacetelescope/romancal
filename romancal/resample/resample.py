@@ -241,12 +241,6 @@ class ResampleData(Resample):
         output_model.meta.resample.pointings = self.output_model["pointings"]
         output_model.meta.resample.weight_type = self.weight_type
 
-        # output_model.meta.basic.location_name = self.input_models.asn.get(
-        #     "target", "None"
-        # )
-        # output_model.meta.asn.pool_name = self.input_models.asn.get("asn_pool", "?")
-        # output_model.meta.asn.table_name = self.input_models.asn.get("table_name", "?")
-
         # every resampling will generate these
         output_model.data = self.output_model["data"]
         output_model.weight = self.output_model["wht"]
