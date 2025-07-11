@@ -9,7 +9,7 @@ from stcal.alignment import util as wcs_util
 __all__ = ["wcsinfo_to_wcs"]
 
 
-def _skycell_wcsinfo_to_wcs(wcsinfo):
+def _skycell_wcsinfo_to_wcs(wcsinfo, vparity=1):
     pixelshift = models.Shift(
         -wcsinfo.get("x0_projection", wcsinfo.get("x_ref", None)),
         name="crpix1",
@@ -39,7 +39,7 @@ def _skycell_wcsinfo_to_wcs(wcsinfo):
                     )
                 ),
                 v3i_yangle=0.0,
-                vparity=1,
+                vparity=vparity,
             ),
             (2, 2),
         )
@@ -73,7 +73,7 @@ _L3_TO_SKYCELL_MAPPING = {
     "y_ref": "y0_projection",
     "ra": "ra_center",
     "dec": "dec_center",
-    "orietation_ref": "orientat",
+    "orientation_ref": "orientat",
 }
 
 
@@ -87,7 +87,7 @@ def _l3_wcsinfo_to_wcs(wcsinfo):
             mapped_info[to_key] = wcsinfo[from_key]
     for key in unmapped_keys:
         mapped_info[key] = wcsinfo[key]
-    return _skycell_wcsinfo_to_wcs(mapped_info)
+    return _skycell_wcsinfo_to_wcs(mapped_info, -1)
 
 
 def wcsinfo_to_wcs(
