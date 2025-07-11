@@ -85,7 +85,7 @@ class EngdbEDP(EngdbABC):
 
         try:
             self.configure(environment, path_to_cc)
-        except FileNotFoundError as exception:
+        except (FileNotFoundError, ModuleNotFoundError) as exception:
             raise RuntimeError(
                 f"Cannot instantiate EDP service with environment: {environment}, path_to_cc: {path_to_cc}"
             ) from exception

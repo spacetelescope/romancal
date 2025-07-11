@@ -44,23 +44,23 @@ The typical workflow is as follows:
 
     values = service.get_values("sa_zattest2", "2021-05-22T00:00:00", "2021-05-22T00:00:01")
 """
-
 import logging
+
+from .engdb_edp import EngdbEDP
+from .engdb_mast import EngdbMast
 
 # Configure logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-# Import specific services, if available.
-from .engdb_mast import EngdbMast  # noqa: E402
+# Define the available services
+AVAILABLE_SERVICES = {
+    'edp': EngdbEDP,
+    "mast": EngdbMast,
+}
 
-AVAILABLE_SERVICES = {"mast": EngdbMast}
-try:
-    from .engdb_edp import EngdbEDP
-except ImportError as exception:
-    logger.debug("EngdbEDP not available. Reason: %s", exception)
-else:
-    AVAILABLE_SERVICES["edp"] = EngdbEDP
+# Expected errors from service initialization
+EXPECTED_ERRORS = (KeyError, RuntimeError, TypeError)
 
 __all__ = ["engdb_service"]
 
@@ -89,7 +89,7 @@ def engdb_service(service=None, **service_kwargs):
     if service:
         try:
             engdb = AVAILABLE_SERVICES[service](**service_kwargs)
-        except KeyError as excp:
+        except EXPECTED_ERRORS as excp:
             raise RuntimeError(f"Service {service} instantiation failed") from excp
         return engdb
 
@@ -97,7 +97,7 @@ def engdb_service(service=None, **service_kwargs):
     for name, service_class in AVAILABLE_SERVICES.items():
         try:
             engdb = service_class(**service_kwargs)
-        except RuntimeError as excp:
+        except EXPECTED_ERRORS as excp:
             logger.debug("Service %s is unavailable.", name)
             logger.debug("Exception: %s", excp)
         else:

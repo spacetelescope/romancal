@@ -22,7 +22,7 @@ from romancal.orientation import set_telescope_pointing as stp
 stp.logger.setLevel(logging.DEBUG)
 stp.logger.addHandler(logging.StreamHandler())
 
-# Setup mock engineering service
+# Setup for some times
 STARTTIME = Time("2027-03-23T19:20:40", format="isot")
 ENDTIME = Time("2027-03-23T19:21:36", format="isot")
 BADSTARTTIME = Time("2020-02-02T02:02:02", format="isot")
@@ -94,7 +94,7 @@ def test_change_base_url_fail():
         )
 
 
-def test_get_pointing(engdb):
+def test_get_pointing():
     """Ensure that the averaging works."""
     q_expected = np.array([-0.52558752, 0.3719724, -0.52016581, 0.38150882])
     obstime, q = stp.get_pointing(STARTTIME, ENDTIME)
@@ -103,12 +103,12 @@ def test_get_pointing(engdb):
     assert np.allclose(q, q_expected)
 
 
-def test_get_pointing_fail(engdb):
+def test_get_pointing_fail():
     with pytest.raises(ValueError):
         obstime, q = stp.get_pointing(BADSTARTTIME, BADENDTIME)
 
 
-def test_get_pointing_list(engdb):
+def test_get_pointing_list():
     q_expected = np.array([-0.690189, 0.121953, -0.695103, 0.159999])
     results = stp.get_pointing(STARTTIME, ENDTIME, reduce_func=stp.all_pointings)
     assert isinstance(results, list)
@@ -117,7 +117,7 @@ def test_get_pointing_list(engdb):
     assert STARTTIME <= results[0].obstime <= ENDTIME
 
 
-def test_logging(caplog, engdb):
+def test_logging(caplog):
     stp.get_pointing(STARTTIME, ENDTIME)
     assert "Determining pointing between observations times" in caplog.text
     assert "Telemetry search tolerance" in caplog.text
@@ -189,18 +189,8 @@ def test_transform_serialize(calc_wcs, tmp_path):
 # ######################
 # Utilities and fixtures
 # ######################
-@pytest.fixture(scope="module")
-def engdb():
-    """Setup the service to operate through the mock service"""
-    try:
-        engdb = engdb_tools.engdb_service()
-    except RuntimeError as exception:
-        pytest.skip(f"Engineering database unvailable: {exception}.")
-    yield engdb
-
-
 @pytest.fixture
-def calc_wcs(tmp_path_factory, engdb):
+def calc_wcs(tmp_path_factory):
     """Calculate full transforms and WCS info"""
     t_pars = _make_t_pars()
 
@@ -251,6 +241,8 @@ def _make_t_pars(aperture="WFI_CEN"):
     t_pars.pointing = stp.Pointing(
         q=np.array([0.709433, -0.291814, 0.641319, 0.016107]),
     )
+
+    t_pars.service_kwargs = {'service': 'mast'}
 
     return t_pars
 
