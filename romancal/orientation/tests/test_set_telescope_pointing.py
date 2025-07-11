@@ -193,7 +193,7 @@ def calc_wcs(tmp_path_factory):
     t_pars = _make_t_pars()
 
     # Calculate the transforms and WCS information
-    wcsinfo, vinfo, transforms, _ = stp.calc_wcs(t_pars)
+    wcsinfo, vinfo, transforms = stp.calc_wcs(t_pars)
 
     # Save all for later examination.
     transforms_path = tmp_path_factory.mktemp("transforms")
