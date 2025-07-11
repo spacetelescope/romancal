@@ -8,7 +8,7 @@ DARK Reference File
 
 The DARK reference file contains pixel-by-pixel fitted
 dark current rates for a given detector all well as the
-error on the fitted slope. 
+error on the fitted slope.
 
 .. include:: ../references_general/dark_selection.inc
 

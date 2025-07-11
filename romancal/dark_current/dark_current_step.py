@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import numpy as np
 
+import numpy as np
 from roman_datamodels import datamodels as rdm
 
 from romancal.stpipe import RomanStep
-
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -62,7 +61,7 @@ class DarkCurrentStep(RomanStep):
             # Do the dark correction
             out_model = input_model
             out_model.data -= dark_slope
-            out_model.err = np.sqrt( out_model.err **2 + (dark_slope_err) **2)
+            out_model.err = np.sqrt(out_model.err**2 + (dark_slope_err) ** 2)
             out_model.meta.cal_step.dark = "COMPLETE"
 
             # Save dark data to file

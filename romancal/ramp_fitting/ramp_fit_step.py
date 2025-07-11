@@ -31,7 +31,6 @@ class RampFitStep(RomanStep):
     determine the mean count rate for each pixel.
     """
 
-    
     class_alias = "ramp_fit"
 
     spec = """
@@ -83,7 +82,9 @@ class RampFitStep(RomanStep):
                 )
 
                 image_info, _, _ = likely_ramp_fit(
-                    input_model, readnoise_model.data, gain_model.data,
+                    input_model,
+                    readnoise_model.data,
+                    gain_model.data,
                 )
 
                 out_model = create_image_model(input_model, image_info)
