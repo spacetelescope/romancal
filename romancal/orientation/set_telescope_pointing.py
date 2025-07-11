@@ -456,7 +456,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
         model.meta.pointing.pa_v3,
     )
     vinfo = wcsinfo
-    s_region_keyword = ''
+    s_region_keyword = ""
 
     # Get the pointing information
     try:
@@ -624,7 +624,7 @@ def wcsinfo_from_siaf(aperture, vinfo):
     pa_v3 = sky_posangle(attitude, *skycoord)
 
     # Compute S_REGION keyword
-    corners = wfi.corners('sky')
+    corners = wfi.corners("sky")
     footprint = np.array([corners[0], corners[1]]).T
     s_region_keyword = compute_s_region_keyword(footprint)
 

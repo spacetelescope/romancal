@@ -139,7 +139,7 @@ def test_wcs(calc_wcs, wcs_type):
 
     wcs_dict = wcs[wcs_type]._asdict()
     for key in wcs_dict:
-        if key != 's_region':
+        if key != "s_region":
             assert np.isclose(expected[key], wcs_dict[key]), (
                 f"Key {key} differs expected {expected[key]} calculated {wcs_dict[key]}"
             )
