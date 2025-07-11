@@ -52,7 +52,7 @@ Inputs
 :File suffix: _uncal
 
 The input to the ``ExposurePipeline`` can be a single raw exposure,
-e.g. "r0008308002010007027_0019_wfi01_uncal.asdf", which contains the
+e.g. "r0008308002010007027_0019_wfi01_f158_uncal.asdf", which contains the
 original raw data from all of the detector readouts in the exposure
 ( ngroups x ncols x nrows ). The raw data may also be input using an association file.
 

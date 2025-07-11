@@ -29,7 +29,7 @@ for the output associations. To get a complete list of options you can run the c
 
 By knowing the structure of the conventional file name you can generate custom associations based
 on the information included in the file names.
-The current naming convention for the input files consists of a Visit_ID + Exposure_ID + detector + suffix
+The current naming convention for the input files consists of a Visit_ID + Exposure_ID + detector + filter + suffix
 Where the Visit_ID is a 19 digit string
 PPPPPCCAAASSSOOOVVV, with
 
@@ -46,11 +46,15 @@ eeee = Exposure number (within the visit)
 
 The detector is WFI01, WFI02, ... WFI18
 
+The filter is the optical element used in the observation, e.g. f158, and a list of the
+available optical elements can be found at `WFI Optical Elements
+<https://rad.readthedocs.io/en/latest/generated/schemas/wfi_optical_element-1.0.0.html>`_.
+
 The suffix indicates the processing level of the file and to create products based on the
 skycells the suffix should generally be 'cal'.
 
 and the file name is constructed as,
-rPPPPPCCAAASSSOOOVVV_eeee_detector_suffix.asdf
+rPPPPPCCAAASSSOOOVVV_eeee_detector_filter_suffix.asdf
 
 To give a more concrete example we'll use the APT example program for the
 High Latitude Wide Angle Survey (hlwas). The program is 00991, the execution plan number is 01,
@@ -61,7 +65,7 @@ command line,
 
 .. code-block:: text
 
-		skycell_asn r0099101001001003001_*_cal.asdf  -o  r0099101001001003001 --product-type visit
+		skycell_asn r0099101001001003001_*_f158_cal.asdf  -o  r0099101001001003001 --product-type visit
 
 Where the wildcard selects all the exposures for visit 001 and generates associations based on the skycells
 the exposures will populate. This will generate associations based the skycells that the exposures can
@@ -75,7 +79,7 @@ or for the selections above
 
 .. code-block:: text
 
-	r00991_p_v101001001003001_270p65x48y69_F158_asn.json
+	r00991_p_v101001001003001_270p65x48y69_f158_asn.json
 
 where the skycell name can vary based on the location on the celestial sphere.
 The release product name can be changed from the default
@@ -86,4 +90,4 @@ the F158 filter.
 
 .. code-block:: text
 
-		skycell_asn r0099101001003001_*_cal.asdf  -o  r00991 --product-type visit
+		skycell_asn r0099101001003001_*_f158_cal.asdf  -o  r00991 --product-type visit

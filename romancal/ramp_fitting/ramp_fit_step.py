@@ -1,10 +1,8 @@
-#
 from __future__ import annotations
 
 import copy
 import logging
 from typing import TYPE_CHECKING
-import pdb
 
 import asdf
 import numpy as np
@@ -33,6 +31,7 @@ class RampFitStep(RomanStep):
     determine the mean count rate for each pixel.
     """
 
+    
     class_alias = "ramp_fit"
 
     spec = """
@@ -80,11 +79,11 @@ class RampFitStep(RomanStep):
                 input_model.read_pattern = get_readtimes(input_model)
                 input_model.zeroframe = None
                 input_model.average_dark_current = np.zeros(
-                    [input_model.data.shape[2], input_model.data.shape[3]]
+                    [input_model.data.shape[2], input_model.data.shape[3]],
                 )
 
                 image_info, _, _ = likely_ramp_fit(
-                    input_model, readnoise_model.data, gain_model.data
+                    input_model, readnoise_model.data, gain_model.data,
                 )
 
                 out_model = create_image_model(input_model, image_info)

@@ -63,7 +63,7 @@ An association of 2D calibrated image data
 :File suffix: _cal
 
 The input to the ``MosaicPipeline`` is a group of calibrated exposures,
-e.g. "r0008308002010007027_0019_wfi01_cal.asdf", which contains the
+e.g. "r0008308002010007027_0019_wfi01_f158_cal.asdf", which contains the
 calibrated data for the the exposures. The most convenient way to pass the list of
 exposures to be processed with the mosaic level pipeline is to use an association.
 Instructions on how to create an input association an be found at :ref:`asn-from-list`.
