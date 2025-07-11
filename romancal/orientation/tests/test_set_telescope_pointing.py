@@ -15,7 +15,7 @@ import asdf
 import roman_datamodels as rdm
 from astropy.time import Time
 
-from romancal.lib.engdb import engdb_mast, engdb_tools
+from romancal.lib.engdb import engdb_mast
 from romancal.orientation import set_telescope_pointing as stp
 
 # Ensure that `set_telescope_pointing` logs.
@@ -242,7 +242,7 @@ def _make_t_pars(aperture="WFI_CEN"):
         q=np.array([0.709433, -0.291814, 0.641319, 0.016107]),
     )
 
-    t_pars.service_kwargs = {'service': 'mast'}
+    t_pars.service_kwargs = {"service": "mast"}
 
     return t_pars
 

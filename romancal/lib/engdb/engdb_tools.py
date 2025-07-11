@@ -44,6 +44,7 @@ The typical workflow is as follows:
 
     values = service.get_values("sa_zattest2", "2021-05-22T00:00:00", "2021-05-22T00:00:01")
 """
+
 import logging
 
 from .engdb_edp import EngdbEDP
@@ -55,7 +56,7 @@ logger.addHandler(logging.NullHandler())
 
 # Define the available services
 AVAILABLE_SERVICES = {
-    'edp': EngdbEDP,
+    "edp": EngdbEDP,
     "mast": EngdbMast,
 }
 

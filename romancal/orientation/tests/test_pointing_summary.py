@@ -27,7 +27,7 @@ TARG_DEC = 66.01
 def engdb():
     """Setup the service to operate through the mock service"""
     try:
-        engdb = engdb_tools.engdb_service(service='mast')
+        engdb = engdb_tools.engdb_service(service="mast")
     except RuntimeError as exception:
         pytest.skip(f"Engineering database unvailable: {exception}.")
     yield engdb
