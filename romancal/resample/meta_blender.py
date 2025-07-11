@@ -75,14 +75,6 @@ class TableBuilder:
         return Table(array_columns)
 
 
-def _copy_value(src, dst, key, default):
-    *nested_keys, final_key = key.split(".")
-    for subkey in nested_keys:
-        src = src[subkey]
-        dst = dst[subkey]
-    dst[final_key] = src.get(final_key, default)
-
-
 class MetaBlender:
     _meta_blend_paths: ClassVar = {
         "observation.program": None,
