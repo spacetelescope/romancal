@@ -13,8 +13,6 @@ import romancal.orientation.v1_calculate as v1c
 DATA_PATH = Path(__file__).parent / "data"
 
 # Engineering parameters
-# Time range corresponds to OTE-1 exposure jw01134001037_03107_00001_nrcb1_uncal.fits
-# Midpoint is about 2022-02-02T22:25:00
 MAST_GOOD_STARTTIME = Time("2027-03-23T19:20:40", format="isot")
 MAST_GOOD_ENDTIME = Time("2027-03-23T19:21:36", format="isot")
 
