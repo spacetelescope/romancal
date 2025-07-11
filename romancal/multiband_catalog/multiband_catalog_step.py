@@ -19,6 +19,7 @@ from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
+from romancal.source_catalog.utils import copy_mosaic_meta
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -74,41 +75,7 @@ class MultibandCatalogStep(RomanStep):
             {"meta": example_model.meta}
         )
         if isinstance(example_model, datamodels.MosaicModel):
-            # map the L3 metadata
-            # TODO some junk values here
-            cat_model.meta.prd_version = "8.8.8"
-            cat_model.meta.sdf_software_version = "7.7.7"
-            cat_model.meta.basic.time_first_mjd = (
-                example_model.meta.coadd_info.time_first.mjd
-            )
-            cat_model.meta.basic.time_last_mjd = (
-                example_model.meta.coadd_info.time_last.mjd
-            )
-            cat_model.meta.basic.time_mean_mjd = (
-                example_model.meta.coadd_info.time_mean.mjd
-            )
-            cat_model.meta.basic.max_exposure_time = example_model.meta.coadd_info.get(
-                "max_exposure_time", np.nan
-            )
-            cat_model.meta.basic.mean_exposure_time = (
-                example_model.meta.coadd_info.exposure_time
-            )
-            cat_model.meta.basic.visit = example_model.meta.observation.visit
-            cat_model.meta.basic.segment = example_model.meta.observation.segment
-            cat_model.meta.basic["pass"] = example_model.meta.observation["pass"]
-            cat_model.meta.basic.program = example_model.meta.observation.program
-            cat_model.meta.basic.survey = "?"
-            # TODO handle optical element with multiple values
-            cat_model.meta.basic.optical_element = (
-                example_model.meta.instrument.optical_element
-            )
-            cat_model.meta.basic.instrument = "WFI"
-            cat_model.meta.basic.location_name = example_model.meta.wcsinfo.skycell_name
-            cat_model.meta.basic.product_type = example_model.meta.product_type
-            # TODO can we fill these in?
-            cat_model.meta.photometry.conversion_megajanskys = None
-            cat_model.meta.photometry.conversion_megajanskys_uncertainty = None
-            cat_model.meta.photometry.pixel_area = None
+            copy_mosaic_meta(example_model, cat_model)
         else:
             cat_model.meta.optical_element = (
                 example_model.meta.instrument.optical_element
