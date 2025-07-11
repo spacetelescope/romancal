@@ -59,12 +59,7 @@ def test_add_wcs_default(science_raw_model, tmp_path):
     m.meta.exposure.start_time = Time("2022-01-01T00:00:00")
     m.meta.exposure.end_time = Time("2022-01-01T01:00:00")
     model_path = _model_to_tmpfile(m, tmp_path)
-    try:
-        stp.add_wcs(model_path, tolerance=0, allow_default=True)
-    except ValueError:
-        pass  # This is what we want for the test.
-    except Exception as e:
-        pytest.skip(f"Live ENGDB service is not accessible.\nException={e}")
+    stp.add_wcs(model_path, tolerance=0, allow_default=True)
 
     with rdm.open(model_path) as result:
         assert result.meta.wcsinfo.ra_ref == result.meta.pointing.target_ra
@@ -144,9 +139,12 @@ def test_wcs(calc_wcs, wcs_type):
 
     wcs_dict = wcs[wcs_type]._asdict()
     for key in wcs_dict:
-        assert np.isclose(expected[key], wcs_dict[key]), (
-            f"Key {key} differs expected {expected[key]} calculated {wcs_dict[key]}"
-        )
+        if key != 's_region':
+            assert np.isclose(expected[key], wcs_dict[key]), (
+                f"Key {key} differs expected {expected[key]} calculated {wcs_dict[key]}"
+            )
+        else:
+            assert expected[key] == wcs_dict[key]
 
 
 def test_strict_pointing(science_raw_model, tmp_path):
@@ -195,7 +193,7 @@ def calc_wcs(tmp_path_factory):
     t_pars = _make_t_pars()
 
     # Calculate the transforms and WCS information
-    wcsinfo, vinfo, transforms = stp.calc_wcs(t_pars)
+    wcsinfo, vinfo, transforms, _ = stp.calc_wcs(t_pars)
 
     # Save all for later examination.
     transforms_path = tmp_path_factory.mktemp("transforms")
@@ -224,7 +222,7 @@ def science_raw_model():
     return m
 
 
-def _make_t_pars(aperture="WFI_CEN"):
+def _make_t_pars(aperture="WFI02_FULL"):
     """Setup initial Transforms Parameters
 
     This set is Visit 1 provided by T.Sohn in a demonstration notebook.

@@ -88,7 +88,7 @@ def v1_calculate_over_time(obsstart, obsend, **calc_wcs_from_time_kwargs):
     # Initialize structures.
     t_pars = stp.TransformParameters(**calc_wcs_from_time_kwargs)
     if len(t_pars.aperture) == 0:
-        t_pars.aperture = "WFI_CEN"
+        t_pars.aperture = "WFI02_FULL"
 
     # Calculate V1 for all sources.
     obstimes, _, vinfos = stp.calc_wcs_over_time(obsstart, obsend, t_pars)
@@ -124,7 +124,7 @@ def simplify_table(v1_table):
     """
     source_formatted = [str(v) for v in v1_table["source"]]
     obstime_formatted = v1_table["obstime"].isot
-    ras, decs, pa_v3s = list(map(list, zip(*v1_table["v1"], strict=False)))
+    ras, decs, pa_v3s, *_ = list(map(list, zip(*v1_table["v1"], strict=False)))
 
     formatted = Table(
         [source_formatted, obstime_formatted, ras, decs, pa_v3s],

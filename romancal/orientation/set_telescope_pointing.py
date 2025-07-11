@@ -57,6 +57,7 @@ import numpy as np
 import roman_datamodels as rdm
 from astropy.table import Table
 from astropy.time import Time, TimeDelta
+from stcal.alignment.util import compute_s_region_keyword
 
 from ..lib.engdb.engdb_tools import engdb_service
 
@@ -455,6 +456,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
         model.meta.pointing.pa_v3,
     )
     vinfo = wcsinfo
+    s_region_keyword = ''
 
     # Get the pointing information
     try:
@@ -477,7 +479,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     # If pointing is available, attempt to calculate WCS information
     if t_pars.pointing is not None:
         try:
-            wcsinfo, vinfo, transforms = calc_wcs(t_pars)
+            wcsinfo, vinfo, transforms, s_region_keyword = calc_wcs(t_pars)
             pointing_engdb_quality = "CALCULATED"
             logger.info("Setting ENGQLPTG keyword to %s", pointing_engdb_quality)
             model.meta.visit.engdb_pointing_quality = pointing_engdb_quality
@@ -504,6 +506,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     model.meta.pointing.pa_aperture = wcsinfo.pa
     model.meta.wcsinfo.ra_ref = wcsinfo.ra
     model.meta.wcsinfo.dec_ref = wcsinfo.dec
+    model.meta.wcsinfo.s_region = s_region_keyword
 
     return transforms
 
@@ -549,7 +552,7 @@ def calc_wcs_over_time(obsstart, obsend, t_pars: TransformParameters):
         pointings = [pointings]
     for pointing in pointings:
         t_pars.pointing = pointing
-        wcsinfo, vinfo, transforms = calc_wcs(t_pars)
+        wcsinfo, vinfo, transforms, s_region_keyword = calc_wcs(t_pars)
         obstimes.append(pointing.obstime)
         wcsinfos.append(wcsinfo)
         vinfos.append(vinfo)
@@ -571,9 +574,9 @@ def calc_wcs(t_pars: TransformParameters):
 
     Returns
     -------
-    wcsinfo, vinfo, transforms : WCSRef, WCSRef, Transforms
-        A 3-tuple is returned with the WCS pointing for
-        the aperture and the V1 axis, and the transformation matrices.
+    wcsinfo, vinfo, transforms, s_region_keyword : WCSRef, WCSRef, Transforms
+        A 4-tuple is returned with the WCS pointing for
+        the aperture and the V1 axis, transformation matrices, and S_REGION info.
     """
     # Calculate transforms
     transforms = calc_transforms(t_pars)
@@ -582,10 +585,10 @@ def calc_wcs(t_pars: TransformParameters):
     vinfo = calc_wcs_from_matrix(transforms.m_eci2v)
 
     # Calculate the Aperture WCS
-    wcsinfo = wcsinfo_from_siaf(t_pars.aperture, vinfo)
+    wcsinfo, s_region_keyword = wcsinfo_from_siaf(t_pars.aperture, vinfo)
 
     # That's all folks
-    return wcsinfo, vinfo, transforms
+    return wcsinfo, vinfo, transforms, s_region_keyword
 
 
 def wcsinfo_from_siaf(aperture, vinfo):
@@ -601,8 +604,9 @@ def wcsinfo_from_siaf(aperture, vinfo):
 
     Returns
     -------
-    wcsinfo : WCSRef
-        The WCS for the aperture's reference point, as defined by its SIAF
+    wcsinfo, s_region_keyword : WCSRef, str
+        The WCS for the aperture's reference point, as defined by its SIAF.
+        `s_region_keyword` is formatted suitably for the s_region meta.
     """
     from pysiaf import Siaf
     from pysiaf.utils.rotations import attitude_matrix, sky_posangle
@@ -619,8 +623,13 @@ def wcsinfo_from_siaf(aperture, vinfo):
     skycoord = wfi.reference_point(to_frame="sky")
     pa_v3 = sky_posangle(attitude, *skycoord)
 
+    # Compute S_REGION keyword
+    corners = wfi.corners('sky')
+    footprint = np.array([corners[0], corners[1]]).T
+    s_region_keyword = compute_s_region_keyword(footprint)
+
     wcsinfo = WCSRef(ra=skycoord[0], dec=skycoord[1], pa=pa_v3)
-    return wcsinfo
+    return wcsinfo, s_region_keyword
 
 
 def calc_transforms(t_pars: TransformParameters):
