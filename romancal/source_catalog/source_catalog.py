@@ -211,7 +211,10 @@ class RomanSourceCatalog:
         placeholder (e.g., -999999 sr), the value is calculated from the
         WCS at the center of the image.
         """
-        if "photometry" in self.model.meta:
+        if (
+            "photometry" in self.model.meta
+            and self.model.meta.photometry.pixel_area > 0
+        ):
             pixel_area = self.model.meta.photometry.pixel_area * u.sr
         else:
             pixel_area = (self._pixel_scale**2).to(u.sr)
