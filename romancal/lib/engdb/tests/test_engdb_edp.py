@@ -11,7 +11,7 @@ from astropy.utils.diff import report_diff_values
 
 from romancal.lib.engdb.engdb_lib import EngDB_Value
 
-pytest.importorskip('edp.mnemonics_reader')
+pytest.importorskip("edp.mnemonics_reader")
 
 # Configure logging
 log = logging.getLogger(__name__)

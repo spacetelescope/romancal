@@ -110,6 +110,7 @@ class EngdbEDP(EngdbABC):
 
         # Create the mnemonic reader
         from edp.mnemonics_reader import MnemonicsReader
+
         self.mr = MnemonicsReader(
             mission="roman", env=ops_env, access_type="FqA", path_to_cc=path_to_cc
         )
