@@ -76,9 +76,7 @@ def assign_l3_wcs(model, wcs):
 
     l3_wcsinfo.orientation_ref = calc_pa(wcs, *world_ref)
 
-    l3_wcsinfo["rotation_matrix"] = transform[
-        "pc_rotation_matrix"
-    ].matrix.value.tolist()
+    l3_wcsinfo.rotation_matrix = transform["pc_rotation_matrix"].matrix.value.tolist()
 
 
 def calc_pa(wcs, ra, dec):
