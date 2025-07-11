@@ -9,11 +9,9 @@ from astropy.table import Table
 from astropy.time import Time
 from astropy.utils.diff import report_diff_values
 
-try:
-    from romancal.lib.engdb import engdb_edp
-except ModuleNotFoundError as exception:
-    pytest.skip(f"Cannot import EngdbEDP. Reason: {exception}", allow_module_level=True)
 from romancal.lib.engdb.engdb_lib import EngDB_Value
+
+pytest.importorskip('edp.mnemonics_reader')
 
 # Configure logging
 log = logging.getLogger(__name__)

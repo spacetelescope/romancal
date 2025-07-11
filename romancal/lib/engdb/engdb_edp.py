@@ -7,7 +7,6 @@ import numpy as np
 import requests
 from astropy.table import Table
 from astropy.time import Time
-from edp.mnemonics_reader import MnemonicsReader
 from requests.adapters import HTTPAdapter, Retry
 
 from .engdb_lib import (
@@ -110,6 +109,7 @@ class EngdbEDP(EngdbABC):
         self.path_to_cc = path_to_cc
 
         # Create the mnemonic reader
+        from edp.mnemonics_reader import MnemonicsReader
         self.mr = MnemonicsReader(
             mission="roman", env=ops_env, access_type="FqA", path_to_cc=path_to_cc
         )
