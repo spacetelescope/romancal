@@ -5,8 +5,8 @@ import os
 import pytest
 import roman_datamodels as rdm
 
-from romancal.lib.wcsinfo_to_wcs import wcsinfo_to_wcs
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
+from romancal.resample.l3_wcs import l3wcsinfo_to_wcs
 
 from . import util
 from .regtestdata import compare_asdf
@@ -127,7 +127,7 @@ def test_added_background_level(output_model):
 
 def test_wcsinfo_wcs_roundtrip(output_model):
     """Test that the contents of wcsinfo reproduces the wcs"""
-    wcs_from_wcsinfo = wcsinfo_to_wcs(output_model.meta.wcsinfo)
+    wcs_from_wcsinfo = l3wcsinfo_to_wcs(output_model.meta.wcsinfo)
 
     ra_mad, dec_mad = util.comp_wcs_grids_arcs(output_model.meta.wcs, wcs_from_wcsinfo)
     assert (ra_mad + dec_mad) / 2.0 < 1.0e-5

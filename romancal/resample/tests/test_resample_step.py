@@ -14,9 +14,9 @@ from roman_datamodels import datamodels
 
 from romancal.assign_wcs.utils import add_s_region
 from romancal.datamodels import ModelLibrary
-from romancal.lib.wcsinfo_to_wcs import wcsinfo_to_wcs
 from romancal.regtest import util
 from romancal.resample import ResampleStep
+from romancal.resample.l3_wcs import l3wcsinfo_to_wcs
 
 
 def create_wcs_object_without_distortion(fiducial_world, pscale, shape, **kwargs):
@@ -144,7 +144,7 @@ def test_wcs_wcsinfo_matches(base_image):
 
     output_model = ResampleStep().run(img)
 
-    wcs_from_wcsinfo = wcsinfo_to_wcs(output_model.meta.wcsinfo)
+    wcs_from_wcsinfo = l3wcsinfo_to_wcs(output_model.meta.wcsinfo)
     ra_mad, dec_mad = util.comp_wcs_grids_arcs(output_model.meta.wcs, wcs_from_wcsinfo)
     assert (ra_mad + dec_mad) / 2.0 < 1.0e-5
 

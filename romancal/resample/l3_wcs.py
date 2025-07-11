@@ -1,6 +1,11 @@
 import logging
 
+import numpy as np
+from astropy import coordinates
+from astropy import units as u
 from astropy.coordinates import SkyCoord
+from astropy.modeling import models
+from gwcs import WCS, coordinate_frames
 from stcal.alignment.util import (
     compute_s_region_keyword,
     compute_scale,
@@ -101,3 +106,40 @@ def calc_pa(wcs, ra, dec):
     coord = SkyCoord(ra, dec, frame="icrs", unit="deg")
 
     return coord.position_angle(delta_coord).degree
+
+
+def l3wcsinfo_to_wcs(wcsinfo, bounding_box=None):
+    pixelshift = models.Shift(
+        -wcsinfo["x_ref"],
+        name="crpix1",
+    ) & models.Shift(-wcsinfo["y_ref"], name="crpix2")
+    pixelscale = models.Scale(wcsinfo["pixel_scale_ref"], name="scale") & models.Scale(
+        wcsinfo["pixel_scale_ref"], name="scale"
+    )
+    tangent_projection = models.Pix2Sky_TAN()
+    celestial_rotation = models.RotateNative2Celestial(
+        wcsinfo["ra_ref"], wcsinfo["dec_ref"], 180.0
+    )
+
+    rotation = models.AffineTransformation2D(
+        np.array(wcsinfo["rotation_matrix"]), name="pc_rotation_matrix"
+    )
+    det2sky = (
+        pixelshift | rotation | pixelscale | tangent_projection | celestial_rotation
+    )
+    det2sky.name = "detector_to_sky"
+
+    detector_frame = coordinate_frames.Frame2D(
+        name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)
+    )
+    sky_frame = coordinate_frames.CelestialFrame(
+        reference_frame=coordinates.ICRS(), name="icrs", unit=(u.deg, u.deg)
+    )
+    wcsobj = WCS(
+        [(detector_frame, det2sky), (sky_frame, None)], name=wcsinfo.get("name", None)
+    )
+
+    if bounding_box:
+        wcsobj.bounding_box = bounding_box
+
+    return wcsobj
