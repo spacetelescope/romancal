@@ -9,6 +9,7 @@ from astropy.table import Table
 from astropy.time import Time
 from astropy.utils.diff import report_diff_values
 
+from romancal.lib.engdb import engdb_edp
 from romancal.lib.engdb.engdb_lib import EngDB_Value
 
 pytest.importorskip("edp.mnemonics_reader")
