@@ -211,13 +211,10 @@ class RomanSourceCatalog:
         placeholder (e.g., -999999 sr), the value is calculated from the
         WCS at the center of the image.
         """
-        if "photometry" not in self.model.meta:
-            pixel_area = (self._pixel_scale**2).to(u.sr)
-        else:
+        if "photometry" in self.model.meta:
             pixel_area = self.model.meta.photometry.pixel_area * u.sr
-            # TODO do we still need this check?
-            if pixel_area < 0:
-                pixel_area = (self._pixel_scale**2).to(u.sr)
+        else:
+            pixel_area = (self._pixel_scale**2).to(u.sr)
         return pixel_area
 
     @lazyproperty
