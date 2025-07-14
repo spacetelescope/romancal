@@ -58,7 +58,7 @@ def wcsinfo_to_wcs(
                     )
                 ),
                 v3i_yangle=0.0,
-                vparity=-1,
+                vparity=1,
             ),
             (2, 2),
         )
