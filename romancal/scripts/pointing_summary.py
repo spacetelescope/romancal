@@ -8,11 +8,6 @@ from sys import stdout
 
 from romancal.orientation import pointing_summary
 
-log_handler = logging.StreamHandler()
-logger = logging.getLogger("romancal")
-logger.addHandler(log_handler)
-LogLevels = [logging.WARNING, logging.INFO, logging.DEBUG]
-
 
 # Begin execution
 def main():
@@ -53,6 +48,10 @@ def main():
     args = parser.parse_args()
 
     # Set output detail.
+    log_handler = logging.StreamHandler()
+    logger = logging.getLogger("romancal")
+    logger.addHandler(log_handler)
+    LogLevels = [logging.WARNING, logging.INFO, logging.DEBUG]
     level = LogLevels[min(len(LogLevels) - 1, args.verbose)]
     logger.setLevel(level)
 

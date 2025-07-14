@@ -12,14 +12,6 @@ import romancal.orientation.set_telescope_pointing as stp
 from romancal.lib.engdb.engdb_tools import AVAILABLE_SERVICES
 from romancal.orientation import v1_calculate
 
-# Configure logging
-logger = logging.getLogger("romancal")
-logger_handler = logging.StreamHandler()
-logger.addHandler(logger_handler)
-logger_format_debug = logging.Formatter(
-    "%(levelname)s:%(filename)s::%(funcName)s: %(message)s"
-)
-
 # Available reduce functions
 REDUCE_FUNCS_MAPPING = {
     "all": stp.all_pointings,
@@ -107,6 +99,12 @@ def main():
     args = parser.parse_args()
 
     # Set output detail.
+    logger = logging.getLogger("romancal")
+    logger_handler = logging.StreamHandler()
+    logger.addHandler(logger_handler)
+    logger_format_debug = logging.Formatter(
+        "%(levelname)s:%(filename)s::%(funcName)s: %(message)s"
+    )
     level = stp.LOGLEVELS[min(len(stp.LOGLEVELS) - 1, args.verbose)]
     logger.setLevel(level)
     if level <= logging.DEBUG:

@@ -18,14 +18,6 @@ from pathlib import Path
 import romancal.orientation.set_telescope_pointing as stp
 from romancal.lib.engdb.engdb_tools import AVAILABLE_SERVICES
 
-# Configure logging
-logger = logging.getLogger("romancal")
-logger_handler = logging.StreamHandler()
-logger.addHandler(logger_handler)
-logger_format_debug = logging.Formatter(
-    "%(levelname)s:%(filename)s::%(funcName)s: %(message)s"
-)
-
 
 def main():
     """Set the initial world coordinate system."""
@@ -104,6 +96,12 @@ def main():
     args = parser.parse_args()
 
     # Set output detail.
+    logger = logging.getLogger("romancal")
+    logger_handler = logging.StreamHandler()
+    logger.addHandler(logger_handler)
+    logger_format_debug = logging.Formatter(
+        "%(levelname)s:%(filename)s::%(funcName)s: %(message)s"
+    )
     level = stp.LOGLEVELS[min(len(stp.LOGLEVELS) - 1, args.verbose)]
     logger.setLevel(level)
     if level <= logging.DEBUG:
