@@ -77,9 +77,11 @@ class TableBuilder:
 
 class MetaBlender:
     _meta_blend_paths: ClassVar = {
-        "observation.program": None,
         "observation.execution_plan": None,
+        "observation.exposure": None,
+        "observation.observation": None,
         "observation.pass": None,
+        "observation.program": None,
         "observation.segment": None,
         "observation.visit": None,
         "program.title": None,
@@ -175,13 +177,15 @@ class MetaBlender:
 
     def finalize(self):
         self._meta.coadd_info.time_mean = Time(self._start_times).mean()
-        # TODO observation.observation? what if some of these values are None?
-        self._meta.observation.exposure_grouping = None
-        # (
-        #     "v{execution_plan:02d}{pass:03d}{segment:03d}001{visit:03d}".format(
-        #         **self._meta.observation
-        #     )
-        # )
+        if all(
+            getattr(self._meta.observation, key) is not None
+            for key in ("execution_plan", "pass", "segment", "observation", "visit")
+        ):
+            self._meta.observation.exposure_grouping = "v{execution_plan:02d}{pass:03d}{segment:03d}{observation:03d}{visit:03d}".format(
+                **self._meta.observation
+            )
+        else:
+            self._meta.observation.exposure_grouping = None
         self._meta.individual_image_meta = {}
         for table_name, builder in self._tables.items():
             self._meta.individual_image_meta[table_name] = builder.to_table()
