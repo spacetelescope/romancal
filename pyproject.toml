@@ -81,11 +81,11 @@ romancal = "romancal.stpipe.integration:get_steps"
 asn_from_list = "romancal.associations.asn_from_list:_cli"
 mk_skycell_asn_from_skycell_list= "romancal.associations.mk_skycell_asn_from_skycell_list:_cli"
 mk_skycell_list = "romancal.associations.mk_skycell_list:_cli"
-pointing_summary = "romancal.scripts.pointing_summary:main"
+roman_pointing_summary = "romancal.scripts.pointing_summary:main"
+roman_set_telescope_pointing = "romancal.scripts.set_telescope_pointing:main"
 roman_static_preview = "romancal.scripts.static_preview:command"
-set_telescope_pointing = "romancal.scripts.set_telescope_pointing:main"
+roman_v1_calculate = "romancal.scripts.v1_calculate:main"
 skycell_asn = "romancal.associations.skycell_asn:_cli"
-v1_calculate = "romancal.scripts.v1_calculate:main"
 
 [build-system]
 requires = [
