@@ -113,7 +113,7 @@ def calc_pa(wcs, ra, dec):
 
     """
     delta_pix = [v for v in wcs.invert(ra, dec, with_bounding_box=False)]
-    delta_pix[1] += 1
+    delta_pix[1] += 100
     delta_coord = SkyCoord(
         *wcs(*delta_pix, with_bounding_box=False), frame="icrs", unit="deg"
     )
