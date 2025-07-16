@@ -65,7 +65,7 @@ dev = [
     "pre-commit > 3",
 ]
 sdp = [
-    "edp-lib @ git+https://grit.stsci.edu/mast/edp-lib"
+    "edp-lib @ git+https://grit.stsci.edu/mast/edp-lib",
     "pysiaf",
     "stpreview>=0.6.0",
 ]
