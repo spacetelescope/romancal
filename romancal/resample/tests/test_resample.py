@@ -583,3 +583,14 @@ def test_l3_wcsinfo(multiple_exposures):
     for key in expected.keys():
         if key not in ["projection", "s_region"]:
             assert np.allclose(output_model.meta.wcsinfo[key], expected[key])
+
+
+def test_resample_pixel_scale_units(wfi_sca1):
+    """
+    Test that the input pixel_scale is in units of arcseconds.
+    """
+    pixel_scale = (0.05 * u.arcsec).value
+    output_model = ResampleStep.call(wfi_sca1, pixel_scale=pixel_scale)
+    coords = output_model.meta.wcs.pixel_to_world((100, 100), (100, 101))
+    pscale = coords[0].separation(coords[1]).to(u.arcsec).value
+    np.testing.assert_allclose(pscale, pixel_scale)
