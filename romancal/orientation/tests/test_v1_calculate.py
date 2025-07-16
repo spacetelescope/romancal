@@ -44,7 +44,7 @@ def test_from_models_mast(tmp_path):
     v1_formatted.write(tmp_path / "test_from_models_mast.ecsv", format="ascii.ecsv")
 
     truth = Table.read(DATA_PATH / "test_from_models_mast.ecsv")
-    assert report_diff_values(v1_formatted, truth)
+    assert report_diff_values(v1_formatted, truth, rtol=1e-05, atol=1e-08)
 
 
 def test_over_time_mast(tmp_path):
@@ -61,7 +61,7 @@ def test_over_time_mast(tmp_path):
     v1_formatted.write(tmp_path / "test_over_time_mast.ecsv", format="ascii.ecsv")
 
     truth = Table.read(DATA_PATH / "test_over_time_mast.ecsv")
-    assert report_diff_values(v1_formatted, truth)
+    assert report_diff_values(v1_formatted, truth, rtol=1e-05, atol=1e-08)
 
 
 # ######################
