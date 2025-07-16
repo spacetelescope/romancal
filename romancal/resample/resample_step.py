@@ -61,7 +61,7 @@ class ResampleStep(RomanStep):
         crval = float_list(min=2, max=2, default=None)
         rotation = float(default=None)  # Position angle of +y axis in degrees
         pixel_scale_ratio = float(default=1.0) # Ratio of output to input pixel scale
-        pixel_scale = float(default=None) # Absolute pixel scale in degrees
+        pixel_scale = float(default=None) # Absolute pixel scale in arcsec
         output_wcs = string(default='')  # Custom output WCS.
         resample_on_skycell = boolean(default=True)  # if association contains skycell information use it for the wcs
         in_memory = boolean(default=True)
@@ -121,6 +121,10 @@ class ResampleStep(RomanStep):
         output_wcs = self._load_custom_wcs(self.output_wcs, self.output_shape)
 
         if output_wcs is None:
+            if self.pixel_scale is not None:
+                log.info(f"Output pixel scale: {self.pixel_scale} arcsec")
+                self.pixel_scale /= 3600.0  # convert to degrees/pix
+
             wcs_kwargs = {
                 "pscale_ratio": self.pixel_scale_ratio,
                 "pscale": self.pixel_scale,
