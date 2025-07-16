@@ -19,12 +19,12 @@ Commands
 
 Available commands are as follows. Use the ``-h`` option for more details.
 
-set_telescope_pointing
+roman_set_telescope_pointing
     Update basic WCS information in Roman exposures from the engineering
     database.
 
-pointing_summary
+roman_pointing_summary
     Summarize various pointing information in a table.
 
-v1_calculate
+roman_v1_calculate
     Calculate V1 over a time period.
