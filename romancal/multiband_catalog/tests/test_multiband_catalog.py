@@ -52,8 +52,8 @@ def mosaic_model():
     model.err = err
     model.var_rnoise = err**2
     model.weight = 1.0 / err
-    model.meta.basic.optical_element = "F184"
-    model.meta.basic.time_first_mjd = Time("2027-01-01T00:00:00").mjd
+    model.meta.instrument.optical_element = "F184"
+    model.meta.coadd_info.time_first = Time("2027-01-01T00:00:00")
     model.meta.wcsinfo.pixel_scale = 0.11 / 3600  # degrees
     model.meta.resample.pixfrac = 0.5
     return model
@@ -62,7 +62,7 @@ def mosaic_model():
 @pytest.fixture
 def library_model(mosaic_model):
     model2 = mosaic_model.copy()
-    model2.meta.basic.optical_element = "F158"
+    model2.meta.instrument.optical_element = "F158"
     return ModelLibrary([mosaic_model, model2])
 
 
@@ -72,7 +72,7 @@ def library_model_all_nan(mosaic_model):
     model1.data[:] = np.nan
     model2 = mosaic_model.copy()
     model2.data[:] = np.nan
-    model2.meta.basic.optical_element = "F158"
+    model2.meta.instrument.optical_element = "F158"
     return ModelLibrary([model1, model2])
 
 

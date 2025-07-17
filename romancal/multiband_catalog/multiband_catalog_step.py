@@ -19,6 +19,7 @@ from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
+from romancal.source_catalog.utils import copy_mosaic_meta
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -73,7 +74,9 @@ class MultibandCatalogStep(RomanStep):
         cat_model = datamodels.MultibandSourceCatalogModel.create_minimal(
             {"meta": example_model.meta}
         )
-        if "instrument" in example_model.meta:
+        if isinstance(example_model, datamodels.MosaicModel):
+            copy_mosaic_meta(example_model, cat_model)
+        else:
             cat_model.meta.optical_element = (
                 example_model.meta.instrument.optical_element
             )
@@ -175,7 +178,7 @@ class MultibandCatalogStep(RomanStep):
                 )
 
                 if self.fit_psf:
-                    filter_name = model.meta.basic.optical_element  # L3
+                    filter_name = model.meta.instrument.optical_element
                     log.info(f"Creating catalog for {filter_name} image")
                     ref_file = self.get_reference_file(model, "epsf")
                     self.log.info("Using ePSF reference file: %s", ref_file)
@@ -196,7 +199,7 @@ class MultibandCatalogStep(RomanStep):
                 )
 
                 # Add the filter name to the column names
-                filter_name = model.meta.basic.optical_element
+                filter_name = model.meta.instrument.optical_element
                 cat = add_filter_to_colnames(catobj.catalog, filter_name)
 
                 # TODO: what metadata do we want to keep, if any,

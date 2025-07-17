@@ -118,7 +118,10 @@ class RomanSourceCatalog:
         self.aperture_cat = None
 
         # define flux unit conversion factors
-        self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
+        if "photometry" in self.model.meta:
+            self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
+        else:
+            self.l2_to_sb = 1.0
         self.sb_to_flux = (1.0 * (u.MJy / u.sr) * self._pixel_area).to(
             u.Unit(self.flux_unit)
         )
@@ -208,8 +211,12 @@ class RomanSourceCatalog:
         placeholder (e.g., -999999 sr), the value is calculated from the
         WCS at the center of the image.
         """
-        pixel_area = self.model.meta.photometry.pixel_area * u.sr
-        if pixel_area < 0:
+        if (
+            "photometry" in self.model.meta
+            and self.model.meta.photometry.pixel_area > 0
+        ):
+            pixel_area = self.model.meta.photometry.pixel_area * u.sr
+        else:
             pixel_area = (self._pixel_scale**2).to(u.sr)
         return pixel_area
 

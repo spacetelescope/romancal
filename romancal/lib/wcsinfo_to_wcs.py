@@ -13,7 +13,7 @@ def wcsinfo_to_wcs(
     wcsinfo: dict | stnode.Wcsinfo,
     bounding_box: None | tuple[tuple[float, float], tuple[float, float]] = None,
 ) -> WCS:
-    """Create a WCS from the L3 wcsinfo meta
+    """Create a WCS from the skycell wcsinfo meta
 
     Parameters
     ----------

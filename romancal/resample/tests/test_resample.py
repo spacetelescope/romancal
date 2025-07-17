@@ -410,17 +410,16 @@ def test_update_exposure_times_different_sca_same_exposure(exposure_1):
     # these three SCAs overlap, so the max exposure time is 3x.
     # get this time within 0.1 s.
     time_difference = (
-        output_model.meta.resample.product_exposure_time
+        output_model.meta.coadd_info.max_exposure_time
         - 3 * exposure_1[0].meta.exposure.effective_exposure_time
     )
     assert np.abs(time_difference) < 0.1
     assert (
-        output_model.meta.basic.time_first_mjd
-        == exposure_1[0].meta.exposure.start_time.mjd
+        output_model.meta.coadd_info.time_first
+        == exposure_1[0].meta.exposure.start_time
     )
     assert (
-        output_model.meta.basic.time_last_mjd
-        == exposure_1[0].meta.exposure.end_time.mjd
+        output_model.meta.coadd_info.time_last == exposure_1[0].meta.exposure.end_time
     )
 
 
@@ -432,26 +431,26 @@ def test_update_exposure_times_same_sca_different_exposures(exposure_1, exposure
 
     with input_models:
         models = list(input_models)
-        first_mjd = min(x.meta.exposure.start_time for x in models).mjd
-        last_mjd = max(x.meta.exposure.end_time for x in models).mjd
+        first_time = min(x.meta.exposure.start_time for x in models)
+        last_time = max(x.meta.exposure.end_time for x in models)
         [input_models.shelve(model, i, modify=False) for i, model in enumerate(models)]
 
     # these exposures overlap perfectly so the max exposure time should
     # be equal to the individual time times two.
     time_difference = (
-        output_model.meta.resample.product_exposure_time
+        output_model.meta.coadd_info.max_exposure_time
         - 2 * exposure_1[0].meta.exposure.effective_exposure_time
     )
     assert np.abs(time_difference) < 0.1
 
-    assert output_model.meta.basic.time_first_mjd == first_mjd
+    assert output_model.meta.coadd_info.time_first == first_time
 
-    assert output_model.meta.basic.time_last_mjd == last_mjd
+    assert output_model.meta.coadd_info.time_last == last_time
 
     # likewise the per-pixel median exposure time is just 2x the individual
     # sca exposure time.
     time_difference = (
-        output_model.meta.basic.max_exposure_time
+        output_model.meta.coadd_info.max_exposure_time
         - 2 * exposure_1[0].meta.exposure.effective_exposure_time
     )
     assert np.abs(time_difference) < 0.1
@@ -547,25 +546,13 @@ def test_l3_wcsinfo(multiple_exposures):
         "dec_ref": 0.001534500000533253,
         "x_ref": 106.4579605214774,
         "y_ref": 80.66617532540977,
-        "rotation_matrix": [
-            [-0.9335804264969954, 0.3583679495458379],
-            [0.3583679495458379, 0.9335804264969954],
-        ],
-        "pixel_scale": 3.100000000097307e-05,
-        "pixel_scale_local": 3.099999999719185e-05,
-        "pixel_shape": (161, 213),
-        "ra_center": 10.002930353020417,
-        "dec_center": 0.0015101325554100666,
-        "ra_corn1": 10.005118261576513,
-        "dec_corn1": -0.0020027691784169498,
-        "ra_corn2": 10.006906876013732,
-        "dec_corn2": 0.0026567307177480667,
-        "ra_corn3": 10.000742444457124,
-        "dec_corn3": 0.005023034287225611,
-        "ra_corn4": 9.998953830031317,
-        "dec_corn4": 0.00036353438578227396,
-        "orientat_local": 20.999999978134802,
-        "orientat": 20.99999999880985,
+        "pixel_scale_ref": 3.100000000097307e-05,
+        "pixel_scale": 3.099999999719185e-05,
+        "image_shape": (161, 213),
+        "ra": 10.002930353020417,
+        "dec": 0.0015101325554100666,
+        "orientation": 20.999999978134802,
+        "orientation_ref": 20.99999999880985,
         "projection": "TAN",
         "s_region": (
             "POLYGON ICRS  10.005118262 -0.002002769 10.006906876 "

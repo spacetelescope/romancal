@@ -7,6 +7,7 @@ import pyarrow
 import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
+from astropy.time import Time
 from numpy.testing import assert_equal
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels as rdm
@@ -74,8 +75,11 @@ def make_test_image():
 def mosaic_model():
     defaults = {
         "meta": {
-            "basic": {
-                "time_first_mjd": 60310.5,
+            "coadd_info": {
+                "time_first": Time("2024-01-01T12:00:00.000", format="isot"),
+            },
+            "instrument": {
+                "optical_element": "F158",
             },
             "resample": {"pixfrac": 1.0},
             "wcsinfo": {

@@ -123,8 +123,9 @@ class ResampleData(Resample):
                 )
                 log.info("Resampling to skycell wcs")
                 output_wcs = {"wcs": skycell.wcs}
-            except ValueError:
-                pass
+            except ValueError as err:
+                log.warning(f"Unable to compute skycell from input association: {err}")
+                log.warning("Computing output wcs from all input wcses")
 
         if output_wcs is None:
             if wcs_kwargs is None:
@@ -226,29 +227,19 @@ class ResampleData(Resample):
         else:
             output_model = datamodels.MosaicModel.create_minimal()
 
-        output_model.meta.resample.good_bits = self.good_bits
-        output_model.meta.resample.weight_type = self.weight_type
-        output_model.meta.resample.pixfrac = self.output_model["pixfrac"]
-        output_model.meta.basic.product_type = "TBD"
-
-        if "var_flat" not in self.variance_array_names:
-            if "var_flat" in output_model._instance:
-                del output_model._instance["var_flat"]
-                # the mk_datamodel makes a var_flat by default,
-                # so this needs to get rid of it.
-
-        pixel_scale_ratio = self.output_model["pixel_scale_ratio"]
-        if pixel_scale_ratio is not None:
-            output_model.meta.resample.pixel_scale_ratio = pixel_scale_ratio
-
-        output_model.meta.resample.pointings = self.output_model["pointings"]
-
         # copy over asn information
-        output_model.meta.basic.location_name = self.input_models.asn.get(
-            "target", "None"
+        output_model.meta.association.name = self.input_models.asn.get(
+            "table_name", "?"
         )
-        output_model.meta.asn.pool_name = self.input_models.asn.get("asn_pool", "?")
-        output_model.meta.asn.table_name = self.input_models.asn.get("table_name", "?")
+
+        # resample parameters
+        output_model.meta.resample.good_bits = self.good_bits
+        output_model.meta.resample.pixel_scale_ratio = self.output_model[
+            "pixel_scale_ratio"
+        ]
+        output_model.meta.resample.pixfrac = self.output_model["pixfrac"]
+        output_model.meta.resample.pointings = self.output_model["pointings"]
+        output_model.meta.resample.weight_type = self.weight_type
 
         # every resampling will generate these
         output_model.data = self.output_model["data"]
@@ -266,9 +257,8 @@ class ResampleData(Resample):
                 f"Mean, max exposure times: {total_exposure_time:.1f}, "
                 f"{max_exposure_time:.1f}"
             )
-            output_model.meta.basic.mean_exposure_time = total_exposure_time
-            output_model.meta.basic.max_exposure_time = max_exposure_time
-            output_model.meta.resample.product_exposure_time = max_exposure_time
+            output_model.meta.coadd_info.max_exposure_time = max_exposure_time
+            output_model.meta.coadd_info.exposure_time = total_exposure_time
 
         if self._enable_ctx:
             output_model.context = self.output_model["con"].astype(np.uint32)
@@ -281,6 +271,9 @@ class ResampleData(Resample):
 
         # assign wcs to output model
         assign_l3_wcs(output_model, self.output_wcs)
+        output_model.meta.wcsinfo.skycell_name = self.input_models.asn.get(
+            "target", "None"
+        )
 
         return output_model
 

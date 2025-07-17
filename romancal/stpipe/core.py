@@ -8,7 +8,6 @@ import time
 from pathlib import Path
 
 import roman_datamodels as rdm
-from astropy.time import Time
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from stpipe import Pipeline, Step, crds_client
 
@@ -62,20 +61,12 @@ class RomanStep(Step):
     @classmethod
     def _get_crds_parameters(cls, dataset):
         crds_parameters, crds_observatory = super()._get_crds_parameters(dataset)
-        if "roman.meta.instrument.name" not in crds_parameters:
-            crds_parameters["roman.meta.instrument.name"] = crds_parameters[
-                "roman.meta.basic.instrument"
-            ]
         if "roman.meta.instrument.detector" not in crds_parameters:
             crds_parameters["roman.meta.instrument.detector"] = "WFI02"
-        if "roman.meta.instrument.optical_element" not in crds_parameters:
-            crds_parameters["roman.meta.instrument.optical_element"] = crds_parameters[
-                "roman.meta.basic.optical_element"
-            ]
         if "roman.meta.exposure.start_time" not in crds_parameters:
-            crds_parameters["roman.meta.exposure.start_time"] = Time(
-                crds_parameters["roman.meta.basic.time_first_mjd"], format="mjd"
-            ).to_value("isot")
+            crds_parameters["roman.meta.exposure.start_time"] = crds_parameters[
+                "roman.meta.coadd_info.time_first"
+            ]
         return crds_parameters, crds_observatory
 
     def finalize_result(self, model, reference_files_used):
