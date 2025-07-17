@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 from astropy.table import Table
 from astropy.time import Time
-from astropy.utils.diff import report_diff_values
 from roman_datamodels.datamodels import ScienceRawModel
 
 import romancal.orientation.v1_calculate as v1c
@@ -18,7 +17,6 @@ MAST_GOOD_STARTTIME = Time("2027-03-23T19:20:40", format="isot")
 MAST_GOOD_ENDTIME = Time("2027-03-23T19:21:36", format="isot")
 
 
-@pytest.mark.xfail(reason="string differences", strict=False)
 def test_from_models_mast(tmp_path):
     """Test v1_calculate_from_models for basic running"""
     model = ScienceRawModel.create_fake_data(
@@ -45,10 +43,11 @@ def test_from_models_mast(tmp_path):
     v1_formatted.write(tmp_path / "test_from_models_mast.ecsv", format="ascii.ecsv")
 
     truth = Table.read(DATA_PATH / "test_from_models_mast.ecsv")
-    assert report_diff_values(v1_formatted, truth, rtol=1e-05, atol=1e-05)
+    errors = v1_compare_simplified_tables(v1_formatted, truth)
+    errors_str = "\n".join(errors)
+    assert len(errors) == 0, f"V1 tables are different: {errors_str}"
 
 
-@pytest.mark.xfail(reason="string differences", strict=False)
 def test_over_time_mast(tmp_path):
     """Test v1_calculate_over_time for basic running"""
     try:
@@ -63,7 +62,9 @@ def test_over_time_mast(tmp_path):
     v1_formatted.write(tmp_path / "test_over_time_mast.ecsv", format="ascii.ecsv")
 
     truth = Table.read(DATA_PATH / "test_over_time_mast.ecsv")
-    assert report_diff_values(v1_formatted, truth, rtol=1e-05, atol=1e-05)
+    errors = v1_compare_simplified_tables(v1_formatted, truth)
+    errors_str = "\n".join(errors)
+    assert len(errors) == 0, f"V1 tables are different: {errors_str}"
 
 
 # ######################
