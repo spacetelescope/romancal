@@ -31,10 +31,10 @@ NODATA_STARTIME = "2014-01-01"
 NODATA_ENDTIME = "2014-01-02"
 
 
-def test_environmental_bad(environ_jail):
+def test_environmental_bad(monkeypatch):
     alternate = "https://google.com/"
     did_except = False
-    os.environ["ENG_BASE_URL"] = alternate
+    monkeypatch.setenv("ENG_BASE_URL", alternate)
     try:
         engdb = engdb_tools.engdb_service("mast")
     except Exception:
