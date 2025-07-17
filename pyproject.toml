@@ -52,17 +52,20 @@ docs = [
 ]
 test = [
     "ci-watson >=0.5.0",
+    "pysiaf",
     "pytest >8.0.0",
     "pytest-astropy >= 0.11.0",
     "deepdiff",
     "stpreview>=0.6.0",
 ]
 dev = [
+    "pysiaf",
     "romancal[docs,test]",
     "tox > 4",
     "pre-commit > 3",
 ]
 sdp = [
+    "pysiaf",
     "stpreview>=0.6.0",
 ]
 
@@ -75,11 +78,14 @@ repository = "https://github.com/spacetelescope/romancal"
 romancal = "romancal.stpipe.integration:get_steps"
 
 [project.scripts]
-roman_static_preview = "romancal.scripts.static_preview:command"
 asn_from_list = "romancal.associations.asn_from_list:_cli"
-skycell_asn = "romancal.associations.skycell_asn:_cli"
-mk_skycell_list = "romancal.associations.mk_skycell_list:_cli"
 mk_skycell_asn_from_skycell_list= "romancal.associations.mk_skycell_asn_from_skycell_list:_cli"
+mk_skycell_list = "romancal.associations.mk_skycell_list:_cli"
+roman_pointing_summary = "romancal.scripts.pointing_summary:main"
+roman_set_telescope_pointing = "romancal.scripts.set_telescope_pointing:main"
+roman_static_preview = "romancal.scripts.static_preview:command"
+roman_v1_calculate = "romancal.scripts.v1_calculate:main"
+skycell_asn = "romancal.associations.skycell_asn:_cli"
 
 [build-system]
 requires = [
@@ -298,6 +304,11 @@ showcontent = true
 [[tool.towncrier.type]]
 directory = "jump_detection"
 name = "``jump_detection``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "orientation"
+name = "``orientation``"
 showcontent = true
 
 [[tool.towncrier.type]]

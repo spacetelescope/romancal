@@ -1,0 +1,19 @@
+#ASDF 1.0.0
+#ASDF_STANDARD 1.6.0
+%YAML 1.1
+%TAG ! tag:stsci.edu:asdf/
+--- !core/asdf-1.1.0
+asdf_library: !core/software-1.0.0 {author: The ASDF Developers, homepage: 'http://github.com/asdf-format/asdf',
+  name: asdf, version: 4.2.0}
+history:
+  extensions:
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/core/extensions/core-1.6.0
+    manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.3.0}
+    software: !core/software-1.0.0 {name: asdf, version: 4.2.0}
+vinfo: {dec: 66.83068262890463, pa: 116.7190098274676, ra: 271.0353051330476, s_region: ''}
+wcsinfo: {dec: 66.5485511563318, pa: 115.46386271624519, ra: 269.66692288550075, s_region: POLYGON
+    ICRS  269.631594526 66.463268503 269.455879697 66.565493078 269.703650792 66.634542007
+    269.880229675 66.531385667}
+...

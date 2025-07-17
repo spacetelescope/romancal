@@ -1,0 +1,22 @@
+# %ECSV 1.0
+# ---
+# datatype:
+# - {name: obstime, datatype: string}
+# - {name: ra, datatype: float64}
+# - {name: dec, datatype: float64}
+# - {name: pa_v3, datatype: float64}
+# meta: !!omap
+# - {allow_default: 'False'}
+# - {aperture: '''WFI01_FULL'''}
+# - {default_pa_v3: '0.0'}
+# - {dry_run: 'False'}
+# - {obsend: '<Time object: scale=''utc'' format=''isot'' value=2027-03-23T19:21:36.000>'}
+# - {obsstart: '<Time object: scale=''utc'' format=''isot'' value=2027-03-23T19:20:40.000>'}
+# - {pointing: 'Pointing(obstime=<Time object: scale=''utc'' format=''unix'' value=1805829668.0275648>, q=array([-0.52558752,  0.3719724
+#     , -0.52016581,  0.38150882]))'}
+# - {reduce_func: <function pointing_from_average at 0x12177cfe0>}
+# - {service_kwargs: None}
+# - {tolerance: '60.0'}
+# schema: astropy-2.0
+obstime ra dec pa_v3
+2027-03-23T19:21:08.028 283.01561401812717 15.245996535114871 83.44631582862803
