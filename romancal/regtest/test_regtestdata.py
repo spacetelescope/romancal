@@ -8,7 +8,7 @@ from romancal.regtest.regtestdata import compare_asdf
 
 
 @pytest.mark.parametrize("modification", [None, "small", "large"])
-def test_compare_asdf(tmp_path, modification, base_image):
+def test_compare_asdf(tmp_path, modification, base_image, ignore_asdf_paths):
     # Need to use different directories for the files because the filenames are
     #    now always updated as part of writing a datamodel, see spacetelescope/datamodels#295
     file0 = tmp_path / "test0"
@@ -27,7 +27,7 @@ def test_compare_asdf(tmp_path, modification, base_image):
     elif modification == "large":
         l2.data += atol * 2
     l2.save(file1)
-    diff = compare_asdf(file0, file1, atol=atol)
+    diff = compare_asdf(file0, file1, atol=atol, **ignore_asdf_paths)
     if modification == "large":
         assert not diff.identical, diff.report()
         assert "arrays_differ" in diff.diff
