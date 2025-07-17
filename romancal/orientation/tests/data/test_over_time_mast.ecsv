@@ -8,15 +8,15 @@
 # - {name: pa_v3, datatype: float64}
 # meta: !!omap
 # - {allow_default: 'False'}
+# - {aperture: '''WFI02_FULL'''}
 # - {default_pa_v3: '0.0'}
-# - {detector: ''''''}
 # - {dry_run: 'False'}
-# - {engdb_url: None}
 # - {obsend: None}
 # - {obsstart: None}
 # - {pointing: 'Pointing(obstime=<Time object: scale=''utc'' format=''unix'' value=1805829668.0275648>, q=array([-0.52558752,  0.3719724
 #     , -0.52016581,  0.38150882]))'}
 # - {reduce_func: None}
+# - {service_kwargs: None}
 # - {tolerance: '60.0'}
 # schema: astropy-2.0
 source obstime ra dec pa_v3
