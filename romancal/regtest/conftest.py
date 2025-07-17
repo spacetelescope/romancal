@@ -220,13 +220,9 @@ def ignore_asdf_paths():
         "roman.cal_logs",
         "roman.meta.cal_logs",
         "roman.meta.date",
+        "roman.meta.file_date",
         "roman.individual_image_cal_logs",
         "roman.meta.individual_image_meta",
-        # individual image meta includes string arrays, not supported by
-        # compare_asdf at present.
-        # roman.meta.filename is used by the ExposurePipeline so should likely
-        # not be ignored here
-        # "roman.meta.filename",
     ]
 
     return {"ignore": ignore_attr}
