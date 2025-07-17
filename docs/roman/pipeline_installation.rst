@@ -1,7 +1,7 @@
 Installation
 ============
 .. warning::
-    Roman requires Python 3.10 or above and a C compiler for dependencies.
+    Roman requires Python 3.11 or above and a C compiler for dependencies.
 
 .. warning::
     Linux and MacOS platforms are tested and supported. Windows is not currently supported.

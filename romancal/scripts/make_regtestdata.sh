@@ -94,7 +94,7 @@ cp ${basename}_ALL_SATURATED_cal.asdf $outdir/roman-pipeline/dev/truth/WFI/image
 
 
 # make a special file dark file with a different name
-strun romancal.step.DarkCurrentStep r0000101001001001001_0001_wfi01_f158_linearity.asdf --output_file=Test_dark
+strun romancal.step.DarkCurrentStep r0000101001001001001_0001_wfi01_f158_rampfit.asdf --output_file=Test_dark
 cp Test_darkcurrent.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 

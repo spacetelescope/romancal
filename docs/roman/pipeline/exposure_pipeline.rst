@@ -27,8 +27,8 @@ table below.
  :ref:`saturation <saturation_step>`                |check|    |check|  |check|
  :ref:`refpix <refpix>`                             |check|    |check|  |check|
  :ref:`linearity <linearity_step>`                  |check|    |check|  |check|
- :ref:`dark_current <dark_current_step>`            |check|    |check|  |check|
  :ref:`ramp_fitting <ramp_fitting_step>`            |check|    |check|  |check|
+ :ref:`dark_current <dark_current_step>`            |check|    |check|  |check|
  :ref:`assign_wcs <assign_wcs_step>`                |check|    |check|  |check|
  :ref:`flatfield <flatfield_step>`                  |check|
  :ref:`photom <photom_step>`                        |check|
@@ -39,7 +39,8 @@ table below.
 
 Arguments
 ---------
-The ``exposure`` pipeline has no arguments
+The ``exposure`` pipeline has no specific arguments, all the available step arguments can be found with the command,
+``strun -h roman_elp``
 
 Inputs
 ------
@@ -51,7 +52,7 @@ Inputs
 :File suffix: _uncal
 
 The input to the ``ExposurePipeline`` can be a single raw exposure,
-e.g. "r0008308002010007027_0019_wfi01_uncal.asdf", which contains the
+e.g. "r0008308002010007027_0019_wfi01_f158_uncal.asdf", which contains the
 original raw data from all of the detector readouts in the exposure
 ( ngroups x ncols x nrows ). The raw data may also be input using an association file.
 
