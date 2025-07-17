@@ -35,7 +35,9 @@ def assign_l3_wcs(model, wcs):
     transform = wcs.forward_transform
 
     l3_wcsinfo.projection = "TAN"
-    l3_wcsinfo.pixel_shape = model.shape
+    l3_wcsinfo.pixel_shape = (
+        model.shape
+    )  # Should this be [::-1], pixel_shape is in cartesian coordinates
 
     # Fill out image-local information
     pixel_center = [(v - 1) / 2.0 for v in model.shape[::-1]]
@@ -59,11 +61,10 @@ def assign_l3_wcs(model, wcs):
         l3_wcsinfo.dec_corn4 = footprint[3][1]
         l3_wcsinfo.s_region = compute_s_region_keyword(footprint)
 
-    # Fill out wcs-general information
     try:
-        l3_wcsinfo.x_ref = -transform["crpix1"].offset.value
-        l3_wcsinfo.y_ref = -transform["crpix2"].offset.value
-    except IndexError:
+        l3_wcsinfo.x_ref = transform.crpix[0]
+        l3_wcsinfo.y_ref = transform.crpix[1]
+    except AttributeError:
         log.warning(
             "WCS has no clear reference pixel defined by crpix1/crpix2. Assuming reference pixel is center."
         )
@@ -75,19 +76,17 @@ def assign_l3_wcs(model, wcs):
     l3_wcsinfo.dec_ref = world_ref[1]
 
     try:
-        cdelt1 = transform["cdelt1"].factor.value
-        cdelt2 = transform["cdelt2"].factor.value
+        cdelt1 = transform.cdelt[0]
+        cdelt2 = transform.cdelt[1]
         l3_wcsinfo.pixel_scale = (cdelt1 + cdelt2) / 2.0
-    except IndexError:
+    except AttributeError:
         l3_wcsinfo.pixel_scale = compute_scale(wcs, world_ref)
 
     l3_wcsinfo.orientat = calc_pa(wcs, *world_ref)
 
     try:
-        l3_wcsinfo.rotation_matrix = transform[
-            "pc_rotation_matrix"
-        ].matrix.value.tolist()
-    except Exception:
+        l3_wcsinfo.rotation_matrix = transform.pc.value.tolist()
+    except AttributeError:
         log.warning(
             "WCS has no clear rotation matrix defined by pc_rotation_matrix. Calculating one."
         )
