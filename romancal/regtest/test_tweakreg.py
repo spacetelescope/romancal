@@ -82,30 +82,39 @@ def test_tweakreg(
 
     assert rms < 1.3 / np.sqrt(2)
 
+    # check if the Mean Absolute Error is less that 10 milliarcsec  (DMS406)
+    abs_diff = (np.absolute(diff) *0.1)/1.e-3
+    mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae * 0.1)/ 1.e-3
+    passmsg = "PASS" if  mean_abs_error < 10.0 else "FAIL"
+    passmsg = "PASS" if  np.max(abs_diff) < 10.0 else "FAIL"
+    dms_logger.info(f"DMS406 {passmsg} the Absolute Astrometric Uncertainty of {np.max(abs_diff):5.2f} mas is less that 10 mas.")
+
+
+
     #check that tweakreg has been run
     if tweakreg_out.meta.cal_step.tweakreg == "COMPLETE":
         # Find the reference catalog used by tweakreg
-        for s in tweakreg_out.meta.cal_logs:
-            if 'abs_refcat' in s:
-                str = s
-
-            str1 = str[str.rfind('abs_refcat'):]
-            refcat_name = str1[:str1.find('\n')]
+        for entry in tweakreg_out.meta.cal_logs:
+            if 'abs_refcat' in entry:
+                log_substring = entry[entry.rfind('abs_refcat'):]
+                refcat_name = log_substring[:log_substring.find('\n')]
 
         passmsg = "PASS" if "GAIA" in refcat_name else "FAIL"
-        dms_logger.info(f"DMS549 MSG: {passmsg}, {refcat_name} used to align data to"
+        dms_logger.info(f"DMS549 MSG: {passmsg}, {refcat_name} used to align data to "
                         f"the Gaia astrometric reference frame.")
     
-    # check if the Mean Absolute Error is less that 5 milliarcsec (10.0E-3 * pixelscale)
-    assert  tweakreg_out.meta.wcs_fit_results.mae * 0.1 < 5.0e-3 
-    passmsg = "PASS" if  tweakreg_out.meta.wcs_fit_results.mae * 0.1 < 5.0e-3 else "FAIL"
-    dms_logger.info(f"DMS406 {passmsg}, the Mean Absolute Error is less that 5 milliarcsec.")
+    # check if the Mean Absolute Error is less that 5 milliarcsec  (DMS549)
+    mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae * 0.1)/ 1.e-3
+    assert  mean_abs_error < 5.0
+    passmsg = "PASS" if  mean_abs_error < 5.0 else "FAIL"
+    dms_logger.info(f"DMS549 {passmsg} the Mean Absolute Error of {mean_abs_error:5.2f} mas is less that 5 mas.")
     # check that the tweakreg step is marked complete
     passmsg = "PASS" if  tweakreg_out.meta.cal_step.tweakreg == "COMPLETE" else "FAIL"
-    dms_logger.info(f"DMS406 {passmsg}, the Tweakreg step is compete.")
+    dms_logger.info(f"DMS549 {passmsg} the Tweakreg step is compete.")
     wcs_filename = output_data.rsplit("_", 1)[0] + "_wcs.asdf"
     passmsg = "PASS" if os.path.isfile(wcs_filename) else "FAIL"
-    dms_logger.info(f"DMS406 {passmsg}, the output wcs file exists.")
+    dms_logger.info(f"DMS549 {passmsg} the output wcs file exists.")
+
     diff = compare_asdf(rtdata.output, rtdata.truth, atol=1e-3, **ignore_asdf_paths)
     dms_logger.info(
         f"DMS280 MSG: Was the proper TweakReg data produced? : {diff.identical}"
