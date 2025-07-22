@@ -1,0 +1,1 @@
+Use ``gwcs.FITSImagingWCSTransform`` in the WCS of Level3 files.

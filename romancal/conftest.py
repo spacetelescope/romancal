@@ -233,6 +233,18 @@ def _create_wcs(input_dm, shift_1=0, shift_2=0):
     add_s_region(input_dm)
 
 
+def _base_image(shift_1=0, shift_2=0):
+    l2 = rdm.ImageModel.create_fake_data(shape=(100, 100))
+    l2.meta.filename = "none"
+    l2.meta.cal_logs = stnode.CalLogs.create_fake_data()
+    l2.meta.cal_step = stnode.L2CalStep.create_fake_data()
+    l2.meta.background = stnode.SkyBackground.create_fake_data()
+    l2.var_flat = l2.var_rnoise.copy()
+    _create_wcs(l2)
+    l2.meta.wcsinfo.vparity = -1
+    return l2
+
+
 @pytest.fixture
 def base_image():
     """
@@ -245,16 +257,5 @@ def base_image():
 
     shift_1 and shift_2 (units in pixel) are used to shift the WCS projection plane.
     """
-
-    def _base_image(shift_1=0, shift_2=0):
-        l2 = rdm.ImageModel.create_fake_data(shape=(100, 100))
-        l2.meta.filename = "none"
-        l2.meta.cal_logs = stnode.CalLogs.create_fake_data()
-        l2.meta.cal_step = stnode.L2CalStep.create_fake_data()
-        l2.meta.background = stnode.SkyBackground.create_fake_data()
-        l2.var_flat = l2.var_rnoise.copy()
-        _create_wcs(l2)
-        l2.meta.wcsinfo.vparity = -1
-        return l2
 
     return _base_image
