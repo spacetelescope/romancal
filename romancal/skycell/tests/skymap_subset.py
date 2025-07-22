@@ -2,8 +2,7 @@ from pathlib import Path
 from romancal.skycell import skymap
 
 LAST_PROJREGION_INDEX = 1
-#DATA_DIRECTORY = Path(__file__).parent / "data"
-DATA_DIRECTORY = Path("/Users/dencheva")
+DATA_DIRECTORY = Path(__file__).parent / "data"
 
 if __name__ == "__main__":
     skymap_subset = skymap.SKYMAP.model.copy()
