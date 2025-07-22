@@ -110,14 +110,16 @@ def test_projregion_from_skycell(skymap_subset):
     projregion0 = skymap.ProjectionRegion(0, skymap=skymap_subset)
     projregion1 = skymap.ProjectionRegion(1, skymap=skymap_subset)
 
-    assert skycell.projection_region == projregion0 # this calls CRDS!
+    assert skycell.projection_region == projregion0  # this calls CRDS!
 
     assert (
-        skymap.ProjectionRegion.from_skycell_index(107, skymap=skymap_subset) == projregion0
+        skymap.ProjectionRegion.from_skycell_index(107, skymap=skymap_subset)
+        == projregion0
     )
 
     assert (
-        skymap.ProjectionRegion.from_skycell_index(0, skymap=skymap_subset) == projregion0
+        skymap.ProjectionRegion.from_skycell_index(0, skymap=skymap_subset)
+        == projregion0
     )
 
     assert (
