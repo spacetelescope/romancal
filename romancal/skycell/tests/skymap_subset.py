@@ -1,19 +1,13 @@
 from pathlib import Path
+from romancal.skycell import skymap
 
-import romancal.skycell.skymap as sc
-
-LAST_PROJREGION_INDEX = 2
-DATA_DIRECTORY = Path(__file__).parent / "data"
+LAST_PROJREGION_INDEX = 1
+#DATA_DIRECTORY = Path(__file__).parent / "data"
+DATA_DIRECTORY = Path("/Users/dencheva")
 
 if __name__ == "__main__":
-    skymap_subset = sc.SKYMAP.data.copy()
+    skymap_subset = skymap.SKYMAP.model.copy()
 
-    # to maintain the proper indices, the subset must contain all the previous projection regions up to the specified index
-    skymap_subset["roman"]["projection_regions"] = sc.SKYMAP.projection_regions[
-        : LAST_PROJREGION_INDEX + 1
-    ].copy()
-    skymap_subset["roman"]["skycells"] = sc.SKYMAP.skycells[
-        : skymap_subset["roman"]["projection_regions"][-1]["skycell_end"] + 1
-    ].copy()
-
-    skymap_subset.write_to(DATA_DIRECTORY / "skymap_subset.asdf")
+    skymap_subset.projection_regions = skymap.SKYMAP.model.projection_regions[: LAST_PROJREGION_INDEX + 1].copy()
+    skymap_subset.skycells = skymap.SKYMAP.model.skycells[: skymap_subset.projection_regions[-1]["skycell_end"] + 1].copy()
+    skymap_subset.save(DATA_DIRECTORY / "skymap_subset.asdf")

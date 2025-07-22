@@ -239,10 +239,6 @@ class SkyCell:
             "ny": self.pixel_shape[1],
             "orientat": self.orientation,
             "orientat_projection_center": self.projection_region.orientation
-            if self.projection_region.data["dec_max"] != 90.0
-            # rotate north polar cap by 180 degrees
-            # TODO: find out why this is necessary...
-            else self.projection_region.orientation + 180,
         }
 
     @cached_property
@@ -504,10 +500,12 @@ class ProjectionRegion:
 
 
 class SkyMap:
-    """Abstract representation of the sky map, comprising of 4058 overlapping rectangular "projection regions" defining gnomonic projection on to uniform pixel grids.
+    """Abstract representation of the sky map, comprising of 4058 overlapping rectangular 
+    "projection regions" defining gnomonic projection on to uniform pixel grids.
     The pixel scale for all projection regions is identical.
 
-    Each projection region is subdivided into ~2000 square subregions ("sky cells", ~8 million in total), each 4.6' across. These sky cells also overlap each other by a standard number of pixels.
+    Each projection region is subdivided into ~2000 square subregions ("sky cells", ~8 million in total), 
+    each 4.6' across. These sky cells also overlap each other by a standard number of pixels.
 
     References
     ----------
