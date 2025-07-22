@@ -1,3 +1,4 @@
+import os
 import asdf
 import numpy as np
 import pytest
@@ -81,6 +82,30 @@ def test_tweakreg(
 
     assert rms < 1.3 / np.sqrt(2)
 
+    #check that tweakreg has been run
+    if tweakreg_out.meta.cal_step.tweakreg == "COMPLETE":
+        # Find the reference catalog used by tweakreg
+        for s in tweakreg_out.meta.cal_logs:
+            if 'abs_refcat' in s:
+                str = s
+
+            str1 = str[str.rfind('abs_refcat'):]
+            refcat_name = str1[:str1.find('\n')]
+
+        passmsg = "PASS" if "GAIA" in refcat_name else "FAIL"
+        dms_logger.info(f"DMS549 MSG: {passmsg}, {refcat_name} used to align data to"
+                        f"the Gaia astrometric reference frame.")
+    
+    # check if the Mean Absolute Error is less that 5 milliarcsec (10.0E-3 * pixelscale)
+    assert  tweakreg_out.meta.wcs_fit_results.mae * 0.1 < 5.0e-3 
+    passmsg = "PASS" if  tweakreg_out.meta.wcs_fit_results.mae * 0.1 < 5.0e-3 else "FAIL"
+    dms_logger.info(f"DMS406 {passmsg}, the Mean Absolute Error is less that 5 milliarcsec.")
+    # check that the tweakreg step is marked complete
+    passmsg = "PASS" if  tweakreg_out.meta.cal_step.tweakreg == "COMPLETE" else "FAIL"
+    dms_logger.info(f"DMS406 {passmsg}, the Tweakreg step is compete.")
+    wcs_filename = output_data.rsplit("_", 1)[0] + "_wcs.asdf"
+    passmsg = "PASS" if os.path.isfile(wcs_filename) else "FAIL"
+    dms_logger.info(f"DMS406 {passmsg}, the output wcs file exists.")
     diff = compare_asdf(rtdata.output, rtdata.truth, atol=1e-3, **ignore_asdf_paths)
     dms_logger.info(
         f"DMS280 MSG: Was the proper TweakReg data produced? : {diff.identical}"
