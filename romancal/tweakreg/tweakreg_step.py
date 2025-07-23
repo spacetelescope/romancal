@@ -88,7 +88,8 @@ class TweakRegStep(RomanStep):
                 "Input to tweakreg must be a list of DataModels, an "
                 "association, or an already open ModelLibrary "
                 "containing one or more DataModels.",
-            ) + e.args[1:]
+                *e.args[1:],
+            )
             raise e
 
         if not images:

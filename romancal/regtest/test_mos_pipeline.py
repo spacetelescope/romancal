@@ -5,8 +5,8 @@ import os
 import pytest
 import roman_datamodels as rdm
 
-from romancal.patch_match.patch_match import wcsinfo_to_wcs
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
+from romancal.resample.l3_wcs import l3wcsinfo_to_wcs
 
 from . import util
 from .regtestdata import compare_asdf
@@ -55,7 +55,7 @@ def truth_filename(run_mos):
 @pytest.fixture(scope="module")
 def thumbnail_filename(output_filename):
     thumbnail_filename = output_filename.rsplit("_", 1)[0] + "_thumb.png"
-    preview_cmd = f"stpreview to {output_filename} {thumbnail_filename} 256 256 roman"
+    preview_cmd = f"stpreview --observatory roman {output_filename} {thumbnail_filename} to 256 256"
     os.system(preview_cmd)  # noqa: S605
     return thumbnail_filename
 
@@ -63,7 +63,7 @@ def thumbnail_filename(output_filename):
 @pytest.fixture(scope="module")
 def preview_filename(output_filename):
     preview_filename = output_filename.rsplit("_", 1)[0] + "_preview.png"
-    preview_cmd = f"stpreview to {output_filename} {preview_filename} 1080 1080 roman"
+    preview_cmd = f"stpreview --observatory roman {output_filename} {preview_filename} to 1080 1080"
     os.system(preview_cmd)  # noqa: S605
     return preview_filename
 
@@ -127,7 +127,7 @@ def test_added_background_level(output_model):
 
 def test_wcsinfo_wcs_roundtrip(output_model):
     """Test that the contents of wcsinfo reproduces the wcs"""
-    wcs_from_wcsinfo = wcsinfo_to_wcs(output_model.meta.wcsinfo)
+    wcs_from_wcsinfo = l3wcsinfo_to_wcs(output_model.meta.wcsinfo)
 
     ra_mad, dec_mad = util.comp_wcs_grids_arcs(output_model.meta.wcs, wcs_from_wcsinfo)
     assert (ra_mad + dec_mad) / 2.0 < 1.0e-5

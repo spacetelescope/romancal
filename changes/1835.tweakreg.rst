@@ -1,0 +1,2 @@
+Remove the dead module ``tweakreg.astrometric_utils`` from the docs and the tweakreg step.
+Remove some related dead code in the ``assign_wcs.utils`` module.

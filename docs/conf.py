@@ -89,12 +89,11 @@ def check_sphinx_version(expected_version):
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "numpy": ("https://numpy.org/devdocs", None),
-    "scipy": ("http://scipy.github.io/devdocs", None),
-    "matplotlib": ("http://matplotlib.org/", None),
+    "scipy": ("https://scipy.github.io/devdocs", None),
+    "matplotlib": ("https://matplotlib.org/", None),
     "gwcs": ("https://gwcs.readthedocs.io/en/latest/", None),
     "astropy": ("https://docs.astropy.org/en/stable/", None),
     "photutils": ("https://photutils.readthedocs.io/en/stable/", None),
-    "stpsf": ("https://stpsf.readthedocs.io/en/latest/", None),
     "roman_datamodels": ("https://roman-datamodels.readthedocs.io/en/latest/", None),
     "rad": ("https://rad.readthedocs.io/en/latest/", None),
     "drizzle": ("https://spacetelescope-drizzle.readthedocs.io/en/latest/", None),
@@ -249,7 +248,7 @@ pygments_style = "default"
 asdf_schema_reference_mappings = [
     (
         "tag:stsci.edu:asdf",
-        "http://asdf-standard.readthedocs.io/en/latest/generated/stsci.edu/asdf/",
+        "https://asdf-standard.readthedocs.io/en/latest/generated/stsci.edu/asdf/",
     ),
 ]
 

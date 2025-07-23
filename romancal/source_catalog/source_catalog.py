@@ -10,7 +10,6 @@ from astropy.table import QTable, Table
 from astropy.utils import lazyproperty
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
-from stpsf import __version__ as stpsf_version
 
 from romancal import __version__ as romancal_version
 from romancal.source_catalog.aperture import ApertureCatalog
@@ -94,6 +93,7 @@ class RomanSourceCatalog:
         *,
         fit_psf=True,
         mask=None,
+        psf_ref_model=None,
         detection_cat=None,
         flux_unit="nJy",
         cat_type="prompt",
@@ -107,6 +107,7 @@ class RomanSourceCatalog:
         self.kernel_fwhm = kernel_fwhm
         self.fit_psf = fit_psf
         self.mask = mask
+        self.psf_ref_model = psf_ref_model
         self.detection_cat = detection_cat
         self.flux_unit = flux_unit
         self.cat_type = cat_type
@@ -117,10 +118,19 @@ class RomanSourceCatalog:
         self.aperture_cat = None
 
         # define flux unit conversion factors
-        self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
+        if "photometry" in self.model.meta:
+            self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
+        else:
+            self.l2_to_sb = 1.0
         self.sb_to_flux = (1.0 * (u.MJy / u.sr) * self._pixel_area).to(
             u.Unit(self.flux_unit)
         )
+
+        if self.fit_psf and self.psf_ref_model is None:
+            log.error(
+                "PSF fitting is requested but no PSF reference model is provided. Skipping PSF photometry."
+            )
+            self.fit_psf = False
 
     def __len__(self):
         return self.n_sources
@@ -201,8 +211,12 @@ class RomanSourceCatalog:
         placeholder (e.g., -999999 sr), the value is calculated from the
         WCS at the center of the image.
         """
-        pixel_area = self.model.meta.photometry.pixel_area * u.sr
-        if pixel_area < 0:
+        if (
+            "photometry" in self.model.meta
+            and self.model.meta.photometry.pixel_area > 0
+        ):
+            pixel_area = self.model.meta.photometry.pixel_area * u.sr
+        else:
             pixel_area = (self._pixel_scale**2).to(u.sr)
         return pixel_area
 
@@ -285,7 +299,7 @@ class RomanSourceCatalog:
 
         The results are set as dynamic attributes on the class instance.
         """
-        psf_cat = PSFCatalog(self.model, self._xypos, self.mask)
+        psf_cat = PSFCatalog(self.model, self.psf_ref_model, self._xypos, self.mask)
         for name in psf_cat.names:
             setattr(self, name, getattr(psf_cat, name))
 
@@ -403,7 +417,6 @@ class RomanSourceCatalog:
         ver_dict = self.meta.get("versions", None)
         if ver_dict is not None:
             ver_dict["romancal"] = romancal_version
-            ver_dict["stpsf"] = stpsf_version
             packages = [
                 "Python",
                 "numpy",
@@ -411,7 +424,6 @@ class RomanSourceCatalog:
                 "astropy",
                 "photutils",
                 "gwcs",
-                "stpsf",
                 "romancal",
             ]
             ver_dict = {key: ver_dict[key] for key in packages if key in ver_dict}

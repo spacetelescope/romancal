@@ -32,14 +32,10 @@ concurrency:
 
 jobs:
   check:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v2
     with:
       envs: |
         - linux: check-dependencies
-  stpsf_data_cache:
-    uses: ./.github/workflows/retrieve_cache.yml
-    with:
-      minimal: true
   latest_crds_contexts:
     uses: ./.github/workflows/contexts.yml
   crds_context:
@@ -51,13 +47,12 @@ jobs:
     outputs:
       context: ${{ steps.context.outputs.context }}
   test:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
-    needs: [ stpsf_data_cache, crds_context ]
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v2
+    needs: [ crds_context ]
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     with:
       setenv: |
-        STPSF_PATH: /tmp/data/stpsf-data/
         CRDS_PATH: /tmp/data/crds_cache/
         CRDS_SERVER_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.crds_server || 'https://roman-crds.stsci.edu' }}
         CRDS_CONTEXT: ${{ needs.crds_context.outputs.context }}
@@ -69,17 +64,16 @@ jobs:
         DD_GIT_COMMIT_SHA: ${{ github.sha }}
         DD_GIT_BRANCH: ${{ github.ref_name }}
       cache-path: /tmp/data/
-      cache-key: data-${{ needs.stpsf_data_cache.outputs.cache_key }}-${{ needs.crds_context.outputs.context }}
-      cache-restore-keys: ${{ needs.stpsf_data_cache.outputs.cache_key }}
+      cache-key: data-${{ needs.crds_context.outputs.context }}
       envs: |
-        - linux: py311-oldestdeps-stpsf-cov
-        - linux: py311-stpsf-nolegacypath
-        - linux: py312-ddtrace-stpsf
-        - macos: py312-ddtrace-stpsf
+        - linux: py311-oldestdeps-cov
+        - linux: py311-nolegacypath
+        - linux: py312-ddtrace
+        - macos: py312-ddtrace
         # `tox` does not currently respect `requires-python` versions when creating testing environments;
         # if this breaks, add an upper pin to `requires-python` and revert this py3 to the latest working version
-        - linux: py3-stpsf-cov
+        - linux: py3-cov
           coverage: codecov
           pytest-results-summary: true
-        - macos: py3-stpsf
+        - macos: py3-pyargs
           pytest-results-summary: true

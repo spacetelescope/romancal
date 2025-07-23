@@ -30,7 +30,7 @@ def test_base_roundtrip():
 def test_association_target():
     """Create the simple associations with target set"""
     items = ["a", "b", "c"]
-    target_name = "r274dp63x32y80"
+    target_name = "270p65x48y69"
     product_name = "l3_target"
     rule_name = "Association"
     asn = asn_from_list(

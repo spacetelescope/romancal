@@ -173,6 +173,7 @@ an [issue](https://github.com/spacetelescope/romancal/issues).
 | 0.16.3    | 24Q4_B15  | 063          | Aug 2024  | Release for Build 24Q3_B15 (Build 15) |
 | 0.17.0    | 25Q1_B16  | 065          | Nov 2024  | Release for Build 25Q1_B16 (Build 16) |
 | 0.18.0    | 25Q2_B17  | 072          | Feb 2025  | Release for Build 25Q2_B17 (Build 17) |
+| 0.19.0    | 25Q3_B18  | 083          | May 2025  | Release for Build 25Q3_B18 (Build 18) |
 
 
 Note: CRDS_CONTEXT values flagged with an asterisk in the above table are estimates
@@ -194,9 +195,6 @@ $ crds sync --contexts roman-edit
 
 The CRDS_READONLY_CACHE variable should not be set, since references will need to be downloaded to your local cache as
 they are requested.
-
-> **Note**\
-> If it is desired to run tests against STPSF data, use the `pytest --stpsf` flag or the `-stpsf` tox factor and follow [these instructions to download the data files / point to existing files on the shared internal network](https://stpsf.readthedocs.io/en/latest/installation.html#data-install).
 
 ### Running tests
 

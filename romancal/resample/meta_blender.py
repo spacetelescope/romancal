@@ -1,10 +1,12 @@
 from collections import defaultdict
+from typing import ClassVar
 
 import numpy as np
 from asdf.lazy_nodes import AsdfDictNode, AsdfListNode
 from asdf.tags.core.ndarray import NDArrayType
 from astropy.table import Table
-from roman_datamodels import datamodels, maker_utils, stnode
+from astropy.time import Time
+from roman_datamodels import datamodels, stnode
 
 
 class MissingCellType:
@@ -74,42 +76,56 @@ class TableBuilder:
 
 
 class MetaBlender:
+    _meta_blend_paths: ClassVar = {
+        "observation.execution_plan": None,
+        "observation.exposure": None,
+        "observation.observation": None,
+        "observation.pass": None,
+        "observation.program": None,
+        "observation.segment": None,
+        "observation.visit": None,
+        "program.title": None,
+        "program.investigator_name": None,
+        "program.category": None,
+        "program.subcategory": None,
+        "program.science_category": None,
+        "instrument.optical_element": None,
+        "cal_step.flux": "INCOMPLETE",
+        "cal_step.outlier_detection": "INCOMPLETE",
+        "cal_step.skymatch": "INCOMPLETE",
+    }
+
     def __init__(self):
         self._tables = defaultdict(TableBuilder)
         self._n_rows = 0
 
     def _blend_first(self, model):
         # make a blank mosic metdata node
-        self._model = maker_utils.mk_datamodel(
-            datamodels.MosaicModel, n_images=0, shape=(0, 0)
-        )
+        self._model = datamodels.MosaicModel.create_minimal()
+
+        # FIXME assuming everything is a prompt coadd
+        self._model.meta.product_type = stnode.ProductType("p_visit_coadd")
+
         self._meta = self._model.meta
 
         self._model["individual_image_cal_logs"] = []
 
-        self._mid_mjds = []
+        # for computing mean start time
+        self._start_times = []
 
-        self._meta.basic.time_first_mjd = model.meta.exposure.start_time.mjd
-        self._meta.basic.time_last_mjd = model.meta.exposure.end_time.mjd
+        # grab start/end times, blended with all other models below
+        self._meta.coadd_info.time_first = model.meta.exposure.start_time
+        self._meta.coadd_info.time_last = model.meta.exposure.end_time
 
-        # copy some metadata from the first input model
-        # FIXME this is incorrect and these values should be
-        # "blended" from all models
-        self._meta.basic.visit = model.meta.observation.visit
-        self._meta.basic.segment = model.meta.observation.segment
-        self._meta.basic["pass"] = model.meta.observation["pass"]
-        self._meta.basic.program = model.meta.observation.program
-        self._meta.basic.optical_element = model.meta.instrument.optical_element
-        self._meta.basic.instrument = model.meta.instrument.name
-        self._meta.coordinates = model.meta.coordinates
-        self._meta.program = model.meta.program
-        for step_name in self._meta.cal_step:
-            if hasattr(model.meta.cal_step, step_name):
-                setattr(
-                    self._meta.cal_step,
-                    step_name,
-                    getattr(model.meta.cal_step, step_name),
-                )
+        # copy over metadata from first model
+        for path, default in self._meta_blend_paths.items():
+            dst = self._meta
+            src = model.meta
+            *sub_path, key = path.split(".")
+            for k in sub_path:
+                src = src.get(k, {})
+                dst = dst[k]
+            dst[key] = src.get(key, default)
 
     def _update_tables(self, meta):
         basic_data = {}
@@ -130,27 +146,47 @@ class MetaBlender:
             self._blend_first(model)
         else:
             # for non-first only blending
-            self._meta.basic.time_first_mjd = min(
-                self._meta.basic.time_first_mjd, model.meta.exposure.start_time.mjd
+            self._meta.coadd_info.time_first = min(
+                self._meta.coadd_info.time_first, model.meta.exposure.start_time
             )
-            self._meta.basic.time_last_mjd = max(
-                self._meta.basic.time_last_mjd, model.meta.exposure.end_time.mjd
+            self._meta.coadd_info.time_last = max(
+                self._meta.coadd_info.time_last, model.meta.exposure.end_time
             )
 
-        self._model["individual_image_cal_logs"].append(model.meta.cal_logs)
+            # blend
+            for path, default in self._meta_blend_paths.items():
+                dst = self._meta
+                src = model.meta
+                *sub_path, key = path.split(".")
+                for k in sub_path:
+                    src = src.get(k, {})
+                    dst = dst[k]
+                if key not in src:
+                    continue
+                if dst[key] != src[key]:
+                    dst[key] = default
+
+        self._start_times.append(model.meta.exposure.start_time)
+
+        if cal_logs := model.meta.get("cal_logs"):
+            self._model["individual_image_cal_logs"].append(cal_logs)
+
         self._meta.resample.members.append(model.meta.filename)
-
-        mid_time = (
-            model.meta.exposure.start_time.mjd
-            + model.meta.exposure.exposure_time / 60 / 60 / 24
-        )
-        self._mid_mjds.append(mid_time)
 
         self._update_tables(model.meta)
 
     def finalize(self):
-        self._meta.basic.time_mean_mjd = np.mean(self._mid_mjds)
-        self._meta.individual_image_meta = stnode.IndividualImageMeta()
+        self._meta.coadd_info.time_mean = Time(self._start_times).mean()
+        if all(
+            getattr(self._meta.observation, key) is not None
+            for key in ("execution_plan", "pass", "segment", "observation", "visit")
+        ):
+            self._meta.observation.exposure_grouping = "v{execution_plan:02d}{pass:03d}{segment:03d}{observation:03d}{visit:03d}".format(
+                **self._meta.observation
+            )
+        else:
+            self._meta.observation.exposure_grouping = None
+        self._meta.individual_image_meta = {}
         for table_name, builder in self._tables.items():
             self._meta.individual_image_meta[table_name] = builder.to_table()
         return self._model

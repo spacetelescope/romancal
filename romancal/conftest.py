@@ -2,7 +2,9 @@
 
 import inspect
 import json
+import logging
 import os
+import sys
 from io import StringIO
 
 import pytest
@@ -12,7 +14,7 @@ from astropy.modeling.models import Shift
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import maker_utils
+from roman_datamodels import stnode
 
 from romancal.assign_wcs import pointing
 from romancal.assign_wcs.utils import add_s_region
@@ -26,6 +28,27 @@ def slow(request):
     has been specified
     """
     return request.config.getoption("--slow")
+
+
+@pytest.fixture(scope="session")
+def dms_logger():
+    """Set up a 'DMS' logger for use in tests.
+
+    The primary use is to report DMS requirement log
+    messages to stderr but can also be used for general
+    stderr logging in tests.
+    """
+    logger = logging.getLogger("DMS")
+    # Don't propagate to root logger to avoid double reporting
+    # during stpipe API calls (like Step.call).
+    logger.propagate = False
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    )
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    return logger
 
 
 @pytest.fixture(scope="function")
@@ -224,10 +247,14 @@ def base_image():
     """
 
     def _base_image(shift_1=0, shift_2=0):
-        l2 = maker_utils.mk_level2_image(shape=(100, 100))
-        l2_im = rdm.ImageModel(l2)
-        _create_wcs(l2_im)
-        l2_im.meta.wcsinfo.vparity = -1
-        return l2_im
+        l2 = rdm.ImageModel.create_fake_data(shape=(100, 100))
+        l2.meta.filename = "none"
+        l2.meta.cal_logs = stnode.CalLogs.create_fake_data()
+        l2.meta.cal_step = stnode.L2CalStep.create_fake_data()
+        l2.meta.background = stnode.SkyBackground.create_fake_data()
+        l2.var_flat = l2.var_rnoise.copy()
+        _create_wcs(l2)
+        l2.meta.wcsinfo.vparity = -1
+        return l2
 
     return _base_image

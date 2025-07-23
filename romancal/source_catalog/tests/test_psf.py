@@ -4,16 +4,24 @@ Unit tests for the Roman source detection step code
 
 from copy import deepcopy
 
+import crds
 import numpy as np
 import pytest
+import roman_datamodels as rdm
 from astropy import units as u
+from astropy.modeling.models import Gaussian2D
+from astropy.stats import mad_std
 from astropy.table import QTable
 from photutils.datasets import make_model_image
 from photutils.psf import PSFPhotometry
-from roman_datamodels import maker_utils as testutil
+from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel
 
-from romancal.source_catalog.psf import create_gridded_psf_model, fit_psf_to_image_model
+from romancal.source_catalog.psf import (
+    azimuthally_smooth,
+    fit_psf_to_image_model,
+    get_gridded_psf_model,
+)
 
 n_trials = 15
 image_model_shape = (50, 50)
@@ -28,7 +36,7 @@ def setup_inputs(
     """
     Return ImageModel of level 2 image.
     """
-    wfi_image = testutil.mk_level2_image(shape=shape)
+    wfi_image = stnode.WfiImage.create_fake_data(shape=shape)
     wfi_image.data = np.ones(shape, dtype=np.float32)
     wfi_image.meta.filename = "filename"
     wfi_image.meta.instrument["optical_element"] = "F087"
@@ -45,26 +53,17 @@ def setup_inputs(
     # construct ImageModel
     mod = ImageModel(wfi_image)
 
-    filt = mod.meta.instrument["optical_element"]
-    detector = mod.meta["instrument"]["detector"].replace("WFI", "SCA")
-
-    # input parameters for PSF model:
-    stpsf_config = dict(
-        filt=filt,
-        detector=detector,
-        oversample=12,
-        fov_pixels=15,
+    crds_parameters = mod.get_crds_parameters()
+    crds_ref_file = crds.getreferences(
+        crds_parameters, reftypes=["epsf"], observatory="roman"
     )
+    psf_ref_file = crds_ref_file["epsf"]
+    mod["psf_ref_model"] = rdm.open(psf_ref_file)
 
     # compute gridded PSF model:
-    psf_model, centroids = create_gridded_psf_model(
-        stpsf_config["filt"],
-        stpsf_config["detector"],
-        oversample=stpsf_config["oversample"],
-        fov_pixels=stpsf_config["fov_pixels"],
-    )
+    psf_model = get_gridded_psf_model(mod["psf_ref_model"])
 
-    return mod, stpsf_config, psf_model
+    return mod, psf_model
 
 
 def add_sources(image_model, psf_model, x_true, y_true, flux_true, background=10):
@@ -75,19 +74,17 @@ def add_sources(image_model, psf_model, x_true, y_true, flux_true, background=10
 
     shape = image_model.data.shape
     image = make_model_image(shape, psf_model, params_table, model_shape=(19, 19))
-    image += rng.normal(background, 1, size=shape)
+    image += rng.normal(background, image_model.err, size=shape)
 
     image_model.data = image * np.ones_like(image_model.data)
-    image_model.err = background * np.ones_like(image_model.err)
 
 
 class TestPSFFitting:
     def setup_method(self):
-        self.image_model, self.stpsf_config, self.psf_model = setup_inputs(
+        self.image_model, self.psf_model = setup_inputs(
             shape=image_model_shape,
         )
 
-    @pytest.mark.stpsf
     @pytest.mark.parametrize(
         "dx, dy, true_flux",
         zip(
@@ -100,23 +97,12 @@ class TestPSFFitting:
     def test_psf_fit(self, dx, dy, true_flux):
         # generate an ImageModel
         image_model = deepcopy(self.image_model)
-        init_data_stddev = np.std(image_model.data)
 
         # add synthetic sources to the ImageModel:
         true_x = image_model_shape[0] / 2 + dx
         true_y = image_model_shape[1] / 2 + dy
         add_sources(image_model, self.psf_model, true_x, true_y, true_flux)
-
-        if self.stpsf_config["fov_pixels"] % 2 == 0:
-            fit_shape = (
-                self.stpsf_config["fov_pixels"] + 1,
-                self.stpsf_config["fov_pixels"] + 1,
-            )
-        else:
-            fit_shape = (
-                self.stpsf_config["fov_pixels"],
-                self.stpsf_config["fov_pixels"],
-            )
+        init_data_stddev = np.std(image_model.data)
 
         # fit the PSF to the ImageModel:
         results_table, photometry = fit_psf_to_image_model(
@@ -125,7 +111,6 @@ class TestPSFFitting:
             psf_model=self.psf_model,
             x_init=true_x,
             y_init=true_y,
-            fit_shape=fit_shape,
         )
 
         # difference between input and output, normalized by the
@@ -146,7 +131,7 @@ class TestPSFFitting:
         approx_centroid_err = approx_fwhm / approx_snr
 
         # centroid err heuristic above is an underestimate, so we scale it up:
-        scale_factor_approx = 100
+        scale_factor_approx = 2
 
         assert np.all(
             results_table["x_err"] < scale_factor_approx * approx_centroid_err
@@ -154,3 +139,15 @@ class TestPSFFitting:
         assert np.all(
             results_table["y_err"] < scale_factor_approx * approx_centroid_err
         )
+
+
+def test_azimuthally_smooth():
+    """Test azimuthally smoothing"""
+    grid_x, grid_y = np.mgrid[0:201, 0:201]
+    gauss_model = Gaussian2D(1.0, 100, 100, 20, 20)
+    gauss = gauss_model(grid_x, grid_y)
+    smoothed = azimuthally_smooth(gauss, oversample=1)
+    delta = gauss - smoothed
+
+    assert np.mean(delta) < 1.0e-6
+    assert mad_std(delta) < 1.0e-8

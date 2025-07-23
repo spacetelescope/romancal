@@ -1,6 +1,5 @@
 import pytest
 import roman_datamodels.datamodels as dm
-from roman_datamodels.maker_utils import mk_level2_image
 
 from romancal.associations.asn_from_list import asn_from_list
 from romancal.datamodels.library import ModelLibrary
@@ -22,7 +21,7 @@ def example_asn_path(tmp_path):
     """
     fns = []
     for i in range(_N_MODELS):
-        m = dm.ImageModel(mk_level2_image(shape=(2, 2)))
+        m = dm.ImageModel.create_fake_data(shape=(2, 2))
         m.meta.observation.program = 1
         m.meta.observation.observation = _OBSERVATION_NUMBERS[i]
         m.meta.observation.visit = 1

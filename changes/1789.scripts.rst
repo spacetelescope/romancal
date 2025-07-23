@@ -1,0 +1,1 @@
+bump required ``stpreview`` version to ``0.6.0``, which includes breaking CLI changes (see `release notes <https://github.com/spacetelescope/stpreview/releases/tag/0.6.0>`_ for details)

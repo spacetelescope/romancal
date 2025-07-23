@@ -73,6 +73,7 @@ def make_det_image(library, kernel_fwhm):
         detection_data = 0.0
         detection_var = 0.0
         wht_sum = 0.0
+        all_nan_mask = False
         for i, model in enumerate(library):
             # TODO: SED weights to be defined in the asn file for each
             # input filter image
@@ -83,7 +84,7 @@ def make_det_image(library, kernel_fwhm):
 
             log.info(
                 f"Processing model {model.meta.filename}: "
-                f"filter={model.meta.basic.optical_element}, {sed_weight=}"
+                f"filter={model.meta.instrument.optical_element}, {sed_weight=}"
             )
 
             # Ideally the weights should be the inverse variance of
@@ -93,25 +94,39 @@ def make_det_image(library, kernel_fwhm):
             # resample step. Note that model.err is the total error, which
             # includes source Poisson noise.
             wht = sed_weight / model.var_rnoise  # inverse variance
-            wht_sum += wht
+            wht_sum += np.nan_to_num(wht, copy=False, nan=0.0)
 
             coverage_mask = np.isnan(model.err)
             with warnings.catch_warnings():
                 # Suppress warnings about any NaNs in the data
                 warnings.filterwarnings(action="ignore", category=AstropyUserWarning)
-
-                detection_data += convolve_fft(
-                    wht * model.data, kernel, mask=coverage_mask
+                data_conv = convolve_fft(
+                    wht * model.data,
+                    kernel,
+                    mask=coverage_mask,
+                    preserve_nan=True,
+                    normalize_kernel=True,
                 )
-                detection_var += convolve_fft(
+                var_conv = convolve_fft(
                     wht**2 * model.var_rnoise,
                     kernel**2,
                     mask=coverage_mask,
+                    preserve_nan=True,
                     normalize_kernel=False,
-                    nan_treatment="fill",
                 )
 
+            detection_data += np.nan_to_num(data_conv, copy=False, nan=0.0)
+            detection_var += np.nan_to_num(var_conv, copy=False, nan=0.0)
+            if i == 0:
+                all_nan_mask = coverage_mask
+            else:
+                np.logical_and(all_nan_mask, coverage_mask, out=all_nan_mask)
+
             library.shelve(model, modify=False)
+
+    # pixels that are NaN in all models are set to NaN in the output
+    detection_data[all_nan_mask] = np.nan
+    detection_var[all_nan_mask] = np.nan
 
     detection_data /= wht_sum
     detection_error = np.sqrt(detection_var) / wht_sum  # std dev error
@@ -148,6 +163,7 @@ def make_detection_image(library, kernel_fwhms):
     det_err = 0
     for kernel_fwhm in kernel_fwhms:
         img, err = make_det_image(library, kernel_fwhm)
-        det_img = np.maximum(det_img, img)
-        det_err = np.maximum(det_err, err)
+        det_img = np.fmax(det_img, img)
+        det_err = np.fmax(det_err, err)
+
     return det_img, det_err

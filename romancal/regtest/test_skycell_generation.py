@@ -13,12 +13,21 @@ from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 pytestmark = [pytest.mark.bigdata]
 
 EXPECTED_FILENAMES = [
-    "r00001_p_v01001001001001_r274dp63x31y80_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x31y81_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x32y82_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x32y80_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x32y81_f158_asn.json",
-    "r00001_p_v01001001001001_r274dp63x32y82_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x48y69_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x48y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x48y71_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x49y69_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x49y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x49y71_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x50y69_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x50y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x50y71_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x51y69_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x51y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x51y71_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x52y69_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x52y70_f158_asn.json",
+    "r00001_p_v01001001001001_270p65x52y71_f158_asn.json",
 ]
 
 
@@ -76,4 +85,4 @@ def test_mosaic_output_is_skycell(mosaic_pipeline_on_skycell_asn):
     rtdata = mosaic_pipeline_on_skycell_asn
     filename = rtdata.output
     with rdm.open(filename) as model:
-        assert model.meta.basic.location_name == "r274dp63x31y80"
+        assert model.meta.wcsinfo.skycell_name == "270p65x48y69"

@@ -1,8 +1,13 @@
+import logging
+
 import numpy as np
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 
 from romancal.datamodels import ModelLibrary
 from romancal.source_catalog.background import RomanBackground
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
 
 def subtract_background(model, box_size=1000):
@@ -28,6 +33,16 @@ def subtract_background(model, box_size=1000):
     # Subtract the background
     mask = np.isnan(model.data)
     coverage_mask = np.logical_or(np.isnan(model.err), model.err == 0)
+
+    # Skip background subtraction if the model is entirely masked
+    total_mask = np.logical_or(mask, coverage_mask)
+    if np.all(total_mask):
+        log.warning(
+            f"Model {model.meta.filename} is entirely masked; "
+            "skipping background subtraction."
+        )
+        return model
+
     bkg = RomanBackground(
         model.data,
         box_size=box_size,

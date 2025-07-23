@@ -10,11 +10,13 @@ from astropy.table import Table
 from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
-from roman_datamodels import datamodels, maker_utils
+from roman_datamodels import datamodels
 
 from romancal.assign_wcs.utils import add_s_region
 from romancal.datamodels import ModelLibrary
+from romancal.regtest import util
 from romancal.resample import ResampleStep
+from romancal.resample.l3_wcs import l3wcsinfo_to_wcs
 
 
 def create_wcs_object_without_distortion(fiducial_world, pscale, shape, **kwargs):
@@ -135,6 +137,18 @@ def test_load_custom_wcs_asdf_without_wcs_attribute(tmp_path):
         step._load_custom_wcs(str(file_path), (100, 100))
 
 
+def test_wcs_wcsinfo_matches(base_image):
+    model = base_image()
+    img = datamodels.ImageModel(model)
+    add_s_region(img)
+
+    output_model = ResampleStep().run(img)
+
+    wcs_from_wcsinfo = l3wcsinfo_to_wcs(output_model.meta.wcsinfo)
+    ra_mad, dec_mad = util.comp_wcs_grids_arcs(output_model.meta.wcs, wcs_from_wcsinfo)
+    assert (ra_mad + dec_mad) / 2.0 < 1.0e-5
+
+
 @pytest.mark.parametrize(
     "good_bits",
     [
@@ -149,7 +163,7 @@ def test_load_custom_wcs_asdf_without_wcs_attribute(tmp_path):
     ],
 )
 def test_set_good_bits_in_resample_meta(base_image, good_bits):
-    model = maker_utils.mk_level2_image(shape=(100, 100))
+    model = base_image()
     model.meta.wcsinfo["vparity"] = -1
     model.meta.wcs.bounding_box = (-0.5, 99.5), (-0.5, 99.5)
 
@@ -211,7 +225,7 @@ def test_individual_image_meta(base_image):
 
 
 @pytest.mark.parametrize(
-    "meta_overrides, expected_basic",
+    "meta_overrides, expected",
     [
         (  # 2 exposures, share visit, etc
             (
@@ -233,11 +247,11 @@ def test_individual_image_meta(base_image):
                 },
             ),
             {
-                "visit": 1,
-                "pass": 1,
-                "segment": 1,
-                "optical_element": "F158",
-                "instrument": "WFI",
+                "meta.observation.visit": 1,
+                "meta.observation.pass": 1,
+                "meta.observation.segment": 1,
+                "meta.instrument.optical_element": "F158",
+                "meta.instrument.name": "WFI",
             },
         ),
         (  # 2 exposures, different metadata
@@ -260,17 +274,17 @@ def test_individual_image_meta(base_image):
                 },
             ),
             {
-                "visit": 1,
-                "pass": 1,
-                "segment": 1,
-                "optical_element": "F158",
-                "instrument": "WFI",
+                "meta.observation.visit": None,
+                "meta.observation.pass": None,
+                "meta.observation.segment": None,
+                "meta.instrument.optical_element": None,
+                "meta.instrument.name": "WFI",
             },
         ),
     ],
 )
-def test_populate_mosaic_basic(base_image, meta_overrides, expected_basic):
-    """Test that the basic mosaic metadata is being populated"""
+def test_populate_mosaic_metadata(base_image, meta_overrides, expected):
+    """Test that the mosaic metadata is being populated"""
     models = []
     for i, meta_override in enumerate(meta_overrides):
         model = base_image()
@@ -289,39 +303,15 @@ def test_populate_mosaic_basic(base_image, meta_overrides, expected_basic):
     input_models = ModelLibrary(models)
     output_model = ResampleStep().run(input_models)
 
-    assert (
-        output_model.meta.basic.time_first_mjd == models[0].meta.exposure.start_time.mjd
-    )
-    assert (
-        output_model.meta.basic.time_last_mjd == models[-1].meta.exposure.end_time.mjd
-    )
-    assert output_model.meta.basic.time_mean_mjd == np.mean(
-        [
-            m.meta.exposure.start_time.mjd
-            + m.meta.exposure.exposure_time / 60 / 60 / 24
-            for m in models
-        ]
+    assert output_model.meta.coadd_info.time_first == models[0].meta.exposure.start_time
+    assert output_model.meta.coadd_info.time_last == models[-1].meta.exposure.end_time
+    assert output_model.meta.coadd_info.time_mean.mjd == np.mean(
+        [m.meta.exposure.start_time.mjd for m in models]
     )
 
-    for key, value in expected_basic.items():
-        assert getattr(output_model.meta.basic, key) == value
-
-
-@pytest.mark.parametrize(
-    "input_pixel_area, pixel_scale_ratio, expected_pixel_area",
-    [
-        # (None, 1.0, None), # this cannot be tested since it causes the step to crash
-        (1.0, 1.0, -999999.0),
-        (1.0, 2.0, -999999.0 * 4.0),
-    ],
-)
-def test_pixel_area_update(
-    base_image, input_pixel_area, pixel_scale_ratio, expected_pixel_area
-):
-    # if input model has a non-None pixel resample should scale it by the square of the pixel_scale_ratio
-    model = base_image()
-    model.meta.photometry.pixel_area = input_pixel_area
-    output_model = ResampleStep(pixel_scale_ratio=pixel_scale_ratio).run(
-        ModelLibrary([model])
-    )
-    assert output_model.meta.photometry.pixel_area == expected_pixel_area
+    for key, value in expected.items():
+        *path, final = key.split(".")
+        obj = output_model
+        for sub_path in path:
+            obj = obj[sub_path]
+        assert obj[final] == value

@@ -19,27 +19,21 @@ dependencies = [
     "gwcs >=0.22.0",
     "jsonschema >=4.8",
     "numpy >=1.25",
-    "photutils >=1.13.0",
+    "photutils >=2.1.0",
     "pyparsing >=2.4.7",
     "requests >=2.26",
-    # "roman_datamodels>=0.23.1,<0.24.0",
-    "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
+    "roman_datamodels>=0.26.0,<0.27.0",
+    # "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
     "scipy >=1.14.1",
-    # "stcal>=1.11.0,<1.12.0",
-    "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
-    "stpipe >=0.8.0,<0.9.0",
+    "stcal>=1.14.1,<1.15.0",
+    # "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
+    "stpipe >=0.10.0,<0.11.0",
     "tweakwcs >=0.8.8",
     "spherical-geometry >= 1.2.22",
     "stsci.imagestats >= 1.6.3",
     "drizzle >= 2.0.1",
-    "stpsf >= 2.0.0",
     "pyarrow >= 10.0.1",  # for Table.read(...) support in astropy for parquet files
     "pandas >= 2.0.0",  # for Table.read(...) support in astropy for parquet files
-    # pysiaf required by stpsf uses pkg_resources which doesn't
-    # exist in python 3.12 without setuptools.
-    # TODO: drop this dependency when stpsf is dropped
-    # (or when pysiaf no longer requires pkg_resources).
-    "setuptools >= 60 ; python_version >= '3.12'",
 ]
 license-files = ["LICENSE"]
 dynamic = [
@@ -58,18 +52,21 @@ docs = [
 ]
 test = [
     "ci-watson >=0.5.0",
+    "pysiaf",
     "pytest >8.0.0",
     "pytest-astropy >= 0.11.0",
     "deepdiff",
-    "stpreview>=0.5.1",
+    "stpreview>=0.6.0",
 ]
 dev = [
+    "pysiaf",
     "romancal[docs,test]",
     "tox > 4",
     "pre-commit > 3",
 ]
 sdp = [
-    "stpreview>=0.5.1",
+    "pysiaf",
+    "stpreview>=0.6.0",
 ]
 
 [project.urls]
@@ -80,15 +77,15 @@ repository = "https://github.com/spacetelescope/romancal"
 [project.entry-points."stpipe.steps"]
 romancal = "romancal.stpipe.integration:get_steps"
 
-[project.entry-points.pytest11]
-stpsf = "pytest_romancal.stpsf_plugin"
-
 [project.scripts]
-roman_static_preview = "romancal.scripts.static_preview:command"
 asn_from_list = "romancal.associations.asn_from_list:_cli"
+mk_skycell_asn_from_skycell_list= "romancal.associations.mk_skycell_asn_from_skycell_list:_cli"
+mk_skycell_list = "romancal.associations.mk_skycell_list:_cli"
+roman_pointing_summary = "romancal.scripts.pointing_summary:main"
+roman_set_telescope_pointing = "romancal.scripts.set_telescope_pointing:main"
+roman_static_preview = "romancal.scripts.static_preview:command"
+roman_v1_calculate = "romancal.scripts.v1_calculate:main"
 skycell_asn = "romancal.associations.skycell_asn:_cli"
-mk_patchlist = "romancal.associations.mk_patchlist:_cli"
-mk_skycell_asn_from_patchlist = "romancal.associations.mk_skycell_asn_from_patchlist:_cli"
 
 [build-system]
 requires = [
@@ -106,7 +103,7 @@ include-package-data = false
 
 [tool.setuptools.packages.find]
 namespaces = false
-include = ["romancal*", "pytest_romancal*"]
+include = ["romancal*"]
 
 [tool.setuptools.package-data]
 # package_data values are glob patterns relative to each specific subpackage.
@@ -273,8 +270,8 @@ name = "``mosaic_pipeline``"
 showcontent = true
 
 [[tool.towncrier.type]]
-directory = "patch_match"
-name = "``patch_match``"
+directory = "skycell"
+name = "``skycell``"
 showcontent = true
 
 # steps
@@ -307,6 +304,11 @@ showcontent = true
 [[tool.towncrier.type]]
 directory = "jump_detection"
 name = "``jump_detection``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "orientation"
+name = "``orientation``"
 showcontent = true
 
 [[tool.towncrier.type]]

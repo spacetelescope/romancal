@@ -7,10 +7,13 @@ import pyarrow
 import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
+from astropy.time import Time
 from numpy.testing import assert_equal
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels as rdm
+from roman_datamodels import stnode
 from roman_datamodels.datamodels import (
+    ForcedImageSourceCatalogModel,
     ImageModel,
     ImageSourceCatalogModel,
     MosaicModel,
@@ -18,7 +21,6 @@ from roman_datamodels.datamodels import (
     MosaicSourceCatalogModel,
     SegmentationMapModel,
 )
-from roman_datamodels.maker_utils import mk_level2_image, mk_level3_mosaic
 
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
@@ -71,8 +73,25 @@ def make_test_image():
 
 @pytest.fixture
 def mosaic_model():
-    wfi_mosaic = mk_level3_mosaic(shape=(101, 101))
-    model = MosaicModel(wfi_mosaic)
+    defaults = {
+        "meta": {
+            "coadd_info": {
+                "time_first": Time("2024-01-01T12:00:00.000", format="isot"),
+            },
+            "instrument": {
+                "optical_element": "F158",
+            },
+            "resample": {"pixfrac": 1.0},
+            "wcsinfo": {
+                "pixel_scale": 1.5277777769528157e-05
+            },  # Taken from regtest test L3 mosaic.
+        }
+    }
+    model = MosaicModel.create_fake_data(defaults=defaults, shape=(101, 101))
+    model.meta.ref_file = stnode.RefFile.create_fake_data()
+    model.meta.filename = "none"
+    model.meta.cal_step = stnode.L3CalStep.create_fake_data()
+    model.cal_logs = stnode.CalLogs.create_fake_data()
     data, err = make_test_image()
     model.data = data
     model.err = err
@@ -82,8 +101,10 @@ def mosaic_model():
 
 @pytest.fixture
 def image_model():
-    wfi_image = mk_level2_image(shape=(101, 101))
-    model = ImageModel(wfi_image)
+    model = ImageModel.create_fake_data(shape=(101, 101))
+    model.meta.filename = "none"
+    model.meta.cal_step = stnode.L2CalStep.create_fake_data()
+    model.meta.cal_logs = stnode.CalLogs.create_fake_data()
     data, err = make_test_image()
     model.data = data
     model.err = err
@@ -91,7 +112,6 @@ def image_model():
     return model
 
 
-@pytest.mark.stpsf
 def test_forced_catalog(image_model, tmp_path):
     os.chdir(tmp_path)
     step = SourceCatalogStep()
@@ -114,6 +134,7 @@ def test_forced_catalog(image_model, tmp_path):
         output_file="force_cat.asdf",
         forced_segmentation="source_segm.asdf",
     )
+    assert isinstance(result_force, ForcedImageSourceCatalogModel)
     catalog = result_force.source_catalog
     assert isinstance(catalog, Table)
     has_forced_fields = False
@@ -123,7 +144,6 @@ def test_forced_catalog(image_model, tmp_path):
     assert has_forced_fields
 
 
-@pytest.mark.stpsf
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results",
     (
@@ -168,7 +188,6 @@ def test_l2_source_catalog(
         assert np.max(cat["y_centroid"]) < 100.0
 
 
-@pytest.mark.stpsf
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results",
     (
@@ -187,9 +206,10 @@ def test_l3_source_catalog(
     os.chdir(tmp_path)
     step = SourceCatalogStep()
 
-    im = mosaic_model
+    # Create model and set some crucial meta required to
+    # create the L3 PSF for flux determination.
     result = step.call(
-        im,
+        mosaic_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
         snr_threshold=snr_threshold,
@@ -215,7 +235,6 @@ def test_l3_source_catalog(
         assert np.max(cat["y_centroid"]) < 100.0
 
 
-@pytest.mark.stpsf
 def test_background(mosaic_model, tmp_path):
     """
     Test background fallback when Background2D fails.
@@ -236,7 +255,6 @@ def test_background(mosaic_model, tmp_path):
     assert isinstance(cat, Table)
 
 
-@pytest.mark.stpsf
 def test_l2_input_model_unchanged(image_model, tmp_path):
     """
     Test that the input model data and error arrays are unchanged after
@@ -261,7 +279,6 @@ def test_l2_input_model_unchanged(image_model, tmp_path):
     assert_equal(original_err, image_model.err)
 
 
-@pytest.mark.stpsf
 def test_l3_input_model_unchanged(mosaic_model, tmp_path):
     """
     Test that the input model data and error arrays are unchanged after
@@ -286,7 +303,17 @@ def test_l3_input_model_unchanged(mosaic_model, tmp_path):
     assert_equal(original_err, mosaic_model.err)
 
 
-@pytest.mark.stpsf
+def test_invalid_step_inputs(image_model, mosaic_model):
+    for input_model in (image_model, mosaic_model):
+        model = input_model.copy()
+        model.data = np.full(model.data.shape, np.nan)
+        step = SourceCatalogStep()
+        result = step.call(model)
+        cat = result.source_catalog
+        assert isinstance(cat, Table)
+        assert len(cat) == 0
+
+
 def test_inputs(mosaic_model):
     data = np.ones((3, 3), dtype=int)
     data[1, 1] = 1
@@ -297,7 +324,6 @@ def test_inputs(mosaic_model):
         RomanSourceCatalog(np.ones((3, 3)), segm, cdata, kernel_fwhm, fit_psf=True)
 
 
-@pytest.mark.stpsf
 def test_psf_photometry(tmp_path, image_model):
     """
     Test PSF photometry.
@@ -330,7 +356,6 @@ def test_psf_photometry(tmp_path, image_model):
             assert not np.any(np.isnan(cat[colname]))  # and contains no nans
 
 
-@pytest.mark.stpsf
 @pytest.mark.parametrize("fit_psf", [True, False])
 def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
     """
@@ -362,7 +387,6 @@ def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
         assert len(psf_colnames) == 0
 
 
-@pytest.mark.stpsf
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results, return_updated_model, expected_result, expected_outputs",
     (
@@ -427,17 +451,18 @@ def test_l2_source_catalog_keywords(
     expected_result,
     expected_outputs,
     tmp_path,
+    monkeypatch,
 ):
     """
     Test that the proper object is returned in the call to SourceCatalogStep
     and that the desired output files are saved to the disk with the correct type.
     """
     os.chdir(tmp_path)
-    step = SourceCatalogStep
-    # this step attribute controls whether to return a datamodel or source catalog
-    step.return_updated_model = return_updated_model
+    monkeypatch.setattr(
+        SourceCatalogStep, "return_updated_model", return_updated_model, raising=False
+    )
 
-    result = step.call(
+    result = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
@@ -457,7 +482,13 @@ def test_l2_source_catalog_keywords(
         else:
             ext = "asdf"
 
-        filepath = Path(tmp_path / f"{result.meta.filename}_{suffix}.{ext}")
+        # annoying case.  Sometimes we have meta.filename as just "none" and
+        # this test relies on the filename actually being at none_cat.parquet, etc.
+        # But if we return a source catalog with a correct meta.filename (e.g.,
+        # none_cat.parquet), this test needs to know how to translate that back
+        # to the equivalent segmentation file.
+        basefilename = result.meta.filename.split("_")[0]
+        filepath = Path(tmp_path / f"{basefilename}_{suffix}.{ext}")
         assert filepath.exists()
 
         if suffix == "cat":
@@ -468,7 +499,6 @@ def test_l2_source_catalog_keywords(
             assert isinstance(rdm.open(filepath), expected_outputs.get(suffix))
 
 
-@pytest.mark.stpsf
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results, return_updated_model, expected_result, expected_outputs",
     (
@@ -533,17 +563,19 @@ def test_l3_source_catalog_keywords(
     expected_result,
     expected_outputs,
     tmp_path,
+    monkeypatch,
 ):
     """
     Test that the proper object is returned in the call to SourceCatalogStep
     and that the desired output files are saved to the disk with the correct type.
     """
     os.chdir(tmp_path)
-    step = SourceCatalogStep
     # this step attribute controls whether to return a datamodel or source catalog
-    step.return_updated_model = return_updated_model
+    monkeypatch.setattr(
+        SourceCatalogStep, "return_updated_model", return_updated_model, raising=False
+    )
 
-    result = step.call(
+    result = SourceCatalogStep.call(
         mosaic_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
@@ -563,7 +595,8 @@ def test_l3_source_catalog_keywords(
         else:
             ext = "asdf"
 
-        filepath = Path(tmp_path / f"{result.meta.filename}_{suffix}.{ext}")
+        basefilename = result.meta.filename.split("_")[0]
+        filepath = Path(tmp_path / f"{basefilename}_{suffix}.{ext}")
         assert filepath.exists()
 
         if suffix == "cat":
@@ -574,7 +607,6 @@ def test_l3_source_catalog_keywords(
             assert isinstance(rdm.open(filepath), expected_outputs.get(suffix))
 
 
-@pytest.mark.stpsf
 @pytest.mark.parametrize(
     "return_updated_model, expected_result",
     (

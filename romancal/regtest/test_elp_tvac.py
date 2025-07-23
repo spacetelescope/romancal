@@ -62,6 +62,7 @@ def truth_filename(run_elp):
 
 
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
+    ignore_asdf_paths["ignore"].append("roman.meta.ref_file.dark")
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
@@ -123,9 +124,7 @@ def test_wcs_applies_distortion_correction(output_model):
     assert (corrected_coords[1] != original_coords[1]).all()
 
 
-@pytest.mark.parametrize(
-    "arr_name", ("dq", "err", "var_poisson", "var_rnoise", "var_flat")
-)
+@pytest.mark.parametrize("arr_name", ("dq", "err", "var_poisson", "var_rnoise"))
 def test_array_exists(output_model, arr_name):
     assert hasattr(output_model, arr_name)
 

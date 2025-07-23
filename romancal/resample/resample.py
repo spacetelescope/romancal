@@ -1,10 +1,10 @@
 import logging
 
 import numpy as np
-from roman_datamodels import datamodels, dqflags, maker_utils
+from roman_datamodels import datamodels, dqflags
 from stcal.resample import Resample
 
-from romancal.patch_match.patch_match import to_skycell_wcs
+import romancal.skycell.skymap as sc
 
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
@@ -36,6 +36,7 @@ class ResampleData(Resample):
         blend_meta,
         resample_on_skycell,
         wcs_kwargs=None,
+        variance_array_names=None,
     ):
         """
         See the base class `stcal.resample.resample.Resample` for more details.
@@ -96,6 +97,9 @@ class ResampleData(Resample):
             when ``output_wcs`` is specified. See
             `romancal.resample.resample_utils.make_output_wcs`
             for supported options.
+
+        variance_array_names : list, None
+            Variance arrays to resample.  If None, use stcal default.
         """
         # fillval indef doesn't define a starting value
         # since we're not resampling onto an existing array
@@ -108,10 +112,20 @@ class ResampleData(Resample):
         self._blend_meta = blend_meta
 
         if output_wcs is None and resample_on_skycell:
-            # first try to use any skycell from the asn
-            if skycell_wcs := to_skycell_wcs(self.input_models):
+            # first try to retrieve a sky cell name from the association
+            try:
+                skycell = sc.SkyCell.from_asn(self.input_models.asn)
+
+                log.info(f"Skycell record: {skycell.data}")
+
+                log.info(
+                    f"Creating skycell image at ra: {skycell.radec_center[0]}  dec {skycell.radec_center[1]}",
+                )
                 log.info("Resampling to skycell wcs")
-                output_wcs = {"wcs": skycell_wcs}
+                output_wcs = {"wcs": skycell.wcs}
+            except ValueError as err:
+                log.warning(f"Unable to compute skycell from input association: {err}")
+                log.warning("Computing output wcs from all input wcses")
 
         if output_wcs is None:
             if wcs_kwargs is None:
@@ -122,6 +136,9 @@ class ResampleData(Resample):
                 "pixel_scale": ps,
                 "pixel_scale_ratio": ps_ratio,
             }
+
+        if variance_array_names:
+            self.variance_array_names = variance_array_names
 
         super().__init__(
             output_wcs,
@@ -165,7 +182,6 @@ class ResampleData(Resample):
             "dq": model.dq,
             "var_rnoise": model.var_rnoise,
             "var_poisson": model.var_poisson,
-            "var_flat": model.var_flat,
             "err": model.err,
             "filename": model.meta.filename,
             "wcs": model.meta.wcs,
@@ -179,6 +195,7 @@ class ResampleData(Resample):
             "level": level,
             "subtracted": subtracted,
             "effective_exposure_time": model.meta.exposure.effective_exposure_time,
+            "var_flat": getattr(model, "var_flat", None),
         }
 
     def _get_intensity_scale(self, model):
@@ -208,31 +225,21 @@ class ResampleData(Resample):
         if self.blend_meta:
             output_model = self._meta_blender.finalize()
         else:
-            output_model = maker_utils.mk_datamodel(
-                datamodels.MosaicModel, n_images=0, shape=(0, 0)
-            )
-
-        output_model.meta.resample.good_bits = self.good_bits
-        output_model.meta.resample.weight_type = self.weight_type
-        output_model.meta.resample.pixfrac = self.output_model["pixfrac"]
-        output_model.meta.basic.product_type = "TBD"
-
-        pixel_scale_ratio = self.output_model["pixel_scale_ratio"]
-        if pixel_scale_ratio is not None:
-            output_model.meta.resample.pixel_scale_ratio = pixel_scale_ratio
-
-        output_model.meta.resample.pointings = self.output_model["pointings"]
+            output_model = datamodels.MosaicModel.create_minimal()
 
         # copy over asn information
-        output_model.meta.basic.location_name = self.input_models.asn.get(
-            "target", "None"
+        output_model.meta.association.name = self.input_models.asn.get(
+            "table_name", "?"
         )
-        if (asn_pool := self.input_models.asn.get("asn_pool", None)) is not None:
-            output_model.meta.asn.pool_name = asn_pool
-        if (
-            asn_table_name := self.input_models.asn.get("table_name", None)
-        ) is not None:
-            output_model.meta.asn.table_name = asn_table_name
+
+        # resample parameters
+        output_model.meta.resample.good_bits = self.good_bits
+        output_model.meta.resample.pixel_scale_ratio = self.output_model[
+            "pixel_scale_ratio"
+        ]
+        output_model.meta.resample.pixfrac = self.output_model["pixfrac"]
+        output_model.meta.resample.pointings = self.output_model["pointings"]
+        output_model.meta.resample.weight_type = self.weight_type
 
         # every resampling will generate these
         output_model.data = self.output_model["data"]
@@ -250,14 +257,13 @@ class ResampleData(Resample):
                 f"Mean, max exposure times: {total_exposure_time:.1f}, "
                 f"{max_exposure_time:.1f}"
             )
-            output_model.meta.basic.mean_exposure_time = total_exposure_time
-            output_model.meta.basic.max_exposure_time = max_exposure_time
-            output_model.meta.resample.product_exposure_time = max_exposure_time
+            output_model.meta.coadd_info.max_exposure_time = max_exposure_time
+            output_model.meta.coadd_info.exposure_time = total_exposure_time
 
         if self._enable_ctx:
             output_model.context = self.output_model["con"].astype(np.uint32)
 
-        for arr_name in ("err", "var_rnoise", "var_poisson", "var_flat"):
+        for arr_name in ["err", *self.variance_array_names]:
             if arr_name in self.output_model:
                 new_array = self.output_model[arr_name]
                 if new_array is not None:
@@ -265,6 +271,9 @@ class ResampleData(Resample):
 
         # assign wcs to output model
         assign_l3_wcs(output_model, self.output_wcs)
+        output_model.meta.wcsinfo.skycell_name = self.input_models.asn.get(
+            "target", "None"
+        )
 
         return output_model
 

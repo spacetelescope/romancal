@@ -7,9 +7,9 @@ import pyarrow
 import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
+from astropy.time import Time
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import MosaicModel, MosaicSegmentationMapModel
-from roman_datamodels.maker_utils import mk_level3_mosaic
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog import MultibandCatalogStep
@@ -46,24 +46,37 @@ def make_test_image():
 
 @pytest.fixture
 def mosaic_model():
-    wfi_mosaic = mk_level3_mosaic(shape=(101, 101))
-    model = MosaicModel(wfi_mosaic)
+    model = MosaicModel.create_fake_data(shape=(101, 101))
     data, err = make_test_image()
     model.data = data
     model.err = err
     model.var_rnoise = err**2
     model.weight = 1.0 / err
+    model.meta.instrument.optical_element = "F184"
+    model.meta.coadd_info.time_first = Time("2027-01-01T00:00:00")
+    model.meta.wcsinfo.pixel_scale = 0.11 / 3600  # degrees
+    model.meta.resample.pixfrac = 0.5
     return model
 
 
 @pytest.fixture
 def library_model(mosaic_model):
     model2 = mosaic_model.copy()
-    model2.meta.basic.optical_element = "F184"
+    model2.meta.instrument.optical_element = "F158"
     return ModelLibrary([mosaic_model, model2])
 
 
-@pytest.mark.stpsf
+@pytest.fixture
+def library_model_all_nan(mosaic_model):
+    model1 = mosaic_model.copy()
+    model1.data[:] = np.nan
+    model2 = mosaic_model.copy()
+    model2.data[:] = np.nan
+    model2.meta.instrument.optical_element = "F158"
+    return ModelLibrary([model1, model2])
+
+
+@pytest.mark.parametrize("fit_psf", (True, False))
 @pytest.mark.parametrize(
     "snr_threshold, npixels, save_results",
     (
@@ -72,7 +85,7 @@ def library_model(mosaic_model):
     ),
 )
 def test_multiband_catalog(
-    library_model, snr_threshold, npixels, save_results, tmp_path
+    library_model, fit_psf, snr_threshold, npixels, save_results, tmp_path
 ):
     os.chdir(tmp_path)
     step = MultibandCatalogStep()
@@ -82,7 +95,7 @@ def test_multiband_catalog(
         bkg_boxsize=50,
         snr_threshold=snr_threshold,
         npixels=npixels,
-        fit_psf=False,
+        fit_psf=fit_psf,
         save_results=save_results,
     )
 
@@ -116,3 +129,75 @@ def test_multiband_catalog(
         filepath = Path(tmp_path / f"{result.meta.filename}_segm.asdf")
         assert filepath.exists()
         assert isinstance(rdm.open(filepath), MosaicSegmentationMapModel)
+
+
+@pytest.mark.parametrize("save_results", (True, False))
+def test_multiband_catalog_no_detections(library_model, save_results, tmp_path):
+    os.chdir(tmp_path)
+    step = MultibandCatalogStep()
+
+    result = step.call(
+        library_model,
+        bkg_boxsize=50,
+        snr_threshold=1000,  # high threshold to ensure no detections
+        npixels=10,
+        fit_psf=False,
+        save_results=save_results,
+    )
+
+    cat = result.source_catalog
+    assert isinstance(cat, Table)
+    assert len(cat) == 0
+
+
+@pytest.mark.parametrize("save_results", (True, False))
+def test_multiband_catalog_invalid_inputs(
+    library_model_all_nan, save_results, tmp_path
+):
+    os.chdir(tmp_path)
+    step = MultibandCatalogStep()
+
+    result = step.call(
+        library_model_all_nan,
+        bkg_boxsize=50,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        save_results=save_results,
+    )
+
+    cat = result.source_catalog
+    assert isinstance(cat, Table)
+    assert len(cat) == 0
+
+
+@pytest.mark.parametrize("save_results", (True, False))
+def test_multiband_catalog_some_invalid_inputs(library_model, save_results, tmp_path):
+    os.chdir(tmp_path)
+
+    # Modify the first model in the library to have all NaN values
+    with library_model:
+        model = library_model.borrow(0)  # f184 model
+        model.data[:] = np.nan
+        model.err[:] = np.nan
+        model.var_rnoise[:] = np.nan
+        library_model.shelve(model, modify=True)
+
+    step = MultibandCatalogStep()
+
+    result = step.call(
+        library_model,
+        bkg_boxsize=50,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        save_results=save_results,
+    )
+
+    cat = result.source_catalog
+    assert isinstance(cat, Table)
+    assert len(cat) == 7
+    assert "segment_f158_flux" in cat.colnames
+    assert "segment_f184_flux" in cat.colnames
+    assert np.all(np.isnan(cat["segment_f184_flux"]))
+    assert np.all(np.isnan(cat["segment_f184_flux_err"]))
