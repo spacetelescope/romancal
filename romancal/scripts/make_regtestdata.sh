@@ -94,7 +94,7 @@ cp ${basename}_ALL_SATURATED_cal.asdf $outdir/roman-pipeline/dev/truth/WFI/image
 
 
 # make a special file dark file with a different name
-strun romancal.step.DarkCurrentStep r0000101001001001001_0001_wfi01_f158_linearity.asdf --output_file=Test_dark
+strun romancal.step.DarkCurrentStep r0000101001001001001_0001_wfi01_f158_rampfit.asdf --output_file=Test_dark
 cp Test_darkcurrent.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 
@@ -102,8 +102,11 @@ cp Test_darkcurrent.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 strun romancal.step.LinearityStep r0000101001001001001_0001_wfi01_f158_refpix.asdf --output_file=Test_linearity
 cp Test_linearity.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
+# test likelihood-based ramp fitting step
+strun romancal.step.RampFitStep r0000101001001001001_0001_wfi01_f158_linearity.asdf --algorithm=likely --output_file=r0000101001001001001_0001_wfi01_f158_like_rampfit.asdf
+cp r0000101001001001001_0001_wfi01_f158_like_rampfit.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
-# we have a test that runs the flat field step directly on an _L1_ spectroscopic
+# We have a test that runs the flat field step directly on an _L1_ spectroscopic
 # file and verifies that it gets skipped.
 basename="r0000201001001001001_0001_wfi01_grism"
 strun romancal.step.FlatFieldStep ${basename}_assignwcs.asdf
@@ -225,7 +228,7 @@ cp ${l3name}_force_cat.parquet $outdir/roman-pipeline/dev/truth/WFI/image/
 
 jf rt dl roman-pipeline/dev/WFI/image/TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf --flat
 jf rt dl roman-pipeline/dev/references/dark_ma510.asdf --flat
-strun roman_elp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf --steps.tweakreg.skip=true --steps.source_catalog.skip=true --steps.dq_init.save=true --steps.dark_current.override_dark=dark_ma510.asdf --steps.rampfit.override_dark=dark_ma510.asdf
+strun roman_elp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf --steps.tweakreg.skip=true --steps.source_catalog.skip=true --steps.dq_init.save=true --steps.dark_current.override_dark=dark_ma510.asdf
 cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
 cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_cal.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_dqinit.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
