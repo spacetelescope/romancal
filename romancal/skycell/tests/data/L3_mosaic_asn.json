@@ -1,29 +1,34 @@
 {
-    "asn_type": "None",
+    "asn_type": "image",
     "asn_rule": "DMS_ELPP_Base",
     "version_id": null,
-    "code_version": "0.18.1.dev102+g74d0e38d",
-    "target": "225p90x49y67",
+    "code_version": "0.19.1.dev97+g5a246a61",
+    "target": "045p86x47y51",
     "degraded_status": "No known degraded exposures in association.",
-    "program": "noprogram",
+    "program": "odel.",
     "constraints": "No constraints",
     "asn_id": "a3001",
     "asn_pool": "none",
-    "skycell_wcs_info": "none",
+    "skycell_wcs_info": {
+        "name": "000p86x69y62",
+        "pixel_scale": 1.5277777777777777e-05,
+        "ra_projection_center": 45.0,
+        "dec_projection_center": 86.40080763030687,
+        "x0_projection": -2300.5,
+        "y0_projection": 16899.5,
+        "ra_center": 46.10082342218519,
+        "dec_center": 86.18010578369427,
+        "nx": 5000,
+        "ny": 5000,
+        "orientat": -1.1008234024047852,
+        "orientat_projection_center": 0.0
+    },
     "products": [
         {
-            "name": "r00001_p_v01001001001001_225p90x49y67_f158",
+            "name": "r0000101001001001001_p_vasdf_000p86x69y62_f158",
             "members": [
                 {
-                    "expname": "r0000101001001001001_0001_wfi01_f158_cal.asdf",
-                    "exptype": "science"
-                },
-                {
-                    "expname": "r0000101001001001001_0002_wfi01_f158_cal.asdf",
-                    "exptype": "science"
-                },
-                {
-                    "expname": "r0000101001001001001_0003_wfi01_f158_cal.asdf",
+                    "expname": "todel.asdf",
                     "exptype": "science"
                 }
             ]
