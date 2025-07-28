@@ -41,7 +41,7 @@ def test_psf_library(
         # matches the data file
         ref_data = rdm.open(ref_file)
         wfi_data = rdm.open(rtdata.input)
-        psf_selection_match = ((wfi_dat.meta.instrument.optical_element == ref_data.meta.instrument.optical_element) and
+        psf_selection_match = ((wfi_data.meta.instrument.optical_element == ref_data.meta.instrument.optical_element) and
                               (wfi_data.meta.instrument.detector == ref_data.meta.instrument.detector))
         assert psf_selection_match
         passmsg = "PASS" if psf_selection_match else "FAIL"
