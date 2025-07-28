@@ -146,5 +146,20 @@
   ],
   "DMS488": [
     "romancal.regtest.test_tweakreg.test_tweakreg"
+  ],
+     "DMS531": [
+	 "romancal.regtest.test_source_catalog.test_psf_library"
+  ],
+     "DMS532": [
+	 "romancal.regtest.test_source_catalog.test_psf_library"
+     ],
+     "DMS535": [
+	 "romancal.regtest.test_source_catalog.test_psf_library"
+  ],
+     "DMS536": [
+	 "romancal.regtest.test_source_catalog.test_psf_library"
+  ],    
+  "DMS549": [
+    "romancal.regtest.test_tweakreg.test_tweakreg"
   ]
 }

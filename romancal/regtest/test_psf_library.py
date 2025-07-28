@@ -29,9 +29,11 @@ def test_psf_library(
         # DMS 532 is that we have access to the PSF library. By retrieving a
         # PSF reference file we show that the library exists and we have access. 
         ref_file = step.get_reference_file(rtdata.input, "epsf")
-        passmsg = "PASS" if ref_file not in"N/A"  else "FAIL"
+        has_ref_file = ref_file != "N/A"
+        assert has_ref_file
+        passmsg = "PASS" if has_ref_file  else "FAIL"
         dms_logger.info(f"DMS531 {passmsg},  ePSF reference file {ref_file} exists.")
-        passmsg = "PASS" if ref_file not in"N/A"  else "FAIL"
+        passmsg = "PASS" if has_ref_file  else "FAIL"
         dms_logger.info(f"DMS532 {passmsg},  ePSF reference file {ref_file} was retrieved.")
 
         # DMS 535 identify an appropriate PSF for WFI source
@@ -39,8 +41,10 @@ def test_psf_library(
         # matches the data file
         ref_data = rdm.open(ref_file)
         wfi_data = rdm.open(rtdata.input)
-        passmsg = "PASS" if ((wfi_data.meta.instrument.detector == ref_data.meta.instrument.detector)
-                             and (wfi_data.meta.instrument.optical_element == ref_data.meta.instrument.optical_element))  else "FAIL"
+        psf_selection_match = ((wfi_dat.meta.instrument.optical_element == ref_data.meta.instrument.optical_element) and
+                              (wfi_data.meta.instrument.detector == ref_data.meta.instrument.detector))
+        assert psf_selection_match
+        passmsg = "PASS" if psf_selection_match else "FAIL"
         dms_logger.info(f"DMS535 {passmsg},  ePSF reference file selection matches input data file")                             
 
         # DMS 536 interpolating empirical ePSFs given the observed-source position
