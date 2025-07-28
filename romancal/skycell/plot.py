@@ -5,8 +5,8 @@ matplotlib dependency is optional.
 """
 
 import numpy as np
-import spherical_geometry.vector as sgv
 from numpy.typing import NDArray
+from sphersgeo import MultiSphericalPoint, SphericalPoint
 
 import romancal.skycell.match as sm
 import romancal.skycell.skymap as sc
@@ -51,7 +51,7 @@ def find_intersecting_projregions(
 
     # find the closest projection regions to the image center
     _, nearby_projregion_indices = skymap.projection_regions_kdtree.query(
-        footprint.vectorpoint_center,
+        footprint.center.xyz,
         k=footprint.possibly_intersecting_projregions,
         distance_upper_bound=footprint.possible_intersecting_projregion_distance * 1.1,
     )
@@ -67,8 +67,8 @@ def find_intersecting_projregions(
 
 
 def veccoords_to_tangent_plane(
-    vertices: list[tuple[float, float, float]],
-    tangent_vectorpoint: tuple[float, float, float],
+    vertices: list[tuple[float, float, float]] | MultiSphericalPoint,
+    tangent: tuple[float, float, float] | SphericalPoint,
 ) -> NDArray[float]:
     """Convert the spherical geometry vectors to tangent plane coordinates
     in arcseconds. This algorithm is not precise, but should be good
@@ -77,16 +77,17 @@ def veccoords_to_tangent_plane(
     poles.
     """
 
+    if not isinstance(vertices, MultiSphericalPoint):
+        vertices = MultiSphericalPoint(vertices)
+
+    if not isinstance(tangent, SphericalPoint):
+        tangent = SphericalPoint(tangent)
+
     # First compute the tangent plane axis vectors.
-    x_axis = sgv.normalize_vector(np.cross([0, 0, 1], tangent_vectorpoint))
-    y_axis = sgv.normalize_vector(
-        np.array([0, 0, 1])
-        - np.array(tangent_vectorpoint)
-        * np.dot(np.array([0, 0, 1]), np.array(tangent_vectorpoint))
-    )
-    avertices = np.vstack(vertices).T
-    x_coords = np.dot(x_axis, avertices) * RAD_TO_ARCSEC
-    y_coords = np.dot(y_axis, avertices) * RAD_TO_ARCSEC
+    x_axis = tangent.vector_cross((0, 0, 1))
+    y_axis = -tangent + (0, 0, 1) * tangent.vector_dot((0, 0, 1))
+    x_coords = np.dot(x_axis.xyz, vertices.xyzs) * RAD_TO_ARCSEC
+    y_coords = np.dot(y_axis.xyz, vertices.xyzs) * RAD_TO_ARCSEC
     return np.stack([x_coords, y_coords], axis=1)
 
 
@@ -102,20 +103,19 @@ def plot_projregion(
     if axis is None:
         axis = plt
 
-    tangent_vectorpoint = sgv.normalize_vector(
-        sgv.lonlat_to_vector(*projregion.radec_tangent)
-    )
-    corners = projregion.vectorpoint_corners
-    corners = np.concat([corners, corners[0, :].reshape((1, 3))], axis=0)
-    corners_tangentplane = veccoords_to_tangent_plane(
-        corners,
-        tangent_vectorpoint,
+    vertices = projregion.polygon.boundary.points.xyzs
+    vertices = np.concat([vertices, vertices[0, :].reshape((1, 3))], axis=0)
+    xy_vertices_tangentplane = veccoords_to_tangent_plane(
+        vertices,
+        projregion.tangent,
     )
 
-    axis.plot(corners_tangentplane[:, 0], corners_tangentplane[:, 1], color=color)
+    axis.plot(
+        xy_vertices_tangentplane[:, 0], xy_vertices_tangentplane[:, 1], color=color
+    )
 
     if label:
-        center = np.mean(corners_tangentplane[:-1], axis=0)
+        center = np.mean(xy_vertices_tangentplane[:-1], axis=0)
         axis.annotate(
             f"proj{projregion.index}",
             center,
@@ -128,7 +128,7 @@ def plot_projregion(
 
 def plot_skycell(
     skycell: sc.SkyCell,
-    tangent_vectorpoint: tuple[float, float, float],
+    tangent: SphericalPoint,
     color=None,
     label: str | None = None,
     annotation: str | None = None,
@@ -137,19 +137,22 @@ def plot_skycell(
     if axis is None:
         axis = plt
 
-    corners = skycell.vectorpoint_corners
-    corners = np.concat([corners, corners[0, :].reshape((1, 3))], axis=0)
-    corners_tangentplane = veccoords_to_tangent_plane(
-        corners,
-        tangent_vectorpoint,
+    vertices = skycell.polygon.vertices
+    vertices = np.concat([vertices, vertices[0, :].reshape((1, 3))], axis=0)
+    xy_vertices_tangentplane = veccoords_to_tangent_plane(
+        vertices,
+        tangent,
     )
 
     axis.plot(
-        corners_tangentplane[:, 0], corners_tangentplane[:, 1], color=color, label=label
+        xy_vertices_tangentplane[:, 0],
+        xy_vertices_tangentplane[:, 1],
+        color=color,
+        label=label,
     )
 
     if annotation:
-        center = np.mean(corners_tangentplane[:-1], axis=0)
+        center = np.mean(xy_vertices_tangentplane[:-1], axis=0)
         axis.annotate(
             annotation, center, va="center", ha="center", size=10, color=color
         )
@@ -172,7 +175,7 @@ def plot_image_footprint_and_skycells(
     """
 
     if not isinstance(footprint, sm.ImageFootprint):
-        footprint = sm.ImageFootprint(footprint)
+        footprint = sm.ImageFootprint.from_lonlats(footprint)
 
     if skymap is None:
         skymap = sc.SKYMAP
@@ -191,12 +194,9 @@ def plot_image_footprint_and_skycells(
 
         projregion = sc.ProjectionRegion(projregion_index, skymap=skymap)
 
-        tangent_vectorpoint = sgv.normalize_vector(
-            sgv.lonlat_to_vector(*projregion.radec_tangent)
-        )
         image_corners_tangentplane = veccoords_to_tangent_plane(
-            footprint.vectorpoint_vertices,
-            tangent_vectorpoint,
+            footprint.polygon.vertices,
+            projregion.tangent,
         )
         plot_field(image_corners_tangentplane, fill="lightgrey", color="black")
 
@@ -206,12 +206,12 @@ def plot_image_footprint_and_skycells(
             skycell = sc.SkyCell(skycell_index, skymap=skymap)
             plot_skycell(
                 skycell,
-                tangent_vectorpoint,
+                projregion.tangent,
                 color="darkgrey",
             )
 
         _, nearby_skycell_indices = projregion.skycells_kdtree.query(
-            footprint.vectorpoint_center,
+            footprint.center.xyz,
             k=footprint.possibly_intersecting_skycells,
             distance_upper_bound=footprint.length + sc.SkyCell.length,
         )
@@ -222,20 +222,20 @@ def plot_image_footprint_and_skycells(
             )
             plot_skycell(
                 skycell,
-                tangent_vectorpoint,
+                projregion.tangent,
                 color="red",
             )
 
             if footprint.polygon.intersects_poly(skycell.polygon):
                 plot_skycell(
-                    skycell, tangent_vectorpoint, color="blue", annotation=skycell.name
+                    skycell, projregion.tangent, color="blue", annotation=skycell.name
                 )
 
         axis.set_xlabel("Offset from nearest tangent point in arcsec")
         axis.set_ylabel("Offset from nearest tangent point in arcsec")
 
-        axis.set_title(f"tangent point radec {np.array(projregion.radec_tangent)}")
+        axis.set_title(f"tangent point radec {projregion.tangent.to_lonlat()}")
 
-        axes.append((axis, tangent_vectorpoint))
+        axes.append((axis, projregion.tangent))
 
     return axes
