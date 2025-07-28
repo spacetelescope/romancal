@@ -9,7 +9,7 @@ from pathlib import Path
 
 import asdf
 import numpy as np
-import spherical_geometry.vector as sgv
+from sphersgeo import SphericalPoint
 
 import romancal.skycell.skymap as sc
 
@@ -52,11 +52,11 @@ def patch_names_to_skycell_names(
         patch = patch_table["patches"][
             np.where(patch_table["patches"]["name"] == patch_name)
         ]
-        patch_radec_center = np.array(
-            sgv.lonlat_to_vector(patch["ra_center"], patch["dec_center"])
-        ).T[0]
+        patch_center = SphericalPoint.from_lonlat(
+            (patch["ra_center"], patch["dec_center"])
+        ).xyz
         neighboring_projregion_indices = skymap.projection_regions_kdtree.query(
-            patch_radec_center,
+            patch_center.xyz,
             k=4,
         )[1]
 
@@ -65,7 +65,7 @@ def patch_names_to_skycell_names(
             if index not in projregions:
                 projregions[index] = sc.ProjectionRegion(index)
             distance, skycell_index = projregions[index].skycells_kdtree.query(
-                patch_radec_center, k=1
+                patch_center.xyz, k=1
             )
             skycell_indices[distance] = skycell_index
 
