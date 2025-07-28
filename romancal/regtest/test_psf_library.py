@@ -39,32 +39,32 @@ def test_psf_library(
         # DMS 535 identify an appropriate PSF for WFI source
         # check that the detector and optical element for the psf ref file
         # matches the data file
-        ref_data = rdm.open(ref_file)
-        wfi_data = rdm.open(rtdata.input)
-        psf_selection_match = ((wfi_data.meta.instrument.optical_element == ref_data.meta.instrument.optical_element) and
-                              (wfi_data.meta.instrument.detector == ref_data.meta.instrument.detector))
-        assert psf_selection_match
-        passmsg = "PASS" if psf_selection_match else "FAIL"
-        dms_logger.info(f"DMS535 {passmsg},  ePSF reference file selection matches input data file")                             
+        with rdm.open(ref_file) as ref_data:
+                with rdm.open(rtdata.input) as wfi_data:
+                        psf_selection_match = ((wfi_data.meta.instrument.optical_element == ref_data.meta.instrument.optical_element) and
+                                              (wfi_data.meta.instrument.detector == ref_data.meta.instrument.detector))
+                        assert psf_selection_match
+                        passmsg = "PASS" if psf_selection_match else "FAIL"
+                        dms_logger.info(f"DMS535 {passmsg},  ePSF reference file selection matches input data file")                             
 
-        # DMS 536 interpolating empirical ePSFs given the observed-source position
-        # Create two psf's one at the center and one off-center to show we can interpolate the PSF
-        # and that the two are not the same
-        psf_model = psf.get_gridded_psf_model(ref_data)
-        center = 2044
-        szo2 = 10 # psf stamp axis lenght/2
-        oversample = 11
-        npix = szo2 * 2 * oversample + 1
-        pts = np.linspace(-szo2 + center, szo2 + center, npix)
-        xx, yy = np.meshgrid(pts, pts)
-        psf_center = psf_model.evaluate(xx, yy, 1, center, center)
-        off_center = center + 99
-        pts = np.linspace(-szo2 + off_center, szo2 + off_center, npix)
-        xx, yy = np.meshgrid(pts, pts)
-        psf_offcenter = psf_model.evaluate(xx, yy, 1, off_center, off_center)
-        # show that these two are different
-        diff = psf_offcenter - psf_center
-        # check to make sure the difference is not zero over the array
-        psf_diff = diff.any()
-        passmsg = "PASS" if psf_diff else "FAIL"
-        dms_logger.info(f"DMS536 {passmsg},  The interpolated ePSF for two positions are not the same") 
+                        # DMS 536 interpolating empirical ePSFs given the observed-source position
+                        # Create two psf's one at the center and one off-center to show we can interpolate the PSF
+                        # and that the two are not the same
+                        psf_model = psf.get_gridded_psf_model(ref_data)
+                        center = 2044
+                        szo2 = 10 # psf stamp axis lenght/2
+                        oversample = 11
+                        npix = szo2 * 2 * oversample + 1
+                        pts = np.linspace(-szo2 + center, szo2 + center, npix)
+                        xx, yy = np.meshgrid(pts, pts)
+                        psf_center = psf_model.evaluate(xx, yy, 1, center, center)
+                        off_center = center + 99
+                        pts = np.linspace(-szo2 + off_center, szo2 + off_center, npix)
+                        xx, yy = np.meshgrid(pts, pts)
+                        psf_offcenter = psf_model.evaluate(xx, yy, 1, off_center, off_center)
+                        # show that these two are different
+                        diff = psf_offcenter - psf_center
+                        # check to make sure the difference is not zero over the array
+                        psf_diff = diff.any()
+                        passmsg = "PASS" if psf_diff else "FAIL"
+                        dms_logger.info(f"DMS536 {passmsg},  The interpolated ePSF for two positions are not the same") 
