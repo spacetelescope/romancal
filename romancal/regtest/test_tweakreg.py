@@ -84,8 +84,10 @@ def test_tweakreg(
 
     # check if the Mean Absolute Error is less that 10 milliarcsec  (DMS406)
     abs_diff = (np.absolute(diff) *0.1)/1.e-3
-    mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae * 0.1)/ 1.e-3
+    mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae )/ 1.e-3
+    assert mean_abs_error < 10.0
     passmsg = "PASS" if  mean_abs_error < 10.0 else "FAIL"
+     assert np.max(abs_diff) < 10.0
     passmsg = "PASS" if  np.max(abs_diff) < 10.0 else "FAIL"
     dms_logger.info(f"DMS406 {passmsg} the Absolute Astrometric Uncertainty of {np.max(abs_diff):5.2f} mas is less that 10 mas.")
 
@@ -99,12 +101,14 @@ def test_tweakreg(
                 log_substring = entry[entry.rfind('abs_refcat'):]
                 refcat_name = log_substring[:log_substring.find('\n')]
 
+        assert tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"
+        assert "GAIA" in refcat_name
         passmsg = "PASS" if "GAIA" in refcat_name else "FAIL"
         dms_logger.info(f"DMS549 MSG: {passmsg}, {refcat_name} used to align data to "
                         f"the Gaia astrometric reference frame.")
     
     # check if the Mean Absolute Error is less that 5 milliarcsec  (DMS549)
-    mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae * 0.1)/ 1.e-3
+    mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae )/ 1.e-3
     assert  mean_abs_error < 5.0
     passmsg = "PASS" if  mean_abs_error < 5.0 else "FAIL"
     dms_logger.info(f"DMS549 {passmsg} the Mean Absolute Error of {mean_abs_error:5.2f} mas is less that 5 mas.")
@@ -112,6 +116,7 @@ def test_tweakreg(
     passmsg = "PASS" if  tweakreg_out.meta.cal_step.tweakreg == "COMPLETE" else "FAIL"
     dms_logger.info(f"DMS549 {passmsg} the Tweakreg step is compete.")
     wcs_filename = output_data.rsplit("_", 1)[0] + "_wcs.asdf"
+    assert os.path.isfile(wcs_filename)
     passmsg = "PASS" if os.path.isfile(wcs_filename) else "FAIL"
     dms_logger.info(f"DMS549 {passmsg} the output wcs file exists.")
 
