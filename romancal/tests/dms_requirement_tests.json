@@ -145,21 +145,21 @@
     "romancal.regtest.test_wfi_grism_16resultants.test_output_has_16_resultants"
   ],
   "DMS488": [
-    "romancal.regtest.test_tweakreg"
+      "romancal.regtest.test_tweakreg.test_tweakreg"
   ],
      "DMS531": [
-	 "romancal.regtest.test_psf_library"
+	 "romancal.regtest.test_psf_library.test_psf_library"
   ],
      "DMS532": [
-	 "romancal.regtest.test_psf_library"
+	 "romancal.regtest.etst_psf_library.test_psf_library"
      ],
      "DMS535": [
-	 "romancal.regtest.test_psf_library"
+	 "romancal.regtest.test_psf_library.test_psf_library"
   ],
      "DMS536": [
-	 "romancal.regtest.test_psf_library"
+	 "romancal.regtest.test_psf_library.test_psf_library"
   ],    
   "DMS549": [
-    "romancal.regtest.test_tweakreg"
+    "romancal.regtest.test_tweakreg.test_tweakreg"
   ]
 }
