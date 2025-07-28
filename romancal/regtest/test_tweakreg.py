@@ -87,7 +87,7 @@ def test_tweakreg(
     mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae )/ 1.e-3
     assert mean_abs_error < 10.0
     passmsg = "PASS" if  mean_abs_error < 10.0 else "FAIL"
-     assert np.max(abs_diff) < 10.0
+    assert np.max(abs_diff) < 10.0
     passmsg = "PASS" if  np.max(abs_diff) < 10.0 else "FAIL"
     dms_logger.info(f"DMS406 {passmsg} the Absolute Astrometric Uncertainty of {np.max(abs_diff):5.2f} mas is less that 10 mas.")
 
