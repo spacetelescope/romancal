@@ -25,12 +25,12 @@ def test_skycell_from_name():
 @pytest.mark.parametrize(
     "name",
     [
-        "000p86x61y68",
-        "045p86x29y34",
+        "000p86x68y61",
+        "045p86x34y29",
         # north pole
-        "225p90x25y49",
+        "135p90x49y25",
         # south pole
-        "135m90x40y46",
+        "225m90x46y40",
     ],
 )
 def test_skycell_wcs_pixel_to_world(name):
@@ -45,10 +45,10 @@ def test_skycell_wcs_pixel_to_world(name):
             wcs(
                 *np.array(
                     [
-                        (0.5, 0.5),
-                        (skycell.pixel_shape[0] + 0.5, 0.5),
-                        (skycell.pixel_shape[0] + 0.5, skycell.pixel_shape[1] + 0.5),
-                        (0.5, skycell.pixel_shape[1] + 0.5),
+                        (-0.5, -0.5),
+                        (skycell.pixel_shape[0] - 0.5, -0.5),
+                        (skycell.pixel_shape[0] - 0.5, skycell.pixel_shape[1] - 0.5),
+                        (-0.5, skycell.pixel_shape[1] - 0.5),
                     ]
                 ).T,
                 with_bounding_box=False,
@@ -62,12 +62,12 @@ def test_skycell_wcs_pixel_to_world(name):
 @pytest.mark.parametrize(
     "name",
     [
-        "000p86x30y34",
-        "045p86x29y34",
+        "000p86x34y30",
+        "045p86x34y29",
         # north pole
-        "225p90x25y49",
+        "135p90x49y25",
         # south pole
-        "135m90x40y46",
+        "225m90x46y40",
     ],
 )
 def test_skycell_wcs_world_to_pixel(name):
@@ -81,10 +81,10 @@ def test_skycell_wcs_world_to_pixel(name):
         np.array(wcs.invert(*skycell.radec_corners.T, with_bounding_box=False)).T,
         (
             [
-                (0.5, 0.5),
-                (skycell.pixel_shape[0] + 0.5, 0.5),
-                (skycell.pixel_shape[0] + 0.5, skycell.pixel_shape[1] + 0.5),
-                (0.5, skycell.pixel_shape[1] + 0.5),
+                (-0.5, -0.5),
+                (skycell.pixel_shape[0] - 0.5, -0.5),
+                (skycell.pixel_shape[0] - 0.5, skycell.pixel_shape[1] - 0.5),
+                (-0.5, skycell.pixel_shape[1] - 0.5),
             ]
         ),
         rtol=1e-5,
