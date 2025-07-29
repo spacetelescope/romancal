@@ -1,18 +1,10 @@
-import pdb
-import asdf
 import numpy as np
 import pytest
-from astropy import units as u
 
-from photutils.psf import GriddedPSFModel
 from roman_datamodels import datamodels as rdm
 
-from romancal.step import SourceCatalogStep
-from romancal.stpipe import RomanStep
-
 import romancal.source_catalog.psf as psf
-
-from .regtestdata import compare_asdf
+from romancal.step import SourceCatalogStep
 
 
 @pytest.mark.bigdata

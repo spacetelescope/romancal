@@ -1,7 +1,9 @@
 import os
+
 import asdf
 import numpy as np
 import pytest
+
 from astropy import units as u
 from roman_datamodels import datamodels as rdm
 
@@ -86,9 +88,9 @@ def test_tweakreg(
     abs_diff = (np.absolute(diff) *0.1)/1.e-3
     mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae )/ 1.e-3
     assert mean_abs_error < 10.0
-    passmsg = "PASS" if  mean_abs_error < 10.0 else "FAIL"
+    passmsg = "PASS" if mean_abs_error < 10.0 else "FAIL"
     assert np.max(abs_diff) < 10.0
-    passmsg = "PASS" if  np.max(abs_diff) < 10.0 else "FAIL"
+    passmsg = "PASS" if np.max(abs_diff) < 10.0 else "FAIL"
     dms_logger.info(f"DMS406 {passmsg} the Absolute Astrometric Uncertainty of {np.max(abs_diff):5.2f} mas is less that 10 mas.")
 
 
@@ -97,9 +99,9 @@ def test_tweakreg(
     if tweakreg_out.meta.cal_step.tweakreg == "COMPLETE":
         # Find the reference catalog used by tweakreg
         for entry in tweakreg_out.meta.cal_logs:
-            if 'abs_refcat' in entry:
-                log_substring = entry[entry.rfind('abs_refcat'):]
-                refcat_name = log_substring[:log_substring.find('\n')]
+            if "abs_refcat" in entry:
+                log_substring = entry[entry.rfind("abs_refcat"):]
+                refcat_name = log_substring[:log_substring.find("\n")]
 
         assert tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"
         assert "GAIA" in refcat_name
@@ -113,6 +115,7 @@ def test_tweakreg(
     passmsg = "PASS" if  mean_abs_error < 5.0 else "FAIL"
     dms_logger.info(f"DMS549 {passmsg} the Mean Absolute Error of {mean_abs_error:5.2f} mas is less that 5 mas.")
     # check that the tweakreg step is marked complete
+    assert tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"
     passmsg = "PASS" if  tweakreg_out.meta.cal_step.tweakreg == "COMPLETE" else "FAIL"
     dms_logger.info(f"DMS549 {passmsg} the Tweakreg step is compete.")
     wcs_filename = output_data.rsplit("_", 1)[0] + "_wcs.asdf"
