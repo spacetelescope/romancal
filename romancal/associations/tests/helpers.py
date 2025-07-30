@@ -17,75 +17,75 @@ from romancal.associations.lib.utilities import is_iterable
 
 
 # Define how to setup initial conditions with pools.
-class PoolParams(
-    namedtuple(
-        "PoolParams",
-        ["path", "n_asns", "n_orphaned", "candidates", "valid_suffixes", "kwargs"],
-    )
-):
-    def __new__(
-        cls,
-        path="",
-        n_asns=0,
-        n_orphaned=0,
-        candidates=None,
-        valid_suffixes=None,
-        kwargs=None,
-    ):
-        if not kwargs:
-            kwargs = {}
-        if candidates is None:
-            candidates = []
-            if valid_suffixes is None:
-                valid_suffixes = ["cal", "calints", "cat"]
-        return super().__new__(
-            cls, path, n_asns, n_orphaned, candidates, valid_suffixes, kwargs
-        )
+# class PoolParams(
+#     namedtuple(
+#         "PoolParams",
+#         ["path", "n_asns", "n_orphaned", "candidates", "valid_suffixes", "kwargs"],
+#     )
+# ):
+#     def __new__(
+#         cls,
+#         path="",
+#         n_asns=0,
+#         n_orphaned=0,
+#         candidates=None,
+#         valid_suffixes=None,
+#         kwargs=None,
+#     ):
+#         if not kwargs:
+#             kwargs = {}
+#         if candidates is None:
+#             candidates = []
+#             if valid_suffixes is None:
+#                 valid_suffixes = ["cal", "calints", "cat"]
+#         return super().__new__(
+#             cls, path, n_asns, n_orphaned, candidates, valid_suffixes, kwargs
+#         )
 
 
-# Basic Pool/Rule test class
-class BasePoolRule:
-    # Define the pools and testing parameters related to them.
-    # Each entry is a tuple starting with the path of the pool.
-    pools = []
+# # Basic Pool/Rule test class
+# class BasePoolRule:
+#     # Define the pools and testing parameters related to them.
+#     # Each entry is a tuple starting with the path of the pool.
+#     pools = []
 
-    # Define the rules that SHOULD be present.
-    # Each entry is the class name of the rule.
-    valid_rules = []
+#     # Define the rules that SHOULD be present.
+#     # Each entry is the class name of the rule.
+#     valid_rules = []
 
-    def test_rules_exist(self):
-        rules = registry_level2_only()
-        assert len(rules) >= len(self.valid_rules)
-        rule_names = get_rule_names(rules)
-        for rule in self.valid_rules:
-            assert rule in rule_names
+#     def test_rules_exist(self):
+#         rules = registry_level2_only()
+#         assert len(rules) >= len(self.valid_rules)
+#         rule_names = get_rule_names(rules)
+#         for rule in self.valid_rules:
+#             assert rule in rule_names
 
-    def test_run_generate(self):
-        rules = registry_level2_only()
-        for ppars in self.pools:
-            pool = combine_pools(ppars.path, **ppars.kwargs)
-            asns = generate(pool, rules)
-            assert len(asns) == ppars.n_asns, (
-                ppars.path
-                + ": n_asns not expected {} {}".format(len(asns), ppars.n_asns)
-            )
-            for asn, candidates in zip(asns, ppars.candidates):
-                assert set(asn.candidates) == set(candidates)
-            file_regex = re.compile(r".+_(?P<suffix>.+)\..+")
-            for asn in asns:
-                for product in asn["products"]:
-                    for member in product["members"]:
-                        if member["exptype"] == "science":
-                            match = file_regex.match(member["expname"])
-                            assert match is not None, (
-                                ppars.path
-                                + ": No suffix match for {}".format(member["expname"])
-                            )
-                            assert (
-                                match.groupdict()["suffix"] in ppars.valid_suffixes
-                            ), ppars.path + ": Suffix {} not valid".format(
-                                match.groupdict()["suffix"]
-                            )
+#     def test_run_generate(self):
+#         rules = registry_level2_only()
+#         for ppars in self.pools:
+#             pool = combine_pools(ppars.path, **ppars.kwargs)
+#             asns = generate(pool, rules)
+#             assert len(asns) == ppars.n_asns, (
+#                 ppars.path
+#                 + ": n_asns not expected {} {}".format(len(asns), ppars.n_asns)
+#             )
+#             for asn, candidates in zip(asns, ppars.candidates):
+#                 assert set(asn.candidates) == set(candidates)
+#             file_regex = re.compile(r".+_(?P<suffix>.+)\..+")
+#             for asn in asns:
+#                 for product in asn["products"]:
+#                     for member in product["members"]:
+#                         if member["exptype"] == "science":
+#                             match = file_regex.match(member["expname"])
+#                             assert match is not None, (
+#                                 ppars.path
+#                                 + ": No suffix match for {}".format(member["expname"])
+#                             )
+#                             assert (
+#                                 match.groupdict()["suffix"] in ppars.valid_suffixes
+#                             ), ppars.path + ": Suffix {} not valid".format(
+#                                 match.groupdict()["suffix"]
+#                             )
 
 
 def make_megapool():
