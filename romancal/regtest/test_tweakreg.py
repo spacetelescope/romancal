@@ -3,7 +3,6 @@ import os
 import asdf
 import numpy as np
 import pytest
-
 from astropy import units as u
 from roman_datamodels import datamodels as rdm
 
@@ -14,7 +13,7 @@ from .regtestdata import compare_asdf
 
 @pytest.mark.bigdata
 def test_tweakreg(
-    rtdata, ignore_asdf_paths, tmp_path, resource_tracker, request, dms_logger
+    rtdata, ignore_asdf_paths, resource_tracker, request, dms_logger
 ):
     # N.B.: uncal file is from simulator
     # ``shifted'' version is created in make_regtestdata.sh; cal file is taken,
@@ -99,6 +98,7 @@ def test_tweakreg(
     if tweakreg_out.meta.cal_step.tweakreg == "COMPLETE":
         # Find the reference catalog used by tweakreg
         for entry in tweakreg_out.meta.cal_logs:
+            refcat_name = ' '
             if "abs_refcat" in entry:
                 log_substring = entry[entry.rfind("abs_refcat"):]
                 refcat_name = log_substring[:log_substring.find("\n")]
@@ -108,7 +108,7 @@ def test_tweakreg(
         passmsg = "PASS" if "GAIA" in refcat_name else "FAIL"
         dms_logger.info(f"DMS549 MSG: {passmsg}, {refcat_name} used to align data to "
                         f"the Gaia astrometric reference frame.")
-    
+
     # check if the Mean Absolute Error is less that 5 milliarcsec  (DMS549)
     mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae )/ 1.e-3
     assert  mean_abs_error < 5.0
