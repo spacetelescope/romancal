@@ -7,7 +7,7 @@ from romancal.step import SourceCatalogStep
 
 
 @pytest.mark.bigdata
-def test_psf_library( rtdata, dms_logger):
+def test_psf_library(rtdata, dms_logger):
 
     input_data = "r0000101001001001001_0001_wfi01_f158_cal.asdf"
 
@@ -21,9 +21,9 @@ def test_psf_library( rtdata, dms_logger):
     ref_file = step.get_reference_file(rtdata.input, "epsf")
     has_ref_file = ref_file != "N/A"
     assert has_ref_file
-    passmsg = "PASS" if has_ref_file  else "FAIL"
+    passmsg = "PASS" if has_ref_file else "FAIL"
     dms_logger.info(f"DMS531 {passmsg},  ePSF reference file {ref_file} exists.")
-    passmsg = "PASS" if has_ref_file  else "FAIL"
+    passmsg = "PASS" if has_ref_file else "FAIL"
     dms_logger.info(f"DMS532 {passmsg},  ePSF reference file {ref_file} was retrieved.")
 
     # DMS 535 identify an appropriate PSF for WFI source
