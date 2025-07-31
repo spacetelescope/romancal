@@ -176,8 +176,8 @@ cp ${l3name}_cat.parquet $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # L3 on skycell
-l3name="r00001_p_v01001001001001_270p65x49y70_f158"
-asn_from_list r0000101001001001001_0001_wfi01_f158_cal.asdf r0000101001001001001_0002_wfi01_f158_cal.asdf r0000101001001001001_0003_wfi01_f158_cal.asdf -o L3_mosaic_asn.json --product-name $l3name --target 270p65x49y70
+l3name="r00001_p_v01001001001001_270p65x70y49_f158"
+asn_from_list r0000101001001001001_0001_wfi01_f158_cal.asdf r0000101001001001001_0002_wfi01_f158_cal.asdf r0000101001001001001_0003_wfi01_f158_cal.asdf -o L3_mosaic_asn.json --product-name $l3name --target 270p65x70y49
 # The pipeline will silently do nothing and not return an error exit code if the output
 # file already exists.
 # see: https://github.com/spacetelescope/romancal/issues/1544
@@ -206,8 +206,8 @@ cp ${l3name}_mbcat_cat.parquet $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_mbcat_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # 2nd L3 on skycell
-l3name="r00001_p_e01001001001001_0001_270p65x49y70_f158"
-asn_from_list r0000101001001001001_0001_wfi01_f158_cal.asdf -o L3_mosaic_0001_asn.json --product-name $l3name --target 270p65x49y70
+l3name="r00001_p_e01001001001001_0001_270p65x70y49_f158"
+asn_from_list r0000101001001001001_0001_wfi01_f158_cal.asdf -o L3_mosaic_0001_asn.json --product-name $l3name --target 270p65x70y49
 # The pipeline will silently do nothing and not return an error exit code if the output
 # file already exists.
 # see: https://github.com/spacetelescope/romancal/issues/1544
@@ -219,7 +219,7 @@ strun roman_mos L3_mosaic_0001_asn.json
 cp ${l3name}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
 
 # forced photometry on shallow skycell from deep skycell
-strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf --forced_segmentation r00001_p_v01001001001001_270p65x49y70_f158_segm.asdf --output_file ${l3name}_force_cat.parquet
+strun romancal.step.SourceCatalogStep ${l3name}_coadd.asdf --forced_segmentation r00001_p_v01001001001001_270p65x70y49_f158_segm.asdf --output_file ${l3name}_force_cat.parquet
 cp ${l3name}_force_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp ${l3name}_force_cat.parquet $outdir/roman-pipeline/dev/truth/WFI/image/
 
