@@ -244,7 +244,7 @@ def test_skycell_wcsinfo(name, skymap_subset):
     wcs = skycell.wcs
     wcsinfo = skycell.wcs_info
 
-    assert_allclose_lonlat(
+    assert_allclose(
         wcs(
             (wcsinfo["nx"] / 2.0) - 0.5,
             (wcsinfo["ny"] / 2.0) - 0.5,

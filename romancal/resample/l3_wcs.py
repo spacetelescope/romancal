@@ -46,7 +46,10 @@ def assign_l3_wcs(model, wcs):
     world_center = wcs(*pixel_center)
     l3_wcsinfo.ra = world_center[0]
     l3_wcsinfo.dec = world_center[1]
-    l3_wcsinfo.pixel_scale_ref = compute_scale(wcs, world_center)
+    try:
+        l3_wcsinfo.pixel_scale_ref = transform.cdelt[0]
+    except AttributeError:
+        l3_wcsinfo.pixel_scale_ref = compute_scale(wcs, world_center)
     l3_wcsinfo.orientation = calc_pa(wcs, *world_center)
 
     footprint = create_footprint(wcs, model.shape, center=False)
@@ -55,6 +58,7 @@ def assign_l3_wcs(model, wcs):
     try:
         l3_wcsinfo.x_ref = transform.crpix[0]
         l3_wcsinfo.y_ref = transform.crpix[1]
+        world_ref = transform.crval
     except AttributeError:
         log.warning(
             "WCS has no clear reference pixel defined by crpix1/crpix2. Assuming reference pixel is center."
@@ -62,16 +66,12 @@ def assign_l3_wcs(model, wcs):
         l3_wcsinfo.x_ref = pixel_center[0]
         l3_wcsinfo.y_ref = pixel_center[1]
 
-    world_ref = wcs(l3_wcsinfo.x_ref, l3_wcsinfo.y_ref, with_bounding_box=False)
+        world_ref = wcs(l3_wcsinfo.x_ref, l3_wcsinfo.y_ref, with_bounding_box=False)
     l3_wcsinfo.ra_ref = world_ref[0]
     l3_wcsinfo.dec_ref = world_ref[1]
 
-    try:
-        cdelt1 = transform.cdelt[0]
-        cdelt2 = transform.cdelt[1]
-        l3_wcsinfo.pixel_scale = (cdelt1 + cdelt2) / 2.0
-    except AttributeError:
-        l3_wcsinfo.pixel_scale = compute_scale(wcs, world_ref)
+    # pixel scale at center of image
+    l3_wcsinfo.pixel_scale = compute_scale(wcs, world_ref)
 
     l3_wcsinfo.orientation_ref = calc_pa(wcs, *world_ref)
 
@@ -81,8 +81,8 @@ def assign_l3_wcs(model, wcs):
         log.warning(
             "WCS has no clear rotation matrix defined by pc_rotation_matrix. Calculating one."
         )
-        rotation_matrix = utils.calc_rotation_matrix(l3_wcsinfo.orientat, 0.0)
-        l3_wcsinfo.rotation_matrix = utils.list_1d_to_2d(rotation_matrix, 2)
+        # rotation_matrix = utils.calc_rotation_matrix(l3_wcsinfo.orientat, 0.0)
+        # l3_wcsinfo.rotation_matrix = utils.list_1d_to_2d(rotation_matrix, 2)
 
 
 def calc_pa(wcs, ra, dec):
