@@ -12,9 +12,7 @@ DATA_DIRECTORY = Path(__file__).parent / "data"
 
 
 def assert_allclose_lonlat(actual: np.ndarray, desired: np.ndarray, rtol=1e-7, atol=0):
-    assert_allclose(
-        np.array(actual) % 360, np.array(desired) % 360, rtol=rtol, atol=atol
-    )
+    assert_allclose(actual, desired)
 
 
 @pytest.fixture()
@@ -246,7 +244,7 @@ def test_skycell_wcsinfo(name, skymap_subset):
     wcs = skycell.wcs
     wcsinfo = skycell.wcs_info
 
-    assert_allclose_lonlat(
+    assert_allclose(
         wcs(
             (wcsinfo["nx"] / 2.0) - 0.5,
             (wcsinfo["ny"] / 2.0) - 0.5,
