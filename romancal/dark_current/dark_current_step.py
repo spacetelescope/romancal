@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
-import numpy as np
 
 import numpy as np
 from roman_datamodels import datamodels as rdm
@@ -58,7 +57,7 @@ class DarkCurrentStep(RomanStep):
             if "nresultants" not in dark_model.meta.exposure:
                 dark_model.meta.exposure["nresultants"] = dark_model.data.shape[0]
 
-           # get the dark slope and dark slope error from the reference file & trim ref pixels
+            # get the dark slope and dark slope error from the reference file & trim ref pixels
             dark_slope = dark_model.dark_slope[4:-4, 4:-4]
             dark_slope_err = dark_model.dark_slope_error[4:-4, 4:-4]
 
