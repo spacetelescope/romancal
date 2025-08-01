@@ -119,8 +119,8 @@ class ExposurePipeline(RomanPipeline):
                 else:
                     result = self.refpix.run(result)
                     result = self.linearity.run(result)
-                    result = self.dark_current.run(result)
                     result = self.rampfit.run(result)
+                    result = self.dark_current.run(result)
                     result = self.assign_wcs.run(result)
 
                     if result.meta.exposure.type == "WFI_IMAGE":
