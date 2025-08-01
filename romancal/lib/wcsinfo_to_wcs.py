@@ -29,11 +29,8 @@ def wcsinfo_to_wcs(
     wcs : WCS
         The WCS object created.
     """
-    crpix = [wcsinfo.get("x0_projection", wcsinfo.get("x_ref", 0)),
-             wcsinfo.get("y0_projection", wcsinfo.get("y_ref", 0))]
-    crval = [wcsinfo.get("ra_projection_center", wcsinfo.get("ra_ref", 0)), 
-             wcsinfo.get("dec_projection_center", wcsinfo.get("dec_ref", 0))
-             ]
+    crpix = [wcsinfo["x0_projection"], wcsinfo["y0_projection"]]
+    crval = [wcsinfo["ra_projection_center"], wcsinfo["dec_projection_center"]]
     cdelt = [wcsinfo.get("pixel_scale", 1), wcsinfo.get("pixel_scale", 1)]
 
     tangent_projection = models.Pix2Sky_TAN()
@@ -56,7 +53,8 @@ def wcsinfo_to_wcs(
         )
 
     det2sky = fitswcs.FITSImagingWCSTransform(
-        tangent_projection, crpix=crpix, crval=crval, cdelt=cdelt, pc=matrix)
+        tangent_projection, crpix=crpix, crval=crval,
+        cdelt=cdelt, pc=matrix)
 
     detector_frame = coordinate_frames.Frame2D(
         name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)
