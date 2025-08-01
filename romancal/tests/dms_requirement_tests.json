@@ -158,7 +158,7 @@
   ],
      "DMS536": [
 	 "romancal.regtest.test_psf_library.test_psf_library"
-  ],    
+  ],
   "DMS549": [
     "romancal.regtest.test_tweakreg.test_tweakreg"
   ]

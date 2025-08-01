@@ -8,7 +8,6 @@ from romancal.step import SourceCatalogStep
 
 @pytest.mark.bigdata
 def test_psf_library(rtdata, dms_logger):
-
     input_data = "r0000101001001001001_0001_wfi01_f158_cal.asdf"
 
     rtdata.get_data(f"WFI/image/{input_data}")
@@ -31,20 +30,24 @@ def test_psf_library(rtdata, dms_logger):
     with rdm.open(ref_file) as ref_data:
         with rdm.open(rtdata.input) as wfi_data:
             psf_selection_match = (
-            (wfi_data.meta.instrument.optical_element == ref_data.meta.instrument.optical_element)
-            and
-            (wfi_data.meta.instrument.detector == ref_data.meta.instrument.detector))
+                wfi_data.meta.instrument.optical_element
+                == ref_data.meta.instrument.optical_element
+            ) and (
+                wfi_data.meta.instrument.detector == ref_data.meta.instrument.detector
+            )
 
             assert psf_selection_match
             passmsg = "PASS" if psf_selection_match else "FAIL"
-            dms_logger.info(f"DMS535 {passmsg},  ePSF reference file selection matches input data file")
+            dms_logger.info(
+                f"DMS535 {passmsg},  ePSF reference file selection matches input data file"
+            )
 
             # DMS 536 interpolating empirical ePSFs given the observed-source position
             # Create two psf's one at the center and one off-center to show we can interpolate the PSF
             # and that the two are not the same
             psf_model = psf.get_gridded_psf_model(ref_data)
             center = 2044
-            szo2 = 10 # psf stamp axis lenght/2
+            szo2 = 10  # psf stamp axis lenght/2
             oversample = 11
             npix = szo2 * 2 * oversample + 1
             pts = np.linspace(-szo2 + center, szo2 + center, npix)
@@ -59,4 +62,6 @@ def test_psf_library(rtdata, dms_logger):
             # check to make sure the difference is not zero over the array
             psf_diff = diff.any()
             passmsg = "PASS" if psf_diff else "FAIL"
-            dms_logger.info(f"DMS536 {passmsg},  The interpolated ePSF for two positions are not the same")
+            dms_logger.info(
+                f"DMS536 {passmsg},  The interpolated ePSF for two positions are not the same"
+            )
