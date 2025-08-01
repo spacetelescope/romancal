@@ -17,7 +17,7 @@ dependencies = [
     "astropy >=6.0.0",
     "crds >=11.16.16",
     # "gwcs >=0.22.0",
-    gwcs @ git+https://github.com/nden/gwcs.git@compute-lon-pole,
+    "gwcs @ git+https://github.com/nden/gwcs.git@compute-lon-pole",
     "jsonschema >=4.8",
     "numpy >=1.25",
     "photutils >=2.1.0",
