@@ -23,7 +23,6 @@ def test_psf_library(rtdata, dms_logger):
     assert has_ref_file
     passmsg = "PASS" if has_ref_file else "FAIL"
     dms_logger.info(f"DMS531 {passmsg},  ePSF reference file {ref_file} exists.")
-    passmsg = "PASS" if has_ref_file else "FAIL"
     dms_logger.info(f"DMS532 {passmsg},  ePSF reference file {ref_file} was retrieved.")
 
     # DMS 535 identify an appropriate PSF for WFI source

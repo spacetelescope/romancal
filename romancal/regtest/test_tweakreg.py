@@ -84,7 +84,7 @@ def test_tweakreg(
     assert rms < 1.3 / np.sqrt(2)
 
     # check if the Mean Absolute Error is less that 10 milliarcsec  (DMS406)
-    abs_diff = (np.absolute(diff) *0.1)/1.e-3
+    abs_diff = (np.absolute(diff))/1.e-3
     mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae )/ 1.e-3
     assert mean_abs_error < 10.0
     passmsg = "PASS" if mean_abs_error < 10.0 else "FAIL"
