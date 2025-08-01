@@ -13,7 +13,7 @@ classifiers = [
 ]
 dependencies = [
     "asdf >=4.1.0",
-    "asdf-astropy >=0.6.0",
+    "asdf-astropy >=0.8.0",
     "astropy >=6.0.0",
     "crds >=11.16.16",
     # "gwcs >=0.22.0",
