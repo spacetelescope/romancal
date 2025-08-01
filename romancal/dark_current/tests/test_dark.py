@@ -50,16 +50,12 @@ def test_dark_step_subtraction(instrument, exptype):
     """Test that the values in a dark reference file are properly subtracted"""
 
     # Set test size
-    # shape = (2, 20, 20)
     shape = (20, 20)
 
     # Create test ramp and dark models
     ramp_model, darkref_model = create_image_and_dark(shape, instrument, exptype)
 
     # populate data array of science cube
-    # for i in range(0, 20):
-    #    ramp_model.data[0, 0, i] = i
-    #    darkref_model.data[0, 0, i] = i * 0.1
     orig_model = ramp_model.copy()
 
     # Perform Dark Current subtraction step
@@ -97,8 +93,7 @@ def test_dark_step_output_dark_file(tmp_path, instrument, exptype):
     # Test dark file results
     assert isinstance(dark_out_file_model, DarkRefModel)
     assert dark_out_file_model.validate() is None
-    assert dark_out_file_model.data.shape[1:] == shape
-    assert dark_out_file_model.dq.shape[:1] == shape[1:]
+    assert dark_out_file_model.dq.shape == shape
 
 
 @pytest.mark.parametrize(
@@ -147,7 +142,7 @@ def create_image_and_dark(shape, instrument, exptype):
     image.meta.exposure.type = exptype
     image.meta.exposure.read_pattern = [[1], [2, 3], [4], [5, 6, 7, 8], [9, 10], [11]]
     image.data = np.ones(shape, dtype=np.float32)
-    image.data = np.full(shape, 0.20381068, dtype=np.float32)
+    image.data = np.full(shape, 0.2, dtype=np.float32)
     image.dq = np.zeros(shape, dtype=image.dq.dtype)
 
     # Create dark model
@@ -160,5 +155,6 @@ def create_image_and_dark(shape, instrument, exptype):
     darkref.dark_slope_error = np.full(
         (shape[0] + 8, shape[1] + 8), 2.6e-05, dtype=np.float32
     )
+    darkref.dq = np.zeros(shape, dtype=image.dq.dtype)
 
     return image, darkref
