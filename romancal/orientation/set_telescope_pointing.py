@@ -472,7 +472,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     vinfo = wcsinfo
 
     # Get the pointing information
-    quality = 'PLANNED'
+    quality = "PLANNED"
     try:
         t_pars.update_pointing()
     except ValueError as exception:
@@ -1411,7 +1411,7 @@ def update_meta(model, wcsinfo, vinfo, quality):
 
     # Update SIAF-related meta
     wm = model.meta.wcsinfo
-    siaf = Siaf('roman')
+    siaf = Siaf("roman")
     aper = siaf[wm.aperture_name.upper()]
     wm.v2_ref = aper.V2Ref
     wm.v3_ref = aper.V3Ref
