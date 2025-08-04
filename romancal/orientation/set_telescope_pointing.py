@@ -510,16 +510,8 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     logger.info("Aperture WCS info: %s", wcsinfo)
     logger.info("V1 WCS info: %s", vinfo)
 
-    # Update V1 pointing
-    model.meta.pointing.ra_v1 = vinfo.ra
-    model.meta.pointing.dec_v1 = vinfo.dec
-    model.meta.pointing.pa_v3 = vinfo.pa
-
-    # Update Aperture pointing
-    model.meta.pointing.pa_aperture = wcsinfo.pa
-    model.meta.wcsinfo.ra_ref = wcsinfo.ra
-    model.meta.wcsinfo.dec_ref = wcsinfo.dec
-    model.meta.wcsinfo.s_region = wcsinfo.s_region
+    # Update model meta.
+    update_meta(model, wcsinfo, vinfo)
 
     return transforms
 
@@ -1383,3 +1375,51 @@ def dcm(alpha, delta, angle):
     )
 
     return dcm
+
+
+def update_meta(model, wcsinfo, vinfo):
+    """Update model's meta info with the given pointing.
+
+    The following meta are update:
+    - meta.pointing.dec_v1
+    - meta.pointing.pa_aperture
+    - meta.pointing.pa_v3
+    - meta.pointing.ra_v1
+    - meta.wcsinfo.dec_ref
+    - meta.wcsinfo.ra_ref
+    - meta.wcsinfo.roll_ref
+    - meta.wcsinfo.s_region
+
+    Parameters
+    ----------
+    model : `~roman.datamodels.DataModel`
+        The model to update. Updates are done in-place.
+
+    wcsinfo : `WCSRef``
+        The aperture-specific pointing.
+
+    vinfo : ``WCSRef`
+        The V1-specific pointing
+    """
+    from pysiaf import Siaf
+
+    # Update SIAF-related meta
+    wm = model.meta.wcsinfo
+    siaf = Siaf('roman')
+    aper = siaf[wm.aperture_name.upper()]
+    wm.v2_ref = aper.V2Ref
+    wm.v3_ref = aper.V3Ref
+    wm.vparity = aper.VIdlParity
+    wm.v3yangle = aper.V3IdlYAngle
+
+    # Update Aperture pointing
+    wm.ra_ref = wcsinfo.ra
+    wm.dec_ref = wcsinfo.dec
+    wm.s_region = wcsinfo.s_region
+    # wm.roll_ref = ???
+
+    # Update V1 pointing
+    model.meta.pointing.pa_aperture = wcsinfo.pa
+    model.meta.pointing.ra_v1 = vinfo.ra
+    model.meta.pointing.dec_v1 = vinfo.dec
+    model.meta.pointing.pa_v3 = vinfo.pa
