@@ -472,6 +472,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     vinfo = wcsinfo
 
     # Get the pointing information
+    quality = 'PLANNED'
     try:
         t_pars.update_pointing()
     except ValueError as exception:
@@ -484,7 +485,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
             )
             logger.warning("Exception is %s", exception)
             logger.info("Setting ENGQLPTG keyword to PLANNED")
-            model.meta.visit.engdb_pointing_quality = "PLANNED"
+            quality = "PLANNED"
     else:
         logger.info("Successful read of engineering quaternions:")
         logger.info("\tPointing: %s", t_pars.pointing)
@@ -493,9 +494,8 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     if t_pars.pointing is not None:
         try:
             wcsinfo, vinfo, transforms = calc_wcs(t_pars)
-            pointing_engdb_quality = "CALCULATED"
-            logger.info("Setting ENGQLPTG keyword to %s", pointing_engdb_quality)
-            model.meta.visit.engdb_pointing_quality = pointing_engdb_quality
+            quality = "CALCULATED"
+            logger.info("Setting ENGQLPTG keyword to %s", quality)
         except EXPECTED_ERRORS as e:
             logger.warning(
                 "WCS calculation has failed and will be skipped."
@@ -506,12 +506,12 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
                 raise
             else:
                 logger.info("Setting ENGQLPTG keyword to PLANNED")
-                model.meta.visit.engdb_pointing_quality = "PLANNED"
+                quality = "PLANNED"
     logger.info("Aperture WCS info: %s", wcsinfo)
     logger.info("V1 WCS info: %s", vinfo)
 
     # Update model meta.
-    update_meta(model, wcsinfo, vinfo)
+    update_meta(model, wcsinfo, vinfo, quality)
 
     return transforms
 
@@ -1377,7 +1377,7 @@ def dcm(alpha, delta, angle):
     return dcm
 
 
-def update_meta(model, wcsinfo, vinfo):
+def update_meta(model, wcsinfo, vinfo, quality):
     """Update model's meta info with the given pointing.
 
     The following meta are update:
@@ -1400,8 +1400,14 @@ def update_meta(model, wcsinfo, vinfo):
 
     vinfo : ``WCSRef`
         The V1-specific pointing
+
+    quality : str
+        Indicator of the success of the pointing determination.
     """
     from pysiaf import Siaf
+
+    # Set the quality
+    model.meta.pointing.pointing_engineering_source = quality
 
     # Update SIAF-related meta
     wm = model.meta.wcsinfo
