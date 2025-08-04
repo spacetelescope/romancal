@@ -1422,7 +1422,7 @@ def update_meta(model, wcsinfo, vinfo, quality):
     wm.ra_ref = wcsinfo.ra
     wm.dec_ref = wcsinfo.dec
     wm.s_region = wcsinfo.s_region
-    # wm.roll_ref = ???
+    wm.roll_ref = wcsinfo.pa - wm.v3yangle
 
     # Update V1 pointing
     model.meta.pointing.pa_aperture = wcsinfo.pa
