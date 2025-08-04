@@ -28,9 +28,9 @@ dependencies = [
     "stcal>=1.14.1,<1.15.0",
     # "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
     "stpipe >=0.10.0,<0.11.0",
-    "tweakwcs >=0.8.8",
-    "spherical-geometry >= 1.2.22",
-    "stsci.imagestats >= 1.6.3",
+    "tweakwcs >=0.8.11",
+    "spherical-geometry >= 1.3.3",
+    "stsci.imagestats >= 1.8.3",
     "drizzle >= 2.0.1",
     "pyarrow >= 10.0.1",  # for Table.read(...) support in astropy for parquet files
     "pandas >= 2.0.0",  # for Table.read(...) support in astropy for parquet files
