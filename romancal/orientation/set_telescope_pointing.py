@@ -484,7 +484,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
                 " Default pointing parameters will be used."
             )
             logger.warning("Exception is %s", exception)
-            logger.info("Setting ENGQLPTG keyword to PLANNED")
+            logger.info("Setting pointing quality to PLANNED")
             quality = "PLANNED"
     else:
         logger.info("Successful read of engineering quaternions:")
@@ -495,7 +495,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
         try:
             wcsinfo, vinfo, transforms = calc_wcs(t_pars)
             quality = "CALCULATED"
-            logger.info("Setting ENGQLPTG keyword to %s", quality)
+            logger.info("Setting pointing quality to %s", quality)
         except EXPECTED_ERRORS as e:
             logger.warning(
                 "WCS calculation has failed and will be skipped."
@@ -505,7 +505,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
             if not t_pars.allow_default:
                 raise
             else:
-                logger.info("Setting ENGQLPTG keyword to PLANNED")
+                logger.info("Setting pointing quality to PLANNED")
                 quality = "PLANNED"
     logger.info("Aperture WCS info: %s", wcsinfo)
     logger.info("V1 WCS info: %s", vinfo)
