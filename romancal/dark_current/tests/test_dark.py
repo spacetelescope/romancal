@@ -126,7 +126,7 @@ def test_dark_step_getbestrefs(tmp_path, instrument, exptype):
     assert isinstance(dark_out_file_model, DarkRefModel)
     assert dark_out_file_model.validate() is None
     assert dark_out_file_model.data.shape[1:] == shape
-    assert dark_out_file_model.dq.shape== shape
+    assert dark_out_file_model.dq.shape == shape
 
 
 def create_image_and_dark(shape, instrument, exptype):
