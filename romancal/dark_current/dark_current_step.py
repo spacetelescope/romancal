@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+import pdb
 import numpy as np
 from roman_datamodels import datamodels as rdm
 
@@ -69,8 +70,8 @@ class DarkCurrentStep(RomanStep):
             out_model.meta.cal_step.dark = "COMPLETE"
 
             # Save dark data to file
-            if self.dark_output is not None:
-                dark_model.save(self.dark_output)
+            #if self.dark_output is not None:
+            #    dark_model.save(self.dark_output)
                 # not clear to me that this makes any sense for Roman
 
         if self.save_results:
