@@ -58,5 +58,7 @@ def test_psf_library(rtdata, dms_logger):
             diff = psf_offcenter - psf_center
             # check to make sure the difference is not zero over the array
             psf_diff = diff.any()
+            assert psf_diff
             passmsg = "PASS" if psf_diff else "FAIL"
             dms_logger.info(f"DMS536 {passmsg},  The interpolated ePSF for two positions are not the same")
+            

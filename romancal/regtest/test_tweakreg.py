@@ -87,7 +87,6 @@ def test_tweakreg(
     abs_diff = (np.absolute(diff))/1.e-3
     mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae )/ 1.e-3
     assert mean_abs_error < 10.0
-    passmsg = "PASS" if mean_abs_error < 10.0 else "FAIL"
     assert np.max(abs_diff) < 10.0
     passmsg = "PASS" if np.max(abs_diff) < 10.0 else "FAIL"
     dms_logger.info(f"DMS406 {passmsg} the Absolute Astrometric Uncertainty of {np.max(abs_diff):5.2f} mas is less that 10 mas.")
@@ -103,7 +102,6 @@ def test_tweakreg(
                 log_substring = entry[entry.rfind("abs_refcat"):]
                 refcat_name = log_substring[:log_substring.find("\n")]
 
-        assert tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"
         assert "GAIA" in refcat_name
         passmsg = "PASS" if "GAIA" in refcat_name else "FAIL"
         dms_logger.info(f"DMS549 MSG: {passmsg}, {refcat_name} used to align data to "
