@@ -5,7 +5,7 @@ from astropy import coordinates
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.modeling import models
-from gwcs import WCS, coordinate_frames
+from gwcs import FITSImagingWCSTransform, WCS, coordinate_frames
 from stcal.alignment.util import (
     calc_rotation_matrix,
     compute_s_region_keyword,
@@ -47,10 +47,7 @@ def assign_l3_wcs(model, wcs):
     world_center = wcs(*pixel_center)
     l3_wcsinfo.ra = world_center[0]
     l3_wcsinfo.dec = world_center[1]
-    try:
-        l3_wcsinfo.pixel_scale_ref = transform.cdelt[0]
-    except AttributeError:
-        l3_wcsinfo.pixel_scale_ref = compute_scale(wcs, world_center)
+    
     l3_wcsinfo.orientation = calc_pa(wcs, *world_center)
 
     footprint = create_footprint(wcs, model.shape, center=False)
@@ -70,6 +67,11 @@ def assign_l3_wcs(model, wcs):
         world_ref = wcs(l3_wcsinfo.x_ref, l3_wcsinfo.y_ref, with_bounding_box=False)
     l3_wcsinfo.ra_ref = world_ref[0]
     l3_wcsinfo.dec_ref = world_ref[1]
+
+    try:
+        l3_wcsinfo.pixel_scale_ref = transform.cdelt[0]
+    except AttributeError:
+        l3_wcsinfo.pixel_scale_ref = compute_scale(wcs, world_ref)
 
     # pixel scale at center of image
     l3_wcsinfo.pixel_scale = compute_scale(wcs, world_center)
@@ -114,24 +116,12 @@ def calc_pa(wcs, ra, dec):
 
 
 def l3wcsinfo_to_wcs(wcsinfo, bounding_box=None):
-    pixelshift = models.Shift(
-        -wcsinfo["x_ref"],
-        name="crpix1",
-    ) & models.Shift(-wcsinfo["y_ref"], name="crpix2")
-    pixelscale = models.Scale(wcsinfo["pixel_scale_ref"], name="scale") & models.Scale(
-        wcsinfo["pixel_scale_ref"], name="scale"
-    )
+    crpix = [wcsinfo["x_ref"], wcsinfo["y_ref"]]
+    cdelt = [wcsinfo["pixel_scale_ref"], wcsinfo["pixel_scale_ref"]]
     tangent_projection = models.Pix2Sky_TAN()
-    celestial_rotation = models.RotateNative2Celestial(
-        wcsinfo["ra_ref"], wcsinfo["dec_ref"], 180.0
-    )
-
-    rotation = models.AffineTransformation2D(
-        np.array(wcsinfo["rotation_matrix"]), name="pc_rotation_matrix"
-    )
-    det2sky = (
-        pixelshift | rotation | pixelscale | tangent_projection | celestial_rotation
-    )
+    crval = [ wcsinfo["ra_ref"],  wcsinfo["dec_ref"],]
+    pc = np.array(wcsinfo["rotation_matrix"])
+    det2sky = FITSImagingWCSTransform(tangent_projection, crpix=crpix, crval=crval, cdelt=cdelt, pc=pc)
     det2sky.name = "detector_to_sky"
 
     detector_frame = coordinate_frames.Frame2D(
