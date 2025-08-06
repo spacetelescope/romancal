@@ -7,6 +7,7 @@ from astropy.coordinates import SkyCoord
 from astropy.modeling import models
 from gwcs import WCS, coordinate_frames
 from stcal.alignment.util import (
+    calc_rotation_matrix,
     compute_s_region_keyword,
     compute_scale,
 )
@@ -39,7 +40,7 @@ def assign_l3_wcs(model, wcs):
     transform = wcs.forward_transform
 
     l3_wcsinfo.projection = "TAN"
-    l3_wcsinfo.image_shape = model.shape   # Should this be [::-1], pixel_shape is in cartesian coordinates
+    l3_wcsinfo.image_shape = model.shape
 
     # Fill out image-local information
     pixel_center = [(v - 1) / 2.0 for v in model.shape[::-1]]
@@ -71,7 +72,7 @@ def assign_l3_wcs(model, wcs):
     l3_wcsinfo.dec_ref = world_ref[1]
 
     # pixel scale at center of image
-    l3_wcsinfo.pixel_scale = compute_scale(wcs, world_ref)
+    l3_wcsinfo.pixel_scale = compute_scale(wcs, world_center)
 
     l3_wcsinfo.orientation_ref = calc_pa(wcs, *world_ref)
 
@@ -81,8 +82,8 @@ def assign_l3_wcs(model, wcs):
         log.warning(
             "WCS has no clear rotation matrix defined by pc_rotation_matrix. Calculating one."
         )
-        # rotation_matrix = utils.calc_rotation_matrix(l3_wcsinfo.orientat, 0.0)
-        # l3_wcsinfo.rotation_matrix = utils.list_1d_to_2d(rotation_matrix, 2)
+        rotation_matrix = calc_rotation_matrix(np.deg2rad(l3_wcsinfo.orientation_ref), 0.0)
+        l3_wcsinfo.rotation_matrix = rotation_matrix
 
 
 def calc_pa(wcs, ra, dec):
