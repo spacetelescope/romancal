@@ -13,10 +13,10 @@ classifiers = [
 ]
 dependencies = [
     "asdf >=4.1.0",
-    "asdf-astropy >=0.6.0",
+    "asdf-astropy >=0.8.0",
     "astropy >=6.0.0",
     "crds >=11.16.16",
-    "gwcs >=0.22.0",
+    "gwcs >=0.25.2",
     "jsonschema >=4.8",
     "numpy >=1.25",
     "photutils >=2.1.0",
@@ -25,8 +25,8 @@ dependencies = [
     # "roman_datamodels>=0.26.0,<0.27.0",
     "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
     "scipy >=1.14.1",
-    "stcal>=1.14.1,<1.15.0",
-    # "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
+    # "stcal>=1.14.1,<1.15.0",
+    "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
     "stpipe >=0.10.0,<0.11.0",
     "tweakwcs >=0.8.8",
     "spherical-geometry >= 1.2.22",
