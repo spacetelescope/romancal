@@ -232,6 +232,7 @@ def _create_wcs(input_dm, shift_1=0, shift_2=0):
 
     add_s_region(input_dm)
 
+
 def _base_image(shift_1=0, shift_2=0):
     l2 = rdm.ImageModel.create_fake_data(shape=(100, 100))
     l2.meta.filename = "none"
@@ -242,6 +243,7 @@ def _base_image(shift_1=0, shift_2=0):
     _create_wcs(l2)
     l2.meta.wcsinfo.vparity = -1
     return l2
+
 
 @pytest.fixture
 def base_image():

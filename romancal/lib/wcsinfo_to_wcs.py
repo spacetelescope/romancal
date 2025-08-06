@@ -53,8 +53,8 @@ def wcsinfo_to_wcs(
         )
 
     det2sky = fitswcs.FITSImagingWCSTransform(
-        tangent_projection, crpix=crpix, crval=crval,
-        cdelt=cdelt, pc=matrix)
+        tangent_projection, crpix=crpix, crval=crval, cdelt=cdelt, pc=matrix
+    )
 
     detector_frame = coordinate_frames.Frame2D(
         name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)

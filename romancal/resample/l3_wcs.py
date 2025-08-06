@@ -5,7 +5,7 @@ from astropy import coordinates
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.modeling import models
-from gwcs import FITSImagingWCSTransform, WCS, coordinate_frames
+from gwcs import WCS, FITSImagingWCSTransform, coordinate_frames
 from stcal.alignment.util import (
     calc_rotation_matrix,
     compute_s_region_keyword,
@@ -47,7 +47,7 @@ def assign_l3_wcs(model, wcs):
     world_center = wcs(*pixel_center)
     l3_wcsinfo.ra = world_center[0]
     l3_wcsinfo.dec = world_center[1]
-    
+
     l3_wcsinfo.orientation = calc_pa(wcs, *world_center)
 
     footprint = create_footprint(wcs, model.shape, center=False)
@@ -84,7 +84,9 @@ def assign_l3_wcs(model, wcs):
         log.warning(
             "WCS has no clear rotation matrix defined by pc_rotation_matrix. Calculating one."
         )
-        rotation_matrix = calc_rotation_matrix(np.deg2rad(l3_wcsinfo.orientation_ref), 0.0)
+        rotation_matrix = calc_rotation_matrix(
+            np.deg2rad(l3_wcsinfo.orientation_ref), 0.0
+        )
         l3_wcsinfo.rotation_matrix = rotation_matrix
 
 
@@ -119,9 +121,14 @@ def l3wcsinfo_to_wcs(wcsinfo, bounding_box=None):
     crpix = [wcsinfo["x_ref"], wcsinfo["y_ref"]]
     cdelt = [wcsinfo["pixel_scale_ref"], wcsinfo["pixel_scale_ref"]]
     tangent_projection = models.Pix2Sky_TAN()
-    crval = [ wcsinfo["ra_ref"],  wcsinfo["dec_ref"],]
+    crval = [
+        wcsinfo["ra_ref"],
+        wcsinfo["dec_ref"],
+    ]
     pc = np.array(wcsinfo["rotation_matrix"])
-    det2sky = FITSImagingWCSTransform(tangent_projection, crpix=crpix, crval=crval, cdelt=cdelt, pc=pc)
+    det2sky = FITSImagingWCSTransform(
+        tangent_projection, crpix=crpix, crval=crval, cdelt=cdelt, pc=pc
+    )
     det2sky.name = "detector_to_sky"
 
     detector_frame = coordinate_frames.Frame2D(

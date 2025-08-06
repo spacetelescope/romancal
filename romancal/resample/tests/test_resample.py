@@ -5,7 +5,7 @@ from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
 from astropy.time import Time
-from gwcs import FITSImagingWCSTransform, Step, WCS
+from gwcs import WCS, FITSImagingWCSTransform, Step
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels
 from stcal.resample.utils import compute_mean_pixel_area
@@ -17,8 +17,13 @@ from romancal.resample import ResampleStep, resample_utils
 
 
 class WfiSca:
-    def __init__(self, fiducial_world, pscale=(0.000031, 0.000031),
-                 shape=(100, 100), filename="noname"):
+    def __init__(
+        self,
+        fiducial_world,
+        pscale=(0.000031, 0.000031),
+        shape=(100, 100),
+        filename="noname",
+    ):
         self.fiducial_world = fiducial_world
         self.pscale = pscale
         self.shape = shape
@@ -201,14 +206,16 @@ def wfi_sca4():
 
 def _wfi_sca5():
     sca = WfiSca(
-    fiducial_world=(10.00139, 0),
-    filename="r0000501001001001001_01101_0002_wfi02_cal.asdf",
+        fiducial_world=(10.00139, 0),
+        filename="r0000501001001001001_01101_0002_wfi02_cal.asdf",
     )
     return sca.create_image()
+
 
 @pytest.fixture
 def wfi_sca5():
     return _wfi_sca5()
+
 
 def _wfi_sca6():
     sca = WfiSca(
@@ -362,10 +369,14 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0(exposure_1):
 
     # Assert
     assert (
-        (expected_min_value - 0.5001 * pscale[0]) <= output_min_value <= expected_min_value
+        (expected_min_value - 0.5001 * pscale[0])
+        <= output_min_value
+        <= expected_min_value
     )
     assert (
-        (expected_max_value + 0.5001 * pscale[0]) >= output_max_value >= expected_max_value
+        (expected_max_value + 0.5001 * pscale[0])
+        >= output_max_value
+        >= expected_max_value
     )
 
 
@@ -396,10 +407,14 @@ def test_resampledata_do_drizzle_many_to_one_default_rotation_0_multiple_exposur
 
     # Assert
     assert (
-        (expected_min_value - 0.5001 * pscale[0]) <= output_min_value <= expected_min_value
+        (expected_min_value - 0.5001 * pscale[0])
+        <= output_min_value
+        <= expected_min_value
     )
     assert (
-        (expected_max_value + 0.5001 * pscale[0]) >= output_max_value >= expected_max_value
+        (expected_max_value + 0.5001 * pscale[0])
+        >= output_max_value
+        >= expected_max_value
     )
 
 
@@ -502,8 +517,9 @@ def _convert2fitswcs(wcs):
     pc = forward[2].matrix.value
     cdelt = forward[3:5].parameters
     crval = forward[-1].parameters[:2]
-    fwcs = FITSImagingWCSTransform(projection=models.Pix2Sky_TAN(), crpix=crpix,
-                                   crval=crval, cdelt=cdelt, pc=pc)
+    fwcs = FITSImagingWCSTransform(
+        projection=models.Pix2Sky_TAN(), crpix=crpix, crval=crval, cdelt=cdelt, pc=pc
+    )
     custom_wcs = WCS([Step(wcs.input_frame, fwcs), Step(wcs.output_frame, None)])
     custom_wcs.pixel_shape = wcs.pixel_shape
     custom_wcs.bounding_box = wcs.bounding_box.bounding_box()
@@ -552,10 +568,14 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures, tmp_path)
     expected_max_value = np.max(np.stack(input_wcs_list))
 
     assert (
-        (expected_min_value - 0.5001 * pscale[0]) <= output_min_value <= expected_min_value
+        (expected_min_value - 0.5001 * pscale[0])
+        <= output_min_value
+        <= expected_min_value
     )
     assert (
-        (expected_max_value + 0.5001 * pscale[0]) >= output_max_value >= expected_max_value
+        (expected_max_value + 0.5001 * pscale[0])
+        >= output_max_value
+        >= expected_max_value
     )
 
 
