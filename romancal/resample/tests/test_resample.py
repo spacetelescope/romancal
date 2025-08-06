@@ -5,7 +5,7 @@ from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
 from astropy.time import Time
-from gwcs import WCS, FITSImagingWCSTransform, Step
+from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels
 from stcal.resample.utils import compute_mean_pixel_area
@@ -511,21 +511,6 @@ def test_var_flat_presence(exposure_1, include_var_flat):
         assert hasattr(output_model, "var_flat")
 
 
-def _convert2fitswcs(wcs):
-    forward = wcs.forward_transform
-    crpix = forward[:2].parameters
-    pc = forward[2].matrix.value
-    cdelt = forward[3:5].parameters
-    crval = forward[-1].parameters[:2]
-    fwcs = FITSImagingWCSTransform(
-        projection=models.Pix2Sky_TAN(), crpix=crpix, crval=crval, cdelt=cdelt, pc=pc
-    )
-    custom_wcs = WCS([Step(wcs.input_frame, fwcs), Step(wcs.output_frame, None)])
-    custom_wcs.pixel_shape = wcs.pixel_shape
-    custom_wcs.bounding_box = wcs.bounding_box.bounding_box()
-    return custom_wcs
-
-
 def test_custom_wcs_input_small_overlap_no_rotation(wfi_sca1, wfi_sca3, tmp_path):
     """Test that resample can create a proper output in the edge case where the
     desired output WCS does not encompass the entire input datamodel but, instead, have
@@ -533,8 +518,7 @@ def test_custom_wcs_input_small_overlap_no_rotation(wfi_sca1, wfi_sca3, tmp_path
     input_models = ModelLibrary([wfi_sca1])
     wcs_path = tmp_path / "wcs.asdf"
     wcs3 = wfi_sca3.meta.wcs
-    custom_wcs = _convert2fitswcs(wcs3)
-    asdf.AsdfFile({"wcs": custom_wcs}).write_to(wcs_path)
+    asdf.AsdfFile({"wcs": wcs3}).write_to(wcs_path)
 
     output_model = ResampleStep(output_wcs=str(wcs_path), rotation=0).run(input_models)
 
