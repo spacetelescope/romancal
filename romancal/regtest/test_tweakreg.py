@@ -93,11 +93,12 @@ def test_tweakreg(
 
     assert tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"
     # Find the reference catalog used by tweakreg
+    refcat_name = None
     for entry in tweakreg_out.meta.cal_logs:
-        refcat_name = " "
         if "abs_refcat" in entry:
             log_substring = entry[entry.rfind("abs_refcat") :]
             refcat_name = log_substring[: log_substring.find("\n")]
+
     assert "GAIA" in refcat_name
     passmsg = "PASS" if "GAIA" in refcat_name else "FAIL"
     dms_logger.info(
