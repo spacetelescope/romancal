@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
@@ -14,6 +15,8 @@ if TYPE_CHECKING:
     from typing import ClassVar
 
 __all__ = ["DQInitStep"]
+
+log = logging.getLogger(__name__)
 
 
 class DQInitStep(RomanStep):
@@ -62,7 +65,7 @@ class DQInitStep(RomanStep):
         y_stop = int(input_model.meta.guide_star.window_ystop)
         # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
         output_model.pixeldq[:, x_start:x_stop] = pixel.GW_AFFECTED_DATA
-        self.log.info(
+        log.info(
             f"Flagging rows from: {x_start} to {x_stop} as affected by guide window read"
         )
         output_model.pixeldq[y_start:y_stop, x_start:x_stop] |= pixel.DO_NOT_USE
@@ -75,7 +78,7 @@ class DQInitStep(RomanStep):
             # If there are mask files, perform dq step
             # Open the relevant reference files as datamodels
             reference_file_model = rdm.open(reference_file_name)
-            self.log.debug(f"Using MASK ref file: {reference_file_name}")
+            log.debug(f"Using MASK ref file: {reference_file_name}")
 
             # Apply the DQ step, in place
             dq_initialization.do_dqinit(
@@ -101,8 +104,8 @@ class DQInitStep(RomanStep):
         else:
             # Skip DQ step if no mask files
             reference_file_model = None
-            self.log.warning("No MASK reference file found.")
-            self.log.warning("DQ initialization step will be skipped.")
+            log.warning("No MASK reference file found.")
+            log.warning("DQ initialization step will be skipped.")
 
             output_model.meta.cal_step.dq_init = "SKIPPED"
 

@@ -4,6 +4,7 @@ Apply linearity correction to a science image
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -17,6 +18,8 @@ if TYPE_CHECKING:
     from typing import ClassVar
 
 __all__ = ["LinearityStep"]
+
+log = logging.getLogger(__name__)
 
 
 class LinearityStep(RomanStep):
@@ -38,12 +41,12 @@ class LinearityStep(RomanStep):
 
         # Get the name of the linearity reference file to use
         self.lin_name = self.get_reference_file(input_model, "linearity")
-        self.log.info("Using LINEARITY reference file: %s", self.lin_name)
+        log.info("Using LINEARITY reference file: %s", self.lin_name)
 
         # Check for a valid reference file
         if self.lin_name == "N/A":
-            self.log.warning("No LINEARITY reference file found")
-            self.log.warning("Linearity step will be skipped")
+            log.warning("No LINEARITY reference file found")
+            log.warning("Linearity step will be skipped")
             input_model.meta.cal_step["linearity"] = "SKIPPED"
 
             return input_model

@@ -1,5 +1,6 @@
 """Public common step definition for OutlierDetection processing."""
 
+import logging
 from functools import partial
 
 from romancal.datamodels import ModelLibrary
@@ -8,6 +9,8 @@ from romancal.outlier_detection.utils import detect_outliers
 from ..stpipe import RomanStep
 
 __all__ = ["OutlierDetectionStep"]
+
+log = logging.getLogger(__name__)
 
 
 class OutlierDetectionStep(RomanStep):
@@ -57,7 +60,7 @@ class OutlierDetectionStep(RomanStep):
             # if input can be parsed into a ModelLibrary
             # but is not valid then log a warning message and
             # skip outlier detection step
-            self.log.warning(
+            log.warning(
                 "Skipping outlier_detection - at least two imaging observations are needed."
             )
 
