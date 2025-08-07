@@ -151,16 +151,16 @@
     "romancal.regtest.test_tweakreg.test_tweakreg"
   ],
   "DMS531": [
-    "romancal.regtest.test_psf_library"
+    "romancal.regtest.test_psf_library.test_psf_library_reffile"
   ],
   "DMS532": [
-     "romancal.regtest.test_psf_library"
+     "romancal.regtest.test_psf_library.test_psf_library_reffile"
   ],
   "DMS535": [
-    "romancal.regtest.test_psf_library"
+    "romancal.regtest.test_psf_library.test_psf_library_crdsfile"
   ],
   "DMS536": [
-    "romancal.regtest.test_psf_library"
+    "romancal.regtest.test_psf_library.test_psf_library_psfinterp"
   ],    
   "DMS549": [
     "romancal.regtest.test_tweakreg.test_tweakreg"
