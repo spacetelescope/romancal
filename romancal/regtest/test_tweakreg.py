@@ -92,18 +92,18 @@ def test_tweakreg(
     dms_logger.info(f"DMS406 {passmsg} the Absolute Astrometric Uncertainty of {np.max(abs_diff):5.2f} mas is less that 10 mas.")
 
     assert tweakreg_out.meta.cal_step.tweakreg == "COMPLETE"
-        # Find the reference catalog used by tweakreg
-        for entry in tweakreg_out.meta.cal_logs:
-            refcat_name = " "
-            if "abs_refcat" in entry:
-                log_substring = entry[entry.rfind("abs_refcat") :]
-                refcat_name = log_substring[: log_substring.find("\n")]
-        assert "GAIA" in refcat_name
-        passmsg = "PASS" if "GAIA" in refcat_name else "FAIL"
-        dms_logger.info(
-            f"DMS549 MSG: {passmsg}, {refcat_name} used to align data to "
-            "the Gaia astrometric reference frame."
-        )
+    # Find the reference catalog used by tweakreg
+    for entry in tweakreg_out.meta.cal_logs:
+        refcat_name = " "
+        if "abs_refcat" in entry:
+            log_substring = entry[entry.rfind("abs_refcat") :]
+            refcat_name = log_substring[: log_substring.find("\n")]
+    assert "GAIA" in refcat_name
+    passmsg = "PASS" if "GAIA" in refcat_name else "FAIL"
+    dms_logger.info(
+        f"DMS549 MSG: {passmsg}, {refcat_name} used to align data to "
+        "the Gaia astrometric reference frame."
+    )
         
     # check if the Mean Absolute Error is less that 5 milliarcsec  (DMS549)
     mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae )/ 1.e-3
