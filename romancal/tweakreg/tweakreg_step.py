@@ -12,6 +12,7 @@ import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
 from stcal.tweakreg import tweakreg
+from stcal.tweakreg import astrometric_utils
 from stcal.tweakreg.tweakreg import _SINGLE_GROUP_REFCAT_STR, SINGLE_GROUP_REFCAT
 
 from romancal.assign_wcs.utils import add_s_region
@@ -68,6 +69,7 @@ class TweakRegStep(RomanStep):
         output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
         update_source_catalog_coordinates = boolean(default=False) # Update source catalog file with tweaked coordinates?
         save_l1_wcs = boolean(default=True)
+        vo_timeout = integer(min=0, default=120) # VO catalog service timeout.
     """
 
     reference_file_types: ClassVar = []
@@ -222,6 +224,9 @@ class TweakRegStep(RomanStep):
 
         # run alignment only if it was possible to build image catalogs
         if len(imcats):
+            # Set the VO timeout.
+            astrometric_utils.TIMEOUT = self.vo_timeout
+
             # extract WCS correctors to use for image alignment
             if len(images.group_indices) > 1:
                 self.do_relative_alignment(imcats)
