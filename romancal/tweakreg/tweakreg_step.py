@@ -11,8 +11,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
-from stcal.tweakreg import tweakreg
-from stcal.tweakreg import astrometric_utils
+from stcal.tweakreg import astrometric_utils, tweakreg
 from stcal.tweakreg.tweakreg import _SINGLE_GROUP_REFCAT_STR, SINGLE_GROUP_REFCAT
 
 from romancal.assign_wcs.utils import add_s_region
