@@ -115,8 +115,8 @@ class ResampleStep(RomanStep):
 
         # Issue a warning about the use of exptime weighting
         if self.weight_type == "exptime":
-            self.log.warning("Use of EXPTIME weighting will result in incorrect")
-            self.log.warning("propagated errors in the resampled product")
+            log.warning("Use of EXPTIME weighting will result in incorrect")
+            log.warning("propagated errors in the resampled product")
 
         output_wcs = self._load_custom_wcs(self.output_wcs, self.output_shape)
 

@@ -87,10 +87,10 @@ class MultibandCatalogStep(RomanStep):
         except (AttributeError, KeyError):
             cat_model.meta.filename = "multiband_catalog"
 
-        self.log.info("Calculating and subtracting background")
+        log.info("Calculating and subtracting background")
         library = subtract_background_library(library, self.bkg_boxsize)
 
-        self.log.info("Creating detection image")
+        log.info("Creating detection image")
         # Define the kernel FWHMs for the detection image
         # TODO: sensible defaults
         # TODO: redefine in terms of intrinsic FWHM
@@ -118,7 +118,7 @@ class MultibandCatalogStep(RomanStep):
         )
         bkg_rms = bkg.background_rms
 
-        self.log.info("Detecting sources")
+        log.info("Detecting sources")
         segment_img = make_segmentation_image(
             det_img,
             snr_threshold=self.snr_threshold,
@@ -181,7 +181,7 @@ class MultibandCatalogStep(RomanStep):
                     filter_name = model.meta.instrument.optical_element
                     log.info(f"Creating catalog for {filter_name} image")
                     ref_file = self.get_reference_file(model, "epsf")
-                    self.log.info("Using ePSF reference file: %s", ref_file)
+                    log.info("Using ePSF reference file: %s", ref_file)
                     psf_ref_model = datamodels.open(ref_file)
                 else:
                     psf_ref_model = None

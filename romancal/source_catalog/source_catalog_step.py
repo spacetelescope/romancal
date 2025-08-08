@@ -4,6 +4,7 @@ Module for the source catalog step.
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -24,6 +25,8 @@ if TYPE_CHECKING:
     from typing import ClassVar
 
 __all__ = ["SourceCatalogStep"]
+
+log = logging.getLogger(__name__)
 
 
 class SourceCatalogStep(RomanStep):
@@ -63,7 +66,7 @@ class SourceCatalogStep(RomanStep):
         # get the name of the psf reference file
         if self.fit_psf:
             self.ref_file = self.get_reference_file(input_model, "epsf")
-            self.log.info("Using ePSF reference file: %s", self.ref_file)
+            log.info("Using ePSF reference file: %s", self.ref_file)
             psf_ref_model = datamodels.open(self.ref_file)
         else:
             psf_ref_model = None
@@ -133,7 +136,7 @@ class SourceCatalogStep(RomanStep):
                 self, model.data.shape, cat_model, input_model=input_model, msg=msg
             )
 
-        self.log.info("Calculating and subtracting background")
+        log.info("Calculating and subtracting background")
         bkg = RomanBackground(
             model.data,
             box_size=self.bkg_boxsize,
@@ -141,12 +144,12 @@ class SourceCatalogStep(RomanStep):
         )
         model.data -= bkg.background
 
-        self.log.info("Creating detection image")
+        log.info("Creating detection image")
         detection_image = convolve_data(
             model.data, kernel_fwhm=self.kernel_fwhm, mask=mask
         )
 
-        self.log.info("Detecting sources")
+        log.info("Detecting sources")
         if not self.forced_segmentation:
             segment_img = make_segmentation_image(
                 detection_image,
@@ -180,7 +183,7 @@ class SourceCatalogStep(RomanStep):
                 self, model.data.shape, cat_model, input_model=input_model, msg=msg
             )
 
-        self.log.info("Creating source catalog")
+        log.info("Creating source catalog")
         cat_type = "prompt" if not self.forced_segmentation else "forced_det"
         fit_psf = self.fit_psf & (not self.forced_segmentation)  # skip when forced
         catobj = RomanSourceCatalog(

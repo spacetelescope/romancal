@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from roman_datamodels import datamodels as rdm
@@ -11,6 +12,8 @@ if TYPE_CHECKING:
     from typing import ClassVar
 
 __all__ = ["DarkCurrentStep"]
+
+log = logging.getLogger(__name__)
 
 
 class DarkCurrentStep(RomanStep):
@@ -38,13 +41,13 @@ class DarkCurrentStep(RomanStep):
         self.dark_name = self.get_reference_file(input_model, "dark")
         # Check for a valid reference file
         if self.dark_name == "N/A":
-            self.log.warning("No DARK reference file found")
-            self.log.warning("Dark current step will be skipped")
+            log.warning("No DARK reference file found")
+            log.warning("Dark current step will be skipped")
             result = input_model
             result.meta.cal_step.dark = "SKIPPED"
             return result
 
-        self.log.info("Using DARK reference file: %s", self.dark_name)
+        log.info("Using DARK reference file: %s", self.dark_name)
 
         # Open dark model
         with rdm.open(self.dark_name) as dark_model:

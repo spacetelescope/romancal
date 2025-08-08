@@ -4,6 +4,7 @@ Roman pipeline step for image alignment.
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -27,6 +28,8 @@ if TYPE_CHECKING:
 DEFAULT_ABS_REFCAT = SINGLE_GROUP_REFCAT[0]
 
 __all__ = ["TweakRegStep"]
+
+log = logging.getLogger(__name__)
 
 
 class TweakRegStep(RomanStep):
@@ -95,12 +98,12 @@ class TweakRegStep(RomanStep):
         if not images:
             raise ValueError("Input must contain at least one image model.")
 
-        self.log.info(
+        log.info(
             f"Number of image groups to be aligned: {len(images.group_indices):d}."
         )
-        self.log.info("Image groups:")
+        log.info("Image groups:")
         for name in images.group_names:
-            self.log.info(f"  {name}")
+            log.info(f"  {name}")
         # set the first image as reference
         with images:
             ref_image = images.borrow(0)
@@ -113,7 +116,7 @@ class TweakRegStep(RomanStep):
         # valid 'catfile' file name that has no custom catalogs,
         # turn off the use of custom catalogs:
         if catdict is not None and not catdict:
-            self.log.warning(
+            log.warning(
                 "'use_custom_catalogs' is set to True but 'catfile' "
                 "contains no user catalogs."
             )
@@ -142,7 +145,7 @@ class TweakRegStep(RomanStep):
         if len(self.catalog_path) == 0:
             self.catalog_path = os.getcwd()
         self.catalog_path = Path(self.catalog_path).as_posix()
-        self.log.info(f"All source catalogs will be saved to: {self.catalog_path}")
+        log.info(f"All source catalogs will be saved to: {self.catalog_path}")
 
         # set reference catalog name
         if not self.abs_refcat:
@@ -156,7 +159,7 @@ class TweakRegStep(RomanStep):
             for i, image_model in enumerate(images):
                 exposure_type = image_model.meta.exposure.type
                 if exposure_type != "WFI_IMAGE":
-                    self.log.info("Skipping TweakReg for spectral exposure.")
+                    log.info("Skipping TweakReg for spectral exposure.")
                     image_model.meta.cal_step.tweakreg = "SKIPPED"
                 else:
                     source_catalog = getattr(image_model.meta, "source_catalog", None)
@@ -170,7 +173,7 @@ class TweakRegStep(RomanStep):
                     try:
                         catalog = self.get_tweakreg_catalog(source_catalog, image_model)
                     except AttributeError as e:
-                        self.log.error(f"Failed to retrieve tweakreg_catalog: {e}")
+                        log.error(f"Failed to retrieve tweakreg_catalog: {e}")
                         images.shelve(image_model, i, modify=False)
                         raise e
 
@@ -178,7 +181,7 @@ class TweakRegStep(RomanStep):
                         # validate catalog columns
                         _validate_catalog_columns(catalog)
                     except ValueError as e:
-                        self.log.error(f"Failed to validate catalog columns: {e}")
+                        log.error(f"Failed to validate catalog columns: {e}")
                         images.shelve(image_model, i, modify=False)
                         raise e
 
@@ -196,7 +199,7 @@ class TweakRegStep(RomanStep):
 
                     image_model.meta["tweakreg_catalog"] = catalog.as_array()
                     nsources = len(catalog)
-                    self.log.info(
+                    log.info(
                         f"Detected {nsources} sources in {image_model.meta.filename}."
                         if nsources
                         else f"No sources found in {image_model.meta.filename}."
