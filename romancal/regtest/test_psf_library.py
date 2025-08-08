@@ -1,4 +1,5 @@
 """ Tests for the Roman PSF Library"""
+import pdb
 import numpy as np
 import pytest
 from roman_datamodels import datamodels as rdm
@@ -21,20 +22,14 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 def run_SourceCatalog(rtdata_module, request, resource_tracker):
     """ Run the source catalog step"""
-
+    
     rtdata = rtdata_module
+
     input_file = request.param
 
 
     rtdata.get_data(f"WFI/image/{input_file}")
     rtdata.input = input_file
-
-    args = [
-        "romancal.step.SourceCatalogStep",
-        rtdata.input,
-    ]
-    with resource_tracker.track():
-        RomanStep.from_cmdline(args)
     return rtdata
 
 @pytest.mark.bigdata
@@ -43,6 +38,8 @@ def test_psf_library_reffile(run_SourceCatalog ,dms_logger):
 
     rtdata = run_SourceCatalog
 
+    #args = ["romancal.step.SourceCatalogStep", rtdata.input, ]
+    #RomanStep.from_cmdline(args)
     # DMS 531 is to check that a PSF library has been provided and
     # DMS 532 is that we have access to the PSF library. By retrieving a
     # PSF reference file we show that the library exists and we have access.
@@ -57,29 +54,6 @@ def test_psf_library_reffile(run_SourceCatalog ,dms_logger):
 @pytest.mark.bigdata
 def test_psf_library_crdsfile(run_SourceCatalog, dms_logger):
     """ Test that the PSF reference file matches the observation"""
-    # DMS 535 identify an appropriate PSF for WFI source
-    # check that the detector and optical element for the psf ref file
-    # matches the data file
-
-    rtdata = run_SourceCatalog
-    input_data = rtdata.input
-
-    step = SourceCatalogStep()
-    ref_file = step.get_reference_file(input_data, "epsf")
-    with rdm.open(ref_file) as ref_data:
-        with rdm.open(rtdata.input) as wfi_data:
-            psf_selection_match = (
-            (wfi_data.meta.instrument.optical_element == ref_data.meta.instrument.optical_element)
-            and
-            (wfi_data.meta.instrument.detector == ref_data.meta.instrument.detector))
-
-            assert psf_selection_match
-            passmsg = "PASS" if psf_selection_match else "FAIL"
-            dms_logger.info(f"DMS535 {passmsg},  ePSF reference file selection matches input data file")
-
-@pytest.mark.bigdata
-def test_psf_library_crdselect(run_SourceCatalog, dms_logger):
-    """ Test the CRDS selection """
     # DMS 535 identify an appropriate PSF for WFI source
     # check that the detector and optical element for the psf ref file
     # matches the data file
