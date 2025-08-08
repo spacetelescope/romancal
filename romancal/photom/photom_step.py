@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
@@ -12,6 +13,8 @@ if TYPE_CHECKING:
     from typing import ClassVar
 
 __all__ = ["PhotomStep"]
+
+log = logging.getLogger(__name__)
 
 
 class PhotomStep(RomanStep):
@@ -50,15 +53,15 @@ class PhotomStep(RomanStep):
         if reffile is not None and reffile != "N/A":
             # If there is a reference file, perform photom application
             photom_model = rdm.open(reffile)
-            self.log.debug(f"Using PHOTOM ref file: {reffile}")
+            log.debug(f"Using PHOTOM ref file: {reffile}")
 
             # Do the correction
             if input_model.meta.exposure.type == "WFI_IMAGE":
                 output_model = photom.apply_photom(input_model, photom_model)
                 output_model.meta.cal_step.photom = "COMPLETE"
             else:
-                self.log.warning("No photometric corrections for spectral data")
-                self.log.warning("Photom step will be skipped")
+                log.warning("No photometric corrections for spectral data")
+                log.warning("Photom step will be skipped")
                 input_model.meta.cal_step.photom = "SKIPPED"
                 input_model.meta.photometry.pixel_area = None
                 input_model.meta.photometry.conversion_megajanskys = None
@@ -68,8 +71,8 @@ class PhotomStep(RomanStep):
 
         else:
             # Skip Photom step if no photom file
-            self.log.warning("No PHOTOM reference file found")
-            self.log.warning("Photom step will be skipped")
+            log.warning("No PHOTOM reference file found")
+            log.warning("Photom step will be skipped")
             input_model.meta.cal_step.photom = "SKIPPED"
             output_model = input_model
 
