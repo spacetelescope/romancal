@@ -6,7 +6,6 @@ from roman_datamodels import datamodels as rdm
 
 from romancal.source_catalog import psf
 from romancal.step import SourceCatalogStep
-from romancal.stpipe import RomanStep
 
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
@@ -20,8 +19,8 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 )
 
 
-def run_SourceCatalog(rtdata_module, request, resource_tracker):
-    """ Run the source catalog step"""
+def get_InputFile(rtdata_module, request, resource_tracker):
+    """ Get the input file for testing"""
     
     rtdata = rtdata_module
 
@@ -33,13 +32,11 @@ def run_SourceCatalog(rtdata_module, request, resource_tracker):
     return rtdata
 
 @pytest.mark.bigdata
-def test_psf_library_reffile(run_SourceCatalog ,dms_logger):
+def test_psf_library_reffile(get_InputFile ,dms_logger):
     """ Test the retrieval of the PSF reference file """
 
-    rtdata = run_SourceCatalog
+    rtdata = get_InputFile
 
-    #args = ["romancal.step.SourceCatalogStep", rtdata.input, ]
-    #RomanStep.from_cmdline(args)
     # DMS 531 is to check that a PSF library has been provided and
     # DMS 532 is that we have access to the PSF library. By retrieving a
     # PSF reference file we show that the library exists and we have access.
@@ -52,13 +49,13 @@ def test_psf_library_reffile(run_SourceCatalog ,dms_logger):
     dms_logger.info(f"DMS532 {passmsg},  ePSF reference file {ref_file} was retrieved.")
 
 @pytest.mark.bigdata
-def test_psf_library_crdsfile(run_SourceCatalog, dms_logger):
+def test_psf_library_crdsfile(get_InputFile, dms_logger):
     """ Test that the PSF reference file matches the observation"""
     # DMS 535 identify an appropriate PSF for WFI source
     # check that the detector and optical element for the psf ref file
     # matches the data file
 
-    rtdata = run_SourceCatalog
+    rtdata = get_InputFile
     input_data = rtdata.input
 
     step = SourceCatalogStep()
@@ -75,13 +72,13 @@ def test_psf_library_crdsfile(run_SourceCatalog, dms_logger):
             dms_logger.info(f"DMS535 {passmsg},  ePSF reference file selection matches input data file")
 
 @pytest.mark.bigdata
-def test_psf_library_psfinterp(run_SourceCatalog, dms_logger):
+def test_psf_library_psfinterp(get_InputFile, dms_logger):
     """ Test that the interpolation is occurring"""
     # DMS 536 interpolating empirical ePSFs given the observed-source position
     # Create two psf's one at the center and one off-center to show we can interpolate the PSF
     # and that the two are not the same
 
-    rtdata = run_SourceCatalog
+    rtdata = get_InputFile
     input_data = rtdata.input
 
     step = SourceCatalogStep()
