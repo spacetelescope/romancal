@@ -223,8 +223,6 @@ class TweakRegStep(RomanStep):
 
         # run alignment only if it was possible to build image catalogs
         if len(imcats):
-            # Set the VO timeout.
-            astrometric_utils.TIMEOUT = self.vo_timeout
 
             # extract WCS correctors to use for image alignment
             if len(images.group_indices) > 1:
@@ -482,6 +480,7 @@ class TweakRegStep(RomanStep):
             save_abs_catalog=self.save_abs_catalog,
             abs_catalog_output_dir=self.output_dir,
             clip_accum=True,
+            timeout=self.vo_timeout,
         )
 
 
