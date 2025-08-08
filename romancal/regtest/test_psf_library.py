@@ -32,10 +32,10 @@ def get_InputFile(rtdata_module, request, resource_tracker):
     return rtdata
 
 @pytest.mark.bigdata
-def test_psf_library_reffile(get_InputFile ,dms_logger):
+def test_psf_library_reffile(get_input_file ,dms_logger):
     """ Test the retrieval of the PSF reference file """
 
-    rtdata = get_InputFile
+    rtdata = get_input_file
 
     # DMS 531 is to check that a PSF library has been provided and
     # DMS 532 is that we have access to the PSF library. By retrieving a
@@ -49,13 +49,13 @@ def test_psf_library_reffile(get_InputFile ,dms_logger):
     dms_logger.info(f"DMS532 {passmsg},  ePSF reference file {ref_file} was retrieved.")
 
 @pytest.mark.bigdata
-def test_psf_library_crdsfile(get_InputFile, dms_logger):
+def test_psf_library_crdsfile(get_input_file, dms_logger):
     """ Test that the PSF reference file matches the observation"""
     # DMS 535 identify an appropriate PSF for WFI source
     # check that the detector and optical element for the psf ref file
     # matches the data file
 
-    rtdata = get_InputFile
+    rtdata = get_input_file
     input_data = rtdata.input
 
     step = SourceCatalogStep()
@@ -72,13 +72,13 @@ def test_psf_library_crdsfile(get_InputFile, dms_logger):
             dms_logger.info(f"DMS535 {passmsg},  ePSF reference file selection matches input data file")
 
 @pytest.mark.bigdata
-def test_psf_library_psfinterp(get_InputFile, dms_logger):
+def test_psf_library_psfinterp(get_input_file, dms_logger):
     """ Test that the interpolation is occurring"""
     # DMS 536 interpolating empirical ePSFs given the observed-source position
     # Create two psf's one at the center and one off-center to show we can interpolate the PSF
     # and that the two are not the same
 
-    rtdata = get_InputFile
+    rtdata = get_input_file
     input_data = rtdata.input
 
     step = SourceCatalogStep()
