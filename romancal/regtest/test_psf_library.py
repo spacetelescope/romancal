@@ -19,7 +19,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 )
 
 
-def get_InputFile(rtdata_module, request, resource_tracker):
+def get_input_file(rtdata_module, request, resource_tracker):
     """ Get the input file for testing"""
     
     rtdata = rtdata_module
