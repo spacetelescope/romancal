@@ -12,9 +12,7 @@ from .regtestdata import compare_asdf
 
 
 @pytest.mark.bigdata
-def test_tweakreg(
-    rtdata, ignore_asdf_paths, resource_tracker, request, dms_logger
-):
+def test_tweakreg(rtdata, ignore_asdf_paths, resource_tracker, request, dms_logger):
     # N.B.: uncal file is from simulator
     # ``shifted'' version is created in make_regtestdata.sh; cal file is taken,
     # the wcsinfo is perturbed, and AssignWCS is run to update the WCS with the
@@ -84,10 +82,12 @@ def test_tweakreg(
     assert rms < 1.3 / np.sqrt(2)
 
     # check if the Mean Absolute Error is less that 10 milliarcsec  (DMS406)
-    abs_diff = (np.absolute(diff))/1.e-3
+    abs_diff = (np.absolute(diff)) / 1.0e-3
     assert np.max(abs_diff) < 10.0
     passmsg = "PASS" if np.max(abs_diff) < 10.0 else "FAIL"
-    dms_logger.info(f"DMS406 {passmsg} the Absolute Astrometric Uncertainty of {np.max(abs_diff):5.2f} mas is less that 10 mas.")
+    dms_logger.info(
+        f"DMS406 {passmsg} the Absolute Astrometric Uncertainty of {np.max(abs_diff):5.2f} mas is less that 10 mas."
+    )
 
     # Find the reference catalog used by tweakreg
     refcat_name = None
@@ -102,12 +102,14 @@ def test_tweakreg(
         f"DMS549 MSG: {passmsg}, {refcat_name} used to align data to "
         "the Gaia astrometric reference frame."
     )
-        
+
     # check if the Mean Absolute Error is less that 5 milliarcsec  (DMS549)
-    mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae )/ 1.e-3
-    assert  mean_abs_error < 5.0
-    passmsg = "PASS" if  mean_abs_error < 5.0 else "FAIL"
-    dms_logger.info(f"DMS549 {passmsg} the Mean Absolute Error of {mean_abs_error:5.2f} mas is less that 5 mas.")
+    mean_abs_error = (tweakreg_out.meta.wcs_fit_results.mae) / 1.0e-3
+    assert mean_abs_error < 5.0
+    passmsg = "PASS" if mean_abs_error < 5.0 else "FAIL"
+    dms_logger.info(
+        f"DMS549 {passmsg} the Mean Absolute Error of {mean_abs_error:5.2f} mas is less that 5 mas."
+    )
     # check that the tweakreg step is marked complete
     wcs_filename = output_data.rsplit("_", 1)[0] + "_wcs.asdf"
     assert os.path.isfile(wcs_filename)
