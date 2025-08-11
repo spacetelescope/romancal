@@ -186,6 +186,8 @@ def test_l2_source_catalog(
         assert np.min(cat["y_centroid"]) > 0.0
         assert np.max(cat["x_centroid"]) < 100.0
         assert np.max(cat["y_centroid"]) < 100.0
+        assert np.any(cat["ra"])
+        assert np.any(cat["dec"])
 
 
 @pytest.mark.parametrize(
@@ -233,6 +235,8 @@ def test_l3_source_catalog(
         assert np.min(cat["y_centroid"]) > 0.0
         assert np.max(cat["x_centroid"]) < 100.0
         assert np.max(cat["y_centroid"]) < 100.0
+        assert np.any(cat["ra"])
+        assert np.any(cat["dec"])
 
 
 def test_background(mosaic_model, tmp_path):
