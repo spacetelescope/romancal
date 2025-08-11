@@ -71,6 +71,7 @@ class TweakRegStep(RomanStep):
         output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
         update_source_catalog_coordinates = boolean(default=False) # Update source catalog file with tweaked coordinates?
         save_l1_wcs = boolean(default=True)
+        vo_timeout = float(min=0, default=120.) # VO catalog service timeout.
     """
 
     reference_file_types: ClassVar = []
@@ -481,6 +482,7 @@ class TweakRegStep(RomanStep):
             save_abs_catalog=self.save_abs_catalog,
             abs_catalog_output_dir=self.output_dir,
             clip_accum=True,
+            timeout=self.vo_timeout,
         )
 
 
