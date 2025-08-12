@@ -12,19 +12,19 @@ Algorithm
 ---------
 
 The dark current step removes dark current from a Roman exposure by subtracting
-dark current data stored in a dark reference file.
+dark current rate data stored in a dark reference file from the fitted ramp
+data. 
 
-The current implementation uses dark reference files that are matched to the
-MA table entry in the exposure metadata. Note that the data reference file
-for a science group (SCI) is named `data`. The dark data are then subtracted,
-group-by-group, from the science exposure groups, in which
-each SCI group of the dark data is subtracted from the corresponding SCI
-group of the science data.
+The current implementation uses dark reference files for a given
+detector that have the rate of the accumulated dark current measured
+and stored in the `dark_slope` array in the reference file.
+The dark rate are then subtracted from the fitted ramp data. 
 
-The ERR arrays of the science data are not modified.
+The reference dark rate will have an associated uncertainty and this error is added
+in quadrature to the error determined in the ramp fit step. 
 
 The DQ flags from the dark reference file are propagated into science
-exposure PIXELDQ array using a bitwise OR operation.
+exposure DQ array using a bitwise OR operation.
 
 Upon successful completion of the dark subtraction the cal_step attribute is
 set to "COMPLETE".

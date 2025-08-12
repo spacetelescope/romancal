@@ -27,8 +27,8 @@ table below.
  :ref:`saturation <saturation_step>`                |check|    |check|  |check|
  :ref:`refpix <refpix>`                             |check|    |check|  |check|
  :ref:`linearity <linearity_step>`                  |check|    |check|  |check|
- :ref:`dark_current <dark_current_step>`            |check|    |check|  |check|
  :ref:`ramp_fitting <ramp_fitting_step>`            |check|    |check|  |check|
+ :ref:`dark_current <dark_current_step>`            |check|    |check|  |check|
  :ref:`assign_wcs <assign_wcs_step>`                |check|    |check|  |check|
  :ref:`flatfield <flatfield_step>`                  |check|
  :ref:`photom <photom_step>`                        |check|
