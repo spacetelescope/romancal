@@ -13,15 +13,15 @@ Algorithm
 
 The dark current step removes dark current from a Roman exposure by subtracting
 dark current rate data stored in a dark reference file from the fitted ramp
-data. 
+data.
 
 The current implementation uses dark reference files for a given
 detector that have the rate of the accumulated dark current measured
 and stored in the `dark_slope` array in the reference file.
-The dark rate are then subtracted from the fitted ramp data. 
+The dark rate are then subtracted from the fitted ramp data.
 
 The reference dark rate will have an associated uncertainty and this error is added
-in quadrature to the error determined in the ramp fit step. 
+in quadrature to the error determined in the ramp fit step.
 
 The DQ flags from the dark reference file are propagated into science
 exposure DQ array using a bitwise OR operation.
