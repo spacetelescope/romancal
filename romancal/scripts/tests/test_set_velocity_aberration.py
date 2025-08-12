@@ -31,7 +31,7 @@ def test_velocity_aberration_script(tmp_path):
     )
     model.save(path)
 
-    subprocess.check_call(["roman_set_velocity_aberration", path])
+    subprocess.check_call(["roman_set_velocity_aberration", path])  # noqa: S603 S607
 
     with rdm.open(path) as model:
         va = model.meta.velocity_aberration
