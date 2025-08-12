@@ -21,14 +21,13 @@ def test_dark_step_interface(instrument, exptype):
     ref_shape = (10, 28, 28)
     image_shape = (ref_shape[1], ref_shape[2])
 
-
     # Create test rampfit and dark models
     rampfit_model, darkref_model = create_image_and_dark(ref_shape, instrument, exptype)
     # Perform Dark Current subtraction step
     result = DarkCurrentStep.call(rampfit_model, override_dark=darkref_model)
 
     # Test dark results
-    trim_shape = (image_shape[0]-8, image_shape[1]-8) # size of the trimmed image
+    trim_shape = (image_shape[0] - 8, image_shape[1] - 8)  # size of the trimmed image
     assert (result.data == rampfit_model.data).all()
     assert isinstance(result, ImageModel)
     assert result.validate() is None
@@ -128,10 +127,11 @@ def test_dark_step_getbestrefs(tmp_path, instrument, exptype):
     assert dark_out_file_model.data.shape == ref_shape
     assert dark_out_file_model.dq.shape == image_shape
 
+
 def create_image_and_dark(shape, instrument, exptype):
     """Helper function to create test image and dark models"""
     # Create test image model
-    image_shape = (shape[1],shape[2])
+    image_shape = (shape[1], shape[2])
     image = ImageModel.create_fake_data(shape=image_shape)
     image.meta.cal_step = stnode.L2CalStep.create_fake_data()
     image.meta.cal_logs = stnode.CalLogs.create_fake_data()
@@ -150,12 +150,8 @@ def create_image_and_dark(shape, instrument, exptype):
 
     # Create dark model
     darkref = DarkRefModel.create_fake_data(shape=shape)
-    darkref.dark_slope = np.full(
-        (image_shape), 5.3e-03, dtype=np.float32
-    )
-    darkref.dark_slope_error = np.full(
-        (image_shape), 2.6e-05, dtype=np.float32
-    )
+    darkref.dark_slope = np.full((image_shape), 5.3e-03, dtype=np.float32)
+    darkref.dark_slope_error = np.full((image_shape), 2.6e-05, dtype=np.float32)
     darkref.dq = np.zeros(image_shape, dtype=image.dq.dtype)
 
     return image, darkref
