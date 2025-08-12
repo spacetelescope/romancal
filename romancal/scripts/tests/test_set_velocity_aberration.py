@@ -1,9 +1,9 @@
 """Test set_velocity_aberration"""
+
 import subprocess
 
-from numpy import isclose
-
 import roman_datamodels as rdm
+from numpy import isclose
 
 # Testing constants
 GOOD_VELOCITY = (100.0, 100.0, 100.0)
@@ -12,18 +12,23 @@ GOOD_SCALE_FACTOR = 1.000316017905845
 GOOD_APPARENT_RA = 359.01945099823
 GOOD_APPARENT_DEC = -1.980247580394956
 
+
 def test_velocity_aberration_script(tmp_path):
     """Test the whole script on a FITS file"""
     path = tmp_path / "velocity_aberration_tmpfile.asdf"
 
-    model = rdm.datamodels.ScienceRawModel.create_fake_data({
-        'meta' : {
-            'ephemeris': {'velocity_x': GOOD_VELOCITY[0],
-                          'velocity_y': GOOD_VELOCITY[1],
-                          'velocity_z': GOOD_VELOCITY[2]},
-            'wcsinfo': {'ra_ref': GOOD_POS[0], 'dec_ref': GOOD_POS[1]}
+    model = rdm.datamodels.ScienceRawModel.create_fake_data(
+        {
+            "meta": {
+                "ephemeris": {
+                    "velocity_x": GOOD_VELOCITY[0],
+                    "velocity_y": GOOD_VELOCITY[1],
+                    "velocity_z": GOOD_VELOCITY[2],
+                },
+                "wcsinfo": {"ra_ref": GOOD_POS[0], "dec_ref": GOOD_POS[1]},
+            }
         }
-    })
+    )
     model.save(path)
 
     subprocess.check_call(["roman_set_velocity_aberration", path])
