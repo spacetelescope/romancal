@@ -1,6 +1,4 @@
-"""
-Unit tests for dark current correction
-"""
+"""Unit tests for dark current correction"""
 
 import numpy as np
 import pytest
@@ -19,17 +17,18 @@ from romancal.dark_current import DarkCurrentStep
 )
 def test_dark_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a DARK reffile"""
-
     # Set test size, data + reference files
-    shape = (10, 28, 28)
+    ref_shape = (10, 28, 28)
+    image_shape = (ref_shape[1], ref_shape[2])
+
 
     # Create test rampfit and dark models
-    rampfit_model, darkref_model = create_image_and_dark(shape, instrument, exptype)
+    rampfit_model, darkref_model = create_image_and_dark(ref_shape, instrument, exptype)
     # Perform Dark Current subtraction step
     result = DarkCurrentStep.call(rampfit_model, override_dark=darkref_model)
 
     # Test dark results
-    trim_shape = (shape[1]-8, shape[2]-8) # size of the trimmed image
+    trim_shape = (image_shape[0]-8, image_shape[1]-8) # size of the trimmed image
     assert (result.data == rampfit_model.data).all()
     assert isinstance(result, ImageModel)
     assert result.validate() is None
@@ -48,24 +47,23 @@ def test_dark_step_interface(instrument, exptype):
 )
 def test_dark_step_subtraction(instrument, exptype):
     """Test that the values in a dark reference file are properly subtracted"""
-
     # Set test size
-    shape = (10, 28, 28)
+    ref_shape = (10, 28, 28)
 
     # Create test ramp and dark models
-    ramp_model, darkref_model = create_image_and_dark(shape, instrument, exptype)
+    image_model, darkref_model = create_image_and_dark(ref_shape, instrument, exptype)
 
     # populate data array of science cube
-    orig_model = ramp_model.copy()
+    orig_model = image_model.copy()
 
     # Perform Dark Current subtraction step
-    result = DarkCurrentStep.call(ramp_model, override_dark=darkref_model)
+    result = DarkCurrentStep.call(image_model, override_dark=darkref_model)
 
     diff = orig_model.data - (darkref_model.dark_slope[4:-4, 4:-4])
 
     # test that the output data file is equal to the difference found when subtracting
     # reffile from sci file
-    np.isclose(result.data, diff, atol=1.0e-7)
+    assert np.all(np.isclose(result.data, diff, atol=1.0e-7))
 
 
 @pytest.mark.parametrize(
@@ -79,13 +77,14 @@ def test_dark_step_output_dark_file(tmp_path, instrument, exptype):
     path = str(tmp_path / "dark_out.asdf")
 
     # Set test size
-    shape = (10, 28, 28)
+    ref_shape = (10, 28, 28)
+    image_shape = (ref_shape[1], ref_shape[2])
 
     # Create test ramp and dark models
-    ramp_model, darkref_model = create_image_and_dark(shape, instrument, exptype)
+    image_model, darkref_model = create_image_and_dark(ref_shape, instrument, exptype)
 
     # Perform Dark Current subtraction step
-    DarkCurrentStep.call(ramp_model, override_dark=darkref_model, dark_output=path)
+    DarkCurrentStep.call(image_model, override_dark=darkref_model, dark_output=path)
 
     # Open dark file
     dark_out_file_model = rdm.open(path)
@@ -93,7 +92,7 @@ def test_dark_step_output_dark_file(tmp_path, instrument, exptype):
     # Test dark file results
     assert isinstance(dark_out_file_model, DarkRefModel)
     assert dark_out_file_model.validate() is None
-    assert dark_out_file_model.dq.shape == (shape[1],shape[2])
+    assert dark_out_file_model.dq.shape == image_shape
 
 
 @pytest.mark.parametrize(
@@ -107,17 +106,18 @@ def test_dark_step_getbestrefs(tmp_path, instrument, exptype):
     path = str(tmp_path / "dark_out.asdf")
 
     # Set test size
-    shape = (10, 28, 28)
+    ref_shape = (10, 28, 28)
+    image_shape = (ref_shape[1], ref_shape[2])
 
     # Create test ramp and dark models
-    ramp_model, darkref_model = create_image_and_dark(shape, instrument, exptype)
+    image_model, darkref_model = create_image_and_dark(ref_shape, instrument, exptype)
 
     # Perform Dark Current subtraction step with override = N/A
-    result = DarkCurrentStep.call(ramp_model, override_dark="N/A")
+    result = DarkCurrentStep.call(image_model, override_dark="N/A")
     assert result.meta.cal_step.dark == "SKIPPED"
 
     # Perform Dark Current subtraction step
-    DarkCurrentStep.call(ramp_model, override_dark=darkref_model, dark_output=path)
+    DarkCurrentStep.call(image_model, override_dark=darkref_model, dark_output=path)
 
     # Open dark file
     dark_out_file_model = rdm.open(path)
@@ -125,12 +125,11 @@ def test_dark_step_getbestrefs(tmp_path, instrument, exptype):
     # Test dark file results
     assert isinstance(dark_out_file_model, DarkRefModel)
     assert dark_out_file_model.validate() is None
-    assert dark_out_file_model.data.shape[1:] == (shape[1],shape[2])
-    assert dark_out_file_model.dq.shape == (shape[1],shape[2])
+    assert dark_out_file_model.data.shape == ref_shape
+    assert dark_out_file_model.dq.shape == image_shape
 
 def create_image_and_dark(shape, instrument, exptype):
     """Helper function to create test image and dark models"""
-
     # Create test image model
     image_shape = (shape[1],shape[2])
     image = ImageModel.create_fake_data(shape=image_shape)
