@@ -61,13 +61,10 @@ class RampFitStep(RomanStep):
             # Do the fitting based on the algorithm selected.
             algorithm = self.algorithm.lower()
             if algorithm == "ols_cas22":
-                dark_filename = self.get_reference_file(input_model, "dark")
-                dark_model = rdm.open(dark_filename, mode="r")
                 out_model = self.ols_cas22(
                     input_model,
                     readnoise_model,
                     gain_model,
-                    dark_model,
                 )
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
             elif algorithm == "likely":
@@ -99,7 +96,7 @@ class RampFitStep(RomanStep):
 
         return out_model
 
-    def ols_cas22(self, input_model, readnoise_model, gain_model, dark_model):
+    def ols_cas22(self, input_model, readnoise_model, gain_model):
         """Peform Optimal Linear Fitting on arbitrarily space resulants
 
         Parameters
@@ -112,9 +109,6 @@ class RampFitStep(RomanStep):
 
         gain_model : GainRefModel
             Model with the gain reference information.
-
-        dark_model : DarkRefModel
-            Model with the dark reference information
 
         Returns
         -------
@@ -146,11 +140,6 @@ class RampFitStep(RomanStep):
         if len(read_pattern) != resultants.shape[0]:
             raise RuntimeError("mismatch between resultants shape and read_pattern.")
 
-        # add dark current back into resultants so that Poisson noise is
-        # properly accounted for
-        tbar = np.array([np.mean(reads) * read_time for reads in read_pattern])
-        resultants += dark_model.dark_slope[None, ...] * tbar[:, None, None]
-
         # account for the gain
         resultants *= gain
         read_noise *= gain
@@ -172,9 +161,6 @@ class RampFitStep(RomanStep):
         var_poisson = output.variances[..., Variance.poisson_var]
         err = np.sqrt(var_poisson + var_rnoise)
         dq = output.dq.astype(np.uint32)
-
-        # remove dark current contribution to slopes
-        slopes -= dark_model.dark_slope * gain
 
         # Propagate DQ flags forward.
         ramp_dq = get_pixeldq_flags(dq, input_model.pixeldq, slopes, err, gain)
