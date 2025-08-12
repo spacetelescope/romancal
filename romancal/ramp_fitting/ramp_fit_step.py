@@ -46,7 +46,7 @@ class RampFitStep(RomanStep):
 
     weighting = "optimal"  # Only weighting allowed for OLS
 
-    reference_file_types: ClassVar = ["readnoise", "gain", "dark"]
+    reference_file_types: ClassVar = ["readnoise", "gain"]
 
     def process(self, input):
         with rdm.open(input, mode="rw") as input_model:
