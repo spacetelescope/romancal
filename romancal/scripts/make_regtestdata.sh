@@ -59,9 +59,9 @@ cp r0000101001001001001_0001_wfi01_f158_cat.parquet $outdir/roman-pipeline/dev/W
 for fn in r0000101001001001001_0003_wfi01_f158 r0000201001001001001_0003_wfi01_grism
 do
     echo "Running pipeline on ${fn}..."
-    strun roman_elp ${fn}_uncal.asdf --steps.dark_current.save_results True --steps.rampfit.save_results True
+    strun roman_elp ${fn}_uncal.asdf --steps.linearity.save_results True --steps.rampfit.save_results True
     [[ ${fn} = r00002* ]] && dirname="grism" || dirname="image"
-    cp ${fn}_darkcurrent.asdf $outdir/roman-pipeline/dev/WFI/$dirname/
+    cp ${fn}_linearity.asdf $outdir/roman-pipeline/dev/WFI/$dirname/
     cp ${fn}_rampfit.asdf $outdir/roman-pipeline/dev/truth/WFI/$dirname/
 done
 cp r0000101001001001001_0003_wfi01_f158_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
