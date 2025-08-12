@@ -341,14 +341,16 @@ class RomanSourceCatalog:
         """
         The best estimate of the right ascension (ICRS).
         """
-        return np.zeros(self.n_sources, dtype=np.float64) * u.deg
+        # FIXME: just return ra_centroid as a placeholder
+        return self.ra_centroid.copy()
 
     @lazyproperty
     def dec(self):
         """
         The best estimate of the declination (ICRS).
         """
-        return np.zeros(self.n_sources, dtype=np.float64) * u.deg
+        # FIXME: just return dec_centroid as a placeholder
+        return self.dec_centroid.copy()
 
     @lazyproperty
     def is_extended(self):
