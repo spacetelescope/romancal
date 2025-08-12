@@ -1,4 +1,4 @@
-.. _set_velocity_aberration
+.. _set_velocity_aberration:
 
 ===================
 Velocity Aberration
