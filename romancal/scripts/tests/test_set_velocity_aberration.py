@@ -14,7 +14,7 @@ GOOD_APPARENT_DEC = -1.980247580394956
 
 
 def test_velocity_aberration_script(tmp_path):
-    """Test the whole script on a FITS file"""
+    """Test the whole script on a Roman L1 file"""
     path = tmp_path / "velocity_aberration_tmpfile.asdf"
 
     model = rdm.datamodels.ScienceRawModel.create_fake_data(
