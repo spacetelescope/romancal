@@ -82,6 +82,7 @@ mk_skycell_asn_from_skycell_list= "romancal.associations.mk_skycell_asn_from_sky
 mk_skycell_list = "romancal.associations.mk_skycell_list:_cli"
 roman_pointing_summary = "romancal.scripts.pointing_summary:main"
 roman_set_telescope_pointing = "romancal.scripts.set_telescope_pointing:main"
+roman_set_velocity_aberration = "romancal.scripts.set_velocity_aberration:main"
 roman_static_preview = "romancal.scripts.static_preview:command"
 roman_v1_calculate = "romancal.scripts.v1_calculate:main"
 skycell_asn = "romancal.associations.skycell_asn:_cli"
