@@ -85,4 +85,4 @@ def test_mosaic_output_is_skycell(mosaic_pipeline_on_skycell_asn):
     rtdata = mosaic_pipeline_on_skycell_asn
     filename = rtdata.output
     with rdm.open(filename) as model:
-        assert model.meta.wcsinfo.skycell_name == "270p65x48y69"
+        assert model.meta.wcsinfo.skycell_name == "270p65x69y48"

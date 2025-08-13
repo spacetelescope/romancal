@@ -1,4 +1,5 @@
 import json
+import logging
 
 import pytest
 from astropy.time import Time
@@ -97,9 +98,11 @@ def test_get_reference_file_spectral(step_class, base_image):
 
 
 def test_log_messages(tmp_path, base_image):
+    logger = logging.getLogger("test_log_messages")
+
     class LoggingStep(RomanStep):
         def process(self):
-            self.log.warning("Splines failed to reticulate")
+            logger.warning("Splines failed to reticulate")
             return base_image()
 
     result = LoggingStep().run()
