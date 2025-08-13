@@ -29,6 +29,7 @@ def test_liklihood_rampfit(
     args = [
         "romancal.step.RampFitStep",
         rtdata.input,
+        "--algorithm=likely",
         "--output_file=r0000101001001001001_0001_wfi01_f158_like_rampfit.asdf",
     ]
     dms_logger.info("Testing the likelihood fitting for ramps")
