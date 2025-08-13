@@ -2,14 +2,15 @@
 Unit tests for the Roman source injection step code
 """
 
+import galsim
 import numpy as np
 import pytest
-import galsim
-from astropy.time import Time
 from astropy import table
+from astropy.time import Time
 from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel, MosaicModel
-from romanisim import parameters, wcs, bandpass
+from romanisim import bandpass, parameters, wcs
+
 from romancal.source_catalog.injection import inject_sources
 
 # Set parameters
@@ -34,14 +35,14 @@ def make_catalog(metadata):
     ra, dec = twcs._radec(np.array(XPOS_IDX), np.array(YPOS_IDX))
 
     tabcat = table.Table()
-    tabcat['ra'] = np.degrees(ra)
-    tabcat['dec'] = np.degrees(dec)
+    tabcat["ra"] = np.degrees(ra)
+    tabcat["dec"] = np.degrees(dec)
     tabcat[FILTER] = 4 * [MAG_FLUX]
-    tabcat['type'] = 4 * ['PSF']
-    tabcat['n'] = 4 * [-1]
-    tabcat['half_light_radius'] = 4 * [-1]
-    tabcat['pa'] = 4 * [-1]
-    tabcat['ba'] = 4 * [-1]
+    tabcat["type"] = 4 * ["PSF"]
+    tabcat["n"] = 4 * [-1]
+    tabcat["half_light_radius"] = 4 * [-1]
+    tabcat["pa"] = 4 * [-1]
+    tabcat["ba"] = 4 * [-1]
 
     return tabcat
 
@@ -89,13 +90,11 @@ def make_test_mosaic():
 
 @pytest.fixture
 def image_model():
-    defaults = {
-        "meta" : parameters.default_parameters_dictionary
-    }
-    defaults["meta"]['instrument']['detector'] = DETECTOR
-    defaults["meta"]['instrument']['optical_element'] = FILTER
-    defaults["meta"]['wcsinfo']['ra_ref'] = RA
-    defaults["meta"]['wcsinfo']['dec_ref'] = DEC
+    defaults = {"meta": parameters.default_parameters_dictionary}
+    defaults["meta"]["instrument"]["detector"] = DETECTOR
+    defaults["meta"]["instrument"]["optical_element"] = FILTER
+    defaults["meta"]["wcsinfo"]["ra_ref"] = RA
+    defaults["meta"]["wcsinfo"]["dec_ref"] = DEC
 
     model = ImageModel.create_fake_data(defaults=defaults, shape=SHAPE)
     model.meta.filename = "none"
@@ -126,8 +125,8 @@ def mosaic_model():
             "resample": {"pixfrac": 1.0},
             "wcsinfo": {
                 "pixel_scale": 1.5277777769528157e-05,
-                'ra_ref': RA,
-                'dec_ref': DEC,
+                "ra_ref": RA,
+                "dec_ref": DEC,
             },  # Taken from regtest test L3 mosaic.
         }
     }
@@ -160,22 +159,39 @@ def test_inject_sources(image_model, mosaic_model):
         si_model = inject_sources(si_model, cat)
 
         # Ensure that sources were actually injected
-        for x_val, y_val in zip(XPOS_IDX, YPOS_IDX):
-            assert np.all(si_model.data[y_val - 1:y_val + 2, x_val - 1:x_val + 2] !=
-                        data_orig.data[y_val - 1:y_val + 2, x_val - 1: x_val + 2])
+        for x_val, y_val in zip(XPOS_IDX, YPOS_IDX, strict=False):
+            assert np.all(
+                si_model.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2]
+                != data_orig.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2]
+            )
 
         # Test that pixels far from the injected source are close to the original image
         # Numpy isclose is needed to determine equality, due to float precision issues
-        assert np.all(np.isclose(si_model.data[90:110, 90:110],
-            data_orig.data[90:110, 90:110], rtol=1e-06))
+        assert np.all(
+            np.isclose(
+                si_model.data[90:110, 90:110],
+                data_orig.data[90:110, 90:110],
+                rtol=1e-06,
+            )
+        )
 
         # IMAGE L2 TEST
         if isinstance(si_model, ImageModel):
             # Test that the amount of added flux makes sense
-            fluxeps = MAG_FLUX * bandpass.get_abflux(FILTER,
-                int(si_model.meta['instrument']['detector'][3:]))  # u.electron / u.s
-            assert np.abs((np.sum(si_model.data - data_orig.data) *
-                parameters.reference_data['gain'].value / (4 * fluxeps)) - 1) < 0.1
+            fluxeps = MAG_FLUX * bandpass.get_abflux(
+                FILTER, int(si_model.meta["instrument"]["detector"][3:])
+            )  # u.electron / u.s
+            assert (
+                np.abs(
+                    (
+                        np.sum(si_model.data - data_orig.data)
+                        * parameters.reference_data["gain"].value
+                        / (4 * fluxeps)
+                    )
+                    - 1
+                )
+                < 0.1
+            )
 
         # MOSAIC L3 TESTS
         elif isinstance(si_model, MosaicModel):
@@ -183,11 +199,13 @@ def test_inject_sources(image_model, mosaic_model):
             # remained the same with the new sources injected
             # Numpy isclose is needed to determine equality,
             # due to float precision issues
-            close_mask = np.isclose(si_model.var_poisson, data_orig.var_poisson,
-                                    rtol=1e-06)
+            close_mask = np.isclose(
+                si_model.var_poisson, data_orig.var_poisson, rtol=1e-06
+            )
             assert False in close_mask
-            assert np.all(si_model.var_poisson[~close_mask] >
-                          data_orig.var_poisson[~close_mask])
+            assert np.all(
+                si_model.var_poisson[~close_mask] > data_orig.var_poisson[~close_mask]
+            )
 
             # Ensure that every data pixel value has increased or
             # remained the same with the new sources injected

@@ -3,10 +3,10 @@ Module to inject sources into existing image / mosaic.
 """
 
 import logging
+
+from roman_datamodels.datamodels import ImageModel, MosaicModel
 from romanisim.image import inject_sources_into_l2
 from romanisim.l3 import inject_sources_into_l3
-from roman_datamodels.datamodels import ImageModel, MosaicModel
-
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
