@@ -1,1 +1,0 @@
-remove unused function ``wcs_from_footprints``
