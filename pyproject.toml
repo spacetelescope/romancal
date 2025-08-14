@@ -23,6 +23,7 @@ dependencies = [
     "requests >=2.26",
     # "roman_datamodels>=0.26.0,<0.27.0",
     "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
+    "rad @ git+https://github.com/PaulHuwe/rad.git@RAD-215_OptionalDarkData",
     "scipy >=1.14.1",
     # "stcal>=1.14.1,<1.15.0",
     "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
