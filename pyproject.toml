@@ -22,7 +22,7 @@ dependencies = [
     "photutils >=2.1.0",
     "requests >=2.26",
     # "roman_datamodels>=0.26.0,<0.27.0",
-    "roman_datamodels @ git+https://github.com/schlafly/roman_datamodels.git@more-dark-data-removal",
+    "roman_datamodels @ git+https://github.com/schlafly/roman_datamodels.git@mork-dark-data-removal",
     "scipy >=1.14.1",
     # "stcal>=1.14.1,<1.15.0",
     "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
