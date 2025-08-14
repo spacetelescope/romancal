@@ -56,13 +56,13 @@ test = [
     "pytest-astropy >= 0.11.0",
     "deepdiff",
     "stpreview>=0.6.0",
-    "romanisim",
 ]
 dev = [
     "pysiaf",
     "romancal[docs,test]",
     "tox > 4",
     "pre-commit > 3",
+    "romanisim @ git+https://github.com/spacetelescope/romanisim.git",
 ]
 sdp = [
     "pysiaf",
