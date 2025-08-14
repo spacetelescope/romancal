@@ -50,11 +50,6 @@ class DarkCurrentStep(RomanStep):
 
         # Open dark model
         with rdm.open(self.dark_name) as dark_model:
-            # Temporary patch to utilize stcal dark step until MA table support
-            # is fully implemented
-            if "nresultants" not in dark_model.meta.exposure:
-                dark_model.meta.exposure["nresultants"] = dark_model.data.shape[0]
-
             # get the dark slope and dark slope error from the reference file & trim ref pixels
             dark_slope = dark_model.dark_slope[4:-4, 4:-4]
             dark_slope_err = dark_model.dark_slope_error[4:-4, 4:-4]
