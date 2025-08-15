@@ -30,7 +30,7 @@ dependencies = [
     "tweakwcs >=0.8.11",
     "spherical-geometry >= 1.3.3",
     "stsci.imagestats >= 1.8.3",
-    "drizzle >= 2.0.1",
+    "drizzle >= 2.1.1",
     "pyarrow >= 10.0.1",  # for Table.read(...) support in astropy for parquet files
     "pandas >= 2.0.0",  # for Table.read(...) support in astropy for parquet files
 ]
