@@ -69,6 +69,25 @@ class RomanStep(Step):
             ]
         return crds_parameters, crds_observatory
 
+    @staticmethod
+    def get_stpipe_loggers():
+        """
+        Get names of loggers stpipe will configure
+
+        List the names of all loggers that might emit
+        messages useful to display or record to the datamodel.
+
+        Since messages are often propagated up the logging
+        heirarchy the names here can be the names of packages
+        that might emit useful log messages.
+
+        Returns
+        -------
+        tuple of str
+            Tuple of log names for stpipe to configure
+        """
+        return ("romancal", "stcal", "roman_datamodels", "stpipe", "tweakwcs")
+
     def finalize_result(self, model, reference_files_used):
         """
         Hook that allows the Step to set metadata on the output model
