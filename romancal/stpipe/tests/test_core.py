@@ -98,12 +98,17 @@ def test_get_reference_file_spectral(step_class, base_image):
 
 
 def test_log_messages(tmp_path, base_image):
-    logger = logging.getLogger("test_log_messages")
+    LOGGER_NAME = "test_log_messages"
+    logger = logging.getLogger(LOGGER_NAME)
 
     class LoggingStep(RomanStep):
         def process(self):
             logger.warning("Splines failed to reticulate")
             return base_image()
+
+        @staticmethod
+        def get_stpipe_loggers():
+            return (*RomanStep.get_stpipe_loggers(), LOGGER_NAME)
 
     result = LoggingStep().run()
     assert any("Splines failed to reticulate" in l for l in result.meta.cal_logs)
