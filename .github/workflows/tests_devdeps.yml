@@ -36,9 +36,10 @@ concurrency:
 
 jobs:
   latest_crds_contexts:
-    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run devdeps tests')))
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run extra tests')))
     uses: ./.github/workflows/contexts.yml
   crds_context:
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run extra tests')))
     needs: [ latest_crds_contexts ]
     runs-on: ubuntu-latest
     steps:
@@ -47,6 +48,7 @@ jobs:
     outputs:
       context: ${{ steps.context.outputs.context }}
   test:
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run extra tests')))
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v2
     needs: [ crds_context ]
     with:
@@ -59,6 +61,8 @@ jobs:
       cache-path: /tmp/data/
       cache-key: data-${{ needs.crds_context.outputs.context }}
       envs: |
+        - macos: py311
+        - macos: py312
         - linux: py3-stdevdeps
           pytest-results-summary: true
         - macos: py3-stdevdeps
