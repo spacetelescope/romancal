@@ -17,6 +17,7 @@ MAST_GOOD_STARTTIME = Time("2027-03-23T19:20:40", format="isot")
 MAST_GOOD_ENDTIME = Time("2027-03-23T19:21:36", format="isot")
 
 
+@pytest.mark.skip(reason="needs update for new database response")
 def test_from_models_mast(tmp_path):
     """Test v1_calculate_from_models for basic running"""
     model = ScienceRawModel.create_fake_data(
@@ -48,6 +49,7 @@ def test_from_models_mast(tmp_path):
     assert len(errors) == 0, f"V1 tables are different: {errors_str}"
 
 
+@pytest.mark.skip(reason="needs update for new database response")
 def test_over_time_mast(tmp_path):
     """Test v1_calculate_over_time for basic running"""
     try:
