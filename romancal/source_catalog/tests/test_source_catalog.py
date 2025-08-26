@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from re import match
 
 import astropy.units as u
 import numpy as np
@@ -174,6 +175,20 @@ def test_l2_source_catalog(
     assert isinstance(cat, Table)
     assert len(cat) == nsources
 
+    # Check that the ee_fraction_xx entries are in the metadata
+    if "aperture_radii" in cat.meta:
+        assert len(cat.meta["aperture_radii"]["circle_pix"]) > 0
+        assert sum(1 for name in cat.colnames if match(r"^aper\d+_flux$", name)) == len(
+            cat.meta["aperture_radii"]["circle_pix"]
+        )
+
+        assert "ee_fractions" in cat.meta
+        assert len(cat.meta["ee_fractions"]) == len(
+            cat.meta["aperture_radii"]["circle_pix"]
+        )
+    else:
+        assert nsources == 0
+
     if nsources > 0:
         for colname in cat.colnames:
             if (
@@ -222,6 +237,20 @@ def test_l3_source_catalog(
     cat = result.source_catalog
     assert isinstance(cat, Table)
     assert len(cat) == nsources
+
+    # Check that the ee_fraction_xx entries are in the metadata
+    if "aperture_radii" in cat.meta:
+        assert len(cat.meta["aperture_radii"]["circle_pix"]) > 0
+        assert sum(1 for name in cat.colnames if match(r"^aper\d+_flux$", name)) == len(
+            cat.meta["aperture_radii"]["circle_pix"]
+        )
+
+        assert "ee_fractions" in cat.meta
+        assert len(cat.meta["ee_fractions"]) == len(
+            cat.meta["aperture_radii"]["circle_pix"]
+        )
+    else:
+        assert nsources == 0
 
     if nsources > 0:
         for colname in cat.colnames:

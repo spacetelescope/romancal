@@ -76,6 +76,9 @@ class RomanSourceCatalog:
         'dr_band' catalogs are band-specific catalogs for the
         multiband source detection.
 
+    ee_spline : `~astropy.modeling.models.Spline1D` or `None`
+        The PSF aperture correction model, built from the reference file.
+
     Notes
     -----
     ``model.err`` is assumed to be the total error array corresponding
@@ -97,6 +100,7 @@ class RomanSourceCatalog:
         detection_cat=None,
         flux_unit="nJy",
         cat_type="prompt",
+        ee_spline=None,
     ):
         if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
@@ -111,6 +115,7 @@ class RomanSourceCatalog:
         self.detection_cat = detection_cat
         self.flux_unit = flux_unit
         self.cat_type = cat_type
+        self.ee_spline = ee_spline
 
         self.n_sources = len(segment_img.labels)
         self.wcs = self.model.meta.wcs
@@ -286,6 +291,7 @@ class RomanSourceCatalog:
             self.model,
             self._pixel_scale,
             self._xypos_finite,
+            ee_spline=self.ee_spline,
         )
         for name in aperture_cat.names:
             setattr(self, name, getattr(aperture_cat, name))
@@ -357,10 +363,7 @@ class RomanSourceCatalog:
         """
         Boolean indicating whether the source is extended.
         """
-        # TODO: replace with filter-dependent ee_ratio from reference file
-        # ee_ratio = ee_fraction_04 / ee_fraction_02
-        ee_ratio = 1.4  # F213 placeholder value
-        return self.aper04_flux > (self.aper02_flux * 1.1 * ee_ratio)
+        return self.aperture_cat.is_extended
 
     @lazyproperty
     def warning_flags(self):
@@ -444,6 +447,15 @@ class RomanSourceCatalog:
             aper_radii["circle_arcsec"] = aper_radii.pop("circle").value
             aper_radii["annulus_arcsec"] = aper_radii.pop("annulus").value
             self.meta["aperture_radii"] = aper_radii
+
+            if self.ee_spline:
+                fractions = []
+                for name in self.aperture_cat.fractions:
+                    fraction = getattr(self.aperture_cat, name)
+                    setattr(self, name, fraction)
+                    fractions.append(fraction)
+
+                self.meta["ee_fractions"] = np.array(fractions).astype(np.float32)
 
     @lazyproperty
     def column_descriptions(self):
