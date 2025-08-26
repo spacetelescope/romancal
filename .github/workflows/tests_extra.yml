@@ -1,4 +1,4 @@
-name: test with development versions
+name: extra tests
 
 on:
   push:
