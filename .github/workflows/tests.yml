@@ -31,6 +31,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v2
+    with:
+      envs: |
+        - linux: check-dependencies
   latest_crds_contexts:
     uses: ./.github/workflows/contexts.yml
   crds_context:
