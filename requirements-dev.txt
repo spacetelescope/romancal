@@ -1,3 +1,16 @@
+# Roman upstream packages
+git+https://github.com/spacetelescope/roman_datamodels.git
+git+https://github.com/spacetelescope/rad.git
+
+# shared upstream packages
+git+https://github.com/spacetelescope/stcal.git
+git+https://github.com/spacetelescope/stpipe.git
+
+# Other important upstream packages
+git+https://github.com/spacetelescope/crds.git
+git+https://github.com/spacetelescope/gwcs.git
+git+https://github.com/spacetelescope/tweakwcs.git
+
 # ASDF upstream packages
 git+https://github.com/asdf-format/asdf-standard.git
 git+https://github.com/asdf-format/asdf.git
@@ -10,7 +23,6 @@ git+https://github.com/seperman/deepdiff.git@dev
 
 # Use weekly astropy dev build
 git+https://github.com/astropy/asdf-astropy.git
---extra-index-url https://pypi.anaconda.org/liberfa/simple pyerfa --pre
 --extra-index-url https://pypi.anaconda.org/astropy/simple
 astropy>=0.0.dev0
 photutils>=0.0.dev0
