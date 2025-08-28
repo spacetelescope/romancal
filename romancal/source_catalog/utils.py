@@ -1,4 +1,7 @@
 import numpy as np
+from astropy.modeling.fitting import SplineSplrepFitter
+from astropy.modeling.models import Spline1D
+from roman_datamodels import datamodels
 
 
 def copy_mosaic_meta(model, cat_model):
@@ -30,3 +33,23 @@ def copy_mosaic_meta(model, cat_model):
     cat_model.meta.photometry.conversion_megajanskys_uncertainty = None
     cat_model.meta.photometry.pixel_area = None
     return cat_model
+
+
+def get_ee_spline(input_model, apcorr_file):
+    """
+    Create a spline fit to the encircled energy fraction vs radius data
+
+    Parameters
+    ----------
+    input'_model : `~roman_datamodels.datamodels.ImageModel` or `~roman_datamodels.datamodels.MosaicModel`
+        The input data model.
+    """
+
+    optical_element = input_model.meta.instrument.optical_element
+    with datamodels.open(apcorr_file) as ee_ref:
+        ee_fractions = getattr(ee_ref.data, optical_element).ee_fractions
+        ee_radii = getattr(ee_ref.data, optical_element).ee_radii
+
+        # Fit a spline model to the ee_fraction vs radius data so that we
+        # can interpolate the values for arbitrary radii
+        return SplineSplrepFitter()(Spline1D(), ee_radii, ee_fractions)

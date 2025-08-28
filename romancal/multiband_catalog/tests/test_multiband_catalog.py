@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from re import match
 
 import astropy.units as u
 import numpy as np
@@ -102,6 +103,22 @@ def test_multiband_catalog(
     cat = result.source_catalog
     assert isinstance(cat, Table)
     assert len(cat) == 7
+
+    assert len(cat.meta["aperture_radii"]["circle_pix"]) > 0
+    print(cat.colnames)
+    assert sum(
+        1 for name in cat.colnames if match(r"^aper\d+_f158_flux$", name)
+    ) == len(cat.meta["aperture_radii"]["circle_pix"])
+    assert sum(
+        1 for name in cat.colnames if match(r"^aper\d+_f184_flux$", name)
+    ) == len(cat.meta["aperture_radii"]["circle_pix"])
+    assert "ee_fractions" in cat.meta
+    assert isinstance(cat.meta["ee_fractions"], dict)
+    assert len(cat.meta["ee_fractions"]) == 2
+    assert "f158" in cat.meta["ee_fractions"]
+    assert "f184" in cat.meta["ee_fractions"]
+    for value in cat.meta["ee_fractions"].values():
+        assert len(value) == len(cat.meta["aperture_radii"]["circle_pix"])
 
     if len(cat) > 0:
         assert np.min(cat["x_centroid"]) > 0.0
