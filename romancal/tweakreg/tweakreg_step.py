@@ -182,7 +182,7 @@ class TweakRegStep(RomanStep):
                         # validate catalog columns
                         if not _validate_catalog_columns(catalog):
                             log.error("""'tweakreg' source catalogs must
-                            contain a header withth " "columns named either 'x'
+                            contain a header withth columns named either 'x'
                             and 'y' or 'x_psf' and 'y_psf'.""")
                             image_model.meta.cal_step.tweakreg = "FAILED"
                             images.shelve(image_model, i, modify=False)
