@@ -400,12 +400,15 @@ class TweakRegStep(RomanStep):
         AttributeError
             If the required catalog information is missing from the source detection.
         """
-        if getattr(source_catalog, "tweakreg_catalog", None):
+        twk_cat = getattr(source_catalog, "tweakreg_catalog", None)
+        twk_cat_name = getattr(source_catalog, "tweakreg_catalog_name", None)
+
+        if twk_cat is not None:
             tweakreg_catalog = Table(np.asarray(source_catalog.tweakreg_catalog))
             del image_model.meta.source_catalog["tweakreg_catalog"]
             return tweakreg_catalog
 
-        if getattr(source_catalog, "tweakreg_catalog_name", None):
+        if twk_cat_name is not None:
             return self.read_catalog(source_catalog.tweakreg_catalog_name)
 
         raise AttributeError(
