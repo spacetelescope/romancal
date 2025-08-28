@@ -1230,7 +1230,7 @@ def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_ima
 
 
 @pytest.mark.parametrize(
-    "catalog_data, expected_colnames, raises_exception",
+    "catalog_data, expected_colnames, flags_step_as_failed",
     [
         # both 'x' and 'y' columns present
         ({"x": [1, 2, 3], "y": [4, 5, 6]}, ["x", "y"], False),
@@ -1252,15 +1252,15 @@ def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_ima
         ),
     ],
 )
-def test_validate_catalog_columns(catalog_data, expected_colnames, raises_exception):
+def test_validate_catalog_columns(
+    catalog_data, expected_colnames, flags_step_as_failed
+):
     """Test that TweakRegStep._validate_catalog_columns() correctly validates the
     presence of required columns ('x' and 'y') in the provided catalog."""
     catalog = Table(catalog_data)
-    if raises_exception:
-        with pytest.raises(ValueError):
-            _validate_catalog_columns(catalog)
-    else:
-        _validate_catalog_columns(catalog)
+    is_valid = _validate_catalog_columns(catalog)
+    assert is_valid is not flags_step_as_failed
+    if expected_colnames is not None:
         assert set(catalog.colnames) == set(expected_colnames)
 
 
