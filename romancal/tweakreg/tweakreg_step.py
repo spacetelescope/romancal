@@ -180,7 +180,13 @@ class TweakRegStep(RomanStep):
 
                     try:
                         # validate catalog columns
-                        _validate_catalog_columns(catalog)
+                        if not _validate_catalog_columns(catalog):
+                            log.error("""'tweakreg' source catalogs must
+                            contain a header withth " "columns named either 'x'
+                            and 'y' or 'x_psf' and 'y_psf'.""")
+                            image_model.meta.cal_step.tweakreg = "FAILED"
+                            images.shelve(image_model, i, modify=False)
+                            continue
                     except ValueError as e:
                         log.error(f"Failed to validate catalog columns: {e}")
                         images.shelve(image_model, i, modify=False)
@@ -537,7 +543,7 @@ def _parse_catfile(catfile):
     return catdict
 
 
-def _validate_catalog_columns(catalog):
+def _validate_catalog_columns(catalog) -> bool:
     """
     Validate the presence of required columns in the catalog.
 
@@ -549,17 +555,11 @@ def _validate_catalog_columns(catalog):
     ----------
     catalog : Table
         The catalog to validate, which should contain source information.
-    axis : str
-        The axis to check for in the catalog (e.g., 'x' or 'y').
 
     Returns
     -------
-    None
+    True if all the required columns are present, False otherwise.
 
-    Raises
-    ------
-    ValueError
-        If the required columns are missing from the catalog.
     """
     for axis in ["x", "y"]:
         if axis not in catalog.colnames:
@@ -567,8 +567,5 @@ def _validate_catalog_columns(catalog):
             if long_axis in catalog.colnames:
                 catalog.rename_column(long_axis, axis)
             else:
-                raise ValueError(
-                    "'tweakreg' source catalogs must contain a header with "
-                    "columns named either 'x' and 'y' or 'x_psf' and 'y_psf'."
-                )
-    return catalog
+                return False
+    return True
