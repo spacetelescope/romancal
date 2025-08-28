@@ -178,19 +178,14 @@ class TweakRegStep(RomanStep):
                         images.shelve(image_model, i, modify=False)
                         raise e
 
-                    try:
-                        # validate catalog columns
-                        if not _validate_catalog_columns(catalog):
-                            log.error("""'tweakreg' source catalogs must
-                            contain a header withth columns named either 'x'
-                            and 'y' or 'x_psf' and 'y_psf'.""")
-                            image_model.meta.cal_step.tweakreg = "FAILED"
-                            images.shelve(image_model, i, modify=False)
-                            continue
-                    except ValueError as e:
-                        log.error(f"Failed to validate catalog columns: {e}")
+                    # validate catalog columns
+                    if not _validate_catalog_columns(catalog):
+                        log.error("""'tweakreg' source catalogs must
+                        contain a header withth columns named either 'x'
+                        and 'y' or 'x_psf' and 'y_psf'.""")
+                        image_model.meta.cal_step.tweakreg = "FAILED"
                         images.shelve(image_model, i, modify=False)
-                        raise e
+                        continue
 
                     catalog = tweakreg.filter_catalog_by_bounding_box(
                         catalog, image_model.meta.wcs.bounding_box
