@@ -1264,6 +1264,33 @@ def test_validate_catalog_columns(
         assert set(catalog.colnames) == set(expected_colnames)
 
 
+def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(base_image):
+    """Test that TweakRegStep marks step as FAILED when catalog columns are
+    invalid."""
+
+    class FakeSourceCatalog(dict):
+        """Create a fake source catalog with both attribute and item access."""
+
+        def __getattr__(self, name):
+            return self[name]
+
+        def __setattr__(self, name, value):
+            self[name] = value
+
+    img = base_image(shift_1=1000, shift_2=1000)
+    # Add a tweakreg catalog with missing required columns
+    bad_catalog = Table({"a": [1, 2, 3], "b": [4, 5, 6]})
+    img.meta["source_catalog"] = FakeSourceCatalog()
+    img.meta.source_catalog.tweakreg_catalog = bad_catalog.as_array()
+
+    # Should mark as FAILED and not raise
+    res = trs.TweakRegStep.call([img], save_l1_wcs=False)
+    with res:
+        model = res.borrow(0)
+        assert model.meta.cal_step.tweakreg == "FAILED"
+        res.shelve(model, 0, modify=False)
+
+
 def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
     """Test that TweakReg can handle mixed exposure types
     (non-WFI_IMAGE data will be marked as SKIPPED only and won't be processed)."""
