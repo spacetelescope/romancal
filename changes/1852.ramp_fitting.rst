@@ -1,0 +1,3 @@
+Downstream fix for changes in ``roman_datamodels`` which prevent the deletion of
+the ``_read_tag`` attribute on tagged nodes. This changes that to be a ``None`` value,
+which results in the same behavior as before.
