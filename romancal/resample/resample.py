@@ -188,7 +188,7 @@ class ResampleData(Resample):
             "dq": model.dq,
             "var_rnoise": model.var_rnoise,
             "var_poisson": model.var_poisson,
-            "var_sky": compute_var_sky(model) if self.weight_type == "ivsky" else None,
+            "var_sky": compute_var_sky(model) if self.weight_type == "ivm-sky" else None,
             "err": model.err,
             "filename": model.meta.filename,
             "wcs": model.meta.wcs,

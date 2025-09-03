@@ -1,1 +1,1 @@
-Add inverse sky variance ('ivsky') option for weight map in resample.
+Add inverse sky variance ('ivm-sky') option for weight map in resample.

@@ -88,7 +88,7 @@ image.
     will be determined per-pixel using the inverse of the read noise
     (VAR_RNOISE) array stored in each input image. If the VAR_RNOISE array does
     not exist, the variance is set to 1 for all pixels (equal weighting).
-    If `weight_type=ivsky`, the scaling value
+    If `weight_type=ivm-sky`, the scaling value
     will be determined per-pixel using the inverse of the sky variance
     (VAR_SKY) array stored in each input image. If the VAR_SKY array does
     not exist, the variance is set to 1 for all pixels (equal weighting).
