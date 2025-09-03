@@ -14,10 +14,11 @@ from astropy import units as u
 from astropy.modeling import bind_bounding_box
 from gwcs.wcs import WCS, Step
 from roman_datamodels import datamodels as rdm
+from stcal.alignment.util import wcs_bbox_from_shape
 
 from ..stpipe import RomanStep
 from . import pointing
-from .utils import add_s_region, wcs_bbox_from_shape
+from .utils import add_s_region
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -48,8 +49,8 @@ class AssignWcsStep(RomanStep):
             reffile = self.get_reference_file(input_model, reftype)
             # Check for a valid reference file
             if reffile == "N/A":
-                self.log.warning("No DISTORTION reference file found")
-                self.log.warning("Assign WCS step will be skipped")
+                log.warning("No DISTORTION reference file found")
+                log.warning("Assign WCS step will be skipped")
                 result = input_model.copy()
                 result.meta.cal_step.assign_wcs = "SKIPPED"
                 return result

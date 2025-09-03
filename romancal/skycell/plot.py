@@ -13,8 +13,17 @@ import romancal.skycell.skymap as sc
 
 try:
     from matplotlib import pyplot as plt
+    from matplotlib.axis import Axis
 except ImportError:
     print("matplotlib is required for this plotting utility")
+
+__all__ = [
+    "plot_field",
+    "plot_image_footprint_and_skycells",
+    "plot_projregion",
+    "plot_skycell",
+    "veccoords_to_tangent_plane",
+]
 
 RAD_TO_ARCSEC = 180.0 / np.pi * 3600.0
 
@@ -23,13 +32,14 @@ def find_intersecting_projregions(
     footprint: sm.ImageFootprint,
     skymap: sc.SkyMap = None,
 ) -> list[int]:
-    """
-    Out of all projection regions, find ones that intersect the given image footprint
+    """Out of all projection regions, find ones that intersect the given image footprint
 
     Parameters
     ----------
-    footprint: sequence of 4 points (ra, dec) or an `ImageFootprint` object
-    skymap: sky map instance (defaults to global SKYMAP)
+    footprint: sm.ImageFootprint :
+        sequence of points (ra, dec) or an `ImageFootprint` object
+    skymap: sc.SkyMap :
+        sky map instance; defaults to global SKYMAP (Default value = None)
 
     Returns
     -------
@@ -60,8 +70,7 @@ def veccoords_to_tangent_plane(
     vertices: list[tuple[float, float, float]],
     tangent_vectorpoint: tuple[float, float, float],
 ) -> NDArray[float]:
-    """
-    Convert the spherical geometry vectors to tangent plane coordinates
+    """Convert the spherical geometry vectors to tangent plane coordinates
     in arcseconds. This algorithm is not precise, but should be good
     enough for now (and besides, the goal here is visualizaion, not
     ultra-precision). This also breaks down numerically very near the
@@ -96,12 +105,11 @@ def plot_projregion(
     tangent_vectorpoint = sgv.normalize_vector(
         sgv.lonlat_to_vector(*projregion.radec_tangent)
     )
+    corners = projregion.vectorpoint_corners
+    corners = np.concat([corners, corners[0, :].reshape((1, 3))], axis=0)
     corners_tangentplane = veccoords_to_tangent_plane(
-        projregion.vectorpoint_corners,
+        corners,
         tangent_vectorpoint,
-    )
-    corners_tangentplane = np.concatenate(
-        [corners_tangentplane, corners_tangentplane[None, -1]]
     )
 
     axis.plot(corners_tangentplane[:, 0], corners_tangentplane[:, 1], color=color)
@@ -129,12 +137,11 @@ def plot_skycell(
     if axis is None:
         axis = plt
 
+    corners = skycell.vectorpoint_corners
+    corners = np.concat([corners, corners[0, :].reshape((1, 3))], axis=0)
     corners_tangentplane = veccoords_to_tangent_plane(
-        skycell.vectorpoint_corners,
+        corners,
         tangent_vectorpoint,
-    )
-    corners_tangentplane = np.concatenate(
-        [corners_tangentplane, corners_tangentplane[None, -1]]
     )
 
     axis.plot(
@@ -151,17 +158,17 @@ def plot_skycell(
 def plot_image_footprint_and_skycells(
     footprint: list[tuple[float, float]] | sm.ImageFootprint,
     skymap: sc.SkyMap = None,
-):
-    """
-    This plots a list of skycell footprints against the image footprint.
+) -> list[tuple[Axis, tuple[float, float, float]]]:
+    """This plots a list of skycell footprints against the image footprint.
 
     Both the touched skycells as well as nearby skycells are plotted.
 
-
     Parameters
     ----------
-    footprint: sequence of 4 points (ra, dec) or an `ImageFootprint` object
-    skymap: sky map instance (defaults to global SKYMAP)
+    footprint : list | sm.ImageFootprint :
+        sequence of points (ra, dec) or an `ImageFootprint` object
+    skymap : sc.SkyMap :
+        sky map instance; defaults to global SKYMAP (Default value = None)
     """
 
     if not isinstance(footprint, sm.ImageFootprint):
@@ -174,6 +181,7 @@ def plot_image_footprint_and_skycells(
     intersecting_projregion_indices = find_intersecting_projregions(
         footprint, skymap=skymap
     )
+    axes = []
     for projregion_index in intersecting_projregion_indices:
         figure = plt.figure()
         figure.gca().invert_xaxis()
@@ -187,7 +195,7 @@ def plot_image_footprint_and_skycells(
             sgv.lonlat_to_vector(*projregion.radec_tangent)
         )
         image_corners_tangentplane = veccoords_to_tangent_plane(
-            footprint.vectorpoint_corners,
+            footprint.vectorpoint_vertices,
             tangent_vectorpoint,
         )
         plot_field(image_corners_tangentplane, fill="lightgrey", color="black")
@@ -227,3 +235,7 @@ def plot_image_footprint_and_skycells(
         axis.set_ylabel("Offset from nearest tangent point in arcsec")
 
         axis.set_title(f"tangent point radec {np.array(projregion.radec_tangent)}")
+
+        axes.append((axis, tangent_vectorpoint))
+
+    return axes

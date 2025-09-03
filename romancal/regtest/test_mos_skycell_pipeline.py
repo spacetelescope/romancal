@@ -1,8 +1,8 @@
 import pytest
 import roman_datamodels as rdm
 
-from romancal.lib.wcsinfo_to_wcs import wcsinfo_to_wcs
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
+from romancal.resample.l3_wcs import l3wcsinfo_to_wcs
 
 from . import util
 from .regtestdata import compare_asdf
@@ -17,7 +17,7 @@ def run_mos(rtdata_module, resource_tracker):
 
     # Test Pipeline
     rtdata.get_asn("WFI/image/L3_mosaic_asn.json")
-    output = "r00001_p_v01001001001001_270p65x49y70_f158_coadd.asdf"
+    output = "r00001_p_v01001001001001_270p65x70y49_f158_coadd.asdf"
     rtdata.output = output
     args = [
         "roman_mos",
@@ -62,12 +62,12 @@ def test_resample_ran(output_model):
 
 def test_location_name(output_model):
     # test that the location_name matches the skycell selected
-    assert output_model.meta.basic.location_name == "270p65x49y70"
+    assert output_model.meta.wcsinfo.skycell_name == "270p65x70y49"
 
 
 def test_wcsinfo_wcs_roundtrip(output_model):
     """Test that the contents of wcsinfo reproduces the wcs"""
-    gwcs_from_wcsinfo = wcsinfo_to_wcs(output_model.meta.wcsinfo)
+    gwcs_from_wcsinfo = l3wcsinfo_to_wcs(output_model.meta.wcsinfo)
 
     ra_mad, dec_mad = util.comp_wcs_grids_arcs(output_model.meta.wcs, gwcs_from_wcsinfo)
     assert (ra_mad + dec_mad) / 2.0 < 1.0e-4

@@ -59,13 +59,14 @@ class ResampleStep(RomanStep):
         output_shape = int_list(min=2, max=2, default=None)  # [x, y] order
         crpix = float_list(min=2, max=2, default=None)
         crval = float_list(min=2, max=2, default=None)
-        rotation = float(default=None)
+        rotation = float(default=None)  # Position angle of +y axis in degrees
         pixel_scale_ratio = float(default=1.0) # Ratio of output to input pixel scale
         pixel_scale = float(default=None) # Absolute pixel scale in arcsec
         output_wcs = string(default='')  # Custom output WCS.
         resample_on_skycell = boolean(default=True)  # if association contains skycell information use it for the wcs
         in_memory = boolean(default=True)
         good_bits = string(default='~DO_NOT_USE+NON_SCIENCE')  # The good bits to use for building the resampling mask.
+        include_var_flat = boolean(default=False)  # include var_flat in output image
     """
 
     reference_file_types: ClassVar = []
@@ -114,12 +115,16 @@ class ResampleStep(RomanStep):
 
         # Issue a warning about the use of exptime weighting
         if self.weight_type == "exptime":
-            self.log.warning("Use of EXPTIME weighting will result in incorrect")
-            self.log.warning("propagated errors in the resampled product")
+            log.warning("Use of EXPTIME weighting will result in incorrect")
+            log.warning("propagated errors in the resampled product")
 
         output_wcs = self._load_custom_wcs(self.output_wcs, self.output_shape)
 
         if output_wcs is None:
+            if self.pixel_scale is not None:
+                log.info(f"Output pixel scale: {self.pixel_scale} arcsec")
+                self.pixel_scale /= 3600.0  # convert to degrees/pix
+
             wcs_kwargs = {
                 "pscale_ratio": self.pixel_scale_ratio,
                 "pscale": self.pixel_scale,
@@ -130,6 +135,10 @@ class ResampleStep(RomanStep):
             }
         else:
             wcs_kwargs = None
+
+        variance_array_names = ["var_rnoise", "var_poisson"]
+        if self.include_var_flat:
+            variance_array_names.append("var_flat")
 
         # Call the resampling routine
         resamp = ResampleData(
@@ -147,29 +156,22 @@ class ResampleStep(RomanStep):
             True,
             self.resample_on_skycell,
             wcs_kwargs,
+            variance_array_names=variance_array_names,
         )
         result = resamp.resample_group(range(len(input_models)))
         result.meta.filename = output_filename
 
-        self._final_updates(result, input_models)
+        self._final_updates(result)
 
         return result
 
-    def _final_updates(self, model, input_models):
+    def _final_updates(self, model):
         model.meta.cal_step["resample"] = "COMPLETE"
 
-        # if pixel_scale exists, it will override pixel_scale_ratio.
-        # calculate the actual value of pixel_scale_ratio based on pixel_scale
-        # because source_catalog uses this value from the header.
-        model.meta.resample.pixel_scale_ratio = (
-            self.pixel_scale / np.sqrt(model.meta.photometry.pixel_area * SR_TO_ARCSEC2)
-            if self.pixel_scale
-            else self.pixel_scale_ratio
-        )
-        model.meta.resample.pixfrac = self.pixfrac
-        if model.meta.photometry.pixel_area is not None:
-            model.meta.photometry.pixel_area *= model.meta.resample.pixel_scale_ratio**2
-        model.meta.resample["good_bits"] = self.good_bits
+        # TODO statistics are unknown
+        model.meta.statistics.image_median = np.nan
+        model.meta.statistics.image_rms = np.nan
+        model.meta.statistics.good_pixel_fraction = np.nan
 
     @staticmethod
     def _load_custom_wcs(asdf_wcs_file, output_shape):

@@ -17,12 +17,14 @@ class ApertureCatalog:
     Class to calculate aperture photometry.
     """
 
-    def __init__(self, model, pixel_scale, xypos_finite):
+    def __init__(self, model, pixel_scale, xypos_finite, *, ee_spline=None):
         self.model = model
         self.pixel_scale = pixel_scale
         self.xypos_finite = xypos_finite
+        self.ee_spline = ee_spline
 
         self.names = []
+        self.fractions = []
 
         self.calc_aperture_photometry()
         self.names.extend(["aper_bkg_flux", "aper_bkg_flux_err"])
@@ -114,6 +116,13 @@ class ApertureCatalog:
         return self._aperture_background[1]
 
     @lazyproperty
+    def aperture_radius_name(self):
+        return [
+            f"{np.round((radius / 0.1 * u.arcsec).value).astype(int):02d}"
+            for radius in self.aperture_radii["circle"]
+        ]
+
+    @lazyproperty
     def aperture_flux_colnames(self):
         """
         The aperture flux column names.
@@ -122,13 +131,7 @@ class ApertureCatalog:
         tenths of arcsec. For example, the flux in a r=0.2 arcsec
         aperture is "aper02_flux".
         """
-        flux_columns = []
-        for radius in self.aperture_radii["circle"]:
-            radius /= 0.1 * u.arcsec
-            radius_str = np.round(radius.value).astype(int)
-            flux_columns.append(f"aper{radius_str:02d}_flux")
-
-        return flux_columns
+        return [f"aper{name}_flux" for name in self.aperture_radius_name]
 
     @lazyproperty
     def aperture_flux_descriptions(self):
@@ -147,6 +150,34 @@ class ApertureCatalog:
             )
             descriptions[colname] = desc
         return descriptions
+
+    def calc_ee_fractions(self):
+        """
+        Calculate the encircled energy fractions for each aperture radius.
+        """
+
+        if self.ee_spline is not None:
+            for radius, name in zip(
+                self.aperture_radii["circle_pix"],
+                self.aperture_radius_name,
+                strict=True,
+            ):
+                attr_name = f"ee_fraction_{name}"
+                self.fractions.append(attr_name)
+                setattr(self, attr_name, self.ee_spline(radius))
+
+    @lazyproperty
+    def is_extended(self):
+        """
+        Boolean array indicating if the source is extended.
+        """
+        if self.ee_spline is None:
+            raise ValueError(
+                "Cannot determine if source is extended without ee_fractions."
+            )
+
+        ee_ratio = self.ee_fraction_04 / self.ee_fraction_02
+        return self.aper04_flux > (self.aper02_flux * 1.1 * ee_ratio)
 
     def calc_aperture_photometry(self, subtract_local_bkg=False):
         """
@@ -178,3 +209,5 @@ class ApertureCatalog:
             setattr(self, flux_err_col, aper_phot[tmp_flux_err_col].astype(np.float32))
             self.names.append(flux_col)
             self.names.append(flux_err_col)
+
+        self.calc_ee_fractions()

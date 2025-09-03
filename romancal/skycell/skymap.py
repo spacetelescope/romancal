@@ -23,10 +23,11 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
+__all__ = ["SKYMAP", "ProjectionRegion", "SkyCell", "SkyMap"]
+
+
 class SkyCell:
-    """
-    Square subregion of a projection region, 4.6 arcminutes per side.
-    """
+    """Square subregion of a projection region, 4.6 arcminutes per side."""
 
     _index: int | None
     _data: np.void
@@ -57,15 +58,14 @@ class SkyCell:
 
     @classmethod
     def from_name(cls, name: str, skymap: "SkyMap" = None) -> "SkyCell":
-        """
-        Retrieve a sky cell from the sky map by its name (see handbook [1] for explanation).
+        """Retrieve a sky cell from the sky map by its name (see handbook [1] for explanation).
 
         Parameters
         ----------
         name : str
             Name of a sky cell, for instance `315p86x50y75`.
-        skymap: SkyMap
-            sky map instance (defaults to global SKYMAP)
+        skymap : SkyMap
+            sky map instance; defaults to global SKYMAP (Default value = None)
 
         References
         ----------
@@ -87,15 +87,14 @@ class SkyCell:
 
     @classmethod
     def from_data(cls, data: np.void, skymap: "SkyMap" = None) -> "SkyCell":
-        """
-        build an index-less sky cell instance from a data array
+        """build an index-less sky cell instance from a data array
 
         Parameters
         ----------
-        data : numpy.void
+        data : np.void
             array with sky cell parameters (see schema)
         skymap: SkyMap
-            sky map instance (defaults to global SKYMAP)
+            sky map instancel; defaults to global SKYMAP (Default value = None)
         """
         instance = cls(index=None, skymap=skymap)
         instance._data = data
@@ -103,8 +102,7 @@ class SkyCell:
 
     @classmethod
     def from_asn(cls, asn: dict | str, skymap: "SkyMap" = None) -> "SkyCell":
-        """
-        retrieve a sky cell from WCS info or a target specified in an association
+        """retrieve a sky cell from WCS info or a target specified in an association
 
         Attempts to find a sky cell name from the following in order:
             - `skycell_wcs_info.name`
@@ -115,7 +113,7 @@ class SkyCell:
         asn : dict | str
             association dictionary or a path to an association file to load
         skymap: SkyMap
-            sky map instance (defaults to global SKYMAP)
+            sky map instance; defaults to global SKYMAP (Default value = None)
         """
 
         if isinstance(asn, str | os.PathLike):
@@ -140,8 +138,7 @@ class SkyCell:
 
     @property
     def data(self) -> np.void:
-        """
-        Sky cell data.
+        """Sky cell data.
 
         ("name", "ra_center", "dec_center", "orientat", "x_tangent", "y_tangent", "ra_corn1", "dec_corn1", "ra_corn2", "dec_corn2", "ra_corn3", "dec_corn3", "ra_corn4", "dec_corn4")
         """
@@ -151,8 +148,7 @@ class SkyCell:
 
     @property
     def name(self) -> str:
-        """
-        name of this sky cell, for instance `315p86x50y75`
+        """name of this sky cell, for instance `315p86x50y75`
 
         NOTE
         ----
@@ -242,11 +238,7 @@ class SkyCell:
             "nx": self.pixel_shape[0],
             "ny": self.pixel_shape[1],
             "orientat": self.orientation,
-            "orientat_projection_center": self.projection_region.orientation
-            if self.projection_region.data["dec_max"] != 90.0
-            # rotate north polar cap by 180 degrees
-            # TODO: find out why this is necessary...
-            else self.projection_region.orientation + 180,
+            "orientat_projection_center": self.projection_region.orientation,
         }
 
     @cached_property
@@ -267,6 +259,12 @@ class SkyCell:
             return False
 
         return self.data == other.data
+
+    def __str__(self) -> str:
+        return f"{self.name} [{self._skymap.path}]"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.index}, {self._skymap})"
 
 
 class ProjectionRegion:
@@ -304,15 +302,14 @@ class ProjectionRegion:
 
     @classmethod
     def from_data(cls, data: np.void, skymap: "SkyMap" = None) -> "ProjectionRegion":
-        """
-        build a projection region instance from a data array
+        """build a projection region instance from a data array
 
         Parameters
         ----------
         data : numpy.void
             array with projection region parameters (see schema)
         skymap: SkyMap
-            sky map instance (defaults to global SKYMAP)
+            sky map instance; defaults to global SKYMAP (Default value = None)
         """
         instance = cls(index=data["index"], skymap=skymap)
         instance._data = data
@@ -327,8 +324,8 @@ class ProjectionRegion:
         ----------
         index : int
             index of the sky cell
-        skymap: SkyMap
-            sky map instance (defaults to global SKYMAP)
+        skymap : SkyMap
+            sky map instance; defaults to global SKYMAP (Default value = None)
 
         Returns
         -------
@@ -360,8 +357,7 @@ class ProjectionRegion:
 
     @property
     def data(self) -> np.void:
-        """
-        Projection region data.
+        """Projection region data.
 
         ("index", "ra_tangent", "dec_tangent", "ra_min", "ra_max", "dec_min", "dec_max", "orientat", "x_tangent", "y_tangent", "nx", "ny", "skycell_start", "skycell_end")
         """
@@ -403,8 +399,7 @@ class ProjectionRegion:
 
     @cached_property
     def skycells_kdtree(self) -> KDTree:
-        """
-        LOCAL k-d tree of skycells in this projection region, using normalized center vectorpoints in 3D space
+        """LOCAL k-d tree of skycells in this projection region, using normalized center vectorpoints in 3D space
 
         NOTE
         ----
@@ -497,13 +492,20 @@ class ProjectionRegion:
 
         return self.data == other.data
 
+    def __str__(self) -> str:
+        return f"projregion {self.index} [{self._skymap.path}]"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.index}, {self._skymap})"
+
 
 class SkyMap:
-    """
-    Abstract representation of the sky map, comprising of 4058 overlapping rectangular "projection regions" defining gnomonic projection on to uniform pixel grids.
+    """Abstract representation of the sky map, comprising of 4058 overlapping rectangular
+    "projection regions" defining gnomonic projection on to uniform pixel grids.
     The pixel scale for all projection regions is identical.
 
-    Each projection region is subdivided into ~2000 square subregions ("sky cells", ~8 million in total), each 4.6' across. These sky cells also overlap each other by a standard number of pixels.
+    Each projection region is subdivided into ~2000 square subregions ("sky cells", ~8 million in total),
+    each 4.6' across. These sky cells also overlap each other by a standard number of pixels.
 
     References
     ----------
@@ -555,8 +557,7 @@ class SkyMap:
 
     @cached_property
     def skycells_kdtree(self) -> KDTree:
-        """
-        k-d tree of all skycells in the skymap, using normalized center vectorpoints in 3D space
+        """k-d tree of all skycells in the skymap, using normalized center vectorpoints in 3D space
 
         NOTE
         ----
@@ -603,6 +604,12 @@ class SkyMap:
     def __getitem__(self, index: int) -> SkyCell:
         """`SkyCell` at the given index in the sky cells array"""
         return SkyCell(index)
+
+    def __str__(self) -> str:
+        return f"skymap {self.path}"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.path})"
 
 
 SKYMAP = SkyMap(path=os.environ.get("SKYMAP_PATH", None))

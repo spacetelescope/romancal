@@ -1,3 +1,163 @@
+0.20.0 (2025-08-14)
+===================
+
+General
+-------
+
+- Replace uses of ``roman_datamodels.maker_utils`` with
+  ``DataModel.create_fake_data``. (`#1760
+  <https://github.com/spacetelescope/romancal/issues/1760>`_)
+- Move the location of cal_logs setting for MosaicModel (`#1799
+  <https://github.com/spacetelescope/romancal/issues/1799>`_)
+
+
+Documentation
+-------------
+
+- Remove description of non-working step-specific log configuration. (`#1805
+  <https://github.com/spacetelescope/romancal/issues/1805>`_)
+
+
+``stpipe``
+----------
+
+- Remove uses of soon to be deprecated ``Step.log``. (`#1883
+  <https://github.com/spacetelescope/romancal/issues/1883>`_)
+
+
+Scripts
+-------
+
+- remove `typer` dependency from `roman_static_preview` script (use builtin
+  `argparse` instead), and reorder CLI arguments (see docs) (`#1788
+  <https://github.com/spacetelescope/romancal/issues/1788>`_)
+- bump required ``stpreview`` version to ``0.6.0``, which includes breaking CLI
+  changes (see `release notes
+  <https://github.com/spacetelescope/stpreview/releases/tag/0.6.0>`_ for
+  details) (`#1789 <https://github.com/spacetelescope/romancal/issues/1789>`_)
+- add roman_set_velocity_aberration script (`#1891
+  <https://github.com/spacetelescope/romancal/issues/1891>`_)
+
+
+``mosaic_pipeline``
+-------------------
+
+- Updated source_catalog class alias in the mosaic pipeline. (`#1776
+  <https://github.com/spacetelescope/romancal/issues/1776>`_)
+
+
+``skycell``
+-----------
+
+- create extra vertices along the edges of the image footprint to account for
+  image distortion (`#1772
+  <https://github.com/spacetelescope/romancal/issues/1772>`_)
+- Use new "skycells" reference file, with new names. (`#1861
+  <https://github.com/spacetelescope/romancal/issues/1861>`_)
+
+
+``dark_current`` (WFI-Image, WFI-Prism, WFI-Grism)
+--------------------------------------------------
+
+- Refactor dark current subtraction to match RTB algorithm (`#1829
+  <https://github.com/spacetelescope/romancal/issues/1829>`_)
+- Remove dark.data from tests and dark current step. (`#1897
+  <https://github.com/spacetelescope/romancal/issues/1897>`_)
+
+
+``orientation``
+---------------
+
+- Initial implementation of Roman orientation modules (`#1816
+  <https://github.com/spacetelescope/romancal/issues/1816>`_)
+- Fix missing/mistaken meta assignments (`#1874
+  <https://github.com/spacetelescope/romancal/issues/1874>`_)
+
+
+``ramp_fitting`` (WFI-Image, WFI-Prism, WFI-Grism)
+--------------------------------------------------
+
+- Use ``ImageModel.create_minimal`` to create output model. (`#1785
+  <https://github.com/spacetelescope/romancal/issues/1785>`_)
+- Add likelihood fitting as an option in the ramp fitting step (`#1812
+  <https://github.com/spacetelescope/romancal/issues/1812>`_)
+
+
+``assign_wcs`` (WFI-Image, WFI-Prism, WFI-Grism)
+------------------------------------------------
+
+- remove unused function ``wcs_from_footprints`` (`#1764
+  <https://github.com/spacetelescope/romancal/issues/1764>`_)
+- replace usages of `romancal.assign_wcs.utils.wcs_bbox_from_shape` with
+  `stcal.alignment.util.wcs_bbox_from_shape` (`#1797
+  <https://github.com/spacetelescope/romancal/issues/1797>`_)
+
+
+``flatfield`` (WFI-Image)
+-------------------------
+
+- Make var_flat optional. (`#1438
+  <https://github.com/spacetelescope/romancal/issues/1438>`_)
+
+
+``tweakreg`` (WFI-Image)
+------------------------
+
+- Remove the dead module ``tweakreg.astrometric_utils`` from the docs and the
+  tweakreg step.
+  Remove some related dead code in the ``assign_wcs.utils`` module. (`#1835
+  <https://github.com/spacetelescope/romancal/issues/1835>`_)
+- Add parameter vo_timeout (`#1884
+  <https://github.com/spacetelescope/romancal/issues/1884>`_)
+
+
+``resample``
+------------
+
+- Use ``gwcs.FITSImagingWCSTransform`` in the WCS of Level3 files. (`#1807
+  <https://github.com/spacetelescope/romancal/issues/1807>`_)
+- Corrected the units for the ResampleStep pixel_scale parameter in the
+  documentation. (`#1828
+  <https://github.com/spacetelescope/romancal/issues/1828>`_)
+- Update for new level 3 metadata structure. (`#1838
+  <https://github.com/spacetelescope/romancal/issues/1838>`_)
+- Improve orientation accuracy by increasing separation between points used for
+  computing PA. (`#1843
+  <https://github.com/spacetelescope/romancal/issues/1843>`_)
+- Fixed the pixel_scale input units to be in arcseconds. (`#1853
+  <https://github.com/spacetelescope/romancal/issues/1853>`_)
+
+
+``source_catalog``
+------------------
+
+- Update the source catalog step to handle the case where there are no
+  valid pixels in the input data. (`#1767
+  <https://github.com/spacetelescope/romancal/issues/1767>`_)
+- Enable using schemas to constrain the columns in source catalog tables.
+  (`#1787 <https://github.com/spacetelescope/romancal/issues/1787>`_)
+- Create an L3-appropriate PSF based on calculated L2 PSF (`#1800
+  <https://github.com/spacetelescope/romancal/issues/1800>`_)
+- Use CRDS ePSFs rather than generating them from STPSF. (`#1814
+  <https://github.com/spacetelescope/romancal/issues/1814>`_)
+- Retrieval of ePSF reference file is skipped if fit_psf is set to False.
+  (`#1823 <https://github.com/spacetelescope/romancal/issues/1823>`_)
+- Update for new level 3 metadata structure. (`#1838
+  <https://github.com/spacetelescope/romancal/issues/1838>`_)
+- Add the DMS identifier for the astrometry and ePSF tests as well as updating
+  the tests (`#1862 <https://github.com/spacetelescope/romancal/issues/1862>`_)
+
+
+``multiband_catalog``
+---------------------
+
+- Update the multiband catalog step to handle the cases where there are no
+  valid pixels in the input data or there are no detections found. (`#1822
+  <https://github.com/spacetelescope/romancal/issues/1822>`_)
+- Update for new level 3 metadata structure. (`#1838
+  <https://github.com/spacetelescope/romancal/issues/1838>`_)
+
+
 0.19.0 (2025-05-14)
 ===================
 

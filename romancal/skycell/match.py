@@ -15,10 +15,11 @@ from gwcs import WCS
 from numpy.typing import NDArray
 
 import romancal.skycell.skymap as sc
-from romancal.assign_wcs.utils import wcs_bbox_from_shape
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+__all__ = ["ImageFootprint", "find_skycell_matches"]
 
 
 class ImageFootprint:
@@ -26,44 +27,92 @@ class ImageFootprint:
 
     _radec_corners: NDArray[float]
 
-    def __init__(self, radec_corners: list[tuple[float, float]]):
+    def __init__(self, radec_vertices: list[tuple[float, float]]):
         """
         Parameters
         ----------
-        radec_corners: list[tuple[float, float]]
-            four corners of the image in right ascension and declination
+        radec_vertices: list[tuple[float, float]]
+            vertices (usually the corners) of the image in right ascension and declination
         """
-        radec_corners = np.array(radec_corners)
-        if radec_corners.shape[0] != 4:
-            raise ValueError(f"need 4 corners, not {radec_corners.shape[0]}")
-        self._radec_corners = radec_corners
+        self._radec_vertices = np.array(radec_vertices)
 
     @classmethod
-    def from_gwcs(
-        cls, iwcs: WCS, image_shape: tuple[int, int] | None = None
+    def from_wcs(
+        cls,
+        wcs: WCS,
+        extra_vertices_per_edge: int = 0,
     ) -> "ImageFootprint":
-        """create an image footprint from a GWCS object (and image shape, if no bounding box is present)"""
+        """create an image footprint from a GWCS object (and image shape, if no bounding box is present)
 
-        if not hasattr(iwcs, "bounding_box") or iwcs.bounding_box is None:
-            if image_shape is None:
-                # pixel_shape is in x, y order contrary to numpy convention.
-                if hasattr(iwcs, "pixel_shape") and iwcs.pixel_shape is not None:
-                    image_shape = (iwcs.pixel_shape[1], iwcs.pixel_shape[0])
-                else:
-                    raise ValueError(
-                        "Cannot infer image footprint from GWCS object because "
-                        "`image_shape` was not specified and "
-                        "the GWCS object does not have `.bounding_box` nor `.pixel_shape`."
-                    )
+        Parameters
+        ----------
+        wcs: WCS :
+            WCS object
+        extra_vertices_per_edge: int :
+            extra vertices to create on each edge to capture distortion (Default value = 0)
 
-            iwcs.bounding_box = wcs_bbox_from_shape(image_shape)
+        Returns
+        -------
+        image footprint object
+        """
 
-        return cls(iwcs.footprint(center=False))
+        if not hasattr(wcs, "bounding_box") or wcs.bounding_box is None:
+            raise ValueError(
+                "Cannot infer image footprint from WCS without a bounding box."
+            )
+
+        array_shape = (
+            wcs.array_shape
+            if hasattr(wcs, "array_shape") and wcs.array_shape is not None
+            else tuple(
+                wcs.bounding_box[index][1] - wcs.bounding_box[index][0]
+                for index in range(len(wcs.bounding_box))
+            )
+        )
+        if extra_vertices_per_edge <= 0:
+            vertex_points = wcs.footprint(center=False)
+        else:
+            # constrain number of vertices to the maximum number of pixels on an edge, excluding the corners
+            if extra_vertices_per_edge > max(array_shape) - 2:
+                extra_vertices_per_edge = max(array_shape) - 2
+
+            # build a list of pixel indices that represent equally-spaced edge vertices
+            vertices_per_edge = 2 + extra_vertices_per_edge
+            origin_indices = np.zeros(vertices_per_edge - 1) - 0.5
+            x_end_indices = array_shape[0] - origin_indices
+            y_end_indices = array_shape[1] - origin_indices
+            vertices_x = np.linspace(
+                0, array_shape[0], num=vertices_per_edge - 1, endpoint=False
+            )
+            vertices_y = np.linspace(
+                0, array_shape[1], num=vertices_per_edge - 1, endpoint=False
+            )
+            edge_indices = np.concatenate(
+                [
+                    # north edge
+                    np.stack([origin_indices, vertices_y], axis=1),
+                    # east edge
+                    np.stack([vertices_x, y_end_indices], axis=1),
+                    # south edge
+                    np.stack([x_end_indices, y_end_indices - vertices_y], axis=1),
+                    # west edge
+                    np.stack([x_end_indices - vertices_x, origin_indices], axis=1),
+                ],
+                axis=0,
+            )
+
+            # query the WCS for pixel indices at the edges
+            vertex_points = np.stack(
+                wcs(*edge_indices.T, with_bounding_box=False),
+                axis=1,
+            )
+
+        return cls(vertex_points)
 
     @property
     def radec_corners(self) -> NDArray:
-        """corners in right ascension and declination in counterclockwise order"""
-        return self._radec_corners
+        """vertices in right ascension and declination in counterclockwise order"""
+        return self._radec_vertices
 
     @cached_property
     def radec_center(self) -> tuple[float, float]:
@@ -71,8 +120,8 @@ class ImageFootprint:
         return sgv.vector_to_lonlat(*self.vectorpoint_center)
 
     @cached_property
-    def vectorpoint_corners(self) -> NDArray[float]:
-        """corners in 3D Cartesian space on the unit sphere"""
+    def vectorpoint_vertices(self) -> NDArray[float]:
+        """vertices in 3D Cartesian space on the unit sphere"""
         return sgv.normalize_vector(
             np.stack(sgv.lonlat_to_vector(*np.array(self.radec_corners).T), axis=1)
         )
@@ -80,17 +129,20 @@ class ImageFootprint:
     @cached_property
     def vectorpoint_center(self) -> tuple[float, float, float]:
         """center in 3D Cartesian space on the unit sphere"""
-        return sgv.normalize_vector(np.mean(self.vectorpoint_corners, axis=0))
+        return sgv.normalize_vector(np.mean(self.vectorpoint_vertices, axis=0))
 
     @cached_property
     def length(self) -> float:
         """diagonal length of the rectangular footprint"""
-        # assume radial against sky background
+        # assume equally-spaced points around the perimeter
+        # NOTE: this will produce an incorrect value with no error if the points are not equally spaced
+        half_index_length = round(len(self.vectorpoint_vertices) / 2)
         return max(
             sga.length(
-                self.vectorpoint_corners[index], self.vectorpoint_corners[index + 2]
+                self.vectorpoint_vertices[index],
+                self.vectorpoint_vertices[index + half_index_length],
             )
-            for index in range(len(self.vectorpoint_corners) - 3)
+            for index in range(len(self.vectorpoint_vertices) - half_index_length - 1)
         )
 
     @cached_property
@@ -98,16 +150,16 @@ class ImageFootprint:
         """circumference of the rectangular footprint"""
         return sum(
             sga.length(
-                self.vectorpoint_corners[index], self.vectorpoint_corners[index + 1]
+                self.vectorpoint_vertices[index], self.vectorpoint_vertices[index + 1]
             )
-            for index in range(-1, len(self.vectorpoint_corners) - 1)
+            for index in range(-1, len(self.vectorpoint_vertices) - 1)
         )
 
     @cached_property
     def polygon(self) -> sgp.SingleSphericalPolygon:
         """spherical polygon representing this image footprint"""
         return sgp.SingleSphericalPolygon(
-            points=self.vectorpoint_corners,
+            points=self.vectorpoint_vertices,
             inside=self.vectorpoint_center,
         )
 
@@ -118,13 +170,7 @@ class ImageFootprint:
 
     @cached_property
     def possibly_intersecting_projregions(self) -> int:
-        """
-        number of possibly intersecting projection regions
-
-        NOTES
-        -----
-        this assumes a non-degenerate tesselation!
-        """
+        """number of possibly intersecting projection regions"""
         if self.area > sc.SkyCell.area:
             return (
                 # the number of times the smallest projection region could fit in the image footprint
@@ -138,13 +184,7 @@ class ImageFootprint:
 
     @cached_property
     def possibly_intersecting_skycells(self) -> int:
-        """
-        number of possibly intersecting skycells
-
-        NOTES
-        -----
-        this assumes a non-degenerate tesselation!
-        """
+        """number of possibly intersecting skycells"""
         if self.polygon.area() > sc.SkyCell.area:
             return (
                 # number of times a skycell could fit in the image footprint
@@ -166,27 +206,27 @@ class ImageFootprint:
         """maximum possible distance to the center of an intersecting sky cell"""
         return (self.length + sc.SkyCell.length) / 2.0
 
+    def __str__(self) -> str:
+        return f"footprint {self.radec_corners}"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.radec_corners!r})"
+
 
 def find_skycell_matches(
     image_corners: list[tuple[float, float]] | NDArray[float] | WCS,
-    image_shape: tuple[int, int] | None = None,
     skymap: sc.SkyMap = None,
 ) -> list[int]:
-    """
-    Find sky cells overlapping the provided image footprint
+    """Find sky cells overlapping the provided image footprint
 
     Parameters
     ----------
-    image_corners : Either a squence of 4 (ra, dec) pairs, or
-        equivalent 2-d numpy array, or
-        a GWCS instance. The instance must have either the bounding_box or
-        pixel_shape attribute defined, or the following image_shape argument
-        must be supplied
-    image_shape : image shape to be used if a GWCS instance is supplied
-        and does not contain a value for either the bounding_box or
-        pixel_shape attributes. Default value is None.
-    skymap: SkyMap
-        sky map instance (defaults to global SKYMAP)
+    image_corners : list | np.ndarray | WCS :
+        Either a squence of 4 (ra, dec) pairs, or
+        equivalent 2-d numpy array, or a GWCS instance.
+        A GWCS instance must have `.bounding_box` or `.pixel_shape` attribute defined.
+    skymap : sc.SkyMap :
+        sky map instance; defaults to global SKYMAP (Default value = None)
 
     Returns
     -------
@@ -196,7 +236,7 @@ def find_skycell_matches(
     """
 
     if isinstance(image_corners, WCS):
-        footprint = ImageFootprint.from_gwcs(image_corners, image_shape)
+        footprint = ImageFootprint.from_wcs(image_corners, extra_vertices_per_edge=3)
     else:
         footprint = ImageFootprint(image_corners)
 

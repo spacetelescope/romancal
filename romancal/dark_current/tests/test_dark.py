@@ -1,12 +1,10 @@
-"""
-Unit tests for dark current correction
-"""
+"""Unit tests for dark current correction"""
 
 import numpy as np
 import pytest
 import roman_datamodels as rdm
-from roman_datamodels import maker_utils
-from roman_datamodels.datamodels import DarkRefModel, RampModel
+from roman_datamodels import stnode
+from roman_datamodels.datamodels import DarkRefModel, ImageModel
 
 from romancal.dark_current import DarkCurrentStep
 
@@ -19,27 +17,25 @@ from romancal.dark_current import DarkCurrentStep
 )
 def test_dark_step_interface(instrument, exptype):
     """Test that the basic inferface works for data requiring a DARK reffile"""
+    # Set test size, data + reference files
+    ref_shape = (10, 28, 28)
+    image_shape = (ref_shape[1], ref_shape[2])
 
-    # Set test size
-    shape = (2, 20, 20)
-
-    # Create test ramp and dark models
-    ramp_model, darkref_model = create_ramp_and_dark(shape, instrument, exptype)
-
+    # Create test rampfit and dark models
+    rampfit_model, darkref_model = create_image_and_dark(ref_shape, instrument, exptype)
     # Perform Dark Current subtraction step
-    result = DarkCurrentStep.call(ramp_model, override_dark=darkref_model)
+    result = DarkCurrentStep.call(rampfit_model, override_dark=darkref_model)
 
     # Test dark results
-    assert (result.data == ramp_model.data).all()
-    assert isinstance(result, RampModel)
+    trim_shape = (image_shape[0] - 8, image_shape[1] - 8)  # size of the trimmed image
+    assert (result.data == rampfit_model.data).all()
+    assert isinstance(result, ImageModel)
     assert result.validate() is None
-    assert result.data.shape == shape
-    assert result.groupdq.shape == shape
-    assert result.pixeldq.shape == shape[1:]
+    assert result.data.shape == trim_shape
+    assert result.dq.shape == trim_shape
     assert result.meta.cal_step.dark == "COMPLETE"
     assert result.data.dtype == np.float32
-    assert result.pixeldq.dtype == np.uint32
-    assert result.groupdq.dtype == np.uint8
+    assert result.dq.dtype == np.uint32
 
 
 @pytest.mark.parametrize(
@@ -50,30 +46,23 @@ def test_dark_step_interface(instrument, exptype):
 )
 def test_dark_step_subtraction(instrument, exptype):
     """Test that the values in a dark reference file are properly subtracted"""
-
     # Set test size
-    shape = (2, 20, 20)
+    ref_shape = (10, 28, 28)
 
     # Create test ramp and dark models
-    ramp_model, darkref_model = create_ramp_and_dark(shape, instrument, exptype)
+    image_model, darkref_model = create_image_and_dark(ref_shape, instrument, exptype)
 
     # populate data array of science cube
-    for i in range(0, 20):
-        ramp_model.data[0, 0, i] = i
-        darkref_model.data[0, 0, i] = i * 0.1
-    orig_model = ramp_model.copy()
+    orig_model = image_model.copy()
 
     # Perform Dark Current subtraction step
-    result = DarkCurrentStep.call(ramp_model, override_dark=darkref_model)
+    result = DarkCurrentStep.call(image_model, override_dark=darkref_model)
 
-    # check that the dark file is subtracted frame by frame from the science data
-    diff = orig_model.data - darkref_model.data
+    diff = orig_model.data - (darkref_model.dark_slope[4:-4, 4:-4])
 
     # test that the output data file is equal to the difference found when subtracting
     # reffile from sci file
-    np.testing.assert_array_equal(
-        result.data, diff, err_msg="dark file should be subtracted from sci file "
-    )
+    assert np.all(np.isclose(result.data, diff, atol=1.0e-7))
 
 
 @pytest.mark.parametrize(
@@ -87,13 +76,14 @@ def test_dark_step_output_dark_file(tmp_path, instrument, exptype):
     path = str(tmp_path / "dark_out.asdf")
 
     # Set test size
-    shape = (2, 20, 20)
+    ref_shape = (10, 28, 28)
+    image_shape = (ref_shape[1], ref_shape[2])
 
     # Create test ramp and dark models
-    ramp_model, darkref_model = create_ramp_and_dark(shape, instrument, exptype)
+    image_model, darkref_model = create_image_and_dark(ref_shape, instrument, exptype)
 
     # Perform Dark Current subtraction step
-    DarkCurrentStep.call(ramp_model, override_dark=darkref_model, dark_output=path)
+    DarkCurrentStep.call(image_model, override_dark=darkref_model, dark_output=path)
 
     # Open dark file
     dark_out_file_model = rdm.open(path)
@@ -101,8 +91,7 @@ def test_dark_step_output_dark_file(tmp_path, instrument, exptype):
     # Test dark file results
     assert isinstance(dark_out_file_model, DarkRefModel)
     assert dark_out_file_model.validate() is None
-    assert dark_out_file_model.data.shape == shape
-    assert dark_out_file_model.dq.shape == shape[1:]
+    assert dark_out_file_model.dq.shape == image_shape
 
 
 @pytest.mark.parametrize(
@@ -116,17 +105,18 @@ def test_dark_step_getbestrefs(tmp_path, instrument, exptype):
     path = str(tmp_path / "dark_out.asdf")
 
     # Set test size
-    shape = (2, 20, 20)
+    ref_shape = (10, 28, 28)
+    image_shape = (ref_shape[1], ref_shape[2])
 
     # Create test ramp and dark models
-    ramp_model, darkref_model = create_ramp_and_dark(shape, instrument, exptype)
+    image_model, darkref_model = create_image_and_dark(ref_shape, instrument, exptype)
 
     # Perform Dark Current subtraction step with override = N/A
-    result = DarkCurrentStep.call(ramp_model, override_dark="N/A")
+    result = DarkCurrentStep.call(image_model, override_dark="N/A")
     assert result.meta.cal_step.dark == "SKIPPED"
 
     # Perform Dark Current subtraction step
-    DarkCurrentStep.call(ramp_model, override_dark=darkref_model, dark_output=path)
+    DarkCurrentStep.call(image_model, override_dark=darkref_model, dark_output=path)
 
     # Open dark file
     dark_out_file_model = rdm.open(path)
@@ -134,24 +124,33 @@ def test_dark_step_getbestrefs(tmp_path, instrument, exptype):
     # Test dark file results
     assert isinstance(dark_out_file_model, DarkRefModel)
     assert dark_out_file_model.validate() is None
-    assert dark_out_file_model.data.shape == shape
-    assert dark_out_file_model.dq.shape == shape[1:]
+    assert dark_out_file_model.dq.shape == image_shape
 
 
-def create_ramp_and_dark(shape, instrument, exptype):
-    """Helper function to create test ramp and dark models"""
-
-    # Create test ramp model
-    ramp = maker_utils.mk_ramp(shape=shape)
-    ramp.meta.instrument.name = instrument
-    ramp.meta.instrument.detector = "WFI01"
-    ramp.meta.instrument.optical_element = "F158"
-    ramp.meta.exposure.type = exptype
-    ramp.data = np.ones(shape, dtype=np.float32)
-    ramp_model = RampModel(ramp)
+def create_image_and_dark(shape, instrument, exptype):
+    """Helper function to create test image and dark models"""
+    # Create test image model
+    image_shape = (shape[1], shape[2])
+    image = ImageModel.create_fake_data(shape=image_shape)
+    image.meta.cal_step = stnode.L2CalStep.create_fake_data()
+    image.meta.cal_logs = stnode.CalLogs.create_fake_data()
+    image.meta.instrument.name = instrument
+    image.meta.instrument.detector = "WFI01"
+    image.meta.instrument.optical_element = "F158"
+    image.meta.exposure.type = exptype
+    image.meta.exposure.read_pattern = [[1], [2, 3], [4], [5, 6, 7, 8], [9, 10], [11]]
+    image.data = np.ones(image_shape, dtype=np.float32)
+    image.data = np.full(image_shape, 0.2, dtype=np.float32)
+    image.dq = np.zeros(image_shape, dtype=image.dq.dtype)
+    # Trim the image
+    image.data = image.data[4:-4, 4:-4]
+    image.dq = image.dq[4:-4, 4:-4]
+    image.err = image.err[4:-4, 4:-4]
 
     # Create dark model
-    darkref = maker_utils.mk_dark(shape=shape)
-    darkref_model = DarkRefModel(darkref)
+    darkref = DarkRefModel.create_fake_data(shape=shape)
+    darkref.dark_slope = np.full((image_shape), 5.3e-03, dtype=np.float32)
+    darkref.dark_slope_error = np.full((image_shape), 2.6e-05, dtype=np.float32)
+    darkref.dq = np.zeros(image_shape, dtype=image.dq.dtype)
 
-    return ramp_model, darkref_model
+    return image, darkref

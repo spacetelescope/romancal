@@ -134,6 +134,9 @@
   "DMS405": [
     "romancal.regtest.test_tweakreg.test_tweakreg"
   ],
+  "DMS406": [
+    "romancal.regtest.test_tweakreg.test_tweakreg"
+  ],
   "DMS413": [
     "romancal.regtest.test_wfi_image_16resultants.test_output_is_image_model",
     "romancal.regtest.test_wfi_image_16resultants.test_input_has_16_resultants",
@@ -146,5 +149,20 @@
   ],
   "DMS488": [
     "romancal.regtest.test_tweakreg.test_tweakreg"
-  ]
+  ],
+  "DMS531": [
+    "romancal.regtest.test_psf_library.test_psf_library_reffile"
+  ],
+  "DMS532": [
+     "romancal.regtest.test_psf_library.test_psf_library_reffile"
+  ],
+  "DMS535": [
+    "romancal.regtest.test_psf_library.test_psf_library_crdsfile"
+  ],
+  "DMS536": [
+    "romancal.regtest.test_psf_library.test_psf_library_psfinterp"
+  ],
+  "DMS549": [
+    "romancal.regtest.test_tweakreg.test_tweakreg"
+ ]
 }

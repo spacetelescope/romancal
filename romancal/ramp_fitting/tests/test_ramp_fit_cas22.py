@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 from astropy.time import Time
-from roman_datamodels import maker_utils
+from roman_datamodels import stnode
 from roman_datamodels.datamodels import (
     DarkRefModel,
     GainRefModel,
@@ -91,7 +91,6 @@ def test_bad_readpattern():
             algorithm="ols_cas22",
             override_gain=gain_model,
             override_readnoise=readnoise_model,
-            override_dark=dark_model,
         )
 
 
@@ -153,7 +152,6 @@ def fit_ramps(request):
         use_ramp_jump_detection=use_jump,
         override_gain=gain_model,
         override_readnoise=readnoise_model,
-        override_dark=dark_model,
     )
 
     return out_model, expected
@@ -224,7 +222,8 @@ def model_from_resultants(resultants, read_pattern=None):
     err = np.zeros(shape=shape, dtype=np.float32)
     gdq = np.zeros(shape=shape, dtype=np.uint8)
 
-    dm_ramp = maker_utils.mk_ramp(shape=shape)
+    dm_ramp = stnode.Ramp.create_fake_data(shape=shape)
+    dm_ramp.meta.cal_step = stnode.L2CalStep.create_fake_data()
     dm_ramp.data = full_wfi
     dm_ramp.pixeldq = pixdq
     dm_ramp.groupdq = gdq
@@ -263,7 +262,7 @@ def generate_wfi_reffiles(
         Randomize the gain and read noise data.
     """
     # Create temporary gain reference file
-    gain_ref = maker_utils.mk_gain(shape=shape)
+    gain_ref = stnode.GainRef.create_fake_data(shape=shape)
 
     gain_ref["meta"]["instrument"]["detector"] = "WFI01"
     gain_ref["meta"]["instrument"]["name"] = "WFI"
@@ -280,7 +279,7 @@ def generate_wfi_reffiles(
     gain_ref_model = GainRefModel(gain_ref)
 
     # Create temporary readnoise reference file
-    rn_ref = maker_utils.mk_readnoise(shape=shape)
+    rn_ref = stnode.ReadnoiseRef.create_fake_data(shape=shape)
     rn_ref["meta"]["instrument"]["detector"] = "WFI01"
     rn_ref["meta"]["instrument"]["name"] = "WFI"
     rn_ref["meta"]["reftype"] = "READNOISE"
@@ -299,7 +298,7 @@ def generate_wfi_reffiles(
     # Create temporary dark reference file
     # shape needs to be 3D but does not matter because the ramp fitting
     # step only uses the 2-D dark slope component
-    dark_ref = maker_utils.mk_dark(shape=(1, *shape))
+    dark_ref = stnode.DarkRef.create_fake_data(shape=(1, *shape))
     dark_ref["meta"]["instrument"]["detector"] = "WFI01"
     dark_ref["meta"]["instrument"]["name"] = "WFI"
     dark_ref["meta"]["reftype"] = "DARK"

@@ -75,10 +75,17 @@ segment.
 Optionally, Point Spread Function (PSF) photometry can be
 performed by setting the ``fit_psf`` keyword. Enabling
 this option fits a model PSF to each source to measure its
-position and flux. The PSF model is generated using the
-`STPSF <https://stpsf.readthedocs.io/en/latest/roman.html>`_
-package. PSF photometry is performed using the
+position and flux. The PSF model is generated using reference
+files on CRDS.  PSF photometry is performed using the
 :py:class:`photutils.psf.PSFPhotometry` class from Photutils.
+
+For Level 3 data, since the data contains a mixture of individual detector PSFs
+with different orientations, further processing is done. The
+base PSF is calculated for the center of the WFI02 detector. It is then scaled and smoothed to
+roughly account for the different pixel scale of the coadded images relative to the detector images,
+and the effect of the image drizzling on the PSF.  Finally, the PSF is
+azimuthally averaged to remove any azimuthal signatures, which will be different in the coadded
+product than in the individual input exposures.
 
 A local background is estimated using a circular annulus around the
 source. The annulus is defined by the inner and outer radii of 2.4 and
@@ -299,8 +306,13 @@ Uncertainties are reported as the 1-sigma (68.27% confidence) errors.
 +-----------------------+-----------------------------------------------------+
 
 
-Detailed descriptions of many of the columns can be found in the
-`Photutils documentation <https://photutils.readthedocs.io/en/latest/>`_:
+Star finding algorithms like `~photutils.detection.DAOStarFinder` provide
+approximate stellar centroids. More precise centroids may be inferred by
+fitting model PSFs to the observations. Setting the SourceCatalogStep's
+option `fit_psf` to True will generate model Roman PSFs with
+PSF reference files in CRDS, and fit
+those models to each of the sources detected by
+`~photutils.detection.DAOStarFinder`. More details are in :doc:`psf`.
 
 * `SourceCatalog
   <https://photutils.readthedocs.io/en/latest/api/photutils.segmentation.SourceCatalog.html>`_

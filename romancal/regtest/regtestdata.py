@@ -750,28 +750,24 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
         TableOperator(rtol, atol, equal_nan, types=[astropy.table.Table]),
         WCSOperator(rtol, atol, equal_nan, types=[gwcs.WCS]),
     ]
-    # warnings can be seen in regtest runs which indicate
-    # that ddtrace logs are evaluated at times after the below
-    # with statement exits resulting in access attempts on the
-    # closed asdf file. To try and avoid that we disable
-    # lazy loading and memmory mapping
-    open_kwargs = {
-        "memmap": False,
-    }
-    with (
-        asdf.open(result, **open_kwargs) as af0,
-        asdf.open(truth, **open_kwargs) as af1,
-    ):
-        # swap the inputs here so DeepDiff(truth, result)
-        # this will create output with 'new_value' referring to
-        # the value in the result and 'old_value' referring to the truth
-        diff = deepdiff.DeepDiff(
-            af1.tree,
-            af0.tree,
-            ignore_nan_inequality=equal_nan,
-            custom_operators=operators,
-            exclude_paths=exclude_paths,
-            math_epsilon=atol,
-            ignore_type_in_groups=[asdf.tags.core.NDArrayType, np.ndarray],
-        )
-        return DiffResult(diff, result, truth)
+    with asdf.open(result) as af0:
+        with asdf.config_context() as cfg:
+            # Disable validation of the truth file to allow for more
+            # flexible comparisons when the truth file was okified from
+            # a prievious "dev" version of rad (which is not strictly
+            # versioned for every change between releases).
+            cfg.validate_on_read = False
+            with asdf.open(truth) as af1:
+                # swap the inputs here so DeepDiff(truth, result)
+                # this will create output with 'new_value' referring to
+                # the value in the result and 'old_value' referring to the truth
+                diff = deepdiff.DeepDiff(
+                    af1.tree,
+                    af0.tree,
+                    ignore_nan_inequality=equal_nan,
+                    custom_operators=operators,
+                    exclude_paths=exclude_paths,
+                    math_epsilon=atol,
+                    ignore_type_in_groups=[asdf.tags.core.NDArrayType, np.ndarray],
+                )
+                return DiffResult(diff, result, truth)

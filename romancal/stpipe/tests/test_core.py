@@ -1,10 +1,9 @@
 import json
+import logging
 
-import asdf
 import pytest
 from astropy.time import Time
 from roman_datamodels.datamodels import FlatRefModel, ImageModel
-from roman_datamodels.maker_utils import mk_level2_image
 from stpipe import crds_client
 
 import romancal
@@ -15,7 +14,7 @@ from romancal.stpipe import RomanPipeline, RomanStep
 
 @pytest.mark.parametrize("is_container", [True, False])
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
-def test_open_model(step_class, tmp_path, is_container):
+def test_open_model(step_class, tmp_path, is_container, base_image):
     """
     Test that the class is properly hooked up to datamodels.open.
     More comprehensive tests can be found in romancal.datamodels.tests,
@@ -23,10 +22,8 @@ def test_open_model(step_class, tmp_path, is_container):
     """
     file_path = tmp_path / "test.asdf"
 
-    with asdf.AsdfFile() as af:
-        imod = mk_level2_image(shape=(20, 20))
-        af.tree = {"roman": imod}
-        af.write_to(file_path)
+    im = base_image()
+    im.save(file_path)
 
     if is_container:
         asn = {
@@ -61,20 +58,19 @@ def test_open_model(step_class, tmp_path, is_container):
 
 
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
-def test_get_reference_file(step_class):
+def test_get_reference_file(step_class, base_image):
     """
     Test that CRDS is properly integrated.
     """
-    im = mk_level2_image(shape=(20, 20))
+    im = base_image()
     # This will be brittle while we're using the dev server.
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
     im.meta.instrument.optical_element = "F158"
     im.meta.exposure.start_time = Time("2021-01-01T12:00:00")
-    model = ImageModel(im)
 
     step = step_class()
-    reference_path = step.get_reference_file(model, "flat")
+    reference_path = step.get_reference_file(im, "flat")
 
     with step.open_model(reference_path) as reference_model:
         assert isinstance(reference_model, FlatRefModel)
@@ -82,40 +78,41 @@ def test_get_reference_file(step_class):
 
 @pytest.mark.skip(reason="There are no grism flats.")
 @pytest.mark.parametrize("step_class", [RomanPipeline, RomanStep])
-def test_get_reference_file_spectral(step_class):
+def test_get_reference_file_spectral(step_class, base_image):
     """
     Test that CRDS is properly integrated.
     """
-    im = mk_level2_image(shape=(20, 20))
+    im = base_image()
     # This will be brittle while we're using the dev server.
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
     im.meta.instrument.optical_element = "GRISM"
     im.meta.exposure.start_time = Time("2021-01-01T12:00:00")
-    model = ImageModel(im)
 
     step = step_class()
-    reference_path = step.get_reference_file(model, "flat")
+    reference_path = step.get_reference_file(im, "flat")
 
     with step.open_model(reference_path) as reference_model:
         assert isinstance(reference_model, FlatRefModel)
         assert reference_model.meta.instrument.optical_element == "GRISM"
 
 
-def test_log_messages(tmp_path):
+def test_log_messages(tmp_path, base_image):
+    logger = logging.getLogger("test_log_messages")
+
     class LoggingStep(RomanStep):
         def process(self):
-            self.log.warning("Splines failed to reticulate")
-            return ImageModel(mk_level2_image(shape=(20, 20)))
+            logger.warning("Splines failed to reticulate")
+            return base_image()
 
     result = LoggingStep().run()
     assert any("Splines failed to reticulate" in l for l in result.meta.cal_logs)
 
 
-def test_crds_meta():
+def test_crds_meta(base_image):
     """Test that context and software versions are set"""
 
-    im = ImageModel(mk_level2_image(shape=(20, 20)))
+    im = base_image()
     result = FlatFieldStep.call(im)
 
     assert result.meta.ref_file.crds.version == crds_client.get_svn_version()
@@ -124,14 +121,14 @@ def test_crds_meta():
     )
 
 
-def test_calibration_software_version():
+def test_calibration_software_version(base_image):
     """Test that calibration_software_version is updated when a step is run"""
 
     class NullStep(RomanStep):
         def process(self, input):
             return input
 
-    im = ImageModel(mk_level2_image(shape=(20, 20)))
+    im = base_image()
     im.meta.calibration_software_version = "junkversion"
 
     result = NullStep.call(im)

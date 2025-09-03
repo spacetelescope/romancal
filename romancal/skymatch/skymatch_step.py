@@ -22,6 +22,8 @@ if TYPE_CHECKING:
 
 __all__ = ["SkyMatchStep"]
 
+log = logging.getLogger(__name__)
+
 
 class SkyMatchStep(RomanStep):
     """
@@ -53,7 +55,7 @@ class SkyMatchStep(RomanStep):
     reference_file_types: ClassVar = []
 
     def process(self, input):
-        self.log.setLevel(logging.DEBUG)
+        log.setLevel(logging.DEBUG)
 
         if isinstance(input, ModelLibrary):
             library = input

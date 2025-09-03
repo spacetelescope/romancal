@@ -10,7 +10,6 @@ from astropy.table import QTable, Table
 from astropy.utils import lazyproperty
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
-from stpsf import __version__ as stpsf_version
 
 from romancal import __version__ as romancal_version
 from romancal.source_catalog.aperture import ApertureCatalog
@@ -77,6 +76,9 @@ class RomanSourceCatalog:
         'dr_band' catalogs are band-specific catalogs for the
         multiband source detection.
 
+    ee_spline : `~astropy.modeling.models.Spline1D` or `None`
+        The PSF aperture correction model, built from the reference file.
+
     Notes
     -----
     ``model.err`` is assumed to be the total error array corresponding
@@ -94,9 +96,11 @@ class RomanSourceCatalog:
         *,
         fit_psf=True,
         mask=None,
+        psf_ref_model=None,
         detection_cat=None,
         flux_unit="nJy",
         cat_type="prompt",
+        ee_spline=None,
     ):
         if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
@@ -107,9 +111,11 @@ class RomanSourceCatalog:
         self.kernel_fwhm = kernel_fwhm
         self.fit_psf = fit_psf
         self.mask = mask
+        self.psf_ref_model = psf_ref_model
         self.detection_cat = detection_cat
         self.flux_unit = flux_unit
         self.cat_type = cat_type
+        self.ee_spline = ee_spline
 
         self.n_sources = len(segment_img.labels)
         self.wcs = self.model.meta.wcs
@@ -117,10 +123,19 @@ class RomanSourceCatalog:
         self.aperture_cat = None
 
         # define flux unit conversion factors
-        self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
+        if "photometry" in self.model.meta:
+            self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
+        else:
+            self.l2_to_sb = 1.0
         self.sb_to_flux = (1.0 * (u.MJy / u.sr) * self._pixel_area).to(
             u.Unit(self.flux_unit)
         )
+
+        if self.fit_psf and self.psf_ref_model is None:
+            log.error(
+                "PSF fitting is requested but no PSF reference model is provided. Skipping PSF photometry."
+            )
+            self.fit_psf = False
 
     def __len__(self):
         return self.n_sources
@@ -201,8 +216,12 @@ class RomanSourceCatalog:
         placeholder (e.g., -999999 sr), the value is calculated from the
         WCS at the center of the image.
         """
-        pixel_area = self.model.meta.photometry.pixel_area * u.sr
-        if pixel_area < 0:
+        if (
+            "photometry" in self.model.meta
+            and self.model.meta.photometry.pixel_area > 0
+        ):
+            pixel_area = self.model.meta.photometry.pixel_area * u.sr
+        else:
             pixel_area = (self._pixel_scale**2).to(u.sr)
         return pixel_area
 
@@ -272,6 +291,7 @@ class RomanSourceCatalog:
             self.model,
             self._pixel_scale,
             self._xypos_finite,
+            ee_spline=self.ee_spline,
         )
         for name in aperture_cat.names:
             setattr(self, name, getattr(aperture_cat, name))
@@ -285,7 +305,7 @@ class RomanSourceCatalog:
 
         The results are set as dynamic attributes on the class instance.
         """
-        psf_cat = PSFCatalog(self.model, self._xypos, self.mask)
+        psf_cat = PSFCatalog(self.model, self.psf_ref_model, self._xypos, self.mask)
         for name in psf_cat.names:
             setattr(self, name, getattr(psf_cat, name))
 
@@ -327,24 +347,23 @@ class RomanSourceCatalog:
         """
         The best estimate of the right ascension (ICRS).
         """
-        return np.zeros(self.n_sources, dtype=np.float64) * u.deg
+        # FIXME: just return ra_centroid as a placeholder
+        return self.ra_centroid.copy()
 
     @lazyproperty
     def dec(self):
         """
         The best estimate of the declination (ICRS).
         """
-        return np.zeros(self.n_sources, dtype=np.float64) * u.deg
+        # FIXME: just return dec_centroid as a placeholder
+        return self.dec_centroid.copy()
 
     @lazyproperty
     def is_extended(self):
         """
         Boolean indicating whether the source is extended.
         """
-        # TODO: replace with filter-dependent ee_ratio from reference file
-        # ee_ratio = ee_fraction_04 / ee_fraction_02
-        ee_ratio = 1.4  # F213 placeholder value
-        return self.aper04_flux > (self.aper02_flux * 1.1 * ee_ratio)
+        return self.aperture_cat.is_extended
 
     @lazyproperty
     def warning_flags(self):
@@ -403,7 +422,6 @@ class RomanSourceCatalog:
         ver_dict = self.meta.get("versions", None)
         if ver_dict is not None:
             ver_dict["romancal"] = romancal_version
-            ver_dict["stpsf"] = stpsf_version
             packages = [
                 "Python",
                 "numpy",
@@ -411,7 +429,6 @@ class RomanSourceCatalog:
                 "astropy",
                 "photutils",
                 "gwcs",
-                "stpsf",
                 "romancal",
             ]
             ver_dict = {key: ver_dict[key] for key in packages if key in ver_dict}
@@ -430,6 +447,15 @@ class RomanSourceCatalog:
             aper_radii["circle_arcsec"] = aper_radii.pop("circle").value
             aper_radii["annulus_arcsec"] = aper_radii.pop("annulus").value
             self.meta["aperture_radii"] = aper_radii
+
+            if self.ee_spline:
+                fractions = []
+                for name in self.aperture_cat.fractions:
+                    fraction = getattr(self.aperture_cat, name)
+                    setattr(self, name, fraction)
+                    fractions.append(fraction)
+
+                self.meta["ee_fractions"] = np.array(fractions).astype(np.float32)
 
     @lazyproperty
     def column_descriptions(self):

@@ -58,7 +58,7 @@ def make_output_wcs(
         WCS object, with defined domain, covering entire set of input frames
 
     pscale : float
-        The computed (or provided) input pixel scale.
+        The computed (or provided) input pixel scale (in degrees).
 
     pscale_ratio : float, optional
         The computed (or provided) input pixel scale ratio.
