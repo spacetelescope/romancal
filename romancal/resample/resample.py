@@ -111,15 +111,6 @@ class ResampleData(Resample):
         self._compute_exptime = compute_exptime
         self._blend_meta = blend_meta
 
-        # add sky variance array to each model
-        # compute_var_sky(self.input_models)
-
-        # add sky variance array to each model
-        compute_var_sky(self.input_models)
-
-        # add sky variance array to each model
-        # compute_var_sky(self.input_models)
-
         if output_wcs is None and resample_on_skycell:
             # first try to retrieve a sky cell name from the association
             try:

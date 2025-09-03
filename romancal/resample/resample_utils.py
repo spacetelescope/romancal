@@ -106,30 +106,24 @@ def make_output_wcs(
     return wcs, pscale * 3600.0, pscale_ratio
 
 
-def compute_var_sky(input_models: ModelLibrary) -> None:
+def compute_var_sky(model) -> None:
     """
     Add sky variance array to each model of a ModelLibrary.
 
     Parameters
     ----------
-    input_models : ModelLibrary
-        A library of models to which the sky variance array will be added.
+    model : `ImageModel`
+        A datamodel to which the sky variance array will be added.
 
     Returns
     -------
     None
     """
-    with input_models:
-        ref_img = input_models.borrow(index=0)
-        input_models.shelve(model=ref_img, index=0)
-        for i, img in enumerate(input_models):
-            try:
-                ok_data = img.data != 0
-                img["var_sky"] = np.empty_like(img.data)
-                img["var_sky"][ok_data] = img.var_rnoise[ok_data] + img.var_poisson[
-                    ok_data
-                ] / img.data[ok_data] * np.median(img.data)
-                img["var_sky"][~ok_data] = img.var_rnoise[~ok_data]
-            except (AttributeError, KeyError, TypeError, ValueError) as e:
-                raise ValueError("Input model contains invalid data array.") from e
-            input_models.shelve(img, i, modify=True)
+ 
+    ok_data = model["data"] != 0
+    var_sky = model["var_rnoise"].copy()
+    var_sky[ok_data] = model["var_rnoise"][ok_data] + model["var_poisson"][
+        ok_data
+    ] / model["data"][ok_data] * np.median(model["data"])
+
+    return var_sky
