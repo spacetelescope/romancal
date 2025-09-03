@@ -18,7 +18,7 @@ from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
-from romancal.source_catalog.utils import copy_mosaic_meta
+from romancal.source_catalog.utils import copy_mosaic_meta, get_ee_spline
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -41,7 +41,7 @@ class SourceCatalogStep(RomanStep):
     """
 
     class_alias = "source_catalog"
-    reference_file_types: ClassVar = []
+    reference_file_types: ClassVar = ["apcorr"]
 
     spec = """
         bkg_boxsize = integer(default=1000)   # background mesh box size in pixels
@@ -183,6 +183,10 @@ class SourceCatalogStep(RomanStep):
                 self, model.data.shape, cat_model, input_model=input_model, msg=msg
             )
 
+        log.info("Creating ee_fractions model")
+        apcorr_ref = self.get_reference_file(input_model, "apcorr")
+        ee_spline = get_ee_spline(input_model, apcorr_ref)
+
         log.info("Creating source catalog")
         cat_type = "prompt" if not self.forced_segmentation else "forced_det"
         fit_psf = self.fit_psf & (not self.forced_segmentation)  # skip when forced
@@ -195,6 +199,7 @@ class SourceCatalogStep(RomanStep):
             mask=mask,
             psf_ref_model=psf_ref_model,
             cat_type=cat_type,
+            ee_spline=ee_spline,
         )
         cat = catobj.catalog
 
@@ -212,6 +217,7 @@ class SourceCatalogStep(RomanStep):
                 mask=mask,
                 psf_ref_model=psf_ref_model,
                 cat_type="forced_full",
+                ee_spline=ee_spline,
             )
 
             # We have two catalogs, both using the same segmentation

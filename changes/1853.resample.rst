@@ -1,1 +1,0 @@
-Fixed the pixel_scale input units to be in arcseconds.

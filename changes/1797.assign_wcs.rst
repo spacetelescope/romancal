@@ -1,1 +1,0 @@
-replace usages of `romancal.assign_wcs.utils.wcs_bbox_from_shape` with `stcal.alignment.util.wcs_bbox_from_shape`

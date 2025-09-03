@@ -24,13 +24,13 @@ dependencies = [
     # "roman_datamodels>=0.26.0,<0.27.0",
     "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
     "scipy >=1.14.1",
-    # "stcal>=1.14.1,<1.15.0",
+    # "stcal>=1.15.0,<1.16.0",
     "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
     "stpipe >=0.10.0,<0.11.0",
     "tweakwcs >=0.8.11",
     "spherical-geometry >= 1.3.3",
     "stsci.imagestats >= 1.8.3",
-    "drizzle >= 2.0.1",
+    "drizzle >= 2.1.1",
     "pyarrow >= 10.0.1",  # for Table.read(...) support in astropy for parquet files
     "pandas >= 2.0.0",  # for Table.read(...) support in astropy for parquet files
 ]
@@ -67,6 +67,7 @@ dev = [
 sdp = [
     "pysiaf",
     "stpreview>=0.6.0",
+    "roman-photoz",
 ]
 
 [project.urls]
@@ -83,6 +84,7 @@ mk_skycell_asn_from_skycell_list= "romancal.associations.mk_skycell_asn_from_sky
 mk_skycell_list = "romancal.associations.mk_skycell_list:_cli"
 roman_pointing_summary = "romancal.scripts.pointing_summary:main"
 roman_set_telescope_pointing = "romancal.scripts.set_telescope_pointing:main"
+roman_set_velocity_aberration = "romancal.scripts.set_velocity_aberration:main"
 roman_static_preview = "romancal.scripts.static_preview:command"
 roman_v1_calculate = "romancal.scripts.v1_calculate:main"
 skycell_asn = "romancal.associations.skycell_asn:_cli"

@@ -1,1 +1,0 @@
-create extra vertices along the edges of the image footprint to account for image distortion

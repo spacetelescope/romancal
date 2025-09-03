@@ -104,7 +104,6 @@ def test_bad_readpattern():
             algorithm="likely",
             override_gain=gain_model,
             override_readnoise=readnoise_model,
-            override_dark=dark_model,
         )
 
 
@@ -166,7 +165,6 @@ def fit_ramps(request):
         use_ramp_jump_detection=use_jump,
         override_gain=gain_model,
         override_readnoise=readnoise_model,
-        override_dark=dark_model,
     )
 
     return out_model, expected

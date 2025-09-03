@@ -1,1 +1,0 @@
-Improve orientation accuracy by increasing separation between points used for computing PA.

@@ -1,0 +1,3 @@
+Update source catalog tables to use the `ee_fraction`` values from the ``apcorr_ref``
+reference file, using it for the ``is_extended`` flag decision. Also, the ``ee_fraction``
+values for each of the aperture radii are now stored in the table metadata.

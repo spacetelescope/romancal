@@ -1,1 +1,0 @@
-remove `typer` dependency from `roman_static_preview` script (use builtin `argparse` instead), and reorder CLI arguments (see docs)
