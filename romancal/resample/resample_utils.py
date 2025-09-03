@@ -108,7 +108,7 @@ def make_output_wcs(
 
 def compute_var_sky(model) -> None:
     """
-    Add sky variance array to each model of a ModelLibrary.
+    Add sky variance array to a datamodel.
 
     Parameters
     ----------
