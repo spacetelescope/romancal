@@ -4,8 +4,6 @@ import numpy as np
 from stcal.alignment.util import compute_scale, wcs_from_sregions
 from stcal.resample.utils import compute_mean_pixel_area
 
-from ..datamodels import ModelLibrary
-
 
 def make_output_wcs(
     input_models,
@@ -119,7 +117,7 @@ def compute_var_sky(model) -> None:
     -------
     None
     """
- 
+
     ok_data = model["data"] != 0
     var_sky = model["var_rnoise"].copy()
     var_sky[ok_data] = model["var_rnoise"][ok_data] + model["var_poisson"][
