@@ -4,6 +4,8 @@ import numpy as np
 from stcal.alignment.util import compute_scale, wcs_from_sregions
 from stcal.resample.utils import compute_mean_pixel_area
 
+from roman_datamodels.dqflags import pixel
+
 
 def make_output_wcs(
     input_models,
@@ -118,9 +120,8 @@ def compute_var_sky(model) -> None:
     None
     """
 
-    # convert NaNs to zeros
-    data = np.nan_to_num(model["data"], nan=0.0)
-    median_data = np.median(data)
+    dnu = (model["dq"] & pixel.DO_NOT_USE) != 0
+    median_data = np.median(model["data"][~dnu])
     ok_data = model["data"] != 0
 
     var_sky = model["var_rnoise"].copy()
