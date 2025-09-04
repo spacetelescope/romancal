@@ -35,7 +35,6 @@ def test_environmental_bad(monkeypatch):
     assert did_except, f"DB connection falsely created for {engdb.base_url}"
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 def test_basic(engdb):
     assert engdb._get_records(GOOD_MNEMONIC, GOOD_STARTTIME, GOOD_ENDTIME)
 
@@ -45,7 +44,6 @@ def test_bad_service():
         engdb_tools.engdb_service("junk_service")
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 def test_values(engdb):
     records = engdb._get_records(GOOD_MNEMONIC, SHORT_STARTTIME, SHORT_STARTTIME)
     assert len(records) == 2
@@ -54,7 +52,6 @@ def test_values(engdb):
     assert values[0] == "SCFA"
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 def test_values_with_bracket(engdb):
     records = engdb._get_records(GOOD_MNEMONIC, SHORT_STARTTIME, SHORT_STARTTIME)
     assert len(records) == 2
@@ -65,7 +62,6 @@ def test_values_with_bracket(engdb):
     assert values[1] == "SCFA"
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 def test_values_with_time(engdb):
     values = engdb.get_values(
         GOOD_MNEMONIC, GOOD_STARTTIME, SHORT_STARTTIME, include_obstime=True
@@ -75,13 +71,11 @@ def test_values_with_time(engdb):
     assert isinstance(values[0].obstime, Time)
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 def test_novalues(engdb):
     values = engdb.get_values(GOOD_MNEMONIC, NODATA_STARTIME, NODATA_ENDTIME)
     assert len(values) == 0
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 def test_unzip(engdb):
     """Test forunzipped versions of content"""
     values = engdb.get_values(

@@ -70,7 +70,6 @@ def test_aliveness(is_alive):
     engdb_mast.EngdbMast(base_url=engdb_mast.MAST_BASE_URL, token="dummytoken")  # noqa: S106
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 def test_get_records(engdb):
     """Test getting records"""
     records = engdb._get_records(*QUERY)
@@ -78,7 +77,6 @@ def test_get_records(engdb):
     assert report_diff_values(records, EXPECTED_RECORDS)
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 @pytest.mark.parametrize(
     "pars, expected",
     [
