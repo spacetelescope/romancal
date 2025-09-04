@@ -98,7 +98,7 @@ image.
     .. note::
         VAR_SKY is calculated as follows:
 
-        VAR_SKY = (VAR_RNOISE + VAR_POISSON) / (DATA * MEDIAN(DATA))
+        VAR_SKY = VAR_RNOISE + VAR_POISSON / DATA * MEDIAN(DATA)
 
         where VAR_RNOISE is the read noise variance, VAR_POISSON is the
         Poisson noise variance, DATA is the science data, and MEDIAN(DATA)
