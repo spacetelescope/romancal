@@ -70,3 +70,4 @@ pip-wheel-metadata/
 .DS_Store
 
 .python-version
+.env
