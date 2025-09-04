@@ -1,10 +1,9 @@
 import math
 
 import numpy as np
+from roman_datamodels.dqflags import pixel
 from stcal.alignment.util import compute_scale, wcs_from_sregions
 from stcal.resample.utils import compute_mean_pixel_area
-
-from roman_datamodels.dqflags import pixel
 
 
 def make_output_wcs(
