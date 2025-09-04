@@ -122,10 +122,11 @@ def compute_var_sky(model) -> None:
     data = np.nan_to_num(model["data"], nan=0.0)
     median_data = np.median(data)
     ok_data = model["data"] != 0
-    
+
     var_sky = model["var_rnoise"].copy()
-    var_sky[ok_data] = model["var_rnoise"][ok_data] + model["var_poisson"][
-        ok_data
-    ] / model["data"][ok_data] * median_data
+    var_sky[ok_data] = (
+        model["var_rnoise"][ok_data]
+        + model["var_poisson"][ok_data] / model["data"][ok_data] * median_data
+    )
 
     return var_sky
