@@ -206,8 +206,8 @@ def create_image_model(input_model, image_info):
     im.meta.model_type = "ImageModel"
     # since we've copied nodes let's remove any "read" tags
     for node in asdf.treeutil.iter_tree(im):
-        if hasattr(node, "_read_tag"):
-            del node._read_tag
+        if node._read_tag is not None:
+            node._read_tag = None
     im.meta.product_type = "l2"
     im.meta.cal_step = stnode.L2CalStep.create_minimal(input_model.meta.cal_step)
     im.meta.cal_logs = stnode.CalLogs.create_minimal()
