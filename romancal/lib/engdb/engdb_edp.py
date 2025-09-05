@@ -21,7 +21,7 @@ __all__ = ["EngdbEDP"]
 
 # Default MAST info.
 MAST_BASE_URL = "https://masttest.stsci.edu"
-API_URI = "edp/api/v0.1/mnemonics/fqa/roman/data"
+API_URI = "edp/api/v0.1/mnemonics/spa/roman/data"
 
 # Configure logging
 logger = logging.getLogger(__name__)
