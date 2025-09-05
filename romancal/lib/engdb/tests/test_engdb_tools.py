@@ -47,7 +47,9 @@ def test_bad_service():
 def test_values(engdb):
     records = engdb._get_records(GOOD_MNEMONIC, SHORT_STARTTIME, SHORT_STARTTIME)
     assert len(records) >= 2
-    values = engdb.get_values(GOOD_MNEMONIC, GOOD_STARTTIME, SHORT_STARTTIME, include_bracket_values=True)
+    values = engdb.get_values(
+        GOOD_MNEMONIC, GOOD_STARTTIME, SHORT_STARTTIME, include_bracket_values=True
+    )
     assert len(values) >= 2
     assert "SCFA" in values
 
@@ -64,7 +66,11 @@ def test_values_with_bracket(engdb):
 
 def test_values_with_time(engdb):
     values = engdb.get_values(
-        GOOD_MNEMONIC, GOOD_STARTTIME, SHORT_STARTTIME, include_obstime=True, include_bracket_values=True
+        GOOD_MNEMONIC,
+        GOOD_STARTTIME,
+        SHORT_STARTTIME,
+        include_obstime=True,
+        include_bracket_values=True,
     )
     assert len(values) >= 2
     assert isinstance(values[0], tuple)

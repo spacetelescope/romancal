@@ -70,10 +70,11 @@ def test_aliveness(is_alive):
 
 
 @pytest.mark.parametrize(
-    'contents', [
+    "contents",
+    [
         '"TlmMnemonic":"OPE_SCF_DIR"',
         '"EUValue":"SCFA"',
-    ]
+    ],
 )
 def test_get_records_response(engdb, contents):
     """Test getting records"""
@@ -84,18 +85,21 @@ def test_get_records_response(engdb, contents):
 def test_get_records(engdb):
     """Test getting records"""
     records = engdb._get_records(*QUERY)
-    assert 'SCFA' in records['EUValue']
+    assert "SCFA" in records["EUValue"]
+
 
 def test_get_value_justvalues(engdb):
     """Test just getting values"""
     values = engdb.get_values(*QUERY, include_bracket_values=True)
     assert len(values) > 1
-    assert 'SCFA' in values
+    assert "SCFA" in values
 
 
 def test_get_values_obstimes(engdb):
     """Get values with the observation times"""
-    result = engdb.get_values(*QUERY, include_bracket_values=True, include_obstime=True, zip_results=True)
+    result = engdb.get_values(
+        *QUERY, include_bracket_values=True, include_obstime=True, zip_results=True
+    )
     assert isinstance(result, list)
     assert len(result) > 1
     item = result[0]
@@ -106,7 +110,9 @@ def test_get_values_obstimes(engdb):
 
 def test_get_values_nozip(engdb):
     """Get values with the observation times"""
-    result = engdb.get_values(*QUERY, include_bracket_values=True, include_obstime=True, zip_results=False)
+    result = engdb.get_values(
+        *QUERY, include_bracket_values=True, include_obstime=True, zip_results=False
+    )
     assert isinstance(result, EngDB_Value)
     assert len(result) > 1
     assert isinstance(result.obstime, list)
