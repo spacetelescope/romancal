@@ -16,6 +16,7 @@ import roman_datamodels as rdm
 from astropy.time import Time
 
 from romancal.lib.engdb import engdb_mast
+from romancal.lib.engdb import engdb_tools
 from romancal.orientation import set_telescope_pointing as stp
 
 # Ensure that `set_telescope_pointing` logs.
@@ -51,6 +52,13 @@ METAS_ISCLOSE = [
     "meta.pointing.dec_v1",
     "meta.pointing.pa_v3",
 ]
+
+# Some tests depend on the default engineering database to be available. Check now.
+NO_ENGDB = False
+try:
+    engdb_tools.engdb_service()
+except engdb_tools.EXPECTED_ERRORS:
+    NO_ENGDB = True
 
 
 def test_add_wcs_default(science_raw_model, tmp_path):
@@ -89,6 +97,7 @@ def test_change_base_url_fail():
         )
 
 
+@pytest.mark.skipif(NO_ENGDB, reason='No engineering database available')
 def test_get_pointing():
     """Ensure that the averaging works."""
     q_expected = np.array([-0.52558752, 0.3719724, -0.52016581, 0.38150882])
@@ -103,7 +112,7 @@ def test_get_pointing_fail():
         obstime, q = stp.get_pointing(BADSTARTTIME, BADENDTIME)
 
 
-@pytest.mark.skip(reason="needs update for new database response")
+@pytest.mark.skipif(NO_ENGDB, reason='No engineering database available')
 def test_get_pointing_list():
     q_expected = np.array([-0.690189, 0.121953, -0.695103, 0.159999])
     results = stp.get_pointing(STARTTIME, ENDTIME, reduce_func=stp.all_pointings)
@@ -113,7 +122,7 @@ def test_get_pointing_list():
     assert STARTTIME <= results[0].obstime <= ENDTIME
 
 
-@pytest.mark.skip(reason="needs update for new database response")
+@pytest.mark.skipif(NO_ENGDB, reason='No engineering database available')
 def test_logging(caplog):
     stp.get_pointing(STARTTIME, ENDTIME)
     assert "Determining pointing between observations times" in caplog.text
