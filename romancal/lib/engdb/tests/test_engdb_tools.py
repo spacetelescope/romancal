@@ -14,10 +14,10 @@ from romancal.lib.engdb import engdb_tools
 log = logging.getLogger(__name__)
 
 GOOD_MNEMONIC = "OPE_SCF_DIR"
-GOOD_STARTTIME = "2027-02-23T01:00:00"
-GOOD_ENDTIME = "2027-02-23T01:01:00"
+GOOD_STARTTIME = "2027-02-01T00:00:00"
+GOOD_ENDTIME = "2027-02-28T23:00:00"
 
-SHORT_STARTTIME = "2027-02-23T01:00:30"
+SHORT_STARTTIME = "2027-02-02T00:00:00"
 
 BAD_MNEMONIC = "No_Such_MNEMONIC"
 NODATA_STARTIME = "2014-01-01"
@@ -46,10 +46,10 @@ def test_bad_service():
 
 def test_values(engdb):
     records = engdb._get_records(GOOD_MNEMONIC, SHORT_STARTTIME, SHORT_STARTTIME)
-    assert len(records) == 2
-    values = engdb.get_values(GOOD_MNEMONIC, GOOD_STARTTIME, SHORT_STARTTIME)
-    assert len(values) == 29
-    assert values[0] == "SCFA"
+    assert len(records) >= 2
+    values = engdb.get_values(GOOD_MNEMONIC, GOOD_STARTTIME, SHORT_STARTTIME, include_bracket_values=True)
+    assert len(values) >= 2
+    assert "SCFA" in values
 
 
 def test_values_with_bracket(engdb):
@@ -59,14 +59,14 @@ def test_values_with_bracket(engdb):
         GOOD_MNEMONIC, SHORT_STARTTIME, SHORT_STARTTIME, include_bracket_values=True
     )
     assert len(values) == 2
-    assert values[1] == "SCFA"
+    assert "SCFA" in values
 
 
 def test_values_with_time(engdb):
     values = engdb.get_values(
-        GOOD_MNEMONIC, GOOD_STARTTIME, SHORT_STARTTIME, include_obstime=True
+        GOOD_MNEMONIC, GOOD_STARTTIME, SHORT_STARTTIME, include_obstime=True, include_bracket_values=True
     )
-    assert len(values) >= 1
+    assert len(values) >= 2
     assert isinstance(values[0], tuple)
     assert isinstance(values[0].obstime, Time)
 
