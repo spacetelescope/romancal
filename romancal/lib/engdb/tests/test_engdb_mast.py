@@ -15,7 +15,7 @@ from romancal.lib.engdb.engdb_lib import EngDB_Value
 log = logging.getLogger(__name__)
 
 # Test query
-QUERY = ("ope_scf_dir", "2027-02-23T01:00:00", "2027-02-23T01:00:05")
+QUERY = ("ope_scf_dir", "2027-02-1T00:00:00", "2027-02-28T23:00:00")
 
 # Expected return from query
 EXPECTED_RESPONSE = (
