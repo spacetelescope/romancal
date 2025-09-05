@@ -1,6 +1,7 @@
 import math
 
 import numpy as np
+from roman_datamodels.dqflags import pixel
 from stcal.alignment.util import compute_scale, wcs_from_sregions
 from stcal.resample.utils import compute_mean_pixel_area
 
@@ -102,3 +103,30 @@ def make_output_wcs(
     )
 
     return wcs, pscale * 3600.0, pscale_ratio
+
+
+def compute_var_sky(model) -> None:
+    """
+    Add sky variance array to a datamodel.
+
+    Parameters
+    ----------
+    model : `ImageModel`
+        A datamodel to which the sky variance array will be added.
+
+    Returns
+    -------
+    None
+    """
+
+    dnu = (model["dq"] & pixel.DO_NOT_USE) != 0
+    median_data = np.median(model["data"][~dnu])
+    ok_data = model["data"] != 0
+
+    var_sky = model["var_rnoise"].copy()
+    var_sky[ok_data] = (
+        model["var_rnoise"][ok_data]
+        + model["var_poisson"][ok_data] / model["data"][ok_data] * median_data
+    )
+
+    return var_sky
