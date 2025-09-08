@@ -1,2 +1,0 @@
-Update the source catalog step to handle the case where there are no
-valid pixels in the input data.

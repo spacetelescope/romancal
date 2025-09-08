@@ -1,8 +1,9 @@
-#! /usr/bin/env python
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
+import numpy as np
 from roman_datamodels import datamodels as rdm
 
 from romancal.stpipe import RomanStep
@@ -12,10 +13,11 @@ if TYPE_CHECKING:
 
 __all__ = ["DarkCurrentStep"]
 
+log = logging.getLogger(__name__)
+
 
 class DarkCurrentStep(RomanStep):
-    """
-    DarkCurrentStep: Performs dark current correction by subtracting
+    """DarkCurrentStep: Performs dark current correction by subtracting
     dark current reference data from the input science data model.
     """
 
@@ -38,26 +40,25 @@ class DarkCurrentStep(RomanStep):
         self.dark_name = self.get_reference_file(input_model, "dark")
         # Check for a valid reference file
         if self.dark_name == "N/A":
-            self.log.warning("No DARK reference file found")
-            self.log.warning("Dark current step will be skipped")
+            log.warning("No DARK reference file found")
+            log.warning("Dark current step will be skipped")
             result = input_model
             result.meta.cal_step.dark = "SKIPPED"
             return result
 
-        self.log.info("Using DARK reference file: %s", self.dark_name)
+        log.info("Using DARK reference file: %s", self.dark_name)
 
         # Open dark model
         with rdm.open(self.dark_name) as dark_model:
-            # Temporary patch to utilize stcal dark step until MA table support
-            # is fully implemented
-            if "nresultants" not in dark_model.meta.exposure:
-                dark_model.meta.exposure["nresultants"] = dark_model.data.shape[0]
+            # get the dark slope and dark slope error from the reference file & trim ref pixels
+            dark_slope = dark_model.dark_slope[4:-4, 4:-4]
+            dark_slope_err = dark_model.dark_slope_error[4:-4, 4:-4]
 
             # Do the dark correction
             out_model = input_model
-            nresultants = len(input_model.meta.exposure["read_pattern"])
-            out_model.data -= dark_model.data[:nresultants]
-            out_model.pixeldq |= dark_model.dq
+            out_model.data -= dark_slope
+            out_model.err = np.sqrt(out_model.err**2 + (dark_slope_err) ** 2)
+            out_model.dq |= dark_model.dq[4:-4, 4:-4]
             out_model.meta.cal_step.dark = "COMPLETE"
 
             # Save dark data to file

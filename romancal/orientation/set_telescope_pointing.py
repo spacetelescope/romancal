@@ -42,6 +42,20 @@ All the transformation matrices, as defined by
 (DCM). A DCM contains the Euler rotation angles that represent the sky
 coordinates for a particular frame-of-reference. The initial DCM is provided
 through the engineering telemetry and represents how the observatory is orientated.
+
+** META Affected**
+The following meta values are populated:
+
+- meta.pointing.dec_v1
+- meta.pointing.pa_aperture
+- meta.pointing.pa_v3
+- meta.pointing.pointing_engineering_source
+- meta.pointing.ra_v1
+- meta.wcsinfo.dec_ref
+- meta.wcsinfo.ra_ref
+- meta.wcsinfo.roll_ref
+- meta.wcsinfo.s_region
+
 """
 
 import dataclasses
@@ -458,6 +472,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     vinfo = wcsinfo
 
     # Get the pointing information
+    quality = "PLANNED"
     try:
         t_pars.update_pointing()
     except ValueError as exception:
@@ -469,8 +484,8 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
                 " Default pointing parameters will be used."
             )
             logger.warning("Exception is %s", exception)
-            logger.info("Setting ENGQLPTG keyword to PLANNED")
-            model.meta.visit.engdb_pointing_quality = "PLANNED"
+            logger.info("Setting pointing quality to PLANNED")
+            quality = "PLANNED"
     else:
         logger.info("Successful read of engineering quaternions:")
         logger.info("\tPointing: %s", t_pars.pointing)
@@ -479,9 +494,8 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     if t_pars.pointing is not None:
         try:
             wcsinfo, vinfo, transforms = calc_wcs(t_pars)
-            pointing_engdb_quality = "CALCULATED"
-            logger.info("Setting ENGQLPTG keyword to %s", pointing_engdb_quality)
-            model.meta.visit.engdb_pointing_quality = pointing_engdb_quality
+            quality = "CALCULATED"
+            logger.info("Setting pointing quality to %s", quality)
         except EXPECTED_ERRORS as e:
             logger.warning(
                 "WCS calculation has failed and will be skipped."
@@ -491,21 +505,13 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
             if not t_pars.allow_default:
                 raise
             else:
-                logger.info("Setting ENGQLPTG keyword to PLANNED")
-                model.meta.visit.engdb_pointing_quality = "PLANNED"
+                logger.info("Setting pointing quality to PLANNED")
+                quality = "PLANNED"
     logger.info("Aperture WCS info: %s", wcsinfo)
     logger.info("V1 WCS info: %s", vinfo)
 
-    # Update V1 pointing
-    model.meta.pointing.ra_v1 = vinfo.ra
-    model.meta.pointing.dec_v1 = vinfo.dec
-    model.meta.pointing.pa_v3 = vinfo.pa
-
-    # Update Aperture pointing
-    model.meta.pointing.pa_aperture = wcsinfo.pa
-    model.meta.wcsinfo.ra_ref = wcsinfo.ra
-    model.meta.wcsinfo.dec_ref = wcsinfo.dec
-    model.meta.wcsinfo.s_region = wcsinfo.s_region
+    # Update model meta.
+    update_meta(model, wcsinfo, vinfo, quality)
 
     return transforms
 
@@ -1369,3 +1375,57 @@ def dcm(alpha, delta, angle):
     )
 
     return dcm
+
+
+def update_meta(model, wcsinfo, vinfo, quality):
+    """Update model's meta info with the given pointing.
+
+    The following meta are update:
+    - meta.pointing.dec_v1
+    - meta.pointing.pa_aperture
+    - meta.pointing.pa_v3
+    - meta.pointing.ra_v1
+    - meta.wcsinfo.dec_ref
+    - meta.wcsinfo.ra_ref
+    - meta.wcsinfo.roll_ref
+    - meta.wcsinfo.s_region
+
+    Parameters
+    ----------
+    model : `~roman.datamodels.DataModel`
+        The model to update. Updates are done in-place.
+
+    wcsinfo : `WCSRef``
+        The aperture-specific pointing.
+
+    vinfo : ``WCSRef`
+        The V1-specific pointing
+
+    quality : str
+        Indicator of the success of the pointing determination.
+    """
+    from pysiaf import Siaf
+
+    # Set the quality
+    model.meta.pointing.pointing_engineering_source = quality
+
+    # Update SIAF-related meta
+    wm = model.meta.wcsinfo
+    siaf = Siaf("roman")
+    aper = siaf[wm.aperture_name.upper()]
+    wm.v2_ref = aper.V2Ref
+    wm.v3_ref = aper.V3Ref
+    wm.vparity = aper.VIdlParity
+    wm.v3yangle = aper.V3IdlYAngle
+
+    # Update Aperture pointing
+    wm.ra_ref = wcsinfo.ra
+    wm.dec_ref = wcsinfo.dec
+    wm.s_region = wcsinfo.s_region
+    wm.roll_ref = wcsinfo.pa
+
+    # Update V1 pointing
+    model.meta.pointing.pa_aperture = wcsinfo.pa
+    model.meta.pointing.ra_v1 = vinfo.ra
+    model.meta.pointing.dec_v1 = vinfo.dec
+    model.meta.pointing.pa_v3 = vinfo.pa

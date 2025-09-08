@@ -1,1 +1,0 @@
-Add likelihood fitting as an option in the ramp fitting step

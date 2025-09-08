@@ -1,1 +1,0 @@
-Retrieval of ePSF reference file is skipped if fit_psf is set to False.

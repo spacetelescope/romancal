@@ -19,7 +19,7 @@ from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
-from romancal.source_catalog.utils import copy_mosaic_meta
+from romancal.source_catalog.utils import copy_mosaic_meta, get_ee_spline
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -45,7 +45,7 @@ class MultibandCatalogStep(RomanStep):
     """
 
     class_alias = "multiband_catalog"
-    reference_file_types: ClassVar = []
+    reference_file_types: ClassVar = ["apcorr"]
 
     spec = """
         bkg_boxsize = integer(default=100)   # background mesh box size in pixels
@@ -81,16 +81,20 @@ class MultibandCatalogStep(RomanStep):
                 example_model.meta.instrument.optical_element
             )
 
+        log.info("Creating ee_fractions model for first image")
+        apcorr_ref = self.get_reference_file(example_model, "apcorr")
+        ee_spline = get_ee_spline(example_model, apcorr_ref)
+
         # Define the output filename for the source catalog model
         try:
             cat_model.meta.filename = library.asn["products"][0]["name"]
         except (AttributeError, KeyError):
             cat_model.meta.filename = "multiband_catalog"
 
-        self.log.info("Calculating and subtracting background")
+        log.info("Calculating and subtracting background")
         library = subtract_background_library(library, self.bkg_boxsize)
 
-        self.log.info("Creating detection image")
+        log.info("Creating detection image")
         # Define the kernel FWHMs for the detection image
         # TODO: sensible defaults
         # TODO: redefine in terms of intrinsic FWHM
@@ -118,7 +122,7 @@ class MultibandCatalogStep(RomanStep):
         )
         bkg_rms = bkg.background_rms
 
-        self.log.info("Detecting sources")
+        log.info("Detecting sources")
         segment_img = make_segmentation_image(
             det_img,
             snr_threshold=self.snr_threshold,
@@ -161,12 +165,14 @@ class MultibandCatalogStep(RomanStep):
             detection_cat=None,
             mask=mask,
             cat_type="dr_det",
+            ee_spline=ee_spline,
         )
 
         # Generate the catalog for the detection image.
         # We need to make this catalog before we pass det_catobj
         # to the RomanSourceCatalog constructor.
         det_cat = det_catobj.catalog
+        det_cat.meta["ee_fractions"] = {}
 
         # Create catalogs for each input image
         with library:
@@ -181,10 +187,13 @@ class MultibandCatalogStep(RomanStep):
                     filter_name = model.meta.instrument.optical_element
                     log.info(f"Creating catalog for {filter_name} image")
                     ref_file = self.get_reference_file(model, "epsf")
-                    self.log.info("Using ePSF reference file: %s", ref_file)
+                    log.info("Using ePSF reference file: %s", ref_file)
                     psf_ref_model = datamodels.open(ref_file)
                 else:
                     psf_ref_model = None
+
+                apcorr_ref = self.get_reference_file(model, "apcorr")
+                ee_spline = get_ee_spline(model, apcorr_ref)
 
                 catobj = RomanSourceCatalog(
                     model,
@@ -196,11 +205,13 @@ class MultibandCatalogStep(RomanStep):
                     mask=mask,
                     psf_ref_model=psf_ref_model,
                     cat_type="dr_band",
+                    ee_spline=ee_spline,
                 )
 
                 # Add the filter name to the column names
                 filter_name = model.meta.instrument.optical_element
                 cat = add_filter_to_colnames(catobj.catalog, filter_name)
+                ee_fractions = cat.meta["ee_fractions"]
 
                 # TODO: what metadata do we want to keep, if any,
                 # from the filter catalogs?
@@ -211,6 +222,7 @@ class MultibandCatalogStep(RomanStep):
                 # columns have the same name but different values
                 # (e.g., repeated filter names)
                 det_cat = join(det_cat, cat, keys="label", join_type="outer")
+                det_cat.meta["ee_fractions"][filter_name.lower()] = ee_fractions
                 library.shelve(model, modify=False)
 
         # Put the resulting multiband catalog in the model

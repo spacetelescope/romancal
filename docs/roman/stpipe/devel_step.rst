@@ -116,8 +116,6 @@ to describe its parameters.
 
         # 1.
         def process(self, image1, image2):
-            self.log.info("Inside ExampleStep")
-
             # 2.
             threshold = self.threshold
 

@@ -14,7 +14,7 @@ def test_liklihood_rampfit(
 ):
     """Testing ramp fitting  using the likelihood method"""
 
-    input_data = "r0000101001001001001_0001_wfi01_f158_darkcurrent.asdf"
+    input_data = "r0000101001001001001_0001_wfi01_f158_linearity.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
@@ -29,6 +29,7 @@ def test_liklihood_rampfit(
     args = [
         "romancal.step.RampFitStep",
         rtdata.input,
+        "--algorithm=likely",
         "--output_file=r0000101001001001001_0001_wfi01_f158_like_rampfit.asdf",
     ]
     dms_logger.info("Testing the likelihood fitting for ramps")

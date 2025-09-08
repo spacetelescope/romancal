@@ -20,3 +20,4 @@
    source_catalog/index.rst
    stpipe/index.rst
    tweakreg/index.rst
+   set_velocity_aberration.rst
