@@ -34,8 +34,7 @@ def inject_sources(model, si_cat):
         new_model = inject_sources_into_l2(model, si_cat)
     elif isinstance(model, MosaicModel):
         #  inject_sources_into_l3
-        new_model = model.copy()
-        _ = inject_sources_into_l3(new_model, si_cat)
+        new_model, _ = inject_sources_into_l3(model, si_cat)
     else:
         raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
