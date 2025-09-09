@@ -8,7 +8,6 @@ import romancal.skycell.skymap as sc
 
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
-from .meta_blender import MetaBlender
 from .resample_utils import make_output_wcs
 
 log = logging.getLogger(__name__)
@@ -163,6 +162,11 @@ class ResampleData(Resample):
         """Indicates if metadata blending is enabled."""
         return self._blend_meta
 
+    @property
+    def resampled_output_model(self) -> datamodels.MosaicModel:
+        """The output model after resampling is complete."""
+        return self._resampled_output_model
+
     def _input_model_to_dict(self, model):
         """Convert an input datamodel to a dictionary suitable for the base class"""
         pixel_area = model.meta.photometry.pixel_area
@@ -217,33 +221,33 @@ class ResampleData(Resample):
         model_dict = self._input_model_to_dict(model)
         super().add_model(model_dict)
         if self.blend_meta:
-            self._meta_blender.blend(model)
+            self.resampled_output_model.blend_image(model)
 
     def finalize(self):
         super().finalize()
 
         if self.blend_meta:
-            output_model = self._meta_blender.finalize()
-        else:
-            output_model = datamodels.MosaicModel.create_minimal()
+            self.resampled_output_model.finish_blend()
 
         # copy over asn information
-        output_model.meta.association.name = self.input_models.asn.get(
+        self.resampled_output_model.meta.association.name = self.input_models.asn.get(
             "table_name", "?"
         )
 
         # resample parameters
-        output_model.meta.resample.good_bits = self.good_bits
-        output_model.meta.resample.pixel_scale_ratio = self.output_model[
+        self.resampled_output_model.meta.resample.good_bits = self.good_bits
+        self.resampled_output_model.meta.resample.pixel_scale_ratio = self.output_model[
             "pixel_scale_ratio"
         ]
-        output_model.meta.resample.pixfrac = self.output_model["pixfrac"]
-        output_model.meta.resample.pointings = self.output_model["pointings"]
-        output_model.meta.resample.weight_type = self.weight_type
+        self.resampled_output_model.meta.resample.pixfrac = self.output_model["pixfrac"]
+        self.resampled_output_model.meta.resample.pointings = self.output_model[
+            "pointings"
+        ]
+        self.resampled_output_model.meta.resample.weight_type = self.weight_type
 
         # every resampling will generate these
-        output_model.data = self.output_model["data"]
-        output_model.weight = self.output_model["wht"]
+        self.resampled_output_model.data = self.output_model["data"]
+        self.resampled_output_model.weight = self.output_model["wht"]
 
         # some things are conditional
         if self.compute_exptime and hasattr(self, "_exptime_resampler"):
@@ -257,30 +261,35 @@ class ResampleData(Resample):
                 f"Mean, max exposure times: {total_exposure_time:.1f}, "
                 f"{max_exposure_time:.1f}"
             )
-            output_model.meta.coadd_info.max_exposure_time = max_exposure_time
-            output_model.meta.coadd_info.exposure_time = total_exposure_time
+            self.resampled_output_model.meta.coadd_info.max_exposure_time = (
+                max_exposure_time
+            )
+            self.resampled_output_model.meta.coadd_info.exposure_time = (
+                total_exposure_time
+            )
 
         if self._enable_ctx:
-            output_model.context = self.output_model["con"].astype(np.uint32)
+            self.resampled_output_model.context = self.output_model["con"].astype(
+                np.uint32
+            )
 
         for arr_name in ["err", *self.variance_array_names]:
             if arr_name in self.output_model:
                 new_array = self.output_model[arr_name]
                 if new_array is not None:
-                    setattr(output_model, arr_name, new_array)
+                    setattr(self.resampled_output_model, arr_name, new_array)
 
         # assign wcs to output model
-        assign_l3_wcs(output_model, self.output_wcs)
-        output_model.meta.wcsinfo.skycell_name = self.input_models.asn.get(
-            "target", "None"
+        assign_l3_wcs(self.resampled_output_model, self.output_wcs)
+        self.resampled_output_model.meta.wcsinfo.skycell_name = (
+            self.input_models.asn.get("target", "None")
         )
 
-        return output_model
+        return self.resampled_output_model
 
     def reset_arrays(self, n_input_models=None):
         super().reset_arrays(n_input_models)
-        if self.blend_meta:
-            self._meta_blender = MetaBlender()
+        self._resampled_output_model = datamodels.MosaicModel.create_minimal()
 
     def resample_group(self, indices):
         """
