@@ -166,7 +166,12 @@ def make_catalog(metadata):
 
     return tabcat
 
-
+# Ignore this warning - it comes from stpsf,
+#   and they are aware of the need for an upgrade.
+@pytest.mark.filterwarnings("ignore:Python 3.14 will, by default,"
+" filter extracted tar archives and"
+" reject files or modify their metadata."
+" Use the filter argument to control this behavior.:DeprecationWarning")
 def test_inject_sources(image_model, mosaic_model):
     for si_model in (image_model, mosaic_model):
         """Test simple source injection"""
