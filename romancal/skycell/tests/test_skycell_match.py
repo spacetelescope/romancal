@@ -99,13 +99,13 @@ def mk_im_corners(
     return radecrect
 
 
-def mk_gwcs(ra, dec, pa, bounding_box=None) -> WCS:
+def mk_gwcs(ra, dec, pa, bounding_box=None, shape=(4096, 4096)) -> WCS:
     """
     Construct a GWCS model for testing the patch matching when provided a WCS
     This just implements a basic tangent projection with specified ra, dec, and
     position angle
     """
-    transform = (amm.Shift(-2048) & amm.Shift(-2048)) | (
+    transform = (amm.Shift(-int(shape[0]/2)) & amm.Shift(-int(shape[1]/2))) | (
         amm.Scale(0.11 / 3600.0) & amm.Scale(0.11 / 3600.0)
         | amm.Rotation2D(pa)
         | amm.Pix2Sky_TAN()
