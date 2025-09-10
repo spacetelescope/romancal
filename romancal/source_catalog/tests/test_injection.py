@@ -2,10 +2,11 @@
 Unit tests for the Roman source injection step code
 """
 
+import galsim
 import numpy as np
 import pytest
-from astropy.time import Time
 from astropy import table
+from astropy.time import Time
 from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from romanisim import parameters, bandpass
@@ -171,14 +172,19 @@ def test_inject_sources(image_model, mosaic_model):
         si_model = inject_sources(si_model, cat)
 
         # Ensure that sources were actually injected
-        for x_val, y_val in zip(XPOS_IDX, YPOS_IDX):
-            assert np.all(si_model.data[y_val - 1:y_val + 2, x_val - 1:x_val + 2] >
-                        data_orig.data[y_val - 1:y_val + 2, x_val - 1: x_val + 2])
+        for x_val, y_val in zip(XPOS_IDX, YPOS_IDX, strict=False):
+            assert np.all(si_model.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2] >
+                        data_orig.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2])
 
         # Test that pixels far from the injected source are close to the original image
         # Numpy isclose is needed to determine equality, due to float precision issues
-        assert np.all(np.isclose(si_model.data[90:110, 90:110],
-            data_orig.data[90:110, 90:110], rtol=1e-06))
+        assert np.all(
+            np.isclose(
+                si_model.data[90:110, 90:110],
+                data_orig.data[90:110, 90:110],
+                rtol=1e-06,
+            )
+        )
 
         # Ensure that every pixel's poisson variance has increased or
         # remained the same with the new sources injected
