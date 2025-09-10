@@ -2,16 +2,16 @@
 Unit tests for the Roman source injection step code
 """
 
-import galsim
 import numpy as np
 import pytest
 from astropy import table
 from astropy.time import Time
 from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel, MosaicModel
-from romanisim import parameters, bandpass
-from romancal.source_catalog.injection import inject_sources
+from romanisim import bandpass, parameters
+
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
+from romancal.source_catalog.injection import inject_sources
 
 # Set parameters
 RA = 270.0
@@ -38,39 +38,41 @@ def make_test_data():
     # Create Four-quadrant pattern of gaussian noise, centered around one
     # Each quadrant's gaussian noise scales like total exposure time
     # (total files contributed to each quadrant)
-    quarter_shape = (int(SHAPE[0]/2), int(SHAPE[1]/2))
+    quarter_shape = (int(SHAPE[0] / 2), int(SHAPE[1] / 2))
     data = err = np.zeros(shape=SHAPE)
     noise_rng = np.random.default_rng(RNG_SEED)
 
     # Populate the data array with gaussian noise
-    data[0:quarter_shape[0], 0:quarter_shape[1]] = \
-        noise_rng.normal(scale=(0.01 * MEANFLUX), size=quarter_shape)
-    data[0:quarter_shape[0], quarter_shape[1]:SHAPE[1]] = \
-        noise_rng.normal(scale=(0.02 * MEANFLUX), size=quarter_shape)
-    data[quarter_shape[0]:SHAPE[0], 0:quarter_shape[1]] = \
-        noise_rng.normal(scale=(0.05 * MEANFLUX), size=quarter_shape)
-    data[quarter_shape[0]:SHAPE[0], quarter_shape[1]:SHAPE[1]] = \
-        noise_rng.normal(scale=(0.10 * MEANFLUX), size=quarter_shape)
+    data[0 : quarter_shape[0], 0 : quarter_shape[1]] = noise_rng.normal(
+        scale=(0.01 * MEANFLUX), size=quarter_shape
+    )
+    data[0 : quarter_shape[0], quarter_shape[1] : SHAPE[1]] = noise_rng.normal(
+        scale=(0.02 * MEANFLUX), size=quarter_shape
+    )
+    data[quarter_shape[0] : SHAPE[0], 0 : quarter_shape[1]] = noise_rng.normal(
+        scale=(0.05 * MEANFLUX), size=quarter_shape
+    )
+    data[quarter_shape[0] : SHAPE[0], quarter_shape[1] : SHAPE[1]] = noise_rng.normal(
+        scale=(0.10 * MEANFLUX), size=quarter_shape
+    )
 
     # Define Poisson Noise
-    err[0:quarter_shape[0], 0:quarter_shape[1]] = 0.01 * MEANFLUX
-    err[0:quarter_shape[0], quarter_shape[1]:SHAPE[1]] = 0.02 * MEANFLUX
-    err[quarter_shape[0]:SHAPE[0], 0:quarter_shape[1]] = 0.05 * MEANFLUX
-    err[quarter_shape[0]:SHAPE[0], quarter_shape[1]:SHAPE[1]] = 0.1 * MEANFLUX
+    err[0 : quarter_shape[0], 0 : quarter_shape[1]] = 0.01 * MEANFLUX
+    err[0 : quarter_shape[0], quarter_shape[1] : SHAPE[1]] = 0.02 * MEANFLUX
+    err[quarter_shape[0] : SHAPE[0], 0 : quarter_shape[1]] = 0.05 * MEANFLUX
+    err[quarter_shape[0] : SHAPE[0], quarter_shape[1] : SHAPE[1]] = 0.1 * MEANFLUX
 
     return data, err
 
 
 @pytest.fixture
 def image_model():
-    defaults = {
-        "meta" : parameters.default_parameters_dictionary
-    }
-    defaults["meta"]['instrument']['detector'] = DETECTOR
-    defaults["meta"]['instrument']['optical_element'] = FILTER
-    defaults["meta"]['wcsinfo']['ra_ref'] = RA
-    defaults["meta"]['wcsinfo']['dec_ref'] = DEC
-    defaults["meta"]['wcsinfo']['roll_ref'] = ROLL
+    defaults = {"meta": parameters.default_parameters_dictionary}
+    defaults["meta"]["instrument"]["detector"] = DETECTOR
+    defaults["meta"]["instrument"]["optical_element"] = FILTER
+    defaults["meta"]["wcsinfo"]["ra_ref"] = RA
+    defaults["meta"]["wcsinfo"]["dec_ref"] = DEC
+    defaults["meta"]["wcsinfo"]["roll_ref"] = ROLL
 
     model = ImageModel.create_fake_data(defaults=defaults, shape=SHAPE)
     model.meta.filename = "none"
@@ -83,7 +85,7 @@ def image_model():
     model.err = err
 
     # Create WCS
-    model.meta.wcs  = mk_gwcs(
+    model.meta.wcs = mk_gwcs(
         model.meta.wcsinfo.ra_ref,
         model.meta.wcsinfo.dec_ref,
         model.meta.wcsinfo.roll_ref,
@@ -107,9 +109,9 @@ def mosaic_model():
             "resample": {"pixfrac": 1.0},
             "wcsinfo": {
                 "pixel_scale": 1.5277777769528157e-05,
-                'ra_ref': RA,
-                'dec_ref': DEC,
-                'roll_ref': ROLL,
+                "ra_ref": RA,
+                "dec_ref": DEC,
+                "roll_ref": ROLL,
             },  # Taken from regtest test L3 mosaic.
         }
     }
@@ -125,7 +127,7 @@ def mosaic_model():
     model.weight = 1.0 / err
 
     # Create WCS
-    model.meta.wcs  = mk_gwcs(
+    model.meta.wcs = mk_gwcs(
         model.meta.wcsinfo.ra_ref,
         model.meta.wcsinfo.dec_ref,
         model.meta.wcsinfo.roll_ref,
@@ -150,14 +152,14 @@ def make_catalog(metadata):
     ra, dec = wcsobj.pixel_to_world_values(np.array(XPOS_IDX), np.array(YPOS_IDX))
 
     tabcat = table.Table()
-    tabcat['ra'] = ra
-    tabcat['dec'] = dec
+    tabcat["ra"] = ra
+    tabcat["dec"] = dec
     tabcat[FILTER] = len(XPOS_IDX) * [MAG_FLUX]
-    tabcat['type'] = len(XPOS_IDX) * ['PSF']
-    tabcat['n'] = len(XPOS_IDX) * [-1]
-    tabcat['half_light_radius'] = len(XPOS_IDX) * [-1]
-    tabcat['pa'] = len(XPOS_IDX) * [-1]
-    tabcat['ba'] = len(XPOS_IDX) * [-1]
+    tabcat["type"] = len(XPOS_IDX) * ["PSF"]
+    tabcat["n"] = len(XPOS_IDX) * [-1]
+    tabcat["half_light_radius"] = len(XPOS_IDX) * [-1]
+    tabcat["pa"] = len(XPOS_IDX) * [-1]
+    tabcat["ba"] = len(XPOS_IDX) * [-1]
 
     return tabcat
 
@@ -173,8 +175,10 @@ def test_inject_sources(image_model, mosaic_model):
 
         # Ensure that sources were actually injected
         for x_val, y_val in zip(XPOS_IDX, YPOS_IDX, strict=False):
-            assert np.all(si_model.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2] >
-                        data_orig.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2])
+            assert np.all(
+                si_model.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2]
+                > data_orig.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2]
+            )
 
         # Test that pixels far from the injected source are close to the original image
         # Numpy isclose is needed to determine equality, due to float precision issues
@@ -190,11 +194,11 @@ def test_inject_sources(image_model, mosaic_model):
         # remained the same with the new sources injected
         # Numpy isclose is needed to determine equality,
         # due to float precision issues
-        close_mask = np.isclose(si_model.var_poisson, data_orig.var_poisson,
-                                rtol=1e-06)
+        close_mask = np.isclose(si_model.var_poisson, data_orig.var_poisson, rtol=1e-06)
         assert False in close_mask
-        assert np.all(si_model.var_poisson[~close_mask] >
-                        data_orig.var_poisson[~close_mask])
+        assert np.all(
+            si_model.var_poisson[~close_mask] > data_orig.var_poisson[~close_mask]
+        )
 
         # Ensure that every data pixel value has increased or
         # remained the same with the new sources injected
@@ -208,5 +212,5 @@ def test_inject_sources(image_model, mosaic_model):
         total_rec_flux = np.sum(si_model.data - data_orig.data)  # MJy / sr
         total_theo_flux = len(cat) * MAG_FLUX * cps_conv * unit_factor  # u.MJy / u.sr
         if isinstance(si_model, ImageModel):
-            total_theo_flux /= parameters.reference_data['gain'].value
+            total_theo_flux /= parameters.reference_data["gain"].value
         assert np.isclose(total_rec_flux, total_theo_flux, rtol=4e-02)

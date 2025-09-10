@@ -105,7 +105,7 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, shape=(4096, 4096)) -> WCS:
     This just implements a basic tangent projection with specified ra, dec, and
     position angle
     """
-    transform = (amm.Shift(-int(shape[0]/2)) & amm.Shift(-int(shape[1]/2))) | (
+    transform = (amm.Shift(-int(shape[0] / 2)) & amm.Shift(-int(shape[1] / 2))) | (
         amm.Scale(0.11 / 3600.0) & amm.Scale(0.11 / 3600.0)
         | amm.Rotation2D(pa)
         | amm.Pix2Sky_TAN()
