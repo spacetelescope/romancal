@@ -3,6 +3,7 @@ Unit tests for the Roman source injection step code
 """
 
 import pytest
+
 pytest.importorskip("romanisim")
 
 import numpy as np
