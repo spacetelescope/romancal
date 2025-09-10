@@ -2,8 +2,10 @@
 Unit tests for the Roman source injection step code
 """
 
-import numpy as np
 import pytest
+pytest.importorskip("romanisim")
+
+import numpy as np
 from astropy import table
 from astropy.time import Time
 from roman_datamodels import stnode

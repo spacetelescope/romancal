@@ -5,8 +5,6 @@ Module to inject sources into existing image / mosaic.
 import logging
 
 from roman_datamodels.datamodels import ImageModel, MosaicModel
-from romanisim.image import inject_sources_into_l2
-from romanisim.l3 import inject_sources_into_l3
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -29,6 +27,9 @@ def inject_sources(model, si_cat):
     new_model : `ImageModel` or `MosaicModel`
         Input model with added sources.
     """
+    from romanisim.image import inject_sources_into_l2
+    from romanisim.l3 import inject_sources_into_l3
+
     if isinstance(model, ImageModel):
         #  inject_sources_into_l2
         new_model = inject_sources_into_l2(model, si_cat)
