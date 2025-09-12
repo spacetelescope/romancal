@@ -178,13 +178,14 @@ class TweakRegStep(RomanStep):
                         images.shelve(image_model, i, modify=False)
                         raise e
 
-                    try:
-                        # validate catalog columns
-                        _validate_catalog_columns(catalog)
-                    except ValueError as e:
-                        log.error(f"Failed to validate catalog columns: {e}")
+                    # validate catalog columns
+                    if not _validate_catalog_columns(catalog):
+                        log.error("""'tweakreg' source catalogs must
+                        contain a header withth columns named either 'x'
+                        and 'y' or 'x_psf' and 'y_psf'.""")
+                        image_model.meta.cal_step.tweakreg = "FAILED"
                         images.shelve(image_model, i, modify=False)
-                        raise e
+                        continue
 
                     catalog = tweakreg.filter_catalog_by_bounding_box(
                         catalog, image_model.meta.wcs.bounding_box
@@ -399,12 +400,15 @@ class TweakRegStep(RomanStep):
         AttributeError
             If the required catalog information is missing from the source detection.
         """
-        if getattr(source_catalog, "tweakreg_catalog", None):
+        twk_cat = getattr(source_catalog, "tweakreg_catalog", None)
+        twk_cat_name = getattr(source_catalog, "tweakreg_catalog_name", None)
+
+        if twk_cat is not None:
             tweakreg_catalog = Table(np.asarray(source_catalog.tweakreg_catalog))
             del image_model.meta.source_catalog["tweakreg_catalog"]
             return tweakreg_catalog
 
-        if getattr(source_catalog, "tweakreg_catalog_name", None):
+        if twk_cat_name is not None:
             return self.read_catalog(source_catalog.tweakreg_catalog_name)
 
         raise AttributeError(
@@ -537,7 +541,7 @@ def _parse_catfile(catfile):
     return catdict
 
 
-def _validate_catalog_columns(catalog):
+def _validate_catalog_columns(catalog) -> bool:
     """
     Validate the presence of required columns in the catalog.
 
@@ -549,17 +553,11 @@ def _validate_catalog_columns(catalog):
     ----------
     catalog : Table
         The catalog to validate, which should contain source information.
-    axis : str
-        The axis to check for in the catalog (e.g., 'x' or 'y').
 
     Returns
     -------
-    None
+    True if all the required columns are present, False otherwise.
 
-    Raises
-    ------
-    ValueError
-        If the required columns are missing from the catalog.
     """
     for axis in ["x", "y"]:
         if axis not in catalog.colnames:
@@ -567,8 +565,5 @@ def _validate_catalog_columns(catalog):
             if long_axis in catalog.colnames:
                 catalog.rename_column(long_axis, axis)
             else:
-                raise ValueError(
-                    "'tweakreg' source catalogs must contain a header with "
-                    "columns named either 'x' and 'y' or 'x_psf' and 'y_psf'."
-                )
-    return catalog
+                return False
+    return True
