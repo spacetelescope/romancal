@@ -1308,3 +1308,17 @@ def test_tweakreg_updates_s_region(tmp_path, base_image):
         for i, model in enumerate(res):
             assert model.meta.wcsinfo.s_region != old_fake_s_region
             res.shelve(model, i, modify=False)
+
+
+@pytest.mark.parametrize("save_results", [True, False])
+def test_tweakreg_produces_output(tmp_path, base_image, save_results):
+    """With save_results and output_dir set confirm expected files are in the output directory"""
+    img = base_image()
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img")
+    base_filename = img.meta.filename
+    trs.TweakRegStep.call([img], save_results=save_results, output_dir=str(tmp_path))
+
+    fns = [p.name for p in tmp_path.iterdir()]
+    # the files should exist only if save_results was True
+    assert (f"{base_filename}_tweakregstep.asdf" in fns) == save_results
+    assert (f"{base_filename}_wcs.asdf" in fns) == save_results
