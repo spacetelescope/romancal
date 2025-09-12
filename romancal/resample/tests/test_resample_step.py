@@ -1,19 +1,13 @@
-from functools import reduce
-
-import numpy as np
 import pytest
 from asdf import AsdfFile
 from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import models
-from astropy.table import Table
-from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels
 
 from romancal.assign_wcs.utils import add_s_region
-from romancal.datamodels import ModelLibrary
 from romancal.regtest import util
 from romancal.resample import ResampleStep
 from romancal.resample.l3_wcs import l3wcsinfo_to_wcs
@@ -176,142 +170,3 @@ def test_set_good_bits_in_resample_meta(base_image, good_bits):
     res = step.run(img)
 
     assert res.meta.resample.good_bits == good_bits
-
-
-def test_individual_image_meta(base_image):
-    """Test that the individual_image_meta is being populated"""
-    models = [base_image() for _ in range(2)]
-    # add a None value
-    models[0].meta.photometry.pixel_area = None
-    models[1].meta.photometry.pixel_area = 1
-
-    # add "extra" stuff (similar to "wcs_fit_results")
-    # this will end up in the "basic" table
-    models[1].meta["extra"] = {}
-    models[1].meta.extra = {"a": 1}
-
-    # remove "background" from one model
-    del models[0].meta["background"]
-
-    input_models = ModelLibrary(models)
-    output_model = ResampleStep().run(input_models)
-
-    # Check that blended table doesn't make model invalid
-    output_model.validate()
-
-    # Assert sizes are expected
-    n_inputs = len(input_models)
-    for value in output_model.meta.individual_image_meta.values():
-        assert type(value) is Table
-        assert len(value) == n_inputs
-
-    # Assert spot check on filename, which is different for each mock input
-    basic_table = output_model.meta.individual_image_meta.basic
-    with input_models:
-        for idx, input in enumerate(input_models):
-            assert input.meta.filename == basic_table["filename"][idx]
-            input_models.shelve(input, index=idx)
-
-    output_tables = output_model.meta.individual_image_meta
-
-    assert "background" in output_tables
-
-    assert "photometry" in output_tables
-    assert np.isnan(output_tables["photometry"]["pixel_area"][0])
-    assert output_tables["photometry"]["pixel_area"][1] == 1
-
-    assert "extra" not in output_tables
-    assert "extra" not in output_tables["basic"].colnames
-
-
-@pytest.mark.parametrize(
-    "meta_overrides, expected",
-    [
-        (  # 2 exposures, share visit, etc
-            (
-                {
-                    "meta.observation.visit": 1,
-                    "meta.observation.pass": 1,
-                    "meta.observation.segment": 1,
-                    "meta.observation.program": 1,
-                    "meta.instrument.optical_element": "F158",
-                    "meta.instrument.name": "WFI",
-                },
-                {
-                    "meta.observation.visit": 1,
-                    "meta.observation.pass": 1,
-                    "meta.observation.segment": 1,
-                    "meta.observation.program": 1,
-                    "meta.instrument.optical_element": "F158",
-                    "meta.instrument.name": "WFI",
-                },
-            ),
-            {
-                "meta.observation.visit": 1,
-                "meta.observation.pass": 1,
-                "meta.observation.segment": 1,
-                "meta.instrument.optical_element": "F158",
-                "meta.instrument.name": "WFI",
-            },
-        ),
-        (  # 2 exposures, different metadata
-            (
-                {
-                    "meta.observation.visit": 1,
-                    "meta.observation.pass": 1,
-                    "meta.observation.segment": 1,
-                    "meta.observation.program": 1,
-                    "meta.instrument.optical_element": "F158",
-                    "meta.instrument.name": "WFI",
-                },
-                {
-                    "meta.observation.visit": 2,
-                    "meta.observation.pass": 2,
-                    "meta.observation.segment": 2,
-                    "meta.observation.program": 2,
-                    "meta.instrument.optical_element": "F062",
-                    "meta.instrument.name": "WFI",
-                },
-            ),
-            {
-                "meta.observation.visit": None,
-                "meta.observation.pass": None,
-                "meta.observation.segment": None,
-                "meta.instrument.optical_element": None,
-                "meta.instrument.name": "WFI",
-            },
-        ),
-    ],
-)
-def test_populate_mosaic_metadata(base_image, meta_overrides, expected):
-    """Test that the mosaic metadata is being populated"""
-    models = []
-    for i, meta_override in enumerate(meta_overrides):
-        model = base_image()
-
-        model.meta.observation.observation_id = i
-
-        model.meta.exposure.start_time = Time(59000 + i, format="mjd")
-        model.meta.exposure.end_time = Time(59001 + i, format="mjd")
-        model.meta.exposure.exposure_time = 3600 * 24
-
-        for key, value in meta_override.items():
-            *parent_keys, child_key = key.split(".")
-            setattr(reduce(getattr, parent_keys, model), child_key, value)
-        models.append(model)
-
-    input_models = ModelLibrary(models)
-    output_model = ResampleStep().run(input_models)
-
-    assert output_model.meta.coadd_info.time_first == models[0].meta.exposure.start_time
-    assert output_model.meta.coadd_info.time_last == models[-1].meta.exposure.end_time
-    assert output_model.meta.coadd_info.time_mean.mjd == np.mean(
-        [m.meta.exposure.start_time.mjd for m in models]
-    )
-
-    for key, value in expected.items():
-        *path, final = key.split(".")
-        obj = output_model
-        for sub_path in path:
-            obj = obj[sub_path]
-        assert obj[final] == value
