@@ -104,6 +104,7 @@ def test_get_pointing_fail():
         obstime, q = stp.get_pointing(BADSTARTTIME, BADENDTIME)
 
 
+@pytest.mark.skip(reason="needs update for new database response")
 def test_get_pointing_list():
     q_expected = np.array([-0.690189, 0.121953, -0.695103, 0.159999])
     results = stp.get_pointing(STARTTIME, ENDTIME, reduce_func=stp.all_pointings)
@@ -113,6 +114,7 @@ def test_get_pointing_list():
     assert STARTTIME <= results[0].obstime <= ENDTIME
 
 
+@pytest.mark.skip(reason="needs update for new database response")
 def test_logging(caplog):
     stp.get_pointing(STARTTIME, ENDTIME)
     assert "Determining pointing between observations times" in caplog.text
