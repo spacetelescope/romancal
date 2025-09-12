@@ -288,7 +288,7 @@ class TweakRegStep(RomanStep):
                     images.shelve(image_model, imcat.meta["model_index"])
 
         # Write out the WfiWcs products
-        if self.save_l1_wcs:
+        if self.save_l1_wcs and self.save_results:
             save_wfiwcs(self, images, force=True)
 
         return images
