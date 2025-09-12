@@ -5,6 +5,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
+import roman_datamodels.datamodels as rdm
 from roman_datamodels.dqflags import group
 
 import romancal.datamodels.filetype as filetype
@@ -47,7 +48,6 @@ class ExposurePipeline(RomanPipeline):
     class_alias = "roman_elp"
 
     spec = """
-        save_l1_wcs = boolean(default=False)
         save_results = boolean(default=False)
         suffix = string(default="cal")
     """
@@ -75,8 +75,6 @@ class ExposurePipeline(RomanPipeline):
         self.source_catalog.return_updated_model = True
         # make sure we update source catalog coordinates afer running TweakRegStep
         self.tweakreg.update_source_catalog_coordinates = True
-        # tweakreg currently holds responsibiility for creating the L1 WCS files.
-        self.tweakreg.save_l1_wcs = True
         # make output filenames based on input filenames
         self.output_use_model = True
 
@@ -149,10 +147,6 @@ class ExposurePipeline(RomanPipeline):
         if not any_saturated:
             self.tweakreg.run(lib)
 
-        # Write out the WfiWcs products
-        if self.save_l1_wcs:
-            save_wfiwcs(self, lib)
-
         log.info("Roman exposure calibration pipeline ending...")
 
         # return a ModelLibrary
@@ -164,6 +158,12 @@ class ExposurePipeline(RomanPipeline):
             model = lib.borrow(0)
             lib.shelve(model)
         return model
+
+    def save_model(self, result, *args, **kwargs):
+        if not self.tweakreg.skip and not isinstance(result, rdm.WfiWcsModel):
+            # TODO using and updating the method for now
+            save_wfiwcs(self, result, force=True)
+        super().save_model(result, *args, **kwargs)
 
     def create_fully_saturated_zeroed_image(self, input_model):
         """
