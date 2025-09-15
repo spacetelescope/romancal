@@ -69,6 +69,24 @@ def test_aliveness(is_alive):
     engdb_mast.EngdbMast(base_url=engdb_mast.MAST_BASE_URL, token="dummytoken")  # noqa: S106
 
 
+@pytest.mark.parametrize('mnemonic, expected', [
+    (None, 'something'),
+    ('ope_scf_dir', 1),
+    ('ope', 'something'),
+    ('junkfromspace', 0),
+])
+def test_get_meta(engdb, mnemonic, expected):
+    """Test meta retrieval"""
+    results = engdb.get_meta(search=mnemonic)
+    n = results['Count']
+    assert n == len(results['TlmMnemonics'])
+    if expected == 'something':
+        if n == 0:
+            pytest.xfail(reason=f'Unexpected database contents. Check state of database. Count: {n}, expected: {expected}')
+    elif n != expected:
+        pytest.xfail(reason=f'Unexpected database contents. Check state of database. Count: {n}, expected: {expected}')
+
+
 @pytest.mark.parametrize(
     "contents",
     [

@@ -22,7 +22,8 @@ __all__ = ["EngdbMast"]
 
 # Default MAST info.
 MAST_BASE_URL = "https://mast.stsci.edu"
-API_URI = "edp/api/v0.1/mnemonics/spa/roman/data"
+DATA_URI = "edp/api/v0.1/mnemonics/spa/roman/data"
+META_URI = "edp/api/v0.1/mnemonics/spa/roman/metadata"
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -129,15 +130,41 @@ class EngdbMast(EngdbABC):
         self.retries = int(getenv("ENG_RETRIES", RETRIES))
         self.timeout = int(getenv("ENG_TIMEOUT", TIMEOUT))
 
-    def get_meta(self, *kwargs):
+    def get_meta(self, search=None):
         """
         Get the mnemonics meta info.
 
-        The MAST interface does not provide any meta.
+        Parameters
+        ----------
+        search : str or None
+            A partial, or full, mnemonic specification.
+            If None, meta for all available mnemonics are returned
+
+        Returns
+        -------
+        meta : ???
+            The meta information
         """
-        raise NotImplementedError(
-            "MAST Engineering AUI does not provide a meta service"
+
+        # Make the request
+        if search is not None:
+            self._metareq.params = {
+                "mnemonic": search,
+            }
+        prepped = self._session.prepare_request(self._metareq)
+        settings = self._session.merge_environment_settings(
+            prepped.url, {}, None, None, None
         )
+        logger.debug("Query: %s", prepped.url)
+        self.metaresponse = self._session.send(prepped, timeout=self.timeout, **settings)
+        self.metaresponse.raise_for_status()
+        logger.debug("Response: %s", self.metaresponse)
+        logger.debug("Response test: %s", self.metaresponse.text)
+
+        # Leave as dictionary.
+        results = literal_eval(self.metaresponse.text)
+        return results
+
 
     def get_values(
         self,
@@ -222,7 +249,13 @@ class EngdbMast(EngdbABC):
         """Set up HTTP session."""
         self._datareq = requests.Request(
             method="GET",
-            url=self.base_url + API_URI,
+            url=self.base_url + DATA_URI,
+            headers={"Authorization": f"token {self.token}"},
+        )
+
+        self._metareq = requests.Request(
+            method="GET",
+            url=self.base_url + META_URI,
             headers={"Authorization": f"token {self.token}"},
         )
 
