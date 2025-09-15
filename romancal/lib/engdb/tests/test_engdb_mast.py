@@ -36,39 +36,6 @@ EXPECTED_RECORDS = Table.read(
 )
 
 
-@pytest.fixture(scope="module")
-def is_alive():
-    """Check if the MAST portal is accessible"""
-    is_alive = False
-    try:
-        r = requests.get(engdb_mast.MAST_BASE_URL, timeout=15)
-        is_alive = r.status_code == requests.codes.ok
-    except Exception as exception:
-        log.debug("Failure to connect to MAST URL %s.", engdb_mast.MAST_BASE_URL)
-        log.debug("Failure reason %s", exception)
-        pass
-    if not is_alive:
-        pytest.skip(f"MAST url {engdb_mast.MAST_BASE_URL} not available. Skipping.")
-
-
-@pytest.fixture(scope="module")
-def engdb():
-    """Open a connection"""
-    try:
-        engdb = engdb_mast.EngdbMast(base_url=engdb_mast.MAST_BASE_URL)
-    except RuntimeError as exception:
-        pytest.skip(f"Live MAST Engineering Service not available: {exception}")
-    return engdb
-
-
-def test_aliveness(is_alive):
-    """Check connection creation
-
-    Failure is any failure from instantiation.
-    """
-    engdb_mast.EngdbMast(base_url=engdb_mast.MAST_BASE_URL, token="dummytoken")  # noqa: S106
-
-
 @pytest.mark.parametrize('mnemonic, expected', [
     (None, 'something'),
     ('ope_scf_dir', 1),
@@ -87,6 +54,12 @@ def test_get_meta(engdb, mnemonic, expected):
         pytest.xfail(reason=f'Unexpected database contents. Check state of database. Count: {n}, expected: {expected}')
 
 
+def test_get_records(engdb):
+    """Test getting records"""
+    records = engdb._get_records(*QUERY)
+    assert "SCFA" in records["EUValue"]
+
+
 @pytest.mark.parametrize(
     "contents",
     [
@@ -98,13 +71,6 @@ def test_get_records_response(engdb, contents):
     """Test getting records"""
     _ = engdb._get_records(*QUERY)
     assert contents in engdb.response.text
-
-
-def test_get_records(engdb):
-    """Test getting records"""
-    records = engdb._get_records(*QUERY)
-    assert "SCFA" in records["EUValue"]
-
 
 def test_get_value_justvalues(engdb):
     """Test just getting values"""
@@ -146,3 +112,16 @@ def test_negative_aliveness():
             base_url="https://127.0.0.1/_engdb_mast_test",
             token="dummytoken",  # noqa: S106
         )
+
+
+# ######################
+# Fixtures and utilities
+# ######################
+@pytest.fixture(scope="module")
+def engdb():
+    """Open a connection"""
+    try:
+        engdb = engdb_mast.EngdbMast(base_url=engdb_mast.MAST_BASE_URL)
+    except RuntimeError as exception:
+        pytest.skip(f"Live MAST Engineering Service not available: {exception}")
+    return engdb

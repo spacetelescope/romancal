@@ -22,6 +22,7 @@ __all__ = ["EngdbMast"]
 
 # Default MAST info.
 MAST_BASE_URL = "https://mast.stsci.edu"
+#MAST_BASE_URL = "https://stsci.edu"
 DATA_URI = "edp/api/v0.1/mnemonics/spa/roman/data"
 META_URI = "edp/api/v0.1/mnemonics/spa/roman/metadata"
 
@@ -81,22 +82,15 @@ class EngdbMast(EngdbABC):
         logger.debug("kwargs not used by this service: %s", service_kwargs)
 
         self.configure(base_url=base_url, token=token)
+        self.set_session()
 
         # Check for basic aliveness.
         try:
-            resp = requests.get(self.base_url + "edp/", timeout=self.timeout)
+            self.get_meta(search='junkfromspace')
         except requests.exceptions.ConnectionError as exception:
             raise RuntimeError(
                 f"MAST url: {self.base_url} is unreachable."
             ) from exception
-        if resp.status_code != 200:
-            raise RuntimeError(
-                f"MAST url: {self.base_url} is not available. "
-                f"Returned HTTPS status {resp.status_code}"
-            )
-
-        # Basics are covered. Finalize initialization.
-        self.set_session()
 
     def configure(self, base_url=None, token=None):
         """
@@ -147,7 +141,9 @@ class EngdbMast(EngdbABC):
         """
 
         # Make the request
-        if search is not None:
+        if search is  None:
+            self._metareq.params = {}
+        else:
             self._metareq.params = {
                 "mnemonic": search,
             }
