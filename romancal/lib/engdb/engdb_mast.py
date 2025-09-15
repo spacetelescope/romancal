@@ -86,8 +86,8 @@ class EngdbMast(EngdbABC):
 
         # Check for basic aliveness.
         try:
-            self.get_meta(search='junkfromspace')
-        except requests.exceptions.ConnectionError as exception:
+            self.get_meta(search='engdb_mastaliveness')
+        except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as exception:
             raise RuntimeError(
                 f"MAST url: {self.base_url} is unreachable."
             ) from exception

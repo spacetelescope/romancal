@@ -121,7 +121,7 @@ def test_negative_aliveness():
 def engdb():
     """Open a connection"""
     try:
-        engdb = engdb_mast.EngdbMast(base_url=engdb_mast.MAST_BASE_URL)
+        engdb = engdb_mast.EngdbMast()
     except RuntimeError as exception:
         pytest.skip(f"Live MAST Engineering Service not available: {exception}")
     return engdb
