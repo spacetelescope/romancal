@@ -21,7 +21,7 @@ from .engdb_lib import (
 __all__ = ["EngdbMast"]
 
 # Default MAST info.
-MAST_BASE_URL = "https://masttest.stsci.edu"
+MAST_BASE_URL = "https://mast.stsci.edu"
 API_URI = "edp/api/v0.1/mnemonics/spa/roman/data"
 
 # Configure logging
@@ -126,8 +126,8 @@ class EngdbMast(EngdbABC):
         self.token = token
 
         # Get various timeout parameters
-        self.retries = getenv("ENG_RETRIES", RETRIES)
-        self.timeout = getenv("ENG_TIMEOUT", TIMEOUT)
+        self.retries = int(getenv("ENG_RETRIES", RETRIES))
+        self.timeout = int(getenv("ENG_TIMEOUT", TIMEOUT))
 
     def get_meta(self, *kwargs):
         """

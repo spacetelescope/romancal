@@ -116,8 +116,8 @@ class EngdbEDP(EngdbABC):
         )
 
         # Get various timeout parameters
-        self.retries = getenv("ENG_RETRIES", RETRIES)
-        self.timeout = getenv("ENG_TIMEOUT", TIMEOUT)
+        self.retries = int(getenv("ENG_RETRIES", RETRIES))
+        self.timeout = int(getenv("ENG_TIMEOUT", TIMEOUT))
 
     def get_meta(self, *kwargs):
         """
