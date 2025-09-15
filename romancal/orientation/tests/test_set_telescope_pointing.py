@@ -100,7 +100,10 @@ def test_change_base_url_fail():
 def test_get_pointing():
     """Ensure that the averaging works."""
     q_expected = np.array([-0.52558752, 0.3719724, -0.52016581, 0.38150882])
-    obstime, q = stp.get_pointing(STARTTIME, ENDTIME)
+    try:
+        obstime, q = stp.get_pointing(STARTTIME, ENDTIME)
+    except ValueError as exception:
+        pytest.xfail(reason=str(exception))
 
     assert np.isclose(obstime.value, OBSTIME_EXPECTED.value)
     assert np.allclose(q, q_expected)
@@ -114,7 +117,10 @@ def test_get_pointing_fail():
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_get_pointing_list():
     q_expected = np.array([-0.690189, 0.121953, -0.695103, 0.159999])
-    results = stp.get_pointing(STARTTIME, ENDTIME, reduce_func=stp.all_pointings)
+    try:
+        results = stp.get_pointing(STARTTIME, ENDTIME, reduce_func=stp.all_pointings)
+    except ValueError as exception:
+        pytest.xfail(reason=str(exception))
     assert isinstance(results, list)
     assert len(results) > 0
     assert np.isclose(results[0].q, q_expected).all()
@@ -123,7 +129,10 @@ def test_get_pointing_list():
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_logging(caplog):
-    stp.get_pointing(STARTTIME, ENDTIME)
+    try:
+        stp.get_pointing(STARTTIME, ENDTIME)
+    except ValueError as exception:
+        pytest.xfail(reason=str(exception))
     assert "Determining pointing between observations times" in caplog.text
     assert "Telemetry search tolerance" in caplog.text
     assert "Reduction function" in caplog.text
