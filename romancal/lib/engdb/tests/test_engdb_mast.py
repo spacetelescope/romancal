@@ -4,12 +4,13 @@ import logging
 from pathlib import Path
 
 import pytest
-import requests
 from astropy.table import Table
 from astropy.time import Time
 
 from romancal.lib.engdb import engdb_mast
 from romancal.lib.engdb.engdb_lib import EngDB_Value
+
+from romancal.lib.engdb.tests.utils import assert_xfail
 
 # Configure logging
 log = logging.getLogger(__name__)
@@ -124,9 +125,3 @@ def engdb():
     except RuntimeError as exception:
         pytest.skip(f"Live MAST Engineering Service not available: {exception}")
     return engdb
-
-
-def assert_xfail(condition, reason='Unexpected database contents. Check state of database.'):
-    """Instead of just failing, mark as expected fail"""
-    if not condition:
-        pytest.xfail(reason=reason)
