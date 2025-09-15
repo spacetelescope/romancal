@@ -9,7 +9,6 @@ import pytest
 from astropy.time import Time
 
 from romancal.lib.engdb import engdb_tools
-
 from romancal.lib.engdb.tests.utils import assert_xfail
 
 # Configure logging

@@ -9,7 +9,6 @@ from astropy.time import Time
 
 from romancal.lib.engdb import engdb_mast
 from romancal.lib.engdb.engdb_lib import EngDB_Value
-
 from romancal.lib.engdb.tests.utils import assert_xfail
 
 # Configure logging
@@ -37,21 +36,32 @@ EXPECTED_RECORDS = Table.read(
 )
 
 
-@pytest.mark.parametrize('mnemonic, expected', [
-    (None, 'something'),
-    ('ope_scf_dir', 1),
-    ('ope', 'something'),
-    ('junkfromspace', 0),
-])
+@pytest.mark.parametrize(
+    "mnemonic, expected",
+    [
+        (None, "something"),
+        ("ope_scf_dir", 1),
+        ("ope", "something"),
+        ("junkfromspace", 0),
+    ],
+)
 def test_get_meta(engdb, mnemonic, expected):
     """Test meta retrieval"""
     results = engdb.get_meta(search=mnemonic)
-    n = results['Count']
-    assert_xfail(n == len(results['TlmMnemonics']), reason='No meta for mnemonics found')
-    if expected == 'something':
-        assert_xfail(n != 0, reason=f'Unexpected database contents. Check state of database. Count: {n}, expected: {expected}')
+    n = results["Count"]
+    assert_xfail(
+        n == len(results["TlmMnemonics"]), reason="No meta for mnemonics found"
+    )
+    if expected == "something":
+        assert_xfail(
+            n != 0,
+            reason=f"Unexpected database contents. Check state of database. Count: {n}, expected: {expected}",
+        )
     else:
-        assert_xfail(n == expected, reason=f'Unexpected database contents. Check state of database. Count: {n}, expected: {expected}')
+        assert_xfail(
+            n == expected,
+            reason=f"Unexpected database contents. Check state of database. Count: {n}, expected: {expected}",
+        )
 
 
 def test_get_records(engdb):
@@ -71,6 +81,7 @@ def test_get_records_response(engdb, contents):
     """Test getting records"""
     _ = engdb._get_records(*QUERY)
     assert_xfail(contents in engdb.response.text)
+
 
 def test_get_value_justvalues(engdb):
     """Test just getting values"""

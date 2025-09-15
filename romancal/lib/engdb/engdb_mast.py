@@ -22,7 +22,7 @@ __all__ = ["EngdbMast"]
 
 # Default MAST info.
 MAST_BASE_URL = "https://mast.stsci.edu"
-#MAST_BASE_URL = "https://stsci.edu"
+# MAST_BASE_URL = "https://stsci.edu"
 DATA_URI = "edp/api/v0.1/mnemonics/spa/roman/data"
 META_URI = "edp/api/v0.1/mnemonics/spa/roman/metadata"
 
@@ -86,8 +86,11 @@ class EngdbMast(EngdbABC):
 
         # Check for basic aliveness.
         try:
-            self.get_meta(search='engdb_mastaliveness')
-        except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as exception:
+            self.get_meta(search="engdb_mastaliveness")
+        except (
+            requests.exceptions.ConnectionError,
+            requests.exceptions.HTTPError,
+        ) as exception:
             raise RuntimeError(
                 f"MAST url: {self.base_url} is unreachable."
             ) from exception
@@ -141,7 +144,7 @@ class EngdbMast(EngdbABC):
         """
 
         # Make the request
-        if search is  None:
+        if search is None:
             self._metareq.params = {}
         else:
             self._metareq.params = {
@@ -152,7 +155,9 @@ class EngdbMast(EngdbABC):
             prepped.url, {}, None, None, None
         )
         logger.debug("Query: %s", prepped.url)
-        self.metaresponse = self._session.send(prepped, timeout=self.timeout, **settings)
+        self.metaresponse = self._session.send(
+            prepped, timeout=self.timeout, **settings
+        )
         self.metaresponse.raise_for_status()
         logger.debug("Response: %s", self.metaresponse)
         logger.debug("Response test: %s", self.metaresponse.text)
@@ -160,7 +165,6 @@ class EngdbMast(EngdbABC):
         # Leave as dictionary.
         results = literal_eval(self.metaresponse.text)
         return results
-
 
     def get_values(
         self,
