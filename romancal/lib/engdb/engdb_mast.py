@@ -220,7 +220,7 @@ class EngdbMast(EngdbABC):
 
     def set_session(self):
         """Set up HTTP session."""
-        self._req = requests.Request(
+        self._datareq = requests.Request(
             method="GET",
             url=self.base_url + API_URI,
             headers={"Authorization": f"token {self.token}"},
@@ -283,12 +283,12 @@ class EngdbMast(EngdbABC):
         mnemonic = mnemonic.upper()
         starttime_fmt = starttime.strftime("%Y-%m-%dT%H:%M:%S")
         endtime_fmt = endtime.strftime("%Y-%m-%dT%H:%M:%S")
-        self._req.params = {
+        self._datareq.params = {
             "mnemonic": mnemonic,
             "s_time": starttime_fmt,
             "e_time": endtime_fmt,
         }
-        prepped = self._session.prepare_request(self._req)
+        prepped = self._session.prepare_request(self._datareq)
         settings = self._session.merge_environment_settings(
             prepped.url, {}, None, None, None
         )
