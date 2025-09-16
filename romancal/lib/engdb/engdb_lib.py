@@ -14,8 +14,13 @@ DATA = "_data.json"
 
 # HTTP status that should get retries
 FORCE_STATUSES = list(range(500, 520))
-RETRIES = 10
-TIMEOUT = 10 * 60  # 10 minutes
+RETRIES = 1
+TIMEOUT = 30
+
+# The following would be set in the JWST environment due to ground processing load.
+# Leaving it documented here in case Roman hits database performance issues also.
+#  RETRIES = 10
+#  TIMEOUT = 10 * 60  # 10 minutes
 
 
 class EngdbABC(abc.ABC):
