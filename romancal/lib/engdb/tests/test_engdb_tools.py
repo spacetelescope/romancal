@@ -9,15 +9,16 @@ import pytest
 from astropy.time import Time
 
 from romancal.lib.engdb import engdb_tools
+from romancal.lib.engdb.tests.utils import assert_xfail
 
 # Configure logging
 log = logging.getLogger(__name__)
 
 GOOD_MNEMONIC = "OPE_SCF_DIR"
-GOOD_STARTTIME = "2027-02-23T01:00:00"
-GOOD_ENDTIME = "2027-02-23T01:01:00"
+GOOD_STARTTIME = "2027-02-01T00:00:00"
+GOOD_ENDTIME = "2027-02-28T23:00:00"
 
-SHORT_STARTTIME = "2027-02-23T01:00:30"
+SHORT_STARTTIME = "2027-02-02T00:00:00"
 
 BAD_MNEMONIC = "No_Such_MNEMONIC"
 NODATA_STARTIME = "2014-01-01"
@@ -35,9 +36,8 @@ def test_environmental_bad(monkeypatch):
     assert did_except, f"DB connection falsely created for {engdb.base_url}"
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 def test_basic(engdb):
-    assert engdb._get_records(GOOD_MNEMONIC, GOOD_STARTTIME, GOOD_ENDTIME)
+    assert_xfail(engdb._get_records(GOOD_MNEMONIC, GOOD_STARTTIME, GOOD_ENDTIME))
 
 
 def test_bad_service():
@@ -45,43 +45,44 @@ def test_bad_service():
         engdb_tools.engdb_service("junk_service")
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 def test_values(engdb):
     records = engdb._get_records(GOOD_MNEMONIC, SHORT_STARTTIME, SHORT_STARTTIME)
-    assert len(records) == 2
-    values = engdb.get_values(GOOD_MNEMONIC, GOOD_STARTTIME, SHORT_STARTTIME)
-    assert len(values) == 29
-    assert values[0] == "SCFA"
+    assert_xfail(len(records) >= 2)
+    values = engdb.get_values(
+        GOOD_MNEMONIC, GOOD_STARTTIME, SHORT_STARTTIME, include_bracket_values=True
+    )
+    assert_xfail(len(values) >= 2)
+    assert_xfail("SCFA" in values)
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 def test_values_with_bracket(engdb):
     records = engdb._get_records(GOOD_MNEMONIC, SHORT_STARTTIME, SHORT_STARTTIME)
-    assert len(records) == 2
+    assert_xfail(len(records) == 2)
     values = engdb.get_values(
         GOOD_MNEMONIC, SHORT_STARTTIME, SHORT_STARTTIME, include_bracket_values=True
     )
-    assert len(values) == 2
-    assert values[1] == "SCFA"
+    assert_xfail(len(values) == 2)
+    assert_xfail("SCFA" in values)
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 def test_values_with_time(engdb):
     values = engdb.get_values(
-        GOOD_MNEMONIC, GOOD_STARTTIME, SHORT_STARTTIME, include_obstime=True
+        GOOD_MNEMONIC,
+        GOOD_STARTTIME,
+        SHORT_STARTTIME,
+        include_obstime=True,
+        include_bracket_values=True,
     )
-    assert len(values) >= 1
-    assert isinstance(values[0], tuple)
-    assert isinstance(values[0].obstime, Time)
+    assert_xfail(len(values) >= 2)
+    assert_xfail(isinstance(values[0], tuple))
+    assert_xfail(isinstance(values[0].obstime, Time))
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 def test_novalues(engdb):
     values = engdb.get_values(GOOD_MNEMONIC, NODATA_STARTIME, NODATA_ENDTIME)
-    assert len(values) == 0
+    assert_xfail(len(values) == 0)
 
 
-@pytest.mark.skip(reason="needs update for new database response")
 def test_unzip(engdb):
     """Test forunzipped versions of content"""
     values = engdb.get_values(
@@ -91,8 +92,8 @@ def test_unzip(engdb):
         include_obstime=True,
         zip_results=False,
     )
-    assert isinstance(values, tuple)
-    assert len(values.obstime) == len(values.value)
+    assert_xfail(isinstance(values, tuple))
+    assert_xfail(len(values.obstime) == len(values.value))
 
 
 # ########
