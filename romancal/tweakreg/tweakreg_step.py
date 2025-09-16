@@ -290,7 +290,6 @@ class TweakRegStep(RomanStep):
 
     def save_model(self, result, *args, **kwargs):
         if isinstance(result, ModelLibrary):
-            # TODO update to not need this custom method
             save_wfiwcs(self, result, force=True)
         super().save_model(result, *args, **kwargs)
 
