@@ -57,7 +57,10 @@ def test_input_to_output(function_jail, input_value, expected_output_type):
 
 
 @pytest.mark.parametrize("save_results", [True, False])
-def test_elp_save_results(function_jail, tmp_path, save_results):
+@pytest.mark.parametrize("skip_tweakreg", [True, False])
+def test_elp_save_results(
+    function_jail, tmp_path, save_results, skip_tweakreg, monkeypatch
+):
     """
     Test that the elp respects save_results.
     """
@@ -75,17 +78,21 @@ def test_elp_save_results(function_jail, tmp_path, save_results):
     pipeline.output_dir = str(output_path)
     pipeline.save_results = save_results
 
-    # skip tweakreg as it fails for an empty catalog and so
-    # that the wfiwcs files are not produced
-    pipeline.tweakreg.skip = True
+    if skip_tweakreg:
+        pipeline.tweakreg.skip = True
+    else:
+        # don't try to actually run tweakreg as it will fail for an empty model
+        monkeypatch.setattr(pipeline.tweakreg, "run", lambda init: init)
 
     pipeline.run(model)
     # check that the current directory doesn't contain extra files
     assert set(p.name for p in tmp_path.iterdir()) == {"output"}
 
     output_files = set(p.name for p in output_path.iterdir())
+    # TODO shouldn't this be empty?
+    expected = {"test_segm.asdf", "test_cat.parquet"}
     if save_results:
-        assert output_files == {"test_segm.asdf", "test_cal.asdf", "test_cat.parquet"}
-    else:
-        # TODO shouldn't this be empty?
-        assert output_files == {"test_segm.asdf", "test_cat.parquet"}
+        expected.add("test_cal.asdf")
+        if not skip_tweakreg:
+            expected.add("test_wcs.asdf")
+    assert output_files == expected
