@@ -9,7 +9,7 @@ import romancal.skycell.skymap as sc
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
 from .meta_blender import MetaBlender
-from .resample_utils import make_output_wcs
+from .resample_utils import compute_var_sky, make_output_wcs
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -182,6 +182,9 @@ class ResampleData(Resample):
             "dq": model.dq,
             "var_rnoise": model.var_rnoise,
             "var_poisson": model.var_poisson,
+            "var_sky": compute_var_sky(model)
+            if self.weight_type == "ivm-sky"
+            else None,
             "err": model.err,
             "filename": model.meta.filename,
             "wcs": model.meta.wcs,
