@@ -21,7 +21,7 @@ __all__ = ["EngdbEDP"]
 
 # Default MAST info.
 MAST_BASE_URL = "https://masttest.stsci.edu"
-API_URI = "edp/api/v0.1/mnemonics/fqa/roman/data"
+API_URI = "edp/api/v0.1/mnemonics/spa/roman/data"
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -116,8 +116,8 @@ class EngdbEDP(EngdbABC):
         )
 
         # Get various timeout parameters
-        self.retries = getenv("ENG_RETRIES", RETRIES)
-        self.timeout = getenv("ENG_TIMEOUT", TIMEOUT)
+        self.retries = int(getenv("ENG_RETRIES", RETRIES))
+        self.timeout = int(getenv("ENG_TIMEOUT", TIMEOUT))
 
     def get_meta(self, *kwargs):
         """
