@@ -524,7 +524,7 @@ def test_tweakreg_returns_modellibrary_on_roman_datamodel_as_input(
 
     test_input = img
 
-    res = trs.TweakRegStep.call(test_input, save_l1_wcs=False)
+    res = trs.TweakRegStep.call(test_input)
     assert isinstance(res, ModelLibrary)
     with res:
         model = res.borrow(0)
@@ -540,7 +540,7 @@ def test_tweakreg_returns_modellibrary_on_modellibrary_as_input(tmp_path, base_i
 
     test_input = ModelLibrary([img])
 
-    res = trs.TweakRegStep.call(test_input, save_l1_wcs=False)
+    res = trs.TweakRegStep.call(test_input)
     assert isinstance(res, ModelLibrary)
     with res:
         model = res.borrow(0)
@@ -563,7 +563,7 @@ def test_tweakreg_returns_modellibrary_on_association_file_as_input(
 
     test_input = asn_filepath
 
-    res = trs.TweakRegStep.call(test_input, save_l1_wcs=False)
+    res = trs.TweakRegStep.call(test_input)
     assert isinstance(res, ModelLibrary)
     with res:
         for i, model in enumerate(res):
@@ -589,7 +589,7 @@ def test_tweakreg_returns_modellibrary_on_list_of_asdf_file_as_input(
         f"{tmp_path_str}/img_2.asdf",
     ]
 
-    res = trs.TweakRegStep.call(test_input, save_l1_wcs=False)
+    res = trs.TweakRegStep.call(test_input)
     assert isinstance(res, ModelLibrary)
     with res:
         for i, model in enumerate(res):
@@ -610,7 +610,7 @@ def test_tweakreg_returns_modellibrary_on_list_of_roman_datamodels_as_input(
 
     test_input = [img_1, img_2]
 
-    res = trs.TweakRegStep.call(test_input, save_l1_wcs=False)
+    res = trs.TweakRegStep.call(test_input)
     assert isinstance(res, ModelLibrary)
     with res:
         for i, model in enumerate(res):
@@ -622,7 +622,7 @@ def test_tweakreg_updates_cal_step(tmp_path, base_image):
     """Test that TweakReg updates meta.cal_step with tweakreg = COMPLETE."""
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
-    res = trs.TweakRegStep.call([img], save_l1_wcs=False)
+    res = trs.TweakRegStep.call([img])
 
     with res:
         model = res.borrow(0)
@@ -731,7 +731,6 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
         use_custom_catalogs=True,
         catalog_format=catalog_format,
         catfile=catfile,
-        save_l1_wcs=False,
     )
 
     assert isinstance(res, ModelLibrary)
@@ -799,7 +798,7 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
         tmp_path, img, catalog_data=transformed_xy_gaia_sources
     )
 
-    trs.TweakRegStep.call([img], abs_minobj=3, save_l1_wcs=False)
+    trs.TweakRegStep.call([img], abs_minobj=3)
 
     # get world coords for Gaia sources using "wrong WCS"
     original_ref_source = [
@@ -847,7 +846,7 @@ def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
     with open(asn_filepath) as f:
         asn_content = json.load(f)
 
-    res = trs.TweakRegStep.call(asn_filepath, save_l1_wcs=False)
+    res = trs.TweakRegStep.call(asn_filepath)
 
     assert isinstance(res, ModelLibrary)
 
@@ -877,7 +876,7 @@ def test_fit_results_in_meta(tmp_path, base_image):
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    res = trs.TweakRegStep.call([img], save_l1_wcs=False)
+    res = trs.TweakRegStep.call([img])
 
     assert isinstance(res, ModelLibrary)
     with res:
@@ -905,7 +904,7 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     img1.meta["filename"] = "file1.asdf"
     img2.meta["filename"] = "file2.asdf"
 
-    res = trs.TweakRegStep.call([img1, img2], save_l1_wcs=False)
+    res = trs.TweakRegStep.call([img1, img2])
 
     assert len(res.group_names) == 2
 
@@ -1308,3 +1307,17 @@ def test_tweakreg_updates_s_region(tmp_path, base_image):
         for i, model in enumerate(res):
             assert model.meta.wcsinfo.s_region != old_fake_s_region
             res.shelve(model, i, modify=False)
+
+
+@pytest.mark.parametrize("save_results", [True, False])
+def test_tweakreg_produces_output(tmp_path, base_image, save_results):
+    """With save_results and output_dir set confirm expected files are in the output directory"""
+    img = base_image()
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img")
+    base_filename = img.meta.filename
+    trs.TweakRegStep.call([img], save_results=save_results, output_dir=str(tmp_path))
+
+    fns = [p.name for p in tmp_path.iterdir()]
+    # the files should exist only if save_results was True
+    assert (f"{base_filename}_tweakregstep.asdf" in fns) == save_results
+    assert (f"{base_filename}_wcs.asdf" in fns) == save_results
