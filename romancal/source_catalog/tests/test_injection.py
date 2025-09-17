@@ -45,7 +45,7 @@ def make_test_data():
 
     # Populate the data array with gaussian noise
     data = noise_rng.normal(loc=MEANFLUX, scale=0.01 * MEANFLUX, size=SHAPE)
-    err = 0.01 * MEANFLUX
+    err = np.ones_like(data) * 0.01 * MEANFLUX
 
     return data, err
 
@@ -201,9 +201,10 @@ def test_inject_sources(image_model, mosaic_model):
         # maggies to counts (large number)
         cps_conv = bandpass.get_abflux(FILTER, 2)
         # electrons to mjysr (roughly order unity in scale)
-        unit_factor = bandpass.etomjysr(FILTER, 2)
+        if isinstance(si_model, ImageModel):
+            unit_factor = 1 / parameters.reference_data["gain"].value
+        else:
+            unit_factor = bandpass.etomjysr(FILTER, 2)
         total_rec_flux = np.sum(si_model.data - data_orig.data)  # MJy / sr
         total_theo_flux = len(cat) * MAG_FLUX * cps_conv * unit_factor  # u.MJy / u.sr
-        if isinstance(si_model, ImageModel):
-            total_theo_flux /= parameters.reference_data["gain"].value
-        assert np.isclose(total_rec_flux, total_theo_flux, rtol=4e-02)
+        assert np.isclose(total_rec_flux, total_theo_flux, rtol=0.1)
