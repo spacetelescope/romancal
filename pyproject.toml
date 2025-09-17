@@ -98,6 +98,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
+version_scheme = "release-branch-semver"
 
 [tool.setuptools]
 zip-safe = false
