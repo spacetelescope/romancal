@@ -41,29 +41,11 @@ def make_test_data():
     # Create Four-quadrant pattern of gaussian noise, centered around one
     # Each quadrant's gaussian noise scales like total exposure time
     # (total files contributed to each quadrant)
-    quarter_shape = (int(SHAPE[0] / 2), int(SHAPE[1] / 2))
-    data = err = np.zeros(shape=SHAPE)
     noise_rng = np.random.default_rng(RNG_SEED)
 
     # Populate the data array with gaussian noise
-    data[0 : quarter_shape[0], 0 : quarter_shape[1]] = noise_rng.normal(
-        scale=(0.01 * MEANFLUX), size=quarter_shape
-    )
-    data[0 : quarter_shape[0], quarter_shape[1] : SHAPE[1]] = noise_rng.normal(
-        scale=(0.02 * MEANFLUX), size=quarter_shape
-    )
-    data[quarter_shape[0] : SHAPE[0], 0 : quarter_shape[1]] = noise_rng.normal(
-        scale=(0.05 * MEANFLUX), size=quarter_shape
-    )
-    data[quarter_shape[0] : SHAPE[0], quarter_shape[1] : SHAPE[1]] = noise_rng.normal(
-        scale=(0.10 * MEANFLUX), size=quarter_shape
-    )
-
-    # Define Poisson Noise
-    err[0 : quarter_shape[0], 0 : quarter_shape[1]] = 0.01 * MEANFLUX
-    err[0 : quarter_shape[0], quarter_shape[1] : SHAPE[1]] = 0.02 * MEANFLUX
-    err[quarter_shape[0] : SHAPE[0], 0 : quarter_shape[1]] = 0.05 * MEANFLUX
-    err[quarter_shape[0] : SHAPE[0], quarter_shape[1] : SHAPE[1]] = 0.1 * MEANFLUX
+    data = noise_rng.normal(loc=MEANFLUX, scale=0.01 * MEANFLUX, size=SHAPE)
+    err = 0.01 * MEANFLUX
 
     return data, err
 
