@@ -21,7 +21,7 @@ dependencies = [
     "numpy >=1.25",
     "photutils >=2.1.0",
     "requests >=2.26",
-    # "roman_datamodels>=0.27.0",
+    # "roman_datamodels>=0.26.0,<0.27.0",
     "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
     "scipy >=1.14.1",
     # "stcal>=1.15.0,<1.16.0",
@@ -57,14 +57,16 @@ test = [
     "pytest-astropy >= 0.11.0",
     "deepdiff",
     "stpreview>=0.6.0",
-    "romanisim @ git+https://github.com/spacetelescope/romanisim.git",
+    # Commented for later
+    # "romanisim @ git+https://github.com/spacetelescope/romanisim.git",
 ]
 dev = [
     "pysiaf",
     "romancal[docs,test]",
     "tox > 4",
     "pre-commit > 3",
-    "romanisim @ git+https://github.com/spacetelescope/romanisim.git",
+    # Commented for later
+    # "romanisim @ git+https://github.com/spacetelescope/romanisim.git",
 ]
 sdp = [
     "pysiaf",
