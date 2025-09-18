@@ -9,6 +9,8 @@ from roman_datamodels.datamodels import ImageModel, MosaicModel
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
+NOBJECTS = 300
+
 
 def inject_sources(model, si_cat):
     """
@@ -40,3 +42,31 @@ def inject_sources(model, si_cat):
         raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
     return new_model
+
+
+def make_cosmoslike_catalog(model, xpos, ypos):
+    """
+    Stuff
+
+    Parameters
+    ----------
+    stuff
+
+    Returns
+    -------
+    stuff
+    """
+    from romanisim.catalog import make_cosmos_galaxies
+
+    # Pointing
+    xcen, ycen = twcs.radecToxy(twcs.center.ra, twcs.center.dec, 'rad')
+
+    # 75% of objects as galaxies
+    # 25% of objects as point sources
+    num_stars = int(len(xpos)/4)
+    num_gals = len(xpos) - num_stars
+
+    # Stars
+
+    # Galaxies
+
