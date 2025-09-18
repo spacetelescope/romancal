@@ -52,6 +52,15 @@ def is_fully_saturated(model):
     return False
 
 
+def is_association(asn_data):
+    """
+    Test if an object is an association by checking for required fields
+    """
+    return (
+        isinstance(asn_data, dict) and "asn_id" in asn_data and "asn_pool" in asn_data
+    )
+
+
 class LoggingContext:
     """Logging context manager
     Keep logging configuration within a context
