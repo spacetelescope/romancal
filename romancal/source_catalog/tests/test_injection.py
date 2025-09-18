@@ -60,10 +60,7 @@ def image_model():
     defaults["meta"]["wcsinfo"]["roll_ref"] = ROLL
 
     model = ImageModel.create_fake_data(defaults=defaults, shape=SHAPE)
-    model.meta.filename = "none"
     model.meta.exposure.read_pattern = parameters.read_pattern[MATABLE]
-    model.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    model.meta.cal_logs = stnode.CalLogs.create_fake_data()
 
     data, err = make_test_data()
     model.data = data
@@ -101,10 +98,6 @@ def mosaic_model():
         }
     }
     model = MosaicModel.create_fake_data(defaults=defaults, shape=SHAPE)
-    model.meta.filename = "none"
-    model.meta.ref_file = stnode.RefFile.create_fake_data()
-    model.meta.cal_step = stnode.L3CalStep.create_fake_data()
-    model.cal_logs = stnode.CalLogs.create_fake_data()
     data, err = make_test_data()
     model.data = data
     model.err = err
