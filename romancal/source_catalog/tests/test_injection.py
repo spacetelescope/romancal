@@ -9,7 +9,6 @@ pytest.importorskip("romanisim")
 import numpy as np
 from astropy import table
 from astropy.time import Time
-from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from romanisim import bandpass, parameters
 
