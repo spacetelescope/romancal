@@ -1,0 +1,1 @@
+Remove ``save_l1_wcs`` parameter. Production of WfiWCS files is now controlled by ``save_results``.
