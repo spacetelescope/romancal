@@ -250,3 +250,52 @@ def test_skycells(skymap_subset):
     assert skycells.vectorpoint_centers.shape == (len(TEST_SKYCELLS), 3)
 
     assert len(skycells.polygons) == len(TEST_SKYCELLS)
+
+
+@pytest.mark.parametrize(
+    "name,expected",
+    [
+        ("000p86x30y34", np.False_),
+        ("000p86x50y65", np.False_),
+        ("000p86x59y38", np.False_),
+        ("135p90x25y49", np.False_),
+        ("135p90x30y51", np.True_),
+        ("135p90x33y62", np.True_),
+        ("135p90x39y33", np.True_),
+        ("135p90x43y65", np.True_),
+        ("135p90x48y41", np.True_),
+        ("135p90x52y59", np.True_),
+        ("135p90x57y35", np.True_),
+        ("135p90x61y67", np.True_),
+        ("135p90x67y38", np.True_),
+    ],
+)
+def test_skycell_exclusively_contains_center(name, expected, skymap_subset):
+    skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
+    assert skycell.exclusively_contains(2500, 2500) is expected
+
+
+@pytest.mark.parametrize(
+    "name,expected",
+    [
+        ("000p86x30y34", 0),
+        ("000p86x50y65", 0),
+        ("000p86x59y38", 0),
+        ("135p90x25y49", 782163),
+        ("135p90x30y51", 24010000),
+        ("135p90x33y62", 24010000),
+        ("135p90x39y33", 24010000),
+        ("135p90x43y65", 24010000),
+        ("135p90x48y41", 24010000),
+        ("135p90x52y59", 24010000),
+        ("135p90x57y35", 24010000),
+        ("135p90x61y67", 24010000),
+        ("135p90x67y38", 24010000),
+    ],
+)
+def test_skycell_exclusively_contains_pixels(name, expected, skymap_subset):
+    skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
+    xy = np.vstack(np.mgrid[0:5000, 0:5000].T)
+    exclusive_pixels = skycell.exclusively_contains(xy[:, 0], xy[:, 1])
+    exclusive_pixels = np.resize(exclusive_pixels, new_shape=(5000, 5000))
+    assert len(np.where(exclusive_pixels)[0]) == expected
