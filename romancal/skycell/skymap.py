@@ -717,6 +717,44 @@ class ProjectionRegion:
         """degrees per pixel"""
         return self._skymap.pixel_scale
 
+    def skycells_at(
+        self,
+        ra: tuple[float, float] | NDArray[float],
+        dec: tuple[float, float] | NDArray[float],
+    ) -> list[SkyCell]:
+        """
+        skycells containing the given point
+
+        Parameters
+        ----------
+        ra: tuple[float, float] | NDArray[float]
+            right ascension of coordinate(s)
+        dec: tuple[float, float] | NDArray[float]
+            right ascension of coordinate(s)
+        """
+
+        vectorpoints = sgv.lonlat_to_vector(ra, dec)
+        if not isinstance(vectorpoints, NDArray):
+            vectorpoints = np.ndarray([vectorpoints])
+        vectorpoints = sgv.normalize_vector(vectorpoints)
+
+        skycells = []
+        for vectorpoint in vectorpoints:
+            indices = self.skycells_kdtree.query(
+                vectorpoint, k=8, distance_upper_bound=SkyCell.length
+            )[1]
+            indices = (
+                np.array(indices[np.where(indices != len(self.skycells))])
+                + self.data["skycell_start"]
+            )
+
+            for index in indices:
+                skycell = SkyCell(index)
+                if skycell.polygon.contains_point(vectorpoints):
+                    skycells.append(skycell)
+
+        return skycells
+
     def __eq__(self, other) -> bool:
         if not isinstance(other, ProjectionRegion):
             return False
@@ -831,6 +869,62 @@ class SkyMap:
     def pixel_shape(self) -> tuple[int, int]:
         """number of pixels per sky cell"""
         return self.model.meta.nxy_skycell, self.model.meta.nxy_skycell
+
+    def projection_regions_at(
+        self,
+        ra: tuple[float, float] | NDArray[float],
+        dec: tuple[float, float] | NDArray[float],
+    ) -> list[ProjectionRegion]:
+        """
+        projection regions containing the given point
+
+        Parameters
+        ----------
+        ra: tuple[float, float] | NDArray[float]
+            right ascension of coordinate(s)
+        dec: tuple[float, float] | NDArray[float]
+            right ascension of coordinate(s)
+        """
+
+        vectorpoints = sgv.lonlat_to_vector(ra, dec)
+        if not isinstance(vectorpoints, NDArray):
+            vectorpoints = np.ndarray([vectorpoints])
+        vectorpoints = sgv.normalize_vector(vectorpoints)
+
+        projregions = []
+        for vectorpoint in vectorpoints:
+            indices = self.projection_regions_kdtree.query(
+                vectorpoint, k=4, distance_upper_bound=ProjectionRegion.MAX_LENGTH
+            )[1]
+            indices = indices[np.where(indices != len(self.model.projection_regions))]
+
+            for index in indices:
+                projregion = ProjectionRegion(index)
+                if projregion.polygon.contains_point(vectorpoint):
+                    projregions.append(projregion)
+
+        return projregions
+
+    def skycells_at(
+        self,
+        ra: tuple[float, float] | NDArray[float],
+        dec: tuple[float, float] | NDArray[float],
+    ) -> list[SkyCell]:
+        """
+        skycells containing the given point
+
+        Parameters
+        ----------
+        ra: tuple[float, float] | NDArray[float]
+            right ascension of coordinate(s)
+        dec: tuple[float, float] | NDArray[float]
+            right ascension of coordinate(s)
+        """
+
+        skycells = []
+        for projregion in self.projection_regions_at(ra, dec):
+            skycells.extend(projregion.skycells_at(ra, dec))
+        return skycells
 
     def __getitem__(self, index: int) -> SkyCell:
         """`SkyCell` at the given index in the sky cells array"""
