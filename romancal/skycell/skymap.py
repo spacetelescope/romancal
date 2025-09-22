@@ -254,6 +254,84 @@ class SkyCell:
         wcsobj.array_shape = self.pixel_shape
         return wcsobj
 
+    def core_contains(
+        self, x: float | NDArray[float], y: float | NDArray[float]
+    ) -> bool | NDArray[bool]:
+        """
+        Whether the given pixel coordinate(s) exist within the core region of this skycell (not within the overlapping margin with neighboring skycells).
+
+        Parameters
+        ----------
+        x: float | NDArray[float]
+            x pixel coordinate(s)
+        y: float | NDArray[float]
+            y pixel coordinate(s)
+
+        Returns
+        -------
+        whether coordinate(s) are within the core region of this skycell
+        """
+
+        nx = self._skymap.pixel_shape[0]
+        ny = self._skymap.pixel_shape[1]
+
+        margin = self._skymap.model.meta["skycell_border_pixels"]
+        return (
+            (margin - 0.5 < x)
+            & (x < nx - margin - 0.5)
+            & (margin - 0.5 < y)
+            & (y < ny - margin - 0.5)
+        )
+
+    def exclusively_contains(
+        self, x: float | NDArray[float], y: float | NDArray[float]
+    ) -> bool | NDArray[bool]:
+        """
+        Whether the given pixel coordinate(s) exist within the exclusive, non-overlapping region of this skycell.
+        Coordinates flagged as belonging to this skycell will NOT belong to any other skycell.
+
+        Parameters
+        ----------
+        x: float | NDArray[float]
+            x pixel coordinate(s)
+        y: float | NDArray[float]
+            y pixel coordinate(s)
+
+        Returns
+        -------
+        whether coordinate(s) belong exclusively to this skycell
+        """
+
+        nx = self._skymap.pixel_shape[0]
+        ny = self._skymap.pixel_shape[1]
+
+        # whether points are outside the half-margin (sharing with neighboring skycells)
+        # we do NOT need to handle the outer non-overlapping margin of skycells at the edge of the projection region, because the region border cuts them off
+        half_margin = self._skymap.model.meta["skycell_border_pixels"] / 2
+        outside_half_margin = (
+            (half_margin - 0.5 < x)
+            & (x < nx - half_margin - 0.5)
+            & (half_margin - 0.5 < y)
+            & (y < ny - half_margin - 0.5)
+        )
+
+        # only convert pixel coordinates to world coordinates if there are pixels outside the half-margin
+        if np.any(outside_half_margin):
+            radec = self.wcs.pixel_to_world(x, y)
+            ra = radec.ra.degree
+            dec = radec.dec.degree
+
+            # whether points are outside the half-margin AND within the coordinate bounds of the projection region
+            return (
+                outside_half_margin
+                & (self.projection_region.data["ra_min"] < ra)
+                & (ra < self.projection_region.data["ra_max"])
+                & (self.projection_region.data["dec_min"] < dec)
+                & (dec < self.projection_region.data["dec_max"])
+            )
+        else:
+            return False
+
     def __eq__(self, other) -> bool:
         if not isinstance(other, SkyCell):
             return False

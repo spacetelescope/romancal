@@ -200,15 +200,15 @@ def plot_image_footprint_and_skycells(
         )
         plot_field(image_corners_tangentplane, fill="lightgrey", color="black")
 
-        plot_projregion(projregion, color="lightgrey")
-
         for skycell_index in projregion.skycell_indices:
             skycell = sc.SkyCell(skycell_index, skymap=skymap)
             plot_skycell(
                 skycell,
                 tangent_vectorpoint,
-                color="darkgrey",
+                color="lightgrey",
             )
+
+        plot_projregion(projregion, color="darkgrey")
 
         _, nearby_skycell_indices = projregion.skycells_kdtree.query(
             footprint.vectorpoint_center,
