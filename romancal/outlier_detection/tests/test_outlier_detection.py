@@ -142,6 +142,8 @@ def test_find_outliers(tmp_path, base_image, on_disk):
         img.meta.filename = str(tmp_path / f"img{i}_suffix.asdf")
         img.meta.observation.observation_id = str(i)
         img.meta.background.level = 0
+        # populate var_rnoise with non-zero values
+        img.var_rnoise = np.full(img.data.shape, 1.0, dtype=np.float32)
         imgs.append(img)
 
     # add outliers
