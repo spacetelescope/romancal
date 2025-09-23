@@ -1283,7 +1283,7 @@ def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(base_image):
     img.meta.source_catalog.tweakreg_catalog = bad_catalog.as_array()
 
     # Should mark as FAILED and not raise
-    res = trs.TweakRegStep.call([img], save_l1_wcs=False)
+    res = trs.TweakRegStep.call([img])
     with res:
         model = res.borrow(0)
         assert model.meta.cal_step.tweakreg == "FAILED"
