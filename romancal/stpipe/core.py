@@ -86,7 +86,14 @@ class RomanStep(Step):
         tuple of str
             Tuple of log names for stpipe to configure
         """
-        return ("romancal", "stcal", "roman_datamodels", "stpipe", "tweakwcs")
+        return (
+            "romancal",
+            "stcal",
+            "roman_datamodels",
+            "stpipe",
+            "tweakwcs",
+            "py.warnings",  # python uses this since stipe enables captureWarnings
+        )
 
     def finalize_result(self, model, reference_files_used):
         """
