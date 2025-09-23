@@ -414,7 +414,7 @@ class TweakRegStep(RomanStep):
         else:
             raise AttributeError(
                 "Attribute 'meta.source_catalog.tweakreg_catalog' is missing. "
-                    "Please either run SourceCatalogStep or provide a custom source catalog."
+                "Please either run SourceCatalogStep or provide a custom source catalog."
             )
 
     def do_relative_alignment(self, imcats):
