@@ -572,6 +572,7 @@ def _validate_catalog_columns(catalog) -> bool:
                 return False
     return True
 
+
 def _add_required_columns(catalog):
     catalog["x"] = catalog["x_centroid"]
     catalog["y"] = catalog["y_centroid"]
