@@ -1278,7 +1278,8 @@ def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(base_image):
 
     img = base_image(shift_1=1000, shift_2=1000)
     # Add a tweakreg catalog with missing required columns
-    bad_catalog = Table({"a": [1, 2, 3], "b": [4, 5, 6]})
+    # but with column names that are always produced by source detection
+    bad_catalog = Table({"x_centroid": [1, 2, 3], "y_centroid": [4, 5, 6]})
     img.meta["source_catalog"] = FakeSourceCatalog()
     img.meta.source_catalog.tweakreg_catalog = bad_catalog.as_array()
 

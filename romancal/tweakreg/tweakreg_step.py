@@ -179,12 +179,14 @@ class TweakRegStep(RomanStep):
 
                     # validate catalog columns
                     if not _validate_catalog_columns(catalog):
-                        log.error("""'tweakreg' source catalogs must
-                        contain a header withth columns named either 'x'
-                        and 'y' or 'x_psf' and 'y_psf'.""")
+                        log.warning("""
+                        'tweakreg' source catalogs must contain a header
+                        with columns named either 'x' and 'y' or
+                        'x_psf' and 'y_psf'. Neither were found in the
+                        catalog provided. Adding required columns
+                        from centroid coordinates.""")
                         image_model.meta.cal_step.tweakreg = "FAILED"
-                        images.shelve(image_model, i, modify=False)
-                        continue
+                        _add_required_columns(catalog)
 
                     catalog = tweakreg.filter_catalog_by_bounding_box(
                         catalog, image_model.meta.wcs.bounding_box
@@ -237,7 +239,8 @@ class TweakRegStep(RomanStep):
             with images:
                 for imcat in imcats:
                     image_model = images.borrow(imcat.meta["model_index"])
-                    image_model.meta.cal_step["tweakreg"] = "COMPLETE"
+                    if image_model.meta.cal_step.tweakreg != "FAILED":
+                        image_model.meta.cal_step.tweakreg = "COMPLETE"
                     # remove source catalog
                     del image_model.meta["tweakreg_catalog"]
 
@@ -568,3 +571,7 @@ def _validate_catalog_columns(catalog) -> bool:
             else:
                 return False
     return True
+
+def _add_required_columns(catalog):
+    catalog["x"] = catalog["x_centroid"]
+    catalog["y"] = catalog["y_centroid"]
