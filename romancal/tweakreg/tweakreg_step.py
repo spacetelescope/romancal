@@ -574,5 +574,19 @@ def _validate_catalog_columns(catalog) -> bool:
 
 
 def _add_required_columns(catalog):
+    """
+    Updates the input catalog with the required columns based on the standard output from SourceCatalogStep.
+
+    The centroid coordinates are always present in the standard output from SourceCatalogStep.
+
+    Parameters
+    ----------
+    catalog : Table
+        The catalog to validate, which should contain source information.
+
+    Returns
+    -------
+    None
+    """
     catalog["x"] = catalog["x_centroid"]
     catalog["y"] = catalog["y_centroid"]
