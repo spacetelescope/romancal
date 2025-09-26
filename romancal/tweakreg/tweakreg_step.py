@@ -240,8 +240,7 @@ class TweakRegStep(RomanStep):
             with images:
                 for imcat in imcats:
                     image_model = images.borrow(imcat.meta["model_index"])
-                    if image_model.meta.cal_step.tweakreg != "FAILED":
-                        image_model.meta.cal_step.tweakreg = "COMPLETE"
+                    image_model.meta.cal_step.tweakreg = "COMPLETE"
                     # remove source catalog
                     del image_model.meta["tweakreg_catalog"]
 
