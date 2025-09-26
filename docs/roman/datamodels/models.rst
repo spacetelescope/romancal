@@ -145,11 +145,11 @@ You can examine the contents of your model from within python using
     root (AsdfObject)
     └─roman (WfiImage) # Level 2 (L2) Calibrated Roman Wide Field Instrument (WFI) Rate Image.
       ├─meta (dict)
-      │ ├─calibration_software_name (CalibrationSoftwareName): RomanCAL # Calibration Software Name
-      │ ├─calibration_software_version (CalibrationSoftwareVersion): 9.9.0 # Calibration Software Version Number
-      │ ├─filename (Filename): r0019106003005004023_0034_wfi01_cal.asdf # File Name
-      │ ├─file_date (FileDate): 2020-01-01T00:00:00.000
-      │ ├─model_type (ModelType): ImageModel # Data Model Type
+      │ ├─calibration_software_name (str): RomanCAL # Calibration Software Name
+      │ ├─calibration_software_version (str): 9.9.0 # Calibration Software Version Number
+      │ ├─filename (str): r0019106003005004023_0034_wfi01_cal.asdf # File Name
+      │ ├─file_date (Time): 2020-01-01T00:00:00.000 # File Creation Date
+      │ ├─model_type (str): ImageModel # Data Model Type
     ...
 
 or you can print specifics
