@@ -9,11 +9,14 @@ pytest.importorskip("romanisim")
 import numpy as np
 from astropy import table
 from astropy.time import Time
+from astropy.coordinates import SkyCoord
+from astropy import units as u
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from romanisim import bandpass, parameters
 
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
-from romancal.source_catalog.injection import inject_sources
+from romancal.source_catalog.injection import inject_sources, make_cosmoslike_catalog
+# from romancal.source_catalog import injection
 
 # Set parameters
 RA = 270.0
@@ -37,9 +40,6 @@ MEANFLUX = 0.2
 
 
 def make_test_data():
-    # Create Four-quadrant pattern of gaussian noise, centered around one
-    # Each quadrant's gaussian noise scales like total exposure time
-    # (total files contributed to each quadrant)
     noise_rng = np.random.default_rng(RNG_SEED)
 
     # Populate the data array with gaussian noise
@@ -118,9 +118,9 @@ def mosaic_model():
 def make_catalog(metadata):
     # Create WCS
     wcsobj = mk_gwcs(
-        metadata.wcsinfo.ra_ref,
-        metadata.wcsinfo.dec_ref,
-        metadata.wcsinfo.roll_ref,
+        metadata["wcsinfo"]["ra_ref"],
+        metadata["wcsinfo"]["dec_ref"],
+        metadata["wcsinfo"]["roll_ref"],
         bounding_box=((-0.5, SHAPE[0] - 0.5), (-0.5, SHAPE[1] - 0.5)),
         shape=SHAPE,
     )
@@ -200,3 +200,46 @@ def test_inject_sources(image_model, mosaic_model):
         total_rec_flux = np.sum(si_model.data - data_orig.data)  # MJy / sr
         total_theo_flux = len(cat) * MAG_FLUX * cps_conv * unit_factor  # u.MJy / u.sr
         assert np.isclose(total_rec_flux, total_theo_flux, rtol=0.1)
+
+
+def test_create_cosmoscat():
+    # Pointing
+    cen = SkyCoord(ra=RA * u.deg, dec=DEC * u.deg)
+
+    # WCS object for ra & dec conversion
+    wcsobj = mk_gwcs(RA, DEC, ROLL, bounding_box=((-0.5, SHAPE[0] - 0.5), (-0.5, SHAPE[1] - 0.5)), shape=SHAPE,)
+
+    # Convert x,y to ra, dec
+    ra, dec = wcsobj.pixel_to_world_values(np.array(XPOS_IDX), np.array(YPOS_IDX))
+
+    # Exposure time (s)
+    exptime = 300
+
+    # Generate cosmos-like catalog
+    cat = make_cosmoslike_catalog(cen, ra, dec, exptime, seed=RNG_SEED)
+
+    print(f"XXX cat = \n{cat}")
+
+    meta = {
+        "wcsinfo" : {
+            "ra_ref" : RA,
+            "dec_ref" : DEC,
+            "roll_ref" : ROLL,
+        }
+    }
+
+    mcat = make_catalog(meta)
+
+    print(f"\nXXX mcat = \n{mcat}")
+
+    print(f"\nXXX cat.colnames = {cat.colnames}")
+
+    assert np.allclose(np.sort(cat["ra"]), np.sort(mcat["ra"]))
+    assert np.allclose(np.sort(cat["dec"]), np.sort(mcat["dec"]))
+
+    assert np.sum(cat["type"] == "PSF") == 1
+    assert np.sum(cat["n"] == -1) == 1
+
+    # assert np.all(cat["type" == "PSF"] > 10.**(-(injection.HRPOINTMAGLIMIT+6) / 2.5)
+    # assert np.all(cat["type" == "PSF"] < 10.**(-(injection.HRPOINTMAGLIMIT-1) / 2.5)
+
