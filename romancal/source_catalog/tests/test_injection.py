@@ -31,6 +31,7 @@ SCA = 4
 FILTER = "F158"
 RNG_SEED = 42
 MATABLE = 4
+BANDPASSES = set(bandpass.galsim2roman_bandpass.values())
 
 # Create gaussian noise generators
 # sky should generate ~0.2 electron / s / pix.
@@ -221,11 +222,8 @@ def test_create_cosmoscat():
     # Exposure time (s)
     exptime = 300
 
-    # Filter for testing
-    filter = "F158"
-
     # Generate cosmos-like catalog
-    cat = make_cosmoslike_catalog(cen, ra, dec, exptime, filter=filter, seed=RNG_SEED)
+    cat = make_cosmoslike_catalog(cen, ra, dec, exptime, filter=FILTER, seed=RNG_SEED)
 
     # Set wcs metadata
     meta = {
@@ -253,14 +251,14 @@ def test_create_cosmoscat():
 
     # Ensure point fluxes in range
     assert np.all(
-        cat[cat["type"] == "PSF"][filter] < 10.0 ** (-(point_mag_limit - 6) / 2.5)
+        cat[cat["type"] == "PSF"][FILTER] < 10.0 ** (-(point_mag_limit - 6) / 2.5)
     )
     assert np.all(
-        cat[cat["type"] == "PSF"][filter] > 10.0 ** (-(point_mag_limit + 1) / 2.5)
+        cat[cat["type"] == "PSF"][FILTER] > 10.0 ** (-(point_mag_limit + 1) / 2.5)
     )
 
     # Ensure points lack color
-    for bandpass in injection.BANDPASSES:
+    for bandpass in BANDPASSES:
         assert np.all(
-            cat[cat["type"] == "PSF"][bandpass] == cat[cat["type"] == "PSF"][filter]
+            cat[cat["type"] == "PSF"][bandpass] == cat[cat["type"] == "PSF"][FILTER]
         )

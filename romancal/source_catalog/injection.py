@@ -8,18 +8,13 @@ import numpy as np
 from astropy import table
 from astropy import units as u
 from roman_datamodels.datamodels import ImageModel, MosaicModel
-from romanisim import bandpass, catalog
-from romanisim.image import inject_sources_into_l2
-from romanisim.l3 import inject_sources_into_l3
+
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 # One hour point source magnitude limit for F213
 HRPOINTMAGLIMIT = 25.64
-
-# WFI bandpasses
-BANDPASSES = set(bandpass.galsim2roman_bandpass.values())
 
 
 def inject_sources(model, si_cat):
@@ -39,6 +34,9 @@ def inject_sources(model, si_cat):
     new_model : `ImageModel` or `MosaicModel`
         Input model with added sources.
     """
+    from romanisim.image import inject_sources_into_l2
+    from romanisim.l3 import inject_sources_into_l3
+
 
     if isinstance(model, ImageModel):
         #  inject_sources_into_l2
@@ -80,6 +78,10 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     all_cat : astropy.Table
         Table for use with table_to_catalog to generate catalog for simulation.
     """
+    from romanisim import bandpass, catalog
+
+    # WFI bandpasses
+    BANDPASSES = set(bandpass.galsim2roman_bandpass.values())
 
     # Set random source index for the catalog
     rng_numpy = np.random.default_rng(seed)
