@@ -258,7 +258,7 @@ def test_create_cosmoscat():
     )
 
     # Ensure points lack color
-    for bandpass in BANDPASSES:
+    for bp in BANDPASSES:
         assert np.all(
-            cat[cat["type"] == "PSF"][bandpass] == cat[cat["type"] == "PSF"][FILTER]
+            cat[cat["type"] == "PSF"][bp] == cat[cat["type"] == "PSF"][FILTER]
         )

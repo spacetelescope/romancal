@@ -52,11 +52,11 @@ def inject_sources(model, si_cat):
 
 def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **kwargs):
     """
-    Generate a catalog of cosmos like galaxies and stars, with the following assumptions:
+    Generate a catalog of cosmos galaxies and stars, with the following assumptions:
     - 75% of objects will be galaxies, 25% will be point sources
-    - Galaxies will draw shapes and colors from the COSMOS catalog. Their position angles
-    are drawn from a uniform distribution. Shapes are to be log scaled to log magnitude
-    with ~1 mag spread.
+    - Galaxies will draw shapes and colors from the COSMOS catalog. Their position
+    angles are drawn from a uniform distribution. Shapes are to be log scaled to
+    log magnitude with ~1 mag spread.
     - Stars will vary in magnitude from 6 mag brighter to 1 mag fainter than the point
     mag limit. They will have no color.
 
@@ -127,8 +127,8 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     mags = point_mag_limit + rng_numpy.uniform(low=-6.0, high=1.0, size=num_stars)
 
     # Color = 0
-    for bandpass in BANDPASSES:
-        star_cat[bandpass] = (10.0 ** (-mags / 2.5)).astype("f4")
+    for bp in BANDPASSES:
+        star_cat[bp] = (10.0 ** (-mags / 2.5)).astype("f4")
 
     # Combine the objects
     all_cat = table.vstack([gal_cat, star_cat])
