@@ -8,12 +8,18 @@ from astropy import table, units as u
 
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 
+from romanisim import bandpass, catalog
+from romanisim.image import inject_sources_into_l2
+from romanisim.l3 import inject_sources_into_l3
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 # One hour point source magnitude limit for F213
 HRPOINTMAGLIMIT = 25.64
 
+# WFI bandpasses
+BANDPASSES = set(bandpass.galsim2roman_bandpass.values())
 
 
 def inject_sources(model, si_cat):
@@ -33,8 +39,7 @@ def inject_sources(model, si_cat):
     new_model : `ImageModel` or `MosaicModel`
         Input model with added sources.
     """
-    from romanisim.image import inject_sources_into_l2
-    from romanisim.l3 import inject_sources_into_l3
+
 
     if isinstance(model, ImageModel):
         #  inject_sources_into_l2
@@ -76,9 +81,6 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     all_cat : astropy.Table
         Table for use with table_to_catalog to generate catalog for simulation.
     """
-    from romanisim import bandpass, catalog
-
-    BANDPASSES = set(bandpass.galsim2roman_bandpass.values())
 
     # Set random source index for the catalog
     rng_numpy = np.random.default_rng(seed)
@@ -92,9 +94,7 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     # RSIM's make cosmos galaxies method will return cosmos like objects with
     # uniformly distributed position angles. Radius and area are set to return
     # a full sample.
-    gal_cat = catalog.make_cosmos_galaxies(cen, radius=1.0, cat_area=(1.0 / np.pi), **kwargs)
-
-    print(f"XXX len(gal_cat) = {len(gal_cat)}")
+    gal_cat = catalog.make_cosmos_galaxies(cen, radius=1.0, cat_area=(np.pi), **kwargs)
 
     # Trim to the required number of objects
     gal_cat = gal_cat[:num_gals]
@@ -117,9 +117,9 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     point_mag_limit = HRPOINTMAGLIMIT + (1.25 * np.log10((exptime * u.s).to(u.year).value))
 
     # Set magnitudes equal to the limit plus spread
-    # Note: for each filter the spread is about -1 to 4 and
-    # there is about +2 spread in the HRPOINTMAGLIMIT, hence -1 to 6
-    mags = rng_numpy.uniform(low=-1.0, high=6.0, size=num_stars) + point_mag_limit
+    # Note: for each filter the spread is about -4 to 1 and
+    # there is about +2 spread in the HRPOINTMAGLIMIT, hence -6 to 1
+    mags = point_mag_limit + rng_numpy.uniform(low=-6.0, high=1.0, size=num_stars)
 
     # Color = 0
     for bandpass in BANDPASSES:

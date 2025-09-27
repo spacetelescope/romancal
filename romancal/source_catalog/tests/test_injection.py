@@ -16,7 +16,7 @@ from romanisim import bandpass, parameters
 
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
 from romancal.source_catalog.injection import inject_sources, make_cosmoslike_catalog
-# from romancal.source_catalog import injection
+from romancal.source_catalog import injection
 
 # Set parameters
 RA = 270.0
@@ -215,11 +215,13 @@ def test_create_cosmoscat():
     # Exposure time (s)
     exptime = 300
 
+    # Filter for testing
+    filter = "F158"
+
     # Generate cosmos-like catalog
-    cat = make_cosmoslike_catalog(cen, ra, dec, exptime, seed=RNG_SEED)
+    cat = make_cosmoslike_catalog(cen, ra, dec, exptime, filter=filter, seed=RNG_SEED)
 
-    print(f"XXX cat = \n{cat}")
-
+    # Set wcs metadata
     meta = {
         "wcsinfo" : {
             "ra_ref" : RA,
@@ -230,16 +232,22 @@ def test_create_cosmoscat():
 
     mcat = make_catalog(meta)
 
-    print(f"\nXXX mcat = \n{mcat}")
-
-    print(f"\nXXX cat.colnames = {cat.colnames}")
-
+    # Ensure that locations are as expected
     assert np.allclose(np.sort(cat["ra"]), np.sort(mcat["ra"]))
     assert np.allclose(np.sort(cat["dec"]), np.sort(mcat["dec"]))
 
+    # Ensure correct number of point sources
     assert np.sum(cat["type"] == "PSF") == 1
     assert np.sum(cat["n"] == -1) == 1
 
-    # assert np.all(cat["type" == "PSF"] > 10.**(-(injection.HRPOINTMAGLIMIT+6) / 2.5)
-    # assert np.all(cat["type" == "PSF"] < 10.**(-(injection.HRPOINTMAGLIMIT-1) / 2.5)
+    # Set the point magnitude limit
+    point_mag_limit = injection.HRPOINTMAGLIMIT + (1.25 * np.log10((exptime * u.s).to(u.year).value))
+
+    # Ensure point fluxes in range
+    assert np.all(cat[cat["type"] == "PSF"][filter] < 10.**(-(point_mag_limit - 6) / 2.5))
+    assert np.all(cat[cat["type"] == "PSF"][filter] > 10.**(-(point_mag_limit + 1) / 2.5))
+
+    # Ensure points lack color
+    for bandpass in injection.BANDPASSES:
+        assert np.all(cat[cat["type"] == "PSF"][bandpass] == cat[cat["type"] == "PSF"][filter])
 
