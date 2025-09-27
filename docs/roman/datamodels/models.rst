@@ -160,5 +160,5 @@ or you can print specifics
     root (AsdfObject)
     └─roman (WfiImage) # Level 2 (L2) Calibrated Roman Wide Field Instrument (WFI) Rate Image.
       └─meta (dict)
-        └─instrument (WfiMode) # Wide Field Instrument (WFI) Configuration Information
+        └─instrument (dict) # Wide Field Instrument (WFI) Configuration Information
           └─detector (str): WFI01
