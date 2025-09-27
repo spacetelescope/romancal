@@ -3,11 +3,11 @@ Module to inject sources into existing image / mosaic.
 """
 
 import logging
+
 import numpy as np
-from astropy import table, units as u
-
+from astropy import table
+from astropy import units as u
 from roman_datamodels.datamodels import ImageModel, MosaicModel
-
 from romanisim import bandpass, catalog
 from romanisim.image import inject_sources_into_l2
 from romanisim.l3 import inject_sources_into_l3
@@ -39,7 +39,6 @@ def inject_sources(model, si_cat):
     new_model : `ImageModel` or `MosaicModel`
         Input model with added sources.
     """
-
 
     if isinstance(model, ImageModel):
         #  inject_sources_into_l2
@@ -87,7 +86,7 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     ran_idx = rng_numpy.permutation(len(xpos))
 
     # 75% of objects as galaxies, 25% of objects as point sources
-    num_stars = int(len(xpos)/4)
+    num_stars = int(len(xpos) / 4)
     num_gals = len(xpos) - num_stars
 
     # Galaxies
@@ -100,21 +99,25 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     gal_cat = gal_cat[:num_gals]
 
     # Set the sizes
-    gal_cat['half_light_radius'] = -2.5 * np.log10(gal_cat[filter] + rng_numpy.normal(num_gals))
+    gal_cat["half_light_radius"] = -2.5 * np.log10(
+        gal_cat[filter] + rng_numpy.normal(num_gals)
+    )
 
     # Stars
     # Create base table
     star_cat = table.Table()
-    star_cat['ra'] = num_stars * [0]
-    star_cat['dec'] = num_stars * [0]
-    star_cat['type'] = num_stars * ['PSF']
-    star_cat['n'] = num_stars * [-1]
-    star_cat['half_light_radius'] = num_stars * [0]
-    star_cat['pa'] = num_stars * [0]
-    star_cat['ba'] = num_stars * [1]
+    star_cat["ra"] = num_stars * [0]
+    star_cat["dec"] = num_stars * [0]
+    star_cat["type"] = num_stars * ["PSF"]
+    star_cat["n"] = num_stars * [-1]
+    star_cat["half_light_radius"] = num_stars * [0]
+    star_cat["pa"] = num_stars * [0]
+    star_cat["ba"] = num_stars * [1]
 
     # Set the point magnitude limit
-    point_mag_limit = HRPOINTMAGLIMIT + (1.25 * np.log10((exptime * u.s).to(u.year).value))
+    point_mag_limit = HRPOINTMAGLIMIT + (
+        1.25 * np.log10((exptime * u.s).to(u.year).value)
+    )
 
     # Set magnitudes equal to the limit plus spread
     # Note: for each filter the spread is about -4 to 1 and
@@ -123,13 +126,13 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
 
     # Color = 0
     for bandpass in BANDPASSES:
-        star_cat[bandpass] = (10.**(-mags / 2.5)).astype('f4')
+        star_cat[bandpass] = (10.0 ** (-mags / 2.5)).astype("f4")
 
     # Combine the objects
     all_cat = table.vstack([gal_cat, star_cat])
 
     # Set the positions to randomly selected objects
-    all_cat['ra'] = np.array(xpos)[ran_idx].tolist()
-    all_cat['dec'] = np.array(ypos)[ran_idx].tolist()
+    all_cat["ra"] = np.array(xpos)[ran_idx].tolist()
+    all_cat["dec"] = np.array(ypos)[ran_idx].tolist()
 
     return all_cat

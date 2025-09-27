@@ -8,15 +8,15 @@ pytest.importorskip("romanisim")
 
 import numpy as np
 from astropy import table
-from astropy.time import Time
-from astropy.coordinates import SkyCoord
 from astropy import units as u
+from astropy.coordinates import SkyCoord
+from astropy.time import Time
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from romanisim import bandpass, parameters
 
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
-from romancal.source_catalog.injection import inject_sources, make_cosmoslike_catalog
 from romancal.source_catalog import injection
+from romancal.source_catalog.injection import inject_sources, make_cosmoslike_catalog
 
 # Set parameters
 RA = 270.0
@@ -207,7 +207,13 @@ def test_create_cosmoscat():
     cen = SkyCoord(ra=RA * u.deg, dec=DEC * u.deg)
 
     # WCS object for ra & dec conversion
-    wcsobj = mk_gwcs(RA, DEC, ROLL, bounding_box=((-0.5, SHAPE[0] - 0.5), (-0.5, SHAPE[1] - 0.5)), shape=SHAPE,)
+    wcsobj = mk_gwcs(
+        RA,
+        DEC,
+        ROLL,
+        bounding_box=((-0.5, SHAPE[0] - 0.5), (-0.5, SHAPE[1] - 0.5)),
+        shape=SHAPE,
+    )
 
     # Convert x,y to ra, dec
     ra, dec = wcsobj.pixel_to_world_values(np.array(XPOS_IDX), np.array(YPOS_IDX))
@@ -223,10 +229,10 @@ def test_create_cosmoscat():
 
     # Set wcs metadata
     meta = {
-        "wcsinfo" : {
-            "ra_ref" : RA,
-            "dec_ref" : DEC,
-            "roll_ref" : ROLL,
+        "wcsinfo": {
+            "ra_ref": RA,
+            "dec_ref": DEC,
+            "roll_ref": ROLL,
         }
     }
 
@@ -241,13 +247,20 @@ def test_create_cosmoscat():
     assert np.sum(cat["n"] == -1) == 1
 
     # Set the point magnitude limit
-    point_mag_limit = injection.HRPOINTMAGLIMIT + (1.25 * np.log10((exptime * u.s).to(u.year).value))
+    point_mag_limit = injection.HRPOINTMAGLIMIT + (
+        1.25 * np.log10((exptime * u.s).to(u.year).value)
+    )
 
     # Ensure point fluxes in range
-    assert np.all(cat[cat["type"] == "PSF"][filter] < 10.**(-(point_mag_limit - 6) / 2.5))
-    assert np.all(cat[cat["type"] == "PSF"][filter] > 10.**(-(point_mag_limit + 1) / 2.5))
+    assert np.all(
+        cat[cat["type"] == "PSF"][filter] < 10.0 ** (-(point_mag_limit - 6) / 2.5)
+    )
+    assert np.all(
+        cat[cat["type"] == "PSF"][filter] > 10.0 ** (-(point_mag_limit + 1) / 2.5)
+    )
 
     # Ensure points lack color
     for bandpass in injection.BANDPASSES:
-        assert np.all(cat[cat["type"] == "PSF"][bandpass] == cat[cat["type"] == "PSF"][filter])
-
+        assert np.all(
+            cat[cat["type"] == "PSF"][bandpass] == cat[cat["type"] == "PSF"][filter]
+        )
