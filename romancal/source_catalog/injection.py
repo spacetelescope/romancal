@@ -9,7 +9,6 @@ from astropy import table
 from astropy import units as u
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 
-
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -36,7 +35,6 @@ def inject_sources(model, si_cat):
     """
     from romanisim.image import inject_sources_into_l2
     from romanisim.l3 import inject_sources_into_l3
-
 
     if isinstance(model, ImageModel):
         #  inject_sources_into_l2
