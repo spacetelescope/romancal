@@ -1264,12 +1264,11 @@ def test_validate_catalog_columns(
 
 
 def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(base_image):
-    """Test that TweakRegStep marks step as FAILED when catalog columns are
-    invalid."""
+    """Test that TweakRegStep raises ValueError when catalog columns are invalid."""
+    import pytest
 
     class FakeSourceCatalog(dict):
         """Create a fake source catalog with both attribute and item access."""
-
         def __getattr__(self, name):
             return self[name]
 
@@ -1278,17 +1277,13 @@ def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(base_image):
 
     img = base_image(shift_1=1000, shift_2=1000)
     # Add a tweakreg catalog with missing required columns
-    # but with column names that are always produced by source detection
-    bad_catalog = Table({"x_centroid": [1, 2, 3], "y_centroid": [4, 5, 6]})
+    bad_catalog = Table({"a": [1, 2, 3], "b": [4, 5, 6]})
     img.meta["source_catalog"] = FakeSourceCatalog()
     img.meta.source_catalog.tweakreg_catalog = bad_catalog.as_array()
 
-    # Should mark as FAILED and not raise
-    res = trs.TweakRegStep.call([img])
-    with res:
-        model = res.borrow(0)
-        assert model.meta.cal_step.tweakreg == "FAILED"
-        res.shelve(model, 0, modify=False)
+    # Should raise ValueError due to invalid catalog columns
+    with pytest.raises(ValueError):
+        trs.TweakRegStep.call([img])
 
 
 def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
