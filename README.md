@@ -133,9 +133,9 @@ To build the docs yourself, clone this repository and build the documentation wi
 ## Contributions and Feedback
 
 We welcome contributions and feedback on the project. Please follow the
-[contributing guidelines](CONTRIBUTING.md) to submit an issue or a pull request.
+[contributing guidelines](https://github.com/spacetelescope/romancal/blob/main/CONTRIBUTING.md) to submit an issue or a pull request.
 
-We strive to provide a welcoming community to all of our users by abiding with the [Code of Conduct](CODE_OF_CONDUCT.md)
+We strive to provide a welcoming community to all of our users by abiding with the [Code of Conduct](https://github.com/spacetelescope/romancal/blob/main/CODE_OF_CONDUCT.md)
 .
 
 If you have questions or concerns regarding the software, please open
