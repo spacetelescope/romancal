@@ -1269,6 +1269,7 @@ def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(base_image):
 
     class FakeSourceCatalog(dict):
         """Create a fake source catalog with both attribute and item access."""
+
         def __getattr__(self, name):
             return self[name]
 
