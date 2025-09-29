@@ -270,9 +270,9 @@ def test_skycells(skymap_subset):
         ("135p90x52y59", True),
     ],
 )
-def test_skycell_exclusively_contains_center(name, expected, skymap_subset):
+def test_skycell_core_contains_center(name, expected, skymap_subset):
     skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
-    assert skycell.exclusivity[2500, 2500] == expected
+    assert skycell.core[2500, 2500] == expected
 
 
 @pytest.mark.parametrize(
@@ -296,6 +296,6 @@ def test_skycell_exclusively_contains_center(name, expected, skymap_subset):
         ("135p90x67y38", 24010000),
     ],
 )
-def test_skycell_exclusively_contains_pixels(name, expected, skymap_subset):
+def test_skycell_core_contains_pixels(name, expected, skymap_subset):
     skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
-    assert len(np.where(skycell.exclusivity)[0]) == expected
+    assert len(np.where(skycell.core)[0]) == expected
