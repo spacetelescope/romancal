@@ -1229,7 +1229,7 @@ def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_ima
 
 
 @pytest.mark.parametrize(
-    "catalog_data, expected_colnames, raises_exception",
+    "catalog_data, expected_colnames, flags_step_as_failed",
     [
         # both 'x' and 'y' columns present
         ({"x": [1, 2, 3], "y": [4, 5, 6]}, ["x", "y"], False),
@@ -1251,16 +1251,40 @@ def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_ima
         ),
     ],
 )
-def test_validate_catalog_columns(catalog_data, expected_colnames, raises_exception):
+def test_validate_catalog_columns(
+    catalog_data, expected_colnames, flags_step_as_failed
+):
     """Test that TweakRegStep._validate_catalog_columns() correctly validates the
     presence of required columns ('x' and 'y') in the provided catalog."""
     catalog = Table(catalog_data)
-    if raises_exception:
-        with pytest.raises(ValueError):
-            _validate_catalog_columns(catalog)
-    else:
-        _validate_catalog_columns(catalog)
+    is_valid = _validate_catalog_columns(catalog)
+    assert is_valid is not flags_step_as_failed
+    if expected_colnames is not None:
         assert set(catalog.colnames) == set(expected_colnames)
+
+
+def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(base_image):
+    """Test that TweakRegStep raises ValueError when catalog columns are invalid."""
+    import pytest
+
+    class FakeSourceCatalog(dict):
+        """Create a fake source catalog with both attribute and item access."""
+
+        def __getattr__(self, name):
+            return self[name]
+
+        def __setattr__(self, name, value):
+            self[name] = value
+
+    img = base_image(shift_1=1000, shift_2=1000)
+    # Add a tweakreg catalog with missing required columns
+    bad_catalog = Table({"a": [1, 2, 3], "b": [4, 5, 6]})
+    img.meta["source_catalog"] = FakeSourceCatalog()
+    img.meta.source_catalog.tweakreg_catalog = bad_catalog.as_array()
+
+    # Should raise ValueError due to invalid catalog columns
+    with pytest.raises(ValueError):
+        trs.TweakRegStep.call([img])
 
 
 def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
