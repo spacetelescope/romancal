@@ -283,54 +283,62 @@ class SkyCell:
             & (y < ny - margin - 0.5)
         )
 
-    def exclusively_contains(
-        self, x: float | NDArray[float], y: float | NDArray[float]
-    ) -> bool | NDArray[bool]:
+    @cached_property
+    def exclusivity(self) -> NDArray[bool]:
         """
-        Whether the given pixel coordinate(s) exist within the exclusive, non-overlapping region of this skycell.
-        Coordinates flagged as belonging to this skycell will NOT belong to any other skycell.
-
-        Parameters
-        ----------
-        x: float | NDArray[float]
-            x pixel coordinate(s)
-        y: float | NDArray[float]
-            y pixel coordinate(s)
-
-        Returns
-        -------
-        whether coordinate(s) belong exclusively to this skycell
+        2D boolean mask comprising the exclusive, non-overlapping pixels of this skycell.
+        Pixels flagged as belonging to this skycell will NOT belong to any other skycell.
         """
 
-        nx = self._skymap.pixel_shape[0]
-        ny = self._skymap.pixel_shape[1]
+        xy = np.vstack(np.mgrid[0 : self.pixel_shape[0], 0 : self.pixel_shape[1]].T)
 
         # whether points are outside the half-margin (sharing with neighboring skycells)
         # we do NOT need to handle the outer non-overlapping margin of skycells at the edge of the projection region, because the region border cuts them off
         half_margin = self._skymap.model.meta["skycell_border_pixels"] / 2
-        outside_half_margin = (
-            (half_margin - 0.5 < x)
-            & (x < nx - half_margin - 0.5)
-            & (half_margin - 0.5 < y)
-            & (y < ny - half_margin - 0.5)
+        in_exclusive_region = (
+            (half_margin - 0.5 < xy[:, 0])
+            & (xy[:, 0] < self._skymap.pixel_shape[0] - half_margin - 0.5)
+            & (half_margin - 0.5 < xy[:, 1])
+            & (xy[:, 1] < self._skymap.pixel_shape[1] - half_margin - 0.5)
         )
 
-        # only convert pixel coordinates to world coordinates if there are pixels outside the half-margin
-        if np.any(outside_half_margin):
-            radec = self.wcs.pixel_to_world(x, y)
-            ra = radec.ra.degree
-            dec = radec.dec.degree
+        # construct corners points of this skycell
+        corners = self.wcs.pixel_to_world(
+            [-0.5, -0.5, self.pixel_shape[0] - 0.5, self.pixel_shape[0] - 0.5],
+            [-0.5, self.pixel_shape[1] - 0.5, self.pixel_shape[1] - 0.5, -0.5],
+        )
 
-            # whether points are outside the half-margin AND within the coordinate bounds of the projection region
-            return (
-                outside_half_margin
-                & (self.projection_region.data["ra_min"] < ra)
-                & (ra < self.projection_region.data["ra_max"])
-                & (self.projection_region.data["dec_min"] < dec)
-                & (dec < self.projection_region.data["dec_max"])
+        projregion_ra_min = self.projection_region.data["ra_min"]
+        projregion_ra_max = self.projection_region.data["ra_max"]
+        if projregion_ra_min > projregion_ra_max:
+            projregion_ra_min -= 360
+
+        # only convert pixels to world coordinates if a corner of this skycell lies OUTSIDE the bounds of the projection region
+        if ~np.all(
+            (projregion_ra_min < corners.ra.degree)
+            & (corners.ra.degree < projregion_ra_max)
+            & (self.projection_region.data["dec_min"] < corners.dec.degree)
+            & (corners.dec.degree < self.projection_region.data["dec_max"])
+        ):
+            radec = self.wcs.pixel_to_world(xy[:, 0], xy[:, 1])
+
+            ra = radec.ra.degree
+            if (
+                self.projection_region.data["ra_min"]
+                > self.projection_region.data["ra_max"]
+            ):
+                ra -= 360
+
+            # whether points lie within the exclusive region AND within the coordinate bounds of the projection region
+            in_exclusive_region = (
+                in_exclusive_region
+                & (projregion_ra_min < ra)
+                & (ra < projregion_ra_max)
+                & (self.projection_region.data["dec_min"] < radec.dec.degree)
+                & (radec.dec.degree < self.projection_region.data["dec_max"])
             )
-        else:
-            return False
+
+        return np.resize(in_exclusive_region, new_shape=self.pixel_shape)
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, SkyCell):
