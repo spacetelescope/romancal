@@ -254,37 +254,8 @@ class SkyCell:
         wcsobj.array_shape = self.pixel_shape
         return wcsobj
 
-    def core_contains(
-        self, x: float | NDArray[float], y: float | NDArray[float]
-    ) -> bool | NDArray[bool]:
-        """
-        Whether the given pixel coordinate(s) exist within the core region of this skycell (not within the overlapping margin with neighboring skycells).
-
-        Parameters
-        ----------
-        x: float | NDArray[float]
-            x pixel coordinate(s)
-        y: float | NDArray[float]
-            y pixel coordinate(s)
-
-        Returns
-        -------
-        whether coordinate(s) are within the core region of this skycell
-        """
-
-        nx = self._skymap.pixel_shape[0]
-        ny = self._skymap.pixel_shape[1]
-
-        margin = self._skymap.model.meta["skycell_border_pixels"]
-        return (
-            (margin - 0.5 < x)
-            & (x < nx - margin - 0.5)
-            & (margin - 0.5 < y)
-            & (y < ny - margin - 0.5)
-        )
-
     @cached_property
-    def exclusivity(self) -> NDArray[bool]:
+    def core(self) -> NDArray[bool]:
         """
         2D boolean mask comprising the exclusive, non-overlapping pixels of this skycell.
         Pixels flagged as belonging to this skycell will NOT belong to any other skycell.
