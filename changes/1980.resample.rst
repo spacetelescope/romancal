@@ -1,0 +1,3 @@
+Update ``resample`` step to use an explicit ``individual_image_meta`` table constructor
+that is being added to RDM, that directly uses the RAD schemas to build the tables, rather
+than relying on inferring the tables from the input data.
