@@ -804,23 +804,20 @@ class ProjectionRegion:
         """degrees per pixel"""
         return self._skymap.pixel_scale
 
-    def skycells_at(
-        self,
-        ra: tuple[float, float] | NDArray[float],
-        dec: tuple[float, float] | NDArray[float],
-    ) -> list[SkyCell]:
+    def skycells_at(self, radec: NDArray[float]) -> list[SkyCell]:
         """
         skycells containing the given point
 
         Parameters
         ----------
-        ra: tuple[float, float] | NDArray[float]
-            right ascension of coordinate(s)
-        dec: tuple[float, float] | NDArray[float]
-            right ascension of coordinate(s)
+        radec: NDArray[float]
+            right ascension and declination of coordinate(s)
         """
+        radec = np.array(radec)
+        if radec.ndim == 1:
+            radec = np.expand_dims(radec, axis=0)
 
-        vectorpoints = sgv.lonlat_to_vector(ra, dec)
+        vectorpoints = sgv.lonlat_to_vector(radec[:, 0], radec[:, 1])
         if not isinstance(vectorpoints, NDArray):
             vectorpoints = np.ndarray([vectorpoints])
         vectorpoints = sgv.normalize_vector(vectorpoints)
