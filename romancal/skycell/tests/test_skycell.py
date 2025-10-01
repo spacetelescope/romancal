@@ -257,7 +257,7 @@ def test_skycells(skymap_subset):
     [
         ("000p86x31y33", True),
         ("000p86x30y34", True),
-        ("000p86x50y65", True),
+        ("000p86x50y65", False),
         ("000p86x54y69", False),
         ("000p86x59y38", True),
         ("000p86x62y35", True),
@@ -273,6 +273,9 @@ def test_skycells(skymap_subset):
 def test_skycell_core_contains_center(name, expected, skymap_subset):
     skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
     assert skycell.core[2500, 2500] == expected
+    assert (
+        skycell.core_contains(skycell.wcs.pixel_to_world_values(2500, 2500)) == expected
+    )
 
 
 @pytest.mark.parametrize(
@@ -280,11 +283,11 @@ def test_skycell_core_contains_center(name, expected, skymap_subset):
     [
         ("000p86x31y33", 24010000),
         ("000p86x30y34", 24010000),
-        ("000p86x50y65", 24010000),
+        ("000p86x50y65", 0),
         ("000p86x54y69", 0),
         ("000p86x59y38", 24010000),
         ("000p86x62y35", 20277310),
-        ("135p90x25y49", 782163),
+        ("135p90x25y49", 0),
         ("135p90x30y51", 24010000),
         ("135p90x33y62", 24010000),
         ("135p90x39y33", 24010000),
@@ -296,6 +299,32 @@ def test_skycell_core_contains_center(name, expected, skymap_subset):
         ("135p90x67y38", 24010000),
     ],
 )
-def test_skycell_core_contains_pixels(name, expected, skymap_subset):
+def test_skycell_core_pixelcount(name, expected, skymap_subset):
     skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
     assert len(np.where(skycell.core)[0]) == expected
+
+
+@pytest.mark.parametrize(
+    "name,radec,expected",
+    [
+        ("000p86x31y33", [68.5, 3.0], False),
+        ("000p86x30y34", [68.5, 3.0], False),
+        ("000p86x50y65", [68.5, 3.0], False),
+        ("000p86x54y69", [68.5, 3.0], False),
+        ("000p86x59y38", [68.5, 3.0], False),
+        ("000p86x62y35", [68.5, 3.0], False),
+        ("135p90x25y49", [68.5, 3.0], False),
+        ("135p90x30y51", [68.5, 3.0], False),
+        ("135p90x33y62", [68.5, 3.0], False),
+        ("135p90x39y33", [68.5, 3.0], False),
+        ("135p90x43y65", [68.5, 3.0], False),
+        ("135p90x48y41", [68.5, 3.0], False),
+        ("135p90x52y59", [68.5, 3.0], False),
+        ("135p90x57y35", [68.5, 3.0], False),
+        ("135p90x61y67", [68.5, 3.0], False),
+        ("135p90x67y38", [68.5, 3.0], False),
+    ],
+)
+def test_skycell_core_contains(name, radec, expected, skymap_subset):
+    skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
+    assert skycell.core_contains(radec) == expected

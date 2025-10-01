@@ -274,26 +274,25 @@ class SkyCell:
         )
 
         # construct corners points of this skycell
-        corners = self.wcs.pixel_to_world(
+        corners_ra, corners_dec = self.wcs.pixel_to_world_values(
             [-0.5, -0.5, self.pixel_shape[0] - 0.5, self.pixel_shape[0] - 0.5],
             [-0.5, self.pixel_shape[1] - 0.5, self.pixel_shape[1] - 0.5, -0.5],
         )
 
         projregion_ra_min = self.projection_region.data["ra_min"]
-        projregion_ra_max = self.projection_region.data["ra_max"]
-        if projregion_ra_min > projregion_ra_max:
+        if projregion_ra_min > self.projection_region.data["ra_max"]:
             projregion_ra_min -= 360
+            corners_ra -= 360
 
         # only convert pixels to world coordinates if a corner of this skycell lies OUTSIDE the bounds of the projection region
         if ~np.all(
-            (projregion_ra_min < corners.ra.degree)
-            & (corners.ra.degree < projregion_ra_max)
-            & (self.projection_region.data["dec_min"] < corners.dec.degree)
-            & (corners.dec.degree < self.projection_region.data["dec_max"])
+            (projregion_ra_min < corners_ra)
+            & (corners_ra < self.projection_region.data["ra_max"])
+            & (self.projection_region.data["dec_min"] < corners_dec)
+            & (corners_dec < self.projection_region.data["dec_max"])
         ):
-            radec = self.wcs.pixel_to_world(xy[:, 0], xy[:, 1])
+            ra, dec = self.wcs.pixel_to_world_values(xy[:, 0], xy[:, 1])
 
-            ra = radec.ra.degree
             if (
                 self.projection_region.data["ra_min"]
                 > self.projection_region.data["ra_max"]
@@ -304,12 +303,40 @@ class SkyCell:
             in_exclusive_region = (
                 in_exclusive_region
                 & (projregion_ra_min < ra)
-                & (ra < projregion_ra_max)
-                & (self.projection_region.data["dec_min"] < radec.dec.degree)
-                & (radec.dec.degree < self.projection_region.data["dec_max"])
+                & (ra < self.projection_region.data["dec_max"])
+                & (self.projection_region.data["dec_min"] < dec)
+                & (dec < self.projection_region.data["dec_max"])
             )
 
         return np.resize(in_exclusive_region, new_shape=self.pixel_shape)
+
+    def core_contains(self, radec: NDArray[np.float64]) -> NDArray[np.bool]:
+        radec = np.array(radec)
+        if radec.ndim == 1:
+            radec = np.expand_dims(radec, axis=0)
+
+        x, y = self.wcs.world_to_pixel_values(radec[:, 0], radec[:, 1])
+
+        core_contains = np.zeros(radec.shape[0]).astype(bool)
+
+        within_bounds = ~np.isnan(x) & ~np.isnan(y)
+        if np.any(within_bounds):
+            x = x[within_bounds]
+            y = y[within_bounds]
+
+            whole = (np.mod(x, 1) == 0) & (np.mod(y, 1) == 0)
+
+            if np.any(whole):
+                core_contains[whole] = self.core[
+                    x[whole].astype(int), y[whole].astype(int)
+                ]
+
+            if np.any(~whole):
+                core_contains[~whole] = self.core[
+                    np.round(x[~whole]).astype(int), np.round(y[~whole]).astype(int)
+                ]
+
+        return core_contains
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, SkyCell):
