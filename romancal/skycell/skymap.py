@@ -274,9 +274,10 @@ class SkyCell:
         )
 
         # construct corners points of this skycell
-        corners_ra, corners_dec = self.wcs.pixel_to_world_values(
+        corners_ra, corners_dec = self.wcs(
             [-0.5, -0.5, self.pixel_shape[0] - 0.5, self.pixel_shape[0] - 0.5],
             [-0.5, self.pixel_shape[1] - 0.5, self.pixel_shape[1] - 0.5, -0.5],
+            with_bounding_box=False,
         )
 
         projregion_ra_min = self.projection_region.data["ra_min"]
@@ -291,7 +292,7 @@ class SkyCell:
             & (self.projection_region.data["dec_min"] < corners_dec)
             & (corners_dec < self.projection_region.data["dec_max"])
         ):
-            ra, dec = self.wcs.pixel_to_world_values(xy[:, 0], xy[:, 1])
+            ra, dec = self.wcs.invert(xy[:, 0], xy[:, 1], with_bounding_box=False)
 
             if (
                 self.projection_region.data["ra_min"]
@@ -315,7 +316,7 @@ class SkyCell:
         if radec.ndim == 1:
             radec = np.expand_dims(radec, axis=0)
 
-        x, y = self.wcs.world_to_pixel_values(radec[:, 0], radec[:, 1])
+        x, y = self.wcs(radec[:, 0], radec[:, 1])
 
         core_contains = np.zeros(radec.shape[0]).astype(bool)
 
