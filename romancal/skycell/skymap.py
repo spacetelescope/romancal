@@ -280,10 +280,11 @@ class SkyCell:
             with_bounding_box=False,
         )
 
+        # handle longitude wrapping around 0
         projregion_ra_min = self.projection_region.data["ra_min"]
         if projregion_ra_min > self.projection_region.data["ra_max"]:
+            corners_ra[corners_ra > self.projection_region.data["ra_min"]] -= 360
             projregion_ra_min -= 360
-            corners_ra -= 360
 
         # only convert pixels to world coordinates if a corner of this skycell lies OUTSIDE the bounds of the projection region
         if ~np.all(
@@ -292,19 +293,20 @@ class SkyCell:
             & (self.projection_region.data["dec_min"] < corners_dec)
             & (corners_dec < self.projection_region.data["dec_max"])
         ):
-            ra, dec = self.wcs.invert(xy[:, 0], xy[:, 1], with_bounding_box=False)
+            ra, dec = self.wcs(xy[:, 0], xy[:, 1], with_bounding_box=False)
 
+            # handle longitude wrapping around 0
             if (
                 self.projection_region.data["ra_min"]
                 > self.projection_region.data["ra_max"]
             ):
-                ra -= 360
+                ra[ra > self.projection_region.data["ra_min"]] -= 360
 
             # whether points lie within the exclusive region AND within the coordinate bounds of the projection region
             in_exclusive_region = (
                 in_exclusive_region
                 & (projregion_ra_min < ra)
-                & (ra < self.projection_region.data["dec_max"])
+                & (ra < self.projection_region.data["ra_max"])
                 & (self.projection_region.data["dec_min"] < dec)
                 & (dec < self.projection_region.data["dec_max"])
             )
@@ -316,7 +318,7 @@ class SkyCell:
         if radec.ndim == 1:
             radec = np.expand_dims(radec, axis=0)
 
-        x, y = self.wcs(radec[:, 0], radec[:, 1])
+        x, y = self.wcs.invert(radec[:, 0], radec[:, 1])
 
         core_contains = np.zeros(radec.shape[0]).astype(bool)
 
