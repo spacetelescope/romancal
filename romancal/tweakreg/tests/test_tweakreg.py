@@ -982,13 +982,11 @@ def test_parse_catfile_raises_error_on_invalid_content(tmp_path, catfile_line_co
         trs._parse_catfile(catfile)
 
 
-def test_update_source_catalog_coordinates(tmp_path, base_image):
+def test_update_source_catalog_coordinates(function_jail, base_image):
     """Test that TweakReg updates the catalog coordinates with the tweaked WCS."""
 
-    os.chdir(tmp_path)
-
     img = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
+    add_tweakreg_catalog_attribute(function_jail, img, catalog_filename="img_1")
 
     # create ImageSourceCatalogModel
     source_catalog = setup_source_catalog(img)
@@ -1027,13 +1025,11 @@ def test_update_source_catalog_coordinates(tmp_path, base_image):
     np.testing.assert_array_equal(cat_dec_psf, expected_psf[1])
 
 
-def test_source_catalog_coordinates_have_changed(tmp_path, base_image):
+def test_source_catalog_coordinates_have_changed(function_jail, base_image):
     """Test that the original catalog file content is different from the updated file."""
 
-    os.chdir(tmp_path)
-
     img = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
+    add_tweakreg_catalog_attribute(function_jail, img, catalog_filename="img_1")
 
     # create ImageSourceCatalogModel
     source_catalog = setup_source_catalog(img)

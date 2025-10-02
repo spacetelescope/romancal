@@ -1,11 +1,14 @@
 """Project default for pytest"""
 
+from __future__ import annotations
+
 import inspect
 import json
 import logging
-import os
 import sys
+from contextlib import chdir
 from io import StringIO
+from typing import TYPE_CHECKING
 
 import pytest
 from astropy import coordinates as coord
@@ -18,6 +21,10 @@ from roman_datamodels import stnode
 
 from romancal.assign_wcs import pointing
 from romancal.assign_wcs.utils import add_s_region
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from pathlib import Path
 
 collect_ignore = ["lib/dqflags.py"]
 
@@ -52,14 +59,10 @@ def dms_logger():
 
 
 @pytest.fixture(scope="function")
-def function_jail(tmp_path):
+def function_jail(tmp_path) -> Generator[Path, None, None]:
     """Perform test in a pristine temporary working directory."""
-    old_dir = os.getcwd()
-    os.chdir(tmp_path)
-    try:
-        yield str(tmp_path)
-    finally:
-        os.chdir(old_dir)
+    with chdir(tmp_path):
+        yield tmp_path
 
 
 @pytest.fixture(scope="module")
@@ -70,14 +73,13 @@ def module_jail(request, tmp_path_factory):
     instead of function.  This allows a fixture using it to produce files in a
     temporary directory, and then have the tests access them.
     """
-    old_dir = os.getcwd()
     path = request.module.__name__.split(".")[-1]
     if request._parent_request.fixturename is not None:
         path = path + "_" + request._parent_request.fixturename
     newpath = tmp_path_factory.mktemp(path)
-    os.chdir(str(newpath))
-    yield newpath
-    os.chdir(old_dir)
+
+    with chdir(newpath):
+        yield newpath
 
 
 @pytest.hookimpl(trylast=True)
