@@ -3,6 +3,7 @@ import os.path as op
 import pprint
 import shutil
 import sys
+from contextlib import chdir
 from difflib import unified_diff
 from glob import glob as _sys_glob
 from pathlib import Path
@@ -215,15 +216,12 @@ class RegtestData:
             self.truth_remote = path
         if docopy is None:
             docopy = self.docopy
-        os.makedirs("truth", exist_ok=True)
-        os.chdir("truth")
-        try:
+
+        truth_dir = Path("truth")
+        truth_dir.mkdir(exist_ok=True)
+        with chdir(truth_dir):
             self.truth = get_bigdata(self._inputs_root, self._env, path, docopy=docopy)
             self.truth_remote = os.path.join(self._inputs_root, self._env, path)
-        except BigdataError:
-            os.chdir("..")
-            raise
-        os.chdir("..")
 
         return self.truth
 

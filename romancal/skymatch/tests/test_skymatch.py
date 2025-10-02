@@ -1,4 +1,3 @@
-import os
 from itertools import product
 
 import astropy.units as u
@@ -404,13 +403,12 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
 def test_skymatch_always_returns_modellibrary_with_updated_datamodels(
     input_type,
     mk_sky_match_image_models,
-    tmp_path,
     create_mock_asn_file,
+    function_jail,
 ):
     """Test that the SkyMatchStep always returns a ModelLibrary
     with updated data models after processing different input types."""
 
-    os.chdir(tmp_path)
     [im1a, im1b, im2a, im2b, im3], dq_mask = mk_sky_match_image_models
 
     im1a.meta.filename = "im1a.asdf"
@@ -420,12 +418,12 @@ def test_skymatch_always_returns_modellibrary_with_updated_datamodels(
     im3.meta.filename = "im3.asdf"
 
     library = ModelLibrary([im1a, im1b, im2a, im2b, im3])
-    library._save(tmp_path)
+    library._save(function_jail)
 
     step_input_map = {
         "ModelLibrary": library,
         "ASNFile": create_mock_asn_file(
-            tmp_path,
+            function_jail,
             members_mapping=[
                 {"expname": im1a.meta.filename, "exptype": "science"},
                 {"expname": im1b.meta.filename, "exptype": "science"},

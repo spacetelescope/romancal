@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from re import match
 
@@ -113,8 +112,7 @@ def image_model():
     return model
 
 
-def test_forced_catalog(image_model, tmp_path):
-    os.chdir(tmp_path)
+def test_forced_catalog(image_model, function_jail):
     step = SourceCatalogStep()
     _ = step.call(
         image_model,
@@ -158,9 +156,8 @@ def test_forced_catalog(image_model, tmp_path):
     ),
 )
 def test_l2_source_catalog(
-    image_model, snr_threshold, npixels, nsources, save_results, tmp_path
+    image_model, snr_threshold, npixels, nsources, save_results, function_jail
 ):
-    os.chdir(tmp_path)
     step = SourceCatalogStep()
     result = step.call(
         image_model,
@@ -218,9 +215,8 @@ def test_l2_source_catalog(
     ),
 )
 def test_l3_source_catalog(
-    mosaic_model, snr_threshold, npixels, nsources, save_results, tmp_path
+    mosaic_model, snr_threshold, npixels, nsources, save_results, function_jail
 ):
-    os.chdir(tmp_path)
     step = SourceCatalogStep()
 
     # Create model and set some crucial meta required to
@@ -268,11 +264,10 @@ def test_l3_source_catalog(
         assert np.any(cat["dec"])
 
 
-def test_background(mosaic_model, tmp_path):
+def test_background(mosaic_model, function_jail):
     """
     Test background fallback when Background2D fails.
     """
-    os.chdir(tmp_path)
     step = SourceCatalogStep()
     result = step.call(
         mosaic_model,
@@ -288,12 +283,11 @@ def test_background(mosaic_model, tmp_path):
     assert isinstance(cat, Table)
 
 
-def test_l2_input_model_unchanged(image_model, tmp_path):
+def test_l2_input_model_unchanged(image_model, function_jail):
     """
     Test that the input model data and error arrays are unchanged after
     processing by SourceCatalogStep.
     """
-    os.chdir(tmp_path)
     original_data = image_model.data.copy()
     original_err = image_model.err.copy()
 
@@ -312,12 +306,11 @@ def test_l2_input_model_unchanged(image_model, tmp_path):
     assert_equal(original_err, image_model.err)
 
 
-def test_l3_input_model_unchanged(mosaic_model, tmp_path):
+def test_l3_input_model_unchanged(mosaic_model, function_jail):
     """
     Test that the input model data and error arrays are unchanged after
     processing by SourceCatalogStep.
     """
-    os.chdir(tmp_path)
     original_data = mosaic_model.data.copy()
     original_err = mosaic_model.err.copy()
 
@@ -336,7 +329,7 @@ def test_l3_input_model_unchanged(mosaic_model, tmp_path):
     assert_equal(original_err, mosaic_model.err)
 
 
-def test_invalid_step_inputs(image_model, mosaic_model):
+def test_invalid_step_inputs(image_model, mosaic_model, function_jail):
     for input_model in (image_model, mosaic_model):
         model = input_model.copy()
         model.data = np.full(model.data.shape, np.nan)
@@ -357,7 +350,7 @@ def test_inputs(mosaic_model):
         RomanSourceCatalog(np.ones((3, 3)), segm, cdata, kernel_fwhm, fit_psf=True)
 
 
-def test_psf_photometry(tmp_path, image_model):
+def test_psf_photometry(function_jail, image_model):
     """
     Test PSF photometry.
     """
@@ -390,7 +383,7 @@ def test_psf_photometry(tmp_path, image_model):
 
 
 @pytest.mark.parametrize("fit_psf", [True, False])
-def test_do_psf_photometry_column_names(tmp_path, image_model, fit_psf):
+def test_do_psf_photometry_column_names(function_jail, image_model, fit_psf):
     """
     Test that fit_psf will determine whether the PSF
     photometry columns are added to the final catalog or not.
@@ -483,14 +476,13 @@ def test_l2_source_catalog_keywords(
     return_updated_model,
     expected_result,
     expected_outputs,
-    tmp_path,
     monkeypatch,
+    function_jail,
 ):
     """
     Test that the proper object is returned in the call to SourceCatalogStep
     and that the desired output files are saved to the disk with the correct type.
     """
-    os.chdir(tmp_path)
     monkeypatch.setattr(
         SourceCatalogStep, "return_updated_model", return_updated_model, raising=False
     )
@@ -521,7 +513,7 @@ def test_l2_source_catalog_keywords(
         # none_cat.parquet), this test needs to know how to translate that back
         # to the equivalent segmentation file.
         basefilename = result.meta.filename.split("_")[0]
-        filepath = Path(tmp_path / f"{basefilename}_{suffix}.{ext}")
+        filepath = Path(function_jail / f"{basefilename}_{suffix}.{ext}")
         assert filepath.exists()
 
         if suffix == "cat":
@@ -595,14 +587,13 @@ def test_l3_source_catalog_keywords(
     return_updated_model,
     expected_result,
     expected_outputs,
-    tmp_path,
     monkeypatch,
+    function_jail,
 ):
     """
     Test that the proper object is returned in the call to SourceCatalogStep
     and that the desired output files are saved to the disk with the correct type.
     """
-    os.chdir(tmp_path)
     # this step attribute controls whether to return a datamodel or source catalog
     monkeypatch.setattr(
         SourceCatalogStep, "return_updated_model", return_updated_model, raising=False
@@ -629,7 +620,7 @@ def test_l3_source_catalog_keywords(
             ext = "asdf"
 
         basefilename = result.meta.filename.split("_")[0]
-        filepath = Path(tmp_path / f"{basefilename}_{suffix}.{ext}")
+        filepath = Path(function_jail / f"{basefilename}_{suffix}.{ext}")
         assert filepath.exists()
 
         if suffix == "cat":
@@ -657,13 +648,11 @@ def test_l2_source_catalog_return_updated_model_attribute(
     image_model,
     return_updated_model,
     expected_result,
-    tmp_path,
+    function_jail,
 ):
     """
     Test that the proper object is returned in the call to SourceCatalogStep.
     """
-    os.chdir(tmp_path)
-
     step = SourceCatalogStep(
         bkg_boxsize=50,
         kernel_fwhm=2.0,

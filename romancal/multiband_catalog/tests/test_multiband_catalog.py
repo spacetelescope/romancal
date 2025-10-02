@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from re import match
 
@@ -86,9 +85,8 @@ def library_model_all_nan(mosaic_model):
     ),
 )
 def test_multiband_catalog(
-    library_model, fit_psf, snr_threshold, npixels, save_results, tmp_path
+    library_model, fit_psf, snr_threshold, npixels, save_results, function_jail
 ):
-    os.chdir(tmp_path)
     step = MultibandCatalogStep()
 
     result = step.call(
@@ -138,19 +136,18 @@ def test_multiband_catalog(
                 assert f"{colname}_err" in cat.colnames
 
     if save_results:
-        filepath = Path(tmp_path / f"{result.meta.filename}_cat.parquet")
+        filepath = Path(function_jail / f"{result.meta.filename}_cat.parquet")
         assert filepath.exists()
         tbl = pyarrow.parquet.read_table(filepath)
         assert isinstance(tbl, pyarrow.Table)
 
-        filepath = Path(tmp_path / f"{result.meta.filename}_segm.asdf")
+        filepath = Path(function_jail / f"{result.meta.filename}_segm.asdf")
         assert filepath.exists()
         assert isinstance(rdm.open(filepath), MosaicSegmentationMapModel)
 
 
 @pytest.mark.parametrize("save_results", (True, False))
-def test_multiband_catalog_no_detections(library_model, save_results, tmp_path):
-    os.chdir(tmp_path)
+def test_multiband_catalog_no_detections(library_model, save_results, function_jail):
     step = MultibandCatalogStep()
 
     result = step.call(
@@ -169,9 +166,8 @@ def test_multiband_catalog_no_detections(library_model, save_results, tmp_path):
 
 @pytest.mark.parametrize("save_results", (True, False))
 def test_multiband_catalog_invalid_inputs(
-    library_model_all_nan, save_results, tmp_path
+    library_model_all_nan, save_results, function_jail
 ):
-    os.chdir(tmp_path)
     step = MultibandCatalogStep()
 
     result = step.call(
@@ -189,9 +185,9 @@ def test_multiband_catalog_invalid_inputs(
 
 
 @pytest.mark.parametrize("save_results", (True, False))
-def test_multiband_catalog_some_invalid_inputs(library_model, save_results, tmp_path):
-    os.chdir(tmp_path)
-
+def test_multiband_catalog_some_invalid_inputs(
+    library_model, save_results, function_jail
+):
     # Modify the first model in the library to have all NaN values
     with library_model:
         model = library_model.borrow(0)  # f184 model
