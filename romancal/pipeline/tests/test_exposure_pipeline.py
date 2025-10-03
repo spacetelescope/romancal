@@ -58,13 +58,11 @@ def test_input_to_output(function_jail, input_value, expected_output_type):
 
 @pytest.mark.parametrize("save_results", [True, False])
 @pytest.mark.parametrize("skip_tweakreg", [True, False])
-def test_elp_save_results(
-    function_jail, tmp_path, save_results, skip_tweakreg, monkeypatch
-):
+def test_elp_save_results(function_jail, save_results, skip_tweakreg, monkeypatch):
     """
     Test that the elp respects save_results.
     """
-    output_path = tmp_path / "output"
+    output_path = function_jail / "output"
     output_path.mkdir()
 
     model = rdm.ScienceRawModel.create_fake_data()
@@ -86,7 +84,7 @@ def test_elp_save_results(
 
     pipeline.run(model)
     # check that the current directory doesn't contain extra files
-    assert set(p.name for p in tmp_path.iterdir()) == {"output"}
+    assert set(p.name for p in function_jail.iterdir()) == {"output"}
 
     output_files = set(p.name for p in output_path.iterdir())
     # TODO shouldn't this be empty?
