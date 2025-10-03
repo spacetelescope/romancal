@@ -4,10 +4,16 @@ Module to inject sources into existing image / mosaic.
 
 import logging
 
+import numpy as np
+from astropy import table
+from astropy import units as u
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+# One hour point source magnitude limit for F213
+HRPOINTMAGLIMIT = 25.64
 
 
 def inject_sources(model, si_cat):
@@ -40,3 +46,93 @@ def inject_sources(model, si_cat):
         raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
     return new_model
+
+
+def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **kwargs):
+    """
+    Generate a catalog of cosmos galaxies and stars, with the following assumptions:
+    - 75% of objects will be galaxies, 25% will be point sources
+    - Galaxies will draw shapes and colors from the COSMOS catalog. Their position
+    angles are drawn from a uniform distribution. Shapes are to be log scaled to
+    log magnitude with ~1 mag spread.
+    - Stars will vary in magnitude from 6 mag brighter to 1 mag fainter than the point
+    mag limit. They will have no color.
+
+    Parameters
+    ----------
+    coord : astropy.coordinates.SkyCoord
+        Location around which to generate sources.
+    xpos, ypos : array_like (float)
+        x, y positions of each source in objlist
+    exptime : float
+        Exposure time
+    filter : str
+        Name of filter (used to calculate size)
+    seed : int
+        Seed for random number generator
+
+    Returns
+    -------
+    all_cat : astropy.Table
+        Table for use with table_to_catalog to generate catalog for simulation.
+    """
+    from romanisim import bandpass, catalog
+
+    # WFI bandpasses
+    BANDPASSES = set(bandpass.galsim2roman_bandpass.values())
+
+    # Set random source index for the catalog
+    rng_numpy = np.random.default_rng(seed)
+    ran_idx = rng_numpy.permutation(len(xpos))
+
+    # 75% of objects as galaxies, 25% of objects as point sources
+    num_stars = int(len(xpos) / 4)
+    num_gals = len(xpos) - num_stars
+
+    # Galaxies
+    # RSIM's make cosmos galaxies method will return cosmos like objects with
+    # uniformly distributed position angles. Radius and area are set to return
+    # a full sample.
+    gal_cat = catalog.make_cosmos_galaxies(cen, radius=1.0, cat_area=(np.pi), **kwargs)
+
+    # Trim to the required number of objects
+    gal_cat = gal_cat[:num_gals]
+
+    # Set the sizes
+    gal_cat["half_light_radius"] = -2.5 * np.log10(
+        gal_cat[filter] + rng_numpy.normal(num_gals)
+    )
+
+    # Stars
+    # Create base table
+    star_cat = table.Table()
+    star_cat["ra"] = num_stars * [0]
+    star_cat["dec"] = num_stars * [0]
+    star_cat["type"] = num_stars * ["PSF"]
+    star_cat["n"] = num_stars * [-1]
+    star_cat["half_light_radius"] = num_stars * [0]
+    star_cat["pa"] = num_stars * [0]
+    star_cat["ba"] = num_stars * [1]
+
+    # Set the point magnitude limit
+    point_mag_limit = HRPOINTMAGLIMIT + (
+        1.25 * np.log10((exptime * u.s).to(u.year).value)
+    )
+
+    # Set magnitudes equal to the limit plus spread
+    # Note: for each filter the spread is about -4 to 1 and
+    # there is about +2 spread in the HRPOINTMAGLIMIT, hence -6 to 1
+    mags = point_mag_limit + rng_numpy.uniform(low=-6.0, high=1.0, size=num_stars)
+
+    # Color = 0
+    for bp in BANDPASSES:
+        star_cat[bp] = (10.0 ** (-mags / 2.5)).astype("f4")
+
+    # Combine the objects
+    all_cat = table.vstack([gal_cat, star_cat])
+
+    # Set the positions to randomly selected objects
+    all_cat["ra"] = np.array(xpos)[ran_idx].tolist()
+    all_cat["dec"] = np.array(ypos)[ran_idx].tolist()
+
+    return all_cat

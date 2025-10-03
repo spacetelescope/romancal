@@ -8,12 +8,15 @@ pytest.importorskip("romanisim")
 
 import numpy as np
 from astropy import table
+from astropy import units as u
+from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from romanisim import bandpass, parameters
 
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
-from romancal.source_catalog.injection import inject_sources
+from romancal.source_catalog import injection
+from romancal.source_catalog.injection import inject_sources, make_cosmoslike_catalog
 
 # Set parameters
 RA = 270.0
@@ -28,6 +31,7 @@ SCA = 4
 FILTER = "F158"
 RNG_SEED = 42
 MATABLE = 4
+BANDPASSES = set(bandpass.galsim2roman_bandpass.values())
 
 # Create gaussian noise generators
 # sky should generate ~0.2 electron / s / pix.
@@ -37,9 +41,6 @@ MEANFLUX = 0.2
 
 
 def make_test_data():
-    # Create Four-quadrant pattern of gaussian noise, centered around one
-    # Each quadrant's gaussian noise scales like total exposure time
-    # (total files contributed to each quadrant)
     noise_rng = np.random.default_rng(RNG_SEED)
 
     # Populate the data array with gaussian noise
@@ -118,9 +119,9 @@ def mosaic_model():
 def make_catalog(metadata):
     # Create WCS
     wcsobj = mk_gwcs(
-        metadata.wcsinfo.ra_ref,
-        metadata.wcsinfo.dec_ref,
-        metadata.wcsinfo.roll_ref,
+        metadata["wcsinfo"]["ra_ref"],
+        metadata["wcsinfo"]["dec_ref"],
+        metadata["wcsinfo"]["roll_ref"],
         bounding_box=((-0.5, SHAPE[0] - 0.5), (-0.5, SHAPE[1] - 0.5)),
         shape=SHAPE,
     )
@@ -200,3 +201,64 @@ def test_inject_sources(image_model, mosaic_model):
         total_rec_flux = np.sum(si_model.data - data_orig.data)  # MJy / sr
         total_theo_flux = len(cat) * MAG_FLUX * cps_conv * unit_factor  # u.MJy / u.sr
         assert np.isclose(total_rec_flux, total_theo_flux, rtol=0.1)
+
+
+def test_create_cosmoscat():
+    # Pointing
+    cen = SkyCoord(ra=RA * u.deg, dec=DEC * u.deg)
+
+    # WCS object for ra & dec conversion
+    wcsobj = mk_gwcs(
+        RA,
+        DEC,
+        ROLL,
+        bounding_box=((-0.5, SHAPE[0] - 0.5), (-0.5, SHAPE[1] - 0.5)),
+        shape=SHAPE,
+    )
+
+    # Convert x,y to ra, dec
+    ra, dec = wcsobj.pixel_to_world_values(np.array(XPOS_IDX), np.array(YPOS_IDX))
+
+    # Exposure time (s)
+    exptime = 300
+
+    # Generate cosmos-like catalog
+    cat = make_cosmoslike_catalog(cen, ra, dec, exptime, filter=FILTER, seed=RNG_SEED)
+
+    # Set wcs metadata
+    meta = {
+        "wcsinfo": {
+            "ra_ref": RA,
+            "dec_ref": DEC,
+            "roll_ref": ROLL,
+        }
+    }
+
+    mcat = make_catalog(meta)
+
+    # Ensure that locations are as expected
+    assert np.allclose(np.sort(cat["ra"]), np.sort(mcat["ra"]))
+    assert np.allclose(np.sort(cat["dec"]), np.sort(mcat["dec"]))
+
+    # Ensure correct number of point sources
+    assert np.sum(cat["type"] == "PSF") == 1
+    assert np.sum(cat["n"] == -1) == 1
+
+    # Set the point magnitude limit
+    point_mag_limit = injection.HRPOINTMAGLIMIT + (
+        1.25 * np.log10((exptime * u.s).to(u.year).value)
+    )
+
+    # Ensure point fluxes in range
+    assert np.all(
+        cat[cat["type"] == "PSF"][FILTER] < 10.0 ** (-(point_mag_limit - 6) / 2.5)
+    )
+    assert np.all(
+        cat[cat["type"] == "PSF"][FILTER] > 10.0 ** (-(point_mag_limit + 1) / 2.5)
+    )
+
+    # Ensure points lack color
+    for bp in BANDPASSES:
+        assert np.all(
+            cat[cat["type"] == "PSF"][bp] == cat[cat["type"] == "PSF"][FILTER]
+        )
