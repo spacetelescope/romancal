@@ -4,6 +4,7 @@ Module for the multiband source catalog step.
 
 from __future__ import annotations
 
+import copy
 import logging
 from typing import TYPE_CHECKING
 
@@ -19,7 +20,7 @@ from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
-from romancal.source_catalog.utils import copy_mosaic_meta, get_ee_spline
+from romancal.source_catalog.utils import get_ee_spline
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -29,6 +30,10 @@ __all__ = ["MultibandCatalogStep"]
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+# TODO cal_logs?
+_SKIP_IMAGE_META_KEYS = {"wcs", "individual_image_meta"}
 
 
 class MultibandCatalogStep(RomanStep):
@@ -71,15 +76,15 @@ class MultibandCatalogStep(RomanStep):
 
         # Initialize the source catalog model, copying the metadata
         # from the input model
+        # TODO blend
         cat_model = datamodels.MultibandSourceCatalogModel.create_minimal(
             {"meta": example_model.meta}
         )
-        if isinstance(example_model, datamodels.MosaicModel):
-            copy_mosaic_meta(example_model, cat_model)
-        else:
-            cat_model.meta.optical_element = (
-                example_model.meta.instrument.optical_element
-            )
+        cat_model.meta["image"] = {
+            "filename": example_model.meta.filename,  # FIXME asn?
+            "file_date": example_model.meta.file_date,  # FIXME asn doesn't have file_date, pick min?
+        }
+        cat_model.meta["image_metas"] = []
 
         log.info("Creating ee_fractions model for first image")
         apcorr_ref = self.get_reference_file(example_model, "apcorr")
@@ -223,6 +228,15 @@ class MultibandCatalogStep(RomanStep):
                 # (e.g., repeated filter names)
                 det_cat = join(det_cat, cat, keys="label", join_type="outer")
                 det_cat.meta["ee_fractions"][filter_name.lower()] = ee_fractions
+
+                # TODO blend
+                image_meta = {
+                    k: copy.deepcopy(v)
+                    for k, v in model["meta"].items()
+                    if k not in _SKIP_IMAGE_META_KEYS
+                }
+                cat_model.meta.image_metas.append(image_meta)
+
                 library.shelve(model, modify=False)
 
         # Put the resulting multiband catalog in the model
