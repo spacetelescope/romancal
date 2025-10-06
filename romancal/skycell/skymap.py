@@ -313,7 +313,7 @@ class SkyCell:
 
         return np.resize(in_exclusive_region, new_shape=self.pixel_shape)
 
-    def core_contains(self, radec: NDArray[np.float64]) -> NDArray[np.bool]:
+    def core_contains(self, radec: NDArray[np.float64]) -> NDArray[np.bool_]:
         radec = np.array(radec)
         if radec.ndim == 1:
             radec = np.expand_dims(radec, axis=0)
