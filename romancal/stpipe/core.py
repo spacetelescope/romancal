@@ -86,7 +86,14 @@ class RomanStep(Step):
         tuple of str
             Tuple of log names for stpipe to configure
         """
-        return ("romancal", "stcal", "roman_datamodels", "stpipe", "tweakwcs")
+        return (
+            "romancal",
+            "stcal",
+            "roman_datamodels",
+            "stpipe",
+            "tweakwcs",
+            "py.warnings",  # python uses this since stipe enables captureWarnings
+        )
 
     def finalize_result(self, model, reference_files_used):
         """
@@ -106,8 +113,7 @@ class RomanStep(Step):
         model.meta.calibration_software_version = importlib.metadata.version("romancal")
 
         if isinstance(model, ImageModel | MosaicModel):
-            # convert to model.cal_logs type to avoid validation errors
-            model.meta.cal_logs = type(model.meta.cal_logs)(self.log_records)
+            model.meta.cal_logs = self.log_records
 
         if len(reference_files_used) > 0:
             if not hasattr(model.meta, "ref_file"):

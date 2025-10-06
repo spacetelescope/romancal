@@ -1,0 +1,1 @@
+Switch to using a schema to determine the tables to be built when creating ``individual_image_meta`` tables.

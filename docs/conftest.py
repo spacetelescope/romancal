@@ -1,22 +1,6 @@
-import os
-from contextlib import contextmanager
+from contextlib import chdir
 
 import pytest
-
-# chdir contextmanager was added with Python 3.11
-try:
-    from contextlib import chdir
-except ImportError:
-
-    @contextmanager
-    def chdir(path):
-        old_path = os.getcwd()
-
-        try:
-            os.chdir(path)
-            yield
-        finally:
-            os.chdir(old_path)
 
 
 @pytest.fixture(autouse=True)
