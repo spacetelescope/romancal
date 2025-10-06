@@ -18,7 +18,7 @@ from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
-from romancal.source_catalog.utils import copy_mosaic_meta, get_ee_spline
+from romancal.source_catalog.utils import get_ee_spline
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -118,11 +118,10 @@ class SourceCatalogStep(RomanStep):
             else:
                 cat_model_cls = datamodels.MosaicSourceCatalogModel
         cat_model = cat_model_cls.create_minimal({"meta": model.meta})
-
-        if isinstance(model, MosaicModel):
-            copy_mosaic_meta(model, cat_model)
-        else:
-            cat_model.meta.optical_element = model.meta.instrument.optical_element
+        cat_model.meta["image"] = {
+            "filename": model.meta.filename,
+            "file_date": model.meta.file_date,
+        }
 
         # make L3 metadata
         if self.forced_segmentation:
