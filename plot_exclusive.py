@@ -7,7 +7,7 @@ from romancal.skycell.plot import (
     plot_skycell,
     veccoords_to_tangent_plane,
 )
-from romancal.skycell.skymap import SkyCell, ProjectionRegion
+from romancal.skycell.skymap import ProjectionRegion, SkyCell
 
 if __name__ == "__main__":
     skycell_names = [
