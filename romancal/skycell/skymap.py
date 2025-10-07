@@ -804,38 +804,36 @@ class ProjectionRegion:
         """degrees per pixel"""
         return self._skymap.pixel_scale
 
-    def skycells_at(self, radec: NDArray[float]) -> list[SkyCell]:
+    def skycells_at(self, radec: NDArray[float]) -> list[list[SkyCell]]:
         """
-        skycells containing the given point
+        skycells containing the given point(s)
 
         Parameters
         ----------
         radec: NDArray[float]
             right ascension and declination of coordinate(s)
         """
+
         radec = np.array(radec)
         if radec.ndim == 1:
             radec = np.expand_dims(radec, axis=0)
 
-        vectorpoints = sgv.lonlat_to_vector(radec[:, 0], radec[:, 1])
-        if not isinstance(vectorpoints, NDArray):
+        vectorpoints = np.stack(sgv.lonlat_to_vector(radec[:, 0], radec[:, 1]), axis=1)
+        if not isinstance(vectorpoints, np.ndarray):
             vectorpoints = np.ndarray([vectorpoints])
         vectorpoints = sgv.normalize_vector(vectorpoints)
 
         skycells = []
         for vectorpoint in vectorpoints:
-            indices = self.skycells_kdtree.query(
-                vectorpoint, k=8, distance_upper_bound=SkyCell.length
-            )[1]
-            indices = (
-                np.array(indices[np.where(indices != len(self.skycells))])
-                + self.data["skycell_start"]
-            )
-
-            for index in indices:
-                skycell = SkyCell(index)
-                if skycell.polygon.contains_point(vectorpoints):
-                    skycells.append(skycell)
+            if self.polygon.contains_point(vectorpoint):
+                vectorpoint_skycells = []
+                # the maximum number of skycells any point on the sphere could possibly be within is 8 (4 overlapping corners)
+                for skycell_index in self.skycells_kdtree.query(vectorpoint, k=4)[1]:
+                    skycell = SkyCell(self.data["skycell_start"] + skycell_index)
+                    if skycell.polygon.contains_point(vectorpoint):
+                        vectorpoint_skycells.append(skycell)
+                        break
+                skycells.append(vectorpoint_skycells)
 
         return skycells
 
@@ -955,59 +953,100 @@ class SkyMap:
         return self.model.meta.nxy_skycell, self.model.meta.nxy_skycell
 
     def projection_regions_at(
-        self,
-        ra: tuple[float, float] | NDArray[float],
-        dec: tuple[float, float] | NDArray[float],
-    ) -> list[ProjectionRegion]:
+        self, radec: NDArray[float]
+    ) -> list[list[ProjectionRegion]]:
         """
         projection regions containing the given point
 
         Parameters
         ----------
-        ra: tuple[float, float] | NDArray[float]
-            right ascension of coordinate(s)
-        dec: tuple[float, float] | NDArray[float]
-            right ascension of coordinate(s)
+        radec: NDArray[float]
+            right ascension and declination of coordinate(s)
         """
 
-        vectorpoints = sgv.lonlat_to_vector(ra, dec)
-        if not isinstance(vectorpoints, NDArray):
+        radec = np.array(radec)
+        if radec.ndim == 1:
+            radec = np.expand_dims(radec, axis=0)
+
+        vectorpoints = np.stack(sgv.lonlat_to_vector(radec[:, 0], radec[:, 1]), axis=1)
+        if not isinstance(vectorpoints, np.ndarray):
             vectorpoints = np.ndarray([vectorpoints])
         vectorpoints = sgv.normalize_vector(vectorpoints)
 
-        projregions = []
-        for vectorpoint in vectorpoints:
-            indices = self.projection_regions_kdtree.query(
-                vectorpoint, k=4, distance_upper_bound=ProjectionRegion.MAX_LENGTH
-            )[1]
-            indices = indices[np.where(indices != len(self.model.projection_regions))]
+        return [
+            [
+                ProjectionRegion(projregion_index)
+                for projregion_index in projregion_indices
+                if projregion_index != len(self.model.projection_regions)
+                and ProjectionRegion(projregion_index).polygon.contains_point(
+                    vectorpoints[vectorpoint_index]
+                )
+            ]
+            for vectorpoint_index, projregion_indices in enumerate(
+                self.projection_regions_kdtree.query(
+                    vectorpoints,
+                    k=4,  # , distance_upper_bound=ProjectionRegion.MAX_LENGTH
+                )[1]
+            )
+        ]
 
-            for index in indices:
-                projregion = ProjectionRegion(index)
-                if projregion.polygon.contains_point(vectorpoint):
-                    projregions.append(projregion)
-
-        return projregions
-
-    def skycells_at(
-        self,
-        ra: tuple[float, float] | NDArray[float],
-        dec: tuple[float, float] | NDArray[float],
-    ) -> list[SkyCell]:
+    def skycells_at(self, radec: NDArray[float]) -> list[list[SkyCell]]:
         """
-        skycells containing the given point
+        skycells containing the given point(s)
 
         Parameters
         ----------
-        ra: tuple[float, float] | NDArray[float]
-            right ascension of coordinate(s)
-        dec: tuple[float, float] | NDArray[float]
-            right ascension of coordinate(s)
+        radec: NDArray[float]
+            right ascension and declination of coordinate(s)
         """
 
+        radec = np.array(radec)
+        if radec.ndim == 1:
+            radec = np.expand_dims(radec, axis=0)
+
+        vectorpoints = np.stack(sgv.lonlat_to_vector(radec[:, 0], radec[:, 1]), axis=1)
+        if not isinstance(vectorpoints, np.ndarray):
+            vectorpoints = np.ndarray([vectorpoints])
+        vectorpoints = sgv.normalize_vector(vectorpoints)
+
+        return [
+            [
+                skycell
+                for skycell in (
+                    SkyCell(skycell_index)
+                    for skycell_index in skycell_indices
+                    if skycell_index != len(SKYMAP.model.skycells)
+                )
+                if skycell.polygon.contains_point(vectorpoints[point_index, :])
+            ]
+            for point_index, skycell_indices in enumerate(
+                self.skycells_kdtree.query(
+                    vectorpoints, k=4, distance_upper_bound=SkyCell.length
+                )[1]
+            )
+        ]
+
+    def belongs_to(self, radec: NDArray[np.float64]) -> list[SkyCell]:
+        """
+        skycell that each point belongs to
+
+        Parameters
+        ----------
+        radec: NDArray[float]
+            right ascension and declination of coordinate(s)
+        """
+
+        radec = np.array(radec)
+        if radec.ndim == 1:
+            radec = np.expand_dims(radec, axis=0)
+
         skycells = []
-        for projregion in self.projection_regions_at(ra, dec):
-            skycells.extend(projregion.skycells_at(ra, dec))
+        for point_index, point_skycells in enumerate(self.skycells_at(radec)):
+            for skycell in point_skycells:
+                if skycell.core_contains(radec[point_index, :]):
+                    skycells.append(skycell)
+                    break
+
         return skycells
 
     def __getitem__(self, index: int) -> SkyCell:
