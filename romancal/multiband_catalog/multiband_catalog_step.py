@@ -179,7 +179,7 @@ class MultibandCatalogStep(RomanStep):
         det_cat = det_catobj.catalog
         det_cat.meta["ee_fractions"] = {}
 
-        time_means = []
+        time_firsts = []
         exposure_times = []
 
         # Create catalogs for each input image
@@ -258,7 +258,7 @@ class MultibandCatalogStep(RomanStep):
                         cat_model.meta[key]["time_last"] = min(
                             cat_model.meta[key]["time_last"], value["time_last"]
                         )
-                        time_means.append(value["time_mean"])
+                        time_firsts.append(value["time_first"])
                         exposure_times.append(value["exposure_time"])
                     else:
                         # set non-matching metadata values to None
@@ -269,7 +269,7 @@ class MultibandCatalogStep(RomanStep):
                 library.shelve(model, modify=False)
 
         # finish blending
-        cat_model.meta.coadd_info.time_mean = Time(time_means).mean()
+        cat_model.meta.coadd_info.time_mean = Time(time_firsts).mean()
         cat_model.meta.coadd_info.exposure_time = sum(exposure_times)
 
         # Put the resulting multiband catalog in the model
