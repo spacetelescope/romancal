@@ -47,6 +47,10 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
         segm_model = MosaicSegmentationMapModel
     segmentation_model = segm_model.create_minimal({"meta": source_catalog_model.meta})
 
+    # carry over image_metas if it exists (since it's not required in the schemas)
+    if image_metas := source_catalog_model.meta.get("image_metas"):
+        segmentation_model.meta.image_metas = image_metas
+
     # Set the data and detection image
     segmentation_model.data = segment_img.data.astype(np.uint32)
     if hasattr(segment_img, "detection_image"):
