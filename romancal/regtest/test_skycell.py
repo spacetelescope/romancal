@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+import spherical_geometry.vector as sgv
 from numpy.testing import assert_allclose
 
 import romancal.skycell.skymap as sc
@@ -89,3 +90,33 @@ def test_skycell_wcs_world_to_pixel(name):
         ),
         rtol=1e-5,
     )
+
+
+def test_exclusive_core():
+    rng = np.random.default_rng()
+    ra = rng.standard_normal(1000) * 360.0
+    dec = rng.standard_normal(1000) * 180.0 - 90
+    radec = np.stack([ra, dec], axis=1)
+
+    vectorpoints = np.stack(sgv.lonlat_to_vector(radec[:, 0], radec[:, 1]), axis=1)
+    if not isinstance(vectorpoints, np.ndarray):
+        vectorpoints = np.ndarray([vectorpoints])
+    vectorpoints = sgv.normalize_vector(vectorpoints)
+
+    skycells_kdtree = sc.SKYMAP.skycells_kdtree
+
+    point_nearest_skycell_indices = skycells_kdtree.query(
+        vectorpoints, k=16, distance_upper_bound=sc.SkyCell.length
+    )[1]
+
+    skycells = []
+    for point_index, skycell_indices in enumerate(point_nearest_skycell_indices):
+        for skycell_index in skycell_indices:
+            if skycell_index != len(sc.SKYMAP.model.skycells):
+                skycell = sc.SkyCell(skycell_index)
+                
+                if skycell.core_contains(radec[point_index, :]):
+                    skycells.append(skycell)
+                    break
+
+    assert len(skycells) == radec.shape[0]
