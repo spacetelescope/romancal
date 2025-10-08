@@ -4,7 +4,7 @@ description = "Library for calibration of science observations from the Nancy Gr
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
-    { name = "Roman calibration pipeline developers", email = "help@stsci.edu" },
+    { name = "Roman calibration pipeline developers" },
 ]
 classifiers = [
     "Intended Audience :: Science/Research",
