@@ -12,8 +12,29 @@ from roman_datamodels.datamodels import ImageModel, MosaicModel
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-# One hour point source magnitude limit for F213
-HRPOINTMAGLIMIT = 25.64
+# One hour point source magnitude limit for each band
+# https://roman.gsfc.nasa.gov/science/WFI_technical.html
+HRPOINTMAGLIMIT = {
+    "F062" : 27.97,
+    "F087" : 27.63,
+    "F106" : 27.60,
+    "F129" : 27.60,
+    "F158" : 27.52,
+    "F184" : 26.95,
+    "F213" : 25.64,
+    "F146" : 28.01,
+}
+
+HRGALMAGLIMIT = {
+    "F062" : 26.70,
+    "F087" : 26.38,
+    "F106" : 26.37,
+    "F129" : 26.37,
+    "F158" : 26.37,
+    "F184" : 25.95,
+    "F213" : 24.71,
+    "F146" : 26.84,
+}
 
 
 def inject_sources(model, si_cat):
@@ -53,9 +74,11 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     Generate a catalog of cosmos galaxies and stars, with the following assumptions:
     - 75% of objects will be galaxies, 25% will be point sources
     - Galaxies will draw shapes and colors from the COSMOS catalog. Their position
-    angles are drawn from a uniform distribution. Shapes are to be log scaled to
-    log magnitude with ~1 mag spread.
-    - Stars will vary in magnitude from 6 mag brighter to 1 mag fainter than the point
+    angles are drawn from a uniform distribution. Sersic indices to be drawn from
+    between [0.8, 4.5]. Fluxes are scaled to the brightest color and vary in magnitude
+    from 4 mag brighter to 1 mag fainter than the compact galaxy mag limit. Sizes scaled
+    from magnitudes.
+    - Stars will vary in magnitude from 4 mag brighter to 1 mag fainter than the point
     mag limit. They will have no color.
 
     Parameters
@@ -90,18 +113,45 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     num_gals = len(xpos) - num_stars
 
     # Galaxies
-    # RSIM's make cosmos galaxies method will return cosmos like objects with
+    # RomanISim's make cosmos galaxies method will return cosmos like objects with
     # uniformly distributed position angles. Radius and area are set to return
-    # a full sample.
+    # a full sample (~346k galaxies)
     gal_cat = catalog.make_cosmos_galaxies(cen, radius=1.0, cat_area=(np.pi), **kwargs)
 
     # Trim to the required number of objects
     gal_cat = gal_cat[:num_gals]
 
-    # Set the sizes
-    gal_cat["half_light_radius"] = -2.5 * np.log10(
-        gal_cat[filter] + rng_numpy.normal(num_gals)
-    )
+    # Set magnitude spread
+    mags = rng_numpy.uniform(low=-4.0, high=1.0, size=num_gals)
+
+    # Brightest color flux
+    gal_cat_data = gal_cat.as_array(names=BANDPASSES).view(dtype=float).reshape((len(gal_cat), len(BANDPASSES)))
+    deepflux = gal_cat_data.max(axis=1)
+
+    # Set bandpass fluxes
+    for bp in BANDPASSES:
+        # Normalize the mag limit to exptime
+        gal_mag_limit = HRGALMAGLIMIT[bp] + (
+            1.25 * np.log10((exptime * u.s).to(u.hour).value)
+        )
+        mag_tot = mags + gal_mag_limit
+
+        # Set scaled fluxes
+        gal_cat[bp] = (gal_cat[bp] * (10.0 ** (-(mag_tot) / 2.5)) / deepflux).astype("f4")
+
+    # Sizes are drawn from a log-normal distribution of J-band magnitudes
+    # The parameters below are derived from the distribution for sizes
+    # at the normalized galaxy mag limit
+    J_AB = HRGALMAGLIMIT["F129"] + (
+            1.25 * np.log10((exptime * u.s).to(u.hour).value)
+        )
+    mu = -0.1555 * (J_AB - 17) - 3.55
+    sigma = 0.15
+    radsize = rng_numpy.normal(mu, sigma, num_gals)
+    gal_cat["half_light_radius"] = (10**radsize) * 3600 * u.arcsec
+
+    # Randomize concentrations
+    gal_cat['n'] = rng_numpy.uniform(low=0.8, high=4.5, size=num_gals)
 
     # Stars
     # Create base table
@@ -114,19 +164,15 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     star_cat["pa"] = num_stars * [0]
     star_cat["ba"] = num_stars * [1]
 
-    # Set the point magnitude limit
-    point_mag_limit = HRPOINTMAGLIMIT + (
-        1.25 * np.log10((exptime * u.s).to(u.year).value)
-    )
+    # Set magnitude spread
+    mags = rng_numpy.uniform(low=-4.0, high=1.0, size=num_stars)
 
-    # Set magnitudes equal to the limit plus spread
-    # Note: for each filter the spread is about -4 to 1 and
-    # there is about +2 spread in the HRPOINTMAGLIMIT, hence -6 to 1
-    mags = point_mag_limit + rng_numpy.uniform(low=-6.0, high=1.0, size=num_stars)
-
-    # Color = 0
+    # Set bandpass fluxes
     for bp in BANDPASSES:
-        star_cat[bp] = (10.0 ** (-mags / 2.5)).astype("f4")
+        point_mag_limit = HRPOINTMAGLIMIT[bp] + (
+            1.25 * np.log10((exptime * u.s).to(u.hour).value)
+        )
+        star_cat[bp] = (10.0 ** (-(mags + point_mag_limit) / 2.5)).astype("f4")
 
     # Combine the objects
     all_cat = table.vstack([gal_cat, star_cat])
@@ -136,3 +182,55 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     all_cat["dec"] = np.array(ypos)[ran_idx].tolist()
 
     return all_cat
+
+
+def make_source_grid(model, yxmax=(5000,5000), yxoffset=(50, 50), yxgrid=(20,20), seed=50, **kwargs):
+    """
+
+
+    Parameters
+    ----------
+
+
+    Returns
+    -------
+
+    """
+    # from romanisim import bandpass, catalog
+
+    # Set random source index for the catalog
+    rng_numpy = np.random.default_rng(seed)
+    ran_idx = rng_numpy.permutation(len(xpos))
+
+    if isinstance(offset, (int, float)):
+        offset = (offset, offset)
+
+    yspread, xspread = yxmax - 2 * yxoffset
+    yspace, xspace = math.ceil((yspread, xspread) / yxgrid)
+
+    y0, x0 = (yxoffset[0] + uniform(yspace), yxoffset[1] + uniform(xspace))
+
+    ypts, xpts = np.arange(yspace), np.arange(xspace)
+
+    ypts *= yspace
+    ypts += y0
+
+    xpts *= xspace
+    xpts += x0
+
+    # Discard off image positions
+    ypts = ypts[ypts < model.data.shape[0]]
+    xpts = xpts[xpts < model.data.shape[1]]
+
+    y_pos, x_pos = np.meshgrid(ypts, xpts)
+
+    # Discard
+
+
+    return x_pos, y_pos
+
+
+
+
+
+
