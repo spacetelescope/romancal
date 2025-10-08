@@ -20,7 +20,10 @@ def compare_model_and_parquet_metadata(model, parquet_filename, ignore_paths):
         assert path[0] == "roman"
         target = model
         for sub_path in path[1:]:
-            target = getattr(target, sub_path)
+            if sub_path.isnumeric():
+                target = target[int(sub_path)]
+            else:
+                target = getattr(target, sub_path)
         str_target = str(target)
         str_value = value.decode("ascii")
         assert str_value == str_target, (
