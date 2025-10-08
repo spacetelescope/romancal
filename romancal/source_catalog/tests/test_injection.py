@@ -237,21 +237,21 @@ def test_create_cosmoscat():
     mcat = make_catalog(meta)
 
     # Ensure that locations are as expected
-    assert np.allclose(np.sort(cat["ra"]), np.sort(mcat["ra"]))
-    assert np.allclose(np.sort(cat["dec"]), np.sort(mcat["dec"]))
+    assert np.allclose(np.sort(cat["ra"]), np.sort(mcat["ra"]), rtol=1.0E-6)
+    assert np.allclose(np.sort(cat["dec"]), np.sort(mcat["dec"]), rtol=1.0E-6)
 
     # Ensure correct number of point sources
     assert np.sum(cat["type"] == "PSF") == 1
     assert np.sum(cat["n"] == -1) == 1
 
-    # Set the point magnitude limit
-    point_mag_limit = injection.HRPOINTMAGLIMIT + (
-        1.25 * np.log10((exptime * u.s).to(u.year).value)
+    # Set the point magnitude limit for filter
+    point_mag_limit = injection.HRPOINTMAGLIMIT[FILTER] + (
+        1.25 * np.log10((exptime * u.s).to(u.hour).value)
     )
 
     # Ensure point fluxes in range
     assert np.all(
-        cat[cat["type"] == "PSF"][FILTER] < 10.0 ** (-(point_mag_limit - 6) / 2.5)
+        cat[cat["type"] == "PSF"][FILTER] < 10.0 ** (-(point_mag_limit - 4) / 2.5)
     )
     assert np.all(
         cat[cat["type"] == "PSF"][FILTER] > 10.0 ** (-(point_mag_limit + 1) / 2.5)
@@ -259,6 +259,20 @@ def test_create_cosmoscat():
 
     # Ensure points lack color
     for bp in BANDPASSES:
-        assert np.all(
-            cat[cat["type"] == "PSF"][bp] == cat[cat["type"] == "PSF"][FILTER]
-        )
+        assert np.allclose(cat[cat["type"] == "PSF"][bp],
+            cat[cat["type"] == "PSF"][FILTER], rtol=1.0E-6)
+
+    # Ensure galaxies sizes are reasonable
+    assert np.all(cat[cat["type"] == "SER"]["half_light_radius"] < 1)
+    assert np.all(cat[cat["type"] == "SER"]["half_light_radius"] > 0)
+
+    # Set the galaxy magnitude limit for filter
+    point_mag_limit = injection.HRGALMAGLIMIT[FILTER] + (
+        1.25 * np.log10((exptime * u.s).to(u.hour).value)
+    )
+
+    # Ensure galaxy fluxes in range
+    assert np.all(
+        cat[cat["type"] == "SER"][FILTER] < 10.0 ** (-(point_mag_limit - 4) / 2.5)
+    )
+    assert np.all(cat[cat["type"] == "SER"][FILTER] > 0)
