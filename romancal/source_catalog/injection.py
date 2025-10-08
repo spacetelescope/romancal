@@ -15,30 +15,28 @@ log.setLevel(logging.DEBUG)
 # One hour point source magnitude limit for each band
 # https://roman.gsfc.nasa.gov/science/WFI_technical.html
 HRPOINTMAGLIMIT = {
-    "F062" : 27.97,
-    "F087" : 27.63,
-    "F106" : 27.60,
-    "F129" : 27.60,
-    "F158" : 27.52,
-    "F184" : 26.95,
-    "F213" : 25.64,
-    "F146" : 28.01,
+    "F062": 27.97,
+    "F087": 27.63,
+    "F106": 27.60,
+    "F129": 27.60,
+    "F158": 27.52,
+    "F184": 26.95,
+    "F213": 25.64,
+    "F146": 28.01,
 }
 
 # One hour compact galaxy (0.3") source magnitude limit for each band
 # https://roman.gsfc.nasa.gov/science/WFI_technical.html
 HRGALMAGLIMIT = {
-    "F062" : 26.70,
-    "F087" : 26.38,
-    "F106" : 26.37,
-    "F129" : 26.37,
-    "F158" : 26.37,
-    "F184" : 25.95,
-    "F213" : 24.71,
-    "F146" : 26.84,
+    "F062": 26.70,
+    "F087": 26.38,
+    "F106": 26.37,
+    "F129": 26.37,
+    "F158": 26.37,
+    "F184": 25.95,
+    "F213": 24.71,
+    "F146": 26.84,
 }
-
-
 
 
 def inject_sources(model, si_cat):
@@ -129,7 +127,11 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     mags = rng_numpy.uniform(low=-4.0, high=1.0, size=num_gals)
 
     # Brightest color flux
-    gal_cat_data = gal_cat.as_array(names=BANDPASSES).view(dtype=float).reshape((len(gal_cat), len(BANDPASSES)))
+    gal_cat_data = (
+        gal_cat.as_array(names=BANDPASSES)
+        .view(dtype=float)
+        .reshape((len(gal_cat), len(BANDPASSES)))
+    )
     deepflux = gal_cat_data.max(axis=1)
 
     # Set bandpass fluxes
@@ -141,7 +143,9 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
         mag_tot = mags + gal_mag_limit
 
         # Set scaled fluxes
-        gal_cat[bp] = (gal_cat[bp] * (10.0 ** (-(mag_tot) / 2.5)) / deepflux).astype("f4")
+        gal_cat[bp] = (gal_cat[bp] * (10.0 ** (-(mag_tot) / 2.5)) / deepflux).astype(
+            "f4"
+        )
 
     # Sizes are drawn from a log-normal distribution of J-band magnitudes
     # The parameters below are derived from the distribution for sizes
@@ -151,7 +155,7 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     gal_cat["half_light_radius"] = (10**radsize) * 3600 * u.arcsec
 
     # Randomize concentrations
-    gal_cat['n'] = rng_numpy.uniform(low=0.8, high=4.5, size=num_gals)
+    gal_cat["n"] = rng_numpy.uniform(low=0.8, high=4.5, size=num_gals)
 
     # Stars
     # Create base table

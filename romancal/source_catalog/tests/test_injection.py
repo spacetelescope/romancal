@@ -237,8 +237,8 @@ def test_create_cosmoscat():
     mcat = make_catalog(meta)
 
     # Ensure that locations are as expected
-    assert np.allclose(np.sort(cat["ra"]), np.sort(mcat["ra"]), rtol=1.0E-6)
-    assert np.allclose(np.sort(cat["dec"]), np.sort(mcat["dec"]), rtol=1.0E-6)
+    assert np.allclose(np.sort(cat["ra"]), np.sort(mcat["ra"]), rtol=1.0e-6)
+    assert np.allclose(np.sort(cat["dec"]), np.sort(mcat["dec"]), rtol=1.0e-6)
 
     # Ensure correct number of point sources
     assert np.sum(cat["type"] == "PSF") == 1
@@ -259,8 +259,11 @@ def test_create_cosmoscat():
 
     # Ensure points lack color
     for bp in BANDPASSES:
-        assert np.allclose(cat[cat["type"] == "PSF"][bp],
-            cat[cat["type"] == "PSF"][FILTER], rtol=1.0E-6)
+        assert np.allclose(
+            cat[cat["type"] == "PSF"][bp],
+            cat[cat["type"] == "PSF"][FILTER],
+            rtol=1.0e-6,
+        )
 
     # Ensure galaxies sizes are reasonable
     assert np.all(cat[cat["type"] == "SER"]["half_light_radius"] < 1)
