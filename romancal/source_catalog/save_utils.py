@@ -4,9 +4,12 @@ import numpy as np
 from photutils.segmentation import SegmentationImage
 from roman_datamodels.datamodels import (
     ForcedImageSourceCatalogModel,
+    ForcedMosaicSourceCatalogModel,
     ImageModel,
     ImageSourceCatalogModel,
     MosaicSegmentationMapModel,
+    MosaicSourceCatalogModel,
+    MultibandSegmentationMapModel,
     SegmentationMapModel,
 )
 from roman_datamodels.stnode import SourceCatalog
@@ -43,8 +46,13 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
         source_catalog_model, (ImageSourceCatalogModel | ForcedImageSourceCatalogModel)
     ):
         segm_model = SegmentationMapModel
-    else:
+    elif isinstance(
+        source_catalog_model,
+        (MosaicSourceCatalogModel | ForcedMosaicSourceCatalogModel),
+    ):
         segm_model = MosaicSegmentationMapModel
+    else:
+        segm_model = MultibandSegmentationMapModel
     segmentation_model = segm_model.create_minimal({"meta": source_catalog_model.meta})
 
     # carry over image_metas if it exists (since it's not required in the schemas)
