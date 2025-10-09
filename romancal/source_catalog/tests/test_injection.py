@@ -259,8 +259,9 @@ def test_create_cosmoscat():
 
     # Ensure points lack color
     for bp in BANDPASSES:
-        assert np.all(cat[cat["type"] == "PSF"][bp] ==
-            cat[cat["type"] == "PSF"][FILTER])
+        assert np.all(
+            cat[cat["type"] == "PSF"][bp] == cat[cat["type"] == "PSF"][FILTER]
+        )
 
     # Ensure galaxies sizes are reasonable
     assert np.all(cat[cat["type"] == "SER"]["half_light_radius"] < 1)
