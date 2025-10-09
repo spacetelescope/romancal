@@ -114,7 +114,7 @@ def test_exclusive_core():
         for skycell_index in skycell_indices:
             if skycell_index != len(sc.SKYMAP.model.skycells):
                 skycell = sc.SkyCell(skycell_index)
-                
+
                 if skycell.core_contains(radec[point_index, :]):
                     skycells.append(skycell)
                     break

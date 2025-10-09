@@ -774,7 +774,9 @@ class SkyMap:
             radec = np.expand_dims(radec, axis=0)
 
         skycells = [set() for _ in radec.shape[0]]
-        for point_index, point_projregions in enumerate(self.projection_regions_at(radec)):
+        for point_index, point_projregions in enumerate(
+            self.projection_regions_at(radec)
+        ):
             for projregion in point_projregions:
                 projregion.skycells_at(radec[point_index, :])[0]
                 skycells[point_index]
