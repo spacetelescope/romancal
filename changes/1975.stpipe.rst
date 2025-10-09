@@ -1,0 +1,1 @@
+Log messages from "py.warnings" logger to log ``warnings.warn`` messages.
