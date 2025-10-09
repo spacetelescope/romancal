@@ -128,7 +128,7 @@ class SourceCatalogStep(RomanStep):
 
         # make L3 metadata
         if self.forced_segmentation:
-            cat_model.meta["forced_segmentation"] = self.forced_segmentation
+            cat_model.meta.image.forced_segmentation = self.forced_segmentation
 
         # Return an empty segmentation image and catalog table if all
         # pixels are masked
