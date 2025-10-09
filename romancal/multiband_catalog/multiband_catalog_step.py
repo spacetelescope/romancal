@@ -34,6 +34,7 @@ log.setLevel(logging.DEBUG)
 
 
 _SKIP_IMAGE_META_KEYS = {"wcs", "individual_image_meta"}
+_SKIP_BLEND_KEYS = {"wcsinfo"}
 
 
 class MultibandCatalogStep(RomanStep):
@@ -248,6 +249,8 @@ class MultibandCatalogStep(RomanStep):
                     cat_model.meta.image.file_date = model.meta.file_date
 
                 for key, value in image_meta.items():
+                    if key in _SKIP_BLEND_KEYS:
+                        continue
                     if not isinstance(value, dict):
                         # skip blending of single top-level values
                         continue
