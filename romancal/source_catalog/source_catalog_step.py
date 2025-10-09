@@ -122,6 +122,9 @@ class SourceCatalogStep(RomanStep):
             "filename": model.meta.filename,
             "file_date": model.meta.file_date,
         }
+        # copy over the data release id since there is no association input
+        if "data_release_id" in model.meta:
+            cat_model.meta.data_release_id = model.meta.data_release_id
 
         # make L3 metadata
         if self.forced_segmentation:

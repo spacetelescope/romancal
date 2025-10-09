@@ -77,6 +77,7 @@ def make_test_image():
 def mosaic_model():
     defaults = {
         "meta": {
+            "data_release_id": "r1",
             "coadd_info": {
                 "time_first": Time("2024-01-01T12:00:00.000", format="isot"),
             },
@@ -275,6 +276,8 @@ def test_l3_source_catalog(
         cat = result.source_catalog
         assert isinstance(cat, Table)
     assert len(cat) == nsources
+
+    assert result.meta.data_release_id == mosaic_model.meta.data_release_id
 
     # Check that the ee_fraction_xx entries are in the metadata
     if "aperture_radii" in cat.meta:

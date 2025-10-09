@@ -85,6 +85,9 @@ class MultibandCatalogStep(RomanStep):
             "file_date": example_model.meta.file_date,  # this may be overwritten during metadata blending
         }
         cat_model.meta["image_metas"] = []
+        # copy over data_release_id, ideally this will come from the association
+        if "data_release_id" in example_model.meta:
+            cat_model.meta.data_release_id = example_model.meta.data_release_id
 
         log.info("Creating ee_fractions model for first image")
         apcorr_ref = self.get_reference_file(example_model, "apcorr")
