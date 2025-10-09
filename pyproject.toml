@@ -204,6 +204,7 @@ exclude = [
 ]
 ignore = [
     "E741", # ambiguous variable name
+    "RUF059", # unused unpacked variable
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]
