@@ -237,8 +237,8 @@ def test_create_cosmoscat():
     mcat = make_catalog(meta)
 
     # Ensure that locations are as expected
-    assert np.allclose(np.sort(cat["ra"]), np.sort(mcat["ra"]), rtol=1.0E-6)
-    assert np.allclose(np.sort(cat["dec"]), np.sort(mcat["dec"]), rtol=1.0E-6)
+    assert np.allclose(np.sort(cat["ra"]), np.sort(mcat["ra"]), rtol=1.0e-6)
+    assert np.allclose(np.sort(cat["dec"]), np.sort(mcat["dec"]), rtol=1.0e-6)
 
     # Ensure correct number of point sources
     assert np.sum(cat["type"] == "PSF") == int(len(XPOS_IDX) / 4)
