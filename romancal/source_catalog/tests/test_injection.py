@@ -241,11 +241,11 @@ def test_create_cosmoscat():
     assert np.allclose(np.sort(cat["dec"]), np.sort(mcat["dec"]), rtol=1.0E-6)
 
     # Ensure correct number of point sources
-    assert np.sum(cat["type"] == "PSF") == 1
-    assert np.sum(cat["n"] == -1) == 1
+    assert np.sum(cat["type"] == "PSF") == int(len(XPOS_IDX) / 4)
+    assert np.sum(cat["n"] == -1) == int(len(XPOS_IDX) / 4)
 
     # Set the point magnitude limit for filter
-    point_mag_limit = injection.HRPOINTMAGLIMIT[FILTER] + (
+    point_mag_limit = max(injection.HRPOINTMAGLIMIT.values()) + (
         1.25 * np.log10((exptime * u.s).to(u.hour).value)
     )
 
@@ -259,20 +259,20 @@ def test_create_cosmoscat():
 
     # Ensure points lack color
     for bp in BANDPASSES:
-        assert np.allclose(cat[cat["type"] == "PSF"][bp],
-            cat[cat["type"] == "PSF"][FILTER], rtol=1.0E-6)
+        assert np.all(cat[cat["type"] == "PSF"][bp] ==
+            cat[cat["type"] == "PSF"][FILTER])
 
     # Ensure galaxies sizes are reasonable
     assert np.all(cat[cat["type"] == "SER"]["half_light_radius"] < 1)
-    assert np.all(cat[cat["type"] == "SER"]["half_light_radius"] > 0)
+    assert np.all(cat[cat["type"] == "SER"]["half_light_radius"] >= 0.036)
 
     # Set the galaxy magnitude limit for filter
-    point_mag_limit = injection.HRGALMAGLIMIT[FILTER] + (
+    gal_mag_limit = injection.HRGALMAGLIMIT[FILTER] + (
         1.25 * np.log10((exptime * u.s).to(u.hour).value)
     )
 
     # Ensure galaxy fluxes in range
     assert np.all(
-        cat[cat["type"] == "SER"][FILTER] < 10.0 ** (-(point_mag_limit - 4) / 2.5)
+        cat[cat["type"] == "SER"][FILTER] < 10.0 ** (-(gal_mag_limit - 4) / 2.5)
     )
-    assert np.all(cat[cat["type"] == "SER"][FILTER] > 0)
+    assert np.all(cat[cat["type"] == "SER"][FILTER] >= 0)

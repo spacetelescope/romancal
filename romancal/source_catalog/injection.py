@@ -130,7 +130,7 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
 
     # Brightest color flux
     gal_cat_data = gal_cat.as_array(names=BANDPASSES).view(dtype=float).reshape((len(gal_cat), len(BANDPASSES)))
-    deepflux = gal_cat_data.max(axis=1)
+    max_flux = gal_cat_data.max(axis=1)
 
     # Set bandpass fluxes
     for bp in BANDPASSES:
@@ -141,14 +141,19 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
         mag_tot = mags + gal_mag_limit
 
         # Set scaled fluxes
-        gal_cat[bp] = (gal_cat[bp] * (10.0 ** (-(mag_tot) / 2.5)) / deepflux).astype("f4")
+        gal_cat[bp] = ((gal_cat[bp] / max_flux) * (10.0 ** (-(mag_tot) / 2.5))).astype("f4")
 
     # Sizes are drawn from a log-normal distribution of J-band magnitudes
     # The parameters below are derived from the distribution for sizes
-    mu = (-0.1555 * ((-2.5 * np.log10(gal_cat["F129"])) - 17)) - 3.55
+    # mu = (-0.1555 * (J - 17)) - 3.55
+    mu = (-0.1555 * ((-2.5 * np.log10(gal_cat["F129"], where=(gal_cat["F129"] > 0),
+        out=np.array([-20.0] * len(gal_cat)))) - 17)) - 3.55
     sigma = 0.15
     radsize = rng_numpy.normal(mu, sigma)
     gal_cat["half_light_radius"] = (10**radsize) * 3600 * u.arcsec
+
+    # Set the radius floor
+    gal_cat["half_light_radius"][gal_cat["half_light_radius"] < 0.036] = 0.036
 
     # Randomize concentrations
     gal_cat['n'] = rng_numpy.uniform(low=0.8, high=4.5, size=num_gals)
@@ -166,12 +171,11 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
 
     # Set magnitude spread
     mags = rng_numpy.uniform(low=-4.0, high=1.0, size=num_stars)
-
+    point_mag_limit = max(HRPOINTMAGLIMIT.values()) + (
+        1.25 * np.log10((exptime * u.s).to(u.hour).value)
+    )
     # Set bandpass fluxes
     for bp in BANDPASSES:
-        point_mag_limit = HRPOINTMAGLIMIT[bp] + (
-            1.25 * np.log10((exptime * u.s).to(u.hour).value)
-        )
         star_cat[bp] = (10.0 ** (-(mags + point_mag_limit) / 2.5)).astype("f4")
 
     # Combine the objects
