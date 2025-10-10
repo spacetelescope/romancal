@@ -16,8 +16,8 @@ TEST_TRANSFORM = models.Shift(1) & models.Shift(2)
 def create_image():
     l2 = rdm.ImageModel.create_fake_data(shape=DATA_SHAPE)
 
-    l2.meta.cal_step = st.L2CalStep.create_fake_data()
-    l2.meta.cal_logs = st.CalLogs.create_fake_data()
+    l2.meta.cal_step = dict(st.L2CalStep.create_fake_data())
+    l2.meta.cal_logs = []
 
     l2.meta.wcsinfo.v2_ref = -503
     l2.meta.wcsinfo.v3_ref = -318
