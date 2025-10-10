@@ -91,10 +91,9 @@ def mosaic_model():
         }
     }
     model = MosaicModel.create_fake_data(defaults=defaults, shape=(101, 101))
-    model.meta.ref_file = stnode.RefFile.create_fake_data()
     model.meta.filename = "none"
-    model.meta.cal_step = stnode.L3CalStep.create_fake_data()
-    model.cal_logs = stnode.CalLogs.create_fake_data()
+    model.meta.cal_step = dict(stnode.L3CalStep.create_fake_data())
+    model.cal_logs = []
     data, err = make_test_image()
     model.data = data
     model.err = err
@@ -106,8 +105,8 @@ def mosaic_model():
 def image_model():
     model = ImageModel.create_fake_data(shape=(101, 101))
     model.meta.filename = "none"
-    model.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    model.meta.cal_logs = stnode.CalLogs.create_fake_data()
+    model.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    model.meta.cal_logs = []
     data, err = make_test_image()
     model.data = data
     model.err = err

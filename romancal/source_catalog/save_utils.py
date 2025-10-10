@@ -12,7 +12,6 @@ from roman_datamodels.datamodels import (
     MultibandSegmentationMapModel,
     SegmentationMapModel,
 )
-from roman_datamodels.stnode import SourceCatalog
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -155,8 +154,9 @@ def save_all_results(self, segment_img, cat_model, input_model=None):
 
         # update the input datamodel with the tweakreg catalog name
         if isinstance(input_model, ImageModel):
-            input_model.meta.source_catalog = SourceCatalog()
-            input_model.meta.source_catalog.tweakreg_catalog_name = output_catalog_name
+            input_model.meta.source_catalog = {
+                "tweakreg_catalog_name": output_catalog_name
+            }
             input_model.meta.cal_step.source_catalog = "COMPLETE"
 
         result = input_model
