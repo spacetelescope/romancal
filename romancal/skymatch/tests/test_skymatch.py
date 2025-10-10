@@ -78,11 +78,9 @@ def mk_image_model(
 
     l2_im.meta["wcs"] = mk_gwcs(image_shape, sky_offset=sky_offset, rotate=rotation)
 
-    l2_im.meta.background = stnode.SkyBackground.create_fake_data(
-        {"level": None, "subtracted": False, "method": "None"}
-    )
-    l2_im.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    l2_im.meta.cal_logs = stnode.CalLogs.create_fake_data()
+    l2_im.meta.background = {"level": None, "subtracted": False, "method": "None"}
+    l2_im.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    l2_im.meta.cal_logs = []
     return l2_im
 
 
