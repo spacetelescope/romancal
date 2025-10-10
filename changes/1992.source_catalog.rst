@@ -1,0 +1,1 @@
+Propogate L2/L3 image metadata into L4 catalogs.

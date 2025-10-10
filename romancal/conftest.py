@@ -261,3 +261,41 @@ def base_image():
     """
 
     return _base_image
+
+
+@pytest.fixture
+def ignore_metadata_paths():
+    """
+    List of metadata paths that will contain always variable values.
+
+    These include versions, dates, logs, etc. that will often differ.
+    """
+    return [
+        "asdf_library",
+        "history",
+        "roman.meta.ref_file.crds.version",
+        "roman.meta.calibration_software_version",
+        "roman.cal_logs",
+        "roman.meta.cal_logs",
+        "roman.meta.date",
+        "roman.meta.file_date",
+        "roman.individual_image_cal_logs",
+        "roman.meta.individual_image_meta",
+    ]
+
+
+@pytest.fixture
+def ignore_parquet_metadata_paths(ignore_metadata_paths):
+    """
+    List of parquet metadata paths to ignore during testings.
+    """
+    return [
+        *ignore_metadata_paths,
+        "table_meta_yaml",
+        "source_catalog",
+        "roman.meta.filename",
+        "roman.meta.model_type",
+        "roman.meta.ref_file",
+        "roman.meta.image",
+        "roman.meta.forced_segmentation",
+    ]
