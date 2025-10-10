@@ -14,7 +14,6 @@ from astropy.stats import mad_std
 from astropy.table import QTable
 from photutils.datasets import make_model_image
 from photutils.psf import PSFPhotometry
-from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel
 
 from romancal.source_catalog.psf import (
@@ -36,22 +35,19 @@ def setup_inputs(
     """
     Return ImageModel of level 2 image.
     """
-    wfi_image = stnode.WfiImage.create_fake_data(shape=shape)
-    wfi_image.data = np.ones(shape, dtype=np.float32)
-    wfi_image.meta.filename = "filename"
-    wfi_image.meta.instrument["optical_element"] = "F087"
+    mod = ImageModel.create_fake_data(shape=shape)
+    mod.data = np.ones(shape, dtype=np.float32)
+    mod.meta.filename = "filename"
+    mod.meta.instrument["optical_element"] = "F087"
 
     # add noise to data
     if noise is not None:
         setup_rng = np.random.default_rng(seed or 19)
-        wfi_image.data = setup_rng.normal(scale=noise, size=shape).astype("float32")
-        wfi_image.err = noise * (np.ones(shape, dtype=np.float32) * u.DN / u.s).value
+        mod.data = setup_rng.normal(scale=noise, size=shape).astype("float32")
+        mod.err = noise * (np.ones(shape, dtype=np.float32) * u.DN / u.s).value
 
     # add dq array
-    wfi_image.dq = np.zeros(shape, dtype=np.uint32)
-
-    # construct ImageModel
-    mod = ImageModel(wfi_image)
+    mod.dq = np.zeros(shape, dtype=np.uint32)
 
     crds_parameters = mod.get_crds_parameters()
     crds_ref_file = crds.getreferences(

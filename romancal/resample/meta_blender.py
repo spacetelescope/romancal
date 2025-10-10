@@ -118,7 +118,7 @@ class MetaBlender:
         self._model = datamodels.MosaicModel.create_minimal()
 
         # FIXME assuming everything is a prompt coadd
-        self._model.meta.product_type = stnode.ProductType("p_visit_coadd")
+        self._model.meta.product_type = "p_visit_coadd"
 
         self._meta = self._model.meta
 

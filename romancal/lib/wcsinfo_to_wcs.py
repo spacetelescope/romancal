@@ -3,14 +3,13 @@ from astropy import coordinates
 from astropy import units as u
 from astropy.modeling import models
 from gwcs import WCS, coordinate_frames, fitswcs
-from roman_datamodels import stnode
 from stcal.alignment import util as wcs_util
 
 __all__ = ["wcsinfo_to_wcs"]
 
 
 def wcsinfo_to_wcs(
-    wcsinfo: dict | stnode.Wcsinfo,
+    wcsinfo: dict,
     bounding_box: None | tuple[tuple[float, float], tuple[float, float]] = None,
 ) -> WCS:
     """Create a WCS from the skycell wcsinfo meta

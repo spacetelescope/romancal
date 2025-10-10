@@ -94,8 +94,8 @@ def image_model():
     image_model.var_poisson = rng.poisson(1, size=shape).astype(np.float32)
     image_model.var_flat = rng.uniform(0, 1, size=shape).astype(np.float32)
     image_model.meta.photometry.conversion_megajanskys = (2.0 * u.MJy / u.sr).value
-    image_model.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    image_model.meta.cal_logs = stnode.CalLogs.create_fake_data()
+    image_model.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    image_model.meta.cal_logs = []
 
     return image_model
 

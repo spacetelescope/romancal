@@ -6,7 +6,7 @@ Unit tests for linearity correction
 
 import numpy as np
 import pytest
-from roman_datamodels import dqflags, stnode
+from roman_datamodels import dqflags
 from roman_datamodels.datamodels import LinearityRefModel, ScienceRawModel
 
 from romancal.dq_init import DQInitStep
@@ -26,15 +26,14 @@ def test_linearity_coeff(instrument, exptype):
     shape = (5, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw = stnode.WfiScienceRaw.create_fake_data(shape=shape)
-    wfi_sci_raw.meta.instrument.name = instrument
-    wfi_sci_raw.meta.instrument.detector = "WFI01"
-    wfi_sci_raw.meta.instrument.optical_element = "F158"
-    wfi_sci_raw.meta["guide_star"]["window_xstart"] = 1012
-    wfi_sci_raw.meta["guide_star"]["window_xsize"] = 16
-    wfi_sci_raw.meta.exposure.type = exptype
-    wfi_sci_raw.data = np.ones(shape, dtype=np.uint16)
-    wfi_sci_raw_model = ScienceRawModel(wfi_sci_raw)
+    wfi_sci_raw_model = ScienceRawModel.create_fake_data(shape=shape)
+    wfi_sci_raw_model.meta.instrument.name = instrument
+    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
+    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
+    wfi_sci_raw_model.meta["guide_star"]["window_xstart"] = 1012
+    wfi_sci_raw_model.meta["guide_star"]["window_xsize"] = 16
+    wfi_sci_raw_model.meta.exposure.type = exptype
+    wfi_sci_raw_model.data = np.ones(shape, dtype=np.uint16)
 
     result = DQInitStep.call(wfi_sci_raw_model)
     result = LinearityStep.call(result, override_linearity="N/A")

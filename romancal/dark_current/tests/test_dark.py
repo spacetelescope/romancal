@@ -132,8 +132,8 @@ def create_image_and_dark(shape, instrument, exptype):
     # Create test image model
     image_shape = (shape[1], shape[2])
     image = ImageModel.create_fake_data(shape=image_shape)
-    image.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    image.meta.cal_logs = stnode.CalLogs.create_fake_data()
+    image.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    image.meta.cal_logs = []
     image.meta.instrument.name = instrument
     image.meta.instrument.detector = "WFI01"
     image.meta.instrument.optical_element = "F158"
