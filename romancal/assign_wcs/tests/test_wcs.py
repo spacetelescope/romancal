@@ -4,7 +4,6 @@ from astropy.modeling import models
 from gwcs.wcstools import grid_from_bounding_box
 from numpy.testing import assert_allclose
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import stnode as st
 from stcal.alignment.util import wcs_bbox_from_shape
 
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep, load_wcs
@@ -16,7 +15,11 @@ TEST_TRANSFORM = models.Shift(1) & models.Shift(2)
 def create_image():
     l2 = rdm.ImageModel.create_fake_data(shape=DATA_SHAPE)
 
-    l2.meta.cal_step = dict(st.L2CalStep.create_fake_data())
+    l2.meta.cal_step = {}
+    for step_name in l2.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        l2.meta.cal_step[step_name] = "INCOMPLETE"
     l2.meta.cal_logs = []
 
     l2.meta.wcsinfo.v2_ref = -503
