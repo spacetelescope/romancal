@@ -1,7 +1,6 @@
 """General utility objects"""
 
 import numpy as np
-from roman_datamodels.datamodels import AssociationsModel
 from roman_datamodels.dqflags import group, pixel
 
 
@@ -57,7 +56,9 @@ def is_association(asn_data):
     """
     Test if an object is an association by checking for required fields
     """
-    return AssociationsModel.is_association(asn_data)
+    return (
+        isinstance(asn_data, dict) and "asn_id" in asn_data and "asn_pool" in asn_data
+    )
 
 
 class LoggingContext:

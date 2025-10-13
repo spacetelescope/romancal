@@ -3,10 +3,24 @@ from typing import ClassVar
 
 import numpy as np
 from asdf.lazy_nodes import AsdfDictNode, AsdfListNode
-from asdf.tags.core.ndarray import NDArrayType
 from astropy.table import Table
 from astropy.time import Time
 from roman_datamodels import datamodels, stnode
+
+_, INDIVIDUAL_IMAGE_META_SCHEMA = stnode.get_latest_schema(
+    "asdf://stsci.edu/datamodels/roman/schemas/meta/individual_image_meta"
+)
+_, BASIC_SCHEMA = stnode.get_latest_schema(
+    "asdf://stsci.edu/datamodels/roman/schemas/basic"
+)
+
+INDIVIDUAL_IMAGE_META_KEYS = set(INDIVIDUAL_IMAGE_META_SCHEMA["properties"].keys()) - {
+    "basic"
+}
+BASIC_KEYS = set(BASIC_SCHEMA["properties"].keys())
+
+if INDIVIDUAL_IMAGE_META_KEYS & BASIC_KEYS:
+    raise RuntimeError("INDIVIDUAL_IMAGE_META_KEYS and BASIC_KEYS overlap")
 
 
 class MissingCellType:
@@ -129,16 +143,15 @@ class MetaBlender:
 
     def _update_tables(self, meta):
         basic_data = {}
-        for key, value in meta.to_flat_dict().items():
-            if key in {"wcs", "cal_logs"}:
-                continue
-
-            if isinstance(value, stnode.DNode):
-                self._tables[key].add_row(value, self._n_rows)
-            elif not isinstance(value, dict | NDArrayType | Table | AsdfDictNode):
+        for key, value in meta.items():
+            if key in BASIC_KEYS:
                 basic_data[key] = value
+            elif key in INDIVIDUAL_IMAGE_META_KEYS:
+                self._tables[key].add_row(value, self._n_rows)
+
         if basic_data:
             self._tables["basic"].add_row(basic_data, self._n_rows)
+
         self._n_rows += 1
 
     def blend(self, model):
