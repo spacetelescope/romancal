@@ -1,6 +1,5 @@
 import numpy as np
 from astropy.time import Time
-from roman_datamodels import stnode
 from roman_datamodels.datamodels import (
     DarkRefModel,
     GainRefModel,
@@ -99,7 +98,11 @@ def model_from_resultants(resultants, read_pattern=None):
     gdq = np.zeros(shape=shape, dtype=np.uint8)
 
     ramp_model = RampModel.create_fake_data(shape=shape)
-    ramp_model.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    ramp_model.meta.cal_step = {}
+    for step_name in ramp_model.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        ramp_model.meta.cal_step[step_name] = "INCOMPLETE"
     ramp_model.data = full_wfi
     ramp_model.pixeldq = pixdq
     ramp_model.groupdq = gdq
