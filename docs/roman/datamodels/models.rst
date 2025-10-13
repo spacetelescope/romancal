@@ -149,7 +149,7 @@ You can examine the contents of your model from within python using
       │ ├─calibration_software_version (str): 9.9.0 # Calibration Software Version Number
       │ ├─filename (str): r0019106003005004023_0034_wfi01_cal.asdf # File Name
       │ ├─file_date (Time): 2020-01-01T00:00:00.000 # File Creation Date
-      │ ├─model_type (str): ImageModel # Data Model Type
+      │ ├─product_type (str): l2 # Product Type Descriptor
     ...
 
 or you can print specifics
