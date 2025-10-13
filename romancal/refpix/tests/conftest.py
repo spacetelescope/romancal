@@ -2,7 +2,6 @@ from enum import IntEnum
 
 import numpy as np
 import pytest
-from roman_datamodels import stnode
 from roman_datamodels.datamodels import RampModel, RefpixRefModel
 
 from romancal.refpix.data import Coefficients, Const, StandardView
@@ -39,7 +38,11 @@ def data():
 @pytest.fixture(scope="module")
 def datamodel(data):
     datamodel = RampModel.create_fake_data(shape=(2, 2, 2))
-    datamodel.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    datamodel.meta.cal_step = {}
+    for step_name in datamodel.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        datamodel.meta.cal_step[step_name] = "INCOMPLETE"
 
     detector = data[:, :, : Const.N_COLUMNS]
     amp33 = data[:, :, Const.N_COLUMNS :]
