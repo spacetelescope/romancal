@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from astropy import units as u
-from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel, WfiImgPhotomRefModel
 
 from romancal.photom import PhotomStep, photom
@@ -190,7 +189,11 @@ def test_photom_step_interface(instrument, exptype):
 
     # Create input model
     wfi_image_model = ImageModel.create_fake_data(shape=shape)
-    wfi_image_model.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    wfi_image_model.meta.cal_step = {}
+    for step_name in wfi_image_model.schema_info("required")["roman"]["meta"][
+        "cal_step"
+    ]["required"].info:
+        wfi_image_model.meta.cal_step[step_name] = "INCOMPLETE"
     wfi_image_model.meta.cal_logs = []
 
     # Create photom model
@@ -245,7 +248,11 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     ).value
 
     # Create input model
-    wfi_image_model.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    wfi_image_model.meta.cal_step = {}
+    for step_name in wfi_image_model.schema_info("required")["roman"]["meta"][
+        "cal_step"
+    ]["required"].info:
+        wfi_image_model.meta.cal_step[step_name] = "INCOMPLETE"
     wfi_image_model.meta.cal_logs = []
 
     # Create photom model
