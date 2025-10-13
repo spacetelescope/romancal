@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from roman_datamodels import stnode
 from roman_datamodels.datamodels import MaskRefModel, RampModel, ScienceRawModel
 from roman_datamodels.dqflags import pixel
 
@@ -18,7 +17,11 @@ ids = ["RampModel"]
 def make_ramp(shape, instrument):
     model = RampModel.create_fake_data(shape=shape)
     model.meta.instrument.name = instrument
-    model.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    model.meta.cal_step = {}
+    for step_name in model.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        model.meta.cal_step[step_name] = "INCOMPLETE"
     model.pixeldq = np.zeros(shape[1:], dtype=model.pixeldq.dtype)
     return model
 
