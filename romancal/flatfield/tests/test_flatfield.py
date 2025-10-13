@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from astropy.time import Time
-from roman_datamodels import stnode
 from roman_datamodels.datamodels import FlatRefModel, ImageModel
 
 from romancal.flatfield import FlatFieldStep
@@ -31,7 +30,11 @@ def test_flatfield_step_interface(instrument, exptype):
     wfi_image_model.var_poisson = np.zeros(shape, dtype=np.float32)
     wfi_image_model.var_rnoise = np.zeros(shape, dtype=np.float32)
     wfi_image_model.var_flat = np.zeros(shape, dtype=np.float32)
-    wfi_image_model.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    wfi_image_model.meta.cal_step = {}
+    for step_name in wfi_image_model.schema_info("required")["roman"]["meta"][
+        "cal_step"
+    ]["required"].info:
+        wfi_image_model.meta.cal_step[step_name] = "INCOMPLETE"
     wfi_image_model.meta.cal_logs = []
 
     flatref_model = FlatRefModel.create_fake_data()
@@ -73,7 +76,12 @@ def test_crds_temporal_match(instrument, exptype):
     wfi_image_model.meta.exposure.end_time = Time("2020-01-02T11:33:11.110")
 
     wfi_image_model.meta.exposure.type = exptype
-    wfi_image_model.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    wfi_image_model.meta.cal_step = {}
+    for step_name in wfi_image_model.schema_info("required")["roman"]["meta"][
+        "cal_step"
+    ]["required"].info:
+        wfi_image_model.meta.cal_step[step_name] = "INCOMPLETE"
+
     wfi_image_model.meta.cal_logs = []
 
     step = FlatFieldStep()
@@ -91,7 +99,11 @@ def test_crds_temporal_match(instrument, exptype):
 def test_skip_var_flat(include_var_flat):
     """Test that we don't populate var_flat if requested."""
     wfi_image_model = ImageModel.create_fake_data(shape=(4088, 4088))
-    wfi_image_model.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    wfi_image_model.meta.cal_step = {}
+    for step_name in wfi_image_model.schema_info("required")["roman"]["meta"][
+        "cal_step"
+    ]["required"].info:
+        wfi_image_model.meta.cal_step[step_name] = "INCOMPLETE"
     wfi_image_model.meta.cal_logs = []
     result = FlatFieldStep.call(wfi_image_model, include_var_flat=include_var_flat)
     assert hasattr(result, "var_flat") == include_var_flat
@@ -122,7 +134,11 @@ def test_spectroscopic_skip(instrument, exptype):
     wfi_image_model.meta.exposure.end_time = Time("2020-02-01T00:00:05.000")
 
     wfi_image_model.meta.exposure.type = exptype
-    wfi_image_model.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    wfi_image_model.meta.cal_step = {}
+    for step_name in wfi_image_model.schema_info("required")["roman"]["meta"][
+        "cal_step"
+    ]["required"].info:
+        wfi_image_model.meta.cal_step[step_name] = "INCOMPLETE"
     wfi_image_model.meta.cal_logs = []
 
     result = FlatFieldStep.call(wfi_image_model)
