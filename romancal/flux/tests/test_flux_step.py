@@ -3,7 +3,7 @@
 import astropy.units as u
 import numpy as np
 import pytest
-from roman_datamodels import datamodels, stnode
+from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelLibrary
 from romancal.flux import FluxStep
@@ -94,7 +94,11 @@ def image_model():
     image_model.var_poisson = rng.poisson(1, size=shape).astype(np.float32)
     image_model.var_flat = rng.uniform(0, 1, size=shape).astype(np.float32)
     image_model.meta.photometry.conversion_megajanskys = (2.0 * u.MJy / u.sr).value
-    image_model.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+    image_model.meta.cal_step = {}
+    for step_name in image_model.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        image_model.meta.cal_step[step_name] = "INCOMPLETE"
     image_model.meta.cal_logs = []
 
     return image_model
