@@ -18,7 +18,6 @@ from gwcs import wcs
 from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from numpy.random import default_rng
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import stnode
 from stcal.tweakreg.astrometric_utils import get_catalog
 
 from romancal.datamodels import ModelLibrary
@@ -473,7 +472,11 @@ def base_image():
     def _base_image(shift_1=0, shift_2=0):
         l2 = rdm.ImageModel.create_fake_data(shape=(2000, 2000))
         l2.meta.filename = "none"
-        l2.meta.cal_step = dict(stnode.L2CalStep.create_fake_data())
+        l2.meta.cal_step = {}
+        for step_name in l2.schema_info("required")["roman"]["meta"]["cal_step"][
+            "required"
+        ].info:
+            l2.meta.cal_step[step_name] = "INCOMPLETE"
         l2.meta.cal_logs = []
         l2.meta.exposure.start_time = Time("2016-01-01T00:00:00")
         # update wcsinfo
