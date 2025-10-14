@@ -313,24 +313,21 @@ class SkyCell:
 
         x, y = self.wcs.invert(radec[:, 0], radec[:, 1])
 
-        core_contains = np.zeros(radec.shape[0]).astype(bool)
-
-        within_bounds = ~np.isnan(x) & ~np.isnan(y)
-        if np.any(within_bounds):
-            x = x[within_bounds]
-            y = y[within_bounds]
-
-            whole = (np.mod(x, 1) == 0) & (np.mod(y, 1) == 0)
-
-            if np.any(whole):
-                core_contains[whole] = self.core[
-                    x[whole].astype(int), y[whole].astype(int)
-                ]
-
-            if np.any(~whole):
-                core_contains[~whole] = self.core[
-                    np.round(x[~whole]).astype(int), np.round(y[~whole]).astype(int)
-                ]
+        # whether points lie within the exclusive region AND within the coordinate bounds of the projection region
+        half_margin = self._skymap.model.meta["skycell_border_pixels"] / 2
+        core_contains = (
+            (half_margin - 0.5 < x)
+            & (x < self._skymap.pixel_shape[0] - half_margin - 0.5)
+            & (half_margin - 0.5 < y)
+            & (y < self._skymap.pixel_shape[1] - half_margin - 0.5)
+            & ra_in_range(
+                radec[:, 0],
+                self.projection_region.data["ra_min"],
+                self.projection_region.data["ra_max"],
+            )
+            & (self.projection_region.data["dec_min"] <= radec[:, 1])
+            & (radec[:, 1] < self.projection_region.data["dec_max"])
+        )
 
         # handle polar singularities
         if np.any(np.abs(radec[:, 1]) == 90):
