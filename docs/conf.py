@@ -12,17 +12,54 @@
 
 import datetime
 import importlib
+import io
 import os
 import sys
 import tomllib
+from contextlib import contextmanager, redirect_stdout
 from distutils.version import LooseVersion
 from pathlib import Path
 
 import sphinx
 import stsci_rtd_theme
+from roman_datamodels import datamodels as rdm
+from sphinx.directives.code import CodeBlock
 from sphinx.ext.autodoc import AttributeDocumenter
 
 from romancal.stpipe import RomanStep
+
+
+@contextmanager
+def stdout_as_string_io():
+    f = io.StringIO()
+    with redirect_stdout(f):
+        yield f
+
+
+class ImageModelInfoDirective(CodeBlock):
+    def run(self):
+        example_image_model = rdm.ImageModel.create_fake_data()
+        with stdout_as_string_io() as sio:
+            example_image_model.info()
+        self.arguments = ["python"]
+        self.content = [
+            ">>> image_model.info()",
+            sio.getvalue(),
+        ]
+        return super().run()
+
+
+class ImageModelSearchDirective(CodeBlock):
+    def run(self):
+        example_image_model = rdm.ImageModel.create_fake_data()
+        with stdout_as_string_io() as sio:
+            print(example_image_model.search("detector"))
+        self.arguments = ["python"]
+        self.content = [
+            ">>> image_model.search('detector')",
+            sio.getvalue(),
+        ]
+        return super().run()
 
 
 class StepSpecDocumenter(AttributeDocumenter):
@@ -55,6 +92,8 @@ def setup(app):
         app.add_stylesheet("stsci.css")
     # add a custom AttributeDocumenter subclass to handle Step.spec formatting
     app.add_autodocumenter(StepSpecDocumenter, True)
+    app.add_directive("image_model_info", ImageModelInfoDirective)
+    app.add_directive("image_model_search", ImageModelSearchDirective)
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
