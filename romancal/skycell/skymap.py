@@ -286,18 +286,16 @@ class SkyCells:
     def wcs(self) -> list[WCS]:
         """WCS objects representing these skycells"""
 
-        wcsobjs = []
-        for wcs_info in self.wcs_infos:
-            wcsobj = wcsinfo_to_wcs(
+        return [
+            wcsinfo_to_wcs(
                 wcs_info,
                 bounding_box=(
                     (-0.5, self.pixel_shape[0] - 0.5),
                     (-0.5, self.pixel_shape[1] - 0.5),
                 ),
             )
-            wcsobj.array_shape = wcsobj.pixel_shape
-            wcsobjs.append(wcsobj)
-        return wcsobjs
+            for wcs_info in self.wcs_infos
+        ]
 
     @property
     def pixel_scale(self) -> float:
