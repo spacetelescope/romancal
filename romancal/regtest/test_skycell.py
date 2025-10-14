@@ -2,9 +2,7 @@
 
 import numpy as np
 import pytest
-import spherical_geometry.vector as sgv
 from numpy.testing import assert_allclose
-from scipy.spatial import KDTree
 
 import romancal.skycell.skymap as sc
 
