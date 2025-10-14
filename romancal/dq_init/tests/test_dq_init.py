@@ -209,12 +209,7 @@ def test_dqinit_step_interface(instrument, exptype):
     wfi_sci_raw_model[extra_key] = extra_value
 
     # Create mask model
-    maskref_model = MaskRefModel.create_fake_data()
-    maskref_model["meta"]["instrument"]["optical_element"] = "F158"
-    maskref_model["meta"]["instrument"]["detector"] = "WFI01"
-    maskref_model["data"] = np.ones(shape[1:], dtype=np.float32)
-    maskref_model["dq"] = np.zeros(shape[1:], dtype=np.uint32)
-    maskref_model["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
+    maskref_model = MaskRefModel.create_fake_data(shape=shape[1:])
 
     # Perform Data Quality application step
     result = DQInitStep.call(wfi_sci_raw_model, override_mask=maskref_model)
@@ -257,12 +252,7 @@ def test_dqinit_refpix(instrument, exptype):
     )
 
     # Create mask model
-    maskref_model = MaskRefModel.create_fake_data()
-    maskref_model["meta"]["instrument"]["optical_element"] = "F158"
-    maskref_model["meta"]["instrument"]["detector"] = "WFI01"
-    maskref_model["data"] = np.ones(shape[1:], dtype=np.float32)
-    maskref_model["dq"] = np.zeros(shape[1:], dtype=np.uint32)
-    maskref_model["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
+    maskref_model = MaskRefModel.create_fake_data(shape=shape[1:])
 
     # Perform Data Quality application step
     result = DQInitStep.call(wfi_sci_raw_model, override_mask=maskref_model)
@@ -305,12 +295,7 @@ def test_dqinit_resultantdq(instrument, exptype):
     wfi_sci_raw_model.data = np.ones(shape, dtype=np.uint16)
 
     # Create mask model
-    maskref_model = MaskRefModel.create_fake_data()
-    maskref_model["meta"]["instrument"]["optical_element"] = "F158"
-    maskref_model["meta"]["instrument"]["detector"] = "WFI01"
-    maskref_model["data"] = np.ones(shape[1:], dtype=np.float32)
-    maskref_model["dq"] = np.zeros(shape[1:], dtype=np.uint32)
-    maskref_model["err"] = (RNG.uniform(size=shape[1:]) * 0.05).astype(np.float32)
+    maskref_model = MaskRefModel.create_fake_data(shape=shape[1:])
 
     # Perform Data Quality application step
     result = DQInitStep.call(wfi_sci_raw_model, override_mask=maskref_model)
