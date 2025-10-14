@@ -280,33 +280,26 @@ class SkyCell:
             with_bounding_box=False,
         )
 
-        # handle longitude wrapping around 0
-        projregion_ra_min = self.projection_region.data["ra_min"]
-        if projregion_ra_min > self.projection_region.data["ra_max"]:
-            corners_ra[corners_ra > self.projection_region.data["ra_min"]] -= 360
-            projregion_ra_min -= 360
-
         # only convert pixels to world coordinates if a corner of this skycell lies OUTSIDE the bounds of the projection region
         if ~np.all(
-            (projregion_ra_min <= corners_ra)
-            & (corners_ra < self.projection_region.data["ra_max"])
+            ra_in_range(
+                corners_ra,
+                self.projection_region.data["ra_min"],
+                self.projection_region.data["ra_max"],
+            )
             & (self.projection_region.data["dec_min"] <= corners_dec)
             & (corners_dec < self.projection_region.data["dec_max"])
         ):
             ra, dec = self.wcs(xy[:, 0], xy[:, 1], with_bounding_box=False)
 
-            # handle longitude wrapping around 0
-            if (
-                self.projection_region.data["ra_min"]
-                > self.projection_region.data["ra_max"]
-            ):
-                ra[ra > self.projection_region.data["ra_min"]] -= 360
-
             # whether points lie within the exclusive region AND within the coordinate bounds of the projection region
             in_exclusive_region = (
                 in_exclusive_region
-                & (projregion_ra_min <= ra)
-                & (ra < self.projection_region.data["ra_max"])
+                & ra_in_range(
+                    ra,
+                    self.projection_region.data["ra_min"],
+                    self.projection_region.data["ra_max"],
+                )
                 & (self.projection_region.data["dec_min"] <= dec)
                 & (dec < self.projection_region.data["dec_max"])
             )
@@ -1062,6 +1055,17 @@ class SkyMap:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.path})"
+
+
+def ra_in_range(ra: float, low: float, high: float):
+    """whether the given longitude lies within the given min and max range, handling wrapping"""
+    ra = ra % 360
+    low = low % 360
+    high = high % 360
+    if low <= high:
+        return (ra >= low) & (ra <= high)
+    else:
+        return (ra >= low) | (ra <= high)
 
 
 SKYMAP = SkyMap(path=os.environ.get("SKYMAP_PATH", None))
