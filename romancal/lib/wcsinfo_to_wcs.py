@@ -68,4 +68,8 @@ def wcsinfo_to_wcs(
     if bounding_box:
         wcsobj.bounding_box = bounding_box
 
+    # ensure array_shape is populated
+    if not hasattr(wcsobj, "array_shape"):
+        wcsobj.array_shape = wcsobj.pixel_shape[::-1]
+
     return wcsobj
