@@ -594,7 +594,6 @@ class ProjectionRegion:
                 for skycell in (
                     SkyCell(self.data["skycell_start"] + skycell_index)
                     for skycell_index in skycell_indices
-                    if skycell_index != len(self.skycell_indices)
                 )
                 if skycell.polygon.contains_point(vectorpoints[point_index, :])
             ]
@@ -743,8 +742,7 @@ class SkyMap:
             [
                 ProjectionRegion(projregion_index)
                 for projregion_index in projregion_indices
-                if projregion_index != len(self.model.projection_regions)
-                and ProjectionRegion(projregion_index).polygon.contains_point(
+                if ProjectionRegion(projregion_index).polygon.contains_point(
                     vectorpoints[vectorpoint_index]
                 )
             ]
@@ -780,7 +778,6 @@ class SkyMap:
                 for skycell in (
                     SkyCell(skycell_index)
                     for skycell_index in skycell_indices
-                    if skycell_index != len(SKYMAP.model.skycells)
                 )
                 if skycell.polygon.contains_point(vectorpoints[point_index, :])
             ]
