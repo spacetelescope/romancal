@@ -11,6 +11,7 @@ __all__ = ["wcsinfo_to_wcs"]
 def wcsinfo_to_wcs(
     wcsinfo: dict,
     bounding_box: None | tuple[tuple[float, float], tuple[float, float]] = None,
+    copy_shape: bool = False,
 ) -> WCS:
     """Create a WCS from the skycell wcsinfo meta
 
@@ -67,5 +68,8 @@ def wcsinfo_to_wcs(
 
     if bounding_box:
         wcsobj.bounding_box = bounding_box
+
+    if copy_shape:
+        wcsobj.array_shape = wcsobj.pixel_shape
 
     return wcsobj

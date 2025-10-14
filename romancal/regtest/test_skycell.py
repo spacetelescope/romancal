@@ -110,16 +110,7 @@ def test_skycells_core_contains_points():
         f"{len(point_indices_outside_skycells)} / {radec.shape[0]} points do not lie within any skycell"
     )
 
-    point_indices_outside_core = [
-        point_index
-        for point_index, skycells in enumerate(skycells_containing_points)
-        if not len(
-            np.where(
-                [skycell.core_contains(radec[point_index, :]) for skycell in skycells]
-            )[0]
-        )
-        == 1
-    ]
+    point_indices_outside_core = (sc.SKYMAP.core_skycell(radec) == -1).nonzero()
 
     # each point on the sphere MUST belong to exactly one skycell
     assert len(point_indices_outside_core) == 0, (
