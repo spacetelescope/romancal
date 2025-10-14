@@ -37,7 +37,7 @@ class SkyCell:
     area = 1.7760288493318122e-06
 
     # average diagonal length of a skycell in degrees on the sphere
-    length = 0.0018846729895155984
+    length = 0.107984
 
     def __init__(self, index: int | None, skymap: "SkyMap" = None):
         """
