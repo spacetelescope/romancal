@@ -823,19 +823,20 @@ class ProjectionRegion:
             vectorpoints = np.ndarray([vectorpoints])
         vectorpoints = sgv.normalize_vector(vectorpoints)
 
-        skycells = []
-        for vectorpoint in vectorpoints:
-            if self.polygon.contains_point(vectorpoint):
-                vectorpoint_skycells = []
-                # the maximum number of skycells any point on the sphere could possibly be within is 8 (4 overlapping corners)
-                for skycell_index in self.skycells_kdtree.query(vectorpoint, k=4)[1]:
-                    skycell = SkyCell(self.data["skycell_start"] + skycell_index)
-                    if skycell.polygon.contains_point(vectorpoint):
-                        vectorpoint_skycells.append(skycell)
-                        break
-                skycells.append(vectorpoint_skycells)
-
-        return skycells
+        return [
+            [
+                skycell
+                for skycell in (
+                    SkyCell(self.data["skycell_start"] + skycell_index)
+                    for skycell_index in skycell_indices
+                    if skycell_index != len(self.skycell_indices)
+                )
+                if skycell.polygon.contains_point(vectorpoints[point_index, :])
+            ]
+            for point_index, skycell_indices in enumerate(
+                self.skycells_kdtree.query_ball_point(vectorpoints, SkyCell.length)
+            )
+        ]
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, ProjectionRegion):
@@ -983,10 +984,9 @@ class SkyMap:
                 )
             ]
             for vectorpoint_index, projregion_indices in enumerate(
-                self.projection_regions_kdtree.query(
-                    vectorpoints,
-                    k=4,  # , distance_upper_bound=ProjectionRegion.MAX_LENGTH
-                )[1]
+                self.projection_regions_kdtree.query_ball_point(
+                    vectorpoints, ProjectionRegion.MAX_LENGTH
+                )
             )
         ]
 
@@ -1020,9 +1020,7 @@ class SkyMap:
                 if skycell.polygon.contains_point(vectorpoints[point_index, :])
             ]
             for point_index, skycell_indices in enumerate(
-                self.skycells_kdtree.query(
-                    vectorpoints, k=4, distance_upper_bound=SkyCell.length
-                )[1]
+                self.skycells_kdtree.query_ball_point(vectorpoints, SkyCell.length)
             )
         ]
 
