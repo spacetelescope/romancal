@@ -339,6 +339,12 @@ class SkyCell:
                     np.round(x[~whole]).astype(int), np.round(y[~whole]).astype(int)
                 ]
 
+        # handle polar singularities
+        if np.any(np.abs(radec[:, 1]) == 90):
+            # TODO if the polar projection regions change, this will need to be updated
+            if str(self.name).endswith("x50y50"):
+                core_contains[np.abs(radec[:, 1]) == 90] = True
+
         return core_contains
 
     def __eq__(self, other) -> bool:
