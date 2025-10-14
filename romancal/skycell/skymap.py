@@ -288,9 +288,9 @@ class SkyCell:
 
         # only convert pixels to world coordinates if a corner of this skycell lies OUTSIDE the bounds of the projection region
         if ~np.all(
-            (projregion_ra_min < corners_ra)
+            (projregion_ra_min <= corners_ra)
             & (corners_ra < self.projection_region.data["ra_max"])
-            & (self.projection_region.data["dec_min"] < corners_dec)
+            & (self.projection_region.data["dec_min"] <= corners_dec)
             & (corners_dec < self.projection_region.data["dec_max"])
         ):
             ra, dec = self.wcs(xy[:, 0], xy[:, 1], with_bounding_box=False)
@@ -305,9 +305,9 @@ class SkyCell:
             # whether points lie within the exclusive region AND within the coordinate bounds of the projection region
             in_exclusive_region = (
                 in_exclusive_region
-                & (projregion_ra_min < ra)
+                & (projregion_ra_min <= ra)
                 & (ra < self.projection_region.data["ra_max"])
-                & (self.projection_region.data["dec_min"] < dec)
+                & (self.projection_region.data["dec_min"] <= dec)
                 & (dec < self.projection_region.data["dec_max"])
             )
 
