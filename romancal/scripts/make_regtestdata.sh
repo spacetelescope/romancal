@@ -80,13 +80,12 @@ echo "Creating regtest files for all saturated tests..."
 basename="r0000101001001001001_0001_wfi01_f158"
 python -c "
 import asdf
-from roman_datamodels import stnode
 basename = '$basename'
 f = asdf.open(f'{basename}_uncal.asdf')
 data = f['roman']['data'].copy()
 data[...] = 65535
 f['roman']['data'] = data
-f['roman']['meta']['filename'] = stnode.Filename(f'{basename}_ALL_SATURATED_uncal.asdf')
+f['roman']['meta']['filename'] = f'{basename}_ALL_SATURATED_uncal.asdf'
 f.write_to(f'{basename}_ALL_SATURATED_uncal.asdf')"
 strun roman_elp ${basename}_ALL_SATURATED_uncal.asdf
 cp ${basename}_ALL_SATURATED_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
@@ -144,10 +143,9 @@ do
     python -c "
 import asdf
 import roman_datamodels as rdm
-from roman_datamodels import stnode
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
 model = rdm.open('${basename}_cal.asdf', lazy_load=False)
-model.meta.filename = stnode.Filename(f'${basename}_shift_cal.asdf')
+model.meta.filename = f'${basename}_shift_cal.asdf'
 delta = [1 / 3600., 1 / 3600.]
 wcsinfo = model.meta.wcsinfo
 wcsinfo.ra_ref += delta[0]

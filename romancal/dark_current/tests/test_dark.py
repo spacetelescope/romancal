@@ -3,7 +3,6 @@
 import numpy as np
 import pytest
 import roman_datamodels as rdm
-from roman_datamodels import stnode
 from roman_datamodels.datamodels import DarkRefModel, ImageModel
 
 from romancal.dark_current import DarkCurrentStep
@@ -132,8 +131,12 @@ def create_image_and_dark(shape, instrument, exptype):
     # Create test image model
     image_shape = (shape[1], shape[2])
     image = ImageModel.create_fake_data(shape=image_shape)
-    image.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    image.meta.cal_logs = stnode.CalLogs.create_fake_data()
+    image.meta.cal_step = {}
+    for step_name in image.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        image.meta.cal_step[step_name] = "INCOMPLETE"
+    image.meta.cal_logs = []
     image.meta.instrument.name = instrument
     image.meta.instrument.detector = "WFI01"
     image.meta.instrument.optical_element = "F158"

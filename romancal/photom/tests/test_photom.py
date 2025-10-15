@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from astropy import units as u
-from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel, WfiImgPhotomRefModel
 
 from romancal.photom import PhotomStep, photom
@@ -70,7 +69,7 @@ def create_photom_wfi_image(min_r=3.1, delta=0.1):
         reftab[element] = key_dict
 
     # Create default datamodel
-    photom_model = stnode.WfiImgPhotomRef.create_fake_data()
+    photom_model = WfiImgPhotomRefModel.create_fake_data()
 
     # Copy values above into defautl datamodel
     photom_model.phot_table = reftab
@@ -82,7 +81,7 @@ def test_no_photom_match():
     """Test apply_photom warning for no match"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = stnode.WfiImage.create_fake_data(shape=(20, 20))
+    input_model = ImageModel.create_fake_data(shape=(20, 20))
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -113,7 +112,7 @@ def test_apply_photom1():
     """Test apply_photom applies correct metadata"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = stnode.WfiImage.create_fake_data(shape=(20, 20))
+    input_model = ImageModel.create_fake_data(shape=(20, 20))
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -159,7 +158,7 @@ def test_apply_photom2():
     """Test apply_photom does not change data values"""
 
     # Create sample WFI Level 2 science datamodel
-    input_model = stnode.WfiImage.create_fake_data(shape=(20, 20))
+    input_model = ImageModel.create_fake_data(shape=(20, 20))
 
     # Create photom reference datamodel
     photom_model = create_photom_wfi_image(min_r=3.1, delta=0.1)
@@ -189,19 +188,21 @@ def test_photom_step_interface(instrument, exptype):
     shape = (20, 20)
 
     # Create input model
-    wfi_image = stnode.WfiImage.create_fake_data(shape=shape)
-    wfi_image_model = ImageModel(wfi_image)
-    wfi_image_model.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    wfi_image_model.meta.cal_logs = stnode.CalLogs.create_fake_data()
+    wfi_image_model = ImageModel.create_fake_data(shape=shape)
+    wfi_image_model.meta.cal_step = {}
+    for step_name in wfi_image_model.schema_info("required")["roman"]["meta"][
+        "cal_step"
+    ]["required"].info:
+        wfi_image_model.meta.cal_step[step_name] = "INCOMPLETE"
+    wfi_image_model.meta.cal_logs = []
 
     # Create photom model
-    photom = stnode.WfiImgPhotomRef.create_fake_data()
-    photom_model = WfiImgPhotomRefModel(photom)
+    photom_model = WfiImgPhotomRefModel.create_fake_data()
 
     # Run photom correction step
     result = PhotomStep.call(wfi_image_model, override_photom=photom_model)
 
-    assert (result.data == wfi_image.data).all()
+    assert (result.data == wfi_image_model.data).all()
     assert result.data.shape == shape
     if exptype == "WFI_IMAGE":
         assert result.meta.cal_step.photom == "COMPLETE"
@@ -229,29 +230,33 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     shape = (20, 20)
 
     # Create input node
-    wfi_image = stnode.WfiImage.create_fake_data(shape=shape)
+    wfi_image_model = ImageModel.create_fake_data(shape=shape)
 
     # Select exposure type and optical element
-    wfi_image.meta.exposure.type = "WFI_PRISM"
-    wfi_image.meta.instrument.optical_element = "PRISM"
+    wfi_image_model.meta.exposure.type = "WFI_PRISM"
+    wfi_image_model.meta.instrument.optical_element = "PRISM"
 
     # Set photometric values for spectroscopic data
-    wfi_image.meta.photometry.pixel_area = (2.31307642258977e-14 * u.steradian).value
-    wfi_image.meta.photometry.conversion_megajanskys = (
+    wfi_image_model.meta.photometry.pixel_area = (
+        2.31307642258977e-14 * u.steradian
+    ).value
+    wfi_image_model.meta.photometry.conversion_megajanskys = (
         -99999 * u.megajansky / u.steradian
     ).value
-    wfi_image.meta.photometry.conversion_megajanskys_uncertainty = (
+    wfi_image_model.meta.photometry.conversion_megajanskys_uncertainty = (
         -99999 * u.megajansky / u.steradian
     ).value
 
     # Create input model
-    wfi_image_model = ImageModel(wfi_image)
-    wfi_image_model.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    wfi_image_model.meta.cal_logs = stnode.CalLogs.create_fake_data()
+    wfi_image_model.meta.cal_step = {}
+    for step_name in wfi_image_model.schema_info("required")["roman"]["meta"][
+        "cal_step"
+    ]["required"].info:
+        wfi_image_model.meta.cal_step[step_name] = "INCOMPLETE"
+    wfi_image_model.meta.cal_logs = []
 
     # Create photom model
-    photom = stnode.WfiImgPhotomRef.create_fake_data()
-    photom_model = WfiImgPhotomRefModel(photom)
+    photom_model = WfiImgPhotomRefModel.create_fake_data()
 
     # Run photom correction step
     result = PhotomStep.call(wfi_image_model, override_photom=photom_model)

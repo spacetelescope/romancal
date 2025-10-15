@@ -17,7 +17,6 @@ from astropy.modeling.models import Shift
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import stnode
 
 from romancal.assign_wcs import pointing
 from romancal.assign_wcs.utils import add_s_region
@@ -238,9 +237,13 @@ def _create_wcs(input_dm, shift_1=0, shift_2=0):
 def _base_image(shift_1=0, shift_2=0):
     l2 = rdm.ImageModel.create_fake_data(shape=(100, 100))
     l2.meta.filename = "none"
-    l2.meta.cal_logs = stnode.CalLogs.create_fake_data()
-    l2.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    l2.meta.background = stnode.SkyBackground.create_fake_data()
+    l2.meta.cal_logs = []
+    l2.meta.cal_step = {}
+    for step_name in l2.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        l2.meta.cal_step[step_name] = "INCOMPLETE"
+    l2.meta.background = {"level": -999999.0, "method": "None", "subtracted": False}
     l2.var_flat = l2.var_rnoise.copy()
     _create_wcs(l2)
     l2.meta.wcsinfo.vparity = -1

@@ -11,7 +11,6 @@ from astropy.time import Time
 from numpy.testing import assert_equal
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import stnode
 from roman_datamodels.datamodels import (
     ForcedImageSourceCatalogModel,
     ImageModel,
@@ -91,10 +90,13 @@ def mosaic_model():
         }
     }
     model = MosaicModel.create_fake_data(defaults=defaults, shape=(101, 101))
-    model.meta.ref_file = stnode.RefFile.create_fake_data()
     model.meta.filename = "none"
-    model.meta.cal_step = stnode.L3CalStep.create_fake_data()
-    model.cal_logs = stnode.CalLogs.create_fake_data()
+    model.meta.cal_step = {}
+    for step_name in model.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        model.meta.cal_step[step_name] = "INCOMPLETE"
+    model.cal_logs = []
     data, err = make_test_image()
     model.data = data
     model.err = err
@@ -106,8 +108,12 @@ def mosaic_model():
 def image_model():
     model = ImageModel.create_fake_data(shape=(101, 101))
     model.meta.filename = "none"
-    model.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    model.meta.cal_logs = stnode.CalLogs.create_fake_data()
+    model.meta.cal_step = {}
+    for step_name in model.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        model.meta.cal_step[step_name] = "INCOMPLETE"
+    model.meta.cal_logs = []
     data, err = make_test_image()
     model.data = data
     model.err = err
