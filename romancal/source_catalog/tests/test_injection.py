@@ -231,7 +231,9 @@ def test_create_cosmoscat():
         exptimes[bp] = 300
 
     # Generate cosmos-like catalog
-    cat = make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=FILTERS, seed=RNG_SEED)
+    cat = make_cosmoslike_catalog(
+        cen, ra, dec, exptimes, filters=FILTERS, seed=RNG_SEED
+    )
 
     # Set simple wcs metadata for mcat
     meta = {
@@ -259,11 +261,11 @@ def test_create_cosmoscat():
     for bp in FILTERS:
         # Normalize the mag limit to exptimes
         if bp in exptimes:
-            point_band_mag_limit.append(injection.HRPOINTMAGLIMIT[bp] + (
-                1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value)
-            ))
+            point_band_mag_limit.append(
+                injection.HRPOINTMAGLIMIT[bp]
+                + (1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value))
+            )
     point_mag_limit = max(point_band_mag_limit)
-
 
     for bp in FILTERS:
         # Ensure point fluxes in range
@@ -275,12 +277,10 @@ def test_create_cosmoscat():
         )
 
         # Ensure points lack color
-        assert np.all(
-            cat[cat["type"] == "PSF"][bp] == cat[cat["type"] == "PSF"][bp]
-        )
+        assert np.all(cat[cat["type"] == "PSF"][bp] == cat[cat["type"] == "PSF"][bp])
 
     # Ensure galaxy sizes are reasonable
-    assert np.all(cat[cat["type"] == "SER"]["half_light_radius"].value < 1 )
+    assert np.all(cat[cat["type"] == "SER"]["half_light_radius"].value < 1)
     assert np.all(cat[cat["type"] == "SER"]["half_light_radius"].value >= 0.036)
 
     # Set the galaxy magnitude limit
@@ -288,9 +288,10 @@ def test_create_cosmoscat():
     for bp in FILTERS:
         # Normalize the mag limit to exptimes
         if bp in exptimes:
-            gal_band_mag_limit.append(injection.HRGALMAGLIMIT[bp] + (
-                1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value)
-            ))
+            gal_band_mag_limit.append(
+                injection.HRGALMAGLIMIT[bp]
+                + (1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value))
+            )
     gal_mag_limit = max(gal_band_mag_limit)
 
     # Ensure galaxy fluxes in range

@@ -122,7 +122,9 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **
     # RomanISim's make cosmos galaxies method will return cosmos like objects with
     # uniformly distributed position angles. Radius and area are set to return
     # a full sample (~346k galaxies)
-    gal_cat = catalog.make_cosmos_galaxies(cen, radius=1.0, bandpasses=filters, cat_area=(np.pi), **kwargs)
+    gal_cat = catalog.make_cosmos_galaxies(
+        cen, radius=1.0, bandpasses=filters, cat_area=(np.pi), **kwargs
+    )
 
     # Trim to the required number of objects
     gal_cat = gal_cat[:num_gals]
@@ -143,9 +145,10 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **
     for bp in filters:
         # Normalize the mag limit to exptimes
         if bp in exptimes:
-            gal_mag_limit.append(HRGALMAGLIMIT[bp] + (
-                1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value)
-            ))
+            gal_mag_limit.append(
+                HRGALMAGLIMIT[bp]
+                + (1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value))
+            )
     mag_tot = mags + max(gal_mag_limit)
 
     # Set bandpass fluxes
@@ -159,15 +162,20 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **
     # Sizes are drawn from a log-normal distribution of J-band magnitudes
     # The parameters below are derived from the distribution for sizes
     # mu = (-0.1555 * (J - 17)) - 3.55
-    jmag = -2.5 * np.log10(gal_cat["F129"], where=(gal_cat["F129"] > 0),
-                    out=np.array([-20.0] * len(gal_cat)))
+    jmag = -2.5 * np.log10(
+        gal_cat["F129"],
+        where=(gal_cat["F129"] > 0),
+        out=np.array([-20.0] * len(gal_cat)),
+    )
     mu = (-0.1555 * (jmag - 17)) - 3.55
     sigma = 0.15
     radsize = rng_numpy.normal(mu, sigma)
     gal_cat["half_light_radius"] = (10**radsize) * 3600 * u.arcsec
 
     # Set the radius floor
-    gal_cat["half_light_radius"][gal_cat["half_light_radius"] < 0.036] = 0.036 * u.arcsec
+    gal_cat["half_light_radius"][gal_cat["half_light_radius"] < 0.036] = (
+        0.036 * u.arcsec
+    )
 
     # Randomize concentrations
     gal_cat["n"] = rng_numpy.uniform(low=0.8, high=4.5, size=num_gals)
@@ -179,7 +187,7 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **
     star_cat["dec"] = num_stars * [0]
     star_cat["type"] = num_stars * ["PSF"]
     star_cat["n"] = num_stars * [-1]
-    star_cat["half_light_radius"] = num_stars * [0] *  u.arcsec
+    star_cat["half_light_radius"] = num_stars * [0] * u.arcsec
     star_cat["pa"] = num_stars * [0]
     star_cat["ba"] = num_stars * [1]
 
@@ -191,9 +199,10 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **
     for bp in filters:
         # Normalize the mag limit to exptimes
         if bp in exptimes:
-            point_band_mag_limit.append(HRPOINTMAGLIMIT[bp] + (
-                1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value)
-            ))
+            point_band_mag_limit.append(
+                HRPOINTMAGLIMIT[bp]
+                + (1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value))
+            )
 
     point_mag_limit = max(point_band_mag_limit)
 
