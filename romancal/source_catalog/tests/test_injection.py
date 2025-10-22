@@ -28,7 +28,7 @@ YPOS_IDX = [50, 150, 50, 150]
 MAG_FLUX = 1e-9
 DETECTOR = "WFI04"
 SCA = 4
-FILTER = "F158"
+FILTERS = ["F062", "F158", "F213", "F146"]
 RNG_SEED = 42
 MATABLE = 4
 BANDPASSES = set(bandpass.galsim2roman_bandpass.values())
@@ -51,10 +51,10 @@ def make_test_data():
 
 
 @pytest.fixture
-def image_model():
+def image_model(filter=FILTERS[0]):
     defaults = {"meta": parameters.default_parameters_dictionary}
     defaults["meta"]["instrument"]["detector"] = DETECTOR
-    defaults["meta"]["instrument"]["optical_element"] = FILTER
+    defaults["meta"]["instrument"]["optical_element"] = filter
     defaults["meta"]["wcsinfo"]["ra_ref"] = RA
     defaults["meta"]["wcsinfo"]["dec_ref"] = DEC
     defaults["meta"]["wcsinfo"]["roll_ref"] = ROLL
@@ -79,14 +79,14 @@ def image_model():
 
 
 @pytest.fixture
-def mosaic_model():
+def mosaic_model(filter=FILTERS[0]):
     defaults = {
         "meta": {
             "coadd_info": {
                 "time_first": Time("2024-01-01T12:00:00.000", format="isot"),
             },
             "instrument": {
-                "optical_element": FILTER,
+                "optical_element": filter,
             },
             "resample": {"pixfrac": 1.0},
             "wcsinfo": {
@@ -132,10 +132,10 @@ def make_catalog(metadata):
     tabcat = table.Table()
     tabcat["ra"] = ra
     tabcat["dec"] = dec
-    tabcat[FILTER] = len(XPOS_IDX) * [MAG_FLUX]
+    tabcat[metadata["instrument"]["optical_element"]] = len(XPOS_IDX) * [MAG_FLUX]
     tabcat["type"] = len(XPOS_IDX) * ["PSF"]
     tabcat["n"] = len(XPOS_IDX) * [-1]
-    tabcat["half_light_radius"] = len(XPOS_IDX) * [-1]
+    tabcat["half_light_radius"] = len(XPOS_IDX) * [-1] * u.arcsec
     tabcat["pa"] = len(XPOS_IDX) * [-1]
     tabcat["ba"] = len(XPOS_IDX) * [-1]
 
@@ -153,6 +153,9 @@ def make_catalog(metadata):
 def test_inject_sources(image_model, mosaic_model):
     for si_model in (image_model, mosaic_model):
         """Test simple source injection"""
+        # Set filter
+        test_filter = FILTERS[0]
+
         cat = make_catalog(si_model.meta)
 
         data_orig = si_model.copy()
@@ -192,18 +195,21 @@ def test_inject_sources(image_model, mosaic_model):
 
         # Ensure total added flux matches expected added flux
         # maggies to counts (large number)
-        cps_conv = bandpass.get_abflux(FILTER, 2)
+        cps_conv = bandpass.get_abflux(test_filter, 2)
         # electrons to mjysr (roughly order unity in scale)
         if isinstance(si_model, ImageModel):
             unit_factor = 1 / parameters.reference_data["gain"].value
         else:
-            unit_factor = bandpass.etomjysr(FILTER, 2)
+            unit_factor = bandpass.etomjysr(test_filter, 2)
         total_rec_flux = np.sum(si_model.data - data_orig.data)  # MJy / sr
         total_theo_flux = len(cat) * MAG_FLUX * cps_conv * unit_factor  # u.MJy / u.sr
         assert np.isclose(total_rec_flux, total_theo_flux, rtol=0.1)
 
 
 def test_create_cosmoscat():
+    # Set a test filter
+    test_filter = FILTERS[0]
+
     # Pointing
     cen = SkyCoord(ra=RA * u.deg, dec=DEC * u.deg)
 
@@ -219,21 +225,25 @@ def test_create_cosmoscat():
     # Convert x,y to ra, dec
     ra, dec = wcsobj.pixel_to_world_values(np.array(XPOS_IDX), np.array(YPOS_IDX))
 
-    # Exposure time (s)
-    exptime = 300
+    # Exposure times (s)
+    exptimes = {}
+    for bp in FILTERS:
+        exptimes[bp] = 300
 
     # Generate cosmos-like catalog
-    cat = make_cosmoslike_catalog(cen, ra, dec, exptime, filter=FILTER, seed=RNG_SEED)
+    cat = make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=FILTERS, seed=RNG_SEED)
 
-    # Set wcs metadata
+    # Set simple wcs metadata for mcat
     meta = {
         "wcsinfo": {
             "ra_ref": RA,
             "dec_ref": DEC,
             "roll_ref": ROLL,
-        }
+        },
+        "instrument": {
+            "optical_element": test_filter,
+        },
     }
-
     mcat = make_catalog(meta)
 
     # Ensure that locations are as expected
@@ -244,36 +254,48 @@ def test_create_cosmoscat():
     assert np.sum(cat["type"] == "PSF") == int(len(XPOS_IDX) / 4)
     assert np.sum(cat["n"] == -1) == int(len(XPOS_IDX) / 4)
 
-    # Set the point magnitude limit for filter
-    point_mag_limit = max(injection.HRPOINTMAGLIMIT.values()) + (
-        1.25 * np.log10((exptime * u.s).to(u.hour).value)
-    )
+    # Set the point magnitude limit
+    point_band_mag_limit = []
+    for bp in FILTERS:
+        # Normalize the mag limit to exptimes
+        if bp in exptimes:
+            point_band_mag_limit.append(injection.HRPOINTMAGLIMIT[bp] + (
+                1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value)
+            ))
+    point_mag_limit = max(point_band_mag_limit)
 
-    # Ensure point fluxes in range
-    assert np.all(
-        cat[cat["type"] == "PSF"][FILTER] < 10.0 ** (-(point_mag_limit - 4) / 2.5)
-    )
-    assert np.all(
-        cat[cat["type"] == "PSF"][FILTER] > 10.0 ** (-(point_mag_limit + 1) / 2.5)
-    )
 
-    # Ensure points lack color
-    for bp in BANDPASSES:
+    for bp in FILTERS:
+        # Ensure point fluxes in range
         assert np.all(
-            cat[cat["type"] == "PSF"][bp] == cat[cat["type"] == "PSF"][FILTER]
+            cat[cat["type"] == "PSF"][bp] < 10.0 ** (-(point_mag_limit - 4) / 2.5)
+        )
+        assert np.all(
+            cat[cat["type"] == "PSF"][bp] > 10.0 ** (-(point_mag_limit + 1) / 2.5)
         )
 
-    # Ensure galaxies sizes are reasonable
-    assert np.all(cat[cat["type"] == "SER"]["half_light_radius"] < 1)
-    assert np.all(cat[cat["type"] == "SER"]["half_light_radius"] >= 0.036)
+        # Ensure points lack color
+        assert np.all(
+            cat[cat["type"] == "PSF"][bp] == cat[cat["type"] == "PSF"][bp]
+        )
 
-    # Set the galaxy magnitude limit for filter
-    gal_mag_limit = injection.HRGALMAGLIMIT[FILTER] + (
-        1.25 * np.log10((exptime * u.s).to(u.hour).value)
-    )
+    # Ensure galaxy sizes are reasonable
+    assert np.all(cat[cat["type"] == "SER"]["half_light_radius"].value < 1 )
+    assert np.all(cat[cat["type"] == "SER"]["half_light_radius"].value >= 0.036)
+
+    # Set the galaxy magnitude limit
+    gal_band_mag_limit = []
+    for bp in FILTERS:
+        # Normalize the mag limit to exptimes
+        if bp in exptimes:
+            gal_band_mag_limit.append(injection.HRGALMAGLIMIT[bp] + (
+                1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value)
+            ))
+    gal_mag_limit = max(gal_band_mag_limit)
 
     # Ensure galaxy fluxes in range
-    assert np.all(
-        cat[cat["type"] == "SER"][FILTER] < 10.0 ** (-(gal_mag_limit - 4) / 2.5)
-    )
-    assert np.all(cat[cat["type"] == "SER"][FILTER] >= 0)
+    for bp in FILTERS:
+        assert np.all(
+            cat[cat["type"] == "SER"][bp] < 10.0 ** (-(gal_mag_limit - 4) / 2.5)
+        )
+        assert np.all(cat[cat["type"] == "SER"][bp] >= 0)

@@ -71,7 +71,7 @@ def inject_sources(model, si_cat):
     return new_model
 
 
-def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **kwargs):
+def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **kwargs):
     """
     Generate a catalog of cosmos galaxies and stars, with the following assumptions:
     - 75% of objects will be galaxies, 25% will be point sources
@@ -89,10 +89,10 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
         Location around which to generate sources.
     xpos, ypos : array_like (float)
         x, y positions of each source in objlist
-    exptime : float
-        Exposure time
-    filter : str
-        Name of filter (used to calculate size)
+    exptimes : dictionary
+        Exposure time for each filter (key)
+    filters : list of str
+        List of filter names
     seed : int
         Seed for random number generator
 
@@ -104,7 +104,11 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     from romanisim import bandpass, catalog
 
     # WFI bandpasses
-    BANDPASSES = set(bandpass.galsim2roman_bandpass.values())
+    if filters is None:
+        filters = set(bandpass.galsim2roman_bandpass.values())
+    # Ensure the J-band is included, as it is used for sizes
+    elif "F129" not in filters:
+        filters.append("F129")
 
     # Set random source index for the catalog
     rng_numpy = np.random.default_rng(seed)
@@ -118,7 +122,7 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     # RomanISim's make cosmos galaxies method will return cosmos like objects with
     # uniformly distributed position angles. Radius and area are set to return
     # a full sample (~346k galaxies)
-    gal_cat = catalog.make_cosmos_galaxies(cen, radius=1.0, cat_area=(np.pi), **kwargs)
+    gal_cat = catalog.make_cosmos_galaxies(cen, radius=1.0, bandpasses=filters, cat_area=(np.pi), **kwargs)
 
     # Trim to the required number of objects
     gal_cat = gal_cat[:num_gals]
@@ -128,21 +132,26 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
 
     # Brightest color flux
     gal_cat_data = (
-        gal_cat.as_array(names=BANDPASSES)
+        gal_cat.as_array(names=filters)
         .view(dtype=float)
-        .reshape((len(gal_cat), len(BANDPASSES)))
+        .reshape((len(gal_cat), len(filters)))
     )
     max_flux = gal_cat_data.max(axis=1)
 
-    # Set bandpass fluxes
-    for bp in BANDPASSES:
-        # Normalize the mag limit to exptime
-        gal_mag_limit = HRGALMAGLIMIT[bp] + (
-            1.25 * np.log10((exptime * u.s).to(u.hour).value)
-        )
-        mag_tot = mags + gal_mag_limit
+    # Find gal mag limit
+    gal_mag_limit = []
+    for bp in filters:
+        # Normalize the mag limit to exptimes
+        if bp in exptimes:
+            gal_mag_limit.append(HRGALMAGLIMIT[bp] + (
+                1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value)
+            ))
+    mag_tot = mags + max(gal_mag_limit)
 
+    # Set bandpass fluxes
+    for bp in filters:
         # Set scaled fluxes
+        # flux_band = (flux_band / max_flux) * flux_spread_about_mag_limit
         gal_cat[bp] = ((gal_cat[bp] / max_flux) * (10.0 ** (-(mag_tot) / 2.5))).astype(
             "f4"
         )
@@ -150,26 +159,15 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     # Sizes are drawn from a log-normal distribution of J-band magnitudes
     # The parameters below are derived from the distribution for sizes
     # mu = (-0.1555 * (J - 17)) - 3.55
-    mu = (
-        -0.1555
-        * (
-            (
-                -2.5
-                * np.log10(
-                    gal_cat["F129"],
-                    where=(gal_cat["F129"] > 0),
-                    out=np.array([-20.0] * len(gal_cat)),
-                )
-            )
-            - 17
-        )
-    ) - 3.55
+    jmag = -2.5 * np.log10(gal_cat["F129"], where=(gal_cat["F129"] > 0),
+                    out=np.array([-20.0] * len(gal_cat)))
+    mu = (-0.1555 * (jmag - 17)) - 3.55
     sigma = 0.15
     radsize = rng_numpy.normal(mu, sigma)
     gal_cat["half_light_radius"] = (10**radsize) * 3600 * u.arcsec
 
     # Set the radius floor
-    gal_cat["half_light_radius"][gal_cat["half_light_radius"] < 0.036] = 0.036
+    gal_cat["half_light_radius"][gal_cat["half_light_radius"] < 0.036] = 0.036 * u.arcsec
 
     # Randomize concentrations
     gal_cat["n"] = rng_numpy.uniform(low=0.8, high=4.5, size=num_gals)
@@ -181,17 +179,26 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptime, filter="F146", seed=50, **
     star_cat["dec"] = num_stars * [0]
     star_cat["type"] = num_stars * ["PSF"]
     star_cat["n"] = num_stars * [-1]
-    star_cat["half_light_radius"] = num_stars * [0]
+    star_cat["half_light_radius"] = num_stars * [0] *  u.arcsec
     star_cat["pa"] = num_stars * [0]
     star_cat["ba"] = num_stars * [1]
 
     # Set magnitude spread
     mags = rng_numpy.uniform(low=-4.0, high=1.0, size=num_stars)
-    point_mag_limit = max(HRPOINTMAGLIMIT.values()) + (
-        1.25 * np.log10((exptime * u.s).to(u.hour).value)
-    )
+
+    # Find point mag limit
+    point_band_mag_limit = []
+    for bp in filters:
+        # Normalize the mag limit to exptimes
+        if bp in exptimes:
+            point_band_mag_limit.append(HRPOINTMAGLIMIT[bp] + (
+                1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value)
+            ))
+
+    point_mag_limit = max(point_band_mag_limit)
+
     # Set bandpass fluxes
-    for bp in BANDPASSES:
+    for bp in filters:
         star_cat[bp] = (10.0 ** (-(mags + point_mag_limit) / 2.5)).astype("f4")
 
     # Combine the objects
