@@ -1024,7 +1024,7 @@ class SkyMap:
             )
         ]
 
-    def belongs_to(self, radec: NDArray[np.float64]) -> list[SkyCell]:
+    def core_skycell(self, radec: NDArray[np.float64]) -> list[SkyCell]:
         """
         skycell that each point belongs to
 
