@@ -1015,8 +1015,7 @@ class SkyMap:
             [
                 skycell
                 for skycell in (
-                    SkyCell(skycell_index)
-                    for skycell_index in skycell_indices
+                    SkyCell(skycell_index) for skycell_index in skycell_indices
                 )
                 if skycell.polygon.contains_point(vectorpoints[point_index, :])
             ]
