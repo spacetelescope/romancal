@@ -85,7 +85,7 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **
 
     Parameters
     ----------
-    coord : astropy.coordinates.SkyCoord
+    cen : astropy.coordinates.SkyCoord
         Location around which to generate sources.
     xpos, ypos : array_like (float)
         x, y positions of each source in objlist
@@ -203,7 +203,6 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **
                 HRPOINTMAGLIMIT[bp]
                 + (1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value))
             )
-
     point_mag_limit = max(point_band_mag_limit)
 
     # Set bandpass fluxes
