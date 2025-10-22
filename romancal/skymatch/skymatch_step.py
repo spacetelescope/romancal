@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
-from roman_datamodels import stnode
 from roman_datamodels.dqflags import pixel
 from stcal.skymatch import SkyImage, SkyStats, skymatch
 
@@ -109,13 +108,11 @@ class SkyMatchStep(RomanStep):
         input_image_model = image_model
 
         if "background" not in image_model.meta:
-            image_model.meta["background"] = stnode.SkyBackground(
-                {
-                    "level": None,
-                    "subtracted": None,
-                    "method": None,
-                }
-            )
+            image_model.meta["background"] = {
+                "level": None,
+                "subtracted": None,
+                "method": None,
+            }
 
         if self._dqbits is None:
             dqmask = np.isfinite(image_model.data).astype(dtype=np.uint8)

@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 import asdf
 import numpy as np
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import stnode
 from roman_datamodels.dqflags import group, pixel
 from stcal.ramp_fitting import ols_cas22_fit
 from stcal.ramp_fitting.likely_fit import likely_ramp_fit
@@ -209,15 +208,19 @@ def create_image_model(input_model, image_info):
         if node._read_tag is not None:
             node._read_tag = None
     im.meta.product_type = "l2"
-    im.meta.cal_step = stnode.L2CalStep.create_minimal(input_model.meta.cal_step)
-    im.meta.cal_logs = stnode.CalLogs.create_minimal()
-    im.meta.photometry = stnode.Photometry.create_minimal(
-        {
-            "conversion_megajanskys": -999999,
-            "conversion_megajanskys_uncertainty": -999999,
-            "pixel_area": -999999,
-        },
-    )
+    im.meta.cal_step = {}
+    for step_name in im.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        im.meta.cal_step[step_name] = input_model.meta.cal_step.get(
+            step_name, "INCOMPLETE"
+        )
+    im.meta.cal_logs = []
+    im.meta.photometry = {
+        "conversion_megajanskys": -999999,
+        "conversion_megajanskys_uncertainty": -999999,
+        "pixel_area": -999999,
+    }
     im.amp33 = input_model.amp33.copy()
     im.border_ref_pix_left = input_model.border_ref_pix_left.copy()
     im.border_ref_pix_right = input_model.border_ref_pix_right.copy()

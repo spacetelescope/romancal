@@ -7,7 +7,6 @@ from astropy import coordinates as coord
 from astropy.modeling import models
 from gwcs import coordinate_frames as cf
 from gwcs import wcs as gwcs_wcs
-from roman_datamodels import stnode
 from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
 
@@ -78,11 +77,13 @@ def mk_image_model(
 
     l2_im.meta["wcs"] = mk_gwcs(image_shape, sky_offset=sky_offset, rotate=rotation)
 
-    l2_im.meta.background = stnode.SkyBackground.create_fake_data(
-        {"level": None, "subtracted": False, "method": "None"}
-    )
-    l2_im.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    l2_im.meta.cal_logs = stnode.CalLogs.create_fake_data()
+    l2_im.meta.background = {"level": None, "subtracted": False, "method": "None"}
+    l2_im.meta.cal_step = {}
+    for step_name in l2_im.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        l2_im.meta.cal_step[step_name] = "INCOMPLETE"
+    l2_im.meta.cal_logs = []
     return l2_im
 
 

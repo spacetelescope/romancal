@@ -4,12 +4,14 @@ import numpy as np
 from photutils.segmentation import SegmentationImage
 from roman_datamodels.datamodels import (
     ForcedImageSourceCatalogModel,
+    ForcedMosaicSourceCatalogModel,
     ImageModel,
     ImageSourceCatalogModel,
     MosaicSegmentationMapModel,
+    MosaicSourceCatalogModel,
+    MultibandSegmentationMapModel,
     SegmentationMapModel,
 )
-from roman_datamodels.stnode import SourceCatalog
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -43,9 +45,18 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
         source_catalog_model, (ImageSourceCatalogModel | ForcedImageSourceCatalogModel)
     ):
         segm_model = SegmentationMapModel
-    else:
+    elif isinstance(
+        source_catalog_model,
+        (MosaicSourceCatalogModel | ForcedMosaicSourceCatalogModel),
+    ):
         segm_model = MosaicSegmentationMapModel
+    else:
+        segm_model = MultibandSegmentationMapModel
     segmentation_model = segm_model.create_minimal({"meta": source_catalog_model.meta})
+
+    # carry over image_metas if it exists (since it's not required in the schemas)
+    if image_metas := source_catalog_model.meta.get("image_metas"):
+        segmentation_model.meta.image_metas = image_metas
 
     # Set the data and detection image
     segmentation_model.data = segment_img.data.astype(np.uint32)
@@ -143,8 +154,9 @@ def save_all_results(self, segment_img, cat_model, input_model=None):
 
         # update the input datamodel with the tweakreg catalog name
         if isinstance(input_model, ImageModel):
-            input_model.meta.source_catalog = SourceCatalog()
-            input_model.meta.source_catalog.tweakreg_catalog_name = output_catalog_name
+            input_model.meta.source_catalog = {
+                "tweakreg_catalog_name": output_catalog_name
+            }
             input_model.meta.cal_step.source_catalog = "COMPLETE"
 
         result = input_model

@@ -4,11 +4,13 @@ Module for the multiband source catalog step.
 
 from __future__ import annotations
 
+import copy
 import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy.table import join
+from astropy.time import Time
 from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelLibrary
@@ -19,7 +21,7 @@ from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
-from romancal.source_catalog.utils import copy_mosaic_meta, get_ee_spline
+from romancal.source_catalog.utils import get_ee_spline
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -29,6 +31,10 @@ __all__ = ["MultibandCatalogStep"]
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+_SKIP_IMAGE_META_KEYS = {"wcs", "individual_image_meta"}
+_SKIP_BLEND_KEYS = {"wcsinfo"}
 
 
 class MultibandCatalogStep(RomanStep):
@@ -70,16 +76,19 @@ class MultibandCatalogStep(RomanStep):
             library.shelve(example_model, modify=False)
 
         # Initialize the source catalog model, copying the metadata
-        # from the input model
+        # from the example model. Some of this may be overwritten during metadata blending.
         cat_model = datamodels.MultibandSourceCatalogModel.create_minimal(
             {"meta": example_model.meta}
         )
-        if isinstance(example_model, datamodels.MosaicModel):
-            copy_mosaic_meta(example_model, cat_model)
-        else:
-            cat_model.meta.optical_element = (
-                example_model.meta.instrument.optical_element
-            )
+        cat_model.meta["image"] = {
+            # try to record association name else fall back to example model filename
+            "filename": library.asn.get("table_name", example_model.meta.filename),
+            "file_date": example_model.meta.file_date,  # this may be overwritten during metadata blending
+        }
+        cat_model.meta["image_metas"] = []
+        # copy over data_release_id, ideally this will come from the association
+        if "data_release_id" in example_model.meta:
+            cat_model.meta.data_release_id = example_model.meta.data_release_id
 
         log.info("Creating ee_fractions model for first image")
         apcorr_ref = self.get_reference_file(example_model, "apcorr")
@@ -174,6 +183,9 @@ class MultibandCatalogStep(RomanStep):
         det_cat = det_catobj.catalog
         det_cat.meta["ee_fractions"] = {}
 
+        time_means = []
+        exposure_times = []
+
         # Create catalogs for each input image
         with library:
             for model in library:
@@ -223,7 +235,48 @@ class MultibandCatalogStep(RomanStep):
                 # (e.g., repeated filter names)
                 det_cat = join(det_cat, cat, keys="label", join_type="outer")
                 det_cat.meta["ee_fractions"][filter_name.lower()] = ee_fractions
+
+                # accumulate image metadata
+                image_meta = {
+                    k: copy.deepcopy(v)
+                    for k, v in model["meta"].items()
+                    if k not in _SKIP_IMAGE_META_KEYS
+                }
+                cat_model.meta.image_metas.append(image_meta)
+
+                # blend model with catalog metadata
+                if model.meta.file_date < cat_model.meta.image.file_date:
+                    cat_model.meta.image.file_date = model.meta.file_date
+
+                for key, value in image_meta.items():
+                    if key in _SKIP_BLEND_KEYS:
+                        continue
+                    if not isinstance(value, dict):
+                        # skip blending of single top-level values
+                        continue
+                    if key not in cat_model.meta:
+                        # skip blending if the key is not in the catalog meta
+                        continue
+                    if key == "coadd_info":
+                        cat_model.meta[key]["time_first"] = min(
+                            cat_model.meta[key]["time_first"], value["time_first"]
+                        )
+                        cat_model.meta[key]["time_last"] = max(
+                            cat_model.meta[key]["time_last"], value["time_last"]
+                        )
+                        time_means.append(value["time_mean"])
+                        exposure_times.append(value["exposure_time"])
+                    else:
+                        # set non-matching metadata values to None
+                        for subkey, subvalue in value.items():
+                            if cat_model.meta[key].get(subkey, None) != subvalue:
+                                cat_model.meta[key][subkey] = None
+
                 library.shelve(model, modify=False)
+
+        # finish blending
+        cat_model.meta.coadd_info.time_mean = Time(time_means).mean()
+        cat_model.meta.coadd_info.exposure_time = np.mean(exposure_times)
 
         # Put the resulting multiband catalog in the model
         cat_model.source_catalog = det_cat

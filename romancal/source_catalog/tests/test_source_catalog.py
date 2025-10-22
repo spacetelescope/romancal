@@ -11,7 +11,6 @@ from astropy.time import Time
 from numpy.testing import assert_equal
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import stnode
 from roman_datamodels.datamodels import (
     ForcedImageSourceCatalogModel,
     ImageModel,
@@ -24,6 +23,8 @@ from roman_datamodels.datamodels import (
 
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
+
+from .helpers import compare_model_and_parquet_metadata
 
 
 def make_test_image():
@@ -75,6 +76,7 @@ def make_test_image():
 def mosaic_model():
     defaults = {
         "meta": {
+            "data_release_id": "r1",
             "coadd_info": {
                 "time_first": Time("2024-01-01T12:00:00.000", format="isot"),
             },
@@ -88,10 +90,13 @@ def mosaic_model():
         }
     }
     model = MosaicModel.create_fake_data(defaults=defaults, shape=(101, 101))
-    model.meta.ref_file = stnode.RefFile.create_fake_data()
     model.meta.filename = "none"
-    model.meta.cal_step = stnode.L3CalStep.create_fake_data()
-    model.cal_logs = stnode.CalLogs.create_fake_data()
+    model.meta.cal_step = {}
+    for step_name in model.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        model.meta.cal_step[step_name] = "INCOMPLETE"
+    model.cal_logs = []
     data, err = make_test_image()
     model.data = data
     model.err = err
@@ -103,8 +108,12 @@ def mosaic_model():
 def image_model():
     model = ImageModel.create_fake_data(shape=(101, 101))
     model.meta.filename = "none"
-    model.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    model.meta.cal_logs = stnode.CalLogs.create_fake_data()
+    model.meta.cal_step = {}
+    for step_name in model.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        model.meta.cal_step[step_name] = "INCOMPLETE"
+    model.meta.cal_logs = []
     data, err = make_test_image()
     model.data = data
     model.err = err
@@ -112,7 +121,8 @@ def image_model():
     return model
 
 
-def test_forced_catalog(image_model, function_jail):
+def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_paths):
+    output_filename = "force_cat.parquet"
     step = SourceCatalogStep()
     _ = step.call(
         image_model,
@@ -130,17 +140,22 @@ def test_forced_catalog(image_model, function_jail):
         snr_threshold=5,
         npixels=10,
         save_results=True,
-        output_file="force_cat.asdf",
+        output_file=output_filename,
         forced_segmentation="source_segm.asdf",
     )
     assert isinstance(result_force, ForcedImageSourceCatalogModel)
-    catalog = result_force.source_catalog
-    assert isinstance(catalog, Table)
+
+    assert Path(output_filename).exists()
+    catalog = Table.read(output_filename)
     has_forced_fields = False
     for field in catalog.dtype.names:
         if "forced_" in field:
             has_forced_fields = True
     assert has_forced_fields
+
+    compare_model_and_parquet_metadata(
+        image_model, output_filename, ignore_parquet_metadata_paths
+    )
 
 
 @pytest.mark.parametrize(
@@ -156,8 +171,16 @@ def test_forced_catalog(image_model, function_jail):
     ),
 )
 def test_l2_source_catalog(
-    image_model, snr_threshold, npixels, nsources, save_results, function_jail
+    image_model,
+    snr_threshold,
+    npixels,
+    nsources,
+    save_results,
+    function_jail,
+    ignore_parquet_metadata_paths,
 ):
+    image_model.meta.filename = "test_cal.asdf"
+    output_filename = "test_cat.parquet"
     step = SourceCatalogStep()
     result = step.call(
         image_model,
@@ -168,8 +191,17 @@ def test_l2_source_catalog(
         save_results=save_results,
     )
 
-    cat = result.source_catalog
-    assert isinstance(cat, Table)
+    if save_results:
+        assert Path(output_filename).exists()
+        compare_model_and_parquet_metadata(
+            image_model, output_filename, ignore_parquet_metadata_paths
+        )
+        cat = Table.read(output_filename)
+    else:
+        # FIXME: test output_filename doesn't exists but due to
+        # https://github.com/spacetelescope/romancal/issues/1960 it always will
+        cat = result.source_catalog
+        assert isinstance(cat, Table)
     assert len(cat) == nsources
 
     # Check that the ee_fraction_xx entries are in the metadata
@@ -215,9 +247,17 @@ def test_l2_source_catalog(
     ),
 )
 def test_l3_source_catalog(
-    mosaic_model, snr_threshold, npixels, nsources, save_results, function_jail
+    mosaic_model,
+    snr_threshold,
+    npixels,
+    nsources,
+    save_results,
+    function_jail,
+    ignore_parquet_metadata_paths,
 ):
     step = SourceCatalogStep()
+    mosaic_model.meta.filename = "test_coadd.asdf"
+    output_filename = "test_cat.parquet"
 
     # Create model and set some crucial meta required to
     # create the L3 PSF for flux determination.
@@ -230,9 +270,20 @@ def test_l3_source_catalog(
         save_results=save_results,
     )
 
-    cat = result.source_catalog
-    assert isinstance(cat, Table)
+    if save_results:
+        assert Path(output_filename).exists()
+        cat = Table.read(output_filename)
+        compare_model_and_parquet_metadata(
+            mosaic_model, output_filename, ignore_parquet_metadata_paths
+        )
+    else:
+        # FIXME: test output_filename doesn't exists but due to
+        # https://github.com/spacetelescope/romancal/issues/1960 it always will
+        cat = result.source_catalog
+        assert isinstance(cat, Table)
     assert len(cat) == nsources
+
+    assert result.meta.data_release_id == mosaic_model.meta.data_release_id
 
     # Check that the ee_fraction_xx entries are in the metadata
     if "aperture_radii" in cat.meta:
