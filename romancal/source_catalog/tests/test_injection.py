@@ -8,12 +8,15 @@ pytest.importorskip("romanisim")
 
 import numpy as np
 from astropy import table
+from astropy import units as u
+from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from romanisim import bandpass, parameters
 
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
-from romancal.source_catalog.injection import inject_sources
+from romancal.source_catalog import injection
+from romancal.source_catalog.injection import inject_sources, make_cosmoslike_catalog
 
 # Set parameters
 RA = 270.0
@@ -25,9 +28,10 @@ YPOS_IDX = [50, 150, 50, 150]
 MAG_FLUX = 1e-9
 DETECTOR = "WFI04"
 SCA = 4
-FILTER = "F158"
+FILTERS = ["F062", "F158", "F213", "F146"]
 RNG_SEED = 42
 MATABLE = 4
+BANDPASSES = set(bandpass.galsim2roman_bandpass.values())
 
 # Create gaussian noise generators
 # sky should generate ~0.2 electron / s / pix.
@@ -37,9 +41,6 @@ MEANFLUX = 0.2
 
 
 def make_test_data():
-    # Create Four-quadrant pattern of gaussian noise, centered around one
-    # Each quadrant's gaussian noise scales like total exposure time
-    # (total files contributed to each quadrant)
     noise_rng = np.random.default_rng(RNG_SEED)
 
     # Populate the data array with gaussian noise
@@ -50,10 +51,10 @@ def make_test_data():
 
 
 @pytest.fixture
-def image_model():
+def image_model(filter=FILTERS[0]):
     defaults = {"meta": parameters.default_parameters_dictionary}
     defaults["meta"]["instrument"]["detector"] = DETECTOR
-    defaults["meta"]["instrument"]["optical_element"] = FILTER
+    defaults["meta"]["instrument"]["optical_element"] = filter
     defaults["meta"]["wcsinfo"]["ra_ref"] = RA
     defaults["meta"]["wcsinfo"]["dec_ref"] = DEC
     defaults["meta"]["wcsinfo"]["roll_ref"] = ROLL
@@ -78,14 +79,14 @@ def image_model():
 
 
 @pytest.fixture
-def mosaic_model():
+def mosaic_model(filter=FILTERS[0]):
     defaults = {
         "meta": {
             "coadd_info": {
                 "time_first": Time("2024-01-01T12:00:00.000", format="isot"),
             },
             "instrument": {
-                "optical_element": FILTER,
+                "optical_element": filter,
             },
             "resample": {"pixfrac": 1.0},
             "wcsinfo": {
@@ -118,9 +119,9 @@ def mosaic_model():
 def make_catalog(metadata):
     # Create WCS
     wcsobj = mk_gwcs(
-        metadata.wcsinfo.ra_ref,
-        metadata.wcsinfo.dec_ref,
-        metadata.wcsinfo.roll_ref,
+        metadata["wcsinfo"]["ra_ref"],
+        metadata["wcsinfo"]["dec_ref"],
+        metadata["wcsinfo"]["roll_ref"],
         bounding_box=((-0.5, SHAPE[0] - 0.5), (-0.5, SHAPE[1] - 0.5)),
         shape=SHAPE,
     )
@@ -131,10 +132,10 @@ def make_catalog(metadata):
     tabcat = table.Table()
     tabcat["ra"] = ra
     tabcat["dec"] = dec
-    tabcat[FILTER] = len(XPOS_IDX) * [MAG_FLUX]
+    tabcat[metadata["instrument"]["optical_element"]] = len(XPOS_IDX) * [MAG_FLUX]
     tabcat["type"] = len(XPOS_IDX) * ["PSF"]
     tabcat["n"] = len(XPOS_IDX) * [-1]
-    tabcat["half_light_radius"] = len(XPOS_IDX) * [-1]
+    tabcat["half_light_radius"] = len(XPOS_IDX) * [-1] * u.arcsec
     tabcat["pa"] = len(XPOS_IDX) * [-1]
     tabcat["ba"] = len(XPOS_IDX) * [-1]
 
@@ -152,6 +153,9 @@ def make_catalog(metadata):
 def test_inject_sources(image_model, mosaic_model):
     for si_model in (image_model, mosaic_model):
         """Test simple source injection"""
+        # Set filter
+        test_filter = FILTERS[0]
+
         cat = make_catalog(si_model.meta)
 
         data_orig = si_model.copy()
@@ -191,12 +195,108 @@ def test_inject_sources(image_model, mosaic_model):
 
         # Ensure total added flux matches expected added flux
         # maggies to counts (large number)
-        cps_conv = bandpass.get_abflux(FILTER, 2)
+        cps_conv = bandpass.get_abflux(test_filter, 2)
         # electrons to mjysr (roughly order unity in scale)
         if isinstance(si_model, ImageModel):
             unit_factor = 1 / parameters.reference_data["gain"].value
         else:
-            unit_factor = bandpass.etomjysr(FILTER, 2)
+            unit_factor = bandpass.etomjysr(test_filter, 2)
         total_rec_flux = np.sum(si_model.data - data_orig.data)  # MJy / sr
         total_theo_flux = len(cat) * MAG_FLUX * cps_conv * unit_factor  # u.MJy / u.sr
         assert np.isclose(total_rec_flux, total_theo_flux, rtol=0.1)
+
+
+def test_create_cosmoscat():
+    # Set a test filter
+    test_filter = FILTERS[0]
+
+    # Pointing
+    cen = SkyCoord(ra=RA * u.deg, dec=DEC * u.deg)
+
+    # WCS object for ra & dec conversion
+    wcsobj = mk_gwcs(
+        RA,
+        DEC,
+        ROLL,
+        bounding_box=((-0.5, SHAPE[0] - 0.5), (-0.5, SHAPE[1] - 0.5)),
+        shape=SHAPE,
+    )
+
+    # Convert x,y to ra, dec
+    ra, dec = wcsobj.pixel_to_world_values(np.array(XPOS_IDX), np.array(YPOS_IDX))
+
+    # Exposure times (s)
+    exptimes = {}
+    for bp in FILTERS:
+        exptimes[bp] = 300
+
+    # Generate cosmos-like catalog
+    cat = make_cosmoslike_catalog(
+        cen, ra, dec, exptimes, filters=FILTERS, seed=RNG_SEED
+    )
+
+    # Set simple wcs metadata for mcat
+    meta = {
+        "wcsinfo": {
+            "ra_ref": RA,
+            "dec_ref": DEC,
+            "roll_ref": ROLL,
+        },
+        "instrument": {
+            "optical_element": test_filter,
+        },
+    }
+    mcat = make_catalog(meta)
+
+    # Ensure that locations are as expected
+    assert np.allclose(np.sort(cat["ra"]), np.sort(mcat["ra"]), rtol=1.0e-6)
+    assert np.allclose(np.sort(cat["dec"]), np.sort(mcat["dec"]), rtol=1.0e-6)
+
+    # Ensure correct number of point sources
+    assert np.sum(cat["type"] == "PSF") == int(len(XPOS_IDX) / 4)
+    assert np.sum(cat["n"] == -1) == int(len(XPOS_IDX) / 4)
+
+    # Set the point magnitude limit
+    point_band_mag_limit = []
+    for bp in FILTERS:
+        # Normalize the mag limit to exptimes
+        if bp in exptimes:
+            point_band_mag_limit.append(
+                injection.HRPOINTMAGLIMIT[bp]
+                + (1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value))
+            )
+    point_mag_limit = max(point_band_mag_limit)
+
+    for bp in FILTERS:
+        # Ensure point fluxes in range
+        assert np.all(
+            cat[cat["type"] == "PSF"][bp] < 10.0 ** (-(point_mag_limit - 4) / 2.5)
+        )
+        assert np.all(
+            cat[cat["type"] == "PSF"][bp] > 10.0 ** (-(point_mag_limit + 1) / 2.5)
+        )
+
+        # Ensure points lack color
+        assert np.all(cat[cat["type"] == "PSF"][bp] == cat[cat["type"] == "PSF"][bp])
+
+    # Ensure galaxy sizes are reasonable
+    assert np.all(cat[cat["type"] == "SER"]["half_light_radius"].value < 1)
+    assert np.all(cat[cat["type"] == "SER"]["half_light_radius"].value >= 0.036)
+
+    # Set the galaxy magnitude limit
+    gal_band_mag_limit = []
+    for bp in FILTERS:
+        # Normalize the mag limit to exptimes
+        if bp in exptimes:
+            gal_band_mag_limit.append(
+                injection.HRGALMAGLIMIT[bp]
+                + (1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value))
+            )
+    gal_mag_limit = max(gal_band_mag_limit)
+
+    # Ensure galaxy fluxes in range
+    for bp in FILTERS:
+        assert np.all(
+            cat[cat["type"] == "SER"][bp] < 10.0 ** (-(gal_mag_limit - 4) / 2.5)
+        )
+        assert np.all(cat[cat["type"] == "SER"][bp] >= 0)
