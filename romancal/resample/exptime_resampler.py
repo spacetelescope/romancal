@@ -24,7 +24,7 @@ class ExptimeResampler:
             disable_ctx=True,
         )
 
-    def add_image(self, model, pixmap, xmin, xmax, ymin, ymax):
+    def add_image(self, model, pixmap, pixel_scale_ratio, xmin, xmax, ymin, ymax):
         data = np.full(model["data"].shape, model["effective_exposure_time"])
 
         # create a unit weight map for all the input pixels with science data
@@ -43,7 +43,7 @@ class ExptimeResampler:
             pixmap=pixmap,
             exptime=1.0,
             iscale=1.0,
-            pixel_scale_ratio=1.0,
+            pixel_scale_ratio=pixel_scale_ratio,
             weight_map=inwht,
             wht_scale=1.0,
             pixfrac=1.0,
