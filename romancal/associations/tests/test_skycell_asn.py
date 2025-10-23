@@ -1,7 +1,5 @@
 """Tests for skycell_asn"""
 
-from unittest import mock
-
 import pytest
 
 import romancal.associations.skycell_asn as skycell_asn
@@ -119,6 +117,7 @@ def test_create_metadata(monkeypatch):
     class DummyASN(dict):
         def dump(self, *args, **kwargs):
             return None, '{"asn_type": "image"}'
+
     dummy_asn_obj = DummyASN()
     monkeypatch.setattr(
         skycell_asn.asn_from_list,
@@ -126,9 +125,11 @@ def test_create_metadata(monkeypatch):
         lambda members, **kwargs: dummy_asn_obj,
     )
     monkeypatch.setattr(skycell_asn, "parse_visitID", lambda vid: {"Program": "P1"})
+
     class DummySkyCell:
         name = "skycell1"
         wcs_info = {"foo": "bar"}
+
     meta = skycell_asn._create_metadata(
         ["file1.asdf"], "d1", "asnfile", DummySkyCell(), "0000101002003004005"
     )
