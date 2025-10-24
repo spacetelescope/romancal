@@ -44,7 +44,7 @@ and the Exposure_ID is a four digits designating the exposures
 
 eeee = Exposure number (within the visit)
 
-The detector is WFI01, WFI02, ... WFI18
+The detector is wfi01, wfi02, ... wfi18
 
 The suffix indicates the processing level of the file and to create products based on the
 skycells the suffix should generally be 'cal'.
@@ -61,7 +61,7 @@ command line,
 
 .. code-block:: text
 
-		skycell_asn r0099101001001003001_*_cal.asdf  -o  r0099101001001003001 --product-type visit
+		skycell_asn r0099101001001003001_*_f158_cal.asdf  -o  r0099101001001003001 --product-type visit
 
 Where the wildcard selects all the exposures for visit 001 and generates associations based on the skycells
 the exposures will populate. This will generate associations based the skycells that the exposures can
@@ -69,21 +69,21 @@ contribute data to. The association files will be json files with names based
 
 .. code-block:: text
 
-	r00991_<release product name>_v<visit_id>_<skycell name>_<filter>_asn.json
+	r00991_<data release ID>_v<visit_id>_<skycell name>_<filter>_asn.json
 
 or for the selections above
 
 .. code-block:: text
 
-	r00991_p_v101001001003001_270p65x48y69_F158_asn.json
+	r00991_p_v101001001003001_270p65x48y69_f158_asn.json
 
 where the skycell name can vary based on the location on the celestial sphere.
-The release product name can be changed from the default
-by adding the optional argument --release-product <new name> to the command line.
+The data release ID name can be changed from the default ('p')
+by adding the optional argument --data-release-ID <new name> to the command line.
 
 An analogous command to generate the pass level products, again setting observation to 003 to only select
 the F158 filter.
 
 .. code-block:: text
 
-		skycell_asn r0099101001003001_*_cal.asdf  -o  r00991 --product-type visit
+		skycell_asn r0099101001003001_*_f158_cal.asdf  -o  r00991 --product-type pass
