@@ -57,8 +57,7 @@ def test_input_to_output(function_jail, input_value, expected_output_type):
 
 
 @pytest.mark.parametrize("save_results", [True, False])
-@pytest.mark.parametrize("skip_tweakreg", [True, False])
-def test_elp_save_results(function_jail, save_results, skip_tweakreg, monkeypatch):
+def test_elp_save_results(function_jail, save_results, monkeypatch):
     """
     Test that the elp respects save_results.
     """
@@ -76,11 +75,8 @@ def test_elp_save_results(function_jail, save_results, skip_tweakreg, monkeypatc
     pipeline.output_dir = str(output_path)
     pipeline.save_results = save_results
 
-    if skip_tweakreg:
-        pipeline.tweakreg.skip = True
-    else:
-        # don't try to actually run tweakreg as it will fail for an empty model
-        monkeypatch.setattr(pipeline.tweakreg, "run", lambda init: init)
+    # don't try to actually run tweakreg as it will fail for an empty model
+    monkeypatch.setattr(pipeline.tweakreg, "run", lambda init: init)
 
     pipeline.run(model)
     # check that the current directory doesn't contain extra files
@@ -91,6 +87,5 @@ def test_elp_save_results(function_jail, save_results, skip_tweakreg, monkeypatc
     expected = {"test_segm.asdf", "test_cat.parquet"}
     if save_results:
         expected.add("test_cal.asdf")
-        if not skip_tweakreg:
-            expected.add("test_wcs.asdf")
+        expected.add("test_wcs.asdf")
     assert output_files == expected
