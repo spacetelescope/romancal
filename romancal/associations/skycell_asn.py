@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 import sys
+from pathlib import Path
 
 import numpy as np
 import roman_datamodels as rdm
@@ -297,7 +298,7 @@ def _extract_visit_id(filename):
     str
         The visit ID string without the leading 'r', if present.
     """
-    base = os.path.basename(filename)
+    base = Path(filename).stem
     obs = base.split("_")[0]
     if obs.startswith("r"):
         obs = obs[1:]

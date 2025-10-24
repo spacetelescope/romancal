@@ -142,3 +142,69 @@ def test_create_metadata(monkeypatch):
     assert meta["data_release_id"] == "d1"
     assert meta["target"] == "skycell1"
     assert meta["skycell_wcs_info"] == {"foo": "bar"}
+
+
+def test_create_groups_default_type(sample_filelist):
+    """Test _create_groups with default (None) product_type returns 'full' group."""
+    groups = skycell_asn._create_groups(sample_filelist, None)
+    assert "full" in groups
+    assert set(groups["full"]) == set(sample_filelist)
+
+
+def test_group_files_by_visit_and_pass():
+    """Test _group_files_by_visit and _group_files_by_pass group files correctly."""
+    files = [
+        "r0000101002003004005_0001_wfi10_cal.asdf",
+        "r0000101002003004005_0002_wfi10_cal.asdf",
+        "r0000101003003004006_0001_wfi10_cal.asdf",
+    ]
+    visit_groups = skycell_asn._group_files_by_visit(files)
+    assert len(visit_groups) == 2
+    for group in visit_groups.values():
+        assert isinstance(group, list)
+    pass_groups = skycell_asn._group_files_by_pass(files)
+    assert set(pass_groups.keys()) == {"01002", "01003"}
+
+
+def test_extract_visit_id_no_r():
+    """Test _extract_visit_id when filename does not start with 'r'."""
+    fname = "0000101002003004005_0001_wfi10_cal.asdf"
+    assert skycell_asn._extract_visit_id(fname) == "0000101002003004005"
+
+
+def test_extract_visit_id_short():
+    """Test _extract_visit_id with a short filename."""
+    fname = "r12345.asdf"
+    assert skycell_asn._extract_visit_id(fname) == "12345"
+
+
+def test_cli_parsing(monkeypatch):
+    """Test _cli parses arguments and calls skycell_asn with correct values."""
+    called = {}
+
+    def fake_skycell_asn(filelist, output_file_root, product_type, data_release_id):
+        called.update(
+            {
+                "filelist": filelist,
+                "output_file_root": output_file_root,
+                "product_type": product_type,
+                "data_release_id": data_release_id,
+            }
+        )
+
+    monkeypatch.setattr(skycell_asn, "skycell_asn", fake_skycell_asn)
+    _cli_args = [
+        "-o",
+        "root",
+        "--product-type",
+        "visit",
+        "--data-release-id",
+        "d1",
+        "f1.asdf",
+        "f2.asdf",
+    ]
+    skycell_asn._cli(_cli_args)
+    assert called["filelist"] == ["f1.asdf", "f2.asdf"]
+    assert called["output_file_root"] == "root"
+    assert called["product_type"] == "visit"
+    assert called["data_release_id"] == "d1"
