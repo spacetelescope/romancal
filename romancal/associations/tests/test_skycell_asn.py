@@ -1,5 +1,7 @@
 """Tests for skycell_asn"""
 
+from typing import ClassVar
+
 import pytest
 
 import romancal.associations.skycell_asn as skycell_asn
@@ -128,7 +130,9 @@ def test_create_metadata(monkeypatch):
 
     class DummySkyCell:
         name = "skycell1"
-        wcs_info = {"foo": "bar"}
+        # need to use ClassVar here to avoid instance variable warning
+        # (i.e., mutable default - dict - assigned as class attribute)
+        wcs_info: ClassVar[dict] = {"foo": "bar"}
 
     meta = skycell_asn._create_metadata(
         ["file1.asdf"], "d1", "asnfile", DummySkyCell(), "0000101002003004005"
