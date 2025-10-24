@@ -159,6 +159,7 @@ def test_repointed_wcs_differs(repointed_filename_and_delta, output_model):
             atol=1.0,
         )
 
+
 def test_wfiwcs_exists(run_elp):
     output_path = Path(run_elp.output)
     wcs_filename = replace_suffix(output_path.stem, "wcs") + output_path.suffix
