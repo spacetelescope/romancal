@@ -17,7 +17,6 @@ from astropy.modeling.models import Shift
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import stnode
 
 from romancal.assign_wcs import pointing
 from romancal.assign_wcs.utils import add_s_region
@@ -238,9 +237,13 @@ def _create_wcs(input_dm, shift_1=0, shift_2=0):
 def _base_image(shift_1=0, shift_2=0):
     l2 = rdm.ImageModel.create_fake_data(shape=(100, 100))
     l2.meta.filename = "none"
-    l2.meta.cal_logs = stnode.CalLogs.create_fake_data()
-    l2.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    l2.meta.background = stnode.SkyBackground.create_fake_data()
+    l2.meta.cal_logs = []
+    l2.meta.cal_step = {}
+    for step_name in l2.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        l2.meta.cal_step[step_name] = "INCOMPLETE"
+    l2.meta.background = {"level": -999999.0, "method": "None", "subtracted": False}
     l2.var_flat = l2.var_rnoise.copy()
     _create_wcs(l2)
     l2.meta.wcsinfo.vparity = -1
@@ -261,3 +264,41 @@ def base_image():
     """
 
     return _base_image
+
+
+@pytest.fixture
+def ignore_metadata_paths():
+    """
+    List of metadata paths that will contain always variable values.
+
+    These include versions, dates, logs, etc. that will often differ.
+    """
+    return [
+        "asdf_library",
+        "history",
+        "roman.meta.ref_file.crds.version",
+        "roman.meta.calibration_software_version",
+        "roman.cal_logs",
+        "roman.meta.cal_logs",
+        "roman.meta.date",
+        "roman.meta.file_date",
+        "roman.individual_image_cal_logs",
+        "roman.meta.individual_image_meta",
+    ]
+
+
+@pytest.fixture
+def ignore_parquet_metadata_paths(ignore_metadata_paths):
+    """
+    List of parquet metadata paths to ignore during testings.
+    """
+    return [
+        *ignore_metadata_paths,
+        "table_meta_yaml",
+        "source_catalog",
+        "roman.meta.filename",
+        "roman.meta.model_type",
+        "roman.meta.ref_file",
+        "roman.meta.image",
+        "roman.meta.forced_segmentation",
+    ]

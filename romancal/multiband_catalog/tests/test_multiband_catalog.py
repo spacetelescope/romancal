@@ -9,7 +9,7 @@ from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from astropy.time import Time
 from roman_datamodels import datamodels as rdm
-from roman_datamodels.datamodels import MosaicModel, MosaicSegmentationMapModel
+from roman_datamodels.datamodels import MosaicModel, MultibandSegmentationMapModel
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog import MultibandCatalogStep
@@ -56,6 +56,7 @@ def mosaic_model():
     model.meta.coadd_info.time_first = Time("2027-01-01T00:00:00")
     model.meta.wcsinfo.pixel_scale = 0.11 / 3600  # degrees
     model.meta.resample.pixfrac = 0.5
+    model.meta.data_release_id = "r1"
     return model
 
 
@@ -97,6 +98,11 @@ def test_multiband_catalog(
         fit_psf=fit_psf,
         save_results=save_results,
     )
+
+    with library_model:
+        input_model = library_model.borrow(0)
+        assert result.meta.data_release_id == input_model.meta.data_release_id
+        library_model.shelve(input_model, modify=False)
 
     cat = result.source_catalog
     assert isinstance(cat, Table)
@@ -143,7 +149,7 @@ def test_multiband_catalog(
 
         filepath = Path(function_jail / f"{result.meta.filename}_segm.asdf")
         assert filepath.exists()
-        assert isinstance(rdm.open(filepath), MosaicSegmentationMapModel)
+        assert isinstance(rdm.open(filepath), MultibandSegmentationMapModel)
 
 
 @pytest.mark.parametrize("save_results", (True, False))
