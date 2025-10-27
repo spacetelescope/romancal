@@ -181,6 +181,18 @@ def test_dq_add1_groupdq():
     assert outfile.pixeldq[400, 500] == pixel.SATURATED + pixel.DO_NOT_USE
 
 
+def rawim(shape, instrument, exptype):
+    wfi_sci_raw_model = ScienceRawModel.create_fake_data(shape=shape)
+    wfi_sci_raw_model.meta.instrument.name = instrument
+    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
+    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
+    wfi_sci_raw_model.meta["guide_star"]["window_xstart"] = 1012
+    wfi_sci_raw_model.meta["guide_star"]["window_xstop"] = 1012 + 16
+    wfi_sci_raw_model.meta.exposure.type = exptype
+    wfi_sci_raw_model.data = np.ones(shape, dtype=np.uint16)
+    return wfi_sci_raw_model
+
+
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
@@ -198,8 +210,7 @@ def test_dqinit_step_interface(instrument, exptype):
     extra_value = [1, 2, 3]
 
     # Create test science raw model
-    wfi_sci_raw_model = ScienceRawModel.create_fake_data(shape=shape)
-    wfi_sci_raw_model.meta.instrument.name = instrument
+    wfi_sci_raw_model = rawim(shape, instrument, exptype)
     wfi_sci_raw_model.meta.instrument.detector = "WFI01"
     wfi_sci_raw_model.meta.instrument.optical_element = "F158"
     wfi_sci_raw_model.meta["guide_star"]["window_xstart"] = 1012
