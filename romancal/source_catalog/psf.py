@@ -95,7 +95,7 @@ def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
     return smoothed
 
 
-def get_gridded_psf_model(psf_ref_model):
+def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
     """Function to generate gridded PSF model from psf reference file
 
     Compute a gridded PSF model for one SCA using the
@@ -103,12 +103,24 @@ def get_gridded_psf_model(psf_ref_model):
     The input reference files have 3 focus positions and this is using
     the in-focus images. There are also three spectral types that are
     available and this code uses the M5V spectal type.
+
+    Parameters
+    ----------
+    psf_ref_model : roman_datamodels.datamodels.EpsfRefModel
+        PSF reference data model
+    focus : integer
+        index of slice into focus dimension of reference model.  0 for in focus
+    spectral_type : integer
+        index of slice into spectral type dimension of reference model.  1 for
+        G2V.
+
+    Returns
+    -------
+    photutils.psf.GriddedPSFModel of desired slice of ePSF reference file
     """
     # Open the reference file data model
     # select the infocus images (0) and we have a selection of spectral types
     # A0V, G2V, and M6V, pick G2V (1)
-    focus = 0
-    spectral_type = 1
     psf_images = psf_ref_model.psf[focus, spectral_type, :, :, :].copy()
     # get the central position of the cutouts in a list
     psf_positions_x = psf_ref_model.meta.pixel_x.data.data
@@ -132,6 +144,39 @@ def get_gridded_psf_model(psf_ref_model):
     model = GriddedPSFModel(nd)
 
     return model
+
+
+def render_stamp(x, y, grid, size):
+    """Render a PSF model at a specified location.
+
+    Equivalent to grid.evaluate(xloc, yloc, 1, x, y) for xloc and yloc
+    a square grid around (x, y) correspending to a [size, size] region.
+    This function is meant to provide a more user-friendly PSF stamp
+    rendering tool.
+
+    Parameters
+    ----------
+    x : float
+        x location at which to render PSF
+    y : float
+        y location at which to render PSF
+    grid : photutils.psf.GriddedPSFModel
+        gridded model to use for evaluation
+
+    Returns
+    -------
+    stamp : np.ndarray[size, size]
+        image of PSF at (x, y)
+    """
+    xx, yy = np.mgrid[:size, :size]
+
+    # for a 3x3 stamp centered at [1, 1], we want [0, 1, 2], so
+    # xcen and ycen should be 0.
+    # for a 4x4 stamp, it's not clear where the stamp should be centered,
+    # so either convention is fine.
+    xcen, ycen = x - size // 2, y - size // 2
+    stamp = grid.evaluate(xx - xcen, yy - ycen, 1, x, y)
+    return stamp
 
 
 def create_l3_psf_model(

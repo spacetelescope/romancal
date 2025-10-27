@@ -18,7 +18,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
     ],
     ids=["input_file"],
 )
-def get_input_file(rtdata_module, request, resource_tracker):
+def render_psfs(rtdata_module, request, resource_tracker):
     """Get the input file for testing"""
 
     rtdata = rtdata_module
@@ -27,14 +27,29 @@ def get_input_file(rtdata_module, request, resource_tracker):
 
     rtdata.get_data(f"WFI/image/{input_file}")
     rtdata.input = input_file
-    return rtdata
+    rtdata.output = "psf_render.asdf"
+    rtdata.get_truth(f"truth/WFI/image/psf_render.asdf")
+
+    step = SourceCatalogStep()
+    ref_file = step.get_reference_file(rtdata.input, "epsf")
+    grid_nominal = psf.get_gridded_psf_model(ref_data, 0, 1)
+    grid_defocus = psf.get_gridded_psf_model(ref_data, 1, 1)
+    grid_red = psf.get_gridded_psf_model(ref_data, 0, 2)
+    out = dict()
+    pixcen = 2044
+    out['stamp_center'] = psf.render_stamp(pixcen, pixcen, grid, 19)
+    out['stamp_corner'] = psf.render_stamp(0, 0, grid, 19)
+    out['stamp_red'] = psf.render_stamp(pixcen, pixcen, grid_red, 19)
+    out['stamp_defocus'] = psf.render_stamp(pixcen, pixcen, grid_defocus, 19)
+    asdf.dump(out, open(rtdata.output, 'wb'))
+    return rtdata, out
 
 
 @pytest.mark.bigdata
-def test_psf_library_reffile(get_input_file, dms_logger):
+def test_psf_library_reffile(render_psfs, dms_logger):
     """Test the retrieval of the PSF reference file"""
 
-    rtdata = get_input_file
+    rtdata, stamps = render_psfs
 
     # DMS 531 is to check that a PSF library has been provided and
     # DMS 532 is that we have access to the PSF library. By retrieving a
@@ -49,13 +64,13 @@ def test_psf_library_reffile(get_input_file, dms_logger):
 
 
 @pytest.mark.bigdata
-def test_psf_library_crdsfile(get_input_file, dms_logger):
+def test_psf_library_crdsfile(render_psfs, dms_logger):
     """Test that the PSF reference file matches the observation"""
     # DMS 535 identify an appropriate PSF for WFI source
     # check that the detector and optical element for the psf ref file
     # matches the data file
 
-    rtdata = get_input_file
+    rtdata, stamps = render_psfs
     input_data = rtdata.input
 
     step = SourceCatalogStep()
@@ -77,36 +92,19 @@ def test_psf_library_crdsfile(get_input_file, dms_logger):
 
 
 @pytest.mark.bigdata
-def test_psf_library_psfinterp(get_input_file, dms_logger):
+def test_psf_library_psfinterp(render_psfs, dms_logger):
     """Test that the interpolation is occurring"""
     # DMS 536 interpolating empirical ePSFs given the observed-source position
     # Create two psf's one at the center and one off-center to show we can interpolate the PSF
     # and that the two are not the same
 
-    rtdata = get_input_file
-    input_data = rtdata.input
+    _, stamps = render_psfs
 
-    step = SourceCatalogStep()
-    ref_file = step.get_reference_file(input_data, "epsf")
-    with rdm.open(ref_file) as ref_data:
-        psf_model = psf.get_gridded_psf_model(ref_data)
-        center = 2044
-        szo2 = 10  # psf stamp axis lenght/2
-        oversample = 11
-        npix = szo2 * 2 * oversample + 1
-        pts = np.linspace(-szo2 + center, szo2 + center, npix)
-        xx, yy = np.meshgrid(pts, pts)
-        psf_center = psf_model.evaluate(xx, yy, 1, center, center)
-        off_center = center + 99
-        pts = np.linspace(-szo2 + off_center, szo2 + off_center, npix)
-        xx, yy = np.meshgrid(pts, pts)
-        psf_offcenter = psf_model.evaluate(xx, yy, 1, off_center, off_center)
-        # show that these two are different
-        diff = psf_offcenter - psf_center
-        # check to make sure the difference is not zero over the array
-        psf_diff = diff.any()
-        assert psf_diff
-        passmsg = "PASS" if psf_diff else "FAIL"
-        dms_logger.info(
-            f"DMS536 {passmsg},  The interpolated ePSF for two positions are not the same"
-        )
+    diff = stamps['stamp_center'] - stamps['stamp_corner']
+    # check to make sure the difference is not zero over the array
+    psf_diff = diff.any()
+    assert psf_diff
+    passmsg = "PASS" if psf_diff else "FAIL"
+    dms_logger.info(
+        f"DMS536 {passmsg},  The interpolated ePSF for two positions are not the same"
+    )
