@@ -125,14 +125,6 @@ def _cli(args=None):
     )
 
     parser.add_argument(
-        "-f",
-        "--format",
-        type=str,
-        default="json",
-        help='Format of the association files. Default: "%(default)s"',
-    )
-
-    parser.add_argument(
         "--product-name",
         type=str,
         help="The product name when creating a Level 3 association",
@@ -199,5 +191,5 @@ def _cli(args=None):
             target=parsed.target,
             data_release_id=parsed.data_release_id,
         )
-        _, serialized = asn.dump(format=parsed.format)
+        _, serialized = asn.dump(format="json")
         outfile.write(serialized)

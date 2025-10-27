@@ -118,17 +118,16 @@ def test_cmdline_fails():
         _cli(["-o", "test_asn.json"])
 
 
-@pytest.mark.parametrize("format", ["json"])
-def test_cmdline_success(format, tmp_path):
+def test_cmdline_success( tmp_path):
     """Create ELPP associations in different formats"""
-    path = tmp_path / f"test_asn.{format}"
+    path = tmp_path / f"test_asn.json"
     product_name = "test_product"
     inlist = ["a", "b", "c"]
-    args = ["-o", str(path), "--product-name", product_name, "--format", format]
+    args = ["-o", str(path), "--product-name", product_name]
     args = args + inlist
     return_code = _cli(args)
     with path.open() as fp:
-        asn = load_asn(fp, format=format)
+        asn = load_asn(fp, format="json")
     assert len(asn["products"]) == 1
     assert asn["products"][0]["name"] == product_name
     members = asn["products"][0]["members"]
