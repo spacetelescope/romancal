@@ -78,9 +78,11 @@ class DQInitStep(RomanStep):
         reference_read = getattr(input_model, 'reference_read', None)
         if reference_read is not None:
             output_model.data += reference_read
+            del output_model.reference_read
         reference_amp33 = getattr(input_model, 'reference_amp33', None)
         if reference_amp33 is not None:
             output_model.amp33 += reference_amp33
+            del output_model.reference_amp33
 
         # Test for reference file
         if reference_file_name != "N/A" and reference_file_name is not None:
