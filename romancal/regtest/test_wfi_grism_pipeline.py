@@ -7,8 +7,8 @@ from numpy.testing import assert_allclose
 from roman_datamodels.dqflags import pixel
 
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
-from romancal.pipeline.exposure_pipeline import ExposurePipeline
 from romancal.lib.suffix import replace_suffix
+from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
 from .regtestdata import compare_asdf
 
