@@ -52,8 +52,9 @@ class DQInitStep(RomanStep):
         input_model = rdm.open(input)
         try:
             input_model = ScienceRawModel.from_tvac_raw(input_model)
+            is_tvac = True
         except ValueError:
-            pass
+            is_tvac = False
 
         # Convert to RampModel
         output_model = RampModel.from_science_raw(input_model)
@@ -75,12 +76,14 @@ class DQInitStep(RomanStep):
 
         # the reference read has been subtracted from the science data
         # in the L1 files.  Add it back into the data.
+        # the TVAC files are special and there the reference read was
+        # already added back in
         reference_read = getattr(input_model, "reference_read", None)
-        if reference_read is not None:
+        if reference_read is not None and not is_tvac:
             output_model.data += reference_read
             del output_model.reference_read
         reference_amp33 = getattr(input_model, "reference_amp33", None)
-        if reference_amp33 is not None:
+        if reference_amp33 is not None and not is_tvac:
             output_model.amp33 += reference_amp33
             del output_model.reference_amp33
 
