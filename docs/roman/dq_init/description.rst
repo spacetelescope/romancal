@@ -35,7 +35,7 @@ WFI_WIM_ACQ, WFI_WIM_TRACK, WFI_WSM_ACQ1, WFI_WSM_ACQ2, WFI_WSM_TRACK.
 Conversion from Level 1 uncal files
 -----------------------------------
 
-The DQ init takes an input raw "uncal" file and outputs a intermediate
+The DQ init takes an input raw "uncal" file and outputs a
 "ramp" model (RampModel) that is the input for all following steps
 until ramp fitting.  For the most part, the meta information between
 the input raw, or "uncal", model and the ramp model is identical.
@@ -50,9 +50,11 @@ allows processing to proceed and preserves the original metadata, but the
 resulting files have duplicates of many entries.
 
 The "data" arrays in the uncal files contain the difference between
-the total values measured in the telecsope and the "reference read"
+the total values measured in the telescope and the "reference read"
 measured immediately before the science reads.  Steps like the
 linearity correction step need to operate on the full pixel values,
 including the reference read contribution.  Accordingly, the DQ
 initialization step also adds the reference read and the
-reference_amp33 read to the data and amp33 pixels, respectively.
+reference_amp33 read to the data and amp33 pixels, respectively, so
+that the ramp model always contains the total number of DN present
+in the detector.
