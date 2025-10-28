@@ -63,12 +63,13 @@ jobs:
       envs: |
         - macos: py311
         - macos: py312
+        - macos: py313
         # TODO: merge stdevdeps into devdeps
-        - linux: py3-stdevdeps
+        - linux: py313-stdevdeps
           pytest-results-summary: true
-        - macos: py3-stdevdeps
+        - macos: py313-stdevdeps
           pytest-results-summary: true
-        - linux: py3-devdeps
+        - linux: py313-devdeps
           pytest-results-summary: true
-        - macos: py3-devdeps
+        - macos: py313-devdeps
           pytest-results-summary: true

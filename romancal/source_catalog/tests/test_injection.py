@@ -303,18 +303,14 @@ def test_create_cosmoscat():
 
 def test_make_source_grid(image_model, mosaic_model):
     for si_model in (image_model, mosaic_model):
-        """Test simple source injection"""
+        """Test simple grid creation"""
         # Set parameters
         test_filter = FILTERS[0]
         yxgrid = (10,15)
         yxoffset = (7, 11)
         yxmax = np.subtract(SHAPE, [50,50])
 
-        cat = make_catalog(si_model.meta)
-
-        data_orig = si_model.copy()
-
-        x_pos, y_pos = make_source_grid(data_orig,
+        x_pos, y_pos = make_source_grid(si_model,
             yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid, seed=RNG_SEED)
 
         # Ensure expected number of grid points
@@ -341,7 +337,7 @@ def test_make_source_grid(image_model, mosaic_model):
 
 def test_grid_injection(image_model, mosaic_model):
     for si_model in (image_model, mosaic_model):
-        """Test simple source injection"""
+        """Test injection of simple grid of sources"""
         # Set parameters
         test_filter = FILTERS[0]
         yxgrid = (10,15)
@@ -385,14 +381,14 @@ def test_grid_injection(image_model, mosaic_model):
 
         si_model = inject_sources(si_model, cat)
 
-        # Ensure that sources were actually injected alogn the specified grid
+        # Ensure that sources were actually injected along the specified grid
         for x_val, y_val in zip(x_pos, y_pos, strict=False):
             assert np.all(
                 si_model.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2]
                 > data_orig.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2]
             )
 
-        # Test that pixels far from the injected source are close to the original image
+        # Test that pixels in the offset areas are close to the original image
         # Numpy isclose is needed to determine equality, due to float precision issues
         assert np.all(
             np.isclose(
@@ -401,4 +397,3 @@ def test_grid_injection(image_model, mosaic_model):
                 rtol=1e-06,
             )
         )
-
