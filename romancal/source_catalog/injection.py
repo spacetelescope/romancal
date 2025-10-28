@@ -219,7 +219,9 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **
     return all_cat
 
 
-def make_source_grid(model, yxmax=(5000,5000), yxoffset=(50, 50), yxgrid=(20,20), seed=50, **kwargs):
+def make_source_grid(
+    model, yxmax=(5000, 5000), yxoffset=(50, 50), yxgrid=(20, 20), seed=50, **kwargs
+):
     """
     Generate a grid of points to inject sources onto. The grid is set to the yxmax
     size for consistent spacing across input, and cropped as needed. An edge offset
@@ -252,11 +254,16 @@ def make_source_grid(model, yxmax=(5000,5000), yxoffset=(50, 50), yxgrid=(20,20)
     yspread, xspread = np.subtract((yxmax), 2 * np.array(yxoffset))
     yspace, xspace = np.ceil(np.divide((yspread, xspread), yxgrid))
 
-    y0, x0 = (yxoffset[0] + rng_numpy.uniform(high=yspace),
-              yxoffset[1] + rng_numpy.uniform(high=xspace))
+    y0, x0 = (
+        yxoffset[0] + rng_numpy.uniform(high=yspace),
+        yxoffset[1] + rng_numpy.uniform(high=xspace),
+    )
 
     # ypts, xpts = np.arange(yspace), np.arange(xspace)
-    ypts, xpts = np.arange(yxgrid[0], dtype=np.float64), np.arange(yxgrid[1], dtype=np.float64)
+    ypts, xpts = (
+        np.arange(yxgrid[0], dtype=np.float64),
+        np.arange(yxgrid[1], dtype=np.float64),
+    )
 
     ypts *= yspace
     ypts += y0
@@ -279,9 +286,3 @@ def make_source_grid(model, yxmax=(5000,5000), yxoffset=(50, 50), yxgrid=(20,20)
     y_pos_idx, x_pos_idx = y_pos_idx[~nanmask], x_pos_idx[~nanmask]
 
     return y_pos_idx, x_pos_idx
-
-
-
-
-
-
