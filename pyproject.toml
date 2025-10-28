@@ -28,7 +28,7 @@ dependencies = [
     "roman_datamodels >=0.28.0,<0.29.0",
     # "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
     "scipy >=1.14.1",
-    "stcal @ git+https://github.com/braingram/stcal.git@isolate_opencv",
+    "stcal>=1.15.1,<1.16.0",
     "stpipe >=0.11.0,<0.12.0",
     "tweakwcs >=0.8.11",
     "spherical-geometry >= 1.3.3",
