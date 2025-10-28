@@ -5,7 +5,8 @@ import logging
 from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
-from roman_datamodels.datamodels import RampModel, ScienceRawModel
+from roman_datamodels.datamodels import (
+    RampModel, ScienceRawModel, TvacModel, FpsModel)
 from roman_datamodels.dqflags import pixel
 
 from romancal.dq_init import dq_initialization
@@ -50,11 +51,12 @@ class DQInitStep(RomanStep):
         """
         # Open datamodel
         input_model = rdm.open(input)
+        is_tvac = isinstance(input_model, (FpsModel | TvacModel))
         try:
+            # note that this succeeds even for ScienceRawModels
             input_model = ScienceRawModel.from_tvac_raw(input_model)
-            is_tvac = True
         except ValueError:
-            is_tvac = False
+            pass
 
         # Convert to RampModel
         output_model = RampModel.from_science_raw(input_model)
