@@ -69,10 +69,9 @@ jobs:
         - linux: py311-oldestdeps-cov
         - linux: py311-nolegacypath
         - linux: py312-ddtrace
-        - linux: py313-ddtrace
-        - macos: py313-ddtrace
-        - linux: py314-cov
+        - linux: py313-cov
           coverage: codecov
           pytest-results-summary: true
-        - macos: py314-pyargs
+        - macos: py313-ddtrace
+        - macos: py313-pyargs
           pytest-results-summary: true
