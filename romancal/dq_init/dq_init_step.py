@@ -5,8 +5,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
-from roman_datamodels.datamodels import (
-    RampModel, ScienceRawModel, TvacModel, FpsModel)
+from roman_datamodels.datamodels import FpsModel, RampModel, ScienceRawModel, TvacModel
 from roman_datamodels.dqflags import pixel
 
 from romancal.dq_init import dq_initialization
