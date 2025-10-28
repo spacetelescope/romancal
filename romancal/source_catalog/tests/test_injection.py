@@ -16,7 +16,11 @@ from romanisim import bandpass, parameters
 
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
 from romancal.source_catalog import injection
-from romancal.source_catalog.injection import inject_sources, make_cosmoslike_catalog, make_source_grid
+from romancal.source_catalog.injection import (
+    inject_sources,
+    make_cosmoslike_catalog,
+    make_source_grid,
+)
 
 # Set parameters
 RA = 270.0
@@ -301,17 +305,19 @@ def test_create_cosmoscat():
         )
         assert np.all(cat[cat["type"] == "SER"][bp] >= 0)
 
+
 def test_make_source_grid(image_model, mosaic_model):
     for si_model in (image_model, mosaic_model):
         """Test simple grid creation"""
         # Set parameters
         test_filter = FILTERS[0]
-        yxgrid = (10,15)
+        yxgrid = (10, 15)
         yxoffset = (7, 11)
-        yxmax = np.subtract(SHAPE, [50,50])
+        yxmax = np.subtract(SHAPE, [50, 50])
 
-        x_pos, y_pos = make_source_grid(si_model,
-            yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid, seed=RNG_SEED)
+        x_pos, y_pos = make_source_grid(
+            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid, seed=RNG_SEED
+        )
 
         # Ensure expected number of grid points
         assert len(y_pos) == len(x_pos)
@@ -322,17 +328,21 @@ def test_make_source_grid(image_model, mosaic_model):
         assert np.allclose(np.diff(np.diff(np.sort(list(set(x_pos))))), 0)
 
         # Create NaN point
-        si_model.data[45,32] = np.nan
+        si_model.data[45, 32] = np.nan
 
-        y_nan_pos, x_nan_pos = make_source_grid(si_model,
-            yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid, seed=RNG_SEED)
+        y_nan_pos, x_nan_pos = make_source_grid(
+            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid, seed=RNG_SEED
+        )
 
         # Ensure expected number of grid points
         assert len(y_nan_pos) == len(y_pos) - 1
         assert len(x_nan_pos) == len(x_pos) - 1
 
         # Ensure x,y (32, 45) not in the grid
-        assert len(np.intersect1d(np.where(y_nan_pos == 45),np.where(x_nan_pos == 32))) == 0
+        assert (
+            len(np.intersect1d(np.where(y_nan_pos == 45), np.where(x_nan_pos == 32)))
+            == 0
+        )
 
 
 def test_grid_injection(image_model, mosaic_model):
@@ -340,9 +350,9 @@ def test_grid_injection(image_model, mosaic_model):
         """Test injection of simple grid of sources"""
         # Set parameters
         test_filter = FILTERS[0]
-        yxgrid = (10,15)
+        yxgrid = (10, 15)
         yxoffset = (7, 11)
-        yxmax = np.subtract(SHAPE, [25,25])
+        yxmax = np.subtract(SHAPE, [25, 25])
 
         # Pointing
         cen = SkyCoord(ra=RA * u.deg, dec=DEC * u.deg)
@@ -359,8 +369,9 @@ def test_grid_injection(image_model, mosaic_model):
         data_orig = si_model.copy()
 
         # Create grid
-        x_pos, y_pos = make_source_grid(si_model,
-            yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid, seed=RNG_SEED)
+        x_pos, y_pos = make_source_grid(
+            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid, seed=RNG_SEED
+        )
 
         # Convert x,y to ra, dec
         ra, dec = wcsobj.pixel_to_world_values(np.array(x_pos), np.array(y_pos))
@@ -392,8 +403,12 @@ def test_grid_injection(image_model, mosaic_model):
         # Numpy isclose is needed to determine equality, due to float precision issues
         assert np.all(
             np.isclose(
-                si_model.data[yxoffset[0]:-yxoffset[0]:-1, yxoffset[1]:-yxoffset[1]:-1],
-                data_orig.data[yxoffset[0]:-yxoffset[0]:-1, yxoffset[1]:-yxoffset[1]:-1],
+                si_model.data[
+                    yxoffset[0] : -yxoffset[0] : -1, yxoffset[1] : -yxoffset[1] : -1
+                ],
+                data_orig.data[
+                    yxoffset[0] : -yxoffset[0] : -1, yxoffset[1] : -yxoffset[1] : -1
+                ],
                 rtol=1e-06,
             )
         )
