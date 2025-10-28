@@ -156,6 +156,12 @@
   "DMS532": [
      "romancal.regtest.test_psf_library.test_psf_library_reffile"
   ],
+  "DMS533": [
+     "romancal.regtest.test_psf_library.test_psf_library_variability"
+  ],
+  "DMS537": [
+     "romancal.regtest.test_psf_library.test_psf_library_variability"
+  ],
   "DMS535": [
     "romancal.regtest.test_psf_library.test_psf_library_crdsfile"
   ],

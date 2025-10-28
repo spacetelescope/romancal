@@ -108,3 +108,17 @@ def test_psf_library_psfinterp(render_psfs, dms_logger):
     dms_logger.info(
         f"DMS536 {passmsg},  The interpolated ePSF for two positions are not the same"
     )
+
+@pytest.mark.bigdata
+def test_psf_library_variability(render_psfs, dms_logger):
+    """Test that PSF variation with color is tracked"""
+    # DMS 533 handling variable PSFs
+    # Create two PSFs, one for a red source, one for a blue source, show that they're
+    # different
+
+    _, stamps = render_psfs
+
+    diff = stamps['stamp_red'] - stamps['stamp_center']
+    # check to make sure the difference is not zero over the array
+    psf_diff = diff.any()
+    assert psf_diff
