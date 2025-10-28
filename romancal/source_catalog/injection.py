@@ -221,7 +221,9 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **
 
 def make_source_grid(model, yxmax=(5000,5000), yxoffset=(50, 50), yxgrid=(20,20), seed=50, **kwargs):
     """
-
+    Generate a grid of points to inject sources onto. The grid is set to the yxmax
+    size for consistent spacing across input, and cropped as needed. An edge offset
+    is specified within the parameters to avoid sources in that area.
 
     Parameters
     ----------
