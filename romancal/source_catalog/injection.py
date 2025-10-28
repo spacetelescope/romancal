@@ -225,11 +225,21 @@ def make_source_grid(model, yxmax=(5000,5000), yxoffset=(50, 50), yxgrid=(20,20)
 
     Parameters
     ----------
-
+    model : `ImageModel` or `MosaicModel`
+        Model into which to inject sources.
+    yxmax : tuple of two ints
+        Maximum extend of the grid
+    yxoffset : int or tuple of two ints
+        Edge Offset to place grid within
+    yxgrid : tuple of two ints
+        Grid point dimensions
+    seed : int
+        Seed for random number generator
 
     Returns
     -------
-
+    y_pos_idx, x_pos_idx : array_like (int)
+        y, x positions of each valid grid point yxmax
     """
     # Set random source index for the grid
     rng_numpy = np.random.default_rng(seed)
@@ -239,15 +249,12 @@ def make_source_grid(model, yxmax=(5000,5000), yxoffset=(50, 50), yxgrid=(20,20)
 
     yspread, xspread = np.subtract((yxmax), 2 * np.array(yxoffset))
     yspace, xspace = np.ceil(np.divide((yspread, xspread), yxgrid))
-    print(f"\nXXXX yspace, xspace = {yspace}, {xspace}")
 
     y0, x0 = (yxoffset[0] + rng_numpy.uniform(high=yspace),
               yxoffset[1] + rng_numpy.uniform(high=xspace))
 
-    ypts, xpts = np.arange(yspace), np.arange(xspace)
-
-    print(f"\nXXXX ypts = {ypts}")
-    print(f"\nXXXX xpts = {xpts}")
+    # ypts, xpts = np.arange(yspace), np.arange(xspace)
+    ypts, xpts = np.arange(yxgrid[0], dtype=np.float64), np.arange(yxgrid[1], dtype=np.float64)
 
     ypts *= yspace
     ypts += y0
@@ -255,42 +262,19 @@ def make_source_grid(model, yxmax=(5000,5000), yxoffset=(50, 50), yxgrid=(20,20)
     xpts *= xspace
     xpts += x0
 
-    print(f"\nXXXX ypts = {ypts}")
-    print(f"\nXXXX xpts = {xpts}")
-
-    print(f"XXXX (model.data.shape[0] - int(yxoffset[0]) = {(model.data.shape[0] - int(yxoffset[0]))}")
-
-    # Discard off image positions
+    # Discard off-image positions
     ypts = ypts[ypts < (model.data.shape[0] - int(yxoffset[0]))]
     xpts = xpts[xpts < (model.data.shape[1] - int(yxoffset[1]))]
 
-    print(f"\nXXXX ypts = {ypts}")
-    print(f"\nXXXX xpts = {xpts}")
-
     # Create grid
     y_pos, x_pos = np.meshgrid(ypts, xpts)
-
-    print(f"\nXXXX y_pos = {y_pos}")
-    print(f"\nXXXX x_pos = {x_pos}")
-
     y_pos = np.ravel(y_pos)
     x_pos = np.ravel(x_pos)
-
-    print(f"\nXXXX y_pos = {y_pos}")
-    print(f"\nXXXX x_pos = {x_pos}")
-
     y_pos_idx, x_pos_idx = y_pos.astype(int), x_pos.astype(int)
-
-    print(f"\nXXXX y_pos_idx = {y_pos_idx}")
-    print(f"\nXXXX x_pos_idx = {x_pos_idx}")
 
     # Discard positions in NA empty regions
     nanmask = np.isnan(model.data[y_pos_idx, x_pos_idx])
     y_pos_idx, x_pos_idx = y_pos_idx[~nanmask], x_pos_idx[~nanmask]
-
-    print(f"\nXXXX y_pos_idx = {y_pos_idx}")
-    print(f"\nXXXX x_pos_idx = {x_pos_idx}")
-    print(f"XXXX np.any(nanmask) = {np.any(nanmask)}")
 
     return y_pos_idx, x_pos_idx
 
