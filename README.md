@@ -2,7 +2,7 @@
 
 
 [![Documentation Status](https://readthedocs.org/projects/roman-pipeline/badge/?version=latest)](https://roman-pipeline.readthedocs.io/en/latest/?badge=latest)
-[![CI](https://github.com/spacetelescope/romancal/actions/workflows/roman_ci.yml/badge.svg)](https://github.com/spacetelescope/romancal/actions/workflows/roman_ci.yml)
+[![Tests](https://github.com/spacetelescope/romancal/actions/workflows/tests.yml/badge.svg)](https://github.com/spacetelescope/romancal/actions/workflows/tests.yml)
 [![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](http://www.stsci.edu)
 [![Powered by Astropy Badge](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
@@ -133,9 +133,9 @@ To build the docs yourself, clone this repository and build the documentation wi
 ## Contributions and Feedback
 
 We welcome contributions and feedback on the project. Please follow the
-[contributing guidelines](CONTRIBUTING.md) to submit an issue or a pull request.
+[contributing guidelines](https://github.com/spacetelescope/romancal/blob/main/CONTRIBUTING.md) to submit an issue or a pull request.
 
-We strive to provide a welcoming community to all of our users by abiding with the [Code of Conduct](CODE_OF_CONDUCT.md)
+We strive to provide a welcoming community to all of our users by abiding with the [Code of Conduct](https://github.com/spacetelescope/romancal/blob/main/CODE_OF_CONDUCT.md)
 .
 
 If you have questions or concerns regarding the software, please open

@@ -21,8 +21,10 @@ from .engdb_lib import (
 __all__ = ["EngdbMast"]
 
 # Default MAST info.
-MAST_BASE_URL = "https://masttest.stsci.edu"
-API_URI = "edp/api/v0.1/mnemonics/fqa/roman/data"
+MAST_BASE_URL = "https://mast.stsci.edu"
+# MAST_BASE_URL = "https://stsci.edu"
+DATA_URI = "edp/api/v0.1/mnemonics/spa/roman/data"
+META_URI = "edp/api/v0.1/mnemonics/spa/roman/metadata"
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -80,22 +82,18 @@ class EngdbMast(EngdbABC):
         logger.debug("kwargs not used by this service: %s", service_kwargs)
 
         self.configure(base_url=base_url, token=token)
+        self.set_session()
 
         # Check for basic aliveness.
         try:
-            resp = requests.get(self.base_url + "edp/", timeout=self.timeout)
-        except requests.exceptions.ConnectionError as exception:
+            self.get_meta(search="engdb_mastaliveness")
+        except (
+            requests.exceptions.ConnectionError,
+            requests.exceptions.HTTPError,
+        ) as exception:
             raise RuntimeError(
                 f"MAST url: {self.base_url} is unreachable."
             ) from exception
-        if resp.status_code != 200:
-            raise RuntimeError(
-                f"MAST url: {self.base_url} is not available. "
-                f"Returned HTTPS status {resp.status_code}"
-            )
-
-        # Basics are covered. Finalize initialization.
-        self.set_session()
 
     def configure(self, base_url=None, token=None):
         """
@@ -126,18 +124,47 @@ class EngdbMast(EngdbABC):
         self.token = token
 
         # Get various timeout parameters
-        self.retries = getenv("ENG_RETRIES", RETRIES)
-        self.timeout = getenv("ENG_TIMEOUT", TIMEOUT)
+        self.retries = int(getenv("ENG_RETRIES", RETRIES))
+        self.timeout = int(getenv("ENG_TIMEOUT", TIMEOUT))
 
-    def get_meta(self, *kwargs):
+    def get_meta(self, search=None):
         """
         Get the mnemonics meta info.
 
-        The MAST interface does not provide any meta.
+        Parameters
+        ----------
+        search : str or None
+            A partial, or full, mnemonic specification.
+            If None, meta for all available mnemonics are returned
+
+        Returns
+        -------
+        meta : ???
+            The meta information
         """
-        raise NotImplementedError(
-            "MAST Engineering AUI does not provide a meta service"
+
+        # Make the request
+        if search is None:
+            self._metareq.params = {}
+        else:
+            self._metareq.params = {
+                "mnemonic": search,
+            }
+        prepped = self._session.prepare_request(self._metareq)
+        settings = self._session.merge_environment_settings(
+            prepped.url, {}, None, None, None
         )
+        logger.debug("Query: %s", prepped.url)
+        self.metaresponse = self._session.send(
+            prepped, timeout=self.timeout, **settings
+        )
+        self.metaresponse.raise_for_status()
+        logger.debug("Response: %s", self.metaresponse)
+        logger.debug("Response test: %s", self.metaresponse.text)
+
+        # Leave as dictionary.
+        results = literal_eval(self.metaresponse.text)
+        return results
 
     def get_values(
         self,
@@ -220,9 +247,15 @@ class EngdbMast(EngdbABC):
 
     def set_session(self):
         """Set up HTTP session."""
-        self._req = requests.Request(
+        self._datareq = requests.Request(
             method="GET",
-            url=self.base_url + API_URI,
+            url=self.base_url + DATA_URI,
+            headers={"Authorization": f"token {self.token}"},
+        )
+
+        self._metareq = requests.Request(
+            method="GET",
+            url=self.base_url + META_URI,
             headers={"Authorization": f"token {self.token}"},
         )
 
@@ -283,12 +316,12 @@ class EngdbMast(EngdbABC):
         mnemonic = mnemonic.upper()
         starttime_fmt = starttime.strftime("%Y-%m-%dT%H:%M:%S")
         endtime_fmt = endtime.strftime("%Y-%m-%dT%H:%M:%S")
-        self._req.params = {
+        self._datareq.params = {
             "mnemonic": mnemonic,
             "s_time": starttime_fmt,
             "e_time": endtime_fmt,
         }
-        prepped = self._session.prepare_request(self._req)
+        prepped = self._session.prepare_request(self._datareq)
         settings = self._session.merge_environment_settings(
             prepped.url, {}, None, None, None
         )

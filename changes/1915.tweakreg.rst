@@ -1,0 +1,1 @@
+Prevent TweakRegStep from crashing when source catalog is missing required columns.

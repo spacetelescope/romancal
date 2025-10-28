@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pytest
 
@@ -142,6 +140,8 @@ def test_find_outliers(tmp_path, base_image, on_disk):
         img.meta.filename = str(tmp_path / f"img{i}_suffix.asdf")
         img.meta.observation.observation_id = str(i)
         img.meta.background.level = 0
+        # populate var_rnoise with non-zero values
+        img.var_rnoise = np.full(img.data.shape, 1.0, dtype=np.float32)
         imgs.append(img)
 
     # add outliers
@@ -243,13 +243,12 @@ def test_identical_images(tmp_path, base_image, caplog):
 def test_outlier_detection_always_returns_modelcontainer_with_updated_datamodels(
     input_type,
     base_image,
-    tmp_path,
     create_mock_asn_file,
+    function_jail,
 ):
     """Test that the OutlierDetectionStep always returns a ModelLibrary
     with updated data models after processing different input types."""
 
-    os.chdir(tmp_path)
     img_1 = base_image()
     img_1.meta.filename = "img_1.asdf"
     img_1.data *= img_1.meta.photometry.conversion_megajanskys / img_1.data
@@ -258,12 +257,12 @@ def test_outlier_detection_always_returns_modelcontainer_with_updated_datamodels
     img_2.data *= img_2.meta.photometry.conversion_megajanskys / img_2.data
 
     library = ModelLibrary([img_1, img_2])
-    library._save(tmp_path)
+    library._save(function_jail)
 
     step_input_map = {
         "ModelLibrary": library,
         "ASNFile": create_mock_asn_file(
-            tmp_path,
+            function_jail,
             members_mapping=[
                 {"expname": img_1.meta.filename, "exptype": "science"},
                 {"expname": img_2.meta.filename, "exptype": "science"},

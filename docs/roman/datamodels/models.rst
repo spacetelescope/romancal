@@ -139,26 +139,8 @@ Looking at the contents of a model
 
 You can examine the contents of your model from within python using
 
-.. code-block:: python
-
-    >>> image_model.info()  # doctest: +ELLIPSIS
-    root (AsdfObject)
-    └─roman (WfiImage) # Level 2 (L2) Calibrated Roman Wide Field Instrument (WFI) Rate Image.
-      ├─meta (dict)
-      │ ├─calibration_software_name (CalibrationSoftwareName): RomanCAL # Calibration Software Name
-      │ ├─calibration_software_version (CalibrationSoftwareVersion): 9.9.0 # Calibration Software Version Number
-      │ ├─filename (Filename): r0019106003005004023_0034_wfi01_cal.asdf # File Name
-      │ ├─file_date (FileDate): 2020-01-01T00:00:00.000
-      │ ├─model_type (ModelType): ImageModel # Data Model Type
-    ...
+.. image_model_info::
 
 or you can print specifics
 
-.. code-block:: python
-
-    >>> image_model.search("detector")
-    root (AsdfObject)
-    └─roman (WfiImage) # Level 2 (L2) Calibrated Roman Wide Field Instrument (WFI) Rate Image.
-      └─meta (dict)
-        └─instrument (WfiMode) # Wide Field Instrument (WFI) Configuration Information
-          └─detector (str): WFI01
+.. image_model_search::

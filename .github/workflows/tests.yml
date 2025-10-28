@@ -69,11 +69,9 @@ jobs:
         - linux: py311-oldestdeps-cov
         - linux: py311-nolegacypath
         - linux: py312-ddtrace
-        - macos: py312-ddtrace
-        # `tox` does not currently respect `requires-python` versions when creating testing environments;
-        # if this breaks, add an upper pin to `requires-python` and revert this py3 to the latest working version
-        - linux: py3-cov
+        - linux: py313-cov
           coverage: codecov
           pytest-results-summary: true
-        - macos: py3-pyargs
+        - macos: py313-ddtrace
+        - macos: py313-pyargs
           pytest-results-summary: true

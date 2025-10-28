@@ -4,7 +4,7 @@ description = "Library for calibration of science observations from the Nancy Gr
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
-    { name = "Roman calibration pipeline developers", email = "help@stsci.edu" },
+    { name = "Roman calibration pipeline developers" },
 ]
 classifiers = [
     "Intended Audience :: Science/Research",
@@ -21,12 +21,15 @@ dependencies = [
     "numpy >=1.25",
     "photutils >=2.1.0",
     "requests >=2.26",
-    # "roman_datamodels>=0.27.0",
-    "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
+    # Between the intermediate and build releases we want to keep
+    # the roman_datamodels pin to the released version. If there
+    # is a need to change this to main then we need a new
+    # roman_datamodels release.
+    "roman_datamodels >=0.28.0,<0.29.0",
+    # "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
     "scipy >=1.14.1",
-    # "stcal>=1.15.0,<1.16.0",
-    "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
-    "stpipe >=0.10.0,<0.11.0",
+    "stcal>=1.15.1,<1.16.0",
+    "stpipe >=0.11.0,<0.12.0",
     "tweakwcs >=0.8.11",
     "spherical-geometry >= 1.3.3",
     "stsci.imagestats >= 1.8.3",
@@ -56,7 +59,7 @@ test = [
     "pytest-astropy >= 0.11.0",
     "deepdiff",
     "stpreview>=0.6.0",
-    "romanisim @ git+https://github.com/PaulHuwe/romanisim.git@RDM_dev_point",
+    # Commented for later
     # "romanisim @ git+https://github.com/spacetelescope/romanisim.git",
 ]
 dev = [
@@ -64,7 +67,7 @@ dev = [
     "romancal[docs,test]",
     "tox > 4",
     "pre-commit > 3",
-    "romanisim @ git+https://github.com/PaulHuwe/romanisim.git@RDM_dev_point",
+    # Commented for later
     # "romanisim @ git+https://github.com/spacetelescope/romanisim.git",
 ]
 sdp = [
@@ -101,6 +104,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
+version_scheme = "release-branch-semver"
 
 [tool.setuptools]
 zip-safe = false
@@ -203,6 +207,7 @@ exclude = [
 ]
 ignore = [
     "E741", # ambiguous variable name
+    "RUF059", # unused unpacked variable
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]

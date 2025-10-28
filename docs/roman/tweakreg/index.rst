@@ -4,7 +4,7 @@
 TweakReg
 ========
 
-.. moduleauthor:: Mihai Cara <help@stsci.edu>
+.. moduleauthor:: Mihai Cara
 
 .. toctree::
    :maxdepth: 2

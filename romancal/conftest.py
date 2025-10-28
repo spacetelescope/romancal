@@ -1,11 +1,14 @@
 """Project default for pytest"""
 
+from __future__ import annotations
+
 import inspect
 import json
 import logging
-import os
 import sys
+from contextlib import chdir
 from io import StringIO
+from typing import TYPE_CHECKING
 
 import pytest
 from astropy import coordinates as coord
@@ -14,10 +17,13 @@ from astropy.modeling.models import Shift
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from roman_datamodels import datamodels as rdm
-from roman_datamodels import stnode
 
 from romancal.assign_wcs import pointing
 from romancal.assign_wcs.utils import add_s_region
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from pathlib import Path
 
 collect_ignore = ["lib/dqflags.py"]
 
@@ -52,14 +58,10 @@ def dms_logger():
 
 
 @pytest.fixture(scope="function")
-def function_jail(tmp_path):
+def function_jail(tmp_path) -> Generator[Path, None, None]:
     """Perform test in a pristine temporary working directory."""
-    old_dir = os.getcwd()
-    os.chdir(tmp_path)
-    try:
-        yield str(tmp_path)
-    finally:
-        os.chdir(old_dir)
+    with chdir(tmp_path):
+        yield tmp_path
 
 
 @pytest.fixture(scope="module")
@@ -70,14 +72,13 @@ def module_jail(request, tmp_path_factory):
     instead of function.  This allows a fixture using it to produce files in a
     temporary directory, and then have the tests access them.
     """
-    old_dir = os.getcwd()
     path = request.module.__name__.split(".")[-1]
     if request._parent_request.fixturename is not None:
         path = path + "_" + request._parent_request.fixturename
     newpath = tmp_path_factory.mktemp(path)
-    os.chdir(str(newpath))
-    yield newpath
-    os.chdir(old_dir)
+
+    with chdir(newpath):
+        yield newpath
 
 
 @pytest.hookimpl(trylast=True)
@@ -236,9 +237,13 @@ def _create_wcs(input_dm, shift_1=0, shift_2=0):
 def _base_image(shift_1=0, shift_2=0):
     l2 = rdm.ImageModel.create_fake_data(shape=(100, 100))
     l2.meta.filename = "none"
-    l2.meta.cal_logs = stnode.CalLogs.create_fake_data()
-    l2.meta.cal_step = stnode.L2CalStep.create_fake_data()
-    l2.meta.background = stnode.SkyBackground.create_fake_data()
+    l2.meta.cal_logs = []
+    l2.meta.cal_step = {}
+    for step_name in l2.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        l2.meta.cal_step[step_name] = "INCOMPLETE"
+    l2.meta.background = {"level": -999999.0, "method": "None", "subtracted": False}
     l2.var_flat = l2.var_rnoise.copy()
     _create_wcs(l2)
     l2.meta.wcsinfo.vparity = -1
@@ -259,3 +264,41 @@ def base_image():
     """
 
     return _base_image
+
+
+@pytest.fixture
+def ignore_metadata_paths():
+    """
+    List of metadata paths that will contain always variable values.
+
+    These include versions, dates, logs, etc. that will often differ.
+    """
+    return [
+        "asdf_library",
+        "history",
+        "roman.meta.ref_file.crds.version",
+        "roman.meta.calibration_software_version",
+        "roman.cal_logs",
+        "roman.meta.cal_logs",
+        "roman.meta.date",
+        "roman.meta.file_date",
+        "roman.individual_image_cal_logs",
+        "roman.meta.individual_image_meta",
+    ]
+
+
+@pytest.fixture
+def ignore_parquet_metadata_paths(ignore_metadata_paths):
+    """
+    List of parquet metadata paths to ignore during testings.
+    """
+    return [
+        *ignore_metadata_paths,
+        "table_meta_yaml",
+        "source_catalog",
+        "roman.meta.filename",
+        "roman.meta.model_type",
+        "roman.meta.ref_file",
+        "roman.meta.image",
+        "roman.meta.forced_segmentation",
+    ]

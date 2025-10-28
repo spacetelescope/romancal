@@ -2,7 +2,6 @@ from enum import IntEnum
 
 import numpy as np
 import pytest
-from roman_datamodels import stnode
 from roman_datamodels.datamodels import RampModel, RefpixRefModel
 
 from romancal.refpix.data import Coefficients, Const, StandardView
@@ -38,8 +37,12 @@ def data():
 
 @pytest.fixture(scope="module")
 def datamodel(data):
-    datamodel = stnode.Ramp.create_fake_data(shape=(2, 2, 2))
-    datamodel.meta.cal_step = stnode.L2CalStep.create_fake_data()
+    datamodel = RampModel.create_fake_data(shape=(2, 2, 2))
+    datamodel.meta.cal_step = {}
+    for step_name in datamodel.schema_info("required")["roman"]["meta"]["cal_step"][
+        "required"
+    ].info:
+        datamodel.meta.cal_step[step_name] = "INCOMPLETE"
 
     detector = data[:, :, : Const.N_COLUMNS]
     amp33 = data[:, :, Const.N_COLUMNS :]
@@ -54,7 +57,7 @@ def datamodel(data):
     datamodel.border_ref_pix_left = datamodel.data[:, :, : Const.REF]
     datamodel.border_ref_pix_right = datamodel.data[:, :, -Const.REF :]
 
-    return RampModel(datamodel)
+    return datamodel
 
 
 @pytest.fixture(scope="module")
@@ -83,8 +86,6 @@ def offset() -> np.ndarray:
 
 @pytest.fixture(scope="module")
 def ref_pix_ref(coeffs):
-    refpix_ref = stnode.RefpixRef.create_fake_data(
+    return RefpixRefModel.create_fake_data(
         {"gamma": coeffs.gamma, "zeta": coeffs.zeta, "alpha": coeffs.alpha}
     )
-
-    return RefpixRefModel(refpix_ref)

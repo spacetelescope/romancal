@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from re import match
 
@@ -10,7 +9,7 @@ from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from astropy.time import Time
 from roman_datamodels import datamodels as rdm
-from roman_datamodels.datamodels import MosaicModel, MosaicSegmentationMapModel
+from roman_datamodels.datamodels import MosaicModel, MultibandSegmentationMapModel
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog import MultibandCatalogStep
@@ -57,6 +56,7 @@ def mosaic_model():
     model.meta.coadd_info.time_first = Time("2027-01-01T00:00:00")
     model.meta.wcsinfo.pixel_scale = 0.11 / 3600  # degrees
     model.meta.resample.pixfrac = 0.5
+    model.meta.data_release_id = "r1"
     return model
 
 
@@ -86,9 +86,8 @@ def library_model_all_nan(mosaic_model):
     ),
 )
 def test_multiband_catalog(
-    library_model, fit_psf, snr_threshold, npixels, save_results, tmp_path
+    library_model, fit_psf, snr_threshold, npixels, save_results, function_jail
 ):
-    os.chdir(tmp_path)
     step = MultibandCatalogStep()
 
     result = step.call(
@@ -99,6 +98,11 @@ def test_multiband_catalog(
         fit_psf=fit_psf,
         save_results=save_results,
     )
+
+    with library_model:
+        input_model = library_model.borrow(0)
+        assert result.meta.data_release_id == input_model.meta.data_release_id
+        library_model.shelve(input_model, modify=False)
 
     cat = result.source_catalog
     assert isinstance(cat, Table)
@@ -138,19 +142,18 @@ def test_multiband_catalog(
                 assert f"{colname}_err" in cat.colnames
 
     if save_results:
-        filepath = Path(tmp_path / f"{result.meta.filename}_cat.parquet")
+        filepath = Path(function_jail / f"{result.meta.filename}_cat.parquet")
         assert filepath.exists()
         tbl = pyarrow.parquet.read_table(filepath)
         assert isinstance(tbl, pyarrow.Table)
 
-        filepath = Path(tmp_path / f"{result.meta.filename}_segm.asdf")
+        filepath = Path(function_jail / f"{result.meta.filename}_segm.asdf")
         assert filepath.exists()
-        assert isinstance(rdm.open(filepath), MosaicSegmentationMapModel)
+        assert isinstance(rdm.open(filepath), MultibandSegmentationMapModel)
 
 
 @pytest.mark.parametrize("save_results", (True, False))
-def test_multiband_catalog_no_detections(library_model, save_results, tmp_path):
-    os.chdir(tmp_path)
+def test_multiband_catalog_no_detections(library_model, save_results, function_jail):
     step = MultibandCatalogStep()
 
     result = step.call(
@@ -169,9 +172,8 @@ def test_multiband_catalog_no_detections(library_model, save_results, tmp_path):
 
 @pytest.mark.parametrize("save_results", (True, False))
 def test_multiband_catalog_invalid_inputs(
-    library_model_all_nan, save_results, tmp_path
+    library_model_all_nan, save_results, function_jail
 ):
-    os.chdir(tmp_path)
     step = MultibandCatalogStep()
 
     result = step.call(
@@ -189,9 +191,9 @@ def test_multiband_catalog_invalid_inputs(
 
 
 @pytest.mark.parametrize("save_results", (True, False))
-def test_multiband_catalog_some_invalid_inputs(library_model, save_results, tmp_path):
-    os.chdir(tmp_path)
-
+def test_multiband_catalog_some_invalid_inputs(
+    library_model, save_results, function_jail
+):
     # Modify the first model in the library to have all NaN values
     with library_model:
         model = library_model.borrow(0)  # f184 model
