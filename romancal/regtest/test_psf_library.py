@@ -30,17 +30,29 @@ def render_psfs(rtdata_module, request, resource_tracker):
     rtdata.output = "psf_render.asdf"
     rtdata.get_truth(f"truth/WFI/image/psf_render.asdf")
 
+    img = rdm.open(input_file)
     step = SourceCatalogStep()
     ref_file = step.get_reference_file(rtdata.input, "epsf")
+    ref_data = rdm.open(ref_file)
     grid_nominal = psf.get_gridded_psf_model(ref_data, 0, 1)
     grid_defocus = psf.get_gridded_psf_model(ref_data, 1, 1)
     grid_red = psf.get_gridded_psf_model(ref_data, 0, 2)
+    ref_data_convolved = ref_data.copy()
+    ref_data_convolved.meta.jitter_major = 4
+    ref_data_convolved.meta.jitter_minor = 4
+    ref_data_convolved.meta.jitter_position_angle = 0
+    img.meta.guide_star.jitter_major = 8
+    img.meta.guide_star.jitter_minor = 8
+    img.meta.guide_star.jitter_position_angle = 0
+    ref_data_convolved.psf = psf.adjust_jitter(ref_data_convolved, img)
+    grid_jitter = psf.get_gridded_psf_model(ref_data, 0, 1)
     out = dict()
     pixcen = 2044
     out['stamp_center'] = psf.render_stamp(pixcen, pixcen, grid, 19)
     out['stamp_corner'] = psf.render_stamp(0, 0, grid, 19)
     out['stamp_red'] = psf.render_stamp(pixcen, pixcen, grid_red, 19)
     out['stamp_defocus'] = psf.render_stamp(pixcen, pixcen, grid_defocus, 19)
+    out['stamp_jitter'] = psf.render_stamp(pixcen, pixcen, grid_jitter, 19)
     asdf.dump(out, open(rtdata.output, 'wb'))
     return rtdata, out
 
@@ -112,7 +124,7 @@ def test_psf_library_psfinterp(render_psfs, dms_logger):
 @pytest.mark.bigdata
 def test_psf_library_variability(render_psfs, dms_logger):
     """Test that PSF variation with color is tracked"""
-    # DMS 533 handling variable PSFs
+    # DMS 533, 537 handling variable PSFs
     # Create two PSFs, one for a red source, one for a blue source, show that they're
     # different
 
@@ -122,3 +134,7 @@ def test_psf_library_variability(render_psfs, dms_logger):
     # check to make sure the difference is not zero over the array
     psf_diff = diff.any()
     assert psf_diff
+
+# 534, 538: jitter
+# 
+

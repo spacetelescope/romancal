@@ -179,6 +179,142 @@ def render_stamp(x, y, grid, size):
     return stamp
 
 
+def _get_jitter_params(meta):
+    """Get jitter parameters out of metadata.
+
+    Parameters
+    ----------
+    meta : metadata dictionary to extract keywords from.
+
+    Returns
+    -------
+    dictionary containing jitter_major, jitter_minor, and jitter_position_angle
+    keywords, substituting with sane defaults when not available.
+    """
+    return dict(
+        jitter_major=getattr(meta, 'jitter_major', 8),
+        jitter_minor=getattr(meta, 'jitter_minor', 8),
+        jitter_position_angle=getattr(meta, 'jitter_position_angle', 0))
+
+
+def _evaluate_gaussian_fft(param, shape, pixel_scale):
+    """Construct the FFT of a real-space Gaussian in the Fourier domain.
+
+    We want to evaluate a jitter kernel in the Fourier domain.  The
+    parameters of that jitter kernel are described in the 'param' dict.
+    The jitter kernel needs to be convolved with PSF stamps from a
+    reference file; the shape of those stamps and their PSF scale need
+    to be specified in the shape and pixel_scale parameters.
+
+    The jitter parameter dictionary must contain jitter_major, jitter_minor,
+    and jitter_position_angle attributes.  The units of the major and
+    minor axes must be in mas, while the position angle must be in degrees.
+    The position angle is the angle of the major axis relative to the +Y
+    axis, with PA increasing as the major axis moves toward the +X axis.
+    Major and minor axis sizes are expressed in units of RMS; i.e., the
+    standard deviation of the corresponding Gaussian.
+
+    Because Gaussians are real-valued, only the positive frequency
+    components are returned.
+
+    Parameters
+    ----------
+    param : dict
+        jitter parameter dictionary from _get_jitter_params
+    shape : tuple
+        shape of PSF stamp
+    pixel_scale : float
+        pixel scale of PSF, arcsec
+
+    Returns
+    -------
+    fft : np.ndarray
+        analytically computed FFT of real-space Gaussian
+    """
+    # pixel scale must include oversampling factor
+    # i.e., be something like the native scale divided by 4
+
+    # need to shift theta -> np.pi / 2 - theta in order to go from
+    # 'math' convention of +x axis, increasing toward +y axis
+    # to 'astronomy' convention of +y axis, increasing toward
+    # +x axis.
+    theta = np.pi / 2 - np.radians(param['jitter_position_angle'])
+    major = param['jitter_major'] / 1000
+    minor = param['jitter_minor'] / 1000
+    rot = np.array([[np.cos(theta), -np.sin(theta)],
+                    [np.sin(theta),  np.cos(theta)]])
+
+    # rfftfreq since this is real
+    uu = np.fft.rfftfreq(shape[1], d=pixel_scale)
+    vv = np.fft.fftfreq(shape[0], d=pixel_scale)
+    ugrid, vgrid = np.meshgrid(uu, vv)
+    covar = rot.dot(np.diag([major**2, minor**2])).dot(rot.T)
+    uvgrid = np.array([ugrid.reshape(-1), vgrid.reshape(-1)])
+    rr2 = np.einsum('ji,jk,ki->i', uvgrid, covar, uvgrid)
+    fft = np.exp(-2 * np.pi ** 2 * rr2)
+    fft = fft.reshape(ugrid.shape)
+    return fft
+
+
+def add_jitter(psf_ref_model, image_model, pixel_scale=0.11):
+    """Add jitter to PSF stamps in a PSF reference file.
+
+    The PSF reference model contains some amount of jitter.  The image
+    model contains some potentially different amount of jitter.  This
+    function needs to deconvolve the jitter in the reference model
+    and then reconvolve with the jitter in the image, to obtain a model
+    for the jitter in this image.
+
+    This procedure is made more challenging by the fact that the jitter is
+    small.  Typical values of the jitter are 8 mas compared to a typical
+    PSF FWHM of ~100 mas.  The pixel scale in the reference files is 4x
+    oversampled relative to the native scale of 0.11", and so is ~28 mas---
+    much larger than the 8 mas jitter scale, so naive direct convolution
+    will not work.
+
+    We use the approach of Lang (2020) to do the convolutions in the Fourier
+    domain to avoid this problem.  The key element there is to analytically
+    evaluate the jitter kernel in Fourier space rather than to evaluate
+    it in real space and then transform it.  If the PSF is well sampled,
+    all fourier components corresponding to higher frequencies than the Nyquist
+    frequency will be exactly zero.  Accordingly, if we evaluate the jitter
+    kernel in the FFT domain analytically only over the frequencies where the
+    PSF FFT is non-zero, we can multiply the two FFTs and transform back
+    to real space without needing to think about the fact that the jitter
+    kernel is undersampled in real space.
+
+    Parameters
+    ----------
+    psf_ref_model : datamodels.EpsfRefModel
+        ePSF reference models from CRDS
+    image_model : datamodels.ImageModel
+        image for which a PSF model is desired
+    pixel_scale : float
+        pixel scale of the image.  Because the jitter kernel is very small,
+        this does not need to be terribly accurate; it's used to transform
+        the real-space jitter kernel specification into the pixel-space
+        kernels that are convolved with the PSF stamps.
+
+    Returns
+    -------
+    convolved_stamps : np.ndarray
+        PSF reference file stamps after convolution with jitter kernel
+    """
+
+    ref_jitter_params = _get_jitter_params(psf_ref_model.meta)
+    image_jitter_params = _get_jitter_params(image_model.meta.guide_star)
+    oversample = psf_ref_model.meta.oversample
+    shape = psf_ref_model.psf.shape[-2:]
+    jit_ref_fft = _evaluate_gaussian_fft(
+        ref_jitter_params, shape, pixel_scale / oversample)
+    jit_img_fft = _evaluate_gaussian_fft(
+        image_jitter_params, shape, pixel_scale / oversample)
+    jitter_fft = jit_img_fft / jit_ref_fft
+    stamp_fft = np.fft.rfft2(psf_ref_model.psf, axes=(-2, -1))
+    convolved = np.fft.irfft2(stamp_fft * jitter_fft[None, ...], axes=(-2, -1), s=shape)
+    return convolved
+
+
 def create_l3_psf_model(
     psf_ref_model,
     pixfrac=1.0,
