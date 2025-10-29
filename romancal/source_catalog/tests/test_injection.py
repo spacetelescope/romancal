@@ -388,7 +388,7 @@ def test_grid_injection(image_model, mosaic_model):
 
         # The sources are very faint, so brightening them for tests
         for opt_elem in FILTERS:
-            cat[opt_elem] *= 10e5
+            cat[opt_elem] *= 10
 
         si_model = inject_sources(si_model, cat)
 
