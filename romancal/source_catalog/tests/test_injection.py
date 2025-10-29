@@ -310,7 +310,6 @@ def test_make_source_grid(image_model, mosaic_model):
     for si_model in (image_model, mosaic_model):
         """Test simple grid creation"""
         # Set parameters
-        test_filter = FILTERS[0]
         yxgrid = (10, 15)
         yxoffset = (7, 11)
         yxmax = np.subtract(SHAPE, [50, 50])
@@ -349,7 +348,6 @@ def test_grid_injection(image_model, mosaic_model):
     for si_model in (image_model, mosaic_model):
         """Test injection of simple grid of sources"""
         # Set parameters
-        test_filter = FILTERS[0]
         yxgrid = (10, 15)
         yxoffset = (7, 11)
         yxmax = np.subtract(SHAPE, [25, 25])
