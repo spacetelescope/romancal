@@ -5,7 +5,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
-from roman_datamodels.datamodels import RampModel, ScienceRawModel
+from roman_datamodels.datamodels import FpsModel, RampModel, ScienceRawModel, TvacModel
 from roman_datamodels.dqflags import pixel
 
 from romancal.dq_init import dq_initialization
@@ -50,7 +50,9 @@ class DQInitStep(RomanStep):
         """
         # Open datamodel
         input_model = rdm.open(input)
+        is_tvac = isinstance(input_model, (FpsModel | TvacModel))
         try:
+            # note that this succeeds even for ScienceRawModels
             input_model = ScienceRawModel.from_tvac_raw(input_model)
         except ValueError:
             pass
@@ -72,6 +74,19 @@ class DQInitStep(RomanStep):
 
         # Get reference file path
         reference_file_name = self.get_reference_file(output_model, "mask")
+
+        # the reference read has been subtracted from the science data
+        # in the L1 files.  Add it back into the data.
+        # the TVAC files are special and there the reference read was
+        # already added back in
+        reference_read = getattr(input_model, "reference_read", None)
+        if reference_read is not None and not is_tvac:
+            output_model.data += reference_read
+            del output_model.reference_read
+        reference_amp33 = getattr(input_model, "reference_amp33", None)
+        if reference_amp33 is not None and not is_tvac:
+            output_model.amp33 += reference_amp33
+            del output_model.reference_amp33
 
         # Test for reference file
         if reference_file_name != "N/A" and reference_file_name is not None:
