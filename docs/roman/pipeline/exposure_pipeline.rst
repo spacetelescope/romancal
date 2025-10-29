@@ -121,9 +121,5 @@ System (GWCS) information along with a modified Level 1 GWCS which accounts for
 the border pixels. The Level 1 GWCS can be used directly with the related Level
 1 product.  This file also contains header metadata from the L2 image, which
 may include, for example, updated ephemeris information relative to the original
-<<<<<<< Updated upstream
-raw file.
-=======
 raw file.  WfiWcs files are produced for both imaging and spectroscopic
 observations.
->>>>>>> Stashed changes
