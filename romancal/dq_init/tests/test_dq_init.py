@@ -181,6 +181,26 @@ def test_dq_add1_groupdq():
     assert outfile.pixeldq[400, 500] == pixel.SATURATED + pixel.DO_NOT_USE
 
 
+def rawim(shape, instrument, exptype):
+    wfi_sci_raw_model = ScienceRawModel.create_fake_data(shape=shape)
+    wfi_sci_raw_model.meta.instrument.name = instrument
+    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
+    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
+    wfi_sci_raw_model.meta["guide_star"]["window_xstart"] = 1012
+    wfi_sci_raw_model.meta["guide_star"]["window_xstop"] = 1012 + 16
+    wfi_sci_raw_model.meta.exposure.type = exptype
+    wfi_sci_raw_model.data = np.ones(shape, dtype=np.uint16)
+    # note that it's hard to make an amp33 shape make sense given
+    # an arbitrary input shape!  The number of resultants should
+    # match, the 1st axis should also match, the last axis should be the
+    # number of pixels in an amplifier that make not make sense
+    # conceptually given an arbitrary shape.
+    wfi_sci_raw_model.amp33 = np.zeros(
+        (2, 4096, 128), dtype=wfi_sci_raw_model.amp33.dtype
+    )
+    return wfi_sci_raw_model
+
+
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
@@ -198,14 +218,7 @@ def test_dqinit_step_interface(instrument, exptype):
     extra_value = [1, 2, 3]
 
     # Create test science raw model
-    wfi_sci_raw_model = ScienceRawModel.create_fake_data(shape=shape)
-    wfi_sci_raw_model.meta.instrument.name = instrument
-    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
-    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
-    wfi_sci_raw_model.meta["guide_star"]["window_xstart"] = 1012
-    wfi_sci_raw_model.meta["guide_star"]["window_xstop"] = 1012 + 16
-    wfi_sci_raw_model.meta.exposure.type = exptype
-    wfi_sci_raw_model.data = np.ones(shape, dtype=np.uint16)
+    wfi_sci_raw_model = rawim(shape, instrument, exptype)
     wfi_sci_raw_model[extra_key] = extra_value
 
     # Create mask model
@@ -239,17 +252,7 @@ def test_dqinit_refpix(instrument, exptype):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw_model = ScienceRawModel.create_fake_data(shape=shape)
-    wfi_sci_raw_model.meta.instrument.name = instrument
-    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
-    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
-    wfi_sci_raw_model.meta["guide_star"]["window_xstart"] = 1012
-    wfi_sci_raw_model.meta["guide_star"]["window_xstop"] = 1012 + 16
-    wfi_sci_raw_model.meta.exposure.type = exptype
-    wfi_sci_raw_model.data = np.ones(shape, dtype=np.uint16)
-    wfi_sci_raw_model.amp33 = np.zeros(
-        (2, 4096, 128), dtype=wfi_sci_raw_model.amp33.dtype
-    )
+    wfi_sci_raw_model = rawim(shape, instrument, exptype)
 
     # Create mask model
     maskref_model = MaskRefModel.create_fake_data(shape=shape[1:])
@@ -259,6 +262,8 @@ def test_dqinit_refpix(instrument, exptype):
 
     # check if reference pixels are correct
     assert result.data.shape == (2, 20, 20)  # no pixels should be trimmed
+
+    # relies on hard-coded amp33 shape in rawim(...)
     assert result.amp33.shape == (2, 4096, 128)
     assert result.border_ref_pix_right.shape == (2, 20, 4)
     assert result.border_ref_pix_left.shape == (2, 20, 4)
@@ -283,16 +288,9 @@ def test_dqinit_resultantdq(instrument, exptype):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw_model = ScienceRawModel.create_fake_data(shape=shape)
+    wfi_sci_raw_model = rawim(shape, instrument, exptype)
     wfi_sci_raw_model["resultantdq"] = np.zeros(shape, dtype=np.uint8)
-    wfi_sci_raw_model.meta.instrument.name = instrument
-    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
-    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
-    wfi_sci_raw_model.meta["guide_star"]["window_xstart"] = 1012
-    wfi_sci_raw_model.meta["guide_star"]["window_xstop"] = 1012 + 16
-    wfi_sci_raw_model.meta.exposure.type = exptype
     wfi_sci_raw_model.resultantdq[1, 12, 12] = pixel["DROPOUT"]
-    wfi_sci_raw_model.data = np.ones(shape, dtype=np.uint16)
 
     # Create mask model
     maskref_model = MaskRefModel.create_fake_data(shape=shape[1:])
@@ -324,15 +322,23 @@ def test_dqinit_getbestref(instrument, exptype):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw_model = ScienceRawModel.create_fake_data(shape=shape)
-    wfi_sci_raw_model.meta.instrument.name = instrument
-    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
-    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
-    wfi_sci_raw_model.meta["guide_star"]["window_xstart"] = 1012
-    wfi_sci_raw_model.meta["guide_star"]["window_xstop"] = 1012 + 16
-    wfi_sci_raw_model.meta.exposure.type = exptype
-    wfi_sci_raw_model.data = np.ones(shape, dtype=np.uint16)
+    wfi_sci_raw_model = rawim(shape, instrument, exptype)
 
     # Perform Data Quality application step
     result = DQInitStep.call(wfi_sci_raw_model, override_mask="N/A")
     assert result.meta.cal_step.dq_init == "SKIPPED"
+
+
+def test_dqinit_add_reference_read():
+    offset = 7
+    shape = (2, 20, 20)
+
+    wfi_sci_raw_model = rawim(shape, "WFI", "WFI_IMAGE")
+    result = DQInitStep.call(wfi_sci_raw_model)
+
+    wfi_sci_raw_model.reference_read = wfi_sci_raw_model.data[0] * 0 + offset
+    wfi_sci_raw_model.reference_amp33 = wfi_sci_raw_model.amp33[0] * 0 + offset
+    result2 = DQInitStep.call(wfi_sci_raw_model)
+
+    assert np.allclose(result2.data - result.data, offset)
+    assert np.allclose(result2.amp33 - result.amp33, offset)
