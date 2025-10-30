@@ -123,8 +123,8 @@ def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
     # A0V, G2V, and M6V, pick G2V (1)
     psf_images = psf_ref_model.psf[focus, spectral_type, :, :, :].copy()
     # get the central position of the cutouts in a list
-    psf_positions_x = psf_ref_model.meta.pixel_x.data.data
-    psf_positions_y = psf_ref_model.meta.pixel_y.data.data
+    psf_positions_x = psf_ref_model.meta.pixel_x
+    psf_positions_y = psf_ref_model.meta.pixel_y
     meta = OrderedDict()
     position_list = []
     for index in range(len(psf_positions_x)):
@@ -175,7 +175,7 @@ def render_stamp(x, y, grid, size):
     # for a 4x4 stamp, it's not clear where the stamp should be centered,
     # so either convention is fine.
     xcen, ycen = x - size // 2, y - size // 2
-    stamp = grid.evaluate(xx - xcen, yy - ycen, 1, x, y)
+    stamp = grid.evaluate(xx + xcen, yy + ycen, 1, x, y)
     return stamp
 
 
@@ -302,7 +302,8 @@ def add_jitter(psf_ref_model, image_model, pixel_scale=0.11):
     """
 
     ref_jitter_params = _get_jitter_params(psf_ref_model.meta)
-    image_jitter_params = _get_jitter_params(image_model.meta.guide_star)
+    image_jitter_params = _get_jitter_params(
+        getattr(image_model.meta, 'guide_star', dict()))
     oversample = psf_ref_model.meta.oversample
     shape = psf_ref_model.psf.shape[-2:]
     jit_ref_fft = _evaluate_gaussian_fft(
