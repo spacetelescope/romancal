@@ -7,6 +7,8 @@ from roman_datamodels import datamodels as rdm
 
 from romancal.source_catalog import psf
 from romancal.step import SourceCatalogStep
+from .regtestdata import compare_asdf
+
 
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
