@@ -8,7 +8,6 @@ import crds
 import numpy as np
 import pytest
 import roman_datamodels as rdm
-from romancal.source_catalog import psf
 from astropy import units as u
 from astropy.modeling.models import Gaussian2D
 from astropy.stats import mad_std
@@ -17,6 +16,7 @@ from photutils.datasets import make_model_image
 from photutils.psf import PSFPhotometry
 from roman_datamodels.datamodels import ImageModel
 
+from romancal.source_catalog import psf
 from romancal.source_catalog.psf import (
     azimuthally_smooth,
     fit_psf_to_image_model,
@@ -28,7 +28,7 @@ image_model_shape = (50, 50)
 rng = np.random.default_rng(0)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def setup_inputs(
     shape=image_model_shape,
     noise=1.0,
@@ -125,12 +125,8 @@ def test_psf_fit(setup_inputs, dx, dy, true_flux):
     # centroid err heuristic above is an underestimate, so we scale it up:
     scale_factor_approx = 2
 
-    assert np.all(
-        results_table["x_err"] < scale_factor_approx * approx_centroid_err
-    )
-    assert np.all(
-        results_table["y_err"] < scale_factor_approx * approx_centroid_err
-    )
+    assert np.all(results_table["x_err"] < scale_factor_approx * approx_centroid_err)
+    assert np.all(results_table["y_err"] < scale_factor_approx * approx_centroid_err)
 
 
 def test_azimuthally_smooth():
@@ -161,14 +157,15 @@ def test_render_stamp(setup_inputs):
 
 def test_get_jitter_params():
     from types import SimpleNamespace
+
     meta = SimpleNamespace()
     res = psf._get_jitter_params(meta)
-    assert res['jitter_major'] > 0
-    assert res['jitter_minor'] > 0
-    assert np.isfinite(res['jitter_position_angle'])
+    assert res["jitter_major"] > 0
+    assert res["jitter_minor"] > 0
+    assert np.isfinite(res["jitter_position_angle"])
     meta.jitter_major = 4
     res = psf._get_jitter_params(meta)
-    assert res['jitter_major'] == meta.jitter_major
+    assert res["jitter_major"] == meta.jitter_major
 
 
 def rms(stamp, coord):
@@ -196,8 +193,8 @@ def test_evaluate_gaussian_fft():
     assert np.abs(rms(stamp, yy) - 2) < tolerance
 
     # check that the position angle uses the right conventions
-    param['jitter_major'] = 24
-    param['jitter_minor'] = 8
+    param["jitter_major"] = 24
+    param["jitter_minor"] = 8
     fft = psf._evaluate_gaussian_fft(param, shape, 0.008)
     stamp = np.fft.fftshift(np.fft.irfft2(fft, s=shape))
     assert np.abs(rms(stamp, yy) - 3) < tolerance
@@ -205,7 +202,7 @@ def test_evaluate_gaussian_fft():
 
     # make sure we tilt to the right when the position angle
     # is mildly positive
-    param['jitter_position_angle'] = 30
+    param["jitter_position_angle"] = 30
     fft = psf._evaluate_gaussian_fft(param, shape, 0.008)
     stamp = np.fft.fftshift(np.fft.irfft2(fft, s=shape))
     tophalf = np.s_[shape[0] // 2, :]
@@ -230,14 +227,18 @@ def test_add_jitter(setup_inputs):
     newstamps = psf.add_jitter(psf_ref_model, img)
     shape = psf_ref_model.psf.shape[-2:]
     npts = 5
-    center = np.s_[shape[0] // 2 - npts : shape[0] // 2 + npts,
-                   shape[1] // 2 - npts : shape[1] // 2 + npts]
+    center = np.s_[
+        shape[0] // 2 - npts : shape[0] // 2 + npts,
+        shape[1] // 2 - npts : shape[1] // 2 + npts,
+    ]
     idx = list(np.ndindex(psf_ref_model.psf.shape[:-2]))[0]
     xx, yy = np.meshgrid(np.arange(shape[1]), np.arange(shape[0]))
-    assert (rms(newstamps[idx][center], xx[center]) >
-            rms(psf_ref_model.psf[idx][center], xx[center]))
+    assert rms(newstamps[idx][center], xx[center]) > rms(
+        psf_ref_model.psf[idx][center], xx[center]
+    )
     img.meta.guide_star.jitter_major = 0
     img.meta.guide_star.jitter_minor = 0
     newstamps = psf.add_jitter(psf_ref_model, img)
-    assert (rms(newstamps[idx][center], xx[center]) <
-            rms(psf_ref_model.psf[idx][center], xx[center]))
+    assert rms(newstamps[idx][center], xx[center]) < rms(
+        psf_ref_model.psf[idx][center], xx[center]
+    )

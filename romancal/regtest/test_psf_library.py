@@ -1,10 +1,10 @@
 """Tests for the Roman PSF Library"""
 
+import asdf
 import numpy as np
 import pytest
-import asdf
-
 from roman_datamodels import datamodels as rdm
+
 from romancal.source_catalog import psf
 from romancal.step import SourceCatalogStep
 
@@ -29,9 +29,9 @@ def render_psfs(rtdata_module, request, resource_tracker):
     rtdata.get_data(f"WFI/image/{input_file}")
     rtdata.input = input_file
     rtdata.output = "psf_render.asdf"
-    rtdata.get_truth(f"truth/WFI/image/psf_render.asdf")
+    rtdata.get_truth("truth/WFI/image/psf_render.asdf")
     out = render_psfs_for_filename(input_file)
-    asdf.dump(out, open(rtdata.output, 'wb'))
+    asdf.dump(out, open(rtdata.output, "wb"))
     return rtdata, out
 
 
@@ -54,11 +54,11 @@ def render_psfs_for_filename(input_file):
     grid_jitter = psf.get_gridded_psf_model(ref_data_convolved, 0, 1)
     out = dict()
     pixcen = 2044
-    out['center'] = psf.render_stamp(pixcen, pixcen, grid_nominal, 19)
-    out['corner'] = psf.render_stamp(0, 0, grid_nominal, 19)
-    out['red'] = psf.render_stamp(pixcen, pixcen, grid_red, 19)
-    out['defocus'] = psf.render_stamp(pixcen, pixcen, grid_defocus, 19)
-    out['jitter'] = psf.render_stamp(pixcen, pixcen, grid_jitter, 19)
+    out["center"] = psf.render_stamp(pixcen, pixcen, grid_nominal, 19)
+    out["corner"] = psf.render_stamp(0, 0, grid_nominal, 19)
+    out["red"] = psf.render_stamp(pixcen, pixcen, grid_red, 19)
+    out["defocus"] = psf.render_stamp(pixcen, pixcen, grid_defocus, 19)
+    out["jitter"] = psf.render_stamp(pixcen, pixcen, grid_jitter, 19)
     return out
 
 
@@ -114,7 +114,7 @@ def test_psf_library_psfinterp(render_psfs, dms_logger):
 
     _, stamps = render_psfs
 
-    diff = stamps['center'] - stamps['corner']
+    diff = stamps["center"] - stamps["corner"]
     # check to make sure the difference is not zero over the array
     psf_diff = diff.any()
     assert psf_diff
@@ -122,6 +122,7 @@ def test_psf_library_psfinterp(render_psfs, dms_logger):
     dms_logger.info(
         f"DMS536 {passmsg},  The interpolated ePSF for two positions are not the same"
     )
+
 
 def test_psf_library_variability(render_psfs):
     """Test that PSF variation with color is tracked"""
@@ -131,7 +132,7 @@ def test_psf_library_variability(render_psfs):
 
     _, stamps = render_psfs
 
-    diff = stamps['red'] - stamps['center']
+    diff = stamps["red"] - stamps["center"]
     # check to make sure the difference is not zero over the array
     psf_diff = diff.any()
     assert psf_diff
@@ -145,7 +146,7 @@ def test_psf_library_jitter(render_psfs):
 
     _, stamps = render_psfs
 
-    diff = stamps['jitter'] - stamps['center']
+    diff = stamps["jitter"] - stamps["center"]
     # check to make sure the difference is not zero over the array
     psf_diff = diff.any()
     assert psf_diff
@@ -153,15 +154,15 @@ def test_psf_library_jitter(render_psfs):
     # the goal was to make the image jitter broader than the reference
     # jitter, so the width of the PSF should go up.
 
-    shape = stamps['center'].shape
+    shape = stamps["center"].shape
     xx, yy = np.meshgrid(np.arange(shape[1]), np.arange(shape[0]))
 
     def rms(stamp, coord):
         mu = np.sum(coord * stamp) / np.sum(stamp)
         return np.sqrt(np.sum((coord - mu) ** 2 * stamp / np.sum(stamp)))
 
-    assert rms(stamps['center'], xx) < rms(stamps['jitter'], xx)
-    assert rms(stamps['center'], yy) < rms(stamps['jitter'], yy)
+    assert rms(stamps["center"], xx) < rms(stamps["jitter"], xx)
+    assert rms(stamps["center"], yy) < rms(stamps["jitter"], yy)
 
 
 def test_psf_match(render_psfs):

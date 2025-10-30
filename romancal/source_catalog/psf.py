@@ -192,9 +192,10 @@ def _get_jitter_params(meta):
     keywords, substituting with sane defaults when not available.
     """
     return dict(
-        jitter_major=getattr(meta, 'jitter_major', 8),
-        jitter_minor=getattr(meta, 'jitter_minor', 8),
-        jitter_position_angle=getattr(meta, 'jitter_position_angle', 0))
+        jitter_major=getattr(meta, "jitter_major", 8),
+        jitter_minor=getattr(meta, "jitter_minor", 8),
+        jitter_position_angle=getattr(meta, "jitter_position_angle", 0),
+    )
 
 
 def _evaluate_gaussian_fft(param, shape, pixel_scale):
@@ -238,11 +239,10 @@ def _evaluate_gaussian_fft(param, shape, pixel_scale):
     # 'math' convention of +x axis, increasing toward +y axis
     # to 'astronomy' convention of +y axis, increasing toward
     # +x axis.
-    theta = np.pi / 2 - np.radians(param['jitter_position_angle'])
-    major = param['jitter_major'] / 1000
-    minor = param['jitter_minor'] / 1000
-    rot = np.array([[np.cos(theta), -np.sin(theta)],
-                    [np.sin(theta),  np.cos(theta)]])
+    theta = np.pi / 2 - np.radians(param["jitter_position_angle"])
+    major = param["jitter_major"] / 1000
+    minor = param["jitter_minor"] / 1000
+    rot = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
 
     # rfftfreq since this is real
     uu = np.fft.rfftfreq(shape[1], d=pixel_scale)
@@ -250,8 +250,8 @@ def _evaluate_gaussian_fft(param, shape, pixel_scale):
     ugrid, vgrid = np.meshgrid(uu, vv)
     covar = rot.dot(np.diag([major**2, minor**2])).dot(rot.T)
     uvgrid = np.array([ugrid.reshape(-1), vgrid.reshape(-1)])
-    rr2 = np.einsum('ji,jk,ki->i', uvgrid, covar, uvgrid)
-    fft = np.exp(-2 * np.pi ** 2 * rr2)
+    rr2 = np.einsum("ji,jk,ki->i", uvgrid, covar, uvgrid)
+    fft = np.exp(-2 * np.pi**2 * rr2)
     fft = fft.reshape(ugrid.shape)
     return fft
 
@@ -303,13 +303,16 @@ def add_jitter(psf_ref_model, image_model, pixel_scale=0.11):
 
     ref_jitter_params = _get_jitter_params(psf_ref_model.meta)
     image_jitter_params = _get_jitter_params(
-        getattr(image_model.meta, 'guide_star', dict()))
+        getattr(image_model.meta, "guide_star", dict())
+    )
     oversample = psf_ref_model.meta.oversample
     shape = psf_ref_model.psf.shape[-2:]
     jit_ref_fft = _evaluate_gaussian_fft(
-        ref_jitter_params, shape, pixel_scale / oversample)
+        ref_jitter_params, shape, pixel_scale / oversample
+    )
     jit_img_fft = _evaluate_gaussian_fft(
-        image_jitter_params, shape, pixel_scale / oversample)
+        image_jitter_params, shape, pixel_scale / oversample
+    )
     jitter_fft = jit_img_fft / jit_ref_fft
     stamp_fft = np.fft.rfft2(psf_ref_model.psf, axes=(-2, -1))
     convolved = np.fft.irfft2(stamp_fft * jitter_fft[None, ...], axes=(-2, -1), s=shape)

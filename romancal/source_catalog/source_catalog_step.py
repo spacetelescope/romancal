@@ -16,10 +16,10 @@ from roman_datamodels.dqflags import pixel
 
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
+from romancal.source_catalog.psf import add_jitter
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.utils import get_ee_spline
-from romancal.source_catalog.psf import add_jitter
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
