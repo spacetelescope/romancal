@@ -169,5 +169,5 @@ def test_psf_library_jitter(render_psfs):
 
 def test_psf_match(render_psfs):
     rtdata, _ = render_psfs
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    diff = compare_asdf(rtdata.output, rtdata.truth)
     assert diff.identical, diff.report()
