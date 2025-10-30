@@ -1,0 +1,1 @@
+Make WfiWcs files even when tweakreg is skipped.  Add associated test.
