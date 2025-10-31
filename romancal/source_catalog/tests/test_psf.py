@@ -231,7 +231,7 @@ def test_add_jitter(setup_inputs):
         shape[0] // 2 - npts : shape[0] // 2 + npts,
         shape[1] // 2 - npts : shape[1] // 2 + npts,
     ]
-    idx = list(np.ndindex(psf_ref_model.psf.shape[:-2]))[0]
+    idx = next(iter(np.ndindex(psf_ref_model.psf.shape[:-2])))
     xx, yy = np.meshgrid(np.arange(shape[1]), np.arange(shape[0]))
     assert rms(newstamps[idx][center], xx[center]) > rms(
         psf_ref_model.psf[idx][center], xx[center]
