@@ -217,3 +217,72 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **
     all_cat["dec"] = np.array(ypos)[ran_idx].tolist()
 
     return all_cat
+
+
+def make_source_grid(
+    model, yxmax=(5000, 5000), yxoffset=(50, 50), yxgrid=(20, 20), seed=50, **kwargs
+):
+    """
+    Generate a grid of points to inject sources onto. The grid is set to the yxmax
+    size for consistent spacing across input, and cropped as needed. An edge offset
+    is specified within the parameters to avoid sources in that area.
+
+    Parameters
+    ----------
+    model : `ImageModel` or `MosaicModel`
+        Model into which to inject sources.
+    yxmax : tuple of two ints
+        Maximum extend of the grid
+    yxoffset : int or tuple of two ints
+        Edge Offset to place grid within
+    yxgrid : tuple of two ints
+        Grid point dimensions
+    seed : int
+        Seed for random number generator
+
+    Returns
+    -------
+    y_pos_idx, x_pos_idx : array_like (int)
+        y, x positions of each valid grid point yxmax
+    """
+    # Set random source index for the grid
+    rng_numpy = np.random.default_rng(seed)
+
+    if isinstance(yxoffset, (int, float)):
+        yxoffset = (yxoffset, yxoffset)
+
+    yspread, xspread = np.subtract((yxmax), 2 * np.array(yxoffset))
+    yspace, xspace = np.ceil(np.divide((yspread, xspread), yxgrid))
+
+    y0, x0 = (
+        yxoffset[0] + rng_numpy.uniform(high=yspace),
+        yxoffset[1] + rng_numpy.uniform(high=xspace),
+    )
+
+    # ypts, xpts = np.arange(yspace), np.arange(xspace)
+    ypts, xpts = (
+        np.arange(yxgrid[0], dtype=np.float64),
+        np.arange(yxgrid[1], dtype=np.float64),
+    )
+
+    ypts *= yspace
+    ypts += y0
+
+    xpts *= xspace
+    xpts += x0
+
+    # Discard off-image positions
+    ypts = ypts[ypts < (model.data.shape[0] - int(yxoffset[0]))]
+    xpts = xpts[xpts < (model.data.shape[1] - int(yxoffset[1]))]
+
+    # Create grid
+    y_pos, x_pos = np.meshgrid(ypts, xpts)
+    y_pos = np.ravel(y_pos)
+    x_pos = np.ravel(x_pos)
+    y_pos_idx, x_pos_idx = y_pos.astype(int), x_pos.astype(int)
+
+    # Discard positions in NA empty regions
+    nanmask = np.isnan(model.data[y_pos_idx, x_pos_idx])
+    y_pos_idx, x_pos_idx = y_pos_idx[~nanmask], x_pos_idx[~nanmask]
+
+    return y_pos_idx, x_pos_idx

@@ -16,7 +16,11 @@ from romanisim import bandpass, parameters
 
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
 from romancal.source_catalog import injection
-from romancal.source_catalog.injection import inject_sources, make_cosmoslike_catalog
+from romancal.source_catalog.injection import (
+    inject_sources,
+    make_cosmoslike_catalog,
+    make_source_grid,
+)
 
 # Set parameters
 RA = 270.0
@@ -300,3 +304,109 @@ def test_create_cosmoscat():
             cat[cat["type"] == "SER"][bp] < 10.0 ** (-(gal_mag_limit - 4) / 2.5)
         )
         assert np.all(cat[cat["type"] == "SER"][bp] >= 0)
+
+
+def test_make_source_grid(image_model, mosaic_model):
+    for si_model in (image_model, mosaic_model):
+        """Test simple grid creation"""
+        # Set parameters
+        yxgrid = (10, 15)
+        yxoffset = (7, 11)
+        yxmax = np.subtract(SHAPE, [50, 50])
+
+        x_pos, y_pos = make_source_grid(
+            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid, seed=RNG_SEED
+        )
+
+        # Ensure expected number of grid points
+        assert len(y_pos) == len(x_pos)
+        assert len(y_pos) == np.prod(yxgrid)
+
+        # Ensure grid is regular
+        assert np.allclose(np.diff(np.diff(np.sort(list(set(y_pos))))), 0)
+        assert np.allclose(np.diff(np.diff(np.sort(list(set(x_pos))))), 0)
+
+        # Create NaN point
+        si_model.data[45, 32] = np.nan
+
+        y_nan_pos, x_nan_pos = make_source_grid(
+            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid, seed=RNG_SEED
+        )
+
+        # Ensure expected number of grid points
+        assert len(y_nan_pos) == len(y_pos) - 1
+        assert len(x_nan_pos) == len(x_pos) - 1
+
+        # Ensure x,y (32, 45) not in the grid
+        assert (
+            len(np.intersect1d(np.where(y_nan_pos == 45), np.where(x_nan_pos == 32)))
+            == 0
+        )
+
+
+def test_grid_injection(image_model, mosaic_model):
+    for si_model in (image_model, mosaic_model):
+        """Test injection of simple grid of sources"""
+        # Set parameters
+        yxgrid = (10, 15)
+        yxoffset = (7, 11)
+        yxmax = np.subtract(SHAPE, [25, 25])
+
+        # Pointing
+        cen = SkyCoord(ra=RA * u.deg, dec=DEC * u.deg)
+
+        # WCS object for ra & dec conversion
+        wcsobj = mk_gwcs(
+            RA,
+            DEC,
+            ROLL,
+            bounding_box=((-0.5, SHAPE[0] - 0.5), (-0.5, SHAPE[1] - 0.5)),
+            shape=SHAPE,
+        )
+
+        data_orig = si_model.copy()
+
+        # Create grid
+        x_pos, y_pos = make_source_grid(
+            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid, seed=RNG_SEED
+        )
+
+        # Convert x,y to ra, dec
+        ra, dec = wcsobj.pixel_to_world_values(np.array(x_pos), np.array(y_pos))
+
+        # Exposure times (s)
+        exptimes = {}
+        for bp in FILTERS:
+            exptimes[bp] = 300
+
+        # Generate cosmos-like catalog
+        cat = make_cosmoslike_catalog(
+            cen, ra, dec, exptimes, filters=FILTERS, seed=RNG_SEED
+        )
+
+        # The sources are very faint, so brightening them for tests
+        for opt_elem in FILTERS:
+            cat[opt_elem] *= 10
+
+        si_model = inject_sources(si_model, cat)
+
+        # Ensure that sources were actually injected along the specified grid
+        for x_val, y_val in zip(x_pos, y_pos, strict=False):
+            assert np.all(
+                si_model.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2]
+                > data_orig.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2]
+            )
+
+        # Test that pixels in the offset areas are close to the original image
+        # Numpy isclose is needed to determine equality, due to float precision issues
+        assert np.all(
+            np.isclose(
+                si_model.data[
+                    yxoffset[0] : -yxoffset[0] : -1, yxoffset[1] : -yxoffset[1] : -1
+                ],
+                data_orig.data[
+                    yxoffset[0] : -yxoffset[0] : -1, yxoffset[1] : -yxoffset[1] : -1
+                ],
+                rtol=1e-06,
+            )
+        )
