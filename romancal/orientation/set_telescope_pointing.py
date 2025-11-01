@@ -495,56 +495,44 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
         If available, the transformation matrices.
     """
     logger.info("Updating wcs from telemetry.")
-    transforms = None  # Assume no transforms are calculated.
 
-    # Setup default WCS info if actual pointing and calculations fail.
-    wcsinfo = WCSRef(
-        model.meta.pointing.target_ra,
-        model.meta.pointing.target_dec,
-        model.meta.pointing.pa_v3,
-    )
-    vinfo = wcsinfo
+    # Initialization. If provided, provide a default Pointing.
+    transforms = None  # Assume no transforms are calculated.
+    quality = None  # Unknown pointing quality.
 
     # Get the pointing information
-    quality = "PLANNED"
     try:
         t_pars.update_pointing()
     except ValueError as exception:
-        if not t_pars.allow_default:
+        logger.error("Cannot retrieve valid engineering orientation data")
+        if t_pars.default_quaternion is None or not t_pars.allow_default:
+            logger.error('Use of default orientation has been disabled. Aborting.')
             raise
         else:
-            logger.warning(
-                "Cannot retrieve valid telescope pointing."
-                " Default pointing parameters will be used."
-            )
             logger.warning("Exception is %s", exception)
+            obstime = Time((t_pars.obsstart.mjd + t_pars.obsend.mjd) / 2., format='mjd')
+            logger.warning('Using provided default quaternion: %s', t_pars.default_quaternion)
+            logger.warning('    at time %s', obstime.iso)
             logger.info("Setting pointing quality to PLANNED")
+            t_pars.pointing = Pointing(q=t_pars.default_quaternion,
+                                       obstime=obstime)
             quality = "PLANNED"
     else:
         logger.info("Successful read of engineering quaternions:")
         logger.info("\tPointing: %s", t_pars.pointing)
+        quality = "CALCULATED"
 
-    # If pointing is available, attempt to calculate WCS information
-    if t_pars.pointing is not None:
-        try:
-            wcsinfo, vinfo, transforms = calc_wcs(t_pars)
-            quality = "CALCULATED"
-            logger.info("Setting pointing quality to %s", quality)
-        except EXPECTED_ERRORS as e:
-            logger.warning(
-                "WCS calculation has failed and will be skipped."
-                "Default pointing parameters will be used."
-            )
-            logger.warning("Exception is %s", e)
-            if not t_pars.allow_default:
-                raise
-            else:
-                logger.info("Setting pointing quality to PLANNED")
-                quality = "PLANNED"
-    logger.info("Aperture WCS info: %s", wcsinfo)
-    logger.info("V1 WCS info: %s", vinfo)
+    # Attempt to calculate WCS information
+    try:
+        wcsinfo, vinfo, transforms = calc_wcs(t_pars)
+        logger.info("Setting pointing quality to %s", quality)
+    except EXPECTED_ERRORS:
+        logger.error("WCS calculation has failed")
+        raise
 
     # Update model meta.
+    logger.info("Aperture WCS info: %s", wcsinfo)
+    logger.info("V1 WCS info: %s", vinfo)
     update_meta(model, wcsinfo, vinfo, quality)
 
     return transforms

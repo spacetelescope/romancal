@@ -27,6 +27,8 @@ STARTTIME = Time("2027-03-23T19:20:40", format="isot")
 ENDTIME = Time("2027-03-23T19:21:36", format="isot")
 BADSTARTTIME = Time("2020-02-02T02:02:02", format="isot")
 BADENDTIME = Time("2020-02-02T02:12:02", format="isot")
+DEFAULT_QUATERNION = [-0.52558752,  0.3719724 , -0.52016581,  0.38150882]
+DEFAULT_RADECREF = (282.70155393880844, 14.716147457820417)
 
 # Header defaults
 TARG_RA = 270.0
@@ -66,11 +68,11 @@ def test_add_wcs_default(science_raw_model, tmp_path):
     m.meta.exposure.start_time = Time("2022-01-01T00:00:00")
     m.meta.exposure.end_time = Time("2022-01-01T01:00:00")
     model_path = _model_to_tmpfile(m, tmp_path)
-    stp.add_wcs(model_path, tolerance=0, allow_default=True)
+    stp.add_wcs(model_path, tolerance=0, allow_default=True, default_quaternion=DEFAULT_QUATERNION)
 
     with rdm.open(model_path) as result:
-        assert result.meta.wcsinfo.ra_ref == result.meta.pointing.target_ra
-        assert result.meta.wcsinfo.dec_ref == result.meta.pointing.target_dec
+        assert np.isclose(result.meta.wcsinfo.ra_ref, DEFAULT_RADECREF[0])
+        assert np.isclose(result.meta.wcsinfo.dec_ref, DEFAULT_RADECREF[1])
 
 
 def test_change_base_url():
@@ -233,7 +235,7 @@ def science_raw_model():
             "meta": {
                 "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
                 "pointing": {"target_ra": TARG_RA, "target_dec": TARG_DEC},
-                "wcsinfo": {"aperture_name": "WFI_CEN"},
+                "wcsinfo": {"aperture_name": "WFI02_FULL"},
             }
         }
     )
