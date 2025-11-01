@@ -226,6 +226,10 @@ class TransformParameters:
     aperture: str = ""
     #: The V3 position angle to use if the pointing information is not found.
     default_pa_v3: float = 0.0
+    #: Default quaternion to use if engineering is not available.
+    default_quaternion=(None,)*4
+    #: Default target V2V3 telescope position if engineering is not available.
+    default_target_v2v3=(None,)*2
     #: Do not write out the modified file.
     dry_run: bool = False
     #: Observation end time
