@@ -32,13 +32,6 @@ def main():
         "exposure", type=str, nargs="+", help="List of Roman exposures to update."
     )
     parser.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        default=0,
-        help="Increase verbosity. Specifying multiple times adds more output.",
-    )
-    parser.add_argument(
         "--allow-default",
         action="store_true",
         help="If pointing information cannot be determine, use header information.",
@@ -49,7 +42,20 @@ def main():
         help="Perform all actions but do not save the results",
     )
     parser.add_argument(
+        '-q','--quaternion', dest='default_quaternion',
+        type=int, nargs=4, metavar=('q1', 'q2', 'q3', 'q4'),
+        default=(None, None, None, None),
+        help='Default orientation quaternion if no engineering database information is found.'
+    )
+    parser.add_argument(
         "--save-transforms", action="store_true", help="Save transforms."
+    )
+    parser.add_argument(
+        "--service",
+        type=str,
+        default="mast",
+        choices=[name for name in AVAILABLE_SERVICES],
+        help="Database service to use. Default: %(default)s",
     )
     parser.add_argument(
         "--tolerance",
@@ -58,11 +64,17 @@ def main():
         help="Seconds beyond the observation time to search for telemetry. Default: %(default)s",
     )
     parser.add_argument(
-        "--service",
-        type=str,
-        default="mast",
-        choices=[name for name in AVAILABLE_SERVICES],
-        help="Database service to use. Default: %(default)s",
+        '--v2v3', dest='default_target_v2v3',
+        type=float, nargs=2, metavar=('v2', 'v3'),
+        default=(None, None),
+        help='Default target V2 and V3 if no engineering database information is found.'
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Increase verbosity. Specifying multiple times adds more output.",
     )
 
     # Arguments pertinent only to the EngdbMast service.
