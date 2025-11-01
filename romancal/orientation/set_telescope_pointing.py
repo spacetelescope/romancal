@@ -227,9 +227,9 @@ class TransformParameters:
     #: The V3 position angle to use if the pointing information is not found.
     default_pa_v3: float = 0.0
     #: Default quaternion to use if engineering is not available.
-    default_quaternion=(None,)*4
+    default_quaternion: tuple | None = None
     #: Default target V2V3 telescope position if engineering is not available.
-    default_target_v2v3=(None,)*2
+    default_target_v2v3: tuple | None = None
     #: Do not write out the modified file.
     dry_run: bool = False
     #: Observation end time
@@ -266,13 +266,17 @@ class TransformParameters:
             reduce_func=self.reduce_func,
         )
 
+    def __post_init__(self):
+        if not self.reduce_func:
+            self.reduce_func = pointing_from_average
+
 
 def add_wcs(
         filename,
         allow_default=False,
         default_pa_v3=0.0,
-        default_quaternion=(None,)*4,
-        default_target_v2v3=(None,)*2,
+        default_quaternion=None,
+        default_target_v2v3=None,
         dry_run=False,
         reduce_func=None,
         save_transforms=None,
@@ -301,11 +305,11 @@ def add_wcs(
         The V3 position angle to use if the pointing information
         is not found.
 
-    default_quaternion : (int, int, int, int)
+    default_quaternion : (int, int, int, int) or None
         The quaternion 4-tuple: (q1, q2, q3, q4).
         Used if no engineering data is available.
 
-    default_v2v3 : (float, float)
+    default_v2v3 : (float, float) or None
         Target V2/V3 position, (v2, v3), in the telescopes field of view in arcsec.
         Used if no engineering data is available.
 
@@ -381,16 +385,16 @@ def add_wcs(
 
 
 def update_wcs(
-    model,
-    allow_default=False,
-    default_pa_v3=0.0,
-    default_quaternion=(None,)*4,
-    default_roll_ref=0.0,
-    default_target_v2v3=(None,)*2,
-    reduce_func=None,
-    service_kwargs=None,
-    tolerance=60,
-    **transform_kwargs,
+        model,
+        allow_default=False,
+        default_pa_v3=0.0,
+        default_quaternion=None,
+        default_roll_ref=0.0,
+        default_target_v2v3=None,
+        reduce_func=None,
+        service_kwargs=None,
+        tolerance=60,
+        **transform_kwargs,
 ):
     """
     Update WCS pointing information.
@@ -414,7 +418,7 @@ def update_wcs(
         The V3 position angle to use if the pointing information
         is not found.
 
-    default_quaternion : (int, int, int, int)
+    default_quaternion : (int, int, int, int) or None
         The quaternion 4-tuple: (q1, q2, q3, q4).
         Used if no engineering data is available.
 
@@ -422,7 +426,7 @@ def update_wcs(
         If pointing information cannot be retrieved,
         use this as the roll ref angle.
 
-    default_v2v3 : (float, float)
+    default_v2v3 : (float, float) or None
         Target V2/V3 position, (v2, v3), in the telescopes field of view in arcsec.
         Used if no engineering data is available.
 
@@ -448,18 +452,18 @@ def update_wcs(
         None for either if telemetry calculations were not
         performed.
     """
-    t_pars = transforms = None  # Assume telemetry is not used.
-
     # Configure transformation parameters.
-    t_pars = t_pars_from_model(
-        model,
+    t_pars = TransformParameters(
+        allow_default=allow_default,
         default_pa_v3=default_pa_v3,
+        default_quaternion=default_quaternion,
+        default_target_v2v3=default_target_v2v3,
+        reduce_func=reduce_func,
         service_kwargs=service_kwargs,
         tolerance=tolerance,
-        allow_default=allow_default,
-        reduce_func=reduce_func,
-        **transform_kwargs,
+        **transform_kwargs
     )
+    t_pars_from_model(model, t_pars)
 
     # Calculate WCS.
     transforms = update_wcs_from_telem(model, t_pars)
@@ -1325,7 +1329,7 @@ def fill_mnemonics_chronologically_table(mnemonics, filled_only=True):
     return t
 
 
-def t_pars_from_model(model, **t_pars_kwargs):
+def t_pars_from_model(model, t_pars):
     """
     Initialize TransformParameters from a DataModel.
 
@@ -1334,17 +1338,10 @@ def t_pars_from_model(model, **t_pars_kwargs):
     model : DataModel
         Data model to initialize from.
 
-    **t_pars_kwargs : dict
-        Keyword arguments used to initialize the TransformParameters object
-        before reading from the model meta information.
-
-    Returns
-    -------
     t_par : TransformParameters
-        The initialized parameters.
+        Transformation parameters updated with model information.
+        Updating is performed in-place.
     """
-    t_pars = TransformParameters(**t_pars_kwargs)
-
     # Instrument details
     t_pars.aperture = model.meta.wcsinfo.aperture_name
     try:
@@ -1357,12 +1354,6 @@ def t_pars_from_model(model, **t_pars_kwargs):
     t_pars.obsstart = model.meta.exposure.start_time
     t_pars.obsend = model.meta.exposure.end_time
     logger.debug("Observation time: %s - %s", t_pars.obsstart, t_pars.obsend)
-
-    # Set pointing reduction function if not already set.
-    if not t_pars.reduce_func:
-        t_pars.reduce_func = pointing_from_average
-
-    return t_pars
 
 
 def dcm(alpha, delta, angle):
