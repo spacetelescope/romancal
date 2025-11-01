@@ -264,15 +264,17 @@ class TransformParameters:
 
 
 def add_wcs(
-    filename,
-    default_pa_v3=0.0,
-    service_kwargs=None,
-    tolerance=60,
-    allow_default=False,
-    reduce_func=None,
-    dry_run=False,
-    save_transforms=None,
-    **transform_kwargs,
+        filename,
+        allow_default=False,
+        default_pa_v3=0.0,
+        default_quaternion=(None,)*4,
+        default_target_v2v3=(None,)*2,
+        dry_run=False,
+        reduce_func=None,
+        save_transforms=None,
+        service_kwargs=None,
+        tolerance=60,
+        **transform_kwargs,
 ):
     """Add WCS information to a Roman DataModel.
 
@@ -287,9 +289,30 @@ def add_wcs(
     filename : str
         The path to a data file.
 
+    allow_default : bool
+        If telemetry cannot be determine, use existing
+        information in the observation's header.
+
     default_pa_v3 : float
         The V3 position angle to use if the pointing information
         is not found.
+
+    default_quaternion : (int, int, int, int)
+        The quaternion 4-tuple: (q1, q2, q3, q4).
+        Used if no engineering data is available.
+
+    default_v2v3 : (float, float)
+        Target V2/V3 position, (v2, v3), in the telescopes field of view in arcsec.
+        Used if no engineering data is available.
+
+    dry_run : bool
+        Do not write out the modified file.
+
+    reduce_func : func or None
+        Reduction function to use on values.
+
+    save_transforms : Path-like or None
+        File to save the calculated transforms to.
 
     service_kwargs : dict or None
         Keyword arguments passed to `engdb_service` defining what
@@ -299,19 +322,6 @@ def add_wcs(
         If no telemetry can be found during the observation,
         the time, in seconds, beyond the observation time to
         search for telemetry.
-
-    allow_default : bool
-        If telemetry cannot be determine, use existing
-        information in the observation's header.
-
-    reduce_func : func or None
-        Reduction function to use on values.
-
-    dry_run : bool
-        Do not write out the modified file.
-
-    save_transforms : Path-like or None
-        File to save the calculated transforms to.
 
     **transform_kwargs : dict
         Keyword arguments used by matrix calculation routines.

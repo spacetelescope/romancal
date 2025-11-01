@@ -143,11 +143,13 @@ def main():
         try:
             stp.add_wcs(
                 filename,
-                tolerance=args.tolerance,
                 allow_default=args.allow_default,
+                default_quaternion=args.default_quaternion,
+                default_target_v2v3=args.default_target_v2v3,
                 dry_run=args.dry_run,
                 save_transforms=transform_path,
                 service_kwargs=service_kwargs,
+                tolerance=args.tolerance,
             )
         except (TypeError, ValueError) as exception:
             logger.warning("Cannot determine pointing information: %s", str(exception))
