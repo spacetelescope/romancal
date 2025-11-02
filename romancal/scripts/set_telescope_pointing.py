@@ -43,8 +43,8 @@ def main():
     )
     parser.add_argument(
         '-q','--quaternion', dest='default_quaternion',
-        type=int, nargs=4, metavar=('q1', 'q2', 'q3', 'q4'),
-        default=(None, None, None, None),
+        type=int, nargs=4, metavar=('Q1', 'Q2', 'Q3', 'Q4'),
+        default=None,
         help='Default orientation quaternion if no engineering database information is found.'
     )
     parser.add_argument(
@@ -65,8 +65,8 @@ def main():
     )
     parser.add_argument(
         '--v2v3', dest='default_target_v2v3',
-        type=float, nargs=2, metavar=('v2', 'v3'),
-        default=(None, None),
+        type=float, nargs=2, metavar=('V2', 'V3'),
+        default=None,
         help='Default target V2 and V3 if no engineering database information is found.'
     )
     parser.add_argument(
