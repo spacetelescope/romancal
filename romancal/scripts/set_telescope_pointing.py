@@ -42,10 +42,14 @@ def main():
         help="Perform all actions but do not save the results",
     )
     parser.add_argument(
-        '-q','--quaternion', dest='default_quaternion',
-        type=float, nargs=4, metavar=('Q1', 'Q2', 'Q3', 'Q4'),
+        "-q",
+        "--quaternion",
+        dest="default_quaternion",
+        type=float,
+        nargs=4,
+        metavar=("Q1", "Q2", "Q3", "Q4"),
         default=None,
-        help='Default orientation quaternion if no engineering database information is found.'
+        help="Default orientation quaternion if no engineering database information is found.",
     )
     parser.add_argument(
         "--save-transforms", action="store_true", help="Save transforms."
@@ -64,10 +68,13 @@ def main():
         help="Seconds beyond the observation time to search for telemetry. Default: %(default)s",
     )
     parser.add_argument(
-        '--v2v3', dest='default_target_v2v3',
-        type=float, nargs=2, metavar=('V2', 'V3'),
+        "--v2v3",
+        dest="default_target_v2v3",
+        type=float,
+        nargs=2,
+        metavar=("V2", "V3"),
         default=None,
-        help='Default target V2 and V3 if no engineering database information is found.'
+        help="Default target V2 and V3 if no engineering database information is found.",
     )
     parser.add_argument(
         "-v",
@@ -122,8 +129,10 @@ def main():
 
     # Warn about the v2v3 option. Not implemented at the moment.
     if args.default_target_v2v3 is not None:
-        logger.warning('`--v2v3` has been specified. At this time, this feature is not implemented.')
-        logger.warning('    Processing will otherwise continue.')
+        logger.warning(
+            "`--v2v3` has been specified. At this time, this feature is not implemented."
+        )
+        logger.warning("    Processing will otherwise continue.")
 
     # Gather the service-specific args
     service_kwargs = {"service": args.service}

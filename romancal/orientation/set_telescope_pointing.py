@@ -269,10 +269,10 @@ class TransformParameters:
 
 
 def add_wcs(
-        filename,
-        dry_run=False,
-        save_transforms=None,
-        **transform_kwargs,
+    filename,
+    dry_run=False,
+    save_transforms=None,
+    **transform_kwargs,
 ):
     """Add WCS information to a Roman DataModel.
 
@@ -341,8 +341,8 @@ def add_wcs(
 
 
 def update_wcs(
-        model,
-        **transform_kwargs,
+    model,
+    **transform_kwargs,
 ):
     """
     Update WCS pointing information.
@@ -414,16 +414,19 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     except ValueError as exception:
         logger.error("Cannot retrieve valid engineering orientation data")
         if t_pars.default_quaternion is None or not t_pars.allow_default:
-            logger.error('Use of default orientation has been disabled. Aborting.')
+            logger.error("Use of default orientation has been disabled. Aborting.")
             raise
         else:
             logger.warning("Exception is %s", exception)
-            obstime = Time((t_pars.obsstart.mjd + t_pars.obsend.mjd) / 2., format='mjd')
-            logger.warning('Using provided default quaternion: %s', t_pars.default_quaternion)
-            logger.warning('    at time %s', obstime.iso)
+            obstime = Time(
+                (t_pars.obsstart.mjd + t_pars.obsend.mjd) / 2.0, format="mjd"
+            )
+            logger.warning(
+                "Using provided default quaternion: %s", t_pars.default_quaternion
+            )
+            logger.warning("    at time %s", obstime.iso)
             logger.info("Setting pointing quality to PLANNED")
-            t_pars.pointing = Pointing(q=t_pars.default_quaternion,
-                                       obstime=obstime)
+            t_pars.pointing = Pointing(q=t_pars.default_quaternion, obstime=obstime)
             quality = "PLANNED"
     else:
         logger.info("Successful read of engineering quaternions:")
@@ -1329,6 +1332,7 @@ def update_meta(model, wcsinfo, vinfo, quality):
 
     # Setup SIAF info.
     from pysiaf import Siaf
+
     siaf = Siaf("roman")
     aper = siaf[wm.aperture_name.upper()]
 
