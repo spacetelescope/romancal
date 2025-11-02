@@ -143,11 +143,13 @@ def main():
         try:
             stp.add_wcs(
                 filename,
+                dry_run=args.dry_run,
                 save_transforms=transform_path,
+                # all keyword arguments below are defined in
+                # set_telescope_pointing.TransformParameters
                 allow_default=args.allow_default,
                 default_quaternion=args.default_quaternion,
                 default_target_v2v3=args.default_target_v2v3,
-                dry_run=args.dry_run,
                 service_kwargs=service_kwargs,
                 tolerance=args.tolerance,
             )

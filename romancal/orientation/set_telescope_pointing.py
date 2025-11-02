@@ -228,8 +228,6 @@ class TransformParameters:
     default_quaternion: tuple | None = None
     #: Default target V2V3 telescope position if engineering is not available.
     default_target_v2v3: tuple | None = None
-    #: Do not write out the modified file.
-    dry_run: bool = False
     #: Observation end time
     obsend: float | None = None
     #: Observation start time
@@ -271,6 +269,7 @@ class TransformParameters:
 
 def add_wcs(
         filename,
+        dry_run=False,
         save_transforms=None,
         **transform_kwargs,
 ):
@@ -286,6 +285,9 @@ def add_wcs(
     ----------
     filename : str
         The path to a data file.
+
+    dry_run : bool
+        Execute but do not modify the file.
 
     save_transforms : Path-like or None
         File to save the calculated transforms to.
@@ -325,7 +327,7 @@ def add_wcs(
             **transform_kwargs,
         )
 
-        if t_pars.dry_run:
+        if dry_run:
             logger.info("Dry run requested; results are not saved.")
         else:
             logger.info("Saving updated model %s", filename)
