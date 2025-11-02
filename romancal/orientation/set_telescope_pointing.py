@@ -1394,6 +1394,8 @@ def update_meta(model, wcsinfo, vinfo, quality):
     - meta.pointing.pa_aperture
     - meta.pointing.pa_v3
     - meta.pointing.ra_v1
+    - meta.pointing.target_dec
+    - meta.pointing.target_ra
     - meta.wcsinfo.dec_ref
     - meta.wcsinfo.ra_ref
     - meta.wcsinfo.roll_ref
@@ -1413,28 +1415,32 @@ def update_meta(model, wcsinfo, vinfo, quality):
     quality : str
         Indicator of the success of the pointing determination.
     """
+    # Shortcuts to the meta blocks
+    wm = model.meta.wcsinfo
+    pm = model.meta.pointing
+
+    # Setup SIAF info.
     from pysiaf import Siaf
+    siaf = Siaf("roman")
+    aper = siaf[wm.aperture_name.upper()]
 
     # Set the quality
     model.meta.pointing.pointing_engineering_source = quality
 
     # Update SIAF-related meta
-    wm = model.meta.wcsinfo
-    siaf = Siaf("roman")
-    aper = siaf[wm.aperture_name.upper()]
     wm.v2_ref = aper.V2Ref
     wm.v3_ref = aper.V3Ref
-    wm.vparity = aper.VIdlParity
     wm.v3yangle = aper.V3IdlYAngle
+    wm.vparity = aper.VIdlParity
 
     # Update Aperture pointing
-    wm.ra_ref = wcsinfo.ra
     wm.dec_ref = wcsinfo.dec
-    wm.s_region = wcsinfo.s_region
+    wm.ra_ref = wcsinfo.ra
     wm.roll_ref = wcsinfo.pa
+    wm.s_region = wcsinfo.s_region
 
     # Update V1 pointing
-    model.meta.pointing.pa_aperture = wcsinfo.pa
-    model.meta.pointing.ra_v1 = vinfo.ra
-    model.meta.pointing.dec_v1 = vinfo.dec
-    model.meta.pointing.pa_v3 = vinfo.pa
+    pm.dec_v1 = vinfo.dec
+    pm.pa_aperture = wcsinfo.pa
+    pm.pa_v3 = vinfo.pa
+    pm.ra_v1 = vinfo.ra
