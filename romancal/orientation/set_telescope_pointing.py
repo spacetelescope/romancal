@@ -1433,14 +1433,16 @@ def update_meta(model, wcsinfo, vinfo, quality):
     wm.v3yangle = aper.V3IdlYAngle
     wm.vparity = aper.VIdlParity
 
-    # Update Aperture pointing
+    # Update aperture-centric pointing, represented by `wcsinfo`
     wm.dec_ref = wcsinfo.dec
     wm.ra_ref = wcsinfo.ra
     wm.roll_ref = wcsinfo.pa
     wm.s_region = wcsinfo.s_region
 
-    # Update V1 pointing
+    # Update general pointing information, including V1.
     pm.dec_v1 = vinfo.dec
     pm.pa_aperture = wcsinfo.pa
     pm.pa_v3 = vinfo.pa
     pm.ra_v1 = vinfo.ra
+    pm.target_dec = wcsinfo.dec
+    pm.target_ra = wcsinfo.ra
