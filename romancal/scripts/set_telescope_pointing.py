@@ -43,7 +43,7 @@ def main():
     )
     parser.add_argument(
         '-q','--quaternion', dest='default_quaternion',
-        type=int, nargs=4, metavar=('Q1', 'Q2', 'Q3', 'Q4'),
+        type=float, nargs=4, metavar=('Q1', 'Q2', 'Q3', 'Q4'),
         default=None,
         help='Default orientation quaternion if no engineering database information is found.'
     )
