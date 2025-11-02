@@ -43,19 +43,20 @@ All the transformation matrices, as defined by
 coordinates for a particular frame-of-reference. The initial DCM is provided
 through the engineering telemetry and represents how the observatory is orientated.
 
-** META Affected**
+**META Affected**
+
 The following meta values are populated:
 
-- meta.pointing.dec_v1
-- meta.pointing.pa_aperture
-- meta.pointing.pa_v3
-- meta.pointing.pointing_engineering_source
-- meta.pointing.ra_v1
-- meta.wcsinfo.dec_ref
-- meta.wcsinfo.ra_ref
-- meta.wcsinfo.roll_ref
-- meta.wcsinfo.s_region
-
+    - meta.pointing.dec_v1
+    - meta.pointing.pa_aperture
+    - meta.pointing.pa_v3
+    - meta.pointing.ra_v1
+    - meta.pointing.target_dec
+    - meta.pointing.target_ra
+    - meta.wcsinfo.dec_ref
+    - meta.wcsinfo.ra_ref
+    - meta.wcsinfo.roll_ref
+    - meta.wcsinfo.s_region
 """
 
 import dataclasses
