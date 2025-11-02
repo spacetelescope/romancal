@@ -380,7 +380,6 @@ def update_wcs(
         model,
         allow_default=False,
         default_quaternion=None,
-        default_roll_ref=0.0,
         default_target_v2v3=None,
         reduce_func=None,
         service_kwargs=None,
@@ -408,10 +407,6 @@ def update_wcs(
     default_quaternion : (float, float, float, float) or None
         The quaternion 4-tuple: (q1, q2, q3, q4).
         Used if no engineering data is available.
-
-    default_roll_ref : float
-        If pointing information cannot be retrieved,
-        use this as the roll ref angle.
 
     default_v2v3 : (float, float) or None
         Target V2/V3 position, (v2, v3), in the telescopes field of view in arcsec.
