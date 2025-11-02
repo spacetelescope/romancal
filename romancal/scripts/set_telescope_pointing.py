@@ -87,7 +87,7 @@ def main():
     # Arguments pertinent only to the EngdbMast service.
     if "mast" in AVAILABLE_SERVICES:
         parser.add_argument(
-            "--engdb-url",
+            "--eng-base-url",
             type=str,
             default=None,
             help=(
@@ -136,7 +136,7 @@ def main():
 
     # Gather the service-specific args
     service_kwargs = {"service": args.service}
-    for arg in ["engdb_url", "environment", "path_to_cc"]:
+    for arg in ["eng_base_url", "environment", "path_to_cc"]:
         try:
             service_kwargs[arg] = getattr(args, arg)
         except AttributeError:
