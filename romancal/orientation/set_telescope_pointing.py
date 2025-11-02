@@ -224,8 +224,6 @@ class TransformParameters:
     allow_default: bool = False
     #: Aperture in use
     aperture: str = ""
-    #: The V3 position angle to use if the pointing information is not found.
-    default_pa_v3: float = 0.0
     #: Default quaternion to use if engineering is not available.
     default_quaternion: tuple | None = None
     #: Default target V2V3 telescope position if engineering is not available.
@@ -274,7 +272,6 @@ class TransformParameters:
 def add_wcs(
         filename,
         allow_default=False,
-        default_pa_v3=0.0,
         default_quaternion=None,
         default_target_v2v3=None,
         dry_run=False,
@@ -300,10 +297,6 @@ def add_wcs(
     allow_default : bool
         If telemetry cannot be determine, use existing
         information in the observation's header.
-
-    default_pa_v3 : float
-        The V3 position angle to use if the pointing information
-        is not found.
 
     default_quaternion : (float, float, float, float) or None
         The quaternion 4-tuple: (q1, q2, q3, q4).
@@ -363,7 +356,6 @@ def add_wcs(
         t_pars, transforms = update_wcs(
             model,
             allow_default=allow_default,
-            default_pa_v3=default_pa_v3,
             default_quaternion=default_quaternion,
             default_target_v2v3=default_target_v2v3,
             reduce_func=reduce_func,
@@ -387,7 +379,6 @@ def add_wcs(
 def update_wcs(
         model,
         allow_default=False,
-        default_pa_v3=0.0,
         default_quaternion=None,
         default_roll_ref=0.0,
         default_target_v2v3=None,
@@ -413,10 +404,6 @@ def update_wcs(
     allow_default : bool
         If telemetry cannot be determine, use existing
         information in the observation's header.
-
-    default_pa_v3 : float
-        The V3 position angle to use if the pointing information
-        is not found.
 
     default_quaternion : (float, float, float, float) or None
         The quaternion 4-tuple: (q1, q2, q3, q4).
@@ -455,7 +442,6 @@ def update_wcs(
     # Configure transformation parameters.
     t_pars = TransformParameters(
         allow_default=allow_default,
-        default_pa_v3=default_pa_v3,
         default_quaternion=default_quaternion,
         default_target_v2v3=default_target_v2v3,
         reduce_func=reduce_func,
