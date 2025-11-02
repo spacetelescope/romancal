@@ -120,6 +120,11 @@ def main():
         logger_handler.setFormatter(logger_format_debug)
     logger.info("set_telescope_pointing called with args %s", args)
 
+    # Warn about the v2v3 option. Not implemented at the moment.
+    if args.default_target_v2v3 is not None:
+        logger.warning('`--v2v3` has been specified. At this time, this feature is not implemented.')
+        logger.warning('    Processing will otherwise continue.')
+
     # Gather the service-specific args
     service_kwargs = {"service": args.service}
     for arg in ["engdb_url", "environment", "path_to_cc"]:
