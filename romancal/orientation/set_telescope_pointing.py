@@ -305,7 +305,7 @@ def add_wcs(
         The V3 position angle to use if the pointing information
         is not found.
 
-    default_quaternion : (int, int, int, int) or None
+    default_quaternion : (float, float, float, float) or None
         The quaternion 4-tuple: (q1, q2, q3, q4).
         Used if no engineering data is available.
 
@@ -418,7 +418,7 @@ def update_wcs(
         The V3 position angle to use if the pointing information
         is not found.
 
-    default_quaternion : (int, int, int, int) or None
+    default_quaternion : (float, float, float, float) or None
         The quaternion 4-tuple: (q1, q2, q3, q4).
         Used if no engineering data is available.
 
