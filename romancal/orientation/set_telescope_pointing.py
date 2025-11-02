@@ -271,14 +271,7 @@ class TransformParameters:
 
 def add_wcs(
         filename,
-        allow_default=False,
-        default_quaternion=None,
-        default_target_v2v3=None,
-        dry_run=False,
-        reduce_func=None,
         save_transforms=None,
-        service_kwargs=None,
-        tolerance=60,
         **transform_kwargs,
 ):
     """Add WCS information to a Roman DataModel.
@@ -294,38 +287,12 @@ def add_wcs(
     filename : str
         The path to a data file.
 
-    allow_default : bool
-        If telemetry cannot be determine, use existing
-        information in the observation's header.
-
-    default_quaternion : (float, float, float, float) or None
-        The quaternion 4-tuple: (q1, q2, q3, q4).
-        Used if no engineering data is available.
-
-    default_v2v3 : (float, float) or None
-        Target V2/V3 position, (v2, v3), in the telescopes field of view in arcsec.
-        Used if no engineering data is available.
-
-    dry_run : bool
-        Do not write out the modified file.
-
-    reduce_func : func or None
-        Reduction function to use on values.
-
     save_transforms : Path-like or None
         File to save the calculated transforms to.
 
-    service_kwargs : dict or None
-        Keyword arguments passed to `engdb_service` defining what
-        engineering database service to use.
-
-    tolerance : int
-        If no telemetry can be found during the observation,
-        the time, in seconds, beyond the observation time to
-        search for telemetry.
-
     **transform_kwargs : dict
-        Keyword arguments used by matrix calculation routines.
+        dict to use to initialize the `TransformParameters` object.
+        See `TransformParameters` for more information.`
 
     Notes
     -----
@@ -355,16 +322,10 @@ def add_wcs(
 
         t_pars, transforms = update_wcs(
             model,
-            allow_default=allow_default,
-            default_quaternion=default_quaternion,
-            default_target_v2v3=default_target_v2v3,
-            reduce_func=reduce_func,
-            service_kwargs=service_kwargs,
-            tolerance=tolerance,
             **transform_kwargs,
         )
 
-        if dry_run:
+        if t_pars.dry_run:
             logger.info("Dry run requested; results are not saved.")
         else:
             logger.info("Saving updated model %s", filename)
@@ -378,12 +339,6 @@ def add_wcs(
 
 def update_wcs(
         model,
-        allow_default=False,
-        default_quaternion=None,
-        default_target_v2v3=None,
-        reduce_func=None,
-        service_kwargs=None,
-        tolerance=60,
         **transform_kwargs,
 ):
     """
@@ -400,32 +355,9 @@ def update_wcs(
     model : `~roman.datamodels.DataModel`
         The model to update.
 
-    allow_default : bool
-        If telemetry cannot be determine, use existing
-        information in the observation's header.
-
-    default_quaternion : (float, float, float, float) or None
-        The quaternion 4-tuple: (q1, q2, q3, q4).
-        Used if no engineering data is available.
-
-    default_v2v3 : (float, float) or None
-        Target V2/V3 position, (v2, v3), in the telescopes field of view in arcsec.
-        Used if no engineering data is available.
-
-    reduce_func : func or None
-        Reduction function to use on values.
-
-    service_kwargs : dict or None
-        Keyword arguments passed to `engdb_service` defining what
-        engineering database service to use.
-
-    tolerance : int
-        If no telemetry can be found during the observation,
-        the time, in seconds, beyond the observation time to
-        search for telemetry.
-
     **transform_kwargs : dict
-        Keyword arguments used by matrix calculation routines.
+        dict to use to initialize the `TransformParameters` object.
+        See `TransformParameters` for more information.`
 
     Returns
     -------
@@ -435,15 +367,7 @@ def update_wcs(
         performed.
     """
     # Configure transformation parameters.
-    t_pars = TransformParameters(
-        allow_default=allow_default,
-        default_quaternion=default_quaternion,
-        default_target_v2v3=default_target_v2v3,
-        reduce_func=reduce_func,
-        service_kwargs=service_kwargs,
-        tolerance=tolerance,
-        **transform_kwargs
-    )
+    t_pars = TransformParameters(**transform_kwargs)
     t_pars_from_model(model, t_pars)
 
     # Calculate WCS.
