@@ -1,0 +1,1 @@
+Add upper pin to  python version. 3.14 and above are not yet supported by required dependencies.
