@@ -240,6 +240,8 @@ class TransformParameters:
     reduce_func: Callable | None = None
     #: Engineering database information
     service_kwargs: dict | None = None
+    #: The `pysiaf` module.
+    pysiaf: Any | None = None
     #: If no telemetry can be found during the observation,
     #: the time, in seconds, beyond the observation time to search for telemetry.
     tolerance: float = 60.0
@@ -264,6 +266,12 @@ class TransformParameters:
         )
 
     def __post_init__(self):
+        # Get the pysiaf module.
+        # Done here to avoid the explicit dependency of romancal on psyiaf.
+        import pysiaf
+        self.pysiaf = pysiaf
+
+        # Setup the default reduction function.
         if not self.reduce_func:
             self.reduce_func = pointing_from_average
 
@@ -444,7 +452,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     # Update model meta.
     logger.info("Aperture WCS info: %s", wcsinfo)
     logger.info("V1 WCS info: %s", vinfo)
-    update_meta(model, wcsinfo, vinfo, quality)
+    update_meta(model, t_pars.pysiaf, wcsinfo, vinfo, quality)
 
     return transforms
 
@@ -523,17 +531,20 @@ def calc_wcs(t_pars: TransformParameters):
     vinfo = calc_wcs_from_matrix(transforms.m_eci2v)
 
     # Calculate the Aperture WCS
-    wcsinfo = wcsinfo_from_siaf(t_pars.aperture, vinfo)
+    wcsinfo = wcsinfo_from_siaf(t_pars.pysiaf, t_pars.aperture, vinfo)
 
     # That's all folks
     return wcsinfo, vinfo, transforms
 
 
-def wcsinfo_from_siaf(aperture, vinfo):
+def wcsinfo_from_siaf(pysiaf, aperture, vinfo):
     """Calculate aperture reference point WCS from V-frame WCS and SIAF
 
     Parameters
     ----------
+    pysiaf : module
+        The `pysiaf` module.
+
     aperture : str
         The aperture in use
 
@@ -545,10 +556,9 @@ def wcsinfo_from_siaf(aperture, vinfo):
     wcsinfo : WCSRef
         The WCS for the aperture's reference point, as defined by its SIAF.
     """
-    from pysiaf import Siaf
     from pysiaf.utils.rotations import attitude_matrix, sky_posangle
 
-    siaf = Siaf("roman")
+    siaf = pysiaf.Siaf("roman")
     boresight = siaf["BORESIGHT"]
     wfi = siaf[aperture.upper()]
 
@@ -1297,7 +1307,7 @@ def dcm(alpha, delta, angle):
     return dcm
 
 
-def update_meta(model, wcsinfo, vinfo, quality):
+def update_meta(model, pysiaf, wcsinfo, vinfo, quality):
     """Update model's meta info with the given pointing.
 
     The following meta are update:
@@ -1316,6 +1326,9 @@ def update_meta(model, wcsinfo, vinfo, quality):
     ----------
     model : `~roman.datamodels.DataModel`
         The model to update. Updates are done in-place.
+
+    pysiaf : module
+        The `pysiaf` module.
 
     wcsinfo : `WCSRef``
         The aperture-specific pointing.
