@@ -156,16 +156,13 @@ def test_render_stamp(setup_inputs):
 
 
 def test_get_jitter_params():
-    from types import SimpleNamespace
-
-    meta = SimpleNamespace()
-    res = psf._get_jitter_params(meta)
+    res = psf._get_jitter_params({})
     assert res["jitter_major"] > 0
     assert res["jitter_minor"] > 0
     assert np.isfinite(res["jitter_position_angle"])
-    meta.jitter_major = 4
+    meta = {"jitter_major": 4}
     res = psf._get_jitter_params(meta)
-    assert res["jitter_major"] == meta.jitter_major
+    assert res["jitter_major"] == meta["jitter_major"]
 
 
 def rms(stamp, coord):
