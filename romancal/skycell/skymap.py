@@ -1066,8 +1066,10 @@ class SkyMap:
         """
 
         return np.array(
-            [SkyCells(skycell_indices).core_skycell(radec[point_index])[0]
-            for point_index, skycell_indices in self.skycells_at(radec)]
+            [
+                SkyCells(skycell_indices).core_skycell(radec[point_index])[0]
+                for point_index, skycell_indices in self.skycells_at(radec)
+            ]
         )
 
     def __getitem__(self, index: int) -> SkyCell:
