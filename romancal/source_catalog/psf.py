@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
+def azimuthally_smooth(data, oversample=2, pixel_scale_ratio=1.0, order=4):
     """Azimuthally smooth model
 
     The image is converted to polar coordinates via a 4th order spline interpolation.
@@ -44,8 +44,8 @@ def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
         Oversampling of the data to improve fidelity of the conversions
         between cartesian and polar layout
 
-    scaling : float
-        Scale factor to apply to the result.
+    pixel_scale_ratio : float
+        Desired final output pixel scale over input pixel scale
 
     order : int
         Order of the spline interpolation used for the coordinate transformations
@@ -64,7 +64,7 @@ def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
         ntheta = 4 * model.shape[0] * oversample
         nrad = model.shape[0] * oversample
         szo2 = model.shape[0] // 2
-        rr = np.linspace(-5, szo2 * np.sqrt(2), nrad)
+        rr = np.linspace(0, szo2 * np.sqrt(2), nrad)
         tt = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
         xx = rr[:, None] * np.cos(tt[None, :]) + szo2
         yy = rr[:, None] * np.sin(tt[None, :]) + szo2
@@ -73,11 +73,11 @@ def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
         )
         return modelpolar, rr, tt
 
-    def polar_to_cart(model, rr, tt, scaling=1.0, order=4):
-        szo = model.shape[0]
-        szo = math.ceil(szo / scaling)
-        szo2 = szo // 2
-        xo, yo = np.mgrid[-szo2 : szo2 + 1, -szo2 : szo2 + 1] * scaling
+    def polar_to_cart(model, rr, tt, pixel_scale_ratio=1.0, order=4):
+        sz = data.shape[0]
+        sz = math.ceil(sz / pixel_scale_ratio)
+        szo2 = sz // 2
+        xo, yo = np.mgrid[-szo2 : szo2 + 1, -szo2 : szo2 + 1] * pixel_scale_ratio
         ro = np.sqrt(xo**2 + yo**2)
         to = np.arctan2(yo, xo) % (2 * np.pi)
         ro = np.interp(ro, rr, np.arange(len(rr)).astype("f4"))
@@ -85,12 +85,12 @@ def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
         res = map_coordinates(
             model, [ro, to], order=order, mode="wrap", output=np.dtype("f4")
         )
-        res *= scaling**2  # keep normalization at 1
+        res *= pixel_scale_ratio**2  # keep normalization at 1
         return res
 
     polar, rr, tt = cart_to_polar(data, oversample=oversample)
     polar_mean = np.mean(polar, axis=1, keepdims=True)
-    smoothed = polar_to_cart(polar_mean, rr, tt, scaling=scaling)
+    smoothed = polar_to_cart(polar_mean, rr, tt, pixel_scale_ratio=pixel_scale_ratio)
 
     return smoothed
 
@@ -136,9 +136,10 @@ def get_gridded_psf_model(psf_ref_model):
 
 def create_l3_psf_model(
     psf_ref_model,
+    stamp_radius = 10,
     pixfrac=1.0,
     pixel_scale=0.11,
-    oversample=11,
+    oversample=None,
 ):
     """
     Compute a PSF model for an L3 image.
@@ -158,13 +159,15 @@ def create_l3_psf_model(
     ----------
     psf_ref_model : str
         PSF reference file model to use
+    stamp_radius : int
+        PSF model should extend this many native pixels from the center pixel
     pixfrac : float
         drizzlepac pixel fraction used.
     pixel_scale : float
         L3 image pixel scale in arcsec.
         Often similar to the default detector scale of 0.11 arcsec.
     oversample : int, optional
-        Oversample factor, default is 11.
+        Oversample factor, default uses gridpsf oversampling
 
     Returns
     -------
@@ -172,12 +175,12 @@ def create_l3_psf_model(
         PSF model.
 
     """
-
-    gridpsf = get_gridded_psf_model(psf_ref_model)
+    gridpsf = get_gridded_psf_model(psf_ref_model)  # 361x361, 4x oversampled
+    # this already includes integration over the native pixel scale
     center = 2044  # Roman SCA center pixel
-    szo2 = 10
-    npix = szo2 * 2 * oversample + 1
-    pts = np.linspace(-szo2 + center, szo2 + center, npix)
+    oversample = oversample if oversample is not None else gridpsf.oversampling[0]
+    npix = stamp_radius * 2 * oversample + 1
+    pts = np.linspace(-stamp_radius + center, stamp_radius + center, npix)
     xx, yy = np.meshgrid(pts, pts)
     psf = gridpsf.evaluate(xx, yy, 1, center, center)
     detector_pixel_scale = 0.11  # Roman native scale
@@ -193,7 +196,7 @@ def create_l3_psf_model(
     psf = convolve(psf, kernel=outscale_kernel)
 
     # Azimuthally smooth the psf
-    psf = azimuthally_smooth(psf, scaling=pixel_scale / detector_pixel_scale)
+    psf = azimuthally_smooth(psf, pixel_scale_ratio=pixel_scale / detector_pixel_scale)
 
     # Create the PSF model.
     x_0, y_0 = psf.shape
@@ -202,6 +205,25 @@ def create_l3_psf_model(
     psf_model = ImagePSF(psf, x_0=x_0, y_0=y_0, oversampling=oversample)
 
     return psf_model
+
+
+def create_convolution_kernel(input_psf, target_psf):
+    """Find convolution kernel which convolves input_psf to match target_psf.
+
+    Parameters
+    ----------
+    input_psf : ImagePSF
+        The input PSF which needs to be convolved
+
+    target_psf : ImagePSF
+        The target PSF which input_psf should match following convolution
+
+    Returns
+    -------
+    kernel : np.ndarray
+        Convolution kernel taking input_psf to target_psf
+    """
+    pass
 
 
 def fit_psf_to_image_model(
