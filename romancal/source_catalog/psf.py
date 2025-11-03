@@ -316,6 +316,9 @@ def add_jitter(psf_ref_model, image_model, pixel_scale=0.11):
     jitter_fft = jit_img_fft / jit_ref_fft
     stamp_fft = np.fft.rfft2(psf_ref_model.psf, axes=(-2, -1))
     convolved = np.fft.irfft2(stamp_fft * jitter_fft[None, ...], axes=(-2, -1), s=shape)
+    log.info("Performed jitter convolution.  " +
+             ("Image kernel: %.1f %.1f %.1f" % tuple(image_jitter_params.values())) +
+             ("Reference kernel: %.1f %.1f %.1f" % tuple(ref_jitter_params.values())))
     return convolved
 
 
