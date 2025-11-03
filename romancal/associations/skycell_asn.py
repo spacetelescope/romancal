@@ -161,7 +161,7 @@ def _process_groups(
     -------
     None
     """
-    for _, group_files in groups.items():
+    for group_files in groups.values():
         # Build file_list and skycell_indices together
         file_list = [[rec[0], rec[1]] for rec in file_index if rec[0] in group_files]
         skycell_indices = [idx for rec in file_list for idx in rec[1]]
