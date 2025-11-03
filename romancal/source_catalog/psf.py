@@ -192,9 +192,9 @@ def _get_jitter_params(meta):
     keywords, substituting with sane defaults when not available.
     """
     return dict(
-        jitter_major=getattr(meta, "jitter_major", 8),
-        jitter_minor=getattr(meta, "jitter_minor", 8),
-        jitter_position_angle=getattr(meta, "jitter_position_angle", 0),
+        jitter_major=meta.get("jitter_major", 8),
+        jitter_minor=meta.get("jitter_minor", 8),
+        jitter_position_angle=meta.get("jitter_position_angle", 0),
     )
 
 
