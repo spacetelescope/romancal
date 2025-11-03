@@ -6,6 +6,7 @@ import pytest
 from roman_datamodels import datamodels as rdm
 
 from romancal.source_catalog import psf
+from romancal.source_catalog.tests.test_psf import rms
 from romancal.step import SourceCatalogStep
 
 from .regtestdata import compare_asdf
