@@ -559,13 +559,11 @@ def wcsinfo_from_siaf(pysiaf, aperture, vinfo):
     from pysiaf.utils.rotations import attitude_matrix, sky_posangle
 
     siaf = pysiaf.Siaf("roman")
-    boresight = siaf["BORESIGHT"]
     wfi = siaf[aperture.upper()]
 
     # For transformations between the telescope frame and all other frames,
     # an attitude matrix is created using the V-frame WCS information.
-    v_refpoint = boresight.reference_point(to_frame="tel")
-    attitude = attitude_matrix(*v_refpoint, vinfo.ra, vinfo.dec, vinfo.pa)
+    attitude = attitude_from_v1(pysiaf, vinfo)
     wfi.set_attitude_matrix(attitude)
     skycoord = wfi.reference_point(to_frame="sky")
     pa_v3 = sky_posangle(attitude, *skycoord)
@@ -1369,5 +1367,42 @@ def update_meta(model, pysiaf, wcsinfo, vinfo, quality):
     pm.pa_aperture = wcsinfo.pa
     pm.pa_v3 = vinfo.pa
     pm.ra_v1 = vinfo.ra
-    pm.target_dec = wcsinfo.dec
-    pm.target_ra = wcsinfo.ra
+
+    # Update target's sky location.
+    # This is currently defined as what point in the sky the
+    # virtual aperture WFI_CEN V2/V3 reference is pointing at.
+    attitude = attitude_from_v1(pysiaf, vinfo)
+    wfi_cen = siaf['WFI_CEN']
+    wfi_cen.set_attitude_matrix(attitude)
+    skycoord = wfi_cen.reference_point(to_frame='sky')
+    pm.target_ra = skycoord[0]
+    pm.target_dec = skycoord[1]
+
+
+def attitude_from_v1(pysiaf, vinfo):
+    """Calculate observatory attitude matrix based on V1 pointing
+
+    Return the attitude matrix used by `pysiaf.Aperture.set_attitude_matrix`
+    to enable transformations to/from the 'sky' frame.
+
+    Parameters
+    ----------
+    pysiaf : module
+        The `pysiaf` module
+
+    vinfo : `WCSRef`
+        The WCS information for V1, the boresight.
+
+    Returns
+    -------
+    attitude : np.array((3, 3), dtype=float)
+        The attitude matrix.
+    """
+    from pysiaf.utils.rotations import attitude_matrix
+
+    siaf = pysiaf.Siaf("roman")
+    boresight = siaf["BORESIGHT"]
+    v_refpoint = boresight.reference_point(to_frame="tel")
+    attitude = attitude_matrix(*v_refpoint, vinfo.ra, vinfo.dec, vinfo.pa)
+
+    return attitude
