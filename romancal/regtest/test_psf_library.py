@@ -159,10 +159,6 @@ def test_psf_library_jitter(render_psfs):
     shape = stamps["center"].shape
     xx, yy = np.meshgrid(np.arange(shape[1]), np.arange(shape[0]))
 
-    def rms(stamp, coord):
-        mu = np.sum(coord * stamp) / np.sum(stamp)
-        return np.sqrt(np.sum((coord - mu) ** 2 * stamp / np.sum(stamp)))
-
     assert rms(stamps["center"], xx) < rms(stamps["jitter"], xx)
     assert rms(stamps["center"], yy) < rms(stamps["jitter"], yy)
 
