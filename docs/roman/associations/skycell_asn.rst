@@ -78,7 +78,7 @@ or for the selections above
 	r00991_p_v101001001003001_270p65x48y69_f158_asn.json
 
 where the skycell name can vary based on the location on the celestial sphere.
-The data release ID name can be changed from the default ('p')
+The data release ID name can be changed from the default ('p', for prompt)
 by adding the optional argument --data-release-ID <new name> to the command line.
 
 An analogous command to generate the pass level products, again setting observation to 003 to only select
