@@ -36,6 +36,7 @@ jobs:
     with:
       envs: |
         - linux: check-dependencies
+          python-version: '3.13'
   latest_crds_contexts:
     uses: ./.github/workflows/contexts.yml
   crds_context:
