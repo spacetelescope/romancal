@@ -44,7 +44,8 @@ def v1_calculate_from_models(sources, **calc_wcs_from_time_kwargs):
     # Calculate V1 for all sources.
     for source in sources:
         with rdm.open(source) as model:
-            t_pars = stp.t_pars_from_model(model, **calc_wcs_from_time_kwargs)
+            t_pars = stp.TransformParameters(**calc_wcs_from_time_kwargs)
+            stp.t_pars_from_model(model, t_pars)
             obstimes, _, vinfos = stp.calc_wcs_over_time(
                 t_pars.obsstart, t_pars.obsend, t_pars
             )

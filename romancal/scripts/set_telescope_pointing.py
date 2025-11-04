@@ -32,13 +32,6 @@ def main():
         "exposure", type=str, nargs="+", help="List of Roman exposures to update."
     )
     parser.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        default=0,
-        help="Increase verbosity. Specifying multiple times adds more output.",
-    )
-    parser.add_argument(
         "--allow-default",
         action="store_true",
         help="If pointing information cannot be determine, use header information.",
@@ -49,13 +42,17 @@ def main():
         help="Perform all actions but do not save the results",
     )
     parser.add_argument(
-        "--save-transforms", action="store_true", help="Save transforms."
+        "-q",
+        "--quaternion",
+        dest="default_quaternion",
+        type=float,
+        nargs=4,
+        metavar=("Q1", "Q2", "Q3", "Q4"),
+        default=None,
+        help="Default orientation quaternion if no engineering database information is found.",
     )
     parser.add_argument(
-        "--tolerance",
-        type=int,
-        default=60,
-        help="Seconds beyond the observation time to search for telemetry. Default: %(default)s",
+        "--save-transforms", action="store_true", help="Save transforms."
     )
     parser.add_argument(
         "--service",
@@ -64,11 +61,24 @@ def main():
         choices=[name for name in AVAILABLE_SERVICES],
         help="Database service to use. Default: %(default)s",
     )
+    parser.add_argument(
+        "--tolerance",
+        type=int,
+        default=60,
+        help="Seconds beyond the observation time to search for telemetry. Default: %(default)s",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Increase verbosity. Specifying multiple times adds more output.",
+    )
 
     # Arguments pertinent only to the EngdbMast service.
     if "mast" in AVAILABLE_SERVICES:
         parser.add_argument(
-            "--engdb-url",
+            "--eng-base-url",
             type=str,
             default=None,
             help=(
@@ -110,7 +120,7 @@ def main():
 
     # Gather the service-specific args
     service_kwargs = {"service": args.service}
-    for arg in ["engdb_url", "environment", "path_to_cc"]:
+    for arg in ["eng_base_url", "environment", "path_to_cc"]:
         try:
             service_kwargs[arg] = getattr(args, arg)
         except AttributeError:
@@ -131,11 +141,14 @@ def main():
         try:
             stp.add_wcs(
                 filename,
-                tolerance=args.tolerance,
-                allow_default=args.allow_default,
                 dry_run=args.dry_run,
                 save_transforms=transform_path,
+                # all keyword arguments below are defined in
+                # set_telescope_pointing.TransformParameters
+                allow_default=args.allow_default,
+                default_quaternion=args.default_quaternion,
                 service_kwargs=service_kwargs,
+                tolerance=args.tolerance,
             )
         except (TypeError, ValueError) as exception:
             logger.warning("Cannot determine pointing information: %s", str(exception))
