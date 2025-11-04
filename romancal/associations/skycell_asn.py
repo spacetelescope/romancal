@@ -163,38 +163,41 @@ def _process_groups(
     """
     for group_files in groups.values():
         # Build file_list and skycell_indices together
-        file_list = [[rec[0], rec[1]] for rec in file_index if rec[0] in group_files]
+        file_list = [
+            [rec[0], rec[1], rec[2]] for rec in file_index if rec[0] in group_files
+        ]
         skycell_indices = [idx for rec in file_list for idx in rec[1]]
         # We only want unique skycell indices
         unique_skycell_indices = np.unique(skycell_indices)
 
         for skycell_index in unique_skycell_indices:
-            member_list = [a[0] for a in file_list if np.isin(skycell_index, a[1])]
-            if not member_list:
-                continue
+            # Group files by filter for this skycell
+            filter_groups = _group_files_by_filter_for_skycell(file_list, skycell_index)
+            for filter_id, members in filter_groups.items():
+                if not members:
+                    continue
 
-            # Get parameters for naming and metadata
-            first_member = member_list[0]
-            visit_id_no_r = _extract_visit_id(first_member)
-            filter_id = _fetch_filter_for(first_member, file_index)
-            skycell = sc.SkyCell(skycell_index)
-            asn_file_name = mk_level3_asn_name(
-                visit_id_no_r,
-                output_file_root,
-                filter_id,
-                data_release_id,
-                product_type,
-                skycell.name,
-            )
+                # Get parameters for naming and metadata
+                first_member = members[0]
+                visit_id_no_r = _extract_visit_id(first_member)
+                skycell = sc.SkyCell(skycell_index)
+                asn_file_name = mk_level3_asn_name(
+                    visit_id_no_r,
+                    output_file_root,
+                    filter_id,
+                    data_release_id,
+                    product_type,
+                    skycell.name,
+                )
 
-            # Create the association metadata
-            prompt_product_asn = _create_metadata(
-                member_list, data_release_id, asn_file_name, skycell, visit_id_no_r
-            )
+                # Create the association metadata
+                prompt_product_asn = _create_metadata(
+                    members, data_release_id, asn_file_name, skycell, visit_id_no_r
+                )
 
-            # Serialize and save the association
-            _, serialized = prompt_product_asn.dump(format="json")
-            _save_association(asn_file_name, serialized)
+                # Serialize and save the association
+                _, serialized = prompt_product_asn.dump(format="json")
+                _save_association(asn_file_name, serialized)
 
 
 def _create_metadata(
@@ -349,6 +352,29 @@ def _group_files_by_pass(filelist: list[str]) -> dict:
         pass_key = visit_id_no_r[:10] if len(visit_id_no_r) >= 10 else visit_id_no_r
         groups.setdefault(pass_key, []).append(f)
     return groups
+
+
+def _group_files_by_filter_for_skycell(file_list, skycell_index):
+    """
+    Group files by filter for a specific skycell index.
+
+    Parameters
+    ----------
+    file_list : list
+        List of [filename, skycell_indices, filter_id] for the group.
+    skycell_index : str or int
+        The skycell index to filter on.
+
+    Returns
+    -------
+    dict
+        Dictionary mapping filter_id to list of filenames for this skycell.
+    """
+    filter_groups = {}
+    for fname, skycells, filter_id in file_list:
+        if np.isin(skycell_index, skycells):
+            filter_groups.setdefault(filter_id, []).append(fname)
+    return filter_groups
 
 
 def _cli(args=None):
