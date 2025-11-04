@@ -227,8 +227,6 @@ class TransformParameters:
     aperture: str = ""
     #: Default quaternion to use if engineering is not available.
     default_quaternion: tuple | None = None
-    #: Default target V2V3 telescope position if engineering is not available.
-    default_target_v2v3: tuple | None = None
     #: Observation end time
     obsend: float | None = None
     #: Observation start time

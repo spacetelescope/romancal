@@ -68,15 +68,6 @@ def main():
         help="Seconds beyond the observation time to search for telemetry. Default: %(default)s",
     )
     parser.add_argument(
-        "--v2v3",
-        dest="default_target_v2v3",
-        type=float,
-        nargs=2,
-        metavar=("V2", "V3"),
-        default=None,
-        help="Default target V2 and V3 if no engineering database information is found.",
-    )
-    parser.add_argument(
         "-v",
         "--verbose",
         action="count",
@@ -127,13 +118,6 @@ def main():
         logger_handler.setFormatter(logger_format_debug)
     logger.info("set_telescope_pointing called with args %s", args)
 
-    # Warn about the v2v3 option. Not implemented at the moment.
-    if args.default_target_v2v3 is not None:
-        logger.warning(
-            "`--v2v3` has been specified. At this time, this feature is not implemented."
-        )
-        logger.warning("    Processing will otherwise continue.")
-
     # Gather the service-specific args
     service_kwargs = {"service": args.service}
     for arg in ["eng_base_url", "environment", "path_to_cc"]:
@@ -163,7 +147,6 @@ def main():
                 # set_telescope_pointing.TransformParameters
                 allow_default=args.allow_default,
                 default_quaternion=args.default_quaternion,
-                default_target_v2v3=args.default_target_v2v3,
                 service_kwargs=service_kwargs,
                 tolerance=args.tolerance,
             )
