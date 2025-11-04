@@ -85,8 +85,8 @@ def test_create_intersecting_skycell_index(monkeypatch, sample_filelist):
     file_index = skycell_asn._create_intersecting_skycell_index(sample_filelist)
     assert len(file_index) == len(sample_filelist)
     for rec in file_index:
-        assert rec[2].lower() == "f158"
-        assert rec[1] == [1, 2]
+        assert rec.filter_id.lower() == "f158"
+        assert rec.skycell_indices == [1, 2]
 
 
 def test_extract_visit_id():
@@ -98,8 +98,8 @@ def test_extract_visit_id():
 
 def test_fetch_filter_for():
     file_index = [
-        ["file1.asdf", [1, 2], "f158"],
-        ["file2.asdf", [2, 3], "f146"],
+        skycell_asn.FileRecord("file1.asdf", [1, 2], "f158"),
+        skycell_asn.FileRecord("file2.asdf", [2, 3], "f146"),
     ]
     assert skycell_asn._fetch_filter_for("file1.asdf", file_index) == "f158"
     assert skycell_asn._fetch_filter_for("file2.asdf", file_index) == "f146"
@@ -151,19 +151,27 @@ def test_create_groups_default_type(sample_filelist):
     assert set(groups["full"]) == set(sample_filelist)
 
 
-def test_group_files_by_visit_and_pass():
-    """Test _group_files_by_visit and _group_files_by_pass group files correctly."""
-    files = [
-        "r0000101002003004005_0001_wfi10_cal.asdf",
-        "r0000101002003004005_0002_wfi10_cal.asdf",
-        "r0000101003003004006_0001_wfi10_cal.asdf",
+def test_group_files_by_filter_for_skycell():
+    """Test _group_files_by_filter_for_skycell groups files by filter for a given skycell index."""
+    # file_list: list of FileRecord
+    file_list = [
+        skycell_asn.FileRecord("file1.asdf", [1, 2], "f158"),
+        skycell_asn.FileRecord("file2.asdf", [2, 3], "f146"),
+        skycell_asn.FileRecord("file3.asdf", [1], "f158"),
+        skycell_asn.FileRecord("file4.asdf", [3], "f146"),
+        skycell_asn.FileRecord("file5.asdf", [1, 3], "f105"),
     ]
-    visit_groups = skycell_asn._group_files_by_visit(files)
-    assert len(visit_groups) == 2
-    for group in visit_groups.values():
-        assert isinstance(group, list)
-    pass_groups = skycell_asn._group_files_by_pass(files)
-    assert set(pass_groups.keys()) == {"0000101002", "0000101003"}
+    # Test for skycell_index = 1
+    result = skycell_asn._group_files_by_filter_for_skycell(file_list, 1)
+    assert set(result.keys()) == {"f158", "f105"}
+    assert set(result["f158"]) == {"file1.asdf", "file3.asdf"}
+    assert set(result["f105"]) == {"file5.asdf"}
+
+    # Test for skycell_index = 3
+    result = skycell_asn._group_files_by_filter_for_skycell(file_list, 3)
+    assert set(result.keys()) == {"f146", "f105"}
+    assert set(result["f146"]) == {"file2.asdf", "file4.asdf"}
+    assert set(result["f105"]) == {"file5.asdf"}
 
 
 def test_extract_visit_id_no_r():
@@ -212,13 +220,13 @@ def test_cli_parsing(monkeypatch):
 
 def test_group_files_by_filter_for_skycell():
     """Test _group_files_by_filter_for_skycell groups files by filter for a given skycell index."""
-    # file_list: [filename, [skycell_indices], filter_id]
+    # file_list: list of FileRecord
     file_list = [
-        ["file1.asdf", [1, 2], "f158"],
-        ["file2.asdf", [2, 3], "f146"],
-        ["file3.asdf", [1], "f158"],
-        ["file4.asdf", [3], "f146"],
-        ["file5.asdf", [1, 3], "f105"],
+        skycell_asn.FileRecord("file1.asdf", [1, 2], "f158"),
+        skycell_asn.FileRecord("file2.asdf", [2, 3], "f146"),
+        skycell_asn.FileRecord("file3.asdf", [1], "f158"),
+        skycell_asn.FileRecord("file4.asdf", [3], "f146"),
+        skycell_asn.FileRecord("file5.asdf", [1, 3], "f105"),
     ]
     # Test for skycell_index = 1
     result = skycell_asn._group_files_by_filter_for_skycell(file_list, 1)

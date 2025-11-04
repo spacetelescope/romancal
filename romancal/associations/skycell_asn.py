@@ -4,10 +4,11 @@ import argparse
 import logging
 import os
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-import roman_datamodels as rdm
+from roman_datamodels import datamodels as rdm
 
 import romancal.skycell.match as sm
 import romancal.skycell.skymap as sc
@@ -16,6 +17,16 @@ from romancal.associations.lib.utilities import mk_level3_asn_name
 from romancal.lib.basic_utils import parse_visitID as parse_visitID
 
 __all__ = ["skycell_asn"]
+
+
+@dataclass
+class FileRecord:
+    """Stores metadata for a single input file for skycell association."""
+
+    filename: str
+    skycell_indices: list
+    filter_id: str
+
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -97,7 +108,7 @@ def _create_groups(filelist: list[str], product_type: str) -> dict:
         return {"full": list(filelist)}
 
 
-def _create_intersecting_skycell_index(filelist: list[str]) -> list:
+def _create_intersecting_skycell_index(filelist: list[str]) -> list[FileRecord]:
     """
     Create an index of intersecting skycells for each file in the file list.
 
@@ -108,8 +119,8 @@ def _create_intersecting_skycell_index(filelist: list[str]) -> list:
 
     Returns
     -------
-    list
-        List of [filename, skycell_indices, filter_id] records.
+    list of FileRecord
+        List of FileRecord objects, each containing filename, skycell_indices, and filter_id.
     """
     file_index = []
     for file_name in filelist:
@@ -126,7 +137,7 @@ def _create_intersecting_skycell_index(filelist: list[str]) -> list:
             filter_id = "unknown"
             intersecting_skycells = []
         logger.info("Skycell List:%s, %s", file_name, intersecting_skycells)
-        file_index.append([file_name, intersecting_skycells, filter_id])
+        file_index.append(FileRecord(file_name, intersecting_skycells, filter_id))
     return file_index
 
 
@@ -164,9 +175,11 @@ def _process_groups(
     for group_files in groups.values():
         # Build file_list and skycell_indices together
         file_list = [
-            [rec[0], rec[1], rec[2]] for rec in file_index if rec[0] in group_files
+            FileRecord(rec.filename, rec.skycell_indices, rec.filter_id)
+            for rec in file_index
+            if rec.filename in group_files
         ]
-        skycell_indices = [idx for rec in file_list for idx in rec[1]]
+        skycell_indices = [idx for rec in file_list for idx in rec.skycell_indices]
         # We only want unique skycell indices
         unique_skycell_indices = np.unique(skycell_indices)
 
@@ -265,7 +278,7 @@ def _save_association(asn_file_name: str, serialized: str):
     logger.info("Wrote association: %s", out_name)
 
 
-def _fetch_filter_for(filename: str, file_index) -> str:
+def _fetch_filter_for(filename: str, file_index: list[FileRecord]) -> str:
     """
     Retrieve the filter ID for a given filename from the precomputed file index.
 
@@ -273,8 +286,8 @@ def _fetch_filter_for(filename: str, file_index) -> str:
     ----------
     filename : str
         The filename to look up.
-    file_index : list
-        List of [filename, skycell_indices, filter_id] records.
+    file_index : list of FileRecord
+        List of FileRecord objects.
 
     Returns
     -------
@@ -282,8 +295,8 @@ def _fetch_filter_for(filename: str, file_index) -> str:
         The filter ID associated with the filename, or "unknown" if not found.
     """
     for rec in file_index:
-        if rec[0] == filename:
-            return rec[2]
+        if rec.filename == filename:
+            return rec.filter_id
     return "unknown"
 
 
@@ -354,14 +367,16 @@ def _group_files_by_pass(filelist: list[str]) -> dict:
     return groups
 
 
-def _group_files_by_filter_for_skycell(file_list, skycell_index):
+def _group_files_by_filter_for_skycell(
+    file_list: list[FileRecord], skycell_index
+) -> dict:
     """
     Group files by filter for a specific skycell index.
 
     Parameters
     ----------
-    file_list : list
-        List of [filename, skycell_indices, filter_id] for the group.
+    file_list : list of FileRecord
+        List of FileRecord objects for the group.
     skycell_index : str or int
         The skycell index to filter on.
 
@@ -371,9 +386,10 @@ def _group_files_by_filter_for_skycell(file_list, skycell_index):
         Dictionary mapping filter_id to list of filenames for this skycell.
     """
     filter_groups = {}
-    for fname, skycells, filter_id in file_list:
-        if np.isin(skycell_index, skycells):
-            filter_groups.setdefault(filter_id, []).append(fname)
+    for rec in file_list:
+        if np.isin(skycell_index, rec.skycell_indices):
+            filter_groups.setdefault(rec.filter_id, []).append(rec.filename)
+
     return filter_groups
 
 
