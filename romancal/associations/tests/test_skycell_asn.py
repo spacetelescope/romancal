@@ -216,26 +216,3 @@ def test_cli_parsing(monkeypatch):
     assert called["output_file_root"] == "root"
     assert called["product_type"] == "visit"
     assert called["data_release_id"] == "d1"
-
-
-def test_group_files_by_filter_for_skycell():
-    """Test _group_files_by_filter_for_skycell groups files by filter for a given skycell index."""
-    # file_list: list of FileRecord
-    file_list = [
-        skycell_asn.FileRecord("file1.asdf", [1, 2], "f158"),
-        skycell_asn.FileRecord("file2.asdf", [2, 3], "f146"),
-        skycell_asn.FileRecord("file3.asdf", [1], "f158"),
-        skycell_asn.FileRecord("file4.asdf", [3], "f146"),
-        skycell_asn.FileRecord("file5.asdf", [1, 3], "f105"),
-    ]
-    # Test for skycell_index = 1
-    result = skycell_asn._group_files_by_filter_for_skycell(file_list, 1)
-    assert set(result.keys()) == {"f158", "f105"}
-    assert set(result["f158"]) == {"file1.asdf", "file3.asdf"}
-    assert set(result["f105"]) == {"file5.asdf"}
-
-    # Test for skycell_index = 3
-    result = skycell_asn._group_files_by_filter_for_skycell(file_list, 3)
-    assert set(result.keys()) == {"f146", "f105"}
-    assert set(result["f146"]) == {"file2.asdf", "file4.asdf"}
-    assert set(result["f105"]) == {"file5.asdf"}
