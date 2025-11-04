@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from collections import OrderedDict
 
 from .lib.rules_elpp_base import DMS_ELPP_Base
 from .registry import AssociationRegistry
@@ -37,22 +38,72 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
     """
     asn = rule()
     asn._add_items(items, **kwargs)
+
+    # Preserve specific top-level metadata if provided in kwargs
     if "target" in kwargs.keys():
         target = kwargs["target"]
         asn["target"] = target
+
+    # Always set data_release_id; default to 'p' if not provided
+    asn["data_release_id"] = kwargs.get("data_release_id", "p")
+    asn = _create_ordered_meta(asn)
+
+    return asn
+
+
+def _create_ordered_meta(asn):
+    """
+    Reorder the association metadata so that 'data_release_id' appears
+    immediately after 'program' in the top-level dictionary.
+
+    Parameters
+    ----------
+    asn : Association
+        The association object whose metadata should be reordered.
+
+    Returns
+    -------
+    Association
+        The association object with reordered metadata.
+    """
+    if "program" in asn and "data_release_id" in asn:
+        items = list(asn.items())
+
+        # Build new ordered list
+        new_items = []
+        for k, v in items:
+            new_items.append((k, v))
+            if k == "program":
+                new_items.append(("data_release_id", asn["data_release_id"]))
+
+        # Remove duplicate if present
+        seen = set()
+        ordered = []
+        for k, v in new_items:
+            if k == "data_release_id" and k in seen:
+                continue
+            ordered.append((k, v))
+            seen.add(k)
+
+        # Assign to internal dict
+        asn.data = OrderedDict(ordered)
+
     return asn
 
 
 def _cli(args=None):
-    """Command-line interface for list_to_asn
+    """
+    Command-line interface for creating an association from a list of files.
 
     Parameters
     ----------
-    args: [str, ...], or None
-        The command line arguments. Can be one of
-            - `None`: `sys.argv` is then used.
-            - `[str, ...]`: A list of strings which create the command line
-              with the similar structure as `sys.argv`
+    args : list of str or None, optional
+        Command line arguments. If None, uses sys.argv[1:].
+        If a string, splits on spaces.
+
+    Returns
+    -------
+    None
     """
 
     if args is None:
@@ -74,17 +125,16 @@ def _cli(args=None):
     )
 
     parser.add_argument(
-        "-f",
-        "--format",
-        type=str,
-        default="json",
-        help='Format of the association files. Default: "%(default)s"',
-    )
-
-    parser.add_argument(
         "--product-name",
         type=str,
         help="The product name when creating a Level 3 association",
+    )
+
+    parser.add_argument(
+        "--data-release-id",
+        type=str,
+        default="p",
+        help="Data release id to include in the association top-level metadata (default: 'p')",
     )
 
     parser.add_argument(
@@ -139,6 +189,7 @@ def _cli(args=None):
             product_name=parsed.product_name,
             acid=parsed.acid,
             target=parsed.target,
+            data_release_id=parsed.data_release_id,
         )
-        _, serialized = asn.dump(format=parsed.format)
+        _, serialized = asn.dump(format="json")
         outfile.write(serialized)
