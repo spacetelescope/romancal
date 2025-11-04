@@ -23,12 +23,13 @@ from photutils.psf import (
     SourceGrouper,
 )
 from scipy.ndimage import map_coordinates
+from photutils.psf import matching
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def azimuthally_smooth(data, oversample=2, pixel_scale_ratio=1.0, order=4):
+def azimuthally_smooth(data, oversample=2, pixel_scale_ratio=1.0, order=5):
     """Azimuthally smooth model
 
     The image is converted to polar coordinates via a 4th order spline interpolation.
@@ -60,7 +61,7 @@ def azimuthally_smooth(data, oversample=2, pixel_scale_ratio=1.0, order=4):
     # Significant difference is the polar back to cartesian uses
     # the original data's transformation parameters, to reproduce
     # an image of the correct dimensions.
-    def cart_to_polar(model, oversample=2, order=4):
+    def cart_to_polar(model, oversample=2, order=order):
         ntheta = 4 * model.shape[0] * oversample
         nrad = model.shape[0] * oversample
         szo2 = model.shape[0] // 2
@@ -73,7 +74,7 @@ def azimuthally_smooth(data, oversample=2, pixel_scale_ratio=1.0, order=4):
         )
         return modelpolar, rr, tt
 
-    def polar_to_cart(model, rr, tt, pixel_scale_ratio=1.0, order=4):
+    def polar_to_cart(model, rr, tt, pixel_scale_ratio=1.0, order=order):
         sz = data.shape[0]
         sz = math.ceil(sz / pixel_scale_ratio)
         szo2 = sz // 2
@@ -93,6 +94,37 @@ def azimuthally_smooth(data, oversample=2, pixel_scale_ratio=1.0, order=4):
     smoothed = polar_to_cart(polar_mean, rr, tt, pixel_scale_ratio=pixel_scale_ratio)
 
     return smoothed
+
+
+def azimuthally_smooth_fft(data, oversample=2, pixel_scale_ratio=1.0, order=5):
+
+    def cart_to_polar(model, oversample=2, order=order):
+        ntheta = 4 * model.shape[0] * oversample
+        nrad = model.shape[0] * oversample
+        szo2 = model.shape[0] // 2
+        rr = np.linspace(0, szo2 * np.sqrt(2), nrad)
+        tt = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
+        xx = rr[:, None] * np.cos(tt[None, :]) + szo2
+        yy = rr[:, None] * np.sin(tt[None, :]) + szo2
+        modelpolar = map_coordinates(
+            model, [xx, yy], order=order, mode="nearest", output=np.dtype("f4")
+        )
+        return modelpolar, rr, tt
+
+    fft = np.fft.fftshift(np.fft.fft2(data))
+    polar, kk, tt = cart_to_polar(fft)
+    azimuthal_average = np.mean(polar, axis=1)
+    azimuthal_average = np.real(azimuthal_average)
+    npts = 2 * (int(np.ceil(data.shape[0] / pixel_scale_ratio)) // 2) + 1
+
+    newk = np.fft.fftshift(np.fft.fftfreq(npts, d=pixel_scale_ratio))
+    newkgrid = np.meshgrid(newk, newk)
+    newkgrid_r = np.hypot(newkgrid[0], newkgrid[1])
+    f_interp = np.interp(newkgrid_r.ravel(), kk, azimuthal_average, left=0, right=0)  # better interpolation needed?
+    f_interp = f_interp.reshape(npts, npts)
+
+    psf_new = np.real(np.fft.ifft2(np.fft.ifftshift(f_interp)))
+    return psf_new
 
 
 def get_gridded_psf_model(psf_ref_model):
@@ -207,23 +239,31 @@ def create_l3_psf_model(
     return psf_model
 
 
-def create_convolution_kernel(input_psf, target_psf):
+def create_convolution_kernel(input_psf, target_psf, window=None):
     """Find convolution kernel which convolves input_psf to match target_psf.
 
     Parameters
     ----------
-    input_psf : ImagePSF
+    input_psf : np.ndarray
         The input PSF which needs to be convolved
 
-    target_psf : ImagePSF
+    target_psf : np.ndarray
         The target PSF which input_psf should match following convolution
+
+    window : photutils.psf.matching window class or None
+        The window function to use to regularize the kernel
+        photutils.psf.matching.TopHatWindow(0.25) will be used if not
+        specified
 
     Returns
     -------
     kernel : np.ndarray
         Convolution kernel taking input_psf to target_psf
     """
-    pass
+    # if window is None:
+    #     window = matching.TopHatWindow(0.25)
+    return matching.create_matching_kernel(
+        input_psf.data, target_psf.data, window=window)
 
 
 def fit_psf_to_image_model(
