@@ -267,6 +267,7 @@ class TransformParameters:
         # Get the pysiaf module.
         # Done here to avoid the explicit dependency of romancal on psyiaf.
         import pysiaf
+
         self.pysiaf = pysiaf
 
         # Setup the default reduction function.
@@ -554,7 +555,7 @@ def wcsinfo_from_siaf(pysiaf, aperture, vinfo):
     wcsinfo : WCSRef
         The WCS for the aperture's reference point, as defined by its SIAF.
     """
-    from pysiaf.utils.rotations import attitude_matrix, sky_posangle
+    from pysiaf.utils.rotations import sky_posangle
 
     siaf = pysiaf.Siaf("roman")
     wfi = siaf[aperture.upper()]
@@ -1370,9 +1371,9 @@ def update_meta(model, pysiaf, wcsinfo, vinfo, quality):
     # This is currently defined as what point in the sky the
     # virtual aperture WFI_CEN V2/V3 reference is pointing at.
     attitude = attitude_from_v1(pysiaf, vinfo)
-    wfi_cen = siaf['WFI_CEN']
+    wfi_cen = siaf["WFI_CEN"]
     wfi_cen.set_attitude_matrix(attitude)
-    skycoord = wfi_cen.reference_point(to_frame='sky')
+    skycoord = wfi_cen.reference_point(to_frame="sky")
     pm.target_ra = skycoord[0]
     pm.target_dec = skycoord[1]
 

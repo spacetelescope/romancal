@@ -94,7 +94,10 @@ def test_change_base_url():
 
 def test_change_base_url_fail():
     """Test changing the engineering database by call"""
-    service_kwargs = {"service": "mast", "eng_base_url": "https://nonexistent.fake.example"}
+    service_kwargs = {
+        "service": "mast",
+        "eng_base_url": "https://nonexistent.fake.example",
+    }
     with pytest.raises(ValueError):
         stp.get_pointing(
             Time(STARTTIME, format="isot"),
