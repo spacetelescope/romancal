@@ -58,7 +58,7 @@ def test_create_groups_visit(sample_filelist):
 def test_create_groups_pass(sample_filelist):
     groups = skycell_asn._create_groups(sample_filelist, "pass")
     assert all(isinstance(v, list) for v in groups.values())
-    # Should group by pass key (positions 5:10)
+    # Should group by pass key (positions :10)
     assert set(groups.keys())  # keys should not be empty
 
 
@@ -85,7 +85,7 @@ def test_create_intersecting_skycell_index(monkeypatch, sample_filelist):
     file_index = skycell_asn._create_intersecting_skycell_index(sample_filelist)
     assert len(file_index) == len(sample_filelist)
     for rec in file_index:
-        assert rec[2] == "f158" or rec[2] == "F158".lower()
+        assert rec[2].lower() == "f158"
         assert rec[1] == [1, 2]
 
 
@@ -163,7 +163,7 @@ def test_group_files_by_visit_and_pass():
     for group in visit_groups.values():
         assert isinstance(group, list)
     pass_groups = skycell_asn._group_files_by_pass(files)
-    assert set(pass_groups.keys()) == {"01002", "01003"}
+    assert set(pass_groups.keys()) == {"0000101002", "0000101003"}
 
 
 def test_extract_visit_id_no_r():

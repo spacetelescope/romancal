@@ -344,8 +344,9 @@ def _group_files_by_pass(filelist: list[str]) -> dict:
     groups: dict = {}
     for f in filelist:
         visit_id_no_r = _extract_visit_id(f)
-        # CCAAA occupies positions 5:10 (0-based indexing)
-        pass_key = visit_id_no_r[5:10] if len(visit_id_no_r) >= 10 else visit_id_no_r
+        # though CCAAA occupies positions 5:10 (0-based indexing),
+        # 'program' (PPPPP) is also relevant here, so we include it too
+        pass_key = visit_id_no_r[:10] if len(visit_id_no_r) >= 10 else visit_id_no_r
         groups.setdefault(pass_key, []).append(f)
     return groups
 

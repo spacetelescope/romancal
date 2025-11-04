@@ -68,4 +68,3 @@ Notes
 - The CLI expects a list of filenames as positional arguments.
 - The Python API allows more advanced usage, such as passing (filename, exptype) tuples.
 - The `"data_release_id"` field will always appear immediately after `"program"` in the output ASN metadata for consistency.
-- The `--rule` and `--ruledefs` options allow you to specify custom association rules if needed.
