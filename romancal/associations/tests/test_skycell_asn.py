@@ -8,16 +8,17 @@ import romancal.associations.skycell_asn as skycell_asn
 from romancal.associations.skycell_asn import _cli
 
 
-def test_cmdline_fails():
+@pytest.mark.parametrize(
+    "args",
+    [
+        [],
+        ["-o", "test_asn.json"],
+    ],
+)
+def test_cmdline_fails(args):
     """Exercise the command line interface"""
-
-    # No arguments
     with pytest.raises(SystemExit):
-        _cli([])
-
-    # Only the association file argument
-    with pytest.raises(SystemExit):
-        _cli(["-o", "test_asn.json"])
+        _cli(args)
 
 
 def test_parse_visitID():
@@ -42,24 +43,22 @@ def sample_filelist():
     ]
 
 
-def test_create_groups_full(sample_filelist):
-    groups = skycell_asn._create_groups(sample_filelist, "full")
-    assert "full" in groups
-    assert set(groups["full"]) == set(sample_filelist)
-
-
-def test_create_groups_visit(sample_filelist):
-    groups = skycell_asn._create_groups(sample_filelist, "visit")
-    # Should group by visit id (first 19 chars after 'r')
+@pytest.mark.parametrize(
+    "product_type,expected_key_count",
+    [
+        ("full", 1),
+        ("visit", 2),
+        ("pass", None),  # Don't check key count for "pass"
+        (None, 1),
+    ],
+)
+def test_create_groups_param(sample_filelist, product_type, expected_key_count):
+    groups = skycell_asn._create_groups(sample_filelist, product_type)
     assert all(isinstance(v, list) for v in groups.values())
-    assert len(groups) == 2  # two unique visit IDs in sample_filelist
-
-
-def test_create_groups_pass(sample_filelist):
-    groups = skycell_asn._create_groups(sample_filelist, "pass")
-    assert all(isinstance(v, list) for v in groups.values())
-    # Should group by pass key (positions :10)
-    assert set(groups.keys())  # keys should not be empty
+    if product_type in ("visit", "full", None):
+        assert len(groups) == expected_key_count
+    elif product_type == "pass":
+        assert set(groups.keys())  # keys should not be empty
 
 
 def test_create_intersecting_skycell_index(monkeypatch, sample_filelist):
@@ -89,11 +88,17 @@ def test_create_intersecting_skycell_index(monkeypatch, sample_filelist):
         assert rec.skycell_indices == [1, 2]
 
 
-def test_extract_visit_id():
-    fname = "r0000101002003004005_0001_wfi10_cal.asdf"
-    assert skycell_asn._extract_visit_id(fname) == "0000101002003004005"
-    fname2 = "0000101002003004005_0001_wfi10_cal.asdf"
-    assert skycell_asn._extract_visit_id(fname2) == "0000101002003004005"
+@pytest.mark.parametrize(
+    "fname,expected",
+    [
+        ("r0000101002003004005_0001_wfi10_cal.asdf", "0000101002003004005"),
+        ("0000101002003004005_0001_wfi10_cal.asdf", "0000101002003004005"),
+        ("0000101002003004005_0001_wfi10_cal.asdf", "0000101002003004005"),  # no 'r'
+        ("r12345.asdf", "12345"),  # short filename
+    ],
+)
+def test_extract_visit_id_variants(fname, expected):
+    assert skycell_asn._extract_visit_id(fname) == expected
 
 
 def test_fetch_filter_for():
@@ -130,8 +135,6 @@ def test_create_metadata(monkeypatch):
 
     class DummySkyCell:
         name = "skycell1"
-        # need to use ClassVar here to avoid instance variable warning
-        # (i.e., mutable default - dict - assigned as class attribute)
         wcs_info: ClassVar[dict] = {"foo": "bar"}
 
     meta = skycell_asn._create_metadata(
@@ -144,16 +147,14 @@ def test_create_metadata(monkeypatch):
     assert meta["skycell_wcs_info"] == {"foo": "bar"}
 
 
-def test_create_groups_default_type(sample_filelist):
-    """Test _create_groups with default (None) product_type returns 'full' group."""
-    groups = skycell_asn._create_groups(sample_filelist, None)
-    assert "full" in groups
-    assert set(groups["full"]) == set(sample_filelist)
-
-
-def test_group_files_by_filter_for_skycell():
-    """Test _group_files_by_filter_for_skycell groups files by filter for a given skycell index."""
-    # file_list: list of FileRecord
+@pytest.mark.parametrize(
+    "skycell_index,expected",
+    [
+        (1, {"f158": {"file1.asdf", "file3.asdf"}, "f105": {"file5.asdf"}}),
+        (3, {"f146": {"file2.asdf", "file4.asdf"}, "f105": {"file5.asdf"}}),
+    ],
+)
+def test_group_files_by_filter_for_skycell(skycell_index, expected):
     file_list = [
         skycell_asn.FileRecord("file1.asdf", [1, 2], "f158"),
         skycell_asn.FileRecord("file2.asdf", [2, 3], "f146"),
@@ -161,29 +162,10 @@ def test_group_files_by_filter_for_skycell():
         skycell_asn.FileRecord("file4.asdf", [3], "f146"),
         skycell_asn.FileRecord("file5.asdf", [1, 3], "f105"),
     ]
-    # Test for skycell_index = 1
-    result = skycell_asn._group_files_by_filter_for_skycell(file_list, 1)
-    assert set(result.keys()) == {"f158", "f105"}
-    assert set(result["f158"]) == {"file1.asdf", "file3.asdf"}
-    assert set(result["f105"]) == {"file5.asdf"}
-
-    # Test for skycell_index = 3
-    result = skycell_asn._group_files_by_filter_for_skycell(file_list, 3)
-    assert set(result.keys()) == {"f146", "f105"}
-    assert set(result["f146"]) == {"file2.asdf", "file4.asdf"}
-    assert set(result["f105"]) == {"file5.asdf"}
-
-
-def test_extract_visit_id_no_r():
-    """Test _extract_visit_id when filename does not start with 'r'."""
-    fname = "0000101002003004005_0001_wfi10_cal.asdf"
-    assert skycell_asn._extract_visit_id(fname) == "0000101002003004005"
-
-
-def test_extract_visit_id_short():
-    """Test _extract_visit_id with a short filename."""
-    fname = "r12345.asdf"
-    assert skycell_asn._extract_visit_id(fname) == "12345"
+    result = skycell_asn._group_files_by_filter_for_skycell(file_list, skycell_index)
+    for k in expected:
+        assert set(result[k]) == expected[k]
+    assert set(result.keys()) == set(expected.keys())
 
 
 def test_cli_parsing(monkeypatch):

@@ -105,7 +105,7 @@ def _create_groups(filelist: list[str], product_type: str) -> dict:
     elif product_type == "pass":
         return _group_files_by_pass(filelist)
     else:
-        return {"full": list(filelist)}
+        return _group_files_by_program(filelist)
 
 
 def _create_intersecting_skycell_index(filelist: list[str]) -> list[FileRecord]:
@@ -363,6 +363,28 @@ def _group_files_by_pass(filelist: list[str]) -> dict:
         # though CCAAA occupies positions 5:10 (0-based indexing),
         # 'program' (PPPPP) is also relevant here, so we include it too
         pass_key = visit_id_no_r[:10] if len(visit_id_no_r) >= 10 else visit_id_no_r
+        groups.setdefault(pass_key, []).append(f)
+    return groups
+
+
+def _group_files_by_program(filelist: list[str]) -> dict:
+    """
+    Group files by program identifier (PPPPP portion of Visit_ID).
+
+    Parameters
+    ----------
+    filelist : list of str
+        List of filenames to group.
+
+    Returns
+    -------
+    dict
+        Dictionary mapping program_key (5 chars PPPPP) to a list of filenames.
+    """
+    groups: dict = {}
+    for f in filelist:
+        visit_id_no_r = _extract_visit_id(f)
+        pass_key = visit_id_no_r[:5] if len(visit_id_no_r) >= 5 else visit_id_no_r
         groups.setdefault(pass_key, []).append(f)
     return groups
 
