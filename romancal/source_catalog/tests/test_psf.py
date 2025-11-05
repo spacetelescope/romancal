@@ -52,7 +52,6 @@ def setup_inputs(
     mod.dq = np.zeros(shape, dtype=np.uint32)
 
     crds_parameters = mod.get_crds_parameters()
-    crds_parameters_2 = deepcopy(crds_parameters)
     crds_ref_file = crds.getreferences(
         crds_parameters, reftypes=["epsf"], observatory="roman"
     )
