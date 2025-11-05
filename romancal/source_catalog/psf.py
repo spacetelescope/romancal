@@ -88,16 +88,6 @@ def azimuthally_average_via_fft(data, oversample=2, pixel_scale_ratio=1.0):
     return psf_new
 
 
-def convolve_box_tophat(image, size):
-    """Convolve image with a rectangular top-hat of given size (in pixels)."""
-    image_fft = fft.fft2(image)
-    kk = fft.fftfreq(image.shape[0])
-    kx, ky = np.meshgrid(kk, kk)
-    kernel = np.sinc(size * kx) * np.sinc(size * ky)
-    res = np.real(fft.ifft2(image_fft * kernel))
-    return res
-
-
 def create_convolution_kernel(input_psf, target_psf,
                                         min_fft_power_ratio=1e-3):
     """Find convolution kernel which convolves input_psf to match target_psf.
@@ -192,8 +182,7 @@ def get_gridded_psf_model(psf_ref_model):
     pixel_response_kernel = Box2DKernel(width=oversample)
     for i in range(psf_images.shape[0]):
         psf = psf_images[i, :, :].copy()
-        # im = convolve(psf, pixel_response_kernel) * oversample**2
-        im = convolve_box_tophat(psf, oversample) * oversample**2
+        im = convolve(psf, pixel_response_kernel) * oversample**2
         psf_images[i, :, :] = im
 
     meta["grid_xypos"] = position_list
@@ -264,7 +253,6 @@ def create_l3_psf_model(
     psf2 = psf.copy()
     # Smooth to the image scale
     outscale_kernel = Box2DKernel(width=oversample * pixel_scale / detector_pixel_scale)
-    # psf = convolve(psf, kernel=outscale_kernel)
     psf = convolve_box_tophat(psf, size=oversample * pixel_scale / detector_pixel_scale)
     psf3 = psf.copy()
     # Azimuthally smooth the psf
