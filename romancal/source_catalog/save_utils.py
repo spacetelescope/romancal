@@ -63,6 +63,15 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
     if hasattr(segment_img, "detection_image"):
         segmentation_model["detection_image"] = segment_img.detection_image
 
+    # Source injection data
+    if hasattr(segment_img, "injected_sources"):
+        segmentation_model["injected_sources"] = segment_img.injected_sources
+    if hasattr(segment_img, "si_segment_img"):
+        segmentation_model["si_data"] = \
+            segment_img.si_segment_img.data.astype(np.uint32)
+    if hasattr(segment_img, "si_detection_image"):
+        segmentation_model["si_detection_image"] = segment_img.si_detection_image
+
     # Save the segmentation image to the output file
     self.output_ext = "asdf"
     self.save_model(

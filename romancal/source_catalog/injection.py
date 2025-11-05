@@ -39,7 +39,7 @@ HRGALMAGLIMIT = {
 }
 
 
-def inject_sources(model, si_cat):
+def inject_sources(model, si_cat, **kwargs):
     """
     Convolve the background-subtracted model image with a Gaussian
     kernel.
@@ -61,17 +61,17 @@ def inject_sources(model, si_cat):
 
     if isinstance(model, ImageModel):
         #  inject_sources_into_l2
-        new_model = inject_sources_into_l2(model, si_cat)
+        new_model = inject_sources_into_l2(model, si_cat, **kwargs)
     elif isinstance(model, MosaicModel):
         #  inject_sources_into_l3
-        new_model = inject_sources_into_l3(model, si_cat)
+        new_model = inject_sources_into_l3(model, si_cat, **kwargs)
     else:
         raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
     return new_model
 
 
-def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **kwargs):
+def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=50, **kwargs):
     """
     Generate a catalog of cosmos galaxies and stars, with the following assumptions:
     - 75% of objects will be galaxies, 25% will be point sources
@@ -87,8 +87,8 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **
     ----------
     cen : astropy.coordinates.SkyCoord
         Location around which to generate sources.
-    xpos, ypos : array_like (float)
-        x, y positions of each source in objlist
+    ra, dec : array_like (float)
+        ra, dec of each source in objlist (degrees)
     exptimes : dictionary
         Exposure time for each filter (key)
     filters : list of str
@@ -112,11 +112,11 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **
 
     # Set random source index for the catalog
     rng_numpy = np.random.default_rng(seed)
-    ran_idx = rng_numpy.permutation(len(xpos))
+    ran_idx = rng_numpy.permutation(len(ra))
 
     # 75% of objects as galaxies, 25% of objects as point sources
-    num_stars = int(len(xpos) / 4)
-    num_gals = len(xpos) - num_stars
+    num_stars = int(len(ra) / 4)
+    num_gals = len(ra) - num_stars
 
     # Galaxies
     # RomanISim's make cosmos galaxies method will return cosmos like objects with
@@ -213,8 +213,8 @@ def make_cosmoslike_catalog(cen, xpos, ypos, exptimes, filters=None, seed=50, **
     all_cat = table.vstack([gal_cat, star_cat])
 
     # Set the positions to randomly selected objects
-    all_cat["ra"] = np.array(xpos)[ran_idx].tolist()
-    all_cat["dec"] = np.array(ypos)[ran_idx].tolist()
+    all_cat["ra"] = np.array(ra)[ran_idx].tolist()
+    all_cat["dec"] = np.array(dec)[ran_idx].tolist()
 
     return all_cat
 
