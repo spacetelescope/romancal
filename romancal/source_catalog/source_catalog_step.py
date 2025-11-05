@@ -16,6 +16,7 @@ from roman_datamodels.dqflags import pixel
 
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
+from romancal.source_catalog.psf import add_jitter
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.utils import get_ee_spline
@@ -68,6 +69,7 @@ class SourceCatalogStep(RomanStep):
             self.ref_file = self.get_reference_file(input_model, "epsf")
             log.info("Using ePSF reference file: %s", self.ref_file)
             psf_ref_model = datamodels.open(self.ref_file)
+            psf_ref_model.psf = add_jitter(psf_ref_model, input_model)
         else:
             psf_ref_model = None
 

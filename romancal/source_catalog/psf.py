@@ -95,7 +95,7 @@ def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
     return smoothed
 
 
-def get_gridded_psf_model(psf_ref_model):
+def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
     """Function to generate gridded PSF model from psf reference file
 
     Compute a gridded PSF model for one SCA using the
@@ -103,16 +103,28 @@ def get_gridded_psf_model(psf_ref_model):
     The input reference files have 3 focus positions and this is using
     the in-focus images. There are also three spectral types that are
     available and this code uses the M5V spectal type.
+
+    Parameters
+    ----------
+    psf_ref_model : roman_datamodels.datamodels.EpsfRefModel
+        PSF reference data model
+    focus : integer
+        index of slice into focus dimension of reference model.  0 for in focus
+    spectral_type : integer
+        index of slice into spectral type dimension of reference model.  1 for
+        G2V.
+
+    Returns
+    -------
+    photutils.psf.GriddedPSFModel of desired slice of ePSF reference file
     """
     # Open the reference file data model
     # select the infocus images (0) and we have a selection of spectral types
     # A0V, G2V, and M6V, pick G2V (1)
-    focus = 0
-    spectral_type = 1
     psf_images = psf_ref_model.psf[focus, spectral_type, :, :, :].copy()
     # get the central position of the cutouts in a list
-    psf_positions_x = psf_ref_model.meta.pixel_x.data.data
-    psf_positions_y = psf_ref_model.meta.pixel_y.data.data
+    psf_positions_x = psf_ref_model.meta.pixel_x
+    psf_positions_y = psf_ref_model.meta.pixel_y
     meta = OrderedDict()
     position_list = []
     for index in range(len(psf_positions_x)):
@@ -132,6 +144,182 @@ def get_gridded_psf_model(psf_ref_model):
     model = GriddedPSFModel(nd)
 
     return model
+
+
+def render_stamp(x, y, grid, size):
+    """Render a PSF model at a specified location.
+
+    Equivalent to grid.evaluate(xloc, yloc, 1, x, y) for xloc and yloc
+    a square grid around (x, y) correspending to a [size, size] region.
+    This function is meant to provide a more user-friendly PSF stamp
+    rendering tool.
+
+    Parameters
+    ----------
+    x : float
+        x location at which to render PSF
+    y : float
+        y location at which to render PSF
+    grid : photutils.psf.GriddedPSFModel
+        gridded model to use for evaluation
+
+    Returns
+    -------
+    stamp : np.ndarray[size, size]
+        image of PSF at (x, y)
+    """
+    xx, yy = np.mgrid[:size, :size]
+
+    # for a 3x3 stamp centered at [1, 1], we want [0, 1, 2], so
+    # xcen and ycen should be 0.
+    # for a 4x4 stamp, it's not clear where the stamp should be centered,
+    # so either convention is fine.
+    xcen, ycen = x - size // 2, y - size // 2
+    stamp = grid.evaluate(xx + xcen, yy + ycen, 1, x, y)
+    return stamp
+
+
+def _get_jitter_params(meta):
+    """Get jitter parameters out of metadata.
+
+    Parameters
+    ----------
+    meta : metadata dictionary to extract keywords from.
+
+    Returns
+    -------
+    dictionary containing jitter_major, jitter_minor, and jitter_position_angle
+    keywords, substituting with sane defaults when not available.
+    """
+    return dict(
+        jitter_major=meta.get("jitter_major", 8),
+        jitter_minor=meta.get("jitter_minor", 8),
+        jitter_position_angle=meta.get("jitter_position_angle", 0),
+    )
+
+
+def _evaluate_gaussian_fft(param, shape, pixel_scale):
+    """Construct the FFT of a real-space Gaussian in the Fourier domain.
+
+    We want to evaluate a jitter kernel in the Fourier domain.  The
+    parameters of that jitter kernel are described in the 'param' dict.
+    The jitter kernel needs to be convolved with PSF stamps from a
+    reference file; the shape of those stamps and their PSF scale need
+    to be specified in the shape and pixel_scale parameters.
+
+    The jitter parameter dictionary must contain jitter_major, jitter_minor,
+    and jitter_position_angle attributes.  The units of the major and
+    minor axes must be in mas, while the position angle must be in degrees.
+    The position angle is the angle of the major axis relative to the +Y
+    axis, with PA increasing as the major axis moves toward the +X axis.
+    Major and minor axis sizes are expressed in units of RMS; i.e., the
+    standard deviation of the corresponding Gaussian.
+
+    Because Gaussians are real-valued, only the positive frequency
+    components are returned.
+
+    Parameters
+    ----------
+    param : dict
+        jitter parameter dictionary from _get_jitter_params
+    shape : tuple
+        shape of PSF stamp
+    pixel_scale : float
+        pixel scale of PSF, arcsec
+
+    Returns
+    -------
+    fft : np.ndarray
+        analytically computed FFT of real-space Gaussian
+    """
+    # pixel scale must include oversampling factor
+    # i.e., be something like the native scale divided by 4
+
+    # need to shift theta -> np.pi / 2 - theta in order to go from
+    # 'math' convention of +x axis, increasing toward +y axis
+    # to 'astronomy' convention of +y axis, increasing toward
+    # +x axis.
+    theta = np.pi / 2 - np.radians(param["jitter_position_angle"])
+    major = param["jitter_major"] / 1000
+    minor = param["jitter_minor"] / 1000
+    rot = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+
+    # rfftfreq since this is real
+    uu = np.fft.rfftfreq(shape[1], d=pixel_scale)
+    vv = np.fft.fftfreq(shape[0], d=pixel_scale)
+    ugrid, vgrid = np.meshgrid(uu, vv)
+    covar = rot.dot(np.diag([major**2, minor**2])).dot(rot.T)
+    uvgrid = np.array([ugrid.reshape(-1), vgrid.reshape(-1)])
+    rr2 = np.einsum("ji,jk,ki->i", uvgrid, covar, uvgrid)
+    fft = np.exp(-2 * np.pi**2 * rr2)
+    fft = fft.reshape(ugrid.shape)
+    return fft
+
+
+def add_jitter(psf_ref_model, image_model, pixel_scale=0.11):
+    """Add jitter to PSF stamps in a PSF reference file.
+
+    The PSF reference model contains some amount of jitter.  The image
+    model contains some potentially different amount of jitter.  This
+    function needs to deconvolve the jitter in the reference model
+    and then reconvolve with the jitter in the image, to obtain a model
+    for the jitter in this image.
+
+    This procedure is made more challenging by the fact that the jitter is
+    small.  Typical values of the jitter are 8 mas compared to a typical
+    PSF FWHM of ~100 mas.  The pixel scale in the reference files is 4x
+    oversampled relative to the native scale of 0.11", and so is ~28 mas---
+    much larger than the 8 mas jitter scale, so naive direct convolution
+    will not work.
+
+    We use the approach of Lang (2020) to do the convolutions in the Fourier
+    domain to avoid this problem.  The key element there is to analytically
+    evaluate the jitter kernel in Fourier space rather than to evaluate
+    it in real space and then transform it.  If the PSF is well sampled,
+    all fourier components corresponding to higher frequencies than the Nyquist
+    frequency will be exactly zero.  Accordingly, if we evaluate the jitter
+    kernel in the FFT domain analytically only over the frequencies where the
+    PSF FFT is non-zero, we can multiply the two FFTs and transform back
+    to real space without needing to think about the fact that the jitter
+    kernel is undersampled in real space.
+
+    Parameters
+    ----------
+    psf_ref_model : datamodels.EpsfRefModel
+        ePSF reference models from CRDS
+    image_model : datamodels.ImageModel
+        image for which a PSF model is desired
+    pixel_scale : float
+        pixel scale of the image.  Because the jitter kernel is very small,
+        this does not need to be terribly accurate; it's used to transform
+        the real-space jitter kernel specification into the pixel-space
+        kernels that are convolved with the PSF stamps.
+
+    Returns
+    -------
+    convolved_stamps : np.ndarray
+        PSF reference file stamps after convolution with jitter kernel
+    """
+
+    ref_jitter_params = _get_jitter_params(psf_ref_model.meta)
+    image_jitter_params = _get_jitter_params(
+        getattr(image_model.meta, "guide_star", dict())
+    )
+    oversample = psf_ref_model.meta.oversample
+    shape = psf_ref_model.psf.shape[-2:]
+    jit_ref_fft = _evaluate_gaussian_fft(
+        ref_jitter_params, shape, pixel_scale / oversample
+    )
+    jit_img_fft = _evaluate_gaussian_fft(
+        image_jitter_params, shape, pixel_scale / oversample
+    )
+    jitter_fft = jit_img_fft / jit_ref_fft
+    stamp_fft = np.fft.rfft2(psf_ref_model.psf, axes=(-2, -1))
+    convolved = np.fft.irfft2(stamp_fft * jitter_fft[None, ...], axes=(-2, -1), s=shape)
+    log.info(
+        f"Performed jitter convolution.  Image kernel: {tuple(image_jitter_params.values())} Reference kernel: {tuple(ref_jitter_params.values())}"
+    )
+    return convolved
 
 
 def create_l3_psf_model(
