@@ -160,7 +160,7 @@ class ExposurePipeline(RomanPipeline):
         return model
 
     def save_model(self, result, *args, **kwargs):
-        if not self.tweakreg.skip and not isinstance(result, rdm.WfiWcsModel):
+        if not isinstance(result, rdm.WfiWcsModel):
             save_wfiwcs(self, result, force=True)
         super().save_model(result, *args, **kwargs)
 

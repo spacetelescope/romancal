@@ -1,0 +1,1 @@
+Allow grouping by visit, pass, and full, and add data release ID to the metadata of the asn file. The CLI was updated accordingly, replacing the --release-product argument with --data-release-id

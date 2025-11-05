@@ -231,3 +231,11 @@ cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_uncal.asdf $outdir/roman-pipeline/de
 cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_cal.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp TVAC2_NOMOPS_WFIFLA_20240419194120_WFI01_dqinit.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 cp dark_ma510.asdf $outdir/roman-pipeline/dev/references/
+
+python -c "
+import asdf
+from romancal.regtest import test_psf_library
+out = test_psf_library.render_psfs_for_filename(
+    'r0000101001001001001_0001_wfi01_f158_cal.asdf')
+asdf.dump(out, open('psf_render.asdf', 'wb'))"
+cp psf_render.asdf $outdir/roman-pipeline/dev/truth/WFI/image/

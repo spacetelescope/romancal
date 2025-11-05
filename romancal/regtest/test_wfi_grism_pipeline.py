@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import numpy as np
@@ -7,6 +8,7 @@ from numpy.testing import assert_allclose
 from roman_datamodels.dqflags import pixel
 
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
+from romancal.lib.suffix import replace_suffix
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
 from .regtestdata import compare_asdf
@@ -158,3 +160,14 @@ def test_repointed_wcs_differs(repointed_filename_and_delta, output_model):
             repointed_model.meta.wcs(2048, 2048),
             atol=1.0,
         )
+
+
+def test_wfiwcs_exists(run_elp):
+    output_path = Path(run_elp.output)
+    wcs_filename = replace_suffix(output_path.stem, "wcs") + output_path.suffix
+    wcs_path = output_path.parent / wcs_filename
+
+    # check to make sure that we are making the required WCS grism products
+    # In principle these also need things like updated ephemeris, but that
+    # requires a database connection we're not making here.
+    assert os.path.exists(wcs_path)

@@ -22,7 +22,6 @@ __all__ = ["EngdbMast"]
 
 # Default MAST info.
 MAST_BASE_URL = "https://mast.stsci.edu"
-# MAST_BASE_URL = "https://stsci.edu"
 DATA_URI = "edp/api/v0.1/mnemonics/spa/roman/data"
 META_URI = "edp/api/v0.1/mnemonics/spa/roman/metadata"
 
@@ -37,7 +36,7 @@ class EngdbMast(EngdbABC):
 
     Parameters
     ----------
-    base_url : str
+    eng_base_url : str
         The base url for the engineering RESTful service. If not defined,
         the environmental variable ENG_BASE_URL is queried. Otherwise
         the default MAST website is used.
@@ -58,7 +57,7 @@ class EngdbMast(EngdbABC):
     """
 
     #: The base URL for the engineering service.
-    base_url = None
+    eng_base_url = None
 
     #: The end time of the last query.
     endtime = None
@@ -78,10 +77,10 @@ class EngdbMast(EngdbABC):
     #: MAST Token
     token = None
 
-    def __init__(self, base_url=None, token=None, **service_kwargs):
+    def __init__(self, eng_base_url=None, token=None, **service_kwargs):
         logger.debug("kwargs not used by this service: %s", service_kwargs)
 
-        self.configure(base_url=base_url, token=token)
+        self.configure(eng_base_url=eng_base_url, token=token)
         self.set_session()
 
         # Check for basic aliveness.
@@ -92,16 +91,16 @@ class EngdbMast(EngdbABC):
             requests.exceptions.HTTPError,
         ) as exception:
             raise RuntimeError(
-                f"MAST url: {self.base_url} is unreachable."
+                f"MAST url: {self.eng_base_url} is unreachable."
             ) from exception
 
-    def configure(self, base_url=None, token=None):
+    def configure(self, eng_base_url=None, token=None):
         """
         Configure from parameters and environment.
 
         Parameters
         ----------
-        base_url : str
+        eng_base_url : str
             The base url for the engineering RESTful service. If not defined,
             the environmental variable ENG_BASE_URL is queried. Otherwise
             the default MAST website is used.
@@ -112,11 +111,11 @@ class EngdbMast(EngdbABC):
             For more information, see 'https://auth.mast.stsci.edu/'
         """
         # Determine the database to use
-        if base_url is None:
-            base_url = getenv("ENG_BASE_URL", MAST_BASE_URL)
-        if base_url[-1] != "/":
-            base_url += "/"
-        self.base_url = base_url
+        if eng_base_url is None:
+            eng_base_url = getenv("ENG_BASE_URL", MAST_BASE_URL)
+        if eng_base_url[-1] != "/":
+            eng_base_url += "/"
+        self.eng_base_url = eng_base_url
 
         # Get the token
         if token is None:
@@ -249,13 +248,13 @@ class EngdbMast(EngdbABC):
         """Set up HTTP session."""
         self._datareq = requests.Request(
             method="GET",
-            url=self.base_url + DATA_URI,
+            url=self.eng_base_url + DATA_URI,
             headers={"Authorization": f"token {self.token}"},
         )
 
         self._metareq = requests.Request(
             method="GET",
-            url=self.base_url + META_URI,
+            url=self.eng_base_url + META_URI,
             headers={"Authorization": f"token {self.token}"},
         )
 
@@ -346,5 +345,5 @@ class EngdbMast(EngdbABC):
 
     def __repr__(self):
         """What am I"""
-        repr = f"{self.__class__.__name__}(base_url='{self.base_url}')"
+        repr = f"{self.__class__.__name__}(eng_base_url='{self.eng_base_url}')"
         return repr
