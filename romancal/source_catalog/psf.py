@@ -3,17 +3,16 @@ Module to calculate PSF photometry.
 """
 
 import logging
-import math
 from collections import OrderedDict
 
 import astropy.units as u
 import numpy as np
-from numpy import fft
 from astropy.convolution import Box2DKernel, convolve
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.nddata import NDData
 from astropy.table import Table
 from astropy.utils import lazyproperty
+from numpy import fft
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
 from photutils.psf import (
@@ -27,7 +26,6 @@ from scipy.ndimage import map_coordinates
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-
 
 
 def _cart_to_polar(image, oversample=2, order=3):
@@ -68,8 +66,12 @@ def _cart_to_polar(image, oversample=2, order=3):
     xx = rr[:, None] * np.cos(tt[None, :]) + szo2
     yy = rr[:, None] * np.sin(tt[None, :]) + szo2
     imagepolar = map_coordinates(
-        image, [yy, xx], order=order, mode="constant",
-        output=image.dtype, cval=np.nan,
+        image,
+        [yy, xx],
+        order=order,
+        mode="constant",
+        output=image.dtype,
+        cval=np.nan,
     )
     return imagepolar, rr, tt
 
@@ -153,24 +155,24 @@ def _downsample_by_interpolation(image, downsample):
     cx = (nx - 1) / 2
 
     # offsets to low-res pixel centers
-    y_offsets = (np.arange(ny_low) - (ny_low - 1)/2) * downsample
-    x_offsets = (np.arange(nx_low) - (nx_low - 1)/2) * downsample
+    y_offsets = (np.arange(ny_low) - (ny_low - 1) / 2) * downsample
+    x_offsets = (np.arange(nx_low) - (nx_low - 1) / 2) * downsample
 
     # actual coordinates in high-res image
     y = cy + y_offsets
     x = cx + x_offsets
-    yy, xx = np.meshgrid(y, x, indexing='ij')
+    yy, xx = np.meshgrid(y, x, indexing="ij")
 
     # interpolate
-    low_res = map_coordinates(image, [yy, xx], order=1, mode='nearest')
+    low_res = map_coordinates(image, [yy, xx], order=1, mode="nearest")
 
     low_res *= image.sum() / low_res.sum()
     return low_res
 
 
-def create_convolution_kernel(input_psf, target_psf,
-                              min_fft_power_ratio=1e-5, downsample=None,
-                              size=None):
+def create_convolution_kernel(
+    input_psf, target_psf, min_fft_power_ratio=1e-5, downsample=None, size=None
+):
     """Find convolution kernel which convolves input_psf to match target_psf.
 
     The nominal photutils matching kernel code does a straight ratio
@@ -228,14 +230,16 @@ def create_convolution_kernel(input_psf, target_psf,
 
     input_power = np.abs(input_fft) ** 2
     max_power = np.max(input_power)
-    conv_kernel_fft = target_fft * np.conj(input_fft) / (
-        input_power + min_fft_power_ratio * max_power)
+    conv_kernel_fft = (
+        target_fft
+        * np.conj(input_fft)
+        / (input_power + min_fft_power_ratio * max_power)
+    )
 
     kernel = np.real(fft.fftshift(fft.ifft2(conv_kernel_fft)))
     kernel = kernel / kernel.sum()
     if downsample is not None and downsample > 1:
-        kernel = convolve(kernel, Box2DKernel(width=downsample),
-                          boundary='extend')
+        kernel = convolve(kernel, Box2DKernel(width=downsample), boundary="extend")
         kernel = _downsample_by_interpolation(kernel, downsample)
     if size is not None:
         return central_stamp(kernel, size).copy()
@@ -351,14 +355,16 @@ def central_stamp(im, size):
     """
 
     if im.shape[0] != im.shape[1]:
-        raise ValueError('im must be square')
+        raise ValueError("im must be square")
     if (im.shape[0] % 2) != (size % 2):
         size = size + 1
     parity = int((im.shape[0] % 2) == 0)
     center = im.shape[0] // 2
     sizeo2 = size // 2
-    return im[center - sizeo2: center + sizeo2 + 1 - parity,
-              center - sizeo2: center + sizeo2 + 1 - parity]
+    return im[
+        center - sizeo2 : center + sizeo2 + 1 - parity,
+        center - sizeo2 : center + sizeo2 + 1 - parity,
+    ]
 
 
 def _get_jitter_params(meta):
@@ -506,7 +512,7 @@ def add_jitter(psf_ref_model, image_model, pixel_scale=0.11):
 
 def create_l3_psf_model(
     psf_ref_model,
-    stamp_radius = 10,
+    stamp_radius=10,
     pixfrac=1.0,
     pixel_scale=0.11,
     oversample=None,
@@ -565,7 +571,8 @@ def create_l3_psf_model(
     psf = convolve(psf, kernel=outscale_kernel)
     # Azimuthally smooth the psf
     psf = _azimuthally_average_via_fft(
-        psf, pixel_scale_ratio=pixel_scale / detector_pixel_scale)
+        psf, pixel_scale_ratio=pixel_scale / detector_pixel_scale
+    )
 
     # Create the PSF model.
     x_0, y_0 = psf.shape

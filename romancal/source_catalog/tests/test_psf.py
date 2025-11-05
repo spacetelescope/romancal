@@ -9,13 +9,13 @@ import numpy as np
 import pytest
 import roman_datamodels as rdm
 from astropy import units as u
+from astropy.convolution import convolve
 from astropy.modeling.models import Gaussian2D
 from astropy.stats import mad_std
 from astropy.table import QTable
 from photutils.datasets import make_model_image
 from photutils.psf import PSFPhotometry
 from roman_datamodels.datamodels import ImageModel
-from astropy.convolution import convolve
 
 from romancal.source_catalog import psf
 from romancal.source_catalog.psf import (
@@ -68,10 +68,12 @@ def setup_inputs(
     psf_ref_file = crds_ref_file["epsf"]
     psf_ref_model_f184 = rdm.open(psf_ref_file)
 
-    return dict(image=mod,
-                psf_model=psf_model,
-                psf_ref_model_f087=psf_ref_model_f087,
-                psf_ref_model_f184=psf_ref_model_f184)
+    return dict(
+        image=mod,
+        psf_model=psf_model,
+        psf_ref_model_f087=psf_ref_model_f087,
+        psf_ref_model_f184=psf_ref_model_f184,
+    )
 
 
 def add_sources(image_model, psf_model, x_true, y_true, flux_true, background=10):
@@ -270,15 +272,13 @@ def test_azimuthally_average_via_fft(setup_inputs):
 def test_downsample_by_interpolation(size):
     pts = np.arange(size) - (size - 1) / 2
     xx, yy = np.meshgrid(pts, pts)
-    gaussian = np.exp(-(xx / 5) ** 2 / 2 - (yy / 5) ** 2 / 2)
+    gaussian = np.exp(-((xx / 5) ** 2) / 2 - (yy / 5) ** 2 / 2)
 
-    gaussian_downsample = psf._downsample_by_interpolation(
-        gaussian, downsample=4)
+    gaussian_downsample = psf._downsample_by_interpolation(gaussian, downsample=4)
     assert gaussian_downsample.shape[0] < gaussian.shape[0] / 4 + 1
 
     def center(img):
-        yy, xx = np.meshgrid(np.arange(img.shape[0]),
-                             np.arange(img.shape[1]))
+        yy, xx = np.meshgrid(np.arange(img.shape[0]), np.arange(img.shape[1]))
         xcen = np.sum(xx * img) / np.sum(img)
         ycen = np.sum(yy * img) / np.sum(img)
         return xcen, ycen
@@ -296,14 +296,11 @@ def test_create_convolution_kernel(setup_inputs):
     mod_f184 = setup_inputs["psf_ref_model_f184"]
     stamp_f087 = psf.central_stamp(mod_f087.psf[0, 1, 0], 91)
     stamp_f184 = psf.central_stamp(mod_f184.psf[0, 1, 0], 91)
-    conv_kernel = psf.create_convolution_kernel(
-        stamp_f087, stamp_f184)
+    conv_kernel = psf.create_convolution_kernel(stamp_f087, stamp_f184)
     sz = 19
-    diff_noconv = np.sum(psf.central_stamp(
-        stamp_f087 - stamp_f184, sz) ** 2)
+    diff_noconv = np.sum(psf.central_stamp(stamp_f087 - stamp_f184, sz) ** 2)
     mod_f184_conv = convolve(stamp_f087, conv_kernel)
-    diff_conv = np.sum(psf.central_stamp(
-        mod_f184_conv - stamp_f184, sz) ** 2)
+    diff_conv = np.sum(psf.central_stamp(mod_f184_conv - stamp_f184, sz) ** 2)
     print(diff_conv, diff_noconv, diff_conv / diff_noconv)
     # FIXME
     # in my tests diff_conv is 1e-5, diff_noconv is 0.008, and the ratio
