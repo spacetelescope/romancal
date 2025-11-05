@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 import astropy.units as u
 import numpy as np
+from numpy import fft
 from astropy.convolution import Box2DKernel, convolve
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.nddata import NDData
@@ -29,102 +30,138 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def azimuthally_smooth(data, oversample=2, pixel_scale_ratio=1.0, order=5):
-    """Azimuthally smooth model
 
-    The image is converted to polar coordinates via a 4th order spline interpolation.
-    The image average is determined at each radius, and a final image is constructed by reprojecting this averaged
-    image back into cartesian coordinates.
+def cart_to_polar(image, oversample=2, order=3):
+    """Convert an image from cartesian to polar coordinates.
 
     Parameters
     ----------
-    data : nd.array(size=(*, *))
-        Data to be smoothed.
+    image : np.ndarray
+        The image to convert to polar coordinates
 
     oversample : int
-        Oversampling of the data to improve fidelity of the conversions
-        between cartesian and polar layout
-
-    pixel_scale_ratio : float
-        Desired final output pixel scale over input pixel scale
-
-    order : int
-        Order of the spline interpolation used for the coordinate transformations
-
-    Returns
-    -------
-    smoothed : nd.array(size=(*, *))
-        The azimuthally smoothed image
+        The oversampling factor 
     """
-
-    # Define cartesian->polar->cartesian conversion.
-    # Significant difference is the polar back to cartesian uses
-    # the original data's transformation parameters, to reproduce
-    # an image of the correct dimensions.
-    def cart_to_polar(model, oversample=2, order=order):
-        ntheta = 4 * model.shape[0] * oversample
-        nrad = model.shape[0] * oversample
-        szo2 = model.shape[0] // 2
-        rr = np.linspace(0, szo2 * np.sqrt(2), nrad)
-        tt = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
-        xx = rr[:, None] * np.cos(tt[None, :]) + szo2
-        yy = rr[:, None] * np.sin(tt[None, :]) + szo2
-        modelpolar = map_coordinates(
-            model, [xx, yy], order=order, mode="nearest", output=np.dtype("f4")
-        )
-        return modelpolar, rr, tt
-
-    def polar_to_cart(model, rr, tt, pixel_scale_ratio=1.0, order=order):
-        sz = data.shape[0]
-        sz = math.ceil(sz / pixel_scale_ratio)
-        szo2 = sz // 2
-        xo, yo = np.mgrid[-szo2 : szo2 + 1, -szo2 : szo2 + 1] * pixel_scale_ratio
-        ro = np.sqrt(xo**2 + yo**2)
-        to = np.arctan2(yo, xo) % (2 * np.pi)
-        ro = np.interp(ro, rr, np.arange(len(rr)).astype("f4"))
-        to = np.interp(to, tt, np.arange(len(tt)).astype("f4"))
-        res = map_coordinates(
-            model, [ro, to], order=order, mode="wrap", output=np.dtype("f4")
-        )
-        res *= pixel_scale_ratio**2  # keep normalization at 1
-        return res
-
-    polar, rr, tt = cart_to_polar(data, oversample=oversample)
-    polar_mean = np.mean(polar, axis=1, keepdims=True)
-    smoothed = polar_to_cart(polar_mean, rr, tt, pixel_scale_ratio=pixel_scale_ratio)
-
-    return smoothed
+    ntheta = 4 * image.shape[0] * oversample
+    nrad = image.shape[0] * oversample
+    szo2 = image.shape[0] // 2
+    rr = np.linspace(0, szo2 * np.sqrt(2), nrad)
+    tt = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
+    xx = rr[:, None] * np.cos(tt[None, :]) + szo2
+    yy = rr[:, None] * np.sin(tt[None, :]) + szo2
+    imagepolar = map_coordinates(
+        image, [yy, xx], order=order, mode="constant",
+        output=image.dtype, cval=np.nan,
+    )
+    return imagepolar, rr, tt
 
 
-def azimuthally_smooth_fft(data, oversample=2, pixel_scale_ratio=1.0, order=5):
+def azimuthally_average_via_fft(data, oversample=2, pixel_scale_ratio=1.0):
+    """Average a function azimuthally via FFT.
 
-    def cart_to_polar(model, oversample=2, order=order):
-        ntheta = 4 * model.shape[0] * oversample
-        nrad = model.shape[0] * oversample
-        szo2 = model.shape[0] // 2
-        rr = np.linspace(0, szo2 * np.sqrt(2), nrad)
-        tt = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
-        xx = rr[:, None] * np.cos(tt[None, :]) + szo2
-        yy = rr[:, None] * np.sin(tt[None, :]) + szo2
-        modelpolar = map_coordinates(
-            model, [xx, yy], order=order, mode="nearest", output=np.dtype("f4")
-        )
-        return modelpolar, rr, tt
+    Assumes that the data to be smooth is roughly circularly symmetric about
+    the center of the image.  If not, large phase changes from pixel to pixel
+    in the FFT will ruin the averaging in the FFT.
 
-    fft = np.fft.fftshift(np.fft.fft2(data))
-    polar, kk, tt = cart_to_polar(fft)
-    azimuthal_average = np.mean(polar, axis=1)
-    azimuthal_average = np.real(azimuthal_average)
+    Smoothing via the FFT rather than directly in real space is nice
+    when the image to be smoothed has nice properties in FFT space.
+    For example, for diffraction-limited PSF stamps, the FFT goes to
+    zero beyond some radius.  This averaging will preserve that behavior,
+    which can be lost in direct-space averaging approaches.
+    """
+    assert data.shape[0] == data.shape[1]
+
+    imfft = fft.fftshift(fft.fft2(fft.ifftshift(data)))
+    polar, rr, tt = cart_to_polar(imfft)
+    kk = rr / data.shape[0]
+
+    azimuthal_average = np.real(np.nanmean(polar, axis=1))
     npts = 2 * (int(np.ceil(data.shape[0] / pixel_scale_ratio)) // 2) + 1
 
-    newk = np.fft.fftshift(np.fft.fftfreq(npts, d=pixel_scale_ratio))
+    newk = fft.fftshift(fft.fftfreq(npts, d=pixel_scale_ratio))
     newkgrid = np.meshgrid(newk, newk)
     newkgrid_r = np.hypot(newkgrid[0], newkgrid[1])
     f_interp = np.interp(newkgrid_r.ravel(), kk, azimuthal_average, left=0, right=0)  # better interpolation needed?
     f_interp = f_interp.reshape(npts, npts)
 
-    psf_new = np.real(np.fft.ifft2(np.fft.ifftshift(f_interp)))
+    psf_new = np.real(fft.fftshift(fft.ifft2(fft.ifftshift(f_interp))))
     return psf_new
+
+
+def convolve_box_tophat(image, size):
+    """Convolve image with a rectangular top-hat of given size (in pixels)."""
+    image_fft = fft.fft2(image)
+    kk = fft.fftfreq(image.shape[0])
+    kx, ky = np.meshgrid(kk, kk)
+    kernel = np.sinc(size * kx) * np.sinc(size * ky)
+    res = np.real(fft.ifft2(image_fft * kernel))
+    return res
+
+
+def create_convolution_kernel(input_psf, target_psf,
+                                        min_fft_power_ratio=1e-3):
+    """Find convolution kernel which convolves input_psf to match target_psf.
+
+    The nominal photutils matching kernel code does a straight ratio of the target
+    and input PSFs in Fourier space.  This is a little fraught for our PSFs
+    where they go to ~0 at high frequencies, and unless the window function is
+    also exactly zero there, you can get huge amounts of power.
+
+    To mitigate this, we introduce a parameter that controls what FFT powers to
+    set to zero due to being too small.  Values in the FFT smaller than this
+    are zeroed.  If the input FFT is zero where the target FFT is non-zero,
+    this function will emit an error message but will otherwise let those
+    frequencies propagate through unchanged.  This will not produce a good matching
+    PSF.
+
+    Parameters
+    ----------
+    input_psf : np.ndarray
+        The input PSF which needs to be convolved
+
+    target_psf : np.ndarray
+        The target PSF which input_psf should match following convolution
+
+    min_fft_power_ratio : float
+        zero power in the FFT when it is smaller than this ratio times its
+        peak
+
+    Returns
+    -------
+    kernel : np.ndarray
+        Convolution kernel taking input_psf to target_psf
+    """
+    # if window is None:
+    #     window = matching.TopHatWindow(0.25)
+
+    input_psf = input_psf.copy()
+    target_psf = target_psf.copy()
+    
+    input_psf /= input_psf.sum()
+    target_psf /= target_psf.sum()
+
+    input_fft = fft.fft2(fft.ifftshift(input_psf))
+    target_fft = fft.fft2(fft.ifftshift(target_psf))
+
+    target_power = np.abs(target_fft)
+    input_power = np.abs(input_fft)
+    mtarget = target_power > np.max(target_power) * min_fft_power_ratio
+    minput = input_power > np.max(input_power) * min_fft_power_ratio
+    target_fft[~mtarget] = 0
+    input_fft[~minput] = 0
+
+    if np.any((target_fft != 0) & (input_fft == 0)):
+        log.error('Could not create good matching kernel!')
+    
+    
+    ratio = target_fft / (input_fft + (input_fft == 0))
+
+    kernel = fft.fftshift(np.real(fft.fftshift(fft.ifft2(ratio))))
+    return kernel / kernel.sum()
+
+
+    return matching.create_matching_kernel(
+        input_psf.data, target_psf.data, window=window)
 
 
 def get_gridded_psf_model(psf_ref_model):
@@ -154,8 +191,9 @@ def get_gridded_psf_model(psf_ref_model):
     oversample = psf_ref_model.meta.oversample
     pixel_response_kernel = Box2DKernel(width=oversample)
     for i in range(psf_images.shape[0]):
-        psf = psf_images[i, :, :]
-        im = convolve(psf, pixel_response_kernel) * oversample**2
+        psf = psf_images[i, :, :].copy()
+        # im = convolve(psf, pixel_response_kernel) * oversample**2
+        im = convolve_box_tophat(psf, oversample) * oversample**2
         psf_images[i, :, :] = im
 
     meta["grid_xypos"] = position_list
@@ -215,6 +253,7 @@ def create_l3_psf_model(
     pts = np.linspace(-stamp_radius + center, stamp_radius + center, npix)
     xx, yy = np.meshgrid(pts, pts)
     psf = gridpsf.evaluate(xx, yy, 1, center, center)
+    psf1 = psf.copy()
     detector_pixel_scale = 0.11  # Roman native scale
     # psf is now a stamp going 10 pixels out from the center of the PSF
     # at the native PSF scale, oversampled by a factor of oversample.
@@ -222,48 +261,24 @@ def create_l3_psf_model(
     # Smooth to account for the pixfrac used to create the L3 image.
     pixfrac_kernel = Box2DKernel(width=pixfrac * oversample)
     psf = convolve(psf, kernel=pixfrac_kernel)
-
+    psf2 = psf.copy()
     # Smooth to the image scale
     outscale_kernel = Box2DKernel(width=oversample * pixel_scale / detector_pixel_scale)
-    psf = convolve(psf, kernel=outscale_kernel)
-
+    # psf = convolve(psf, kernel=outscale_kernel)
+    psf = convolve_box_tophat(psf, size=oversample * pixel_scale / detector_pixel_scale)
+    psf3 = psf.copy()
     # Azimuthally smooth the psf
-    psf = azimuthally_smooth(psf, pixel_scale_ratio=pixel_scale / detector_pixel_scale)
+    psf = azimuthally_average_via_fft(psf, pixel_scale_ratio=pixel_scale / detector_pixel_scale)
 
     # Create the PSF model.
     x_0, y_0 = psf.shape
     x_0 = (x_0 - 1) / 2.0 / oversample
     y_0 = (y_0 - 1) / 2.0 / oversample
     psf_model = ImagePSF(psf, x_0=x_0, y_0=y_0, oversampling=oversample)
+    import pdb
+    pdb.set_trace()
 
     return psf_model
-
-
-def create_convolution_kernel(input_psf, target_psf, window=None):
-    """Find convolution kernel which convolves input_psf to match target_psf.
-
-    Parameters
-    ----------
-    input_psf : np.ndarray
-        The input PSF which needs to be convolved
-
-    target_psf : np.ndarray
-        The target PSF which input_psf should match following convolution
-
-    window : photutils.psf.matching window class or None
-        The window function to use to regularize the kernel
-        photutils.psf.matching.TopHatWindow(0.25) will be used if not
-        specified
-
-    Returns
-    -------
-    kernel : np.ndarray
-        Convolution kernel taking input_psf to target_psf
-    """
-    # if window is None:
-    #     window = matching.TopHatWindow(0.25)
-    return matching.create_matching_kernel(
-        input_psf.data, target_psf.data, window=window)
 
 
 def fit_psf_to_image_model(
