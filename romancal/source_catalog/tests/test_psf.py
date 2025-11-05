@@ -240,12 +240,6 @@ def test_add_jitter(setup_inputs):
         psf_ref_model.psf[idx][center], xx[center]
     )
 
-# new functions
-# _cart_to_polar
-# _azimuthally_average_via_fft
-# _downsample_by_interpolation
-# create_convolution_kernel
-# central_stamp
 
 def test_azimuthally_average_via_fft(setup_inputs):
     psf_ref_model_f087 = setup_inputs["psf_ref_model_f087"]
@@ -267,8 +261,6 @@ def test_azimuthally_average_via_fft(setup_inputs):
 
     assert np.mean(delta) < 1.0e-6
     assert mad_std(delta) < 1.0e-3
-
-
 
 
 @pytest.mark.parametrize(
