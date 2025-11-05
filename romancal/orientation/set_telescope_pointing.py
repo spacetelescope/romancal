@@ -43,19 +43,20 @@ All the transformation matrices, as defined by
 coordinates for a particular frame-of-reference. The initial DCM is provided
 through the engineering telemetry and represents how the observatory is orientated.
 
-** META Affected**
+**META Affected**
+
 The following meta values are populated:
 
-- meta.pointing.dec_v1
-- meta.pointing.pa_aperture
-- meta.pointing.pa_v3
-- meta.pointing.pointing_engineering_source
-- meta.pointing.ra_v1
-- meta.wcsinfo.dec_ref
-- meta.wcsinfo.ra_ref
-- meta.wcsinfo.roll_ref
-- meta.wcsinfo.s_region
-
+    - meta.pointing.dec_v1
+    - meta.pointing.pa_aperture
+    - meta.pointing.pa_v3
+    - meta.pointing.ra_v1
+    - meta.pointing.target_dec
+    - meta.pointing.target_ra
+    - meta.wcsinfo.dec_ref
+    - meta.wcsinfo.ra_ref
+    - meta.wcsinfo.roll_ref
+    - meta.wcsinfo.s_region
 """
 
 import dataclasses
@@ -224,10 +225,8 @@ class TransformParameters:
     allow_default: bool = False
     #: Aperture in use
     aperture: str = ""
-    #: The V3 position angle to use if the pointing information is not found.
-    default_pa_v3: float = 0.0
-    #: Do not write out the modified file.
-    dry_run: bool = False
+    #: Default quaternion to use if engineering is not available.
+    default_quaternion: tuple | None = None
     #: Observation end time
     obsend: float | None = None
     #: Observation start time
@@ -239,6 +238,8 @@ class TransformParameters:
     reduce_func: Callable | None = None
     #: Engineering database information
     service_kwargs: dict | None = None
+    #: The `pysiaf` module.
+    pysiaf: Any | None = None
     #: If no telemetry can be found during the observation,
     #: the time, in seconds, beyond the observation time to search for telemetry.
     tolerance: float = 60.0
@@ -262,14 +263,20 @@ class TransformParameters:
             reduce_func=self.reduce_func,
         )
 
+    def __post_init__(self):
+        # Get the pysiaf module.
+        # Done here to avoid the explicit dependency of romancal on psyiaf.
+        import pysiaf
+
+        self.pysiaf = pysiaf
+
+        # Setup the default reduction function.
+        if not self.reduce_func:
+            self.reduce_func = pointing_from_average
+
 
 def add_wcs(
     filename,
-    default_pa_v3=0.0,
-    service_kwargs=None,
-    tolerance=60,
-    allow_default=False,
-    reduce_func=None,
     dry_run=False,
     save_transforms=None,
     **transform_kwargs,
@@ -287,34 +294,15 @@ def add_wcs(
     filename : str
         The path to a data file.
 
-    default_pa_v3 : float
-        The V3 position angle to use if the pointing information
-        is not found.
-
-    service_kwargs : dict or None
-        Keyword arguments passed to `engdb_service` defining what
-        engineering database service to use.
-
-    tolerance : int
-        If no telemetry can be found during the observation,
-        the time, in seconds, beyond the observation time to
-        search for telemetry.
-
-    allow_default : bool
-        If telemetry cannot be determine, use existing
-        information in the observation's header.
-
-    reduce_func : func or None
-        Reduction function to use on values.
-
     dry_run : bool
-        Do not write out the modified file.
+        Execute but do not modify the file.
 
     save_transforms : Path-like or None
         File to save the calculated transforms to.
 
     **transform_kwargs : dict
-        Keyword arguments used by matrix calculation routines.
+        dict to use to initialize the `TransformParameters` object.
+        See `TransformParameters` for more information.`
 
     Notes
     -----
@@ -344,11 +332,6 @@ def add_wcs(
 
         t_pars, transforms = update_wcs(
             model,
-            default_pa_v3=default_pa_v3,
-            service_kwargs=service_kwargs,
-            tolerance=tolerance,
-            allow_default=allow_default,
-            reduce_func=reduce_func,
             **transform_kwargs,
         )
 
@@ -366,12 +349,6 @@ def add_wcs(
 
 def update_wcs(
     model,
-    default_pa_v3=0.0,
-    default_roll_ref=0.0,
-    service_kwargs=None,
-    tolerance=60,
-    allow_default=False,
-    reduce_func=None,
     **transform_kwargs,
 ):
     """
@@ -388,28 +365,9 @@ def update_wcs(
     model : `~roman.datamodels.DataModel`
         The model to update.
 
-    default_roll_ref : float
-        If pointing information cannot be retrieved,
-        use this as the roll ref angle.
-
-    service_kwargs : dict or None
-        Keyword arguments passed to `engdb_service` defining what
-        engineering database service to use.
-
-    tolerance : int
-        If no telemetry can be found during the observation,
-        the time, in seconds, beyond the observation time to
-        search for telemetry.
-
-    allow_default : bool
-        If telemetry cannot be determine, use existing
-        information in the observation's header.
-
-    reduce_func : func or None
-        Reduction function to use on values.
-
     **transform_kwargs : dict
-        Keyword arguments used by matrix calculation routines.
+        dict to use to initialize the `TransformParameters` object.
+        See `TransformParameters` for more information.`
 
     Returns
     -------
@@ -418,18 +376,9 @@ def update_wcs(
         None for either if telemetry calculations were not
         performed.
     """
-    t_pars = transforms = None  # Assume telemetry is not used.
-
     # Configure transformation parameters.
-    t_pars = t_pars_from_model(
-        model,
-        default_pa_v3=default_pa_v3,
-        service_kwargs=service_kwargs,
-        tolerance=tolerance,
-        allow_default=allow_default,
-        reduce_func=reduce_func,
-        **transform_kwargs,
-    )
+    t_pars = TransformParameters(**transform_kwargs)
+    t_pars_from_model(model, t_pars)
 
     # Calculate WCS.
     transforms = update_wcs_from_telem(model, t_pars)
@@ -461,57 +410,48 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
         If available, the transformation matrices.
     """
     logger.info("Updating wcs from telemetry.")
-    transforms = None  # Assume no transforms are calculated.
 
-    # Setup default WCS info if actual pointing and calculations fail.
-    wcsinfo = WCSRef(
-        model.meta.pointing.target_ra,
-        model.meta.pointing.target_dec,
-        model.meta.pointing.pa_v3,
-    )
-    vinfo = wcsinfo
+    # Initialization. If provided, provide a default Pointing.
+    transforms = None  # Assume no transforms are calculated.
+    quality = None  # Unknown pointing quality.
 
     # Get the pointing information
-    quality = "PLANNED"
     try:
         t_pars.update_pointing()
     except ValueError as exception:
-        if not t_pars.allow_default:
+        logger.error("Cannot retrieve valid engineering orientation data")
+        if t_pars.default_quaternion is None or not t_pars.allow_default:
+            logger.error("Use of default orientation has been disabled. Aborting.")
             raise
         else:
-            logger.warning(
-                "Cannot retrieve valid telescope pointing."
-                " Default pointing parameters will be used."
-            )
             logger.warning("Exception is %s", exception)
+            obstime = Time(
+                (t_pars.obsstart.mjd + t_pars.obsend.mjd) / 2.0, format="mjd"
+            )
+            logger.warning(
+                "Using provided default quaternion: %s", t_pars.default_quaternion
+            )
+            logger.warning("    at time %s", obstime.iso)
             logger.info("Setting pointing quality to PLANNED")
+            t_pars.pointing = Pointing(q=t_pars.default_quaternion, obstime=obstime)
             quality = "PLANNED"
     else:
         logger.info("Successful read of engineering quaternions:")
         logger.info("\tPointing: %s", t_pars.pointing)
+        quality = "CALCULATED"
 
-    # If pointing is available, attempt to calculate WCS information
-    if t_pars.pointing is not None:
-        try:
-            wcsinfo, vinfo, transforms = calc_wcs(t_pars)
-            quality = "CALCULATED"
-            logger.info("Setting pointing quality to %s", quality)
-        except EXPECTED_ERRORS as e:
-            logger.warning(
-                "WCS calculation has failed and will be skipped."
-                "Default pointing parameters will be used."
-            )
-            logger.warning("Exception is %s", e)
-            if not t_pars.allow_default:
-                raise
-            else:
-                logger.info("Setting pointing quality to PLANNED")
-                quality = "PLANNED"
-    logger.info("Aperture WCS info: %s", wcsinfo)
-    logger.info("V1 WCS info: %s", vinfo)
+    # Attempt to calculate WCS information
+    try:
+        wcsinfo, vinfo, transforms = calc_wcs(t_pars)
+        logger.info("Setting pointing quality to %s", quality)
+    except EXPECTED_ERRORS:
+        logger.error("WCS calculation has failed")
+        raise
 
     # Update model meta.
-    update_meta(model, wcsinfo, vinfo, quality)
+    logger.info("Aperture WCS info: %s", wcsinfo)
+    logger.info("V1 WCS info: %s", vinfo)
+    update_meta(model, t_pars.pysiaf, wcsinfo, vinfo, quality)
 
     return transforms
 
@@ -590,17 +530,20 @@ def calc_wcs(t_pars: TransformParameters):
     vinfo = calc_wcs_from_matrix(transforms.m_eci2v)
 
     # Calculate the Aperture WCS
-    wcsinfo = wcsinfo_from_siaf(t_pars.aperture, vinfo)
+    wcsinfo = wcsinfo_from_siaf(t_pars.pysiaf, t_pars.aperture, vinfo)
 
     # That's all folks
     return wcsinfo, vinfo, transforms
 
 
-def wcsinfo_from_siaf(aperture, vinfo):
+def wcsinfo_from_siaf(pysiaf, aperture, vinfo):
     """Calculate aperture reference point WCS from V-frame WCS and SIAF
 
     Parameters
     ----------
+    pysiaf : module
+        The `pysiaf` module.
+
     aperture : str
         The aperture in use
 
@@ -612,17 +555,14 @@ def wcsinfo_from_siaf(aperture, vinfo):
     wcsinfo : WCSRef
         The WCS for the aperture's reference point, as defined by its SIAF.
     """
-    from pysiaf import Siaf
-    from pysiaf.utils.rotations import attitude_matrix, sky_posangle
+    from pysiaf.utils.rotations import sky_posangle
 
-    siaf = Siaf("roman")
-    boresight = siaf["BORESIGHT"]
+    siaf = pysiaf.Siaf("roman")
     wfi = siaf[aperture.upper()]
 
     # For transformations between the telescope frame and all other frames,
     # an attitude matrix is created using the V-frame WCS information.
-    v_refpoint = boresight.reference_point(to_frame="tel")
-    attitude = attitude_matrix(*v_refpoint, vinfo.ra, vinfo.dec, vinfo.pa)
+    attitude = attitude_from_v1(pysiaf, vinfo)
     wfi.set_attitude_matrix(attitude)
     skycoord = wfi.reference_point(to_frame="sky")
     pa_v3 = sky_posangle(attitude, *skycoord)
@@ -1295,7 +1235,7 @@ def fill_mnemonics_chronologically_table(mnemonics, filled_only=True):
     return t
 
 
-def t_pars_from_model(model, **t_pars_kwargs):
+def t_pars_from_model(model, t_pars):
     """
     Initialize TransformParameters from a DataModel.
 
@@ -1304,17 +1244,10 @@ def t_pars_from_model(model, **t_pars_kwargs):
     model : DataModel
         Data model to initialize from.
 
-    **t_pars_kwargs : dict
-        Keyword arguments used to initialize the TransformParameters object
-        before reading from the model meta information.
-
-    Returns
-    -------
     t_par : TransformParameters
-        The initialized parameters.
+        Transformation parameters updated with model information.
+        Updating is performed in-place.
     """
-    t_pars = TransformParameters(**t_pars_kwargs)
-
     # Instrument details
     t_pars.aperture = model.meta.wcsinfo.aperture_name
     try:
@@ -1327,12 +1260,6 @@ def t_pars_from_model(model, **t_pars_kwargs):
     t_pars.obsstart = model.meta.exposure.start_time
     t_pars.obsend = model.meta.exposure.end_time
     logger.debug("Observation time: %s - %s", t_pars.obsstart, t_pars.obsend)
-
-    # Set pointing reduction function if not already set.
-    if not t_pars.reduce_func:
-        t_pars.reduce_func = pointing_from_average
-
-    return t_pars
 
 
 def dcm(alpha, delta, angle):
@@ -1377,7 +1304,7 @@ def dcm(alpha, delta, angle):
     return dcm
 
 
-def update_meta(model, wcsinfo, vinfo, quality):
+def update_meta(model, pysiaf, wcsinfo, vinfo, quality):
     """Update model's meta info with the given pointing.
 
     The following meta are update:
@@ -1385,6 +1312,8 @@ def update_meta(model, wcsinfo, vinfo, quality):
     - meta.pointing.pa_aperture
     - meta.pointing.pa_v3
     - meta.pointing.ra_v1
+    - meta.pointing.target_dec
+    - meta.pointing.target_ra
     - meta.wcsinfo.dec_ref
     - meta.wcsinfo.ra_ref
     - meta.wcsinfo.roll_ref
@@ -1395,6 +1324,9 @@ def update_meta(model, wcsinfo, vinfo, quality):
     model : `~roman.datamodels.DataModel`
         The model to update. Updates are done in-place.
 
+    pysiaf : module
+        The `pysiaf` module.
+
     wcsinfo : `WCSRef``
         The aperture-specific pointing.
 
@@ -1404,28 +1336,72 @@ def update_meta(model, wcsinfo, vinfo, quality):
     quality : str
         Indicator of the success of the pointing determination.
     """
+    # Shortcuts to the meta blocks
+    wm = model.meta.wcsinfo
+    pm = model.meta.pointing
+
+    # Setup SIAF info.
     from pysiaf import Siaf
+
+    siaf = Siaf("roman")
+    aper = siaf[wm.aperture_name.upper()]
 
     # Set the quality
     model.meta.pointing.pointing_engineering_source = quality
 
     # Update SIAF-related meta
-    wm = model.meta.wcsinfo
-    siaf = Siaf("roman")
-    aper = siaf[wm.aperture_name.upper()]
     wm.v2_ref = aper.V2Ref
     wm.v3_ref = aper.V3Ref
-    wm.vparity = aper.VIdlParity
     wm.v3yangle = aper.V3IdlYAngle
+    wm.vparity = aper.VIdlParity
 
-    # Update Aperture pointing
-    wm.ra_ref = wcsinfo.ra
+    # Update aperture-centric pointing, represented by `wcsinfo`
     wm.dec_ref = wcsinfo.dec
-    wm.s_region = wcsinfo.s_region
+    wm.ra_ref = wcsinfo.ra
     wm.roll_ref = wcsinfo.pa
+    wm.s_region = wcsinfo.s_region
 
-    # Update V1 pointing
-    model.meta.pointing.pa_aperture = wcsinfo.pa
-    model.meta.pointing.ra_v1 = vinfo.ra
-    model.meta.pointing.dec_v1 = vinfo.dec
-    model.meta.pointing.pa_v3 = vinfo.pa
+    # Update general pointing information, including V1.
+    pm.dec_v1 = vinfo.dec
+    pm.pa_aperture = wcsinfo.pa
+    pm.pa_v3 = vinfo.pa
+    pm.ra_v1 = vinfo.ra
+
+    # Update target's sky location.
+    # This is currently defined as what point in the sky the
+    # virtual aperture WFI_CEN V2/V3 reference is pointing at.
+    attitude = attitude_from_v1(pysiaf, vinfo)
+    wfi_cen = siaf["WFI_CEN"]
+    wfi_cen.set_attitude_matrix(attitude)
+    skycoord = wfi_cen.reference_point(to_frame="sky")
+    pm.target_ra = skycoord[0]
+    pm.target_dec = skycoord[1]
+
+
+def attitude_from_v1(pysiaf, vinfo):
+    """Calculate observatory attitude matrix based on V1 pointing
+
+    Return the attitude matrix used by `pysiaf.Aperture.set_attitude_matrix`
+    to enable transformations to/from the 'sky' frame.
+
+    Parameters
+    ----------
+    pysiaf : module
+        The `pysiaf` module
+
+    vinfo : `WCSRef`
+        The WCS information for V1, the boresight.
+
+    Returns
+    -------
+    attitude : np.array((3, 3), dtype=float)
+        The attitude matrix.
+    """
+    from pysiaf.utils.rotations import attitude_matrix
+
+    siaf = pysiaf.Siaf("roman")
+    boresight = siaf["BORESIGHT"]
+    v_refpoint = boresight.reference_point(to_frame="tel")
+    attitude = attitude_matrix(*v_refpoint, vinfo.ra, vinfo.dec, vinfo.pa)
+
+    return attitude
