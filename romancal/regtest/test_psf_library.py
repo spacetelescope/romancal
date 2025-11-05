@@ -164,7 +164,7 @@ def test_psf_library_jitter(render_psfs):
     assert rms(stamps["center"], yy) < rms(stamps["jitter"], yy)
 
 
-def test_psf_match(render_psfs):
+def test_psf_match(render_psfs, ignore_asdf_paths):
     rtdata, _ = render_psfs
-    diff = compare_asdf(rtdata.output, rtdata.truth)
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
