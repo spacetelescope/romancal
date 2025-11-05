@@ -1,6 +1,6 @@
+from copy import deepcopy
 from pathlib import Path
 from re import match
-from copy import deepcopy
 
 import astropy.units as u
 import numpy as np
@@ -12,9 +12,9 @@ from astropy.time import Time
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import MosaicModel, MultibandSegmentationMapModel
 
-from romancal.skycell.tests.test_skycell_match import mk_gwcs
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog import MultibandCatalogStep
+from romancal.skycell.tests.test_skycell_match import mk_gwcs
 
 
 def make_test_image():
@@ -59,10 +59,9 @@ def mosaic_model(shape=(101, 101)):
     model.meta.wcsinfo.pixel_scale = 0.11 / 3600  # degrees
 
     model.meta.wcsinfo.ra_ref = 270.0  # degrees
-    model.meta.wcsinfo.dec_ref = 66.0 # degrees
+    model.meta.wcsinfo.dec_ref = 66.0  # degrees
     model.meta.wcsinfo.roll_ref = 0.0  # degrees
-    model.meta.coadd_info.exposure_time = 300 # seconds
-
+    model.meta.coadd_info.exposure_time = 300  # seconds
 
     model.meta.resample.pixfrac = 0.5
     model.meta.data_release_id = "r1"
@@ -229,6 +228,7 @@ def test_multiband_catalog_some_invalid_inputs(
     assert np.all(np.isnan(cat["segment_f184_flux"]))
     assert np.all(np.isnan(cat["segment_f184_flux_err"]))
 
+
 def make_si_test_image():
     g1 = Gaussian2D(60.5, 11, 12, 1.5, 1.5)
     g2 = Gaussian2D(35, 65, 18, 9.2, 4.5)
@@ -239,7 +239,7 @@ def make_si_test_image():
     g7 = Gaussian2D(48.5, 85, 88, 4, 2, theta=-30 * u.deg)
 
     yy, xx = np.mgrid[0:100, 0:100]
-    smalldata = np.zeros(shape=(len(yy),len(xx)))
+    smalldata = np.zeros(shape=(len(yy), len(xx)))
     smalldata = (
         g1(xx, yy)
         + g2(xx, yy)
@@ -250,7 +250,7 @@ def make_si_test_image():
         + g7(xx, yy)
     ).value.astype("float32")
 
-    data = np.zeros(shape=(500,500))
+    data = np.zeros(shape=(500, 500))
     data = np.tile(smalldata, (5, 5))
 
     rng = np.random.default_rng(seed=123)
@@ -260,6 +260,7 @@ def make_si_test_image():
     err = np.zeros_like(data) + noise_scale
 
     return data, err
+
 
 @pytest.fixture
 def mosaic_si_model(shape=(500, 500)):
@@ -275,9 +276,9 @@ def mosaic_si_model(shape=(500, 500)):
     model.meta.wcsinfo.pixel_scale = 0.11 / 3600  # degrees
 
     model.meta.wcsinfo.ra_ref = 270.0  # degrees
-    model.meta.wcsinfo.dec_ref = 66.0 # degrees
+    model.meta.wcsinfo.dec_ref = 66.0  # degrees
     model.meta.wcsinfo.roll_ref = 0.0  # degrees
-    model.meta.coadd_info.exposure_time = 1 # seconds
+    model.meta.coadd_info.exposure_time = 1  # seconds
 
     model.meta.resample.pixfrac = 0.5
     model.meta.data_release_id = "r1"
@@ -293,11 +294,13 @@ def mosaic_si_model(shape=(500, 500)):
 
     return model
 
+
 @pytest.fixture
 def library_model2(mosaic_si_model):
     si_model2 = deepcopy(mosaic_si_model)
     si_model2.meta.instrument.optical_element = "F158"
     return ModelLibrary([mosaic_si_model, si_model2])
+
 
 # @pytest.mark.parametrize("fit_psf", (True, False))
 @pytest.mark.parametrize("fit_psf", (False,))
@@ -335,9 +338,22 @@ def test_multiband_source_injection_catalog(
     # Ensure all original objects found in the proper location
     cat["x_mod"] = np.mod(np.round(cat["x_centroid"]), 100)
     cat["y_mod"] = np.mod(np.round(cat["y_centroid"]), 100)
-    gocj_locs = [(11, 12,), (65, 18,), (41, 43),
-        (17, 53), (65, 71), (20, 80), (85, 88)]
-    for modx, mody in cat[["x_mod","y_mod"]]:
+    gocj_locs = [
+        (
+            11,
+            12,
+        ),
+        (
+            65,
+            18,
+        ),
+        (41, 43),
+        (17, 53),
+        (65, 71),
+        (20, 80),
+        (85, 88),
+    ]
+    for modx, mody in cat[["x_mod", "y_mod"]]:
         assert (modx, mody) in gocj_locs
 
     # Source injected and original images

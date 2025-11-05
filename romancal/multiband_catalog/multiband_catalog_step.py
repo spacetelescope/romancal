@@ -17,12 +17,12 @@ from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog.background import subtract_background_library
 from romancal.multiband_catalog.detection_image import make_detection_image
 from romancal.multiband_catalog.utils import add_filter_to_colnames
+from romancal.source_catalog import injection
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.utils import get_ee_spline
-from romancal.source_catalog import injection
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -164,8 +164,9 @@ class MultibandCatalogStep(RomanStep):
         # Source Injection
         if self.inject_sources:
             # Imports
-            from astropy.coordinates import SkyCoord
             from astropy import units as u
+            from astropy.coordinates import SkyCoord
+
             from romancal.skycell.tests.test_skycell_match import mk_gwcs
 
             # Make copy of detection image to inject sources into
@@ -212,11 +213,14 @@ class MultibandCatalogStep(RomanStep):
                 si_model.var_poisson = si_model.err**2
 
             # Create source grid points
-            si_x_pos, si_y_pos = injection.make_source_grid(si_model,
-                yxmax=si_model.data.shape, yxoffset=(50, 50), yxgrid=(20, 20))
+            si_x_pos, si_y_pos = injection.make_source_grid(
+                si_model, yxmax=si_model.data.shape, yxoffset=(50, 50), yxgrid=(20, 20)
+            )
 
-            si_cen = SkyCoord(ra=det_model.meta.wcsinfo.ra_ref * u.deg,
-                              dec=det_model.meta.wcsinfo.dec_ref * u.deg,)
+            si_cen = SkyCoord(
+                ra=det_model.meta.wcsinfo.ra_ref * u.deg,
+                dec=det_model.meta.wcsinfo.dec_ref * u.deg,
+            )
 
             # Obtain exposure times and filters
             # This code assumes all filters have been coadded already,
@@ -227,8 +231,9 @@ class MultibandCatalogStep(RomanStep):
                 for model in library:
                     si_filter_name = model.meta.instrument.optical_element
 
-                    si_exptimes[si_filter_name] = \
-                        float(model.meta.coadd_info.exposure_time)
+                    si_exptimes[si_filter_name] = float(
+                        model.meta.coadd_info.exposure_time
+                    )
                     si_filters.append(si_filter_name)
 
                     library.shelve(model, modify=False)
@@ -238,15 +243,23 @@ class MultibandCatalogStep(RomanStep):
                 det_model.meta.wcsinfo.ra_ref,
                 det_model.meta.wcsinfo.dec_ref,
                 det_model.meta.wcsinfo.roll_ref,
-                bounding_box=((-0.5, model.data.shape[0] - 0.5), (-0.5, model.data.shape[1] - 0.5)),
+                bounding_box=(
+                    (-0.5, model.data.shape[0] - 0.5),
+                    (-0.5, model.data.shape[1] - 0.5),
+                ),
                 shape=model.data.shape,
             )
 
-            si_ra, si_dec = wcsobj.pixel_to_world_values(np.array(si_x_pos), np.array(si_y_pos))
+            si_ra, si_dec = wcsobj.pixel_to_world_values(
+                np.array(si_x_pos), np.array(si_y_pos)
+            )
 
             # Generate cosmos-like catalog
             si_cat = injection.make_cosmoslike_catalog(
-                cen=si_cen, ra=si_ra, dec=si_dec, exptimes=si_exptimes,
+                cen=si_cen,
+                ra=si_ra,
+                dec=si_dec,
+                exptimes=si_exptimes,
             )
 
             # Save catalog to segmentation image
@@ -367,7 +380,9 @@ class MultibandCatalogStep(RomanStep):
 
                     # Add the filter name to the column names
                     si_filter_name = si_model.meta.instrument.optical_element
-                    si_model_cat = add_filter_to_colnames(si_catobj.catalog, si_filter_name)
+                    si_model_cat = add_filter_to_colnames(
+                        si_catobj.catalog, si_filter_name
+                    )
                     si_ee_fractions = si_model_cat.meta["ee_fractions"]
                     si_model_cat.meta = None
 
@@ -375,8 +390,12 @@ class MultibandCatalogStep(RomanStep):
                     # The outer join prevents an empty table if any
                     # columns have the same name but different values
                     # (e.g., repeated filter names)
-                    si_det_cat = join(si_det_cat, si_model_cat, keys="label", join_type="outer")
-                    si_det_cat.meta["ee_fractions"][si_filter_name.lower()] = si_ee_fractions
+                    si_det_cat = join(
+                        si_det_cat, si_model_cat, keys="label", join_type="outer"
+                    )
+                    si_det_cat.meta["ee_fractions"][si_filter_name.lower()] = (
+                        si_ee_fractions
+                    )
 
                 # accumulate image metadata
                 image_meta = {
