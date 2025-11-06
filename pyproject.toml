@@ -12,30 +12,28 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "asdf >=4.1.0",
     "asdf-astropy >=0.8.0",
     "astropy >=6.0.0",
-    "crds >=11.16.21",
-    "gwcs >=0.25.2",
     "jsonschema >=4.8",
     "numpy >=1.25",
-    "photutils >=2.1.0",
+    "scipy >=1.14.1",
     "requests >=2.26",
+    "photutils >=2.1.0",
+    "pyarrow >= 10.0.1",  # for Table.read(...) support in astropy for parquet files
+    "pandas >= 2.0.0",  # for Table.read(...) support in astropy for parquet files
     # Between the intermediate and build releases we want to keep
     # the roman_datamodels pin to the released version. If there
     # is a need to change this to main then we need a new
     # roman_datamodels release.
     "roman_datamodels >=0.28.0,<0.29.0",
     # "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
-    "scipy >=1.14.1",
+    "asdf >=4.1.0,<6",
+    "crds >=11.16.21",
+    "drizzle >= 2.1.1",
+    "gwcs >=0.25.2,<0.27.0",
     "stcal>=1.15.1,<1.16.0",
     "stpipe >=0.11.0,<0.12.0",
-    "tweakwcs >=0.8.11",
-    "spherical-geometry >= 1.3.3",
-    "stsci.imagestats >= 1.8.3",
-    "drizzle >= 2.1.1",
-    "pyarrow >= 10.0.1",  # for Table.read(...) support in astropy for parquet files
-    "pandas >= 2.0.0",  # for Table.read(...) support in astropy for parquet files
+    "spherical-geometry >= 1.3.3,<1.4",
 ]
 license-files = ["LICENSE"]
 dynamic = [
