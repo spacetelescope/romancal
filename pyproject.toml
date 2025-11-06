@@ -29,7 +29,7 @@ dependencies = [
     # "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
     "asdf >=4.1.0,<6",
     "crds >=11.16.21",
-    "drizzle >= 2.1.1",
+    "drizzle >= 2.1.1,<2.2",
     "gwcs >=0.25.2,<0.27.0",
     "stcal>=1.15.1,<1.16.0",
     "stpipe >=0.11.0,<0.12.0",
