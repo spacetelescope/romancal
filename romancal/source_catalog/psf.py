@@ -286,7 +286,7 @@ def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
     oversample = psf_ref_model.meta.oversample
     pixel_response_kernel = Box2DKernel(width=oversample)
     for i in range(psf_images.shape[0]):
-        psf = psf_images[i, :, :].copy()
+        psf = psf_images[i, :, :]
         im = convolve(psf, pixel_response_kernel) * oversample**2
         psf_images[i, :, :] = im
 
