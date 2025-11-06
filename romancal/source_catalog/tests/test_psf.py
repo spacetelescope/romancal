@@ -309,12 +309,12 @@ def test_create_convolution_kernel(setup_inputs):
 
 
 def test_central_stamp():
-    img = np.zeros((99, 99), dtype='f4')
+    img = np.zeros((99, 99), dtype="f4")
     cen = psf.central_stamp(img, 19)
     assert cen.shape[0] == 19
     cen = psf.central_stamp(img, 20)
     assert cen.shape[0] == 21  # needed to make it bigger to be central
-    img = np.zeros((40, 40), dtype='f4')
+    img = np.zeros((40, 40), dtype="f4")
     cen = psf.central_stamp(img, 20)
     assert cen.shape[0] == 20
     cen = psf.central_stamp(img, 21)
