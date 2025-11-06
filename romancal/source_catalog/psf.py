@@ -103,7 +103,8 @@ def _azimuthally_average_via_fft(data, pixel_scale_ratio=1.0):
     image : np.ndarray
         the image after azimuthal averaging
     """
-    assert data.shape[0] == data.shape[1]
+    if data.shape[0] != data.shape[1]:
+        raise ValueError('image must be square')
 
     imfft = fft.fftshift(fft.fft2(fft.ifftshift(data)))
     polar, rr, tt = _cart_to_polar(imfft)
