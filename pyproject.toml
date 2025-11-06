@@ -33,7 +33,8 @@ dependencies = [
     "gwcs >=0.25.2,<0.27.0",
     "stcal>=1.15.1,<1.16.0",
     "stpipe >=0.11.0,<0.12.0",
-    "spherical-geometry >= 1.3.3,<1.4",
+    "spherical-geometry >=1.3.3,<1.4",
+    "stsci.imagestats >=1.8.3,<1.9",  # remove when stcal fixes this missing dep
 ]
 license-files = ["LICENSE"]
 dynamic = [
