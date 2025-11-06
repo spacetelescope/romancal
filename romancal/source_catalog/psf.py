@@ -3,7 +3,6 @@ Module to calculate PSF photometry.
 """
 
 import logging
-import math
 from collections import OrderedDict
 
 import astropy.units as u
@@ -13,6 +12,7 @@ from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.nddata import NDData
 from astropy.table import Table
 from astropy.utils import lazyproperty
+from numpy import fft
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
 from photutils.psf import (
@@ -28,71 +28,223 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def azimuthally_smooth(data, oversample=2, scaling=1.0, order=4):
-    """Azimuthally smooth model
+def _cart_to_polar(image, oversample=2, order=3):
+    """Convert an image from cartesian to polar coordinates.
 
-    The image is converted to polar coordinates via a 4th order spline interpolation.
-    The image average is determined at each radius, and a final image is constructed by reprojecting this averaged
-    image back into cartesian coordinates.
+    This makes a dense grid of points in polar coordinates and
+    interpolates the values of image at those locations.
 
     Parameters
     ----------
-    data : nd.array(size=(*, *))
-        Data to be smoothed.
+    image : np.ndarray
+        The image to convert to polar coordinates
 
     oversample : int
-        Oversampling of the data to improve fidelity of the conversions
-        between cartesian and polar layout
-
-    scaling : float
-        Scale factor to apply to the result.
+        The oversampling factor
 
     order : int
-        Order of the spline interpolation used for the coordinate transformations
+        The order of the interpolation used to extract
+        points from the image
 
     Returns
     -------
-    smoothed : nd.array(size=(*, *))
-        The azimuthally smoothed image
+    imagepolar, rr, tt
+    imagepolar : np.ndarray
+        the image in polar coordinates
+    rr : np.ndarray
+        the radii in pixel coordinates corresponding to
+        the first dimension of imagepolar
+    tt : np.ndarray
+        the angles in radians corresponding to the
+        second dimension of imagepolar
     """
+    ntheta = 4 * image.shape[0] * oversample
+    nrad = image.shape[0] * oversample
+    szo2 = image.shape[0] // 2
+    rr = np.linspace(0, szo2 * np.sqrt(2), nrad)
+    tt = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
+    xx = rr[:, None] * np.cos(tt[None, :]) + szo2
+    yy = rr[:, None] * np.sin(tt[None, :]) + szo2
+    imagepolar = map_coordinates(
+        image,
+        [yy, xx],
+        order=order,
+        mode="constant",
+        output=image.dtype,
+        cval=np.nan,
+    )
+    return imagepolar, rr, tt
 
-    # Define cartesian->polar->cartesian conversion.
-    # Significant difference is the polar back to cartesian uses
-    # the original data's transformation parameters, to reproduce
-    # an image of the correct dimensions.
-    def cart_to_polar(model, oversample=2, order=4):
-        ntheta = 4 * model.shape[0] * oversample
-        nrad = model.shape[0] * oversample
-        szo2 = model.shape[0] // 2
-        rr = np.linspace(-5, szo2 * np.sqrt(2), nrad)
-        tt = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
-        xx = rr[:, None] * np.cos(tt[None, :]) + szo2
-        yy = rr[:, None] * np.sin(tt[None, :]) + szo2
-        modelpolar = map_coordinates(
-            model, [xx, yy], order=order, mode="nearest", output=np.dtype("f4")
-        )
-        return modelpolar, rr, tt
 
-    def polar_to_cart(model, rr, tt, scaling=1.0, order=4):
-        szo = model.shape[0]
-        szo = math.ceil(szo / scaling)
-        szo2 = szo // 2
-        xo, yo = np.mgrid[-szo2 : szo2 + 1, -szo2 : szo2 + 1] * scaling
-        ro = np.sqrt(xo**2 + yo**2)
-        to = np.arctan2(yo, xo) % (2 * np.pi)
-        ro = np.interp(ro, rr, np.arange(len(rr)).astype("f4"))
-        to = np.interp(to, tt, np.arange(len(tt)).astype("f4"))
-        res = map_coordinates(
-            model, [ro, to], order=order, mode="wrap", output=np.dtype("f4")
-        )
-        res *= scaling**2  # keep normalization at 1
-        return res
+def _azimuthally_average_via_fft(data, pixel_scale_ratio=1.0):
+    """Average a function azimuthally via FFT.
 
-    polar, rr, tt = cart_to_polar(data, oversample=oversample)
-    polar_mean = np.mean(polar, axis=1, keepdims=True)
-    smoothed = polar_to_cart(polar_mean, rr, tt, scaling=scaling)
+    Assumes that the data to be averaged is roughly circularly symmetric about
+    the center of the image.  If not, large phase changes from pixel to pixel
+    in the FFT will ruin the averaging in the FFT.
 
-    return smoothed
+    Smoothing via the FFT has advantages over direct smoothing in real space
+    when the image to be smoothed has nice properties in FFT space.
+    For example, for diffraction-limited PSF stamps, the FFT goes to
+    zero beyond some radius.  This averaging will preserve that behavior,
+    which can otherwise be lost.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        the image to be averaged
+
+    pixel_scale_ratio : int
+        the desired output pixel scale ratio divided by the input
+        pixel scale ratio
+
+    Returns
+    -------
+    image : np.ndarray
+        the image after azimuthal averaging
+    """
+    if data.shape[0] != data.shape[1]:
+        raise ValueError("image must be square")
+
+    imfft = fft.fftshift(fft.fft2(fft.ifftshift(data)))
+    polar, rr, tt = _cart_to_polar(imfft)
+    kk = rr / data.shape[0]
+
+    azimuthal_average = np.real(np.nanmean(polar, axis=1))
+    npts = 2 * (int(np.ceil(data.shape[0] / pixel_scale_ratio)) // 2) + 1
+
+    newk = fft.fftshift(fft.fftfreq(npts, d=pixel_scale_ratio))
+    newkgrid = np.meshgrid(newk, newk)
+    newkgrid_r = np.hypot(newkgrid[0], newkgrid[1])
+    f_interp = np.interp(newkgrid_r.ravel(), kk, azimuthal_average, left=0, right=0)
+    f_interp = f_interp.reshape(npts, npts)
+    psf_new = np.real(fft.fftshift(fft.ifft2(fft.ifftshift(f_interp))))
+    return psf_new
+
+
+def _downsample_by_interpolation(image, downsample):
+    """Downsample an image by interpolating it, preserving the centering.
+
+    This is conceptually similar to taking every nth pixel of the image,
+    but is careful about keeping the image centered and.  This is important
+    for PSFs, for example, where we want to keep the PSF precisely centered,
+    including for cases where the shape of the image and the amount of
+    downsampling don't align neatly.
+
+    We do this via linear interpolation, finding the locations in the
+    original image that we want in the final downsampled image, and
+    linearly interpolating to get the output values at those locations.
+
+    Parameters
+    ----------
+    image : np.ndarray
+        The image to be downsampled
+    downsample : int
+        the amount to downsample
+
+    Returns
+    -------
+    image_downsampled : np.ndarray
+        The downsampled image
+    """
+    ny, nx = image.shape
+    ny_low = int(np.ceil(ny / downsample))
+    nx_low = int(np.ceil(nx / downsample))
+
+    # physical center of high-res image
+    cy = (ny - 1) / 2
+    cx = (nx - 1) / 2
+
+    # offsets to low-res pixel centers
+    y_offsets = (np.arange(ny_low) - (ny_low - 1) / 2) * downsample
+    x_offsets = (np.arange(nx_low) - (nx_low - 1) / 2) * downsample
+
+    # actual coordinates in high-res image
+    y = cy + y_offsets
+    x = cx + x_offsets
+    yy, xx = np.meshgrid(y, x, indexing="ij")
+
+    # interpolate
+    low_res = map_coordinates(image, [yy, xx], order=1, mode="nearest")
+
+    low_res *= image.sum() / low_res.sum()
+    return low_res
+
+
+def create_convolution_kernel(
+    input_psf, target_psf, min_fft_power_ratio=1e-5, downsample=None, size=None
+):
+    """Find convolution kernel which convolves input_psf to match target_psf.
+
+    The nominal photutils matching kernel code does a straight ratio
+    of the target and input PSFs in Fourier space.  This is a little
+    fraught for our PSFs where they go to ~0 at high frequencies, and
+    unless the window function is also exactly zero there, you can get
+    huge amounts of power.
+
+    We mitigate this by taking an approach analogous to Boucaud+2016,
+    adding a regularizing term to the denominator of the FFT.  The
+    scale of this term is set by min_fft_power_ratio; its amplitude
+    will be the maximum of the power in the input PSF times this
+    ratio.  Large values correspond to stronger regularization.
+
+    Boucaud+2016 penalizes variation in the matching kernel, while the
+    approach taken here simply penalizes large values in the matching
+    kernel.  Other approaches like penalizing second or third
+    derivatives of the matching kernel could be taken, but for the
+    light regularization needed here the amplitude of the matching
+    kernel was adequate.
+
+    Parameters
+    ----------
+    input_psf : np.ndarray
+        The input PSF which needs to be convolved
+
+    target_psf : np.ndarray
+        The target PSF which input_psf should match following convolution
+
+    min_fft_power_ratio : float
+        controls the scale of the regularization of the matching kernel in
+        terms of the peak power of the input PSF's FFT.
+
+    downsample : int
+        amount to downsample the final kernels by; useful if the models
+        are oversampled but an image with the original sampling is desired
+
+    size : int
+        the desired size of the final stamp
+
+    Returns
+    -------
+    kernel : np.ndarray
+        Convolution kernel taking input_psf to target_psf
+
+    """
+    input_psf = fft.ifftshift(input_psf.copy())
+    target_psf = fft.ifftshift(target_psf.copy())
+
+    input_psf /= input_psf.sum()
+    target_psf /= target_psf.sum()
+
+    input_fft = fft.fft2(input_psf)
+    target_fft = fft.fft2(target_psf)
+
+    input_power = np.abs(input_fft) ** 2
+    max_power = np.max(input_power)
+    conv_kernel_fft = (
+        target_fft
+        * np.conj(input_fft)
+        / (input_power + min_fft_power_ratio * max_power)
+    )
+
+    kernel = np.real(fft.fftshift(fft.ifft2(conv_kernel_fft)))
+    kernel = kernel / kernel.sum()
+    if downsample is not None and downsample > 1:
+        kernel = convolve(kernel, Box2DKernel(width=downsample), boundary="extend")
+        kernel = _downsample_by_interpolation(kernel, downsample)
+    if size is not None:
+        return central_stamp(kernel, size).copy()
+    return kernel
 
 
 def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
@@ -146,7 +298,7 @@ def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
     return model
 
 
-def render_stamp(x, y, grid, size):
+def render_stamp(x, y, grid, size, oversample=1):
     """Render a PSF model at a specified location.
 
     Equivalent to grid.evaluate(xloc, yloc, 1, x, y) for xloc and yloc
@@ -168,15 +320,52 @@ def render_stamp(x, y, grid, size):
     stamp : np.ndarray[size, size]
         image of PSF at (x, y)
     """
-    xx, yy = np.mgrid[:size, :size]
+    yy, xx = np.mgrid[:size, :size] / oversample
 
     # for a 3x3 stamp centered at [1, 1], we want [0, 1, 2], so
     # xcen and ycen should be 0.
     # for a 4x4 stamp, it's not clear where the stamp should be centered,
     # so either convention is fine.
-    xcen, ycen = x - size // 2, y - size // 2
+    xcen, ycen = x - (size // 2) / oversample, y - (size // 2) / oversample
     stamp = grid.evaluate(xx + xcen, yy + ycen, 1, x, y)
     return stamp
+
+
+def central_stamp(im, size):
+    """Extract the central region of an image.
+
+    The image must be square and we extract a square stamp.  The parity
+    of the size of im and size must be the same; if they are not, we add
+    one to size so that its parity matches that of the size of im.  The
+    motivation for this behavior is that it's not clear, for example,
+    what it means to extract the 'central' 1x1 pixel region from a 2x2
+    stamp.
+
+    Parameters
+    ----------
+    im : np.ndarray
+        the image
+    size : int
+        the number of pixels to extract
+
+    Returns
+    -------
+    stamp : np.ndarray[size, size]
+        the central pixels of im, possibly adjusted by 1 to account
+        for parity differences
+    """
+
+    if im.shape[0] != im.shape[1]:
+        raise ValueError("im must be square")
+    if (im.shape[0] % 2) != (size % 2):
+        size = size + 1
+    parity = int((im.shape[0] % 2) == 0)
+    center = im.shape[0] // 2
+    sizeo2 = size // 2
+    return im[
+        center - sizeo2 : center + sizeo2 + 1 - parity,
+        center - sizeo2 : center + sizeo2 + 1 - parity,
+    ]
 
 
 def _get_jitter_params(meta):
@@ -324,9 +513,10 @@ def add_jitter(psf_ref_model, image_model, pixel_scale=0.11):
 
 def create_l3_psf_model(
     psf_ref_model,
+    stamp_radius=10,
     pixfrac=1.0,
     pixel_scale=0.11,
-    oversample=11,
+    oversample=None,
 ):
     """
     Compute a PSF model for an L3 image.
@@ -346,13 +536,15 @@ def create_l3_psf_model(
     ----------
     psf_ref_model : str
         PSF reference file model to use
+    stamp_radius : int
+        PSF model should extend this many native pixels from the center pixel
     pixfrac : float
         drizzlepac pixel fraction used.
     pixel_scale : float
         L3 image pixel scale in arcsec.
         Often similar to the default detector scale of 0.11 arcsec.
     oversample : int, optional
-        Oversample factor, default is 11.
+        Oversample factor, default uses gridpsf oversampling
 
     Returns
     -------
@@ -360,12 +552,12 @@ def create_l3_psf_model(
         PSF model.
 
     """
-
-    gridpsf = get_gridded_psf_model(psf_ref_model)
+    gridpsf = get_gridded_psf_model(psf_ref_model)  # 361x361, 4x oversampled
+    # this already includes integration over the native pixel scale
     center = 2044  # Roman SCA center pixel
-    szo2 = 10
-    npix = szo2 * 2 * oversample + 1
-    pts = np.linspace(-szo2 + center, szo2 + center, npix)
+    oversample = oversample if oversample is not None else gridpsf.oversampling[0]
+    npix = stamp_radius * 2 * oversample + 1
+    pts = np.linspace(-stamp_radius + center, stamp_radius + center, npix)
     xx, yy = np.meshgrid(pts, pts)
     psf = gridpsf.evaluate(xx, yy, 1, center, center)
     detector_pixel_scale = 0.11  # Roman native scale
@@ -375,20 +567,19 @@ def create_l3_psf_model(
     # Smooth to account for the pixfrac used to create the L3 image.
     pixfrac_kernel = Box2DKernel(width=pixfrac * oversample)
     psf = convolve(psf, kernel=pixfrac_kernel)
-
     # Smooth to the image scale
     outscale_kernel = Box2DKernel(width=oversample * pixel_scale / detector_pixel_scale)
     psf = convolve(psf, kernel=outscale_kernel)
-
     # Azimuthally smooth the psf
-    psf = azimuthally_smooth(psf, scaling=pixel_scale / detector_pixel_scale)
+    psf = _azimuthally_average_via_fft(
+        psf, pixel_scale_ratio=pixel_scale / detector_pixel_scale
+    )
 
     # Create the PSF model.
     x_0, y_0 = psf.shape
     x_0 = (x_0 - 1) / 2.0 / oversample
     y_0 = (y_0 - 1) / 2.0 / oversample
     psf_model = ImagePSF(psf, x_0=x_0, y_0=y_0, oversampling=oversample)
-
     return psf_model
 
 
