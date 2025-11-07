@@ -113,7 +113,7 @@ def test_get_pointing():
     Note: The expected quaternion is from mastdev during Q26B20 development.
     This will most likely change again.
     """
-    q_expected = np.array([-0.69018802,  0.12195182, -0.695103  ,  0.15999998])
+    q_expected = np.array([-0.69018802, 0.12195182, -0.695103, 0.15999998])
     try:
         obstime, q = stp.get_pointing(STARTTIME, ENDTIME)
     except ValueError as exception:
@@ -135,7 +135,7 @@ def test_get_pointing_list():
     Note: The expected quaternion is from mastdev during Q26B20 development.
     This will most likely change again.
     """
-    q_expected = np.array([-0.69018802,  0.12195182, -0.695103  ,  0.15999998])
+    q_expected = np.array([-0.69018802, 0.12195182, -0.695103, 0.15999998])
     try:
         results = stp.get_pointing(STARTTIME, ENDTIME, reduce_func=stp.all_pointings)
     except ValueError as exception:
@@ -251,7 +251,11 @@ def science_raw_model():
         {
             "meta": {
                 "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
-                "pointing": {'target_aperture': 'WFI_CEN', "target_ra": TARG_RA, "target_dec": TARG_DEC},
+                "pointing": {
+                    "target_aperture": "WFI_CEN",
+                    "target_ra": TARG_RA,
+                    "target_dec": TARG_DEC,
+                },
                 "wcsinfo": {"aperture_name": "WFI02_FULL"},
             }
         }
