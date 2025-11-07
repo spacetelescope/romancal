@@ -278,7 +278,7 @@ class ResampleData(Resample):
             "target", "None"
         )
         # get data release ID
-        output_model.meta.data_release_id = self.input_models.asn.get("data_release_id")
+        output_model.meta.data_release_id = self.input_models.asn.get("data_release_id", "p")
 
         return output_model
 
