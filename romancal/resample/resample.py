@@ -277,6 +277,8 @@ class ResampleData(Resample):
         output_model.meta.wcsinfo.skycell_name = self.input_models.asn.get(
             "target", "None"
         )
+        # get data release ID
+        output_model.meta.data_release_id = self.input_models.asn.get("data_release_id")
 
         return output_model
 
