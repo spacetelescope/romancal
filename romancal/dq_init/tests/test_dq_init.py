@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from astropy.time import Time
 from roman_datamodels.datamodels import MaskRefModel, RampModel, ScienceRawModel
 from roman_datamodels.dqflags import pixel
 
@@ -183,6 +184,9 @@ def test_dq_add1_groupdq():
 
 def rawim(shape, instrument, exptype):
     wfi_sci_raw_model = ScienceRawModel.create_fake_data(shape=shape)
+    wfi_sci_raw_model.meta.exposure.start_time = Time(
+        "2024-01-03T00:00:00.0", format="isot", scale="utc"
+    )
     wfi_sci_raw_model.meta.instrument.name = instrument
     wfi_sci_raw_model.meta.instrument.detector = "WFI01"
     wfi_sci_raw_model.meta.instrument.optical_element = "F158"
