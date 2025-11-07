@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 import roman_datamodels.datamodels as rdm
+from astropy.time import Time
 
 from romancal.associations.asn_from_list import asn_from_list
 from romancal.datamodels.library import ModelLibrary
@@ -10,6 +11,9 @@ from romancal.pipeline import ExposurePipeline
 @pytest.fixture(scope="function")
 def input_value(request, tmp_path):
     model = rdm.RampModel.create_fake_data(shape=(2, 20, 20))
+    model.meta.exposure.start_time = Time(
+        "2024-01-03T00:00:00.0", format="isot", scale="utc"
+    )
     match request.param:
         case "datamodel_fn":
             fn = tmp_path / "model.asdf"
@@ -68,6 +72,9 @@ def test_elp_save_results(function_jail, save_results, monkeypatch):
     model.meta.filename = "test_uncal.asdf"
     model.meta.exposure.read_pattern = [[1], [2]]  # truncated for 2 groups below
     model.meta.exposure.ma_table_number = 5
+    model.meta.exposure.start_time = Time(
+        "2024-01-03T00:00:00.0", format="isot", scale="utc"
+    )
     model.data = np.zeros((2, 4096, 4096), dtype=model.data.dtype)
     model.amp33 = np.zeros((2, 4096, 128), dtype=model.amp33.dtype)
 
