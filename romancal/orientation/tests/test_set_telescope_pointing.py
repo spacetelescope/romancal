@@ -251,7 +251,7 @@ def science_raw_model():
         {
             "meta": {
                 "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
-                "pointing": {"target_ra": TARG_RA, "target_dec": TARG_DEC},
+                "pointing": {'target_aperture': 'WFI_CEN', "target_ra": TARG_RA, "target_dec": TARG_DEC},
                 "wcsinfo": {"aperture_name": "WFI02_FULL"},
             }
         }
