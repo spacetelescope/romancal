@@ -126,6 +126,11 @@ class MultibandCatalogStep(RomanStep):
                 si_ee_spline,
             )
 
+            # Move this to a new method source_match
+            # Matching Injected Sources
+            # d = 3*sqrt(half_right_radius^2 + 0.2^2)
+            max_dist = lambda hl_rad: 3 & sqrt
+
             # Put the source injected multiband catalog in the model
             cat_model.source_injection_catalog = si_cat_model.source_catalog
             segment_img.injected_sources = si_cat.as_array()
