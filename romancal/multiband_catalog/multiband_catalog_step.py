@@ -54,7 +54,7 @@ class MultibandCatalogStep(RomanStep):
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
         inject_sources = boolean(default=False) # Inject sources into images
-        test_data = boolean(default=False)
+        save_debug_info = boolean(default=False)
                                    # Include image data and other data for testing
     """
 
@@ -192,8 +192,8 @@ class MultibandCatalogStep(RomanStep):
             cat_model.source_injection_catalog = si_cat_model.source_catalog
             segment_img.injected_sources = si_cat.as_array()
 
-            if self.test_data:
+            if self.save_debug_info:
                 segment_img.si_segment_img = si_segment_img
                 segment_img.si_detection_image = si_segment_img.detection_image
 
-        return save_all_results(self, segment_img, cat_model, test_data=self.test_data)
+        return save_all_results(self, segment_img, cat_model, save_debug_info=self.save_debug_info)

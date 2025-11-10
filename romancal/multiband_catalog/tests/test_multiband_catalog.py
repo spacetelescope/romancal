@@ -335,7 +335,7 @@ def test_multiband_source_injection_catalog(
         deblend=True,
         inject_sources=True,
         save_results=save_results,
-        test_data=True,
+        save_debug_info=True,
     )
 
     # Original objects
@@ -347,14 +347,8 @@ def test_multiband_source_injection_catalog(
     cat["x_mod"] = np.mod(np.round(cat["x_centroid"]), 100)
     cat["y_mod"] = np.mod(np.round(cat["y_centroid"]), 100)
     gocj_locs = [
-        (
-            11,
-            12,
-        ),
-        (
-            65,
-            18,
-        ),
+        (11, 12),
+        (65, 18),
         (41, 43),
         (17, 53),
         (65, 71),
