@@ -47,7 +47,7 @@ class MultibandCatalogStep(RomanStep):
     spec = """
         bkg_boxsize = integer(default=100)   # background mesh box size in pixels
         kernel_fwhms = float_list(default=None)  # Gaussian kernel FWHM in pixels
-        snr_threshold = float(default=3.0)    # per-pixel SNR threshold above the bkg
+        snr_threshold = float(default=5.0)    # per-pixel SNR threshold above the bkg
         npixels = integer(default=25)         # min number of pixels in source
         deblend = boolean(default=False)      # deblend sources?
         suffix = string(default='cat')        # Default suffix for output files

@@ -71,11 +71,11 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
 
     # TODO: det_img is saved in the MosaicSegmentationMapModel;
     # do we also want to save the det_err?
-    det_img, det_err = make_detection_image(library, self.kernel_fwhms)
+    det_img = make_detection_image(library, self.kernel_fwhms)
 
     # Estimate background rms from detection image to calculate a
     # threshold for source detection
-    mask = ~np.isfinite(det_img) | ~np.isfinite(det_err) | (det_err <= 0)
+    mask = ~np.isfinite(det_img)
 
     # Return an empty segmentation image and catalog table if all
     # pixels are masked in the detection image.
@@ -107,12 +107,12 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
         msg = "Cannot create source catalog. No sources were detected."
         return det_img.shape, cat_model, msg
 
-    segment_img.detection_image = det_img
+    segment_img.detection_image = det_img.copy()
 
     # Define the detection image model
     det_model = datamodels.MosaicModel.create_minimal()
     det_model.data = det_img
-    det_model.err = det_err
+    det_model.err = np.ones_like(det_img)
 
     # TODO: this is a temporary solution to get model attributes
     # currently needed in RomanSourceCatalog
@@ -132,7 +132,7 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
         segment_img,
         det_img,
         star_kernel_fwhm,
-        fit_psf=self.fit_psf,
+        fit_psf=False,  # not needed for detection image
         detection_cat=None,
         mask=mask,
         cat_type="dr_det",
