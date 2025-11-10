@@ -17,6 +17,7 @@ from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog.multiband_catalog import multiband_catalog
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.utils import get_ee_spline
+from romancal.source_catalog import injection
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
