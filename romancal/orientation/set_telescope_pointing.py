@@ -1396,12 +1396,10 @@ def update_meta(model, pysiaf, wcsinfo, vinfo, quality):
     pm.ra_v1 = vinfo.ra
 
     # Update target's sky location.
-    # This is currently defined as what point in the sky the
-    # virtual aperture WFI_CEN V2/V3 reference is pointing at.
     attitude = attitude_from_v1(pysiaf, vinfo)
-    wfi_cen = siaf["WFI_CEN"]
-    wfi_cen.set_attitude_matrix(attitude)
-    skycoord = wfi_cen.reference_point(to_frame="sky")
+    targ_app = siaf[model.meta.pointing.target_aperture]
+    targ_app.set_attitude_matrix(attitude)
+    skycoord = targ_app.reference_point(to_frame="sky")
     pm.target_ra = skycoord[0]
     pm.target_dec = skycoord[1]
 
