@@ -8,22 +8,21 @@ import copy
 import logging
 
 import numpy as np
-from astropy.table import join
-from astropy.time import Time
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+from astropy.table import join
+from astropy.time import Time
 from roman_datamodels import datamodels
+
 from romancal.datamodels import ModelLibrary
-
-
 from romancal.multiband_catalog.background import subtract_background_library
 from romancal.multiband_catalog.detection_image import make_detection_image
 from romancal.multiband_catalog.utils import add_filter_to_colnames
+from romancal.source_catalog import injection
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.utils import get_ee_spline
-from romancal.source_catalog import injection
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -274,9 +273,7 @@ def make_source_injected_library(library):
             library.shelve(model, modify=False)
 
             si_filter_name = si_model.meta.instrument.optical_element
-            si_exptimes[si_filter_name] = float(
-                si_model.meta.coadd_info.exposure_time
-            )
+            si_exptimes[si_filter_name] = float(si_model.meta.coadd_info.exposure_time)
             si_filters.append(si_filter_name)
 
             # Poisson variance required for source injection

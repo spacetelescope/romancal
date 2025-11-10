@@ -11,8 +11,10 @@ from typing import TYPE_CHECKING
 from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelLibrary
-from romancal.multiband_catalog.multiband_catalog import \
-    multiband_catalog, make_source_injected_library
+from romancal.multiband_catalog.multiband_catalog import (
+    make_source_injected_library,
+    multiband_catalog,
+)
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.utils import get_ee_spline
 from romancal.stpipe import RomanStep
