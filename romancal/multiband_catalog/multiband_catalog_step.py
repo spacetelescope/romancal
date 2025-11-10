@@ -196,4 +196,6 @@ class MultibandCatalogStep(RomanStep):
                 segment_img.si_segment_img = si_segment_img
                 segment_img.si_detection_image = si_segment_img.detection_image
 
-        return save_all_results(self, segment_img, cat_model, save_debug_info=self.save_debug_info)
+        return save_all_results(
+            self, segment_img, cat_model, save_debug_info=self.save_debug_info
+        )

@@ -88,7 +88,9 @@ def save_segment_image(
     )
 
 
-def save_all_results(self, segment_img, cat_model, input_model=None, save_debug_info=False):
+def save_all_results(
+    self, segment_img, cat_model, input_model=None, save_debug_info=False
+):
     """
     Return and save the results of the source catalog step.
 
