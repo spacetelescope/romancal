@@ -1,9 +1,8 @@
 from copy import deepcopy
 from pathlib import Path
 from re import match
-from copy import deepcopy
-import asdf
 
+import asdf
 import astropy.units as u
 import numpy as np
 import pyarrow
@@ -63,7 +62,7 @@ def mosaic_model(shape=(101, 101)):
     model.meta.wcsinfo.ra_ref = 270.0  # degrees
     model.meta.wcsinfo.dec_ref = 66.0  # degrees
     model.meta.wcsinfo.roll_ref = 0.0  # degrees
-    model.meta.coadd_info.exposure_time = 300 # seconds
+    model.meta.coadd_info.exposure_time = 300  # seconds
 
     model.meta.resample.pixfrac = 0.5
     model.meta.data_release_id = "r1"
@@ -87,8 +86,9 @@ def library_model_all_nan(mosaic_model):
     return ModelLibrary([model1, model2])
 
 
-def shared_tests(result, cat, library_model, save_results,
-                 function_jail, shape=(101,101)):
+def shared_tests(
+    result, cat, library_model, save_results, function_jail, shape=(101, 101)
+):
     with library_model:
         input_model = library_model.borrow(0)
         assert result.meta.data_release_id == input_model.meta.data_release_id
@@ -375,10 +375,17 @@ def test_multiband_source_injection_catalog(
         segm_mod = rdm.open(filepath)
         assert isinstance(segm_mod, MultibandSegmentationMapModel)
         assert segm_mod.data.shape == segm_mod.si_data.shape
-        assert isinstance(segm_mod.injected_sources,
-            np.ndarray | asdf.tags.core.ndarray.NDArrayType)
+        assert isinstance(
+            segm_mod.injected_sources, np.ndarray | asdf.tags.core.ndarray.NDArrayType
+        )
         assert len(segm_mod.injected_sources[0]) <= len(si_cat)
 
     # Old lines from other MBC tests
-    shared_tests(result, cat, library_model2, test_multiband_catalog,
-        function_jail, shape=(5000,5000))
+    shared_tests(
+        result,
+        cat,
+        library_model2,
+        test_multiband_catalog,
+        function_jail,
+        shape=(5000, 5000),
+    )

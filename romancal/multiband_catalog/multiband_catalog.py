@@ -20,7 +20,6 @@ from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.utils import get_ee_spline
 
-
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -65,8 +64,10 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
     # Return an empty segmentation image and catalog table if all
     # pixels are masked in the detection image.
     if np.all(mask):
-        msg = "Cannot create source catalog. All " \
-               "pixels in the detection image are masked."
+        msg = (
+            "Cannot create source catalog. All "
+            "pixels in the detection image are masked."
+        )
         return det_img.shape, cat_model, msg
 
     bkg = RomanBackground(
@@ -134,11 +135,7 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
     # Create catalogs for each input image
     with library:
         for model in library:
-            mask = (
-                ~np.isfinite(model.data)
-                | ~np.isfinite(model.err)
-                | (model.err <= 0)
-            )
+            mask = ~np.isfinite(model.data) | ~np.isfinite(model.err) | (model.err <= 0)
 
             if self.fit_psf:
                 filter_name = model.meta.instrument.optical_element

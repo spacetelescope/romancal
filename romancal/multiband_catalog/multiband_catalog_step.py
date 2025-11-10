@@ -9,8 +9,8 @@ import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
-from astropy.coordinates import SkyCoord
 from astropy import units as u
+from astropy.coordinates import SkyCoord
 from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelLibrary
@@ -113,8 +113,9 @@ class MultibandCatalogStep(RomanStep):
                     library.shelve(model, modify=False)
 
                     si_filter_name = si_model.meta.instrument.optical_element
-                    si_exptimes[si_filter_name] = \
-                        float(si_model.meta.coadd_info.exposure_time)
+                    si_exptimes[si_filter_name] = float(
+                        si_model.meta.coadd_info.exposure_time
+                    )
                     si_filters.append(si_filter_name)
 
                     # Poisson variance required for source injection
@@ -125,21 +126,30 @@ class MultibandCatalogStep(RomanStep):
                     # This only needs to be done once per library
                     if si_cen is None:
                         # Create source grid points
-                        si_x_pos, si_y_pos = injection.make_source_grid(si_model,
-                            yxmax=si_model.data.shape, yxoffset=(50, 50),
-                            yxgrid=(20, 20))
+                        si_x_pos, si_y_pos = injection.make_source_grid(
+                            si_model,
+                            yxmax=si_model.data.shape,
+                            yxoffset=(50, 50),
+                            yxgrid=(20, 20),
+                        )
 
-                        si_cen = SkyCoord(ra=si_model.meta.wcsinfo.ra_ref * u.deg,
-                                            dec=si_model.meta.wcsinfo.dec_ref * u.deg,)
+                        si_cen = SkyCoord(
+                            ra=si_model.meta.wcsinfo.ra_ref * u.deg,
+                            dec=si_model.meta.wcsinfo.dec_ref * u.deg,
+                        )
 
                         # Convert to RA & Dec
                         wcsobj = si_model.meta.wcs
-                        si_ra, si_dec = wcsobj.pixel_to_world_values(np.array(si_x_pos),
-                            np.array(si_y_pos))
+                        si_ra, si_dec = wcsobj.pixel_to_world_values(
+                            np.array(si_x_pos), np.array(si_y_pos)
+                        )
 
                         # Generate cosmos-like catalog
                         si_cat = injection.make_cosmoslike_catalog(
-                            cen=si_cen, ra=si_ra, dec=si_dec, exptimes=si_exptimes,
+                            cen=si_cen,
+                            ra=si_ra,
+                            dec=si_dec,
+                            exptimes=si_exptimes,
                         )
 
                     # Inject sources into the detection image
@@ -152,8 +162,9 @@ class MultibandCatalogStep(RomanStep):
             si_library = ModelLibrary(si_model_lst)
 
         # Create catalog of library images
-        segment_img, cat_model, msg = multiband_catalog(self,
-            library, example_model, cat_model, ee_spline)
+        segment_img, cat_model, msg = multiband_catalog(
+            self, library, example_model, cat_model, ee_spline
+        )
 
         # The results are empty
         if msg is not None:
@@ -168,8 +179,13 @@ class MultibandCatalogStep(RomanStep):
             si_ee_spline = get_ee_spline(si_example_model, apcorr_ref)
 
             # Create catalog of source injected images
-            si_segment_img, si_cat_model, _ = multiband_catalog(self,
-                si_library, si_example_model, copy.deepcopy(cat_model), si_ee_spline)
+            si_segment_img, si_cat_model, _ = multiband_catalog(
+                self,
+                si_library,
+                si_example_model,
+                copy.deepcopy(cat_model),
+                si_ee_spline,
+            )
 
             # Put the source injected multiband catalog in the model
             cat_model.source_injection_catalog = si_cat_model.source_catalog

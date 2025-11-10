@@ -17,7 +17,9 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def save_segment_image(self, segment_img, source_catalog_model, output_filename, test_data=False):
+def save_segment_image(
+    self, segment_img, source_catalog_model, output_filename, test_data=False
+):
     """
     Save the segmentation image to an ASDF file.
 
@@ -70,8 +72,9 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename,
     # Write data for tests
     if test_data:
         if hasattr(segment_img, "si_segment_img"):
-            segmentation_model["si_data"] = \
-                segment_img.si_segment_img.data.astype(np.uint32)
+            segmentation_model["si_data"] = segment_img.si_segment_img.data.astype(
+                np.uint32
+            )
         if hasattr(segment_img, "si_detection_image"):
             segmentation_model["si_detection_image"] = segment_img.si_detection_image
 
