@@ -628,7 +628,7 @@ def calc_transforms_va(t_pars, gs_sky_corr, gs_commanded):
     t.m_eci2b = calc_m_eci2b(t_pars.pointing.q)
 
     # M_eci2gsapp
-    m_fcs2gsapp = calc_m_fgs2gs(*gs_sky_corr)
+    m_fcs2gsapp = calc_m_fgs2gs(gs_sky_corr[0] * D2R, gs_sky_corr[1] * D2R)
     m_eci2gsapp = m_fcs2gsapp * M_B2FCS0 * t.m_eci2b
 
     # M_eci2gs
@@ -637,7 +637,7 @@ def calc_transforms_va(t_pars, gs_sky_corr, gs_commanded):
     m_eci2gs = np.linalg.multi_dot([M_ics2idl, m_vacorr, m_eci2gsapp])
 
     # M_eci2v
-    m_fgs2gs = calc_m_fgs2gs(*gs_commanded)
+    m_fgs2gs = calc_m_fgs2gs(gs_commanded[0] * A2R, gs_commanded[1] * A2R)
     t.m_eci2v = np.linalg.multi_dot([M_V2FCS0.T, m_fgs2gs.T, M_idl2ics, m_eci2gs])
 
     return t
@@ -1441,10 +1441,8 @@ def calc_m_fgs2gs(x, y):
     Parameters
     ----------
     x, y : float, float
-        Guidestar location (degrees)
+        Guidestar location (radians)
     """
-    x = D2R * x
-    y = D2R * y
     m = np.array([
         [cos(x), 0., sin(x)],
         [-sin(x) * sin(y), cos(y), cos(x) * sin(y)],
