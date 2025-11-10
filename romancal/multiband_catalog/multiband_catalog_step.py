@@ -8,14 +8,11 @@ import copy
 import logging
 from typing import TYPE_CHECKING
 
-import numpy as np
-from astropy import units as u
-from astropy.coordinates import SkyCoord
 from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelLibrary
-from romancal.multiband_catalog.multiband_catalog import multiband_catalog
-from romancal.source_catalog import injection
+from romancal.multiband_catalog.multiband_catalog import \
+    multiband_catalog, make_source_injected_library
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.utils import get_ee_spline
 from romancal.stpipe import RomanStep
@@ -97,70 +94,9 @@ class MultibandCatalogStep(RomanStep):
         except (AttributeError, KeyError):
             cat_model.meta.filename = "multiband_catalog"
 
-        # Set ups source injection files and library
+        # Set up source injection library and injection catalog
         if self.inject_sources:
-            # Obtain exposure times and filters
-            # This code assumes all filters have been coadded already,
-            # and thus there is one image per filter
-            si_model_lst = []
-            si_filters = []
-            si_exptimes = {}
-            si_cen = None
-
-            # Cycle through library images to make source injected versions
-            with library:
-                for model in library:
-                    si_model = copy.deepcopy(model)
-                    library.shelve(model, modify=False)
-
-                    si_filter_name = si_model.meta.instrument.optical_element
-                    si_exptimes[si_filter_name] = float(
-                        si_model.meta.coadd_info.exposure_time
-                    )
-                    si_filters.append(si_filter_name)
-
-                    # Poisson variance required for source injection
-                    if "var_poisson" not in si_model:
-                        si_model.var_poisson = si_model.err**2
-
-                    # Set parameters for source injection
-                    # This only needs to be done once per library
-                    if si_cen is None:
-                        # Create source grid points
-                        si_x_pos, si_y_pos = injection.make_source_grid(
-                            si_model,
-                            yxmax=si_model.data.shape,
-                            yxoffset=(50, 50),
-                            yxgrid=(20, 20),
-                        )
-
-                        si_cen = SkyCoord(
-                            ra=si_model.meta.wcsinfo.ra_ref * u.deg,
-                            dec=si_model.meta.wcsinfo.dec_ref * u.deg,
-                        )
-
-                        # Convert to RA & Dec
-                        wcsobj = si_model.meta.wcs
-                        si_ra, si_dec = wcsobj.pixel_to_world_values(
-                            np.array(si_x_pos), np.array(si_y_pos)
-                        )
-
-                        # Generate cosmos-like catalog
-                        si_cat = injection.make_cosmoslike_catalog(
-                            cen=si_cen,
-                            ra=si_ra,
-                            dec=si_dec,
-                            exptimes=si_exptimes,
-                        )
-
-                    # Inject sources into the detection image
-                    si_model = injection.inject_sources(si_model, si_cat)
-
-                    # Add model to list for new library
-                    si_model_lst.append(si_model)
-
-            # Create library of source injected models
-            si_library = ModelLibrary(si_model_lst)
+            si_library, si_cat = make_source_injected_library(library)
 
         # Create catalog of library images
         segment_img, cat_model, msg = multiband_catalog(
