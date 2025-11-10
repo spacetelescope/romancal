@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def save_segment_image(self, segment_img, source_catalog_model, output_filename):
+def save_segment_image(self, segment_img, source_catalog_model, output_filename, test_data=False):
     """
     Save the segmentation image to an ASDF file.
 
@@ -66,12 +66,14 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
     # Source injection data
     if hasattr(segment_img, "injected_sources"):
         segmentation_model["injected_sources"] = segment_img.injected_sources
-    if hasattr(segment_img, "si_segment_img"):
-        segmentation_model["si_data"] = segment_img.si_segment_img.data.astype(
-            np.uint32
-        )
-    if hasattr(segment_img, "si_detection_image"):
-        segmentation_model["si_detection_image"] = segment_img.si_detection_image
+
+    # Write data for tests
+    if test_data:
+        if hasattr(segment_img, "si_segment_img"):
+            segmentation_model["si_data"] = \
+                segment_img.si_segment_img.data.astype(np.uint32)
+        if hasattr(segment_img, "si_detection_image"):
+            segmentation_model["si_detection_image"] = segment_img.si_detection_image
 
     # Save the segmentation image to the output file
     self.output_ext = "asdf"
@@ -83,7 +85,7 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
     )
 
 
-def save_all_results(self, segment_img, cat_model, input_model=None):
+def save_all_results(self, segment_img, cat_model, input_model=None, test_data=False):
     """
     Return and save the results of the source catalog step.
 
@@ -130,7 +132,7 @@ def save_all_results(self, segment_img, cat_model, input_model=None):
     )
 
     # always save the segmentation image
-    save_segment_image(self, segment_img, cat_model, output_filename)
+    save_segment_image(self, segment_img, cat_model, output_filename, test_data)
 
     # Update the source catalog filename metadata
     self.output_ext = "parquet"

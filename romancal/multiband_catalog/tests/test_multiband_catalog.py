@@ -1,6 +1,8 @@
 from copy import deepcopy
 from pathlib import Path
 from re import match
+from copy import deepcopy
+import asdf
 
 import astropy.units as u
 import numpy as np
@@ -61,7 +63,7 @@ def mosaic_model(shape=(101, 101)):
     model.meta.wcsinfo.ra_ref = 270.0  # degrees
     model.meta.wcsinfo.dec_ref = 66.0  # degrees
     model.meta.wcsinfo.roll_ref = 0.0  # degrees
-    model.meta.coadd_info.exposure_time = 300  # seconds
+    model.meta.coadd_info.exposure_time = 300 # seconds
 
     model.meta.resample.pixfrac = 0.5
     model.meta.data_release_id = "r1"
@@ -83,6 +85,56 @@ def library_model_all_nan(mosaic_model):
     model2.data[:] = np.nan
     model2.meta.instrument.optical_element = "F158"
     return ModelLibrary([model1, model2])
+
+
+def shared_tests(result, cat, library_model, save_results,
+                 function_jail, shape=(101,101)):
+    with library_model:
+        input_model = library_model.borrow(0)
+        assert result.meta.data_release_id == input_model.meta.data_release_id
+        library_model.shelve(input_model, modify=False)
+
+    assert len(cat.meta["aperture_radii"]["circle_pix"]) > 0
+    assert sum(
+        1 for name in cat.colnames if match(r"^aper\d+_f158_flux$", name)
+    ) == len(cat.meta["aperture_radii"]["circle_pix"])
+    assert sum(
+        1 for name in cat.colnames if match(r"^aper\d+_f184_flux$", name)
+    ) == len(cat.meta["aperture_radii"]["circle_pix"])
+    assert "ee_fractions" in cat.meta
+    assert isinstance(cat.meta["ee_fractions"], dict)
+    assert len(cat.meta["ee_fractions"]) == 2
+    assert "f158" in cat.meta["ee_fractions"]
+    assert "f184" in cat.meta["ee_fractions"]
+    for value in cat.meta["ee_fractions"].values():
+        assert len(value) == len(cat.meta["aperture_radii"]["circle_pix"])
+
+    if len(cat) > 0:
+        assert np.min(cat["x_centroid"]) > 0.0
+        assert np.min(cat["y_centroid"]) > 0.0
+        assert np.max(cat["x_centroid"]) < shape[0]
+        assert np.max(cat["y_centroid"]) < shape[1]
+
+        for colname in cat.colnames:
+            if (
+                "flux" in colname
+                and "fluxfrac" not in colname
+                and "aper_bkg" not in colname
+            ):
+                assert cat[colname].unit == "nJy"
+                assert "f158" in colname or "f184" in colname
+            if colname.endswith("_flux"):
+                assert f"{colname}_err" in cat.colnames
+
+    if save_results:
+        filepath = Path(function_jail / f"{result.meta.filename}_cat.parquet")
+        assert filepath.exists()
+        tbl = pyarrow.parquet.read_table(filepath)
+        assert isinstance(tbl, pyarrow.Table)
+
+        filepath = Path(function_jail / f"{result.meta.filename}_segm.asdf")
+        assert filepath.exists()
+        assert isinstance(rdm.open(filepath), MultibandSegmentationMapModel)
 
 
 @pytest.mark.parametrize("fit_psf", (True, False))
@@ -107,56 +159,11 @@ def test_multiband_catalog(
         save_results=save_results,
     )
 
-    with library_model:
-        input_model = library_model.borrow(0)
-        assert result.meta.data_release_id == input_model.meta.data_release_id
-        library_model.shelve(input_model, modify=False)
-
     cat = result.source_catalog
     assert isinstance(cat, Table)
     assert len(cat) == 7
 
-    assert len(cat.meta["aperture_radii"]["circle_pix"]) > 0
-    assert sum(
-        1 for name in cat.colnames if match(r"^aper\d+_f158_flux$", name)
-    ) == len(cat.meta["aperture_radii"]["circle_pix"])
-    assert sum(
-        1 for name in cat.colnames if match(r"^aper\d+_f184_flux$", name)
-    ) == len(cat.meta["aperture_radii"]["circle_pix"])
-    assert "ee_fractions" in cat.meta
-    assert isinstance(cat.meta["ee_fractions"], dict)
-    assert len(cat.meta["ee_fractions"]) == 2
-    assert "f158" in cat.meta["ee_fractions"]
-    assert "f184" in cat.meta["ee_fractions"]
-    for value in cat.meta["ee_fractions"].values():
-        assert len(value) == len(cat.meta["aperture_radii"]["circle_pix"])
-
-    if len(cat) > 0:
-        assert np.min(cat["x_centroid"]) > 0.0
-        assert np.min(cat["y_centroid"]) > 0.0
-        assert np.max(cat["x_centroid"]) < 100.0
-        assert np.max(cat["y_centroid"]) < 100.0
-
-        for colname in cat.colnames:
-            if (
-                "flux" in colname
-                and "fluxfrac" not in colname
-                and "aper_bkg" not in colname
-            ):
-                assert cat[colname].unit == "nJy"
-                assert "f158" in colname or "f184" in colname
-            if colname.endswith("_flux"):
-                assert f"{colname}_err" in cat.colnames
-
-    if save_results:
-        filepath = Path(function_jail / f"{result.meta.filename}_cat.parquet")
-        assert filepath.exists()
-        tbl = pyarrow.parquet.read_table(filepath)
-        assert isinstance(tbl, pyarrow.Table)
-
-        filepath = Path(function_jail / f"{result.meta.filename}_segm.asdf")
-        assert filepath.exists()
-        assert isinstance(rdm.open(filepath), MultibandSegmentationMapModel)
+    shared_tests(result, cat, library_model, save_results, function_jail)
 
 
 @pytest.mark.parametrize("save_results", (True, False))
@@ -328,6 +335,7 @@ def test_multiband_source_injection_catalog(
         deblend=True,
         inject_sources=True,
         save_results=save_results,
+        test_data=True,
     )
 
     # Original objects
@@ -367,53 +375,10 @@ def test_multiband_source_injection_catalog(
         segm_mod = rdm.open(filepath)
         assert isinstance(segm_mod, MultibandSegmentationMapModel)
         assert segm_mod.data.shape == segm_mod.si_data.shape
+        assert isinstance(segm_mod.injected_sources,
+            np.ndarray | asdf.tags.core.ndarray.NDArrayType)
         assert len(segm_mod.injected_sources[0]) <= len(si_cat)
 
     # Old lines from other MBC tests
-
-    with library_model2:
-        input_model = library_model2.borrow(0)
-        assert result.meta.data_release_id == input_model.meta.data_release_id
-        library_model2.shelve(input_model, modify=False)
-
-    assert len(cat.meta["aperture_radii"]["circle_pix"]) > 0
-    assert sum(
-        1 for name in cat.colnames if match(r"^aper\d+_f158_flux$", name)
-    ) == len(cat.meta["aperture_radii"]["circle_pix"])
-    assert sum(
-        1 for name in cat.colnames if match(r"^aper\d+_f184_flux$", name)
-    ) == len(cat.meta["aperture_radii"]["circle_pix"])
-    assert "ee_fractions" in cat.meta
-    assert isinstance(cat.meta["ee_fractions"], dict)
-    assert len(cat.meta["ee_fractions"]) == 2
-    assert "f158" in cat.meta["ee_fractions"]
-    assert "f184" in cat.meta["ee_fractions"]
-    for value in cat.meta["ee_fractions"].values():
-        assert len(value) == len(cat.meta["aperture_radii"]["circle_pix"])
-
-    if len(cat) > 0:
-        assert np.min(cat["x_centroid"]) > 0.0
-        assert np.min(cat["y_centroid"]) > 0.0
-        assert np.max(cat["x_centroid"]) < 5000.0
-        assert np.max(cat["y_centroid"]) < 5000.0
-
-        for colname in cat.colnames:
-            if (
-                "flux" in colname
-                and "fluxfrac" not in colname
-                and "aper_bkg" not in colname
-            ):
-                assert cat[colname].unit == "nJy"
-                assert "f158" in colname or "f184" in colname
-            if colname.endswith("_flux"):
-                assert f"{colname}_err" in cat.colnames
-
-    if save_results:
-        filepath = Path(function_jail / f"{result.meta.filename}_cat.parquet")
-        assert filepath.exists()
-        tbl = pyarrow.parquet.read_table(filepath)
-        assert isinstance(tbl, pyarrow.Table)
-
-        filepath = Path(function_jail / f"{result.meta.filename}_segm.asdf")
-        assert filepath.exists()
-        assert isinstance(rdm.open(filepath), MultibandSegmentationMapModel)
+    shared_tests(result, cat, library_model2, test_multiband_catalog,
+        function_jail, shape=(5000,5000))
