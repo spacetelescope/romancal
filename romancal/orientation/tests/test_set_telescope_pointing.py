@@ -108,8 +108,12 @@ def test_change_base_url_fail():
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_get_pointing():
-    """Ensure that the averaging works."""
-    q_expected = np.array([-0.52558752, 0.3719724, -0.52016581, 0.38150882])
+    """Ensure that the averaging works.
+
+    Note: The expected quaternion is from mastdev during Q26B20 development.
+    This will most likely change again.
+    """
+    q_expected = np.array([-0.69018802, 0.12195182, -0.695103, 0.15999998])
     try:
         obstime, q = stp.get_pointing(STARTTIME, ENDTIME)
     except ValueError as exception:
@@ -126,7 +130,12 @@ def test_get_pointing_fail():
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_get_pointing_list():
-    q_expected = np.array([-0.690189, 0.121953, -0.695103, 0.159999])
+    """Test pointing collection
+
+    Note: The expected quaternion is from mastdev during Q26B20 development.
+    This will most likely change again.
+    """
+    q_expected = np.array([-0.69018802, 0.12195182, -0.695103, 0.15999998])
     try:
         results = stp.get_pointing(STARTTIME, ENDTIME, reduce_func=stp.all_pointings)
     except ValueError as exception:
@@ -242,7 +251,11 @@ def science_raw_model():
         {
             "meta": {
                 "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
-                "pointing": {"target_ra": TARG_RA, "target_dec": TARG_DEC},
+                "pointing": {
+                    "target_aperture": "WFI_CEN",
+                    "target_ra": TARG_RA,
+                    "target_dec": TARG_DEC,
+                },
                 "wcsinfo": {"aperture_name": "WFI02_FULL"},
             }
         }
