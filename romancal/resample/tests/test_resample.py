@@ -594,6 +594,7 @@ def test_l3_wcsinfo(multiple_exposures):
             "POLYGON ICRS  10.005118262 -0.002002769 10.006906876 "
             "0.002656731 10.000742444 0.005023034 9.998953830 0.000363534"
         ),
+        "data_release_id": "p",
     }
 
     input_models = ModelLibrary(multiple_exposures)
@@ -603,8 +604,9 @@ def test_l3_wcsinfo(multiple_exposures):
     assert word_precision_check(
         output_model.meta.wcsinfo.s_region, expected["s_region"]
     )
+    assert output_model.meta.data_release_id == expected["data_release_id"]
     for key in expected.keys():
-        if key not in ["projection", "s_region"]:
+        if key not in ["projection", "s_region", "data_release_id"]:
             assert np.allclose(output_model.meta.wcsinfo[key], expected[key])
 
 
