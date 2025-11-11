@@ -239,6 +239,9 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
     # Put the resulting multiband catalog in the model
     cat_model.source_catalog = det_cat
 
+    import pdb
+    pdb.set_trace()
+
     return segment_img, cat_model, None
 
 
