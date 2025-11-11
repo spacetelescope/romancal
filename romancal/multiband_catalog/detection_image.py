@@ -105,7 +105,7 @@ def make_det_image(library, kernel_fwhm):
                     kernel,
                     mask=coverage_mask,
                     preserve_nan=True,
-                    normalize_kernel=True,
+                    normalize_kernel=False,
                 )
                 var_conv = convolve_fft(
                     wht**2 * model.var_rnoise,
@@ -131,7 +131,7 @@ def make_det_image(library, kernel_fwhm):
     detection_data /= wht_sum
     detection_error = np.sqrt(detection_var) / wht_sum  # std dev error
 
-    return detection_data, detection_error
+    return detection_data / (detection_error + (detection_error == 1))
 
 
 def make_detection_image(library, kernel_fwhms):
@@ -159,11 +159,9 @@ def make_detection_image(library, kernel_fwhms):
         The detection image (standard deviation) error.
     """
     log.info("Making detection image")
-    det_img = 0
-    det_err = 0
+    det_img = -np.inf
     for kernel_fwhm in kernel_fwhms:
-        img, err = make_det_image(library, kernel_fwhm)
+        img = make_det_image(library, kernel_fwhm)
         det_img = np.fmax(det_img, img)
-        det_err = np.fmax(det_err, err)
 
-    return det_img, det_err
+    return det_img
