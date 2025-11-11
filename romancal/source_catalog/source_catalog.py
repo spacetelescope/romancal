@@ -32,7 +32,8 @@ class RomanSourceCatalog:
     ----------
     model : `ImageModel` or `MosaicModel`
         The input data model. The image data is assumed to be background
-        subtracted.
+        subtracted. For PSF-matched photometry in multiband catalogs,
+        input the PSF-matched model.
 
     segment_image : `~photutils.segmentation.SegmentationImage`
         A 2D segmentation image, with the same shape as the input data,
@@ -76,7 +77,7 @@ class RomanSourceCatalog:
         'dr_band' catalogs are band-specific catalogs for the
         multiband source detection.
 
-    ee_spline : `~astropy.modeling.models.Spline1D` or `None`
+    ee_spline : `~astropy.modeling.models.Spline1D` or `None`, optional
         The PSF aperture correction model, built from the reference file.
 
     Notes
@@ -271,7 +272,7 @@ class RomanSourceCatalog:
             self._pixel_area,
             self._wcs_angle,
             detection_cat=self.detection_cat,
-            flux_unit=self.flux_unit,
+            cat_type=self.cat_type,
         )
 
         self.meta.update(segment_cat.meta)
