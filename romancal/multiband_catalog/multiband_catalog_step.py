@@ -161,30 +161,27 @@ class MultibandCatalogStep(RomanStep):
 
             recovered['best_injected_index'][t12["inject_label"]] = t12["si_label"]
 
-            sc3 =
+            icoord = SkyCoord(injected['ra'] * u.deg, injected['dec'] * u.deg)
+rcoord = SkyCoord(recovered['ra'] * u.deg, recovered['dec'] * u.deg)
+ocoord = SkyCoord(original['ra'] * u.deg, original['dec'] * u.deg)
+max_sep_injected = 3 * sqrt(half_light_radius^2 + 0.2^2) * u.arcsec
+# let's also add some kind of maximum on what half light radius we're willing to inject
+# maybe we already have this?  Let's not bother looking further away than 10" = 200 pixels.
+# or here this would be max_sep_injected = min([10 * u.arcsec, max_sep_injected])
+mi, mr, dir, _ = = icoord.search_around_sky(c, np.max(max_sep_injected))
+keep = np.zeros(len(rcoord), dtype='bool')
+keep[mr] = True
+recovered = recovered[keep]
+rcoord = rcoord[keep]  # trim recovered catalog to only objects near injected sources
+idx, sep, _ = icoord.match_to_coordinates_sky(rcoord)
+m = sep <
+recovered['best_injected_index'] = -1
+recovered['best_injected_index'][idx[m]] = np.flatnonzero(m)
+idx, sep, _ = rcoord.match_coordinates_sky(rcoord, ocoord)
+recovered['dist_nearest'] = sep
 
 
 
-            # join_cat = table.join(
-            #     si_cat_model.source_catalog,
-            #     si_cat,
-            #     keys=['ra', 'dec'],
-            #     join_type='inner',
-            #     # merge_data=table.join_distance(distance=0.01) # Use join_distance to specify distance
-            #     join_funcs={'ra': table.join_distance(0.01),
-            #                 'dec': table.join_distance(0.01),},
-            # )
-
-            # print(f"XXX len(join_cat) = {len(join_cat)}")
-
-            # join_cat = table.join(
-            #     si_cat_model.source_catalog,
-            #     cat_model.source_catalog,
-            #     keys='x_centroid, y_centroid',
-            #     join_type='inner',
-            #     # merge_data=join_distance(distance=0.01) # Use join_distance to specify distance
-            #     join_funcs={'col': join_distance(0.01)},
-            # )
 
             # Put the source injected multiband catalog in the model
             cat_model.source_injection_catalog = si_cat_model.source_catalog
