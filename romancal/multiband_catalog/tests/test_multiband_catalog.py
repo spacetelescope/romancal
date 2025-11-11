@@ -157,6 +157,7 @@ def test_multiband_catalog(
         npixels=npixels,
         fit_psf=fit_psf,
         save_results=save_results,
+        deblend=True,
     )
 
     cat = result.source_catalog
@@ -225,6 +226,7 @@ def test_multiband_catalog_some_invalid_inputs(
         npixels=10,
         fit_psf=False,
         save_results=save_results,
+        deblend=True,
     )
 
     cat = result.source_catalog
@@ -309,8 +311,7 @@ def library_model2(mosaic_si_model):
     return ModelLibrary([mosaic_si_model, si_model2])
 
 
-# @pytest.mark.parametrize("fit_psf", (True, False))
-@pytest.mark.parametrize("fit_psf", (False,))
+@pytest.mark.parametrize("fit_psf", (True, False))
 @pytest.mark.parametrize(
     "snr_threshold, npixels, save_results",
     (

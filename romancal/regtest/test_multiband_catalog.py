@@ -48,6 +48,8 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
         inputasnfn,
         "--deblend",
         "True",  # use deblending, DMS 393
+        "--inject_sources",  # turn on source injection
+        "True",
     ]
     with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
