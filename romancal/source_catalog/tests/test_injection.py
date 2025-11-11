@@ -4,8 +4,6 @@ Unit tests for the Roman source injection step code
 
 import pytest
 
-pytest.importorskip("romanisim")
-
 import numpy as np
 from astropy import table
 from astropy import units as u
@@ -179,7 +177,7 @@ def test_inject_sources(image_model, mosaic_model):
             np.isclose(
                 si_model.data[90:110, 90:110],
                 data_orig.data[90:110, 90:110],
-                rtol=1e-06,
+                rtol=1e-03,
             )
         )
 

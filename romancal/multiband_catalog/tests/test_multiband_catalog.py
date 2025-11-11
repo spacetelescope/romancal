@@ -321,9 +321,6 @@ def library_model2(mosaic_si_model):
 def test_multiband_source_injection_catalog(
     library_model2, fit_psf, snr_threshold, npixels, save_results, function_jail
 ):
-    # Skip this test if romanisim is not available in the environment
-    pytest.importorskip("romanisim")
-
     step = MultibandCatalogStep()
 
     result = step.call(
