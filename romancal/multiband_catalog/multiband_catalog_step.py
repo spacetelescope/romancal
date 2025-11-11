@@ -7,6 +7,8 @@ from __future__ import annotations
 import copy
 import logging
 from typing import TYPE_CHECKING
+import numpy as np
+from astropy import table
 
 from roman_datamodels import datamodels
 
@@ -129,7 +131,60 @@ class MultibandCatalogStep(RomanStep):
             # Move this to a new method source_match
             # Matching Injected Sources
             # d = 3*sqrt(half_right_radius^2 + 0.2^2)
-            max_dist = lambda hl_rad: 3 & np.sqrt(hl_rad**2 + 0.2**2)
+            max_dist = lambda hl_rad: 3 * np.sqrt(hl_rad**2 + 0.2**2)
+
+            # cat_model["max_dist"] =
+            print(f"XXX si_cat_model.source_catalog.colnames = {si_cat_model.source_catalog.colnames}")
+
+            # si_cat_model.source_catalog["max_dist"] = max_dist(si_cat_model.source_catalog["fwhm"])
+            si_cat_model.source_catalog["max_dist"] =  3.0 * np.sqrt((si_cat_model.source_catalog["fwhm"] / 2)**2 + 0.2**2)
+
+            # print(f"XXX si_cat_model.source_catalog[max_dist] = {si_cat_model.source_catalog['max_dist'] }")
+
+            # print(f"XXX si_cat.colnames = {si_cat.colnames}")
+
+            print(f"XXXX len(si_cat) = {len(si_cat)}")
+            print(f"XXXX len(source_catalog) = {len(si_cat_model.source_catalog)}")
+
+
+            from astropy.coordinates import SkyCoord
+            from astropy import units as u
+
+            recovered = table.Table()
+            recovered['best_injected_index'] = [-1] * len(si_cat)
+
+            sc1 = SkyCoord(si_cat["ra"], si_cat["dec"], unit='deg')
+            sc2 = SkyCoord(si_cat_model.source_catalog["ra"], si_cat_model.source_catalog["dec"], unit='deg')
+            t1 = table.Table([sc1, si_cat["label"]], names=['sc', "inject_label"])
+            t2 = table.Table([sc2, si_cat_model.source_catalog["label"]], names=['sc', "si_label"])
+            t12 = table.join(t1, t2, join_funcs={'sc': table.join_skycoord(si_cat["half_light_radius"].value * u.arcsec)})
+
+            recovered['best_injected_index'][t12["inject_label"]] = t12["si_label"]
+
+            sc3 =
+
+
+
+            # join_cat = table.join(
+            #     si_cat_model.source_catalog,
+            #     si_cat,
+            #     keys=['ra', 'dec'],
+            #     join_type='inner',
+            #     # merge_data=table.join_distance(distance=0.01) # Use join_distance to specify distance
+            #     join_funcs={'ra': table.join_distance(0.01),
+            #                 'dec': table.join_distance(0.01),},
+            # )
+
+            # print(f"XXX len(join_cat) = {len(join_cat)}")
+
+            # join_cat = table.join(
+            #     si_cat_model.source_catalog,
+            #     cat_model.source_catalog,
+            #     keys='x_centroid, y_centroid',
+            #     join_type='inner',
+            #     # merge_data=join_distance(distance=0.01) # Use join_distance to specify distance
+            #     join_funcs={'col': join_distance(0.01)},
+            # )
 
             # Put the source injected multiband catalog in the model
             cat_model.source_injection_catalog = si_cat_model.source_catalog

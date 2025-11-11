@@ -310,6 +310,12 @@ def make_source_injected_library(library):
                     exptimes=si_exptimes,
                 )
 
+                si_cat["x_pos"] = si_x_pos
+                si_cat["y_pos"] = si_y_pos
+                si_cat["label"] = np.arange(len(si_x_pos))
+
+
+
             # Inject sources into the detection image
             si_model = injection.inject_sources(si_model, si_cat)
 
