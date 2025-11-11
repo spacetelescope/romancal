@@ -67,7 +67,7 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
     # TODO: sensible defaults
     # TODO: redefine in terms of intrinsic FWHM
     if self.kernel_fwhms is None:
-        self.kernel_fwhms = [2.0, 20.0]
+        self.kernel_fwhms = [2.0, 5.0]
 
     # TODO: det_img is saved in the MosaicSegmentationMapModel;
     # do we also want to save the det_err?
