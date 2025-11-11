@@ -2,9 +2,8 @@
 Unit tests for the Roman source injection step code
 """
 
-import pytest
-
 import numpy as np
+import pytest
 from astropy import table
 from astropy import units as u
 from astropy.coordinates import SkyCoord
