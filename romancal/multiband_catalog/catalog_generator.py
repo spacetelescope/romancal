@@ -56,7 +56,7 @@ def create_filter_catalog(
         Name of the reference filter for PSF matching.
 
     ref_wavelength : int
-        Wavelength of the reference filter in nm.
+        Wavelength of the reference filter in microns.
 
     segment_img : ndarray
         Segmentation image from detection.
@@ -73,7 +73,7 @@ def create_filter_catalog(
     ref_filter_catalog : Table or None
         The reference filter's catalog (needed for redder filters).
 
-    ref_psf_model : datamodels
+    ref_psf_model : EpsfRefModel
         PSF reference model for the reference filter.
 
     fit_psf : bool
@@ -101,7 +101,7 @@ def create_filter_catalog(
     log.info(f"Creating catalog for {filter_name} image")
     ref_file = get_reference_file_func(model, "epsf")
     log.info("Using ePSF reference file: %s", ref_file)
-    psf_ref_model = datamodels.open(ref_file)
+    psf_model = datamodels.open(ref_file)
 
     apcorr_ref = get_reference_file_func(model, "apcorr")
     ee_spline = get_ee_spline(model, apcorr_ref)
@@ -116,7 +116,7 @@ def create_filter_catalog(
         fit_psf=fit_psf,
         detection_cat=detection_catobj,
         mask=mask,
-        psf_ref_model=psf_ref_model if fit_psf else None,
+        psf_ref_model=psf_model if fit_psf else None,
         cat_type="dr_band",
         ee_spline=ee_spline,
     )
@@ -153,8 +153,8 @@ def create_filter_catalog(
         log.info(f"Creating PSF-matched image for {filter_name}")
         psf_matched_model = create_psf_matched_image(
             model,
+            psf_model,
             ref_psf_model,
-            input_psf_ref_model=psf_ref_model,
         )
 
         log.info(f"Creating catalog for PSF-matched {filter_name} image")
@@ -195,13 +195,14 @@ def create_filter_catalog(
                 f"{filter_name}."
             )
 
-        # Compute correction factors by matching reference TO redder filter
+        # Compute correction factors by matching reference image to
+        # the redder filter
         correction_factors = compute_psf_correction_factors(
             ref_model=ref_model,
+            ref_psf_model=ref_psf_model,
             ref_catalog=ref_filter_catalog,
             target_model=model,
-            target_psf_ref_model=psf_ref_model,
-            ref_psf_model=ref_psf_model,
+            target_psf_model=psf_model,
             segment_img=segment_img,
             star_kernel_fwhm=star_kernel_fwhm,
             detection_cat=detection_catobj,
@@ -211,7 +212,6 @@ def create_filter_catalog(
 
         # Create synthetic PSF-matched catalog by applying
         # correction factors to the original catalog
-        # Use cat_original which has filter names but still has data
         cat_synthetic = cat_original.copy()
 
         # Apply correction factors to flux columns
@@ -221,14 +221,14 @@ def create_filter_catalog(
             filter_suffix = f"_{filter_name.lower()}_flux"
             flux_col = flux_col_base.replace("_flux", filter_suffix)
             if flux_col in cat_synthetic.colnames:
-                cat_synthetic[flux_col] = cat_synthetic[flux_col] * correction
+                cat_synthetic[flux_col] *= correction
 
             # Also apply to error columns
             err_col = flux_col.replace("_flux", "_flux_err")
             if err_col in cat_synthetic.colnames:
-                cat_synthetic[err_col] = cat_synthetic[err_col] * correction
+                cat_synthetic[err_col] *= correction
 
-            # Handle magnitude columns (subtract 2.5*log10(C))
+            # Handle magnitude columns (subtract 2.5 * log10(C))
             mag_col = flux_col.replace("_flux", "_abmag")
             if mag_col in cat_synthetic.colnames:
                 with np.errstate(divide="ignore", invalid="ignore"):
@@ -238,7 +238,7 @@ def create_filter_catalog(
                         0.0,
                         mag_correction,
                     )
-                cat_synthetic[mag_col] = cat_synthetic[mag_col] + mag_correction
+                cat_synthetic[mag_col] += mag_correction
 
         # Rename columns to add 'm' suffix and keep only those columns
         filter_name_matched = f"{filter_name}m"
