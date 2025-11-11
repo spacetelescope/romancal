@@ -109,18 +109,34 @@ def test_multiband_catalog(
     assert len(cat) == 7
 
     assert len(cat.meta["aperture_radii"]["circle_pix"]) > 0
-    print(cat.colnames)
+
+    # Check for original (non-PSF-matched) columns
     assert sum(
         1 for name in cat.colnames if match(r"^aper\d+_f158_flux$", name)
     ) == len(cat.meta["aperture_radii"]["circle_pix"])
     assert sum(
         1 for name in cat.colnames if match(r"^aper\d+_f184_flux$", name)
     ) == len(cat.meta["aperture_radii"]["circle_pix"])
+
+    # Check for PSF-matched columns
+    # Target filter (F184) should NOT have PSF-matched columns
+    assert sum(
+        1 for name in cat.colnames if match(r"^aper\d+_f158m_flux$", name)
+    ) == len(cat.meta["aperture_radii"]["circle_pix"])
+    assert sum(1 for name in cat.colnames if match(r"^aper\d+_f184m_flux$", name)) == 0
     assert "ee_fractions" in cat.meta
     assert isinstance(cat.meta["ee_fractions"], dict)
+    # f158, f184 (no PSF-matched bands)
     assert len(cat.meta["ee_fractions"]) == 2
+
+    # Check metadata for PSF match reference filter
+    assert "psf_match_reference_filter" in cat.meta
+    assert cat.meta["psf_match_reference_filter"] == "f184"
     assert "f158" in cat.meta["ee_fractions"]
     assert "f184" in cat.meta["ee_fractions"]
+    # PSF-matched bands should not have ee_fractions
+    assert "f158m" not in cat.meta["ee_fractions"]
+    assert "f184m" not in cat.meta["ee_fractions"]
     for value in cat.meta["ee_fractions"].values():
         assert len(value) == len(cat.meta["aperture_radii"]["circle_pix"])
 
@@ -220,3 +236,191 @@ def test_multiband_catalog_some_invalid_inputs(
     assert "segment_f184_flux" in cat.colnames
     assert np.all(np.isnan(cat["segment_f184_flux"]))
     assert np.all(np.isnan(cat["segment_f184_flux_err"]))
+
+
+@pytest.fixture
+def library_model_three_filters(mosaic_model):
+    """
+    Library with F062, F158, F184.
+    """
+    model1 = mosaic_model.copy()
+    model1.meta.instrument.optical_element = "F062"
+
+    model2 = mosaic_model.copy()
+    model2.meta.instrument.optical_element = "F158"
+
+    model3 = mosaic_model.copy()
+    model3.meta.instrument.optical_element = "F184"
+
+    # input models not in wavelength order to test sorting
+    return ModelLibrary([model2, model3, model1])
+
+
+@pytest.mark.parametrize("fit_psf", (True, False))
+def test_multiband_catalog_reddest_reference(
+    library_model_three_filters, fit_psf, function_jail
+):
+    """
+    Test PSF matching when reference filter is the reddest.
+
+    This tests the case where we have [F062, F158, F184] and F184 is
+    selected as the reference (longest wavelength). F062 and F158 get
+    PSF-matched to F184. Because F184 is the reference, no PSF-matched
+    columns are created for F184.
+    """
+    step = MultibandCatalogStep()
+
+    result = step.call(
+        library_model_three_filters,
+        bkg_boxsize=50,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=fit_psf,
+        save_results=False,
+    )
+
+    cat = result.source_catalog
+    assert isinstance(cat, Table)
+    assert len(cat) == 7
+
+    # Check metadata for PSF match reference filter
+    assert "psf_match_reference_filter" in cat.meta
+    assert cat.meta["psf_match_reference_filter"] == "f184"
+
+    # F062 and F158 should have PSF-matched columns (matched to F184)
+    assert sum(
+        1 for name in cat.colnames if match(r"^aper\d+_f062m_flux$", name)
+    ) == len(cat.meta["aperture_radii"]["circle_pix"])
+    assert sum(
+        1 for name in cat.colnames if match(r"^aper\d+_f158m_flux$", name)
+    ) == len(cat.meta["aperture_radii"]["circle_pix"])
+
+    # F184 (reference) should NOT have PSF-matched columns
+    assert sum(1 for name in cat.colnames if match(r"^aper\d+_f184m_flux$", name)) == 0
+
+    # Check ee_fractions - should have 3 keys: f062, f158, f184 (no
+    # PSF-matched bands)
+    assert "ee_fractions" in cat.meta
+    assert len(cat.meta["ee_fractions"]) == 3
+    assert "f062" in cat.meta["ee_fractions"]
+    assert "f158" in cat.meta["ee_fractions"]
+    assert "f184" in cat.meta["ee_fractions"]
+    # PSF-matched bands should not have ee_fractions
+    assert "f062m" not in cat.meta["ee_fractions"]
+    assert "f158m" not in cat.meta["ee_fractions"]
+    assert "f184m" not in cat.meta["ee_fractions"]
+
+
+def test_multiband_catalog_middle_reference(library_model_three_filters, function_jail):
+    """
+    Test PSF matching when reference filter is in the middle.
+
+    This tests the case where we have [F062, F158, F184] and F158 is
+    selected as the reference (middle wavelength). F062 gets normal
+    PSF-matching (convolved to F158), while F184 gets synthetic
+    PSF-matching (correction factors). F158 has no PSF-matched columns
+    as it is the reference.
+    """
+    step = MultibandCatalogStep()
+
+    result = step.call(
+        library_model_three_filters,
+        bkg_boxsize=50,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        save_results=False,
+        reference_filter="F158",
+    )
+
+    cat = result.source_catalog
+    assert isinstance(cat, Table)
+    assert len(cat) == 7
+
+    # Check metadata for PSF match reference filter
+    assert "psf_match_reference_filter" in cat.meta
+    assert cat.meta["psf_match_reference_filter"] == "f158"
+
+    # F062 (bluer) should have PSF-matched columns (normal convolution
+    # to F158)
+    assert sum(
+        1 for name in cat.colnames if match(r"^aper\d+_f062m_flux$", name)
+    ) == len(cat.meta["aperture_radii"]["circle_pix"])
+
+    # F158 (reference) should NOT have PSF-matched columns
+    assert sum(1 for name in cat.colnames if match(r"^aper\d+_f158m_flux$", name)) == 0
+
+    # F184 (redder) should have PSF-matched columns (synthetic via
+    # correction factors)
+    assert sum(
+        1 for name in cat.colnames if match(r"^aper\d+_f184m_flux$", name)
+    ) == len(cat.meta["aperture_radii"]["circle_pix"])
+
+    # Check ee_fractions - should have 3 keys: f062, f158, f184 (no
+    # PSF-matched bands)
+    assert "ee_fractions" in cat.meta
+    assert len(cat.meta["ee_fractions"]) == 3
+    assert "f062" in cat.meta["ee_fractions"]
+    assert "f158" in cat.meta["ee_fractions"]
+    assert "f184" in cat.meta["ee_fractions"]
+    # PSF-matched bands should not have ee_fractions
+    assert "f062m" not in cat.meta["ee_fractions"]
+    assert "f158m" not in cat.meta["ee_fractions"]
+    assert "f184m" not in cat.meta["ee_fractions"]
+
+
+def test_multiband_catalog_bluest_reference(library_model_three_filters, function_jail):
+    """
+    Test PSF matching when reference filter is the bluest.
+
+    This tests the case where we have [F062, F158, F184] and F062 is
+    selected as the reference (shortest wavelength). Both F158 and
+    F184 get synthetic PSF-matching (correction factors). F062 has no
+    PSF-matched columns as it is the reference.
+    """
+    step = MultibandCatalogStep()
+
+    result = step.call(
+        library_model_three_filters,
+        bkg_boxsize=50,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        save_results=False,
+        reference_filter="F062",
+    )
+
+    cat = result.source_catalog
+    assert isinstance(cat, Table)
+    assert len(cat) == 7
+
+    # Check metadata for PSF match reference filter
+    assert "psf_match_reference_filter" in cat.meta
+    assert cat.meta["psf_match_reference_filter"] == "f062"
+
+    # F062 (reference) should NOT have PSF-matched columns
+    assert sum(1 for name in cat.colnames if match(r"^aper\d+_f062m_flux$", name)) == 0
+
+    # F158 (redder) should have PSF-matched columns (synthetic via
+    # correction factors)
+    assert sum(
+        1 for name in cat.colnames if match(r"^aper\d+_f158m_flux$", name)
+    ) == len(cat.meta["aperture_radii"]["circle_pix"])
+
+    # F184 (reddest) should have PSF-matched columns (synthetic via
+    # correction factors)
+    assert sum(
+        1 for name in cat.colnames if match(r"^aper\d+_f184m_flux$", name)
+    ) == len(cat.meta["aperture_radii"]["circle_pix"])
+
+    # Check ee_fractions - should have 3 keys: f062, f158, f184 (no
+    # PSF-matched bands)
+    assert "ee_fractions" in cat.meta
+    assert len(cat.meta["ee_fractions"]) == 3
+    assert "f062" in cat.meta["ee_fractions"]
+    assert "f158" in cat.meta["ee_fractions"]
+    assert "f184" in cat.meta["ee_fractions"]
+    # PSF-matched bands should not have ee_fractions
+    assert "f062m" not in cat.meta["ee_fractions"]
+    assert "f158m" not in cat.meta["ee_fractions"]
+    assert "f184m" not in cat.meta["ee_fractions"]
