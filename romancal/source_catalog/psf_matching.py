@@ -94,7 +94,7 @@ def create_psf_matched_image(
         )
         raise ValueError(msg)
     target_oversampling = target_l3_psf_model.oversampling
-    if input_oversampling != target_oversampling:
+    if np.all(input_oversampling != target_oversampling):
         msg = "Input and target PSF models have different oversampling factors."
         raise ValueError(msg)
     oversampling = input_oversampling[0]
