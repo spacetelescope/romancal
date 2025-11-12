@@ -8,6 +8,7 @@ import numpy as np
 from astropy.convolution import convolve_fft
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 
+from romancal.multiband_catalog.utils import add_filter_to_colnames
 from romancal.source_catalog.psf import (
     create_convolution_kernel,
     create_l3_psf_model,
@@ -268,10 +269,9 @@ def compute_psf_correction_factors(
     Returns
     -------
     correction_factors : dict
-        Dictionary mapping flux column base names to arrays of
-        correction factors. Keys are like 'segment_flux', 'kron_flux',
-        'aper01_flux', etc. Values are arrays with one correction factor
-        per source.
+        Dictionary mapping flux column names to arrays of correction
+        factors. Values are arrays with one correction factor per
+        source.
     """
     from romancal.source_catalog.source_catalog import RomanSourceCatalog
 
@@ -302,7 +302,8 @@ def compute_psf_correction_factors(
         ee_spline=ee_spline,
     )
 
-    cat_matched = catobj_matched.catalog
+    # add filter name to catalog column names
+    cat_matched = add_filter_to_colnames(catobj_matched.catalog, ref_filter)
 
     # Compute correction factors C = flux_matched / flux_original
     # for each flux type (segment, kron, aper*)

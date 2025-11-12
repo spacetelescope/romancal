@@ -215,22 +215,25 @@ def create_filter_catalog(
         cat_synthetic = cat_original.copy()
 
         # Apply correction factors to flux columns
-        # Column names already have filter suffix (e.g., kron_f158_flux)
-        for flux_col_base, correction in correction_factors.items():
-            # Add filter name to the base column name
-            filter_suffix = f"_{filter_name.lower()}_flux"
-            flux_col = flux_col_base.replace("_flux", filter_suffix)
-            if flux_col in cat_synthetic.colnames:
-                cat_synthetic[flux_col] *= correction
+        for flux_col, correction in correction_factors.items():
+            # flux_col names contain the reference filter name, so
+            # we need to replace it with the current filter name
+            flux_col_syn = flux_col.replace(
+                f"_{ref_filter.lower()}_", f"_{filter_name.lower()}_"
+            )
+
+            # Apply correction to flux column
+            if flux_col_syn in cat_synthetic.colnames:
+                cat_synthetic[flux_col_syn] *= correction
 
             # Also apply to error columns
-            err_col = flux_col.replace("_flux", "_flux_err")
-            if err_col in cat_synthetic.colnames:
-                cat_synthetic[err_col] *= correction
+            err_col_syn = flux_col_syn.replace("_flux", "_flux_err")
+            if err_col_syn in cat_synthetic.colnames:
+                cat_synthetic[err_col_syn] *= correction
 
             # Handle magnitude columns (subtract 2.5 * log10(C))
-            mag_col = flux_col.replace("_flux", "_abmag")
-            if mag_col in cat_synthetic.colnames:
+            mag_col_syn = flux_col_syn.replace("_flux", "_abmag")
+            if mag_col_syn in cat_synthetic.colnames:
                 with np.errstate(divide="ignore", invalid="ignore"):
                     mag_correction = -2.5 * np.log10(correction)
                     mag_correction = np.where(
@@ -238,14 +241,16 @@ def create_filter_catalog(
                         0.0,
                         mag_correction,
                     )
-                cat_synthetic[mag_col] += mag_correction
+                cat_synthetic[mag_col_syn] += mag_correction
 
-        # Rename columns to add 'm' suffix and keep only those columns
+        # Rename columns to add 'm' suffix and keep only flux columns
         filter_name_matched = f"{filter_name}m"
         cols_to_keep = ["label"]  # Always keep label for joining
         for colname in list(cat_synthetic.colnames):
             # Replace filter name with filter name + 'm'
             # e.g., kron_f158_flux -> kron_f158m_flux
+            # We not keep columns that *end* with the filter name, e.g.,
+            # sharpness_f158.
             if f"_{filter_name.lower()}_" in colname:
                 new_colname = colname.replace(
                     f"_{filter_name.lower()}_",
@@ -255,12 +260,12 @@ def create_filter_catalog(
                 cols_to_keep.append(new_colname)
 
         # Keep only the PSF-matched columns (and label)
-        cat_synthetic_named = cat_synthetic[cols_to_keep]
+        cat_synthetic = cat_synthetic[cols_to_keep]
 
         # Merge the two catalogs
         cat = join(
             cat_original,
-            cat_synthetic_named,
+            cat_synthetic,
             keys="label",
             join_type="outer",
         )
