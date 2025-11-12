@@ -69,7 +69,7 @@ class RomanBackground:
             A Background2D object containing the 2D background and
             background RMS noise estimates.
         """
-        sigma_clip = SigmaClip(sigma=3.0)
+        sigma_clip = SigmaClip(sigma=3.0, stdfunc="mad_std")
         bkg_estimator = MedianBackground()
         filter_size = (3, 3)
 
