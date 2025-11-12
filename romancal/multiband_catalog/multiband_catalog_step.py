@@ -13,8 +13,8 @@ from roman_datamodels import datamodels
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog.multiband_catalog import (
     make_source_injected_library,
+    match_recovered_sources,
     multiband_catalog,
-    match_recovered_sources
 )
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.utils import get_ee_spline
@@ -128,8 +128,9 @@ class MultibandCatalogStep(RomanStep):
             )
 
             # Match sources
-            recovered_sources = match_recovered_sources(cat_model.source_catalog,
-                si_cat, si_cat_model.source_catalog)
+            recovered_sources = match_recovered_sources(
+                cat_model.source_catalog, si_cat, si_cat_model.source_catalog
+            )
 
             # Put the source injected multiband catalog in the model
             cat_model.source_injection_catalog = si_cat_model.source_catalog

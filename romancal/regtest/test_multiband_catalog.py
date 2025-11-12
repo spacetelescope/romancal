@@ -2,8 +2,8 @@
 
 import pytest
 from astropy.table import Table
-
 from roman_datamodels.datamodels import MultibandSegmentationMapModel
+
 from romancal.stpipe import RomanStep
 
 # mark all tests in this module
@@ -78,8 +78,9 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
     )
 
 
-
-def test_multiband_source_injection(rtdata_module, resource_tracker, request, dms_logger):
+def test_multiband_source_injection(
+    rtdata_module, resource_tracker, request, dms_logger
+):
     rtdata = rtdata_module
     inputasnfn = "L3_skycell_mbcat_asn.json"
     # note that this input association currently only has a single
@@ -113,7 +114,8 @@ def test_multiband_source_injection(rtdata_module, resource_tracker, request, dm
     )
 
     # DMS 396: Ensure at least 50% of injected sourced are recovered.
-    assert np.count_nonzero(segm_mod.recovered_sources['best_injected_index'] != -1) > (len(segm_mod.injected_sources) / 2)
+    assert np.count_nonzero(segm_mod.recovered_sources["best_injected_index"] != -1) > (
+        len(segm_mod.injected_sources) / 2
+    )
 
     dms_logger.info("DMS396: successfully recovered over half of the injected sources.")
-

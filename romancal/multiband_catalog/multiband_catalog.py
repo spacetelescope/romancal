@@ -8,8 +8,8 @@ import copy
 import logging
 
 import numpy as np
-from astropy import units as u
 from astropy import coordinates
+from astropy import units as u
 from astropy.table import join
 from astropy.time import Time
 from roman_datamodels import datamodels
@@ -349,36 +349,38 @@ def match_recovered_sources(original, injected, si_catalogs):
 
     # Create recovered catalog
     recovered = copy.deepcopy(si_catalogs)
-    recovered['best_injected_index'] = -1
+    recovered["best_injected_index"] = -1
 
     # Create skycoord objects
-    if hasattr(original['ra'], "unit") and (original['ra'].unit == u.deg):
-        ocoord = coordinates.SkyCoord(original['ra'], original['dec'])
+    if hasattr(original["ra"], "unit") and (original["ra"].unit == u.deg):
+        ocoord = coordinates.SkyCoord(original["ra"], original["dec"])
     else:
-        ocoord = coordinates.SkyCoord(original['ra'] * u.deg, original['dec'] * u.deg)
+        ocoord = coordinates.SkyCoord(original["ra"] * u.deg, original["dec"] * u.deg)
 
-    if hasattr(injected['ra'], "unit") and (injected['ra'].unit == u.deg):
-        icoord = coordinates.SkyCoord(injected['ra'], injected['dec'])
+    if hasattr(injected["ra"], "unit") and (injected["ra"].unit == u.deg):
+        icoord = coordinates.SkyCoord(injected["ra"], injected["dec"])
     else:
-        icoord = coordinates.SkyCoord(injected['ra'] * u.deg, injected['dec'] * u.deg)
+        icoord = coordinates.SkyCoord(injected["ra"] * u.deg, injected["dec"] * u.deg)
 
-    if hasattr(recovered['ra'], "unit") and (recovered['ra'].unit == u.deg):
-        rcoord = coordinates.SkyCoord(recovered['ra'], recovered['dec'])
+    if hasattr(recovered["ra"], "unit") and (recovered["ra"].unit == u.deg):
+        rcoord = coordinates.SkyCoord(recovered["ra"], recovered["dec"])
     else:
-        rcoord = coordinates.SkyCoord(recovered['ra'] * u.deg, recovered['dec'] * u.deg)
+        rcoord = coordinates.SkyCoord(recovered["ra"] * u.deg, recovered["dec"] * u.deg)
 
     # Set maximum radius for matching.
     # d = 3*sqrt(half_right_radius^2 + 0.2^2)
     # In addition, set a maximum of 10"
-    max_sep_injected = 3 * np.sqrt(injected['half_light_radius'].value**2
-        + 0.2**2) * u.arcsec
+    max_sep_injected = (
+        3 * np.sqrt(injected["half_light_radius"].value ** 2 + 0.2**2) * u.arcsec
+    )
     sep_mask = np.greater(max_sep_injected.value, 10)
     max_sep_injected[sep_mask] = 10 * u.arcsec
 
     # Trim recovered catalog to only objects near injected sources
-    mi, mr, dist, _ = coordinates.search_around_sky(icoord,
-        rcoord, np.max(max_sep_injected))
-    keep = np.zeros(len(rcoord), dtype='bool')
+    mi, mr, dist, _ = coordinates.search_around_sky(
+        icoord, rcoord, np.max(max_sep_injected)
+    )
+    keep = np.zeros(len(rcoord), dtype="bool")
     keep[mr] = True
     recovered = recovered[keep]
     rcoord = rcoord[keep]
@@ -387,11 +389,11 @@ def match_recovered_sources(original, injected, si_catalogs):
     m = sep.to(u.arcsec) < max_sep_injected
 
     # Set matched injected sources
-    recovered['best_injected_index'] = -1
-    recovered['best_injected_index'][idx[m]] = np.flatnonzero(m)
+    recovered["best_injected_index"] = -1
+    recovered["best_injected_index"][idx[m]] = np.flatnonzero(m)
 
     # Set distances
     idx, sep, _ = coordinates.match_coordinates_sky(rcoord, ocoord)
-    recovered['dist_nearest'] = sep.to(u.arcsec)
+    recovered["dist_nearest"] = sep.to(u.arcsec)
 
     return recovered

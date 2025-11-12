@@ -373,7 +373,9 @@ def test_multiband_source_injection_catalog(
         )
         assert len(segm_mod.injected_sources[0]) <= len(si_cat)
 
-        assert np.count_nonzero(segm_mod.recovered_sources['best_injected_index'] != -1) > (400 / 2)
+        assert np.count_nonzero(
+            segm_mod.recovered_sources["best_injected_index"] != -1
+        ) > (400 / 2)
 
     # Old lines from other MBC tests
     shared_tests(
@@ -389,12 +391,20 @@ def test_multiband_source_injection_catalog(
 def test_match_recovered_sources():
     # Create minimal source catalog data
     shape = (2000, 2000)
-    orig_xy = [[510,510], [400, 400], [1000,1000], [450,1450], [100,100]]
-    injected_xy = [[500,500], [500,1500], [1500,500], [1500,1500]]
+    orig_xy = [[510, 510], [400, 400], [1000, 1000], [450, 1450], [100, 100]]
+    injected_xy = [[500, 500], [500, 1500], [1500, 500], [1500, 1500]]
     injected_hlr = [2.0, 12.0, 5.0, 1.0]
-    si_cat_xy = [[510.1,510.1], [400.1, 400.1], [1000.1,1000.1],
-        [450.1,1450.1], [100.1,100.1], [500.1,500.1], [500.1,1500.1],
-        [1500.1,500.1], [1500.1,1500.1]]
+    si_cat_xy = [
+        [510.1, 510.1],
+        [400.1, 400.1],
+        [1000.1, 1000.1],
+        [450.1, 1450.1],
+        [100.1, 100.1],
+        [500.1, 500.1],
+        [500.1, 1500.1],
+        [1500.1, 500.1],
+        [1500.1, 1500.1],
+    ]
 
     # Make wcs object
     wcsobj = mk_gwcs(
@@ -411,22 +421,25 @@ def test_match_recovered_sources():
     si_cat_table = Table()
 
     # Conert x, y to ra & dec
-    orig_table['x'], orig_table['y'] = zip(*orig_xy)
-    orig_table['ra'], orig_table['dec'] = wcsobj.pixel_to_world_values(
-                    np.array(orig_table['x']), np.array(orig_table['y']))
+    orig_table["x"], orig_table["y"] = zip(*orig_xy)
+    orig_table["ra"], orig_table["dec"] = wcsobj.pixel_to_world_values(
+        np.array(orig_table["x"]), np.array(orig_table["y"])
+    )
 
-    injected_table['x'], injected_table['y'] = zip(*injected_xy)
-    injected_table['ra'], injected_table['dec'] = wcsobj.pixel_to_world_values(
-                    np.array(injected_table['x']), np.array(injected_table['y']))
+    injected_table["x"], injected_table["y"] = zip(*injected_xy)
+    injected_table["ra"], injected_table["dec"] = wcsobj.pixel_to_world_values(
+        np.array(injected_table["x"]), np.array(injected_table["y"])
+    )
 
-    si_cat_table['x'], si_cat_table['y'] = zip(*si_cat_xy)
-    si_cat_table['ra'], si_cat_table['dec'] = wcsobj.pixel_to_world_values(
-                    np.array(si_cat_table['x']), np.array(si_cat_table['y']))
+    si_cat_table["x"], si_cat_table["y"] = zip(*si_cat_xy)
+    si_cat_table["ra"], si_cat_table["dec"] = wcsobj.pixel_to_world_values(
+        np.array(si_cat_table["x"]), np.array(si_cat_table["y"])
+    )
 
     # Additional table columns
-    injected_table['half_light_radius'] = injected_hlr
-    orig_table['empty'] = 0
-    si_cat_table['one'] = 1
+    injected_table["half_light_radius"] = injected_hlr
+    orig_table["empty"] = 0
+    si_cat_table["one"] = 1
 
     # Conduct matching
     rec_table = match_recovered_sources(orig_table, injected_table, si_cat_table)
@@ -435,8 +448,9 @@ def test_match_recovered_sources():
     assert len(rec_table) < len(si_cat_table)
 
     # Test that grid sources were found
-    assert np.count_nonzero(rec_table['best_injected_index'] != -1) \
-        == len(injected_table)
+    assert np.count_nonzero(rec_table["best_injected_index"] != -1) == len(
+        injected_table
+    )
 
     # Test columns included or excluded as expected
     assert "one" in rec_table.colnames
