@@ -436,6 +436,7 @@ def test_match_recovered_sources():
 
     # Additional table columns
     injected_table["half_light_radius"] = injected_hlr
+    injected_table["half_light_radius"].unit = 'arcsec'
     orig_table["empty"] = 0
     si_cat_table["one"] = 1
 
