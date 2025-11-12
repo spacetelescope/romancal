@@ -13,6 +13,7 @@ from romancal.source_catalog.psf import (
     create_convolution_kernel,
     create_l3_psf_model,
 )
+from romancal.source_catalog.utils import copy_model_arrays
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -131,9 +132,8 @@ def create_psf_matched_image(
     else:
         matched_err = None
 
-    # Create output model
-    # TODO: copy only data and err
-    matched_model = model.copy()
+    # Create output model with copied data and err arrays
+    matched_model = copy_model_arrays(model)
     matched_model.data = matched_data
     if matched_err is not None:
         matched_model.err = matched_err

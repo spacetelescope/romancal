@@ -2,6 +2,7 @@ import numpy as np
 from astropy.modeling.fitting import SplineSplrepFitter
 from astropy.modeling.models import Spline1D
 from roman_datamodels import datamodels
+from roman_datamodels.datamodels import ImageModel, MosaicModel
 
 
 def copy_mosaic_meta(model, cat_model):
@@ -41,7 +42,7 @@ def get_ee_spline(input_model, apcorr_file):
 
     Parameters
     ----------
-    input'_model : `~roman_datamodels.datamodels.ImageModel` or `~roman_datamodels.datamodels.MosaicModel`
+    input_model : `~roman_datamodels.datamodels.ImageModel` or `~roman_datamodels.datamodels.MosaicModel`
         The input data model.
     """
 
@@ -53,3 +54,45 @@ def get_ee_spline(input_model, apcorr_file):
         # Fit a spline model to the ee_fraction vs radius data so that we
         # can interpolate the values for arbitrary radii
         return SplineSplrepFitter()(Spline1D(), ee_radii, ee_fractions)
+
+
+def copy_model_arrays(model):
+    """
+    Create a shallow copy of ImageModel or MosaicModel with data and err
+    copied.
+
+    This function creates a new model instance that shares the metadata
+    with the input model but has independent copies of the data and err
+    arrays. Other arrays (dq, weight) are shared references.
+
+    Parameters
+    ----------
+    model : ImageModel or MosaicModel
+        The input data model to copy.
+
+    Returns
+    -------
+    copied_model : ImageModel or MosaicModel
+        A new model with copied data and err arrays.
+
+    Notes
+    -----
+    The metadata and dq/weight arrays are not copied because they are
+    not modified in source catalog operations.
+    """
+    if isinstance(model, ImageModel):
+        copied_model = ImageModel()
+        copied_model.meta = model.meta
+        copied_model.data = model.data.copy()
+        copied_model.err = model.err.copy()
+        copied_model.dq = model.dq
+    elif isinstance(model, MosaicModel):
+        copied_model = MosaicModel()
+        copied_model.meta = model.meta
+        copied_model.data = model.data.copy()
+        copied_model.err = model.err.copy()
+        copied_model.weight = model.weight
+    else:
+        raise TypeError("model must be an ImageModel or MosaicModel")
+
+    return copied_model
