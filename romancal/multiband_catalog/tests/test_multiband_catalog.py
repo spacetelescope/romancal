@@ -368,9 +368,7 @@ def test_multiband_source_injection_catalog(
         segm_mod = rdm.open(filepath)
         assert isinstance(segm_mod, MultibandSegmentationMapModel)
         assert segm_mod.data.shape == segm_mod.si_data.shape
-        assert isinstance(
-            segm_mod.injected_sources, np.ndarray | asdf.tags.core.ndarray.NDArrayType
-        )
+        assert isinstance(segm_mod.injected_sources, Table)
         assert len(segm_mod.injected_sources[0]) <= len(si_cat)
 
         assert np.count_nonzero(
@@ -438,6 +436,7 @@ def test_match_recovered_sources():
 
     # Additional table columns
     injected_table["half_light_radius"] = injected_hlr
+    injected_table["half_light_radius"].unit = 'arcsec'
     orig_table["empty"] = 0
     si_cat_table["one"] = 1
 

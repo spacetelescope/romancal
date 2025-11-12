@@ -351,42 +351,39 @@ def match_recovered_sources(original, injected, si_catalogs):
     recovered = copy.deepcopy(si_catalogs)
     recovered["best_injected_index"] = -1
 
+    def _make_skycoord(cat):
+        ra, dec = cat['ra'], cat['dec']
+        if not hasattr(cat["ra"], "unit") or ra.unit is None:
+            ra = ra * u.deg
+            dec = dec * u.deg
+        return coordinates.SkyCoord(ra, dec)
+
     # Create skycoord objects
-    if hasattr(original["ra"], "unit") and (original["ra"].unit == u.deg):
-        ocoord = coordinates.SkyCoord(original["ra"], original["dec"])
-    else:
-        ocoord = coordinates.SkyCoord(original["ra"] * u.deg, original["dec"] * u.deg)
-
-    if hasattr(injected["ra"], "unit") and (injected["ra"].unit == u.deg):
-        icoord = coordinates.SkyCoord(injected["ra"], injected["dec"])
-    else:
-        icoord = coordinates.SkyCoord(injected["ra"] * u.deg, injected["dec"] * u.deg)
-
-    if hasattr(recovered["ra"], "unit") and (recovered["ra"].unit == u.deg):
-        rcoord = coordinates.SkyCoord(recovered["ra"], recovered["dec"])
-    else:
-        rcoord = coordinates.SkyCoord(recovered["ra"] * u.deg, recovered["dec"] * u.deg)
+    ocoord = _make_skycoord(original)
+    icoord = _make_skycoord(injected)
+    rcoord = _make_skycoord(recovered)
 
     # Set maximum radius for matching.
     # d = 3*sqrt(half_right_radius^2 + 0.2^2)
     # In addition, set a maximum of 10"
     max_sep_injected = (
-        3 * np.sqrt(injected["half_light_radius"].value ** 2 + 0.2**2) * u.arcsec
+        3 * np.sqrt(injected["half_light_radius"].to(u.arcsec).value ** 2
+                    + 0.2 ** 2)
     )
-    sep_mask = np.greater(max_sep_injected.value, 10)
-    max_sep_injected[sep_mask] = 10 * u.arcsec
+    max_sep_injected = np.clip(max_sep_injected, 0, np.inf)
 
     # Trim recovered catalog to only objects near injected sources
     mi, mr, dist, _ = coordinates.search_around_sky(
-        icoord, rcoord, np.max(max_sep_injected)
+        icoord, rcoord, np.max(max_sep_injected) * u.arcsec
     )
+    m = dist < max_sep_injected[mi] * u.arcsec
     keep = np.zeros(len(rcoord), dtype="bool")
-    keep[mr] = True
+    keep[mr[m]] = True
     recovered = recovered[keep]
     rcoord = rcoord[keep]
 
     idx, sep, _ = coordinates.match_coordinates_sky(icoord, rcoord)
-    m = sep.to(u.arcsec) < max_sep_injected
+    m = sep < max_sep_injected * u.arcsec
 
     # Set matched injected sources
     recovered["best_injected_index"] = -1

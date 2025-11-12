@@ -123,6 +123,9 @@
   "DMS395": [
     "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
   ],
+  "DMS396": [
+    "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
+  ],
   "DMS399": [
     "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
   ],
