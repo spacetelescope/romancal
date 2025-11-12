@@ -96,8 +96,8 @@ class RomanSourceCatalog:
         kernel_fwhm,
         *,
         fit_psf=True,
+        psf_model=None,
         mask=None,
-        psf_ref_model=None,
         detection_cat=None,
         flux_unit="nJy",
         cat_type="prompt",
@@ -111,8 +111,8 @@ class RomanSourceCatalog:
         self.convolved_data = convolved_data
         self.kernel_fwhm = kernel_fwhm
         self.fit_psf = fit_psf
+        self.psf_model = psf_model
         self.mask = mask
-        self.psf_ref_model = psf_ref_model
         self.detection_cat = detection_cat
         self.flux_unit = flux_unit
         self.cat_type = cat_type
@@ -132,7 +132,7 @@ class RomanSourceCatalog:
             u.Unit(self.flux_unit)
         )
 
-        if self.fit_psf and self.psf_ref_model is None:
+        if self.fit_psf and self.psf_model is None:
             log.error(
                 "PSF fitting is requested but no PSF reference model is provided. Skipping PSF photometry."
             )
@@ -306,7 +306,7 @@ class RomanSourceCatalog:
 
         The results are set as dynamic attributes on the class instance.
         """
-        psf_cat = PSFCatalog(self.model, self.psf_ref_model, self._xypos, self.mask)
+        psf_cat = PSFCatalog(self.model, self.psf_model, self._xypos, self.mask)
         for name in psf_cat.names:
             setattr(self, name, getattr(psf_cat, name))
 
