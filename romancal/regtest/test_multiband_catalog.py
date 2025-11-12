@@ -1,6 +1,7 @@
 """Roman tests for source catalog creation"""
 
 import pytest
+import numpy as np
 from astropy.table import Table
 from roman_datamodels.datamodels import MultibandSegmentationMapModel
 
