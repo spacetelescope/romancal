@@ -61,11 +61,11 @@ The following meta values are populated:
 
 import dataclasses
 import logging
+import sys
 from collections import defaultdict, namedtuple
 from collections.abc import Callable
 from copy import copy
 from math import cos, sin
-import sys
 from typing import Any
 
 import asdf
@@ -1408,10 +1408,10 @@ def update_meta(model, pysiaf, wcsinfo, vinfo, quality):
     # If not present, stub-out keywords that are expected
     # in L1 products. 26Q2B21 will deal with this bad situation
     gs = model.meta.guide_star
-    gs.corrected_ra = getattr(gs, 'corrected_ra', pm.target_ra)
-    gs.corrected_dec = getattr(gs, 'corrected_dec', pm.target_dec)
-    gs.h = getattr(gs, 'h', wm.v2_ref)
-    gs.v = getattr(gs, 'v', wm.v3_ref)
+    gs.corrected_ra = getattr(gs, "corrected_ra", pm.target_ra)
+    gs.corrected_dec = getattr(gs, "corrected_dec", pm.target_dec)
+    gs.h = getattr(gs, "h", wm.v2_ref)
+    gs.v = getattr(gs, "v", wm.v3_ref)
 
 
 def attitude_from_v1(pysiaf, vinfo):
@@ -1451,11 +1451,13 @@ def calc_m_fgs2gs(x, y):
     x, y : float, float
         Guidestar location (radians)
     """
-    m = np.array([
-        [cos(x), 0., sin(x)],
-        [-sin(x) * sin(y), cos(y), cos(x) * sin(y)],
-        [-sin(x) * cos(y), -sin(y), cos(x) * cos(y)]
-    ])
+    m = np.array(
+        [
+            [cos(x), 0.0, sin(x)],
+            [-sin(x) * sin(y), cos(y), cos(x) * sin(y)],
+            [-sin(x) * cos(y), -sin(y), cos(x) * cos(y)],
+        ]
+    )
 
     return m
 
@@ -1503,7 +1505,9 @@ def calc_gs2gsapp(m_eci2gsics, velocity):
     try:
         scale_factor, u_gseci_app = compute_va_effects_vector(*velocity, u_gseci)
     except TypeError:
-        logger.warning("Failure in computing velocity aberration. Returning identity matrix.")
+        logger.warning(
+            "Failure in computing velocity aberration. Returning identity matrix."
+        )
         logger.warning("Exception: %s", sys.exc_info())
         return np.identity(3)
 
@@ -1515,12 +1519,18 @@ def calc_gs2gsapp(m_eci2gsics, velocity):
     u_prod_mag = np.linalg.norm(u_prod)
     a_hat = u_prod / u_prod_mag
     m_a_hat = np.array(
-        [[0.0, -a_hat[2], a_hat[1]], [a_hat[2], 0.0, -a_hat[0]], [-a_hat[1], a_hat[0], 0.0]]
+        [
+            [0.0, -a_hat[2], a_hat[1]],
+            [a_hat[2], 0.0, -a_hat[0]],
+            [-a_hat[1], a_hat[0], 0.0],
+        ]
     )
     theta = np.arcsin(u_prod_mag)
 
     m_gs2gsapp = (
-        np.identity(3) - (m_a_hat * np.sin(theta)) + (2 * m_a_hat**2 * np.sin(theta / 2.0) ** 2)
+        np.identity(3)
+        - (m_a_hat * np.sin(theta))
+        + (2 * m_a_hat**2 * np.sin(theta / 2.0) ** 2)
     )
 
     logger.debug("m_gs2gsapp: %s", m_gs2gsapp)
