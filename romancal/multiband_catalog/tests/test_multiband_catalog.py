@@ -418,17 +418,17 @@ def test_match_recovered_sources():
     si_cat_table = Table()
 
     # Conert x, y to ra & dec
-    orig_table["x"], orig_table["y"] = zip(*orig_xy)
+    orig_table["x"], orig_table["y"] = zip(*orig_xy, strict=True)
     orig_table["ra"], orig_table["dec"] = wcsobj.pixel_to_world_values(
         np.array(orig_table["x"]), np.array(orig_table["y"])
     )
 
-    injected_table["x"], injected_table["y"] = zip(*injected_xy)
+    injected_table["x"], injected_table["y"] = zip(*injected_xy, strict=True)
     injected_table["ra"], injected_table["dec"] = wcsobj.pixel_to_world_values(
         np.array(injected_table["x"]), np.array(injected_table["y"])
     )
 
-    si_cat_table["x"], si_cat_table["y"] = zip(*si_cat_xy)
+    si_cat_table["x"], si_cat_table["y"] = zip(*si_cat_xy, strict=True)
     si_cat_table["ra"], si_cat_table["dec"] = wcsobj.pixel_to_world_values(
         np.array(si_cat_table["x"]), np.array(si_cat_table["y"])
     )

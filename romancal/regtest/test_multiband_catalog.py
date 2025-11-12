@@ -80,7 +80,8 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
         "fluxes and uncertainties."
     )
 
-    # DMS 396: Ensure the segmentation image contains both injected_sources and recovered_sources
+    # DMS 396: Ensure the segmentation image contains
+    # both injected_sources and recovered_sources
     segm_mod = MultibandSegmentationMapModel(
         outputfn.replace("_cat.parquet", "_segm.asdf")
     )
@@ -88,7 +89,8 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
     assert "recovered_sources" in segm_mod
 
     dms_logger.info(
-        "DMS396: segmentation image contains both injected_sources and recovered_sources."
+        "DMS396: segmentation image contains both " \
+        "injected_sources and recovered_sources."
     )
 
     # DMS 396: Ensure at least 50% of injected sourced are recovered.
