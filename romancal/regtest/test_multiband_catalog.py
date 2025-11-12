@@ -89,7 +89,7 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
     assert "recovered_sources" in segm_mod
 
     dms_logger.info(
-        "DMS396: segmentation image contains both " \
+        "DMS396: segmentation image contains both "
         "injected_sources and recovered_sources."
     )
 
