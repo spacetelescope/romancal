@@ -2,6 +2,7 @@
 
 import pytest
 from astropy.table import Table
+from roman_datamodels.datamodels import MultibandSegmentationMapModel
 
 from romancal.stpipe import RomanStep
 
@@ -77,3 +78,46 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
         "DMS399: successfully tested that catalogs contain aperture "
         "fluxes and uncertainties."
     )
+
+
+def test_multiband_source_injection(
+    rtdata_module, resource_tracker, request, dms_logger
+):
+    rtdata = rtdata_module
+    inputasnfn = "L3_skycell_mbcat_asn.json"
+    # note that this input association currently only has a single
+    # filter in it, so this is more of an existence proof for the multiband
+    # catalogs than a detailed test.  Using only a single catalog lets us
+    # rely on the existing regtest files.
+    outputfn = "r00001_p_v01001001001001_270p65x70y49_f158_mbcat_segm.asdf"
+    rtdata.get_asn(f"WFI/image/{inputasnfn}")
+    rtdata.output = outputfn
+    rtdata.input = inputasnfn
+    rtdata.get_truth(f"truth/WFI/image/{outputfn}")
+    cattruth = Table.read(f"truth/{outputfn}")
+    args = [
+        "romancal.step.MultibandCatalogStep",
+        inputasnfn,
+        "--deblend",
+        "True",
+        "--inject_sources",  # turn on source injection, DMS 396
+        "True",
+    ]
+    with resource_tracker.track(log=request):
+        RomanStep.from_cmdline(args)
+    segm_mod = MultibandSegmentationMapModel(outputfn)
+
+    # DMS 396: Ensure the segmentation image contains both injected_sources and recovered_sources
+    assert "injected_sources" in segm_mod
+    assert "recovered_sources" in segm_mod
+
+    dms_logger.info(
+        "DMS396: segmentation image contains both injected_sources and recovered_sources."
+    )
+
+    # DMS 396: Ensure at least 50% of injected sourced are recovered.
+    assert np.count_nonzero(segm_mod.recovered_sources["best_injected_index"] != -1) > (
+        len(segm_mod.injected_sources) / 2
+    )
+
+    dms_logger.info("DMS396: successfully recovered over half of the injected sources.")
