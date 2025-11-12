@@ -68,6 +68,8 @@ def save_segment_image(
     # Source injection data
     if hasattr(segment_img, "injected_sources"):
         segmentation_model["injected_sources"] = segment_img.injected_sources
+    if hasattr(segment_img, "recovered_sources"):
+        segmentation_model["recovered_sources"] = segment_img.recovered_sources
 
     # Write data for tests
     if save_debug_info:

@@ -7,8 +7,6 @@ from __future__ import annotations
 import copy
 import logging
 from typing import TYPE_CHECKING
-import numpy as np
-from astropy import table
 
 from roman_datamodels import datamodels
 
@@ -16,6 +14,7 @@ from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog.multiband_catalog import (
     make_source_injected_library,
     multiband_catalog,
+    match_recovered_sources
 )
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.utils import get_ee_spline
@@ -128,81 +127,14 @@ class MultibandCatalogStep(RomanStep):
                 si_ee_spline,
             )
 
-            # Move this to a new method source_match
-            # Matching Injected Sources
-            # d = 3*sqrt(half_right_radius^2 + 0.2^2)
-            max_dist = lambda hl_rad: 3 * np.sqrt(hl_rad**2 + 0.2**2)
-
-            # cat_model["max_dist"] =
-            print(f"XXX si_cat_model.source_catalog.colnames = {si_cat_model.source_catalog.colnames}")
-
-            # si_cat_model.source_catalog["max_dist"] = max_dist(si_cat_model.source_catalog["fwhm"])
-            si_cat_model.source_catalog["max_dist"] =  3.0 * np.sqrt((si_cat_model.source_catalog["fwhm"] / 2)**2 + 0.2**2)
-
-            # print(f"XXX si_cat_model.source_catalog[max_dist] = {si_cat_model.source_catalog['max_dist'] }")
-
-            # print(f"XXX si_cat.colnames = {si_cat.colnames}")
-
-            print(f"XXXX len(si_cat) = {len(si_cat)}")
-            print(f"XXXX len(source_catalog) = {len(si_cat_model.source_catalog)}")
-
-
-            from astropy.coordinates import SkyCoord
-            from astropy import units as u
-
-            recovered = table.Table()
-            recovered['best_injected_index'] = [-1] * len(si_cat)
-
-            sc1 = SkyCoord(si_cat["ra"], si_cat["dec"], unit='deg')
-            sc2 = SkyCoord(si_cat_model.source_catalog["ra"], si_cat_model.source_catalog["dec"], unit='deg')
-            t1 = table.Table([sc1, si_cat["label"]], names=['sc', "inject_label"])
-            t2 = table.Table([sc2, si_cat_model.source_catalog["label"]], names=['sc', "si_label"])
-            t12 = table.join(t1, t2, join_funcs={'sc': table.join_skycoord(si_cat["half_light_radius"].value * u.arcsec)})
-
-            recovered['best_injected_index'][t12["inject_label"]] = t12["si_label"]
-
-            recovered = deepcopy(si_cat_model.source_catalog)
-
-            # icoord = SkyCoord(injected['ra'] * u.deg, injected['dec'] * u.deg)
-            # rcoord = SkyCoord(recovered['ra'] * u.deg, recovered['dec'] * u.deg)
-            # ocoord = SkyCoord(original['ra'] * u.deg, original['dec'] * u.deg)
-
-            icoord = SkyCoord(si_cat['ra'] * u.deg, si_cat['dec'] * u.deg)
-            rcoord = SkyCoord(si_cat_model.source_catalog['ra'] * u.deg, si_cat_model.source_catalog['dec'] * u.deg)
-            ocoord = SkyCoord(cat_model.source_catalog['ra'] * u.deg, cat_model.source_catalog['dec'] * u.deg)
-
-            # segm_mod.detection_image
-
-            # max_sep_injected = 3 * sqrt(half_light_radius^2 + 0.2^2) * u.arcsec
-            max_sep_injected = 3 * sqrt(si_cat['half_light_radius']**2 + 0.2**2) * u.arcsec
-
-
-
-            # let's also add some kind of maximum on what half light radius we're willing to inject
-            # maybe we already have this?  Let's not bother looking further away than 10" = 200 pixels.
-            # or here this would be max_sep_injected = min([10 * u.arcsec, max_sep_injected])
-
-            max_sep_injected = np.min([10 * u.arcsec, max_sep_injected])
-            # np.greater(si_model.data, 2000)
-
-            mi, mr, dir, _ = icoord.search_around_sky(c, np.max(max_sep_injected))
-            keep = np.zeros(len(rcoord), dtype='bool')
-            keep[mr] = True
-            recovered = recovered[keep]
-            rcoord = rcoord[keep]  # trim recovered catalog to only objects near injected sources
-            idx, sep, _ = icoord.match_to_coordinates_sky(rcoord)
-            m = sep < max_sep_injected
-            recovered['best_injected_index'] = -1
-            recovered['best_injected_index'][idx[m]] = np.flatnonzero(m)
-            idx, sep, _ = rcoord.match_coordinates_sky(rcoord, ocoord)
-            recovered['dist_nearest'] = sep
-
-
-
+            # Match sources
+            recovered_sources = match_recovered_sources(cat_model.source_catalog,
+                si_cat, si_cat_model.source_catalog)
 
             # Put the source injected multiband catalog in the model
             cat_model.source_injection_catalog = si_cat_model.source_catalog
             segment_img.injected_sources = si_cat.as_array()
+            segment_img.recovered_sources = recovered_sources
 
             if self.save_debug_info:
                 segment_img.si_segment_img = si_segment_img
