@@ -352,7 +352,7 @@ def match_recovered_sources(original, injected, si_catalogs):
     recovered["best_injected_index"] = -1
 
     def _make_skycoord(cat):
-        ra, dec = cat['ra'], cat['dec']
+        ra, dec = cat["ra"], cat["dec"]
         if not hasattr(cat["ra"], "unit") or ra.unit is None:
             ra = ra * u.deg
             dec = dec * u.deg
@@ -366,9 +366,8 @@ def match_recovered_sources(original, injected, si_catalogs):
     # Set maximum radius for matching.
     # d = 3*sqrt(half_right_radius^2 + 0.2^2)
     # In addition, set a maximum of 10"
-    max_sep_injected = (
-        3 * np.sqrt(injected["half_light_radius"].to(u.arcsec).value ** 2
-                    + 0.2 ** 2)
+    max_sep_injected = 3 * np.sqrt(
+        injected["half_light_radius"].to(u.arcsec).value ** 2 + 0.2**2
     )
     max_sep_injected = np.clip(max_sep_injected, 0, np.inf)
 

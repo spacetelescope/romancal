@@ -2,7 +2,6 @@ from copy import deepcopy
 from pathlib import Path
 from re import match
 
-import asdf
 import astropy.units as u
 import numpy as np
 import pyarrow
@@ -436,7 +435,7 @@ def test_match_recovered_sources():
 
     # Additional table columns
     injected_table["half_light_radius"] = injected_hlr
-    injected_table["half_light_radius"].unit = 'arcsec'
+    injected_table["half_light_radius"].unit = "arcsec"
     orig_table["empty"] = 0
     si_cat_table["one"] = 1
 

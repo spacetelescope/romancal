@@ -1,7 +1,7 @@
 """Roman tests for source catalog creation"""
 
-import pytest
 import numpy as np
+import pytest
 from astropy.table import Table
 from roman_datamodels.datamodels import MultibandSegmentationMapModel
 
@@ -81,7 +81,9 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
     )
 
     # DMS 396: Ensure the segmentation image contains both injected_sources and recovered_sources
-    segm_mod = MultibandSegmentationMapModel(outputfn.replace('_cat.parquet', '_segm.asdf'))
+    segm_mod = MultibandSegmentationMapModel(
+        outputfn.replace("_cat.parquet", "_segm.asdf")
+    )
     assert "injected_sources" in segm_mod
     assert "recovered_sources" in segm_mod
 
