@@ -32,7 +32,8 @@ class RomanSourceCatalog:
     ----------
     model : `ImageModel` or `MosaicModel`
         The input data model. The image data is assumed to be background
-        subtracted.
+        subtracted. For PSF-matched photometry in multiband catalogs,
+        input the PSF-matched model.
 
     segment_image : `~photutils.segmentation.SegmentationImage`
         A 2D segmentation image, with the same shape as the input data,
@@ -76,7 +77,7 @@ class RomanSourceCatalog:
         'dr_band' catalogs are band-specific catalogs for the
         multiband source detection.
 
-    ee_spline : `~astropy.modeling.models.Spline1D` or `None`
+    ee_spline : `~astropy.modeling.models.Spline1D` or `None`, optional
         The PSF aperture correction model, built from the reference file.
 
     Notes
@@ -95,8 +96,8 @@ class RomanSourceCatalog:
         kernel_fwhm,
         *,
         fit_psf=True,
+        psf_model=None,
         mask=None,
-        psf_ref_model=None,
         detection_cat=None,
         flux_unit="nJy",
         cat_type="prompt",
@@ -110,8 +111,8 @@ class RomanSourceCatalog:
         self.convolved_data = convolved_data
         self.kernel_fwhm = kernel_fwhm
         self.fit_psf = fit_psf
+        self.psf_model = psf_model
         self.mask = mask
-        self.psf_ref_model = psf_ref_model
         self.detection_cat = detection_cat
         self.flux_unit = flux_unit
         self.cat_type = cat_type
@@ -131,7 +132,7 @@ class RomanSourceCatalog:
             u.Unit(self.flux_unit)
         )
 
-        if self.fit_psf and self.psf_ref_model is None:
+        if self.fit_psf and self.psf_model is None:
             log.error(
                 "PSF fitting is requested but no PSF reference model is provided. Skipping PSF photometry."
             )
@@ -272,6 +273,7 @@ class RomanSourceCatalog:
             self._wcs_angle,
             detection_cat=self.detection_cat,
             flux_unit=self.flux_unit,
+            cat_type=self.cat_type,
         )
 
         self.meta.update(segment_cat.meta)
@@ -305,7 +307,7 @@ class RomanSourceCatalog:
 
         The results are set as dynamic attributes on the class instance.
         """
-        psf_cat = PSFCatalog(self.model, self.psf_ref_model, self._xypos, self.mask)
+        psf_cat = PSFCatalog(self.model, self.psf_model, self._xypos, self.mask)
         for name in psf_cat.names:
             setattr(self, name, getattr(psf_cat, name))
 
