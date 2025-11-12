@@ -18,7 +18,7 @@ dependencies = [
     "numpy >1.26",
     "scipy >=1.14.1",
     "requests >=2.26",
-    "photutils >=2.1.0",
+    "photutils >=2.3.0",
     "pyarrow >= 10.0.1",  # for Table.read(...) support in astropy for parquet files
     "pandas >= 2.0.0",  # for Table.read(...) support in astropy for parquet files
     # Between the intermediate and build releases we want to keep
