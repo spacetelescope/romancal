@@ -134,7 +134,7 @@ class MultibandCatalogStep(RomanStep):
 
             # Put the source injected multiband catalog in the model
             cat_model.source_injection_catalog = si_cat_model.source_catalog
-            segment_img.injected_sources = si_cat.as_array()
+            segment_img.injected_sources = si_cat
             segment_img.recovered_sources = recovered_sources
 
             if self.save_debug_info:
