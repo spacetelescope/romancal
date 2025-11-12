@@ -129,6 +129,13 @@ def test_multiband_catalog(
     # f158, f184 (no PSF-matched bands)
     assert len(cat.meta["ee_fractions"]) == 2
 
+    # check that sharpness, roundness1, is_extended, and
+    # fluxfrac_radius_50 columns are not present for matched bands
+    assert all(
+        f"{param}_f158m" not in cat.colnames
+        for param in ["sharpness", "roundness1", "is_extended", "fluxfrac_radius_50"]
+    )
+
     # Check metadata for PSF match reference filter
     assert "psf_match_reference_filter" in cat.meta
     assert cat.meta["psf_match_reference_filter"] == "f184"
