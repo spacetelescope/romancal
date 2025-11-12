@@ -17,7 +17,9 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def save_segment_image(self, segment_img, source_catalog_model, output_filename):
+def save_segment_image(
+    self, segment_img, source_catalog_model, output_filename, save_debug_info=False
+):
     """
     Save the segmentation image to an ASDF file.
 
@@ -63,6 +65,19 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
     if hasattr(segment_img, "detection_image"):
         segmentation_model["detection_image"] = segment_img.detection_image
 
+    # Source injection data
+    if hasattr(segment_img, "injected_sources"):
+        segmentation_model["injected_sources"] = segment_img.injected_sources
+
+    # Write data for tests
+    if save_debug_info:
+        if hasattr(segment_img, "si_segment_img"):
+            segmentation_model["si_data"] = segment_img.si_segment_img.data.astype(
+                np.uint32
+            )
+        if hasattr(segment_img, "si_detection_image"):
+            segmentation_model["si_detection_image"] = segment_img.si_detection_image
+
     # Save the segmentation image to the output file
     self.output_ext = "asdf"
     self.save_model(
@@ -73,7 +88,9 @@ def save_segment_image(self, segment_img, source_catalog_model, output_filename)
     )
 
 
-def save_all_results(self, segment_img, cat_model, input_model=None):
+def save_all_results(
+    self, segment_img, cat_model, input_model=None, save_debug_info=False
+):
     """
     Return and save the results of the source catalog step.
 
@@ -120,7 +137,7 @@ def save_all_results(self, segment_img, cat_model, input_model=None):
     )
 
     # always save the segmentation image
-    save_segment_image(self, segment_img, cat_model, output_filename)
+    save_segment_image(self, segment_img, cat_model, output_filename, save_debug_info)
 
     # Update the source catalog filename metadata
     self.output_ext = "parquet"
