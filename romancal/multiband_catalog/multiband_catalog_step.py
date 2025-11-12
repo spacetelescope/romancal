@@ -226,8 +226,8 @@ class MultibandCatalogStep(RomanStep):
             detection_img,
             star_kernel_fwhm,
             fit_psf=self.fit_psf,
-            detection_cat=None,
             mask=mask,
+            detection_cat=None,
             cat_type="dr_det",
             ee_spline=ee_spline,
         )
