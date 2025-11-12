@@ -2,7 +2,6 @@ from copy import deepcopy
 from pathlib import Path
 from re import match
 
-import asdf
 import astropy.units as u
 import numpy as np
 import pyarrow
@@ -15,6 +14,7 @@ from roman_datamodels.datamodels import MosaicModel, MultibandSegmentationMapMod
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog import MultibandCatalogStep
+from romancal.multiband_catalog.multiband_catalog import match_recovered_sources
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
 
 
@@ -367,10 +367,12 @@ def test_multiband_source_injection_catalog(
         segm_mod = rdm.open(filepath)
         assert isinstance(segm_mod, MultibandSegmentationMapModel)
         assert segm_mod.data.shape == segm_mod.si_data.shape
-        assert isinstance(
-            segm_mod.injected_sources, np.ndarray | asdf.tags.core.ndarray.NDArrayType
-        )
+        assert isinstance(segm_mod.injected_sources, Table)
         assert len(segm_mod.injected_sources[0]) <= len(si_cat)
+
+        assert np.count_nonzero(
+            segm_mod.recovered_sources["best_injected_index"] != -1
+        ) > (400 / 2)
 
     # Old lines from other MBC tests
     shared_tests(
@@ -381,3 +383,73 @@ def test_multiband_source_injection_catalog(
         function_jail,
         shape=(5000, 5000),
     )
+
+
+def test_match_recovered_sources():
+    # Create minimal source catalog data
+    shape = (2000, 2000)
+    orig_xy = [[510, 510], [400, 400], [1000, 1000], [450, 1450], [100, 100]]
+    injected_xy = [[500, 500], [500, 1500], [1500, 500], [1500, 1500]]
+    injected_hlr = [2.0, 12.0, 5.0, 1.0]
+    si_cat_xy = [
+        [510.1, 510.1],
+        [400.1, 400.1],
+        [1000.1, 1000.1],
+        [450.1, 1450.1],
+        [100.1, 100.1],
+        [500.1, 500.1],
+        [500.1, 1500.1],
+        [1500.1, 500.1],
+        [1500.1, 1500.1],
+    ]
+
+    # Make wcs object
+    wcsobj = mk_gwcs(
+        270.0,  # degrees
+        66.0,  # degrees
+        0.0,  # degrees
+        bounding_box=((-0.5, shape[0] - 0.5), (-0.5, shape[1] - 0.5)),
+        shape=shape,
+    )
+
+    # Create source catalogs
+    orig_table = Table()
+    injected_table = Table()
+    si_cat_table = Table()
+
+    # Conert x, y to ra & dec
+    orig_table["x"], orig_table["y"] = zip(*orig_xy, strict=True)
+    orig_table["ra"], orig_table["dec"] = wcsobj.pixel_to_world_values(
+        np.array(orig_table["x"]), np.array(orig_table["y"])
+    )
+
+    injected_table["x"], injected_table["y"] = zip(*injected_xy, strict=True)
+    injected_table["ra"], injected_table["dec"] = wcsobj.pixel_to_world_values(
+        np.array(injected_table["x"]), np.array(injected_table["y"])
+    )
+
+    si_cat_table["x"], si_cat_table["y"] = zip(*si_cat_xy, strict=True)
+    si_cat_table["ra"], si_cat_table["dec"] = wcsobj.pixel_to_world_values(
+        np.array(si_cat_table["x"]), np.array(si_cat_table["y"])
+    )
+
+    # Additional table columns
+    injected_table["half_light_radius"] = injected_hlr
+    injected_table["half_light_radius"].unit = "arcsec"
+    orig_table["empty"] = 0
+    si_cat_table["one"] = 1
+
+    # Conduct matching
+    rec_table = match_recovered_sources(orig_table, injected_table, si_cat_table)
+
+    # Test that distant sources were dropped
+    assert len(rec_table) < len(si_cat_table)
+
+    # Test that grid sources were found
+    assert np.count_nonzero(rec_table["best_injected_index"] != -1) == len(
+        injected_table
+    )
+
+    # Test columns included or excluded as expected
+    assert "one" in rec_table.colnames
+    assert "empty" not in rec_table.colnames

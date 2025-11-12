@@ -251,10 +251,10 @@ def test_outlier_detection_always_returns_modelcontainer_with_updated_datamodels
 
     img_1 = base_image()
     img_1.meta.filename = "img_1.asdf"
-    img_1.data *= img_1.meta.photometry.conversion_megajanskys / img_1.data
+    img_1.data *= img_1.meta.photometry.conversion_megajanskys
     img_2 = base_image()
     img_2.meta.filename = "img_2.asdf"
-    img_2.data *= img_2.meta.photometry.conversion_megajanskys / img_2.data
+    img_2.data *= img_2.meta.photometry.conversion_megajanskys
 
     library = ModelLibrary([img_1, img_2])
     library._save(function_jail)

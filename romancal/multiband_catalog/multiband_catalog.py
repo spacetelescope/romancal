@@ -8,8 +8,8 @@ import copy
 import logging
 
 import numpy as np
+from astropy import coordinates
 from astropy import units as u
-from astropy.coordinates import SkyCoord
 from astropy.table import join
 from astropy.time import Time
 from roman_datamodels import datamodels
@@ -291,7 +291,7 @@ def make_source_injected_library(library):
                     yxgrid=(20, 20),
                 )
 
-                si_cen = SkyCoord(
+                si_cen = coordinates.SkyCoord(
                     ra=si_model.meta.wcsinfo.ra_ref * u.deg,
                     dec=si_model.meta.wcsinfo.dec_ref * u.deg,
                 )
@@ -310,6 +310,11 @@ def make_source_injected_library(library):
                     exptimes=si_exptimes,
                 )
 
+                # Additional useful parameters
+                si_cat["x_pos"] = si_x_pos
+                si_cat["y_pos"] = si_y_pos
+                si_cat["label"] = np.arange(len(si_x_pos))
+
             # Inject sources into the detection image
             si_model = injection.inject_sources(si_model, si_cat)
 
@@ -318,3 +323,73 @@ def make_source_injected_library(library):
 
     # Return library of source injected models and injection catalog
     return ModelLibrary(si_model_lst), si_cat
+
+
+def match_recovered_sources(original, injected, si_catalogs):
+    """
+    Create recovered sources which matches sources between
+    an original catalog and injected catalog.
+
+    Parameters
+    -----------
+    original : `~astropy.table.Table`
+        Catalog of original sources.
+
+    injected : `~astropy.table.Table`
+        Catalog of injected sources.
+
+    si_catalogs : `~astropy.table.Table`
+        Catalog of sources after injection.
+
+    Returns
+    -------
+    recovered : `~astropy.table.Table`
+        Catalog of recovered sources.
+    """
+
+    # Create recovered catalog
+    recovered = copy.deepcopy(si_catalogs)
+    recovered["best_injected_index"] = -1
+
+    def _make_skycoord(cat):
+        ra, dec = cat["ra"], cat["dec"]
+        if not hasattr(cat["ra"], "unit") or ra.unit is None:
+            ra = ra * u.deg
+            dec = dec * u.deg
+        return coordinates.SkyCoord(ra, dec)
+
+    # Create skycoord objects
+    ocoord = _make_skycoord(original)
+    icoord = _make_skycoord(injected)
+    rcoord = _make_skycoord(recovered)
+
+    # Set maximum radius for matching.
+    # d = 3*sqrt(half_right_radius^2 + 0.2^2)
+    # In addition, set a maximum of 10"
+    max_sep_injected = 3 * np.sqrt(
+        injected["half_light_radius"].to(u.arcsec).value ** 2 + 0.2**2
+    )
+    max_sep_injected = np.clip(max_sep_injected, 0, np.inf)
+
+    # Trim recovered catalog to only objects near injected sources
+    mi, mr, dist, _ = coordinates.search_around_sky(
+        icoord, rcoord, np.max(max_sep_injected) * u.arcsec
+    )
+    m = dist < max_sep_injected[mi] * u.arcsec
+    keep = np.zeros(len(rcoord), dtype="bool")
+    keep[mr[m]] = True
+    recovered = recovered[keep]
+    rcoord = rcoord[keep]
+
+    idx, sep, _ = coordinates.match_coordinates_sky(icoord, rcoord)
+    m = sep < max_sep_injected * u.arcsec
+
+    # Set matched injected sources
+    recovered["best_injected_index"] = -1
+    recovered["best_injected_index"][idx[m]] = np.flatnonzero(m)
+
+    # Set distances
+    idx, sep, _ = coordinates.match_coordinates_sky(rcoord, ocoord)
+    recovered["dist_nearest"] = sep.to(u.arcsec)
+
+    return recovered
