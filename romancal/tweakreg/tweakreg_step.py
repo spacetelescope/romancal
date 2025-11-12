@@ -235,7 +235,10 @@ class TweakRegStep(RomanStep):
         if len(imcats):
             # extract WCS correctors to use for image alignment
             if len(images.group_indices) > 1:
-                self.do_relative_alignment(imcats)
+                try:
+                    self.do_relative_alignment(imcats)
+                except TweakregError as e:
+                    log.warning(str(e))
 
             if self.abs_refcat in SINGLE_GROUP_REFCAT:
                 try:
