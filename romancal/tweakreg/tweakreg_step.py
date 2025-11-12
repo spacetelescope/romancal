@@ -13,7 +13,11 @@ import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
 from stcal.tweakreg import tweakreg
-from stcal.tweakreg.tweakreg import _SINGLE_GROUP_REFCAT_STR, SINGLE_GROUP_REFCAT
+from stcal.tweakreg.tweakreg import (
+    _SINGLE_GROUP_REFCAT_STR,
+    SINGLE_GROUP_REFCAT,
+    TweakregError,
+)
 
 from romancal.assign_wcs.utils import add_s_region
 from romancal.lib.save_wcs import save_wfiwcs
@@ -234,7 +238,11 @@ class TweakRegStep(RomanStep):
                 self.do_relative_alignment(imcats)
 
             if self.abs_refcat in SINGLE_GROUP_REFCAT:
-                self.do_absolute_alignment(ref_image, imcats)
+                try:
+                    self.do_absolute_alignment(ref_image, imcats)
+                except TweakregError as e:
+                    log.warning(str(e))
+                    return images
 
             # finalize step
             with images:
