@@ -1,0 +1,1 @@
+Update Kron aperture photometry to mask pixels assigned to neighboring sources.
