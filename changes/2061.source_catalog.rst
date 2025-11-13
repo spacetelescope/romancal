@@ -1,0 +1,1 @@
+Update psf_gof to use reduced chi2 calculation.
