@@ -1,1 +1,1 @@
-Fix bug where injected source x & y do not match the corresponding ra & dec.  Add subpixel offsets.
+Fix bug where injected source x & y do not match the corresponding ra & dec.
