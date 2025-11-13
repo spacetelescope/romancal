@@ -112,7 +112,6 @@ def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=50, **kwa
 
     # Set random source index for the catalog
     rng_numpy = np.random.default_rng(seed)
-    ran_idx = rng_numpy.permutation(len(ra))
 
     # 75% of objects as galaxies, 25% of objects as point sources
     num_stars = int(len(ra) / 4)
@@ -213,8 +212,8 @@ def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=50, **kwa
     all_cat = table.vstack([gal_cat, star_cat])
 
     # Set the positions to randomly selected objects
-    all_cat["ra"] = np.array(ra)[ran_idx].tolist()
-    all_cat["dec"] = np.array(dec)[ran_idx].tolist()
+    all_cat["ra"] = np.array(ra).tolist()
+    all_cat["dec"] = np.array(dec).tolist()
 
     return all_cat
 
@@ -267,9 +266,11 @@ def make_source_grid(
 
     ypts *= yspace
     ypts += y0
+    ypts += rng_numpy.uniform(low=-0.5, high=0.5, size=len(ypts))
 
     xpts *= xspace
     xpts += x0
+    xpts += rng_numpy.uniform(low=-0.5, high=0.5, size=len(xpts))
 
     # Discard off-image positions
     ypts = ypts[ypts < (model.data.shape[0] - int(yxoffset[0]))]
