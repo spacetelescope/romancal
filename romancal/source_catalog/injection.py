@@ -266,11 +266,13 @@ def make_source_grid(
 
     ypts *= yspace
     ypts += y0
-    ypts += rng_numpy.uniform(low=-0.5, high=0.5, size=len(ypts))
+    # TODO: add sub-pixel shifts
+    # ypts += rng_numpy.uniform(low=-0.5, high=0.5, size=len(ypts))
 
     xpts *= xspace
     xpts += x0
-    xpts += rng_numpy.uniform(low=-0.5, high=0.5, size=len(xpts))
+    # TODO: add sub-pixel shifts
+    # xpts += rng_numpy.uniform(low=-0.5, high=0.5, size=len(xpts))
 
     # Discard off-image positions
     ypts = ypts[ypts < (model.data.shape[0] - int(yxoffset[0]))]
