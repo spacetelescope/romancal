@@ -20,6 +20,9 @@ def test_flatfield_step_interface(instrument, exptype):
     shape = (20, 20)
 
     wfi_image_model = ImageModel.create_fake_data(shape=shape)
+    wfi_image_model.meta.exposure.start_time = Time(
+        "2024-01-03T00:00:00.0", format="isot", scale="utc"
+    )
     wfi_image_model.meta.instrument.name = instrument
     wfi_image_model.meta.instrument.detector = "WFI01"
     wfi_image_model.meta.instrument.optical_element = "F158"
@@ -99,6 +102,9 @@ def test_crds_temporal_match(instrument, exptype):
 def test_skip_var_flat(include_var_flat):
     """Test that we don't populate var_flat if requested."""
     wfi_image_model = ImageModel.create_fake_data(shape=(4088, 4088))
+    wfi_image_model.meta.exposure.start_time = Time(
+        "2024-01-03T00:00:00.0", format="isot", scale="utc"
+    )
     wfi_image_model.meta.cal_step = {}
     for step_name in wfi_image_model.schema_info("required")["roman"]["meta"][
         "cal_step"
