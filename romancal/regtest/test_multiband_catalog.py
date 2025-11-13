@@ -1,7 +1,9 @@
 """Roman tests for source catalog creation"""
 
+import numpy as np
 import pytest
 from astropy.table import Table
+from roman_datamodels.datamodels import MultibandSegmentationMapModel
 
 from romancal.stpipe import RomanStep
 
@@ -48,6 +50,8 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
         inputasnfn,
         "--deblend",
         "True",  # use deblending, DMS 393
+        "--inject_sources",  # turn on source injection, DMS 396
+        "True",
     ]
     with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
@@ -75,3 +79,23 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
         "DMS399: successfully tested that catalogs contain aperture "
         "fluxes and uncertainties."
     )
+
+    # DMS 396: Ensure the segmentation image contains
+    # both injected_sources and recovered_sources
+    segm_mod = MultibandSegmentationMapModel(
+        outputfn.replace("_cat.parquet", "_segm.asdf")
+    )
+    assert "injected_sources" in segm_mod
+    assert "recovered_sources" in segm_mod
+
+    dms_logger.info(
+        "DMS396: segmentation image contains both "
+        "injected_sources and recovered_sources."
+    )
+
+    # DMS 396: Ensure at least 50% of injected sourced are recovered.
+    assert np.count_nonzero(segm_mod.recovered_sources["best_injected_index"] != -1) > (
+        len(segm_mod.injected_sources) / 2
+    )
+
+    dms_logger.info("DMS396: successfully recovered over half of the injected sources.")

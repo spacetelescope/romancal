@@ -8,19 +8,15 @@ import copy
 import logging
 from typing import TYPE_CHECKING
 
-import numpy as np
-from astropy.table import join
-from astropy.time import Time
 from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelLibrary
-from romancal.multiband_catalog.background import subtract_background_library
-from romancal.multiband_catalog.detection_image import make_detection_image
-from romancal.multiband_catalog.utils import add_filter_to_colnames
-from romancal.source_catalog.background import RomanBackground
-from romancal.source_catalog.detection import make_segmentation_image
+from romancal.multiband_catalog.multiband_catalog import (
+    make_source_injected_library,
+    match_recovered_sources,
+    multiband_catalog,
+)
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
-from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.utils import get_ee_spline
 from romancal.stpipe import RomanStep
 
@@ -31,10 +27,6 @@ __all__ = ["MultibandCatalogStep"]
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-
-
-_SKIP_IMAGE_META_KEYS = {"wcs", "individual_image_meta"}
-_SKIP_BLEND_KEYS = {"wcsinfo"}
 
 
 class MultibandCatalogStep(RomanStep):
@@ -56,11 +48,14 @@ class MultibandCatalogStep(RomanStep):
     spec = """
         bkg_boxsize = integer(default=100)   # background mesh box size in pixels
         kernel_fwhms = float_list(default=None)  # Gaussian kernel FWHM in pixels
-        snr_threshold = float(default=3.0)    # per-pixel SNR threshold above the bkg
+        snr_threshold = float(default=5.0)    # per-pixel SNR threshold above the bkg
         npixels = integer(default=25)         # min number of pixels in source
         deblend = boolean(default=False)      # deblend sources?
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
+        inject_sources = boolean(default=False) # Inject sources into images
+        save_debug_info = boolean(default=False)
+                                   # Include image data and other data for testing
     """
 
     def process(self, library):
@@ -76,14 +71,16 @@ class MultibandCatalogStep(RomanStep):
             library.shelve(example_model, modify=False)
 
         # Initialize the source catalog model, copying the metadata
-        # from the example model. Some of this may be overwritten during metadata blending.
+        # from the example model. Some of this may be overwritten
+        # during metadata blending.
         cat_model = datamodels.MultibandSourceCatalogModel.create_minimal(
             {"meta": example_model.meta}
         )
         cat_model.meta["image"] = {
             # try to record association name else fall back to example model filename
             "filename": library.asn.get("table_name", example_model.meta.filename),
-            "file_date": example_model.meta.file_date,  # this may be overwritten during metadata blending
+            "file_date": example_model.meta.file_date,
+            # this may be overwritten during metadata blending
         }
         cat_model.meta["image_metas"] = []
         # copy over data_release_id, ideally this will come from the association
@@ -100,185 +97,50 @@ class MultibandCatalogStep(RomanStep):
         except (AttributeError, KeyError):
             cat_model.meta.filename = "multiband_catalog"
 
-        log.info("Calculating and subtracting background")
-        library = subtract_background_library(library, self.bkg_boxsize)
+        # Set up source injection library and injection catalog
+        if self.inject_sources:
+            si_library, si_cat = make_source_injected_library(library)
 
-        log.info("Creating detection image")
-        # Define the kernel FWHMs for the detection image
-        # TODO: sensible defaults
-        # TODO: redefine in terms of intrinsic FWHM
-        if self.kernel_fwhms is None:
-            self.kernel_fwhms = [2.0, 20.0]
-
-        # TODO: det_img is saved in the MosaicSegmentationMapModel;
-        # do we also want to save the det_err?
-        det_img, det_err = make_detection_image(library, self.kernel_fwhms)
-
-        # Estimate background rms from detection image to calculate a
-        # threshold for source detection
-        mask = ~np.isfinite(det_img) | ~np.isfinite(det_err) | (det_err <= 0)
-
-        # Return an empty segmentation image and catalog table if all
-        # pixels are masked in the detection image.
-        if np.all(mask):
-            msg = "Cannot create source catalog. All pixels in the detection image are masked."
-            return save_empty_results(self, det_img.shape, cat_model, msg=msg)
-
-        bkg = RomanBackground(
-            det_img,
-            box_size=self.bkg_boxsize,
-            coverage_mask=mask,
-        )
-        bkg_rms = bkg.background_rms
-
-        log.info("Detecting sources")
-        segment_img = make_segmentation_image(
-            det_img,
-            snr_threshold=self.snr_threshold,
-            npixels=self.npixels,
-            bkg_rms=bkg_rms,
-            deblend=self.deblend,
-            mask=mask,
+        # Create catalog of library images
+        segment_img, cat_model, msg = multiband_catalog(
+            self, library, example_model, cat_model, ee_spline
         )
 
-        if segment_img is None:  # no sources found
-            msg = "Cannot create source catalog. No sources were detected."
-            return save_empty_results(self, det_img.shape, cat_model, msg=msg)
+        # The results are empty
+        if msg is not None:
+            return save_empty_results(self, segment_img, cat_model, msg=msg)
 
-        segment_img.detection_image = det_img
+        # Source Injection
+        if self.inject_sources:
+            with si_library:
+                si_example_model = si_library.borrow(0)
+                si_library.shelve(si_example_model, modify=False)
 
-        # Define the detection image model
-        det_model = datamodels.MosaicModel()
-        det_model.data = det_img
-        det_model.err = det_err
+            si_ee_spline = get_ee_spline(si_example_model, apcorr_ref)
 
-        # TODO: this is a temporary solution to get model attributes
-        # currently needed in RomanSourceCatalog
-        det_model.weight = example_model.weight
-        det_model.meta = example_model.meta
+            # Create catalog of source injected images
+            si_segment_img, si_cat_model, _ = multiband_catalog(
+                self,
+                si_library,
+                si_example_model,
+                copy.deepcopy(cat_model),
+                si_ee_spline,
+            )
 
-        # The stellar FWHM is needed to define the kernel used for
-        # the DAOStarFinder sharpness and roundness properties.
-        # TODO: measure on a secondary detection image with minimal
-        # smoothing?; use the same detection image for basic shape
-        # measurements?
-        star_kernel_fwhm = np.min(self.kernel_fwhms)
+            # Match sources
+            recovered_sources = match_recovered_sources(
+                cat_model.source_catalog, si_cat, si_cat_model.source_catalog
+            )
 
-        log.info("Creating catalog for detection image")
-        det_catobj = RomanSourceCatalog(
-            det_model,
-            segment_img,
-            det_img,
-            star_kernel_fwhm,
-            fit_psf=self.fit_psf,
-            detection_cat=None,
-            mask=mask,
-            cat_type="dr_det",
-            ee_spline=ee_spline,
+            # Put the source injected multiband catalog in the model
+            cat_model.source_injection_catalog = si_cat_model.source_catalog
+            segment_img.injected_sources = si_cat
+            segment_img.recovered_sources = recovered_sources
+
+            if self.save_debug_info:
+                segment_img.si_segment_img = si_segment_img
+                segment_img.si_detection_image = si_segment_img.detection_image
+
+        return save_all_results(
+            self, segment_img, cat_model, save_debug_info=self.save_debug_info
         )
-
-        # Generate the catalog for the detection image.
-        # We need to make this catalog before we pass det_catobj
-        # to the RomanSourceCatalog constructor.
-        det_cat = det_catobj.catalog
-        det_cat.meta["ee_fractions"] = {}
-
-        time_means = []
-        exposure_times = []
-
-        # Create catalogs for each input image
-        with library:
-            for model in library:
-                mask = (
-                    ~np.isfinite(model.data)
-                    | ~np.isfinite(model.err)
-                    | (model.err <= 0)
-                )
-
-                if self.fit_psf:
-                    filter_name = model.meta.instrument.optical_element
-                    log.info(f"Creating catalog for {filter_name} image")
-                    ref_file = self.get_reference_file(model, "epsf")
-                    log.info("Using ePSF reference file: %s", ref_file)
-                    psf_ref_model = datamodels.open(ref_file)
-                else:
-                    psf_ref_model = None
-
-                apcorr_ref = self.get_reference_file(model, "apcorr")
-                ee_spline = get_ee_spline(model, apcorr_ref)
-
-                catobj = RomanSourceCatalog(
-                    model,
-                    segment_img,
-                    None,
-                    star_kernel_fwhm,
-                    fit_psf=self.fit_psf,
-                    detection_cat=det_catobj,
-                    mask=mask,
-                    psf_ref_model=psf_ref_model,
-                    cat_type="dr_band",
-                    ee_spline=ee_spline,
-                )
-
-                # Add the filter name to the column names
-                filter_name = model.meta.instrument.optical_element
-                cat = add_filter_to_colnames(catobj.catalog, filter_name)
-                ee_fractions = cat.meta["ee_fractions"]
-
-                # TODO: what metadata do we want to keep, if any,
-                # from the filter catalogs?
-                cat.meta = None
-
-                # Add the filter catalog to the multiband catalog.
-                # The outer join prevents an empty table if any
-                # columns have the same name but different values
-                # (e.g., repeated filter names)
-                det_cat = join(det_cat, cat, keys="label", join_type="outer")
-                det_cat.meta["ee_fractions"][filter_name.lower()] = ee_fractions
-
-                # accumulate image metadata
-                image_meta = {
-                    k: copy.deepcopy(v)
-                    for k, v in model["meta"].items()
-                    if k not in _SKIP_IMAGE_META_KEYS
-                }
-                cat_model.meta.image_metas.append(image_meta)
-
-                # blend model with catalog metadata
-                if model.meta.file_date < cat_model.meta.image.file_date:
-                    cat_model.meta.image.file_date = model.meta.file_date
-
-                for key, value in image_meta.items():
-                    if key in _SKIP_BLEND_KEYS:
-                        continue
-                    if not isinstance(value, dict):
-                        # skip blending of single top-level values
-                        continue
-                    if key not in cat_model.meta:
-                        # skip blending if the key is not in the catalog meta
-                        continue
-                    if key == "coadd_info":
-                        cat_model.meta[key]["time_first"] = min(
-                            cat_model.meta[key]["time_first"], value["time_first"]
-                        )
-                        cat_model.meta[key]["time_last"] = max(
-                            cat_model.meta[key]["time_last"], value["time_last"]
-                        )
-                        time_means.append(value["time_mean"])
-                        exposure_times.append(value["exposure_time"])
-                    else:
-                        # set non-matching metadata values to None
-                        for subkey, subvalue in value.items():
-                            if cat_model.meta[key].get(subkey, None) != subvalue:
-                                cat_model.meta[key][subkey] = None
-
-                library.shelve(model, modify=False)
-
-        # finish blending
-        cat_model.meta.coadd_info.time_mean = Time(time_means).mean()
-        cat_model.meta.coadd_info.exposure_time = np.mean(exposure_times)
-
-        # Put the resulting multiband catalog in the model
-        cat_model.source_catalog = det_cat
-
-        return save_all_results(self, segment_img, cat_model)

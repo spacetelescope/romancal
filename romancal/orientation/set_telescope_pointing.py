@@ -61,6 +61,7 @@ The following meta values are populated:
 
 import dataclasses
 import logging
+import sys
 from collections import defaultdict, namedtuple
 from collections.abc import Callable
 from copy import copy
@@ -73,6 +74,7 @@ import roman_datamodels as rdm
 from astropy.table import Table
 from astropy.time import Time, TimeDelta
 from stcal.alignment.util import compute_s_region_keyword
+from stcal.velocity_aberration import compute_va_effects_vector
 
 from ..lib.engdb.engdb_tools import engdb_service
 
@@ -243,6 +245,8 @@ class TransformParameters:
     #: If no telemetry can be found during the observation,
     #: the time, in seconds, beyond the observation time to search for telemetry.
     tolerance: float = 60.0
+    # Observatory velocity
+    velocity: tuple | None = None
 
     def as_reprdict(self):
         """Return a dict where all values are REPR of their values."""  # numpydoc ignore=RT01
@@ -612,6 +616,29 @@ def calc_transforms(t_pars: TransformParameters):
 
     # ECI to V
     t.m_eci2v = np.linalg.multi_dot([M_B2FCS0.T, M_idl2ics, t.m_eci2gs])
+
+    return t
+
+
+def calc_transforms_va(t_pars, gs_sky_corr, gs_commanded):
+    """Calculate with VA correction"""
+    t = Transforms()
+
+    # Quaternion to M_eci2b
+    t.m_eci2b = calc_m_eci2b(t_pars.pointing.q)
+
+    # M_eci2gsapp
+    m_fcs2gsapp = calc_m_fgs2gs(gs_sky_corr[0] * D2R, gs_sky_corr[1] * D2R)
+    m_eci2gsapp = m_fcs2gsapp * M_B2FCS0 * t.m_eci2b
+
+    # M_eci2gs
+    velocity = np.array(t_pars.velocity)
+    m_vacorr = calc_gs2gsapp(m_eci2gsapp, velocity)
+    m_eci2gs = np.linalg.multi_dot([M_ics2idl, m_vacorr, m_eci2gsapp])
+
+    # M_eci2v
+    m_fgs2gs = calc_m_fgs2gs(gs_commanded[0] * A2R, gs_commanded[1] * A2R)
+    t.m_eci2v = np.linalg.multi_dot([M_V2FCS0.T, m_fgs2gs.T, M_idl2ics, m_eci2gs])
 
     return t
 
@@ -1259,7 +1286,8 @@ def t_pars_from_model(model, t_pars):
     # observation parameters
     t_pars.obsstart = model.meta.exposure.start_time
     t_pars.obsend = model.meta.exposure.end_time
-    logger.debug("Observation time: %s - %s", t_pars.obsstart, t_pars.obsend)
+    ephem = model.meta.ephemeris
+    t_pars.velocity = (ephem.velocity_x, ephem.velocity_y, ephem.velocity_z)
 
 
 def dcm(alpha, delta, angle):
@@ -1368,14 +1396,20 @@ def update_meta(model, pysiaf, wcsinfo, vinfo, quality):
     pm.ra_v1 = vinfo.ra
 
     # Update target's sky location.
-    # This is currently defined as what point in the sky the
-    # virtual aperture WFI_CEN V2/V3 reference is pointing at.
     attitude = attitude_from_v1(pysiaf, vinfo)
-    wfi_cen = siaf["WFI_CEN"]
-    wfi_cen.set_attitude_matrix(attitude)
-    skycoord = wfi_cen.reference_point(to_frame="sky")
+    targ_app = siaf[model.meta.pointing.target_aperture]
+    targ_app.set_attitude_matrix(attitude)
+    skycoord = targ_app.reference_point(to_frame="sky")
     pm.target_ra = skycoord[0]
     pm.target_dec = skycoord[1]
+
+    # If not present, stub-out keywords that are expected
+    # in L1 products. 26Q2B21 will deal with this bad situation
+    gs = model.meta.guide_star
+    gs.corrected_ra = getattr(gs, "corrected_ra", pm.target_ra)
+    gs.corrected_dec = getattr(gs, "corrected_dec", pm.target_dec)
+    gs.h = getattr(gs, "h", wm.v2_ref)
+    gs.v = getattr(gs, "v", wm.v3_ref)
 
 
 def attitude_from_v1(pysiaf, vinfo):
@@ -1405,3 +1439,97 @@ def attitude_from_v1(pysiaf, vinfo):
     attitude = attitude_matrix(*v_refpoint, vinfo.ra, vinfo.dec, vinfo.pa)
 
     return attitude
+
+
+def calc_m_fgs2gs(x, y):
+    """Calculate DCM that converts FGS reference to guide star location
+
+    Parameters
+    ----------
+    x, y : float, float
+        Guidestar location (radians)
+    """
+    m = np.array(
+        [
+            [cos(x), 0.0, sin(x)],
+            [-sin(x) * sin(y), cos(y), cos(x) * sin(y)],
+            [-sin(x) * cos(y), -sin(y), cos(x) * cos(y)],
+        ]
+    )
+
+    return m
+
+
+def calc_gs2gsapp(m_eci2gsics, velocity):
+    """
+    Calculate the Velocity Aberration correction.
+
+    This implements Eq. 40 from Technical Report JWST-STScI-003222, SM-12, Rev. C, 2021-11
+    From Section 3.2.5:
+
+    The velocity aberration correction is applied in the direction of the guide
+    star. The matrix that translates from ECI to the apparent guide star ICS
+    frame is M_(ECI→GSAppICS), where the GS Apparent position vector is along
+    the z-axis in the guide star ICS frame.
+
+    Parameters
+    ----------
+    m_eci2gsics : numpy.array(3, 3)
+        The the ECI to Guide Star transformation matrix, in the ICS frame.
+
+    velocity : numpy.array([dx, dy, dz])
+        The barycentric velocity.
+
+    Returns
+    -------
+    m_gs2gsapp : numpy.array(3, 3)
+        The velocity aberration correction matrix.
+    """
+    # Check velocity. If present, negate the velocity since
+    # the desire is to remove the correction.
+    if velocity is None or any(velocity == None):  # noqa: E711 Syntax needed for numpy arrays.
+        logger.warning(
+            "Velocity: %s contains None. Cannot calculate aberration. Returning identity matrix",
+            velocity,
+        )
+        return np.identity(3)
+    velocity = -1 * velocity
+
+    # Eq. 35: Guide star position vector
+    uz = np.array([0.0, 0.0, 1.0])
+    u_gseci = np.dot(np.transpose(m_eci2gsics), uz)
+
+    # Eq. 36: Compute the apparent shift due to velocity aberration.
+    try:
+        scale_factor, u_gseci_app = compute_va_effects_vector(*velocity, u_gseci)
+    except TypeError:
+        logger.warning(
+            "Failure in computing velocity aberration. Returning identity matrix."
+        )
+        logger.warning("Exception: %s", sys.exc_info())
+        return np.identity(3)
+
+    # Eq. 39: Rotate from ICS into the guide star frame.
+    u_gs_app = np.dot(m_eci2gsics, u_gseci_app)
+
+    # Eq. 40: Compute the M_gs2gsapp matrix
+    u_prod = np.cross(uz, u_gs_app)
+    u_prod_mag = np.linalg.norm(u_prod)
+    a_hat = u_prod / u_prod_mag
+    m_a_hat = np.array(
+        [
+            [0.0, -a_hat[2], a_hat[1]],
+            [a_hat[2], 0.0, -a_hat[0]],
+            [-a_hat[1], a_hat[0], 0.0],
+        ]
+    )
+    theta = np.arcsin(u_prod_mag)
+
+    m_gs2gsapp = (
+        np.identity(3)
+        - (m_a_hat * np.sin(theta))
+        + (2 * m_a_hat**2 * np.sin(theta / 2.0) ** 2)
+    )
+
+    logger.debug("m_gs2gsapp: %s", m_gs2gsapp)
+    return m_gs2gsapp

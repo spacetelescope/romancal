@@ -80,7 +80,7 @@ def make_segmentation_image(
         # suppress NoDetectionsWarning from photutils
         warnings.filterwarnings("ignore", category=NoDetectionsWarning)
 
-        finder = SourceFinder(npixels, deblend=deblend)
+        finder = SourceFinder(npixels, deblend=deblend, contrast=1e-4)
         threshold = snr_threshold * bkg_rms
         segment_img = finder(convolved_data, threshold, mask=mask)
 
