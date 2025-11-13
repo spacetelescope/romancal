@@ -168,6 +168,7 @@ class SegmentCatalog:
             convolved_data=self.convolved_data,
             error=self.model.err,
             wcs=self.wcs,
+            apermask_method="mask",
             detection_cat=detection_cat,
         )
         self.source_cat = segm_cat
