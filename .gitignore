@@ -71,3 +71,6 @@ pip-wheel-metadata/
 
 .python-version
 .env
+
+# uv
+uv.lock
