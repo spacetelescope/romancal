@@ -1,1 +1,0 @@
-Add reference_read and reference_amp33 to data and amp33 in ramp construction from raw images.

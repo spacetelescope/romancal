@@ -1,1 +1,0 @@
-Only consider specific loggers for log message handling (including those from this package, stcal, roman_datamodels, stpipe and tweakwcs).

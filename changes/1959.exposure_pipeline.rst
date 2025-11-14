@@ -1,1 +1,0 @@
-Remove ``save_l1_wcs`` parameter. WfiWCS files will be produced when ``save_results`` is enabled and tweakreg is not skipped.

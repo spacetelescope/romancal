@@ -1,1 +1,0 @@
-Added ``make_cosmoslike_catalog`` method to generate cosmos galaxies and point sources for source injection.

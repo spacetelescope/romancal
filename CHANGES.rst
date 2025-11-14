@@ -1,3 +1,139 @@
+0.21.0 (2025-11-14)
+===================
+
+General
+-------
+
+- Only consider specific loggers for log message handling (including those from
+  this package, stcal, roman_datamodels, stpipe and tweakwcs). (`#1898
+  <https://github.com/spacetelescope/romancal/issues/1898>`_)
+- Update RCAL to support removal of internal tags. (`#1982
+  <https://github.com/spacetelescope/romancal/issues/1982>`_)
+- Remove remaining tagged node usage. (`#2001
+  <https://github.com/spacetelescope/romancal/issues/2001>`_)
+- Add upper pin to  python version. 3.14 and above are not yet supported by
+  required dependencies. (`#2030
+  <https://github.com/spacetelescope/romancal/issues/2030>`_)
+- Update required versions of dependencies. Remove unused tweakwcs dependency.
+  (`#2039 <https://github.com/spacetelescope/romancal/issues/2039>`_)
+
+
+``stpipe``
+----------
+
+- Log messages from "py.warnings" logger to log ``warnings.warn`` messages.
+  (`#1975 <https://github.com/spacetelescope/romancal/issues/1975>`_)
+
+
+Associations
+------------
+
+- Allow grouping by visit, pass, and full, and add data release ID to the
+  metadata of the asn file. The CLI was updated accordingly, replacing the
+  --release-product argument with --data-release-id (`#2014
+  <https://github.com/spacetelescope/romancal/issues/2014>`_)
+
+
+Scripts
+-------
+
+- Removed unused ``patch_name_to_skycell_name`` script. (`#1957
+  <https://github.com/spacetelescope/romancal/issues/1957>`_)
+
+
+``exposure_pipeline``
+---------------------
+
+- Remove ``save_l1_wcs`` parameter. WfiWCS files will be produced when
+  ``save_results`` is enabled and tweakreg is not skipped. (`#1959
+  <https://github.com/spacetelescope/romancal/issues/1959>`_)
+- Make WfiWcs files even when tweakreg is skipped.  Add associated test.
+  (`#2015 <https://github.com/spacetelescope/romancal/issues/2015>`_)
+
+
+``dq_init`` (WFI-Image, WFI-Prism, WFI-Grism)
+---------------------------------------------
+
+- Add reference_read and reference_amp33 to data and amp33 in ramp construction
+  from raw images. (`#2018
+  <https://github.com/spacetelescope/romancal/issues/2018>`_)
+
+
+``orientation``
+---------------
+
+- Add providing default orientation information to the api (`#2029
+  <https://github.com/spacetelescope/romancal/issues/2029>`_)
+
+
+``ramp_fitting`` (WFI-Image, WFI-Prism, WFI-Grism)
+--------------------------------------------------
+
+- Downstream fix for changes in ``roman_datamodels`` which prevent the deletion
+  of
+  the ``_read_tag`` attribute on tagged nodes. This changes that to be a
+  ``None`` value,
+  which results in the same behavior as before. (`#1852
+  <https://github.com/spacetelescope/romancal/issues/1852>`_)
+
+
+``tweakreg`` (WFI-Image)
+------------------------
+
+- Prevent TweakRegStep from crashing when source catalog is missing required
+  columns. (`#1915 <https://github.com/spacetelescope/romancal/issues/1915>`_)
+- Remove ``save_l1_wcs`` parameter. Production of WfiWCS files is now
+  controlled by ``save_results``. (`#1959
+  <https://github.com/spacetelescope/romancal/issues/1959>`_)
+- Turn ``TweakregError`` errors from relative and absolute alignments into a
+  warnings. (`#2052 <https://github.com/spacetelescope/romancal/issues/2052>`_)
+
+
+``resample``
+------------
+
+- Add inverse sky variance ('ivm-sky') option for weight map in resample.
+  (`#1691 <https://github.com/spacetelescope/romancal/issues/1691>`_)
+- Switch to using a schema to determine the tables to be built when creating
+  ``individual_image_meta`` tables. (`#1981
+  <https://github.com/spacetelescope/romancal/issues/1981>`_)
+
+
+``source_catalog``
+------------------
+
+- Added simple source injection method with tests. (`#1892
+  <https://github.com/spacetelescope/romancal/issues/1892>`_)
+- Update source catalog tables to use the `ee_fraction`` values from the
+  ``apcorr_ref``
+  reference file, using it for the ``is_extended`` flag decision. Also, the
+  ``ee_fraction``
+  values for each of the aperture radii are now stored in the table metadata.
+  (`#1911 <https://github.com/spacetelescope/romancal/issues/1911>`_)
+- Added ``make_cosmoslike_catalog`` method to generate cosmos galaxies and
+  point sources for source injection. (`#1978
+  <https://github.com/spacetelescope/romancal/issues/1978>`_)
+- Propogate L2/L3 image metadata into L4 catalogs. (`#1992
+  <https://github.com/spacetelescope/romancal/issues/1992>`_)
+- Added capability to create grids for source injection. (`#2021
+  <https://github.com/spacetelescope/romancal/issues/2021>`_)
+- Account for jitter in PSF construction. (`#2023
+  <https://github.com/spacetelescope/romancal/issues/2023>`_)
+- Incorporates source injection into the MultibandSourceCatalog step. (`#2036
+  <https://github.com/spacetelescope/romancal/issues/2036>`_)
+- Add routines for performing PSF-matching, to be used in PSF-matched flux
+  measuremnt. (`#2038
+  <https://github.com/spacetelescope/romancal/issues/2038>`_)
+- Added matching of injected sources, unit testing, and a regression testing.
+  (`#2054 <https://github.com/spacetelescope/romancal/issues/2054>`_)
+- Update psf_gof to use reduced chi2 calculation. (`#2061
+  <https://github.com/spacetelescope/romancal/issues/2061>`_)
+- Update Kron aperture photometry to mask pixels assigned to neighboring
+  sources. (`#2062 <https://github.com/spacetelescope/romancal/issues/2062>`_)
+- Fix bug where injected source x & y do not match the corresponding ra & dec.
+  (`#2063 <https://github.com/spacetelescope/romancal/issues/2063>`_)
+
+
 0.20.0 (2025-08-14)
 ===================
 
