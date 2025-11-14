@@ -89,3 +89,30 @@ def test_skycell_wcs_world_to_pixel(name):
         ),
         rtol=1e-5,
     )
+
+
+def test_skycells_core_contains_points():
+    rng = np.random.default_rng()
+    lon = rng.standard_normal(1000)
+    lon = lon / np.max(np.abs(lon)) * 180 + 180
+    lat = rng.standard_normal(1000)
+    lat = lat / np.max(np.abs(lat)) * 90
+    radec = np.stack([lon, lat], axis=1)
+
+    skycells_containing_points = sc.SKYMAP.skycells_at(radec)
+    point_indices_outside_skycells = [
+        point_index
+        for point_index, skycell_indices in enumerate(skycells_containing_points)
+        if len(skycell_indices) == 0
+    ]
+
+    assert len(point_indices_outside_skycells) == 0, (
+        f"{len(point_indices_outside_skycells)} / {radec.shape[0]} points do not lie within any skycell"
+    )
+
+    point_indices_outside_core = (sc.SKYMAP.core_skycell(radec) == -1).nonzero()
+
+    # each point on the sphere MUST belong to exactly one skycell
+    assert len(point_indices_outside_core) == 0, (
+        f"{len(point_indices_outside_core)} / {radec.shape[0]} points do not lie within the exclusive zone of any skycell"
+    )
