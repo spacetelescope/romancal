@@ -21,16 +21,10 @@ build:
   tools:
     python: mambaforge-4.10
   jobs:
+    install:
+      - pip install .[docs]
     post_install:
       - towncrier build --keep
 
 conda:
   environment: docs/rtd_environment.yaml
-
-# Optionally set the version of Python and requirements required to build your docs
-python:
-  install:
-    - method: pip
-      path: .
-      extra_requirements:
-        - docs
