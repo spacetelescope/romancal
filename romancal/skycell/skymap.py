@@ -37,7 +37,7 @@ class SkyCell:
     area = 1.7760288493318122e-06
 
     # average diagonal length of a skycell in degrees on the sphere
-    length = 0.0018846729895155984
+    length = 0.107984
 
     def __init__(self, index: int | None, skymap: "SkyMap" = None):
         """
@@ -253,6 +253,89 @@ class SkyCell:
         )
         wcsobj.array_shape = self.pixel_shape
         return wcsobj
+
+    @cached_property
+    def core(self) -> NDArray[bool]:
+        """
+        2D boolean mask comprising the exclusive, non-overlapping pixels of this skycell.
+        Pixels flagged as belonging to this skycell will NOT belong to any other skycell.
+        """
+
+        xy = np.vstack(np.mgrid[0 : self.pixel_shape[0], 0 : self.pixel_shape[1]].T)
+
+        # whether points are outside the half-margin (sharing with neighboring skycells)
+        # we do NOT need to handle the outer non-overlapping margin of skycells at the edge of the projection region, because the region border cuts them off
+        half_margin = self._skymap.model.meta["skycell_border_pixels"] / 2
+        in_exclusive_region = (
+            (half_margin - 0.5 < xy[:, 0])
+            & (xy[:, 0] < self._skymap.pixel_shape[0] - half_margin - 0.5)
+            & (half_margin - 0.5 < xy[:, 1])
+            & (xy[:, 1] < self._skymap.pixel_shape[1] - half_margin - 0.5)
+        )
+
+        # construct corners points of this skycell
+        corners_ra, corners_dec = self.wcs(
+            [-0.5, -0.5, self.pixel_shape[0] - 0.5, self.pixel_shape[0] - 0.5],
+            [-0.5, self.pixel_shape[1] - 0.5, self.pixel_shape[1] - 0.5, -0.5],
+            with_bounding_box=False,
+        )
+
+        # only convert pixels to world coordinates if a corner of this skycell lies OUTSIDE the bounds of the projection region
+        if ~np.all(
+            ra_in_range(
+                corners_ra,
+                self.projection_region.data["ra_min"],
+                self.projection_region.data["ra_max"],
+            )
+            & (self.projection_region.data["dec_min"] <= corners_dec)
+            & (corners_dec < self.projection_region.data["dec_max"])
+        ):
+            ra, dec = self.wcs(xy[:, 0], xy[:, 1], with_bounding_box=False)
+
+            # whether points lie within the exclusive region AND within the coordinate bounds of the projection region
+            in_exclusive_region = (
+                in_exclusive_region
+                & ra_in_range(
+                    ra,
+                    self.projection_region.data["ra_min"],
+                    self.projection_region.data["ra_max"],
+                )
+                & (self.projection_region.data["dec_min"] <= dec)
+                & (dec < self.projection_region.data["dec_max"])
+            )
+
+        return np.resize(in_exclusive_region, new_shape=self.pixel_shape)
+
+    def core_contains(self, radec: NDArray[np.float64]) -> NDArray[np.bool_]:
+        radec = np.array(radec)
+        if radec.ndim == 1:
+            radec = np.expand_dims(radec, axis=0)
+
+        x, y = self.wcs.invert(radec[:, 0], radec[:, 1])
+
+        # whether points lie within the exclusive region AND within the coordinate bounds of the projection region
+        half_margin = self._skymap.model.meta["skycell_border_pixels"] / 2
+        core_contains = (
+            (half_margin - 0.5 < x)
+            & (x < self._skymap.pixel_shape[0] - half_margin - 0.5)
+            & (half_margin - 0.5 < y)
+            & (y < self._skymap.pixel_shape[1] - half_margin - 0.5)
+            & ra_in_range(
+                radec[:, 0],
+                self.projection_region.data["ra_min"],
+                self.projection_region.data["ra_max"],
+            )
+            & (self.projection_region.data["dec_min"] <= radec[:, 1])
+            & (radec[:, 1] < self.projection_region.data["dec_max"])
+        )
+
+        # handle polar singularities
+        if np.any(np.abs(radec[:, 1]) == 90):
+            # TODO if the polar projection regions change, this will need to be updated
+            if str(self.name).endswith("x50y50"):
+                core_contains[np.abs(radec[:, 1]) == 90] = True
+
+        return core_contains
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, SkyCell):
@@ -486,6 +569,39 @@ class ProjectionRegion:
         """degrees per pixel"""
         return self._skymap.pixel_scale
 
+    def skycells_at(self, radec: NDArray[float]) -> list[list[SkyCell]]:
+        """
+        skycells containing the given point(s)
+
+        Parameters
+        ----------
+        radec: NDArray[float]
+            right ascension and declination of coordinate(s)
+        """
+
+        radec = np.array(radec)
+        if radec.ndim == 1:
+            radec = np.expand_dims(radec, axis=0)
+
+        vectorpoints = np.stack(sgv.lonlat_to_vector(radec[:, 0], radec[:, 1]), axis=1)
+        if not isinstance(vectorpoints, np.ndarray):
+            vectorpoints = np.ndarray([vectorpoints])
+        vectorpoints = sgv.normalize_vector(vectorpoints)
+
+        return [
+            [
+                skycell
+                for skycell in (
+                    SkyCell(self.data["skycell_start"] + skycell_index)
+                    for skycell_index in skycell_indices
+                )
+                if skycell.polygon.contains_point(vectorpoints[point_index, :])
+            ]
+            for point_index, skycell_indices in enumerate(
+                self.skycells_kdtree.query_ball_point(vectorpoints, SkyCell.length)
+            )
+        ]
+
     def __eq__(self, other) -> bool:
         if not isinstance(other, ProjectionRegion):
             return False
@@ -601,6 +717,97 @@ class SkyMap:
         """number of pixels per sky cell"""
         return self.model.meta.nxy_skycell, self.model.meta.nxy_skycell
 
+    def projection_regions_at(
+        self, radec: NDArray[float]
+    ) -> list[list[ProjectionRegion]]:
+        """
+        projection regions containing the given point
+
+        Parameters
+        ----------
+        radec: NDArray[float]
+            right ascension and declination of coordinate(s)
+        """
+
+        radec = np.array(radec)
+        if radec.ndim == 1:
+            radec = np.expand_dims(radec, axis=0)
+
+        vectorpoints = np.stack(sgv.lonlat_to_vector(radec[:, 0], radec[:, 1]), axis=1)
+        if not isinstance(vectorpoints, np.ndarray):
+            vectorpoints = np.ndarray([vectorpoints])
+        vectorpoints = sgv.normalize_vector(vectorpoints)
+
+        return [
+            [
+                ProjectionRegion(projregion_index)
+                for projregion_index in projregion_indices
+                if ProjectionRegion(projregion_index).polygon.contains_point(
+                    vectorpoints[vectorpoint_index]
+                )
+            ]
+            for vectorpoint_index, projregion_indices in enumerate(
+                self.projection_regions_kdtree.query_ball_point(
+                    vectorpoints, ProjectionRegion.MAX_LENGTH
+                )
+            )
+        ]
+
+    def skycells_at(self, radec: NDArray[float]) -> list[list[SkyCell]]:
+        """
+        skycells containing the given point(s)
+
+        Parameters
+        ----------
+        radec: NDArray[float]
+            right ascension and declination of coordinate(s)
+        """
+
+        radec = np.array(radec)
+        if radec.ndim == 1:
+            radec = np.expand_dims(radec, axis=0)
+
+        vectorpoints = np.stack(sgv.lonlat_to_vector(radec[:, 0], radec[:, 1]), axis=1)
+        if not isinstance(vectorpoints, np.ndarray):
+            vectorpoints = np.ndarray([vectorpoints])
+        vectorpoints = sgv.normalize_vector(vectorpoints)
+
+        return [
+            [
+                skycell
+                for skycell in (
+                    SkyCell(skycell_index) for skycell_index in skycell_indices
+                )
+                if skycell.polygon.contains_point(vectorpoints[point_index, :])
+            ]
+            for point_index, skycell_indices in enumerate(
+                self.skycells_kdtree.query_ball_point(vectorpoints, SkyCell.length)
+            )
+        ]
+
+    def core_skycell(self, radec: NDArray[np.float64]) -> list[SkyCell]:
+        """
+        skycell that each point belongs to
+
+        Parameters
+        ----------
+        radec: NDArray[float]
+            right ascension and declination of coordinate(s)
+        """
+
+        radec = np.array(radec)
+        if radec.ndim == 1:
+            radec = np.expand_dims(radec, axis=0)
+
+        skycells = []
+        for point_index, point_skycells in enumerate(self.skycells_at(radec)):
+            for skycell in point_skycells:
+                if skycell.core_contains(radec[point_index, :]):
+                    skycells.append(skycell)
+                    break
+
+        return skycells
+
     def __getitem__(self, index: int) -> SkyCell:
         """`SkyCell` at the given index in the sky cells array"""
         return SkyCell(index)
@@ -610,6 +817,17 @@ class SkyMap:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.path})"
+
+
+def ra_in_range(ra: float, low: float, high: float):
+    """whether the given longitude lies within the given min and max range, handling wrapping"""
+    ra = ra % 360
+    low = low % 360
+    high = high % 360
+    if low <= high:
+        return (ra >= low) & (ra <= high)
+    else:
+        return (ra >= low) | (ra <= high)
 
 
 SKYMAP = SkyMap(path=os.environ.get("SKYMAP_PATH", None))
