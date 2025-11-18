@@ -14,6 +14,7 @@ import pytest
 from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling.models import Shift
+from astropy.time import Time
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from roman_datamodels import datamodels as rdm
@@ -236,6 +237,9 @@ def _create_wcs(input_dm, shift_1=0, shift_2=0):
 
 def _base_image(shift_1=0, shift_2=0):
     l2 = rdm.ImageModel.create_fake_data(shape=(100, 100))
+    l2.meta.exposure.start_time = Time(
+        "2024-01-03T00:00:00.0", format="isot", scale="utc"
+    )
     l2.meta.filename = "none"
     l2.meta.cal_logs = []
     l2.meta.cal_step = {}
