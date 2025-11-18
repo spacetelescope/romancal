@@ -1,0 +1,1 @@
+ensure `wcsobj.array_shape` is populated by inverse of `wcsobj.pixel_shape`
