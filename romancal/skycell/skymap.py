@@ -77,12 +77,16 @@ class SkyCell:
         if skymap is None:
             skymap = SKYMAP
 
-        indices = np.where(skymap.model.skycells["name"] == name)[0]
-        if len(indices) > 0:
+        indices = (skymap.model.skycells["name"] == name).nonzero()[0]
+        if len(indices) == 1:
             return SkyCell(indices[0], skymap=skymap)
-        else:
+        elif len(indices) == 0:
             raise KeyError(
-                f"skycell with name '{name}' does not exist in the currently-loaded sky map"
+                f"sky cell with name '{name}' does not exist in the currently-loaded sky map"
+            )
+        else:
+            raise ValueError(
+                f"multiple sky cells found matching name '{name}'; malformed reference file?"
             )
 
     @classmethod
@@ -301,6 +305,10 @@ class SkyCells:
     def from_names(cls, names: list[str], skymap: "SkyMap" = None) -> "SkyCells":
         """Retrieve sky cells from the sky map by name (see handbook [1] for explanation).
 
+        Note
+        ----
+        Order of input names is NOT preserved.
+
         Parameters
         ----------
         name : list[str]
@@ -317,11 +325,16 @@ class SkyCells:
             skymap = SKYMAP
 
         indices = np.isin(skymap.model.skycells["name"], names).nonzero()[0]
-        if len(indices) > 0:
-            return SkyCells(indices, skymap=skymap)
+        found_names = skymap.model.skycells["name"][indices]
+
+        if len(indices) == len(names):
+            return SkyCells(
+                indices,
+                skymap=skymap,
+            )
         else:
             raise KeyError(
-                "no skycells found with given name(s) in the currently-loaded sky map"
+                f"no skycells found with the following name(s) in the currently-loaded sky map: {[name for index, name in enumerate(names) if name not in found_names]}"
             )
 
     @property
@@ -340,7 +353,7 @@ class SkyCells:
         return self._data
 
     @property
-    def names(self) -> NDArray[str]:
+    def names(self) -> list[str]:
         """names of these sky cells, for instance `315p86x50y75`
 
         NOTE
@@ -348,12 +361,12 @@ class SkyCells:
         the name of a sky cell comprises the rounded center coordinates of its containing projection region in right ascension and declination,
         and the XY location of the sky cell within its projection region in units of ordinal sky cells from that center
         """
-        return self.data["name"]
+        return self.data["name"].tolist()
 
     @property
     def radec_centers(self) -> NDArray[float]:
         """center points in right ascension and declination (Nx2 array of floats)"""
-        return self.data[["ra_center", "dec_center"]]
+        return np.array((self.data["ra_center"], self.data["dec_center"])).T
 
     @property
     def orientations(self) -> NDArray[float]:
@@ -362,43 +375,31 @@ class SkyCells:
     @property
     def xy_tangents(self) -> NDArray[float]:
         """tangent points of projection regions in pixel coordinates (Nx2 array of floats)"""
-        return self.data[["x_tangent", "y_tangent"]]
+        return np.array((self.data["x_tangent"], self.data["y_tangent"]))
 
     @property
     def radec_corners(
         self,
     ) -> NDArray[float]:
-        """corners in right ascension and declination in the order given by the sky map (Nx2x4 array of floats)"""
-        return np.stack(
+        """corners in right ascension and declination in the order given by the sky map (Nx4x2 array of floats)"""
+        return np.reshape(
             (
-                self.data[["ra_corn1", "dec_corn1"]],
-                self.data[["ra_corn2", "dec_corn2"]],
-                self.data[["ra_corn3", "dec_corn3"]],
-                self.data[["ra_corn4", "dec_corn4"]],
+                np.concat([self.data[f"ra_corn{index}"] for index in range(1, 5)]),
+                np.concat([self.data[f"dec_corn{index}"] for index in range(1, 5)]),
             ),
-            axis=2,
-        )
+            (2, 4, len(self)),
+        ).T
 
     @cached_property
     def vectorpoint_corners(self) -> NDArray[float]:
-        """corners in 3D Cartesian space on the unit sphere (Nx3x4 array of floats)"""
-        return np.stack(
-            (
-                sgv.normalize_vector(
-                    sgv.lonlat_to_vector(self.data["ra_corn1"], self.data["dec_corn1"])
-                ),
-                sgv.normalize_vector(
-                    sgv.lonlat_to_vector(self.data["ra_corn2"], self.data["dec_corn2"])
-                ),
-                sgv.normalize_vector(
-                    sgv.lonlat_to_vector(self.data["ra_corn3"], self.data["dec_corn3"])
-                ),
-                sgv.normalize_vector(
-                    sgv.lonlat_to_vector(self.data["ra_corn4"], self.data["dec_corn4"])
-                ),
+        """corners in 3D Cartesian space on the unit sphere (Nx4x3 array of floats)"""
+        radec_corners = np.reshape(self.radec_corners, (len(self) * 4, 2))
+        return np.reshape(
+            sgv.normalize_vector(
+                sgv.lonlat_to_vector(radec_corners[:, 0], radec_corners[:, 1])
             ),
-            axis=2,
-        )
+            (3, 4, len(self)),
+        ).T
 
     @cached_property
     def vectorpoint_centers(self) -> NDArray[float]:
@@ -407,10 +408,10 @@ class SkyCells:
             np.array(
                 sgv.lonlat_to_vector(self.radec_centers[:, 0], self.radec_centers[:, 1])
             )
-        )
+        ).T
 
     @cached_property
-    def polygon(self) -> sgp.SphericalPolygon:
+    def polygons(self) -> sgp.SphericalPolygon:
         """spherical polygons representing these sky cells"""
         return sgp.SphericalPolygon(
             [
@@ -427,13 +428,10 @@ class SkyCells:
         """index of each sky cell's projection region"""
 
         return [
-            np.where(
-                (
-                    skycell_index
-                    >= self._skymap.model.projection_regions["skycell_start"]
-                )
-                & (skycell_index < self._skymap.model.projection_regions["skycell_end"])
-            )[0][0]
+            (skycell_index >= self._skymap.model.projection_regions["skycell_start"])
+            & (
+                skycell_index < self._skymap.model.projection_regions["skycell_end"]
+            ).nonzero()[0][0]
             for skycell_index in self.indices
         ]
 
@@ -495,6 +493,9 @@ class SkyCells:
     def pixel_shape(self) -> tuple[int, int]:
         """number of pixels across"""
         return self._skymap.pixel_shape
+
+    def __len__(self) -> int:
+        return len(self._indices)
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, SkyCell):
@@ -578,10 +579,10 @@ class ProjectionRegion:
         if skymap is None:
             skymap = SKYMAP
 
-        projregion_indices = np.where(
+        projregion_indices = (
             (index >= skymap.model.projection_regions["skycell_start"])
             & (index < skymap.model.projection_regions["skycell_end"])
-        )[0]
+        ).nonzero()[0]
         if len(projregion_indices) == 1:
             return cls(projregion_indices[0], skymap=skymap)
         else:
