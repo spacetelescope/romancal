@@ -151,10 +151,7 @@ def test_projregion_from_skycell(skymap_subset):
         skymap.ProjectionRegion.from_skycell_index(10000, skymap=skymap_subset)
 
 
-@pytest.mark.parametrize(
-    "name",
-    TEST_SKYCELLS,
-)
+@pytest.mark.parametrize("name", TEST_SKYCELLS)
 def test_skycell_wcs_pixel_to_world(name, skymap_subset):
     skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
 
@@ -181,10 +178,7 @@ def test_skycell_wcs_pixel_to_world(name, skymap_subset):
     )
 
 
-@pytest.mark.parametrize(
-    "name",
-    TEST_SKYCELLS,
-)
+@pytest.mark.parametrize("name", TEST_SKYCELLS)
 def test_skycell_wcs_world_to_pixel(name, skymap_subset):
     skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
 
@@ -206,10 +200,7 @@ def test_skycell_wcs_world_to_pixel(name, skymap_subset):
     )
 
 
-@pytest.mark.parametrize(
-    "name",
-    TEST_SKYCELLS,
-)
+@pytest.mark.parametrize("name", TEST_SKYCELLS)
 def test_skycell_wcsinfo(name, skymap_subset):
     skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
 

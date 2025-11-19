@@ -9,6 +9,15 @@ import romancal.skycell.skymap as sc
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata]
 
+TEST_SKYCELLS = [
+    "000p86x68y61",
+    "045p86x34y29",
+    # north pole
+    "135p90x49y25",
+    # south pole
+    "225m90x46y40",
+]
+
 
 def assert_allclose_lonlat(actual: np.ndarray, desired: np.ndarray, rtol=1e-7, atol=0):
     assert_allclose(
@@ -22,17 +31,7 @@ def test_skycell_from_name():
         sc.SkyCell.from_name("270p65x99y70")
 
 
-@pytest.mark.parametrize(
-    "name",
-    [
-        "000p86x68y61",
-        "045p86x34y29",
-        # north pole
-        "135p90x49y25",
-        # south pole
-        "225m90x46y40",
-    ],
-)
+@pytest.mark.parametrize("name", TEST_SKYCELLS)
 def test_skycell_wcs_pixel_to_world(name):
     skycell = sc.SkyCell.from_name(name)
 
@@ -59,17 +58,7 @@ def test_skycell_wcs_pixel_to_world(name):
     )
 
 
-@pytest.mark.parametrize(
-    "name",
-    [
-        "000p86x34y30",
-        "045p86x34y29",
-        # north pole
-        "135p90x49y25",
-        # south pole
-        "225m90x46y40",
-    ],
-)
+@pytest.mark.parametrize("name", TEST_SKYCELLS)
 def test_skycell_wcs_world_to_pixel(name):
     skycell = sc.SkyCell.from_name(name)
 
@@ -89,3 +78,17 @@ def test_skycell_wcs_world_to_pixel(name):
         ),
         rtol=1e-5,
     )
+
+
+def test_skycells(skymap_subset):
+    skycells = sc.SkyCells.from_names(TEST_SKYCELLS, skymap=skymap_subset)
+
+    assert sorted(skycells.names) == sorted(TEST_SKYCELLS)
+
+    assert skycells.radec_corners.shape == (len(TEST_SKYCELLS), 4, 2)
+    assert skycells.vectorpoint_corners.shape == (len(TEST_SKYCELLS), 4, 3)
+
+    assert skycells.radec_centers.shape == (len(TEST_SKYCELLS), 2)
+    assert skycells.vectorpoint_centers.shape == (len(TEST_SKYCELLS), 3)
+
+    assert len(skycells.polygons)
