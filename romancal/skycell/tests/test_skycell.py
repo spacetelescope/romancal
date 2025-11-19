@@ -249,4 +249,4 @@ def test_skycells(skymap_subset):
     assert skycells.radec_centers.shape == (len(TEST_SKYCELLS), 2)
     assert skycells.vectorpoint_centers.shape == (len(TEST_SKYCELLS), 3)
 
-    assert len(skycells.polygons)
+    assert len(skycells.polygons) == len(TEST_SKYCELLS)

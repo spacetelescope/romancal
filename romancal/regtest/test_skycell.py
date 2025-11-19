@@ -80,8 +80,8 @@ def test_skycell_wcs_world_to_pixel(name):
     )
 
 
-def test_skycells(skymap_subset):
-    skycells = sc.SkyCells.from_names(TEST_SKYCELLS, skymap=skymap_subset)
+def test_skycells():
+    skycells = sc.SkyCells.from_names(TEST_SKYCELLS)
 
     assert sorted(skycells.names) == sorted(TEST_SKYCELLS)
 
@@ -91,4 +91,4 @@ def test_skycells(skymap_subset):
     assert skycells.radec_centers.shape == (len(TEST_SKYCELLS), 2)
     assert skycells.vectorpoint_centers.shape == (len(TEST_SKYCELLS), 3)
 
-    assert len(skycells.polygons)
+    assert len(skycells.polygons) == len(TEST_SKYCELLS)

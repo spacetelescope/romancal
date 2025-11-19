@@ -416,7 +416,7 @@ class SkyCells:
         return sgp.SphericalPolygon(
             [
                 sgp.SingleSphericalPolygon(
-                    points=self.vectorpoint_corners[index].T,
+                    points=self.vectorpoint_corners[index],
                     inside=vectorpoint_center,
                 )
                 for index, vectorpoint_center in enumerate(self.vectorpoint_centers)
