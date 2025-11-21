@@ -107,6 +107,9 @@ def mosaic_model():
 @pytest.fixture
 def image_model():
     model = ImageModel.create_fake_data(shape=(101, 101))
+    model.meta.exposure.start_time = Time(
+        "2024-01-03T00:00:00.0", format="isot", scale="utc"
+    )
     model.meta.filename = "none"
     model.meta.cal_step = {}
     for step_name in model.schema_info("required")["roman"]["meta"]["cal_step"][
