@@ -606,7 +606,7 @@ def calc_transforms(t_pars: TransformParameters):
     t = Transforms()
 
     # Quaternion to M_eci2b
-    t.m_eci2b = calc_m_eci2b(t_pars.pointing.q)
+    t.m_eci2b = calc_quat2matrix(t_pars.pointing.q)
 
     # ECI to FCS
     t.m_eci2fcs = np.dot(M_B2FCS0, t.m_eci2b)
@@ -625,7 +625,7 @@ def calc_transforms_va(t_pars, gs_sky_corr, gs_commanded):
     t = Transforms()
 
     # Quaternion to M_eci2b
-    t.m_eci2b = calc_m_eci2b(t_pars.pointing.q)
+    t.m_eci2b = calc_quat2matrix(t_pars.pointing.q)
 
     # M_eci2gsapp
     m_fcs2gsapp = calc_m_fgs2gs(gs_sky_corr[0] * D2R, gs_sky_corr[1] * D2R)
@@ -721,7 +721,7 @@ def calc_wcs_from_matrix(m):
     return wcs
 
 
-def calc_m_eci2b(q):
+def calc_quat2matrix(q):
     """
     Calculate ECI to B-frame matrix from quaternions.
 
