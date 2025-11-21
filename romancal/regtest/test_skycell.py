@@ -95,33 +95,45 @@ def test_skycells():
 
 
 def test_skycells_core_contains_points():
+def test_skycells_contains_points():
     rng = np.random.default_rng()
-    lon = rng.standard_normal(1000)
+    lon = rng.standard_normal(10000)
     lon = lon / np.max(np.abs(lon)) * 180 + 180
-    lat = rng.standard_normal(1000)
+    lat = rng.standard_normal(10000)
     lat = lat / np.max(np.abs(lat)) * 90
     radec = np.stack([lon, lat], axis=1)
 
-    skycells_containing_points = sc.SKYMAP.skycells_at(radec)
+    skycells_containing_points = sc.SKYMAP.skycells_containing(radec)
     point_indices_outside_skycells = [
         point_index
-        for point_index, skycell_indices in enumerate(skycells_containing_points)
-        if len(skycell_indices) == 0
+        for point_index in np.arange(radec.shape[0])
+        if not any(
+            point_index not in skycell_point_indices
+            for skycell_point_indices in skycells_containing_points.values()
+        )
     ]
 
     assert len(point_indices_outside_skycells) == 0, (
         f"{len(point_indices_outside_skycells)} / {radec.shape[0]} points do not lie within any skycell"
     )
 
+
+def test_skycells_core_contains_points():
+    rng = np.random.default_rng()
+    lon = rng.standard_normal(10000)
+    lon = lon / np.max(np.abs(lon)) * 180 + 180
+    lat = rng.standard_normal(10000)
+    lat = lat / np.max(np.abs(lat)) * 90
+    radec = np.stack([lon, lat], axis=1)
+
+    skycells_exclusively_containing_points = sc.SKYMAP.core_skycell(radec)
     point_indices_outside_core = [
         point_index
-        for point_index, skycells in enumerate(skycells_containing_points)
-        if not len(
-            np.where(
-                [skycell.core_contains(radec[point_index, :]) for skycell in skycells]
-            )[0]
+        for point_index in np.arange(radec.shape[0])
+        if not any(
+            point_index not in skycell_point_indices
+            for skycell_point_indices in skycells_exclusively_containing_points.values()
         )
-        == 1
     ]
 
     # each point on the sphere MUST belong to exactly one skycell
