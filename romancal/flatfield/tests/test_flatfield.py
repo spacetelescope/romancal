@@ -91,7 +91,7 @@ def test_crds_temporal_match(instrument, exptype):
 
     step = FlatFieldStep()
     ref_file_path = step.get_reference_file(wfi_image_model, "flat")
-    assert 'roman_wfi_flat' in ref_file_path
+    assert "roman_wfi_flat" in ref_file_path
 
     # As of 20251120, there are no references with multiple USEAFTER.
     # However, picking a date earlier than the first USEAFTER
@@ -100,7 +100,6 @@ def test_crds_temporal_match(instrument, exptype):
     wfi_image_model.meta.exposure.end_time = Time("2021-09-01T00:33:11.110")
     with pytest.raises(CrdsLookupError):
         _ = step.get_reference_file(wfi_image_model, "flat")
-
 
 
 @pytest.mark.parametrize("include_var_flat", (True, False))
