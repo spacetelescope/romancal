@@ -633,7 +633,7 @@ def calc_transforms_va(t_pars, gs_sky_corr, gs_commanded):
 
     # M_eci2gs
     velocity = np.array(t_pars.velocity)
-    m_vacorr = calc_gs2gsapp(m_eci2gsapp, velocity)
+    m_vacorr = calc_gsapp2gs(m_eci2gsapp, velocity)
     m_eci2gs = np.linalg.multi_dot([M_ics2idl, m_vacorr, m_eci2gsapp])
 
     # M_eci2v
@@ -1460,7 +1460,7 @@ def calc_m_fgs2gs(x, y):
     return m
 
 
-def calc_gs2gsapp(m_eci2gsics, velocity):
+def calc_gsapp2gs(m_eci2gsics, velocity):
     """
     Calculate the Velocity Aberration correction.
 
