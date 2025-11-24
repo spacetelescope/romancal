@@ -254,58 +254,6 @@ class SkyCell:
         wcsobj.array_shape = self.pixel_shape
         return wcsobj
 
-    @cached_property
-    def core(self) -> NDArray[bool]:
-        """
-        2D boolean mask comprising the exclusive, non-overlapping pixels of this skycell.
-        Pixels flagged as belonging to this skycell will NOT belong to any other skycell.
-        """
-
-        xy = np.vstack(np.mgrid[0 : self.pixel_shape[0], 0 : self.pixel_shape[1]].T)
-
-        # whether points are outside the half-margin (sharing with neighboring skycells)
-        # we do NOT need to handle the outer non-overlapping margin of skycells at the edge of the projection region, because the region border cuts them off
-        half_margin = self._skymap.model.meta["skycell_border_pixels"] / 2
-        in_exclusive_region = (
-            (half_margin - 0.5 < xy[:, 0])
-            & (xy[:, 0] < self._skymap.pixel_shape[0] - half_margin - 0.5)
-            & (half_margin - 0.5 < xy[:, 1])
-            & (xy[:, 1] < self._skymap.pixel_shape[1] - half_margin - 0.5)
-        )
-
-        # construct corners points of this skycell
-        corners_ra, corners_dec = self.wcs(
-            [-0.5, -0.5, self.pixel_shape[0] - 0.5, self.pixel_shape[0] - 0.5],
-            [-0.5, self.pixel_shape[1] - 0.5, self.pixel_shape[1] - 0.5, -0.5],
-            with_bounding_box=False,
-        )
-
-        # only convert pixels to world coordinates if a corner of this skycell lies OUTSIDE the bounds of the projection region
-        if ~np.all(
-            ra_in_range(
-                corners_ra,
-                self.projection_region.data["ra_min"],
-                self.projection_region.data["ra_max"],
-            )
-            & (corners_dec >= self.projection_region.data["dec_min"])
-            & (corners_dec < self.projection_region.data["dec_max"])
-        ):
-            ra, dec = self.wcs(xy[:, 0], xy[:, 1], with_bounding_box=False)
-
-            # whether points lie within the exclusive region AND within the coordinate bounds of the projection region
-            in_exclusive_region = (
-                in_exclusive_region
-                & ra_in_range(
-                    ra,
-                    self.projection_region.data["ra_min"],
-                    self.projection_region.data["ra_max"],
-                )
-                & (dec >= self.projection_region.data["dec_min"])
-                & (dec < self.projection_region.data["dec_max"])
-            )
-
-        return np.resize(in_exclusive_region, new_shape=self.pixel_shape)
-
     def core_contains(self, radec: NDArray[np.float64]) -> NDArray[np.bool_]:
         """
         whether each given point is exclusively core-contained by this skycell

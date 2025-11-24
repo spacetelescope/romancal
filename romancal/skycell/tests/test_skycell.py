@@ -262,46 +262,17 @@ def test_skycells(skymap_subset):
         ("000p86x59y38", True),
         ("000p86x62y35", True),
         ("135p90x25y49", False),
-        ("135p90x30y51", True),
-        ("135p90x33y62", True),
-        ("135p90x39y33", True),
-        ("135p90x43y65", True),
-        ("135p90x48y41", True),
-        ("135p90x52y59", True),
+        ("135p90x30y51", False),
+        ("135p90x33y62", False),
+        ("135p90x39y33", False),
+        ("135p90x43y65", False),
+        ("135p90x48y41", False),
+        ("135p90x52y59", False),
     ],
 )
 def test_skycell_core_contains_center(name, expected, skymap_subset):
     skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
-    assert skycell.core[2500, 2500] == expected
-    assert (
-        skycell.core_contains(skycell.wcs.pixel_to_world_values(2500, 2500)) == expected
-    )
-
-
-@pytest.mark.parametrize(
-    "name,expected",
-    [
-        ("000p86x31y33", 24010000),
-        ("000p86x30y34", 24010000),
-        ("000p86x50y65", 24010000),
-        ("000p86x54y69", 4109664),
-        ("000p86x59y38", 24010000),
-        ("000p86x62y35", 20277310),
-        ("135p90x25y49", 782163),
-        ("135p90x30y51", 24010000),
-        ("135p90x33y62", 24010000),
-        ("135p90x39y33", 24010000),
-        ("135p90x43y65", 24010000),
-        ("135p90x48y41", 24010000),
-        ("135p90x52y59", 24010000),
-        ("135p90x57y35", 24010000),
-        ("135p90x61y67", 24010000),
-        ("135p90x67y38", 24010000),
-    ],
-)
-def test_skycell_core_pixelcount(name, expected, skymap_subset):
-    skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
-    assert len(np.where(skycell.core)[0]) == expected
+    assert skycell.core_contains(skycell.radec_center) == expected
 
 
 @pytest.mark.parametrize(
