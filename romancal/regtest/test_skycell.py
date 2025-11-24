@@ -97,9 +97,9 @@ def test_skycells():
 def test_skycells_core_contains_points():
 def test_skycells_contains_points():
     rng = np.random.default_rng()
-    lon = rng.standard_normal(10000)
+    lon = rng.standard_normal(1000000)
     lon = lon / np.max(np.abs(lon)) * 180 + 180
-    lat = rng.standard_normal(10000)
+    lat = rng.standard_normal(1000000)
     lat = lat / np.max(np.abs(lat)) * 90
     radec = np.stack([lon, lat], axis=1)
 
