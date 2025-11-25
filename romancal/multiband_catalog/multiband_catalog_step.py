@@ -8,10 +8,9 @@ import copy
 import logging
 from typing import TYPE_CHECKING
 
-from roman_datamodels import datamodels
-
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog.multiband_catalog import (
+    initialize_catalog_model,
     make_source_injected_library,
     match_recovered_sources,
     multiband_catalog,
@@ -70,32 +69,12 @@ class MultibandCatalogStep(RomanStep):
             example_model = library.borrow(0)
             library.shelve(example_model, modify=False)
 
-        # Initialize the source catalog model, copying the metadata
-        # from the example model. Some of this may be overwritten
-        # during metadata blending.
-        cat_model = datamodels.MultibandSourceCatalogModel.create_minimal(
-            {"meta": example_model.meta}
-        )
-        cat_model.meta["image"] = {
-            # try to record association name else fall back to example model filename
-            "filename": library.asn.get("table_name", example_model.meta.filename),
-            "file_date": example_model.meta.file_date,
-            # this may be overwritten during metadata blending
-        }
-        cat_model.meta["image_metas"] = []
-        # copy over data_release_id, ideally this will come from the association
-        if "data_release_id" in example_model.meta:
-            cat_model.meta.data_release_id = example_model.meta.data_release_id
+        # Initialize the source catalog model
+        cat_model = initialize_catalog_model(library, example_model)
 
         log.info("Creating ee_fractions model for first image")
         apcorr_ref = self.get_reference_file(example_model, "apcorr")
         ee_spline = get_ee_spline(example_model, apcorr_ref)
-
-        # Define the output filename for the source catalog model
-        try:
-            cat_model.meta.filename = library.asn["products"][0]["name"]
-        except (AttributeError, KeyError):
-            cat_model.meta.filename = "multiband_catalog"
 
         # Set up source injection library and injection catalog
         if self.inject_sources:

@@ -31,7 +31,7 @@ _SKIP_IMAGE_META_KEYS = {"wcs", "individual_image_meta"}
 _SKIP_BLEND_KEYS = {"wcsinfo"}
 
 
-def multiband_catalog(self, library, example_model, cat_model, ee_spline):
+def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     """
     Create a multiband catalog of sources including photometry and basic
     shape measurements.
@@ -42,7 +42,7 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
         The library of models.
     example_model : `MosaicModel` or `ImageModel`
         Example model.
-    cat_model : `MultibandSourceCatalogModel`
+    catalog_model : `MultibandSourceCatalogModel`
         Catalog model.
     ee_spline : `astropy.modeling.fitting.SplineSplrepFitter
 
@@ -50,7 +50,7 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
     -------
     segment_img : `SegmentationImage` or set
         The segmentation image.
-    cat_model : `MultibandSourceCatalogModel`
+    catalog_model : `MultibandSourceCatalogModel`
         Updated catalog.
     msg : str (optional)
         Reason for empty file.
@@ -83,7 +83,7 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
             "Cannot create source catalog. All "
             "pixels in the detection image are masked."
         )
-        return det_img.shape, cat_model, msg
+        return det_img.shape, catalog_model, msg
 
     bkg = RomanBackground(
         det_img,
@@ -104,7 +104,7 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
 
     if segment_img is None:  # no sources found
         msg = "Cannot create source catalog. No sources were detected."
-        return det_img.shape, cat_model, msg
+        return det_img.shape, catalog_model, msg
 
     segment_img.detection_image = det_img.copy()
 
@@ -187,11 +187,11 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
                 for k, v in model["meta"].items()
                 if k not in _SKIP_IMAGE_META_KEYS
             }
-            cat_model.meta.image_metas.append(image_meta)
+            catalog_model.meta.image_metas.append(image_meta)
 
             # blend model with catalog metadata
-            if model.meta.file_date < cat_model.meta.image.file_date:
-                cat_model.meta.image.file_date = model.meta.file_date
+            if model.meta.file_date < catalog_model.meta.image.file_date:
+                catalog_model.meta.image.file_date = model.meta.file_date
 
             for key, value in image_meta.items():
                 if key in _SKIP_BLEND_KEYS:
@@ -199,34 +199,82 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
                 if not isinstance(value, dict):
                     # skip blending of single top-level values
                     continue
-                if key not in cat_model.meta:
+                if key not in catalog_model.meta:
                     # skip blending if the key is not in the catalog meta
                     continue
                 if key == "coadd_info":
-                    cat_model.meta[key]["time_first"] = min(
-                        cat_model.meta[key]["time_first"], value["time_first"]
+                    catalog_model.meta[key]["time_first"] = min(
+                        catalog_model.meta[key]["time_first"], value["time_first"]
                     )
-                    cat_model.meta[key]["time_last"] = max(
-                        cat_model.meta[key]["time_last"], value["time_last"]
+                    catalog_model.meta[key]["time_last"] = max(
+                        catalog_model.meta[key]["time_last"], value["time_last"]
                     )
                     time_means.append(value["time_mean"])
                     exposure_times.append(value["exposure_time"])
                 else:
                     # set non-matching metadata values to None
                     for subkey, subvalue in value.items():
-                        if cat_model.meta[key].get(subkey, None) != subvalue:
-                            cat_model.meta[key][subkey] = None
+                        if catalog_model.meta[key].get(subkey, None) != subvalue:
+                            catalog_model.meta[key][subkey] = None
 
             library.shelve(model, modify=False)
 
     # finish blending
-    cat_model.meta.coadd_info.time_mean = Time(time_means).mean()
-    cat_model.meta.coadd_info.exposure_time = np.mean(exposure_times)
+    catalog_model.meta.coadd_info.time_mean = Time(time_means).mean()
+    catalog_model.meta.coadd_info.exposure_time = np.mean(exposure_times)
 
     # Put the resulting multiband catalog in the model
-    cat_model.source_catalog = det_cat
+    catalog_model.source_catalog = det_cat
 
-    return segment_img, cat_model, None
+    return segment_img, catalog_model, None
+
+
+def initialize_catalog_model(library, example_model):
+    """
+    Initialize the multiband source catalog model.
+
+    Creates the catalog model and sets up initial metadata from
+    the example model and association information.
+
+    Parameters
+    ----------
+    library : `romancal.datamodels.ModelLibrary`
+        The library of models to process.
+
+    example_model : `romancal.datamodels.MosaicImageModel`
+        An example model from the library for metadata access.
+
+    Returns
+    -------
+    result : `romancal.datamodels.MultibandSourceCatalogModel`
+        The initialized catalog model with set metadata.
+    """
+    # Initialize the source catalog model, copying the metadata
+    # from the example model. Some of this may be overwritten
+    # during metadata blending.
+    catalog_model = datamodels.MultibandSourceCatalogModel.create_minimal(
+        {"meta": example_model.meta}
+    )
+    catalog_model.meta["image"] = {
+        # try to record association name else fall back to example model
+        # filename
+        "filename": library.asn.get("table_name", example_model.meta.filename),
+        # file_date may be overwritten during metadata blending
+        "file_date": example_model.meta.file_date,
+    }
+    catalog_model.meta["image_metas"] = []
+
+    # copy over data_release_id, ideally this will come from the association
+    if "data_release_id" in example_model.meta:
+        catalog_model.meta.data_release_id = example_model.meta.data_release_id
+
+    # Define the output filename for the source catalog model
+    try:
+        catalog_model.meta.filename = library.asn["products"][0]["name"]
+    except (AttributeError, KeyError):
+        catalog_model.meta.filename = "multiband_catalog"
+
+    return catalog_model
 
 
 def make_source_injected_library(library):
