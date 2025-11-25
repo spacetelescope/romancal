@@ -42,6 +42,14 @@ def main():
         help="Perform all actions but do not save the results",
     )
     parser.add_argument(
+        '--gspos',
+        type=float,
+        nargs=2,
+        metavar=('RA', 'DEC'),
+        default=None,
+        help='Corrected (apparent) Guide Star sky location (degrees)',
+    )
+    parser.add_argument(
         "-q",
         "--quaternion",
         dest="default_quaternion",
@@ -147,6 +155,7 @@ def main():
                 # set_telescope_pointing.TransformParameters
                 allow_default=args.allow_default,
                 default_quaternion=args.default_quaternion,
+                gspos=args.gspos,
                 service_kwargs=service_kwargs,
                 tolerance=args.tolerance,
             )
