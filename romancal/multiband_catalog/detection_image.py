@@ -56,9 +56,6 @@ def make_det_image(library, kernel_fwhm):
     -------
     detection_data : 2D `numpy.ndarray`
         The detection image data.
-
-    detection_error : 2D `numpy.ndarray`
-        The detection image (standard deviation) error.
     """
     if not isinstance(library, ModelLibrary):
         raise TypeError("library input must be a ModelLibrary object")
