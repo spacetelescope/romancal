@@ -16,13 +16,12 @@ from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog.background import subtract_background_library
+from romancal.multiband_catalog.catalog_generator import create_filter_catalog
 from romancal.multiband_catalog.detection_image import make_detection_image
-from romancal.multiband_catalog.utils import add_filter_to_colnames
 from romancal.source_catalog import injection
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
-from romancal.source_catalog.utils import get_ee_spline
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -153,35 +152,23 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
         for model in library:
             mask = ~np.isfinite(model.data) | ~np.isfinite(model.err) | (model.err <= 0)
 
-            if self.fit_psf:
-                filter_name = model.meta.instrument.optical_element
-                log.info(f"Creating catalog for {filter_name} image")
-                ref_file = self.get_reference_file(model, "epsf")
-                log.info("Using ePSF reference file: %s", ref_file)
-                psf_model = datamodels.open(ref_file)
-            else:
-                psf_model = None
-
-            apcorr_ref = self.get_reference_file(model, "apcorr")
-            ee_spline = get_ee_spline(model, apcorr_ref)
-
-            catobj = RomanSourceCatalog(
-                model,
-                segment_img,
-                None,
-                star_kernel_fwhm,
-                fit_psf=self.fit_psf,
-                psf_model=psf_model,
-                detection_cat=det_catobj,
-                mask=mask,
-                cat_type="dr_band",
-                ee_spline=ee_spline,
-            )
-
-            # Add the filter name to the column names
             filter_name = model.meta.instrument.optical_element
-            cat = add_filter_to_colnames(catobj.catalog, filter_name)
-            ee_fractions = cat.meta["ee_fractions"]
+            res = create_filter_catalog(
+                model,
+                filter_name,
+                filter_name,  # ref_filter (same as filter_name to disable matching)
+                0,  # ref_wavelength (ignored)
+                segment_img,
+                star_kernel_fwhm,
+                det_catobj,
+                None,  # ref_model
+                None,  # ref_filter_catalog
+                None,  # ref_psf_model
+                self.fit_psf,
+                self.get_reference_file,
+            )
+            cat = res["catalog"]
+            ee_fractions = res["ee_fractions"]
 
             # TODO: what metadata do we want to keep, if any,
             # from the filter catalogs?
@@ -192,7 +179,7 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
             # columns have the same name but different values
             # (e.g., repeated filter names)
             det_cat = join(det_cat, cat, keys="label", join_type="outer")
-            det_cat.meta["ee_fractions"][filter_name.lower()] = ee_fractions
+            det_cat.meta["ee_fractions"].update(ee_fractions)
 
             # accumulate image metadata
             image_meta = {
