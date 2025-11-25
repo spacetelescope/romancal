@@ -167,7 +167,7 @@ def create_filter_catalog(
             psf_model=None,
             mask=mask,
             detection_cat=detection_catobj,
-            cat_type="dr_band",
+            cat_type="psf_matched",
             ee_spline=ee_spline,
         )
 
@@ -269,6 +269,12 @@ def create_filter_catalog(
             keys="label",
             join_type="outer",
         )
+        log.info(
+            f"Synthetic PSF-matched catalog created for {filter_name} "
+            f"using correction factors"
+        )
+
+    log.info(f"Completed catalog for {filter_name} filter")
 
     return {
         "catalog": cat,

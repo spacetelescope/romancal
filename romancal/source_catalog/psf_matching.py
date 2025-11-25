@@ -138,7 +138,7 @@ def create_psf_matched_image(
     if matched_err is not None:
         matched_model.err = matched_err
 
-    log.info(f"PSF matching complete: {input_filter} matched to {target_filter}")
+    log.info(f"Created PSF-matched image: {input_filter} -> {target_filter}")
 
     return matched_model
 
@@ -302,7 +302,7 @@ def compute_psf_correction_factors(
         psf_model=None,
         mask=mask,
         detection_cat=detection_cat,
-        cat_type="dr_band",
+        cat_type="psf_matched",
         ee_spline=ee_spline,
     )
 

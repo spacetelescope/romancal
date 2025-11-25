@@ -71,14 +71,19 @@ class RomanSourceCatalog:
     flux_unit : str, optional
         The unit of the flux density. Default is 'nJy'.
 
-    cat_type : {'prompt', 'dr_det', 'dr_band', 'forced_full', 'forced_det'}, optional
-        The type of catalog to create. The default is 'prompt'. This
-        determines the columns in the output catalog. The 'dr_det' and
-        'dr_band' catalogs are band-specific catalogs for the
-        multiband source detection.
+    cat_type : str, optional
+        The type of catalog to create. The default is 'prompt'. Allowed
+        values are 'prompt', 'dr_det', 'dr_band', 'psf_matched',
+        'forced_full', and 'forced_det'. This determines the columns
+        in the output catalog. The 'dr_det' and 'dr_band' catalogs are
+        band-specific catalogs for the multiband source detection. The
+        'psf_matched' catalog is similar to 'dr_band' but excludes
+        sharpness, roundness1, is_extended, and fluxfrac_radius_50
+        properties for performance optimization.
 
     ee_spline : `~astropy.modeling.models.Spline1D` or `None`, optional
-        The PSF aperture correction model, built from the reference file.
+        The PSF aperture correction model, built from the reference
+        file.
 
     Notes
     -----
@@ -612,7 +617,7 @@ class RomanSourceCatalog:
         ]
         psf_colnames = ["psf_flux", "psf_flux_err"]
 
-        if self.cat_type in ("prompt", "forced_full", "dr_band"):
+        if self.cat_type in ("prompt", "forced_full", "dr_band", "psf_matched"):
             flux_colnames = self.aper_colnames
             if self.fit_psf:
                 flux_colnames.extend(psf_colnames)
@@ -769,6 +774,12 @@ class RomanSourceCatalog:
 
         elif self.cat_type == "dr_band":
             colnames = band_colnames.copy()
+
+        elif self.cat_type == "psf_matched":
+            # Similar to dr_band but without the othershape_colnames
+            # (sharpness, roundness1, is_extended, fluxfrac_radius_50)
+            colnames = ["label"]
+            colnames.extend(self.flux_colnames)
 
         return colnames
 
