@@ -42,6 +42,14 @@ def main():
         help="Perform all actions but do not save the results",
     )
     parser.add_argument(
+        '--gscommanded',
+        type=float,
+        nargs=2,
+        metavar=('H', 'V'),
+        default=None,
+        help='Commanded position of the guide start in (H,V) space'
+    )
+    parser.add_argument(
         '--gspos',
         type=float,
         nargs=2,
@@ -155,6 +163,7 @@ def main():
                 # set_telescope_pointing.TransformParameters
                 allow_default=args.allow_default,
                 default_quaternion=args.default_quaternion,
+                gscommanded=args.gscommanded,
                 gspos=args.gspos,
                 service_kwargs=service_kwargs,
                 tolerance=args.tolerance,
