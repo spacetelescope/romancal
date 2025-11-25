@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 logger.setLevel("INFO")
 
-__all__ = ["create_multiband_asn"]
+__all__ = ["MultibandAssociation"]
 
 
 class MultibandAssociation:
