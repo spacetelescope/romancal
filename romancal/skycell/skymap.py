@@ -278,18 +278,12 @@ class SkyCells:
     _data: np.void
     _skymap: "SkyMap"
 
-    # average area of a sky cell in square degrees on the sphere
-    area = 1.7760288493318122e-06
-
-    # average diagonal length of a skycell in degrees on the sphere
-    length = 0.107984
-
     def __init__(self, indices: NDArray[int], skymap: "SkyMap" = None):
         """
         Parameters
         ----------
         indices : list[int]
-            Indices of sky cells in the global sky map.
+            Indices of skycells in the global sky map.
         skymap: SkyMap
             sky map instance (defaults to global SKYMAP)
         """
@@ -303,7 +297,7 @@ class SkyCells:
 
     @classmethod
     def from_names(cls, names: list[str], skymap: "SkyMap" = None) -> "SkyCells":
-        """Retrieve sky cells from the sky map by name (see handbook [1] for explanation).
+        """Retrieve skycells from the sky map by name (see handbook [1] for explanation).
 
         Note
         ----
@@ -312,7 +306,7 @@ class SkyCells:
         Parameters
         ----------
         name : list[str]
-            List of names of sky cells, for instance `315p86x50y75`.
+            List of names of skycells, for instance `315p86x50y75`.
         skymap : SkyMap
             sky map instance; defaults to global SKYMAP (Default value = None)
 
@@ -339,12 +333,12 @@ class SkyCells:
 
     @property
     def indices(self) -> NDArray[int]:
-        """indices of these sky cells in the sky map"""
+        """indices of these skycells in the sky map"""
         return self._indices
 
     @property
     def data(self) -> np.void:
-        """data of these sky cells
+        """data of these skycells
 
         ("name", "ra_center", "dec_center", "orientat", "x_tangent", "y_tangent", "ra_corn1", "dec_corn1", "ra_corn2", "dec_corn2", "ra_corn3", "dec_corn3", "ra_corn4", "dec_corn4")
         """
@@ -354,12 +348,12 @@ class SkyCells:
 
     @property
     def names(self) -> list[str]:
-        """names of these sky cells, for instance `315p86x50y75`
+        """names of these skycells, for instance `315p86x50y75`
 
         NOTE
         ----
-        the name of a sky cell comprises the rounded center coordinates of its containing projection region in right ascension and declination,
-        and the XY location of the sky cell within its projection region in units of ordinal sky cells from that center
+        the name of a skycell comprises the rounded center coordinates of its containing projection region in right ascension and declination,
+        and the XY location of the skycell within its projection region in units of ordinal skycells from that center
         """
         return self.data["name"].tolist()
 
@@ -414,7 +408,7 @@ class SkyCells:
 
     @cached_property
     def polygons(self) -> sgp.SphericalPolygon:
-        """spherical polygons representing these sky cells"""
+        """spherical polygons representing these skycells"""
         return sgp.SphericalPolygon(
             [
                 sgp.SingleSphericalPolygon(
@@ -427,7 +421,7 @@ class SkyCells:
 
     @cached_property
     def projection_regions(self) -> list[int]:
-        """index of each sky cell's projection region"""
+        """index of each skycell's projection region"""
 
         return [
             (skycell_index >= self._skymap.model.projection_regions["skycell_start"])
@@ -439,7 +433,7 @@ class SkyCells:
 
     @property
     def wcs_infos(self) -> list[dict[str, float | str]]:
-        """WCS properties as defined in the Level 3 association schema for each sky cell"""
+        """WCS properties as defined in the Level 3 association schema for each skycell"""
 
         return [
             {
@@ -471,7 +465,7 @@ class SkyCells:
 
     @cached_property
     def wcs(self) -> list[WCS]:
-        """WCS objects representing these sky cells"""
+        """WCS objects representing these skycells"""
 
         wcsobjs = []
         for wcs_info in self.wcs_infos:
