@@ -385,7 +385,9 @@ class SkyCells:
         return np.reshape(
             (
                 np.concatenate([self.data[f"ra_corn{index}"] for index in range(1, 5)]),
-                np.concatenate([self.data[f"dec_corn{index}"] for index in range(1, 5)]),
+                np.concatenate(
+                    [self.data[f"dec_corn{index}"] for index in range(1, 5)]
+                ),
             ),
             (2, 4, len(self)),
         ).T
