@@ -384,8 +384,8 @@ class SkyCells:
         """corners in right ascension and declination in the order given by the sky map (Nx4x2 array of floats)"""
         return np.reshape(
             (
-                np.concat([self.data[f"ra_corn{index}"] for index in range(1, 5)]),
-                np.concat([self.data[f"dec_corn{index}"] for index in range(1, 5)]),
+                np.concatenate([self.data[f"ra_corn{index}"] for index in range(1, 5)]),
+                np.concatenate([self.data[f"dec_corn{index}"] for index in range(1, 5)]),
             ),
             (2, 4, len(self)),
         ).T
