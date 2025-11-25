@@ -114,9 +114,9 @@ def create_filter_catalog(
         None,
         star_kernel_fwhm,
         fit_psf=fit_psf,
-        detection_cat=detection_catobj,
+        psf_model=psf_model if fit_psf else None,
         mask=mask,
-        psf_ref_model=psf_model if fit_psf else None,
+        detection_cat=detection_catobj,
         cat_type="dr_band",
         ee_spline=ee_spline,
     )
@@ -164,9 +164,9 @@ def create_filter_catalog(
             None,
             star_kernel_fwhm,
             fit_psf=False,  # No PSF fitting on matched images
-            detection_cat=detection_catobj,
+            psf_model=None,
             mask=mask,
-            psf_ref_model=None,
+            detection_cat=detection_catobj,
             cat_type="dr_band",
             ee_spline=ee_spline,
         )

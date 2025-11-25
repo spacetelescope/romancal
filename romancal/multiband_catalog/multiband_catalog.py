@@ -158,9 +158,9 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
                 log.info(f"Creating catalog for {filter_name} image")
                 ref_file = self.get_reference_file(model, "epsf")
                 log.info("Using ePSF reference file: %s", ref_file)
-                psf_ref_model = datamodels.open(ref_file)
+                psf_model = datamodels.open(ref_file)
             else:
-                psf_ref_model = None
+                psf_model = None
 
             apcorr_ref = self.get_reference_file(model, "apcorr")
             ee_spline = get_ee_spline(model, apcorr_ref)
@@ -171,9 +171,9 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
                 None,
                 star_kernel_fwhm,
                 fit_psf=self.fit_psf,
+                psf_model=psf_model,
                 detection_cat=det_catobj,
                 mask=mask,
-                psf_ref_model=psf_ref_model,
                 cat_type="dr_band",
                 ee_spline=ee_spline,
             )

@@ -68,10 +68,10 @@ class SourceCatalogStep(RomanStep):
         if self.fit_psf:
             self.ref_file = self.get_reference_file(input_model, "epsf")
             log.info("Using ePSF reference file: %s", self.ref_file)
-            psf_ref_model = datamodels.open(self.ref_file)
-            psf_ref_model.psf = add_jitter(psf_ref_model, input_model)
+            psf_model = datamodels.open(self.ref_file)
+            psf_model.psf = add_jitter(psf_model, input_model)
         else:
-            psf_ref_model = None
+            psf_model = None
 
         # Define a boolean mask for pixels to be excluded
         mask = (
@@ -200,8 +200,8 @@ class SourceCatalogStep(RomanStep):
             detection_image,
             self.kernel_fwhm,
             fit_psf=fit_psf,
+            psf_model=psf_model,
             mask=mask,
-            psf_ref_model=psf_ref_model,
             cat_type=cat_type,
             ee_spline=ee_spline,
         )
@@ -218,8 +218,8 @@ class SourceCatalogStep(RomanStep):
                 forced_detection_image,
                 self.kernel_fwhm,
                 fit_psf=self.fit_psf,
+                psf_model=psf_model,
                 mask=mask,
-                psf_ref_model=psf_ref_model,
                 cat_type="forced_full",
                 ee_spline=ee_spline,
             )

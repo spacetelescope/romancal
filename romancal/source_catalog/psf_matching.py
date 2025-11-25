@@ -299,9 +299,9 @@ def compute_psf_correction_factors(
         None,
         star_kernel_fwhm,
         fit_psf=False,
-        detection_cat=detection_cat,
+        psf_model=None,
         mask=mask,
-        psf_ref_model=None,
+        detection_cat=detection_cat,
         cat_type="dr_band",
         ee_spline=ee_spline,
     )
