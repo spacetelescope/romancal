@@ -106,7 +106,7 @@ def plot_projregion(
         sgv.lonlat_to_vector(*projregion.radec_tangent)
     )
     corners = projregion.vectorpoint_corners
-    corners = np.concat([corners, corners[0, :].reshape((1, 3))], axis=0)
+    corners = np.concatenate([corners, corners[0, :].reshape((1, 3))], axis=0)
     corners_tangentplane = veccoords_to_tangent_plane(
         corners,
         tangent_vectorpoint,
@@ -138,7 +138,7 @@ def plot_skycell(
         axis = plt
 
     corners = skycell.vectorpoint_corners
-    corners = np.concat([corners, corners[0, :].reshape((1, 3))], axis=0)
+    corners = np.concatenate([corners, corners[0, :].reshape((1, 3))], axis=0)
     corners_tangentplane = veccoords_to_tangent_plane(
         corners,
         tangent_vectorpoint,
