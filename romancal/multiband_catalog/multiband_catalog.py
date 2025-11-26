@@ -159,6 +159,40 @@ def process_detection_image(self, library, example_model, ee_spline, catalog_mod
     }
 
 
+def join_filter_catalogs(detection_catalog, filter_catalogs):
+    """
+    Join filter catalogs to detection catalog in wavelength order.
+
+    Parameters
+    ----------
+    detection_catalog : Table
+        The detection catalog to which filter catalogs will be joined.
+
+    filter_catalogs : dict
+        Dictionary with (filter_name, wavelength) tuples as keys and
+        catalog tables as values.
+
+    Returns
+    -------
+    result : Table
+        The detection catalog with all filter catalogs joined in
+        wavelength order.
+    """
+    # Sort by wavelength (second element of tuple key)
+    sorted_filter_keys = sorted(filter_catalogs.keys(), key=lambda x: x[1])
+
+    for filter_key in sorted_filter_keys:
+        cat = filter_catalogs[filter_key]
+        # The outer join prevents an empty table if any
+        # columns have the same name but different values
+        # (e.g., repeated filter names)
+        detection_catalog = join(
+            detection_catalog, cat, keys="label", join_type="outer"
+        )
+
+    return detection_catalog
+
+
 def finalize_ee_fractions(detection_catalog, filter_ee_fractions):
     """
     Consolidate and finalize encircled energy fractions.
@@ -249,6 +283,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
 
     time_means = []
     exposure_times = []
+    filter_catalogs = {}
     filter_ee_fractions = []
 
     # Create catalogs for each input image
@@ -257,7 +292,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
             # mask = ~np.isfinite(model.data) | ~np.isfinite(model.err) | (model.err <= 0)
 
             filter_name = model.meta.instrument.optical_element
-            res = create_filter_catalog(
+            result = create_filter_catalog(
                 model,
                 filter_name,
                 filter_name,  # ref_filter (same as filter_name to disable matching)
@@ -271,27 +306,22 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
                 self.fit_psf,
                 self.get_reference_file,
             )
-            cat = res["catalog"]
-
-            # TODO: what metadata do we want to keep, if any,
-            # from the filter catalogs?
-            cat.meta = None
-
-            # Add the filter catalog to the multiband catalog.
-            # The outer join prevents an empty table if any
-            # columns have the same name but different values
-            # (e.g., repeated filter names)
-            detection_catalog = join(
-                detection_catalog, cat, keys="label", join_type="outer"
-            )
 
             # Store ee_fractions for consolidation
-            filter_ee_fractions.append(res["ee_fractions"])
+            filter_ee_fractions.append(result["ee_fractions"])
+
+            # Store filter catalog for later joining in wavelength order
+            filter_wavelength = get_filter_wavelength(filter_name)
+            cat = result["catalog"]
+            filter_catalogs[(filter_name, filter_wavelength)] = cat
 
             # Accumulate and blend image metadata
             blend_image_metadata(model, catalog_model, time_means, exposure_times)
 
             library.shelve(model, modify=False)
+
+    # Join all filter catalogs to detection catalog
+    detection_catalog = join_filter_catalogs(detection_catalog, filter_catalogs)
 
     # Finish blending
     catalog_model.meta.coadd_info.time_mean = Time(time_means).mean()
