@@ -214,6 +214,10 @@ def create_filter_catalog(
         # correction factors to the original catalog
         cat_synthetic = cat_original.copy()
 
+        # Remove background aperture flux columns
+        cols_to_remove = [col for col in cat_synthetic.colnames if "aper_bkg_" in col]
+        cat_synthetic.remove_columns(cols_to_remove)
+
         # Apply correction factors to flux columns
         for flux_col, correction in correction_factors.items():
             # flux_col names contain the reference filter name, so
