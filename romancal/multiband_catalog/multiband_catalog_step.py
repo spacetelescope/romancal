@@ -80,14 +80,16 @@ class MultibandCatalogStep(RomanStep):
         if self.inject_sources:
             si_library, si_cat = make_source_injected_library(library)
 
-        # Create catalog of library images
-        segment_img, cat_model, msg = multiband_catalog(
+        # Create the multiband catalog
+        *results, msg = multiband_catalog(
             self, library, example_model, cat_model, ee_spline
         )
 
-        # The results are empty
-        if msg is not None:
-            return save_empty_results(self, segment_img, cat_model, msg=msg)
+        # Save empty results if there was an error
+        if msg is None:
+            segment_img, cat_model = results
+        else:
+            return save_empty_results(self, *results, msg=msg)
 
         # Source Injection
         if self.inject_sources:

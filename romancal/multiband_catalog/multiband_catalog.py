@@ -31,6 +31,136 @@ _SKIP_IMAGE_META_KEYS = {"wcs", "individual_image_meta"}
 _SKIP_BLEND_KEYS = {"wcsinfo"}
 
 
+def process_detection_image(self, library, example_model, ee_spline, catalog_model):
+    """
+    Create and process the detection image.
+
+    This includes background estimation, source detection via
+    segmentation, and creation of the detection catalog.
+
+    Parameters
+    ----------
+    library : `romancal.datamodels.ModelLibrary`
+        The library of models to process.
+
+    example_model : `romancal.datamodels.MosaicImageModel`
+        An example model from the library for metadata access.
+
+    ee_spline : callable
+        The encircled energy spline function.
+
+    catalog_model : `romancal.datamodels.MultibandSourceCatalogModel`
+        The output catalog model (for saving empty results if
+        needed).
+
+    Returns
+    -------
+    result : dict or tuple
+        If successful, returns a dictionary with keys:
+        - 'detection_model': The detection image model
+        - 'mask': The total mask array
+        - 'segment_img': The segmentation image
+        - 'detection_catobj': The detection RomanSourceCatalog object
+        - 'detection_catalog': The detection catalog table
+        - 'star_kernel_fwhm': The stellar kernel FWHM
+
+        If detection fails, returns the result of
+        save_empty_results().
+    """
+    log.info("Creating detection image")
+
+    # Define the kernel FWHMs for the detection image
+    # TODO: sensible defaults
+    # TODO: redefine in terms of intrinsic FWHM
+    if self.kernel_fwhms is None:
+        self.kernel_fwhms = [2.0, 5.0]
+
+    detection_image = make_detection_image(library, self.kernel_fwhms)
+
+    # Estimate background rms from detection image to calculate a
+    # threshold for source detection
+    mask = ~np.isfinite(detection_image)
+
+    # Return image shape and empty catalog table if all pixels are
+    # masked in the detection image
+    if np.all(mask):
+        msg = (
+            "Cannot create source catalog. All "
+            "pixels in the detection image are masked."
+        )
+        return detection_image.shape, catalog_model, msg
+
+    log.info("Calculating background RMS for detection image")
+    bkg = RomanBackground(
+        detection_image,
+        box_size=self.bkg_boxsize,
+        coverage_mask=mask,
+    )
+    bkg_rms = bkg.background_rms
+
+    log.info("Detecting sources")
+    segment_img = make_segmentation_image(
+        detection_image,
+        snr_threshold=self.snr_threshold,
+        npixels=self.npixels,
+        bkg_rms=bkg_rms,
+        deblend=self.deblend,
+        mask=mask,
+    )
+
+    # Return image shape and empty catalog table if no sources
+    # were detected
+    if segment_img is None:  # no sources found
+        msg = "Cannot create source catalog. No sources were detected."
+        return detection_image.shape, catalog_model, msg
+
+    segment_img.detection_image = detection_image.copy()
+
+    # Define the detection image model
+    detection_model = datamodels.MosaicModel.create_minimal()
+    detection_model.data = detection_image
+    detection_model.err = np.ones_like(detection_image)
+
+    # TODO: this is a temporary solution to get model attributes
+    # currently needed in RomanSourceCatalog
+    detection_model.weight = example_model.weight
+    detection_model.meta = example_model.meta
+
+    # The stellar FWHM is needed to define the kernel used for
+    # the DAOStarFinder sharpness and roundness properties.
+    # TODO: measure on a secondary detection image with minimal
+    # smoothing?; use the same detection image for basic shape
+    # measurements?
+    star_kernel_fwhm = np.min(self.kernel_fwhms)
+
+    log.info("Creating catalog for detection image")
+    detection_catobj = RomanSourceCatalog(
+        detection_model,
+        segment_img,
+        detection_image,
+        star_kernel_fwhm,
+        fit_psf=False,  # not needed for detection image
+        detection_cat=None,
+        mask=mask,
+        cat_type="dr_det",
+        ee_spline=ee_spline,
+    )
+
+    # Generate the catalog for the detection image. The catalog
+    # is lazily evalated, so we need to access it before we pass
+    # detection_catobj to the RomanSourceCatalog constructor.
+    detection_catalog = detection_catobj.catalog
+
+    return {
+        "detection_model": detection_model,
+        "mask": mask,
+        "segment_img": segment_img,
+        "detection_catobj": detection_catobj,
+        "detection_catalog": detection_catalog,
+        "star_kernel_fwhm": star_kernel_fwhm,
+    }
+
+
 def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     """
     Create a multiband catalog of sources including photometry and basic
@@ -54,95 +184,32 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
         Updated catalog.
     msg : str (optional)
         Reason for empty file.
-    """
-    # All input MosaicImages in the ModelLibrary are assumed to have
-    # the same shape and be pixel aligned.
 
+    Notes
+    -----
+    All input MosaicImages in the ModelLibrary are assumed to have the
+    same shape and be pixel aligned.
+    """
     log.info("Calculating and subtracting background")
     library = subtract_background_library(library, self.bkg_boxsize)
 
-    log.info("Creating detection image")
-    # Define the kernel FWHMs for the detection image
-    # TODO: sensible defaults
-    # TODO: redefine in terms of intrinsic FWHM
-    if self.kernel_fwhms is None:
-        self.kernel_fwhms = [2.0, 5.0]
-
-    # TODO: det_img is saved in the MosaicSegmentationMapModel;
-    # do we also want to save the det_err?
-    det_img = make_detection_image(library, self.kernel_fwhms)
-
-    # Estimate background rms from detection image to calculate a
-    # threshold for source detection
-    mask = ~np.isfinite(det_img)
-
-    # Return an empty segmentation image and catalog table if all
-    # pixels are masked in the detection image.
-    if np.all(mask):
-        msg = (
-            "Cannot create source catalog. All "
-            "pixels in the detection image are masked."
-        )
-        return det_img.shape, catalog_model, msg
-
-    bkg = RomanBackground(
-        det_img,
-        box_size=self.bkg_boxsize,
-        coverage_mask=mask,
-    )
-    bkg_rms = bkg.background_rms
-
-    log.info("Detecting sources")
-    segment_img = make_segmentation_image(
-        det_img,
-        snr_threshold=self.snr_threshold,
-        npixels=self.npixels,
-        bkg_rms=bkg_rms,
-        deblend=self.deblend,
-        mask=mask,
+    # Create detection image, segmentation, and catalog
+    detection_result = process_detection_image(
+        self, library, example_model, ee_spline, catalog_model
     )
 
-    if segment_img is None:  # no sources found
-        msg = "Cannot create source catalog. No sources were detected."
-        return det_img.shape, catalog_model, msg
+    # Check if detection failed (step returns save_empty_results)
+    if isinstance(detection_result, tuple):
+        log.warning("Detection image processing failed")
+        return detection_result
 
-    segment_img.detection_image = det_img.copy()
+    # Extract detection results
+    segment_img = detection_result["segment_img"]
+    detection_catobj = detection_result["detection_catobj"]
+    detection_catalog = detection_result["detection_catalog"]
+    star_kernel_fwhm = detection_result["star_kernel_fwhm"]
 
-    # Define the detection image model
-    det_model = datamodels.MosaicModel.create_minimal()
-    det_model.data = det_img
-    det_model.err = np.ones_like(det_img)
-
-    # TODO: this is a temporary solution to get model attributes
-    # currently needed in RomanSourceCatalog
-    det_model.weight = example_model.weight
-    det_model.meta = example_model.meta
-
-    # The stellar FWHM is needed to define the kernel used for
-    # the DAOStarFinder sharpness and roundness properties.
-    # TODO: measure on a secondary detection image with minimal
-    # smoothing?; use the same detection image for basic shape
-    # measurements?
-    star_kernel_fwhm = np.min(self.kernel_fwhms)
-
-    log.info("Creating catalog for detection image")
-    det_catobj = RomanSourceCatalog(
-        det_model,
-        segment_img,
-        det_img,
-        star_kernel_fwhm,
-        fit_psf=False,  # not needed for detection image
-        detection_cat=None,
-        mask=mask,
-        cat_type="dr_det",
-        ee_spline=ee_spline,
-    )
-
-    # Generate the catalog for the detection image.
-    # We need to make this catalog before we pass det_catobj
-    # to the RomanSourceCatalog constructor.
-    det_cat = det_catobj.catalog
-    det_cat.meta["ee_fractions"] = {}
+    detection_catalog.meta["ee_fractions"] = {}
 
     time_means = []
     exposure_times = []
@@ -150,7 +217,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     # Create catalogs for each input image
     with library:
         for model in library:
-            mask = ~np.isfinite(model.data) | ~np.isfinite(model.err) | (model.err <= 0)
+            # mask = ~np.isfinite(model.data) | ~np.isfinite(model.err) | (model.err <= 0)
 
             filter_name = model.meta.instrument.optical_element
             res = create_filter_catalog(
@@ -160,7 +227,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
                 0,  # ref_wavelength (ignored)
                 segment_img,
                 star_kernel_fwhm,
-                det_catobj,
+                detection_catobj,
                 None,  # ref_model
                 None,  # ref_filter_catalog
                 None,  # ref_psf_model
@@ -178,8 +245,10 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
             # The outer join prevents an empty table if any
             # columns have the same name but different values
             # (e.g., repeated filter names)
-            det_cat = join(det_cat, cat, keys="label", join_type="outer")
-            det_cat.meta["ee_fractions"].update(ee_fractions)
+            detection_catalog = join(
+                detection_catalog, cat, keys="label", join_type="outer"
+            )
+            detection_catalog.meta["ee_fractions"].update(ee_fractions)
 
             # accumulate image metadata
             image_meta = {
@@ -190,8 +259,9 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
             catalog_model.meta.image_metas.append(image_meta)
 
             # blend model with catalog metadata
-            if model.meta.file_date < catalog_model.meta.image.file_date:
-                catalog_model.meta.image.file_date = model.meta.file_date
+            catalog_model.meta.image.file_date = min(
+                catalog_model.meta.image.file_date, model.meta.file_date
+            )
 
             for key, value in image_meta.items():
                 if key in _SKIP_BLEND_KEYS:
@@ -224,7 +294,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     catalog_model.meta.coadd_info.exposure_time = np.mean(exposure_times)
 
     # Put the resulting multiband catalog in the model
-    catalog_model.source_catalog = det_cat
+    catalog_model.source_catalog = detection_catalog
 
     return segment_img, catalog_model, None
 
