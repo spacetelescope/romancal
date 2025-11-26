@@ -22,7 +22,10 @@ from romancal.multiband_catalog.metadata import blend_image_metadata
 from romancal.source_catalog import injection
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
-from romancal.source_catalog.psf_matching import get_filter_wavelength
+from romancal.source_catalog.psf_matching import (
+    get_filter_wavelength,
+    get_reddest_filter,
+)
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 
 log = logging.getLogger(__name__)
@@ -38,6 +41,9 @@ def process_detection_image(self, library, example_model, ee_spline, catalog_mod
 
     Parameters
     ----------
+    self : object
+        The multiband catalog step instance.
+
     library : `romancal.datamodels.ModelLibrary`
         The library of models to process.
 
@@ -233,6 +239,109 @@ def finalize_ee_fractions(detection_catalog, filter_ee_fractions):
         detection_catalog.meta["ee_fractions"] = sorted_ee_fractions
 
 
+def prepare_reference_filter(self, library):
+    """
+    Determine and load the reference filter for PSF matching.
+
+    Parameters
+    ----------
+    self : object
+        The multiband catalog step instance.
+
+    library : `romancal.datamodels.ModelLibrary`
+        The library of models to process.
+
+    Returns
+    -------
+    result : dict
+        Dictionary with keys:
+        - 'ref_filter': The reference filter name (uppercase)
+        - 'ref_wavelength': The reference filter approx wavelength (nm)
+        - 'ref_model': The reference filter model
+        - 'ref_psf_model': The reference PSF model
+    """
+    # Determine reference filter for PSF matching
+    if self.reference_filter is None:
+        # Default to reddest filter
+        ref_filter = get_reddest_filter(library)
+        log.info(f"Using reddest filter as reference: {ref_filter}")
+    else:
+        # User specified reference filter
+        ref_filter = self.reference_filter.upper()
+        log.info(f"Using user-specified reference filter: {ref_filter}")
+
+    # Load reference PSF model
+    ref_model = None
+    with library:
+        for model in library:
+            if model.meta.instrument.optical_element == ref_filter:
+                ref_model = model
+            library.shelve(model, modify=False)
+            if ref_model is not None:
+                break
+
+    if ref_model is None:
+        msg = (
+            f"Reference filter {ref_filter} not found in library. "
+            "Cannot perform PSF matching."
+        )
+        raise ValueError(msg)
+
+    ref_psf_file = self.get_reference_file(ref_model, "epsf")
+    ref_psf_model = datamodels.open(ref_psf_file)
+    log.info(f"Using reference PSF: {ref_psf_file}")
+
+    # Get reference filter approximate wavelength (nm) based on filter name
+    ref_wavelength = get_filter_wavelength(ref_filter)
+
+    return {
+        "ref_filter": ref_filter,
+        "ref_wavelength": ref_wavelength,
+        "ref_model": ref_model,
+        "ref_psf_model": ref_psf_model,
+    }
+
+
+def prepare_processing_order(library, ref_filter):
+    """
+    Prepare the processing order for filter models.
+
+    Ensures the reference filter is processed first so its catalog is
+    available when processing redder filters.
+
+    Parameters
+    ----------
+    library : `romancal.datamodels.ModelLibrary`
+        The library of models to process.
+
+    ref_filter : str
+        The reference filter name.
+
+    Returns
+    -------
+    result : list of tuple
+        List of (model_index, filter_name) tuples sorted so reference
+        filter is first.
+    """
+    # Create list of model indices in processing order with reference
+    # filter first, then all others
+    model_indices = []
+    with library:
+        for i, model in enumerate(library):
+            filter_name = model.meta.instrument.optical_element
+            model_indices.append((i, filter_name))
+            library.shelve(model, modify=False)
+
+    # Sort so reference filter is first
+    def sort_key(index_filter_tuple):
+        _, filt = index_filter_tuple
+        return 0 if filt == ref_filter else 1
+
+    model_indices.sort(key=sort_key)
+
+    return model_indices
+
+
 def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     """
     Create a multiband catalog of sources including photometry and basic
@@ -281,31 +390,55 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     detection_catalog = detection_result["detection_catalog"]
     star_kernel_fwhm = detection_result["star_kernel_fwhm"]
 
+    # Setup reference filter for PSF matching
+    ref_info = prepare_reference_filter(self, library)
+    ref_filter = ref_info["ref_filter"]
+    _ref_wavelength = ref_info["ref_wavelength"]
+    _ref_model = ref_info["ref_model"]
+    _ref_psf_model = ref_info["ref_psf_model"]
+
+    # Record the PSF match reference filter in metadata
+    detection_catalog.meta["psf_match_reference_filter"] = ref_filter.lower()
+
+    # Store reference filter's catalog for computing correction factors
+    _ref_filter_catalog = None  # defined in processing loop
+
+    # Prepare to accumulate filter catalogs and metadata
     time_means = []
     exposure_times = []
     filter_catalogs = {}
     filter_ee_fractions = []
 
+    # Prepare processing order (reference filter first)
+    model_indices = prepare_processing_order(library, ref_filter)
+
     # Create catalogs for each input image
     with library:
-        for model in library:
+        for model_index, _ in model_indices:
+            model = library.borrow(model_index)
+            filter_name = model.meta.instrument.optical_element
+
             # mask = ~np.isfinite(model.data) | ~np.isfinite(model.err) | (model.err <= 0)
 
-            filter_name = model.meta.instrument.optical_element
+            # Create catalog for this filter
             result = create_filter_catalog(
-                model,
-                filter_name,
-                filter_name,  # ref_filter (same as filter_name to disable matching)
-                0,  # ref_wavelength (ignored)
-                segment_img,
-                star_kernel_fwhm,
-                detection_catobj,
-                None,  # ref_model
-                None,  # ref_filter_catalog
-                None,  # ref_psf_model
-                self.fit_psf,
-                self.get_reference_file,
+                model=model,
+                filter_name=filter_name,
+                ref_filter=filter_name,
+                ref_wavelength=0,
+                segment_img=segment_img,
+                star_kernel_fwhm=star_kernel_fwhm,
+                detection_catobj=detection_catobj,
+                ref_model=None,
+                ref_filter_catalog=None,
+                ref_psf_model=None,
+                fit_psf=self.fit_psf,
+                get_reference_file_func=self.get_reference_file,
             )
+
+            # Store the reference filter catalog. This will be None
+            # until we process the reference filter.
+            _ref_filter_catalog = result["ref_filter_catalog"]
 
             # Store ee_fractions for consolidation
             filter_ee_fractions.append(result["ee_fractions"])

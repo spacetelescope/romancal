@@ -52,6 +52,7 @@ class MultibandCatalogStep(RomanStep):
         deblend = boolean(default=False)      # deblend sources?
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
+        reference_filter = string(default=None)  # reference filter for PSF matching
         inject_sources = boolean(default=False) # Inject sources into images
         save_debug_info = boolean(default=False)
                                    # Include image data and other data for testing
