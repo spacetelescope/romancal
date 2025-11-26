@@ -21,6 +21,7 @@ from romancal.multiband_catalog.detection_image import make_detection_image
 from romancal.source_catalog import injection
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
+from romancal.source_catalog.psf_matching import get_filter_wavelength
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
 
 log = logging.getLogger(__name__)
@@ -161,6 +162,46 @@ def process_detection_image(self, library, example_model, ee_spline, catalog_mod
     }
 
 
+def finalize_ee_fractions(detection_catalog, filter_ee_fractions):
+    """
+    Consolidate and finalize encircled energy fractions.
+
+    Accumulates ee_fractions from all filter processing and sorts
+    them by wavelength in the detection catalog metadata. Only
+    includes ee_fractions for original (non-PSF-matched) filter
+    bands.
+
+    The method modifies detection_catalog.meta["ee_fractions"] in
+    place.
+
+    Parameters
+    ----------
+    detection_catalog : Table
+        The detection catalog where ee_fractions metadata will be
+        stored.
+
+    filter_ee_fractions : list of dict
+        List of ee_fractions dictionaries from each filter,
+        where each dict maps filter names to ee_fractions arrays.
+    """
+    detection_catalog.meta["ee_fractions"] = {}
+
+    # Accumulate all ee_fractions from filters
+    for ee_fracs in filter_ee_fractions:
+        for key, value in ee_fracs.items():
+            detection_catalog.meta["ee_fractions"][key] = value
+
+    # Sort ee_fractions dictionary by filter wavelength
+    if detection_catalog.meta.get("ee_fractions"):
+        sorted_ee_fractions = dict(
+            sorted(
+                detection_catalog.meta["ee_fractions"].items(),
+                key=lambda item: get_filter_wavelength(item[0]),
+            )
+        )
+        detection_catalog.meta["ee_fractions"] = sorted_ee_fractions
+
+
 def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     """
     Create a multiband catalog of sources including photometry and basic
@@ -209,10 +250,9 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     detection_catalog = detection_result["detection_catalog"]
     star_kernel_fwhm = detection_result["star_kernel_fwhm"]
 
-    detection_catalog.meta["ee_fractions"] = {}
-
     time_means = []
     exposure_times = []
+    filter_ee_fractions = []
 
     # Create catalogs for each input image
     with library:
@@ -235,7 +275,6 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
                 self.get_reference_file,
             )
             cat = res["catalog"]
-            ee_fractions = res["ee_fractions"]
 
             # TODO: what metadata do we want to keep, if any,
             # from the filter catalogs?
@@ -248,7 +287,9 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
             detection_catalog = join(
                 detection_catalog, cat, keys="label", join_type="outer"
             )
-            detection_catalog.meta["ee_fractions"].update(ee_fractions)
+
+            # Store ee_fractions for consolidation
+            filter_ee_fractions.append(res["ee_fractions"])
 
             # accumulate image metadata
             image_meta = {
@@ -289,9 +330,12 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
 
             library.shelve(model, modify=False)
 
-    # finish blending
+    # Finish blending
     catalog_model.meta.coadd_info.time_mean = Time(time_means).mean()
     catalog_model.meta.coadd_info.exposure_time = np.mean(exposure_times)
+
+    # Consolidate and sort ee_fractions
+    finalize_ee_fractions(detection_catalog, filter_ee_fractions)
 
     # Put the resulting multiband catalog in the model
     catalog_model.source_catalog = detection_catalog
