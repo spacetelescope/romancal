@@ -18,6 +18,7 @@ from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog.background import subtract_background_library
 from romancal.multiband_catalog.catalog_generator import create_filter_catalog
 from romancal.multiband_catalog.detection_image import make_detection_image
+from romancal.multiband_catalog.metadata import blend_image_metadata
 from romancal.source_catalog import injection
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import make_segmentation_image
@@ -26,10 +27,6 @@ from romancal.source_catalog.source_catalog import RomanSourceCatalog
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-
-
-_SKIP_IMAGE_META_KEYS = {"wcs", "individual_image_meta"}
-_SKIP_BLEND_KEYS = {"wcsinfo"}
 
 
 def process_detection_image(self, library, example_model, ee_spline, catalog_model):
@@ -291,42 +288,8 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
             # Store ee_fractions for consolidation
             filter_ee_fractions.append(res["ee_fractions"])
 
-            # accumulate image metadata
-            image_meta = {
-                k: copy.deepcopy(v)
-                for k, v in model["meta"].items()
-                if k not in _SKIP_IMAGE_META_KEYS
-            }
-            catalog_model.meta.image_metas.append(image_meta)
-
-            # blend model with catalog metadata
-            catalog_model.meta.image.file_date = min(
-                catalog_model.meta.image.file_date, model.meta.file_date
-            )
-
-            for key, value in image_meta.items():
-                if key in _SKIP_BLEND_KEYS:
-                    continue
-                if not isinstance(value, dict):
-                    # skip blending of single top-level values
-                    continue
-                if key not in catalog_model.meta:
-                    # skip blending if the key is not in the catalog meta
-                    continue
-                if key == "coadd_info":
-                    catalog_model.meta[key]["time_first"] = min(
-                        catalog_model.meta[key]["time_first"], value["time_first"]
-                    )
-                    catalog_model.meta[key]["time_last"] = max(
-                        catalog_model.meta[key]["time_last"], value["time_last"]
-                    )
-                    time_means.append(value["time_mean"])
-                    exposure_times.append(value["exposure_time"])
-                else:
-                    # set non-matching metadata values to None
-                    for subkey, subvalue in value.items():
-                        if catalog_model.meta[key].get(subkey, None) != subvalue:
-                            catalog_model.meta[key][subkey] = None
+            # Accumulate and blend image metadata
+            blend_image_metadata(model, catalog_model, time_means, exposure_times)
 
             library.shelve(model, modify=False)
 
