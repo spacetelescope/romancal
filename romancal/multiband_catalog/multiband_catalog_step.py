@@ -95,15 +95,13 @@ class MultibandCatalogStep(RomanStep):
                 si_example_model = si_library.borrow(0)
                 si_library.shelve(si_example_model, modify=False)
 
-            si_ee_spline = get_ee_spline(si_example_model, apcorr_ref)
-
             # Create catalog of source injected images
             si_segment_img, si_cat_model, _ = multiband_catalog(
                 self,
                 si_library,
                 si_example_model,
                 copy.deepcopy(cat_model),
-                si_ee_spline,
+                ee_spline,
             )
 
             # Match sources
