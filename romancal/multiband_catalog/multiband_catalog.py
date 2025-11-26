@@ -393,15 +393,15 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     # Setup reference filter for PSF matching
     ref_info = prepare_reference_filter(self, library)
     ref_filter = ref_info["ref_filter"]
-    _ref_wavelength = ref_info["ref_wavelength"]
-    _ref_model = ref_info["ref_model"]
-    _ref_psf_model = ref_info["ref_psf_model"]
+    ref_wavelength = ref_info["ref_wavelength"]
+    ref_model = ref_info["ref_model"]
+    ref_psf_model = ref_info["ref_psf_model"]
 
     # Record the PSF match reference filter in metadata
     detection_catalog.meta["psf_match_reference_filter"] = ref_filter.lower()
 
     # Store reference filter's catalog for computing correction factors
-    _ref_filter_catalog = None  # defined in processing loop
+    ref_filter_catalog = None  # defined in processing loop
 
     # Prepare to accumulate filter catalogs and metadata
     time_means = []
@@ -418,27 +418,25 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
             model = library.borrow(model_index)
             filter_name = model.meta.instrument.optical_element
 
-            # mask = ~np.isfinite(model.data) | ~np.isfinite(model.err) | (model.err <= 0)
-
             # Create catalog for this filter
             result = create_filter_catalog(
                 model=model,
                 filter_name=filter_name,
-                ref_filter=filter_name,
-                ref_wavelength=0,
+                ref_filter=ref_filter,
+                ref_wavelength=ref_wavelength,
                 segment_img=segment_img,
                 star_kernel_fwhm=star_kernel_fwhm,
                 detection_catobj=detection_catobj,
-                ref_model=None,
-                ref_filter_catalog=None,
-                ref_psf_model=None,
+                ref_model=ref_model,
+                ref_filter_catalog=ref_filter_catalog,
+                ref_psf_model=ref_psf_model,
                 fit_psf=self.fit_psf,
                 get_reference_file_func=self.get_reference_file,
             )
 
             # Store the reference filter catalog. This will be None
             # until we process the reference filter.
-            _ref_filter_catalog = result["ref_filter_catalog"]
+            ref_filter_catalog = result["ref_filter_catalog"]
 
             # Store ee_fractions for consolidation
             filter_ee_fractions.append(result["ee_fractions"])
