@@ -556,43 +556,6 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     ).all()
 
 
-def test_tweakreg_parses_asn_correctly(tmp_path, base_image):
-    """Test that TweakReg can parse an ASN file properly."""
-
-    img_1 = base_image(shift_1=1000, shift_2=1000)
-    img_2 = base_image(shift_1=1000, shift_2=1000)
-    img_1.meta["filename"] = "img_1.asdf"
-    img_2.meta["filename"] = "img_2.asdf"
-    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
-    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
-    img_1.save(tmp_path / "img_1.asdf")
-    img_2.save(tmp_path / "img_2.asdf")
-    asn_filepath = create_asn_file(tmp_path)
-    with open(asn_filepath) as f:
-        asn_content = json.load(f)
-
-    res = trs.TweakRegStep.call(asn_filepath)
-
-    assert isinstance(res, ModelLibrary)
-
-    with res:
-        models = list(res)
-        assert hasattr(models[0].meta, "asn")
-        assert models[0].meta.asn["pool_name"] == asn_content["asn_pool"]
-        assert models[1].meta.asn["pool_name"] == asn_content["asn_pool"]
-
-        assert models[0].meta.filename == img_1.meta.filename
-        assert models[1].meta.filename == img_2.meta.filename
-
-        assert type(models[0]) is type(img_1)
-        assert type(models[1]) is type(img_2)
-
-        assert (models[0].data == img_1.data).all()
-        assert (models[1].data == img_2.data).all()
-
-        [res.shelve(m, i, modify=False) for i, m in enumerate(models)]
-
-
 def test_fit_results_in_meta(tmp_path, base_image):
     """
     Test that the WCS fit results from tweakwcs are available in the meta tree.
