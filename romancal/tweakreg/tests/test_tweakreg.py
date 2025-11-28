@@ -254,43 +254,6 @@ def get_catalog_data(input_dm):
     return catalog_data
 
 
-def create_base_image_source_catalog(
-    tmp_path,
-    output_filename,
-    catalog_data,
-    catalog_format: str = "ascii.ecsv",
-    save_catalogs=True,
-):
-    """
-    Write a temp CSV file to be used as source catalog, similar to what
-    is produced by the previous pipeline step, source detection.
-
-    Parameters
-    ----------
-    tmp_path : pathlib.PosixPath
-        A path-like object representing the path where to save the file.
-    output_filename : string
-        The output filename (with extension).
-    catalog_data : numpy.ndarray
-        A numpy array with the (x, y) coordinates of the
-        "detected" sources
-    catalog_format : str, optional
-        A string indicating the catalog format.
-    save_catalogs : boolean, optional
-        A boolean indicating whether the source catalog should be saved to disk.
-    """
-    src_detector_coords = catalog_data
-    output = os.path.join(tmp_path, output_filename)
-    t = Table(src_detector_coords, names=("x", "y"))
-    if save_catalogs:
-        t.write((tmp_path / output), format=catalog_format)
-    # mimic the same output format from SourceCatalogStep
-    t.add_column([i for i in range(len(t))], name="id", index=0)
-    t.add_column([np.float64(i) for i in range(len(t))], name="flux")
-    t.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
-    return t.as_array()
-
-
 def add_tweakreg_catalog_attribute(
     tmp_path,
     input_dm,
@@ -332,13 +295,15 @@ def add_tweakreg_catalog_attribute(
     if catalog_data is None:
         catalog_data = get_catalog_data(input_dm)
 
-    source_catalog = create_base_image_source_catalog(
-        tmp_path,
-        tweakreg_catalog_filename,
-        catalog_data=catalog_data,
-        catalog_format=catalog_format,
-        save_catalogs=save_catalogs,
-    )
+    output = os.path.join(tmp_path, tweakreg_catalog_filename)
+    t = Table(catalog_data, names=("x", "y"))
+    if save_catalogs:
+        t.write((tmp_path / output), format=catalog_format)
+    # mimic the same output format from SourceCatalogStep
+    t.add_column([i for i in range(len(t))], name="id", index=0)
+    t.add_column([np.float64(i) for i in range(len(t))], name="flux")
+    t.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
+    source_catalog = t.as_array()
 
     input_dm.meta["source_catalog"] = {}
 
