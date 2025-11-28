@@ -3,7 +3,6 @@ import functools
 import json
 import os
 import shutil
-from io import StringIO
 
 import numpy as np
 import pytest
@@ -71,15 +70,13 @@ def create_custom_catalogs(tmp_path, base_image):
 
     # create catfile
     catfile = str(tmp_path / "catfile.txt")
-    catfile_content = StringIO()
-    for x in custom_catalog_map:
-        # write line to catfile
-        catfile_content.write(f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n")
-        # write out the catalog data
-        t = Table(x.get("cat_data"), names=("x", "y"))
-        t.write(tmp_path / x.get("cat_filename"), format="ascii.ecsv")
-    with open(catfile, mode="w") as f:
-        print(catfile_content.getvalue(), file=f)
+    with open(catfile, "w") as f:
+        for x in custom_catalog_map:
+            # write line to catfile
+            f.write(f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n")
+            # write out the catalog data
+            t = Table(x.get("cat_data"), names=("x", "y"))
+            t.write(tmp_path / x.get("cat_filename"), format="ascii.ecsv")
 
     return {"catfile": catfile, "datamodels": [img1, img2, img3]}
 
@@ -114,18 +111,15 @@ def create_asn_file(tmp_path, members_mapping=None):
             ]
         }
     """
+    asn_dict = json.loads(asn_content)
     if members_mapping is not None:
-        asn_dict = json.loads(asn_content)
         asn_dict["products"][0]["members"] = []
         for x in members_mapping:
             asn_dict["products"][0]["members"].append(x)
-        asn_content = json.dumps(asn_dict)
 
     asn_file_path = str(tmp_path / "sample_asn.json")
-    asn_file = StringIO()
-    asn_file.write(asn_content)
-    with open(asn_file_path, mode="w") as f:
-        print(asn_file.getvalue(), file=f)
+    with open(asn_file_path, "w") as f:
+        json.dump(asn_dict, f)
 
     return asn_file_path
 
@@ -754,12 +748,8 @@ def test_parse_catfile_returns_none_on_invalid_content(tmp_path, catfile_line_co
     """
     # create custom catalog file and input datamodels
     catfile = str(tmp_path / "catfile.txt")
-    catfile_content = StringIO()
-    # write empty line to catfile
-    catfile_content.write(catfile_line_content)
-    # write StringIO object to disk
     with open(catfile, mode="w") as f:
-        print(catfile_content.getvalue(), file=f)
+        f.write(catfile_line_content)
 
     catdict = trs._parse_catfile(catfile)
 
@@ -777,12 +767,8 @@ def test_parse_catfile_raises_error_on_invalid_content(tmp_path, catfile_line_co
     """
     # create custom catalog file and input datamodels
     catfile = str(tmp_path / "catfile.txt")
-    catfile_content = StringIO()
-    # write empty line to catfile
-    catfile_content.write(catfile_line_content)
-    # write StringIO object to disk
-    with open(catfile, mode="w") as f:
-        print(catfile_content.getvalue(), file=f)
+    with open(catfile, "w") as f:
+        f.write(catfile_line_content)
 
     with pytest.raises(ValueError):
         trs._parse_catfile(catfile)
