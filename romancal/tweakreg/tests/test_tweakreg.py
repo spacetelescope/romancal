@@ -307,7 +307,7 @@ def test_tweakreg_returns_modellibrary_on_list_of_asdf_file_as_input(
             res.shelve(model, i, modify=False)
 
 
-def test_tweakreg_save_valid_abs_refcat(tmp_path, request, base_image):
+def test_tweakreg_save_valid_abs_refcat(tmp_path, base_image):
     """Test that TweakReg saves the catalog used for absolute astrometry."""
     abs_refcat = "GAIADR3"
 
@@ -397,7 +397,7 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
         (0.1 * u.deg, 1, 1),
     ],
 )
-def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
+def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y):
     """
     Test that TweakReg returns accurate results.
     """
@@ -409,7 +409,7 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
         (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)
     ]
 
-    img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
+    img = base_image(shift_1=1000, shift_2=1000)
     original_wcs = copy.deepcopy(img.meta.wcs)
 
     # calculate original (x,y) for Gaia sources
