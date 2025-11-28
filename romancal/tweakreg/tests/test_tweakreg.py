@@ -712,19 +712,19 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     assert len(res.group_names) == 2
 
 
-def test_parse_catfile_valid_catalog(tmp_path, base_image):
+def test_parse_catfile_valid_catalog(tmp_path):
     """
     Test that _parse_catfile can parse a custom catalog with valid format.
     """
-    # create custom catalog file and input datamodels
-    res_dict = create_custom_catalogs(tmp_path, base_image)
-    catfile = res_dict.get("catfile")
+    catfile = str(tmp_path / "catfile.txt")
+    with open(catfile, mode="w") as f:
+        f.write("img1.asdf cat1\nimg2.asdf cat2")
     catdict = trs._parse_catfile(catfile)
 
-    assert all(
-        x.meta.filename == y
-        for x, y in zip(res_dict.get("datamodels"), catdict.keys(), strict=False)
-    )
+    assert catdict == {
+        "img1.asdf": str(tmp_path / "cat1"),
+        "img2.asdf": str(tmp_path / "cat2"),
+    }
 
 
 @pytest.mark.parametrize("catfile", (None, ""))
