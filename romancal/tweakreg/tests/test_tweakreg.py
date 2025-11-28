@@ -737,30 +737,23 @@ def test_parse_catfile_returns_none(catfile):
     assert catdict is None
 
 
-@pytest.mark.parametrize(
-    "catfile_line_content",
-    ["img1.asdf\nimg2.asdf\nimg3.asdf"],
-)
-def test_parse_catfile_returns_none_on_invalid_content(tmp_path, catfile_line_content):
+def test_parse_catfile_returns_none_on_invalid_content(tmp_path):
     """
     Test that _parse_catfile returns a dict where all the values are None
     if only filename is present in catfile (i.e. no associated catalog).
     """
+    # FIXME the tested behavior here causes the step to fail
     # create custom catalog file and input datamodels
     catfile = str(tmp_path / "catfile.txt")
     with open(catfile, mode="w") as f:
-        f.write(catfile_line_content)
+        f.write("img1.asdf\nimg2.asdf\nimg3.asdf")
 
     catdict = trs._parse_catfile(catfile)
 
     assert not all(catdict.values())
 
 
-@pytest.mark.parametrize(
-    "catfile_line_content",
-    ["img1.asdf column1 column2 column3"],
-)
-def test_parse_catfile_raises_error_on_invalid_content(tmp_path, catfile_line_content):
+def test_parse_catfile_raises_error_on_invalid_content(tmp_path):
     """
     Test that _parse_catfile raises an error if catfile contains more than
     two columns (i.e. image name and corresponding catalog path).
@@ -768,7 +761,7 @@ def test_parse_catfile_raises_error_on_invalid_content(tmp_path, catfile_line_co
     # create custom catalog file and input datamodels
     catfile = str(tmp_path / "catfile.txt")
     with open(catfile, "w") as f:
-        f.write(catfile_line_content)
+        f.write("img1.asdf column1 column2 column3")
 
     with pytest.raises(ValueError):
         trs._parse_catfile(catfile)
