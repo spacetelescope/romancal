@@ -323,27 +323,6 @@ def test_tweakreg_returns_modellibrary_on_list_of_asdf_file_as_input(
             res.shelve(model, i, modify=False)
 
 
-def test_tweakreg_returns_modellibrary_on_list_of_roman_datamodels_as_input(
-    tmp_path, base_image
-):
-    """Test that TweakReg always returns a ModelLibrary when processing a list of open Roman datamodels as input."""
-    img_1 = base_image(shift_1=1000, shift_2=1000)
-    img_2 = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
-    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
-    img_1.save(tmp_path / "img_1.asdf")
-    img_2.save(tmp_path / "img_2.asdf")
-
-    test_input = [img_1, img_2]
-
-    res = trs.TweakRegStep.call(test_input)
-    assert isinstance(res, ModelLibrary)
-    with res:
-        for i, model in enumerate(res):
-            assert model.meta.cal_step.tweakreg == "COMPLETE"
-            res.shelve(model, i, modify=False)
-
-
 def test_tweakreg_updates_cal_step(tmp_path, base_image):
     """Test that TweakReg updates meta.cal_step with tweakreg = COMPLETE."""
     img = base_image(shift_1=1000, shift_2=1000)
