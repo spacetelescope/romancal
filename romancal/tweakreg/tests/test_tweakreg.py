@@ -259,8 +259,6 @@ def add_tweakreg_catalog_attribute(
     input_dm,
     catalog_filename="base_image_sources",
     catalog_data=None,
-    catalog_format: str = "ascii.ecsv",
-    save_catalogs=True,
 ):
     """
     Add tweakreg_catalog attribute to the meta, which is a mandatory
@@ -280,10 +278,6 @@ def add_tweakreg_catalog_attribute(
     catalog_data : numpy.ndarray, optional
         A numpy array with the (x, y) coordinates of the
         "detected" sources, by default None (see note below).
-    catalog_format : str, optional
-        A string indicating the catalog format.
-    save_catalogs : boolean, optional
-        A boolean indicating whether the source catalog should be saved to disk.
 
     Notes
     ----
@@ -297,24 +291,12 @@ def add_tweakreg_catalog_attribute(
 
     output = os.path.join(tmp_path, tweakreg_catalog_filename)
     t = Table(catalog_data, names=("x", "y"))
-    if save_catalogs:
-        t.write((tmp_path / output), format=catalog_format)
-    # mimic the same output format from SourceCatalogStep
-    t.add_column([i for i in range(len(t))], name="id", index=0)
-    t.add_column([np.float64(i) for i in range(len(t))], name="flux")
-    t.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
-    source_catalog = t.as_array()
+    t.write((tmp_path / output), format="ascii.ecsv")
 
-    input_dm.meta["source_catalog"] = {}
-
-    if save_catalogs:
-        # SourceCatalogStep adds the catalog path+filename
-        input_dm.meta.source_catalog["tweakreg_catalog_name"] = os.path.join(
-            tmp_path, tweakreg_catalog_filename
-        )
-    else:
-        # SourceCatalogStep attaches the catalog data as a structured array
-        input_dm.meta.source_catalog["tweakreg_catalog"] = source_catalog
+    # SourceCatalogStep adds the catalog path+filename
+    input_dm.meta["source_catalog"] = {
+        "tweakreg_catalog_name": os.path.join(tmp_path, tweakreg_catalog_filename)
+    }
 
 
 @pytest.fixture
