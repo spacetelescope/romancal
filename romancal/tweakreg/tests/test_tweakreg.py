@@ -263,24 +263,6 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
         trs.TweakRegStep.call([img])
 
 
-def test_tweakreg_returns_modellibrary_on_roman_datamodel_as_input(
-    tmp_path, base_image
-):
-    """Test that TweakReg always returns a ModelLibrary when processing an open Roman DataModel as input."""
-
-    img = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img_1")
-
-    test_input = img
-
-    res = trs.TweakRegStep.call(test_input)
-    assert isinstance(res, ModelLibrary)
-    with res:
-        model = res.borrow(0)
-        assert model.meta.cal_step.tweakreg == "COMPLETE"
-        res.shelve(model, 0, modify=False)
-
-
 def test_tweakreg_returns_modellibrary_on_modellibrary_as_input(tmp_path, base_image):
     """Test that TweakReg always returns a ModelLibrary when processing a ModelLibrary as input."""
 
@@ -935,7 +917,7 @@ def test_tweakreg_updates_s_region(tmp_path, base_image):
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img")
 
     # call TweakRegStep to update WCS & S_REGION
-    res = trs.TweakRegStep.call([img])
+    res = trs.TweakRegStep.call(img)
 
     with res:
         for i, model in enumerate(res):
