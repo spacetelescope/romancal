@@ -34,7 +34,7 @@ def get_gaia_coords():
     return [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)]
 
 
-def create_custom_catalogs(tmp_path, base_image, catalog_format="ascii.ecsv"):
+def create_custom_catalogs(tmp_path, base_image):
     """
     Creates a custom catalog with three datamodels and its respective catalog data.
     """
@@ -77,7 +77,7 @@ def create_custom_catalogs(tmp_path, base_image, catalog_format="ascii.ecsv"):
         catfile_content.write(f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n")
         # write out the catalog data
         t = Table(x.get("cat_data"), names=("x", "y"))
-        t.write(tmp_path / x.get("cat_filename"), format=catalog_format)
+        t.write(tmp_path / x.get("cat_filename"), format="ascii.ecsv")
     with open(catfile, mode="w") as f:
         print(catfile_content.getvalue(), file=f)
 
@@ -579,10 +579,7 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
     members of an ASN file.
     """
     # create custom catalog and input datamodels
-    catalog_format = "ascii.ecsv"
-    res_dict = create_custom_catalogs(
-        tmp_path, base_image, catalog_format=catalog_format
-    )
+    res_dict = create_custom_catalogs(tmp_path, base_image)
     catfile = res_dict.get("catfile")
     img1, img2, img3 = res_dict.get("datamodels")
     add_tweakreg_catalog_attribute(tmp_path, img1, catalog_filename="img1")
@@ -605,7 +602,6 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
     res = trs.TweakRegStep.call(
         asn_filepath,
         use_custom_catalogs=True,
-        catalog_format=catalog_format,
         catfile=catfile,
     )
 
@@ -780,10 +776,7 @@ def test_parse_catfile_valid_catalog(tmp_path, base_image):
     Test that _parse_catfile can parse a custom catalog with valid format.
     """
     # create custom catalog file and input datamodels
-    catalog_format = "ascii.ecsv"
-    res_dict = create_custom_catalogs(
-        tmp_path, base_image, catalog_format=catalog_format
-    )
+    res_dict = create_custom_catalogs(tmp_path, base_image)
     catfile = res_dict.get("catfile")
     catdict = trs._parse_catfile(catfile)
 
