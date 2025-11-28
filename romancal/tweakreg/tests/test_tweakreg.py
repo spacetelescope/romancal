@@ -397,17 +397,11 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
         (0.1 * u.deg, 1, 1),
     ],
 )
-def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y):
+def test_tweakreg_rotated_plane(tmp_path, base_image, theta, offset_x, offset_y):
     """
     Test that TweakReg returns accurate results.
     """
-    # FIXME incorrect epoch and assumes GAIADR3 abs_refcat
-    gaia_cat = get_catalog(
-        right_ascension=270, declination=66, search_radius=100 / 3600
-    )
-    gaia_source_coords = [
-        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)
-    ]
+    gaia_source_coords = get_gaia_coords()
 
     img = base_image(shift_1=1000, shift_2=1000)
     original_wcs = copy.deepcopy(img.meta.wcs)
