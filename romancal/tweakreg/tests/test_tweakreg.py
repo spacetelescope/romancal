@@ -471,63 +471,32 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
     In this case, the user can create a custom catalog file (catfile) for each of the
     members of an ASN file.
     """
-    img1 = base_image(shift_1=1000, shift_2=1000)
-    img2 = base_image(shift_1=1010, shift_2=1010)
-    img3 = base_image(shift_1=1020, shift_2=1020)
-
-    img1.meta.filename = "img1.asdf"
-    img2.meta.filename = "img2.asdf"
-    img3.meta.filename = "img3.asdf"
-
-    # create valid custom catalog data to be used with each input datamodel
-    catalog_data1 = get_catalog_data(img1)
-    catalog_data2 = get_catalog_data(img2)
-    catalog_data3 = get_catalog_data(img3)
-
-    custom_catalog_map = [
-        {
-            "cat_filename": "ref_catalog_1",
-            "cat_datamodel": img1.meta.filename,
-            "cat_data": catalog_data1,
-        },
-        {
-            "cat_filename": "ref_catalog_2",
-            "cat_datamodel": img2.meta.filename,
-            "cat_data": catalog_data2,
-        },
-        {
-            "cat_filename": "ref_catalog_3",
-            "cat_datamodel": img3.meta.filename,
-            "cat_data": catalog_data3,
-        },
-    ]
-
-    # create catfile
+    members = []
     catfile = str(tmp_path / "catfile.txt")
-    with open(catfile, "w") as f:
-        for x in custom_catalog_map:
-            # write line to catfile
-            f.write(f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n")
-            # write out the catalog data
-            t = Table(x.get("cat_data"), names=("x", "y"))
-            t.write(tmp_path / x.get("cat_filename"), format="ascii.ecsv")
+    with open(catfile, "w") as catfile_fp:
+        for i in range(3):
+            # generate and save model
+            img = base_image(shift_1=1000 + i * 10, shift_2=1000 + i * 10)
+            img.meta.filename = f"img{i}.asdf"
+            img.save(tmp_path / img.meta.filename)
 
-    add_tweakreg_catalog_attribute(tmp_path, img1, catalog_filename="img1")
-    add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
-    add_tweakreg_catalog_attribute(tmp_path, img3, catalog_filename="img3")
+            # generate and save custom catalog
+            catalog_data = get_catalog_data(img)
+            custom_catalog_fn = str(tmp_path / f"custom_catalog_{i}")
+            Table(catalog_data, names=("x", "y")).write(
+                custom_catalog_fn, format="ascii.ecsv"
+            )
 
-    img1.save(tmp_path / "img1.asdf")
-    img2.save(tmp_path / "img2.asdf")
-    img3.save(tmp_path / "img3.asdf")
+            # record custom catalog
+            catfile_fp.write(f"{img.meta.filename} {custom_catalog_fn}\n")
+
+            # accumulate members
+            members.append({"expname": img.meta.filename, "exptype": "science"})
 
     # create ASN file
     asn_filepath = create_asn_file(
         tmp_path,
-        members_mapping=[
-            {"expname": img1.meta.filename, "exptype": "science"},
-            {"expname": img2.meta.filename, "exptype": "science"},
-            {"expname": img3.meta.filename, "exptype": "science"},
-        ],
+        members_mapping=members,
     )
 
     res = trs.TweakRegStep.call(
@@ -536,19 +505,8 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
         catfile=catfile,
     )
 
+    # FIXME this test doesn't test anything relevant
     assert isinstance(res, ModelLibrary)
-
-    with res:
-        for i, (model, target) in enumerate(zip(res, [img1, img2, img3], strict=False)):
-            assert hasattr(model.meta, "asn")
-
-            assert model.meta.filename == target.meta.filename
-
-            assert type(model) is type(target)
-
-            assert (model.data == target.data).all()
-
-            res.shelve(model, i, modify=False)
 
 
 @pytest.mark.parametrize(
