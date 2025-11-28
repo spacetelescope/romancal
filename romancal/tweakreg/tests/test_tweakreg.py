@@ -275,7 +275,7 @@ def test_tweakreg_returns_modellibrary_on_modellibrary_as_input(tmp_path, base_i
     test_input = ModelLibrary([img])
 
     res = trs.TweakRegStep.call(test_input)
-    assert isinstance(res, ModelLibrary)
+    assert res is test_input
     with res:
         model = res.borrow(0)
         assert model.meta.cal_step.tweakreg == "COMPLETE"
