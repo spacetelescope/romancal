@@ -13,11 +13,7 @@ import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
 from stcal.tweakreg import tweakreg
-from stcal.tweakreg.tweakreg import (
-    _SINGLE_GROUP_REFCAT_STR,
-    SINGLE_GROUP_REFCAT,
-    TweakregError,
-)
+from stcal.tweakreg.tweakreg import TweakregError
 
 from romancal.assign_wcs.utils import add_s_region
 from romancal.lib.save_wcs import save_wfiwcs
@@ -29,7 +25,7 @@ from ..stpipe import RomanStep
 if TYPE_CHECKING:
     from typing import ClassVar
 
-DEFAULT_ABS_REFCAT = SINGLE_GROUP_REFCAT[0]
+DEFAULT_ABS_REFCAT = "s3://stpubdata/gaia/gaia_dr3/public/hats/gaia/"
 
 __all__ = ["TweakRegStep"]
 
@@ -60,7 +56,6 @@ class TweakRegStep(RomanStep):
         nclip = integer(min=0, default=3) # Number of clipping iterations in fit
         sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units
         abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference
-        # catalog. Options: {_SINGLE_GROUP_REFCAT_STR}
         save_abs_catalog = boolean(default=False)  # Write out used absolute astrometric reference catalog as a separate product
         abs_minobj = integer(default=15) # Minimum number of objects acceptable for matching when performing absolute astrometry
         abs_searchrad = float(default=6.0) # The search radius in arcsec for a match when performing absolute astrometry
@@ -240,7 +235,7 @@ class TweakRegStep(RomanStep):
                 except TweakregError as e:
                     log.warning(str(e))
 
-            if self.abs_refcat in SINGLE_GROUP_REFCAT:
+            if self.abs_refcat.strip() != "":
                 try:
                     self.do_absolute_alignment(ref_image, imcats)
                 except TweakregError as e:
