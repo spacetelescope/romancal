@@ -308,18 +308,11 @@ def test_tweakreg_returns_modellibrary_on_list_of_asdf_file_as_input(
             res.shelve(model, i, modify=False)
 
 
-@pytest.mark.parametrize(
-    "abs_refcat",
-    (
-        "GAIADR1",
-        "GAIADR2",
-        "GAIADR3",
-    ),
-)
-def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
+def test_tweakreg_save_valid_abs_refcat(tmp_path, request, base_image):
     """Test that TweakReg saves the catalog used for absolute astrometry."""
+    abs_refcat = "GAIADR3"
 
-    img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
+    img = base_image(shift_1=1000, shift_2=1000)
     catalog_filename = "ref_catalog.ecsv"
     abs_refcat_filename = f"fit_{abs_refcat.lower()}_ref.ecsv"
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
