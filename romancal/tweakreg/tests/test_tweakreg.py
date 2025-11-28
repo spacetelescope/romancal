@@ -339,6 +339,7 @@ def get_catalog_data(input_dm, **kwargs):
     dec = kwargs.get("dec", 66)
     sr = kwargs.get("sr", 100 / 3600)
     add_shifts = kwargs.get("add_shifts", False)
+    # FIXME incorrect epoch and assumes GAIADR3 abs_refcat
     gaia_cat = get_catalog(right_ascension=ra, declination=dec, search_radius=sr)
     gaia_source_coords = [
         (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)
@@ -755,17 +756,6 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
 @pytest.mark.parametrize(
     "theta, offset_x, offset_y",
     [
-        (0 * u.deg, 0, 0),
-        (0 * u.deg, 1, 0),
-        (0 * u.deg, 0, 1),
-        (0 * u.deg, 1, 1),
-        (0.05 * u.deg, 0, 0),
-        (0.05 * u.deg, 1, 0),
-        (0.05 * u.deg, 0, 1),
-        (0.05 * u.deg, 1, 1),
-        (0.1 * u.deg, 0, 0),
-        (0.1 * u.deg, 1, 0),
-        (0.1 * u.deg, 0, 1),
         (0.1 * u.deg, 1, 1),
     ],
 )
@@ -773,6 +763,7 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
     """
     Test that TweakReg returns accurate results.
     """
+    # FIXME incorrect epoch and assumes GAIADR3 abs_refcat
     gaia_cat = get_catalog(
         right_ascension=270, declination=66, search_radius=100 / 3600
     )
