@@ -1,4 +1,5 @@
 import copy
+import functools
 import json
 import os
 import shutil
@@ -22,6 +23,15 @@ from stcal.tweakreg.astrometric_utils import get_catalog
 from romancal.datamodels import ModelLibrary
 from romancal.tweakreg import tweakreg_step as trs
 from romancal.tweakreg.tweakreg_step import _validate_catalog_columns
+
+
+@functools.cache
+def get_gaia_coords():
+    # FIXME incorrect epoch and assumes GAIADR3 abs_refcat
+    gaia_cat = get_catalog(
+        right_ascension=270, declination=66, search_radius=100 / 3600.0
+    )
+    return [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)]
 
 
 def create_custom_catalogs(tmp_path, base_image, catalog_format="ascii.ecsv"):
@@ -234,26 +244,13 @@ def create_wcs_for_tweakreg_pipeline(input_dm, shift_1=0, shift_2=0):
     input_dm.meta["wcs"] = wcs_obj
 
 
-def get_catalog_data(input_dm, **kwargs):
-    ra = kwargs.get("ra", 270)
-    dec = kwargs.get("dec", 66)
-    sr = kwargs.get("sr", 100 / 3600)
-    add_shifts = kwargs.get("add_shifts", False)
-    # FIXME incorrect epoch and assumes GAIADR3 abs_refcat
-    gaia_cat = get_catalog(right_ascension=ra, declination=dec, search_radius=sr)
-    gaia_source_coords = [
-        (ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)
-    ]
+def get_catalog_data(input_dm):
     catalog_data = np.array(
         [
             input_dm.meta.wcs.world_to_pixel_values(ra, dec)
-            for ra, dec in gaia_source_coords
+            for ra, dec in get_gaia_coords()
         ]
     )
-    if add_shifts:
-        rng = np.random.default_rng(seed=int(ra + dec))
-        shifts = rng.uniform(-1, 1, size=catalog_data.shape)
-        catalog_data += shifts
     return catalog_data
 
 
@@ -301,7 +298,6 @@ def add_tweakreg_catalog_attribute(
     catalog_data=None,
     catalog_format: str = "ascii.ecsv",
     save_catalogs=True,
-    **kwargs,
 ):
     """
     Add tweakreg_catalog attribute to the meta, which is a mandatory
@@ -328,14 +324,13 @@ def add_tweakreg_catalog_attribute(
 
     Notes
     ----
-    - kwargs will be passed on to get_catalog_data();
     - if no catalog_data is provided, a default catalog will be created
     by fetching data from Gaia within a search radius of 100 arcsec
     centered at RA=270, Dec=66.
     """
     tweakreg_catalog_filename = catalog_filename
     if catalog_data is None:
-        catalog_data = get_catalog_data(input_dm, **kwargs)
+        catalog_data = get_catalog_data(input_dm)
 
     source_catalog = create_base_image_source_catalog(
         tmp_path,
