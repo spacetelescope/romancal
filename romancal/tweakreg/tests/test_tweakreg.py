@@ -471,32 +471,25 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
     In this case, the user can create a custom catalog file (catfile) for each of the
     members of an ASN file.
     """
-    members = []
     catfile = str(tmp_path / "catfile.txt")
-    with open(catfile, "w") as catfile_fp:
-        for i in range(3):
-            # generate and save model
-            img = base_image(shift_1=1000 + i * 10, shift_2=1000 + i * 10)
-            img.meta.filename = f"img{i}.asdf"
-            img.save(tmp_path / img.meta.filename)
 
-            # generate and save custom catalog
-            catalog_data = get_catalog_data(img)
-            custom_catalog_fn = str(tmp_path / f"custom_catalog_{i}")
-            Table(catalog_data, names=("x", "y")).write(
-                custom_catalog_fn, format="ascii.ecsv"
-            )
+    # generate and save model
+    img = base_image()
+    img.meta.filename = "img.asdf"
+    img.save(tmp_path / img.meta.filename)
 
-            # record custom catalog
-            catfile_fp.write(f"{img.meta.filename} {custom_catalog_fn}\n")
-
-            # accumulate members
-            members.append({"expname": img.meta.filename, "exptype": "science"})
+    # generate and save custom catalog
+    catalog_data = get_catalog_data(img)
+    custom_catalog_fn = str(tmp_path / "custom_catalog")
+    Table(catalog_data, names=("x", "y")).write(custom_catalog_fn, format="ascii.ecsv")
+    # record custom catalog
+    with open(catfile, "w") as f:
+        f.write(f"{img.meta.filename} {custom_catalog_fn}")
 
     # create ASN file
     asn_filepath = create_asn_file(
         tmp_path,
-        members_mapping=members,
+        members_mapping=[{"expname": img.meta.filename, "exptype": "science"}],
     )
 
     res = trs.TweakRegStep.call(
@@ -505,8 +498,10 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
         catfile=catfile,
     )
 
-    # FIXME this test doesn't test anything relevant
-    assert isinstance(res, ModelLibrary)
+    with res:
+        m = res.borrow(0)
+        assert m.meta.source_catalog.tweakreg_catalog_name.endswith("custom_catalog")
+        res.shelve(m, modify=False)
 
 
 @pytest.mark.parametrize(
