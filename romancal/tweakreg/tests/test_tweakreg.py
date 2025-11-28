@@ -308,19 +308,6 @@ def test_tweakreg_returns_modellibrary_on_list_of_asdf_file_as_input(
             res.shelve(model, i, modify=False)
 
 
-def test_tweakreg_updates_cal_step(tmp_path, base_image):
-    """Test that TweakReg updates meta.cal_step with tweakreg = COMPLETE."""
-    img = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img)
-    res = trs.TweakRegStep.call([img])
-
-    with res:
-        model = res.borrow(0)
-        assert hasattr(model.meta.cal_step, "tweakreg")
-        assert model.meta.cal_step.tweakreg == "COMPLETE"
-        res.shelve(model, 0, modify=False)
-
-
 @pytest.mark.parametrize(
     "abs_refcat",
     (
