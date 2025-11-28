@@ -33,54 +33,6 @@ def get_gaia_coords():
     return [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)]
 
 
-def create_custom_catalogs(tmp_path, base_image):
-    """
-    Creates a custom catalog with three datamodels and its respective catalog data.
-    """
-    img1 = base_image(shift_1=1000, shift_2=1000)
-    img2 = base_image(shift_1=1010, shift_2=1010)
-    img3 = base_image(shift_1=1020, shift_2=1020)
-
-    img1.meta.filename = "img1.asdf"
-    img2.meta.filename = "img2.asdf"
-    img3.meta.filename = "img3.asdf"
-
-    # create valid custom catalog data to be used with each input datamodel
-    catalog_data1 = get_catalog_data(img1)
-    catalog_data2 = get_catalog_data(img2)
-    catalog_data3 = get_catalog_data(img3)
-
-    custom_catalog_map = [
-        {
-            "cat_filename": "ref_catalog_1",
-            "cat_datamodel": img1.meta.filename,
-            "cat_data": catalog_data1,
-        },
-        {
-            "cat_filename": "ref_catalog_2",
-            "cat_datamodel": img2.meta.filename,
-            "cat_data": catalog_data2,
-        },
-        {
-            "cat_filename": "ref_catalog_3",
-            "cat_datamodel": img3.meta.filename,
-            "cat_data": catalog_data3,
-        },
-    ]
-
-    # create catfile
-    catfile = str(tmp_path / "catfile.txt")
-    with open(catfile, "w") as f:
-        for x in custom_catalog_map:
-            # write line to catfile
-            f.write(f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n")
-            # write out the catalog data
-            t = Table(x.get("cat_data"), names=("x", "y"))
-            t.write(tmp_path / x.get("cat_filename"), format="ascii.ecsv")
-
-    return {"catfile": catfile, "datamodels": [img1, img2, img3]}
-
-
 def create_asn_file(tmp_path, members_mapping=None):
     asn_content = """
         {
@@ -519,13 +471,51 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
     In this case, the user can create a custom catalog file (catfile) for each of the
     members of an ASN file.
     """
-    # create custom catalog and input datamodels
-    res_dict = create_custom_catalogs(tmp_path, base_image)
-    catfile = res_dict.get("catfile")
-    img1, img2, img3 = res_dict.get("datamodels")
+    img1 = base_image(shift_1=1000, shift_2=1000)
+    img2 = base_image(shift_1=1010, shift_2=1010)
+    img3 = base_image(shift_1=1020, shift_2=1020)
+
+    img1.meta.filename = "img1.asdf"
+    img2.meta.filename = "img2.asdf"
+    img3.meta.filename = "img3.asdf"
+
+    # create valid custom catalog data to be used with each input datamodel
+    catalog_data1 = get_catalog_data(img1)
+    catalog_data2 = get_catalog_data(img2)
+    catalog_data3 = get_catalog_data(img3)
+
+    custom_catalog_map = [
+        {
+            "cat_filename": "ref_catalog_1",
+            "cat_datamodel": img1.meta.filename,
+            "cat_data": catalog_data1,
+        },
+        {
+            "cat_filename": "ref_catalog_2",
+            "cat_datamodel": img2.meta.filename,
+            "cat_data": catalog_data2,
+        },
+        {
+            "cat_filename": "ref_catalog_3",
+            "cat_datamodel": img3.meta.filename,
+            "cat_data": catalog_data3,
+        },
+    ]
+
+    # create catfile
+    catfile = str(tmp_path / "catfile.txt")
+    with open(catfile, "w") as f:
+        for x in custom_catalog_map:
+            # write line to catfile
+            f.write(f"{x.get('cat_datamodel')} {x.get('cat_filename')}\n")
+            # write out the catalog data
+            t = Table(x.get("cat_data"), names=("x", "y"))
+            t.write(tmp_path / x.get("cat_filename"), format="ascii.ecsv")
+
     add_tweakreg_catalog_attribute(tmp_path, img1, catalog_filename="img1")
     add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
     add_tweakreg_catalog_attribute(tmp_path, img3, catalog_filename="img3")
+
     img1.save(tmp_path / "img1.asdf")
     img2.save(tmp_path / "img2.asdf")
     img3.save(tmp_path / "img3.asdf")
