@@ -340,29 +340,6 @@ def test_tweakreg_returns_modellibrary_on_modellibrary_as_input(tmp_path, base_i
         res.shelve(model, 0, modify=False)
 
 
-def test_tweakreg_returns_modellibrary_on_association_file_as_input(
-    tmp_path, base_image
-):
-    """Test that TweakReg always returns a ModelLibrary when processing an association file as input."""
-
-    img_1 = base_image(shift_1=1000, shift_2=1000)
-    img_2 = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img_1, catalog_filename="img_1")
-    add_tweakreg_catalog_attribute(tmp_path, img_2, catalog_filename="img_2")
-    img_1.save(tmp_path / "img_1.asdf")
-    img_2.save(tmp_path / "img_2.asdf")
-    asn_filepath = create_asn_file(tmp_path)
-
-    test_input = asn_filepath
-
-    res = trs.TweakRegStep.call(test_input)
-    assert isinstance(res, ModelLibrary)
-    with res:
-        for i, model in enumerate(res):
-            assert model.meta.cal_step.tweakreg == "COMPLETE"
-            res.shelve(model, i, modify=False)
-
-
 def test_tweakreg_returns_modellibrary_on_list_of_asdf_file_as_input(
     tmp_path, base_image
 ):
@@ -498,8 +475,10 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
         catfile=catfile,
     )
 
+    assert isinstance(res, ModelLibrary)
     with res:
         m = res.borrow(0)
+        assert m.meta.cal_step.tweakreg == "COMPLETE"
         assert m.meta.source_catalog.tweakreg_catalog_name.endswith("custom_catalog")
         res.shelve(m, modify=False)
 
