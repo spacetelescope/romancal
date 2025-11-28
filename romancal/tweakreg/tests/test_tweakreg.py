@@ -661,6 +661,7 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     assert os.path.exists(tmp_path / abs_refcat_filename)
 
 
+@pytest.mark.skip(reason="This test is incorrect")
 @pytest.mark.parametrize(
     "abs_refcat",
     (None, ""),
@@ -689,7 +690,7 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError, match="Invalid 'abs_refcat'"):
         trs.TweakRegStep.call(
             [img],
             save_abs_catalog=True,

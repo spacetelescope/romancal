@@ -192,14 +192,6 @@ class TweakRegStep(RomanStep):
                         catalog, image_model.meta.wcs.bounding_box
                     )
 
-                    if self.save_abs_catalog:
-                        output_name = os.path.join(
-                            self.catalog_path, f"fit_{self.abs_refcat.lower()}_ref.ecsv"
-                        )
-                        catalog.write(
-                            output_name, format=self.catalog_format, overwrite=True
-                        )
-
                     image_model.meta["tweakreg_catalog"] = catalog.as_array()
                     nsources = len(catalog)
                     log.info(
@@ -494,7 +486,7 @@ class TweakRegStep(RomanStep):
             abs_separation=self.abs_separation,
             abs_tolerance=self.abs_tolerance,
             save_abs_catalog=self.save_abs_catalog,
-            abs_catalog_output_dir=self.output_dir,
+            abs_catalog_output_dir=self.search_attr("output_dir", default=""),
             clip_accum=True,
             timeout=self.vo_timeout,
         )
