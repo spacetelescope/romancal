@@ -33,49 +33,6 @@ def get_gaia_coords():
     return [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)]
 
 
-def create_asn_file(tmp_path, members_mapping=None):
-    asn_content = """
-        {
-            "asn_type": "None",
-            "asn_rule": "DMS_ELPP_Base",
-            "version_id": null,
-            "code_version": "0.9.1.dev28+ge987cc9.d20230106",
-            "degraded_status": "No known degraded exposures in association.",
-            "program": "noprogram",
-            "constraints": "No constraints",
-            "asn_id": "a3001",
-            "target": "none",
-            "asn_pool": "test_pool_name",
-            "products": [
-                {
-                    "name": "files.asdf",
-                    "members": [
-                        {
-                            "expname": "img_1.asdf",
-                            "exptype": "science"
-                        },
-                        {
-                            "expname": "img_2.asdf",
-                            "exptype": "science"
-                        }
-                    ]
-                }
-            ]
-        }
-    """
-    asn_dict = json.loads(asn_content)
-    if members_mapping is not None:
-        asn_dict["products"][0]["members"] = []
-        for x in members_mapping:
-            asn_dict["products"][0]["members"].append(x)
-
-    asn_file_path = str(tmp_path / "sample_asn.json")
-    with open(asn_file_path, "w") as f:
-        json.dump(asn_dict, f)
-
-    return asn_file_path
-
-
 def update_wcsinfo(input_dm):
     """
     Update WCSInfo with realistic data (i.e. obtained from romanisim simulations).
@@ -464,10 +421,18 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
         f.write(f"{img.meta.filename} {custom_catalog_fn}")
 
     # create ASN file
-    asn_filepath = create_asn_file(
-        tmp_path,
-        members_mapping=[{"expname": img.meta.filename, "exptype": "science"}],
-    )
+    asn_filepath = str(tmp_path / "test_asn.json")
+    asn_dict = {
+        "asn_id": "a3001",
+        "products": [
+            {
+                "name": "test.asdf",
+                "members": [{"expname": img.meta.filename, "exptype": "science"}],
+            }
+        ],
+    }
+    with open(asn_filepath, "w") as f:
+        json.dump(asn_dict, f)
 
     res = trs.TweakRegStep.call(
         asn_filepath,
