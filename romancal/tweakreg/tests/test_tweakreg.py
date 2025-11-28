@@ -259,7 +259,10 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
     # make sure tweakreg_catalog_name doesn't exist
     img.meta.source_catalog = {}
     assert "tweakreg_catalog_name" not in img.meta.source_catalog
-    with pytest.raises(AttributeError):
+    with pytest.raises(
+        AttributeError,
+        match=r"Attribute 'meta.source_catalog.tweakreg_catalog' is missing",
+    ):
         trs.TweakRegStep.call([img])
 
 
