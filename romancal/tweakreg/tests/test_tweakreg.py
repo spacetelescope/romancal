@@ -656,30 +656,6 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, abs_refcat, request):
     assert os.path.exists(tmp_path / abs_refcat_filename)
 
 
-@pytest.mark.skip(reason="This test is incorrect")
-@pytest.mark.parametrize(
-    "abs_refcat",
-    (None, ""),
-)
-def test_tweakreg_defaults_to_valid_abs_refcat(tmp_path, abs_refcat, request):
-    """Test that TweakReg defaults to DEFAULT_ABS_REFCAT on invalid values."""
-
-    img = request.getfixturevalue("base_image")(shift_1=1000, shift_2=1000)
-    catalog_filename = "ref_catalog.ecsv"
-    abs_refcat_filename = f"fit_{trs.DEFAULT_ABS_REFCAT.lower()}_ref.ecsv"
-    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
-
-    trs.TweakRegStep.call(
-        [img],
-        save_abs_catalog=True,
-        abs_refcat=abs_refcat,
-        catalog_path=str(tmp_path),
-        output_dir=str(tmp_path),
-    )
-
-    assert os.path.exists(tmp_path / abs_refcat_filename)
-
-
 def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
     """Test that TweakReg raises an error when an invalid abs_refcat is provided."""
     img = base_image(shift_1=1000, shift_2=1000)
