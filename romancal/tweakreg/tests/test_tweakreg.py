@@ -20,8 +20,7 @@ from roman_datamodels import datamodels as rdm
 from stcal.tweakreg.astrometric_utils import get_catalog
 
 from romancal.datamodels import ModelLibrary
-from romancal.tweakreg import tweakreg_step as trs
-from romancal.tweakreg.tweakreg_step import _validate_catalog_columns
+from romancal.tweakreg.tweakreg_step import TweakRegStep, _validate_catalog_columns
 
 
 @functools.cache
@@ -248,7 +247,7 @@ def test_tweakreg_raises_error_on_invalid_input(input, error_type):
     # sourcery skip: list-literal
     """Test that TweakReg raises an error when an invalid input is provided."""
     with pytest.raises(error_type):
-        trs.TweakRegStep.call(input)
+        TweakRegStep.call(input)
 
 
 def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
@@ -263,7 +262,7 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
         AttributeError,
         match=r"Attribute 'meta.source_catalog.tweakreg_catalog' is missing",
     ):
-        trs.TweakRegStep.call([img])
+        TweakRegStep.call([img])
 
 
 def test_tweakreg_returns_modellibrary_on_modellibrary_as_input(tmp_path, base_image):
@@ -274,7 +273,7 @@ def test_tweakreg_returns_modellibrary_on_modellibrary_as_input(tmp_path, base_i
 
     test_input = ModelLibrary([img])
 
-    res = trs.TweakRegStep.call(test_input)
+    res = TweakRegStep.call(test_input)
     assert res is test_input
     with res:
         model = res.borrow(0)
@@ -300,7 +299,7 @@ def test_tweakreg_returns_modellibrary_on_list_of_asdf_file_as_input(
         f"{tmp_path_str}/img_2.asdf",
     ]
 
-    res = trs.TweakRegStep.call(test_input)
+    res = TweakRegStep.call(test_input)
     assert isinstance(res, ModelLibrary)
     with res:
         for i, model in enumerate(res):
@@ -317,7 +316,7 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, request, base_image):
     abs_refcat_filename = f"fit_{abs_refcat.lower()}_ref.ecsv"
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename=catalog_filename)
 
-    trs.TweakRegStep.call(
+    TweakRegStep.call(
         [img],
         save_abs_catalog=True,
         abs_refcat=abs_refcat,
@@ -334,7 +333,7 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
     add_tweakreg_catalog_attribute(tmp_path, img)
 
     with pytest.raises(ValueError, match="Invalid 'abs_refcat'"):
-        trs.TweakRegStep.call(
+        TweakRegStep.call(
             [img],
             save_abs_catalog=True,
             abs_refcat="my_ref_cat",
@@ -378,7 +377,7 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(tmp_path, base_image):
     with open(asn_filepath, "w") as f:
         json.dump(asn_dict, f)
 
-    res = trs.TweakRegStep.call(
+    res = TweakRegStep.call(
         asn_filepath,
         use_custom_catalogs=True,
         catfile=catfile,
@@ -432,7 +431,7 @@ def test_tweakreg_rotated_plane(tmp_path, theta, offset_x, offset_y, request):
         tmp_path, img, catalog_data=transformed_xy_gaia_sources
     )
 
-    trs.TweakRegStep.call([img], abs_minobj=3)
+    TweakRegStep.call([img], abs_minobj=3)
 
     # get world coords for Gaia sources using "wrong WCS"
     original_ref_source = [
@@ -473,7 +472,7 @@ def test_fit_results_in_meta(tmp_path, base_image):
     img = base_image(shift_1=1000, shift_2=1000)
     add_tweakreg_catalog_attribute(tmp_path, img)
 
-    res = trs.TweakRegStep.call([img])
+    res = TweakRegStep.call([img])
 
     assert isinstance(res, ModelLibrary)
     with res:
@@ -501,64 +500,9 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     img1.meta["filename"] = "file1.asdf"
     img2.meta["filename"] = "file2.asdf"
 
-    res = trs.TweakRegStep.call([img1, img2])
+    res = TweakRegStep.call([img1, img2])
 
     assert len(res.group_names) == 2
-
-
-def test_parse_catfile_valid_catalog(tmp_path):
-    """
-    Test that _parse_catfile can parse a custom catalog with valid format.
-    """
-    catfile = str(tmp_path / "catfile.txt")
-    with open(catfile, mode="w") as f:
-        f.write("img1.asdf cat1\nimg2.asdf cat2")
-    catdict = trs._parse_catfile(catfile)
-
-    assert catdict == {
-        "img1.asdf": str(tmp_path / "cat1"),
-        "img2.asdf": str(tmp_path / "cat2"),
-    }
-
-
-@pytest.mark.parametrize("catfile", (None, ""))
-def test_parse_catfile_returns_none(catfile):
-    """
-    Test that _parse_catfile returns None when catfile = None or catfile = "".
-    """
-    catdict = trs._parse_catfile(catfile=catfile)
-
-    assert catdict is None
-
-
-def test_parse_catfile_returns_none_on_invalid_content(tmp_path):
-    """
-    Test that _parse_catfile returns a dict where all the values are None
-    if only filename is present in catfile (i.e. no associated catalog).
-    """
-    # FIXME the tested behavior here causes the step to fail
-    # create custom catalog file and input datamodels
-    catfile = str(tmp_path / "catfile.txt")
-    with open(catfile, mode="w") as f:
-        f.write("img1.asdf\nimg2.asdf\nimg3.asdf")
-
-    catdict = trs._parse_catfile(catfile)
-
-    assert not all(catdict.values())
-
-
-def test_parse_catfile_raises_error_on_invalid_content(tmp_path):
-    """
-    Test that _parse_catfile raises an error if catfile contains more than
-    two columns (i.e. image name and corresponding catalog path).
-    """
-    # create custom catalog file and input datamodels
-    catfile = str(tmp_path / "catfile.txt")
-    with open(catfile, "w") as f:
-        f.write("img1.asdf column1 column2 column3")
-
-    with pytest.raises(ValueError):
-        trs._parse_catfile(catfile)
 
 
 def test_update_source_catalog_coordinates(function_jail, base_image):
@@ -575,7 +519,7 @@ def test_update_source_catalog_coordinates(function_jail, base_image):
     img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
 
     # run TweakRegStep
-    res = trs.TweakRegStep.call([img])
+    res = TweakRegStep.call([img])
 
     # tweak the current WCS using TweakRegStep and save the updated cat file
     with res:
@@ -621,7 +565,7 @@ def test_source_catalog_coordinates_have_changed(function_jail, base_image):
     img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
 
     # run TweakRegStep
-    res = trs.TweakRegStep.call([img])
+    res = TweakRegStep.call([img])
 
     # tweak the current WCS using TweakRegStep and save the updated cat file
     with res:
@@ -793,7 +737,7 @@ def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_ima
     img1.meta.exposure.type = exposure_type
     img2 = base_image(shift_1=1000, shift_2=1000)
     img2.meta.exposure.type = exposure_type
-    res = trs.TweakRegStep.call([img1, img2])
+    res = TweakRegStep.call([img1, img2])
 
     assert isinstance(res, ModelLibrary)
     with res:
@@ -859,7 +803,7 @@ def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(base_image):
 
     # Should raise ValueError due to invalid catalog columns
     with pytest.raises(ValueError):
-        trs.TweakRegStep.call([img])
+        TweakRegStep.call([img])
 
 
 def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
@@ -882,7 +826,7 @@ def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
     img5 = base_image(shift_1=1000, shift_2=1000)
     img5.meta.exposure.type = "WFI_IM_DARK"
 
-    res = trs.TweakRegStep.call([img1, img2, img3, img4, img5])
+    res = TweakRegStep.call([img1, img2, img3, img4, img5])
 
     assert len(res) == 5
     assert img1.meta.cal_step.tweakreg == "SKIPPED"
@@ -900,7 +844,7 @@ def test_tweakreg_updates_s_region(tmp_path, base_image):
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img")
 
     # call TweakRegStep to update WCS & S_REGION
-    res = trs.TweakRegStep.call(img)
+    res = TweakRegStep.call(img)
 
     with res:
         for i, model in enumerate(res):
@@ -914,7 +858,7 @@ def test_tweakreg_produces_output(tmp_path, base_image, save_results):
     img = base_image()
     add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img")
     base_filename = img.meta.filename
-    trs.TweakRegStep.call([img], save_results=save_results, output_dir=str(tmp_path))
+    TweakRegStep.call([img], save_results=save_results, output_dir=str(tmp_path))
 
     fns = [p.name for p in tmp_path.iterdir()]
     # the files should exist only if save_results was True
