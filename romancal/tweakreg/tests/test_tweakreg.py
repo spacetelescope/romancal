@@ -730,23 +730,6 @@ def update_catalog_coordinates(tweakreg_catalog_name, tweaked_wcs):
     catalog.write(tweakreg_catalog_name, overwrite=True)
 
 
-@pytest.mark.parametrize("exposure_type", ["WFI_FLAT", "WFI_WFSC"])
-def test_tweakreg_skips_invalid_exposure_types(exposure_type, tmp_path, base_image):
-    """Test that TweakReg updates meta.cal_step with tweakreg = COMPLETE."""
-    img1 = base_image(shift_1=1000, shift_2=1000)
-    img1.meta.exposure.type = exposure_type
-    img2 = base_image(shift_1=1000, shift_2=1000)
-    img2.meta.exposure.type = exposure_type
-    res = TweakRegStep.call([img1, img2])
-
-    assert isinstance(res, ModelLibrary)
-    with res:
-        for i, model in enumerate(res):
-            assert hasattr(model.meta.cal_step, "tweakreg")
-            assert model.meta.cal_step.tweakreg == "SKIPPED"
-            res.shelve(model, i, modify=False)
-
-
 @pytest.mark.parametrize(
     "catalog_data, expected_colnames, flags_step_as_failed",
     [
@@ -809,31 +792,39 @@ def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(base_image):
 def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
     """Test that TweakReg can handle mixed exposure types
     (non-WFI_IMAGE data will be marked as SKIPPED only and won't be processed)."""
-    img1 = base_image(shift_1=1000, shift_2=1000)
-    img1.meta.exposure.type = "WFI_IM_DARK"
+    invalid_types = [
+        "WFI_SPECTRAL",
+        "WFI_IM_DARK",
+        "WFI_SP_DARK",
+        "WFI_FLAT",
+        "WFI_LOLO",
+        "WFI_WFSC",
+        "WFI_DARK",
+        "WFI_GRISM",
+        "WFI_PRISM",
+    ]
 
-    img2 = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img2, catalog_filename="img2")
-    img2.meta.exposure.type = "WFI_IMAGE"
+    # start with 1 valid type
+    img = base_image()
+    add_tweakreg_catalog_attribute(tmp_path, img, catalog_filename="img0")
+    imgs = [img]
 
-    img3 = base_image(shift_1=1000, shift_2=1000)
-    img3.meta.exposure.type = "WFI_SP_DARK"
+    # add one of each invalid type
+    for invalid_type in invalid_types:
+        img = base_image()
+        img.meta.exposure.type = invalid_type
+        imgs.append(img)
 
-    img4 = base_image(shift_1=1000, shift_2=1000)
-    add_tweakreg_catalog_attribute(tmp_path, img4, catalog_filename="img4")
-    img4.meta.exposure.type = "WFI_IMAGE"
+    res = TweakRegStep.call(imgs)
 
-    img5 = base_image(shift_1=1000, shift_2=1000)
-    img5.meta.exposure.type = "WFI_IM_DARK"
-
-    res = TweakRegStep.call([img1, img2, img3, img4, img5])
-
-    assert len(res) == 5
-    assert img1.meta.cal_step.tweakreg == "SKIPPED"
-    assert img2.meta.cal_step.tweakreg == "COMPLETE"
-    assert img3.meta.cal_step.tweakreg == "SKIPPED"
-    assert img4.meta.cal_step.tweakreg == "COMPLETE"
-    assert img5.meta.cal_step.tweakreg == "SKIPPED"
+    assert len(res) == len(imgs)
+    with res:
+        for i, m in enumerate(res):
+            if i == 0:
+                assert m.meta.cal_step.tweakreg == "COMPLETE"
+            else:
+                assert m.meta.cal_step.tweakreg == "SKIPPED"
+            res.shelve(m, modify=False)
 
 
 def test_tweakreg_updates_s_region(tmp_path, base_image):
