@@ -10,6 +10,23 @@ from romancal.skycell import skymap
 
 DATA_DIRECTORY = Path(__file__).parent / "data"
 
+TEST_SKYCELLS = [
+    "000p86x30y34",
+    "000p86x50y65",
+    "000p86x59y38",
+    # north pole
+    "135p90x25y49",
+    "135p90x30y51",
+    "135p90x33y62",
+    "135p90x39y33",
+    "135p90x43y65",
+    "135p90x48y41",
+    "135p90x52y59",
+    "135p90x57y35",
+    "135p90x61y67",
+    "135p90x67y38",
+]
+
 
 def assert_allclose_lonlat(actual: np.ndarray, desired: np.ndarray, rtol=1e-7, atol=0):
     assert_allclose(actual, desired)
@@ -134,25 +151,7 @@ def test_projregion_from_skycell(skymap_subset):
         skymap.ProjectionRegion.from_skycell_index(10000, skymap=skymap_subset)
 
 
-@pytest.mark.parametrize(
-    "name",
-    [
-        "000p86x30y34",
-        "000p86x50y65",
-        "000p86x59y38",
-        # north pole
-        "135p90x25y49",
-        "135p90x30y51",
-        "135p90x33y62",
-        "135p90x39y33",
-        "135p90x43y65",
-        "135p90x48y41",
-        "135p90x52y59",
-        "135p90x57y35",
-        "135p90x61y67",
-        "135p90x67y38",
-    ],
-)
+@pytest.mark.parametrize("name", TEST_SKYCELLS)
 def test_skycell_wcs_pixel_to_world(name, skymap_subset):
     skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
 
@@ -179,25 +178,7 @@ def test_skycell_wcs_pixel_to_world(name, skymap_subset):
     )
 
 
-@pytest.mark.parametrize(
-    "name",
-    [
-        "000p86x30y34",
-        "000p86x50y65",
-        "000p86x59y38",
-        # north pole
-        "135p90x25y49",
-        "135p90x30y51",
-        "135p90x33y62",
-        "135p90x39y33",
-        "135p90x43y65",
-        "135p90x48y41",
-        "135p90x52y59",
-        "135p90x57y35",
-        "135p90x61y67",
-        "135p90x67y38",
-    ],
-)
+@pytest.mark.parametrize("name", TEST_SKYCELLS)
 def test_skycell_wcs_world_to_pixel(name, skymap_subset):
     skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
 
@@ -219,25 +200,7 @@ def test_skycell_wcs_world_to_pixel(name, skymap_subset):
     )
 
 
-@pytest.mark.parametrize(
-    "name",
-    [
-        "000p86x30y34",
-        "000p86x50y65",
-        "000p86x59y38",
-        # north pole
-        "135p90x25y49",
-        "135p90x30y51",
-        "135p90x33y62",
-        "135p90x39y33",
-        "135p90x43y65",
-        "135p90x48y41",
-        "135p90x52y59",
-        "135p90x57y35",
-        "135p90x61y67",
-        "135p90x67y38",
-    ],
-)
+@pytest.mark.parametrize("name", TEST_SKYCELLS)
 def test_skycell_wcsinfo(name, skymap_subset):
     skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
 
@@ -273,3 +236,17 @@ def test_skycell_wcsinfo(name, skymap_subset):
         skycell.radec_corners,
         rtol=1e-7,
     )
+
+
+def test_skycells(skymap_subset):
+    skycells = skymap.SkyCells.from_names(TEST_SKYCELLS, skymap=skymap_subset)
+
+    assert sorted(skycells.names) == sorted(TEST_SKYCELLS)
+
+    assert skycells.radec_corners.shape == (len(TEST_SKYCELLS), 4, 2)
+    assert skycells.vectorpoint_corners.shape == (len(TEST_SKYCELLS), 4, 3)
+
+    assert skycells.radec_centers.shape == (len(TEST_SKYCELLS), 2)
+    assert skycells.vectorpoint_centers.shape == (len(TEST_SKYCELLS), 3)
+
+    assert len(skycells.polygons) == len(TEST_SKYCELLS)
