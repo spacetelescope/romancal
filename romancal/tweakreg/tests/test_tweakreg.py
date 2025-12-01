@@ -15,11 +15,11 @@ from romancal.datamodels import ModelLibrary
 from romancal.tweakreg.tweakreg_step import TweakRegStep, _validate_catalog_columns
 
 
-def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
+def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(tweakreg_image):
     """
     Test that TweakReg raises an AttributeError if meta.tweakreg_catalog is missing.
     """
-    img = base_image()
+    img = tweakreg_image()
     # make sure tweakreg_catalog_name doesn't exist
     img.meta.source_catalog = {}
     assert "tweakreg_catalog_name" not in img.meta.source_catalog
@@ -30,11 +30,13 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(base_image):
         TweakRegStep.call([img])
 
 
-def test_tweakreg_save_valid_abs_refcat(tmp_path, base_image):
+def test_tweakreg_save_valid_abs_refcat(tmp_path, tweakreg_image):
     """Test that TweakReg saves the catalog used for absolute astrometry."""
     abs_refcat = "GAIADR3"
 
-    img = base_image(shift_1=1000, shift_2=1000, catalog_filename="ref_catalog.ecsv")
+    img = tweakreg_image(
+        shift_1=1000, shift_2=1000, catalog_filename="ref_catalog.ecsv"
+    )
     abs_refcat_filename = f"fit_{abs_refcat.lower()}_ref.ecsv"
 
     TweakRegStep.call(
@@ -48,9 +50,9 @@ def test_tweakreg_save_valid_abs_refcat(tmp_path, base_image):
     assert os.path.exists(tmp_path / abs_refcat_filename)
 
 
-def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
+def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, tweakreg_image):
     """Test that TweakReg raises an error when an invalid abs_refcat is provided."""
-    img = base_image(shift_1=1000, shift_2=1000)
+    img = tweakreg_image(shift_1=1000, shift_2=1000)
 
     with pytest.raises(ValueError, match="Invalid 'abs_refcat'"):
         TweakRegStep.call(
@@ -63,7 +65,7 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, base_image):
 
 
 def test_tweakreg_combine_custom_catalogs_and_asn_file(
-    tmp_path, base_image, gaia_coords
+    tmp_path, tweakreg_image, gaia_coords
 ):
     """
     Test that TweakRegStep can handle a custom catalog for the members of an ASN file.
@@ -73,7 +75,7 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(
     catfile = str(tmp_path / "catfile.txt")
 
     # generate and save model
-    img = base_image()
+    img = tweakreg_image()
     img.meta.filename = "img.asdf"
     img.save(tmp_path / img.meta.filename)
 
@@ -122,12 +124,12 @@ def test_tweakreg_combine_custom_catalogs_and_asn_file(
     ],
 )
 def test_tweakreg_rotated_plane(
-    tmp_path, base_image, theta, offset_x, offset_y, gaia_coords
+    tmp_path, tweakreg_image, theta, offset_x, offset_y, gaia_coords
 ):
     """
     Test that TweakReg returns accurate results.
     """
-    img = base_image(shift_1=1000, shift_2=1000)
+    img = tweakreg_image(shift_1=1000, shift_2=1000)
     original_wcs = copy.deepcopy(img.meta.wcs)
 
     # calculate original (x,y) for Gaia sources
@@ -183,12 +185,12 @@ def test_tweakreg_rotated_plane(
     ).all()
 
 
-def test_fit_results_in_meta(tmp_path, base_image):
+def test_fit_results_in_meta(tmp_path, tweakreg_image):
     """
     Test that the WCS fit results from tweakwcs are available in the meta tree.
     """
 
-    img = base_image(shift_1=1000, shift_2=1000)
+    img = tweakreg_image(shift_1=1000, shift_2=1000)
 
     res = TweakRegStep.call([img])
 
@@ -200,13 +202,13 @@ def test_fit_results_in_meta(tmp_path, base_image):
             res.shelve(model, i, modify=False)
 
 
-def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
+def test_tweakreg_handles_multiple_groups(tmp_path, tweakreg_image):
     """
     Test that TweakRegStep can perform relative alignment for all images in the groups
     before performing absolute alignment.
     """
-    img1 = base_image(shift_1=1000, shift_2=1000, catalog_filename="img1")
-    img2 = base_image(shift_1=990, shift_2=990, catalog_filename="img2")
+    img1 = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img1")
+    img2 = tweakreg_image(shift_1=990, shift_2=990, catalog_filename="img2")
 
     img1.meta.observation.program = 1
     img1.meta.observation["observation_id"] = "1"
@@ -221,10 +223,10 @@ def test_tweakreg_handles_multiple_groups(tmp_path, base_image):
     assert len(res.group_names) == 2
 
 
-def test_update_source_catalog_coordinates(function_jail, base_image):
+def test_update_source_catalog_coordinates(function_jail, tweakreg_image):
     """Test that TweakReg updates the catalog coordinates with the tweaked WCS."""
 
-    img = base_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
+    img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
 
     # create ImageSourceCatalogModel
     source_catalog = setup_source_catalog(img)
@@ -263,10 +265,10 @@ def test_update_source_catalog_coordinates(function_jail, base_image):
     np.testing.assert_array_equal(cat_dec_psf, expected_psf[1])
 
 
-def test_source_catalog_coordinates_have_changed(function_jail, base_image):
+def test_source_catalog_coordinates_have_changed(function_jail, tweakreg_image):
     """Test that the original catalog file content is different from the updated file."""
 
-    img = base_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
+    img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
 
     # create ImageSourceCatalogModel
     source_catalog = setup_source_catalog(img)
@@ -479,9 +481,9 @@ def test_validate_catalog_columns(
         assert set(catalog.colnames) == set(expected_colnames)
 
 
-def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(base_image):
+def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(tweakreg_image):
     """Test that TweakRegStep raises ValueError when catalog columns are invalid."""
-    img = base_image(shift_1=1000, shift_2=1000)
+    img = tweakreg_image(shift_1=1000, shift_2=1000)
     # Add a tweakreg catalog with missing required columns
     img.meta.source_catalog = {
         "tweakreg_catalog": Table({"a": [1, 2, 3], "b": [4, 5, 6]}).as_array()
@@ -492,7 +494,7 @@ def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(base_image):
         TweakRegStep.call([img])
 
 
-def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
+def test_tweakreg_handles_mixed_exposure_types(tmp_path, tweakreg_image):
     """Test that TweakReg can handle mixed exposure types
     (non-WFI_IMAGE data will be marked as SKIPPED only and won't be processed)."""
     invalid_types = [
@@ -508,12 +510,12 @@ def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
     ]
 
     # start with 1 valid type
-    img = base_image(catalog_filename="img0")
+    img = tweakreg_image(catalog_filename="img0")
     imgs = [img]
 
     # add one of each invalid type
     for i, invalid_type in enumerate(invalid_types):
-        img = base_image(catalog_filename=f"img{i + 1}")
+        img = tweakreg_image(catalog_filename=f"img{i + 1}")
         img.meta.exposure.type = invalid_type
         imgs.append(img)
 
@@ -529,9 +531,9 @@ def test_tweakreg_handles_mixed_exposure_types(tmp_path, base_image):
             res.shelve(m, modify=False)
 
 
-def test_tweakreg_updates_s_region(tmp_path, base_image):
+def test_tweakreg_updates_s_region(tmp_path, tweakreg_image):
     """Test that the TweakRegStep updates the s_region attribute."""
-    img = base_image(shift_1=1000, shift_2=1000, catalog_filename="img")
+    img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img")
     old_fake_s_region = "POLYGON ICRS 1.0000000000000 2.0000000000000 3.0000000000000 4.0000000000000 5.0000000000000 6.0000000000000 7.0000000000000 8.0000000000000 "
     img.meta.wcsinfo["s_region"] = old_fake_s_region
 
@@ -545,9 +547,9 @@ def test_tweakreg_updates_s_region(tmp_path, base_image):
 
 
 @pytest.mark.parametrize("save_results", [True, False])
-def test_tweakreg_produces_output(tmp_path, base_image, save_results):
+def test_tweakreg_produces_output(tmp_path, tweakreg_image, save_results):
     """With save_results and output_dir set confirm expected files are in the output directory"""
-    img = base_image(catalog_filename="img")
+    img = tweakreg_image(catalog_filename="img")
     base_filename = img.meta.filename
     TweakRegStep.call([img], save_results=save_results, output_dir=str(tmp_path))
 

@@ -4,35 +4,54 @@ from romancal.datamodels import ModelLibrary
 from romancal.tweakreg.tweakreg_step import TweakRegStep
 
 
+@pytest.fixture()
+def datamodel(tweakreg_image):
+    model = tweakreg_image()
+    model.meta.filename = "test.asdf"
+    return model
+
+
+@pytest.fixture()
+def datamodel_filename(datamodel, tmp_path):
+    fn = tmp_path / "test.asdf"
+    datamodel.save(fn)
+    return fn
+
+
+@pytest.fixture()
+def list_of_models(datamodel):
+    return [datamodel]
+
+
+@pytest.fixture()
+def list_of_filenames(datamodel_filename):
+    return [datamodel_filename]
+
+
+@pytest.fixture()
+def library(list_of_models):
+    return ModelLibrary(list_of_models)
+
+
+@pytest.fixture()
+def association(library, tmp_path):
+    fn = tmp_path / "asn.json"
+    library._save(fn.parent)
+    return fn
+
+
 @pytest.mark.parametrize(
-    "init_type",
+    "init",
     [
         "datamodel",
         "datamodel_filename",
         "list_of_models",
         "list_of_filenames",
         "library",
-        "asn",
+        "association",
     ],
 )
-def test_tweakreg_handle_input(base_image, tmp_path, init_type):
-    match init_type:
-        case "datamodel":
-            init = base_image()
-        case "datamodel_filename":
-            init = tmp_path / "test.asdf"
-            base_image().save(init)
-        case "list_of_models":
-            init = [base_image()]
-        case "list_of_filenames":
-            init = [tmp_path / "test.asdf"]
-            base_image().save(init[0])
-        case "library":
-            init = ModelLibrary([base_image()])
-        case "asn":
-            init = tmp_path / "asn.json"
-            model = base_image()
-            model.meta.filename = "test.asdf"
-            lib = ModelLibrary([model])
-            lib._save(init.parent)
-    assert isinstance(TweakRegStep()._prepare_input(init), ModelLibrary)
+def test_tweakreg_handle_input(init, request):
+    assert isinstance(
+        TweakRegStep()._prepare_input(request.getfixturevalue(init)), ModelLibrary
+    )

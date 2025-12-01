@@ -25,7 +25,7 @@ def gaia_coords():
 
 
 @pytest.fixture
-def base_image(tmp_path, gaia_coords):
+def tweakreg_image(tmp_path, gaia_coords):
     """
     Create a base image with a realistic WCSInfo and a WCS.
 
@@ -37,7 +37,7 @@ def base_image(tmp_path, gaia_coords):
     shift_1 and shift_2 (units in pixel) are used to shift the WCS projection plane.
     """
 
-    def _base_image(shift_1=0, shift_2=0, catalog_filename="catalog.ecsv"):
+    def _tweakreg_image(shift_1=0, shift_2=0, catalog_filename="catalog.ecsv"):
         l2 = rdm.ImageModel.create_fake_data(shape=(2000, 2000))
         l2.meta.filename = "none"
         l2.meta.cal_step = {}
@@ -123,4 +123,4 @@ def base_image(tmp_path, gaia_coords):
 
         return l2
 
-    return _base_image
+    return _tweakreg_image
