@@ -25,9 +25,12 @@ from romancal.tweakreg.tweakreg_step import TweakRegStep, _validate_catalog_colu
 
 @functools.cache
 def get_gaia_coords():
-    # FIXME incorrect epoch and assumes GAIADR3 abs_refcat
     gaia_cat = get_catalog(
-        right_ascension=270, declination=66, search_radius=100 / 3600.0
+        right_ascension=270,
+        declination=66,
+        search_radius=100 / 3600.0,
+        catalog="GAIAREFCAT",
+        timeout=120,
     )
     return [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)]
 
@@ -223,6 +226,7 @@ def base_image():
         ].info:
             l2.meta.cal_step[step_name] = "INCOMPLETE"
         l2.meta.cal_logs = []
+        # to match GAIADR3 epoch
         l2.meta.exposure.start_time = Time("2016-01-01T00:00:00")
         # update wcsinfo
         update_wcsinfo(l2)
