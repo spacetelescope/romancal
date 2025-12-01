@@ -74,25 +74,17 @@ class TweakRegStep(RomanStep):
 
     reference_file_types: ClassVar = []
 
-    def process(self, input):
-        # properly handle input
-        try:
-            if isinstance(input, rdm.DataModel):
-                images = ModelLibrary([input])
-            elif str(input).endswith(".asdf"):
-                images = ModelLibrary([rdm.open(input)])
-            elif isinstance(input, ModelLibrary):
-                images = input
-            else:
-                images = ModelLibrary(input)
-        except TypeError as e:
-            e.args = (
-                "Input to tweakreg must be a list of DataModels, an "
-                "association, or an already open ModelLibrary "
-                "containing one or more DataModels.",
-                *e.args[1:],
-            )
-            raise e
+    def _prepare_input(self, init):
+        if isinstance(init, rdm.DataModel):
+            return ModelLibrary([init])
+        if isinstance(init, ModelLibrary):
+            return init
+        if str(init).endswith(".asdf"):
+            return ModelLibrary([rdm.open(init)])
+        return ModelLibrary(init)
+
+    def process(self, init):
+        images = self._prepare_input(init)
 
         if not images:
             raise ValueError("Input must contain at least one image model.")
