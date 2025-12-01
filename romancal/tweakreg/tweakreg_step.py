@@ -172,11 +172,9 @@ class TweakRegStep(RomanStep):
 
                     # validate catalog columns
                     if not _validate_catalog_columns(catalog):
-                        raise ValueError("""
-                        'tweakreg' source catalogs must contain a header
-                        with columns named either 'x' and 'y' or
-                        'x_psf' and 'y_psf'. Neither were found in the
-                        catalog provided.""")
+                        raise ValueError(
+                            "'tweakreg' source catalogs must contain a header with columns named either 'x' and 'y' or 'x_psf' and 'y_psf'. Neither were found in the catalog provided."
+                        )
 
                     catalog = tweakreg.filter_catalog_by_bounding_box(
                         catalog, image_model.meta.wcs.bounding_box

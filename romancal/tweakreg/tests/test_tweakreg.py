@@ -481,24 +481,14 @@ def test_validate_catalog_columns(
 
 def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(base_image):
     """Test that TweakRegStep raises ValueError when catalog columns are invalid."""
-
-    class FakeSourceCatalog(dict):
-        """Create a fake source catalog with both attribute and item access."""
-
-        def __getattr__(self, name):
-            return self[name]
-
-        def __setattr__(self, name, value):
-            self[name] = value
-
     img = base_image(shift_1=1000, shift_2=1000)
     # Add a tweakreg catalog with missing required columns
-    bad_catalog = Table({"a": [1, 2, 3], "b": [4, 5, 6]})
-    img.meta["source_catalog"] = FakeSourceCatalog()
-    img.meta.source_catalog.tweakreg_catalog = bad_catalog.as_array()
+    img.meta.source_catalog = {
+        "tweakreg_catalog": Table({"a": [1, 2, 3], "b": [4, 5, 6]}).as_array()
+    }
 
     # Should raise ValueError due to invalid catalog columns
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"'tweakreg' source catalogs must contain"):
         TweakRegStep.call([img])
 
 
