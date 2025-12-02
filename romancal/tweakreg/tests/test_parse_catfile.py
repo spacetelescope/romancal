@@ -47,8 +47,6 @@ def test_parse_catfile_returns_none_on_invalid_content(tmp_path):
     Test that _parse_catfile returns a dict where all the values are None
     if only filename is present in catfile (i.e. no associated catalog).
     """
-    # FIXME the tested behavior here causes the step to fail
-    # create custom catalog file and input datamodels
     catfile = str(tmp_path / "catfile.txt")
     with open(catfile, mode="w") as f:
         f.write("img1.asdf\nimg2.asdf\nimg3.asdf")
