@@ -139,6 +139,8 @@ class TweakRegStep(RomanStep):
         log.info(f"All source catalogs will be saved to: {self.catalog_path}")
 
         # set reference catalog name
+        if not self.abs_refcat:
+            self.abs_refcat = DEFAULT_ABS_REFCAT.strip().upper()
         if self.abs_refcat != DEFAULT_ABS_REFCAT:
             self.expand_refcat = True
 
@@ -223,12 +225,11 @@ class TweakRegStep(RomanStep):
                 except TweakregError as e:
                     log.warning(str(e))
 
-            if self.abs_refcat.strip() != "":
-                try:
-                    self.do_absolute_alignment(ref_image, imcats)
-                except TweakregError as e:
-                    log.warning(str(e))
-                    return images
+            try:
+                self.do_absolute_alignment(ref_image, imcats)
+            except TweakregError as e:
+                log.warning(str(e))
+                return images
 
             # finalize step
             with images:

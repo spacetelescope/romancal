@@ -11,6 +11,8 @@ from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from roman_datamodels import datamodels as rdm
 from stcal.tweakreg.astrometric_utils import get_catalog
 
+from romancal.tweakreg.tweakreg_step import DEFAULT_ABS_REFCAT
+
 
 @pytest.fixture(scope="session")
 def gaia_coords():
@@ -18,7 +20,7 @@ def gaia_coords():
         right_ascension=270,
         declination=66,
         search_radius=100 / 3600.0,
-        catalog="GAIAREFCAT",
+        catalog=DEFAULT_ABS_REFCAT,
         timeout=120,
     )
     return [(ra, dec) for ra, dec in zip(gaia_cat["ra"], gaia_cat["dec"], strict=False)]
