@@ -55,7 +55,7 @@ class TweakRegStep(RomanStep):
         fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='rshift') # Fitting geometry
         nclip = integer(min=0, default=3) # Number of clipping iterations in fit
         sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units
-        abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference
+        abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference catalog
         save_abs_catalog = boolean(default=False)  # Write out used absolute astrometric reference catalog as a separate product
         abs_minobj = integer(default=15) # Minimum number of objects acceptable for matching when performing absolute astrometry
         abs_searchrad = float(default=6.0) # The search radius in arcsec for a match when performing absolute astrometry
@@ -179,6 +179,14 @@ class TweakRegStep(RomanStep):
                     catalog = tweakreg.filter_catalog_by_bounding_box(
                         catalog, image_model.meta.wcs.bounding_box
                     )
+
+                    if self.save_abs_catalog:
+                        output_name = os.path.join(
+                            self.catalog_path, f"fit_{self.abs_refcat.lower()}_ref.ecsv"
+                        )
+                        catalog.write(
+                            output_name, format=self.catalog_format, overwrite=True
+                        )
 
                     image_model.meta["tweakreg_catalog"] = catalog.as_array()
                     nsources = len(catalog)
@@ -473,8 +481,7 @@ class TweakRegStep(RomanStep):
             abs_use2dhist=self.abs_use2dhist,
             abs_separation=self.abs_separation,
             abs_tolerance=self.abs_tolerance,
-            save_abs_catalog=self.save_abs_catalog,
-            abs_catalog_output_dir=self.search_attr("output_dir", default=""),
+            save_abs_catalog=False,
             clip_accum=True,
             timeout=self.vo_timeout,
         )
