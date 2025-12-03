@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-__all__ = ["SKYMAP", "ProjectionRegion", "SkyCell", "SkyMap"]
+__all__ = ["SKYMAP", "ProjectionRegion", "SkyCell", "SkyCells", "SkyMap"]
 
 
 class SkyCell:
@@ -77,12 +77,16 @@ class SkyCell:
         if skymap is None:
             skymap = SKYMAP
 
-        indices = np.where(skymap.model.skycells["name"] == name)[0]
-        if len(indices) > 0:
+        indices = (skymap.model.skycells["name"] == name).nonzero()[0]
+        if len(indices) == 1:
             return SkyCell(indices[0], skymap=skymap)
-        else:
+        elif len(indices) == 0:
             raise KeyError(
-                f"skycell with name '{name}' does not exist in the currently-loaded sky map"
+                f"sky cell with name '{name}' does not exist in the currently-loaded sky map"
+            )
+        else:
+            raise ValueError(
+                f"multiple sky cells found matching name '{name}'; malformed reference file?"
             )
 
     @classmethod
@@ -267,6 +271,241 @@ class SkyCell:
         return f"{self.__class__.__name__}({self.index}, {self._skymap})"
 
 
+class SkyCells:
+    """Set of square subregions of projection regions, 4.6 arcminutes per side."""
+
+    _indices: NDArray[int]
+    _data: np.void
+    _skymap: "SkyMap"
+
+    def __init__(self, indices: NDArray[int], skymap: "SkyMap" = None):
+        """
+        Parameters
+        ----------
+        indices : list[int]
+            Indices of skycells in the global sky map.
+        skymap: SkyMap
+            sky map instance (defaults to global SKYMAP)
+        """
+
+        if skymap is None:
+            skymap = SKYMAP
+
+        self._indices = indices
+        self._skymap = skymap
+        self._data = None
+
+    @classmethod
+    def from_names(cls, names: list[str], skymap: "SkyMap" = None) -> "SkyCells":
+        """Retrieve skycells from the sky map by name (see handbook [1] for explanation).
+
+        Note
+        ----
+        Order of input names is NOT preserved.
+
+        Parameters
+        ----------
+        name : list[str]
+            List of names of skycells, for instance `315p86x50y75`.
+        skymap : SkyMap
+            sky map instance; defaults to global SKYMAP (Default value = None)
+
+        References
+        ----------
+        .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
+        """
+
+        if skymap is None:
+            skymap = SKYMAP
+
+        indices = np.isin(skymap.model.skycells["name"], names).nonzero()[0]
+        found_names = skymap.model.skycells["name"][indices]
+
+        if len(indices) == len(names):
+            return SkyCells(
+                indices,
+                skymap=skymap,
+            )
+        else:
+            raise KeyError(
+                f"no skycells found with the following name(s) in the currently-loaded sky map: {[name for index, name in enumerate(names) if name not in found_names]}"
+            )
+
+    @property
+    def indices(self) -> NDArray[int]:
+        """indices of these skycells in the sky map"""
+        return self._indices
+
+    @property
+    def data(self) -> np.void:
+        """data of these skycells
+
+        ("name", "ra_center", "dec_center", "orientat", "x_tangent", "y_tangent", "ra_corn1", "dec_corn1", "ra_corn2", "dec_corn2", "ra_corn3", "dec_corn3", "ra_corn4", "dec_corn4")
+        """
+        if self._data is None:
+            self._data = self._skymap.model.skycells[self.indices]
+        return self._data
+
+    @property
+    def names(self) -> list[str]:
+        """names of these skycells, for instance `315p86x50y75`
+
+        NOTE
+        ----
+        the name of a skycell comprises the rounded center coordinates of its containing projection region in right ascension and declination,
+        and the XY location of the skycell within its projection region in units of ordinal skycells from that center
+        """
+        return self.data["name"].tolist()
+
+    @property
+    def radec_centers(self) -> NDArray[float]:
+        """center points in right ascension and declination (Nx2 array of floats)"""
+        return np.array((self.data["ra_center"], self.data["dec_center"])).T
+
+    @property
+    def orientations(self) -> NDArray[float]:
+        return self.data["orientat"]
+
+    @property
+    def xy_tangents(self) -> NDArray[float]:
+        """tangent points of projection regions in pixel coordinates (Nx2 array of floats)"""
+        return np.array((self.data["x_tangent"], self.data["y_tangent"]))
+
+    @property
+    def radec_corners(
+        self,
+    ) -> NDArray[float]:
+        """corners in right ascension and declination in the order given by the sky map (Nx4x2 array of floats)"""
+        return np.reshape(
+            (
+                np.concatenate([self.data[f"ra_corn{index}"] for index in range(1, 5)]),
+                np.concatenate(
+                    [self.data[f"dec_corn{index}"] for index in range(1, 5)]
+                ),
+            ),
+            (2, 4, len(self)),
+        ).T
+
+    @cached_property
+    def vectorpoint_corners(self) -> NDArray[float]:
+        """corners in 3D Cartesian space on the unit sphere (Nx4x3 array of floats)"""
+        radec_corners = np.reshape(self.radec_corners, (len(self) * 4, 2))
+        return np.reshape(
+            sgv.normalize_vector(
+                sgv.lonlat_to_vector(radec_corners[:, 0], radec_corners[:, 1])
+            ),
+            (3, 4, len(self)),
+        ).T
+
+    @cached_property
+    def vectorpoint_centers(self) -> NDArray[float]:
+        """centers in 3D Cartesian space on the unit sphere (Nx3 array of floats)"""
+        return sgv.normalize_vector(
+            np.array(
+                sgv.lonlat_to_vector(self.radec_centers[:, 0], self.radec_centers[:, 1])
+            )
+        ).T
+
+    @cached_property
+    def polygons(self) -> sgp.SphericalPolygon:
+        """spherical polygons representing these skycells"""
+        return sgp.SphericalPolygon(
+            [
+                sgp.SingleSphericalPolygon(
+                    points=self.vectorpoint_corners[index],
+                    inside=vectorpoint_center,
+                )
+                for index, vectorpoint_center in enumerate(self.vectorpoint_centers)
+            ]
+        )
+
+    @cached_property
+    def projection_regions(self) -> list[int]:
+        """index of each skycell's projection region"""
+
+        return [
+            (skycell_index >= self._skymap.model.projection_regions["skycell_start"])
+            & (
+                skycell_index < self._skymap.model.projection_regions["skycell_end"]
+            ).nonzero()[0][0]
+            for skycell_index in self.indices
+        ]
+
+    @property
+    def wcs_infos(self) -> list[dict[str, float | str]]:
+        """WCS properties as defined in the Level 3 association schema for each skycell"""
+
+        return [
+            {
+                "name": self._skymap.model.skycells["name"][skycell_index],
+                "pixel_scale": self.pixel_scale,
+                "ra_projection_center": self._skymap.model.projection_regions[
+                    "ra_tangent"
+                ][self.projection_regions[index]],
+                "dec_projection_center": self._skymap.model.projection_regions[
+                    "ra_tangent"
+                ][self.projection_regions[index]],
+                "x0_projection": self._skymap.model.skycells["x_tangent"][
+                    skycell_index
+                ],
+                "y0_projection": self._skymap.model.skycells["y_tangent"][
+                    skycell_index
+                ],
+                "ra_center": self._skymap.model.skycells["ra_center"][skycell_index],
+                "dec_center": self._skymap.model.skycells["dec_center"][skycell_index],
+                "nx": self.pixel_shape[0],
+                "ny": self.pixel_shape[1],
+                "orientat": self._skymap.model.skycells["orientat"][skycell_index],
+                "orientat_projection_center": self._skymap.model.projection_regions[
+                    "orientat"
+                ][self.projection_regions[index]],
+            }
+            for index, skycell_index in enumerate(self.indices)
+        ]
+
+    @cached_property
+    def wcs(self) -> list[WCS]:
+        """WCS objects representing these skycells"""
+
+        wcsobjs = []
+        for wcs_info in self.wcs_infos:
+            wcsobj = wcsinfo_to_wcs(
+                wcs_info,
+                bounding_box=(
+                    (-0.5, self.pixel_shape[0] - 0.5),
+                    (-0.5, self.pixel_shape[1] - 0.5),
+                ),
+            )
+            wcsobj.array_shape = wcsobj.pixel_shape
+            wcsobjs.append(wcsobj)
+        return wcsobjs
+
+    @property
+    def pixel_scale(self) -> float:
+        """degrees per pixel"""
+        return self._skymap.pixel_scale
+
+    @property
+    def pixel_shape(self) -> tuple[int, int]:
+        """number of pixels across"""
+        return self._skymap.pixel_shape
+
+    def __len__(self) -> int:
+        return len(self._indices)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, SkyCell):
+            return False
+
+        return self.data == other.data
+
+    def __str__(self) -> str:
+        return f"{self.names} [{self._skymap.path}]"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.indices}, {self._skymap})"
+
+
 class ProjectionRegion:
     """Projection region in the sky map."""
 
@@ -336,10 +575,10 @@ class ProjectionRegion:
         if skymap is None:
             skymap = SKYMAP
 
-        projregion_indices = np.where(
+        projregion_indices = (
             (index >= skymap.model.projection_regions["skycell_start"])
             & (index < skymap.model.projection_regions["skycell_end"])
-        )[0]
+        ).nonzero()[0]
         if len(projregion_indices) == 1:
             return cls(projregion_indices[0], skymap=skymap)
         else:
