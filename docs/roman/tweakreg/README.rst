@@ -175,8 +175,8 @@ Step Arguments
 
   - ``'shift'``: x/y shifts only
   - ``'rshift'``: rotation and shifts
-  - ``'rscale'``: rotation, scale and shifts
-  - ``'general'``: shift, rotation, scale and skew
+  - ``'rscale'``: rotation, shifts, and scale
+  - ``'general'``: rotation, shifts, scale, and skew
 
   The default value is "rshift".
 
