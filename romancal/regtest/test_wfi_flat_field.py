@@ -69,6 +69,9 @@ def test_ref_file_used(output_model):
         assert output_model.meta.ref_file.flat == "N/A"
 
 
+@pytest.mark.xfail(
+    reason="Cannot succeed because no references yet exist with more than one USEAFTER"
+)
 def test_ref_file_query(rtdata):
     """Test DMS79: 2 different start times return different flats"""
     rtdata.get_data(f"WFI/image/{IMAGE_FILENAME}")

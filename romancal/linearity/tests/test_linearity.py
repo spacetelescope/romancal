@@ -6,6 +6,7 @@ Unit tests for linearity correction
 
 import numpy as np
 import pytest
+from astropy.time import Time
 from roman_datamodels import dqflags
 from roman_datamodels.datamodels import LinearityRefModel, ScienceRawModel
 
@@ -27,6 +28,9 @@ def test_linearity_coeff(instrument, exptype):
 
     # Create test science raw model
     wfi_sci_raw_model = ScienceRawModel.create_fake_data(shape=shape)
+    wfi_sci_raw_model.meta.exposure.start_time = Time(
+        "2024-01-03T00:00:00.0", format="isot", scale="utc"
+    )
     wfi_sci_raw_model.meta.instrument.name = instrument
     wfi_sci_raw_model.meta.instrument.detector = "WFI01"
     wfi_sci_raw_model.meta.instrument.optical_element = "F158"
