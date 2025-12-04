@@ -181,9 +181,11 @@ def _process_groups(
         ]
         skycell_indices = [idx for rec in file_list for idx in rec.skycell_indices]
         # We only want unique skycell indices
-        unique_skycell_indices = np.unique(skycell_indices)
+        skycells = sc.SkyCells(np.unique(skycell_indices))
 
-        for skycell_index in unique_skycell_indices:
+        for skycell_index, skycell_name, skycell_wcs_info in zip(
+            skycells.indices, skycells.names, skycells.wcs_infos, strict=True
+        ):
             # Group files by filter for this skycell
             filter_groups = _group_files_by_filter_for_skycell(file_list, skycell_index)
             for filter_id, members in filter_groups.items():
@@ -193,19 +195,23 @@ def _process_groups(
                 # Get parameters for naming and metadata
                 first_member = members[0]
                 visit_id_no_r = _extract_visit_id(first_member)
-                skycell = sc.SkyCell(skycell_index)
                 asn_file_name = mk_level3_asn_name(
                     visit_id_no_r,
                     output_file_root,
                     filter_id,
                     data_release_id,
                     product_type,
-                    skycell.name,
+                    skycell_name,
                 )
 
                 # Create the association metadata
                 prompt_product_asn = _create_metadata(
-                    members, data_release_id, asn_file_name, skycell, visit_id_no_r
+                    members,
+                    data_release_id,
+                    asn_file_name,
+                    skycell_name,
+                    skycell_wcs_info,
+                    visit_id_no_r,
                 )
 
                 # Serialize and save the association
@@ -217,7 +223,8 @@ def _create_metadata(
     member_list: list[str],
     data_release_id: str,
     asn_file_name: str,
-    skycell,
+    skycell_name: str,
+    skycell_wcs_info: dict,
     visit_id_no_r: str,
 ):
     """
@@ -231,8 +238,10 @@ def _create_metadata(
         Data release identifier to include in the association metadata.
     asn_file_name : str
         Product name for the association, used as the product_name in the ASN.
-    skycell : SkyCell
-        SkyCell object representing the current skycell.
+    skycell_name: str
+        Name of the skycell.
+    skycell_wcs_info: dict
+        WCS info dictionary of the skycell.
     visit_id_no_r : str
         Visit ID string (without leading 'r') used for program extraction.
 
@@ -251,8 +260,8 @@ def _create_metadata(
         program_id = ""
     prompt_product_asn["program"] = program_id
     prompt_product_asn["data_release_id"] = data_release_id
-    prompt_product_asn["target"] = skycell.name
-    prompt_product_asn["skycell_wcs_info"] = skycell.wcs_info
+    prompt_product_asn["target"] = skycell_name
+    prompt_product_asn["skycell_wcs_info"] = skycell_wcs_info
 
     return prompt_product_asn
 

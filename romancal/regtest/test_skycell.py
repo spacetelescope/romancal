@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-import romancal.skycell.skymap as sc
+from romancal.skycell import skymap
 
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata]
@@ -25,23 +25,40 @@ def assert_allclose_lonlat(actual: np.ndarray, desired: np.ndarray, rtol=1e-7, a
     )
 
 
+def test_skycells():
+    skycells = skymap.SkyCells.from_names(TEST_SKYCELLS)
+
+    assert sorted(skycells.names) == sorted(TEST_SKYCELLS)
+
+    assert skycells.radec_corners.shape == (len(TEST_SKYCELLS), 4, 2)
+    assert skycells.vectorpoint_corners.shape == (len(TEST_SKYCELLS), 4, 3)
+
+    assert skycells.radec_centers.shape == (len(TEST_SKYCELLS), 2)
+    assert skycells.vectorpoint_centers.shape == (len(TEST_SKYCELLS), 3)
+
+    assert len(skycells.polygons) == len(TEST_SKYCELLS)
+
+
 def test_skycell_from_name():
+    skycells = skymap.SkyCells.from_names(TEST_SKYCELLS)
+    assert len(skycells) == len(TEST_SKYCELLS)
+
     with pytest.raises(KeyError):
         # this sky cell should not exist, even in the global sky map
-        sc.SkyCell.from_name("270p65x99y70")
+        skymap.SkyCells.from_names(["270p65x99y70"])
 
 
 @pytest.mark.parametrize("name", TEST_SKYCELLS)
 def test_skycell_wcs_pixel_to_world(name):
-    skycell = sc.SkyCell.from_name(name)
+    skycell = skymap.SkyCells.from_names([name])
 
-    wcs = skycell.wcs
+    wcsobj = skycell.wcs[0]
 
     # forward transform to radec corners
     # TODO: the corners in the reference file currently use FITS convention (pixel + 0.5) instead of (pixel - 0.5)
     assert_allclose_lonlat(
         np.array(
-            wcs(
+            wcsobj(
                 *np.array(
                     [
                         (-0.5, -0.5),
@@ -53,42 +70,28 @@ def test_skycell_wcs_pixel_to_world(name):
                 with_bounding_box=False,
             )
         ).T,
-        skycell.radec_corners,
+        skycell.radec_corners[0],
         rtol=1e-7,
     )
 
 
 @pytest.mark.parametrize("name", TEST_SKYCELLS)
 def test_skycell_wcs_world_to_pixel(name):
-    skycell = sc.SkyCell.from_name(name)
+    skycell = skymap.SkyCells.from_names([name])
 
-    wcs = skycell.wcs
+    wcsobj = skycell.wcs[0]
 
     # inverse transform to pixel corners
     # TODO: the corners in the reference file currently use FITS convention (pixel + 0.5) instead of (pixel - 0.5)
     assert_allclose(
-        np.array(wcs.invert(*skycell.radec_corners.T, with_bounding_box=False)).T,
-        (
+        np.array(wcsobj.invert(*skycell.radec_corners.T, with_bounding_box=False)).T,
+        [
             [
                 (-0.5, -0.5),
                 (skycell.pixel_shape[0] - 0.5, -0.5),
                 (skycell.pixel_shape[0] - 0.5, skycell.pixel_shape[1] - 0.5),
                 (-0.5, skycell.pixel_shape[1] - 0.5),
             ]
-        ),
+        ],
         rtol=1e-5,
     )
-
-
-def test_skycells():
-    skycells = sc.SkyCells.from_names(TEST_SKYCELLS)
-
-    assert sorted(skycells.names) == sorted(TEST_SKYCELLS)
-
-    assert skycells.radec_corners.shape == (len(TEST_SKYCELLS), 4, 2)
-    assert skycells.vectorpoint_corners.shape == (len(TEST_SKYCELLS), 4, 3)
-
-    assert skycells.radec_centers.shape == (len(TEST_SKYCELLS), 2)
-    assert skycells.vectorpoint_centers.shape == (len(TEST_SKYCELLS), 3)
-
-    assert len(skycells.polygons) == len(TEST_SKYCELLS)
