@@ -119,7 +119,7 @@ class ResampleData(Resample):
                 log.info(f"Skycell record: {skycell.data}")
 
                 log.info(
-                    f"Creating skycell image at ra: {skycell.radec_centers[0,0]}  dec {skycell.radec_centers[0,1]}",
+                    f"Creating skycell image at ra: {skycell.radec_centers[0, 0]}  dec {skycell.radec_centers[0, 1]}",
                 )
                 log.info("Resampling to skycell wcs")
                 output_wcs = {"wcs": skycell.wcs[0]}
