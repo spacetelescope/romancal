@@ -25,7 +25,7 @@ from ..stpipe import RomanStep
 if TYPE_CHECKING:
     from typing import ClassVar
 
-DEFAULT_ABS_REFCAT = "GAIAREFCAT"
+DEFAULT_ABS_REFCAT = "GAIADR3_S3"
 
 __all__ = ["TweakRegStep"]
 
