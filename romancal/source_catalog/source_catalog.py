@@ -32,7 +32,8 @@ class RomanSourceCatalog:
     ----------
     model : `ImageModel` or `MosaicModel`
         The input data model. The image data is assumed to be background
-        subtracted.
+        subtracted. For PSF-matched photometry in multiband catalogs,
+        input the PSF-matched model.
 
     segment_image : `~photutils.segmentation.SegmentationImage`
         A 2D segmentation image, with the same shape as the input data,
@@ -70,14 +71,19 @@ class RomanSourceCatalog:
     flux_unit : str, optional
         The unit of the flux density. Default is 'nJy'.
 
-    cat_type : {'prompt', 'dr_det', 'dr_band', 'forced_full', 'forced_det'}, optional
-        The type of catalog to create. The default is 'prompt'. This
-        determines the columns in the output catalog. The 'dr_det' and
-        'dr_band' catalogs are band-specific catalogs for the
-        multiband source detection.
+    cat_type : str, optional
+        The type of catalog to create. The default is 'prompt'. Allowed
+        values are 'prompt', 'dr_det', 'dr_band', 'psf_matched',
+        'forced_full', and 'forced_det'. This determines the columns
+        in the output catalog. The 'dr_det' and 'dr_band' catalogs are
+        band-specific catalogs for the multiband source detection. The
+        'psf_matched' catalog is similar to 'dr_band' but excludes
+        sharpness, roundness1, is_extended, and fluxfrac_radius_50
+        properties for performance optimization.
 
-    ee_spline : `~astropy.modeling.models.Spline1D` or `None`
-        The PSF aperture correction model, built from the reference file.
+    ee_spline : `~astropy.modeling.models.Spline1D` or `None`, optional
+        The PSF aperture correction model, built from the reference
+        file.
 
     Notes
     -----
@@ -95,8 +101,8 @@ class RomanSourceCatalog:
         kernel_fwhm,
         *,
         fit_psf=True,
+        psf_model=None,
         mask=None,
-        psf_ref_model=None,
         detection_cat=None,
         flux_unit="nJy",
         cat_type="prompt",
@@ -110,10 +116,11 @@ class RomanSourceCatalog:
         self.convolved_data = convolved_data
         self.kernel_fwhm = kernel_fwhm
         self.fit_psf = fit_psf
+        self.psf_model = psf_model
         self.mask = mask
-        self.psf_ref_model = psf_ref_model
         self.detection_cat = detection_cat
-        self.flux_unit = flux_unit
+        self.flux_unit_str = flux_unit
+        self.flux_unit = u.Unit(self.flux_unit_str)
         self.cat_type = cat_type
         self.ee_spline = ee_spline
 
@@ -127,11 +134,9 @@ class RomanSourceCatalog:
             self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
         else:
             self.l2_to_sb = 1.0
-        self.sb_to_flux = (1.0 * (u.MJy / u.sr) * self._pixel_area).to(
-            u.Unit(self.flux_unit)
-        )
+        self.sb_to_flux = (1.0 * (u.MJy / u.sr) * self._pixel_area).to(self.flux_unit)
 
-        if self.fit_psf and self.psf_ref_model is None:
+        if self.fit_psf and self.psf_model is None:
             log.error(
                 "PSF fitting is requested but no PSF reference model is provided. Skipping PSF photometry."
             )
@@ -145,10 +150,10 @@ class RomanSourceCatalog:
         Convert level-2 data from units of DN/s to MJy/sr (surface
         brightness).
         """
-        # the conversion in done in-place to avoid making copies of the data;
+        # the conversion is done in-place to avoid making copies of the data;
         # use dictionary syntax to set the value to avoid on-the-fly validation
-        self.model["data"] *= self.l2_to_sb
-        self.model["err"] *= self.l2_to_sb
+        for attr in ("data", "err"):
+            self.model[attr] *= self.l2_to_sb
         if self.convolved_data is not None:
             self.convolved_data *= self.l2_to_sb
 
@@ -159,12 +164,11 @@ class RomanSourceCatalog:
 
         The flux density unit is defined by self.flux_unit.
         """
-        # the conversion in done in-place to avoid making copies of the data;
+        # the conversion is done in-place to avoid making copies of the data;
         # use dictionary syntax to set the value to avoid on-the-fly validation
-        self.model["data"] *= self.sb_to_flux.value
-        self.model["data"] <<= self.sb_to_flux.unit
-        self.model["err"] *= self.sb_to_flux.value
-        self.model["err"] <<= self.sb_to_flux.unit
+        for attr in ("data", "err"):
+            self.model[attr] *= self.sb_to_flux.value
+            self.model[attr] <<= self.sb_to_flux.unit
         if self.convolved_data is not None:
             self.convolved_data *= self.sb_to_flux.value
             self.convolved_data <<= self.sb_to_flux.unit
@@ -271,7 +275,7 @@ class RomanSourceCatalog:
             self._pixel_area,
             self._wcs_angle,
             detection_cat=self.detection_cat,
-            flux_unit=self.flux_unit,
+            cat_type=self.cat_type,
         )
 
         self.meta.update(segment_cat.meta)
@@ -305,7 +309,7 @@ class RomanSourceCatalog:
 
         The results are set as dynamic attributes on the class instance.
         """
-        psf_cat = PSFCatalog(self.model, self.psf_ref_model, self._xypos, self.mask)
+        psf_cat = PSFCatalog(self.model, self.psf_model, self._xypos, self.mask)
         for name in psf_cat.names:
             setattr(self, name, getattr(psf_cat, name))
 
@@ -613,7 +617,7 @@ class RomanSourceCatalog:
         ]
         psf_colnames = ["psf_flux", "psf_flux_err"]
 
-        if self.cat_type in ("prompt", "forced_full", "dr_band"):
+        if self.cat_type in ("prompt", "forced_full", "dr_band", "psf_matched"):
             flux_colnames = self.aper_colnames
             if self.fit_psf:
                 flux_colnames.extend(psf_colnames)
@@ -771,6 +775,12 @@ class RomanSourceCatalog:
         elif self.cat_type == "dr_band":
             colnames = band_colnames.copy()
 
+        elif self.cat_type == "psf_matched":
+            # Similar to dr_band but without the othershape_colnames
+            # (sharpness, roundness1, is_extended, fluxfrac_radius_50)
+            colnames = ["label"]
+            colnames.extend(self.flux_colnames)
+
         return colnames
 
     def _prefix_forced(self, catalog):
@@ -802,15 +812,138 @@ class RomanSourceCatalog:
 
         return catalog
 
+    @staticmethod
+    def _get_compatible_unit(*arrays):
+        """
+        Check if multiple arrays have compatible units and return the
+        common unit.
+
+        This function verifies that either all arrays are plain NumPy
+        ndarrays (no units) or that they are all Astropy Quantity
+        objects with the same units.
+
+        Parameters
+        ----------
+        *arrays : `numpy.ndarray` or `astropy.units.Quantity`
+            The data arrays to check.
+
+        Returns
+        -------
+        result : astropy.units.Unit or None
+            The common `astropy.units.Unit` object if all are Quantity
+            arrays with the same unit. Otherwise, returns `None`.
+
+        Raises
+        ------
+        ValueError
+            If one input is a Quantity and another is not, or if they
+            are all Quantities but with different units.
+        """
+        if len(arrays) == 0:
+            return None
+
+        # Filter out None values
+        arrays = [arr for arr in arrays if arr is not None]
+        if len(arrays) == 0:
+            return None
+
+        # Check if first array is a Quantity
+        is_quantity = [isinstance(arr, u.Quantity) for arr in arrays]
+
+        # All must be quantities or all must not be quantities
+        if all(is_quantity):
+            # Check that all have the same unit
+            first_unit = arrays[0].unit
+            for i, arr in enumerate(arrays[1:], start=1):
+                if arr.unit != first_unit:
+                    raise ValueError(
+                        f"Incompatible units: array 0 has unit '{first_unit}' "
+                        f"but array {i} has unit '{arr.unit}'."
+                    )
+            return first_unit
+        elif not any(is_quantity):
+            return None
+        else:
+            # Mixed types
+            raise ValueError(
+                "Incompatible types: some arrays have units while others do not."
+            )
+
+    def _validate_and_convert_units(self):
+        """
+        Validate that model data arrays have compatible units and
+        convert them to flux density units if needed.
+
+        This method checks that model.data and model.err have the same
+        units, then converts both them and convolved_data (if not None)
+        to the desired flux density unit (self.flux_unit).
+
+        Note: convolved_data is allowed to have different units from
+        model.data and model.err because it may come from a separate
+        source (e.g., a detection image from forced photometry).
+
+        For models without units:
+        - Level-2 (ImageModel): DN/s -> MJy/sr -> flux density
+        - Level-3 (MosaicModel): MJy/sr -> flux density
+
+        For models with units:
+        - Converts to self.flux_unit if the unit is compatible
+
+        Raises
+        ------
+        ValueError
+            If model.data and model.err have incompatible units.
+        """
+        # Check that model.data and model.err have compatible units
+        unit = self._get_compatible_unit(self.model.data, self.model.err)
+
+        if unit is None:
+            # No units present - convert to flux density units
+            if isinstance(self.model, ImageModel):
+                # Level-2: DN/s -> MJy/sr
+                self.convert_l2_to_sb()
+            # Level-2 or Level-3: MJy/sr -> flux density
+            self.convert_sb_to_flux_density()
+        else:
+            # Units present - check compatibility and convert
+            if unit.is_equivalent(self.flux_unit):
+                # Convert to desired flux unit
+                self.model["data"] = self.model["data"].to(self.flux_unit)
+                self.model["err"] = self.model["err"].to(self.flux_unit)
+            else:
+                raise ValueError(
+                    f"Incompatible units: model data has unit '{unit}' "
+                    f"which is not equivalent to the desired flux unit "
+                    f"'{self.flux_unit}'."
+                )
+
+        # Handle convolved_data separately as it may have different units
+        if self.convolved_data is not None:
+            conv_unit = self._get_compatible_unit(self.convolved_data)
+            if conv_unit is None:
+                # No units - apply same conversion as model data
+                if isinstance(self.model, ImageModel):
+                    self.convolved_data *= self.l2_to_sb
+                self.convolved_data *= self.sb_to_flux.value
+                self.convolved_data <<= self.sb_to_flux.unit
+            else:
+                if conv_unit.is_equivalent(self.flux_unit):
+                    # Convert to desired flux unit
+                    self.convolved_data = self.convolved_data.to(self.flux_unit)
+                else:
+                    raise ValueError(
+                        f"Incompatible units: convolved_data has unit "
+                        f"'{conv_unit}' which is not equivalent to the "
+                        f"desired flux unit '{self.flux_unit}'."
+                    )
+
     @lazyproperty
     def catalog(self):
         """
         The final source catalog as an Astropy Table.
         """
-        # convert data to flux units
-        if isinstance(self.model, ImageModel):
-            self.convert_l2_to_sb()
-        self.convert_sb_to_flux_density()
+        # Validate and convert units for all data arrays
+        self._validate_and_convert_units()
 
         # make measurements - the order of these calculations is important
         log.info("Calculating segment properties")
