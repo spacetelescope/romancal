@@ -133,12 +133,8 @@ def test_create_metadata(monkeypatch):
     )
     monkeypatch.setattr(skycell_asn, "parse_visitID", lambda vid: {"Program": "P1"})
 
-    class DummySkyCell:
-        name = "skycell1"
-        wcs_info: ClassVar[dict] = {"foo": "bar"}
-
     meta = skycell_asn._create_metadata(
-        ["file1.asdf"], "d1", "asnfile", DummySkyCell(), "0000101002003004005"
+        ["file1.asdf"], "d1", "asnfile", "skycell1", {"foo": "bar"}, "0000101002003004005"
     )
     assert meta["asn_type"] == "image"
     assert meta["program"] == "P1"

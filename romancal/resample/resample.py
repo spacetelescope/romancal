@@ -114,15 +114,15 @@ class ResampleData(Resample):
         if output_wcs is None and resample_on_skycell:
             # first try to retrieve a sky cell name from the association
             try:
-                skycell = sc.SkyCell.from_asn(self.input_models.asn)
+                skycell = sc.SkyCells.from_asns([self.input_models.asn])
 
                 log.info(f"Skycell record: {skycell.data}")
 
                 log.info(
-                    f"Creating skycell image at ra: {skycell.radec_center[0]}  dec {skycell.radec_center[1]}",
+                    f"Creating skycell image at ra: {skycell.radec_centers[0,0]}  dec {skycell.radec_centers[0,1]}",
                 )
                 log.info("Resampling to skycell wcs")
-                output_wcs = {"wcs": skycell.wcs}
+                output_wcs = {"wcs": skycell.wcs[0]}
             except ValueError as err:
                 log.warning(f"Unable to compute skycell from input association: {err}")
                 log.warning("Computing output wcs from all input wcses")
