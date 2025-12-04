@@ -21,7 +21,7 @@ __all__ = [
     "plot_field",
     "plot_image_footprint_and_skycells",
     "plot_projregion",
-    "plot_skycell",
+    "plot_skycells",
     "veccoords_to_tangent_plane",
 ]
 
@@ -126,33 +126,59 @@ def plot_projregion(
         )
 
 
-def plot_skycell(
-    skycell: sc.SkyCell,
+def plot_skycells(
+    skycells: sc.SkyCells,
     tangent_vectorpoint: tuple[float, float, float],
-    color=None,
-    label: str | None = None,
-    annotation: str | None = None,
+    colors=None,
+    labels: list[str] = None,
+    annotations: list[str] = None,
     axis=None,
 ):
     if axis is None:
         axis = plt
 
-    corners = skycell.vectorpoint_corners
-    corners = np.concat([corners, corners[0, :].reshape((1, 3))], axis=0)
-    corners_tangentplane = veccoords_to_tangent_plane(
-        corners,
-        tangent_vectorpoint,
-    )
+    for index, corners in enumerate(skycells.vectorpoint_corners):
+        if not colors:
+            color = None
+        if isinstance(colors, str):
+            color = colors
+        elif len(colors) == 1:
+            color = colors[0]
+        else:
+            color = colors[index]
 
-    axis.plot(
-        corners_tangentplane[:, 0], corners_tangentplane[:, 1], color=color, label=label
-    )
+        if not labels:
+            label = None
+        if isinstance(labels, str):
+            label = labels
+        elif len(labels) == 1:
+            label = labels[0]
+        else:
+            label = labels[index]
 
-    if annotation:
-        center = np.mean(corners_tangentplane[:-1], axis=0)
-        axis.annotate(
-            annotation, center, va="center", ha="center", size=10, color=color
+        corners = np.concat([corners, corners[0, :].reshape((1, 3))], axis=0)
+        corners_tangentplane = veccoords_to_tangent_plane(
+            corners,
+            tangent_vectorpoint,
         )
+
+        axis.plot(
+            corners_tangentplane[:, 0],
+            corners_tangentplane[:, 1],
+            color=color,
+            label=label,
+        )
+
+        if annotations:
+            center = np.mean(corners_tangentplane[:-1], axis=0)
+            axis.annotate(
+                annotations,
+                center,
+                va="center",
+                ha="center",
+                size=10,
+                color=color,
+            )
 
 
 def plot_image_footprint_and_skycells(
@@ -202,34 +228,47 @@ def plot_image_footprint_and_skycells(
 
         plot_projregion(projregion, color="lightgrey")
 
-        for skycell_index in projregion.skycell_indices:
-            skycell = sc.SkyCell(skycell_index, skymap=skymap)
-            plot_skycell(
-                skycell,
-                tangent_vectorpoint,
-                color="darkgrey",
-            )
-
-        _, nearby_skycell_indices = projregion.skycells_kdtree.query(
-            footprint.vectorpoint_center,
-            k=footprint.possibly_intersecting_skycells,
-            distance_upper_bound=footprint.length + sc.SkyCell.length,
+        plot_skycells(
+            sc.SkyCells(projregion.skycell_indices, skymap=skymap),
+            tangent_vectorpoint,
+            colors="darkgrey",
         )
 
-        for skycell_index in nearby_skycell_indices:
-            skycell = sc.SkyCell(
-                projregion.data["skycell_start"] + skycell_index, skymap=skymap
+        nearby_skycells = sc.SkyCells(
+            np.array(
+                projregion.skycells_kdtree.query(
+                    footprint.vectorpoint_center,
+                    k=footprint.possibly_intersecting_skycells,
+                    distance_upper_bound=footprint.length + sc.SkyCells.length,
+                )[1]
             )
-            plot_skycell(
-                skycell,
-                tangent_vectorpoint,
-                color="red",
-            )
+            + projregion.data["skycell_start"],
+            skymap=skymap,
+        )
+        plot_skycells(
+            nearby_skycells,
+            tangent_vectorpoint,
+            colors="red",
+        )
 
-            if footprint.polygon.intersects_poly(skycell.polygon):
-                plot_skycell(
-                    skycell, tangent_vectorpoint, color="blue", annotation=skycell.name
+        intersecting_skycells = sc.SkyCells(
+            [
+                skycell_index
+                for skycell_index, skycell_polygon in zip(
+                    nearby_skycells.indices,
+                    nearby_skycells.polygons._polygons,
+                    strict=True,
                 )
+                if footprint.polygon.intersects_poly(skycell_polygon)
+            ]
+        )
+        if len(intersecting_skycells) > 0:
+            plot_skycells(
+                intersecting_skycells,
+                tangent_vectorpoint,
+                colors="blue",
+                annotations=intersecting_skycells.names,
+            )
 
         axis.set_xlabel("Offset from nearest tangent point in arcsec")
         axis.set_ylabel("Offset from nearest tangent point in arcsec")
