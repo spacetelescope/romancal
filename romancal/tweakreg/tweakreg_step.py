@@ -13,11 +13,7 @@ import numpy as np
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
 from stcal.tweakreg import tweakreg
-from stcal.tweakreg.tweakreg import (
-    _SINGLE_GROUP_REFCAT_STR,
-    SINGLE_GROUP_REFCAT,
-    TweakregError,
-)
+from stcal.tweakreg.tweakreg import TweakregError
 
 from romancal.assign_wcs.utils import add_s_region
 from romancal.lib.save_wcs import save_wfiwcs
@@ -29,7 +25,7 @@ from ..stpipe import RomanStep
 if TYPE_CHECKING:
     from typing import ClassVar
 
-DEFAULT_ABS_REFCAT = SINGLE_GROUP_REFCAT[0]
+DEFAULT_ABS_REFCAT = "GAIAREFCAT"
 
 __all__ = ["TweakRegStep"]
 
@@ -59,8 +55,7 @@ class TweakRegStep(RomanStep):
         fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='rshift') # Fitting geometry
         nclip = integer(min=0, default=3) # Number of clipping iterations in fit
         sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units
-        abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference
-        # catalog. Options: {_SINGLE_GROUP_REFCAT_STR}
+        abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference catalog
         save_abs_catalog = boolean(default=False)  # Write out used absolute astrometric reference catalog as a separate product
         abs_minobj = integer(default=15) # Minimum number of objects acceptable for matching when performing absolute astrometry
         abs_searchrad = float(default=6.0) # The search radius in arcsec for a match when performing absolute astrometry
@@ -79,25 +74,17 @@ class TweakRegStep(RomanStep):
 
     reference_file_types: ClassVar = []
 
-    def process(self, input):
-        # properly handle input
-        try:
-            if isinstance(input, rdm.DataModel):
-                images = ModelLibrary([input])
-            elif str(input).endswith(".asdf"):
-                images = ModelLibrary([rdm.open(input)])
-            elif isinstance(input, ModelLibrary):
-                images = input
-            else:
-                images = ModelLibrary(input)
-        except TypeError as e:
-            e.args = (
-                "Input to tweakreg must be a list of DataModels, an "
-                "association, or an already open ModelLibrary "
-                "containing one or more DataModels.",
-                *e.args[1:],
-            )
-            raise e
+    def _prepare_input(self, init):
+        if isinstance(init, rdm.DataModel):
+            return ModelLibrary([init])
+        if isinstance(init, ModelLibrary):
+            return init
+        if str(init).endswith(".asdf"):
+            return ModelLibrary([rdm.open(init)])
+        return ModelLibrary(init)
+
+    def process(self, init):
+        images = self._prepare_input(init)
 
         if not images:
             raise ValueError("Input must contain at least one image model.")
@@ -187,11 +174,9 @@ class TweakRegStep(RomanStep):
 
                     # validate catalog columns
                     if not _validate_catalog_columns(catalog):
-                        raise ValueError("""
-                        'tweakreg' source catalogs must contain a header
-                        with columns named either 'x' and 'y' or
-                        'x_psf' and 'y_psf'. Neither were found in the
-                        catalog provided.""")
+                        raise ValueError(
+                            "'tweakreg' source catalogs must contain a header with columns named either 'x' and 'y' or 'x_psf' and 'y_psf'. Neither were found in the catalog provided."
+                        )
 
                     catalog = tweakreg.filter_catalog_by_bounding_box(
                         catalog, image_model.meta.wcs.bounding_box
@@ -240,12 +225,11 @@ class TweakRegStep(RomanStep):
                 except TweakregError as e:
                     log.warning(str(e))
 
-            if self.abs_refcat in SINGLE_GROUP_REFCAT:
-                try:
-                    self.do_absolute_alignment(ref_image, imcats)
-                except TweakregError as e:
-                    log.warning(str(e))
-                    return images
+            try:
+                self.do_absolute_alignment(ref_image, imcats)
+            except TweakregError as e:
+                log.warning(str(e))
+                return images
 
             # finalize step
             with images:
@@ -498,8 +482,7 @@ class TweakRegStep(RomanStep):
             abs_use2dhist=self.abs_use2dhist,
             abs_separation=self.abs_separation,
             abs_tolerance=self.abs_tolerance,
-            save_abs_catalog=self.save_abs_catalog,
-            abs_catalog_output_dir=self.output_dir,
+            save_abs_catalog=False,
             clip_accum=True,
             timeout=self.vo_timeout,
         )
