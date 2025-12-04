@@ -1,7 +1,5 @@
 """Tests for skycell_asn"""
 
-from typing import ClassVar
-
 import pytest
 
 import romancal.associations.skycell_asn as skycell_asn
@@ -134,7 +132,12 @@ def test_create_metadata(monkeypatch):
     monkeypatch.setattr(skycell_asn, "parse_visitID", lambda vid: {"Program": "P1"})
 
     meta = skycell_asn._create_metadata(
-        ["file1.asdf"], "d1", "asnfile", "skycell1", {"foo": "bar"}, "0000101002003004005"
+        ["file1.asdf"],
+        "d1",
+        "asnfile",
+        "skycell1",
+        {"foo": "bar"},
+        "0000101002003004005",
     )
     assert meta["asn_type"] == "image"
     assert meta["program"] == "P1"
