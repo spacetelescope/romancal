@@ -94,15 +94,25 @@ def test_skycells():
     assert len(skycells.polygons) == len(TEST_SKYCELLS)
 
 
-def test_skycells_contains_points():
+def test_skycells_projection_regions():
     rng = np.random.default_rng()
-    lon = rng.standard_normal(1000000)
+    lon = rng.standard_normal(1)
     lon = lon / np.max(np.abs(lon)) * 180 + 180
-    lat = rng.standard_normal(1000000)
+    lat = rng.standard_normal(1)
+    lat = lat / np.max(np.abs(lat)) * 90
+
+    assert len(sc.SKYMAP.skycells.projection_regions) == len(sc.SKYMAP.model.skycells)
+
+
+def test_skycells_containing_points():
+    rng = np.random.default_rng()
+    lon = rng.standard_normal(10000)
+    lon = lon / np.max(np.abs(lon)) * 180 + 180
+    lat = rng.standard_normal(10000)
     lat = lat / np.max(np.abs(lat)) * 90
     radec = np.stack([lon, lat], axis=1)
 
-    skycells_containing_points = sc.SKYMAP.skycells_containing(radec)
+    skycells_containing_points = sc.SKYMAP.skycells.containing(radec)
     point_indices_outside_skycells = [
         point_index
         for point_index in np.arange(radec.shape[0])
@@ -117,7 +127,7 @@ def test_skycells_contains_points():
     )
 
 
-def test_skycells_core_contains_points():
+def test_skycells_cores_containing_points():
     rng = np.random.default_rng()
     lon = rng.standard_normal(10000)
     lon = lon / np.max(np.abs(lon)) * 180 + 180
@@ -125,7 +135,7 @@ def test_skycells_core_contains_points():
     lat = lat / np.max(np.abs(lat)) * 90
     radec = np.stack([lon, lat], axis=1)
 
-    skycells_exclusively_containing_points = sc.SKYMAP.core_skycell(radec)
+    skycells_exclusively_containing_points = sc.SKYMAP.skycells.cores_containing(radec)
     point_indices_outside_core = [
         point_index
         for point_index in np.arange(radec.shape[0])
