@@ -308,7 +308,7 @@ def add_wcs(
     save_transforms : Path-like or None
         File to save the calculated transforms to.
 
-    **transform_kwargs : dict
+    transform_kwargs : dict
         dict to use to initialize the `TransformParameters` object.
         See `TransformParameters` for more information.`
 

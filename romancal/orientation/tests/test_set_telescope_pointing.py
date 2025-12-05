@@ -35,6 +35,14 @@ DEFAULT_RADECREF = (282.70155393880844, 14.716147457820417)
 TARG_RA = 270.0
 TARG_DEC = 66.01
 
+# Default set of transform parameters
+TRANSFORM_KWARGS = {
+    'aperture': "WFI01_FULL",
+    'gscommanded': (916.4728835141, -186.8939737044),
+    'gspos': (266.663935674969, -30.5163135226147),
+    'pointing': stp.Pointing(q=np.array([-0.33879082,  0.62326573, -0.36611627,  0.60226181]),)
+}
+
 # Get the mock databases
 DATA_PATH = Path(__file__).parent / "data"
 
@@ -238,8 +246,12 @@ def test_transform_serialize(calc_wcs, tmp_path):
 # ######################
 @pytest.fixture
 def calc_wcs(tmp_path_factory):
-    """Calculate full transforms and WCS info"""
-    t_pars = _make_t_pars()
+    """Calculate full transforms and WCS info
+
+    ***DEFINE WHERE DEFAULTS HAVE COME FROM***
+
+    """
+    t_pars = _make_t_pars(**TRANSFORM_KWARGS)
 
     # Calculate the transforms and WCS information
     wcsinfo, vinfo, transforms = stp.calc_wcs(t_pars)
@@ -275,24 +287,18 @@ def science_raw_model():
     return m
 
 
-def _make_t_pars(aperture="WFI02_FULL"):
+def _make_t_pars(**transform_kwargs):
     """Setup initial Transforms Parameters
-
-    This set is Visit 1 provided by T.Sohn in a demonstration notebook.
 
     Parameters
     ==========
-    aperture : str
-        Aperture in use.
+    transform_kwargs : dict
+        dict to use to initialize the `TransformParameters` object.
+        See `TransformParameters` for more information.`
     """
-    t_pars = stp.TransformParameters()
+    t_pars = stp.TransformParameters(**transform_kwargs)
 
-    t_pars.aperture = aperture
-
-    t_pars.pointing = stp.Pointing(
-        q=np.array([0.709433, -0.291814, 0.641319, 0.016107]),
-    )
-
+    # Force MAST service
     t_pars.service_kwargs = {"service": "mast"}
 
     return t_pars
