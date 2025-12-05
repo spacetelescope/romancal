@@ -9,14 +9,15 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-pytest.importorskip("pysiaf")
-
 import asdf
 import roman_datamodels as rdm
 from astropy.time import Time
 
 from romancal.lib.engdb import engdb_mast, engdb_tools
 from romancal.orientation import set_telescope_pointing as stp
+
+# pysiaf is not a required dependency. If not present, ignore all this.
+pysiaf = pytest.importorskip("pysiaf")
 
 # Ensure that `set_telescope_pointing` logs.
 stp.logger.setLevel(logging.DEBUG)
@@ -144,6 +145,16 @@ def test_get_pointing_list():
     assert len(results) > 0
     assert np.isclose(results[0].q, q_expected).all()
     assert STARTTIME <= results[0].obstime <= ENDTIME
+
+
+def test_hv_to_fgs():
+    """ Test conversion from HV frame to FGS frame"""
+    hv = (916.4728835141, -186.8939737044)
+    fgs_expected = (346.06680318732685, -148.7528870949794)
+
+    fgs = stp.hv_to_fgs('WFI01_FULL', *hv, pysiaf)
+
+    assert np.allclose(fgs, fgs_expected)
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")

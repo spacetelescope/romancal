@@ -1537,3 +1537,39 @@ def calc_gsapp2gs(m_eci2gsics, velocity):
 
     logger.debug("m_gs2gsapp: %s", m_gs2gsapp)
     return m_gs2gsapp
+
+
+def hv_to_fgs(aperture_name, h, v, pysiaf):
+    """Convert HV frame to FGS frame
+
+    Parameters
+    ----------
+    aperture_name : str
+        The aperture in which the guide star is located.
+
+    h, v : float, float
+        The commanded coordinates in the HV frame.
+        Units are in pixels.
+
+    pysiaf : module
+        The `pysiaf` module
+
+    Returns
+    -------
+    fgs_x, fgs_y : float, float
+        The coordinates in the FGS reference frame in arcsec.
+    """
+    siaf = pysiaf.Siaf('roman')
+    aper = siaf[aperture_name]
+    aper_wfi_cen = siaf['WFI_CEN']
+
+    # Location of GS. This is from Eqn. 7 of Roman-STScI-000416 (Roman SOC FGS Algorithms)
+    x, y = h + aper.XSciRef, aper.YSciRef - v
+    v2, v3 = aper.sci_to_tel(x, y)  # Convert sci to tel coords using pysiaf
+
+    # Convert tel to WFI_CEN idl coords using pysiaf.
+    # The only difference between FGS and WFI_CEN coordinates is that the Y-axis is flipped
+    x_wc, y_wc = aper_wfi_cen.tel_to_idl(v2, v3)
+    x_fgs, y_fgs = x_wc, -y_wc
+
+    return x_fgs, y_fgs
