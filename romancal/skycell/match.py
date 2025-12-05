@@ -264,7 +264,7 @@ def find_skycell_matches(
         if footprint.polygon.intersects_poly(projregion.polygon):
             # query the LOCAL k-d tree of skycells for possible intersection candidates in (normalized) 3D space
             projregion_nearby_skycell_indices = np.array(
-                projregion.skycells_kdtree.query(
+                projregion.skycells.kdtree.query(
                     footprint.vectorpoint_center,
                     # NOTE: `k` can be `footprint.possibly_intersecting_skycells` if we assume non-degenerate tesselation
                     k=100,
