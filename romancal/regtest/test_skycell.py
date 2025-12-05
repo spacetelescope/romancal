@@ -94,7 +94,6 @@ def test_skycells():
     assert len(skycells.polygons) == len(TEST_SKYCELLS)
 
 
-def test_skycells_core_contains_points():
 def test_skycells_contains_points():
     rng = np.random.default_rng()
     lon = rng.standard_normal(1000000)
