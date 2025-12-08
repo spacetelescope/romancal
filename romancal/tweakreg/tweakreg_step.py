@@ -69,7 +69,7 @@ class TweakRegStep(RomanStep):
         abs_sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units when performing absolute astrometry
         output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
         update_source_catalog_coordinates = boolean(default=False) # Update source catalog file with tweaked coordinates?
-        vo_timeout = float(min=0, default=120.) # VO catalog service timeout.
+        vo_timeout = float(min=0, default=1200.) # VO catalog service timeout.
     """
 
     reference_file_types: ClassVar = []
