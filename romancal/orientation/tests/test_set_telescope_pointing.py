@@ -41,7 +41,8 @@ TRANSFORM_KWARGS = {
     'gscommanded': (916.4728835141, -186.8939737044),
     'gspos': (266.663935674969, -30.5163135226147),
     'pointing': stp.Pointing(fgs_q=np.array([-0.18596734175399293, 0.6837984564491885, -0.1800546332580956, 0.6822141509826322]),
-                             q=np.array([-0.33879082,  0.62326573, -0.36611627,  0.60226181]))
+                             q=np.array([-0.33879082,  0.62326573, -0.36611627,  0.60226181])),
+    'velocity': (-5.473753741352352, -27.480586797035414, -11.875972151015253),
 }
 
 # Get the mock databases
@@ -213,7 +214,9 @@ def test_strict_pointing(science_raw_model, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "matrix", [matrix for matrix in dataclasses.fields(stp.Transforms())]
+    "matrix",
+    [matrix for matrix in dataclasses.fields(stp.Transforms())],
+    ids=[matrix.name for matrix in dataclasses.fields(stp.Transforms())]
 )
 def test_transforms(calc_wcs, matrix):
     """Ensure expected calculate of the specified matrix
@@ -245,7 +248,7 @@ def test_transform_serialize(calc_wcs, tmp_path):
 # ######################
 # Utilities and fixtures
 # ######################
-@pytest.fixture
+@pytest.fixture(scope='module')
 def calc_wcs(tmp_path_factory):
     """Calculate full transforms and WCS info
 
