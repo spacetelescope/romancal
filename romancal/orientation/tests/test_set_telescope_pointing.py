@@ -158,7 +158,7 @@ def test_get_pointing_list():
 
 def test_hv_to_fgs():
     """ Test conversion from HV frame to FGS frame"""
-    hv = (916.4728835141, -186.8939737044)
+    hv = TRANSFORM_KWARGS['gscommanded']
     fgs_expected = (346.06680318732685, -148.7528870949794)
 
     fgs = stp.hv_to_fgs('WFI01_FULL', *hv, pysiaf)
