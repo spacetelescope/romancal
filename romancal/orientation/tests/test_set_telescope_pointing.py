@@ -29,7 +29,7 @@ ENDTIME = Time("2027-03-23T19:21:36", format="isot")
 BADSTARTTIME = Time("2020-02-02T02:02:02", format="isot")
 BADENDTIME = Time("2020-02-02T02:12:02", format="isot")
 DEFAULT_QUATERNION = [-0.52558752, 0.3719724, -0.52016581, 0.38150882]
-DEFAULT_RADECREF = (282.70155393880844, 14.716147457820417)
+DEFAULT_RADECREF = (270.0116277464953, 89.77871039051475)
 
 # Header defaults
 TARG_RA = 270.0
@@ -40,7 +40,8 @@ TRANSFORM_KWARGS = {
     'aperture': "WFI01_FULL",
     'gscommanded': (916.4728835141, -186.8939737044),
     'gspos': (266.663935674969, -30.5163135226147),
-    'pointing': stp.Pointing(q=np.array([-0.33879082,  0.62326573, -0.36611627,  0.60226181]),)
+    'pointing': stp.Pointing(fgs_q=np.array([-0.18596734175399293, 0.6837984564491885, -0.1800546332580956, 0.6822141509826322]),
+                             q=np.array([-0.33879082,  0.62326573, -0.36611627,  0.60226181]))
 }
 
 # Get the mock databases
@@ -124,12 +125,12 @@ def test_get_pointing():
     """
     q_expected = np.array([-0.69018802, 0.12195182, -0.695103, 0.15999998])
     try:
-        obstime, q = stp.get_pointing(STARTTIME, ENDTIME)
+        pointing = stp.get_pointing(STARTTIME, ENDTIME)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
 
-    assert np.isclose(obstime.value, OBSTIME_EXPECTED.value)
-    assert np.allclose(q, q_expected)
+    assert np.isclose(pointing.obstime.value, OBSTIME_EXPECTED.value)
+    assert np.allclose(pointing.q, q_expected)
 
 
 def test_get_pointing_fail():

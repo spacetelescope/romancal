@@ -145,10 +145,11 @@ EXPECTED_ERRORS = (OSError, RuntimeError, ValueError)
 # Pointing container
 # Attributes are as follows. Except for the observation time, all values
 # are retrieved from the engineering data.
+#    fgs_q        : Quaternion representing orientation of the FGS frame relative to the Observatory frame
 #    obstime      : Time the pointing information refers to.
 #    q            : Quaternion of the FGS.
-Pointing = namedtuple("Pointing", ["obstime", "q"])
-Pointing.__new__.__defaults__ = (None,) * 2
+Pointing = namedtuple("Pointing", ['fgs_q', "obstime", "q"])
+Pointing.__new__.__defaults__ = (None,) * 3
 
 
 # Transforms
@@ -156,6 +157,8 @@ Pointing.__new__.__defaults__ = (None,) * 2
 class Transforms:
     """The matrices used in calculation of the M_eci2siaf transformation."""
 
+    #: B-frame to FGS
+    m_b2fgs: np.ndarray | None = None
     #: ECI to B-frame
     m_eci2b: np.ndarray | None = None
     #: ECI to FCS
@@ -613,36 +616,30 @@ def calc_transforms(t_pars: TransformParameters):
     t.m_eci2b = calc_quat2matrix(t_pars.pointing.q)
 
     # ECI to FCS
-    t.m_eci2fcs = np.dot(M_B2FCS0, t.m_eci2b)
+    t.m_b2fgs = calc_m_b2fgs(t_pars.pointing.fgs_q)
+    t.m_eci2fcs = np.dot(t.m_b2fgs, t.m_eci2b)
+
+    # FGS to Guide star apparent.
+    if t_pars.gscommanded is None:
+        logger.warning('No command guide star position provided. Assuming guide star is at the aperture reference position.')
+        hv = (0., 0.)
+    else:
+        hv = t_pars.gscommanded
+    fgs_x, fgs_y = hv_to_fgs(t_pars.aperture, *hv, t_pars.pysiaf)
+    t.m_fgs2gsapp = calc_m_fgs2gsapp(fgs_x, fgs_y)
+
+    # ECI to GS apparent
+    t.m_eci2gsapp = np.linalg.multi_dot([t.m_fgs2gsapp, t.m_b2fgs, t.m_eci2b])
+
+    # Use calc_gs2gsapp to convert m_eci2gsapp to VA-applied (or "aberrated") m_eci2gs
+    # Note that calc_gs2gsapp should be renamed to calc_gsapp2gs
+    t.m_gsapp2gsics = calc_gsapp2gs(t.m_eci2gsapp, t_pars.velocity)
 
     # ECI to GS
-    t.m_eci2gs = np.dot(M_ics2idl, t.m_eci2fcs)
+    t.m_eci2gs = np.dot(M_ics2idl, t.m_gsapp2gsics, t.m_eci2gsapp)
 
     # ECI to V
-    t.m_eci2v = np.linalg.multi_dot([M_B2FCS0.T, M_idl2ics, t.m_eci2gs])
-
-    return t
-
-
-def calc_transforms_va(t_pars, gs_sky_corr, gs_commanded):
-    """Calculate with VA correction"""
-    t = Transforms()
-
-    # Quaternion to M_eci2b
-    t.m_eci2b = calc_quat2matrix(t_pars.pointing.q)
-
-    # M_eci2gsapp
-    m_fcs2gsapp = calc_m_fgs2gs(gs_sky_corr[0] * D2R, gs_sky_corr[1] * D2R)
-    m_eci2gsapp = m_fcs2gsapp * M_B2FCS0 * t.m_eci2b
-
-    # M_eci2gs
-    velocity = np.array(t_pars.velocity)
-    m_vacorr = calc_gsapp2gs(m_eci2gsapp, velocity)
-    m_eci2gs = np.linalg.multi_dot([M_ics2idl, m_vacorr, m_eci2gsapp])
-
-    # M_eci2v
-    m_fgs2gs = calc_m_fgs2gs(gs_commanded[0] * A2R, gs_commanded[1] * A2R)
-    t.m_eci2v = np.linalg.multi_dot([M_V2FCS0.T, m_fgs2gs.T, M_idl2ics, m_eci2gs])
+    t.m_eci2v = np.linalg.multi_dot([t.m_b2fgs.T, t.m_fgs2gsapp.T, M_idl2ics, t.m_eci2gs])
 
     return t
 
@@ -1491,7 +1488,7 @@ def calc_gsapp2gs(m_eci2gsics, velocity):
     """
     # Check velocity. If present, negate the velocity since
     # the desire is to remove the correction.
-    if velocity is None or any(velocity == None):  # noqa: E711 Syntax needed for numpy arrays.
+    if velocity is None:
         logger.warning(
             "Velocity: %s contains None. Cannot calculate aberration. Returning identity matrix",
             velocity,
@@ -1573,3 +1570,50 @@ def hv_to_fgs(aperture_name, h, v, pysiaf):
     x_fgs, y_fgs = x_wc, -y_wc
 
     return x_fgs, y_fgs
+
+
+def calc_m_b2fgs(fgs_q=None):
+    """Calculate the B-to-FGS frame DCM
+
+    Convert
+    Parameters
+    ----------
+    fgs_q : [float, float, float, float]
+        The quaterion representing the B to FGS transformation.
+    """
+    if fgs_q is None:
+        return M_B2FCS0
+
+    # Calculate the DCM from the quaterion
+    return calc_quat2matrix(fgs_q)
+
+
+def calc_m_fgs2gsapp(x, y):
+    """Calculate the FGS to Guide star apparent transformation
+
+    Parameters
+    ----------
+    x, y : float, float
+        Position in arcseconds in the FGS frame
+
+    Returns
+    -------
+    m_fgs2gsapp : np.array(3,3)
+        The DCM representing the transformation.
+    """
+    x_gs, y_gs = A2R * x, A2R * y
+    cx, sx = cos(x_gs), sin(x_gs)
+    cy, sy = cos(y_gs), sin(y_gs)
+
+    m_x = np.array([[ cx,   0, -sx],
+                    [  0,   1,   0],
+                    [ sx,   0,  cx]])
+
+    m_y = np.array([[  1,   0,   0],
+                    [  0,  cy,  sy],
+                    [  0, -sy,  cy]])
+
+    m_gsapp2fgs = np.dot(m_y, m_x)
+    m_fgs2gsapp = m_gsapp2fgs.T
+
+    return m_fgs2gsapp
