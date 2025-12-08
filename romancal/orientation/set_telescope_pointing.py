@@ -124,6 +124,10 @@ M_V2FCS0 = np.array(
 # Pre-launch this is the same as M_v_to_fcs.
 M_B2FCS0 = M_V2FCS0
 
+# Maximum absolute speed of the observatory. Used for sanity check is defined
+# as the sum of the absolute components of the velocity.
+MAX_OBSERVATORY_SPEED = 150
+
 # Define the transformation matrices to move between the Idealized Coordinate System (ICS)
 # and the Idealized Coordinate System (Idl). ICS is the spacecraft-centric system used by
 # all frames up through the V-frame. Idl is used by the instruments.
@@ -165,8 +169,14 @@ class Transforms:
     m_eci2fcs: np.ndarray | None = None
     #: ECI to GS
     m_eci2gs: np.ndarray | None = None
+    #: ECI to GS apparent
+    m_eci2gsapp: np.ndarray | None = None
     #: ECI to V
     m_eci2v: np.ndarray | Any = None
+    #: ECI to Guide star apparent position
+    m_fgs2gsapp: np.ndarray | None = None
+    #: GS apparent to GS corrected
+    m_gsapp2gsics: np.ndarray | None = None
 
     @classmethod
     def from_asdf(cls, asdf_file):
@@ -636,7 +646,7 @@ def calc_transforms(t_pars: TransformParameters):
     t.m_gsapp2gsics = calc_gsapp2gs(t.m_eci2gsapp, t_pars.velocity)
 
     # ECI to GS
-    t.m_eci2gs = np.dot(M_ics2idl, t.m_gsapp2gsics, t.m_eci2gsapp)
+    t.m_eci2gs = np.linalg.multi_dot([M_ics2idl, t.m_gsapp2gsics, t.m_eci2gsapp])
 
     # ECI to V
     t.m_eci2v = np.linalg.multi_dot([t.m_b2fgs.T, t.m_fgs2gsapp.T, M_idl2ics, t.m_eci2gs])
@@ -1461,7 +1471,7 @@ def calc_m_fgs2gs(x, y):
     return m
 
 
-def calc_gsapp2gs(m_eci2gsics, velocity):
+def calc_gsapp2gs(m_eci2gsapp, velocity):
     """
     Calculate the Velocity Aberration correction.
 
@@ -1475,7 +1485,7 @@ def calc_gsapp2gs(m_eci2gsics, velocity):
 
     Parameters
     ----------
-    m_eci2gsics : numpy.array(3, 3)
+    m_eci2gsapp : numpy.array(3, 3)
         The the ECI to Guide Star transformation matrix, in the ICS frame.
 
     velocity : numpy.array([dx, dy, dz])
@@ -1483,14 +1493,15 @@ def calc_gsapp2gs(m_eci2gsics, velocity):
 
     Returns
     -------
-    m_gs2gsapp : numpy.array(3, 3)
+    m_gsapp2gs : numpy.array(3, 3)
         The velocity aberration correction matrix.
     """
     # Check velocity. If present, negate the velocity since
     # the desire is to remove the correction.
-    if velocity is None:
+    velocity = np.array(velocity)
+    if not velocity.all() or np.sum(np.abs(velocity) > MAX_OBSERVATORY_SPEED):
         logger.warning(
-            "Velocity: %s contains None. Cannot calculate aberration. Returning identity matrix",
+            "Velocity: %s is either unspecified or contains unreasonable values. Cannot calculate aberration. Returning identity matrix",
             velocity,
         )
         return np.identity(3)
@@ -1498,7 +1509,7 @@ def calc_gsapp2gs(m_eci2gsics, velocity):
 
     # Eq. 35: Guide star position vector
     uz = np.array([0.0, 0.0, 1.0])
-    u_gseci = np.dot(np.transpose(m_eci2gsics), uz)
+    u_gseci = np.dot(np.transpose(m_eci2gsapp), uz)
 
     # Eq. 36: Compute the apparent shift due to velocity aberration.
     try:
@@ -1511,9 +1522,9 @@ def calc_gsapp2gs(m_eci2gsics, velocity):
         return np.identity(3)
 
     # Eq. 39: Rotate from ICS into the guide star frame.
-    u_gs_app = np.dot(m_eci2gsics, u_gseci_app)
+    u_gs_app = np.dot(m_eci2gsapp, u_gseci_app)
 
-    # Eq. 40: Compute the M_gs2gsapp matrix
+    # Eq. 40: Compute the M_gsapp2gs matrix
     u_prod = np.cross(uz, u_gs_app)
     u_prod_mag = np.linalg.norm(u_prod)
     a_hat = u_prod / u_prod_mag
@@ -1526,14 +1537,14 @@ def calc_gsapp2gs(m_eci2gsics, velocity):
     )
     theta = np.arcsin(u_prod_mag)
 
-    m_gs2gsapp = (
+    m_gsapp2gs = (
         np.identity(3)
         - (m_a_hat * np.sin(theta))
         + (2 * m_a_hat**2 * np.sin(theta / 2.0) ** 2)
     )
 
-    logger.debug("m_gs2gsapp: %s", m_gs2gsapp)
-    return m_gs2gsapp
+    logger.debug("m_gsapp2gs: %s", m_gsapp2gs)
+    return m_gsapp2gs
 
 
 def hv_to_fgs(aperture_name, h, v, pysiaf):
