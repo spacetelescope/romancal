@@ -178,6 +178,16 @@ def test_logging(caplog):
     assert "Querying engineering DB" in caplog.text
 
 
+def test_mnemonic_list():
+    """Ensure the mnemonic list is as expected"""
+    expected= set(('SCF_AC_SDR_QBJ_1', 'SCF_AC_SDR_QBJ_2', 'SCF_AC_SDR_QBJ_3',
+                  'SCF_AC_SDR_QBJ_4', 'SCF_AC_EST_FGS_qbr1', 'SCF_AC_EST_FGS_qbr2',
+                  'SCF_AC_EST_FGS_qbr3', 'SCF_AC_EST_FGS_qbr4', 'SCF_AC_FGS_TBL_Qb1',
+                  'SCF_AC_FGS_TBL_Qb2', 'SCF_AC_FGS_TBL_Qb3', 'SCF_AC_FGS_TBL_Qb4'))
+
+    assert expected == stp.COARSE_MNEMONICS.keys()
+
+
 @pytest.mark.parametrize("wcs_type", ["wcsinfo", "vinfo"])
 def test_wcs(calc_wcs, wcs_type):
     """Ensure WCS information is correct
