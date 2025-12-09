@@ -61,6 +61,7 @@ SUFFIXES_TO_ADD = [
     "cat",
     "segm",
     "coadd",
+    "wfi18_transient",
 ]
 
 # Suffixes that are discovered but should not be considered.
@@ -93,6 +94,7 @@ _calculated_suffixes = {
     "resamplestep",
     "sourcecatalogstep",
     "multibandcatalogstep",
+    "wfi18transientstep",
 }
 
 
