@@ -39,4 +39,5 @@ def get_steps():
         ("romancal.step.ResampleStep", "resample", False),
         ("romancal.step.SourceCatalogStep", "source_catalog", False),
         ("romancal.step.MultibandCatalogStep", "multiband_catalog", False),
+        ("romancal.step.WFI18TransientStep", "wfi18_transient", False),
     ]
