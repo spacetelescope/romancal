@@ -1,7 +1,5 @@
 import logging
 import os
-import re
-import warnings
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
@@ -24,182 +22,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-__all__ = ["SKYMAP", "ProjectionRegion", "SkyCell", "SkyCells", "SkyMap"]
-
-
-class SkyCell:
-    """
-    DEPRECATED: USE SkyCells OBJECT INSTEAD
-    Square subregion of a projection region, 4.6 arcminutes per side.
-    """
-
-    _skycells: "SkyCells"
-
-    def __init__(self, index: int, skymap: "SkyMap" = None):
-        """
-        Parameters
-        ----------
-        index : int
-            Index in the global skymap.
-        skymap: SkyMap
-            skymap instance (defaults to global SKYMAP)
-        """
-        warnings.warn(
-            "The SkyCell object is deprecated and will be removed in a future release. Use the SkyCells object instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self._skycells = SkyCells([index], skymap=skymap)
-
-    @classmethod
-    def from_name(cls, name: str, skymap: "SkyMap" = None) -> "SkyCell":
-        """Retrieve a sky cell from the sky map by its name (see handbook [1] for explanation).
-
-        Parameters
-        ----------
-        name : str
-            Name of a sky cell, for instance `315p86x50y75`.
-        skymap : SkyMap
-            skymap instance; defaults to global SKYMAP (Default value = None)
-
-        References
-        ----------
-        .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
-        """
-        if not re.match(r"\d{3}\w\d{2}x\d{2}y\d{2}", name):
-            raise ValueError(f"invalid skycell name {name}")
-
-        if skymap is None:
-            skymap = SKYMAP
-
-        indices = (skymap.model.skycells["name"] == name).nonzero()[0]
-        if len(indices) == 1:
-            return SkyCell(indices[0], skymap=skymap)
-        elif len(indices) == 0:
-            raise KeyError(
-                f"sky cell with name '{name}' does not exist in the currently-loaded skymap"
-            )
-        else:
-            raise ValueError(
-                f"multiple sky cells found matching name '{name}'; malformed reference file?"
-            )
-
-    @classmethod
-    def from_asn(cls, asn: os.PathLike | dict, skymap: "SkyMap" = None) -> "SkyCell":
-        """retrieve a skycell from the given association
-
-        Attempts to find a sky cell name from the following in order:
-            - `skycell_wcs_info.name`
-            - `target`
-
-        Parameters
-        ----------
-        asn : os.PathLike | dict
-            path to an association file to load, or an association dictionary
-        skymap: SkyMap
-            skymap instance; defaults to global SKYMAP (Default value = None)
-        """
-
-        return SkyCell(
-            SkyCells.from_asns([asn], skymap=skymap).indices[0], skymap=skymap
-        )
-
-    @property
-    def index(self) -> int | None:
-        """index of this sky cell in the skymap"""
-        return self._skycells.indices[0]
-
-    @property
-    def data(self) -> np.void:
-        """Skycell data.
-
-        ("name", "ra_center", "dec_center", "orientat", "x_tangent", "y_tangent", "ra_corn1", "dec_corn1", "ra_corn2", "dec_corn2", "ra_corn3", "dec_corn3", "ra_corn4", "dec_corn4")
-        """
-        return self._skycells.data
-
-    @property
-    def name(self) -> str:
-        """name of this sky cell, for instance `315p86x50y75`
-
-        NOTE
-        ----
-        the name of a sky cell center comprises the rounded center coordinates of its containing projection region in right ascension and declination,
-        and the XY location of the sky cell within its projection region in units of ordinal sky cells from that center
-        """
-        return self._skycells.names[0]
-
-    @property
-    def radec_center(self) -> tuple[float, float]:
-        """center point in right ascension and declination"""
-        return tuple(self._skycells.radec_centers[0])
-
-    @property
-    def orientation(self) -> float:
-        return self._skycells.orientations[0]
-
-    @property
-    def xy_tangent(self) -> tuple[float, float]:
-        """center point in pixel coordinates"""
-        return tuple(self._skycells.xy_tangents[0])
-
-    @property
-    def radec_corners(
-        self,
-    ) -> NDArray[float]:
-        """corners in right ascension and declination in the order given by the skymap"""
-        return self._skycells.radec_corners[0]
-
-    @cached_property
-    def vectorpoint_corners(self) -> NDArray[float]:
-        """corners in 3D Cartesian space on the unit sphere"""
-        return self._skycells.vectorpoint_corners[0]
-
-    @cached_property
-    def vectorpoint_center(self) -> tuple[float, float, float]:
-        """center in 3D Cartesian space on the unit sphere"""
-        return self._skycells.vectorpoint_centers[0]
-
-    @cached_property
-    def polygon(self) -> sgp.SingleSphericalPolygon:
-        """spherical polygon representing this sky cell"""
-        return self._skycells.polygons._polygons[0]
-
-    @cached_property
-    def projection_region(self) -> "ProjectionRegion":
-        """Projection region containing this sky cell."""
-        return ProjectionRegion(self._skycells.projection_regions[0])
-
-    @property
-    def pixel_scale(self) -> float:
-        """degrees per pixel"""
-        return self._skycells.pixel_scale
-
-    @property
-    def pixel_shape(self) -> tuple[int, int]:
-        """number of pixels across"""
-        return self._skycells.pixel_shape
-
-    @property
-    def wcs_info(self) -> dict[str, float | str]:
-        """WCS properties as defined in the Level 3 association schema"""
-        return self._skycells.wcs_infos[0]
-
-    @cached_property
-    def wcs(self) -> WCS:
-        """WCS representing this sky cell"""
-        return self._skycells.wcs[0]
-
-    def __eq__(self, other) -> bool:
-        if isinstance(other, SkyCell):
-            return self._skycells == other._skycells
-        else:
-            return False
-
-    def __str__(self) -> str:
-        return f"{self.name} [{self._skycells._skymap.path}]"
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.index}, {self._skycells._skymap})"
+__all__ = ["SKYMAP", "ProjectionRegion", "SkyCells", "SkyMap"]
 
 
 class SkyCells:
@@ -827,9 +650,9 @@ class SkyMap:
         """number of pixels per skycell"""
         return self.model.meta.nxy_skycell, self.model.meta.nxy_skycell
 
-    def __getitem__(self, index: int) -> SkyCell:
-        """`SkyCell` at the given index in the sky cells array"""
-        return SkyCell(index)
+    def __getitem__(self, indices: int) -> SkyCells:
+        """`SkyCells` at the given index in the skycells array"""
+        return SkyCells(indices)
 
     def __str__(self) -> str:
         return f"skymap {self.path}"
