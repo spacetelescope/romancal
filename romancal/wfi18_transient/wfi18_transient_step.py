@@ -38,6 +38,12 @@ class WFI18TransientStep(RomanStep):
             # Open the input data model
             input_model = rdm.open(input_data)
 
+        if self.save_results:
+            try:
+                self.suffix = "wfi18_transient"
+            except AttributeError:
+                self["suffix"] = "wfi18_transient"
+
         # Ignore any data that is not WFI18
         if input_model.meta.instrument.detector != "WFI18":
             input_model.meta.cal_step.wfi18_transient = "N/A"
@@ -46,11 +52,5 @@ class WFI18TransientStep(RomanStep):
         log.info("Correcting the first read transient anomaly for WFI18")
         output_model = correct_anomaly(input_model, mask_rows=self.mask_rows)
         output_model.meta.cal_step.wfi18_transient = "COMPLETE"
-
-        if self.save_results:
-            try:
-                self.suffix = "wfi18_transient"
-            except AttributeError:
-                self["suffix"] = "wfi18_transient"
 
         return output_model
