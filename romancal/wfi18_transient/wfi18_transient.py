@@ -171,7 +171,7 @@ def correct_anomaly(input_model, mask_rows=False):
     # Residual from the estimated value
     residual = first_read - estimated_first_read
 
-    # Identify rows with weakly illuminated pixels for fitting.
+    # Identify weakly illuminated pixels in each row for fitting.
     # Use a different pair of reads, to minimize bias from covariances.
     diff_data = data[4] - data[3]
     high_illum_mask = diff_data > np.median(diff_data, axis=1)
