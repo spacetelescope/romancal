@@ -130,8 +130,8 @@ def plot_skycells(
     skycells: sc.SkyCells,
     tangent_vectorpoint: tuple[float, float, float],
     colors=None,
-    labels: list[str] = None,
-    annotations: list[str] = None,
+    labels: list[str] | None = None,
+    annotations: list[str] | None = None,
     axis=None,
 ):
     if axis is None:
