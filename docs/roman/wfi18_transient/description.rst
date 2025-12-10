@@ -6,7 +6,7 @@ read of exposures taken with detector WFI18.  The transient signal is strongly t
 dependent with significant exposure-to-exposure variations so it must be fit and
 removed separately for each exposure.
 
-To fit the transient signal, the ``wfi_transient`` step implements the following algorithm:
+To fit the transient signal, the ``wfi18_transient`` step implements the following algorithm:
 
 #. Estimate the true counts in the first read from the values in the 2nd and 3rd
    resultants, extrapolating backward from the count rate.
@@ -18,7 +18,7 @@ To fit the transient signal, the ``wfi_transient`` step implements the following
    values to minimize bias from covariances.
 
 #. Estimate the typical residual in each row from a sigma-clipped mean of the
-   weakly illuminated pixels.
+   residuals in weakly illuminated pixels.
 
 #. Fit the row residuals with a double-exponential model with functional form:
 
