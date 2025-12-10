@@ -91,6 +91,7 @@ roman_set_velocity_aberration = "romancal.scripts.set_velocity_aberration:main"
 roman_static_preview = "romancal.scripts.static_preview:command"
 roman_v1_calculate = "romancal.scripts.v1_calculate:main"
 skycell_asn = "romancal.associations.skycell_asn:_cli"
+multiband_asn = "romancal.associations.multiband_asn:_cli"
 
 [build-system]
 requires = [
