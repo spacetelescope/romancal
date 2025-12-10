@@ -1,7 +1,33 @@
 # automatically requests pull request reviews for files matching the given pattern; the last match takes precendence
 
-# all files
-* @schlafy @ddavis-stsci
+# any files not matched below default to the maintainers team
+* 								@spacetelescope/romancal-maintainers
 
 # workflows and automation
-/.github/ @zacharyburnett @jhunkeler
+/.github/						@zacharyburnett @jhunkeler
+
+# steps and packages
+/romancal/assign_wcs/			@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/associations/			@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/dark_current/			@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/datamodels/			@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/dq_init/				@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/flatfield/			@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/flux/					@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/jump/					@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/lib/					@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/linearity/			@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/multiband_catalog/	@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/orientation/			@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/outlier_detection/	@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/photom/				@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/pipeline/				@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/ramp_fitting/			@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/refpix/				@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/resample/				@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/saturation/			@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/skymatch/				@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/source_catalog/		@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/source_detection/		@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/stpipe/				@spacetelescope/romancal-maintainers # TODO; add someone here
+/romancal/tweakreg/				@spacetelescope/romancal-maintainers # TODO; add someone here
