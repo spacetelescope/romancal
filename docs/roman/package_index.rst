@@ -21,3 +21,4 @@
    stpipe/index.rst
    tweakreg/index.rst
    set_velocity_aberration.rst
+   wfi18_transient/index.rst
