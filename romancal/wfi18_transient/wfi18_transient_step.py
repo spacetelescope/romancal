@@ -28,7 +28,7 @@ class WFI18TransientStep(RomanStep):
     reference_file_types: ClassVar = []
 
     spec = """
-        mask_rows = boolean(default = False) # Just mask the affected rows
+        mask_rows = boolean(default = False) # Mask the affected rows instead of fitting
     """
 
     def process(self, input_data):
