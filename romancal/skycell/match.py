@@ -226,7 +226,7 @@ def find_skycell_matches(
         equivalent 2-d numpy array, or a GWCS instance.
         A GWCS instance must have `.bounding_box` or `.pixel_shape` attribute defined.
     skymap : sc.SkyMap :
-        sky map instance; defaults to global SKYMAP (Default value = None)
+        skymap instance; defaults to global SKYMAP (Default value = None)
 
     Returns
     -------

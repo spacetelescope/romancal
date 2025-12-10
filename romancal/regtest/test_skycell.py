@@ -1,4 +1,4 @@
-"""Unit tests for skycell WCS on global sky map"""
+"""Unit tests for skycell WCS on global skymap"""
 
 import numpy as np
 import pytest
@@ -44,7 +44,7 @@ def test_skycell_from_name():
     assert len(skycells) == len(TEST_SKYCELLS)
 
     with pytest.raises(KeyError):
-        # this sky cell should not exist, even in the global sky map
+        # this sky cell should not exist, even in the global skymap
         skymap.SkyCells.from_names(["270p65x99y70"])
 
 
