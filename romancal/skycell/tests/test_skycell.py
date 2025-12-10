@@ -41,11 +41,6 @@ def skymap_subset() -> skymap.SkyMap:
     return skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
 
 
-def test_skycell_deprecation(skymap_subset):
-    with pytest.warns(expected_warning=DeprecationWarning):
-        skymap.SkyCell.from_name("135p90x50y57", skymap=skymap_subset)
-
-
 def test_skycells(skymap_subset):
     skycells = skymap.SkyCells.from_names(TEST_SKYCELLS, skymap=skymap_subset)
 
