@@ -37,15 +37,10 @@ The input filenames should follow the convention:
 
 .. code-block:: text
 
-    rPPPPPCCAAASSSOOOVVV_<data_release_id>_<product_type>_<skycell_id>_coadd.asdf
+    rPPPPP_<data_release_id>_<product_type>_<skycell_id>_coadd.asdf
 
 Where:
     PPPPP = Program number
-    CC = Execution plan number
-    AAA = Pass number (within execution plan)
-    SSS = Segment Number (within pass)
-    OOO = Observation number (within the leg)
-    VVV = Visit Number (within the observation)
     data_release_id = Data release identifier (e.g., 'p' for prompt)
     product_type = Product type (e.g., 'full')
     skycell_id = Skycell identifier (e.g., '270p65x48y69')
@@ -54,16 +49,13 @@ The association files will be JSON files named:
 
 .. code-block:: text
 
-    rPPPPPCCAAASSSOOOVVV_<data_release_id>_<product_type>_<skycell_id>_asn.json
+    rPPPPP_<data_release_id>_<product_type>_<skycell_id>_asn.json
 
 For example, to generate associations for all skycells in a program:
 
 .. code-block:: bash
 
     multiband_asn r00001_*full*_coadd.asdf
-
-This will create association files for each unique skycell, grouping the
-corresponding input files.
 
 You can also use the Python API:
 
