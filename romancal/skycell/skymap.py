@@ -40,9 +40,9 @@ class SkyCell:
         Parameters
         ----------
         index : int
-            Index in the global sky map.
+            Index in the global skymap.
         skymap: SkyMap
-            sky map instance (defaults to global SKYMAP)
+            skymap instance (defaults to global SKYMAP)
         """
         warnings.warn(
             "The SkyCell object is deprecated and will be removed in a future release. Use the SkyCells object instead.",
@@ -60,7 +60,7 @@ class SkyCell:
         name : str
             Name of a sky cell, for instance `315p86x50y75`.
         skymap : SkyMap
-            sky map instance; defaults to global SKYMAP (Default value = None)
+            skymap instance; defaults to global SKYMAP (Default value = None)
 
         References
         ----------
@@ -77,7 +77,7 @@ class SkyCell:
             return SkyCell(indices[0], skymap=skymap)
         elif len(indices) == 0:
             raise KeyError(
-                f"sky cell with name '{name}' does not exist in the currently-loaded sky map"
+                f"sky cell with name '{name}' does not exist in the currently-loaded skymap"
             )
         else:
             raise ValueError(
@@ -97,7 +97,7 @@ class SkyCell:
         asn : os.PathLike | dict
             path to an association file to load, or an association dictionary
         skymap: SkyMap
-            sky map instance; defaults to global SKYMAP (Default value = None)
+            skymap instance; defaults to global SKYMAP (Default value = None)
         """
 
         return SkyCell(
@@ -106,7 +106,7 @@ class SkyCell:
 
     @property
     def index(self) -> int | None:
-        """index of this sky cell in the sky map"""
+        """index of this sky cell in the skymap"""
         return self._skycells.indices[0]
 
     @property
@@ -146,7 +146,7 @@ class SkyCell:
     def radec_corners(
         self,
     ) -> NDArray[float]:
-        """corners in right ascension and declination in the order given by the sky map"""
+        """corners in right ascension and declination in the order given by the skymap"""
         return self._skycells.radec_corners[0]
 
     @cached_property
@@ -209,7 +209,7 @@ class SkyCells:
     _data: np.void
     _skymap: "SkyMap"
 
-    # average area of a sky cell in square degrees on the sphere
+    # average area of a skycell in square degrees on the sphere
     area = 1.7760288493318122e-06
 
     # average diagonal length of a skycell in degrees on the sphere
@@ -220,9 +220,9 @@ class SkyCells:
         Parameters
         ----------
         indices : list[int]
-            Indices of skycells in the global sky map.
+            Indices of skycells in the global skymap.
         skymap: SkyMap
-            sky map instance (defaults to global SKYMAP)
+            skymap instance (defaults to global SKYMAP)
         """
 
         if skymap is None:
@@ -234,7 +234,7 @@ class SkyCells:
 
     @classmethod
     def from_names(cls, names: list[str], skymap: "SkyMap" = None) -> "SkyCells":
-        """Retrieve skycells from the sky map by name (see handbook [1] for explanation).
+        """Retrieve skycells from the skymap [skymap]_ by name.
 
         Note
         ----
@@ -245,11 +245,11 @@ class SkyCells:
         name : list[str]
             List of names of skycells, for instance `315p86x50y75`.
         skymap : SkyMap
-            sky map instance; defaults to global SKYMAP (Default value = None)
+            skymap instance; defaults to global SKYMAP (Default value = None)
 
         References
         ----------
-        .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
+        .. [skymap] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
         """
 
         if skymap is None:
@@ -268,7 +268,7 @@ class SkyCells:
             )
         else:
             raise KeyError(
-                f"no skycells found with the following name(s) in the currently-loaded sky map: {[name for name in names if name not in found_names]}"
+                f"no skycells found with the following name(s) in the currently-loaded skymap: {[name for name in names if name not in found_names]}"
             )
 
     @classmethod
@@ -277,7 +277,7 @@ class SkyCells:
     ) -> "SkyCells":
         """retrieve skycells from the given association file(s)
 
-        Attempts to find a sky cell name from the following in order:
+        Attempts to find a skycell name from the following in order:
             - `skycell_wcs_info.name`
             - `target`
 
@@ -286,7 +286,7 @@ class SkyCells:
         asns : list[os.PathLike | dict]
             list of path(s) to association file(s) to load, or dictionaries
         skymap: SkyMap
-            sky map instance; defaults to global SKYMAP (Default value = None)
+            skymap instance; defaults to global SKYMAP (Default value = None)
         """
 
         skycell_names = []
@@ -307,7 +307,7 @@ class SkyCells:
 
     @property
     def indices(self) -> NDArray[int]:
-        """indices of these skycells in the sky map"""
+        """indices of these skycells in the skymap"""
         return self._indices
 
     @property
@@ -349,7 +349,7 @@ class SkyCells:
     def radec_corners(
         self,
     ) -> NDArray[float]:
-        """corners in right ascension and declination in the order given by the sky map (Nx4x2 array of floats)"""
+        """corners in right ascension and declination in the order given by the skymap (Nx4x2 array of floats)"""
         return np.reshape(
             (
                 np.concatenate([self.data[f"ra_corn{index}"] for index in range(1, 5)]),
@@ -494,7 +494,7 @@ class SkyCells:
 
 
 class ProjectionRegion:
-    """Projection region in the sky map."""
+    """Projection region in the skymap."""
 
     _index: int | None
     _data: np.void
@@ -513,9 +513,9 @@ class ProjectionRegion:
         Parameters
         ----------
         index : int
-            index of the projection region in the sky map array
+            index of the projection region in the skymap array
         skymap: SkyMap
-            sky map instance (defaults to global SKYMAP)
+            skymap instance (defaults to global SKYMAP)
         """
 
         if skymap is None:
@@ -535,7 +535,7 @@ class ProjectionRegion:
         data : numpy.void
             array with projection region parameters (see schema)
         skymap: SkyMap
-            sky map instance; defaults to global SKYMAP (Default value = None)
+            skymap instance; defaults to global SKYMAP (Default value = None)
         """
         instance = cls(index=data["index"], skymap=skymap)
         instance._data = data
@@ -549,14 +549,14 @@ class ProjectionRegion:
         Parameters
         ----------
         index : int
-            index of the sky cell
+            index of the skycell
         skymap : SkyMap
-            sky map instance; defaults to global SKYMAP (Default value = None)
+            skymap instance; defaults to global SKYMAP (Default value = None)
 
         Returns
         -------
         ProjectionRegion
-            projection region corresponding to the given sky cell
+            projection region corresponding to the given skycell
         """
 
         if skymap is None:
@@ -570,15 +570,15 @@ class ProjectionRegion:
             return cls(projregion_indices[0], skymap=skymap)
         else:
             msg = (
-                f"sky cell index {index} not found in any projection regions"
+                f"skycell index {index} not found in any projection regions"
                 if len(projregion_indices) == 0
-                else f"sky cell index {index} found in multiple projection regions; possibly malformed sky map at {skymap.path}"
+                else f"skycell index {index} found in multiple projection regions; possibly malformed sky map at {skymap.path}"
             )
             raise KeyError(msg)
 
     @property
     def index(self) -> int | None:
-        """index in the sky map"""
+        """index in the skymap"""
         return self._index
 
     @property
@@ -615,12 +615,12 @@ class ProjectionRegion:
 
     @cached_property
     def skycell_indices(self) -> NDArray[int]:
-        """indices of sky cells in the sky map within this region"""
+        """indices of skycells in the sky map within this region"""
         return np.arange(self.data["skycell_start"], self.data["skycell_end"])
 
     @property
     def skycells(self) -> np.void:
-        """subset array of sky cells from the sky map within this region"""
+        """subset array of skycells from the sky map within this region"""
         return self._skymap.model.skycells[self.skycell_indices]
 
     @cached_property
@@ -726,16 +726,16 @@ class ProjectionRegion:
 
 
 class SkyMap:
-    """Abstract representation of the sky map, comprising of 4058 overlapping rectangular
+    """Abstract representation of the skymap [skymap]_, comprising of 4058 overlapping rectangular
     "projection regions" defining gnomonic projection on to uniform pixel grids.
     The pixel scale for all projection regions is identical.
 
-    Each projection region is subdivided into ~2000 square subregions ("sky cells", ~8 million in total),
-    each 4.6' across. These sky cells also overlap each other by a standard number of pixels.
+    Each projection region is subdivided into ~2000 square subregions ("skycells", ~8 million in total),
+    each 4.6' across. These skycells also overlap each other by a standard number of pixels.
 
     References
     ----------
-    .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
+    .. [skymap] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
     """
 
     _path: None | Path
@@ -746,7 +746,7 @@ class SkyMap:
         Parameters
         ----------
         path : None | Path | str, optional
-            load sky map from the specified ASDF file (defaults to latest `skycells` ref on CRDS)
+            load skymap from the specified ASDF file (defaults to latest `skycells` ref on CRDS)
         """
         if path is not None and not isinstance(path, Path):
             path = Path(path)
@@ -755,7 +755,7 @@ class SkyMap:
 
     @property
     def path(self) -> None | Path:
-        """location of sky map reference file on filesystem"""
+        """location of skymap reference file on filesystem"""
         return self._path
 
     @path.setter
@@ -766,7 +766,7 @@ class SkyMap:
 
     @property
     def model(self) -> AsdfFile:
-        """data model of sky map"""
+        """data model of skymap"""
         if self._data is None:
             if self._path is None:
                 rmap = crds.getreferences(
@@ -824,7 +824,7 @@ class SkyMap:
 
     @property
     def pixel_shape(self) -> tuple[int, int]:
-        """number of pixels per sky cell"""
+        """number of pixels per skycell"""
         return self.model.meta.nxy_skycell, self.model.meta.nxy_skycell
 
     def __getitem__(self, index: int) -> SkyCell:
