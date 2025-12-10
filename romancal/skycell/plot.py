@@ -39,11 +39,11 @@ def find_intersecting_projregions(
     footprint: sm.ImageFootprint :
         sequence of points (ra, dec) or an `ImageFootprint` object
     skymap: sc.SkyMap :
-        sky map instance; defaults to global SKYMAP (Default value = None)
+        skymap instance; defaults to global SKYMAP (Default value = None)
 
     Returns
     -------
-    indices of projection regions in the sky map that intersect the given footprint
+    indices of projection regions in the skymap that intersect the given footprint
     """
 
     if skymap is None:
@@ -194,7 +194,7 @@ def plot_image_footprint_and_skycells(
     footprint : list | sm.ImageFootprint :
         sequence of points (ra, dec) or an `ImageFootprint` object
     skymap : sc.SkyMap :
-        sky map instance; defaults to global SKYMAP (Default value = None)
+        skymap instance; defaults to global SKYMAP (Default value = None)
     """
 
     if not isinstance(footprint, sm.ImageFootprint):
