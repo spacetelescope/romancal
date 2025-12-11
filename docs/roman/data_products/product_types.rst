@@ -33,6 +33,8 @@ the user is running the pipeline. The input for each optional step is the output
 +------------------------------------------------+-----------------+--------------------------+---------------------+------------------+---------------------------------------+
 | :ref:`refpix <refpix>`                         |                 | refpix (opt)             | RampModel           | DN               | 3-D ref pix corrected data            |
 +------------------------------------------------+-----------------+--------------------------+---------------------+------------------+---------------------------------------+
+| :ref:`wfi18_transient <wfi18_transient_step>`  |                 | wfi18_transient (opt)    | RampModel           | DN               | 3-D data corrected for WFI18 transient|
++------------------------------------------------+-----------------+--------------------------+---------------------+------------------+---------------------------------------+
 | :ref:`linearity <linearity_step>`              |                 | linearity (opt)          | RampModel           | DN               | 3-D linearity corrected data          |
 +------------------------------------------------+-----------------+--------------------------+---------------------+------------------+---------------------------------------+
 | :ref:`dark_current <dark_current_step>`        |                 | darkcurrent (opt)        | RampModel           | DN               | 3-D dark current subtracted data      |
