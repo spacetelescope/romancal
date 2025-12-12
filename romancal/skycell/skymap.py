@@ -655,7 +655,7 @@ class SkyMap:
         return self.model.meta.nxy_skycell, self.model.meta.nxy_skycell
 
     def __getitem__(self, indices: int) -> SkyCells:
-        """`SkyCells` at the given index in the skycells array"""
+        """`SkyCells` at the given indices in the skycells array"""
         return SkyCells(indices)
 
     def __str__(self) -> str:
