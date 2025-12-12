@@ -49,7 +49,7 @@ EPSILON = 0.0011  # epsilon offset in degrees
 DATA_DIRECTORY = Path(__file__).parent / "data"
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def skymap_subset() -> skymap.SkyMap:
     """
     smaller subset to allow these tests

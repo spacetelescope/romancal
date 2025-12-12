@@ -32,7 +32,7 @@ def assert_allclose_lonlat(actual: np.ndarray, desired: np.ndarray, rtol=1e-7, a
     assert_allclose(actual, desired)
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def skymap_subset() -> skymap.SkyMap:
     """
     smaller subset to allow these tests
