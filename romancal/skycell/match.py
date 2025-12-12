@@ -245,13 +245,10 @@ def find_skycell_matches(
 
     # query the global k-d tree of projection regions for possible intersection candidates in (normalized) 3D space
     nearby_projregion_indices = np.array(
-        skymap.projection_regions_kdtree.query(
+        skymap.projection_regions_kdtree.query_ball_point(
             footprint.vectorpoint_center,
-            # NOTE: `k` can be `footprint.possibly_intersecting_projregions` if we assume non-degenerate tesselation
-            k=100,
-            distance_upper_bound=footprint.possible_intersecting_projregion_distance
-            * 1.1,
-        )[1]
+            r=footprint.possible_intersecting_projregion_distance * 1.1,
+        )
     )
     nearby_projregion_indices = nearby_projregion_indices[
         np.where(nearby_projregion_indices != len(skymap.model.projection_regions))
@@ -262,13 +259,10 @@ def find_skycell_matches(
         if footprint.polygon.intersects_poly(projregion.polygon):
             # query the LOCAL k-d tree of skycells for possible intersection candidates in (normalized) 3D space
             projregion_nearby_skycell_indices = np.array(
-                projregion.skycells_kdtree.query(
+                projregion.skycells_kdtree.query_ball_point(
                     footprint.vectorpoint_center,
-                    # NOTE: `k` can be `footprint.possibly_intersecting_skycells` if we assume non-degenerate tesselation
-                    k=100,
-                    distance_upper_bound=footprint.possible_intersecting_skycell_distance
-                    * 1.1,
-                )[1]
+                    r=footprint.possible_intersecting_skycell_distance * 1.1,
+                )
             )
 
             projregion_nearby_skycells = sc.SkyCells(
