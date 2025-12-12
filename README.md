@@ -1,10 +1,15 @@
 # Roman Calibration Pipeline
 
-
 [![Documentation Status](https://readthedocs.org/projects/roman-pipeline/badge/?version=latest)](https://roman-pipeline.readthedocs.io/en/latest/?badge=latest)
 [![Tests](https://github.com/spacetelescope/romancal/actions/workflows/tests.yml/badge.svg)](https://github.com/spacetelescope/romancal/actions/workflows/tests.yml)
 [![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](http://www.stsci.edu)
 [![Powered by Astropy Badge](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
+
+This package processes uncalibrated data for both imagers and spectrographs onboard
+the Nancy Grace Roman Space Telescope, an orbiting wide-field infrared observatory stationed at Earth-Sun L<sub>2</sub>.
+It performs a series of calibration steps that result in standard data products usable for science.
+More information on running this pipeline, including explanations of specific stages and how to obtain reference files,
+can be found [here](https://roman-docs.stsci.edu/data-handbook-home/roman-data-pipelines).
 
 > [!NOTE]
 > Linux and MacOS platforms are tested and supported. Windows is not currently supported.
