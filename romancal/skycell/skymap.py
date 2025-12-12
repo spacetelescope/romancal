@@ -189,19 +189,25 @@ class SkyCells:
         radec_corners = np.reshape(self.radec_corners, (len(self) * 4, 2))
         return np.reshape(
             sgv.normalize_vector(
-                sgv.lonlat_to_vector(radec_corners[:, 0], radec_corners[:, 1])
+                np.stack(
+                    sgv.lonlat_to_vector(radec_corners[:, 0], radec_corners[:, 1]),
+                    axis=1,
+                )
             ),
-            (3, 4, len(self)),
-        ).T
+            (len(self), 4, 3),
+        )
 
     @cached_property
     def vectorpoint_centers(self) -> NDArray[float]:
         """centers in 3D Cartesian space on the unit sphere (Nx3 array of floats)"""
         return sgv.normalize_vector(
-            np.array(
-                sgv.lonlat_to_vector(self.radec_centers[:, 0], self.radec_centers[:, 1])
+            np.stack(
+                sgv.lonlat_to_vector(
+                    self.radec_centers[:, 0], self.radec_centers[:, 1]
+                ),
+                axis=1,
             )
-        ).T
+        )
 
     @cached_property
     def polygons(self) -> sgp.SphericalPolygon:
