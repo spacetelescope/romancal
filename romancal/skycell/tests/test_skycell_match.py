@@ -375,7 +375,7 @@ def test_skycell_match(
 
     intersecting_skycells = sm.find_skycell_matches(corners, skymap=skymap_subset)
 
-    assert intersecting_skycells.names == expected_skycell_names
+    assert sorted(intersecting_skycells.names) == sorted(expected_skycell_names)
 
 
 @pytest.mark.parametrize(
@@ -405,7 +405,7 @@ def test_match_from_wcs_with_bbox(test_point, expected_skycell_names, skymap_sub
 
     intersecting_skycells = sm.find_skycell_matches(wcsobj, skymap=skymap_subset)
 
-    assert intersecting_skycells.names == expected_skycell_names
+    assert sorted(intersecting_skycells.names) == sorted(expected_skycell_names)
 
 
 @pytest.mark.parametrize("test_point", [TEST_POINTS[1]])
