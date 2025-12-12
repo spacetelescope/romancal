@@ -140,7 +140,12 @@ class SkyCells:
         ("name", "ra_center", "dec_center", "orientat", "x_tangent", "y_tangent", "ra_corn1", "dec_corn1", "ra_corn2", "dec_corn2", "ra_corn3", "dec_corn3", "ra_corn4", "dec_corn4")
         """
         if self._data is None:
-            self._data = self._skymap.model.skycells[self.indices]
+            self._data = self._data = (
+                self._skymap.model.skycells[self.indices]
+                if len(self.indices) > 0
+                else np.array([], dtype=self._skymap.model.skycells.dtype)
+            )
+
         return self._data
 
     @property
