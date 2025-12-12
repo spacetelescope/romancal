@@ -50,7 +50,7 @@ def find_intersecting_projregions(
         skymap = sc.SKYMAP
 
     # find the closest projection regions to the image center
-    _, nearby_projregion_indices = skymap.projection_regions_kdtree.query(
+    nearby_projregion_indices = skymap.projection_regions_kdtree.query_ball_point(
         footprint.vectorpoint_center,
         k=footprint.possibly_intersecting_projregions,
         distance_upper_bound=footprint.possible_intersecting_projregion_distance * 1.1,

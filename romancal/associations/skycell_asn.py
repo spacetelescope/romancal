@@ -137,7 +137,7 @@ def _create_intersecting_skycell_index(filelist: list[str]) -> list[FileRecord]:
             filter_id = "unknown"
             intersecting_skycells = []
         logger.info("Skycell List:%s, %s", file_name, intersecting_skycells)
-        file_index.append(FileRecord(file_name, intersecting_skycells, filter_id))
+        file_index.append(FileRecord(file_name, intersecting_skycells.indices, filter_id))
     return file_index
 
 
