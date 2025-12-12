@@ -271,7 +271,8 @@ def find_skycell_matches(
                         projregion_nearby_skycell_indices != len(projregion.skycells)
                     ]
                 )
-                + projregion.data["skycell_start"]
+                + projregion.data["skycell_start"],
+                skymap=skymap,
             )
 
             # find polygons that intersect the image footprint
