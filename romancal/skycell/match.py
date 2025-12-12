@@ -278,7 +278,7 @@ def find_skycell_matches(
             # find polygons that intersect the image footprint
             for skycell_index, skycell_polygon in zip(
                 projregion_nearby_skycells.indices,
-                projregion_nearby_skycells.polygons._polygons,
+                projregion_nearby_skycells.polygons,
                 strict=True,
             ):
                 if footprint.polygon.intersects_poly(skycell_polygon):
