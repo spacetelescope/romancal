@@ -52,8 +52,7 @@ def find_intersecting_projregions(
     # find the closest projection regions to the image center
     nearby_projregion_indices = skymap.projection_regions_kdtree.query_ball_point(
         footprint.vectorpoint_center,
-        k=footprint.possibly_intersecting_projregions,
-        distance_upper_bound=footprint.possible_intersecting_projregion_distance * 1.1,
+        r=footprint.possible_intersecting_projregion_distance * 1.1,
     )
 
     intersecting_projregion_indices = []
@@ -183,6 +182,7 @@ def plot_skycells(
 
 def plot_image_footprint_and_skycells(
     footprint: list[tuple[float, float]] | sm.ImageFootprint,
+    skycells: sc.SkyCells,
     skymap: sc.SkyMap = None,
 ) -> list[tuple[Axis, tuple[float, float, float]]]:
     """This plots a list of skycell footprints against the image footprint.
@@ -215,6 +215,9 @@ def plot_image_footprint_and_skycells(
         axis = figure.subplots(1, 1)
         axis.plot(0, 0, "+", markersize=10)
 
+        projregion_intersecting_skycells = skycells[
+            skycells.projection_regions == projregion_index
+        ]
         projregion = sc.ProjectionRegion(projregion_index, skymap=skymap)
 
         tangent_vectorpoint = sgv.normalize_vector(
@@ -234,41 +237,12 @@ def plot_image_footprint_and_skycells(
             colors="darkgrey",
         )
 
-        nearby_skycells = sc.SkyCells(
-            np.array(
-                projregion.skycells_kdtree.query(
-                    footprint.vectorpoint_center,
-                    k=footprint.possibly_intersecting_skycells,
-                    distance_upper_bound=footprint.length + sc.SkyCells.length,
-                )[1]
-            )
-            + projregion.data["skycell_start"],
-            skymap=skymap,
-        )
         plot_skycells(
-            nearby_skycells,
+            projregion_intersecting_skycells,
             tangent_vectorpoint,
             colors="red",
+            annotations=projregion_intersecting_skycells.names,
         )
-
-        intersecting_skycells = sc.SkyCells(
-            [
-                skycell_index
-                for skycell_index, skycell_polygon in zip(
-                    nearby_skycells.indices,
-                    nearby_skycells.polygons._polygons,
-                    strict=True,
-                )
-                if footprint.polygon.intersects_poly(skycell_polygon)
-            ]
-        )
-        if len(intersecting_skycells) > 0:
-            plot_skycells(
-                intersecting_skycells,
-                tangent_vectorpoint,
-                colors="blue",
-                annotations=intersecting_skycells.names,
-            )
 
         axis.set_xlabel("Offset from nearest tangent point in arcsec")
         axis.set_ylabel("Offset from nearest tangent point in arcsec")

@@ -300,6 +300,10 @@ class SkyCells:
         """number of pixels across"""
         return self._skymap.pixel_shape
 
+    def __getitem__(self, indices: int) -> "SkyCells":
+        """`SkyCells` at the given indices in the skycells array"""
+        return SkyCells(self.indices[np.isin(self.indices, indices)])
+
     def __len__(self) -> int:
         return len(self._indices)
 
