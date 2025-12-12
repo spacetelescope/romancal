@@ -251,7 +251,7 @@ def find_skycell_matches(
         )
     )
     nearby_projregion_indices = nearby_projregion_indices[
-        np.where(nearby_projregion_indices != len(skymap.model.projection_regions))
+        nearby_projregion_indices != len(skymap.model.projection_regions)
     ]
 
     for projregion_index in nearby_projregion_indices:
@@ -268,10 +268,7 @@ def find_skycell_matches(
             projregion_nearby_skycells = sc.SkyCells(
                 np.array(
                     projregion_nearby_skycell_indices[
-                        np.where(
-                            projregion_nearby_skycell_indices
-                            != len(projregion.skycells)
-                        )
+                        projregion_nearby_skycell_indices != len(projregion.skycells)
                     ]
                 )
                 + projregion.data["skycell_start"]
