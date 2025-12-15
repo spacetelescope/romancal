@@ -7,27 +7,27 @@
 /.github/						@zacharyburnett @jhunkeler
 
 # steps and packages
-/romancal/assign_wcs/			@spacetelescope/romancal-maintainers @ddavis-stsci 
-/romancal/associations/			@spacetelescope/romancal-maintainers @ddavis-stsci @mairanteodoro 
-/romancal/dark_current/			@spacetelescope/romancal-maintainers @ddavis-stsci 
-/romancal/datamodels/			@spacetelescope/romancal-maintainers @PaulHuwe 
-/romancal/dq_init/				@spacetelescope/romancal-maintainers @ddavis-stsci 
-/romancal/flatfield/			@spacetelescope/romancal-maintainers @ddavis-stsci 
-/romancal/flux/					@spacetelescope/romancal-maintainers @stscieisenhamer 
-/romancal/jump/					@spacetelescope/romancal-maintainers @WilliamJamieson 
-/romancal/lib/					@spacetelescope/romancal-maintainers @ddavis-stsci 
-/romancal/linearity/			@spacetelescope/romancal-maintainers @ddavis-stsci 
-/romancal/multiband_catalog/	@spacetelescope/romancal-maintainers @larrybradley @mairanteodoro @stscieisenhamer 
-/romancal/orientation/			@spacetelescope/romancal-maintainers @stscieisenhamer 
-/romancal/outlier_detection/	@spacetelescope/romancal-maintainers @mairanteodoro 
-/romancal/photom/				@spacetelescope/romancal-maintainers @ddavis-stsci 
-/romancal/pipeline/				@spacetelescope/romancal-maintainers @ddavis-stsci 
-/romancal/ramp_fitting/			@spacetelescope/romancal-maintainers @WilliamJamieson @stscieisenhamer 
-/romancal/refpix/				@spacetelescope/romancal-maintainers @WilliamJamieson 
-/romancal/resample/				@spacetelescope/romancal-maintainers @mairanteodoro 
-/romancal/saturation/			@spacetelescope/romancal-maintainers @ddavis-stsci 
-/romancal/skymatch/				@spacetelescope/romancal-maintainers @mairanteodoro 
-/romancal/source_catalog/		@spacetelescope/romancal-maintainers @larrybradley @mairanteodoro @stscieisenhamer 
+/romancal/assign_wcs/			@spacetelescope/romancal-maintainers @ddavis-stsci
+/romancal/associations/			@spacetelescope/romancal-maintainers @ddavis-stsci @mairanteodoro
+/romancal/dark_current/			@spacetelescope/romancal-maintainers @ddavis-stsci
+/romancal/datamodels/			@spacetelescope/romancal-maintainers @PaulHuwe
+/romancal/dq_init/				@spacetelescope/romancal-maintainers @ddavis-stsci
+/romancal/flatfield/			@spacetelescope/romancal-maintainers @ddavis-stsci
+/romancal/flux/					@spacetelescope/romancal-maintainers @stscieisenhamer
+/romancal/jump/					@spacetelescope/romancal-maintainers @WilliamJamieson
+/romancal/lib/					@spacetelescope/romancal-maintainers @ddavis-stsci
+/romancal/linearity/			@spacetelescope/romancal-maintainers @ddavis-stsci
+/romancal/multiband_catalog/	@spacetelescope/romancal-maintainers @larrybradley @mairanteodoro @stscieisenhamer
+/romancal/orientation/			@spacetelescope/romancal-maintainers @stscieisenhamer
+/romancal/outlier_detection/	@spacetelescope/romancal-maintainers @mairanteodoro
+/romancal/photom/				@spacetelescope/romancal-maintainers @ddavis-stsci
+/romancal/pipeline/				@spacetelescope/romancal-maintainers @ddavis-stsci
+/romancal/ramp_fitting/			@spacetelescope/romancal-maintainers @WilliamJamieson @stscieisenhamer
+/romancal/refpix/				@spacetelescope/romancal-maintainers @WilliamJamieson
+/romancal/resample/				@spacetelescope/romancal-maintainers @mairanteodoro
+/romancal/saturation/			@spacetelescope/romancal-maintainers @ddavis-stsci
+/romancal/skymatch/				@spacetelescope/romancal-maintainers @mairanteodoro
+/romancal/source_catalog/		@spacetelescope/romancal-maintainers @larrybradley @mairanteodoro @stscieisenhamer
 /romancal/source_detection/		@spacetelescope/romancal-maintainers # TODO; add someone here
-/romancal/stpipe/				@spacetelescope/romancal-maintainers @ddavis-stsci 
-/romancal/tweakreg/				@spacetelescope/romancal-maintainers @mairanteodoro 
+/romancal/stpipe/				@spacetelescope/romancal-maintainers @ddavis-stsci
+/romancal/tweakreg/				@spacetelescope/romancal-maintainers @mairanteodoro
