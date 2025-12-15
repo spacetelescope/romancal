@@ -239,3 +239,13 @@ out = test_psf_library.render_psfs_for_filename(
     'r0000101001001001001_0001_wfi01_f158_cal.asdf')
 asdf.dump(out, open('psf_render.asdf', 'wb'))"
 cp psf_render.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
+# tests for wfi18_transient step: uses WFI18 TVAC data as well as the default WFI01 data
+jf rt dl roman-pipeline/dev/WFI/image/TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_uncal.asdf --flat
+cp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
+strun roman_elp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_uncal.asdf --steps.refpix.save_results=true --steps.wfi18_transient.skip=true --steps.linearity.skip=true --steps.dark_current.skip=True --steps.rampfit.skip=true --steps.assign_wcs.skip=true --steps.flatfield.skip=true --steps.photom.skip=true --steps.source_catalog.skip=true --steps.tweakreg.skip=true
+cp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_refpix.asdf $outdir/roman-pipeline/dev/WFI/image/
+strun romancal.step.WFI18TransientStep TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_refpix.asdf
+cp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_wfi18_transient.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+strun romancal.step.WFI18TransientStep r0000101001001001001_0001_wfi01_f158_refpix.asdf
+cp r0000101001001001001_0001_wfi01_f158_refpix.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
