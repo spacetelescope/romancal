@@ -28,6 +28,5 @@
 /romancal/saturation/			@spacetelescope/romancal-maintainers @ddavis-stsci
 /romancal/skymatch/				@spacetelescope/romancal-maintainers @mairanteodoro
 /romancal/source_catalog/		@spacetelescope/romancal-maintainers @larrybradley @mairanteodoro @stscieisenhamer
-/romancal/source_detection/		@spacetelescope/romancal-maintainers # TODO; add someone here
 /romancal/stpipe/				@spacetelescope/romancal-maintainers @ddavis-stsci
 /romancal/tweakreg/				@spacetelescope/romancal-maintainers @mairanteodoro
