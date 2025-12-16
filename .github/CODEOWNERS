@@ -1,4 +1,8 @@
 # automatically requests pull request reviews for files matching the given pattern; the last match takes precendence
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# 
+# pull requests are required to have at least 1 approval from one of the codeowners, as defined in the ruleset at https://github.com/spacetelescope/romancal/settings/rules/7658093
+# files defined without any usernames or teams will have NO codeowner
 
 # any files not matched below default to the maintainers team
 * 								@spacetelescope/romancal-maintainers
