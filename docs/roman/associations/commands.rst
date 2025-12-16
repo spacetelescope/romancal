@@ -10,3 +10,4 @@ Association Commands
    skycell_asn.rst
    mk_skycell_list.rst
    mk_skycell_asn_from_skycell_list.rst
+   multiband_asn.rst
