@@ -127,7 +127,9 @@ def _create_intersecting_skycell_index(filelist: list[str]) -> list[FileRecord]:
         try:
             cal_file = rdm.open(file_name)
             filter_id = cal_file.meta.instrument.optical_element.lower()
-            intersecting_skycell_indices = sm.find_skycell_matches(cal_file.meta.wcs).indices
+            intersecting_skycell_indices = sm.find_skycell_matches(
+                cal_file.meta.wcs
+            ).indices
             cal_file.close()
         except Exception:
             logger.warning(
