@@ -1007,9 +1007,9 @@ def get_mnemonics(
                 include_bracket_values=False,
             )
         except EXPECTED_ERRORS as exception:
-            raise ValueError(
-                f"Cannot retrieve {mnemonic} from engineering."
-            ) from exception
+            logger.warning("Cannot retrieve %s from engineering.", mnemonic)
+            logger.debug('Exception %s', exception)
+            continue
 
         # If more than two points exist, throw off the bracket values.
         # Else, ensure the bracket values are within the allowed time.
