@@ -106,9 +106,9 @@ TYPES_TO_UPDATE = set()
 COARSE_MNEMONICS_QUATERNION_ECI = [f"SCF_AC_SDR_QBJ_{idx + 1}" for idx in range(4)]
 COARSE_MNEMONICS_B2FGS_EST = [f'SCF_AC_EST_FGS_qbr{idx+1}' for idx in range(4)]
 COARSE_MNEMONICS_B2FGS_PRELOAD = [f'SCF_AC_FGS_TBL_Qb{idx+1}' for idx in range(4)]
-COARSE_MNEMONICS = {q: True for q in COARSE_MNEMONICS_QUATERNION_ECI}
-COARSE_MNEMONICS |= {q: False for q in COARSE_MNEMONICS_B2FGS_EST}
-COARSE_MNEMONICS |= {q: False for q in COARSE_MNEMONICS_B2FGS_PRELOAD}
+COARSE_MNEMONICS = COARSE_MNEMONICS_QUATERNION_ECI + \
+    COARSE_MNEMONICS_B2FGS_EST + \
+    COARSE_MNEMONICS_B2FGS_PRELOAD
 
 # Conversion from seconds to MJD
 SECONDS2MJD = 1 / 24 / 60 / 60
@@ -838,10 +838,8 @@ def get_pointing(
     obsstart, obsend : float
         MJD observation start/end times
 
-    mnemonics_to_read : {str: bool[,...]}
-        The mnemonics to read. Key is the mnemonic name.
-        Value is a boolean indicating whether the mnemonic
-        is required to have values or not.
+    mnemonics_to_read : (str,[...])
+        mnemonics to read.
 
     service_kwargs : dict or None
         Keyword arguments passed to `engdb_service` defining what
@@ -889,7 +887,7 @@ def get_pointing(
         tolerance=tolerance,
         service_kwargs=service_kwargs,
     )
-    reduced = reduce_func(mnemonics_to_read, mnemonics)
+    reduced = reduce_func(mnemonics)
 
     logger.log(DEBUG_FULL, "Mnemonics found:")
     logger.log(DEBUG_FULL, "%s", mnemonics)
@@ -962,9 +960,8 @@ def get_mnemonics(
         the time, in seconds, beyond the observation time to
         search for telemetry.
 
-    mnemonics_to_read : {str: bool[,...]}
-        The mnemonics to fetch. key is the mnemonic and
-        value is whether it is required to be found.
+    mnemonics_to_read : (str[,...])
+        The mnemonics to fetch.
 
     service_kwargs : dict or None
         Keyword arguments passed to `engdb_service` defining what
@@ -1048,24 +1045,15 @@ def get_mnemonics(
                 )
             mnemonics[mnemonic] = allowed
 
-    # All mnemonics must have some values.
-    if not all(len(mnemonic) for mnemonic in mnemonics.values()):
-        raise ValueError("Incomplete set of pointing mnemonics")
-
     return mnemonics
 
 
-def all_pointings(mnemonics_to_read, mnemonics):
+def all_pointings(mnemonics):
     """
     V1 of making pointings.
 
     Parameters
     ----------
-    mnemonics_to_read : {str: bool[,...]}
-        The mnemonics to read. Key is the mnemonic name.
-        Value is a boolean indicating whether the mnemonic
-        is required to have values or not.
-
     mnemonics : {mnemonic: [value[,...]][,...]}
         The values for each pointing mnemonic.
 
@@ -1094,17 +1082,12 @@ def all_pointings(mnemonics_to_read, mnemonics):
     return pointings
 
 
-def first_pointing(mnemonics_to_read, mnemonics):
+def first_pointing(mnemonics):
     """
     Return first pointing.
 
     Parameters
     ----------
-    mnemonics_to_read : {str: bool[,...]}
-        The mnemonics to read. Key is the mnemonic name.
-        Value is a boolean indicating whether the mnemonic
-        is required to have values or not.
-
     mnemonics : {mnemonic: [value[,...]][,...]}
         The values for each pointing mnemonic.
 
@@ -1113,21 +1096,16 @@ def first_pointing(mnemonics_to_read, mnemonics):
     pointing : Pointing
         First pointing.
     """
-    pointings = all_pointings(mnemonics_to_read, mnemonics)
+    pointings = all_pointings(mnemonics)
     return pointings[0]
 
 
-def pointing_from_average(mnemonics_to_read, mnemonics):
+def pointing_from_average(mnemonics):
     """
     Determine single pointing from average of available pointings.
 
     Parameters
     ----------
-    mnemonics_to_read : {str: bool[,...]}
-        The mnemonics to read. Key is the mnemonic name.
-        Value is a boolean indicating whether the mnemonic
-        is required to have values or not.
-
     mnemonics : {mnemonic: [value[,...]][,...]}
         The values for each pointing mnemonic.
 
@@ -1136,6 +1114,7 @@ def pointing_from_average(mnemonics_to_read, mnemonics):
     pointing : Pointing
         Pointing from average.
     """
+    # Ensure
     # Get average observation time.
     times = [
         eng_param.obstime.unix
@@ -1153,16 +1132,8 @@ def pointing_from_average(mnemonics_to_read, mnemonics):
     zero_mnemonics = []
     for mnemonic in mnemonics:
         values = [eng_param.value for eng_param in mnemonics[mnemonic]]
-        # Weed out mnemonic entries that are zero, though some are OK to be zero.
-        if mnemonics_to_read[mnemonic]:
-            good_mnemonic = []
-            for this_value in values:
-                if this_value != 0.0:
-                    good_mnemonic.append(this_value)
-            if len(good_mnemonic) > 0:
-                mnemonic_averages[mnemonic] = np.average(good_mnemonic)
-            else:
-                zero_mnemonics.append(mnemonic)
+        if np.allclose(values, 0.):
+            zero_mnemonics.append(mnemonic)
         else:
             mnemonic_averages[mnemonic] = np.average(values)
 
