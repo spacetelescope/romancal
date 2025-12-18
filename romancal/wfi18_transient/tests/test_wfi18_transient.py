@@ -4,8 +4,8 @@ from roman_datamodels import datamodels, dqflags
 from romancal.wfi18_transient.wfi18_transient import _double_exp, _frame_read_times
 from romancal.wfi18_transient.wfi18_transient_step import WFI18TransientStep
 
-
 MASK_FLAG = dqflags.group.DO_NOT_USE | dqflags.group.WFI18_TRANSIENT
+
 
 def create_ramp_model(nresultants, nrows=4096, ncols=4096):
     # make a ramp model with fake data
