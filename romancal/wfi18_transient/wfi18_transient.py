@@ -22,7 +22,7 @@ def mask_affected_rows(groupdq):
     groupdq : `~numpy.ndarray`
         The group DQ image.  Updated in place.
     """
-    groupdq[0, :1000, :] |= dqflags.group.DO_NOT_USE
+    groupdq[0, :1000, :] |= dqflags.group.DO_NOT_USE | dqflags.group.WFI18_TRANSIENT
 
 
 def _frame_read_times(sca, frame_time):

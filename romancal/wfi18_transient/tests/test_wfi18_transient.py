@@ -1,9 +1,11 @@
 import numpy as np
-from roman_datamodels import datamodels
+from roman_datamodels import datamodels, dqflags
 
 from romancal.wfi18_transient.wfi18_transient import _double_exp, _frame_read_times
 from romancal.wfi18_transient.wfi18_transient_step import WFI18TransientStep
 
+
+MASK_FLAG = dqflags.group.DO_NOT_USE | dqflags.group.WFI18_TRANSIENT
 
 def create_ramp_model(nresultants, nrows=4096, ncols=4096):
     # make a ramp model with fake data
@@ -101,7 +103,7 @@ def test_wfi18_transient_too_few_resultants(caplog):
 
     assert "Masking affected rows" in caplog.text
     np.testing.assert_equal(result.data, 0)
-    np.testing.assert_equal(result.groupdq[0, :1000], 1)
+    np.testing.assert_equal(result.groupdq[0, :1000], MASK_FLAG)
     np.testing.assert_equal(result.groupdq[0, 1000:], 0)
     np.testing.assert_equal(result.groupdq[1:], 0)
 
@@ -116,7 +118,7 @@ def test_wfi18_transient_fit_failure(caplog):
 
     assert "Transient fit failed; masking affected rows instead" in caplog.text
     np.testing.assert_equal(result.data, np.nan)
-    np.testing.assert_equal(result.groupdq[0, :1000], 1)
+    np.testing.assert_equal(result.groupdq[0, :1000], MASK_FLAG)
     np.testing.assert_equal(result.groupdq[0, 1000:], 0)
     np.testing.assert_equal(result.groupdq[1:], 0)
 
