@@ -19,7 +19,7 @@ from romancal.source_catalog.detection import convolve_data, make_segmentation_i
 from romancal.source_catalog.psf import add_jitter
 from romancal.source_catalog.save_utils import save_all_results, save_empty_results
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
-from romancal.source_catalog.utils import get_ee_spline
+from romancal.source_catalog.utils import copy_model_arrays, get_ee_spline
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -68,10 +68,10 @@ class SourceCatalogStep(RomanStep):
         if self.fit_psf:
             self.ref_file = self.get_reference_file(input_model, "epsf")
             log.info("Using ePSF reference file: %s", self.ref_file)
-            psf_ref_model = datamodels.open(self.ref_file)
-            psf_ref_model.psf = add_jitter(psf_ref_model, input_model)
+            psf_model = datamodels.open(self.ref_file)
+            psf_model.psf = add_jitter(psf_model, input_model)
         else:
-            psf_ref_model = None
+            psf_model = None
 
         # Define a boolean mask for pixels to be excluded
         mask = (
@@ -80,16 +80,11 @@ class SourceCatalogStep(RomanStep):
             | (input_model.err <= 0)
         )
 
-        # Copy the data and error arrays to avoid modifying the input
-        # model. The metadata and dq and weight arrays are not copied
-        # because they are not modified in this step.
-        if isinstance(input_model, ImageModel):
-            model = ImageModel()
-            model.meta = input_model.meta
-            model.data = input_model.data.copy()
-            model.err = input_model.err.copy()
-            model.dq = input_model.dq
+        # Copy the data and error arrays to avoid modifying the input model
+        model = copy_model_arrays(input_model)
 
+        # Create a DQ mask for ImageModel
+        if isinstance(input_model, ImageModel):
             # Create a DQ mask for pixels to be excluded; currently all
             # pixels with any DQ flag are excluded from the source catalog
             # except for those in ignored_dq_flags.
@@ -100,12 +95,6 @@ class SourceCatalogStep(RomanStep):
             # TODO: to set the mask to True for *only* dq_flags use:
             # dq_mask = np.any(model.dq[..., None] & dq_flags, axis=-1)
             mask |= dq_mask
-        elif isinstance(input_model, MosaicModel):
-            model = MosaicModel()
-            model.meta = input_model.meta
-            model.data = input_model.data.copy()
-            model.err = input_model.err.copy()
-            model.weight = input_model.weight
 
         # Initialize the source catalog model, copying the metadata
         # from the input model
@@ -200,8 +189,8 @@ class SourceCatalogStep(RomanStep):
             detection_image,
             self.kernel_fwhm,
             fit_psf=fit_psf,
+            psf_model=psf_model,
             mask=mask,
-            psf_ref_model=psf_ref_model,
             cat_type=cat_type,
             ee_spline=ee_spline,
         )
@@ -218,8 +207,8 @@ class SourceCatalogStep(RomanStep):
                 forced_detection_image,
                 self.kernel_fwhm,
                 fit_psf=self.fit_psf,
+                psf_model=psf_model,
                 mask=mask,
-                psf_ref_model=psf_ref_model,
                 cat_type="forced_full",
                 ee_spline=ee_spline,
             )
