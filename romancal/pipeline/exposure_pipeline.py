@@ -25,6 +25,7 @@ from romancal.refpix import RefPixStep
 from romancal.saturation import SaturationStep
 from romancal.source_catalog import SourceCatalogStep
 from romancal.tweakreg import TweakRegStep
+from romancal.wfi18_transient import WFI18TransientStep
 
 from ..stpipe import RomanPipeline
 
@@ -57,6 +58,7 @@ class ExposurePipeline(RomanPipeline):
         "dq_init": dq_init_step.DQInitStep,
         "saturation": SaturationStep,
         "refpix": RefPixStep,
+        "wfi18_transient": WFI18TransientStep,
         "linearity": LinearityStep,
         "dark_current": DarkCurrentStep,
         "rampfit": ramp_fit_step.RampFitStep,
@@ -116,6 +118,7 @@ class ExposurePipeline(RomanPipeline):
                     )
                 else:
                     result = self.refpix.run(result)
+                    result = self.wfi18_transient.run(result)
                     result = self.linearity.run(result)
                     result = self.rampfit.run(result)
                     result = self.dark_current.run(result)
@@ -183,6 +186,7 @@ class ExposurePipeline(RomanPipeline):
         # Set all subsequent steps to skipped
         for step_str in [
             "refpix",
+            "wfi18_transient",
             "linearity",
             "dark",
             "ramp_fit",
