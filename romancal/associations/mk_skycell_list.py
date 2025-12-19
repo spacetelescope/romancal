@@ -47,9 +47,7 @@ def mk_skycell_list(output_dir, filelist):
 
         with open(output_file_name + ".match", "w") as outfile:
             out_string = (
-                file_name
-                + " "
-                + np.array2string(intersecting_skycells.indices, separator=",")
+                file_name + " " + np.array2string(intersecting_skycells, separator=",")
             )
             outfile.write(out_string)
 

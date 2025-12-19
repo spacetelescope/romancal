@@ -373,7 +373,9 @@ def test_skycell_match(
 ):
     corners = mk_im_corners(*test_point + np.array(offset), rotation, size)
 
-    intersecting_skycells = sm.find_skycell_matches(corners, skymap=skymap_subset)
+    intersecting_skycells = skymap.SkyCells(
+        sm.find_skycell_matches(corners, skymap=skymap_subset), skymap=skymap_subset
+    )
 
     assert sorted(intersecting_skycells.names) == sorted(expected_skycell_names)
 
@@ -403,7 +405,9 @@ def test_match_from_wcs_with_bbox(test_point, expected_skycell_names, skymap_sub
         bounding_box=((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5)),
     )
 
-    intersecting_skycells = sm.find_skycell_matches(wcsobj, skymap=skymap_subset)
+    intersecting_skycells = skymap.SkyCells(
+        sm.find_skycell_matches(wcsobj, skymap=skymap_subset), skymap=skymap_subset
+    )
 
     assert sorted(intersecting_skycells.names) == sorted(expected_skycell_names)
 

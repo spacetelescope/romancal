@@ -216,7 +216,7 @@ class ImageFootprint:
 def find_skycell_matches(
     image_corners: list[tuple[float, float]] | NDArray[float] | WCS,
     skymap: sc.SkyMap = None,
-) -> sc.SkyCells:
+) -> list[int]:
     """Find sky cells overlapping the provided image footprint
 
     Parameters
@@ -284,4 +284,4 @@ def find_skycell_matches(
                 if footprint.polygon.intersects_poly(skycell_polygon):
                     intersecting_skycell_indices.append(skycell_index)
 
-    return sc.SkyCells(intersecting_skycell_indices)
+    return intersecting_skycell_indices
