@@ -1114,41 +1114,35 @@ def pointing_from_average(mnemonics):
     pointing : Pointing
         Pointing from average.
     """
-    # Ensure
+    # weed-out empty mnemonics
+    valid_mnemonics = [mnemonic for mnemonic in mnemonics if mnemonics[mnemonic] is not None]
+
     # Get average observation time.
     times = [
         eng_param.obstime.unix
-        for key in mnemonics
-        for eng_param in mnemonics[key]
+        for mnemonic in valid_mnemonics
+        for eng_param in mnemonics[mnemonic]
         if eng_param.obstime.unix != 0.0
     ]
     if len(times) > 0:
         obstime = Time(np.average(times), format="unix")
     else:
-        raise ValueError("No valid times in range")
+        raise ValueError("No valid mnemonics found.")
 
     # Get averages for all the mnemonics.
     mnemonic_averages = {}
-    zero_mnemonics = []
-    for mnemonic in mnemonics:
+    for mnemonic in valid_mnemonics:
         values = [eng_param.value for eng_param in mnemonics[mnemonic]]
         if np.allclose(values, 0.):
-            zero_mnemonics.append(mnemonic)
+            logger.warning('Mnemonics %s is only zeros. Treating as undefined.', mnemonic)
         else:
             mnemonic_averages[mnemonic] = np.average(values)
 
-    # Raise exception if there are mnemonics with only zeros in the time range
-    if len(zero_mnemonics):
-        logger.warning(
-            "The following engineering mnemonics only contained zeros in the requested "
-            "time interval:"
-        )
-        badmnemonicsstring = " ".join(zero_mnemonics)
-        logger.info(badmnemonicsstring)
-        raise ValueError("Bad telemetry values")
-
     # Fill out the pointing matrices.
-    q = np.array([mnemonic_averages[m] for m in COARSE_MNEMONICS_QUATERNION_ECI])
+    try:
+        q = np.array([mnemonic_averages[m] for m in COARSE_MNEMONICS_QUATERNION_ECI])
+    except KeyError as exception:
+        raise ValueError(f'One or more quaternion mnemonics not in the telemetry {COARSE_MNEMONICS_QUATERNION_ECI}') from exception
 
     pointing = Pointing(
         obstime=obstime,

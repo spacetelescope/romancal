@@ -24,8 +24,8 @@ stp.logger.setLevel(logging.DEBUG)
 stp.logger.addHandler(logging.StreamHandler())
 
 # Setup for some times
-STARTTIME = Time("2027-03-23T19:20:40", format="isot")
-ENDTIME = Time("2027-03-23T19:21:36", format="isot")
+STARTTIME = Time("2027-03-11T13:26:56.571", format="isot")
+ENDTIME = Time("2027-03-11T13:27:56.658", format="isot")
 BADSTARTTIME = Time("2020-02-02T02:02:02", format="isot")
 BADENDTIME = Time("2020-02-02T02:12:02", format="isot")
 DEFAULT_RADECREF = (266.59060641987423, -30.664532676056954)
@@ -40,14 +40,13 @@ TRANSFORM_KWARGS = {
     'gscommanded': (916.4728835141, -186.8939737044),
     'gspos': (266.663935674969, -30.5163135226147),
     'pointing': stp.Pointing(fgs_q=np.array([-0.18596734175399293, 0.6837984564491885, -0.1800546332580956, 0.6822141509826322]),
+                             obstime=Time(1804771646.4242268, format='unix'),
                              q=np.array([-0.33879082,  0.62326573, -0.36611627,  0.60226181])),
     'velocity': (-5.473753741352352, -27.480586797035414, -11.875972151015253),
 }
 
 # Get the mock databases
 DATA_PATH = Path(__file__).parent / "data"
-
-OBSTIME_EXPECTED = Time(1805829668.0276294, format="unix")
 
 # Meta attributes for test comparisons
 METAS_EQUALITY = [
@@ -123,14 +122,13 @@ def test_get_pointing():
     Note: The expected quaternion is from mastdev during Q26B20 development.
     This will most likely change again.
     """
-    q_expected = np.array([-0.69018802, 0.12195182, -0.695103, 0.15999998])
     try:
         pointing = stp.get_pointing(STARTTIME, ENDTIME)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
 
-    assert np.isclose(pointing.obstime.value, OBSTIME_EXPECTED.value)
-    assert np.allclose(pointing.q, q_expected)
+    assert np.isclose(pointing.obstime.value, TRANSFORM_KWARGS['pointing'].obstime.value)
+    assert np.allclose(pointing.q, TRANSFORM_KWARGS['pointing'].q)
 
 
 def test_get_pointing_fail():
