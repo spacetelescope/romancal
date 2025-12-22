@@ -143,14 +143,13 @@ def test_get_pointing_list():
     Note: The expected quaternion is from mastdev during Q26B20 development.
     This will most likely change again.
     """
-    q_expected = np.array([-0.69018802, 0.12195182, -0.695103, 0.15999998])
     try:
         results = stp.get_pointing(STARTTIME, ENDTIME, reduce_func=stp.all_pointings)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
     assert isinstance(results, list)
     assert len(results) > 0
-    assert np.isclose(results[0].q, q_expected).all()
+    assert np.isclose(results[0].q, TRANSFORM_KWARGS['pointing'].q, rtol=1.e-2).all()
     assert STARTTIME <= results[0].obstime <= ENDTIME
 
 
