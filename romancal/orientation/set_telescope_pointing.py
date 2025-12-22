@@ -1153,7 +1153,7 @@ def pointing_from_average(mnemonics):
     return pointing
 
 
-def fill_mnemonics_chronologically(mnemonics, filled_only=True):
+def fill_mnemonics_chronologically(mnemonics, filled_only=False):
     """
     Return time-ordered mnemonic list with progressive values.
 
@@ -1179,8 +1179,9 @@ def fill_mnemonics_chronologically(mnemonics, filled_only=True):
     by_obstime = defaultdict(dict)
     n_mnemonics = len(mnemonics)
     for mnemonic, values in mnemonics.items():
-        for value in values:
-            by_obstime[value.obstime][mnemonic] = value
+        if values is not None:
+            for value in values:
+                by_obstime[value.obstime][mnemonic] = value
     by_obstime = sorted(by_obstime.items())
 
     # Created the filled matrix
