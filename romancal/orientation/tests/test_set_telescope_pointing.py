@@ -116,6 +116,17 @@ def test_change_base_url_fail():
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
+def test_get_mnemonics():
+    """Test getting mnemonics"""
+    try:
+        mnemonics = stp.get_mnemonics(STARTTIME, ENDTIME, 60)
+    except ValueError as exception:
+        pytest.xfail(reason=str(exception))
+
+    assert len(mnemonics) == len(stp.COARSE_MNEMONICS)
+
+
+@pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_get_pointing():
     """Ensure that the averaging works.
 
@@ -161,6 +172,22 @@ def test_hv_to_fgs():
     fgs = stp.hv_to_fgs('WFI01_FULL', *hv, pysiaf)
 
     assert np.allclose(fgs, fgs_expected)
+
+@pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
+def test_mnemonics_chronologically():
+    """Test ordering mnemonics chronologically"""
+    try:
+        mnemonics = stp.get_mnemonics(STARTTIME, ENDTIME, 60)
+    except ValueError as exception:
+        pytest.xfail(reason=str(exception))
+    ordered = stp.mnemonics_chronologically(mnemonics)
+
+    assert len(ordered) > 1
+
+    first = ordered[0]
+    assert isinstance(first[0], Time)
+    assert isinstance(first[1], dict)
+    assert len(first[1]) >= len(stp.COARSE_MNEMONICS_QUATERNION_ECI)
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")

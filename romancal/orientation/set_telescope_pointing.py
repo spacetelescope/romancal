@@ -1064,7 +1064,7 @@ def all_pointings(mnemonics):
     """
     pointings = []
     ordered = mnemonics_chronologically(mnemonics)
-    for obstime, mnemonics_at_time in ordered.items():
+    for obstime, mnemonics_at_time in ordered:
         # Fill out the matrices
         q = np.array(
             [mnemonics_at_time[m].value for m in COARSE_MNEMONICS_QUATERNION_ECI]
@@ -1180,8 +1180,8 @@ def mnemonics_chronologically(mnemonics):
 
     Returns
     -------
-    ordered : {obstime: {mnemonic: value}}
-        Time-ordered mnemonic list with progressive values.
+    ordered : [(obstime, {mnemonic: value[,...]}[,...]]
+        Time-ordered list of 2-tuple consisting of `(time, mnemonics)`.
     """
     # Collect all information by observation time and sort.
     by_obstime = defaultdict(dict)
@@ -1192,7 +1192,7 @@ def mnemonics_chronologically(mnemonics):
     by_obstime = sorted(by_obstime.items())
 
     # Created the ordered matrix
-    ordered = {}
+    ordered = []
     last_obstime = {}
     for obstime, mnemonics_at_time in by_obstime:
         last_obstime.update(mnemonics_at_time)
@@ -1203,7 +1203,7 @@ def mnemonics_chronologically(mnemonics):
         if not any(values):
             continue
 
-        ordered[obstime] = copy(last_obstime)
+        ordered.append((obstime, copy(last_obstime)))
 
     return ordered
 
@@ -1235,9 +1235,9 @@ def mnemonics_chronologically_table(mnemonics):
 
     values = [[] for _ in names]
 
-    for time in ordered:
+    for time, mnemonics_at_time in ordered:
         values[time_idx].append(time)
-        for mnemonic in ordered[time]:
+        for mnemonic in mnemonics_at_time:
             idx = names.index(mnemonic)
             values[idx].append(ordered[time][mnemonic].value)
 
