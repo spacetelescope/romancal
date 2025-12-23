@@ -76,6 +76,7 @@ from astropy.time import Time, TimeDelta
 from stcal.alignment.util import compute_s_region_keyword
 from stcal.velocity_aberration import compute_va_effects_vector
 
+from ..lib.engdb.engdb_lib import EngDB_Value
 from ..lib.engdb.engdb_tools import engdb_service
 
 __all__ = [
@@ -1062,22 +1063,51 @@ def all_pointings(mnemonics):
     pointings : [Pointing[,...]]
         List of pointings.
     """
-    pointings = []
     ordered = mnemonics_chronologically(mnemonics)
-    for obstime, mnemonics_at_time in ordered:
-        # Fill out the matrices
-        q = np.array(
-            [mnemonics_at_time[m].value for m in COARSE_MNEMONICS_QUATERNION_ECI]
-        )
+    pointings = mnemonics_to_pointings(ordered)
 
-        pointing = Pointing(
-            q=q,
-            obstime=obstime,
-        )
+    return pointings
+
+
+def mnemonics_to_pointings(ordered_mnemonics):
+    """From a list of mnemonic values, create a list of Pointings
+
+    Parameters
+    ----------
+    ordered_mnemonics : [(Time, {mnemonic: [value[,...]][,...]})[,...]]
+        List of 2-tuples consisting of (Time, dict) where the dict are
+        the mnemonics values at the associated time.
+
+    Returns
+    -------
+    pointings : [Pointing[,...]]
+        List of pointings
+    """
+    pointings = []
+    for obstime, mnemonics_at_time in ordered_mnemonics:
+
+        # Observatory orientation, required
+        try:
+            q = np.array(
+                [mnemonics_at_time[m].value for m in COARSE_MNEMONICS_QUATERNION_ECI]
+            )
+        except KeyError as exception:
+            raise ValueError(f'One or more quaternion mnemonics not in the telemetry {COARSE_MNEMONICS_QUATERNION_ECI}') from exception
+
+        # B-frame to FGS-frame quaternion. Not required and very oddly has so many backups...
+        fgs_q = None
+        try:
+            fgs_q = np.array([mnemonics_at_time[m].value for m in COARSE_MNEMONICS_B2FGS_EST])
+        except KeyError:
+            logger.warning('One or more of the B-to-FGS quaternion mnemonics are not in the telementry %s', COARSE_MNEMONICS_B2FGS_EST)
+        if fgs_q is None:
+            try:
+                fgs_q = np.array([mnemonics_at_time[m].value for m in COARSE_MNEMONICS_B2FGS_PRELOAD])
+            except KeyError:
+                logger.warning('One or more of the B-to-FGS quaternion mnemonics are not in the telementry %s', COARSE_MNEMONICS_B2FGS_PRELOAD)
+
+        pointing = Pointing(fgs_q=fgs_q, obstime=obstime, q=q)
         pointings.append(pointing)
-
-    if not len(pointings):
-        raise ValueError("No non-zero quaternion found.")
 
     return pointings
 
@@ -1136,29 +1166,9 @@ def pointing_from_average(mnemonics):
         if np.allclose(values, 0.):
             logger.warning('Mnemonics %s is only zeros. Treating as undefined.', mnemonic)
         else:
-            mnemonic_averages[mnemonic] = np.average(values)
+            mnemonic_averages[mnemonic] = EngDB_Value(obstime=obstime, value=np.average(values))
 
-    # Fill out the pointing matrices.
-    # Quaternion is a required one.
-    try:
-        q = np.array([mnemonic_averages[m] for m in COARSE_MNEMONICS_QUATERNION_ECI])
-    except KeyError as exception:
-        raise ValueError(f'One or more quaternion mnemonics not in the telemetry {COARSE_MNEMONICS_QUATERNION_ECI}') from exception
-
-
-    # B-frame to FGS-frame quaternion. Not required and very oddly has so many backups...
-    fgs_q = None
-    try:
-        fgs_q = np.array([mnemonic_averages[m] for m in COARSE_MNEMONICS_B2FGS_EST])
-    except KeyError:
-        logger.warning('One or more of the B-to-FGS quaternion mnemonics are not in the telementry %s', COARSE_MNEMONICS_B2FGS_EST)
-    if fgs_q is None:
-        try:
-            fgs_q = np.array([mnemonic_averages[m] for m in COARSE_MNEMONICS_B2FGS_PRELOAD])
-        except KeyError:
-            logger.warning('One or more of the B-to-FGS quaternion mnemonics are not in the telementry %s', COARSE_MNEMONICS_B2FGS_PRELOAD)
-
-    pointing = Pointing(fgs_q=fgs_q, obstime=obstime, q=q)
+    pointing = mnemonics_to_pointings([(obstime, mnemonic_averages)])[0]
 
     # That's all folks
     return pointing
