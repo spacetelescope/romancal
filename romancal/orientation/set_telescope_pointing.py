@@ -1063,8 +1063,8 @@ def all_pointings(mnemonics):
         List of pointings.
     """
     pointings = []
-    filled = fill_mnemonics_chronologically(mnemonics)
-    for obstime, mnemonics_at_time in filled.items():
+    ordered = mnemonics_chronologically(mnemonics)
+    for obstime, mnemonics_at_time in ordered.items():
         # Fill out the matrices
         q = np.array(
             [mnemonics_at_time[m].value for m in COARSE_MNEMONICS_QUATERNION_ECI]
@@ -1164,7 +1164,7 @@ def pointing_from_average(mnemonics):
     return pointing
 
 
-def fill_mnemonics_chronologically(mnemonics, filled_only=False):
+def mnemonics_chronologically(mnemonics):
     """
     Return time-ordered mnemonic list with progressive values.
 
@@ -1178,42 +1178,37 @@ def fill_mnemonics_chronologically(mnemonics, filled_only=False):
     mnemonics : {mnemonic: [value[,...]]}
         Dictionary mapping mnemonics to their respective values.
 
-    filled_only : bool
-        Only return a matrix where observation times have all the mnemonics defined.
-
     Returns
     -------
-    filled_by_time : {obstime: {mnemonic: value}}
+    ordered : {obstime: {mnemonic: value}}
         Time-ordered mnemonic list with progressive values.
     """
-    # Collect all information by observation time and order.
+    # Collect all information by observation time and sort.
     by_obstime = defaultdict(dict)
-    n_mnemonics = len(mnemonics)
     for mnemonic, values in mnemonics.items():
         if values is not None:
             for value in values:
                 by_obstime[value.obstime][mnemonic] = value
     by_obstime = sorted(by_obstime.items())
 
-    # Created the filled matrix
-    filled = {}
+    # Created the ordered matrix
+    ordered = {}
     last_obstime = {}
     for obstime, mnemonics_at_time in by_obstime:
         last_obstime.update(mnemonics_at_time)
-        if len(last_obstime) >= n_mnemonics or not filled_only:
-            # Engineering data may be present, but all zeros.
-            # Filter out this situation also.
-            if filled_only:
-                values = [value.value for value in last_obstime.values()]
-                if not any(values):
-                    continue
 
-            filled[obstime] = copy(last_obstime)
+        # Engineering data may be present, but all zeros.
+        # Filter out this situation.
+        values = [value.value for value in last_obstime.values()]
+        if not any(values):
+            continue
 
-    return filled
+        ordered[obstime] = copy(last_obstime)
+
+    return ordered
 
 
-def fill_mnemonics_chronologically_table(mnemonics, filled_only=True):
+def mnemonics_chronologically_table(mnemonics):
     """
     Return time-ordered mnemonic list with progressive values.
 
@@ -1227,15 +1222,12 @@ def fill_mnemonics_chronologically_table(mnemonics, filled_only=True):
     mnemonics : {mnemonic: [value[,...]]}
         Dictionary mapping mnemonics to their respective values.
 
-    filled_only : bool
-        Only return a matrix where observation times have all the mnemonics defined.
-
     Returns
     -------
-    filled_by_time : `astropy.table.Table`
+    ordered_by_time : `astropy.table.Table`
         Time-ordered mnemonic list with progressive values.
     """
-    filled = fill_mnemonics_chronologically(mnemonics, filled_only=filled_only)
+    ordered = mnemonics_chronologically(mnemonics)
 
     names = list(mnemonics.keys())
     names = ["time", *names]
@@ -1243,11 +1235,11 @@ def fill_mnemonics_chronologically_table(mnemonics, filled_only=True):
 
     values = [[] for _ in names]
 
-    for time in filled:
+    for time in ordered:
         values[time_idx].append(time)
-        for mnemonic in filled[time]:
+        for mnemonic in ordered[time]:
             idx = names.index(mnemonic)
-            values[idx].append(filled[time][mnemonic].value)
+            values[idx].append(ordered[time][mnemonic].value)
 
     t = Table(values, names=names)
 
