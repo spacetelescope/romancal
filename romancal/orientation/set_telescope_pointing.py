@@ -1139,15 +1139,26 @@ def pointing_from_average(mnemonics):
             mnemonic_averages[mnemonic] = np.average(values)
 
     # Fill out the pointing matrices.
+    # Quaternion is a required one.
     try:
         q = np.array([mnemonic_averages[m] for m in COARSE_MNEMONICS_QUATERNION_ECI])
     except KeyError as exception:
         raise ValueError(f'One or more quaternion mnemonics not in the telemetry {COARSE_MNEMONICS_QUATERNION_ECI}') from exception
 
-    pointing = Pointing(
-        obstime=obstime,
-        q=q,
-    )
+
+    # B-frame to FGS-frame quaternion. Not required and very oddly has so many backups...
+    fgs_q = None
+    try:
+        fgs_q = np.array([mnemonic_averages[m] for m in COARSE_MNEMONICS_B2FGS_EST])
+    except KeyError:
+        logger.warning('One or more of the B-to-FGS quaternion mnemonics are not in the telementry %s', COARSE_MNEMONICS_B2FGS_EST)
+    if fgs_q is None:
+        try:
+            fgs_q = np.array([mnemonic_averages[m] for m in COARSE_MNEMONICS_B2FGS_PRELOAD])
+        except KeyError:
+            logger.warning('One or more of the B-to-FGS quaternion mnemonics are not in the telementry %s', COARSE_MNEMONICS_B2FGS_PRELOAD)
+
+    pointing = Pointing(fgs_q=fgs_q, obstime=obstime, q=q)
 
     # That's all folks
     return pointing
