@@ -178,15 +178,17 @@ class SkyCells:
         self,
     ) -> NDArray[float]:
         """corners in right ascension and declination in the order given by the skymap (Nx4x2 array of floats)"""
-        return np.reshape(
+        return np.stack(
             (
-                np.concatenate([self.data[f"ra_corn{index}"] for index in range(1, 5)]),
-                np.concatenate(
-                    [self.data[f"dec_corn{index}"] for index in range(1, 5)]
+                np.stack(
+                    [self.data[f"ra_corn{index}"] for index in range(1, 5)], axis=1
+                ),
+                np.stack(
+                    [self.data[f"dec_corn{index}"] for index in range(1, 5)], axis=1
                 ),
             ),
-            (2, 4, len(self)),
-        ).T
+            axis=2,
+        )
 
     @cached_property
     def vectorpoint_corners(self) -> NDArray[float]:
