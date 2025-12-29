@@ -5,7 +5,6 @@ import logging
 import os.path
 import sys
 
-import numpy as np
 import roman_datamodels as rdm
 
 import romancal.skycell.match as sm
