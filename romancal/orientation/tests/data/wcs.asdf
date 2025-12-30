@@ -12,8 +12,8 @@ history:
     extension_uri: asdf://asdf-format.org/core/extensions/core-1.6.0
     manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.4.0}
     software: !core/software-1.0.0 {name: asdf, version: 5.1.0}
-vinfo: {dec: -30.177183927606528, pa: 90.4289479321644, ra: 267.0168676146806, s_region: ''}
-wcsinfo: {dec: -30.53927896286344, pa: 90.60111674247034, ra: 266.67803540698276,
-  s_region: POLYGON ICRS  266.704474362 -30.623991336 266.579827226 -30.560011007
-    266.651764709 -30.453928832 266.777049827 -30.518088819}
+vinfo: {dec: -31.031240922422004, pa: 270.7265196281436, ra: 266.430563565033, s_region: ''}
+wcsinfo: {dec: -30.669781480085533, pa: -89.44766906020511, ra: 266.77203705292044,
+  s_region: POLYGON ICRS  266.745524935 -30.585083149 266.870314810 -30.648903622
+    266.798474115 -30.755106986 266.672866737 -30.690969148}
 ...
