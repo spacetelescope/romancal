@@ -5,6 +5,7 @@ Module for the multiband source catalog step.
 from __future__ import annotations
 
 import copy
+import importlib
 import logging
 from typing import TYPE_CHECKING
 
@@ -99,6 +100,8 @@ class MultibandCatalogStep(RomanStep):
 
         # Set up source injection library and injection catalog
         if self.inject_sources:
+            if not importlib.util.find_spec("romanisim"):
+                raise Exception("inject_sources requires romanisim to be installed")
             si_library, si_cat = make_source_injected_library(library)
 
         # Create catalog of library images
