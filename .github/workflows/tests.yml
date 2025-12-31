@@ -73,6 +73,7 @@ jobs:
         - linux: py313-cov
           coverage: codecov
           pytest-results-summary: true
+        - linux: py314-ddtrace
         - macos: py313-ddtrace
         - macos: py313-pyargs
           pytest-results-summary: true

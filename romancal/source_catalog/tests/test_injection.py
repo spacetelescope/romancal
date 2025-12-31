@@ -9,7 +9,6 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from roman_datamodels.datamodels import ImageModel, MosaicModel
-from romanisim import bandpass, parameters
 
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
 from romancal.source_catalog import injection
@@ -18,6 +17,8 @@ from romancal.source_catalog.injection import (
     make_cosmoslike_catalog,
     make_source_grid,
 )
+
+romanisim = pytest.importorskip("romanisim")
 
 # Set parameters
 RA = 270.0
@@ -32,7 +33,7 @@ SCA = 4
 FILTERS = ["F062", "F158", "F213", "F146"]
 RNG_SEED = 42
 MATABLE = 4
-BANDPASSES = set(bandpass.galsim2roman_bandpass.values())
+BANDPASSES = set(romanisim.bandpass.galsim2roman_bandpass.values())
 
 # Create gaussian noise generators
 # sky should generate ~0.2 electron / s / pix.
@@ -53,7 +54,7 @@ def make_test_data():
 
 @pytest.fixture
 def image_model(filter=FILTERS[0]):
-    defaults = {"meta": parameters.default_parameters_dictionary}
+    defaults = {"meta": romanisim.parameters.default_parameters_dictionary}
     defaults["meta"]["instrument"]["detector"] = DETECTOR
     defaults["meta"]["instrument"]["optical_element"] = filter
     defaults["meta"]["wcsinfo"]["ra_ref"] = RA
@@ -61,7 +62,7 @@ def image_model(filter=FILTERS[0]):
     defaults["meta"]["wcsinfo"]["roll_ref"] = ROLL
 
     model = ImageModel.create_fake_data(defaults=defaults, shape=SHAPE)
-    model.meta.exposure.read_pattern = parameters.read_pattern[MATABLE]
+    model.meta.exposure.read_pattern = romanisim.parameters.read_pattern[MATABLE]
 
     data, err = make_test_data()
     model.data = data
@@ -196,12 +197,12 @@ def test_inject_sources(image_model, mosaic_model):
 
         # Ensure total added flux matches expected added flux
         # maggies to counts (large number)
-        cps_conv = bandpass.get_abflux(test_filter, 2)
+        cps_conv = romanisim.bandpass.get_abflux(test_filter, 2)
         # electrons to mjysr (roughly order unity in scale)
         if isinstance(si_model, ImageModel):
-            unit_factor = 1 / parameters.reference_data["gain"].value
+            unit_factor = 1 / romanisim.parameters.reference_data["gain"].value
         else:
-            unit_factor = bandpass.etomjysr(test_filter, 2)
+            unit_factor = romanisim.bandpass.etomjysr(test_filter, 2)
         total_rec_flux = np.sum(si_model.data - data_orig.data)  # MJy / sr
         total_theo_flux = len(cat) * MAG_FLUX * cps_conv * unit_factor  # u.MJy / u.sr
         assert np.isclose(total_rec_flux, total_theo_flux, rtol=0.1)
