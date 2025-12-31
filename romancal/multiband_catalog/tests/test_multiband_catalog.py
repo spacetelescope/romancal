@@ -322,6 +322,9 @@ def library_model2(mosaic_si_model):
 def test_multiband_source_injection_catalog(
     library_model2, fit_psf, snr_threshold, npixels, save_results, function_jail
 ):
+    # test requires romanisim
+    pytest.importorskip("romanisim")
+
     step = MultibandCatalogStep()
 
     result = step.call(
