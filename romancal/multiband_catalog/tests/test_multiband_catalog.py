@@ -1,3 +1,4 @@
+import importlib
 from copy import deepcopy
 from pathlib import Path
 from re import match
@@ -236,6 +237,27 @@ def test_multiband_catalog_some_invalid_inputs(
     assert "segment_f184_flux" in cat.colnames
     assert np.all(np.isnan(cat["segment_f184_flux"]))
     assert np.all(np.isnan(cat["segment_f184_flux_err"]))
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("romanisim"),
+    reason="test requires romanisim is not installed",
+)
+def test_multiband_catalog_inject_sources_error(library_model, function_jail):
+    step = MultibandCatalogStep()
+
+    with pytest.raises(
+        Exception, match="inject_sources requires romanisim to be installed"
+    ):
+        step.call(
+            library_model,
+            bkg_boxsize=50,
+            snr_threshold=1000,
+            inject_sources=True,
+            npixels=10,
+            fit_psf=False,
+            save_results=False,
+        )
 
 
 def make_si_test_image():
