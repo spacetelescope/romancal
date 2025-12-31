@@ -6,6 +6,7 @@ Pipeline Steps
    dq_init/index.rst
    saturation/index.rst
    refpix/index.rst
+   wfi18_transient/index.rst
    linearity/index.rst
    dark_current/index.rst
    ramp_fitting/index.rst

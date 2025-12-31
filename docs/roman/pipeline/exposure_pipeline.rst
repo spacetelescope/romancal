@@ -26,6 +26,7 @@ table below.
  :ref:`dq_init <dq_init_step>`                      |check|    |check|  |check|
  :ref:`saturation <saturation_step>`                |check|    |check|  |check|
  :ref:`refpix <refpix>`                             |check|    |check|  |check|
+ :ref:`wfi18_transient <wfi18_transient_step>`      |check|    |check|  |check|
  :ref:`linearity <linearity_step>`                  |check|    |check|  |check|
  :ref:`ramp_fitting <ramp_fitting_step>`            |check|    |check|  |check|
  :ref:`dark_current <dark_current_step>`            |check|    |check|  |check|

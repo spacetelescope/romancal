@@ -19,6 +19,7 @@ from .saturation.saturation_step import SaturationStep
 from .skymatch.skymatch_step import SkyMatchStep
 from .source_catalog.source_catalog_step import SourceCatalogStep
 from .tweakreg.tweakreg_step import TweakRegStep
+from .wfi18_transient.wfi18_transient_step import WFI18TransientStep
 
 __all__ = [
     "AssignWcsStep",
@@ -37,4 +38,5 @@ __all__ = [
     "SkyMatchStep",
     "SourceCatalogStep",
     "TweakRegStep",
+    "WFI18TransientStep",
 ]
