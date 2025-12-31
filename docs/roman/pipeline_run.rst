@@ -62,7 +62,6 @@ Exit Status
 
  - 0: Successful completion of the step/pipeline
  - 1: General error occurred
- - 64: No science data found
 
  .. _intro_file_conventions:
 
