@@ -13,8 +13,7 @@ Configuring a Pipeline
 
 This section describes how to set parameters on the individual steps
 in a pipeline.  To change the order of steps in a pipeline, one must
-write a Pipeline subclass in Python.  That is described in the
-:ref:`devel-pipelines` section of the developer documentation.
+write a Pipeline subclass in Python (see :ref:`stpipe-devel-steps`).
 
 Just as with Steps, Pipelines can by configured either by a
 parameter file or directly from Python.
