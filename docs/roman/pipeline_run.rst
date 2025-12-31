@@ -103,7 +103,7 @@ For the mosaic level pipeline and steps,
  result = SkyMatchStep.call('r0000101001001001001_asn.json')
 
 
-For more information, see :ref:`Execute via call()<call_examples>`
+For more information, see :ref:`Execute via call()<stpipe:call_examples>`
 
 For details on the different ways to run a pipeline step, see
-the :ref:`Configuring a Step<configuring-a-step>` page.
+the :ref:`Configuring a Step<stpipe:configuring-a-step>` page.
