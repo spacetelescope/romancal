@@ -41,7 +41,7 @@ used in operations, and development versions. Remember that all conda operations
 
 You can install the latest released version via `pip`. From a bash shell:
 
-    conda create -n <env_name> python
+    conda create -n <env_name> python==3.13
     conda activate <env_name>
     pip install romancal
 
@@ -51,7 +51,7 @@ You can install the latest released version via `pip`. From a bash shell:
 
 You can also install a specific version (from `romancal 0.1.0` onward):
 
-    conda create -n <env_name> python
+    conda create -n <env_name> python==3.13
     conda activate <env_name>
     pip install romancal==0.10.0
 
@@ -59,7 +59,7 @@ You can also install a specific version (from `romancal 0.1.0` onward):
 
 You can install the latest development version (not as well tested) from the Github main branch:
 
-    conda create -n <env_name> python
+    conda create -n <env_name> python==3.13
     conda activate <env_name>
     pip install git+https://github.com/spacetelescope/romancal
 
@@ -73,7 +73,7 @@ package.
 
 As usual, the first two steps are to create and activate an environment:
 
-    conda create -n <env_name> python
+    conda create -n <env_name> python==3.13
     conda activate <env_name>
 
 To install your own copy of the code into that environment, you first need to fork and clone the `romancal` repo:
