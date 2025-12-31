@@ -35,7 +35,7 @@ To run a single step:
  # Set parameter values
  step.override_gain = 'my_gain_file.asdf'
  step.save_results = True
- step.output_dir = '/my/data/jump_data'
+ step.output_dir = '/my/data/ramp_data'
 
  # Execute using the run method
  result = step.run('r0000101001001001001_0001_wfi01_linearity.asdf')

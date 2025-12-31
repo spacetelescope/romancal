@@ -200,21 +200,21 @@ Finally, the remaining optional keyword arguments are the parameters that the
 particular step accepts. The method returns the result of the step. A basic
 example is::
 
-    from romancal.jump import JumpStep
-    output = JumpStep.call('r0000101001001001001_0001_wfi01_uncal.asdf')
+    from romancal.refpix import RefPixStep
+    output = RefPixStep.call('r0000101001001001001_0001_wfi01_uncal.asdf')
 
-makes a new instance of `JumpStep` and executes using the specified exposure
-file. `JumpStep` has a parameter ``rejection_threshold``. To use a different
+makes a new instance of `RefPixStep` and executes using the specified exposure
+file. `RefPixStep` has a parameter ``remove_offset``. To use a different
 value than the default, the statement would be::
 
-    output = JumpStep.call('r0000101001001001001_0001_wfi01_uncal.asdf',
-                           rejection_threshold=42.0)
+    output = RefPixStep.call('r0000101001001001001_0001_wfi01_uncal.asdf',
+                             remove_offset=False)
 
 If one wishes to use a :ref:`parameter file<parameter_files>`, specify the path
 to it using the ``config_file`` argument::
 
-    output = JumpStep.call('r0000101001001001001_0001_wfi01_uncal.asdf',
-                           config_file='my_jumpstep_config.asdf')
+    output = RefPixStep.call('r0000101001001001001_0001_wfi01_uncal.asdf',
+                             config_file='my_refpixstep_config.asdf')
 
 run()
 `````

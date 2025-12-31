@@ -31,13 +31,13 @@ parameter names:
 
 ::
 
- result = ExposurePipeline.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf', config_file='exp_pars.asdf', steps={"jump":{"rejection_threshold": 200}})
+ result = ExposurePipeline.call('r0000101001001001001_01101_0001_WFI01_uncal.asdf', config_file='exp_pars.asdf', steps={"refpix":{"remove_offset": False}})
 
 When running a single step with ``call``, parameter values can be supplied more simply:
 
 ::
 
- result = JumpStep.call("r0000101001001001001_01101_0001_WFI01_dqinit.asdf", rejection_threshold=200)
+ result = RefPixStep.call("r0000101001001001001_01101_0001_WFI01_dqinit.asdf", remove_offset=False)
 
 Running steps and pipelines with ``call`` also allows for the specification of a logging
 configuration file using the keyword ``logcfg``:
@@ -64,8 +64,8 @@ automatically saved to files. It is left to the user to decide when to save.
 If one wishes for results to be saved by a particular ``call``, use the
 parameter ``save_results=True``::
 
- result = JumpStep.call("r0000101001001001001_01101_0001_WFI01_dqinit.asdf",
-                        rejection_threshold=200, save_results=True)
+ result = RefPixStep.call("r0000101001001001001_01101_0001_WFI01_dqinit.asdf",
+                          save_results=True)
 
 If one wishes to specify a different file name, rather than a system-generated
 one, set :ref:`output_file<intro_output_file>` and/or
