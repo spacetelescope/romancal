@@ -196,6 +196,7 @@ class SourceCatalogStep(RomanStep):
         fit_psf = self.fit_psf & (not self.forced_segmentation)  # skip when forced
         catobj = RomanSourceCatalog(
             model,
+            cat_model,
             segment_img,
             detection_image,
             self.kernel_fwhm,
@@ -214,6 +215,7 @@ class SourceCatalogStep(RomanStep):
             segment_img.detection_image = forced_detection_image
             forced_catobj = RomanSourceCatalog(
                 model,
+                cat_model,
                 segment_img,
                 forced_detection_image,
                 self.kernel_fwhm,
