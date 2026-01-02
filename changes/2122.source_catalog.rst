@@ -1,0 +1,1 @@
+Generate catalog column descriptions from schemas.

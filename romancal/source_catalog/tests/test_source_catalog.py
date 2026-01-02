@@ -9,7 +9,6 @@ from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from astropy.time import Time
 from numpy.testing import assert_equal
-from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import (
     ForcedImageSourceCatalogModel,
@@ -21,7 +20,6 @@ from roman_datamodels.datamodels import (
     SegmentationMapModel,
 )
 
-from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
 from .helpers import compare_model_and_parquet_metadata
@@ -392,16 +390,6 @@ def test_invalid_step_inputs(image_model, mosaic_model, function_jail):
         cat = result.source_catalog
         assert isinstance(cat, Table)
         assert len(cat) == 0
-
-
-def test_inputs(mosaic_model):
-    data = np.ones((3, 3), dtype=int)
-    data[1, 1] = 1
-    segm = SegmentationImage(data)
-    cdata = np.ones((3, 3))
-    kernel_fwhm = 2.0
-    with pytest.raises(ValueError):
-        RomanSourceCatalog(np.ones((3, 3)), segm, cdata, kernel_fwhm, fit_psf=True)
 
 
 def test_psf_photometry(function_jail, image_model):

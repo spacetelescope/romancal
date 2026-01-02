@@ -129,6 +129,7 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
     log.info("Creating catalog for detection image")
     det_catobj = RomanSourceCatalog(
         det_model,
+        cat_model,
         segment_img,
         det_img,
         star_kernel_fwhm,
@@ -167,6 +168,7 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
 
             catobj = RomanSourceCatalog(
                 model,
+                cat_model,
                 segment_img,
                 None,
                 star_kernel_fwhm,

@@ -133,24 +133,6 @@ class ApertureCatalog:
         """
         return [f"aper{name}_flux" for name in self.aperture_radius_name]
 
-    @lazyproperty
-    def aperture_flux_descriptions(self):
-        """
-        The aperture flux descriptions.
-
-        The descriptions are based on the circular aperture radii in
-        tenths of arcsec. For example, the flux in a r=0.2 arcsec
-        aperture is "aper02_flux".
-        """
-        descriptions = {}
-        for i, colname in enumerate(self.aperture_flux_colnames):
-            desc = (
-                "Flux within a circular aperture of radius="
-                f"{self.aperture_radii['circle'][i]:0.1f}"
-            )
-            descriptions[colname] = desc
-        return descriptions
-
     def calc_ee_fractions(self):
         """
         Calculate the encircled energy fractions for each aperture radius.
