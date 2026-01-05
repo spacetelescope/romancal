@@ -20,6 +20,7 @@ from roman_datamodels.datamodels import (
     SegmentationMapModel,
 )
 
+from romancal.source_catalog.source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
 from .helpers import compare_model_and_parquet_metadata
@@ -390,6 +391,11 @@ def test_invalid_step_inputs(image_model, mosaic_model, function_jail):
         cat = result.source_catalog
         assert isinstance(cat, Table)
         assert len(cat) == 0
+
+
+def test_inputs(mosaic_model):
+    with pytest.raises(ValueError, match="The input model must be an"):
+        RomanSourceCatalog(None, None, None, None, None)
 
 
 def test_psf_photometry(function_jail, image_model):
