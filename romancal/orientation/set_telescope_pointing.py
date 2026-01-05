@@ -278,7 +278,7 @@ class TransformParameters:
         }
         return r
 
-    def update_pointing(self):
+    def update_from_engdb(self):
         """Update pointing information."""
         self.pointing = get_pointing(
             self.obsstart,
@@ -443,7 +443,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
 
     # Get the pointing information
     try:
-        t_pars.update_pointing()
+        t_pars.update_from_engdb()
     except ValueError as exception:
         logger.error("Cannot retrieve valid engineering orientation data")
         if t_pars.default_quaternion is None or not t_pars.allow_default:
