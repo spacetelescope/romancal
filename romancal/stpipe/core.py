@@ -5,10 +5,11 @@ Roman Calibration Pipeline base class
 import importlib.metadata
 import logging
 import time
+from collections.abc import Iterable
 from pathlib import Path
 
 import roman_datamodels as rdm
-from roman_datamodels.datamodels import ImageModel, MosaicModel
+from roman_datamodels.datamodels import DataModel, ImageModel, MosaicModel
 from stpipe import Pipeline, Step, crds_client
 
 from romancal.datamodels.library import ModelLibrary
@@ -36,6 +37,7 @@ class RomanStep(Step):
     """
 
     _log_records_formatter = _LOG_FORMATTER
+    _input_class = None
 
     @classmethod
     def _datamodels_open(cls, init, **kwargs):
@@ -136,6 +138,60 @@ class RomanStep(Step):
                     log.info(
                         f"Results used CRDS context: {model.meta.ref_file.crds.context}"
                     )
+
+    def _prepare_input(self, init):
+        """
+        Prepare step input for processing.
+
+        This is responsible for opening files, converting models and
+        anything else needed to convert the step input to the expected
+        format for processing.
+
+        Parameters
+        ----------
+
+        init : str or Path or DataModel or ModelLibrary
+            Step input.
+
+        Returns
+        -------
+        step_input : DataModel or ModelLibrary
+            Input converted to the expected format.
+        """
+        # only ModelLibrary and DataModel are supported
+        if not issubclass(self._input_class, (ModelLibrary, DataModel)):
+            raise ValueError(f"{self._input_class} is not a ModelLibrary or DataModel")
+
+        # open str and Path instances
+        if isinstance(init, (str, Path)):
+            init = rdm.open(init)
+
+        # if input is already the expected class/format, return as-is
+        if isinstance(init, self._input_class):
+            return init
+
+        if self._input_class is ModelLibrary:
+            # for a single DataModel, convert it to a library
+            if isinstance(init, DataModel):
+                return ModelLibrary([init])
+
+            # finally allow ModelLibrary to handle the init
+            return ModelLibrary(init)
+
+        # some steps can accept multiple DataModel classes
+        if isinstance(self._input_class, Iterable):
+            input_classes = self._input_class
+        else:
+            input_classes = (self._input_class,)
+
+        # handle DataModel subclass conversions
+        if rdm.RampModel in input_classes:
+            if isinstance(init, (rdm.TvacModel, rdm.FpsModel)):
+                init = rdm.ScienceRawModel.from_tvac_raw(init)
+            if isinstance(init, rdm.ScienceRawModel):
+                return rdm.RampModel.from_science_raw(init)
+
+        raise ValueError(f"Unable to convert {init} to required class: {input_classes}")
 
     def record_step_status(self, model, step_name, success=True):
         """

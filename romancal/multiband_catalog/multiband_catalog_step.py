@@ -42,7 +42,10 @@ class MultibandCatalogStep(RomanStep):
         models.
     """
 
+    _input_clas = ModelLibrary
+
     class_alias = "multiband_catalog"
+
     reference_file_types: ClassVar = ["apcorr"]
 
     spec = """

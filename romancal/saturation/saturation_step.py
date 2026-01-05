@@ -23,6 +23,8 @@ class SaturationStep(RomanStep):
     This Step sets saturation flags.
     """
 
+    _input_class = rdm.datamodels.RampModel
+
     class_alias = "saturation"
 
     reference_file_types: ClassVar = ["saturation"]

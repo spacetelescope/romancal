@@ -46,8 +46,8 @@ class ExposurePipeline(RomanPipeline):
     in the ``step_defs``.
     """
 
+    _input_class = ModelLibrary
     class_alias = "roman_elp"
-
     spec = """
         save_results = boolean(default=False)
         suffix = string(default="cal")

@@ -49,6 +49,8 @@ class ResampleStep(RomanStep):
         A mosaic datamodel with the final output frame.
     """
 
+    _input_class = ModelLibrary
+
     class_alias = "resample"
 
     spec = """

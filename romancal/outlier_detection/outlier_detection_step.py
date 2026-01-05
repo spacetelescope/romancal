@@ -26,6 +26,8 @@ class OutlierDetectionStep(RomanStep):
 
     """
 
+    _input_class = ModelLibrary
+
     class_alias = "outlier_detection"
 
     # The members of spec needs to be a super-set of all parameters needed

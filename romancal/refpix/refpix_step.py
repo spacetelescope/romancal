@@ -23,6 +23,8 @@ class RefPixStep(RomanStep):
         pixels
     """
 
+    _input_class = rdm.datamodels.RampModel
+
     class_alias = "refpix"
 
     spec = """

@@ -23,7 +23,10 @@ log = logging.getLogger(__name__)
 class FlatFieldStep(RomanStep):
     """Flat-field a science image using a flatfield reference image."""
 
+    _input_class = rdm.datamodels.ImageModel
+
     class_alias = "flat_field"
+
     spec = """
         include_var_flat = boolean(default=False) # include flat field variance
     """
@@ -31,7 +34,7 @@ class FlatFieldStep(RomanStep):
     reference_file_types: ClassVar = ["flat"]
 
     def process(self, input_model):
-        if not isinstance(input_model, rdm.DataModel):
+        if not isinstance(input_model, rdm.datamodels.DataModel):
             input_model = rdm.open(input_model)
 
         reference_file_name = self.get_reference_file(input_model, "flat")

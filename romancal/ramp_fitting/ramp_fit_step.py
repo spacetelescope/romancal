@@ -32,6 +32,8 @@ class RampFitStep(RomanStep):
     determine the mean count rate for each pixel.
     """
 
+    _input_class = rdm.RampModel
+
     class_alias = "ramp_fit"
 
     spec = """

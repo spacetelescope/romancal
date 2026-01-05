@@ -33,6 +33,8 @@ __all__ = ["AssignWcsStep", "load_wcs"]
 class AssignWcsStep(RomanStep):
     """Assign a gWCS object to a science image."""
 
+    _input_class = rdm.ImageModel
+
     class_alias = "assign_wcs"
 
     reference_file_types: ClassVar = ["distortion"]

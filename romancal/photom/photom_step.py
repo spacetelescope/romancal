@@ -23,6 +23,8 @@ class PhotomStep(RomanStep):
         reference files and attaching to the input science data model
     """
 
+    _input_class = rdm.datamodels.ImageModel
+
     class_alias = "photom"
 
     reference_file_types: ClassVar = ["photom"]

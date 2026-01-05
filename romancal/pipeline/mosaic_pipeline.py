@@ -33,6 +33,7 @@ class MosaicPipeline(RomanPipeline):
     ``flux``, ``skymatch``, ``outlier_detection``, ``resample`` and ``source catalog``.
     """
 
+    _input_class = ModelLibrary
     class_alias = "roman_mos"
     spec = """
         save_results = boolean(default=False)

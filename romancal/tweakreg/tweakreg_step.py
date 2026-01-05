@@ -38,6 +38,8 @@ class TweakRegStep(RomanStep):
     input images.
     """
 
+    _input_class = ModelLibrary
+
     class_alias = "tweakreg"
 
     spec = f"""

@@ -29,6 +29,8 @@ class SkyMatchStep(RomanStep):
     SkyMatchStep: Subtraction or equalization of sky background in science images.
     """
 
+    _input_class = ModelLibrary
+
     class_alias = "skymatch"
 
     spec = """

@@ -21,6 +21,8 @@ class DarkCurrentStep(RomanStep):
     dark current reference data from the input science data model.
     """
 
+    _input_class = rdm.ImageModel
+
     class_alias = "dark"
 
     spec = """

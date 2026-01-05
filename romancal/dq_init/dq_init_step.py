@@ -31,6 +31,8 @@ class DQInitStep(RomanStep):
     input model.
     """
 
+    _input_class = RampModel
+
     class_alias = "dq_init"
 
     reference_file_types: ClassVar = ["mask"]

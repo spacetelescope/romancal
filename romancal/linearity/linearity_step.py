@@ -28,6 +28,8 @@ class LinearityStep(RomanStep):
     detector response, using the "classic" polynomial method.
     """
 
+    _input_class = rdd.RampModel
+
     class_alias = "linearity"
 
     reference_file_types: ClassVar = ["linearity"]

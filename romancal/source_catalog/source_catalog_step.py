@@ -41,7 +41,10 @@ class SourceCatalogStep(RomanStep):
         Path to an ASDF file, or an `ImageModel` or `MosaicModel`.
     """
 
+    _input_class = (ImageModel, MosaicModel)
+
     class_alias = "source_catalog"
+
     reference_file_types: ClassVar = ["apcorr"]
 
     spec = """

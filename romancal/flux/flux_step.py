@@ -42,6 +42,8 @@ class FluxStep(RomanStep):
     Currently, the correction is done in-place; the inputs are directly modified if in-memory DataModels are input.
     """
 
+    _input_class = ModelLibrary
+
     class_alias = "flux"
 
     spec = """
