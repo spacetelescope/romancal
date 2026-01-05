@@ -55,13 +55,8 @@ class SkyMatchStep(RomanStep):
 
     reference_file_types: ClassVar = []
 
-    def process(self, input):
-        log.setLevel(logging.DEBUG)
-
-        if isinstance(input, ModelLibrary):
-            library = input
-        else:
-            library = ModelLibrary(input)
+    def process(self, init):
+        library = self._prepare_input(init)
 
         self._dqbits = interpret_bit_flags(self.dqbits, flag_name_map=pixel)
 

@@ -73,7 +73,7 @@ class ResampleStep(RomanStep):
 
     reference_file_types: ClassVar = []
 
-    def process(self, input):
+    def process(self, init):
         # There is no way to check for minimum values in output_shape
         # within the step spec so check them here.
         if self.output_shape is not None:
@@ -83,21 +83,15 @@ class ResampleStep(RomanStep):
                         f"output shape values must be >= 1: {self.output_shape}"
                     )
 
-        if isinstance(input, datamodels.DataModel):
-            input_models = ModelLibrary([input])
+        input_models = self._prepare_input(init)
+
+        if isinstance(init, datamodels.DataModel):
             # set output filename from meta.filename found in the first datamodel
-            output_filename = input.meta.filename
-        elif isinstance(input, str):
+            output_filename = init.meta.filename
+        elif isinstance(init, str):
             # either a single asdf filename or an association filename
-            try:
-                # association filename
-                input_models = ModelLibrary(input)
-            except Exception:
-                # single ASDF filename
-                input_models = ModelLibrary([input])
             output_filename = input_models.asn["products"][0]["name"]
-        elif isinstance(input, ModelLibrary):
-            input_models = input
+        elif isinstance(init, ModelLibrary):
             if "name" in input_models.asn["products"][0]:
                 output_filename = input_models.asn["products"][0]["name"]
             else:
@@ -106,11 +100,6 @@ class ResampleStep(RomanStep):
                 if len(output_filename) == 0:
                     # set default filename if no common prefix can be determined
                     output_filename = "resample_output.asdf"
-        else:
-            raise TypeError(
-                "Input must be an ASN filename, a ModelLibrary, "
-                "a single ASDF filename, or a single Roman DataModel."
-            )
 
         if not len(input_models):
             raise ValueError("At least 1 file must be provided")

@@ -49,13 +49,10 @@ class OutlierDetectionStep(RomanStep):
         in_memory = boolean(default=False) # Specifies whether or not to keep all intermediate products and datamodels in memory
     """
 
-    def process(self, input_models):
+    def process(self, init):
         """Perform outlier detection processing on input data."""
 
-        if isinstance(input_models, ModelLibrary):
-            library = input_models
-        else:
-            library = ModelLibrary(input_models)
+        library = self._prepare_input(init)
 
         # check number of input models
         if len(library) < 2:

@@ -34,12 +34,8 @@ class LinearityStep(RomanStep):
 
     reference_file_types: ClassVar = ["linearity"]
 
-    def process(self, input):
-        # Open the input data model
-        if isinstance(input, rdd.DataModel):
-            input_model = input
-        else:
-            input_model = rdd.open(input)
+    def process(self, init):
+        input_model = self._prepare_input(init)
 
         # Get the name of the linearity reference file to use
         self.lin_name = self.get_reference_file(input_model, "linearity")

@@ -58,14 +58,8 @@ class SourceCatalogStep(RomanStep):
         forced_segmentation = string(default='')  # force the use of this segmentation map
     """
 
-    def process(self, step_input):
-        if isinstance(step_input, datamodels.DataModel):
-            input_model = step_input
-        else:
-            input_model = datamodels.open(step_input)
-
-        if not isinstance(input_model, ImageModel | MosaicModel):
-            raise ValueError("The input model must be an ImageModel or MosaicModel.")
+    def process(self, init):
+        input_model = self._prepare_input(init)
 
         # get the name of the psf reference file
         if self.fit_psf:

@@ -39,12 +39,9 @@ class AssignWcsStep(RomanStep):
 
     reference_file_types: ClassVar = ["distortion"]
 
-    def process(self, input):
+    def process(self, init):
         reference_file_names = {}
-        if isinstance(input, rdm.DataModel):
-            input_model = input
-        else:
-            input_model = rdm.open(input)
+        input_model = self._prepare_input(init)
 
         for reftype in self.reference_file_types:
             log.info(f"reftype, {reftype}")

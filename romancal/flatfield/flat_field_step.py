@@ -33,9 +33,8 @@ class FlatFieldStep(RomanStep):
 
     reference_file_types: ClassVar = ["flat"]
 
-    def process(self, input_model):
-        if not isinstance(input_model, rdm.datamodels.DataModel):
-            input_model = rdm.open(input_model)
+    def process(self, init):
+        input_model = self._prepare_input(init)
 
         reference_file_name = self.get_reference_file(input_model, "flat")
 
@@ -53,7 +52,7 @@ class FlatFieldStep(RomanStep):
             log.debug("Using no FLAT ref file")
 
         # Do the flat-field correction
-        output_model = flat_field.do_correction(
+        flat_field.do_correction(
             input_model, reference_file_model, include_var_flat=self.include_var_flat
         )
 
@@ -67,4 +66,4 @@ class FlatFieldStep(RomanStep):
             except AttributeError:
                 self["suffix"] = "flat"
 
-        return output_model
+        return input_model

@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-import romancal.datamodels.filetype as filetype
 from romancal.datamodels import ModelLibrary
 
 # step imports
@@ -51,21 +50,13 @@ class MosaicPipeline(RomanPipeline):
     }
 
     # start the actual processing
-    def process(self, input_data):
+    def process(self, init):
         """Process the Roman WFI data from Level 2 to Level 3"""
 
         log.info("Starting Roman mosaic level calibration pipeline ...")
 
         # open the input file
-        file_type = filetype.check(input_data)
-        if file_type == "asn":
-            library = ModelLibrary(input_data, on_disk=self.on_disk)
-        elif file_type == "ModelLibrary":
-            library = input_data
-        else:
-            raise TypeError(
-                "The level three pipeline input needs to be an association or ModelLibrary"
-            )
+        library = self._prepare_input(init, open_kwargs={"on_disk": self.on_disk})
 
         # propagate resample_on_skycell setting
         self.outlier_detection.resample_on_skycell = self.resample_on_skycell

@@ -31,12 +31,8 @@ class DarkCurrentStep(RomanStep):
 
     reference_file_types: ClassVar = ["dark"]
 
-    def process(self, input):
-        if isinstance(input, rdm.DataModel):
-            input_model = input
-        else:
-            # Open the input data model
-            input_model = rdm.open(input)
+    def process(self, init):
+        input_model = self._prepare_input(init)
 
         # Get the name of the dark reference file to use
         self.dark_name = self.get_reference_file(input_model, "dark")
@@ -44,9 +40,8 @@ class DarkCurrentStep(RomanStep):
         if self.dark_name == "N/A":
             log.warning("No DARK reference file found")
             log.warning("Dark current step will be skipped")
-            result = input_model
-            result.meta.cal_step.dark = "SKIPPED"
-            return result
+            input_model.meta.cal_step.dark = "SKIPPED"
+            return input_model
 
         log.info("Using DARK reference file: %s", self.dark_name)
 
@@ -57,11 +52,10 @@ class DarkCurrentStep(RomanStep):
             dark_slope_err = dark_model.dark_slope_error[4:-4, 4:-4]
 
             # Do the dark correction
-            out_model = input_model
-            out_model.data -= dark_slope
-            out_model.err = np.sqrt(out_model.err**2 + (dark_slope_err) ** 2)
-            out_model.dq |= dark_model.dq[4:-4, 4:-4]
-            out_model.meta.cal_step.dark = "COMPLETE"
+            input_model.data -= dark_slope
+            input_model.err = np.sqrt(input_model.err**2 + (dark_slope_err) ** 2)
+            input_model.dq |= dark_model.dq[4:-4, 4:-4]
+            input_model.meta.cal_step.dark = "COMPLETE"
 
             # Save dark data to file
             if self.dark_output is not None:
@@ -74,4 +68,4 @@ class DarkCurrentStep(RomanStep):
             except AttributeError:
                 self["suffix"] = "darkcurrent"
 
-        return out_model
+        return input_model

@@ -76,15 +76,6 @@ class TweakRegStep(RomanStep):
 
     reference_file_types: ClassVar = []
 
-    def _prepare_input(self, init):
-        if isinstance(init, rdm.DataModel):
-            return ModelLibrary([init])
-        if isinstance(init, ModelLibrary):
-            return init
-        if str(init).endswith(".asdf"):
-            return ModelLibrary([rdm.open(init)])
-        return ModelLibrary(init)
-
     def process(self, init):
         images = self._prepare_input(init)
 

@@ -42,7 +42,7 @@ class MultibandCatalogStep(RomanStep):
         models.
     """
 
-    _input_clas = ModelLibrary
+    _input_class = ModelLibrary
 
     class_alias = "multiband_catalog"
 
@@ -61,13 +61,10 @@ class MultibandCatalogStep(RomanStep):
                                    # Include image data and other data for testing
     """
 
-    def process(self, library):
+    def process(self, init):
         # All input MosaicImages in the ModelLibrary are assumed to have
         # the same shape and be pixel aligned.
-        if isinstance(library, str):
-            library = ModelLibrary(library)
-        if not isinstance(library, ModelLibrary):
-            raise TypeError("library input must be a ModelLibrary object")
+        library = self._prepare_input(init)
 
         with library:
             example_model = library.borrow(0)

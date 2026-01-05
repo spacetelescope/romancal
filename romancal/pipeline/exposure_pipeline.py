@@ -70,7 +70,7 @@ class ExposurePipeline(RomanPipeline):
     }
 
     # start the actual processing
-    def process(self, input):
+    def process(self, init):
         """Process the Roman WFI data"""
 
         # make sure source_catalog returns the updated datamodel
@@ -83,17 +83,8 @@ class ExposurePipeline(RomanPipeline):
         log.info("Starting Roman exposure calibration pipeline ...")
 
         # determine the input type
-        file_type = filetype.check(input)
-        return_lib = True
-        if file_type == "ModelLibrary":
-            lib = input
-        elif file_type == "asn":
-            lib = ModelLibrary(input)
-        else:
-            # for a non-asn non-library input process it as a library
-            lib = ModelLibrary([input])
-            # but return it as a datamodel
-            return_lib = False
+        lib = self._prepare_input(init)
+        return_lib = filetype.check(init) in ("ModelLibrary", "asn")
 
         # Flag to track if any of the input models are fully saturated
         any_saturated = False
@@ -159,7 +150,7 @@ class ExposurePipeline(RomanPipeline):
         # or a DataModel (for non-asn non-lib inputs)
         with lib:
             model = lib.borrow(0)
-            lib.shelve(model)
+            lib.shelve(model, modify=False)
         return model
 
     def save_model(self, result, *args, **kwargs):

@@ -12,6 +12,7 @@ import roman_datamodels as rdm
 from roman_datamodels.datamodels import DataModel, ImageModel, MosaicModel
 from stpipe import Pipeline, Step, crds_client
 
+from romancal.datamodels import filetype
 from romancal.datamodels.library import ModelLibrary
 
 from ..lib.suffix import remove_suffix
@@ -139,7 +140,7 @@ class RomanStep(Step):
                         f"Results used CRDS context: {model.meta.ref_file.crds.context}"
                     )
 
-    def _prepare_input(self, init):
+    def _prepare_input(self, init, open_kwargs=None):
         """
         Prepare step input for processing.
 
@@ -153,36 +154,44 @@ class RomanStep(Step):
         init : str or Path or DataModel or ModelLibrary
             Step input.
 
+        open_kwargs : dict, optional
+            Keyword arguments to pass to rdm.open or ModelLibrary
+
         Returns
         -------
         step_input : DataModel or ModelLibrary
             Input converted to the expected format.
         """
-        # only ModelLibrary and DataModel are supported
-        if not issubclass(self._input_class, (ModelLibrary, DataModel)):
-            raise ValueError(f"{self._input_class} is not a ModelLibrary or DataModel")
-
-        # open str and Path instances
-        if isinstance(init, (str, Path)):
-            init = rdm.open(init)
-
-        # if input is already the expected class/format, return as-is
-        if isinstance(init, self._input_class):
-            return init
-
-        if self._input_class is ModelLibrary:
-            # for a single DataModel, convert it to a library
-            if isinstance(init, DataModel):
-                return ModelLibrary([init])
-
-            # finally allow ModelLibrary to handle the init
-            return ModelLibrary(init)
+        open_kwargs = open_kwargs or {}
 
         # some steps can accept multiple DataModel classes
         if isinstance(self._input_class, Iterable):
             input_classes = self._input_class
         else:
             input_classes = (self._input_class,)
+
+        # only ModelLibrary and DataModel are supported
+        if not all(issubclass(c, (ModelLibrary, DataModel)) for c in input_classes):
+            raise ValueError(f"{self._input_class} is not a ModelLibrary or DataModel")
+
+        # open str and Path instances
+        if isinstance(init, (str, Path)):
+            if filetype.check(init) == "asn":
+                init = ModelLibrary(init, **open_kwargs)
+            else:
+                init = rdm.open(init, **open_kwargs)
+
+        # if input is already the expected class/format, return as-is
+        if isinstance(init, input_classes):
+            return init
+
+        if ModelLibrary in input_classes:
+            # for a single DataModel, convert it to a library
+            if isinstance(init, DataModel):
+                return ModelLibrary([init], **open_kwargs)
+
+            # finally allow ModelLibrary to handle the init
+            return ModelLibrary(init, **open_kwargs)
 
         # handle DataModel subclass conversions
         if rdm.RampModel in input_classes:
