@@ -34,6 +34,9 @@ class RomanSourceCatalog:
         The input data model. The image data is assumed to be background
         subtracted.
 
+    cat_model : `ImageSourceCatalogModel` or other catalog model
+        The output catalog model.
+
     segment_image : `~photutils.segmentation.SegmentationImage`
         A 2D segmentation image, with the same shape as the input data,
         where sources are marked by different positive integer values. A
@@ -90,6 +93,7 @@ class RomanSourceCatalog:
     def __init__(
         self,
         model,
+        cat_model,
         segment_img,
         convolved_data,
         kernel_fwhm,
@@ -106,6 +110,7 @@ class RomanSourceCatalog:
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
         self.model = model  # input model is background-subtracted
+        self.cat_model = cat_model
         self.segment_img = segment_img
         self.convolved_data = convolved_data
         self.kernel_fwhm = kernel_fwhm
@@ -458,128 +463,6 @@ class RomanSourceCatalog:
                 self.meta["ee_fractions"] = np.array(fractions).astype(np.float32)
 
     @lazyproperty
-    def column_descriptions(self):
-        """
-        A dictionary of the output catalog column descriptions.
-
-        The order is not important.
-        """
-        col = {}
-        col["label"] = "Label of the source segment in the segmentation image"
-        col["flagged_spatial_index"] = (
-            "Bit flag encoding the overlap flag, projection, skycell, and "
-            "pixel coordinates of the source"
-        )
-
-        col["x_centroid"] = (
-            "Column coordinate of the source centroid in the detection "
-            "image from image moments (0 indexed)"
-        )
-        col["y_centroid"] = (
-            "Row coordinate of the source centroid in the detection image "
-            "from image moments (0 indexed)"
-        )
-        col["x_centroid_win"] = (
-            "Column coordinate of the windowed source centroid in the "
-            "detection image from image moments (0 indexed)"
-        )
-        col["y_centroid_win"] = (
-            "Row coordinate of the windowed source centroid in the "
-            "detection image from image moments (0 indexed)"
-        )
-
-        col["ra"] = "Best estimate of the right ascension (ICRS)"
-        col["dec"] = "Best estimate of the declination (ICRS)"
-        col["ra_centroid"] = "Right ascension (ICRS) of the source centroid"
-        col["dec_centroid"] = "Declination (ICRS) of the source centroid"
-        col["ra_centroid_win"] = (
-            "Right ascension (ICRS) of the windowed source centroid"
-        )
-        col["dec_centroid_win"] = "Declination (ICRS) of the windowed source centroid"
-        col["ra_psf"] = "Right ascension (ICRS) of the PSF-fitted position"
-        col["dec_psf"] = "Declination (ICRS) of the PSF-fitted position"
-
-        col["bbox_xmin"] = (
-            "Column index of the left edge of the source bounding box (0 indexed)"
-        )
-        col["bbox_xmax"] = (
-            "Column index of the right edge of the source bounding box (0 indexed)"
-        )
-        col["bbox_ymin"] = (
-            "Row index of the bottom edge of the source bounding box (0 indexed)"
-        )
-        col["bbox_ymax"] = (
-            "Row index of the top edge of the source bounding box (0 indexed)"
-        )
-        col["semimajor"] = (
-            "Length of the source semimajor axis computed from image moments"
-        )
-        col["semiminor"] = (
-            "Length of the source semiminor axis computed from image moments"
-        )
-        col["fwhm"] = (
-            "Circularized full width at half maximum (FWHM) "
-            "calculated from the semimajor and semiminor axes "
-            "as 2*sqrt(ln(2) * (semimajor**2 + semiminor**2))"
-        )
-        col["ellipticity"] = "Source ellipticity as 1 - (semimajor / semiminor)"
-        col["orientation_pix"] = (
-            "Angle measured counter-clockwise from the positive X axis to the source major axis computed from image moments"
-        )
-        col["orientation_sky"] = (
-            "Position angle from North of the source major axis computed from image moments"
-        )
-
-        col["cxx"] = (
-            "Coefficient for the x**2 term in the generalized quadratic ellipse equation"
-        )
-        col["cxy"] = (
-            "Coefficient for the x*y term in the generalized quadratic ellipse equation"
-        )
-        col["cyy"] = (
-            "Coefficient for the y**2 term in the generalized quadratic ellipse equation"
-        )
-
-        col["segment_flux"] = "Isophotal flux"
-        col["segment_area"] = "Area of the source segment"
-        col["kron_radius"] = "Unscaled first-moment Kron radius"
-        col["fluxfrac_radius_50"] = (
-            "Radius of a circle centered on the source centroid that encloses 50% of the Kron flux"
-        )
-        col["kron_flux"] = "Flux within the elliptical Kron aperture"
-        col["kron_abmag"] = "AB magnitude within the elliptical Kron aperture"
-        col["aper_bkg_flux"] = "Local background estimated within a circular annulus"
-
-        col["x_psf"] = "Column coordinate of the source from PSF fitting (0 indexed)"
-        col["y_psf"] = "Row coordinate of the source from PSF fitting (0 indexed)"
-        col["psf_flux"] = "Total PSF flux"
-        col["psf_gof"] = "PSF goodness of fit metric"
-        col["psf_flags"] = "PSF fitting bit flags (0 = good)"
-
-        col["warning_flags"] = "Warning bit flags (0 = good)"
-        col["image_flags"] = "Image quality bit flags (0 = good)"
-
-        col["is_extended"] = (
-            "Flag indicating that the source appears to be more extended than a point source"
-        )
-        col["sharpness"] = "Photutils DAOStarFinder sharpness statistic"
-        col["roundness1"] = "Photutils DAOStarFinder roundness1 statistic"
-        col["nn_label"] = "Segment label of the nearest neighbor in this skycell"
-        col["nn_distance"] = "Distance to the nearest neighbor in this skycell"
-
-        # add the aperture flux column descriptions
-        if self.aperture_cat is not None:
-            col.update(self.aperture_cat.aperture_flux_descriptions)
-
-        # add the "*_err" column descriptions
-        for column in self.column_names:
-            if column.endswith("_err"):
-                base_column = column.replace("_err", "")
-                col[column] = f"Uncertainty in {base_column}"
-
-        return col
-
-    @lazyproperty
     def aper_colnames(self):
         """
         An ordered list of the aperture column names.
@@ -841,8 +724,8 @@ class RomanSourceCatalog:
         catalog = QTable()
         for column in self.column_names:
             catalog[column] = getattr(self, column)
-            descrip = self.column_descriptions.get(column, None)
-            catalog[column].info.description = descrip
+            definition = self.cat_model.get_column_definition(column)
+            catalog[column].info.description = definition["description"]
         self.update_metadata()
         catalog.meta.update(self.meta)
 
