@@ -4,9 +4,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-import roman_datamodels as rdm
 from roman_datamodels.datamodels import SaturationRefModel
 
+from romancal.datamodels.fileio import open_dataset
 from romancal.saturation import saturation
 from romancal.stpipe import RomanStep
 
@@ -23,14 +23,12 @@ class SaturationStep(RomanStep):
     This Step sets saturation flags.
     """
 
-    _input_class = rdm.datamodels.RampModel
-
     class_alias = "saturation"
 
     reference_file_types: ClassVar = ["saturation"]
 
-    def process(self, init):
-        input_model = self._prepare_input(init)
+    def process(self, dataset):
+        input_model = open_dataset(dataset)
 
         # Get the name of the saturation reference file
         self.ref_name = self.get_reference_file(input_model, "saturation")

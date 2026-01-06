@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from romancal.datamodels import ModelLibrary
+from romancal.datamodels.fileio import open_dataset
 
 # step imports
 from romancal.flux import FluxStep
@@ -32,7 +32,6 @@ class MosaicPipeline(RomanPipeline):
     ``flux``, ``skymatch``, ``outlier_detection``, ``resample`` and ``source catalog``.
     """
 
-    _input_class = ModelLibrary
     class_alias = "roman_mos"
     spec = """
         save_results = boolean(default=False)
@@ -50,13 +49,15 @@ class MosaicPipeline(RomanPipeline):
     }
 
     # start the actual processing
-    def process(self, init):
+    def process(self, dataset):
         """Process the Roman WFI data from Level 2 to Level 3"""
 
         log.info("Starting Roman mosaic level calibration pipeline ...")
 
         # open the input file
-        library = self._prepare_input(init, open_kwargs={"on_disk": self.on_disk})
+        library = open_dataset(
+            dataset, as_library=True, open_kwargs={"on_disk": self.on_disk}
+        )
 
         # propagate resample_on_skycell setting
         self.outlier_detection.resample_on_skycell = self.resample_on_skycell

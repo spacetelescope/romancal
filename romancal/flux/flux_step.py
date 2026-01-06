@@ -5,9 +5,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-import romancal.datamodels.filetype as filetype
+from romancal.datamodels.fileio import open_dataset
 
-from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -42,8 +41,6 @@ class FluxStep(RomanStep):
     Currently, the correction is done in-place; the inputs are directly modified if in-memory DataModels are input.
     """
 
-    _input_class = ModelLibrary
-
     class_alias = "flux"
 
     spec = """
@@ -51,9 +48,11 @@ class FluxStep(RomanStep):
 
     reference_file_types: ClassVar = []
 
-    def process(self, init):
-        input_models = self._prepare_input(init)
-        return_lib = filetype.check(init) in ("ModelLibrary", "asn")
+    def process(self, dataset):
+        input_models, dataset_type = open_dataset(
+            dataset, return_type=True, as_library=True
+        )
+        return_lib = dataset_type in ("ModelLibrary", "asn")
 
         with input_models:
             for index, model in enumerate(input_models):

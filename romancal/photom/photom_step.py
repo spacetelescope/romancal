@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
 
+from romancal.datamodels.fileio import open_dataset
 from romancal.photom import photom
 from romancal.stpipe import RomanStep
 
@@ -23,18 +24,16 @@ class PhotomStep(RomanStep):
         reference files and attaching to the input science data model
     """
 
-    _input_class = rdm.datamodels.ImageModel
-
     class_alias = "photom"
 
     reference_file_types: ClassVar = ["photom"]
 
-    def process(self, init):
+    def process(self, dataset):
         """Perform the photometric calibration step
 
         Parameters
         ----------
-        init : Roman level 2 image datamodel (wfi_image-1.x.x)
+        dataset : Roman level 2 image datamodel (wfi_image-1.x.x)
             input roman datamodel
 
         Returns
@@ -43,7 +42,7 @@ class PhotomStep(RomanStep):
             output roman datamodel
         """
 
-        input_model = self._prepare_input(init)
+        input_model = open_dataset(dataset)
 
         # Get reference file
         reffile = self.get_reference_file(input_model, "photom")

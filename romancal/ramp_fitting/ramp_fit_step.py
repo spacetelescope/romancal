@@ -14,6 +14,7 @@ from stcal.ramp_fitting import ols_cas22_fit
 from stcal.ramp_fitting.likely_fit import likely_ramp_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 
+from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
 
 SQRT2 = np.sqrt(2)
@@ -32,8 +33,6 @@ class RampFitStep(RomanStep):
     determine the mean count rate for each pixel.
     """
 
-    _input_class = rdm.RampModel
-
     class_alias = "ramp_fit"
 
     spec = """
@@ -49,8 +48,8 @@ class RampFitStep(RomanStep):
 
     reference_file_types: ClassVar = ["readnoise", "gain"]
 
-    def process(self, init):
-        input_model = self._prepare_input(init)
+    def process(self, dataset):
+        input_model = open_dataset(dataset)
 
         # Retrieve reference info
         readnoise_filename = self.get_reference_file(input_model, "readnoise")

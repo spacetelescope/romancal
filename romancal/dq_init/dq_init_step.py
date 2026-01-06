@@ -8,6 +8,7 @@ import roman_datamodels as rdm
 from roman_datamodels.datamodels import FpsModel, RampModel, ScienceRawModel, TvacModel
 from roman_datamodels.dqflags import pixel
 
+from romancal.datamodels.fileio import open_dataset
 from romancal.dq_init import dq_initialization
 from romancal.stpipe import RomanStep
 
@@ -31,18 +32,16 @@ class DQInitStep(RomanStep):
     input model.
     """
 
-    _input_class = RampModel
-
     class_alias = "dq_init"
 
     reference_file_types: ClassVar = ["mask"]
 
-    def process(self, input):
+    def process(self, dataset):
         """Perform the dq_init calibration step
 
         Parameters
         ----------
-        input : Roman datamodel
+        dataset : Roman datamodel
             input roman datamodel
 
         Returns
@@ -51,7 +50,7 @@ class DQInitStep(RomanStep):
             result roman datamodel
         """
         # Open datamodel
-        input_model = rdm.open(input)
+        input_model = open_dataset(dataset)
         is_tvac = isinstance(input_model, (FpsModel | TvacModel))
         try:
             # note that this succeeds even for ScienceRawModels

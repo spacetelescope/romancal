@@ -5,15 +5,11 @@ Roman Calibration Pipeline base class
 import importlib.metadata
 import logging
 import time
-from collections.abc import Iterable
-from pathlib import Path
 
-import roman_datamodels as rdm
-from roman_datamodels.datamodels import DataModel, ImageModel, MosaicModel
+from roman_datamodels.datamodels import ImageModel, MosaicModel
 from stpipe import Pipeline, Step, crds_client
 
-from romancal.datamodels import filetype
-from romancal.datamodels.library import ModelLibrary
+from romancal.datamodels.fileio import open_dataset
 
 from ..lib.suffix import remove_suffix
 
@@ -38,7 +34,6 @@ class RomanStep(Step):
     """
 
     _log_records_formatter = _LOG_FORMATTER
-    _input_class = None
 
     @classmethod
     def _datamodels_open(cls, init, **kwargs):
@@ -47,19 +42,7 @@ class RomanStep(Step):
         so that the stpipe infrastructure knows how to instantiate
         models and containers.
         """
-        if isinstance(init, str):
-            init = Path(init)
-        if isinstance(init, Path):
-            ext = init.suffix.lower()
-            if ext == ".asdf":
-                return rdm.open(init, **kwargs)
-            if ext in (".json", ".yaml"):
-                return ModelLibrary(init, **kwargs)
-        if isinstance(init, rdm.DataModel):
-            return rdm.open(init, **kwargs)
-        if isinstance(init, ModelLibrary):
-            return ModelLibrary(init)
-        raise TypeError(f"Invalid input: {init}")
+        return open_dataset(init, open_kwargs=kwargs)
 
     @classmethod
     def _get_crds_parameters(cls, dataset):
@@ -139,68 +122,6 @@ class RomanStep(Step):
                     log.info(
                         f"Results used CRDS context: {model.meta.ref_file.crds.context}"
                     )
-
-    def _prepare_input(self, init, open_kwargs=None):
-        """
-        Prepare step input for processing.
-
-        This is responsible for opening files, converting models and
-        anything else needed to convert the step input to the expected
-        format for processing.
-
-        Parameters
-        ----------
-
-        init : str or Path or DataModel or ModelLibrary
-            Step input.
-
-        open_kwargs : dict, optional
-            Keyword arguments to pass to rdm.open or ModelLibrary
-
-        Returns
-        -------
-        step_input : DataModel or ModelLibrary
-            Input converted to the expected format.
-        """
-        open_kwargs = open_kwargs or {}
-
-        # some steps can accept multiple DataModel classes
-        if isinstance(self._input_class, Iterable):
-            input_classes = self._input_class
-        else:
-            input_classes = (self._input_class,)
-
-        # only ModelLibrary and DataModel are supported
-        if not all(issubclass(c, (ModelLibrary, DataModel)) for c in input_classes):
-            raise ValueError(f"{self._input_class} is not a ModelLibrary or DataModel")
-
-        # open str and Path instances
-        if isinstance(init, (str, Path)):
-            if filetype.check(init) == "asn":
-                init = ModelLibrary(init, **open_kwargs)
-            else:
-                init = rdm.open(init, **open_kwargs)
-
-        # if input is already the expected class/format, return as-is
-        if isinstance(init, input_classes):
-            return init
-
-        if ModelLibrary in input_classes:
-            # for a single DataModel, convert it to a library
-            if isinstance(init, DataModel):
-                return ModelLibrary([init], **open_kwargs)
-
-            # finally allow ModelLibrary to handle the init
-            return ModelLibrary(init, **open_kwargs)
-
-        # handle DataModel subclass conversions
-        if rdm.RampModel in input_classes:
-            if isinstance(init, (rdm.TvacModel, rdm.FpsModel)):
-                init = rdm.ScienceRawModel.from_tvac_raw(init)
-            if isinstance(init, rdm.ScienceRawModel):
-                return rdm.RampModel.from_science_raw(init)
-
-        raise ValueError(f"Unable to convert {init} to required class: {input_classes}")
 
     def record_step_status(self, model, step_name, success=True):
         """

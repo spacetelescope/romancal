@@ -9,6 +9,8 @@ import asdf
 import numpy as np
 from roman_datamodels import datamodels
 
+from romancal.datamodels.fileio import open_dataset
+
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
 from .resample import ResampleData
@@ -49,8 +51,6 @@ class ResampleStep(RomanStep):
         A mosaic datamodel with the final output frame.
     """
 
-    _input_class = ModelLibrary
-
     class_alias = "resample"
 
     spec = """
@@ -73,7 +73,7 @@ class ResampleStep(RomanStep):
 
     reference_file_types: ClassVar = []
 
-    def process(self, init):
+    def process(self, dataset):
         # There is no way to check for minimum values in output_shape
         # within the step spec so check them here.
         if self.output_shape is not None:
@@ -83,15 +83,17 @@ class ResampleStep(RomanStep):
                         f"output shape values must be >= 1: {self.output_shape}"
                     )
 
-        input_models = self._prepare_input(init)
+        input_models = open_dataset(
+            dataset, as_library=True, open_kwargs={"on_disk": not self.in_memory}
+        )
 
-        if isinstance(init, datamodels.DataModel):
+        if isinstance(dataset, datamodels.DataModel):
             # set output filename from meta.filename found in the first datamodel
-            output_filename = init.meta.filename
-        elif isinstance(init, str):
+            output_filename = dataset.meta.filename
+        elif isinstance(dataset, str):
             # either a single asdf filename or an association filename
             output_filename = input_models.asn["products"][0]["name"]
-        elif isinstance(init, ModelLibrary):
+        elif isinstance(dataset, ModelLibrary):
             if "name" in input_models.asn["products"][0]:
                 output_filename = input_models.asn["products"][0]["name"]
             else:

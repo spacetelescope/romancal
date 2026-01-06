@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from roman_datamodels import datamodels as rdm
 
+from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -21,8 +22,6 @@ class DarkCurrentStep(RomanStep):
     dark current reference data from the input science data model.
     """
 
-    _input_class = rdm.ImageModel
-
     class_alias = "dark"
 
     spec = """
@@ -31,8 +30,8 @@ class DarkCurrentStep(RomanStep):
 
     reference_file_types: ClassVar = ["dark"]
 
-    def process(self, init):
-        input_model = self._prepare_input(init)
+    def process(self, dataset):
+        input_model = open_dataset(dataset)
 
         # Get the name of the dark reference file to use
         self.dark_name = self.get_reference_file(input_model, "dark")

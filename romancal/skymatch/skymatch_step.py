@@ -13,7 +13,7 @@ from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
 from roman_datamodels.dqflags import pixel
 from stcal.skymatch import SkyImage, SkyStats, skymatch
 
-from romancal.datamodels import ModelLibrary
+from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -28,8 +28,6 @@ class SkyMatchStep(RomanStep):
     """
     SkyMatchStep: Subtraction or equalization of sky background in science images.
     """
-
-    _input_class = ModelLibrary
 
     class_alias = "skymatch"
 
@@ -55,8 +53,8 @@ class SkyMatchStep(RomanStep):
 
     reference_file_types: ClassVar = []
 
-    def process(self, init):
-        library = self._prepare_input(init)
+    def process(self, dataset):
+        library = open_dataset(dataset, as_library=True)
 
         self._dqbits = interpret_bit_flags(self.dqbits, flag_name_map=pixel)
 

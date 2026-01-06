@@ -16,6 +16,8 @@ from gwcs.wcs import WCS, Step
 from roman_datamodels import datamodels as rdm
 from stcal.alignment.util import wcs_bbox_from_shape
 
+from romancal.datamodels.fileio import open_dataset
+
 from ..stpipe import RomanStep
 from . import pointing
 from .utils import add_s_region
@@ -33,15 +35,13 @@ __all__ = ["AssignWcsStep", "load_wcs"]
 class AssignWcsStep(RomanStep):
     """Assign a gWCS object to a science image."""
 
-    _input_class = rdm.ImageModel
-
     class_alias = "assign_wcs"
 
     reference_file_types: ClassVar = ["distortion"]
 
-    def process(self, init):
+    def process(self, dataset):
         reference_file_names = {}
-        input_model = self._prepare_input(init)
+        input_model = open_dataset(dataset)
 
         for reftype in self.reference_file_types:
             log.info(f"reftype, {reftype}")

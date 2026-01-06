@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
 
+from romancal.datamodels.fileio import open_dataset
+
 from ..stpipe import RomanStep
 from . import flat_field
 
@@ -23,8 +25,6 @@ log = logging.getLogger(__name__)
 class FlatFieldStep(RomanStep):
     """Flat-field a science image using a flatfield reference image."""
 
-    _input_class = rdm.datamodels.ImageModel
-
     class_alias = "flat_field"
 
     spec = """
@@ -33,8 +33,8 @@ class FlatFieldStep(RomanStep):
 
     reference_file_types: ClassVar = ["flat"]
 
-    def process(self, init):
-        input_model = self._prepare_input(init)
+    def process(self, dataset):
+        input_model = open_dataset(dataset)
 
         reference_file_name = self.get_reference_file(input_model, "flat")
 

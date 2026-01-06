@@ -3,7 +3,7 @@
 import logging
 from functools import partial
 
-from romancal.datamodels import ModelLibrary
+from romancal.datamodels.fileio import open_dataset
 from romancal.outlier_detection.utils import detect_outliers
 
 from ..stpipe import RomanStep
@@ -26,8 +26,6 @@ class OutlierDetectionStep(RomanStep):
 
     """
 
-    _input_class = ModelLibrary
-
     class_alias = "outlier_detection"
 
     # The members of spec needs to be a super-set of all parameters needed
@@ -49,10 +47,12 @@ class OutlierDetectionStep(RomanStep):
         in_memory = boolean(default=False) # Specifies whether or not to keep all intermediate products and datamodels in memory
     """
 
-    def process(self, init):
+    def process(self, dataset):
         """Perform outlier detection processing on input data."""
 
-        library = self._prepare_input(init)
+        # TODO handle in_memory
+        # library = open_dataset(dataset, as_library=True, open_kwargs={"on_disk": not self.in_memory})
+        library = open_dataset(dataset, as_library=True)
 
         # check number of input models
         if len(library) < 2:

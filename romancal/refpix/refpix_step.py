@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
 
+from romancal.datamodels.fileio import open_dataset
 from romancal.refpix import refpix
 from romancal.stpipe import RomanStep
 
@@ -23,8 +24,6 @@ class RefPixStep(RomanStep):
         pixels
     """
 
-    _input_class = rdm.datamodels.RampModel
-
     class_alias = "refpix"
 
     spec = """
@@ -40,14 +39,14 @@ class RefPixStep(RomanStep):
 
     reference_file_types: ClassVar = ["refpix"]
 
-    def process(self, init):
+    def process(self, dataset):
         """
         Perform the reference pixel correction
         """
 
         # open the input data model
-        log.debug(f"Opening the science data: {init}")
-        datamodel = self._prepare_input(init)
+        log.debug(f"Opening the science data: {dataset}")
+        datamodel = open_dataset(dataset)
 
         # Get the reference file
         ref_file = self.get_reference_file(datamodel, "refpix")

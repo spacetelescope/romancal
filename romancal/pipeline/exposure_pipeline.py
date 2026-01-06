@@ -8,12 +8,10 @@ import numpy as np
 import roman_datamodels.datamodels as rdm
 from roman_datamodels.dqflags import group
 
-import romancal.datamodels.filetype as filetype
-
 # step imports
 from romancal.assign_wcs import AssignWcsStep
 from romancal.dark_current import DarkCurrentStep
-from romancal.datamodels.library import ModelLibrary
+from romancal.datamodels.fileio import open_dataset
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
 from romancal.lib.basic_utils import is_fully_saturated
@@ -46,8 +44,8 @@ class ExposurePipeline(RomanPipeline):
     in the ``step_defs``.
     """
 
-    _input_class = ModelLibrary
     class_alias = "roman_elp"
+
     spec = """
         save_results = boolean(default=False)
         suffix = string(default="cal")
@@ -70,7 +68,7 @@ class ExposurePipeline(RomanPipeline):
     }
 
     # start the actual processing
-    def process(self, init):
+    def process(self, dataset):
         """Process the Roman WFI data"""
 
         # make sure source_catalog returns the updated datamodel
@@ -83,8 +81,8 @@ class ExposurePipeline(RomanPipeline):
         log.info("Starting Roman exposure calibration pipeline ...")
 
         # determine the input type
-        lib = self._prepare_input(init)
-        return_lib = filetype.check(init) in ("ModelLibrary", "asn")
+        lib, input_type = open_dataset(dataset, return_type=True, as_library=True)
+        return_lib = input_type in ("ModelLibrary", "asn")
 
         # Flag to track if any of the input models are fully saturated
         any_saturated = False
