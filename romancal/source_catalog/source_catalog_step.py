@@ -58,7 +58,7 @@ class SourceCatalogStep(RomanStep):
     """
 
     def process(self, dataset):
-        input_model = open_dataset(dataset)
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
         # get the name of the psf reference file
         if self.fit_psf:

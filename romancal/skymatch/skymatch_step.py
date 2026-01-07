@@ -54,7 +54,9 @@ class SkyMatchStep(RomanStep):
     reference_file_types: ClassVar = []
 
     def process(self, dataset):
-        library = open_dataset(dataset, as_library=True)
+        library = open_dataset(
+            dataset, update_version=self.update_version, as_library=True
+        )
 
         self._dqbits = interpret_bit_flags(self.dqbits, flag_name_map=pixel)
 

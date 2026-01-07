@@ -28,7 +28,7 @@ class SaturationStep(RomanStep):
     reference_file_types: ClassVar = ["saturation"]
 
     def process(self, dataset):
-        input_model = open_dataset(dataset)
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
         # Get the name of the saturation reference file
         self.ref_name = self.get_reference_file(input_model, "saturation")

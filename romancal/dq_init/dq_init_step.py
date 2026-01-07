@@ -50,7 +50,7 @@ class DQInitStep(RomanStep):
             result roman datamodel
         """
         # Open datamodel
-        input_model = open_dataset(dataset)
+        input_model = open_dataset(dataset, update_version=self.update_version)
         is_tvac = isinstance(input_model, (FpsModel | TvacModel))
         try:
             # note that this succeeds even for ScienceRawModels

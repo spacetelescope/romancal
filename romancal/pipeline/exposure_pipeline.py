@@ -81,7 +81,12 @@ class ExposurePipeline(RomanPipeline):
         log.info("Starting Roman exposure calibration pipeline ...")
 
         # determine the input type
-        lib, input_type = open_dataset(dataset, return_type=True, as_library=True)
+        lib, input_type = open_dataset(
+            dataset,
+            update_version=self.update_version,
+            return_type=True,
+            as_library=True,
+        )
         return_lib = input_type in ("ModelLibrary", "asn")
 
         # Flag to track if any of the input models are fully saturated

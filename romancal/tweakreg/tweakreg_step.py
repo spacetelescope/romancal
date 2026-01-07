@@ -76,7 +76,9 @@ class TweakRegStep(RomanStep):
     reference_file_types: ClassVar = []
 
     def process(self, dataset):
-        images = open_dataset(dataset, as_library=True)
+        images = open_dataset(
+            dataset, update_version=self.update_version, as_library=True
+        )
 
         if not images:
             raise ValueError("Input must contain at least one image model.")

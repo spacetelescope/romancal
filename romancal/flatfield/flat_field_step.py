@@ -34,7 +34,7 @@ class FlatFieldStep(RomanStep):
     reference_file_types: ClassVar = ["flat"]
 
     def process(self, dataset):
-        input_model = open_dataset(dataset)
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
         reference_file_name = self.get_reference_file(input_model, "flat")
 

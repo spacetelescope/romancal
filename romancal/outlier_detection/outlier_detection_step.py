@@ -51,7 +51,10 @@ class OutlierDetectionStep(RomanStep):
         """Perform outlier detection processing on input data."""
 
         library = open_dataset(
-            dataset, as_library=True, open_kwargs={"on_disk": not self.in_memory}
+            dataset,
+            update_version=self.update_version,
+            as_library=True,
+            open_kwargs={"on_disk": not self.in_memory},
         )
 
         # check number of input models

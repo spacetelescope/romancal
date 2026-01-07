@@ -84,7 +84,10 @@ class ResampleStep(RomanStep):
                     )
 
         input_models = open_dataset(
-            dataset, as_library=True, open_kwargs={"on_disk": not self.in_memory}
+            dataset,
+            update_version=self.update_version,
+            as_library=True,
+            open_kwargs={"on_disk": not self.in_memory},
         )
 
         if isinstance(dataset, datamodels.DataModel):

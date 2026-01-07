@@ -42,7 +42,7 @@ class PhotomStep(RomanStep):
             output roman datamodel
         """
 
-        input_model = open_dataset(dataset)
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
         # Get reference file
         reffile = self.get_reference_file(input_model, "photom")

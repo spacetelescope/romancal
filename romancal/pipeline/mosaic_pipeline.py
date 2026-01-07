@@ -56,7 +56,10 @@ class MosaicPipeline(RomanPipeline):
 
         # open the input file
         library = open_dataset(
-            dataset, as_library=True, open_kwargs={"on_disk": self.on_disk}
+            dataset,
+            update_version=self.update_version,
+            as_library=True,
+            open_kwargs={"on_disk": self.on_disk},
         )
 
         # propagate resample_on_skycell setting

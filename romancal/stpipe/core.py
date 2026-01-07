@@ -30,7 +30,8 @@ class RomanStep(Step):
     """
 
     spec = """
-    output_ext =  string(default='.asdf')    # Default type of output
+    output_ext =  string(default='.asdf') # Default type of output
+    update_version = boolean(default=False) # Update old versions of datamodels to newest version
     """
 
     _log_records_formatter = _LOG_FORMATTER

@@ -62,7 +62,9 @@ class MultibandCatalogStep(RomanStep):
     def process(self, dataset):
         # All input MosaicImages in the ModelLibrary are assumed to have
         # the same shape and be pixel aligned.
-        library = open_dataset(dataset, as_library=True)
+        library = open_dataset(
+            dataset, update_version=self.update_version, as_library=True
+        )
 
         with library:
             example_model = library.borrow(0)

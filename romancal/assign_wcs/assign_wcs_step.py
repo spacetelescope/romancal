@@ -41,7 +41,7 @@ class AssignWcsStep(RomanStep):
 
     def process(self, dataset):
         reference_file_names = {}
-        input_model = open_dataset(dataset)
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
         for reftype in self.reference_file_types:
             log.info(f"reftype, {reftype}")

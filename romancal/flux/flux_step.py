@@ -50,7 +50,10 @@ class FluxStep(RomanStep):
 
     def process(self, dataset):
         input_models, dataset_type = open_dataset(
-            dataset, return_type=True, as_library=True
+            dataset,
+            update_version=self.update_version,
+            return_type=True,
+            as_library=True,
         )
         return_lib = dataset_type in ("ModelLibrary", "asn")
 

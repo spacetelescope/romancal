@@ -31,7 +31,7 @@ class DarkCurrentStep(RomanStep):
     reference_file_types: ClassVar = ["dark"]
 
     def process(self, dataset):
-        input_model = open_dataset(dataset)
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
         # Get the name of the dark reference file to use
         self.dark_name = self.get_reference_file(input_model, "dark")
