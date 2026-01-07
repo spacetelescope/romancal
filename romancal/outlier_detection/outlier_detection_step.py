@@ -44,15 +44,15 @@ class OutlierDetectionStep(RomanStep):
         resample_data = boolean(default=True) # Specifies whether or not to resample the input images when performing outlier detection
         resample_on_skycell = boolean(default=True) # if association contains skycell information use the skycell wcs for resampling
         good_bits = string(default="~DO_NOT_USE+NON_SCIENCE")  # DQ bit value to be considered 'good'
-        in_memory = boolean(default=False) # Specifies whether or not to keep all intermediate products and datamodels in memory
+        in_memory = boolean(default=True) # Specifies whether or not to keep all intermediate products and datamodels in memory, ignored if run as part of a pipeline
     """
 
     def process(self, dataset):
         """Perform outlier detection processing on input data."""
 
-        # TODO handle in_memory
-        # library = open_dataset(dataset, as_library=True, open_kwargs={"on_disk": not self.in_memory})
-        library = open_dataset(dataset, as_library=True)
+        library = open_dataset(
+            dataset, as_library=True, open_kwargs={"on_disk": not self.in_memory}
+        )
 
         # check number of input models
         if len(library) < 2:
@@ -105,7 +105,6 @@ class OutlierDetectionStep(RomanStep):
             self.save_intermediate_results,
             self.resample_data,
             self.good_bits,
-            self.in_memory,
             self.resample_on_skycell,
             self.make_output_path,
         )

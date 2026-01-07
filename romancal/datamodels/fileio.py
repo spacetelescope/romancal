@@ -1,3 +1,5 @@
+import warnings
+
 import roman_datamodels.datamodels as rdm
 
 from . import filetype
@@ -37,7 +39,18 @@ def open_dataset(
             else:
                 result = model
         case _:
-            result = ModelLibrary(dataset, update_version=update_version, **open_kwargs)
+            # on disk is only supported for associations
+            if open_kwargs.get("on_disk", False):
+                kwargs = open_kwargs.copy()
+                kwargs.pop("on_disk")
+                warnings.warn(
+                    f"ModelLibrary on_disk is not supported for input {dataset}. "
+                    "Disabling on_disk mode.",
+                    stacklevel=2,
+                )
+            else:
+                kwargs = open_kwargs
+            result = ModelLibrary(dataset, update_version=update_version, **kwargs)
 
     if as_library and isinstance(result, rdm.DataModel):
         result = ModelLibrary([result], update_version=update_version, **open_kwargs)
