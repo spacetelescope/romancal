@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def old_build_path():
     """
     Artifactory path of a previous build.
