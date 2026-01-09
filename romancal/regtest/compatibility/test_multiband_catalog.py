@@ -27,7 +27,7 @@ def run_multiband_catalog(old_rtdata_module, request, resource_tracker):
     return rtdata
 
 
-def test_log_tracked_resources(log_tracked_resources, run_source_catalog):
+def test_log_tracked_resources(log_tracked_resources, run_multiband_catalog):
     log_tracked_resources()
 
 
