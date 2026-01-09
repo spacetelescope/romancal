@@ -4,8 +4,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-import roman_datamodels as rdm
-
+from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
 from romancal.wfi18_transient.wfi18_transient import correct_anomaly
 
@@ -31,12 +30,8 @@ class WFI18TransientStep(RomanStep):
         mask_rows = boolean(default = False) # Mask the affected rows instead of fitting
     """
 
-    def process(self, input_data):
-        if isinstance(input_data, rdm.DataModel):
-            input_model = input_data
-        else:
-            # Open the input data model
-            input_model = rdm.open(input_data)
+    def process(self, dataset):
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
         if self.save_results:
             try:
@@ -50,7 +45,7 @@ class WFI18TransientStep(RomanStep):
             return input_model
 
         log.info("Correcting the first read transient anomaly for WFI18")
-        output_model = correct_anomaly(input_model, mask_rows=self.mask_rows)
-        output_model.meta.cal_step.wfi18_transient = "COMPLETE"
+        correct_anomaly(input_model, mask_rows=self.mask_rows)
+        input_model.meta.cal_step.wfi18_transient = "COMPLETE"
 
-        return output_model
+        return input_model
