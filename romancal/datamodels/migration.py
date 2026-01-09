@@ -1,3 +1,5 @@
+from astropy.time import Time
+
 __all__ = ["update_model_version"]
 
 
@@ -23,6 +25,10 @@ def update_model_version(model, *, close_on_update=False):
         return model
 
     updated_model = model.__class__.create_from_model(model)
+
+    # old files (<B20) used a custom Time class
+    if type(updated_model.meta.file_date) is not Time:
+        updated_model.meta.file_date = Time(updated_model.meta.file_date)
 
     if close_on_update:
         model.close()
