@@ -245,7 +245,6 @@ def detect_outliers(
     save_intermediate_results,
     resample_data,
     good_bits,
-    in_memory,
     resample_on_skycell,
     make_output_path,
 ):

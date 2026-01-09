@@ -12,6 +12,7 @@ from roman_datamodels import datamodels as rdd
 from roman_datamodels.dqflags import pixel
 from stcal.linearity.linearity import linearity_correction
 
+from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -32,12 +33,8 @@ class LinearityStep(RomanStep):
 
     reference_file_types: ClassVar = ["linearity"]
 
-    def process(self, input):
-        # Open the input data model
-        if isinstance(input, rdd.DataModel):
-            input_model = input
-        else:
-            input_model = rdd.open(input)
+    def process(self, dataset):
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
         # Get the name of the linearity reference file to use
         self.lin_name = self.get_reference_file(input_model, "linearity")
