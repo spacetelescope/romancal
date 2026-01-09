@@ -12,7 +12,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 def run_multiband_catalog(old_rtdata_module, request, resource_tracker):
     rtdata = old_rtdata_module
 
-    rtdata.get_asn("WFI/image/compatibility/L3_skycell_mbcat_asn.json")
+    rtdata.get_asn("WFI/image/L3_skycell_mbcat_asn.json")
 
     outputfn = "r00001_p_v01001001001001_270p65x70y49_f158_mbcat_cat.parquet"
     rtdata.output = outputfn

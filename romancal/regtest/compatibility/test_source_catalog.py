@@ -25,7 +25,7 @@ def run_source_catalog(old_rtdata_module, request, resource_tracker):
     outputfn = inputfn.rsplit("_", 1)[0] + "_cat.parquet"
     rtdata.output = outputfn
 
-    rtdata.get_data(f"WFI/image/compatibility/{inputfn}")
+    rtdata.get_data(f"WFI/image/{inputfn}")
     rtdata.input = inputfn
 
     args = [
