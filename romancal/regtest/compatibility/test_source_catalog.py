@@ -17,7 +17,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
     ],
     ids=["L3skycell", "L3", "L2"],
 )
-def run_source_catalog(rtdata_module, request, resource_tracker):
+def run_source_catalog(rtdata_module, request, resource_tracker, old_build_path):
     rtdata = rtdata_module
 
     inputfn = request.param
@@ -25,13 +25,13 @@ def run_source_catalog(rtdata_module, request, resource_tracker):
     outputfn = inputfn.rsplit("_", 1)[0] + "_cat.parquet"
     rtdata.output = outputfn
 
-    rtdata.get_data(f"WFI/image/compatibility/{inputfn}")
+    rtdata.get_data(f"{old_build_path}/WFI/image/compatibility/{inputfn}")
     rtdata.input = inputfn
-    rtdata.get_truth(f"truth/WFI/image/compatibility/{outputfn}")
 
     args = [
         "romancal.step.SourceCatalogStep",
         rtdata.input,
+        "--update_version=True",
     ]
     with resource_tracker.track():
         RomanStep.from_cmdline(args)

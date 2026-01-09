@@ -9,19 +9,20 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 
 @pytest.fixture(scope="module")
-def run_multiband_catalog(rtdata_module, request, resource_tracker):
+def run_multiband_catalog(rtdata_module, request, resource_tracker, old_build_path):
     rtdata = rtdata_module
 
-    rtdata.get_asn("WFI/image/compatibility/L3_skycell_mbcat_asn.json")
+    rtdata.get_asn(
+        f"{old_build_path}/WFI/image/compatibility/L3_skycell_mbcat_asn.json"
+    )
 
     outputfn = "r00001_p_v01001001001001_270p65x70y49_f158_mbcat_cat.parquet"
     rtdata.output = outputfn
 
-    rtdata.get_truth(f"truth/WFI/image/compatibility/{outputfn}")
-
     args = [
         "romancal.step.MultibandCatalogStep",
         rtdata.input,
+        "--update_version=True",
     ]
     with resource_tracker.track():
         RomanStep.from_cmdline(args)
