@@ -9,11 +9,11 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 
 @pytest.fixture(scope="module")
-def run_elp(rtdata_module, resource_tracker, old_build_path):
-    rtdata = rtdata_module
+def run_elp(old_rtdata_module, resource_tracker):
+    rtdata = old_rtdata_module
 
     input_data = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
-    rtdata.get_data(f"{old_build_path}/WFI/image/{input_data}")
+    rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 
     # Test Pipeline

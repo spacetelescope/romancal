@@ -9,10 +9,10 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 
 @pytest.fixture(scope="module")
-def run_mos(rtdata_module, resource_tracker, old_build_path):
-    rtdata = rtdata_module
+def run_mos(old_rtdata_module, resource_tracker):
+    rtdata = old_rtdata_module
 
-    rtdata.get_asn(f"{old_build_path}/WFI/image/compatibility/L3_regtest_asn.json")
+    rtdata.get_asn("WFI/image/compatibility/L3_regtest_asn.json")
 
     # Test Pipeline
     output = "r0000101001001001001_f158_coadd.asdf"
