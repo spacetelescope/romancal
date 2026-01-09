@@ -9,4 +9,4 @@ def old_build_path():
     The files for this build will be used to test
     pipeline backwards compatibility.
     """
-    return "build/26Q1_B20"
+    return "../build/26Q1_B20"
