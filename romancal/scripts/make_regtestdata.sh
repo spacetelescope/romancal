@@ -249,3 +249,9 @@ strun romancal.step.WFI18TransientStep TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18
 cp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_wfi18_transient.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 strun romancal.step.WFI18TransientStep r0000101001001001001_0001_wfi01_f158_refpix.asdf
 cp r0000101001001001001_0001_wfi01_f158_refpix.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
+# pull in files from an old build for compatibility tests
+OLD_BUILD="26Q1_B20"
+pushd $outdir/roman-pipeline/dev/WFI/image/compatibility
+jf rt dl roman-pipeline/build/$OLD_BUILD/WFI/image/ --flat
+popd
