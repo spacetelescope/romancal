@@ -1,0 +1,1 @@
+Use S3 HATS partitioned GAIA DR3 catalog (GAIADR3_S3) as default reference catalog.

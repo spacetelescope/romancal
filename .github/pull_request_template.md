@@ -35,6 +35,7 @@ This PR addresses ...
   - ``changes/<PR#>.dq_init.rst``
   - ``changes/<PR#>.saturation.rst``
   - ``changes/<PR#>.refpix.rst``
+  - ``changes/<PR#>.wfi18_transient.rst``
   - ``changes/<PR#>.linearity.rst``
   - ``changes/<PR#>.dark_current.rst``
   - ``changes/<PR#>.jump_detection.rst``

@@ -36,7 +36,6 @@ dependencies = [
     "stcal @ git+https://github.com/spacetelescope/stcal.git",
     "stpipe >=0.11.0,<0.12.0",
     "spherical-geometry >=1.3.3,<1.4",
-    "stsci.imagestats >=1.8.3,<1.9",  # remove when stcal fixes this missing dep
 ]
 license-files = ["LICENSE"]
 dynamic = [
@@ -299,6 +298,11 @@ showcontent = true
 [[tool.towncrier.type]]
 directory = "refpix"
 name = "``refpix`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "wfi18_transient"
+name = "``wfi18_transient`` (WFI-Image, WFI-Prism, WFI-Grism)"
 showcontent = true
 
 [[tool.towncrier.type]]
