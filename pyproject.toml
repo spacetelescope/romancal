@@ -244,14 +244,11 @@ wrap = true
 issue_format = "`#{issue} <https://github.com/spacetelescope/romancal/issues/{issue}>`_"
 
 [[tool.towncrier.type]]
-directory = "general"
-name = "General"
+directory = "breaking"
+name = "Breaking Changes"
 showcontent = true
 
-[[tool.towncrier.type]]
-directory = "docs"
-name = "Documentation"
-showcontent = true
+# general pipeline changes
 
 [[tool.towncrier.type]]
 directory = "stpipe"
@@ -283,7 +280,7 @@ directory = "skycell"
 name = "``skycell``"
 showcontent = true
 
-# steps
+# step changes
 
 [[tool.towncrier.type]]
 directory = "dq_init"
@@ -383,4 +380,16 @@ showcontent = true
 [[tool.towncrier.type]]
 directory = "multiband_catalog"
 name = "``multiband_catalog``"
+showcontent = true
+
+# other changes
+
+[[tool.towncrier.type]]
+directory = "general"
+name = "General"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "docs"
+name = "Documentation"
 showcontent = true
