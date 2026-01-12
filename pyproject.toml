@@ -55,7 +55,7 @@ docs = [
 test = [
     "ci-watson >=0.5.0",
     "pysiaf",
-    "pytest >8.0.0",
+    "pytest>=9.0",
     "pytest-astropy >= 0.11.0",
     "deepdiff",
     "stpreview>=0.6.0",
@@ -124,8 +124,8 @@ include = ["romancal*"]
     "**/*.asdf",
 ]
 
-[tool.pytest.ini_options]
-minversion = 6.0
+[tool.pytest]
+minversion = "9.0"
 norecursedirs = [
     "docs/_build",
     "romancal/scripts",
@@ -139,8 +139,8 @@ filterwarnings = [
     "ignore:invalid escape:DeprecationWarning",
 ]
 junit_family = "xunit2"
-inputs_root = "roman-pipeline"
-results_root = "roman-pipeline-results/regression-tests/runs/"
+inputs_root = ["roman-pipeline"]
+results_root = ["roman-pipeline-results/regression-tests/runs/"]
 doctest_plus = "enabled"
 doctest_rst = "enabled"
 text_file_format = "rst"
