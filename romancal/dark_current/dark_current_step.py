@@ -57,7 +57,6 @@ class DarkCurrentStep(RomanStep):
             # Do the dark correction
             out_model = input_model
             out_model.data -= dark_slope
-            out_model.err = np.sqrt(out_model.err**2 + (dark_slope_err) ** 2)
             out_model.dq |= dark_model.dq[4:-4, 4:-4]
             out_model.meta.cal_step.dark = "COMPLETE"
 

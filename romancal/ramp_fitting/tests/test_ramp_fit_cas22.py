@@ -75,7 +75,11 @@ def test_fits(fit_ramps, attribute):
     image_model, expected = fit_ramps
 
     value = getattr(image_model, attribute)
-    np.testing.assert_allclose(value, expected[attribute], 1e-05)
+    expected_value = expected[attribute]
+    # err is float16, so convert expected to float16 for comparison
+    if attribute == "err":
+        expected_value = expected_value.astype(np.float16)
+    np.testing.assert_allclose(value, expected_value, 1e-05)
 
 
 # ########
@@ -123,6 +127,7 @@ def fit_ramps(request):
         use_ramp_jump_detection=use_jump,
         override_gain=gain_model,
         override_readnoise=readnoise_model,
+        include_var_rnoise=True,
     )
 
     return out_model, expected

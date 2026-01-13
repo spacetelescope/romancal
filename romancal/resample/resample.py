@@ -5,6 +5,7 @@ from roman_datamodels import datamodels, dqflags
 from stcal.resample import Resample
 
 import romancal.skycell.skymap as sc
+from romancal.lib.basic_utils import compute_var_rnoise
 
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
@@ -180,7 +181,7 @@ class ResampleData(Resample):
         return {
             "data": model.data,
             "dq": model.dq,
-            "var_rnoise": model.var_rnoise,
+            "var_rnoise": compute_var_rnoise(model),
             "var_poisson": model.var_poisson,
             "var_sky": compute_var_sky(model)
             if self.weight_type == "ivm-sky"

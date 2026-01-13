@@ -199,7 +199,7 @@ def test_inject_sources(image_model, mosaic_model):
         cps_conv = bandpass.get_abflux(test_filter, 2)
         # electrons to mjysr (roughly order unity in scale)
         if isinstance(si_model, ImageModel):
-            unit_factor = 1 / parameters.reference_data["gain"].value
+            unit_factor = 1 / parameters.reference_data["gain"]
         else:
             unit_factor = bandpass.etomjysr(test_filter, 2)
         total_rec_flux = np.sum(si_model.data - data_orig.data)  # MJy / sr

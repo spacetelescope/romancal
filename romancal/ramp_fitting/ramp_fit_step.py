@@ -41,6 +41,7 @@ class RampFitStep(RomanStep):
         use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
         threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
         threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
+        include_var_rnoise = boolean(default=False) # include var_rnoise in output (can be reconstructed from err and other variances)
     """
 
     weighting = "optimal"  # Only weighting allowed for OLS
@@ -64,6 +65,7 @@ class RampFitStep(RomanStep):
                     input_model,
                     readnoise_model,
                     gain_model,
+                    include_var_rnoise=self.include_var_rnoise,
                 )
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
             elif algorithm == "likely":
@@ -86,7 +88,14 @@ class RampFitStep(RomanStep):
                     input_model, readnoise_model.data, gain_model.data
                 )
 
-                out_model = create_image_model(input_model, image_info)
+                # Cast err to float16
+                data, dq, var_poisson, var_rnoise, err = image_info
+                err = err.astype(np.float16)
+                image_info = (data, dq, var_poisson, var_rnoise, err)
+
+                out_model = create_image_model(
+                    input_model, image_info, include_var_rnoise=self.include_var_rnoise
+                )
                 out_model.meta.cal_step.ramp_fit = "COMPLETE"
             else:
                 log.error("Algorithm %s is not supported. Skipping step.")
@@ -95,7 +104,9 @@ class RampFitStep(RomanStep):
 
         return out_model
 
-    def ols_cas22(self, input_model, readnoise_model, gain_model):
+    def ols_cas22(
+        self, input_model, readnoise_model, gain_model, include_var_rnoise=False
+    ):
         """Peform Optimal Linear Fitting on arbitrarily space resulants
 
         Parameters
@@ -158,7 +169,7 @@ class RampFitStep(RomanStep):
         slopes = output.parameters[..., Parameter.slope]
         var_rnoise = output.variances[..., Variance.read_var]
         var_poisson = output.variances[..., Variance.poisson_var]
-        err = np.sqrt(var_poisson + var_rnoise)
+        err = np.sqrt(var_poisson + var_rnoise).astype(np.float16)
         dq = output.dq.astype(np.uint32)
 
         # Propagate DQ flags forward.
@@ -166,13 +177,16 @@ class RampFitStep(RomanStep):
 
         # Create the image model
         image_info = (slopes, ramp_dq, var_poisson, var_rnoise, err)
-        image_model = create_image_model(input_model, image_info)
+        image_model = create_image_model(
+            input_model, image_info, include_var_rnoise=include_var_rnoise
+        )
 
         # Rescale by the gain back to DN/s
         image_model.data /= gain[4:-4, 4:-4]
         image_model.err /= gain[4:-4, 4:-4]
         image_model.var_poisson /= gain[4:-4, 4:-4] ** 2
-        image_model.var_rnoise /= gain[4:-4, 4:-4] ** 2
+        if include_var_rnoise:
+            image_model.var_rnoise /= gain[4:-4, 4:-4] ** 2
 
         # That's all folks
         return image_model
@@ -181,7 +195,7 @@ class RampFitStep(RomanStep):
 # #########
 # Utilities
 # #########
-def create_image_model(input_model, image_info):
+def create_image_model(input_model, image_info, include_var_rnoise=False):
     """Creates an ImageModel from the computed arrays from ramp_fit.
 
     Parameters
@@ -191,6 +205,9 @@ def create_image_model(input_model, image_info):
 
     image_info : tuple
         The ramp fitting arrays needed for the ``ImageModel``.
+
+    include_var_rnoise : bool
+        If True, include var_rnoise in the output model.
 
     Returns
     -------
@@ -240,7 +257,12 @@ def create_image_model(input_model, image_info):
         im.dq = np.zeros(im.data.shape, dtype="u4")
     im.err = err[4:-4, 4:-4].copy()
     im.var_poisson = var_poisson[4:-4, 4:-4].copy()
-    im.var_rnoise = var_rnoise[4:-4, 4:-4].copy()
+    if include_var_rnoise:
+        im.var_rnoise = var_rnoise[4:-4, 4:-4].copy()
+
+    # Add required chisq and dumo fields (currently set to zero)
+    im.chisq = np.zeros(im.data.shape, dtype=np.float16)
+    im.dumo = np.zeros(im.data.shape, dtype=np.float16)
 
     return im
 
