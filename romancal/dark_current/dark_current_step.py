@@ -45,9 +45,8 @@ class DarkCurrentStep(RomanStep):
 
         # Open dark model
         with rdm.open(self.dark_name) as dark_model:
-            # get the dark slope and dark slope error from the reference file & trim ref pixels
+            # get the dark slope from the reference file & trim ref pixels
             dark_slope = dark_model.dark_slope[4:-4, 4:-4]
-            dark_slope_err = dark_model.dark_slope_error[4:-4, 4:-4]
 
             # Do the dark correction
             input_model.data -= dark_slope
