@@ -7,8 +7,6 @@ import logging
 import numpy as np
 from roman_datamodels.dqflags import pixel
 
-from romancal.lib.basic_utils import compute_var_rnoise
-
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -121,7 +119,7 @@ def apply_flat_field(science, flat, include_var_flat=False):
     # not gone through ramp fitting so there is no Poisson noise or readnoise
     flat_data_squared = flat_data**2
     science.var_poisson /= flat_data_squared
-    if hasattr(science, 'var_rnoise') and science.var_rnoise is not None:
+    if hasattr(science, "var_rnoise") and science.var_rnoise is not None:
         science.var_rnoise /= flat_data_squared
 
     # Scale err by flat (err = sqrt(variance), so divide by flat not flat^2)
