@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 from roman_datamodels import datamodels
 
-from romancal.datamodels import ModelLibrary
+from romancal.datamodels.fileio import open_dataset
 from romancal.multiband_catalog.multiband_catalog import (
     make_source_injected_library,
     match_recovered_sources,
@@ -43,6 +43,7 @@ class MultibandCatalogStep(RomanStep):
     """
 
     class_alias = "multiband_catalog"
+
     reference_file_types: ClassVar = ["apcorr"]
 
     spec = """
@@ -58,13 +59,12 @@ class MultibandCatalogStep(RomanStep):
                                    # Include image data and other data for testing
     """
 
-    def process(self, library):
+    def process(self, dataset):
         # All input MosaicImages in the ModelLibrary are assumed to have
         # the same shape and be pixel aligned.
-        if isinstance(library, str):
-            library = ModelLibrary(library)
-        if not isinstance(library, ModelLibrary):
-            raise TypeError("library input must be a ModelLibrary object")
+        library = open_dataset(
+            dataset, update_version=self.update_version, as_library=True
+        )
 
         with library:
             example_model = library.borrow(0)

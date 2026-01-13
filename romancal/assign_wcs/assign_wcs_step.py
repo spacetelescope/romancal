@@ -16,6 +16,8 @@ from gwcs.wcs import WCS, Step
 from roman_datamodels import datamodels as rdm
 from stcal.alignment.util import wcs_bbox_from_shape
 
+from romancal.datamodels.fileio import open_dataset
+
 from ..stpipe import RomanStep
 from . import pointing
 from .utils import add_s_region
@@ -37,12 +39,9 @@ class AssignWcsStep(RomanStep):
 
     reference_file_types: ClassVar = ["distortion"]
 
-    def process(self, input):
+    def process(self, dataset):
         reference_file_names = {}
-        if isinstance(input, rdm.DataModel):
-            input_model = input
-        else:
-            input_model = rdm.open(input)
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
         for reftype in self.reference_file_types:
             log.info(f"reftype, {reftype}")

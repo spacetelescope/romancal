@@ -16,6 +16,7 @@ from stcal.tweakreg import tweakreg
 from stcal.tweakreg.tweakreg import TweakregError
 
 from romancal.assign_wcs.utils import add_s_region
+from romancal.datamodels.fileio import open_dataset
 from romancal.lib.save_wcs import save_wfiwcs
 
 # LOCAL
@@ -74,17 +75,10 @@ class TweakRegStep(RomanStep):
 
     reference_file_types: ClassVar = []
 
-    def _prepare_input(self, init):
-        if isinstance(init, rdm.DataModel):
-            return ModelLibrary([init])
-        if isinstance(init, ModelLibrary):
-            return init
-        if str(init).endswith(".asdf"):
-            return ModelLibrary([rdm.open(init)])
-        return ModelLibrary(init)
-
-    def process(self, init):
-        images = self._prepare_input(init)
+    def process(self, dataset):
+        images = open_dataset(
+            dataset, update_version=self.update_version, as_library=True
+        )
 
         if not images:
             raise ValueError("Input must contain at least one image model.")
