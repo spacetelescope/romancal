@@ -185,6 +185,7 @@ intersphinx_mapping = {
     "rad": ("https://rad.readthedocs.io/en/latest/", None),
     "drizzle": ("https://spacetelescope-drizzle.readthedocs.io/en/latest/", None),
     "stcal": ("https://stcal.readthedocs.io/en/latest/", None),
+    "stpipe": ("https://stpipe.readthedocs.io/en/latest/", None),
 }
 
 intersphinx_disabled_reftypes = ["*"]
