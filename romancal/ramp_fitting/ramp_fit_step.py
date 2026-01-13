@@ -14,6 +14,7 @@ from stcal.ramp_fitting import ols_cas22_fit
 from stcal.ramp_fitting.likely_fit import likely_ramp_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 
+from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
 
 SQRT2 = np.sqrt(2)
@@ -48,59 +49,60 @@ class RampFitStep(RomanStep):
 
     reference_file_types: ClassVar = ["readnoise", "gain"]
 
-    def process(self, input):
-        with rdm.open(input, mode="rw") as input_model:
-            # Retrieve reference info
-            readnoise_filename = self.get_reference_file(input_model, "readnoise")
-            gain_filename = self.get_reference_file(input_model, "gain")
-            log.info("Using READNOISE reference file: %s", readnoise_filename)
-            readnoise_model = rdm.open(readnoise_filename, mode="r")
-            log.info("Using GAIN reference file: %s", gain_filename)
-            gain_model = rdm.open(gain_filename, mode="r")
+    def process(self, dataset):
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
-            # Do the fitting based on the algorithm selected.
-            algorithm = self.algorithm.lower()
-            if algorithm == "ols_cas22":
-                out_model = self.ols_cas22(
-                    input_model,
-                    readnoise_model,
-                    gain_model,
-                    include_var_rnoise=self.include_var_rnoise,
-                )
-                out_model.meta.cal_step.ramp_fit = "COMPLETE"
-            elif algorithm == "likely":
-                # Add the needed components to the input model.
-                input_model["flags_do_not_use"] = pixel.DO_NOT_USE
-                input_model["flags_saturated"] = pixel.SATURATED
-                input_model["rejection_threshold"] = None
-                input_model["flags_jump_det"] = pixel.JUMP_DET
-                # Add an axis to match the JWST data cube
-                input_model.data = input_model.data[np.newaxis, :, :, :]
-                input_model.groupdq = input_model.groupdq[np.newaxis, :, :, :]
-                # add ancillary information needed by likelihood fitting
-                input_model.read_pattern = get_readtimes(input_model)
-                input_model.zeroframe = None
-                input_model.average_dark_current = np.zeros(
-                    [input_model.data.shape[2], input_model.data.shape[3]]
-                )
+        # Retrieve reference info
+        readnoise_filename = self.get_reference_file(input_model, "readnoise")
+        gain_filename = self.get_reference_file(input_model, "gain")
+        log.info("Using READNOISE reference file: %s", readnoise_filename)
+        readnoise_model = rdm.open(readnoise_filename, mode="r")
+        log.info("Using GAIN reference file: %s", gain_filename)
+        gain_model = rdm.open(gain_filename, mode="r")
 
-                image_info, _, _ = likely_ramp_fit(
-                    input_model, readnoise_model.data, gain_model.data
-                )
+        # Do the fitting based on the algorithm selected.
+        algorithm = self.algorithm.lower()
+        if algorithm == "ols_cas22":
+            out_model = self.ols_cas22(
+                input_model,
+                readnoise_model,
+                gain_model,
+                include_var_rnoise=self.include_var_rnoise,
+            )
+            out_model.meta.cal_step.ramp_fit = "COMPLETE"
+        elif algorithm == "likely":
+            # Add the needed components to the input model.
+            input_model["flags_do_not_use"] = pixel.DO_NOT_USE
+            input_model["flags_saturated"] = pixel.SATURATED
+            input_model["rejection_threshold"] = None
+            input_model["flags_jump_det"] = pixel.JUMP_DET
+            # Add an axis to match the JWST data cube
+            input_model.data = input_model.data[np.newaxis, :, :, :]
+            input_model.groupdq = input_model.groupdq[np.newaxis, :, :, :]
+            # add ancillary information needed by likelihood fitting
+            input_model.read_pattern = get_readtimes(input_model)
+            input_model.zeroframe = None
+            input_model.average_dark_current = np.zeros(
+                [input_model.data.shape[2], input_model.data.shape[3]]
+            )
 
-                # Cast err to float16
-                data, dq, var_poisson, var_rnoise, err = image_info
-                err = err.astype(np.float16)
-                image_info = (data, dq, var_poisson, var_rnoise, err)
+            image_info, _, _ = likely_ramp_fit(
+                input_model, readnoise_model.data, gain_model.data
+            )
 
-                out_model = create_image_model(
-                    input_model, image_info, include_var_rnoise=self.include_var_rnoise
-                )
-                out_model.meta.cal_step.ramp_fit = "COMPLETE"
-            else:
-                log.error("Algorithm %s is not supported. Skipping step.")
-                out_model = input
-                out_model.meta.cal_step.ramp_fit = "SKIPPED"
+            # Cast err to float16
+            data, dq, var_poisson, var_rnoise, err = image_info
+            err = err.astype(np.float16)
+            image_info = (data, dq, var_poisson, var_rnoise, err)
+
+            out_model = create_image_model(
+                input_model, image_info, include_var_rnoise=self.include_var_rnoise
+            )
+            out_model.meta.cal_step.ramp_fit = "COMPLETE"
+        else:
+            log.error("Algorithm %s is not supported. Skipping step.")
+            out_model = input
+            out_model.meta.cal_step.ramp_fit = "SKIPPED"
 
         return out_model
 

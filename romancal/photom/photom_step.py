@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
 
+from romancal.datamodels.fileio import open_dataset
 from romancal.photom import photom
 from romancal.stpipe import RomanStep
 
@@ -27,12 +28,12 @@ class PhotomStep(RomanStep):
 
     reference_file_types: ClassVar = ["photom"]
 
-    def process(self, input):
+    def process(self, dataset):
         """Perform the photometric calibration step
 
         Parameters
         ----------
-        input : Roman level 2 image datamodel (wfi_image-1.x.x)
+        dataset : Roman level 2 image datamodel (wfi_image-1.x.x)
             input roman datamodel
 
         Returns
@@ -41,10 +42,7 @@ class PhotomStep(RomanStep):
             output roman datamodel
         """
 
-        if isinstance(input, rdm.DataModel):
-            input_model = input
-        else:
-            input_model = rdm.open(input)
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
         # Get reference file
         reffile = self.get_reference_file(input_model, "photom")
@@ -57,8 +55,8 @@ class PhotomStep(RomanStep):
 
             # Do the correction
             if input_model.meta.exposure.type == "WFI_IMAGE":
-                output_model = photom.apply_photom(input_model, photom_model)
-                output_model.meta.cal_step.photom = "COMPLETE"
+                photom.apply_photom(input_model, photom_model)
+                input_model.meta.cal_step.photom = "COMPLETE"
             else:
                 log.warning("No photometric corrections for spectral data")
                 log.warning("Photom step will be skipped")
@@ -66,7 +64,6 @@ class PhotomStep(RomanStep):
                 input_model.meta.photometry.pixel_area = None
                 input_model.meta.photometry.conversion_megajanskys = None
                 input_model.meta.photometry.conversion_megajanskys_uncertainty = None
-                output_model = input_model
             photom_model.close()
 
         else:
@@ -74,7 +71,6 @@ class PhotomStep(RomanStep):
             log.warning("No PHOTOM reference file found")
             log.warning("Photom step will be skipped")
             input_model.meta.cal_step.photom = "SKIPPED"
-            output_model = input_model
 
         if self.save_results:
             try:
@@ -82,4 +78,4 @@ class PhotomStep(RomanStep):
             except AttributeError:
                 self["suffix"] = "photom"
 
-        return output_model
+        return input_model

@@ -55,7 +55,7 @@ docs = [
 test = [
     "ci-watson >=0.5.0",
     "pysiaf",
-    "pytest >8.0.0",
+    "pytest>=9.0",
     "pytest-astropy >= 0.11.0",
     "deepdiff",
     "stpreview>=0.6.0",
@@ -124,8 +124,8 @@ include = ["romancal*"]
     "**/*.asdf",
 ]
 
-[tool.pytest.ini_options]
-minversion = 6.0
+[tool.pytest]
+minversion = "9.0"
 norecursedirs = [
     "docs/_build",
     "romancal/scripts",
@@ -137,10 +137,12 @@ filterwarnings = [
     "error::ResourceWarning",
     "error::DeprecationWarning",
     "ignore:invalid escape:DeprecationWarning",
+    # dev numpy deprecated shape assignment which astropy still uses
+    "ignore:Setting the shape on a NumPy array has been deprecated:DeprecationWarning:astropy.*",
 ]
 junit_family = "xunit2"
-inputs_root = "roman-pipeline"
-results_root = "roman-pipeline-results/regression-tests/runs/"
+inputs_root = ["roman-pipeline"]
+results_root = ["roman-pipeline-results/regression-tests/runs/"]
 doctest_plus = "enabled"
 doctest_rst = "enabled"
 text_file_format = "rst"
@@ -244,14 +246,11 @@ wrap = true
 issue_format = "`#{issue} <https://github.com/spacetelescope/romancal/issues/{issue}>`_"
 
 [[tool.towncrier.type]]
-directory = "general"
-name = "General"
+directory = "breaking"
+name = "Breaking Changes"
 showcontent = true
 
-[[tool.towncrier.type]]
-directory = "docs"
-name = "Documentation"
-showcontent = true
+# general pipeline changes
 
 [[tool.towncrier.type]]
 directory = "stpipe"
@@ -283,7 +282,7 @@ directory = "skycell"
 name = "``skycell``"
 showcontent = true
 
-# steps
+# step changes
 
 [[tool.towncrier.type]]
 directory = "dq_init"
@@ -383,4 +382,16 @@ showcontent = true
 [[tool.towncrier.type]]
 directory = "multiband_catalog"
 name = "``multiband_catalog``"
+showcontent = true
+
+# other changes
+
+[[tool.towncrier.type]]
+directory = "general"
+name = "General"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "docs"
+name = "Documentation"
 showcontent = true

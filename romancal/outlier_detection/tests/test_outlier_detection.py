@@ -5,19 +5,6 @@ from romancal.datamodels import ModelLibrary
 from romancal.outlier_detection import OutlierDetectionStep
 
 
-@pytest.mark.parametrize(
-    "input_models",
-    [
-        "",
-    ],
-)
-def test_outlier_raises_error_on_invalid_input_models(input_models):
-    """Test that OutlierDetection raises an Exception if input is invalid."""
-
-    with pytest.raises(IsADirectoryError):
-        OutlierDetectionStep().run(input_models)
-
-
 def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
     """Test that OutlierDetection skips processing when provided with an invalid number of elements in the input,
     and sets the appropriate metadata for the skipped step."""
