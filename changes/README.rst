@@ -1,29 +1,25 @@
-Changelog
-=========
+Writing news fragments for the change log
+#########################################
 
-This directory contains "news fragments" which are short files that contain a
-small **ReST**-formatted text that will be added to the full changelog.
+This ``changes/`` directory contains "news fragments": small ReStructured Text files describing a change in a few sentences.
+When making a release, run ``towncrier build --version <VERSION>`` to consume existing fragments in ``changes/`` and insert them as a full change log entry at the top of ``CHANGES.rst`` for the released version.
 
-Make sure to use full sentences with correct case and punctuation.
+News fragment filenames consist of the pull request number and the change log category (see below). A single change can have more than one news fragment, if it spans multiple categories:
 
-Consuming news fragments in `changes/` into a new change log entry
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code-block::
 
-Running `towncrier build` will read all existing fragment files in `changes/`
-and create a new entry at the top of `CHANGES.rst` with the specified version number.
+  2071.skycell.rst
+  2077.associations.rst
+  2089.skycell.rst
+  2128.other.rst
+  2034.docs.rst
 
-```shell
-pip install towncrier
-towncrier build --version <VERSION>
-```
-
-News fragment change types
---------------------------
-
-- ``<PR#>.breaking.rst``: Also add a fragment of this type if your change breaks existing functionality
+Change log categories
+*********************
+- ``<PR#>.breaking.rst``: Also add this fragment if your change breaks existing functionality
 
 General Pipeline Changes
-""""""""""""""""""""""""
+========================
 
 - ``changes/<PR#>.stpipe.rst``
 - ``changes/<PR#>.associations.rst``
@@ -32,7 +28,7 @@ General Pipeline Changes
 - ``changes/<PR#>.skycell.rst``
 
 Step Changes
-""""""""""""
+============
 
 - ``changes/<PR#>.dq_init.rst``
 - ``changes/<PR#>.saturation.rst``
@@ -54,14 +50,9 @@ Step Changes
 - ``changes/<PR#>.source_catalog.rst``
 
 Other Changes
-"""""""""""""
+=============
 
 - ``changes/<PR#>.other.rst``: infrastructure or miscellaneous change
 - ``changes/<PR#>.docs.rst``
 
-Note
-----
-
-This README was adapted from the Astropy changelog readme under the terms
-of BSD license, which in turn adapted from the Numpy changelog readme under
-the terms of the MIT licence.
+.. note:: This README was adapted from the Astropy changelog readme under the terms of BSD license, which in turn adapted from the Numpy changelog readme under the terms of the MIT licence.
