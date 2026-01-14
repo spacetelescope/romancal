@@ -101,11 +101,13 @@ TYPES_TO_UPDATE = set()
 
 # Mnemonics needed.
 COARSE_MNEMONICS_QUATERNION_ECI = [f"SCF_AC_SDR_QBJ_{idx + 1}" for idx in range(4)]
-COARSE_MNEMONICS_B2FGS_EST = [f'SCF_AC_EST_FGS_qbr{idx+1}' for idx in range(4)]
-COARSE_MNEMONICS_B2FGS_PRELOAD = [f'SCF_AC_FGS_TBL_Qb{idx+1}' for idx in range(4)]
-COARSE_MNEMONICS = COARSE_MNEMONICS_QUATERNION_ECI + \
-    COARSE_MNEMONICS_B2FGS_EST + \
-    COARSE_MNEMONICS_B2FGS_PRELOAD
+COARSE_MNEMONICS_B2FGS_EST = [f"SCF_AC_EST_FGS_qbr{idx + 1}" for idx in range(4)]
+COARSE_MNEMONICS_B2FGS_PRELOAD = [f"SCF_AC_FGS_TBL_Qb{idx + 1}" for idx in range(4)]
+COARSE_MNEMONICS = (
+    COARSE_MNEMONICS_QUATERNION_ECI
+    + COARSE_MNEMONICS_B2FGS_EST
+    + COARSE_MNEMONICS_B2FGS_PRELOAD
+)
 
 # Default and pre-defined matricies.
 # Conversion of the FCS reference point from the V-Frame.
@@ -157,7 +159,7 @@ EXPECTED_ERRORS = (OSError, RuntimeError, ValueError)
 #    fgs_q        : Quaternion representing orientation of the FGS frame relative to the Observatory frame
 #    obstime      : Time the pointing information refers to.
 #    q            : Quaternion of the FGS.
-Pointing = namedtuple("Pointing", ['fgs_q', "obstime", "q"])
+Pointing = namedtuple("Pointing", ["fgs_q", "obstime", "q"])
 Pointing.__new__.__defaults__ = (None,) * 3
 
 
@@ -636,8 +638,10 @@ def calc_transforms(t_pars: TransformParameters):
 
     # FGS to Guide star apparent.
     if t_pars.gscommanded is None:
-        logger.warning('No command guide star position provided. Assuming guide star is at the aperture reference position.')
-        hv = (0., 0.)
+        logger.warning(
+            "No command guide star position provided. Assuming guide star is at the aperture reference position."
+        )
+        hv = (0.0, 0.0)
     else:
         hv = t_pars.gscommanded
     fgs_x, fgs_y = hv_to_fgs(t_pars.aperture, *hv, t_pars.pysiaf)
@@ -654,7 +658,9 @@ def calc_transforms(t_pars: TransformParameters):
     t.m_eci2gs = np.linalg.multi_dot([M_ics2idl, t.m_gsapp2gsics, t.m_eci2gsapp])
 
     # ECI to V
-    t.m_eci2v = np.linalg.multi_dot([M_V2FCS0.T, t.m_fgs2gsapp.T, M_idl2ics, t.m_eci2gs])
+    t.m_eci2v = np.linalg.multi_dot(
+        [M_V2FCS0.T, t.m_fgs2gsapp.T, M_idl2ics, t.m_eci2gs]
+    )
 
     return t
 
@@ -1002,7 +1008,7 @@ def get_mnemonics(
             )
         except EXPECTED_ERRORS as exception:
             logger.warning("Cannot retrieve %s from engineering.", mnemonic)
-            logger.debug('Exception %s', exception)
+            logger.debug("Exception %s", exception)
             continue
 
         # If more than two points exist, throw off the bracket values.
@@ -1081,26 +1087,37 @@ def mnemonics_to_pointings(ordered_mnemonics):
     """
     pointings = []
     for obstime, mnemonics_at_time in ordered_mnemonics:
-
         # Observatory orientation, required
         try:
             q = np.array(
                 [mnemonics_at_time[m].value for m in COARSE_MNEMONICS_QUATERNION_ECI]
             )
         except KeyError as exception:
-            raise ValueError(f'One or more quaternion mnemonics not in the telemetry {COARSE_MNEMONICS_QUATERNION_ECI}') from exception
+            raise ValueError(
+                f"One or more quaternion mnemonics not in the telemetry {COARSE_MNEMONICS_QUATERNION_ECI}"
+            ) from exception
 
         # B-frame to FGS-frame quaternion. Not required and very oddly has so many backups...
         fgs_q = None
         try:
-            fgs_q = np.array([mnemonics_at_time[m].value for m in COARSE_MNEMONICS_B2FGS_EST])
+            fgs_q = np.array(
+                [mnemonics_at_time[m].value for m in COARSE_MNEMONICS_B2FGS_EST]
+            )
         except KeyError:
-            logger.warning('One or more of the B-to-FGS quaternion mnemonics are not in the telementry %s', COARSE_MNEMONICS_B2FGS_EST)
+            logger.warning(
+                "One or more of the B-to-FGS quaternion mnemonics are not in the telementry %s",
+                COARSE_MNEMONICS_B2FGS_EST,
+            )
         if fgs_q is None:
             try:
-                fgs_q = np.array([mnemonics_at_time[m].value for m in COARSE_MNEMONICS_B2FGS_PRELOAD])
+                fgs_q = np.array(
+                    [mnemonics_at_time[m].value for m in COARSE_MNEMONICS_B2FGS_PRELOAD]
+                )
             except KeyError:
-                logger.warning('One or more of the B-to-FGS quaternion mnemonics are not in the telementry %s', COARSE_MNEMONICS_B2FGS_PRELOAD)
+                logger.warning(
+                    "One or more of the B-to-FGS quaternion mnemonics are not in the telementry %s",
+                    COARSE_MNEMONICS_B2FGS_PRELOAD,
+                )
 
         pointing = Pointing(fgs_q=fgs_q, obstime=obstime, q=q)
         pointings.append(pointing)
@@ -1141,7 +1158,9 @@ def pointing_from_average(mnemonics):
         Pointing from average.
     """
     # weed-out empty mnemonics
-    valid_mnemonics = [mnemonic for mnemonic in mnemonics if mnemonics[mnemonic] is not None]
+    valid_mnemonics = [
+        mnemonic for mnemonic in mnemonics if mnemonics[mnemonic] is not None
+    ]
 
     # Get average observation time.
     times = [
@@ -1159,10 +1178,14 @@ def pointing_from_average(mnemonics):
     mnemonic_averages = {}
     for mnemonic in valid_mnemonics:
         values = [eng_param.value for eng_param in mnemonics[mnemonic]]
-        if np.allclose(values, 0.):
-            logger.warning('Mnemonics %s is only zeros. Treating as undefined.', mnemonic)
+        if np.allclose(values, 0.0):
+            logger.warning(
+                "Mnemonics %s is only zeros. Treating as undefined.", mnemonic
+            )
         else:
-            mnemonic_averages[mnemonic] = EngDB_Value(obstime=obstime, value=np.average(values))
+            mnemonic_averages[mnemonic] = EngDB_Value(
+                obstime=obstime, value=np.average(values)
+            )
 
     pointing = mnemonics_to_pointings([(obstime, mnemonic_averages)])[0]
 
@@ -1553,9 +1576,9 @@ def hv_to_fgs(aperture_name, h, v, pysiaf):
     fgs_x, fgs_y : float, float
         The coordinates in the FGS reference frame in arcsec.
     """
-    siaf = pysiaf.Siaf('roman')
+    siaf = pysiaf.Siaf("roman")
     aper = siaf[aperture_name]
-    aper_wfi_cen = siaf['WFI_CEN']
+    aper_wfi_cen = siaf["WFI_CEN"]
 
     # Location of GS. This is from Eqn. 7 of Roman-STScI-000416 (Roman SOC FGS Algorithms)
     x, y = h + aper.XSciRef, aper.YSciRef - v
@@ -1579,7 +1602,7 @@ def calc_m_b2fgs(fgs_q=None):
         If no B-to-FGS quaternion is given, use a pre-launch defined matrix.
     """
     if fgs_q is None:
-        logger.warning('No B-to-FGS information is given. Using pre-launch values.')
+        logger.warning("No B-to-FGS information is given. Using pre-launch values.")
         return M_B2FCS0
 
     # Calculate the DCM from the quaterion
@@ -1606,13 +1629,9 @@ def calc_m_fgs2gsapp(x, y):
     cx, sx = cos(x_gs), sin(x_gs)
     cy, sy = cos(y_gs), sin(y_gs)
 
-    m_x = np.array([[ cx,   0, -sx],
-                    [  0,   1,   0],
-                    [ sx,   0,  cx]])
+    m_x = np.array([[cx, 0, -sx], [0, 1, 0], [sx, 0, cx]])
 
-    m_y = np.array([[  1,   0,   0],
-                    [  0,  cy,  sy],
-                    [  0, -sy,  cy]])
+    m_y = np.array([[1, 0, 0], [0, cy, sy], [0, -sy, cy]])
 
     m_gsapp2fgs = np.dot(m_y, m_x)
     m_fgs2gsapp = m_gsapp2fgs.T
