@@ -21,7 +21,6 @@ from roman_datamodels import datamodels as rdm
 
 from romancal.assign_wcs import pointing
 from romancal.assign_wcs.utils import add_s_region
-from romancal.lib.basic_utils import compute_var_rnoise
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -249,7 +248,7 @@ def _base_image(shift_1=0, shift_2=0):
     ].info:
         l2.meta.cal_step[step_name] = "INCOMPLETE"
     l2.meta.background = {"level": -999999.0, "method": "None", "subtracted": False}
-    l2.var_flat = compute_var_rnoise(l2).copy()
+    l2.var_flat = l2.var_poisson.copy()
     _create_wcs(l2)
     l2.meta.wcsinfo.vparity = -1
     return l2

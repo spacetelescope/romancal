@@ -12,35 +12,35 @@ SIMPLE_EXPECTED_DEFAULT = {
         [[0.52631587, 0.52631587], [0.23026317, 0.7236843]], dtype=np.float32
     ),
     "err": np.array(
-        [[0.24262409, 0.24262409], [0.16048454, 0.28450054]], dtype=np.float32
+        [[0.24262409, 0.24262409], [0.16048454, 0.28450054]], dtype=np.float16
     ),
     "var_poisson": np.array(
-        [[0.05886428, 0.05886428], [0.02575312, 0.08093839]], dtype=np.float32
+        [[0.05886428, 0.05886428], [0.02575312, 0.08093839]], dtype=np.float16
     ),
     "var_rnoise": np.array(
-        [[2.164128e-06, 2.164128e-06], [2.164128e-06, 2.164128e-06]], dtype=np.float32
+        [[2.164128e-06, 2.164128e-06], [2.164128e-06, 2.164128e-06]], dtype=np.float16
     ),
 }
 SIMPLE_EXPECTED_GAIN = {
     "data": np.array([[0.526316, 0.526316], [0.230263, 0.701852]], dtype=np.float32),
-    "err": np.array([[0.108513, 0.108513], [0.071783, 0.124624]], dtype=np.float32),
+    "err": np.array([[0.108513, 0.108513], [0.071783, 0.124624]], dtype=np.float16),
     "var_poisson": np.array(
-        [[1.1772858e-02, 1.1772858e-02], [5.150624e-03, 1.55289e-02]], dtype=np.float32
+        [[1.1772858e-02, 1.1772858e-02], [5.150624e-03, 1.55289e-02]], dtype=np.float16
     ),
     "var_rnoise": np.array(
-        [[2.164127e-06, 2.164127e-06], [2.164127e-06, 2.190606e-06]], dtype=np.float32
+        [[2.164127e-06, 2.164127e-06], [2.164127e-06, 2.190606e-06]], dtype=np.float16
     ),
 }
 SIMPLE_EXPECTED_RNOISE = {
     "data": np.array(
         [[0.52631587, 0.52631587], [0.23026317, 0.7236843]], dtype=np.float32
     ),
-    "err": np.array([[14.712976, 14.712976], [14.711851, 14.713726]], dtype=np.float32),
+    "err": np.array([[14.712976, 14.712976], [14.711851, 14.713726]], dtype=np.float16),
     "var_poisson": np.array(
-        [[0.05886428, 0.05886428], [0.02575312, 0.08093839]], dtype=np.float32
+        [[0.05886428, 0.05886428], [0.02575312, 0.08093839]], dtype=np.float16
     ),
     "var_rnoise": np.array(
-        [[216.4128, 216.4128], [216.4128, 216.4128]], dtype=np.float32
+        [[216.4128, 216.4128], [216.4128, 216.4128]], dtype=np.float16
     ),
 }
 
@@ -76,10 +76,8 @@ def test_fits(fit_ramps, attribute):
 
     value = getattr(image_model, attribute)
     expected_value = expected[attribute]
-    # err is float16, so convert expected to float16 for comparison
-    if attribute == "err":
-        expected_value = expected_value.astype(np.float16)
-    np.testing.assert_allclose(value, expected_value, 1e-05)
+    precision = 1e-5 if expected_value.dtype == np.float32 else 1e-3
+    np.testing.assert_allclose(value, expected_value, precision)
 
 
 # ########

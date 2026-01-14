@@ -9,24 +9,20 @@ from .common import SIMPLE_RESULTANTS, make_data
 
 SIMPLE_EXPECTED_DEFAULT = {
     "data": np.array(
-        # [[0.52631587, 0.52631587], [0.23026317, 0.7236843]], dtype=np.float32
         [[0.5482434, 0.5482434], [0.21930099, 0.6579002]],
         dtype=np.float32,
     ),
     "err": np.array(
-        # [[0.24262409, 0.24262409], [0.16048454, 0.28450054]], dtype=np.float32
         [[0.24518493, 0.24518453], [0.1550718, 0.26858887]],
-        dtype=np.float32,
+        dtype=np.float16,
     ),
     "var_poisson": np.array(
-        # [[0.05886428, 0.05886428], [0.02575312, 0.08093839]], dtype=np.float32
         [[0.06011445, 0.06011425], [0.02404606, 0.07213879]],
-        dtype=np.float32,
+        dtype=np.float16,
     ),
     "var_rnoise": np.array(
-        # [[2.164128e-06, 2.164128e-06], [2.164128e-06, 2.164128e-06]], dtype=np.float32
         [[1.2022689e-06, 1.2022689e-06], [1.2022329e-06, 1.2022729e-06]],
-        dtype=np.float32,
+        dtype=np.float16,
     ),
 }
 SIMPLE_EXPECTED_GAIN = {
@@ -34,26 +30,26 @@ SIMPLE_EXPECTED_GAIN = {
         [[0.54823464, 0.54823464], [0.21931194, 0.32894737]], dtype=np.float32
     ),
     "err": np.array(
-        [[0.10965369, 0.10965278], [0.0693583, 0.1040483]], dtype=np.float32
+        [[0.10965369, 0.10965278], [0.0693583, 0.1040483]], dtype=np.float16
     ),
     "var_poisson": np.array(
-        [[0.01202273, 0.01202253], [0.00480937, 0.01082064]], dtype=np.float32
+        [[0.01202273, 0.01202253], [0.00480937, 0.01082064]], dtype=np.float16
     ),
     "var_rnoise": np.array(
         [[1.2021728e-06, 1.2021728e-06], [1.2019930e-06, 5.4103184e-06]],
-        dtype=np.float32,
+        dtype=np.float16,
     ),
 }
 SIMPLE_EXPECTED_RNOISE = {
     "data": np.array(
         [[0.5263179, 0.5263179], [0.2302627, 0.72367555]], dtype=np.float32
     ),
-    "err": np.array([[10.405058, 10.405058], [10.403467, 10.406118]], dtype=np.float32),
+    "err": np.array([[10.405058, 10.405058], [10.403467, 10.406118]], dtype=np.float16),
     "var_poisson": np.array(
-        [[0.05886434, 0.05886419], [0.025753, 0.0809375]], dtype=np.float32
+        [[0.05886434, 0.05886419], [0.025753, 0.0809375]], dtype=np.float16
     ),
     "var_rnoise": np.array(
-        [[108.20637, 108.20637], [108.20637, 108.20637]], dtype=np.float32
+        [[108.20637, 108.20637], [108.20637, 108.20637]], dtype=np.float16
     ),
 }
 
@@ -89,10 +85,8 @@ def test_fits(fit_ramps, attribute):
 
     value = getattr(image_model, attribute)
     expected_value = expected[attribute]
-    # err is float16, so convert expected to float16 for comparison
-    if attribute == "err":
-        expected_value = expected_value.astype(np.float16)
-    np.testing.assert_allclose(value, expected_value, 1e-05)
+    precision = 1e-5 if expected_value.dtype == np.float32 else 1e-3
+    np.testing.assert_allclose(value, expected_value, precision)
 
 
 # ########

@@ -90,9 +90,7 @@ class RampFitStep(RomanStep):
                 input_model, readnoise_model.data, gain_model.data
             )
 
-            # Cast err to float16
             data, dq, var_poisson, var_rnoise, err = image_info
-            err = err.astype(np.float16)
             image_info = (data, dq, var_poisson, var_rnoise, err)
 
             out_model = create_image_model(
@@ -171,7 +169,7 @@ class RampFitStep(RomanStep):
         slopes = output.parameters[..., Parameter.slope]
         var_rnoise = output.variances[..., Variance.read_var]
         var_poisson = output.variances[..., Variance.poisson_var]
-        err = np.sqrt(var_poisson + var_rnoise).astype(np.float16)
+        err = np.sqrt(var_poisson + var_rnoise)
         dq = output.dq.astype(np.uint32)
 
         # Propagate DQ flags forward.
@@ -257,10 +255,10 @@ def create_image_model(input_model, image_info, include_var_rnoise=False):
         im.dq = dq[4:-4, 4:-4].copy()
     else:
         im.dq = np.zeros(im.data.shape, dtype="u4")
-    im.err = err[4:-4, 4:-4].copy()
-    im.var_poisson = var_poisson[4:-4, 4:-4].copy()
+    im.err = err[4:-4, 4:-4].copy().astype('float16')
+    im.var_poisson = var_poisson[4:-4, 4:-4].copy().astype('float16')
     if include_var_rnoise:
-        im.var_rnoise = var_rnoise[4:-4, 4:-4].copy()
+        im.var_rnoise = var_rnoise[4:-4, 4:-4].copy().astype('float16')
 
     # Add required chisq and dumo fields (currently set to zero)
     im.chisq = np.zeros(im.data.shape, dtype=np.float16)
