@@ -84,7 +84,7 @@ class SourceCatalogStep(RomanStep):
             model.meta = input_model.meta
             model.data = input_model.data.copy()
             # cast to float32 so unit manipulations later on don't overflow
-            model.err = input_model.err.copy().astype('float32')
+            model.err = input_model.err.copy().astype("float32")
             model.dq = input_model.dq
 
             # Create a DQ mask for pixels to be excluded; currently all

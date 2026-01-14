@@ -255,10 +255,10 @@ def create_image_model(input_model, image_info, include_var_rnoise=False):
         im.dq = dq[4:-4, 4:-4].copy()
     else:
         im.dq = np.zeros(im.data.shape, dtype="u4")
-    im.err = err[4:-4, 4:-4].copy().astype('float16')
-    im.var_poisson = var_poisson[4:-4, 4:-4].copy().astype('float16')
+    im.err = err[4:-4, 4:-4].copy().astype("float16")
+    im.var_poisson = var_poisson[4:-4, 4:-4].copy().astype("float16")
     if include_var_rnoise:
-        im.var_rnoise = var_rnoise[4:-4, 4:-4].copy().astype('float16')
+        im.var_rnoise = var_rnoise[4:-4, 4:-4].copy().astype("float16")
 
     # Add required chisq and dumo fields (currently set to zero)
     im.chisq = np.zeros(im.data.shape, dtype=np.float16)
