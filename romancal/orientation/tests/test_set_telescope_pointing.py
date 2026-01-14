@@ -6,10 +6,9 @@ import dataclasses
 import logging
 from pathlib import Path
 
+import asdf
 import numpy as np
 import pytest
-
-import asdf
 import roman_datamodels as rdm
 from astropy.time import Time
 
@@ -36,13 +35,22 @@ TARG_DEC = 66.01
 
 # Default set of transform parameters
 TRANSFORM_KWARGS = {
-    'aperture': "WFI01_FULL",
-    'gscommanded': (916.4728835141, -186.8939737044),
-    'gspos': (266.663935674969, -30.5163135226147),
-    'pointing': stp.Pointing(fgs_q=np.array([-0.18596734175399293, 0.6837984564491885, -0.1800546332580956, 0.6822141509826322]),
-                             obstime=Time(1804771646.4242268, format='unix'),
-                             q=np.array([-0.33879082,  0.62326573, -0.36611627,  0.60226181])),
-    'velocity': (-5.473753741352352, -27.480586797035414, -11.875972151015253),
+    "aperture": "WFI01_FULL",
+    "gscommanded": (916.4728835141, -186.8939737044),
+    "gspos": (266.663935674969, -30.5163135226147),
+    "pointing": stp.Pointing(
+        fgs_q=np.array(
+            [
+                -0.18596734175399293,
+                0.6837984564491885,
+                -0.1800546332580956,
+                0.6822141509826322,
+            ]
+        ),
+        obstime=Time(1804771646.4242268, format="unix"),
+        q=np.array([-0.33879082, 0.62326573, -0.36611627, 0.60226181]),
+    ),
+    "velocity": (-5.473753741352352, -27.480586797035414, -11.875972151015253),
 }
 
 # Get the mock databases
@@ -81,7 +89,7 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         model_path,
         tolerance=0,
         allow_default=True,
-        default_quaternion=TRANSFORM_KWARGS['pointing'].q,
+        default_quaternion=TRANSFORM_KWARGS["pointing"].q,
     )
 
     with rdm.open(model_path) as result:
@@ -138,8 +146,10 @@ def test_get_pointing():
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
 
-    assert np.isclose(pointing.obstime.value, TRANSFORM_KWARGS['pointing'].obstime.value)
-    assert np.allclose(pointing.q, TRANSFORM_KWARGS['pointing'].q)
+    assert np.isclose(
+        pointing.obstime.value, TRANSFORM_KWARGS["pointing"].obstime.value
+    )
+    assert np.allclose(pointing.q, TRANSFORM_KWARGS["pointing"].q)
 
 
 def test_get_pointing_fail():
@@ -160,18 +170,19 @@ def test_get_pointing_list():
         pytest.xfail(reason=str(exception))
     assert isinstance(results, list)
     assert len(results) > 0
-    assert np.isclose(results[0].q, TRANSFORM_KWARGS['pointing'].q, rtol=1.e-2).all()
+    assert np.isclose(results[0].q, TRANSFORM_KWARGS["pointing"].q, rtol=1.0e-2).all()
     assert STARTTIME <= results[0].obstime <= ENDTIME
 
 
 def test_hv_to_fgs():
-    """ Test conversion from HV frame to FGS frame"""
-    hv = TRANSFORM_KWARGS['gscommanded']
+    """Test conversion from HV frame to FGS frame"""
+    hv = TRANSFORM_KWARGS["gscommanded"]
     fgs_expected = (346.06680318732685, -148.7528870949794)
 
-    fgs = stp.hv_to_fgs('WFI01_FULL', *hv, pysiaf)
+    fgs = stp.hv_to_fgs("WFI01_FULL", *hv, pysiaf)
 
     assert np.allclose(fgs, fgs_expected)
+
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_mnemonics_chronologically():
@@ -204,9 +215,22 @@ def test_logging(caplog):
 
 def test_mnemonic_list():
     """Ensure the mnemonic list is as expected"""
-    expected= set(('SCF_AC_SDR_QBJ_1', 'SCF_AC_SDR_QBJ_2', 'SCF_AC_SDR_QBJ_3', 'SCF_AC_SDR_QBJ_4',
-                   'SCF_AC_EST_FGS_qbr1', 'SCF_AC_EST_FGS_qbr2', 'SCF_AC_EST_FGS_qbr3', 'SCF_AC_EST_FGS_qbr4',
-                   'SCF_AC_FGS_TBL_Qb1', 'SCF_AC_FGS_TBL_Qb2', 'SCF_AC_FGS_TBL_Qb3', 'SCF_AC_FGS_TBL_Qb4'))
+    expected = set(
+        (
+            "SCF_AC_SDR_QBJ_1",
+            "SCF_AC_SDR_QBJ_2",
+            "SCF_AC_SDR_QBJ_3",
+            "SCF_AC_SDR_QBJ_4",
+            "SCF_AC_EST_FGS_qbr1",
+            "SCF_AC_EST_FGS_qbr2",
+            "SCF_AC_EST_FGS_qbr3",
+            "SCF_AC_EST_FGS_qbr4",
+            "SCF_AC_FGS_TBL_Qb1",
+            "SCF_AC_FGS_TBL_Qb2",
+            "SCF_AC_FGS_TBL_Qb3",
+            "SCF_AC_FGS_TBL_Qb4",
+        )
+    )
 
     assert expected == set(stp.COARSE_MNEMONICS)
 
@@ -248,7 +272,7 @@ def test_strict_pointing(science_raw_model, tmp_path):
 @pytest.mark.parametrize(
     "matrix",
     [matrix for matrix in dataclasses.fields(stp.Transforms())],
-    ids=[matrix.name for matrix in dataclasses.fields(stp.Transforms())]
+    ids=[matrix.name for matrix in dataclasses.fields(stp.Transforms())],
 )
 def test_transforms(calc_wcs, matrix):
     """Ensure expected calculate of the specified matrix
@@ -280,7 +304,7 @@ def test_transform_serialize(calc_wcs, tmp_path):
 # ######################
 # Utilities and fixtures
 # ######################
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def calc_wcs(tmp_path_factory):
     """Calculate full transforms and WCS info
 

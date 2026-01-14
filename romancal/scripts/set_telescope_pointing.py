@@ -42,20 +42,20 @@ def main():
         help="Perform all actions but do not save the results",
     )
     parser.add_argument(
-        '--gscommanded',
+        "--gscommanded",
         type=float,
         nargs=2,
-        metavar=('H', 'V'),
+        metavar=("H", "V"),
         default=None,
-        help='Commanded position of the guide start in (H,V) space'
+        help="Commanded position of the guide start in (H,V) space",
     )
     parser.add_argument(
-        '--gspos',
+        "--gspos",
         type=float,
         nargs=2,
-        metavar=('RA', 'DEC'),
+        metavar=("RA", "DEC"),
         default=None,
-        help='Corrected (apparent) Guide Star sky location (degrees)',
+        help="Corrected (apparent) Guide Star sky location (degrees)",
     )
     parser.add_argument(
         "-q",
