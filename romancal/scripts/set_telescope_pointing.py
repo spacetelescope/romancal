@@ -50,14 +50,6 @@ def main():
         help="Commanded position of the guide start in (H,V) space",
     )
     parser.add_argument(
-        "--gspos",
-        type=float,
-        nargs=2,
-        metavar=("RA", "DEC"),
-        default=None,
-        help="Corrected (apparent) Guide Star sky location (degrees)",
-    )
-    parser.add_argument(
         "-q",
         "--quaternion",
         dest="default_quaternion",
@@ -164,7 +156,6 @@ def main():
                 allow_default=args.allow_default,
                 default_quaternion=args.default_quaternion,
                 gscommanded=args.gscommanded,
-                gspos=args.gspos,
                 service_kwargs=service_kwargs,
                 tolerance=args.tolerance,
             )

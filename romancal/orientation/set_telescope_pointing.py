@@ -251,8 +251,6 @@ class TransformParameters:
     default_quaternion: tuple | None = None
     #: Commanded position of the guide star in (H, V) space.
     gscommanded: tuple | None = None
-    #: Corrected, or apparent, sky location of the guide star.
-    gspos: tuple | None = None
     #: Observation end time
     obsend: float | None = None
     #: Observation start time
