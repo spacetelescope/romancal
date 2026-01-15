@@ -36,8 +36,8 @@ class OutlierDetectionStep(RomanStep):
         pixfrac = float(default=1.0) # Fraction by which input pixels are shrunk before being drizzled onto the output image grid
         kernel = string(default='square') # Shape of the kernel used for flux distribution onto output images
         fillval = string(default='NaN') # Value assigned to output pixels that have zero weight or no flux during drizzling
-        stepsize = integer(default=1, min=1) # Grid sparseness to calculate WCS values, using interpolation to fill in the image
-        order = integer(default=1, min=1) # Order of the 2D spline to interpolate the sparse pixel mapping if stepsize>1.  Supported values are: 1 (bilinear) or 3 (bicubic).
+        stepsize = integer(default=10, min=1) # Grid sparseness to calculate WCS values, using interpolation to fill in the image
+        order = integer(default=3, min=1) # Order of the 2D spline to interpolate the sparse pixel mapping if stepsize>1.  Supported values are: 1 (bilinear) or 3 (bicubic).
         maskpt = float(default=0.7) # Percentage of weight image values below which they are flagged as bad pixels
         snr = string(default='5.0 4.0') # The signal-to-noise values to use for bad pixel identification
         scale = string(default='1.2 0.7') # The scaling factor applied to derivative used to identify bad pixels
