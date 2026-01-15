@@ -165,16 +165,21 @@ class ExposurePipeline(RomanPipeline):
         """
         Create zeroed-out image file
         """
-        # The set order is: data, dq, var_poisson, var_rnoise, err
+        # Make a throw-away model to get the expected datatypes
+        fake_model = rdm.ImageModel.create_fake_data()
+
+        # compute the output (2d) data shape
+        data_shape = input_model.data.shape[1:]
+
+        # allocate arrays for the "fully saturated" image
+        data = np.zeros(data_shape, dtype=fake_model.data.dtype)
+        dq = input_model.pixeldq | input_model.groupdq[0] | group.SATURATED
+        var_poisson = np.zeros(data_shape, dtype=fake_model.var_poisson.dtype)
+        var_rnoise = np.zeros(data_shape, dtype=fake_model.var_rnoise.dtype)
+        err = np.zeros(data_shape, dtype=fake_model.err.dtype)
+
         fully_saturated_model = ramp_fit_step.create_image_model(
-            input_model,
-            (
-                np.zeros(input_model.data.shape[1:], dtype=input_model.data.dtype),
-                input_model.pixeldq | input_model.groupdq[0] | group.SATURATED,
-                np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype),
-                np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype),
-                np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype),
-            ),
+            input_model, (data, dq, var_poisson, var_rnoise, err)
         )
 
         # Set all subsequent steps to skipped
