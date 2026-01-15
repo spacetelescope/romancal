@@ -1,0 +1,1 @@
+Add parameters stepsize & order to outlier_detection and resample steps for updated gwcs_blot api
