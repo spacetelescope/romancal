@@ -170,7 +170,7 @@ class ResampleData(Resample):
             enable_var=enable_var,
             compute_err=compute_err,
             stepsize=stepsize,
-            order=order
+            order=order,
         )
 
     @property
