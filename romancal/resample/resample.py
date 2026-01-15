@@ -178,7 +178,7 @@ class ResampleData(Resample):
             compute_err=compute_err,
             propagate_dq=propagate_dq,
             stepsize=stepsize,
-            order=order
+            order=order,
         )
 
     @property

@@ -204,6 +204,8 @@ def _flag_resampled_model_crs(
         blot_shape=image.data.shape,
         blot_wcs=image.meta.wcs,
         fillval=fillval,
+        stepsize=stepsize,
+        order=order,
     )
 
     # Get background level of science data if it has not been subtracted, so it
