@@ -11,15 +11,16 @@ Note that the ERR array values are always expressed as a standard deviation
 
 The table below is a summary of which steps create or update variance and error arrays,
 as well as which steps make use of these data. Details of how each step computes or
-uses these data are given in the subsequent sections below.
+uses these data are given in the subsequent sections below.  Parameters marked with an
+asterisk are optional and will not be created by default.
 
-================= ===== ======================= ============================ =========
-Step              Stage Creates arrays          Updates arrays               Step uses
-================= ===== ======================= ============================ =========
-ramp_fitting      ELPP  VAR_POISSON, VAR_RNOISE ERR                          None
-flat_field        ELPP  VAR_FLAT                ERR, VAR_POISSON, VAR_RNOISE None
-outlier_detection HLPP  None                    None                         ERR
-================= ===== ======================= ============================ =========
+================= ===== ======================== ============================= =========
+Step              Stage Creates arrays           Updates arrays                Step uses
+================= ===== ======================== ============================= =========
+ramp_fitting      ELPP  VAR_POISSON, VAR_RNOISE* ERR                           None
+flat_field        ELPP  VAR_FLAT*                ERR, VAR_POISSON, VAR_RNOISE* None
+outlier_detection HLPP  None                     None                          ERR
+================= ===== ======================== ============================= =========
 
 ELPP Processing
 ---------------
@@ -34,8 +35,10 @@ in any way and simply propagates the information to the next step.
 
 ramp_fitting
 ++++++++++++
-This step calculates and populates the VAR_POISSON and VAR_RNOISE arrays to pass to the
-next step or saved in the optional output 'rate' files. The ERR array is updated as the square root of the
+This step calculates and populates the VAR_POISSON and VAR_RNOISE (optionally)
+arrays to pass to the
+next step or saved in the optional output 'rate' files. The ERR array is updated as the
+square root of the
 quadratic sum of the variances. VAR_POISSON and VAR_RNOISE represent the uncertainty in the
 computed slopes (per pixel) due to Poisson and read noise, respectively.
 The details of the calculations can be found at :ref:`ramp_fitting <ramp_fitting_step>`.
@@ -43,8 +46,9 @@ The details of the calculations can be found at :ref:`ramp_fitting <ramp_fitting
 flat_field
 ++++++++++
 The SCI array of the exposure being processed is divided by the flat-field reference
-image, and the VAR_POISSON and VAR_RNOISE arrays are divided by the square of the flat.
-A VAR_FLAT array is created, computed from the science data and the flat-field
+image, and the VAR_POISSON and VAR_RNOISE (if present) arrays are divided by the
+square of the flat.
+A VAR_FLAT array is optionally created, computed from the science data and the flat-field
 reference file ERR array.
 The science data ERR array is then updated to be the square root of the quadratic sum of
 the three variance arrays.
