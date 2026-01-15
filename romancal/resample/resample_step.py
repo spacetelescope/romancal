@@ -69,13 +69,10 @@ class ResampleStep(RomanStep):
         in_memory = boolean(default=True)
         good_bits = string(default='~DO_NOT_USE+NON_SCIENCE')  # The good bits to use for building the resampling mask.
         include_var_flat = boolean(default=False)  # include var_flat in output image
-<<<<<<< HEAD
         propagate_dq = boolean(default=False)  # propagate DQ during resampling
+        stepsize = integer(default=10, min=1) # Grid sparseness to calculate WCS values, using interpolation to fill in the image
+        order = integer(default=3, min=1) # Order of the 2D spline to interpolate the sparse pixel mapping if stepsize>1.  Supported values are
     """
-=======
-        stepsize = integer(default=1, min=1) # Grid sparseness to calculate WCS values, using interpolation to fill in the image
-        order = integer(default=1, min=1) # Order of the 2D spline to interpolate the sparse pixel mapping if stepsize>1.  Supported values are    """
->>>>>>> 07c081b0 (Add parameters to resample_step for new gwcs_blot api)
 
     reference_file_types: ClassVar = []
 
