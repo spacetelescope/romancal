@@ -272,6 +272,8 @@ def detect_outliers(
             # the previous behavior.
             "ivm",
             good_bits,
+            stepsize,
+            order,
             False,
             False,
             False,

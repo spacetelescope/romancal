@@ -30,6 +30,8 @@ class ResampleData(Resample):
         fillval,
         weight_type,
         good_bits,
+        stepsize,
+        order,
         enable_ctx,
         enable_var,
         compute_err,
@@ -70,6 +72,22 @@ class ResampleData(Resample):
 
         good_bits : int, str, None
             The bit mask of pixels to use for resampling.
+
+        stepsize : int
+            If ``stepsize>1``, perform the full WCS calculation on a sparser
+            grid and use interpolation to fill in the rest of the pixels.  This
+            option speeds up pixel map computation by reducing the number of WCS
+            calls, though at the cost of reduced pixel map accuracy.  The loss
+            of accuracy is typically negligible if the underlying distortion
+            correction is smooth, but if the distortion is non-smooth,
+            ``stepsize>1`` is not recommended.  Large ``stepsize`` values are
+            automatically reduced to no more than 1/10 of image size.
+            Passed to alignment.resample_utils.calc_pixmap.
+
+        order : int
+            Order of the 2D spline to interpolate the sparse pixel mapping
+            if ``stepsize>1``.  Supported values are: 1 (bilinear) or 3 (bicubic).
+            This parameter is ignored when ``stepsize <= 1``.
 
         enable_ctx : bool
             If `True` include a context array in the resampled output.
@@ -159,6 +177,8 @@ class ResampleData(Resample):
             enable_var=enable_var,
             compute_err=compute_err,
             propagate_dq=propagate_dq,
+            stepsize=stepsize,
+            order=order
         )
 
     @property
@@ -274,6 +294,10 @@ class ResampleData(Resample):
         # every resampling will generate these
         output_model.data = self.output_model["data"]
         output_model.weight = self.output_model["wht"]
+
+        # WCS interpolation
+        output_model.meta.resample.stepsize = self.stepsize
+        output_model.meta.resample.order = self.order
 
         # some things are conditional
         if self.compute_exptime and hasattr(self, "_exptime_resampler"):
