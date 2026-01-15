@@ -188,6 +188,8 @@ def _flag_resampled_model_crs(
     scale2,
     backg,
     fillval,
+    stepsize,
+    order,
     save_intermediate_results,
     make_output_path,
 ):
@@ -247,6 +249,8 @@ def detect_outliers(
     scale1,
     scale2,
     backg,
+    stepsize,
+    order,
     save_intermediate_results,
     resample_data,
     good_bits,
@@ -307,6 +311,8 @@ def detect_outliers(
                     scale2,
                     backg,
                     fillval,
+                    stepsize,
+                    order,
                     save_intermediate_results,
                     make_output_path,
                 )
