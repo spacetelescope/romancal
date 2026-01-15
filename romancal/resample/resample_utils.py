@@ -4,6 +4,7 @@ import numpy as np
 from roman_datamodels.dqflags import pixel
 from stcal.alignment.util import compute_scale, wcs_from_sregions
 from stcal.resample.utils import compute_mean_pixel_area
+
 from romancal.lib.basic_utils import compute_var_rnoise
 
 
