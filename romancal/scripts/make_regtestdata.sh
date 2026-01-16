@@ -98,7 +98,7 @@ cp Test_darkcurrent.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 
 # make a special linearity file with a different suffix
-strun romancal.step.LinearityStep r0000101001001001001_0001_wfi01_f158_refpix.asdf --output_file=Test_linearity
+strun romancal.step.LinearityStep r0000101001001001001_0001_wfi01_f158_wfi18_transient.asdf --output_file=Test_linearity
 cp Test_linearity.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # test likelihood-based ramp fitting step
