@@ -37,7 +37,7 @@ ramp_fitting
 ++++++++++++
 This step calculates and populates the VAR_POISSON and VAR_RNOISE (optionally)
 arrays to pass to the
-next step or saved in the optional output 'rate' files. The ERR array is updated as the
+next step or saved in the optional output 'rate' files. The ERR array is created as the
 square root of the
 quadratic sum of the variances. VAR_POISSON and VAR_RNOISE represent the uncertainty in the
 computed slopes (per pixel) due to Poisson and read noise, respectively.
@@ -49,9 +49,10 @@ The SCI array of the exposure being processed is divided by the flat-field refer
 image, and the VAR_POISSON and VAR_RNOISE (if present) arrays are divided by the
 square of the flat.
 A VAR_FLAT array is optionally created, computed from the science data and the flat-field
-reference file ERR array.
-The science data ERR array is then updated to be the square root of the quadratic sum of
-the three variance arrays.
+reference file ERR array, representing the uncertainty in the data due to the systematic
+uncertainty in the flat field.
+The science data ERR array is then updated to be the square root of the quadrature sum of
+the variance arrays.
 For more details see :ref:`flat_field <flatfield_step>`.
 
 HLPP Processing
