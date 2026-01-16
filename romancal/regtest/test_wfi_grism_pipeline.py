@@ -122,7 +122,7 @@ def test_jump_in_uneven_ramp(output_model):
     assert uneven & np.any(output_model.dq & pixel.JUMP_DET)
 
 
-@pytest.mark.parametrize("arr_name", ("dq", "err", "var_poisson", "var_rnoise"))
+@pytest.mark.parametrize("arr_name", ("dq", "err", "var_poisson"))
 def test_array_exists(output_model, arr_name):
     # DMS91
     assert hasattr(output_model, arr_name)

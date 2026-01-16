@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-import numpy as np
 from roman_datamodels import datamodels as rdm
 
 from romancal.datamodels.fileio import open_dataset
@@ -46,13 +45,11 @@ class DarkCurrentStep(RomanStep):
 
         # Open dark model
         with rdm.open(self.dark_name) as dark_model:
-            # get the dark slope and dark slope error from the reference file & trim ref pixels
+            # get the dark slope from the reference file & trim ref pixels
             dark_slope = dark_model.dark_slope[4:-4, 4:-4]
-            dark_slope_err = dark_model.dark_slope_error[4:-4, 4:-4]
 
             # Do the dark correction
             input_model.data -= dark_slope
-            input_model.err = np.sqrt(input_model.err**2 + (dark_slope_err) ** 2)
             input_model.dq |= dark_model.dq[4:-4, 4:-4]
             input_model.meta.cal_step.dark = "COMPLETE"
 
