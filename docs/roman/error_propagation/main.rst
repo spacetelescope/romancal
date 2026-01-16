@@ -14,13 +14,13 @@ as well as which steps make use of these data. Details of how each step computes
 uses these data are given in the subsequent sections below.  Parameters marked with an
 asterisk are optional and will not be created by default.
 
-================= ===== ======================== ============================= =========
-Step              Stage Creates arrays           Updates arrays                Step uses
-================= ===== ======================== ============================= =========
-ramp_fitting      ELPP  VAR_POISSON, VAR_RNOISE* ERR                           None
-flat_field        ELPP  VAR_FLAT*                ERR, VAR_POISSON, VAR_RNOISE* None
-outlier_detection HLPP  None                     None                          ERR
-================= ===== ======================== ============================= =========
+================= ===== ============================== ============================= =========
+Step              Stage Creates arrays                 Updates arrays                Step uses
+================= ===== ============================== ============================= =========
+ramp_fitting      ELPP  VAR_POISSON, VAR_RNOISE*, ERR  None                          None
+flat_field        ELPP  VAR_FLAT*                      ERR, VAR_POISSON, VAR_RNOISE* None
+outlier_detection HLPP  None                           None                          ERR
+================= ===== ============================== ============================= =========
 
 ELPP Processing
 ---------------
