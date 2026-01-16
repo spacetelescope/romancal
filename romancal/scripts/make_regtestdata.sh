@@ -247,5 +247,6 @@ strun roman_elp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_uncal.asdf --steps.ref
 cp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_refpix.asdf $outdir/roman-pipeline/dev/WFI/image/
 strun romancal.step.WFI18TransientStep TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_refpix.asdf
 cp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_wfi18_transient.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-strun romancal.step.WFI18TransientStep r0000101001001001001_0001_wfi01_f158_wfi18_transient.asdf
-cp r0000101001001001001_0001_wfi01_f158_refpix.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+
+strun romancal.step.WFI18TransientStep r0000101001001001001_0001_wfi01_f158_refpix.asdf
+cp r0000101001001001001_0001_wfi01_f158_wfi18_transient.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
