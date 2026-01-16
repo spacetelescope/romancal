@@ -89,9 +89,6 @@ class RampFitStep(RomanStep):
                 input_model, readnoise_model.data, gain_model.data
             )
 
-            data, dq, var_poisson, var_rnoise, err = image_info
-            image_info = (data, dq, var_poisson, var_rnoise, err)
-
             out_model = create_image_model(
                 input_model, image_info, include_var_rnoise=self.include_var_rnoise
             )
