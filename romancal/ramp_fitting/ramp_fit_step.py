@@ -167,12 +167,13 @@ class RampFitStep(RomanStep):
         ramp_dq = get_pixeldq_flags(dq, input_model.pixeldq, slopes, err, gain)
 
         # Create the image model
-        image_info = {'slope':slopes,
-                      'dq':ramp_dq,
-                      'var_poisson':var_poisson,
-                      'var_rnoise':var_rnoise,
-                      'err':err
-                      }
+        image_info = {
+            "slope": slopes,
+            "dq": ramp_dq,
+            "var_poisson": var_poisson,
+            "var_rnoise": var_rnoise,
+            "err": err,
+        }
         image_model = create_image_model(input_model, image_info)
 
         # Rescale by the gain back to DN/s
@@ -239,14 +240,14 @@ def create_image_model(input_model, image_info):
 
     # trim off border reference pixels from science data, dq, err
     # and var_poisson/var_rnoise
-    im.data = image_info['slope'][4:-4, 4:-4].copy()
-    if image_info['dq'] is not None:
-        im.dq = image_info['dq'][4:-4, 4:-4].copy()
+    im.data = image_info["slope"][4:-4, 4:-4].copy()
+    if image_info["dq"] is not None:
+        im.dq = image_info["dq"][4:-4, 4:-4].copy()
     else:
         im.dq = np.zeros(im.data.shape, dtype="u4")
-    im.err = image_info['err'][4:-4, 4:-4].copy()
-    im.var_poisson = image_info['var_poisson'][4:-4, 4:-4].copy()
-    im.var_rnoise = image_info['var_rnoise'][4:-4, 4:-4].copy()
+    im.err = image_info["err"][4:-4, 4:-4].copy()
+    im.var_poisson = image_info["var_poisson"][4:-4, 4:-4].copy()
+    im.var_rnoise = image_info["var_rnoise"][4:-4, 4:-4].copy()
 
     return im
 
