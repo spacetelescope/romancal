@@ -30,9 +30,13 @@ def test_old_open_model(old_model, close_on_update, monkeypatch):
     update_model_version(old_model, close_on_update=close_on_update)
     assert close_on_update == close_called
 
-@pytest.mark.parametrize("vfs_value, wp_bool", [
-    (1, False),
-    (2, True),]
+
+@pytest.mark.parametrize(
+    "vfs_value, wp_bool",
+    [
+        (1, False),
+        (2, True),
+    ],
 )
 def test_update(old_model, latest_model, vfs_value, wp_bool):
     old_model.meta.observation.visit_file_sequence = vfs_value
