@@ -155,7 +155,6 @@ class SkyMatchStep(RomanStep):
             sky_id=image_model.meta.filename,  # file name?
             skystat=self._skystat,
             stepsize=self.stepsize,
-            reduce_memory_usage=False,
             meta={"image_model": input_image_model},
         )
 
