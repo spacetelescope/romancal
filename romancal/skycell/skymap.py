@@ -66,10 +66,6 @@ class SkyCell:
             Name of a sky cell, for instance `315p86x50y75`.
         skymap : SkyMap
             sky map instance; defaults to global SKYMAP (Default value = None)
-
-        References
-        ----------
-        .. [skymap]_ `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
         """
         if not re.match(r"\d{3}\w\d{2}x\d{2}y\d{2}", name):
             raise ValueError(f"invalid skycell name {name}")
@@ -309,10 +305,6 @@ class SkyCells:
             List of names of skycells, for instance `315p86x50y75`.
         skymap : SkyMap
             sky map instance; defaults to global SKYMAP (Default value = None)
-
-        References
-        ----------
-        .. [skymap] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
         """
 
         if skymap is None:
