@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
 
+from romancal.datamodels.fileio import open_dataset
+
 from ..stpipe import RomanStep
 from . import flat_field
 
@@ -24,15 +26,15 @@ class FlatFieldStep(RomanStep):
     """Flat-field a science image using a flatfield reference image."""
 
     class_alias = "flat_field"
+
     spec = """
         include_var_flat = boolean(default=False) # include flat field variance
     """
 
     reference_file_types: ClassVar = ["flat"]
 
-    def process(self, input_model):
-        if not isinstance(input_model, rdm.DataModel):
-            input_model = rdm.open(input_model)
+    def process(self, dataset):
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
         reference_file_name = self.get_reference_file(input_model, "flat")
 
@@ -50,7 +52,7 @@ class FlatFieldStep(RomanStep):
             log.debug("Using no FLAT ref file")
 
         # Do the flat-field correction
-        output_model = flat_field.do_correction(
+        flat_field.do_correction(
             input_model, reference_file_model, include_var_flat=self.include_var_flat
         )
 
@@ -64,4 +66,4 @@ class FlatFieldStep(RomanStep):
             except AttributeError:
                 self["suffix"] = "flat"
 
-        return output_model
+        return input_model

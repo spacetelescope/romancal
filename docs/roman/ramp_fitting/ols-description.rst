@@ -331,5 +331,6 @@ Error propagation in the ramp fitting step is implemented by storing the
 square-root of the exposure-level combined variance in the ERR array of the primary
 output product. This combined variance of the exposure-level slope is the sum
 of the variance of the slope due to the Poisson noise and the variance of the
-slope due to the read noise. These two variances are also separately written
-to the arrays VAR_POISSON and VAR_RNOISE in the asdf output.
+slope due to the read noise. The poisson variance is written to VAR_POISSON in
+the asdf output, and the read noise variance is also optionally included as
+VAR_RNOISE.

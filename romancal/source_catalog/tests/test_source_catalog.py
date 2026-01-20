@@ -26,7 +26,7 @@ from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 from .helpers import compare_model_and_parquet_metadata
 
 
-def make_test_image():
+def make_test_image(err_dtype=np.float16):
     g1 = Gaussian2D(121.0, 11.1, 12.2, 1.5, 1.5)
     g2 = Gaussian2D(70, 65, 18, 9.2, 4.5)
     g3 = Gaussian2D(111.0, 41, 42.7, 8.0, 3.0, theta=30 * u.deg)
@@ -66,7 +66,7 @@ def make_test_image():
     noise_scale = 2.5
     noise = rng.normal(0, noise_scale, size=data.shape)
     data += noise
-    err = np.zeros_like(data) + noise_scale
+    err = (np.zeros_like(data) + noise_scale).astype(err_dtype)
 
     return data, err
 
@@ -96,7 +96,7 @@ def mosaic_model():
     ].info:
         model.meta.cal_step[step_name] = "INCOMPLETE"
     model.cal_logs = []
-    data, err = make_test_image()
+    data, err = make_test_image(err_dtype=np.float32)
     model.data = data
     model.err = err
     model.weight = 1.0 / err

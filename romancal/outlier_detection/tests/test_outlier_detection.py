@@ -5,19 +5,6 @@ from romancal.datamodels import ModelLibrary
 from romancal.outlier_detection import OutlierDetectionStep
 
 
-@pytest.mark.parametrize(
-    "input_models",
-    [
-        "",
-    ],
-)
-def test_outlier_raises_error_on_invalid_input_models(input_models):
-    """Test that OutlierDetection raises an Exception if input is invalid."""
-
-    with pytest.raises(IsADirectoryError):
-        OutlierDetectionStep().run(input_models)
-
-
 def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
     """Test that OutlierDetection skips processing when provided with an invalid number of elements in the input,
     and sets the appropriate metadata for the skipped step."""
@@ -140,8 +127,6 @@ def test_find_outliers(tmp_path, base_image, on_disk):
         img.meta.filename = str(tmp_path / f"img{i}_suffix.asdf")
         img.meta.observation.observation_id = str(i)
         img.meta.background.level = 0
-        # populate var_rnoise with non-zero values
-        img.var_rnoise = np.full(img.data.shape, 1.0, dtype=np.float32)
         imgs.append(img)
 
     # add outliers

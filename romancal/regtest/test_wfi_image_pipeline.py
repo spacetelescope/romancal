@@ -171,7 +171,7 @@ def test_wcs_applies_distortion_correction(output_model):
 
 
 @pytest.mark.soctests
-@pytest.mark.parametrize("arr_name", ("dq", "err", "var_poisson", "var_rnoise"))
+@pytest.mark.parametrize("arr_name", ("dq", "err", "var_poisson"))
 def test_array_exists(output_model, arr_name):
     # DMS87
     assert hasattr(output_model, arr_name)
@@ -313,7 +313,7 @@ def test_all_saturated_model_type(all_saturated_model):
     assert isinstance(all_saturated_model, ImageModel)
 
 
-@pytest.mark.parametrize("array_name", ["data", "err", "var_poisson", "var_rnoise"])
+@pytest.mark.parametrize("array_name", ["data", "err", "var_poisson"])
 def test_all_saturated_zeroed(all_saturated_model, array_name):
     """
     For an all saturated input the output model should contain 0s for data and err arrays.

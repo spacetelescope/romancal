@@ -8,12 +8,10 @@ import numpy as np
 import roman_datamodels.datamodels as rdm
 from roman_datamodels.dqflags import group
 
-import romancal.datamodels.filetype as filetype
-
 # step imports
 from romancal.assign_wcs import AssignWcsStep
 from romancal.dark_current import DarkCurrentStep
-from romancal.datamodels.library import ModelLibrary
+from romancal.datamodels.fileio import open_dataset
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
 from romancal.lib.basic_utils import is_fully_saturated
@@ -25,6 +23,7 @@ from romancal.refpix import RefPixStep
 from romancal.saturation import SaturationStep
 from romancal.source_catalog import SourceCatalogStep
 from romancal.tweakreg import TweakRegStep
+from romancal.wfi18_transient import WFI18TransientStep
 
 from ..stpipe import RomanPipeline
 
@@ -57,6 +56,7 @@ class ExposurePipeline(RomanPipeline):
         "dq_init": dq_init_step.DQInitStep,
         "saturation": SaturationStep,
         "refpix": RefPixStep,
+        "wfi18_transient": WFI18TransientStep,
         "linearity": LinearityStep,
         "dark_current": DarkCurrentStep,
         "rampfit": ramp_fit_step.RampFitStep,
@@ -68,7 +68,7 @@ class ExposurePipeline(RomanPipeline):
     }
 
     # start the actual processing
-    def process(self, input):
+    def process(self, dataset):
         """Process the Roman WFI data"""
 
         # make sure source_catalog returns the updated datamodel
@@ -81,17 +81,13 @@ class ExposurePipeline(RomanPipeline):
         log.info("Starting Roman exposure calibration pipeline ...")
 
         # determine the input type
-        file_type = filetype.check(input)
-        return_lib = True
-        if file_type == "ModelLibrary":
-            lib = input
-        elif file_type == "asn":
-            lib = ModelLibrary(input)
-        else:
-            # for a non-asn non-library input process it as a library
-            lib = ModelLibrary([input])
-            # but return it as a datamodel
-            return_lib = False
+        lib, input_type = open_dataset(
+            dataset,
+            update_version=self.update_version,
+            return_type=True,
+            as_library=True,
+        )
+        return_lib = input_type in ("ModelLibrary", "asn")
 
         # Flag to track if any of the input models are fully saturated
         any_saturated = False
@@ -116,6 +112,7 @@ class ExposurePipeline(RomanPipeline):
                     )
                 else:
                     result = self.refpix.run(result)
+                    result = self.wfi18_transient.run(result)
                     result = self.linearity.run(result)
                     result = self.rampfit.run(result)
                     result = self.dark_current.run(result)
@@ -156,7 +153,7 @@ class ExposurePipeline(RomanPipeline):
         # or a DataModel (for non-asn non-lib inputs)
         with lib:
             model = lib.borrow(0)
-            lib.shelve(model)
+            lib.shelve(model, modify=False)
         return model
 
     def save_model(self, result, *args, **kwargs):
@@ -183,6 +180,7 @@ class ExposurePipeline(RomanPipeline):
         # Set all subsequent steps to skipped
         for step_str in [
             "refpix",
+            "wfi18_transient",
             "linearity",
             "dark",
             "ramp_fit",

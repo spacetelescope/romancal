@@ -5,9 +5,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from roman_datamodels import datamodels
+from romancal.datamodels.fileio import open_dataset
 
-from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -49,28 +48,14 @@ class FluxStep(RomanStep):
 
     reference_file_types: ClassVar = []
 
-    def process(self, input):
-        if isinstance(input, datamodels.DataModel):
-            input_models = ModelLibrary([input])
-            single_model = True
-        elif isinstance(input, str):
-            # either a single asdf filename or an association filename
-            try:
-                # association filename
-                input_models = ModelLibrary(input)
-                single_model = False
-            except Exception:
-                # single ASDF filename
-                input_models = ModelLibrary([datamodels.open(input)])
-                single_model = True
-        elif isinstance(input, ModelLibrary):
-            input_models = input
-            single_model = False
-        else:
-            raise TypeError(
-                "Input must be an ASN filename, a ModelLibrary, "
-                "a single ASDF filename, or a single Roman DataModel."
-            )
+    def process(self, dataset):
+        input_models, dataset_type = open_dataset(
+            dataset,
+            update_version=self.update_version,
+            return_type=True,
+            as_library=True,
+        )
+        return_lib = dataset_type in ("ModelLibrary", "asn")
 
         with input_models:
             for index, model in enumerate(input_models):
@@ -78,12 +63,13 @@ class FluxStep(RomanStep):
                 model.meta.cal_step.flux = "COMPLETE"
                 input_models.shelve(model, index)
 
-        if single_model:
-            with input_models:
-                model = input_models.borrow(0)
-                input_models.shelve(model, 0, modify=False)
-            return model
-        return input_models
+        if return_lib:
+            return input_models
+
+        with input_models:
+            model = input_models.borrow(0)
+            input_models.shelve(model, modify=False)
+        return model
 
 
 def apply_flux_correction(model):
@@ -105,9 +91,10 @@ def apply_flux_correction(model):
     """
     # Define the various arrays to be converted.
     DATA = ("data", "err")
-    VARIANCES = ("var_rnoise", "var_poisson")
-    if hasattr(model, "var_flat"):
-        VARIANCES = (*VARIANCES, "var_flat")
+    variances = []
+    for field in ("var_rnoise", "var_poisson", "var_flat"):
+        if hasattr(model, field):
+            variances.append(field)
 
     if model.meta.cal_step["flux"] == "COMPLETE":
         message = (
@@ -124,5 +111,5 @@ def apply_flux_correction(model):
     c_mj = model.meta.photometry.conversion_megajanskys
     for data in DATA:
         model[data] *= c_mj
-    for variance in VARIANCES:
+    for variance in variances:
         model[variance] *= c_mj**2
