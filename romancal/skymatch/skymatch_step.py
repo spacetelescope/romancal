@@ -149,8 +149,6 @@ class SkyMatchStep(RomanStep):
             image=image_model.data,
             wcs_fwd=wcs.forward_transform,
             wcs_inv=wcs.backward_transform,
-            pix_area=1.0,  # TODO: pixel area
-            convf=1.0,  # TODO: conv. factor to brightness
             mask=dqmask,
             sky_id=image_model.meta.filename,  # file name?
             skystat=self._skystat,
