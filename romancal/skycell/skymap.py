@@ -58,7 +58,7 @@ class SkyCell:
 
     @classmethod
     def from_name(cls, name: str, skymap: "SkyMap" = None) -> "SkyCell":
-        """Retrieve a sky cell from the sky map by its name (see handbook [1] for explanation).
+        """Retrieve a sky cell from the sky map [skymap]_ by its name.
 
         Parameters
         ----------
@@ -66,10 +66,6 @@ class SkyCell:
             Name of a sky cell, for instance `315p86x50y75`.
         skymap : SkyMap
             sky map instance; defaults to global SKYMAP (Default value = None)
-
-        References
-        ----------
-        .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
         """
         if not re.match(r"\d{3}\w\d{2}x\d{2}y\d{2}", name):
             raise ValueError(f"invalid skycell name {name}")
@@ -297,7 +293,7 @@ class SkyCells:
 
     @classmethod
     def from_names(cls, names: list[str], skymap: "SkyMap" = None) -> "SkyCells":
-        """Retrieve skycells from the sky map by name (see handbook [1] for explanation).
+        """Retrieve skycells from the sky map [skymap]_ by name.
 
         Note
         ----
@@ -309,10 +305,6 @@ class SkyCells:
             List of names of skycells, for instance `315p86x50y75`.
         skymap : SkyMap
             sky map instance; defaults to global SKYMAP (Default value = None)
-
-        References
-        ----------
-        .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
         """
 
         if skymap is None:
@@ -739,7 +731,7 @@ class ProjectionRegion:
 
 
 class SkyMap:
-    """Abstract representation of the sky map, comprising of 4058 overlapping rectangular
+    """Abstract representation of the sky map [skymap]_, comprising of 4058 overlapping rectangular
     "projection regions" defining gnomonic projection on to uniform pixel grids.
     The pixel scale for all projection regions is identical.
 
@@ -748,7 +740,7 @@ class SkyMap:
 
     References
     ----------
-    .. [1] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
+    .. [skymap] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
     """
 
     _path: None | Path
