@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-__all__ = ["SKYMAP", "SkyMap", "ProjectionRegion", "SkyCells", "SkyCell"]
+__all__ = ["SKYMAP", "ProjectionRegion", "SkyCell", "SkyCells", "SkyMap"]
 
 
 class SkyCell:
