@@ -150,3 +150,48 @@ def parse_visitID(visit_id):
     )
 
     return visit_id_parts
+
+
+def compute_var_rnoise(model):
+    """Compute read noise variance from model data.
+
+    If var_rnoise exists in the model, return it directly.
+    Otherwise, compute it as err^2 - sum(other variance terms).
+
+    This function supports the optional storage of var_rnoise in L2 files.
+    When var_rnoise is not present, it can be reconstructed from the total
+    error and other variance components using:
+        var_rnoise = err^2 - var_poisson - var_flat - var_dark - ...
+
+    Parameters
+    ----------
+    model : ImageModel
+        Roman WFI ImageModel containing error and variance arrays.
+
+    Returns
+    -------
+    var_rnoise : np.ndarray
+        Read noise variance array.
+
+    Notes
+    -----
+    The total error follows the relation:
+        err^2 = var_rnoise + var_poisson + var_flat + var_dark + ...
+
+    Therefore:
+        var_rnoise = err^2 - var_poisson - var_flat - var_dark - ...
+    """
+    # If var_rnoise exists in the model, return it
+    if hasattr(model, "var_rnoise"):
+        return model.var_rnoise
+
+    # Otherwise, compute from err^2 minus other variance terms
+    var_rnoise = model.err.astype(np.float32) ** 2
+
+    # Subtract other variance components
+    variance_arrays = ["var_poisson", "var_flat", "var_dark"]
+    for var_name in variance_arrays:
+        if hasattr(model, var_name):
+            var_rnoise -= getattr(model, var_name)
+
+    return var_rnoise

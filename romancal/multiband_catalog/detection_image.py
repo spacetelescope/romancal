@@ -7,6 +7,7 @@ from astropy.utils.exceptions import AstropyUserWarning
 from photutils.segmentation import make_2dgaussian_kernel
 
 from romancal.datamodels import ModelLibrary
+from romancal.lib.basic_utils import compute_var_rnoise
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -93,7 +94,8 @@ def make_det_image(library, kernel_fwhm):
             # variance) -- var_rnoise is also used as the weighting in the
             # resample step. Note that model.err is the total error, which
             # includes source Poisson noise.
-            wht = sed_weight / model.var_rnoise  # inverse variance
+            var_rnoise = compute_var_rnoise(model)
+            wht = sed_weight / var_rnoise  # inverse variance
             wht_sum += np.nan_to_num(wht, copy=False, nan=0.0)
 
             coverage_mask = np.isnan(model.err)
@@ -108,7 +110,7 @@ def make_det_image(library, kernel_fwhm):
                     normalize_kernel=False,
                 )
                 var_conv = convolve_fft(
-                    wht**2 * model.var_rnoise,
+                    wht**2 * var_rnoise,
                     kernel**2,
                     mask=coverage_mask,
                     preserve_nan=True,
