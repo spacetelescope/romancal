@@ -178,7 +178,7 @@ def test_hv_to_fgs():
     hv = TRANSFORM_KWARGS["gscommanded"]
     fgs_expected = (346.06680318732685, -148.7528870949794)
 
-    fgs = stp.hv_to_fgs("WFI01_FULL", *hv, pysiaf)
+    fgs = stp.hv_to_fgs("WFI01_FULL", *hv)
 
     assert np.allclose(fgs, fgs_expected)
 
