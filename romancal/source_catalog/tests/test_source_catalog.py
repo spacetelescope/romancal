@@ -9,7 +9,6 @@ from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from astropy.time import Time
 from numpy.testing import assert_equal
-from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import (
     ForcedImageSourceCatalogModel,
@@ -27,7 +26,7 @@ from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 from .helpers import compare_model_and_parquet_metadata
 
 
-def make_test_image():
+def make_test_image(err_dtype=np.float16):
     g1 = Gaussian2D(121.0, 11.1, 12.2, 1.5, 1.5)
     g2 = Gaussian2D(70, 65, 18, 9.2, 4.5)
     g3 = Gaussian2D(111.0, 41, 42.7, 8.0, 3.0, theta=30 * u.deg)
@@ -67,7 +66,7 @@ def make_test_image():
     noise_scale = 2.5
     noise = rng.normal(0, noise_scale, size=data.shape)
     data += noise
-    err = np.zeros_like(data) + noise_scale
+    err = (np.zeros_like(data) + noise_scale).astype(err_dtype)
 
     return data, err
 
@@ -97,7 +96,7 @@ def mosaic_model():
     ].info:
         model.meta.cal_step[step_name] = "INCOMPLETE"
     model.cal_logs = []
-    data, err = make_test_image()
+    data, err = make_test_image(err_dtype=np.float32)
     model.data = data
     model.err = err
     model.weight = 1.0 / err
@@ -395,13 +394,8 @@ def test_invalid_step_inputs(image_model, mosaic_model, function_jail):
 
 
 def test_inputs(mosaic_model):
-    data = np.ones((3, 3), dtype=int)
-    data[1, 1] = 1
-    segm = SegmentationImage(data)
-    cdata = np.ones((3, 3))
-    kernel_fwhm = 2.0
-    with pytest.raises(ValueError):
-        RomanSourceCatalog(np.ones((3, 3)), segm, cdata, kernel_fwhm, fit_psf=True)
+    with pytest.raises(ValueError, match="The input model must be an"):
+        RomanSourceCatalog(None, None, None, None, None)
 
 
 def test_psf_photometry(function_jail, image_model):

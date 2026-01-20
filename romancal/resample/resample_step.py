@@ -9,6 +9,8 @@ import asdf
 import numpy as np
 from roman_datamodels import datamodels
 
+from romancal.datamodels.fileio import open_dataset
+
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
 from .resample import ResampleData
@@ -71,7 +73,7 @@ class ResampleStep(RomanStep):
 
     reference_file_types: ClassVar = []
 
-    def process(self, input):
+    def process(self, dataset):
         # There is no way to check for minimum values in output_shape
         # within the step spec so check them here.
         if self.output_shape is not None:
@@ -81,21 +83,20 @@ class ResampleStep(RomanStep):
                         f"output shape values must be >= 1: {self.output_shape}"
                     )
 
-        if isinstance(input, datamodels.DataModel):
-            input_models = ModelLibrary([input])
+        input_models = open_dataset(
+            dataset,
+            update_version=self.update_version,
+            as_library=True,
+            open_kwargs={"on_disk": not self.in_memory},
+        )
+
+        if isinstance(dataset, datamodels.DataModel):
             # set output filename from meta.filename found in the first datamodel
-            output_filename = input.meta.filename
-        elif isinstance(input, str):
+            output_filename = dataset.meta.filename
+        elif isinstance(dataset, str):
             # either a single asdf filename or an association filename
-            try:
-                # association filename
-                input_models = ModelLibrary(input)
-            except Exception:
-                # single ASDF filename
-                input_models = ModelLibrary([input])
             output_filename = input_models.asn["products"][0]["name"]
-        elif isinstance(input, ModelLibrary):
-            input_models = input
+        elif isinstance(dataset, ModelLibrary):
             if "name" in input_models.asn["products"][0]:
                 output_filename = input_models.asn["products"][0]["name"]
             else:
@@ -104,11 +105,6 @@ class ResampleStep(RomanStep):
                 if len(output_filename) == 0:
                     # set default filename if no common prefix can be determined
                     output_filename = "resample_output.asdf"
-        else:
-            raise TypeError(
-                "Input must be an ASN filename, a ModelLibrary, "
-                "a single ASDF filename, or a single Roman DataModel."
-            )
 
         if not len(input_models):
             raise ValueError("At least 1 file must be provided")

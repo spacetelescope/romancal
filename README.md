@@ -1,10 +1,15 @@
 # Roman Calibration Pipeline
 
-
 [![Documentation Status](https://readthedocs.org/projects/roman-pipeline/badge/?version=latest)](https://roman-pipeline.readthedocs.io/en/latest/?badge=latest)
 [![Tests](https://github.com/spacetelescope/romancal/actions/workflows/tests.yml/badge.svg)](https://github.com/spacetelescope/romancal/actions/workflows/tests.yml)
 [![Powered by STScI Badge](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](http://www.stsci.edu)
 [![Powered by Astropy Badge](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
+
+This package processes uncalibrated data for both imagers and spectrographs onboard
+the Nancy Grace Roman Space Telescope, an orbiting wide-field infrared observatory stationed at Earth-Sun L<sub>2</sub>.
+It performs a series of calibration steps that result in standard data products usable for science.
+More information on running this pipeline, including explanations of specific stages and how to obtain reference files,
+can be found [here](https://roman-docs.stsci.edu/data-handbook-home/roman-data-pipelines).
 
 > [!NOTE]
 > Linux and MacOS platforms are tested and supported. Windows is not currently supported.
@@ -36,7 +41,7 @@ used in operations, and development versions. Remember that all conda operations
 
 You can install the latest released version via `pip`. From a bash shell:
 
-    conda create -n <env_name> python
+    conda create -n <env_name> python==3.13
     conda activate <env_name>
     pip install romancal
 
@@ -46,7 +51,7 @@ You can install the latest released version via `pip`. From a bash shell:
 
 You can also install a specific version (from `romancal 0.1.0` onward):
 
-    conda create -n <env_name> python
+    conda create -n <env_name> python==3.13
     conda activate <env_name>
     pip install romancal==0.10.0
 
@@ -54,7 +59,7 @@ You can also install a specific version (from `romancal 0.1.0` onward):
 
 You can install the latest development version (not as well tested) from the Github main branch:
 
-    conda create -n <env_name> python
+    conda create -n <env_name> python==3.13
     conda activate <env_name>
     pip install git+https://github.com/spacetelescope/romancal
 
@@ -68,7 +73,7 @@ package.
 
 As usual, the first two steps are to create and activate an environment:
 
-    conda create -n <env_name> python
+    conda create -n <env_name> python==3.13
     conda activate <env_name>
 
 To install your own copy of the code into that environment, you first need to fork and clone the `romancal` repo:
@@ -183,18 +188,16 @@ Note: CRDS_CONTEXT values flagged with an asterisk in the above table are estima
 
 ### Setup
 
-The test suite require access to a CRDS cache, but currently (2021-02-09) the shared /grp/crds cache does not include
-Roman files. Developers inside the STScI network can sync a cache from roman-crds-test.stsci.edu (if working from home,
-be sure to connect to the VPN first):
+CRDS is the system that manages the reference files needed to run the pipeline.
+
+The romancal CRDS server is available at https://roman-crds.stsci.edu
+
+To run the pipeline (or test suite), CRDS must be configured by setting two environment variables
 
 ```bash
-$ export CRDS_SERVER_URL=https://roman-crds-test.stsci.edu
-$ export CRDS_PATH=$HOME/roman-crds-test-cache
-$ crds sync --contexts roman-edit
+$ export CRDS_SERVER_URL=https://roman-crds.stsci.edu
+$ export CRDS_PATH=$HOME/roman-crds-cache
 ```
-
-The CRDS_READONLY_CACHE variable should not be set, since references will need to be downloaded to your local cache as
-they are requested.
 
 ### Running tests
 

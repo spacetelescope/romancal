@@ -20,9 +20,12 @@ from contextlib import contextmanager, redirect_stdout
 from distutils.version import LooseVersion
 from pathlib import Path
 
+import docutils
 import sphinx
 import stsci_rtd_theme
+from docutils.parsers.rst import Directive
 from roman_datamodels import datamodels as rdm
+from roman_datamodels import get_latest_schema
 from sphinx.directives.code import CodeBlock
 from sphinx.ext.autodoc import AttributeDocumenter
 
@@ -62,6 +65,50 @@ class ImageModelSearchDirective(CodeBlock):
         return super().run()
 
 
+class SourceCatalogColumnsDirective(Directive):
+    def run(self):
+        node = docutils.nodes.paragraph()
+        node.parent = self.state.parent
+
+        _, schema = get_latest_schema(
+            "asdf://stsci.edu/datamodels/roman/schemas/tables/source_catalog_columns"
+        )
+        defs = schema["definitions"]
+        column_names = sorted(defs.keys())
+
+        rows = [
+            {
+                "name": name,
+                "unit": defs[name].get("unit", ""),
+                "description": defs[name]["description"],
+            }
+            for name in column_names
+        ]
+
+        table_columns = ("name", "unit", "description")
+        column_widths = {
+            name: max(len(name), max(len(r[name]) for r in rows))
+            for name in table_columns
+        }
+
+        header = " ".join("".ljust(column_widths[c], "=") for c in table_columns)
+        titles = " ".join(c.capitalize().ljust(column_widths[c]) for c in table_columns)
+
+        node.children.append(header)
+        node.children.append(titles)
+        node.children.append(header)
+
+        for row in rows:
+            row_text = " ".join(row[c].ljust(column_widths[c]) for c in table_columns)
+            node.children.append(row_text)
+
+        node.children.append(header)
+
+        output_node = docutils.nodes.paragraph()
+        self.state.nested_parse(node, 0, output_node)
+        return [output_node]
+
+
 class StepSpecDocumenter(AttributeDocumenter):
     def should_suppress_value_header(self):
         if self.name == "spec" and issubclass(self.parent, RomanStep):
@@ -94,6 +141,7 @@ def setup(app):
     app.add_autodocumenter(StepSpecDocumenter, True)
     app.add_directive("image_model_info", ImageModelInfoDirective)
     app.add_directive("image_model_search", ImageModelSearchDirective)
+    app.add_directive("source_catalog_columns", SourceCatalogColumnsDirective)
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -137,6 +185,7 @@ intersphinx_mapping = {
     "rad": ("https://rad.readthedocs.io/en/latest/", None),
     "drizzle": ("https://spacetelescope-drizzle.readthedocs.io/en/latest/", None),
     "stcal": ("https://stcal.readthedocs.io/en/latest/", None),
+    "stpipe": ("https://stpipe.readthedocs.io/en/latest/", None),
 }
 
 intersphinx_disabled_reftypes = ["*"]

@@ -13,7 +13,7 @@ from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
 from roman_datamodels.dqflags import pixel
 from stcal.skymatch import SkyImage, SkyStats, skymatch
 
-from romancal.datamodels import ModelLibrary
+from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -53,13 +53,10 @@ class SkyMatchStep(RomanStep):
 
     reference_file_types: ClassVar = []
 
-    def process(self, input):
-        log.setLevel(logging.DEBUG)
-
-        if isinstance(input, ModelLibrary):
-            library = input
-        else:
-            library = ModelLibrary(input)
+    def process(self, dataset):
+        library = open_dataset(
+            dataset, update_version=self.update_version, as_library=True
+        )
 
         self._dqbits = interpret_bit_flags(self.dqbits, flag_name_map=pixel)
 
