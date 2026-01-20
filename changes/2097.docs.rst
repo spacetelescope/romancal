@@ -1,0 +1,1 @@
+add `romancal.skycell.skymap` module to docs
