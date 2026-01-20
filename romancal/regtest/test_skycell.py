@@ -92,3 +92,60 @@ def test_skycells():
     assert skycells.vectorpoint_centers.shape == (len(TEST_SKYCELLS), 3)
 
     assert len(skycells.polygons) == len(TEST_SKYCELLS)
+
+
+def test_skycells_projection_regions():
+    rng = np.random.default_rng()
+    lon = rng.standard_normal(1)
+    lon = lon / np.max(np.abs(lon)) * 180 + 180
+    lat = rng.standard_normal(1)
+    lat = lat / np.max(np.abs(lat)) * 90
+
+    assert len(sc.SKYMAP.skycells.projection_regions) == len(sc.SKYMAP.model.skycells)
+
+
+def test_skycells_containing_points():
+    rng = np.random.default_rng()
+    lon = rng.standard_normal(10000)
+    lon = lon / np.max(np.abs(lon)) * 180 + 180
+    lat = rng.standard_normal(10000)
+    lat = lat / np.max(np.abs(lat)) * 90
+    radec = np.stack([lon, lat], axis=1)
+
+    skycells_containing_points = sc.SKYMAP.skycells.containing(radec)
+    point_indices_outside_skycells = [
+        point_index
+        for point_index in np.arange(radec.shape[0])
+        if not any(
+            point_index not in skycell_point_indices
+            for skycell_point_indices in skycells_containing_points.values()
+        )
+    ]
+
+    assert len(point_indices_outside_skycells) == 0, (
+        f"{len(point_indices_outside_skycells)} / {radec.shape[0]} points do not lie within any skycell"
+    )
+
+
+def test_skycells_cores_containing_points():
+    rng = np.random.default_rng()
+    lon = rng.standard_normal(10000)
+    lon = lon / np.max(np.abs(lon)) * 180 + 180
+    lat = rng.standard_normal(10000)
+    lat = lat / np.max(np.abs(lat)) * 90
+    radec = np.stack([lon, lat], axis=1)
+
+    skycells_exclusively_containing_points = sc.SKYMAP.skycells.cores_containing(radec)
+    point_indices_outside_core = [
+        point_index
+        for point_index in np.arange(radec.shape[0])
+        if not any(
+            point_index not in skycell_point_indices
+            for skycell_point_indices in skycells_exclusively_containing_points.values()
+        )
+    ]
+
+    # each point on the sphere MUST belong to exactly one skycell
+    assert len(point_indices_outside_core) == 0, (
+        f"{len(point_indices_outside_core)} / {radec.shape[0]} points do not lie within the exclusive zone of any skycell"
+    )
