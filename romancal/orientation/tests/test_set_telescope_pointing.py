@@ -6,38 +6,54 @@ import dataclasses
 import logging
 from pathlib import Path
 
+import asdf
 import numpy as np
 import pytest
-
-pytest.importorskip("pysiaf")
-
-import asdf
 import roman_datamodels as rdm
 from astropy.time import Time
 
 from romancal.lib.engdb import engdb_mast, engdb_tools
 from romancal.orientation import set_telescope_pointing as stp
 
+# pysiaf is not a required dependency. If not present, ignore all this.
+pysiaf = pytest.importorskip("pysiaf")
+
 # Ensure that `set_telescope_pointing` logs.
 stp.logger.setLevel(logging.DEBUG)
 stp.logger.addHandler(logging.StreamHandler())
 
 # Setup for some times
-STARTTIME = Time("2027-03-23T19:20:40", format="isot")
-ENDTIME = Time("2027-03-23T19:21:36", format="isot")
+STARTTIME = Time("2027-03-11T13:26:56.571", format="isot")
+ENDTIME = Time("2027-03-11T13:27:56.658", format="isot")
 BADSTARTTIME = Time("2020-02-02T02:02:02", format="isot")
 BADENDTIME = Time("2020-02-02T02:12:02", format="isot")
-DEFAULT_QUATERNION = [-0.52558752, 0.3719724, -0.52016581, 0.38150882]
-DEFAULT_RADECREF = (282.70155393880844, 14.716147457820417)
+DEFAULT_RADECREF = (149.9709175757851, 86.7401422250309)
 
 # Header defaults
 TARG_RA = 270.0
 TARG_DEC = 66.01
 
+# Default set of transform parameters
+TRANSFORM_KWARGS = {
+    "aperture": "WFI01_FULL",
+    "gscommanded": (916.4728835141, -186.8939737044),
+    "pointing": stp.Pointing(
+        fgs_q=np.array(
+            [
+                -0.18596734175399293,
+                0.6837984564491885,
+                -0.1800546332580956,
+                0.6822141509826322,
+            ]
+        ),
+        obstime=Time(1804771646.4242268, format="unix"),
+        q=np.array([-0.33879082, 0.62326573, -0.36611627, 0.60226181]),
+    ),
+    "velocity": (-5.473753741352352, -27.480586797035414, -11.875972151015253),
+}
+
 # Get the mock databases
 DATA_PATH = Path(__file__).parent / "data"
-
-OBSTIME_EXPECTED = Time(1805829668.0276294, format="unix")
 
 # Meta attributes for test comparisons
 METAS_EQUALITY = [
@@ -72,7 +88,7 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         model_path,
         tolerance=0,
         allow_default=True,
-        default_quaternion=DEFAULT_QUATERNION,
+        default_quaternion=TRANSFORM_KWARGS["pointing"].q,
     )
 
     with rdm.open(model_path) as result:
@@ -107,20 +123,32 @@ def test_change_base_url_fail():
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
+def test_get_mnemonics():
+    """Test getting mnemonics"""
+    try:
+        mnemonics = stp.get_mnemonics(STARTTIME, ENDTIME, 60)
+    except ValueError as exception:
+        pytest.xfail(reason=str(exception))
+
+    assert len(mnemonics) == len(stp.COARSE_MNEMONICS)
+
+
+@pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_get_pointing():
     """Ensure that the averaging works.
 
     Note: The expected quaternion is from mastdev during Q26B20 development.
     This will most likely change again.
     """
-    q_expected = np.array([-0.69018802, 0.12195182, -0.695103, 0.15999998])
     try:
-        obstime, q = stp.get_pointing(STARTTIME, ENDTIME)
+        pointing = stp.get_pointing(STARTTIME, ENDTIME)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
 
-    assert np.isclose(obstime.value, OBSTIME_EXPECTED.value)
-    assert np.allclose(q, q_expected)
+    assert np.isclose(
+        pointing.obstime.value, TRANSFORM_KWARGS["pointing"].obstime.value
+    )
+    assert np.allclose(pointing.q, TRANSFORM_KWARGS["pointing"].q)
 
 
 def test_get_pointing_fail():
@@ -135,15 +163,41 @@ def test_get_pointing_list():
     Note: The expected quaternion is from mastdev during Q26B20 development.
     This will most likely change again.
     """
-    q_expected = np.array([-0.69018802, 0.12195182, -0.695103, 0.15999998])
     try:
         results = stp.get_pointing(STARTTIME, ENDTIME, reduce_func=stp.all_pointings)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
     assert isinstance(results, list)
     assert len(results) > 0
-    assert np.isclose(results[0].q, q_expected).all()
+    assert np.isclose(results[0].q, TRANSFORM_KWARGS["pointing"].q, rtol=1.0e-2).all()
     assert STARTTIME <= results[0].obstime <= ENDTIME
+
+
+def test_hv_to_fgs():
+    """Test conversion from HV frame to FGS frame"""
+    hv = TRANSFORM_KWARGS["gscommanded"]
+    fgs_expected = (346.06680318732685, -148.7528870949794)
+
+    fgs = stp.hv_to_fgs("WFI01_FULL", *hv)
+
+    assert np.allclose(fgs, fgs_expected)
+
+
+@pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
+def test_mnemonics_chronologically():
+    """Test ordering mnemonics chronologically"""
+    try:
+        mnemonics = stp.get_mnemonics(STARTTIME, ENDTIME, 60)
+    except ValueError as exception:
+        pytest.xfail(reason=str(exception))
+    ordered = stp.mnemonics_chronologically(mnemonics)
+
+    assert len(ordered) > 1
+
+    first = ordered[0]
+    assert isinstance(first[0], Time)
+    assert isinstance(first[1], dict)
+    assert len(first[1]) >= len(stp.COARSE_MNEMONICS_QUATERNION_ECI)
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
@@ -156,6 +210,28 @@ def test_logging(caplog):
     assert "Telemetry search tolerance" in caplog.text
     assert "Reduction function" in caplog.text
     assert "Querying engineering DB" in caplog.text
+
+
+def test_mnemonic_list():
+    """Ensure the mnemonic list is as expected"""
+    expected = set(
+        (
+            "SCF_AC_SDR_QBJ_1",
+            "SCF_AC_SDR_QBJ_2",
+            "SCF_AC_SDR_QBJ_3",
+            "SCF_AC_SDR_QBJ_4",
+            "SCF_AC_EST_FGS_qbr1",
+            "SCF_AC_EST_FGS_qbr2",
+            "SCF_AC_EST_FGS_qbr3",
+            "SCF_AC_EST_FGS_qbr4",
+            "SCF_AC_FGS_TBL_Qb1",
+            "SCF_AC_FGS_TBL_Qb2",
+            "SCF_AC_FGS_TBL_Qb3",
+            "SCF_AC_FGS_TBL_Qb4",
+        )
+    )
+
+    assert expected == set(stp.COARSE_MNEMONICS)
 
 
 @pytest.mark.parametrize("wcs_type", ["wcsinfo", "vinfo"])
@@ -193,7 +269,9 @@ def test_strict_pointing(science_raw_model, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "matrix", [matrix for matrix in dataclasses.fields(stp.Transforms())]
+    "matrix",
+    [matrix for matrix in dataclasses.fields(stp.Transforms())],
+    ids=[matrix.name for matrix in dataclasses.fields(stp.Transforms())],
 )
 def test_transforms(calc_wcs, matrix):
     """Ensure expected calculate of the specified matrix
@@ -225,10 +303,14 @@ def test_transform_serialize(calc_wcs, tmp_path):
 # ######################
 # Utilities and fixtures
 # ######################
-@pytest.fixture
+@pytest.fixture(scope="module")
 def calc_wcs(tmp_path_factory):
-    """Calculate full transforms and WCS info"""
-    t_pars = _make_t_pars()
+    """Calculate full transforms and WCS info
+
+    ***DEFINE WHERE DEFAULTS HAVE COME FROM***
+
+    """
+    t_pars = _make_t_pars(**TRANSFORM_KWARGS)
 
     # Calculate the transforms and WCS information
     wcsinfo, vinfo, transforms = stp.calc_wcs(t_pars)
@@ -264,24 +346,18 @@ def science_raw_model():
     return m
 
 
-def _make_t_pars(aperture="WFI02_FULL"):
+def _make_t_pars(**transform_kwargs):
     """Setup initial Transforms Parameters
-
-    This set is Visit 1 provided by T.Sohn in a demonstration notebook.
 
     Parameters
     ==========
-    aperture : str
-        Aperture in use.
+    transform_kwargs : dict
+        dict to use to initialize the `TransformParameters` object.
+        See `TransformParameters` for more information.`
     """
-    t_pars = stp.TransformParameters()
+    t_pars = stp.TransformParameters(**transform_kwargs)
 
-    t_pars.aperture = aperture
-
-    t_pars.pointing = stp.Pointing(
-        q=np.array([0.709433, -0.291814, 0.641319, 0.016107]),
-    )
-
+    # Force MAST service
     t_pars.service_kwargs = {"service": "mast"}
 
     return t_pars

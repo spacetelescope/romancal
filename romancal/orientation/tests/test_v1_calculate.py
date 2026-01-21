@@ -10,6 +10,9 @@ from roman_datamodels.datamodels import ScienceRawModel
 
 import romancal.orientation.v1_calculate as v1c
 
+# pysiaf is not a required dependency. If not present, ignore all this.
+pysiaf = pytest.importorskip("pysiaf")
+
 DATA_PATH = Path(__file__).parent / "data"
 
 # Engineering parameters

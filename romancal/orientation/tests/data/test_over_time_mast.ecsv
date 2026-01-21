@@ -10,14 +10,15 @@
 # - {allow_default: 'False'}
 # - {aperture: '''WFI02_FULL'''}
 # - {default_quaternion: None}
+# - {gscommanded: None}
 # - {obsend: None}
 # - {obsstart: None}
-# - {pointing: 'Pointing(obstime=<Time object: scale=''utc'' format=''unix'' value=1805829668.0276294>, q=array([-0.69018802,  0.12195182,
-#     -0.695103  ,  0.15999998]))'}
-# - {reduce_func: <function pointing_from_average at 0x1182f9440>}
+# - {pointing: 'Pointing(fgs_q=None, obstime=<Time object: scale=''utc'' format=''unix'' value=1805829668.0275648>, q=array([-0.52558752,  0.3719724
+#     , -0.52016581,  0.38150882]))'}
+# - {reduce_func: <function pointing_from_average at 0x11c2f4900>}
 # - {service_kwargs: None}
-# - {pysiaf: <module 'pysiaf' from '/Users/eisenham/miniforge3/envs/rcal-1259-targapp/lib/python3.13/site-packages/pysiaf/__init__.py'>}
 # - {tolerance: '60.0'}
+# - {velocity: None}
 # schema: astropy-2.0
 source obstime ra dec pa_v3
-"time range" 2027-03-23T19:21:08.028 270.5746110716807 66.99619310305059 87.42805263041119
+"time range" 2027-03-23T19:21:08.028 1.8515542645716956 56.161123809866474 261.6410904500064
