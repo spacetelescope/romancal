@@ -177,7 +177,9 @@ class ExposurePipeline(RomanPipeline):
             "err": err,
         }
 
-        fully_saturated_model = ramp_fit_step.create_image_model(input_model, image_info_allsat)
+        fully_saturated_model = ramp_fit_step.create_image_model(
+            input_model, image_info_allsat
+        )
 
         # Set all subsequent steps to skipped
         for step_str in [
