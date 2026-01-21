@@ -31,9 +31,10 @@ def update_model_version(model, *, close_on_update=False):
         updated_model.meta.file_date = Time(updated_model.meta.file_date)
 
     # old files (<B21) lacks WFI_parallel
-    if "wfi_parallel" not in model.meta.observation:
+    if (("wfi_parallel" not in model.meta.get("observation", {})) and
+        (visit_file_sequence := model.meta.get("observation", {}).get("visit_file_sequence", None))):
         updated_model.meta.observation.wfi_parallel = (
-            model.meta.observation.visit_file_sequence > 1
+            visit_file_sequence > 1
         )
 
     if close_on_update:
