@@ -171,7 +171,7 @@ class ExposurePipeline(RomanPipeline):
         err = np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype)
         image_info_allsat = {
             "slope": slopes,
-            "dq": ramp_dq,
+            "dq": dq,
             "var_poisson": err,
             "var_rnoise": err,
             "err": err,
