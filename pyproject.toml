@@ -50,6 +50,7 @@ docs = [
     "sphinx-automodapi",
     "sphinx-rtd-theme",
     "sphinx-autobuild",
+    "pytest_doctestplus",
 ]
 test = [
     "ci-watson >=0.5.0",
