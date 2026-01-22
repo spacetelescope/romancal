@@ -47,10 +47,8 @@ dynamic = [
 docs = [
     "matplotlib",
     "sphinx",
-    "sphinx-astropy",
     "sphinx-automodapi",
     "sphinx-rtd-theme",
-    "stsci-rtd-theme",
     "sphinx-autobuild",
 ]
 test = [
