@@ -132,13 +132,18 @@ class StepSpecDocumenter(AttributeDocumenter):
         self.add_line(f"  {txt}", source_name, 2)
 
 
+def register_step_spec_documenter(app, config):
+    # add a custom AttributeDocumenter subclass to handle Step.spec formatting
+    app.add_autodocumenter(StepSpecDocumenter, True)
+
+
 def setup(app):
     try:
         app.add_css_file("stsci.css")
     except AttributeError:
         app.add_stylesheet("stsci.css")
-    # add a custom AttributeDocumenter subclass to handle Step.spec formatting
-    app.add_autodocumenter(StepSpecDocumenter, True)
+    # register with a high priority to override the autodoc documenter
+    app.connect("config-inited", register_step_spec_documenter, priority=9000)
     app.add_directive("image_model_info", ImageModelInfoDirective)
     app.add_directive("image_model_search", ImageModelSearchDirective)
     app.add_directive("source_catalog_columns", SourceCatalogColumnsDirective)
