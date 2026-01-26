@@ -47,11 +47,10 @@ dynamic = [
 docs = [
     "matplotlib",
     "sphinx",
-    "sphinx-astropy",
     "sphinx-automodapi",
     "sphinx-rtd-theme",
-    "stsci-rtd-theme",
     "sphinx-autobuild",
+    "pytest_doctestplus",
 ]
 test = [
     "ci-watson >=0.5.0",
