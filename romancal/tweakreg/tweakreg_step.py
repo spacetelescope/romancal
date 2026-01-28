@@ -276,6 +276,20 @@ class TweakRegStep(RomanStep):
                         image_model.meta.wcs = imcat.wcs
                         # update S_REGION
                         add_s_region(image_model)
+                        # update source catalog coordinates if requested
+                        if self.update_source_catalog_coordinates:
+                            try:
+                                self.update_catalog_coordinates(
+                                    image_model.meta.source_catalog[
+                                        "tweakreg_catalog_name"
+                                    ],
+                                    imcat.wcs,
+                                )
+                            except Exception as e:
+                                log.error(
+                                    f"Failed to update source catalog coordinates: {e}"
+                                )
+                                raise e
 
                     images.shelve(image_model, imcat.meta["model_index"])
 
@@ -302,33 +316,26 @@ class TweakRegStep(RomanStep):
         None
         """
         # read in cat file
-        with rdm.open(tweakreg_catalog_name) as source_catalog_model:
-            # get catalog
-            catalog = source_catalog_model.source_catalog
+        catalog = Table.read(tweakreg_catalog_name)
 
-            # define mapping between pixel and world coordinates
-            colname_mapping = {
-                ("xcentroid", "ycentroid"): ("ra_centroid", "dec_centroid"),
-                ("x_psf", "y_psf"): ("ra_psf", "dec_psf"),
-            }
+        # define mapping between pixel and world coordinates
+        colname_mapping = {
+            ("xcentroid", "ycentroid"): ("ra_centroid", "dec_centroid"),
+            ("x_psf", "y_psf"): ("ra_psf", "dec_psf"),
+        }
 
-            for k, v in colname_mapping.items():
-                # get column names
-                x_colname, y_colname = k
-                ra_colname, dec_colname = v
+        for k, v in colname_mapping.items():
+            # get column names
+            x_colname, y_colname = k
+            ra_colname, dec_colname = v
 
-                # calculate new coordinates using tweaked WCS and update catalog coordinates
-                catalog[ra_colname], catalog[dec_colname] = tweaked_wcs(
-                    catalog[x_colname], catalog[y_colname]
-                )
-
-            # save updated catalog (overwrite cat file)
-            self.save_model(
-                source_catalog_model,
-                output_file=source_catalog_model.meta.filename,
-                suffix="cat",
-                force=True,
+            # calculate new coordinates using tweaked WCS and update catalog coordinates
+            catalog[ra_colname], catalog[dec_colname] = tweaked_wcs(
+                catalog[x_colname], catalog[y_colname]
             )
+
+        # save updated catalog (overwrite cat file)
+        catalog.write(tweakreg_catalog_name, overwrite=True)
 
     def read_catalog(self, catalog_name):
         """
