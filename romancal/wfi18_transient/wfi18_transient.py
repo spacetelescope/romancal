@@ -25,9 +25,9 @@ def mask_affected_rows(groupdq):
     groupdq[0, :1000, :] |= dqflags.group.DO_NOT_USE | dqflags.group.WFI18_TRANSIENT
 
 
-def _frame_read_times(sca, frame_time):
+def _wfi18_frame_read_times(frame_time):
     """
-    Compute the read times for a single frame.
+    Compute the WFI18 read times for a single frame.
 
     This is a placeholder function that assumes a uniform read
     across each channel within the frame time.  A more careful
@@ -37,10 +37,11 @@ def _frame_read_times(sca, frame_time):
     Data shape for the frame is assumed to be 4096 x 4096, with
     32 channels along the columns.
 
+    Read order direction assumes the WFI18 detector.  Other detectors
+    may need different handling.
+
     Parameters
     ----------
-    sca : int
-        Detector number.
     frame_time : float
         The frame time for the exposure, in seconds.
 
@@ -58,11 +59,10 @@ def _frame_read_times(sca, frame_time):
     read_times = np.tile(channel_read_times, (1, nchannel))
 
     # Apply science -> detector flipping for read order
-    if (sca % 3) == 0:
-        read_times = read_times[:, ::-1]
-    else:  # pragma: no cover
-        # This is not expected for WFI18, but included here for completeness.
-        read_times = read_times[::-1, :]
+    # This order is appropriate for detectors with SCA % 3 == 0.
+    # Other detectors would use read_times[::-1, :].
+    read_times = read_times[:, ::-1]
+
     return read_times
 
 
@@ -146,10 +146,9 @@ def correct_anomaly(input_model, mask_rows=False):
         return input_model
 
     # Get the read times for all pixels and resultants
-    sca = input_model.meta.exposure.sca_number
     frame_time = input_model.meta.exposure.frame_time
     read_pattern = input_model.meta.exposure.read_pattern
-    t_pixel = _frame_read_times(sca, frame_time)
+    t_pixel = _wfi18_frame_read_times(frame_time)
     t_resultant = _resultant_read_times(read_pattern, frame_time)
 
     # Input data without reference pixels
