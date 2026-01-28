@@ -242,7 +242,7 @@ def test_update_source_catalog_coordinates(function_jail, tweakreg_image):
     with res:
         dm = res.borrow(0)
         assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.parquet"
-        update_catalog_coordinates(
+        TweakRegStep().update_catalog_coordinates(
             dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
         )
         res.shelve(dm, 0)
@@ -287,7 +287,7 @@ def test_source_catalog_coordinates_have_changed(function_jail, tweakreg_image):
     with res:
         dm = res.borrow(0)
         assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.parquet"
-        update_catalog_coordinates(
+        TweakRegStep().update_catalog_coordinates(
             dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
         )
         res.shelve(dm, 0)
@@ -407,43 +407,6 @@ def setup_source_catalog(img):
     source_catalog["dec_psf"].unit = u.deg
 
     return source_catalog
-
-
-def update_catalog_coordinates(tweakreg_catalog_name, tweaked_wcs):
-    """
-    Update the source catalog coordinates using the tweaked WCS.
-
-    Parameters
-    ----------
-    tweakreg_catalog_name : str
-        The name of the TweakReg catalog file produced by `SourceCatalog`.
-    tweaked_wcs : `gwcs.wcs.WCS`
-        The tweaked World Coordinate System (WCS) object.
-
-    Returns
-    -------
-    None
-    """
-    # read in cat file
-    catalog = Table.read(tweakreg_catalog_name)
-
-    # define mapping between pixel and world coordinates
-    colname_mapping = {
-        ("xcentroid", "ycentroid"): ("ra_centroid", "dec_centroid"),
-        ("x_psf", "y_psf"): ("ra_psf", "dec_psf"),
-    }
-
-    for k, v in colname_mapping.items():
-        # get column names
-        x_colname, y_colname = k
-        ra_colname, dec_colname = v
-
-        # calculate new coordinates using tweaked WCS and update catalog coordinates
-        catalog[ra_colname], catalog[dec_colname] = tweaked_wcs(
-            catalog[x_colname], catalog[y_colname]
-        )
-
-    catalog.write(tweakreg_catalog_name, overwrite=True)
 
 
 @pytest.mark.parametrize(
