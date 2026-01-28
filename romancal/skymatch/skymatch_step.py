@@ -112,11 +112,11 @@ class SkyMatchStep(RomanStep):
             }
 
         if self._dqbits is None:
-            dqmask = np.isfinite(image_model.data).astype(dtype=np.uint8)
+            dqmask = np.isfinite(image_model.data)
         else:
             dqmask = bitfield_to_boolean_mask(
-                image_model.dq, self._dqbits, good_mask_value=1, dtype=np.uint8
-            ) * np.isfinite(image_model.data)
+                image_model.dq, self._dqbits, good_mask_value=True, dtype=np.bool
+            ) & np.isfinite(image_model.data)
 
         # see if 'skymatch' was previously run and raise an exception
         # if 'subtract' mode has changed compared to the previous pass:
