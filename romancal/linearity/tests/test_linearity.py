@@ -8,7 +8,11 @@ import numpy as np
 import pytest
 from astropy.time import Time
 from roman_datamodels import dqflags
-from roman_datamodels.datamodels import LinearityRefModel, ScienceRawModel
+from roman_datamodels.datamodels import (
+    InverselinearityRefModel,
+    LinearityRefModel,
+    ScienceRawModel,
+)
 
 from romancal.dq_init import DQInitStep
 from romancal.linearity import LinearityStep
@@ -40,7 +44,9 @@ def test_linearity_coeff(instrument, exptype):
     wfi_sci_raw_model.data = np.ones(shape, dtype=np.uint16)
 
     result = DQInitStep.call(wfi_sci_raw_model)
-    result = LinearityStep.call(result, override_linearity="N/A")
+    result = LinearityStep.call(
+        result, override_linearity="N/A", override_inverselinearity="N/A"
+    )
 
     assert result.meta.cal_step.linearity == "SKIPPED"
 
@@ -66,8 +72,17 @@ def test_linearity_coeff(instrument, exptype):
     linref_model = LinearityRefModel.create_fake_data(
         {"coeffs": coeffs}, shape=shape[1:]
     )
+    ilinref_model = InverselinearityRefModel.create_fake_data(
+        {"coeffs": coeffs.copy()}, shape=shape[1:]
+    )
 
-    LinearityStep.call(result, override_linearity=linref_model)
+    result.meta.exposure.read_pattern = [[1], [2], [3], [4], [5]]
+
+    LinearityStep.call(
+        result,
+        override_linearity=linref_model,
+        override_inverselinearity=ilinref_model,
+    )
 
     assert result.meta.cal_step.linearity == "COMPLETE"
     assert result.pixeldq[5, 5] == dqflags.pixel["NO_LIN_CORR"]
