@@ -420,7 +420,7 @@ def test_tweakreg_catalog_coordinate_update_behavior_combined(
     cat_original = Table.read("img_1_cat_original.parquet")
 
     # Run TweakRegStep with specified parameter
-    res = TweakRegStep.call([img], update_source_catalog_coordinates=update_coordinates)
+    TweakRegStep.call([img], update_source_catalog_coordinates=update_coordinates)
 
     # Read catalog after tweakreg
     cat_after = Table.read("img_1_cat.parquet")
