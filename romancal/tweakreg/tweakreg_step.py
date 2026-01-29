@@ -320,7 +320,7 @@ class TweakRegStep(RomanStep):
 
         # define mapping between pixel and world coordinates
         colname_mapping = {
-            ("xcentroid", "ycentroid"): ("ra_centroid", "dec_centroid"),
+            ("x_centroid", "y_centroid"): ("ra_centroid", "dec_centroid"),
             ("x_psf", "y_psf"): ("ra_psf", "dec_psf"),
         }
 
