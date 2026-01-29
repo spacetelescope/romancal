@@ -1,0 +1,1 @@
+Add support for integral nonlinearity correction using per-channel lookup tables.
