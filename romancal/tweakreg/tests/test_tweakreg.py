@@ -402,97 +402,90 @@ def test_tweakreg_produces_output(tmp_path, tweakreg_image, save_results):
     ],
     ids=["update_enabled", "update_disabled"],
 )
-def test_tweakreg_catalog_coordinate_update_behavior_combined(
+def test_tweakreg_catalog_coordinate_update_behavior(
     function_jail, tweakreg_image, update_coordinates, should_update
 ):
-    """
-    Test that TweakRegStep updates (or doesn't update) catalog coordinates based on parameter,
-    and that the coordinate changes are within expected tolerances.
-    """
+    """Test that TweakRegStep updates (or doesn't update) catalog coordinates based on parameter."""
+
     img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
+
     # create and save source catalog
     source_catalog = setup_source_catalog(img)
     source_catalog.write("img_1_cat.parquet", overwrite=True)
     img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
 
-    # Save original catalog for comparison
-    shutil.copy("img_1_cat.parquet", "img_1_cat_original.parquet")
-    cat_original = Table.read("img_1_cat_original.parquet")
+    # save original catalog for comparison
+    cat_original = Table.read("img_1_cat.parquet")
 
-    # Run TweakRegStep with specified parameter
-    TweakRegStep.call([img], update_source_catalog_coordinates=update_coordinates)
+    # run TweakRegStep with specified parameter
+    res = TweakRegStep.call([img], update_source_catalog_coordinates=update_coordinates)
 
-    # Read catalog after tweakreg
+    # read catalog after tweakreg
     cat_after = Table.read("img_1_cat.parquet")
 
-    # Tolerances for coordinate changes
-    atol = u.Quantity(0.11 / 2, "arcsec").to("deg").value
-    rtol = 5e-8
+    with res:
+        dm = res.borrow(0)
 
-    if should_update:
-        # Coordinates should be updated with tweaked WCS
-        expected_centroid = img.meta.wcs(cat_after["xcentroid"], cat_after["ycentroid"])
-        expected_psf = img.meta.wcs(cat_after["x_psf"], cat_after["y_psf"])
+        # verify step completed successfully
+        assert dm.meta.cal_step.tweakreg == "COMPLETE"
 
-        np.testing.assert_array_almost_equal(
-            cat_after["ra_centroid"], expected_centroid[0]
-        )
-        np.testing.assert_array_almost_equal(
-            cat_after["dec_centroid"], expected_centroid[1]
-        )
-        np.testing.assert_array_almost_equal(cat_after["ra_psf"], expected_psf[0])
-        np.testing.assert_array_almost_equal(cat_after["dec_psf"], expected_psf[1])
+        if should_update:
+            # verify coordinates were updated with tweaked WCS
+            expected_centroid = dm.meta.wcs(
+                cat_after["xcentroid"], cat_after["ycentroid"]
+            )
+            expected_psf = dm.meta.wcs(cat_after["x_psf"], cat_after["y_psf"])
 
-        # New coordinates are within 1/2 pixel from original (reasonable update)
-        assert np.allclose(
-            cat_original["ra_centroid"], cat_after["ra_centroid"], atol=atol, rtol=rtol
-        )
-        assert np.allclose(
-            cat_original["dec_centroid"],
-            cat_after["dec_centroid"],
-            atol=atol,
-            rtol=rtol,
-        )
-        assert np.allclose(
-            cat_original["ra_psf"], cat_after["ra_psf"], atol=atol, rtol=rtol
-        )
-        assert np.allclose(
-            cat_original["dec_psf"], cat_after["dec_psf"], atol=atol, rtol=rtol
-        )
+            # The updated catalog should match the tweaked WCS exactly
+            # (ignoring floating point precision issues)
+            np.testing.assert_array_almost_equal(
+                cat_after["ra_centroid"], expected_centroid[0]
+            )
+            np.testing.assert_array_almost_equal(
+                cat_after["dec_centroid"], expected_centroid[1]
+            )
+            np.testing.assert_array_almost_equal(cat_after["ra_psf"], expected_psf[0])
+            np.testing.assert_array_almost_equal(cat_after["dec_psf"], expected_psf[1])
 
-        # New coordinates actually did change by more than ~1/100 of a pixel
-        assert not np.allclose(
-            cat_original["ra_centroid"],
-            cat_after["ra_centroid"],
-            atol=atol / 50,
-            rtol=rtol / 50,
-        )
-        assert not np.allclose(
-            cat_original["dec_centroid"],
-            cat_after["dec_centroid"],
-            atol=atol / 50,
-            rtol=rtol / 50,
-        )
-        assert not np.allclose(
-            cat_original["ra_psf"],
-            cat_after["ra_psf"],
-            atol=atol / 50,
-            rtol=rtol / 50,
-        )
-        assert not np.allclose(
-            cat_original["dec_psf"],
-            cat_after["dec_psf"],
-            atol=atol / 50,
-            rtol=rtol / 50,
-        )
-    else:
-        # Coordinates should NOT be updated (should be identical to original)
-        np.testing.assert_array_equal(
-            cat_original["ra_centroid"], cat_after["ra_centroid"]
-        )
-        np.testing.assert_array_equal(
-            cat_original["dec_centroid"], cat_after["dec_centroid"]
-        )
-        np.testing.assert_array_equal(cat_original["ra_psf"], cat_after["ra_psf"])
-        np.testing.assert_array_equal(cat_original["dec_psf"], cat_after["dec_psf"])
-        np.testing.assert_array_equal(cat_original["dec_psf"], cat_after["dec_psf"])
+            # Calculate actual differences between original and updated coordinates
+            diff_ra_centroid = np.abs(
+                cat_original["ra_centroid"] - cat_after["ra_centroid"]
+            )
+            diff_dec_centroid = np.abs(
+                cat_original["dec_centroid"] - cat_after["dec_centroid"]
+            )
+            diff_ra_psf = np.abs(cat_original["ra_psf"] - cat_after["ra_psf"])
+            diff_dec_psf = np.abs(cat_original["dec_psf"] - cat_after["dec_psf"])
+
+            # New coordinates must change by at least 1 mas
+            min_change_threshold_mas = 1.0  # mas
+            min_change_threshold_deg = (
+                (min_change_threshold_mas * u.mas).to(u.deg).value
+            )
+
+            # Verify coordinates changed by at least 1 mas
+            assert np.any(diff_ra_centroid > min_change_threshold_deg)
+            assert np.any(diff_dec_centroid > min_change_threshold_deg)
+            assert np.any(diff_ra_psf > min_change_threshold_deg)
+            assert np.any(diff_dec_psf > min_change_threshold_deg)
+
+            # Verify changes are reasonable (within 1/2 a pixel)
+            max_expected_change_mas = 55.0  # mas
+            max_expected_change_deg = (max_expected_change_mas * u.mas).to(u.deg).value
+
+            assert np.all(diff_ra_centroid < max_expected_change_deg)
+            assert np.all(diff_dec_centroid < max_expected_change_deg)
+            assert np.all(diff_ra_psf < max_expected_change_deg)
+            assert np.all(diff_dec_psf < max_expected_change_deg)
+        else:
+            # verify coordinates were NOT updated (should be identical to original)
+            np.testing.assert_array_equal(
+                cat_original["ra_centroid"], cat_after["ra_centroid"]
+            )
+            np.testing.assert_array_equal(
+                cat_original["dec_centroid"], cat_after["dec_centroid"]
+            )
+            np.testing.assert_array_equal(cat_original["ra_psf"], cat_after["ra_psf"])
+            np.testing.assert_array_equal(cat_original["dec_psf"], cat_after["dec_psf"])
+
+        res.shelve(dm, 0, modify=False)
