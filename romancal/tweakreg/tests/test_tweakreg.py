@@ -235,10 +235,10 @@ def setup_source_catalog(img):
     # read in the mock table
     source_catalog = Table.read("img_1", format="ascii.ecsv")
     # rename columns to match expected column names
-    source_catalog.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
+    source_catalog.rename_columns(["x", "y"], ["x_centroid", "y_centroid"])
     # add mock PSF coordinates
-    source_catalog["x_psf"] = source_catalog["xcentroid"]
-    source_catalog["y_psf"] = source_catalog["ycentroid"]
+    source_catalog["x_psf"] = source_catalog["x_centroid"]
+    source_catalog["y_psf"] = source_catalog["y_centroid"]
 
     # generate a set of random shifts to be added to the original coordinates
     seed = 13
@@ -246,8 +246,8 @@ def setup_source_catalog(img):
     shift_x = rng.uniform(-0.5, 0.5, size=len(source_catalog))
     shift_y = rng.uniform(-0.5, 0.5, size=len(source_catalog))
     # add random fraction of a pixel shifts to the centroid coordinates
-    source_catalog["xcentroid"] += shift_x
-    source_catalog["ycentroid"] += shift_y
+    source_catalog["x_centroid"] += shift_x
+    source_catalog["y_centroid"] += shift_y
 
     # generate another set of random shifts to be added to the original coordinates
     seed = 5
@@ -260,8 +260,8 @@ def setup_source_catalog(img):
 
     # calculate centroid world coordinates
     centroid = img.meta.wcs(
-        source_catalog["xcentroid"],
-        source_catalog["ycentroid"],
+        source_catalog["x_centroid"],
+        source_catalog["y_centroid"],
     )
     # calculate PSF world coordinates
     psf = img.meta.wcs(
@@ -431,7 +431,7 @@ def test_tweakreg_catalog_coordinate_update_behavior(
         if should_update:
             # verify coordinates were updated with tweaked WCS
             expected_centroid = dm.meta.wcs(
-                cat_after["xcentroid"], cat_after["ycentroid"]
+                cat_after["x_centroid"], cat_after["y_centroid"]
             )
             expected_psf = dm.meta.wcs(cat_after["x_psf"], cat_after["y_psf"])
 
