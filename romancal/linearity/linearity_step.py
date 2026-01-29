@@ -42,7 +42,7 @@ def make_inl_correction(inl_model, ncols):
         a correction array of the same shape to be added to the data.
     """
     channel_width = 128
-    lookup_values = inl_model.value.copy().astype('f4')
+    lookup_values = inl_model.value.copy().astype("f4")
     channel_corrections = {}
     for start_col in range(0, ncols, channel_width):
         channel_num = start_col // channel_width + 1
