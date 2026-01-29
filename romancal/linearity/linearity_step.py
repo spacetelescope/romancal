@@ -23,6 +23,49 @@ __all__ = ["LinearityStep"]
 log = logging.getLogger(__name__)
 
 
+def make_inl_correction(inl_model, ncols):
+    """
+    Create a callable for integral nonlinearity correction.
+
+    Parameters
+    ----------
+    inl_model : datamodel
+        The integral nonlinearity reference file model.
+    ncols : int
+        Number of columns in the data, used to determine which channels
+        to extract.
+
+    Returns
+    -------
+    callable
+        A function that takes a 3D array (nreads, nrows, ncols) and returns
+        a correction array of the same shape to be added to the data.
+    """
+    channel_width = 128
+    lookup_values = inl_model.value.copy().astype('f4')
+    channel_corrections = {}
+    for start_col in range(0, ncols, channel_width):
+        channel_num = start_col // channel_width + 1
+        attr_name = f"science_channel_{channel_num:02d}"
+        channel_corrections[channel_num] = getattr(
+            inl_model.inl_table, attr_name
+        ).correction.copy()
+
+    def inl_correction(data):
+        """Apply INL correction to data array."""
+        result = np.zeros_like(data)
+        for start_col in range(0, data.shape[-1], channel_width):
+            channel_num = start_col // channel_width + 1
+            correction = channel_corrections[channel_num]
+            channel_data = data[..., start_col : start_col + channel_width]
+            result[..., start_col : start_col + channel_width] = np.interp(
+                channel_data, lookup_values, correction
+            )
+        return result
+
+    return inl_correction
+
+
 class LinearityStep(RomanStep):
     """
     LinearityStep: This step performs a correction for non-linear
@@ -31,7 +74,11 @@ class LinearityStep(RomanStep):
 
     class_alias = "linearity"
 
-    reference_file_types: ClassVar = ["linearity", "inverselinearity"]
+    reference_file_types: ClassVar = [
+        "linearity",
+        "inverselinearity",
+        "integralnonlinearity",
+    ]
 
     def process(self, dataset):
         input_model = open_dataset(dataset, update_version=self.update_version)
@@ -39,8 +86,10 @@ class LinearityStep(RomanStep):
         # Get reference file names
         self.lin_name = self.get_reference_file(input_model, "linearity")
         self.ilin_name = self.get_reference_file(input_model, "inverselinearity")
+        self.inl_name = self.get_reference_file(input_model, "integralnonlinearity")
         log.info("Using LINEARITY reference file: %s", self.lin_name)
         log.info("Using INVERSELINEARITY reference file: %s", self.ilin_name)
+        log.info("Using INTEGRALNONLINEARITY reference file: %s", self.inl_name)
 
         # Check for valid reference files
         if self.lin_name == "N/A" or self.ilin_name == "N/A":
@@ -48,6 +97,14 @@ class LinearityStep(RomanStep):
             log.warning("Linearity step will be skipped")
             input_model.meta.cal_step["linearity"] = "SKIPPED"
             return input_model
+
+        # INL correction is optional
+        inl_correction = None
+        if self.inl_name != "N/A":
+            with rdd.open(self.inl_name) as inl_model:
+                inl_correction = make_inl_correction(
+                    inl_model, input_model.data.shape[-1]
+                )
 
         with (
             rdd.LinearityRefModel(self.lin_name, memmap=False) as lin_model,
@@ -73,6 +130,7 @@ class LinearityStep(RomanStep):
                 lin_dq,
                 pixel,
                 ilin_coeffs=ilin_coeffs,
+                additional_correction=inl_correction,
                 read_pattern=read_pattern,
             )
 
