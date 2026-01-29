@@ -223,134 +223,6 @@ def test_tweakreg_handles_multiple_groups(tmp_path, tweakreg_image):
     assert len(res.group_names) == 2
 
 
-def test_update_source_catalog_coordinates(function_jail, tweakreg_image):
-    """Test that TweakReg updates the catalog coordinates with the tweaked WCS."""
-
-    img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
-
-    # create ImageSourceCatalogModel
-    source_catalog = setup_source_catalog(img)
-    source_catalog.write("img_1_cat.parquet", overwrite=True)
-
-    # update tweakreg catalog name
-    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
-
-    # run TweakRegStep
-    res = TweakRegStep.call([img])
-
-    # tweak the current WCS using TweakRegStep and save the updated cat file
-    with res:
-        dm = res.borrow(0)
-        assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.parquet"
-        TweakRegStep().update_catalog_coordinates(
-            dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
-        )
-        res.shelve(dm, 0)
-
-    # read in saved catalog coords
-    cat = Table.read("img_1_cat.parquet")
-    cat_ra_centroid = cat["ra_centroid"]
-    cat_dec_centroid = cat["dec_centroid"]
-    cat_ra_psf = cat["ra_psf"]
-    cat_dec_psf = cat["dec_psf"]
-
-    # calculate world coords using tweaked WCS
-    expected_centroid = img.meta.wcs(cat["xcentroid"], cat["ycentroid"])
-    expected_psf = img.meta.wcs(cat["x_psf"], cat["y_psf"])
-
-    # compare coordinates (make sure tweaked WCS was applied to cat file coords)
-    np.testing.assert_array_equal(cat_ra_centroid, expected_centroid[0])
-    np.testing.assert_array_equal(cat_dec_centroid, expected_centroid[1])
-    np.testing.assert_array_equal(cat_ra_psf, expected_psf[0])
-    np.testing.assert_array_equal(cat_dec_psf, expected_psf[1])
-
-
-def test_source_catalog_coordinates_have_changed(function_jail, tweakreg_image):
-    """Test that the original catalog file content is different from the updated file."""
-
-    img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
-
-    # create ImageSourceCatalogModel
-    source_catalog = setup_source_catalog(img)
-    source_catalog.write("img_1_cat.parquet", overwrite=True)
-
-    # save original data
-    shutil.copy("img_1_cat.parquet", "img_1_cat_original.parquet")
-
-    # update tweakreg catalog name
-    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
-
-    # run TweakRegStep
-    res = TweakRegStep.call([img])
-
-    # tweak the current WCS using TweakRegStep and save the updated cat file
-    with res:
-        dm = res.borrow(0)
-        assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.parquet"
-        TweakRegStep().update_catalog_coordinates(
-            dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
-        )
-        res.shelve(dm, 0)
-
-    cat_original = Table.read("img_1_cat_original.parquet")
-    cat_updated = Table.read("img_1_cat.parquet")
-
-    # set max absolute and relative tolerance to ~ 1/2 a pixel
-    atol = u.Quantity(0.11 / 2, "arcsec").to("deg").value
-    rtol = 5e-8
-
-    # testing that nothing moved by more than 1/2 a pixel
-    assert np.allclose(
-        cat_original["ra_centroid"],
-        cat_updated["ra_centroid"],
-        atol=atol,
-        rtol=rtol,
-    )
-    assert np.allclose(
-        cat_original["dec_centroid"],
-        cat_updated["dec_centroid"],
-        atol=atol,
-        rtol=rtol,
-    )
-    assert np.allclose(
-        cat_original["ra_psf"],
-        cat_updated["ra_psf"],
-        atol=atol,
-        rtol=rtol,
-    )
-    assert np.allclose(
-        cat_original["dec_psf"],
-        cat_updated["dec_psf"],
-        atol=atol,
-        rtol=rtol,
-    )
-    # testing that things did move by more than ~ 1/100 of a pixel
-    assert not np.allclose(
-        cat_original["ra_centroid"],
-        cat_updated["ra_centroid"],
-        atol=atol / 100,
-        rtol=rtol / 100,
-    )
-    assert not np.allclose(
-        cat_original["dec_centroid"],
-        cat_updated["dec_centroid"],
-        atol=atol / 100,
-        rtol=rtol / 100,
-    )
-    assert not np.allclose(
-        cat_original["ra_psf"],
-        cat_updated["ra_psf"],
-        atol=atol / 100,
-        rtol=rtol / 100,
-    )
-    assert not np.allclose(
-        cat_original["dec_psf"],
-        cat_updated["dec_psf"],
-        atol=atol / 100,
-        rtol=rtol / 100,
-    )
-
-
 def setup_source_catalog(img):
     """
     Set up the source catalog.
@@ -520,3 +392,107 @@ def test_tweakreg_produces_output(tmp_path, tweakreg_image, save_results):
     # the files should exist only if save_results was True
     assert (f"{base_filename}_tweakregstep.asdf" in fns) == save_results
     assert (f"{base_filename}_wcs.asdf" in fns) == save_results
+
+
+@pytest.mark.parametrize(
+    "update_coordinates, should_update",
+    [
+        (True, True),  # coordinates should be updated
+        (False, False),  # coordinates should NOT be updated
+    ],
+    ids=["update_enabled", "update_disabled"],
+)
+def test_tweakreg_catalog_coordinate_update_behavior_combined(
+    function_jail, tweakreg_image, update_coordinates, should_update
+):
+    """
+    Test that TweakRegStep updates (or doesn't update) catalog coordinates based on parameter,
+    and that the coordinate changes are within expected tolerances.
+    """
+    img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
+    # create and save source catalog
+    source_catalog = setup_source_catalog(img)
+    source_catalog.write("img_1_cat.parquet", overwrite=True)
+    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
+
+    # Save original catalog for comparison
+    shutil.copy("img_1_cat.parquet", "img_1_cat_original.parquet")
+    cat_original = Table.read("img_1_cat_original.parquet")
+
+    # Run TweakRegStep with specified parameter
+    res = TweakRegStep.call([img], update_source_catalog_coordinates=update_coordinates)
+
+    # Read catalog after tweakreg
+    cat_after = Table.read("img_1_cat.parquet")
+
+    # Tolerances for coordinate changes
+    atol = u.Quantity(0.11 / 2, "arcsec").to("deg").value
+    rtol = 5e-8
+
+    if should_update:
+        # Coordinates should be updated with tweaked WCS
+        expected_centroid = img.meta.wcs(cat_after["xcentroid"], cat_after["ycentroid"])
+        expected_psf = img.meta.wcs(cat_after["x_psf"], cat_after["y_psf"])
+
+        np.testing.assert_array_almost_equal(
+            cat_after["ra_centroid"], expected_centroid[0]
+        )
+        np.testing.assert_array_almost_equal(
+            cat_after["dec_centroid"], expected_centroid[1]
+        )
+        np.testing.assert_array_almost_equal(cat_after["ra_psf"], expected_psf[0])
+        np.testing.assert_array_almost_equal(cat_after["dec_psf"], expected_psf[1])
+
+        # New coordinates are within 1/2 pixel from original (reasonable update)
+        assert np.allclose(
+            cat_original["ra_centroid"], cat_after["ra_centroid"], atol=atol, rtol=rtol
+        )
+        assert np.allclose(
+            cat_original["dec_centroid"],
+            cat_after["dec_centroid"],
+            atol=atol,
+            rtol=rtol,
+        )
+        assert np.allclose(
+            cat_original["ra_psf"], cat_after["ra_psf"], atol=atol, rtol=rtol
+        )
+        assert np.allclose(
+            cat_original["dec_psf"], cat_after["dec_psf"], atol=atol, rtol=rtol
+        )
+
+        # New coordinates actually did change by more than ~1/100 of a pixel
+        assert not np.allclose(
+            cat_original["ra_centroid"],
+            cat_after["ra_centroid"],
+            atol=atol / 50,
+            rtol=rtol / 50,
+        )
+        assert not np.allclose(
+            cat_original["dec_centroid"],
+            cat_after["dec_centroid"],
+            atol=atol / 50,
+            rtol=rtol / 50,
+        )
+        assert not np.allclose(
+            cat_original["ra_psf"],
+            cat_after["ra_psf"],
+            atol=atol / 50,
+            rtol=rtol / 50,
+        )
+        assert not np.allclose(
+            cat_original["dec_psf"],
+            cat_after["dec_psf"],
+            atol=atol / 50,
+            rtol=rtol / 50,
+        )
+    else:
+        # Coordinates should NOT be updated (should be identical to original)
+        np.testing.assert_array_equal(
+            cat_original["ra_centroid"], cat_after["ra_centroid"]
+        )
+        np.testing.assert_array_equal(
+            cat_original["dec_centroid"], cat_after["dec_centroid"]
+        )
+        np.testing.assert_array_equal(cat_original["ra_psf"], cat_after["ra_psf"])
+        np.testing.assert_array_equal(cat_original["dec_psf"], cat_after["dec_psf"])
+        np.testing.assert_array_equal(cat_original["dec_psf"], cat_after["dec_psf"])
