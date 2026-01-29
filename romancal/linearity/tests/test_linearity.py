@@ -5,46 +5,22 @@ Unit tests for linearity correction
 """
 
 import numpy as np
-import pytest
-from astropy.time import Time
 from roman_datamodels import dqflags
 from roman_datamodels.datamodels import (
     IntegralnonlinearityRefModel,
     InverselinearityRefModel,
     LinearityRefModel,
-    ScienceRawModel,
 )
 
-from romancal.dq_init import DQInitStep
 from romancal.linearity import LinearityStep
 
 
-@pytest.mark.parametrize(
-    "instrument, exptype",
-    [
-        ("WFI", "WFI_IMAGE"),
-    ],
-)
-def test_linearity_coeff(instrument, exptype):
+def test_linearity_coeff(setup_ramp_for_linearity):
     """Test that the basic inferface works for data requiring a DQ reffile"""
 
-    # Set test size
     shape = (5, 20, 20)
-
-    # Create test science raw model
-    wfi_sci_raw_model = ScienceRawModel.create_fake_data(shape=shape)
-    wfi_sci_raw_model.meta.exposure.start_time = Time(
-        "2024-01-03T00:00:00.0", format="isot", scale="utc"
-    )
-    wfi_sci_raw_model.meta.instrument.name = instrument
-    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
-    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
-    wfi_sci_raw_model.meta["guide_star"]["window_xstart"] = 1012
-    wfi_sci_raw_model.meta["guide_star"]["window_xsize"] = 16
-    wfi_sci_raw_model.meta.exposure.type = exptype
-    wfi_sci_raw_model.data = np.ones(shape, dtype=np.uint16)
-
-    result = DQInitStep.call(wfi_sci_raw_model)
+    result = setup_ramp_for_linearity(shape)
+    result.data = np.ones(shape, dtype=np.float32)
     result = LinearityStep.call(
         result,
         override_linearity="N/A",
@@ -80,8 +56,6 @@ def test_linearity_coeff(instrument, exptype):
         {"coeffs": coeffs.copy()}, shape=shape[1:]
     )
 
-    result.meta.exposure.read_pattern = [[1], [2], [3], [4], [5]]
-
     LinearityStep.call(
         result,
         override_linearity=linref_model,
@@ -96,26 +70,13 @@ def test_linearity_coeff(instrument, exptype):
     np.testing.assert_array_equal(result.data[0:, 6, 5], pixels_65)
 
 
-def test_linearity_correction_values():
+def test_linearity_correction_values(setup_ramp_for_linearity):
     """Test linearity correction with simple coefficients and INL."""
 
     shape = (5, 20, 256)
-
-    wfi_sci_raw_model = ScienceRawModel.create_fake_data(shape=shape)
-    wfi_sci_raw_model.meta.exposure.start_time = Time(
-        "2024-01-03T00:00:00.0", format="isot", scale="utc"
-    )
-    wfi_sci_raw_model.meta.instrument.name = "WFI"
-    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
-    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
-    wfi_sci_raw_model.meta["guide_star"]["window_xstart"] = 1012
-    wfi_sci_raw_model.meta["guide_star"]["window_xsize"] = 16
-    wfi_sci_raw_model.meta.exposure.type = "WFI_IMAGE"
-    wfi_sci_raw_model.data = np.zeros(shape, dtype=np.uint16)
-    wfi_sci_raw_model.data[:, 0, :] = 0
-    wfi_sci_raw_model.data[:, 1, :] = 100
-
-    result = DQInitStep.call(wfi_sci_raw_model)
+    result = setup_ramp_for_linearity(shape)
+    result.data[:, 0, :] = 0
+    result.data[:, 1, :] = 100
 
     # Simple linearity: output = 2 * input
     lin_coeffs = np.zeros(shape, dtype=np.float32)
@@ -144,8 +105,6 @@ def test_linearity_correction_values():
         "inl_table": inl_table_data,
     })
 
-    result.meta.exposure.read_pattern = [[1], [2], [3], [4], [5]]
-
     LinearityStep.call(
         result,
         override_linearity=linref_model,
@@ -161,7 +120,7 @@ def test_linearity_correction_values():
     # In this case the ramp slope is zero so the resultant ->
     # read simulation is trivial doesn't do anything,
     # so this just applies the INL and then the CNL.
-    
+
     # integral non-linearity corrects 0 -> 1, classical non-linearity
     # doubles 1->2.
     np.testing.assert_array_equal(result.data[:, 0, :], 2)
