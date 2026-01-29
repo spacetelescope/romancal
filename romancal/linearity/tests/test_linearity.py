@@ -100,10 +100,12 @@ def test_linearity_correction_values(setup_ramp_for_linearity):
         attr_name = f"science_channel_{channel_num:02d}"
         inl_table_data[attr_name] = {"correction": np.ones(65536, dtype="f4")}
 
-    inlref_model = IntegralnonlinearityRefModel.create_fake_data({
-        "value": np.arange(65536, dtype="f4"),
-        "inl_table": inl_table_data,
-    })
+    inlref_model = IntegralnonlinearityRefModel.create_fake_data(
+        {
+            "value": np.arange(65536, dtype="f4"),
+            "inl_table": inl_table_data,
+        }
+    )
 
     LinearityStep.call(
         result,
