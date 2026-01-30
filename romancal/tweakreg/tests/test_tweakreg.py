@@ -488,3 +488,42 @@ def test_tweakreg_catalog_coordinate_update_behavior(
             np.testing.assert_array_equal(cat_original["dec_psf"], cat_after["dec_psf"])
 
         res.shelve(dm, 0, modify=False)
+
+
+def test_parquet_metadata_preserved_after_update(function_jail, tweakreg_image):
+    """Test that parquet metadata survives the coordinate update operation."""
+    import pyarrow.parquet as pq
+
+    img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
+
+    # Create and save source catalog
+    source_catalog = setup_source_catalog(img)
+    source_catalog.write("img_1_cat.parquet", overwrite=True)
+    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
+
+    # Read original metadata using pyarrow
+    original_table = pq.read_table("img_1_cat.parquet")
+    original_schema_metadata = original_table.schema.metadata
+    original_schema = original_table.schema
+
+    # Run TweakRegStep with coordinate updates
+    TweakRegStep.call([img], update_source_catalog_coordinates=True)
+
+    # Read updated file's metadata
+    updated_table = pq.read_table("img_1_cat.parquet")
+    updated_schema_metadata = updated_table.schema.metadata
+    updated_schema = updated_table.schema
+
+    # Verify schema metadata is preserved
+    assert original_schema_metadata == updated_schema_metadata, (
+        "Schema metadata was not preserved during coordinate update"
+    )
+
+    # Verify column schemas match (types, names, field metadata)
+    for orig_field, updated_field in zip(original_schema, updated_schema):
+        assert orig_field.name == updated_field.name
+        # Note: We expect RA/Dec columns to have the same type, just different values
+        # So schema types should still match
+        assert orig_field.type == updated_field.type, (
+            f"Column {orig_field.name} type changed from {orig_field.type} to {updated_field.type}"
+        )
