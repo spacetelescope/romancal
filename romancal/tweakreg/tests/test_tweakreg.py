@@ -520,7 +520,7 @@ def test_parquet_metadata_preserved_after_update(function_jail, tweakreg_image):
     )
 
     # Verify column schemas match (types, names, field metadata)
-    for orig_field, updated_field in zip(original_schema, updated_schema):
+    for orig_field, updated_field in zip(original_schema, updated_schema, strict=False):
         assert orig_field.name == updated_field.name
         # Note: We expect RA/Dec columns to have the same type, just different values
         # So schema types should still match
