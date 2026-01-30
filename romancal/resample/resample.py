@@ -206,7 +206,18 @@ class ResampleData(Resample):
         # always provide 1: https://github.com/spacetelescope/romancal/issues/1637
         return 1
 
-    def add_model_hook(self, model, pixmap, iscale, weight_map, xmin, xmax, ymin, ymax):
+    def add_model_hook(
+        self,
+        model,
+        pixmap,
+        pixel_scale_ratio,
+        iscale,
+        weight_map,
+        xmin,
+        xmax,
+        ymin,
+        ymax,
+    ):
         if self.compute_exptime:
             if not hasattr(self, "_exptime_resampler"):
                 self._exptime_resampler = ExptimeResampler(
@@ -215,7 +226,15 @@ class ResampleData(Resample):
                     self.good_bits,
                     self.kernel,
                 )
-            self._exptime_resampler.add_image(model, pixmap, xmin, xmax, ymin, ymax)
+            self._exptime_resampler.add_image(
+                model=model,
+                pixmap=pixmap,
+                pixel_scale_ratio=pixel_scale_ratio,
+                xmin=xmin,
+                xmax=xmax,
+                ymin=ymin,
+                ymax=ymax,
+            )
 
     def add_model(self, model):
         model_dict = self._input_model_to_dict(model)
