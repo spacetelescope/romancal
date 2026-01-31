@@ -76,6 +76,44 @@ def test_bad_readpattern():
             override_readnoise=readnoise_model,
         )
 
+def test_uniformweighting():
+    """Ensure uniform weighting slope only matches in the read noise limit
+    """
+    ramp_model, gain_model, readnoise_model, dark_model = make_data(
+        SIMPLE_RESULTANTS, 0.01, 1000, False
+    )
+
+    out_model = RampFitStep.call(
+        ramp_model,
+        algorithm="likely",
+        override_gain=gain_model,
+        override_readnoise=readnoise_model,
+        include_var_rnoise=True,
+    )
+
+    # Fully in the read noise limit: the uniform-weighting and
+    # optimal-weighting sloeps should be the same.
+
+    np.testing.assert_allclose(out_model.dumo, 0, atol=1e-5)
+
+    ramp_model, gain_model, readnoise_model, dark_model = make_data(
+        SIMPLE_RESULTANTS, 10, 0.01, False
+    )
+
+    out_model = RampFitStep.call(
+        ramp_model,
+        algorithm="likely",
+        override_gain=gain_model,
+        override_readnoise=readnoise_model,
+        include_var_rnoise=True,
+    )
+
+    # Now we are in the photon noise limt.  The uniform-weighting and
+    # optimal-weighting slopes should be different.
+
+    with pytest.raises(AssertionError):
+        np.testing.assert_allclose(out_model.dumo, 0, atol=1e-2)
+
 
 @pytest.mark.parametrize(
     "attribute",
