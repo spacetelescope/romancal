@@ -277,6 +277,52 @@ class RampFitStep(RomanStep):
         return jump_data
 
 
+    def likely(self, input_model, readnoise_model, gain_model):
+        """Perform Maximum Likelihood Algorithm
+
+        Parameters
+        ----------
+        input_model : RampModel
+            Model containing ramps.
+
+        readnoise_model : ReadnoiseRefModel
+            Model with the read noise reference information.
+
+        gain_model : GainRefModel
+            Model with the gain reference information.
+
+        Returns
+        -------
+        out_model : ImageModel
+            Model containing a count-rate image.
+        """
+        # Add the needed components to the input model.
+        input_model["flags_do_not_use"] = pixel.DO_NOT_USE
+        input_model["flags_saturated"] = pixel.SATURATED
+        input_model["rejection_threshold"] = None
+        input_model["flags_jump_det"] = pixel.JUMP_DET
+        # Add an axis to match the JWST data cube
+        input_model.data = input_model.data[np.newaxis, :, :, :]
+        input_model.groupdq = input_model.groupdq[np.newaxis, :, :, :]
+        # add ancillary information needed by likelihood fitting
+        input_model.read_pattern = get_readtimes(input_model)
+        input_model.zeroframe = None
+        input_model.average_dark_current = np.zeros(
+            [input_model.data.shape[2], input_model.data.shape[3]]
+        )
+
+        image_info, _, _ = likely_ramp_fit(
+            input_model, readnoise_model.data, gain_model.data
+        )
+
+        out_model = create_image_model(
+            input_model, image_info, include_var_rnoise=self.include_var_rnoise
+        )
+        out_model.meta.cal_step.ramp_fit = "COMPLETE"
+
+        return out_model
+
+
 # #########
 # Utilities
 # #########
