@@ -76,9 +76,9 @@ def test_bad_readpattern():
             override_readnoise=readnoise_model,
         )
 
+
 def test_uniformweighting():
-    """Ensure uniform weighting slope only matches in the read noise limit
-    """
+    """Ensure uniform weighting slope only matches in the read noise limit"""
     ramp_model, gain_model, readnoise_model, dark_model = make_data(
         SIMPLE_RESULTANTS, 0.01, 1000, False
     )
