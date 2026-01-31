@@ -108,7 +108,7 @@ def test_uniformweighting():
         include_var_rnoise=True,
     )
 
-    # Now we are in the photon noise limt.  The uniform-weighting and
+    # Now we are in the photon noise limit.  The uniform-weighting and
     # optimal-weighting slopes should be different.
 
     with pytest.raises(AssertionError):
