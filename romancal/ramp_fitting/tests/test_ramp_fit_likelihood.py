@@ -24,9 +24,7 @@ SIMPLE_EXPECTED_DEFAULT = {
         [[1.2022689e-06, 1.2022689e-06], [1.2022329e-06, 1.2022729e-06]],
         dtype=np.float16,
     ),
-    "chisq": np.array(
-        [[0.4, 1.6], [1, 3]], dtype=np.float16
-    ),
+    "chisq": np.array([[0.4, 1.6], [1, 3]], dtype=np.float16),
 }
 SIMPLE_EXPECTED_GAIN = {
     "data": np.array(
@@ -42,9 +40,7 @@ SIMPLE_EXPECTED_GAIN = {
         [[1.2021728e-06, 1.2021728e-06], [1.2019930e-06, 5.4103184e-06]],
         dtype=np.float16,
     ),
-    "chisq": np.array(
-        [[2, 8], [5, 0]], dtype=np.float16
-    ),
+    "chisq": np.array([[2, 8], [5, 0]], dtype=np.float16),
 }
 SIMPLE_EXPECTED_RNOISE = {
     "data": np.array(
@@ -57,9 +53,7 @@ SIMPLE_EXPECTED_RNOISE = {
     "var_rnoise": np.array(
         [[108.20637, 108.20637], [108.20637, 108.20637]], dtype=np.float16
     ),
-    "chisq": np.array(
-        [[4e-5, 2.4e-4], [6e-5, 3.6e-4]], dtype=np.float16
-    ),
+    "chisq": np.array([[4e-5, 2.4e-4], [6e-5, 3.6e-4]], dtype=np.float16),
 }
 
 

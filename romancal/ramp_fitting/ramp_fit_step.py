@@ -175,7 +175,7 @@ class RampFitStep(RomanStep):
             "dq": ramp_dq,
             "var_poisson": var_poisson,
             "var_rnoise": var_rnoise,
-            "err": err
+            "err": err,
         }
         image_model = create_image_model(
             input_model, image_info, include_var_rnoise=include_var_rnoise
@@ -183,6 +183,7 @@ class RampFitStep(RomanStep):
 
         # That's all folks
         return image_model
+
 
 # #########
 # Utilities
@@ -268,6 +269,7 @@ def create_image_model(input_model, image_info, include_var_rnoise=False):
 
     return im
 
+
 def slopes_uniform_weights(input_model):
     """
     Compute ramp slopes using uniform (read-noise-limited) weights.
@@ -296,15 +298,16 @@ def slopes_uniform_weights(input_model):
     N = np.sum(ni)
     Nt = np.sum(ni * ti)
     Ntt = np.sum(ni * ti**2)
-    weights = (N * ni * ti - Nt * ni)/(N * Ntt - Nt**2)
+    weights = (N * ni * ti - Nt * ni) / (N * Ntt - Nt**2)
 
     # We want the weighted sum over reads.
     if len(input_model.data.shape) == 3:
-        return np.sum(weights[:, None, None]*input_model.data, axis=0)
+        return np.sum(weights[:, None, None] * input_model.data, axis=0)
     elif len(input_model.data.shape) == 4:
-        return np.sum(weights[:, None, None]*input_model.data[0], axis=0)
+        return np.sum(weights[:, None, None] * input_model.data[0], axis=0)
     else:
         raise ValueError("Unexpected shape for input_model.data")
+
 
 def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
     """Construct pixeldq for ramp fit output from input dqs and ramp slopes.
