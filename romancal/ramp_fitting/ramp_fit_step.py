@@ -176,7 +176,6 @@ class RampFitStep(RomanStep):
         # That's all folks
         return image_model
 
-
     def likely(self, input_model, readnoise_model, gain_model):
         """Perform Maximum Likelihood Algorithm
 
@@ -225,7 +224,6 @@ class RampFitStep(RomanStep):
         out_model.meta.cal_step.ramp_fit = "COMPLETE"
 
         return out_model
-
 
     def _setup_jump_data(self, result, rnoise_m, gain_m):
         """
